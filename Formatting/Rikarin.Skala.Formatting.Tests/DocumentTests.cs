@@ -44,29 +44,27 @@ public sealed class DocumentBuilderTests {
     }
 
     [Fact]
-    public void ContinuousScopes_Nest() {
-        // A continuation level is a scope, not a per-line adjustment: `=>` then `(` is two levels,
-        // which is the only way the two compose (docs/plan/04 § "Indentation").
-        Assert.Equal("a\nb", Render(open: 0));
-        Assert.Equal("a\n    b", Render(open: 1));
-        Assert.Equal("a\n        b", Render(open: 2));
+    public void ContinuousScopes_CountOnePerOpeningLine() {
+        // ⚠ A continuation level is a scope, not a per-line adjustment — `=>` then `(` is two
+        // levels — but two scopes opened on the SAME line are one, which is what keeps
+        // `Report(Create(` from indenting its arguments twice (docs/plan/04 § "Indentation").
+        var builder = new DocumentBuilder();
+        builder.Text("a", new SourceSpan(0, 1));
+        builder.OpenIndent(IndentKind.Continuous);
+        builder.OpenIndent(IndentKind.Continuous);
+        builder.Line(LineKind.Hard);
+        builder.Text("b", new SourceSpan(2, 1));
+        builder.OpenIndent(IndentKind.Continuous);
+        builder.Line(LineKind.Hard);
+        builder.Text("c", new SourceSpan(4, 1));
+        builder.Close();
+        builder.Close();
+        builder.Close();
 
-        static string Render(int open) {
-            var builder = new DocumentBuilder();
-            builder.Text("a", new SourceSpan(0, 1));
-            for (var i = 0; i < open; i++) {
-                builder.OpenIndent(IndentKind.Continuous);
-            }
-
-            builder.Line(LineKind.Hard);
-            builder.Text("b", new SourceSpan(2, 1));
-            for (var i = 0; i < open; i++) {
-                builder.Close();
-            }
-
-            var document = builder.Build();
-            return LayoutWriter.Write(document, Fitter.Resolve(document, 120), "    ", "\n").Text;
-        }
+        var document = builder.Build();
+        Assert.Equal(
+            "a\n    b\n        c",
+            LayoutWriter.Write(document, Fitter.Resolve(document, 120), "    ", "\n").Text);
     }
 }
 

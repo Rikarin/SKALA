@@ -37,6 +37,7 @@ public sealed partial class CSharpDocumentBuilder {
 
     /// <summary>One per open statement, member, accessor or call chain, and per block scope.</summary>
     readonly List<Frame> _frames = [];
+
     readonly HashSet<int> _verbatimMembers = [];
     readonly string _path;
 
@@ -94,8 +95,13 @@ public sealed partial class CSharpDocumentBuilder {
         //                              c);
         // The level is spent lazily, at the first break before a `.`, so a chain that does not
         // break costs nothing and an argument list inside one is not pushed twice.
-        if (IsChainRoot(node)) {
-            _frames.Add(new Frame(FrameKind.Chain, false));
+        // ⚠ A binary PATTERN chain takes a level of its own; a binary EXPRESSION chain does not.
+        // `wrap_chained_binary_patterns` and `wrap_chained_binary_expressions` are separate keys and
+        // ReSharper treats them differently:
+        //   x is A            a
+        //       or B    vs    + b     ← one level, not two
+        if (IsChainRoot(node) || IsPatternChainRoot(node)) {
+            _frames.Add(new Frame(IsPatternChainRoot(node) ? FrameKind.Pattern : FrameKind.Chain, false));
             Dispatch(node);
             if (_frames[^1].Activated) {
                 CloseIndent(IndentKind.Continuous);
@@ -147,9 +153,24 @@ public sealed partial class CSharpDocumentBuilder {
             or ElementAccessExpressionSyntax or ConditionalAccessExpressionSyntax
             or MemberBindingExpressionSyntax or PostfixUnaryExpressionSyntax);
 
+    static bool IsPatternChainRoot(SyntaxNode node) =>
+        node is BinaryPatternSyntax && node.Parent is not BinaryPatternSyntax;
+
+    /// <summary>
+    /// The constructs a continuation level is attributed to.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ List elements are on this list, and they have to be. A level spent inside one arm of a
+    /// switch expression must not still be open when the next arm starts — the leak shifts every
+    /// following arm right by four and is invisible until a long file has one wrapped arm in the
+    /// middle of it.
+    /// </remarks>
     static bool OwnsAContinuationFrame(SyntaxNode node) =>
         node is StatementSyntax or MemberDeclarationSyntax or AccessorDeclarationSyntax
-            or AnonymousFunctionExpressionSyntax;
+            or AnonymousFunctionExpressionSyntax or SwitchExpressionArmSyntax or ArgumentSyntax
+            or AttributeArgumentSyntax or ParameterSyntax or AnonymousObjectMemberDeclaratorSyntax
+            or VariableDeclaratorSyntax or SubpatternSyntax or CollectionElementSyntax
+            or SwitchLabelSyntax or BaseTypeSyntax or TypeParameterConstraintClauseSyntax;
 
     void Dispatch(SyntaxNode node) {
         if (_verbatimMembers.Contains(node.SpanStart) && node is MemberDeclarationSyntax) {
@@ -838,6 +859,14 @@ public sealed partial class CSharpDocumentBuilder {
                 continue;
             }
 
+            if (_frames[i].Kind == FrameKind.Pattern) {
+                if (nextToken.Parent is BinaryPatternSyntax pattern && pattern.OperatorToken == nextToken) {
+                    return i;
+                }
+
+                continue;
+            }
+
             return _continuousDepth == 0 && IsContinuation(nextPieceIndex, nextToken) ? i : -1;
         }
 
@@ -846,7 +875,8 @@ public sealed partial class CSharpDocumentBuilder {
 
     enum FrameKind {
         Unit,
-        Chain
+        Chain,
+        Pattern
     }
 
     /// <param name="Started">

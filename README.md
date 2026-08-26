@@ -12,8 +12,8 @@ milestone 3.
 
 | | |
 |---|---|
-| **Line fidelity vs. `jb cleanupcode`** on `corpus/real/` (380 files, 76 684 lines) | **94.37 %** |
-| File fidelity, same corpus | 36.32 % |
+| **Line fidelity vs. `jb cleanupcode`** on `corpus/real/` (380 files, 76 684 lines) | **94.28 %** |
+| File fidelity, same corpus | 36.84 % |
 | … on `corpus/constructs/` (228 files) | 93.20 % line, 85.53 % file |
 | … on `corpus/pathological/` (52 files) | 84.93 % line, 63.46 % file |
 | Idempotency, token equivalence, parse stability, determinism, range consistency | 100 % of the corpus, every test run |
@@ -24,13 +24,17 @@ Per origin, because the three measure different things:
 
 | Origin | Line | File | What it measures |
 |---|---:|---:|---|
-| `vixen/` | 96.39 % | 42.00 % | Does Skala leave code that already conforms alone |
+| `vixen/` | 96.25 % | 43.00 % | Does Skala leave code that already conforms alone |
 | `newtonsoft/` | 90.32 % | 23.64 % | Does Skala move Allman-braced, differently-spaced code to where Rider would put it |
-| `serilog/` | 89.87 % | 40.00 % | Same, a second house style |
+| `serilog/` | 89.89 % | 40.00 % | Same, a second house style |
 
-Most of the remaining 5.6 % is wrapping, which milestone 1 does not do: 3 243 of the 4 320 divergent
-lines are a line the oracle broke at 120 columns and Skala left whole
+Most of the remaining 5.7 % is wrapping, which milestone 1 does not do: three quarters of the
+divergent lines are a line the oracle broke at 120 columns and Skala left whole
 ([SK-DIV-0002](docs/divergences.md)).
+
+Run over [Vixen](https://github.com/Rikarin/Vixen) — 4 700 files, 1 353 090 lines — 1 000 files
+change, 7 880 lines, **0.58 % of the tree**, in 37 s. No `SK9099`, no `SK9010`, no crash artefacts:
+every file written has the token stream it started with.
 
 ## Running it
 

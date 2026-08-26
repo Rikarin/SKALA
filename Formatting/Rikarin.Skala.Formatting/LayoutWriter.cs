@@ -191,17 +191,30 @@ public sealed class LayoutWriter {
         _scopes.RemoveAt(_scopes.Count - 1);
     }
 
-    /// <summary>The indent level for a line starting now.</summary>
+    /// <summary>
+    /// The indent level for a line starting now.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ One level per opening <em>line</em>, not per scope. Two groups opened on the same line
+    /// are one indentation step:
+    /// <code>
+    /// context.Report(Diagnostic.Create(
+    ///     descriptor,      ← one level, though two parentheses are open
+    ///     location));
+    /// </code>
+    /// </remarks>
     int Effective() {
         var level = 0;
+        var counted = -1;
         for (var i = _scopes.Count - 1; i >= 0; i--) {
             var scope = _scopes[i];
             if (scope.IsBlock) {
                 return level + scope.Level;
             }
 
-            if (scope.OpenLine < _line) {
+            if (scope.OpenLine < _line && scope.OpenLine != counted) {
                 level += scope.Level;
+                counted = scope.OpenLine;
             }
         }
 

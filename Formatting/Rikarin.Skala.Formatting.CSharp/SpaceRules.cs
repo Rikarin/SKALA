@@ -164,6 +164,58 @@ public static class SpaceRules {
             return !ClingsLeft(right);
         }
 
+        // ── Question marks ───────────────────────────────────────────────────────────────────
+        if (right == SyntaxKind.QuestionToken) {
+            return next.Parent switch {
+                ConditionalExpressionSyntax => o.SpaceBeforeTernaryQuest,
+                NullableTypeSyntax => o.SpaceBeforeNullableMark,
+                _ => false
+            };
+        }
+
+        if (left == SyntaxKind.QuestionToken) {
+            return prev.Parent switch {
+                ConditionalExpressionSyntax => o.SpaceAfterTernaryQuest,
+                NullableTypeSyntax => !ClingsLeft(right) && !IsTypeAngle(next),
+                _ => true
+            };
+        }
+
+        // ── Angles ───────────────────────────────────────────────────────────────────────────
+        if (right is SyntaxKind.LessThanToken && IsTypeAngle(next)) {
+            return next.Parent is TypeParameterListSyntax ? o.SpaceBeforeTypeParameterAngle : o.SpaceBeforeTypeArgumentAngle;
+        }
+
+        if (IsTypeAngle(next) || IsTypeAngle(prev)) {
+            if (IsTypeAngle(next)) {
+                return WithinAngles(next.Parent, o);
+            }
+
+            if (left == SyntaxKind.LessThanToken) {
+                return WithinAngles(prev.Parent, o);
+            }
+
+            // After the closing `>`: whatever follows decides.
+            return !ClingsLeft(right);
+        }
+
+        // ── Braces ───────────────────────────────────────────────────────────────────────────
+        if (right == SyntaxKind.OpenBraceToken) {
+            return BeforeOpenBrace(prev, next, o);
+        }
+
+        if (left == SyntaxKind.OpenBraceToken) {
+            return WithinBraces(prev.Parent, next, o);
+        }
+
+        if (right == SyntaxKind.CloseBraceToken) {
+            return WithinBraces(next.Parent, prev, o);
+        }
+
+        if (left == SyntaxKind.CloseBraceToken) {
+            return !ClingsLeft(right);
+        }
+
         // ── Colons ───────────────────────────────────────────────────────────────────────────
         if (right == SyntaxKind.ColonToken) {
             return next.Parent switch {
@@ -253,10 +305,10 @@ public static class SpaceRules {
 
     static bool IntroducesAType(SyntaxKind keyword) => keyword is
         SyntaxKind.NewKeyword or SyntaxKind.IsKeyword or SyntaxKind.AsKeyword
-        or SyntaxKind.StackAllocKeyword or SyntaxKind.TypeOfKeyword or SyntaxKind.SizeOfKeyword
-        or SyntaxKind.DefaultKeyword or SyntaxKind.RefKeyword or SyntaxKind.OutKeyword
-        or SyntaxKind.InKeyword or SyntaxKind.ScopedKeyword or SyntaxKind.ParamsKeyword
-        or SyntaxKind.ReadOnlyKeyword or SyntaxKind.ConstKeyword or SyntaxKind.WhereKeyword;
+            or SyntaxKind.StackAllocKeyword or SyntaxKind.TypeOfKeyword or SyntaxKind.SizeOfKeyword
+            or SyntaxKind.DefaultKeyword or SyntaxKind.RefKeyword or SyntaxKind.OutKeyword
+            or SyntaxKind.InKeyword or SyntaxKind.ScopedKeyword or SyntaxKind.ParamsKeyword
+            or SyntaxKind.ReadOnlyKeyword or SyntaxKind.ConstKeyword or SyntaxKind.WhereKeyword;
 
     /// <summary>
     /// The gap around a <c>..</c>. ⚠ A prefix range with no left operand — which is how Roslyn
@@ -329,7 +381,7 @@ public static class SpaceRules {
             or BaseParameterListSyntax { Parameters.Count: 0 };
 
         switch (next.Parent) {
-            case ParameterListSyntax { Parent: ParenthesizedLambdaExpressionSyntax }:
+            case ParameterListSyntax { Parent: ParenthesizedLambdaExpressionSyntax } :
                 // ⚠ A lambda's parentheses are the head of an operand, not a call site: whatever
                 // precedes decides. `x += (a, b) => …` needs its space; `M((a, b) => …)` does not.
                 return !ClingsRight(prev.Kind()) && !IsCallSite(prev);
@@ -337,7 +389,7 @@ public static class SpaceRules {
             case ParameterListSyntax or FunctionPointerParameterListSyntax:
                 return empty ? o.SpaceBeforeEmptyMethodParentheses : o.SpaceBeforeMethodParentheses;
 
-            case ArgumentListSyntax { Parent: ObjectCreationExpressionSyntax or ImplicitObjectCreationExpressionSyntax }:
+            case ArgumentListSyntax { Parent: ObjectCreationExpressionSyntax or ImplicitObjectCreationExpressionSyntax } :
                 return o.SpaceBeforeNewParentheses;
 
             case ArgumentListSyntax or AttributeArgumentListSyntax:
@@ -479,7 +531,7 @@ public static class SpaceRules {
         // `1 .ToString()`: without the space `1.` lexes as the start of a numeric literal.
         // ⚠ Only for an actual numeric literal. Testing the last character alone puts a space in
         // `v2.Count`, which is one of the most common shapes in any real tree.
-        if (prev.IsKind(SyntaxKind.NumericLiteralToken) && b == '.') {
+        if (prev.IsKind(SyntaxKind.NumericLiteralToken) && b == '.' && !next.IsKind(SyntaxKind.DotDotToken)) {
             return true;
         }
 

@@ -48,7 +48,7 @@ public static class PreprocessorGuard {
 
     static bool IsConditional(DirectiveTriviaSyntax directive) => directive.Kind() is
         SyntaxKind.IfDirectiveTrivia or SyntaxKind.ElifDirectiveTrivia
-        or SyntaxKind.ElseDirectiveTrivia or SyntaxKind.EndIfDirectiveTrivia;
+            or SyntaxKind.ElseDirectiveTrivia or SyntaxKind.EndIfDirectiveTrivia;
 
     /// <summary>
     /// Walks one <c>#if … #endif</c> group and reports whether its branches agree on how many
