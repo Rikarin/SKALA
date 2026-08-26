@@ -1,0 +1,9 @@
+bin/
+obj/
+artifacts/
+.idea/
+.vs/
+*.user
+*.binlog
+.DS_Store
+.nuke/temp/

@@ -1,0 +1,26 @@
+<Project>
+
+  <!-- Central package management. Versions are the register in docs/plan/01-technology-decisions.md. -->
+
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    <CentralPackageVersionOverrideEnabled>false</CentralPackageVersionOverrideEnabled>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Core -->
+    <PackageVersion Include="Microsoft.CodeAnalysis.CSharp" Version="5.9.0" />
+
+    <!-- CLI -->
+    <PackageVersion Include="System.CommandLine" Version="2.0.10" />
+
+    <!-- Build -->
+    <PackageVersion Include="Nuke.Common" Version="10.1.0" />
+
+    <!-- Test -->
+    <PackageVersion Include="xunit.v3" Version="3.2.2" />
+    <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.5" />
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.9.0" />
+  </ItemGroup>
+
+</Project>

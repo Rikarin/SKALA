@@ -1,0 +1,67 @@
+<Project>
+
+  <!--
+    Shared identity and the two MSBuild profiles from docs/plan/02-repository-layout.md.
+
+    Profile selection is by project name, following Vixen's pattern:
+      *.Rules, *.Generator  ->  analyzer profile (netstandard2.0, loaded into csc and Rider)
+      everything else       ->  tool profile     (net10.0)
+  -->
+
+  <PropertyGroup>
+    <SkalaRepositoryRoot>$(MSBuildThisFileDirectory)</SkalaRepositoryRoot>
+    <Product>Skala</Product>
+    <Company>Rikarin</Company>
+    <Authors>Rikarin</Authors>
+    <Copyright>Copyright (c) Rikarin</Copyright>
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+    <RepositoryUrl>https://github.com/Rikarin/Skala</RepositoryUrl>
+    <VersionPrefix>0.1.0</VersionPrefix>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(MSBuildProjectName)' != '_build'">
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <Deterministic>true</Deterministic>
+    <ContinuousIntegrationBuild Condition="'$(CI)' == 'true'">true</ContinuousIntegrationBuild>
+    <!--
+      The repository's own .editorconfig is the Rider export (ADR-015). It carries 253
+      dotnet_diagnostic severities and ~40 csharp_style_* keys with inline severities. Those
+      configure the IDE; letting them also drive the build would make `dotnet build` a code-style
+      gate before `skala format` exists to satisfy it. M3 turns this on (docs/plan/15 § M3).
+    -->
+    <EnforceCodeStyleInBuild>false</EnforceCodeStyleInBuild>
+  </PropertyGroup>
+
+  <!-- Analyzer profile: *.Rules, *.Generator -->
+  <PropertyGroup Condition="$(MSBuildProjectName.EndsWith('.Rules')) or $(MSBuildProjectName.EndsWith('.Generator'))">
+    <SkalaProfile>analyzer</SkalaProfile>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
+    <IsRoslynComponent>true</IsRoslynComponent>
+    <IncludeBuildOutput>false</IncludeBuildOutput>
+    <ImplicitUsings>disable</ImplicitUsings>
+  </PropertyGroup>
+
+  <!-- Tool profile: everything else -->
+  <PropertyGroup Condition="'$(SkalaProfile)' == '' and '$(MSBuildProjectName)' != '_build'">
+    <SkalaProfile>tool</SkalaProfile>
+    <TargetFramework>net10.0</TargetFramework>
+    <AnalysisLevel>latest-recommended</AnalysisLevel>
+    <InvariantGlobalization>true</InvariantGlobalization>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="$(MSBuildProjectName.EndsWith('.Tests'))">
+    <SkalaIsTestProject>true</SkalaIsTestProject>
+    <OutputType>Exe</OutputType>
+    <!--
+      docs/plan/02 § "Naming" mandates Method_Condition_Expectation for test names, which is
+      exactly what CA1707 forbids. The naming convention wins; it is the one a reader benefits from.
+    -->
+    <NoWarn>$(NoWarn);CA1707</NoWarn>
+  </PropertyGroup>
+
+</Project>

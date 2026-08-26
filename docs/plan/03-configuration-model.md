@@ -184,9 +184,25 @@ skala config check                # tier report + contradictions, exit non-zero 
 ```
 
 **`skala config distill`** takes the 4 238-line export and writes back the subset that differs from
-ReSharper's defaults — measured against `options.json`, which stores those defaults precisely for
-this purpose. On the current template this is expected to be on the order of 150–250 lines: a file a
-human can read, review in a diff, and reason about, that produces byte-identical formatting.
+ReSharper's defaults, measured against `options.json`. A distilled file a human can read, review in
+a diff, and reason about, that produces byte-identical formatting.
+
+⚠ **This does not work yet, and the reason is a mistake in this document.** The original text said
+`options.json` "stores those defaults precisely for this purpose", and M0 established that it cannot:
+JetBrains' EditorConfig property tables publish each property's name, language and possible values,
+and **never its shipped default** — all 22 schema pages and the 5 200-row index were checked. So
+every registry entry records the export's own value as its default, marked `defaultSource:
+"template"` or `"unknown"`, and none is marked `"resharper-docs"`.
+
+`distill` may only drop a key whose default is `resharper-docs`, so today it drops **0 of 4 226** and
+says so, at length, on stdout. That is the correct answer, not a failure: dropping a key on a guessed
+default silently changes formatting, which non-negotiable #4 forbids.
+
+**What unblocks it** is a verified default table, and the only reliable source is a one-off human
+action: export an `.editorconfig` from a *pristine* Rider profile with nothing customised, and diff
+it against the author's export. The difference is, by construction, exactly the set of non-default
+keys. Until that exists, `distill` is honest and useless, and no option may claim Tier A on the
+grounds that its default is known.
 
 It is offered, never imposed. The export must keep working forever (ADR-001), because the workflow
 that produced it — change a setting in Rider, re-export — must keep working. `distill` is for the
