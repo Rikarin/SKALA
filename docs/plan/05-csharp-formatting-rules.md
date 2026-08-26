@@ -25,7 +25,18 @@ Counts below are C#-relevant keys after excluding the C++/VB/XAML/HTML/Razor nam
 
 Nothing here needs the fitting pass. A Phase-1 Skala reformats a file correctly as long as no line
 needs to move, which is already most of a `.cs` file, and it is the fastest route to a differential
-harness that produces meaningful numbers.
+harness that produces meaningful numbers. ✅ Measured: 94.4 % line fidelity, and a run over Vixen
+that touched 0.58 % of the tree.
+
+⚠ **Some keys listed under this phase can never be observed at this phase, and are Tier D with the
+reason recorded rather than Tier A.** M1 found five: `blank_lines_inside_type` and
+`blank_lines_inside_namespace` (`remove_blank_lines_near_braces` wins over both by the documented
+ordering, so no input can distinguish them), `max_line_length` and `tab_width` (nothing wraps yet;
+the writer emits spaces), `end_of_line` while `enforce_line_ending_style = false`, and
+`remove_spaces_on_blank_lines` (the writer cannot emit trailing whitespace at all, so the option has
+no off state). An option that cannot change behaviour must not claim a tier that says it was
+verified — that is the difference between the tier matrix being a progress bar and it being
+decoration.
 
 ### Spaces
 

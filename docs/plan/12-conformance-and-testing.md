@@ -65,9 +65,15 @@ oracle's, and report:
 
 | Metric | Definition |
 |---|---|
-| **Line fidelity** | identical lines ÷ total lines |
+| **Line fidelity** | matched lines ÷ oracle lines, where "matched" is an **LCS diff**, not a positional comparison ⚠ |
 | **File fidelity** | byte-identical files ÷ total files |
 | **Divergence classes** | differences grouped by the construct they occur in |
+
+⚠ The diff basis is not a detail. Until M3 the oracle wraps and Skala does not, so the two outputs
+have different line *counts*; comparing line *n* to line *n* misaligns everything after the first
+wrap and charges every subsequent line as wrong. Measured on M1: the same output scored 53 %
+positionally and 94 % by diff. The positional number is not a stricter measure of the same thing, it
+is a measure of nothing.
 
 Line fidelity is the headline (≥ 99.9 % is the bar from [00](00-vision-and-principles.md)). File
 fidelity will be much lower for a long time and that is expected — one divergent construct spoils a
