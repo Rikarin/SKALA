@@ -182,6 +182,8 @@ public readonly struct PhaseOneOptions {
         KeepExistingEmbeddedArrangement = options.GetBool(Ids.KeepExistingEmbeddedArrangement);
         KeepExistingAttributeArrangement = options.GetBool(Ids.KeepExistingAttributeArrangement);
         KeepExistingEnumArrangement = options.GetBool(Ids.KeepExistingEnumArrangement);
+        KeepExistingDeclarationBlockArrangement = options.GetBool(Ids.KeepExistingDeclarationBlockArrangement);
+        KeepExistingEmbeddedBlockArrangement = options.GetBool(Ids.KeepExistingEmbeddedBlockArrangement);
         KeepExistingLinebreaks = options.GetBool(Ids.KeepExistingLinebreaks);
 
         WrapEnumDeclaration = (WrapStyle)options.GetRaw(Ids.WrapEnumDeclaration);
@@ -428,6 +430,8 @@ public readonly struct PhaseOneOptions {
     public bool KeepExistingEmbeddedArrangement { get; }
     public bool KeepExistingAttributeArrangement { get; }
     public bool KeepExistingEnumArrangement { get; }
+    public bool KeepExistingDeclarationBlockArrangement { get; }
+    public bool KeepExistingEmbeddedBlockArrangement { get; }
     public bool KeepExistingLinebreaks { get; }
 
     /// <summary>
@@ -739,7 +743,13 @@ public static class Ids {
         "resharper_csharp_space_between_accessors_in_singleline_property"
     );
 
-    public static readonly OptionId SpaceInSinglelineMethod = Of("resharper_csharp_space_in_singleline_method");
+    // ⚠ Inert since milestone 3, because the shape it governs no longer exists. `space_in_singleline_method`
+    // is the spacing of `{ M(); }` on a method's own line, and BreakPlan.PlanOnePerLine gives every
+    // statement a line of its own — the oracle does the same, so no input produces a single-line
+    // method body with anything in it. An empty one is `empty_block_style`'s.
+    public static readonly OptionId SpaceInSinglelineMethod = OfInert(
+        "resharper_csharp_space_in_singleline_method"
+    );
 
     public static readonly OptionId SpaceInSinglelineAnonymousMethod = Of(
         "resharper_csharp_space_in_singleline_anonymous_method"
@@ -756,7 +766,11 @@ public static class Ids {
 
     public static readonly OptionId SpaceBeforeTrailingComment = Of("resharper_csharp_space_before_trailing_comment");
     public static readonly OptionId SpaceBeforeTrailingCommentText = Of("resharper_space_before_trailing_comment_text");
-    public static readonly OptionId SpaceAfterTripleSlash = Of("resharper_space_after_triple_slash");
+    // ⚠ Inert since milestone 3, and it was Tier A before it — wrongly. The oracle does not insert
+    // the space, on this option's own fixture or anywhere else, because `jb cleanupcode` does not
+    // format doc comments (SK-DIV-0006). An option Skala honours and Rider ignores is a divergence
+    // wearing a tier badge.
+    public static readonly OptionId SpaceAfterTripleSlash = OfInert("resharper_space_after_triple_slash");
     public static readonly OptionId StickComment = Of("resharper_csharp_stick_comment");
     public static readonly OptionId PlaceCommentsAtFirstColumn = Of("resharper_csharp_place_comments_at_first_column");
 
@@ -915,6 +929,14 @@ public static class Ids {
 
     public static readonly OptionId KeepExistingAttributeArrangement = Of(
         "resharper_csharp_keep_existing_attribute_arrangement"
+    );
+
+    public static readonly OptionId KeepExistingDeclarationBlockArrangement = Of(
+        "resharper_keep_existing_declaration_block_arrangement"
+    );
+
+    public static readonly OptionId KeepExistingEmbeddedBlockArrangement = Of(
+        "resharper_keep_existing_embedded_block_arrangement"
     );
 
     public static readonly OptionId KeepExistingEnumArrangement = Of("resharper_csharp_keep_existing_enum_arrangement");

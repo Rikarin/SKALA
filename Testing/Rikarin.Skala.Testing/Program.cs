@@ -37,6 +37,8 @@ switch (args[0]) {
         return Probe();
     case "ask":
         return Ask(args[1], args[2..]);
+    case "defaults":
+        return Defaults(args.Length > 1 ? args[1] : null);
     default:
         Console.Error.WriteLine($"unknown command '{args[0]}'");
         return 2;
@@ -89,6 +91,27 @@ static int Ask(string directory, string[] overrides) {
     }
 
     Console.WriteLine($"{results.Count.ToString(CultureInfo.InvariantCulture)}/{files.Length.ToString(CultureInfo.InvariantCulture)} files answered.");
+    return 0;
+}
+
+// `defaults [out]`: derive ReSharper's built-in defaults from the oracle, because nobody publishes
+// them (docs/plan/03 § "Deriving ReSharper's defaults"). Tens of minutes; a deliberate developer
+// action, never a test.
+static int Defaults(string? outputPath) {
+    if (OracleRunner.FindExecutableOrNull() is null) {
+        Console.Error.WriteLine("jb is not installed.");
+        return 2;
+    }
+
+    var probed = DefaultsProbe.Run(new OracleRunner(), Console.Out);
+    var report = DefaultsProbe.Render(probed);
+    if (outputPath is { Length: > 0 }) {
+        File.WriteAllText(outputPath, report);
+        Console.WriteLine($"written to {outputPath}");
+    } else {
+        Console.WriteLine(report);
+    }
+
     return 0;
 }
 

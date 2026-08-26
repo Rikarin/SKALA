@@ -865,7 +865,13 @@ public sealed partial class CSharpDocumentBuilder {
                 break;
 
             case PieceKind.DocCommentLine:
-                _doc.Text(SpaceAfterMarker(piece.Text, "///", _options.SpaceAfterTripleSlash), span, CommentFlags(piece));
+                // ⚠ `space_after_triple_slash` is read and deliberately not applied. Milestone 1
+                // inserted the space; the oracle does not, on its own dedicated fixture
+                // (`constructs/trivia/resharper_space_after_triple_slash.cs` comes back with
+                // `///<summary>` untouched) and nowhere else either. Applying it costs 79 lines
+                // across 15 files of `corpus/real/`. See SK-DIV-0006: `jb cleanupcode`'s
+                // CSReformatCode does not format doc comments at all.
+                _doc.Text(piece.Text, span, CommentFlags(piece));
                 break;
 
             case PieceKind.LineComment:
@@ -986,7 +992,7 @@ public sealed partial class CSharpDocumentBuilder {
                         spec.Group,
                         GapSpace(previous, nextKind, nextToken) != SpaceKind.Forbidden,
                         spec.Rule == GapRule.FillPoint,
-                        newLines == 0 ? 0 : ResolveBlankLines(previous, nextPieceIndex, nextToken, newLines - 1),
+                        ResolveBlankLines(previous, nextPieceIndex, nextToken, Math.Max(0, newLines - 1)),
                         newLines == 0
                             ? DefaultNewLine()
                             : _options.EnforceLineEndingStyle ? DefaultNewLine() : FirstNewLine(gap) ?? DefaultNewLine());
@@ -997,10 +1003,16 @@ public sealed partial class CSharpDocumentBuilder {
                     return;
 
                 default:
+                    // ⚠ The requirement is resolved even when the source gap held no newline, and
+                    // that is a correction rather than a tidy-up. A break the *rules* introduce —
+                    // one member per line — creates a gap the blank-line requirements have an
+                    // opinion about, and skipping them because the author wrote no newline there
+                    // makes the first pass emit no blank and the second emit one:
+                    // `int A => 1;    int B => 2;` is not idempotent under the old reading.
                     Break(
                         nextPieceIndex,
                         nextToken,
-                        newLines == 0 ? 0 : ResolveBlankLines(previous, nextPieceIndex, nextToken, newLines - 1),
+                        ResolveBlankLines(previous, nextPieceIndex, nextToken, Math.Max(0, newLines - 1)),
                         newLines == 0
                             ? DefaultNewLine()
                             : _options.EnforceLineEndingStyle ? DefaultNewLine() : FirstNewLine(gap) ?? DefaultNewLine());

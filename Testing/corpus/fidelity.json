@@ -1,17 +1,17 @@
 {
   "real": {
-    "LineFidelity": 0.986,
+    "LineFidelity": 0.9861,
     "FileFidelity": 0.6895,
     "Milestone": "M3 - wrapping, the ordering rule, the trailing-context measure, and blank lines that no longer fire across a preprocessor directive. M2 was 0.9747/0.4947."
   },
   "constructs": {
-    "LineFidelity": 0.9485,
-    "FileFidelity": 0.8699,
+    "LineFidelity": 0.9571,
+    "FileFidelity": 0.8922,
     "Milestone": "M3 - the set grew by 9 files (wrapping/), so this is a different population from M2's 0.9305."
   },
   "pathological": {
-    "LineFidelity": 0.9143,
-    "FileFidelity": 0.75,
+    "LineFidelity": 0.9407,
+    "FileFidelity": 0.7885,
     "Milestone": "M3. M2 was 0.8843/0.6731."
   },
   "preservation/keep-keep": {
@@ -20,9 +20,9 @@
     "Milestone": "M3 - constructs/preservation/ under keep_user_linebreaks=true, keep_existing_*=true. M2 was 0.8101."
   },
   "preservation/keep-rearrange": {
-    "LineFidelity": 0.9451,
-    "FileFidelity": 0.8462,
-    "Milestone": "M3 - keep_user_linebreaks=true, keep_existing_*=false; the corner that costs a first-run diff. M2 was 0.8765."
+    "LineFidelity": 1.0,
+    "FileFidelity": 1.0,
+    "Milestone": "M3 - keep_user_linebreaks=true, keep_existing_*=false; the corner that costs a first-run diff, and now exact. M2 was 0.8765."
   },
   "preservation/reflow-keep": {
     "LineFidelity": 0.9265,
@@ -30,8 +30,8 @@
     "Milestone": "M3 - keep_user_linebreaks=false, keep_existing_*=true. M2 was 0.8582."
   },
   "preservation/reflow-rearrange": {
-    "LineFidelity": 0.9362,
-    "FileFidelity": 0.8462,
-    "Milestone": "M3 - keep_user_linebreaks=false, keep_existing_*=false (--reflow). M2 was 0.8844."
+    "LineFidelity": 1.0,
+    "FileFidelity": 1.0,
+    "Milestone": "M3 - keep_user_linebreaks=false, keep_existing_*=false (--reflow), and now exact. M2 was 0.8844."
   }
 }

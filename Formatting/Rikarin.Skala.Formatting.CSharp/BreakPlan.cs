@@ -240,6 +240,7 @@ public sealed class BreakPlan {
     void Plan(SyntaxNode node) {
         PlanAttributes(node);
         PlanEmbeddedStatement(node, EmbeddedStatementOf(node));
+        PlanOnePerLine(node);
 
         switch (node) {
             case EnumDeclarationSyntax enumeration:
@@ -1384,6 +1385,81 @@ public sealed class BreakPlan {
         if (group >= 0) {
             Describe(node, group, GroupMode.Preserve, new GroupFacts(SourceBroken: broken, BreaksIfTooLong: true));
         }
+    }
+
+    /// <summary>
+    /// Every member and every statement gets a line of its own.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ Unconditional, which is not what the option names suggest and is what the oracle does.
+    /// <c>csharp_preserve_single_line_blocks = true</c> is in the export and reads like permission
+    /// to leave <c>void M() { Call(); Call(); }</c> alone; ReSharper ignores it, and
+    /// <c>class B { public int P => 1; public int Q => 2; }</c> comes back as five lines. There is
+    /// no width test and no <c>keep_user_linebreaks</c> in it: a body with anything in it is broken.
+    /// <para>
+    /// ⚠ Three exclusions, each measured rather than assumed. An <em>empty</em> body stays together
+    /// (<c>empty_block_style = together</c>). An accessor's body does not break —
+    /// <c>get { return _street; }</c> comes back from the oracle exactly as written, and
+    /// <c>public int X { get; set; }</c> is one line and has its own spacing keys. And a lambda's or
+    /// anonymous method's block does not, because the call it is an argument to keeps it on its line:
+    /// <c>Register(() => { Body(); });</c> comes back whole.
+    /// </para>
+    /// <para>
+    /// It is also what makes "single line" a stable property of the output. A member sharing a line
+    /// with the member before it has no answer to <c>blank_lines_around_single_line_field</c>, which
+    /// is why <c>constructs/blank-lines/two-members-on-one-line.cs</c> was committed failing at M2.
+    /// </para>
+    /// </remarks>
+    void PlanOnePerLine(SyntaxNode node) {
+        switch (node) {
+            case BlockSyntax { Statements.Count: > 0 } block
+                when block.Parent is not (AnonymousFunctionExpressionSyntax or AccessorDeclarationSyntax)
+                && !Keeps(block):
+                foreach (var statement in block.Statements) {
+                    Mandatory(FirstToken(statement));
+                }
+
+                Mandatory(block.CloseBraceToken);
+                return;
+
+            case TypeDeclarationSyntax { Members.Count: > 0 } type
+                when !_options.KeepExistingDeclarationBlockArrangement:
+                MembersOnOwnLines(type.Members, type.CloseBraceToken);
+                return;
+
+            case NamespaceDeclarationSyntax { Members.Count: > 0 } declaration
+                when !_options.KeepExistingDeclarationBlockArrangement:
+                MembersOnOwnLines(declaration.Members, declaration.CloseBraceToken);
+                return;
+
+            default:
+                return;
+        }
+    }
+
+    /// <summary>
+    /// Whether the author's arrangement of this block wins over the one-per-line rule.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ Two keys, and which applies is what the block is the body of.
+    /// <c>keep_existing_declaration_block_arrangement</c> governs a method's or a local function's;
+    /// <c>keep_existing_embedded_block_arrangement</c> governs an <c>if</c>'s or a <c>while</c>'s.
+    /// Both are <c>false</c> in the export, which is why the rule looks unconditional there; set
+    /// either to <c>true</c> and the oracle keeps <c>void M() { Body(); }</c> and
+    /// <c>if (flag) { First(); }</c> exactly as written. The four-way preservation table is what
+    /// found this — the two <c>keep_existing_* = true</c> corners were the only ones that moved.
+    /// </remarks>
+    bool Keeps(BlockSyntax block) =>
+        block.Parent is StatementSyntax
+            ? _options.KeepExistingEmbeddedBlockArrangement
+            : _options.KeepExistingDeclarationBlockArrangement;
+
+    void MembersOnOwnLines(SyntaxList<MemberDeclarationSyntax> members, SyntaxToken close) {
+        foreach (var member in members) {
+            Mandatory(FirstToken(member));
+        }
+
+        Mandatory(close);
     }
 
     /// <summary>

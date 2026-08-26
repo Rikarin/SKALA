@@ -32,8 +32,12 @@ public static class Format {
 
 public sealed class SpacingTests {
     [Theory]
-    [InlineData("class C { void M(int a,int b) { M(a,b); } }", "void M(int a, int b) { M(a, b); }")]
-    [InlineData("class C { void M() { M ( ) ; } }", "void M() { M(); }")]
+    // ⚠ The body is on its own line since milestone 3, and these two rows say so on purpose. Every
+    // statement gets a line of its own — `csharp_preserve_single_line_blocks = true` is in the export
+    // and ReSharper ignores it (BreakPlan.PlanOnePerLine) — so a one-line method with a body in it
+    // is three lines, and asserting the spacing on one line was asserting the wrong shape.
+    [InlineData("class C { void M(int a,int b) { M(a,b); } }", "void M(int a, int b) {\n        M(a, b);\n    }")]
+    [InlineData("class C { void M() { M ( ) ; } }", "void M() {\n        M();\n    }")]
     [InlineData("class C { int M(int a) => ( int ) a ; }", "int M(int a) => (int)a;")]
     [InlineData("class C { void M(bool b) { if(b){} } }", "if (b) { }")]
     [InlineData("class C { int M(int a) => a<1?2:3; }", "int M(int a) => a < 1 ? 2 : 3;")]
