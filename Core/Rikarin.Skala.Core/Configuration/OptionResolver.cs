@@ -70,7 +70,7 @@ public sealed record ResolutionResult(
 /// key within one level.
 /// </remarks>
 public static class OptionResolver {
-    static readonly string[] SpecificityPrefixes = ["resharper_csharp_", "resharper_xmldoc_", "resharper_", "csharp_", "dotnet_"];
+    static readonly string[] SpecificityPrefixes = ["resharper_csharp_", "resharper_xmldoc_", "resharper_", "csharp_", "xmldoc_", "dotnet_"];
 
     public static ResolutionResult Resolve(string sourcePath, IReadOnlyList<KeyValuePair<string, string>>? overrides = null) =>
         Resolve(EditorConfigChain.For(sourcePath), overrides);

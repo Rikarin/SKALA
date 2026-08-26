@@ -57,6 +57,11 @@
   <PropertyGroup Condition="$(MSBuildProjectName.EndsWith('.Tests'))">
     <SkalaIsTestProject>true</SkalaIsTestProject>
     <OutputType>Exe</OutputType>
+    <!--
+      docs/plan/02 § "Naming" mandates Method_Condition_Expectation for test names, which is
+      exactly what CA1707 forbids. The naming convention wins; it is the one a reader benefits from.
+    -->
+    <NoWarn>$(NoWarn);CA1707</NoWarn>
   </PropertyGroup>
 
 </Project>

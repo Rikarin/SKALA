@@ -102,27 +102,6 @@
       ],
       "valueAliases": {}
     },
-    "BraceRequirement": {
-      "values": [
-        {
-          "name": "not_required",
-          "summary": "Do not enforce"
-        },
-        {
-          "name": "required",
-          "summary": "Enforce always"
-        },
-        {
-          "name": "required_for_multiline",
-          "summary": "Enforce if body is multi-line"
-        },
-        {
-          "name": "required_for_multiline_statement",
-          "summary": "Enforce if statement is multi-line"
-        }
-      ],
-      "valueAliases": {}
-    },
     "ChildIndentStyle": {
       "values": [
         {
@@ -591,7 +570,7 @@
       "key": "csharp_prefer_braces",
       "aliases": [],
       "language": "csharp",
-      "type": "enum:BraceRequirement",
+      "type": "string",
       "default": "true:none",
       "defaultSource": "unknown",
       "tier": "D",
@@ -3296,7 +3275,7 @@
         "resharper_instance_members_qualify_declared_in"
       ],
       "language": "csharp",
-      "type": "enum:QualifyDeclaredIn",
+      "type": "flags:QualifyDeclaredIn",
       "default": "this_class, base_class",
       "defaultSource": "template",
       "tier": "D",

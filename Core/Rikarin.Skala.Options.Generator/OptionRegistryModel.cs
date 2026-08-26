@@ -10,7 +10,7 @@ internal sealed record OptionEnumValue(string EditorConfigName, string MemberNam
 
 internal sealed record OptionEnum(string Name, IReadOnlyList<OptionEnumValue> Values, IReadOnlyList<KeyValuePair<string, string>> ValueAliases);
 
-internal enum OptionValueKind { Bool, Int, String, Enum }
+internal enum OptionValueKind { Bool, Int, String, Enum, Flags }
 
 internal sealed record OptionEntry(
     string Key,
@@ -123,6 +123,7 @@ internal static class OptionRegistryReader {
                 "bool" => OptionValueKind.Bool,
                 "int" => OptionValueKind.Int,
                 _ when type.StartsWith("enum:", StringComparison.Ordinal) => OptionValueKind.Enum,
+                _ when type.StartsWith("flags:", StringComparison.Ordinal) => OptionValueKind.Flags,
                 _ => OptionValueKind.String
             };
 
@@ -131,7 +132,11 @@ internal static class OptionRegistryReader {
                 item["aliases"].AsStringList(),
                 item["language"].AsString() ?? "any",
                 kind,
-                kind == OptionValueKind.Enum ? type.Substring("enum:".Length) : null,
+                kind switch {
+                    OptionValueKind.Enum => type.Substring("enum:".Length),
+                    OptionValueKind.Flags => type.Substring("flags:".Length),
+                    _ => null
+                },
                 item["default"].IsNull ? null : item["default"].AsString(),
                 item["defaultSource"].AsString() ?? "unknown",
                 item["tier"].AsString() ?? "D",

@@ -39,6 +39,15 @@ public sealed class OptionsGenerator : IIncrementalGenerator {
         DiagnosticSeverity.Error,
         isEnabledByDefault: true);
 
+    static readonly DiagnosticDescriptor DefaultOutOfDomain = new(
+        "SKG003",
+        "An option's default is not one of its values",
+        "'{0}' declares type '{1}' but its default '{2}' is not in that domain ({3})",
+        "Skala.Options",
+        DiagnosticSeverity.Error,
+        isEnabledByDefault: true,
+        description: "A default outside the option's domain would be silently replaced by the first enum member, which is a different style than the one configured.");
+
     static readonly DiagnosticDescriptor DuplicateAlias = new(
         "SK9004",
         "Duplicate option alias",
@@ -77,7 +86,7 @@ public sealed class OptionsGenerator : IIncrementalGenerator {
             return;
         }
 
-        if (!CheckSpellings(context, model)) {
+        if (!CheckSpellings(context, model) || !CheckDefaults(context, model)) {
             return;
         }
 
@@ -103,6 +112,42 @@ public sealed class OptionsGenerator : IIncrementalGenerator {
         foreach (var pair in owners.Where(static p => p.Value.Count > 1).OrderBy(static p => p.Key, StringComparer.Ordinal)) {
             context.ReportDiagnostic(Diagnostic.Create(
                 DuplicateAlias, Location.None, pair.Key, string.Join(", ", pair.Value.OrderBy(static k => k, StringComparer.Ordinal))));
+            clean = false;
+        }
+
+        return clean;
+    }
+
+    static bool CheckDefaults(SourceProductionContext context, OptionRegistry model) {
+        var clean = true;
+        foreach (var option in model.Options) {
+            if (option.Kind is not (OptionValueKind.Enum or OptionValueKind.Flags) || option.Default is null) {
+                continue;
+            }
+
+            var declared = model.Enums.FirstOrDefault(e => string.Equals(e.Name, option.EnumName, StringComparison.Ordinal));
+            var text = option.Default;
+            if (option.SeveritySuffix) {
+                var colon = text.LastIndexOf(':');
+                if (colon >= 0) {
+                    text = text.Substring(0, colon).Trim();
+                }
+            }
+
+            var parts = option.Kind == OptionValueKind.Flags
+                ? text.Split(',').Select(static part => part.Trim()).Where(static part => part.Length > 0).ToArray()
+                : [text];
+
+            if (declared is not null && parts.All(part =>
+                    IndexOfValue(declared, part) >= 0
+                    || declared.ValueAliases.Any(a => string.Equals(a.Key, part, StringComparison.Ordinal)))) {
+                continue;
+            }
+
+            var domain = declared is null
+                ? "no such enum"
+                : string.Join(", ", declared.Values.Select(static v => v.EditorConfigName));
+            context.ReportDiagnostic(Diagnostic.Create(DefaultOutOfDomain, Location.None, option.Key, option.EnumName, text, domain));
             clean = false;
         }
 
@@ -235,7 +280,7 @@ public sealed class OptionsGenerator : IIncrementalGenerator {
         builder.AppendLine();
         builder.AppendLine($"namespace {Namespace};");
         builder.AppendLine();
-        builder.AppendLine("public enum OptionValueKind { Bool, Int, String, Enum }");
+        builder.AppendLine("public enum OptionValueKind { Bool, Int, String, Enum, Flags }");
         builder.AppendLine();
         builder.AppendLine("/// <summary>docs/plan/03-configuration-model.md § \"Four tiers\".</summary>");
         builder.AppendLine("public enum OptionTier {");
@@ -381,6 +426,7 @@ public sealed class OptionsGenerator : IIncrementalGenerator {
         builder.AppendLine("            OptionValueKind.Bool => _scalars[(int)id] != 0 ? \"true\" : \"false\",");
         builder.AppendLine("            OptionValueKind.Int => _scalars[(int)id].ToString(System.Globalization.CultureInfo.InvariantCulture),");
         builder.AppendLine("            OptionValueKind.Enum => OptionEnums.ToText(info.EnumName!, _scalars[(int)id]),");
+        builder.AppendLine("            OptionValueKind.Flags => _strings[(int)id] ?? string.Empty,");
         builder.AppendLine("            _ => _strings[(int)id] ?? string.Empty");
         builder.AppendLine("        };");
         builder.AppendLine("    }");
@@ -443,6 +489,8 @@ public sealed class OptionsGenerator : IIncrementalGenerator {
                 OptionValueKind.Bool => "bool",
                 OptionValueKind.Int => "int",
                 OptionValueKind.Enum => option.EnumName!,
+                // Flags is a comma-separated subset of an enum's domain; there is no single member
+                // to return, so it stays text and OptionEnums.ValuesOf names what is legal.
                 _ => "string?"
             };
 
@@ -519,6 +567,23 @@ public sealed class OptionsGenerator : IIncrementalGenerator {
                             error = "expected one of " + string.Join(", ", OptionEnums.ValuesOf(info.EnumName!));
                             return false;
 
+                        case OptionValueKind.Flags:
+                            foreach (var part in value.Split(',')) {
+                                var trimmed = part.Trim();
+                                if (trimmed.Length == 0) {
+                                    continue;
+                                }
+
+                                if (!OptionEnums.TryParse(info.EnumName!, trimmed, out _)) {
+                                    error = "'" + trimmed + "' is not one of " + string.Join(", ", OptionEnums.ValuesOf(info.EnumName!));
+                                    return false;
+                                }
+                            }
+
+                            _strings[(int)id] = value;
+                            error = null;
+                            return true;
+
                         default:
                             _strings[(int)id] = value;
                             error = null;
@@ -547,14 +612,27 @@ public sealed class OptionsGenerator : IIncrementalGenerator {
         builder.AppendLine("    static string?[] CreateDefaultStrings() {");
         builder.AppendLine($"        var strings = new string?[{model.Options.Count.ToString(CultureInfo.InvariantCulture)}];");
         foreach (var option in model.Options) {
-            if (option.Kind == OptionValueKind.String && option.Default is not null) {
-                builder.AppendLine($"        strings[(int)OptionId.{option.MemberName}] = {OptionRegistryReader.Literal(option.Default)};");
+            if (option.Kind is OptionValueKind.String or OptionValueKind.Flags && option.Default is not null) {
+                builder.AppendLine($"        strings[(int)OptionId.{option.MemberName}] = {OptionRegistryReader.Literal(StripSeverity(option, option.Default))};");
             }
         }
 
         builder.AppendLine("        return strings;");
         builder.AppendLine("    }");
         builder.AppendLine("}");
+    }
+
+    /// <summary>
+    /// Microsoft's style keys are written <c>value:severity</c>. The severity configures a rule and
+    /// belongs to the rule layer; the option's value is what is left.
+    /// </summary>
+    static string StripSeverity(OptionEntry option, string text) {
+        if (!option.SeveritySuffix) {
+            return text;
+        }
+
+        var colon = text.LastIndexOf(':');
+        return colon < 0 ? text : text.Substring(0, colon).Trim();
     }
 
     static string? DefaultScalar(OptionRegistry model, OptionEntry option) {

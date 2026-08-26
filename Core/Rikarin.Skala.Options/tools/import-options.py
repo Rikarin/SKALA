@@ -180,7 +180,9 @@ MICROSOFT_OPTIONS: dict[str, tuple[str, str, str, bool]] = {
         False,
     ),
     "csharp_preferred_modifier_order": ("string", "ModifierList", "The order modifiers are written in.", True),
-    "csharp_prefer_braces": ("enum:BraceRequirement", "EmbeddedStatement", "Whether braces are required.", True),
+    # Microsoft's key takes true | false | when_multiline, which is not ReSharper's BraceRequirement
+    # domain. Typing it as that enum would silently default it to `not_required`.
+    "csharp_prefer_braces": ("string", "EmbeddedStatement", "Whether braces are required.", True),
     "csharp_preserve_single_line_blocks": ("bool", "Block", "Keep a block that was written on one line on one line.", False),
     "csharp_space_after_dot": ("bool", "MemberAccess", "Space after '.'.", False),
     "csharp_space_around_binary_operators": ("string", "BinaryExpression", "Spacing around binary operators.", False),
@@ -428,7 +430,7 @@ def read_template(repo: str) -> list[tuple[int, str, str, str]]:
     return entries
 
 
-SPECIFICITY_PREFIXES = ("resharper_csharp_", "resharper_xmldoc_", "resharper_", "csharp_", "dotnet_")
+SPECIFICITY_PREFIXES = ("resharper_csharp_", "resharper_xmldoc_", "resharper_", "csharp_", "xmldoc_", "dotnet_")
 
 
 def specificity(form: str) -> int:
@@ -480,6 +482,18 @@ def dedupe_members(enum_name: str, members: list[dict]) -> list[dict]:
         canonical[folded] = member
         result.append(member)
     return result
+
+
+def as_flags_if_list(option_type: str, value: str | None) -> str:
+    """
+    Some ReSharper properties take a comma-separated subset of their value domain —
+    ``resharper_instance_members_qualify_declared_in = this_class, base_class``. They are one
+    option with a set-valued domain, not an enum, and typing them as an enum would silently pin
+    them to the first member.
+    """
+    if option_type.startswith("enum:") and value is not None and "," in value:
+        return "flags:" + option_type[len("enum:") :]
+    return option_type
 
 
 def pascal(text: str) -> str:
@@ -562,6 +576,7 @@ def build(repo: str, cache: str) -> dict:
         value, line = template_values[winning]
         option_type, members = classify_value(prop["valueLines"])
         register_enum(option_type, members)
+        option_type = as_flags_if_list(option_type, value)
         expands = sorted({e for name in prop["expands"] for e in expand_form(name)}) if prop["expands"] else []
         add(
             {
@@ -590,6 +605,7 @@ def build(repo: str, cache: str) -> dict:
         value, line = template_values[form]
         option_type, members = classify_value(targets[0]["valueLines"])
         register_enum(option_type, members)
+        option_type = as_flags_if_list(option_type, value)
         expanded = []
         for owner in owners:
             if props[owner]["lang"] not in SKALA_LANGUAGES:
