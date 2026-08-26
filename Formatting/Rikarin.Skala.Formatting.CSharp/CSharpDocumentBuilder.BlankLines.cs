@@ -58,6 +58,21 @@ public sealed partial class CSharpDocumentBuilder {
             required = Math.Max(required, RegionRequirement(previous, nextPieceIndex));
         }
 
+        // ⚠ A gap that touches a conditional or a `#pragma` gets no requirement at all, and the
+        // caps still apply to it. The requirement belongs to the boundary between two members and
+        // not to whichever gap the directive happens to have landed in:
+        // <code>
+        // using System.Collections.Generic;
+        // #if DNXCORE50            ← `blank_lines_after_using_list = 1` fired here
+        // </code>
+        // The oracle puts nothing there and the blank line after the matching `#endif` instead,
+        // which is the same requirement paid at the boundary it is about. Measured at 156 lines
+        // across 84 files of `corpus/real/` — one blank line per conditional region, and
+        // Newtonsoft.Json is largely wrapped in them.
+        if (TouchesDirective(previous, nextPieceIndex)) {
+            return required;
+        }
+
         // ⚠ stick_comment = true: a comment directly above a declaration is part of it, so the gap
         // BELOW the comment is inside the member and takes none of the member's requirement. The
         // requirement was already spent on the gap above the comment, which is the whole point of
@@ -120,6 +135,24 @@ public sealed partial class CSharpDocumentBuilder {
 
         return required;
     }
+
+    /// <summary>
+    /// Whether either side of the gap is a conditional directive, a <c>#pragma</c> or disabled text.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ Not a region. <c>blank_lines_around_region</c> and <c>blank_lines_inside_region</c> are
+    /// requirements <em>about</em> the directive, and they are the only ones that are.
+    /// </remarks>
+    bool TouchesDirective(Piece previous, int nextPieceIndex) {
+        if (IsDirective(previous.Kind)) {
+            return true;
+        }
+
+        return nextPieceIndex >= 0 && nextPieceIndex < _pieces.Length && IsDirective(_pieces[nextPieceIndex].Kind);
+    }
+
+    static bool IsDirective(PieceKind kind) =>
+        kind is PieceKind.ConditionalDirective or PieceKind.OtherDirective or PieceKind.DisabledText;
 
     int RegionRequirement(Piece previous, int nextPieceIndex) {
         var nextIsRegion = nextPieceIndex >= 0 && nextPieceIndex < _pieces.Length && _pieces[nextPieceIndex].Kind == PieceKind.RegionDirective;

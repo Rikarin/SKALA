@@ -538,6 +538,13 @@ public sealed partial class CSharpDocumentBuilder {
         var opened = false;
         var suppress = layout == NodeLayout.Parens && !_options.UseContinuousIndentInsideParens;
 
+        // ⚠ `place_single_method_argument_lambda_on_same_line = true` keeps a sole lambda argument
+        // on the call's line, so the parenthesis never gets a line of its own — and it still spends
+        // a continuation level, which the one-level-per-opening-line rule would otherwise collapse
+        // into whatever the lambda's own body opens. See LayoutWriter's Scope.Unconditional.
+        var soleLambdaArgument = _options.PlaceSingleMethodArgumentLambdaOnSameLine
+            && node is ArgumentListSyntax { Arguments: [{ Expression: AnonymousFunctionExpressionSyntax }] };
+
         // ⚠ A collection expression's elements are elements, like an initializer's: a chain broken
         // inside one takes its own continuation level rather than living off the bracket's.
         var element = node is CollectionExpressionSyntax or ListPatternSyntax;
@@ -563,7 +570,7 @@ public sealed partial class CSharpDocumentBuilder {
                 EmitToken(token);
 
                 if (!opened && !suppress && token.SpanStart == open.SpanStart) {
-                    OpenIndent(IndentKind.Continuous);
+                    OpenIndent(IndentKind.Continuous, soleLambdaArgument);
                     opened = true;
                     if (element) {
                         savedDepth = _continuousDepth;
@@ -715,8 +722,8 @@ public sealed partial class CSharpDocumentBuilder {
 
     // ── Indent scopes ────────────────────────────────────────────────────────────────────────
 
-    void OpenIndent(IndentKind kind) {
-        _doc.OpenIndent(kind);
+    void OpenIndent(IndentKind kind, bool unconditional = false) {
+        _doc.OpenIndent(kind, unconditional);
         if (kind == IndentKind.Outdent) {
             return;
         }

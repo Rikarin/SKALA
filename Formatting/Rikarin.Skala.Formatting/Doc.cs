@@ -402,6 +402,20 @@ public sealed class Document {
 /// </item>
 /// </list>
 /// </param>
+/// <param name="HidesFlatWidthWhenBroken">
+/// ⚠ When this group is certain to break, nothing containing it has a flat form either — the same
+/// rule <see cref="GroupMode.Break"/> already carries, extended to a
+/// <see cref="GroupMode.Preserve"/> group whose source was broken and which may not re-join. The
+/// oracle chops <c>Report(Diagnostic.Create(</c> into two lines as soon as the inner call is
+/// broken, although the outer call's own flat width is 59 columns.
+/// <para>
+/// ⚠ Set on delimited lists and not on every Preserve group, and the difference is measured. An
+/// expression body's arrow is resolved against its whole flat width — "if owner is single line"
+/// means the declaration occupies one line — so an unbreakable body would make every such arrow
+/// break, and <c>bool Property(object o) =&gt; o is { … };</c> would lose its first line. Applying
+/// it everywhere costs 0.12 points of line fidelity and two of the four preservation corners.
+/// </para>
+/// </param>
 /// <param name="SpendsIndent">
 /// The group opens the continuation scope its own break points land in, so the column after one of
 /// its breaks is one level deeper than the line it is on. The fitter needs the number, not the flag,
@@ -425,6 +439,7 @@ public readonly record struct GroupFacts(
     bool BreaksIfTooLong = false,
     bool MeasuresHead = false,
     bool PrefersOuterBreak = false,
+    bool HidesFlatWidthWhenBroken = false,
     bool SpendsIndent = false,
     bool BreaksWithOwner = false,
     int Owner = -1);

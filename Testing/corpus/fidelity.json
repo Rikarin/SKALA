@@ -1,27 +1,27 @@
 {
   "real": {
-    "LineFidelity": 0.9805,
-    "FileFidelity": 0.5395,
-    "Milestone": "M3 - wrapping: Fill for wrap_if_long, the wrap-point ordering rule, the max_*_on_line counters, chained calls, binary chains, ternaries, declarators and base lists. M2 was 0.9747/0.4947."
+    "LineFidelity": 0.986,
+    "FileFidelity": 0.6895,
+    "Milestone": "M3 - wrapping, the ordering rule, the trailing-context measure, and blank lines that no longer fire across a preprocessor directive. M2 was 0.9747/0.4947."
   },
   "constructs": {
-    "LineFidelity": 0.9408,
-    "FileFidelity": 0.8662,
+    "LineFidelity": 0.9485,
+    "FileFidelity": 0.8699,
     "Milestone": "M3 - the set grew by 9 files (wrapping/), so this is a different population from M2's 0.9305."
   },
   "pathological": {
-    "LineFidelity": 0.9083,
-    "FileFidelity": 0.6923,
+    "LineFidelity": 0.9143,
+    "FileFidelity": 0.75,
     "Milestone": "M3. M2 was 0.8843/0.6731."
   },
   "preservation/keep-keep": {
-    "LineFidelity": 0.8966,
+    "LineFidelity": 0.9086,
     "FileFidelity": 0.7692,
     "Milestone": "M3 - constructs/preservation/ under keep_user_linebreaks=true, keep_existing_*=true. M2 was 0.8101."
   },
   "preservation/keep-rearrange": {
-    "LineFidelity": 0.9207,
-    "FileFidelity": 0.7692,
+    "LineFidelity": 0.9451,
+    "FileFidelity": 0.8462,
     "Milestone": "M3 - keep_user_linebreaks=true, keep_existing_*=false; the corner that costs a first-run diff. M2 was 0.8765."
   },
   "preservation/reflow-keep": {

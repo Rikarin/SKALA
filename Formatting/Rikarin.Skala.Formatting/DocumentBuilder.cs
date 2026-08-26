@@ -175,7 +175,12 @@ public sealed class DocumentBuilder {
 
     public void OpenFill() => Open(DocKind.Fill, 0, 0);
 
-    public void OpenIndent(IndentKind kind) => Open(DocKind.Indent, (int)kind, 0);
+    /// <param name="unconditional">
+    /// The scope contributes its level even when another scope opened on the same line, which is
+    /// otherwise collapsed to one. See <see cref="LayoutWriter"/>'s Effective.
+    /// </param>
+    public void OpenIndent(IndentKind kind, bool unconditional = false) =>
+        Open(DocKind.Indent, (int)kind, unconditional ? 1 : 0);
 
     public void OpenConcat() => Open(DocKind.Concat, 0, 0);
 
@@ -245,6 +250,18 @@ public sealed class DocumentBuilder {
         // `int M(int v) => v switch { … }` is a one-line expression body whose body cannot be on one
         // line, and an enclosing group that measures the switch as its flat width concludes the
         // member fits and leaves the arrow where it was.
+        // ⚠ A group that is going to break has no flat form either, and "going to break" is not only
+        // GroupMode.Break. A Preserve group whose source was broken at its own points and which may
+        // not re-join is just as certain, and the construct around it has to know: the oracle chops
+        // `Report(Diagnostic.Create(` into two lines as soon as the inner call is broken, although
+        // the outer call's own flat width is 59 columns and fits with room to spare. That is the
+        // "chop if long *or multiline*" half of chop_if_long, one level up.
+        if (frame.Kind == DocKind.Group
+            && (GroupMode)frame.Arg0 == GroupMode.Preserve
+            && _facts[frame.Arg1] is { SourceBroken: true, JoinsIfFits: false, HidesFlatWidthWhenBroken: true }) {
+            width = Document.Unbounded;
+        }
+
         if (frame.Kind == DocKind.Group && (GroupMode)frame.Arg0 == GroupMode.Break) {
             width = Document.Unbounded;
             head = 0;

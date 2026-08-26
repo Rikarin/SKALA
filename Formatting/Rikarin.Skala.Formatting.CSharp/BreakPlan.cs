@@ -668,7 +668,12 @@ public sealed class BreakPlan {
             node,
             group,
             style == WrapStyle.ChopAlways || overCap || forced ? GroupMode.Break : GroupMode.Preserve,
-            new GroupFacts(SourceBroken: broken, JoinsIfFits: joins && !overCap, BreaksIfTooLong: true)
+            new GroupFacts(
+                SourceBroken: broken,
+                JoinsIfFits: joins && !overCap,
+                BreaksIfTooLong: true,
+                HidesFlatWidthWhenBroken: true
+            )
         );
     }
 
@@ -951,7 +956,16 @@ public sealed class BreakPlan {
             new GroupFacts(
                 SourceBroken: _options.KeepsUserBreaksBetweenItems && broken,
                 BreaksIfTooLong: _options.WrapChainedMethodCalls != WrapStyle.WrapIfLong
-            )
+            ),
+            // ⚠ The chain opens its own continuation scope. Milestone 2 spent that level lazily, in
+            // `Break`, at the first break landing before a `.` — and a group's break point never
+            // goes through `Break`, so a chain that the fitter chops comes out flush with its
+            // receiver:
+            //     text.AppendLine("…")
+            //     .AppendLine("…")
+            // The frame machinery still serves breaks the author wrote; this serves the ones the
+            // fitter adds.
+            spendsIndent: true
         );
 
         void Collect(SyntaxNode node) {
@@ -1279,7 +1293,9 @@ public sealed class BreakPlan {
                 // ⚠ Measured against the whole flat width, not the head: "if owner is single line"
                 // means the declaration occupies one line, and a body that spans lines makes it not
                 // single-line however short its first line is. `Target Docs => definition => …` with
-                // a chain under it is the shape that shows the difference.
+                // a chain under it is the shape that shows the difference. Measuring the head
+                // instead costs 0.12 points of line fidelity on `corpus/real/` and two of the four
+                // preservation corners, which is how the reading was settled rather than argued.
                 BreaksIfTooLong: placement == PlacementStyle.IfOwnerIsSingleLine
             ),
             spendsIndent: true

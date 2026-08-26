@@ -126,7 +126,7 @@ public sealed class LayoutWriter {
                         continue;
 
                     case DocKind.Indent:
-                        Push((IndentKind)slot.Arg0);
+                        Push((IndentKind)slot.Arg0, slot.Arg1 != 0);
                         break;
 
                     case DocKind.Group:
@@ -182,7 +182,7 @@ public sealed class LayoutWriter {
     /// come out the way ReSharper writes it. A block additionally <em>fixes</em> its level rather
     /// than adding to whatever is open, because a brace resets the continuation context.
     /// </remarks>
-    void Push(IndentKind kind) {
+    void Push(IndentKind kind, bool unconditional) {
         // ⚠ The closing delimiter goes back to the level the scope was opened AT, not to the level
         // of the physical line the opener happened to land on. The two differ whenever a condition
         // or an initializer pushed the opener rightwards:
@@ -192,13 +192,13 @@ public sealed class LayoutWriter {
         //     Body();
         // }               ← the `if`'s level, not the `&amp;&amp; second` line's
         // </code>
-        var outer = Effective();
+        var outer = LevelForNested();
         _scopes.Add(
             kind switch {
-                IndentKind.Block => new Scope(true, outer + 1, _line, outer),
-                IndentKind.Continuous => new Scope(false, _continuousMultiplier, _line, outer),
-                IndentKind.Outdent => new Scope(true, Math.Max(0, outer - 1), _line, outer),
-                _ => new Scope(false, 0, int.MaxValue, outer)
+                IndentKind.Block => new Scope(true, outer + 1, _line, outer, unconditional),
+                IndentKind.Continuous => new Scope(false, _continuousMultiplier, _line, outer, unconditional),
+                IndentKind.Outdent => new Scope(true, Math.Max(0, outer - 1), _line, outer, unconditional),
+                _ => new Scope(false, 0, int.MaxValue, outer, unconditional)
             }
         );
     }
@@ -226,6 +226,38 @@ public sealed class LayoutWriter {
     }
 
     /// <summary>
+    /// The level a scope opening now nests from, and the level its closing delimiter takes.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ Not <see cref="Effective"/>, and the difference is one scope. Effective answers "what
+    /// level does a line starting now take" and therefore ignores everything opened on the current
+    /// line; a scope opening now is opening <em>inside</em> those, so an unconditional one counts.
+    /// <code>
+    /// messages.Any(message => message.Contains(
+    ///         "…"
+    ///     )        ← Contains' closer, at Any's level, not at the statement's
+    /// );
+    /// </code>
+    /// </remarks>
+    int LevelForNested() {
+        var level = 0;
+        var counted = -1;
+        for (var i = _scopes.Count - 1; i >= 0; i--) {
+            var scope = _scopes[i];
+            if (scope.IsBlock) {
+                return level + scope.Level;
+            }
+
+            if (scope.Unconditional ? scope.OpenLine <= _line : scope.OpenLine < _line && scope.OpenLine != counted) {
+                level += scope.Level;
+                counted = scope.OpenLine;
+            }
+        }
+
+        return level;
+    }
+
+    /// <summary>
     /// The indent level for a line starting now.
     /// </summary>
     /// <remarks>
@@ -246,7 +278,7 @@ public sealed class LayoutWriter {
                 return level + scope.Level;
             }
 
-            if (scope.OpenLine < _line && scope.OpenLine != counted) {
+            if (scope.OpenLine < _line && (scope.Unconditional || scope.OpenLine != counted)) {
                 level += scope.Level;
                 counted = scope.OpenLine;
             }
@@ -255,7 +287,24 @@ public sealed class LayoutWriter {
         return level;
     }
 
-    readonly record struct Scope(bool IsBlock, int Level, int OpenLine, int CloserLevel);
+    /// <param name="Unconditional">
+    /// ⚠ The scope counts even when another scope opened on the same line. One level per opening
+    /// <em>line</em> is the general rule and it is right —
+    /// <c>context.Report(Diagnostic.Create(\n    descriptor,</c> takes one level, not two, and
+    /// removing the collapse costs 1.7 points of line fidelity on <c>corpus/real/</c>. The
+    /// exception is the parenthesis of a call whose sole argument is a lambda, which
+    /// <c>place_single_method_argument_lambda_on_same_line = true</c> keeps on the call's line:
+    /// <code>
+    /// messages.Any(message => message.Contains(
+    ///         "…"          ← two levels, from `Any(` and from `Contains(`
+    ///     )                ← one, back to `Contains(`'s opener
+    /// );
+    /// </code>
+    /// The lambda is not a break the layout chose, so the parenthesis it hides behind still spends
+    /// its level. docs/plan/05 § "place_* and if_owner_is_single_line" records the closing half of
+    /// the same rule.
+    /// </param>
+    readonly record struct Scope(bool IsBlock, int Level, int OpenLine, int CloserLevel, bool Unconditional = false);
 
     /// <summary>
     /// The column the next character will land on, which is what a group is measured against.
