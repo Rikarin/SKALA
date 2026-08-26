@@ -135,11 +135,18 @@ public sealed class OptionRegistryTests {
         // names as permanently ignored are Tier C.
         Assert.DoesNotContain(OptionRegistry.All, static i => i.Tier is OptionTier.A or OptionTier.B);
 
-        var tierC = OptionRegistry.All.Where(static i => i.Tier == OptionTier.C).Select(static i => i.Key).ToArray();
-        Assert.Contains("resharper_autodetect_indent_settings", tierC);
-        Assert.Contains("resharper_apply_auto_detected_rules", tierC);
-        Assert.Contains("resharper_use_indent_from_vs", tierC);
-        Assert.Contains("resharper_show_autodetect_configure_formatting_tip", tierC);
-        Assert.Contains("resharper_use_old_engine", tierC);
+        string[] permanentlyIgnored = [
+            "resharper_old_engine",
+            "resharper_use_old_engine",
+            "resharper_autodetect_indent_settings",
+            "resharper_apply_auto_detected_rules",
+            "resharper_use_indent_from_vs",
+            "resharper_show_autodetect_configure_formatting_tip"
+        ];
+
+        foreach (var key in permanentlyIgnored) {
+            Assert.True(OptionRegistry.TryResolve(key, out var id), key);
+            Assert.Equal(OptionTier.C, OptionRegistry.Get(id).Tier);
+        }
     }
 }

@@ -586,7 +586,9 @@ def build(repo: str, cache: str) -> dict:
                 "type": option_type,
                 "default": value,
                 "defaultSource": "template",
-                "tier": "C" if canonical in TIER_C_KEYS else "D",
+                # Tier C is matched on any spelling: `resharper_old_engine` canonicalises to
+                # `resharper_csharp_old_engine`, and the plan names the generic spelling.
+                "tier": "C" if TIER_C_KEYS.intersection([canonical, *aliases]) else "D",
                 "construct": pascal(prop["group"]) if prop["group"] else "Other",
                 "summary": f"{prop['group']} — {prop['title']}" if prop["group"] else prop["title"],
                 "since": "0.1",

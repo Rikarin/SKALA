@@ -4194,7 +4194,7 @@
       "type": "bool",
       "default": "false",
       "defaultSource": "template",
-      "tier": "D",
+      "tier": "C",
       "construct": "ReSharperOther",
       "summary": "ReSharper other \u2014 Revert to old formatting engine",
       "since": "0.1",
