@@ -6,6 +6,16 @@
     <Project Path="Core/Rikarin.Skala.Options.Generator/Rikarin.Skala.Options.Generator.csproj" />
     <Project Path="Core/Rikarin.Skala.Options.Tests/Rikarin.Skala.Options.Tests.csproj" />
   </Folder>
+  <Folder Name="/Formatting/">
+    <Project Path="Formatting/Rikarin.Skala.Formatting/Rikarin.Skala.Formatting.csproj" />
+    <Project Path="Formatting/Rikarin.Skala.Formatting.Tests/Rikarin.Skala.Formatting.Tests.csproj" />
+    <Project Path="Formatting/Rikarin.Skala.Formatting.CSharp/Rikarin.Skala.Formatting.CSharp.csproj" />
+    <Project Path="Formatting/Rikarin.Skala.Formatting.CSharp.Tests/Rikarin.Skala.Formatting.CSharp.Tests.csproj" />
+  </Folder>
+  <Folder Name="/Testing/">
+    <Project Path="Testing/Rikarin.Skala.Testing/Rikarin.Skala.Testing.csproj" />
+    <Project Path="Testing/Rikarin.Skala.Conformance.Tests/Rikarin.Skala.Conformance.Tests.csproj" />
+  </Folder>
   <Folder Name="/Tools/">
     <Project Path="Tools/Rikarin.Skala.Cli/Rikarin.Skala.Cli.csproj" />
     <Project Path="Tools/Rikarin.Skala.Cli.Tests/Rikarin.Skala.Cli.Tests.csproj" />

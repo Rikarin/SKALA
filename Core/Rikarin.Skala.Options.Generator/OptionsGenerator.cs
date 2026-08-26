@@ -139,8 +139,8 @@ public sealed class OptionsGenerator : IIncrementalGenerator {
                 : [text];
 
             if (declared is not null && parts.All(part =>
-                    IndexOfValue(declared, part) >= 0
-                    || declared.ValueAliases.Any(a => string.Equals(a.Key, part, StringComparison.Ordinal)))) {
+                IndexOfValue(declared, part) >= 0
+                || declared.ValueAliases.Any(a => string.Equals(a.Key, part, StringComparison.Ordinal)))) {
                 continue;
             }
 

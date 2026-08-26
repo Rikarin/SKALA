@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    The language-agnostic document IR, the fitting pass and the minimal-edit emitter.
+
+    ⚠ This project may not reference Roslyn (docs/plan/02 § "The project graph"). The IR and the
+    fitting algorithm are what the HTML and CSS front ends reuse (docs/plan/14); the moment
+    SyntaxKind appears here the language-plugin seam is gone. Rikarin.Skala.Core.Tests asserts the
+    missing edge stays missing.
+  -->
+
+  <PropertyGroup>
+    <RootNamespace>Rikarin.Skala.Formatting</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../Core/Rikarin.Skala.Options/Rikarin.Skala.Options.csproj" />
+  </ItemGroup>
+
+</Project>

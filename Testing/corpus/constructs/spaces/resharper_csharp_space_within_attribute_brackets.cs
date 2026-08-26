@@ -1,0 +1,3 @@
+[System.Serializable]
+class C {
+}

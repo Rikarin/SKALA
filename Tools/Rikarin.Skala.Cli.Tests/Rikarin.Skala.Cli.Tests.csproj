@@ -9,19 +9,10 @@
     <ProjectReference Include="../../Core/Rikarin.Skala.Core/Rikarin.Skala.Core.csproj" />
 
     <!--
-      Build order only: ReferenceOutputAssembly="false" means no assembly reference is created, so
-      the CLI's types are unreachable from here and the forbidden edge stays forbidden. It exists
-      so that `dotnet test` on this project alone still has a `skala` binary to drive.
+      CliRunner and the corpus harness live in Rikarin.Skala.Testing (docs/plan/02), which carries
+      the build-order-only edge on the CLI so that a test run has a `skala` binary to drive.
     -->
-    <ProjectReference Include="../Rikarin.Skala.Cli/Rikarin.Skala.Cli.csproj"
-                      ReferenceOutputAssembly="false"
-                      Private="false"
-                      SkipGetTargetFrameworkProperties="true" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <AssemblyMetadata Include="SkalaCliAssembly"
-                      Value="$(SkalaRepositoryRoot)Tools/Rikarin.Skala.Cli/bin/$(Configuration)/net10.0/skala.dll" />
+    <ProjectReference Include="../../Testing/Rikarin.Skala.Testing/Rikarin.Skala.Testing.csproj" />
   </ItemGroup>
 
 </Project>

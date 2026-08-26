@@ -1,0 +1,17 @@
+{
+  "real": {
+    "LineFidelity": 0.9428,
+    "FileFidelity": 0.3684,
+    "Milestone": "M1 - spaces, blank lines, braces, indentation; no wrapping"
+  },
+  "constructs": {
+    "LineFidelity": 0.9320,
+    "FileFidelity": 0.8553,
+    "Milestone": "M1"
+  },
+  "pathological": {
+    "LineFidelity": 0.8493,
+    "FileFidelity": 0.6346,
+    "Milestone": "M1"
+  }
+}

@@ -1,0 +1,35 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    The test harness docs/plan/02 specifies: fixtures, the oracle, the corpus, the fidelity
+    measurement, and the CliRunner every command test drives.
+
+    ⚠ Nothing references Rikarin.Skala.Cli. The build-order edge below creates no assembly
+    reference; it exists so that a test run has a `skala` binary to drive.
+  -->
+
+  <PropertyGroup>
+    <RootNamespace>Rikarin.Skala.Testing</RootNamespace>
+    <!--
+      An entry point for the two deliberate developer-machine actions: regenerating the oracle
+      fixtures and printing the differential report. Never packaged, never the `skala` tool.
+    -->
+    <OutputType>Exe</OutputType>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../Formatting/Rikarin.Skala.Formatting.CSharp/Rikarin.Skala.Formatting.CSharp.csproj" />
+
+    <ProjectReference Include="../../Tools/Rikarin.Skala.Cli/Rikarin.Skala.Cli.csproj"
+                      ReferenceOutputAssembly="false"
+                      Private="false"
+                      SkipGetTargetFrameworkProperties="true" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AssemblyMetadata Include="SkalaRepositoryRoot" Value="$(SkalaRepositoryRoot)" />
+    <AssemblyMetadata Include="SkalaCliAssembly"
+                      Value="$(SkalaRepositoryRoot)Tools/Rikarin.Skala.Cli/bin/$(Configuration)/net10.0/skala.dll" />
+  </ItemGroup>
+
+</Project>

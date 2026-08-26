@@ -1,0 +1,6 @@
+namespace N {
+
+    class C {
+    }
+
+}

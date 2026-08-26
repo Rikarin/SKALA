@@ -1,5 +1,6 @@
 using Rikarin.Skala.Core.Configuration;
 using Rikarin.Skala.Options;
+using Rikarin.Skala.Testing;
 
 namespace Rikarin.Skala.Cli.Tests;
 
@@ -83,7 +84,11 @@ public sealed class ConfigCommandTests {
         var run = CliRunner.Run("config", "check", "editor_config_template");
 
         Assert.Contains($"{OptionRegistry.Count} options known", run.StandardOutput, StringComparison.Ordinal);
-        Assert.Contains("Tiers — A (implemented): 0", run.StandardOutput, StringComparison.Ordinal);
+        // Milestone 1 promoted the phase-1 keys; the count is a progress bar and moves per
+        // milestone, so the assertion is that it is honest rather than that it is a number.
+        var implemented = OptionRegistry.All.Count(static info => info.Tier == OptionTier.A);
+        Assert.Contains($"Tiers — A (implemented): {implemented}", run.StandardOutput, StringComparison.Ordinal);
+        Assert.True(implemented > 0);
         Assert.Contains("InspectionSeverity", run.StandardOutput, StringComparison.Ordinal);
         Assert.Contains("Milestone 5", run.StandardOutput, StringComparison.Ordinal);
     }

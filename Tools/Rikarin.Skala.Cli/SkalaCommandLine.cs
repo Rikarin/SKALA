@@ -1,5 +1,6 @@
 using System.CommandLine;
 using Rikarin.Skala.Core.Configuration;
+using Rikarin.Skala.Formatting.CSharp;
 
 namespace Rikarin.Skala.Cli;
 
@@ -14,8 +15,80 @@ namespace Rikarin.Skala.Cli;
 public static class SkalaCommandLine {
     public static RootCommand Create() {
         var root = new RootCommand("Skala — one configuration, the same formatting and analysis everywhere.");
+        root.Subcommands.Add(CreateFormatCommand());
         root.Subcommands.Add(CreateConfigCommand());
         return root;
+    }
+
+    /// <summary>
+    /// <c>skala format</c> — docs/plan/11 § "Command surface".
+    /// </summary>
+    static Command CreateFormatCommand() {
+        var paths = new Argument<string[]>("paths") {
+            Description = "Files, directories or globs. Empty means the repository root.",
+            Arity = ArgumentArity.ZeroOrMore
+        };
+
+        var check = new Option<bool>("--check") { Description = "Report what would change and write nothing. Exit 1 when there is anything." };
+        var diff = new Option<bool>("--diff") { Description = "Print a unified diff over the edits." };
+        var range = new Option<string?>("--range") { Description = "a:b — character offsets. Filtered after full-file fitting." };
+        var staged = new Option<string?>("--staged") {
+            Description = "Format the staged files and write back to both the worktree and the index. --staged=worktree formats staged files that also have unstaged changes.",
+            Arity = ArgumentArity.ZeroOrOne
+        };
+
+        var quiet = new Option<bool>("--quiet") { Description = "Print nothing but diagnostics." };
+        var option = new Option<string[]>("--option") {
+            Description = "key=value, repeatable. For debugging and for the conformance harness.",
+            Arity = ArgumentArity.ZeroOrMore
+        };
+
+        var command = new Command("format", "Format C# files. Spaces, blank lines, braces and indentation; no wrapping yet.");
+        command.Arguments.Add(paths);
+        command.Options.Add(check);
+        command.Options.Add(diff);
+        command.Options.Add(range);
+        command.Options.Add(staged);
+        command.Options.Add(quiet);
+        command.Options.Add(option);
+
+        command.SetAction(parse => {
+            var stagedValue = parse.GetResult(staged) is null
+                ? StagedMode.Off
+                : string.Equals(parse.GetValue(staged), "worktree", StringComparison.Ordinal)
+                    ? StagedMode.Worktree
+                    : StagedMode.Strict;
+
+            var request = new FormatRequest {
+                Paths = parse.GetValue(paths) ?? [],
+                Check = parse.GetValue(check),
+                Diff = parse.GetValue(diff),
+                Range = parse.GetValue(range),
+                Staged = stagedValue,
+                Quiet = parse.GetValue(quiet),
+                Overrides = ParseOverrides(parse.GetValue(option))
+            };
+
+            return Run(() => FormatCommand.Run(request));
+        });
+
+        return command;
+    }
+
+    static List<KeyValuePair<string, string>> ParseOverrides(string[]? values) {
+        if (values is null || values.Length == 0) {
+            return [];
+        }
+
+        var result = new List<KeyValuePair<string, string>>(values.Length);
+        foreach (var value in values) {
+            var equals = value.IndexOf('=', StringComparison.Ordinal);
+            if (equals > 0) {
+                result.Add(new KeyValuePair<string, string>(value[..equals].Trim(), value[(equals + 1)..].Trim()));
+            }
+        }
+
+        return result;
     }
 
     static Command CreateConfigCommand() {

@@ -131,9 +131,24 @@ public sealed class OptionRegistryTests {
 
     [Fact]
     public void Tiers_AreHonest() {
-        // M0 implements no formatting, so nothing may claim Tier A or B. The six keys the plan
-        // names as permanently ignored are Tier C.
-        Assert.DoesNotContain(OptionRegistry.All, static i => i.Tier is OptionTier.A or OptionTier.B);
+        // ⚠ Tier A means "implemented, and pinned by at least one oracle fixture". It may never
+        // rest on a default being known: defaultSource is `template` or `unknown` for every entry
+        // in this registry and there is no verified default table (docs/plan/03 § "distill",
+        // corrected in d081293). So the only evidence a Tier A claim can carry is an `oracle` glob,
+        // and this test is the half of that rule the registry can check on its own — the other half,
+        // that the glob names a corpus file which demonstrably changes behaviour, is
+        // OptionCoverageTests in the conformance suite.
+        //
+        // M0 forbade Tier A outright, because M0 implemented no formatting. M1 implements 138 keys.
+        foreach (var info in OptionRegistry.All.Where(static i => i.Tier is OptionTier.A or OptionTier.B)) {
+            Assert.True(
+                info.Oracle is { Length: > 0 },
+                $"{info.Key} claims Tier {info.Tier} with no `oracle` fixture glob. A tier claim is evidence, not an intention.");
+
+            Assert.NotEqual(OptionDefaultSource.ReSharperDocs, info.DefaultSource);
+        }
+
+        Assert.DoesNotContain(OptionRegistry.All, static i => i.Tier is OptionTier.D && i.Oracle is { Length: > 0 });
 
         string[] permanentlyIgnored = [
             "resharper_old_engine",

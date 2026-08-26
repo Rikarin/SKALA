@@ -41,13 +41,20 @@ record Fill(ImmutableArray<Doc> Items) : Doc;            // wrap_if_long
 record Indent(Doc Body, IndentKind Kind) : Doc;          // Block | Continuous | None | Outdent
 record IfBroken(GroupId Of, Doc Then, Doc Else) : Doc;   // trailing commas, `=>` placement, …
 record Verbatim(string Text) : Doc;                      // raw strings, disabled #if regions, off-tag spans
-record Anchor(TextSpan Source, int TokenId) : Doc;       // maps output back to input for edits + verify
+record Anchor(SourceSpan Source, int TokenId) : Doc;     // maps output back to input for edits + verify
 ```
 
 ⚠ `Anchor` carries a span and an opaque id, **not** a `SyntaxToken`. `Rikarin.Skala.Formatting` may
 not reference Roslyn ([02](02-repository-layout.md)), because this IR and this fitting pass are what
 the HTML and CSS front ends reuse ([14](14-web-languages.md)); the C# front end keeps its own token
-table and looks ids up in it.
+table and looks ids up in it. ⚠ That also rules out `TextSpan`, which this document named until M1
+pointed out it lives in `Microsoft.CodeAnalysis.Text` — hence `SourceSpan`, Skala's own, with the
+conversion in the C# front end.
+
+⚠ **The records above are a notation, not the representation.** [13](13-performance.md) § "The
+fitting pass" requires `Doc` nodes to be structs in a per-file arena indexed by `int` — a 1 000-line
+file produces ~40 000 nodes and the corpus ~110 M, which as class instances is several GB of garbage
+per run. Read the shapes here for what the IR *means* and the arena for what it *is*.
 
 `Anchor` is what makes step 5 a *minimal edit* rather than a rewrite: every `Text` is traceable to
 the source span it came from, so a run of output that matches the original bytes exactly produces no
@@ -109,11 +116,28 @@ so fitting is two passes over a group tree, not one (see below).
 Two kinds of indent, and conflating them is the classic formatter bug:
 
 - **Block indent** — one level per `{ }`, per `case`, per embedded statement. Governs statements.
-- **Continuous indent** — one level (`= single`) applied to *continuation lines of one expression*:
-  a wrapped argument list, a wrapped binary chain, a wrapped initializer. Does not nest per paren by
-  default; `single` means one continuation level regardless of depth. ⚠ ReSharper's alternative,
-  `double`, and `resharper_continuous_indent_multiplier` exist and are Tier A too, but the export
-  uses `single`, so that is the path that gets the fixture coverage.
+- **Continuous indent** — applied to *continuation lines of one expression*: a wrapped argument list,
+  a wrapped binary chain, a wrapped initializer.
+
+⚠ **This document originally said `single` means one continuation level regardless of depth. That is
+wrong**, and M1 established it against the oracle the expensive way — it was the single largest source
+of divergence on the Vixen run. `= single` sets the *size of one level*; it does not mean there is
+only ever one. The oracle's actual behaviour is five rules:
+
+| Construct | Spends a level? |
+|---|---|
+| Delimited group (parens, brackets, initializer braces) | Yes — one per *opening line*, so they nest |
+| Undelimited continuation | No — however deep the expression, they collapse to one |
+| Chained method call | Yes, its own |
+| Binary **expression** chain | No |
+| Binary **pattern** chain | Yes |
+
+The distinction in the last two rows looks arbitrary and is not: it is what `jb cleanupcode`
+produces, it is pinned by fixtures in `constructs/indentation/`, and a formatter that "rationalises"
+it diverges on real code immediately.
+
+ReSharper's `double` and `resharper_continuous_indent_multiplier` change the level size and are Tier
+A too, but the export uses `single`, so that is the path with fixture coverage.
 
 Nested-statement outdenting (`indent_nested_for_stmt = false`) means
 

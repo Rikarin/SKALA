@@ -48,9 +48,13 @@ class Build : NukeBuild {
             .EnableNoRestore()));
 
     /// <summary>
-    /// ADR-015 — Skala formats Skala. Until the formatter exists (Milestone 1) the lint gate is the
-    /// configuration gate: the repository's own .editorconfig must have no configuration errors.
+    /// ADR-015 — Skala formats Skala, with the configuration gate beside it.
     /// </summary>
+    /// <remarks>
+    /// ⚠ Testing/corpus is excluded on purpose. Those files are inputs: half of them are
+    /// deliberately misformatted and the rest are vendored from other people's trees, and a
+    /// formatter that reformats its own test corpus has destroyed its own measurement.
+    /// </remarks>
     Target Lint => definition => definition
         .DependsOn(Compile)
         .Executes(() => {
@@ -61,5 +65,65 @@ class Build : NukeBuild {
                 .EnableNoBuild()
                 .EnableNoRestore()
                 .SetApplicationArguments("config", "check", RootDirectory));
+
+            foreach (var area in new[] { "Core", "Formatting", "Testing", "Tools" }) {
+                var directory = RootDirectory / area;
+                if (area == "Testing") {
+                    DotNetRun(settings => Format(settings, cli, directory / "Rikarin.Skala.Testing"));
+                    DotNetRun(settings => Format(settings, cli, directory / "Rikarin.Skala.Conformance.Tests"));
+                    continue;
+                }
+
+                DotNetRun(settings => Format(settings, cli, directory));
+            }
         });
+
+    DotNetRunSettings Format(DotNetRunSettings settings, AbsolutePath cli, AbsolutePath target) => settings
+        .SetProjectFile(cli)
+        .SetConfiguration(Configuration)
+        .EnableNoBuild()
+        .EnableNoRestore()
+        .SetApplicationArguments("format", "--check", "--quiet", target);
+
+    /// <summary>
+    /// The differential suite: the fidelity number, the properties, and the per-option units.
+    /// </summary>
+    /// <remarks>
+    /// It reads the committed fixtures, not JetBrains — the oracle is a developer-machine and
+    /// nightly dependency (ADR-011), and `dotnet test` works on a machine with no ReSharper.
+    /// </remarks>
+    Target Conformance => definition => definition
+        .DependsOn(Compile)
+        .Executes(() => DotNetTest(settings => settings
+            .SetProjectFile(RootDirectory / "Testing" / "Rikarin.Skala.Conformance.Tests")
+            .SetConfiguration(Configuration)
+            .EnableNoBuild()
+            .EnableNoRestore()));
+
+    /// <summary>
+    /// ⚠ Regenerates the committed <c>.expected.cs</c> fixtures from `jb cleanupcode`.
+    /// </summary>
+    /// <remarks>
+    /// A deliberate, reviewed action, and never automatic: an oracle that updates itself when it
+    /// disagrees is a tautology (docs/plan/12 § "The oracle"). Its diff is reviewed in its own
+    /// commit, whose message says which ReSharper version and why.
+    /// </remarks>
+    Target Oracle => definition => definition
+        .DependsOn(Compile)
+        .Executes(() => DotNetRun(settings => settings
+            .SetProjectFile(RootDirectory / "Testing" / "Rikarin.Skala.Testing")
+            .SetConfiguration(Configuration)
+            .EnableNoBuild()
+            .EnableNoRestore()
+            .SetApplicationArguments("oracle")));
+
+    /// <summary>The differential report without a pass/fail: the ranked work queue.</summary>
+    Target Fidelity => definition => definition
+        .DependsOn(Compile)
+        .Executes(() => DotNetRun(settings => settings
+            .SetProjectFile(RootDirectory / "Testing" / "Rikarin.Skala.Testing")
+            .SetConfiguration(Configuration)
+            .EnableNoBuild()
+            .EnableNoRestore()
+            .SetApplicationArguments("fidelity")));
 }
