@@ -32,15 +32,18 @@ public static class SkalaCommandLine {
         var path = new Argument<string>("path") { Description = "The file whose effective options to print.", DefaultValueFactory = static _ => "." };
         var repositoryRoot = new Option<string?>("--repository-root") { Description = "Where the repository starts, for SK9002." };
         var configuredOnly = new Option<bool>("--configured-only") { Description = "Only options the configuration actually sets." };
+        var configPath = new Option<string?>("--config") { Description = "Resolve against this .editorconfig instead of the chain above the file." };
 
         var command = new Command("explain", "The effective option set for a file, each with its source file:line and tier.");
         command.Arguments.Add(path);
         command.Options.Add(repositoryRoot);
         command.Options.Add(configuredOnly);
+        command.Options.Add(configPath);
         command.SetAction(parse => Run(() => ConfigCommands.Explain(
             parse.GetValue(path)!,
             parse.GetValue(repositoryRoot) ?? FindRepositoryRoot(parse.GetValue(path)!),
-            parse.GetValue(configuredOnly))));
+            parse.GetValue(configuredOnly),
+            parse.GetValue(configPath))));
 
         return command;
     }

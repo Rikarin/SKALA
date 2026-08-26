@@ -34,6 +34,28 @@ public sealed class ConfigCommandTests {
     }
 
     [Fact]
+    public void Explain_CanBePointedAtTheExportBeforeItIsInstalled() {
+        var run = CliRunner.Run("config", "explain", "Core/Foo.cs", "--config", "editor_config_template");
+
+        Assert.Equal(0, run.ExitCode);
+        Assert.Contains("reached the filesystem root without finding `root = true`", run.StandardOutput, StringComparison.Ordinal);
+
+        var width = Assert.Single(run.Lines, line => line.StartsWith("resharper_csharp_max_line_length ", StringComparison.Ordinal));
+        Assert.Contains("editor_config_template:", width, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void TheExport_IsNeverWrittenTo() {
+        // It is the input and the fixture for everything in M0, and no command may change it.
+        var before = File.ReadAllBytes(CliRunner.Template);
+        CliRunner.Run("config", "check", "editor_config_template");
+        CliRunner.Run("config", "explain", "Core/Foo.cs", "--config", "editor_config_template");
+        CliRunner.Run("config", "fix", "editor_config_template");
+
+        Assert.Equal(before, File.ReadAllBytes(CliRunner.Template));
+    }
+
+    [Fact]
     public void Check_NamesTheThreeContradictions_TheMissingRoot_AndTheMissingWidth() {
         var run = CliRunner.Run("config", "check", "editor_config_template");
 

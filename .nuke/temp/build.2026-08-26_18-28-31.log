@@ -1,0 +1,84 @@
+V |                      | ArgumentsFromParametersFile.OnBuildCreated (150)
+V |                      | HandleReSharperSurrogateArguments.OnBuildCreated (150)
+V |                      | InjectParameterValues.OnBuildCreated (100)
+V |                      | HandleShellCompletion.OnBuildCreated (75)
+V |                      | GenerateBuildServerConfigurations.OnBuildCreated (50)
+V |                      | InvokeBuildServerConfigurationGeneration.OnBuildCreated (45)
+V |                      | UpdateNotification.OnBuildCreated (10)
+V |                      | UnsetVisualStudioEnvironmentVariables.OnBuildCreated (0)
+V |                      | HandleVisualStudioDebugging.OnBuildCreated (0)
+V |                      | EventInvoker.OnBuildCreated (-3.4028235E+38)
+V |                      | HandlePlanRequests.OnBuildInitialized (10)
+V |                      | HandleHelpRequests.OnBuildInitialized (5)
+V |                      | Telemetry.OnBuildInitialized (0)
+W |                      | Exception was suppressed
+Microsoft.Build.Exceptions.InvalidProjectFileException: The expression "[MSBuild]::GetTargetFrameworkIdentifier(net10.0)" cannot be evaluated. Could not load file or assembly 'NuGet.Frameworks, Version=7.9.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35'. The located assembly's manifest definition does not match the assembly reference. (0x80131040)  /usr/local/share/dotnet/sdk/10.0.400/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.TargetFrameworkInference.targets
+   at Microsoft.Build.Shared.ProjectErrorUtilities.ThrowInvalidProject(String errorSubCategoryResourceName, IElementLocation elementLocation, String resourceName, Object[] args)
+   at Microsoft.Build.Shared.ProjectErrorUtilities.ThrowInvalidProject[T1,T2](IElementLocation elementLocation, String resourceName, T1 arg0, T2 arg1)
+   at Microsoft.Build.Evaluation.Expander`2.Function.Execute(Object objectInstance, IPropertyProvider`1 properties, ExpanderOptions options, IElementLocation elementLocation)
+   at Microsoft.Build.Evaluation.Expander`2.PropertyExpander.ExpandPropertyBody(String propertyBody, Object propertyValue, IPropertyProvider`1 properties, ExpanderOptions options, IElementLocation elementLocation, PropertiesUseTracker propertiesUseTracker, IFileSystem fileSystem)
+   at Microsoft.Build.Evaluation.Expander`2.PropertyExpander.ExpandPropertiesLeaveTypedAndEscaped(String expression, IPropertyProvider`1 properties, ExpanderOptions options, IElementLocation elementLocation, PropertiesUseTracker propertiesUseTracker, IFileSystem fileSystem)
+   at Microsoft.Build.Evaluation.Expander`2.ExpandIntoStringLeaveEscaped(String expression, ExpanderOptions options, IElementLocation elementLocation)
+   at Microsoft.Build.Evaluation.Evaluator`4.EvaluatePropertyElement(ProjectPropertyElement propertyElement)
+   at Microsoft.Build.Evaluation.Evaluator`4.EvaluatePropertyGroupElement(ProjectPropertyGroupElement propertyGroupElement)
+   at Microsoft.Build.Evaluation.Evaluator`4.PerformDepthFirstPass(ProjectRootElement currentProjectOrImport)
+   at Microsoft.Build.Evaluation.Evaluator`4.EvaluateImportElement(String directoryOfImportingFile, ProjectImportElement importElement)
+   at Microsoft.Build.Evaluation.Evaluator`4.PerformDepthFirstPass(ProjectRootElement currentProjectOrImport)
+   at Microsoft.Build.Evaluation.Evaluator`4.EvaluateImportElement(String directoryOfImportingFile, ProjectImportElement importElement)
+   at Microsoft.Build.Evaluation.Evaluator`4.PerformDepthFirstPass(ProjectRootElement currentProjectOrImport)
+   at Microsoft.Build.Evaluation.Evaluator`4.EvaluateImportElement(String directoryOfImportingFile, ProjectImportElement importElement)
+   at Microsoft.Build.Evaluation.Evaluator`4.PerformDepthFirstPass(ProjectRootElement currentProjectOrImport)
+   at Microsoft.Build.Evaluation.Evaluator`4.Evaluate()
+   at Microsoft.Build.Evaluation.Evaluator`4.Evaluate(IEvaluatorData`4 data, Project project, ProjectRootElement root, ProjectLoadSettings loadSettings, Int32 maxNodeCount, PropertyDictionary`1 environmentProperties, ICollection`1 propertiesFromCommandLine, ILoggingService loggingService, IItemFactory`2 itemFactory, IToolsetProvider toolsetProvider, IDirectoryCacheFactory directoryCacheFactory, ProjectRootElementCacheBase projectRootElementCache, BuildEventContext buildEventContext, ISdkResolverService sdkResolverService, Int32 submissionId, EvaluationContext evaluationContext, Boolean interactive)
+   at Microsoft.Build.Evaluation.Project.ProjectImpl.Reevaluate(ILoggingService loggingServiceForEvaluation, ProjectLoadSettings loadSettings, EvaluationContext evaluationContext)
+   at Microsoft.Build.Evaluation.Project.ProjectImpl.ReevaluateIfNecessary(ILoggingService loggingServiceForEvaluation, ProjectLoadSettings loadSettings, EvaluationContext evaluationContext)
+   at Microsoft.Build.Evaluation.Project.ProjectImpl.Initialize(IDictionary`2 globalProperties, String toolsVersion, String subToolsetVersion, ProjectLoadSettings loadSettings, EvaluationContext evaluationContext, Boolean interactive)
+   at Microsoft.Build.Evaluation.Project.FromProjectRootElement(ProjectRootElement rootElement, ProjectOptions options)
+   at Nuke.Common.ProjectModel.ProjectModelTasks.ParseProject(String projectFile, String configuration, String targetFramework) in /_/source/Nuke.ProjectModel/ProjectModelTasks.cs:line 97
+   at Nuke.Common.Execution.Telemetry.CheckAwareness() in /_/source/Nuke.Build/Telemetry/Telemetry.cs:line 73
+   at System.Reflection.MethodBaseInvoker.InterpretedInvoke_Method(Object obj, IntPtr* args)
+   at System.Reflection.MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)
+V |                      | InjectNonParameterValues.OnBuildInitialized (-100)
+V |                      | EventInvoker.OnBuildInitialized (-3.4028235E+38)
+V | Restore              | EventInvoker.OnTargetRunning (-3.4028235E+38)
+I | Restore              | > /opt/homebrew/bin/dotnet restore /Users/jiu/Projects/Rikarin/Skala/Skala.slnx
+V | Restore              | @ /Users/jiu/Projects/Rikarin/Skala
+D | Restore              |   Determining projects to restore...
+D | Restore              |   All projects are up-to-date for restore.
+V | Restore              | Telemetry.OnTargetSucceeded (0)
+V | Restore              | EventInvoker.OnTargetSucceeded (-3.4028235E+38)
+V | Compile              | EventInvoker.OnTargetRunning (-3.4028235E+38)
+I | Compile              | > /opt/homebrew/bin/dotnet build /Users/jiu/Projects/Rikarin/Skala/Skala.slnx --configuration Debug --no-restore
+V | Compile              | @ /Users/jiu/Projects/Rikarin/Skala
+D | Compile              |   Rikarin.Skala.Options.Generator -> /Users/jiu/Projects/Rikarin/Skala/Core/Rikarin.Skala.Options.Generator/bin/Debug/netstandard2.0/Rikarin.Skala.Options.Generator.dll
+D | Compile              |   Rikarin.Skala.Options -> /Users/jiu/Projects/Rikarin/Skala/Core/Rikarin.Skala.Options/bin/Debug/net10.0/Rikarin.Skala.Options.dll
+D | Compile              |   Rikarin.Skala.Options.Tests -> /Users/jiu/Projects/Rikarin/Skala/Core/Rikarin.Skala.Options.Tests/bin/Debug/net10.0/Rikarin.Skala.Options.Tests.dll
+D | Compile              |   Rikarin.Skala.Core -> /Users/jiu/Projects/Rikarin/Skala/Core/Rikarin.Skala.Core/bin/Debug/net10.0/Rikarin.Skala.Core.dll
+D | Compile              |   Rikarin.Skala.Cli -> /Users/jiu/Projects/Rikarin/Skala/Tools/Rikarin.Skala.Cli/bin/Debug/net10.0/skala.dll
+D | Compile              |   Rikarin.Skala.Cli.Tests -> /Users/jiu/Projects/Rikarin/Skala/Tools/Rikarin.Skala.Cli.Tests/bin/Debug/net10.0/Rikarin.Skala.Cli.Tests.dll
+D | Compile              |   Rikarin.Skala.Core.Tests -> /Users/jiu/Projects/Rikarin/Skala/Core/Rikarin.Skala.Core.Tests/bin/Debug/net10.0/Rikarin.Skala.Core.Tests.dll
+D | Compile              | 
+D | Compile              | Build succeeded.
+D | Compile              |     0 Warning(s)
+D | Compile              |     0 Error(s)
+D | Compile              | 
+D | Compile              | Time Elapsed 00:00:02.72
+V | Compile              | Telemetry.OnTargetSucceeded (0)
+V | Compile              | EventInvoker.OnTargetSucceeded (-3.4028235E+38)
+V | Test                 | EventInvoker.OnTargetRunning (-3.4028235E+38)
+I | Test                 | > /opt/homebrew/bin/dotnet test /Users/jiu/Projects/Rikarin/Skala/Skala.slnx --configuration Debug --no-build --no-restore
+V | Test                 | @ /Users/jiu/Projects/Rikarin/Skala
+D | Test                 | Test run for /Users/jiu/Projects/Rikarin/Skala/Core/Rikarin.Skala.Core.Tests/bin/Debug/net10.0/Rikarin.Skala.Core.Tests.dll (.NETCoreApp,Version=v10.0)
+D | Test                 | Test run for /Users/jiu/Projects/Rikarin/Skala/Tools/Rikarin.Skala.Cli.Tests/bin/Debug/net10.0/Rikarin.Skala.Cli.Tests.dll (.NETCoreApp,Version=v10.0)
+D | Test                 | Test run for /Users/jiu/Projects/Rikarin/Skala/Core/Rikarin.Skala.Options.Tests/bin/Debug/net10.0/Rikarin.Skala.Options.Tests.dll (.NETCoreApp,Version=v10.0)
+D | Test                 | A total of 1 test files matched the specified pattern.
+D | Test                 | A total of 1 test files matched the specified pattern.
+D | Test                 | A total of 1 test files matched the specified pattern.
+D | Test                 | 
+D | Test                 | Passed!  - Failed:     0, Passed:    13, Skipped:     0, Total:    13, Duration: 71 ms - Rikarin.Skala.Options.Tests.dll (net10.0)
+D | Test                 | 
+D | Test                 | Passed!  - Failed:     0, Passed:    44, Skipped:     0, Total:    44, Duration: 6 s - Rikarin.Skala.Core.Tests.dll (net10.0)
+D | Test                 | 
+D | Test                 | Passed!  - Failed:     0, Passed:    12, Skipped:     0, Total:    12, Duration: 12 s - Rikarin.Skala.Cli.Tests.dll (net10.0)
+V | Test                 | Telemetry.OnTargetSucceeded (0)
+V | Test                 | EventInvoker.OnTargetSucceeded (-3.4028235E+38)

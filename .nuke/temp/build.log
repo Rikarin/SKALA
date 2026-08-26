@@ -1,17 +1,17 @@
-18:17:25.331 | V |                      | ArgumentsFromParametersFile.OnBuildCreated (150)
-18:17:25.341 | V |                      | HandleReSharperSurrogateArguments.OnBuildCreated (150)
-18:17:25.341 | V |                      | InjectParameterValues.OnBuildCreated (100)
-18:17:25.355 | V |                      | HandleShellCompletion.OnBuildCreated (75)
-18:17:25.567 | V |                      | GenerateBuildServerConfigurations.OnBuildCreated (50)
-18:17:25.567 | V |                      | InvokeBuildServerConfigurationGeneration.OnBuildCreated (45)
-18:17:25.573 | V |                      | UpdateNotification.OnBuildCreated (10)
-18:17:25.573 | V |                      | UnsetVisualStudioEnvironmentVariables.OnBuildCreated (0)
-18:17:25.573 | V |                      | HandleVisualStudioDebugging.OnBuildCreated (0)
-18:17:25.574 | V |                      | EventInvoker.OnBuildCreated (-3.4028235E+38)
-18:17:25.583 | V |                      | HandlePlanRequests.OnBuildInitialized (10)
-18:17:25.583 | V |                      | HandleHelpRequests.OnBuildInitialized (5)
-18:17:25.583 | V |                      | Telemetry.OnBuildInitialized (0)
-18:17:25.677 | W |                      | Exception was suppressed
+18:28:52.006 | V |                      | ArgumentsFromParametersFile.OnBuildCreated (150)
+18:28:52.015 | V |                      | HandleReSharperSurrogateArguments.OnBuildCreated (150)
+18:28:52.015 | V |                      | InjectParameterValues.OnBuildCreated (100)
+18:28:52.028 | V |                      | HandleShellCompletion.OnBuildCreated (75)
+18:28:52.223 | V |                      | GenerateBuildServerConfigurations.OnBuildCreated (50)
+18:28:52.224 | V |                      | InvokeBuildServerConfigurationGeneration.OnBuildCreated (45)
+18:28:52.229 | V |                      | UpdateNotification.OnBuildCreated (10)
+18:28:52.229 | V |                      | UnsetVisualStudioEnvironmentVariables.OnBuildCreated (0)
+18:28:52.229 | V |                      | HandleVisualStudioDebugging.OnBuildCreated (0)
+18:28:52.229 | V |                      | EventInvoker.OnBuildCreated (-3.4028235E+38)
+18:28:52.238 | V |                      | HandlePlanRequests.OnBuildInitialized (10)
+18:28:52.238 | V |                      | HandleHelpRequests.OnBuildInitialized (5)
+18:28:52.239 | V |                      | Telemetry.OnBuildInitialized (0)
+18:28:52.325 | W |                      | Exception was suppressed
 Microsoft.Build.Exceptions.InvalidProjectFileException: The expression "[MSBuild]::GetTargetFrameworkIdentifier(net10.0)" cannot be evaluated. Could not load file or assembly 'NuGet.Frameworks, Version=7.9.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35'. The located assembly's manifest definition does not match the assembly reference. (0x80131040)  /usr/local/share/dotnet/sdk/10.0.400/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.TargetFrameworkInference.targets
    at Microsoft.Build.Shared.ProjectErrorUtilities.ThrowInvalidProject(String errorSubCategoryResourceName, IElementLocation elementLocation, String resourceName, Object[] args)
    at Microsoft.Build.Shared.ProjectErrorUtilities.ThrowInvalidProject[T1,T2](IElementLocation elementLocation, String resourceName, T1 arg0, T2 arg1)
@@ -38,36 +38,80 @@ Microsoft.Build.Exceptions.InvalidProjectFileException: The expression "[MSBuild
    at Nuke.Common.Execution.Telemetry.CheckAwareness() in /_/source/Nuke.Build/Telemetry/Telemetry.cs:line 73
    at System.Reflection.MethodBaseInvoker.InterpretedInvoke_Method(Object obj, IntPtr* args)
    at System.Reflection.MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)
-18:17:25.684 | V |                      | InjectNonParameterValues.OnBuildInitialized (-100)
-18:17:25.708 | V |                      | EventInvoker.OnBuildInitialized (-3.4028235E+38)
-18:17:25.713 | V | Restore              | EventInvoker.OnTargetRunning (-3.4028235E+38)
-18:17:25.765 | I | Restore              | > /opt/homebrew/bin/dotnet restore /Users/jiu/Projects/Rikarin/Skala/Skala.slnx
-18:17:25.766 | V | Restore              | @ /Users/jiu/Projects/Rikarin/Skala
-18:17:26.187 | D | Restore              |   Determining projects to restore...
-18:17:26.473 | D | Restore              |   Restored /Users/jiu/Projects/Rikarin/Skala/Core/Rikarin.Skala.Options/Rikarin.Skala.Options.csproj (in 97 ms).
-18:17:26.527 | D | Restore              |   Restored /Users/jiu/Projects/Rikarin/Skala/Core/Rikarin.Skala.Options.Generator/Rikarin.Skala.Options.Generator.csproj (in 173 ms).
-18:17:26.528 | D | Restore              |   Restored /Users/jiu/Projects/Rikarin/Skala/Core/Rikarin.Skala.Core/Rikarin.Skala.Core.csproj (in 171 ms).
-18:17:26.528 | D | Restore              |   Restored /Users/jiu/Projects/Rikarin/Skala/Tools/Rikarin.Skala.Cli/Rikarin.Skala.Cli.csproj (in 171 ms).
-18:17:28.023 | D | Restore              |   Restored /Users/jiu/Projects/Rikarin/Skala/Core/Rikarin.Skala.Options.Tests/Rikarin.Skala.Options.Tests.csproj (in 1,67 sec).
-18:17:28.025 | D | Restore              |   Restored /Users/jiu/Projects/Rikarin/Skala/Core/Rikarin.Skala.Core.Tests/Rikarin.Skala.Core.Tests.csproj (in 1,67 sec).
-18:17:28.025 | D | Restore              |   Restored /Users/jiu/Projects/Rikarin/Skala/Tools/Rikarin.Skala.Cli.Tests/Rikarin.Skala.Cli.Tests.csproj (in 1,67 sec).
-18:17:28.059 | V | Restore              | Telemetry.OnTargetSucceeded (0)
-18:17:28.059 | V | Restore              | EventInvoker.OnTargetSucceeded (-3.4028235E+38)
-18:17:28.060 | V | Compile              | EventInvoker.OnTargetRunning (-3.4028235E+38)
-18:17:28.088 | I | Compile              | > /opt/homebrew/bin/dotnet build /Users/jiu/Projects/Rikarin/Skala/Skala.slnx --configuration Debug --no-restore
-18:17:28.088 | V | Compile              | @ /Users/jiu/Projects/Rikarin/Skala
-18:17:28.524 | D | Compile              |   Rikarin.Skala.Options.Generator -> /Users/jiu/Projects/Rikarin/Skala/Core/Rikarin.Skala.Options.Generator/bin/Debug/netstandard2.0/Rikarin.Skala.Options.Generator.dll
-18:17:28.678 | D | Compile              |   Rikarin.Skala.Options -> /Users/jiu/Projects/Rikarin/Skala/Core/Rikarin.Skala.Options/bin/Debug/net10.0/Rikarin.Skala.Options.dll
-18:17:28.820 | D | Compile              |   Rikarin.Skala.Core -> /Users/jiu/Projects/Rikarin/Skala/Core/Rikarin.Skala.Core/bin/Debug/net10.0/Rikarin.Skala.Core.dll
-18:17:28.823 | D | Compile              |   Rikarin.Skala.Options.Tests -> /Users/jiu/Projects/Rikarin/Skala/Core/Rikarin.Skala.Options.Tests/bin/Debug/net10.0/Rikarin.Skala.Options.Tests.dll
-18:17:28.901 | D | Compile              |   Rikarin.Skala.Cli -> /Users/jiu/Projects/Rikarin/Skala/Tools/Rikarin.Skala.Cli/bin/Debug/net10.0/skala.dll
-18:17:28.924 | D | Compile              |   Rikarin.Skala.Cli.Tests -> /Users/jiu/Projects/Rikarin/Skala/Tools/Rikarin.Skala.Cli.Tests/bin/Debug/net10.0/Rikarin.Skala.Cli.Tests.dll
-18:17:29.061 | D | Compile              |   Rikarin.Skala.Core.Tests -> /Users/jiu/Projects/Rikarin/Skala/Core/Rikarin.Skala.Core.Tests/bin/Debug/net10.0/Rikarin.Skala.Core.Tests.dll
-18:17:29.095 | D | Compile              | 
-18:17:29.095 | D | Compile              | Build succeeded.
-18:17:29.095 | D | Compile              |     0 Warning(s)
-18:17:29.095 | D | Compile              |     0 Error(s)
-18:17:29.095 | D | Compile              | 
-18:17:29.095 | D | Compile              | Time Elapsed 00:00:00.83
-18:17:29.111 | V | Compile              | Telemetry.OnTargetSucceeded (0)
-18:17:29.111 | V | Compile              | EventInvoker.OnTargetSucceeded (-3.4028235E+38)
+18:28:52.331 | V |                      | InjectNonParameterValues.OnBuildInitialized (-100)
+18:28:52.352 | V |                      | EventInvoker.OnBuildInitialized (-3.4028235E+38)
+18:28:52.356 | V | Restore              | EventInvoker.OnTargetRunning (-3.4028235E+38)
+18:28:52.406 | I | Restore              | > /opt/homebrew/bin/dotnet restore /Users/jiu/Projects/Rikarin/Skala/Skala.slnx
+18:28:52.406 | V | Restore              | @ /Users/jiu/Projects/Rikarin/Skala
+18:28:52.808 | D | Restore              |   Determining projects to restore...
+18:28:52.983 | D | Restore              |   All projects are up-to-date for restore.
+18:28:53.017 | V | Restore              | Telemetry.OnTargetSucceeded (0)
+18:28:53.017 | V | Restore              | EventInvoker.OnTargetSucceeded (-3.4028235E+38)
+18:28:53.018 | V | Compile              | EventInvoker.OnTargetRunning (-3.4028235E+38)
+18:28:53.052 | I | Compile              | > /opt/homebrew/bin/dotnet build /Users/jiu/Projects/Rikarin/Skala/Skala.slnx --configuration Debug --no-restore
+18:28:53.052 | V | Compile              | @ /Users/jiu/Projects/Rikarin/Skala
+18:28:53.422 | D | Compile              |   Rikarin.Skala.Options.Generator -> /Users/jiu/Projects/Rikarin/Skala/Core/Rikarin.Skala.Options.Generator/bin/Debug/netstandard2.0/Rikarin.Skala.Options.Generator.dll
+18:28:53.457 | D | Compile              |   Rikarin.Skala.Options -> /Users/jiu/Projects/Rikarin/Skala/Core/Rikarin.Skala.Options/bin/Debug/net10.0/Rikarin.Skala.Options.dll
+18:28:53.490 | D | Compile              |   Rikarin.Skala.Core -> /Users/jiu/Projects/Rikarin/Skala/Core/Rikarin.Skala.Core/bin/Debug/net10.0/Rikarin.Skala.Core.dll
+18:28:53.499 | D | Compile              |   Rikarin.Skala.Options.Tests -> /Users/jiu/Projects/Rikarin/Skala/Core/Rikarin.Skala.Options.Tests/bin/Debug/net10.0/Rikarin.Skala.Options.Tests.dll
+18:28:53.531 | D | Compile              |   Rikarin.Skala.Cli -> /Users/jiu/Projects/Rikarin/Skala/Tools/Rikarin.Skala.Cli/bin/Debug/net10.0/skala.dll
+18:28:53.595 | D | Compile              |   Rikarin.Skala.Cli.Tests -> /Users/jiu/Projects/Rikarin/Skala/Tools/Rikarin.Skala.Cli.Tests/bin/Debug/net10.0/Rikarin.Skala.Cli.Tests.dll
+18:28:53.694 | D | Compile              |   Rikarin.Skala.Core.Tests -> /Users/jiu/Projects/Rikarin/Skala/Core/Rikarin.Skala.Core.Tests/bin/Debug/net10.0/Rikarin.Skala.Core.Tests.dll
+18:28:53.729 | D | Compile              | 
+18:28:53.730 | D | Compile              | Build succeeded.
+18:28:53.730 | D | Compile              |     0 Warning(s)
+18:28:53.730 | D | Compile              |     0 Error(s)
+18:28:53.730 | D | Compile              | 
+18:28:53.730 | D | Compile              | Time Elapsed 00:00:00.49
+18:28:53.745 | V | Compile              | Telemetry.OnTargetSucceeded (0)
+18:28:53.745 | V | Compile              | EventInvoker.OnTargetSucceeded (-3.4028235E+38)
+18:28:53.745 | V | Lint                 | EventInvoker.OnTargetRunning (-3.4028235E+38)
+18:28:53.782 | I | Lint                 | > /opt/homebrew/bin/dotnet run --project /Users/jiu/Projects/Rikarin/Skala/Tools/Rikarin.Skala.Cli/Rikarin.Skala.Cli.csproj --configuration Debug --no-build --no-restore -- config check /Users/jiu/Projects/Rikarin/Skala
+18:28:53.782 | V | Lint                 | @ /Users/jiu/Projects/Rikarin/Skala
+18:28:57.630 | D | Lint                 | Configuration check for /Users/jiu/Projects/Rikarin/Skala
+18:28:57.630 | D | Lint                 | 
+18:28:57.632 | D | Lint                 | 483 options known: 421 set by the configuration, 62 at the registry default.
+18:28:57.632 | D | Lint                 | Tiers — A (implemented): 0, B (approximated): 0, C (accepted, ignored): 5, D (not implemented): 478.
+18:28:57.632 | D | Lint                 | 
+18:28:57.632 | D | Lint                 | Keys the option registry does not own:
+18:28:57.632 | D | Lint                 |   DiagnosticSeverity     253  Roslyn analyzer severities — Milestone 5
+18:28:57.632 | D | Lint                 |   InspectionSeverity    3021  ReSharper inspection severities — Milestone 5
+18:28:57.632 | D | Lint                 |   NamingRule             215  Roslyn's own naming engine; Skala never reimplements it
+18:28:57.632 | D | Lint                 |   Option                 300  reported as SK9001
+18:28:57.632 | D | Lint                 | 
+18:28:57.632 | D | Lint                 | ⚠ no `max_line_length`; the column limit lives only in `resharper_csharp_max_line_length = 120`.
+18:28:57.632 | D | Lint                 |   Every other tool in the ecosystem therefore does not know the width. `skala config fix` adds it.
+18:28:57.632 | D | Lint                 | 
+18:28:57.632 | D | Lint                 | Diagnostics:
+18:28:57.632 | W | Lint                 |   /Users/jiu/Projects/Rikarin/Skala/.editorconfig:6: warning SK9005: 'end_of_line = lf' contradicts 'resharper_enforce_line_ending_style = false'; the C# key wins, so the effective behaviour is 'resharper_enforce_line_ending_style = false'
+18:28:57.632 | D | Lint                 |       end_of_line names a line ending; resharper_enforce_line_ending_style says do not enforce one.
+18:28:57.632 | W | Lint                 |   /Users/jiu/Projects/Rikarin/Skala/.editorconfig:7: warning SK9005: 'trim_trailing_whitespace = false' contradicts 'resharper_remove_spaces_on_blank_lines = true'; the C# key wins, so the effective behaviour is 'resharper_remove_spaces_on_blank_lines = true'
+18:28:57.633 | D | Lint                 |       trim_trailing_whitespace says leave trailing whitespace alone; resharper_remove_spaces_on_blank_lines says strip it from blank lines.
+18:28:57.633 | W | Lint                 |   /Users/jiu/Projects/Rikarin/Skala/.editorconfig:8: warning SK9005: 'insert_final_newline = false' contradicts 'resharper_csharp_insert_final_newline = true'; the C# key wins, so the effective value is 'true'
+18:28:57.633 | D | Lint                 |       ReSharper resolves this by language specificity. Winner: /Users/jiu/Projects/Rikarin/Skala/.editorconfig:699.
+18:28:57.633 | D | Lint                 |   /Users/jiu/Projects/Rikarin/Skala/.editorconfig:533: info SK9001: 'fsharp_align_function_signature_to_indentation' is not an option Skala knows
+18:28:57.633 | D | Lint                 |   /Users/jiu/Projects/Rikarin/Skala/.editorconfig:534: info SK9001: 'fsharp_alternative_long_member_definitions' is not an option Skala knows
+18:28:57.633 | D | Lint                 |   /Users/jiu/Projects/Rikarin/Skala/.editorconfig:535: info SK9001: 'fsharp_indent_on_try_with' is not an option Skala knows
+18:28:57.633 | D | Lint                 |   /Users/jiu/Projects/Rikarin/Skala/.editorconfig:536: info SK9001: 'fsharp_keep_if_then_in_same_line' is not an option Skala knows
+18:28:57.633 | D | Lint                 |   /Users/jiu/Projects/Rikarin/Skala/.editorconfig:537: info SK9001: 'fsharp_max_array_or_list_width' is not an option Skala knows
+18:28:57.633 | D | Lint                 |   /Users/jiu/Projects/Rikarin/Skala/.editorconfig:538: info SK9001: 'fsharp_max_elmish_width' is not an option Skala knows
+18:28:57.633 | D | Lint                 |   /Users/jiu/Projects/Rikarin/Skala/.editorconfig:539: info SK9001: 'fsharp_max_function_binding_width' is not an option Skala knows
+18:28:57.633 | D | Lint                 |   /Users/jiu/Projects/Rikarin/Skala/.editorconfig:540: info SK9001: 'fsharp_max_if_then_else_short_width' is not an option Skala knows
+18:28:57.633 | D | Lint                 |   /Users/jiu/Projects/Rikarin/Skala/.editorconfig:541: info SK9001: 'fsharp_max_infix_operator_expression' is not an option Skala knows
+18:28:57.633 | D | Lint                 |   /Users/jiu/Projects/Rikarin/Skala/.editorconfig:542: info SK9001: 'fsharp_max_record_width' is not an option Skala knows
+18:28:57.633 | D | Lint                 |   /Users/jiu/Projects/Rikarin/Skala/.editorconfig:543: info SK9001: 'fsharp_max_value_binding_width' is not an option Skala knows
+18:28:57.633 | D | Lint                 |   /Users/jiu/Projects/Rikarin/Skala/.editorconfig:544: info SK9001: 'fsharp_multiline_block_brackets_on_same_column' is not an option Skala knows
+18:28:57.633 | D | Lint                 |   /Users/jiu/Projects/Rikarin/Skala/.editorconfig:545: info SK9001: 'fsharp_multi_line_lambda_closing_newline' is not an option Skala knows
+18:28:57.633 | D | Lint                 |   /Users/jiu/Projects/Rikarin/Skala/.editorconfig:546: info SK9001: 'fsharp_newline_between_type_definition_and_members' is not an option Skala knows
+18:28:57.633 | D | Lint                 |   /Users/jiu/Projects/Rikarin/Skala/.editorconfig:547: info SK9001: 'fsharp_semicolon_at_end_of_line' is not an option Skala knows
+18:28:57.633 | D | Lint                 |   /Users/jiu/Projects/Rikarin/Skala/.editorconfig:548: info SK9001: 'fsharp_single_argument_web_mode' is not an option Skala knows
+18:28:57.633 | D | Lint                 |   /Users/jiu/Projects/Rikarin/Skala/.editorconfig:549: info SK9001: 'fsharp_space_after_comma' is not an option Skala knows; did you mean 'csharp_space_after_comma'?
+18:28:57.633 | D | Lint                 |   /Users/jiu/Projects/Rikarin/Skala/.editorconfig:550: info SK9001: 'fsharp_space_after_semicolon' is not an option Skala knows; did you mean 'csharp_space_after_colon'?
+18:28:57.633 | D | Lint                 |   /Users/jiu/Projects/Rikarin/Skala/.editorconfig:551: info SK9001: 'fsharp_space_around_delimiter' is not an option Skala knows; did you mean 'csharp_space_around_alias_eq'?
+18:28:57.633 | D | Lint                 |   /Users/jiu/Projects/Rikarin/Skala/.editorconfig:552: info SK9001: 'fsharp_space_before_class_constructor' is not an option Skala knows
+18:28:57.633 | D | Lint                 |   … and 280 more SK9001. Unknown keys are info, not warnings, by design.
+18:28:57.633 | D | Lint                 | 
+18:28:57.633 | D | Lint                 |   SK9001: 300
+18:28:57.633 | D | Lint                 |   SK9005: 3
+18:28:57.655 | V | Lint                 | Telemetry.OnTargetSucceeded (0)
+18:28:57.655 | V | Lint                 | EventInvoker.OnTargetSucceeded (-3.4028235E+38)

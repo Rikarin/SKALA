@@ -25,8 +25,14 @@ public static class ConfigCommands {
     /// <summary>
     /// The effective option set for one file, each with its source file:line and its tier.
     /// </summary>
-    public static CommandResult Explain(string sourcePath, string? repositoryRoot = null, bool configuredOnly = false) {
-        var resolution = OptionResolver.Resolve(sourcePath);
+    /// <param name="configPath">
+    /// A single <c>.editorconfig</c> to resolve against instead of the chain above
+    /// <paramref name="sourcePath"/>. This is how the export is explained before it is installed.
+    /// </param>
+    public static CommandResult Explain(string sourcePath, string? repositoryRoot = null, bool configuredOnly = false, string? configPath = null) {
+        var resolution = configPath is null
+            ? OptionResolver.Resolve(sourcePath)
+            : ResolveStandalone(configPath, sourcePath);
         var diagnostics = ConfigurationAnalyzer.Analyze(resolution, repositoryRoot);
         var output = new StringBuilder();
 
