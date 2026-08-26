@@ -183,7 +183,8 @@ public sealed class Document {
         int groupCount,
         int[] flatWidth,
         int[] headWidth,
-        GroupFacts[] facts) {
+        GroupFacts[] facts
+    ) {
         Nodes = nodes;
         NodeCount = nodeCount;
         Children = children;

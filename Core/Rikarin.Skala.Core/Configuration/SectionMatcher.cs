@@ -26,11 +26,16 @@ public static class SectionMatcher {
             return false;
         }
 
-        var set = Probes.GetOrAdd((section.Document.Directory, section.Name), static key => {
-            var text = SourceText.From($"root = true{Environment.NewLine}[{key.Section}]{Environment.NewLine}{ProbeKey} = 1{Environment.NewLine}");
-            var config = AnalyzerConfig.Parse(text, Path.Combine(key.Directory, EditorConfigDocument.FileName));
-            return AnalyzerConfigSet.Create(new[] { config });
-        });
+        var set = Probes.GetOrAdd(
+            (section.Document.Directory, section.Name),
+            static key => {
+                var text = SourceText.From(
+                    $"root = true{Environment.NewLine}[{key.Section}]{Environment.NewLine}{ProbeKey} = 1{Environment.NewLine}"
+                );
+                var config = AnalyzerConfig.Parse(text, Path.Combine(key.Directory, EditorConfigDocument.FileName));
+                return AnalyzerConfigSet.Create(new[] { config });
+            }
+        );
 
         return set.GetOptionsForSourcePath(Path.GetFullPath(sourcePath)).AnalyzerOptions.ContainsKey(ProbeKey);
     }
@@ -39,7 +44,10 @@ public static class SectionMatcher {
     /// The effective option map the compiler itself would produce for <paramref name="sourcePath"/>
     /// from this chain. Used to cross-check Skala's own resolution, never as its source.
     /// </summary>
-    public static IReadOnlyDictionary<string, string> CompilerView(IEnumerable<EditorConfigDocument> chain, string sourcePath) {
+    public static IReadOnlyDictionary<string, string> CompilerView(
+        IEnumerable<EditorConfigDocument> chain,
+        string sourcePath
+    ) {
         var configs = chain
             .Select(static document => AnalyzerConfig.Parse(SourceText.From(document.Text), document.Path))
             .ToArray();

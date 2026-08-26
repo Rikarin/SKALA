@@ -26,11 +26,12 @@ public sealed record SkalaDiagnostic(
     string? File = null,
     int Line = 0,
     string? Detail = null) {
-    public string Location => File is null
-        ? string.Empty
-        : Line > 0
-            ? $"{File}:{Line.ToString(System.Globalization.CultureInfo.InvariantCulture)}"
-            : File;
+    public string Location =>
+        File is null
+            ? string.Empty
+            : Line > 0
+                ? $"{File}:{Line.ToString(System.Globalization.CultureInfo.InvariantCulture)}"
+                : File;
 
     public override string ToString() {
         var location = Location;

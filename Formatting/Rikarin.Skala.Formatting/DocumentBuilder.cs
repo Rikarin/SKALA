@@ -77,7 +77,8 @@ public sealed class DocumentBuilder {
             source,
             AddString(value),
             multiline ? Document.Unbounded : TextWidth.Measure(value),
-            multiline ? FirstLineWidth(value) : TextWidth.Measure(value));
+            multiline ? FirstLineWidth(value) : TextWidth.Measure(value)
+        );
         _nodes[_pending[index]].Flags = (int)flags;
     }
 
@@ -92,12 +93,21 @@ public sealed class DocumentBuilder {
             source,
             AddString(value),
             multiline ? Document.Unbounded : TextWidth.Measure(value),
-            multiline ? FirstLineWidth(value) : TextWidth.Measure(value));
+            multiline ? FirstLineWidth(value) : TextWidth.Measure(value)
+        );
         _nodes[_pending[index]].Flags = (int)flags;
     }
 
     public void Space(SpaceKind kind) =>
-        Leaf(DocKind.Space, (int)kind, 0, default, 0, kind == SpaceKind.Forbidden ? 0 : 1, kind == SpaceKind.Forbidden ? 0 : 1);
+        Leaf(
+            DocKind.Space,
+            (int)kind,
+            0,
+            default,
+            0,
+            kind == SpaceKind.Forbidden ? 0 : 1,
+            kind == SpaceKind.Forbidden ? 0 : 1
+        );
 
     /// <summary>
     /// A line break. <paramref name="newLine"/> carries the source's own ending so that a file with
@@ -112,7 +122,8 @@ public sealed class DocumentBuilder {
             default,
             newLine is null ? 0 : AddString(newLine),
             kind == LineKind.Soft ? 1 : Document.Unbounded,
-            kind == LineKind.Soft ? 1 : 0);
+            kind == LineKind.Soft ? 1 : 0
+        );
 
     /// <summary>
     /// A break point: a gap the layout may or may not break at, owned by <paramref name="group"/>.
@@ -130,7 +141,8 @@ public sealed class DocumentBuilder {
             default,
             newLine is null ? 0 : AddString(newLine),
             flatSpace ? 1 : 0,
-            flatSpace ? 1 : 0);
+            flatSpace ? 1 : 0
+        );
         ref var node = ref _nodes[_pending[index]];
         node.Arg2 = group;
         node.Flags = flatSpace ? (int)LineFlags.FlatSpace : (int)LineFlags.None;
@@ -233,7 +245,8 @@ public sealed class DocumentBuilder {
             _groupCount,
             _flatWidth,
             _headWidth,
-            [.. _facts]);
+            [.. _facts]
+        );
     }
 
     void Open(DocKind kind, int arg0, int arg1) => _stack.Add(new Frame(kind, arg0, arg1, _pending.Count));

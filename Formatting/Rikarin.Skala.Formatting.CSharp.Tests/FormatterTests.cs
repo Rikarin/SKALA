@@ -37,8 +37,10 @@ public sealed class SpacingTests {
     [InlineData("class C { int M(int a) => ( int ) a ; }", "int M(int a) => (int)a;")]
     [InlineData("class C { void M(bool b) { if(b){} } }", "if (b) { }")]
     [InlineData("class C { int M(int a) => a<1?2:3; }", "int M(int a) => a < 1 ? 2 : 3;")]
-    [InlineData("class C { System.Collections.Generic.List<int> M() => new System.Collections.Generic.List < int > (); }",
-        "new System.Collections.Generic.List<int>();")]
+    [InlineData(
+        "class C { System.Collections.Generic.List<int> M() => new System.Collections.Generic.List < int > (); }",
+        "new System.Collections.Generic.List<int>();"
+    )]
     [InlineData("class C { public int X{get;set;} }", "public int X { get; set; }")]
     [InlineData("class C { void M() { for(var i=0;i<2;i++){} } }", "for (var i = 0; i < 2; i++) { }")]
     [InlineData("class C { int M(int[] xs) => xs [ 0 ] ; }", "int M(int[] xs) => xs[0];")]
@@ -53,12 +55,14 @@ public sealed class SpacingTests {
         // ⚠ disable_space_changes_before_trailing_comment = false, so hand-built trailing-comment
         // alignment IS collapsed. It is correct, it is what Rider does, and it is the change people
         // most often mistake for a bug on a first run (docs/plan/05 § "Spaces").
-        var formatted = Format.Text("""
+        var formatted = Format.Text(
+            """
             class C {
                 int _a;      // the first
                 int _bb;     // the second
             }
-            """);
+            """
+        );
 
         Assert.Contains("int _a; // the first", formatted, StringComparison.Ordinal);
         Assert.Contains("int _bb; // the second", formatted, StringComparison.Ordinal);
@@ -76,7 +80,8 @@ public sealed class IndentationTests {
     public void NestedLoops_StayFlush() {
         // indent_nested_for_stmt = false — a real transformation, and one of the few places the
         // formatter removes indentation the author wrote.
-        var formatted = Format.Text("""
+        var formatted = Format.Text(
+            """
             class C {
                 void M() {
                     for (var i = 0; i < 2; i++)
@@ -85,14 +90,20 @@ public sealed class IndentationTests {
                         }
                 }
             }
-            """);
+            """
+        );
 
-        Assert.Contains("        for (var i = 0; i < 2; i++)\n        for (var j = 0; j < 2; j++) {", formatted, StringComparison.Ordinal);
+        Assert.Contains(
+            "        for (var i = 0; i < 2; i++)\n        for (var j = 0; j < 2; j++) {",
+            formatted,
+            StringComparison.Ordinal
+        );
     }
 
     [Fact]
     public void ClosingDelimiter_TakesTheIndentOfTheLineThatOpenedIt() {
-        var formatted = Format.Text("""
+        var formatted = Format.Text(
+            """
             class C {
                 void M(int a, int b) {
                     M(
@@ -101,14 +112,16 @@ public sealed class IndentationTests {
                             );
                 }
             }
-            """);
+            """
+        );
 
         Assert.Contains("        M(\n            a,\n            b\n        );", formatted, StringComparison.Ordinal);
     }
 
     [Fact]
     public void ContinuationLines_TakeOneLevel_RegardlessOfChainDepth() {
-        var formatted = Format.Text("""
+        var formatted = Format.Text(
+            """
             class C {
                 int M(int a, int b) {
                     return a
@@ -116,14 +129,16 @@ public sealed class IndentationTests {
                         + a;
                 }
             }
-            """);
+            """
+        );
 
         Assert.Contains("        return a\n            + b\n            + a;", formatted, StringComparison.Ordinal);
     }
 
     [Fact]
     public void PreprocessorIf_GoesToColumnZero_AndRegionsIndentWithTheCode() {
-        var formatted = Format.Text("""
+        var formatted = Format.Text(
+            """
             class C {
                 void M() {
                     #if DEBUG
@@ -136,7 +151,8 @@ public sealed class IndentationTests {
                 }
                 #endregion
             }
-            """);
+            """
+        );
 
         // ⚠ DEBUG is not defined for `skala format` — there is no project to ask until milestone 5
         // — so the branch is disabled text and is frozen. What phase 1 owns here is the directives'
@@ -148,7 +164,8 @@ public sealed class IndentationTests {
 
     [Fact]
     public void SwitchLabels_IndentFromTheSwitch_AndStatementsFromTheLabel() {
-        var formatted = Format.Text("""
+        var formatted = Format.Text(
+            """
             class C {
                 void M(int a) {
                     switch (a) {
@@ -158,23 +175,30 @@ public sealed class IndentationTests {
                     }
                 }
             }
-            """);
+            """
+        );
 
-        Assert.Contains("        switch (a) {\n            case 1:\n                M(a);\n                break;\n        }", formatted, StringComparison.Ordinal);
+        Assert.Contains(
+            "        switch (a) {\n            case 1:\n                M(a);\n                break;\n        }",
+            formatted,
+            StringComparison.Ordinal
+        );
     }
 }
 
 public sealed class BraceTests {
     [Fact]
     public void OpenBrace_JoinsThePreviousLine() {
-        var formatted = Format.Text("""
+        var formatted = Format.Text(
+            """
             class C
             {
                 void M()
                 {
                 }
             }
-            """);
+            """
+        );
 
         Assert.Contains("class C {", formatted, StringComparison.Ordinal);
         Assert.Contains("void M() { }", formatted, StringComparison.Ordinal);
@@ -182,7 +206,8 @@ public sealed class BraceTests {
 
     [Fact]
     public void ElseCatchFinally_JoinTheClosingBrace() {
-        var formatted = Format.Text("""
+        var formatted = Format.Text(
+            """
             class C {
                 void M(bool b) {
                     try {
@@ -199,7 +224,8 @@ public sealed class BraceTests {
                     }
                 }
             }
-            """);
+            """
+        );
 
         Assert.Contains("} catch (System.Exception) { }", formatted, StringComparison.Ordinal);
         Assert.Contains("} finally { }", formatted, StringComparison.Ordinal);
@@ -209,7 +235,8 @@ public sealed class BraceTests {
     [Fact]
     public void ABraceIsNeverJoinedAcrossAComment() {
         // ⚠ Joining `// why` with the brace below it would put the brace inside the comment.
-        var formatted = Format.Text("""
+        var formatted = Format.Text(
+            """
             class C {
                 void M()
                 // why
@@ -217,7 +244,8 @@ public sealed class BraceTests {
                     M();
                 }
             }
-            """);
+            """
+        );
 
         Assert.Contains("// why\n", formatted, StringComparison.Ordinal);
         Assert.DoesNotContain("// why {", formatted, StringComparison.Ordinal);
@@ -258,11 +286,19 @@ public sealed class BlankLineTests {
 
     [Fact]
     public void AFileScopedNamespace_GetsOneBlankAfterIt() =>
-        Assert.Contains("namespace N;\n\nclass C", Format.Text("namespace N;\nclass C {\n}\n"), StringComparison.Ordinal);
+        Assert.Contains(
+            "namespace N;\n\nclass C",
+            Format.Text("namespace N;\nclass C {\n}\n"),
+            StringComparison.Ordinal
+        );
 
     [Fact]
     public void TheUsingList_GetsOneBlankAfterIt() =>
-        Assert.Contains("using System;\n\nclass C", Format.Text("using System;\nclass C {\n}\n"), StringComparison.Ordinal);
+        Assert.Contains(
+            "using System;\n\nclass C",
+            Format.Text("using System;\nclass C {\n}\n"),
+            StringComparison.Ordinal
+        );
 }
 
 public sealed class TriviaTests {
@@ -298,14 +334,22 @@ public sealed class TriviaTests {
             """;
 
         var formatted = Format.Text(source);
-        Assert.Contains("    var  matrix = new[,] {\n        { 1 , 0 },\n        { 0 , 1 }\n    };", formatted, StringComparison.Ordinal);
+        Assert.Contains(
+            "    var  matrix = new[,] {\n        { 1 , 0 },\n        { 0 , 1 }\n    };",
+            formatted,
+            StringComparison.Ordinal
+        );
         Assert.Contains("void M() { }", formatted, StringComparison.Ordinal);
     }
 
     [Fact]
     public void ARawStringLiteral_IsUntouched() {
         const string source = "class C {\n    const string A = \"\"\"\n        {  }\n          x\n        \"\"\";\n}\n";
-        Assert.Contains("\"\"\"\n        {  }\n          x\n        \"\"\"", Format.Text(source), StringComparison.Ordinal);
+        Assert.Contains(
+            "\"\"\"\n        {  }\n          x\n        \"\"\"",
+            Format.Text(source),
+            StringComparison.Ordinal
+        );
     }
 
     [Fact]
@@ -320,7 +364,10 @@ public sealed class TriviaTests {
             }
             """;
 
-        Assert.Equal("class C {\n    /// <summary>\n    /// Docs.\n    /// </summary>\n    void M() { }\n}\n", Format.Text(source));
+        Assert.Equal(
+            "class C {\n    /// <summary>\n    /// Docs.\n    /// </summary>\n    void M() { }\n}\n",
+            Format.Text(source)
+        );
     }
 }
 
@@ -396,11 +443,21 @@ public sealed class SafetyTests {
     public void ACrashArtefact_IsAReadyMadeRegressionTest() {
         var directory = Directory.CreateTempSubdirectory("skala-crash-test-");
         try {
-            var written = CrashArtifacts.Write(directory.FullName, "Thing.cs", "class A { }", "class B { }", Format.Options);
+            var written = CrashArtifacts.Write(
+                directory.FullName,
+                "Thing.cs",
+                "class A { }",
+                "class B { }",
+                Format.Options
+            );
             Assert.NotNull(written);
             Assert.Equal("class A { }", File.ReadAllText(Path.Combine(written, "input.cs")));
             Assert.Equal("class B { }", File.ReadAllText(Path.Combine(written, "output.cs")));
-            Assert.Contains("max_line_length = 120", File.ReadAllText(Path.Combine(written, "config.snapshot")), StringComparison.Ordinal);
+            Assert.Contains(
+                "max_line_length = 120",
+                File.ReadAllText(Path.Combine(written, "config.snapshot")),
+                StringComparison.Ordinal
+            );
         } finally {
             directory.Delete(recursive: true);
         }
@@ -429,7 +486,10 @@ public sealed class EditTests {
         const string source = "class C {\n    void M() {\n        M( );\n    }\n}\n";
         var result = Format.Run(source);
         var edit = Assert.Single(result.Edits);
-        Assert.Equal("M( )".IndexOf('(', StringComparison.Ordinal) + source.IndexOf("M( )", StringComparison.Ordinal) + 1, edit.Span.Start);
+        Assert.Equal(
+            "M( )".IndexOf('(', StringComparison.Ordinal) + source.IndexOf("M( )", StringComparison.Ordinal) + 1,
+            edit.Span.Start
+        );
         Assert.Equal(string.Empty, edit.NewText);
     }
 
@@ -456,7 +516,11 @@ public sealed class EditTests {
     public void CrlfInput_StaysCrlf() {
         // enforce_line_ending_style = false: mixed endings are preserved, not normalised.
         var formatted = Format.Text("class C {\r\n    void M( ) {\r\n    }\r\n}\r\n");
-        Assert.DoesNotContain("\n\n", formatted.Replace("\r\n", "\n", StringComparison.Ordinal).Replace("\n\n", "|", StringComparison.Ordinal), StringComparison.Ordinal);
+        Assert.DoesNotContain(
+            "\n\n",
+            formatted.Replace("\r\n", "\n", StringComparison.Ordinal).Replace("\n\n", "|", StringComparison.Ordinal),
+            StringComparison.Ordinal
+        );
         Assert.Contains("\r\n", formatted, StringComparison.Ordinal);
     }
 }
@@ -474,7 +538,8 @@ public sealed class BreakPositionTests {
     public void ABreakOnTheWrongSideOfABinaryOperator_IsRemoved() {
         // wrap_before_binary_opsign = true: the gap before the operator is the break point and the
         // gap after it is not, so one of these two survives and the other does not.
-        var formatted = Format.Text("""
+        var formatted = Format.Text(
+            """
             class C {
                 void M() {
                     var afterTheSign = first +
@@ -483,7 +548,8 @@ public sealed class BreakPositionTests {
                         + second;
                 }
             }
-            """);
+            """
+        );
 
         Assert.Contains("var afterTheSign = first + second;", formatted, StringComparison.Ordinal);
         Assert.Contains("var beforeTheSign = first\n            + second;", formatted, StringComparison.Ordinal);
@@ -491,7 +557,8 @@ public sealed class BreakPositionTests {
 
     [Fact]
     public void ABreakOnTheWrongSideOfATernaryOperator_IsRemoved() {
-        var formatted = Format.Text("""
+        var formatted = Format.Text(
+            """
             class C {
                 void M() {
                     var after = condition ?
@@ -499,7 +566,8 @@ public sealed class BreakPositionTests {
                         whenFalse;
                 }
             }
-            """);
+            """
+        );
 
         Assert.Contains("var after = condition ? whenTrue : whenFalse;", formatted, StringComparison.Ordinal);
     }
@@ -508,14 +576,16 @@ public sealed class BreakPositionTests {
     public void AnInvocationBrokenBetweenItsArguments_IsChoppedAtEveryPoint() {
         // ⚠ chop_if_long is "chop if long OR multiline": one break between two arguments puts every
         // argument on its own line and the closing parenthesis on one of its own.
-        var formatted = Format.Text("""
+        var formatted = Format.Text(
+            """
             class C {
                 void M() {
                     Foo(first,
                         second);
                 }
             }
-            """);
+            """
+        );
 
         Assert.Contains("Foo(\n            first,\n            second\n        );", formatted, StringComparison.Ordinal);
     }
@@ -525,14 +595,16 @@ public sealed class BreakPositionTests {
         // keep_existing_invocation_parens_arrangement = false, and there is no break between items
         // for keep_user_linebreaks to protect. The asymmetry between this and the test above is the
         // whole content of docs/plan/05's four-way table.
-        var formatted = Format.Text("""
+        var formatted = Format.Text(
+            """
             class C {
                 void M() {
                     Foo(
                         first);
                 }
             }
-            """);
+            """
+        );
 
         Assert.Contains("Foo(first);", formatted, StringComparison.Ordinal);
     }
@@ -541,12 +613,14 @@ public sealed class BreakPositionTests {
     public void ADeclarationBrokenOnlyAtItsParenthesis_IsKept() {
         // …and the same shape on a declaration is kept, because
         // keep_existing_declaration_parens_arrangement is true where the invocation one is false.
-        var formatted = Format.Text("""
+        var formatted = Format.Text(
+            """
             class C {
                 void M(
                     int first) { }
             }
-            """);
+            """
+        );
 
         Assert.Contains("void M(\n        int first\n    ) { }", formatted, StringComparison.Ordinal);
     }
@@ -559,22 +633,30 @@ public sealed class BreakPositionTests {
 
     [Fact]
     public void ASwitchExpression_ChopsEveryArm_Always() {
-        var formatted = Format.Text("""
+        var formatted = Format.Text(
+            """
             class C {
                 int M(int v) => v switch { 1 => 10, _ => 0 };
             }
-            """);
+            """
+        );
 
-        Assert.Contains("v switch {\n            1 => 10,\n            _ => 0\n        }", formatted, StringComparison.Ordinal);
+        Assert.Contains(
+            "v switch {\n            1 => 10,\n            _ => 0\n        }",
+            formatted,
+            StringComparison.Ordinal
+        );
     }
 
     [Fact]
     public void AnAttributeSection_NeverSharesALineWithWhatFollowsIt() {
-        var formatted = Format.Text("""
+        var formatted = Format.Text(
+            """
             class C {
                 [First] [Second] void M() { }
             }
-            """);
+            """
+        );
 
         Assert.Contains("[First]\n    [Second]\n    void M() { }", formatted, StringComparison.Ordinal);
     }
@@ -582,13 +664,15 @@ public sealed class BreakPositionTests {
     [Fact]
     public void AShortExpressionBodiedMember_IsRejoined_AndALongOneIsNot() {
         // place_expr_property_on_single_line = if_owner_is_single_line, both halves of it.
-        var formatted = Format.Text("""
+        var formatted = Format.Text(
+            """
             class C {
                 int Short =>
                     1;
                 int TheLongOne => Helper.Compute(firstArgumentName, secondArgumentName, thirdArgumentName, fourthArgumentName, fifth);
             }
-            """);
+            """
+        );
 
         Assert.Contains("int Short => 1;", formatted, StringComparison.Ordinal);
         Assert.Contains("int TheLongOne =>\n        Helper.Compute(", formatted, StringComparison.Ordinal);
@@ -598,7 +682,8 @@ public sealed class BreakPositionTests {
     public void ACallWhoseOnlyArgumentIsALambda_KeepsItsOpeningParenthesis_ButNotItsClosingOne() {
         // ⚠ place_single_method_argument_lambda_on_same_line governs the opening parenthesis only,
         // which is not what the name suggests and is what the oracle does.
-        var formatted = Format.Text("""
+        var formatted = Format.Text(
+            """
             class C {
                 void M() {
                     Run(() => {
@@ -607,7 +692,8 @@ public sealed class BreakPositionTests {
                     });
                 }
             }
-            """);
+            """
+        );
 
         Assert.Contains("Run(() => {", formatted, StringComparison.Ordinal);
 

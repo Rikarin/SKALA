@@ -40,10 +40,14 @@ public sealed class OptionCoverageTests {
         var implemented = PhaseOneOptions.Implemented.ToHashSet();
         var claimed = OptionRegistry.All.Where(static info => info.Tier == OptionTier.A).Select(static info => info.Id).ToHashSet();
 
-        var overclaimed = claimed.Except(implemented).Select(static id => OptionRegistry.Get(id).Key).Order(StringComparer.Ordinal).ToArray();
+        var overclaimed = claimed.Except(implemented).Select(static id => OptionRegistry.Get(id).Key).Order(
+            StringComparer.Ordinal
+        ).ToArray();
         Assert.True(overclaimed.Length == 0, "Tier A without an implementation: " + string.Join(", ", overclaimed));
 
-        var underclaimed = implemented.Except(claimed).Select(static id => OptionRegistry.Get(id).Key).Order(StringComparer.Ordinal).ToArray();
+        var underclaimed = implemented.Except(claimed).Select(static id => OptionRegistry.Get(id).Key).Order(
+            StringComparer.Ordinal
+        ).ToArray();
         Assert.True(underclaimed.Length == 0, "Implemented but not Tier A: " + string.Join(", ", underclaimed));
     }
 
@@ -52,7 +56,8 @@ public sealed class OptionCoverageTests {
         foreach (var info in OptionRegistry.All.Where(static i => i.Tier == OptionTier.B)) {
             Assert.True(
                 Divergences.Register.Any(entry => entry.Options.Contains(info.Key, StringComparer.Ordinal)),
-                $"{info.Key} is Tier B, which means 'implemented with a documented divergence'. docs/divergences.md does not mention it.");
+                $"{info.Key} is Tier B, which means 'implemented with a documented divergence'. docs/divergences.md does not mention it."
+            );
         }
     }
 
@@ -67,7 +72,8 @@ public sealed class OptionCoverageTests {
         Assert.True(files.Count > 0, $"{key}: `oracle` is '{info.Oracle}' and no corpus file matches it.");
         Assert.True(
             files.Any(static file => file.HasFixture),
-            $"{key}: no committed .expected.cs beside its corpus file. Tier A rests on fixture evidence and nothing else; run ./build.sh Oracle.");
+            $"{key}: no committed .expected.cs beside its corpus file. Tier A rests on fixture evidence and nothing else; run ./build.sh Oracle."
+        );
     }
 
     [Theory]
@@ -100,7 +106,8 @@ public sealed class OptionCoverageTests {
         Assert.Fail(
             $"{key}: setting it to any of [{string.Join(", ", values)}] produces byte-identical output on "
             + $"[{string.Join(", ", files.Select(static f => f.ToString()))}]. An option with no observable effect is "
-            + "either unimplemented or wrongly wired; both are bugs.");
+            + "either unimplemented or wrongly wired; both are bugs."
+        );
     }
 
     /// <summary>
@@ -123,7 +130,12 @@ public sealed class OptionCoverageTests {
                 break;
 
             case OptionValueKind.Int:
-                var current = int.TryParse(info.Default, NumberStyles.Integer, CultureInfo.InvariantCulture, out var number) ? number : 0;
+                var current = int.TryParse(
+                    info.Default,
+                    NumberStyles.Integer,
+                    CultureInfo.InvariantCulture,
+                    out var number
+                ) ? number : 0;
                 yield return current.ToString(CultureInfo.InvariantCulture);
                 yield return (current == 0 ? 3 : current == 1 ? 2 : 0).ToString(CultureInfo.InvariantCulture);
                 break;

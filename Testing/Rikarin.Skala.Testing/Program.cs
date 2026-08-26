@@ -43,7 +43,8 @@ switch (args[0]) {
 static int Regenerate(string[] sets) {
     if (OracleRunner.FindExecutableOrNull() is null) {
         Console.Error.WriteLine(
-            "jb is not installed. `dotnet tool install -g JetBrains.ReSharper.GlobalTools --version 2025.2.6`.");
+            "jb is not installed. `dotnet tool install -g JetBrains.ReSharper.GlobalTools --version 2025.2.6`."
+        );
         return 2;
     }
 
@@ -73,7 +74,9 @@ static int Regenerate(string[] sets) {
                 }
             }
 
-            Console.WriteLine($"  {set}: {Math.Min(start + batch, files.Count).ToString(CultureInfo.InvariantCulture)}/{files.Count.ToString(CultureInfo.InvariantCulture)}");
+            Console.WriteLine(
+                $"  {set}: {Math.Min(start + batch, files.Count).ToString(CultureInfo.InvariantCulture)}/{files.Count.ToString(CultureInfo.InvariantCulture)}"
+            );
         }
     }
 
@@ -102,7 +105,9 @@ static int RegenerateVariants(OracleRunner runner, string editorConfig, OracleHe
                 }
             }
 
-            Console.WriteLine($"  {set} [{group.Key.Name}]: {files.Length.ToString(CultureInfo.InvariantCulture)} files");
+            Console.WriteLine(
+                $"  {set} [{group.Key.Name}]: {files.Length.ToString(CultureInfo.InvariantCulture)} files"
+            );
         }
     }
 
@@ -126,9 +131,14 @@ static int Report(string[] sets) {
         Console.WriteLine($"── {set} ──────────────────────────────────────────────────────────");
         Console.WriteLine(Fidelity.Compare(results).Render());
 
-        foreach (var origin in results.GroupBy(static r => r.File.Split('/')[1], StringComparer.Ordinal).OrderBy(static g => g.Key, StringComparer.Ordinal)) {
+        foreach (var origin in results.GroupBy(static r => r.File.Split('/')[1], StringComparer.Ordinal).OrderBy(
+            static g => g.Key,
+            StringComparer.Ordinal
+        )) {
             var report = Fidelity.Compare(origin);
-            Console.WriteLine($"  {origin.Key,-14} line {report.LineFidelity * 100:F2}%  file {report.FileFidelity * 100:F2}%  ({report.Files} files)");
+            Console.WriteLine(
+                $"  {origin.Key,-14} line {report.LineFidelity * 100:F2}%  file {report.FileFidelity * 100:F2}%  ({report.Files} files)"
+            );
         }
 
         Console.WriteLine();
@@ -147,7 +157,10 @@ static int Dump(string set, string directory) {
         var text = CSharpFormatter.Read(file.Path);
         var result = CSharpFormatter.Format(file.Path, text, Resolve(file.Path));
         File.WriteAllText(Path.Combine(directory, name + ".skala"), TextNormalisation.Normalise(result.Formatted));
-        File.WriteAllText(Path.Combine(directory, name + ".oracle"), TextNormalisation.Normalise(OracleFixture.Read(file)));
+        File.WriteAllText(
+            Path.Combine(directory, name + ".oracle"),
+            TextNormalisation.Normalise(OracleFixture.Read(file))
+        );
     }
 
     return 0;

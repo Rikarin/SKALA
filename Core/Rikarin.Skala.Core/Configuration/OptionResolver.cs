@@ -22,9 +22,10 @@ public sealed record ResolvedOption(
     /// <summary>True when nothing in the chain set the option and the registry default is in force.</summary>
     public bool IsDefault => Origin is null;
 
-    public string SourceText => Origin is null
-        ? "(default)"
-        : $"{Origin.File}:{Origin.Line.ToString(System.Globalization.CultureInfo.InvariantCulture)}";
+    public string SourceText =>
+        Origin is null
+            ? "(default)"
+            : $"{Origin.File}:{Origin.Line.ToString(System.Globalization.CultureInfo.InvariantCulture)}";
 }
 
 /// <summary>A key in the configuration that the registry does not know.</summary>
@@ -72,10 +73,15 @@ public sealed record ResolutionResult(
 public static class OptionResolver {
     static readonly string[] SpecificityPrefixes = ["resharper_csharp_", "resharper_xmldoc_", "resharper_", "csharp_", "xmldoc_", "dotnet_"];
 
-    public static ResolutionResult Resolve(string sourcePath, IReadOnlyList<KeyValuePair<string, string>>? overrides = null) =>
-        Resolve(EditorConfigChain.For(sourcePath), overrides);
+    public static ResolutionResult Resolve(
+        string sourcePath,
+        IReadOnlyList<KeyValuePair<string, string>>? overrides = null
+    ) => Resolve(EditorConfigChain.For(sourcePath), overrides);
 
-    public static ResolutionResult Resolve(EditorConfigChain chain, IReadOnlyList<KeyValuePair<string, string>>? overrides = null) {
+    public static ResolutionResult Resolve(
+        EditorConfigChain chain,
+        IReadOnlyList<KeyValuePair<string, string>>? overrides = null
+    ) {
         var winners = new OptionOrigin?[OptionRegistry.Count];
         var candidates = new List<OptionOrigin>?[OptionRegistry.Count];
         var unknown = ImmutableArray.CreateBuilder<UnknownKey>();
@@ -121,7 +127,10 @@ public static class OptionResolver {
                     continue;
                 }
 
-                var document = EditorConfigDocument.FromText("(command line)", $"[*]{Environment.NewLine}{key} = {value}{Environment.NewLine}");
+                var document = EditorConfigDocument.FromText(
+                    "(command line)",
+                    $"[*]{Environment.NewLine}{key} = {value}{Environment.NewLine}"
+                );
                 var assignment = document.Sections[1].Assignments[0];
                 winners[(int)id] = new OptionOrigin(assignment, -1);
                 (candidates[(int)id] ??= []).Add(winners[(int)id]!);
@@ -134,7 +143,9 @@ public static class OptionResolver {
             var info = OptionRegistry.Get(id);
             var origin = winners[i];
             if (origin is not null && !builder.TrySet(id, origin.Value, out var error)) {
-                errors.Add($"{origin.File}:{origin.Line.ToString(System.Globalization.CultureInfo.InvariantCulture)}: {origin.Spelling} = {origin.Value}: {error}");
+                errors.Add(
+                    $"{origin.File}:{origin.Line.ToString(System.Globalization.CultureInfo.InvariantCulture)}: {origin.Spelling} = {origin.Value}: {error}"
+                );
                 origin = null;
             }
 
@@ -142,7 +153,14 @@ public static class OptionResolver {
             resolved.Add(new ResolvedOption(id, value, origin, [.. candidates[i] ?? []]));
         }
 
-        return new ResolutionResult(chain.SourcePath, chain, builder.Build(), resolved.MoveToImmutable(), unknown.ToImmutable(), errors.ToImmutable());
+        return new ResolutionResult(
+            chain.SourcePath,
+            chain,
+            builder.Build(),
+            resolved.MoveToImmutable(),
+            unknown.ToImmutable(),
+            errors.ToImmutable()
+        );
     }
 
     /// <summary>Lower is more specific. docs/plan/03 § "Precedence" step 3.</summary>

@@ -23,7 +23,8 @@ public sealed class OptionRegistryTests {
             foreach (var spelling in info.Aliases.Prepend(info.Key)) {
                 Assert.True(
                     seen.TryAdd(spelling, info.Key),
-                    $"'{spelling}' names both '{(seen.TryGetValue(spelling, out var other) ? other : "?")}' and '{info.Key}'");
+                    $"'{spelling}' names both '{(seen.TryGetValue(spelling, out var other) ? other : "?")}' and '{info.Key}'"
+                );
 
                 Assert.True(OptionRegistry.TryResolve(spelling, out var id));
                 Assert.Equal(info.Id, id);
@@ -93,10 +94,12 @@ public sealed class OptionRegistryTests {
         var options = FormattingOptions.Defaults;
         Assert.Equal(
             options.GetRaw(OptionId.ResharperCsharpWrapArgumentsStyle),
-            (int)options.ReSharper.CSharp.WrapArgumentsStyle);
+            (int)options.ReSharper.CSharp.WrapArgumentsStyle
+        );
         Assert.Equal(
             options.GetInt(OptionId.ResharperCsharpMaxLineLength),
-            options.ReSharper.CSharp.MaxLineLength);
+            options.ReSharper.CSharp.MaxLineLength
+        );
     }
 
     [Fact]
@@ -143,7 +146,8 @@ public sealed class OptionRegistryTests {
         foreach (var info in OptionRegistry.All.Where(static i => i.Tier is OptionTier.A or OptionTier.B)) {
             Assert.True(
                 info.Oracle is { Length: > 0 },
-                $"{info.Key} claims Tier {info.Tier} with no `oracle` fixture glob. A tier claim is evidence, not an intention.");
+                $"{info.Key} claims Tier {info.Tier} with no `oracle` fixture glob. A tier claim is evidence, not an intention."
+            );
 
             Assert.NotEqual(OptionDefaultSource.ReSharperDocs, info.DefaultSource);
         }

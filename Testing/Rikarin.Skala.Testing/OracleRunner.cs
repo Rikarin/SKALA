@@ -50,7 +50,8 @@ public sealed class OracleRunner {
         FindExecutableOrNull()
         ?? throw new InvalidOperationException(
             "jb (JetBrains.ReSharper.GlobalTools) is not installed. `dotnet tool install -g JetBrains.ReSharper.GlobalTools --version 2025.2.6`. "
-            + "It is a developer-machine and nightly dependency only; the day-to-day test run reads the committed fixtures (ADR-011).");
+            + "It is a developer-machine and nightly dependency only; the day-to-day test run reads the committed fixtures (ADR-011)."
+        );
 
     static IEnumerable<string> Candidates() {
         var home = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
@@ -71,7 +72,8 @@ public sealed class OracleRunner {
     public IReadOnlyDictionary<string, string> Format(
         IReadOnlyList<CorpusFile> files,
         string editorConfigPath,
-        IReadOnlyList<KeyValuePair<string, string>>? overrides = null) {
+        IReadOnlyList<KeyValuePair<string, string>>? overrides = null
+    ) {
         var scratch = Directory.CreateTempSubdirectory("skala-oracle-");
         try {
             File.Copy(editorConfigPath, Path.Combine(scratch.FullName, ".editorconfig"));
@@ -98,8 +100,15 @@ public sealed class OracleRunner {
                 names[name] = files[i].Path;
             }
 
-            Run(scratch.FullName, "cleanupcode", "--no-build", "--profile=" + Profile,
-                "--settings=" + settings, "--verbosity=WARN", Path.Combine(scratch.FullName, "Oracle.sln"));
+            Run(
+                scratch.FullName,
+                "cleanupcode",
+                "--no-build",
+                "--profile=" + Profile,
+                "--settings=" + settings,
+                "--verbosity=WARN",
+                Path.Combine(scratch.FullName, "Oracle.sln")
+            );
 
             var results = new Dictionary<string, string>(StringComparer.Ordinal);
             foreach (var (name, original) in names) {

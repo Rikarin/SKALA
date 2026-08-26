@@ -37,7 +37,8 @@ public static class TokenEquivalence {
             return new EquivalenceFailure(
                 count,
                 count < left.Count ? left[count] : "(end of file)",
-                count < right.Count ? right[count] : "(end of file)");
+                count < right.Count ? right[count] : "(end of file)"
+            );
         }
 
         return null;

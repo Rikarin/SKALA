@@ -47,6 +47,7 @@ public sealed partial class CSharpDocumentBuilder {
 
     /// <summary>Where <see cref="EmitLeadingGap"/> already wrote a gap, so it is not written twice.</summary>
     int _gapEmittedAt = -1;
+
     int _verbatimUntil = -1;
     int _continuousDepth;
 
@@ -179,7 +180,12 @@ public sealed partial class CSharpDocumentBuilder {
             return;
         }
 
-        EmitGap(_cursor, piece.Kind, piece.Span.Start, piece.Kind == PieceKind.Token ? _tokens[piece.TokenIndex] : default);
+        EmitGap(
+            _cursor,
+            piece.Kind,
+            piece.Span.Start,
+            piece.Kind == PieceKind.Token ? _tokens[piece.TokenIndex] : default
+        );
         _gapEmittedAt = piece.Span.Start;
     }
 
@@ -246,7 +252,7 @@ public sealed partial class CSharpDocumentBuilder {
         // member access inside it. Testing only for a member access finds the wrong node and the
         // chain never spends its level.
         node is InvocationExpressionSyntax { Expression: MemberAccessExpressionSyntax or MemberBindingExpressionSyntax }
-            or MemberAccessExpressionSyntax or ConditionalAccessExpressionSyntax
+        or MemberAccessExpressionSyntax or ConditionalAccessExpressionSyntax
         && node.Parent is not (InvocationExpressionSyntax or MemberAccessExpressionSyntax
             or ElementAccessExpressionSyntax or ConditionalAccessExpressionSyntax
             or MemberBindingExpressionSyntax or PostfixUnaryExpressionSyntax);
@@ -265,10 +271,10 @@ public sealed partial class CSharpDocumentBuilder {
     /// </remarks>
     static bool OwnsAContinuationFrame(SyntaxNode node) =>
         node is StatementSyntax or MemberDeclarationSyntax or AccessorDeclarationSyntax
-            or AnonymousFunctionExpressionSyntax or SwitchExpressionArmSyntax or ArgumentSyntax
-            or AttributeArgumentSyntax or ParameterSyntax or AnonymousObjectMemberDeclaratorSyntax
-            or VariableDeclaratorSyntax or SubpatternSyntax or CollectionElementSyntax
-            or SwitchLabelSyntax or BaseTypeSyntax or TypeParameterConstraintClauseSyntax;
+        or AnonymousFunctionExpressionSyntax or SwitchExpressionArmSyntax or ArgumentSyntax
+        or AttributeArgumentSyntax or ParameterSyntax or AnonymousObjectMemberDeclaratorSyntax
+        or VariableDeclaratorSyntax or SubpatternSyntax or CollectionElementSyntax
+        or SwitchLabelSyntax or BaseTypeSyntax or TypeParameterConstraintClauseSyntax;
 
     void Dispatch(SyntaxNode node) {
         if (_verbatimMembers.Contains(node.SpanStart) && node is MemberDeclarationSyntax) {

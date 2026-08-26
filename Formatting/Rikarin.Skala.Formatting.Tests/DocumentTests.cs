@@ -64,7 +64,8 @@ public sealed class DocumentBuilderTests {
         var document = builder.Build();
         Assert.Equal(
             "a\n    b\n        c",
-            LayoutWriter.Write(document, 120, "    ", "\n").Text);
+            LayoutWriter.Write(document, 120, "    ", "\n").Text
+        );
     }
 }
 
@@ -164,10 +165,13 @@ public sealed class EditEmitterTests {
     public void Emit_ProducesNothing_WhenTheOutputMatchesTheInput() {
         // ⚠ The property that makes a first run on a 1.35 M-line tree reviewable.
         const string input = "a b";
-        var layout = new Layout("a b", [
-            new AnchorPoint(new SourceSpan(0, 1), 0, 1, 0),
-            new AnchorPoint(new SourceSpan(2, 1), 2, 3, 1)
-        ]);
+        var layout = new Layout(
+            "a b",
+            [
+                new AnchorPoint(new SourceSpan(0, 1), 0, 1, 0),
+                new AnchorPoint(new SourceSpan(2, 1), 2, 3, 1)
+            ]
+        );
 
         Assert.Empty(EditEmitter.Emit(input, layout));
     }
@@ -175,10 +179,13 @@ public sealed class EditEmitterTests {
     [Fact]
     public void Emit_SpansOnlyTheGapThatDiffers() {
         const string input = "a    b";
-        var layout = new Layout("a b", [
-            new AnchorPoint(new SourceSpan(0, 1), 0, 1, 0),
-            new AnchorPoint(new SourceSpan(5, 1), 2, 3, 1)
-        ]);
+        var layout = new Layout(
+            "a b",
+            [
+                new AnchorPoint(new SourceSpan(0, 1), 0, 1, 0),
+                new AnchorPoint(new SourceSpan(5, 1), 2, 3, 1)
+            ]
+        );
 
         var edit = Assert.Single(EditEmitter.Emit(input, layout));
         Assert.Equal(new SourceSpan(2, 3), edit.Span);

@@ -66,7 +66,8 @@ public sealed class PropertyTests {
         Assert.True(
             second.Edits.IsEmpty,
             $"{file} is not idempotent; the second pass still wants {second.Edits.Length} edit(s): "
-            + string.Join(", ", second.Edits.Take(3)));
+            + string.Join(", ", second.Edits.Take(3))
+        );
     }
 
     [Theory]
@@ -123,7 +124,8 @@ public sealed class PropertyTests {
         Assert.All(restricted, edit => Assert.Contains(edit, result.Edits));
         Assert.Equal(
             result.Edits.Count(edit => edit.Span.IntersectsWith(range)),
-            restricted.Count);
+            restricted.Count
+        );
     }
 
     [Theory]

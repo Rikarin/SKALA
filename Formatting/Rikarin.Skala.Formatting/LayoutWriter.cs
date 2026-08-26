@@ -71,14 +71,21 @@ public sealed class LayoutWriter {
     /// <param name="continuousMultiplier">
     /// <c>continuous_indent_multiplier</c>: how many indent units one continuation level is worth.
     /// </param>
-    public static Layout Write(Document document, int width, string indentUnit, string defaultNewLine, int continuousMultiplier = 1) {
+    public static Layout Write(
+        Document document,
+        int width,
+        string indentUnit,
+        string defaultNewLine,
+        int continuousMultiplier = 1
+    ) {
         var writer = new LayoutWriter(document, width, indentUnit, defaultNewLine, continuousMultiplier);
         writer.Walk();
         return new Layout(
             writer._output.ToString(),
             writer._anchors,
             writer._fitter.Modes,
-            writer._fitter.OwnerUnresolved);
+            writer._fitter.OwnerUnresolved
+        );
     }
 
     void Walk() {
@@ -182,12 +189,14 @@ public sealed class LayoutWriter {
         // }               ← the `if`'s level, not the `&amp;&amp; second` line's
         // </code>
         var outer = Effective();
-        _scopes.Add(kind switch {
-            IndentKind.Block => new Scope(true, outer + 1, _line, outer),
-            IndentKind.Continuous => new Scope(false, _continuousMultiplier, _line, outer),
-            IndentKind.Outdent => new Scope(true, Math.Max(0, outer - 1), _line, outer),
-            _ => new Scope(false, 0, int.MaxValue, outer)
-        });
+        _scopes.Add(
+            kind switch {
+                IndentKind.Block => new Scope(true, outer + 1, _line, outer),
+                IndentKind.Continuous => new Scope(false, _continuousMultiplier, _line, outer),
+                IndentKind.Outdent => new Scope(true, Math.Max(0, outer - 1), _line, outer),
+                _ => new Scope(false, 0, int.MaxValue, outer)
+            }
+        );
     }
 
     /// <summary>

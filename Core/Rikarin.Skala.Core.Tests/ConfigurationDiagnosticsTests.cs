@@ -8,7 +8,10 @@ public sealed class ConfigurationDiagnosticsTests {
     static ImmutableArray<SkalaDiagnostic> AnalyzeTemplate() {
         var document = EditorConfigDocument.Load(RepositoryPaths.Template);
         var probe = Path.Combine(RepositoryPaths.Root, "Probe.cs");
-        return ConfigurationAnalyzer.Analyze(OptionResolver.Resolve(EditorConfigChain.Of(probe, document)), RepositoryPaths.Root);
+        return ConfigurationAnalyzer.Analyze(
+            OptionResolver.Resolve(EditorConfigChain.Of(probe, document)),
+            RepositoryPaths.Root
+        );
     }
 
     [Fact]
@@ -38,20 +41,28 @@ public sealed class ConfigurationDiagnosticsTests {
 
     [Fact]
     public void SK9001_IsInfo_AndSuggestsANearbyKey() {
-        var document = EditorConfigDocument.FromText("/repo/.editorconfig", """
+        var document = EditorConfigDocument.FromText(
+            "/repo/.editorconfig",
+            """
             root = true
             [*]
             resharper_csharp_wrap_argument_style = chop_if_long
-            """);
+            """
+        );
 
         var diagnostic = Assert.Single(
             ConfigurationAnalyzer.Analyze(OptionResolver.Resolve(EditorConfigChain.Of("/repo/File.cs", document))),
-            d => d.Id == ConfigDiagnosticIds.UnknownKey);
+            d => d.Id == ConfigDiagnosticIds.UnknownKey
+        );
 
         // ⚠ Info, not warning: the export contains ~2 000 keys Skala will never implement, and a
         // tool that emits two thousand warnings on first run gets uninstalled on first run.
         Assert.Equal(SkalaSeverity.Info, diagnostic.Severity);
-        Assert.Contains("did you mean 'resharper_csharp_wrap_arguments_style'", diagnostic.Message, StringComparison.Ordinal);
+        Assert.Contains(
+            "did you mean 'resharper_csharp_wrap_arguments_style'",
+            diagnostic.Message,
+            StringComparison.Ordinal
+        );
     }
 
     [Fact]
@@ -59,12 +70,15 @@ public sealed class ConfigurationDiagnosticsTests {
         // 3 021 inspection severities, 253 diagnostic severities and 215 naming keys are not
         // unknown options; they are Milestone 5's and Roslyn's, respectively.
         var document = EditorConfigDocument.Load(RepositoryPaths.Template);
-        var resolution = OptionResolver.Resolve(EditorConfigChain.Of(Path.Combine(RepositoryPaths.Root, "Probe.cs"), document));
+        var resolution = OptionResolver.Resolve(
+            EditorConfigChain.Of(Path.Combine(RepositoryPaths.Root, "Probe.cs"), document)
+        );
 
         Assert.Contains(resolution.Unknown, key => key.Namespace == KeyNamespace.InspectionSeverity);
         Assert.DoesNotContain(
             ConfigurationAnalyzer.Analyze(resolution),
-            d => d.Id == ConfigDiagnosticIds.UnknownKey && d.Message.Contains("_highlighting", StringComparison.Ordinal));
+            d => d.Id == ConfigDiagnosticIds.UnknownKey && d.Message.Contains("_highlighting", StringComparison.Ordinal)
+        );
     }
 
     [Fact]
@@ -77,7 +91,8 @@ public sealed class ConfigurationDiagnosticsTests {
 
         var diagnostic = Assert.Single(
             ConfigurationAnalyzer.Analyze(OptionResolver.Resolve(source), repository),
-            d => d.Id == ConfigDiagnosticIds.InheritedFromAbove);
+            d => d.Id == ConfigDiagnosticIds.InheritedFromAbove
+        );
 
         Assert.Equal(SkalaSeverity.Info, diagnostic.Severity);
         Assert.Contains("resharper_csharp_max_line_length", diagnostic.Detail!, StringComparison.Ordinal);
@@ -85,13 +100,16 @@ public sealed class ConfigurationDiagnosticsTests {
 
     [Fact]
     public void SK9003_RejectsAStyleKeyInTheToolConfiguration() {
-        var config = ToolConfiguration.FromText("/repo/skala.jsonc", """
+        var config = ToolConfiguration.FromText(
+            "/repo/skala.jsonc",
+            """
             {
               // where to look
               "include": ["**/*.cs"],
               "resharper_csharp_max_line_length": 120
             }
-            """);
+            """
+        );
 
         var diagnostic = Assert.Single(config.Diagnostics, d => d.Id == ConfigDiagnosticIds.StyleKeyInToolConfig);
         Assert.Equal(SkalaSeverity.Error, diagnostic.Severity);
@@ -100,16 +118,20 @@ public sealed class ConfigurationDiagnosticsTests {
 
     [Fact]
     public void SK9004_ReportsTwoEquallySpecificSpellingsThatDisagree() {
-        var document = EditorConfigDocument.FromText("/repo/.editorconfig", """
+        var document = EditorConfigDocument.FromText(
+            "/repo/.editorconfig",
+            """
             root = true
             [*]
             csharp_space_after_attribute_colon = true
             csharp_space_after_colon = false
-            """);
+            """
+        );
 
         var diagnostic = Assert.Single(
             ConfigurationAnalyzer.Analyze(OptionResolver.Resolve(EditorConfigChain.Of("/repo/File.cs", document))),
-            d => d.Id == ConfigDiagnosticIds.DuplicateAlias);
+            d => d.Id == ConfigDiagnosticIds.DuplicateAlias
+        );
 
         Assert.Equal(SkalaSeverity.Warning, diagnostic.Severity);
         Assert.Contains("equally specific", diagnostic.Message, StringComparison.Ordinal);
@@ -119,15 +141,19 @@ public sealed class ConfigurationDiagnosticsTests {
     public void SK9006_FiresWhenIndentAutodetectionIsSwitchedBackOn() {
         // docs/plan/16 § Q1: with autodetection on, the IDE formats against a detected indent and
         // the oracle against the configured one, and Skala cannot match both.
-        var document = EditorConfigDocument.FromText("/repo/.editorconfig", """
+        var document = EditorConfigDocument.FromText(
+            "/repo/.editorconfig",
+            """
             root = true
             [*]
             resharper_autodetect_indent_settings = true
-            """);
+            """
+        );
 
         var diagnostic = Assert.Single(
             ConfigurationAnalyzer.Analyze(OptionResolver.Resolve(EditorConfigChain.Of("/repo/File.cs", document))),
-            d => d.Id == ConfigDiagnosticIds.UnhonourableSetting);
+            d => d.Id == ConfigDiagnosticIds.UnhonourableSetting
+        );
 
         Assert.Equal(SkalaSeverity.Warning, diagnostic.Severity);
     }

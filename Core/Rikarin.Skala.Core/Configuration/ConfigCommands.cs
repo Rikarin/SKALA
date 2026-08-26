@@ -29,7 +29,12 @@ public static class ConfigCommands {
     /// A single <c>.editorconfig</c> to resolve against instead of the chain above
     /// <paramref name="sourcePath"/>. This is how the export is explained before it is installed.
     /// </param>
-    public static CommandResult Explain(string sourcePath, string? repositoryRoot = null, bool configuredOnly = false, string? configPath = null) {
+    public static CommandResult Explain(
+        string sourcePath,
+        string? repositoryRoot = null,
+        bool configuredOnly = false,
+        string? configPath = null
+    ) {
         var resolution = configPath is null
             ? OptionResolver.Resolve(sourcePath)
             : ResolveStandalone(configPath, sourcePath);
@@ -50,7 +55,10 @@ public static class ConfigCommands {
         output.AppendLine();
         var rows = (configuredOnly ? resolution.Configured : resolution.Resolved).ToArray();
         var keyWidth = rows.Length == 0 ? 3 : rows.Max(static option => option.Info.Key.Length);
-        var valueWidth = Math.Min(28, rows.Length == 0 ? 5 : Math.Max(5, rows.Max(static option => option.Value.Length)));
+        var valueWidth = Math.Min(
+            28,
+            rows.Length == 0 ? 5 : Math.Max(5, rows.Max(static option => option.Value.Length))
+        );
 
         output.Append("option".PadRight(keyWidth))
             .Append("  ")
@@ -109,27 +117,35 @@ public static class ConfigCommands {
             output.Append("  ")
                 .Append(group.Key.ToString().PadRight(20))
                 .Append(group.Count().ToString(CultureInfo.InvariantCulture).PadLeft(6))
-                .AppendLine(group.Key switch {
-                    KeyNamespace.Option => "  reported as SK9001",
-                    KeyNamespace.InspectionSeverity => "  ReSharper inspection severities — Milestone 5",
-                    KeyNamespace.DiagnosticSeverity => "  Roslyn analyzer severities — Milestone 5",
-                    KeyNamespace.NamingRule => "  Roslyn's own naming engine; Skala never reimplements it",
-                    _ => string.Empty
-                });
+                .AppendLine(
+                    group.Key switch {
+                        KeyNamespace.Option => "  reported as SK9001",
+                        KeyNamespace.InspectionSeverity => "  ReSharper inspection severities — Milestone 5",
+                        KeyNamespace.DiagnosticSeverity => "  Roslyn analyzer severities — Milestone 5",
+                        KeyNamespace.NamingRule => "  Roslyn's own naming engine; Skala never reimplements it",
+                        _ => string.Empty
+                    }
+                );
         }
 
         output.AppendLine();
         var nearest = resolution.Chain.Documents.LastOrDefault();
         if (nearest is not null && !nearest.IsRoot) {
-            output.AppendLine($"⚠ {nearest.Path} has no `root = true`. An .editorconfig above the repository still applies.");
+            output.AppendLine(
+                $"⚠ {nearest.Path} has no `root = true`. An .editorconfig above the repository still applies."
+            );
             output.AppendLine("  `skala config fix` adds it.");
         }
 
         var hasStandardWidth = OptionRegistry.TryResolve("max_line_length", out var widthId) && !resolution[widthId].IsDefault;
         var reSharperWidth = OptionRegistry.TryResolve("resharper_csharp_max_line_length", out var rsWidthId) ? resolution[rsWidthId] : null;
         if (!hasStandardWidth && reSharperWidth is { IsDefault: false }) {
-            output.AppendLine($"⚠ no `max_line_length`; the column limit lives only in `resharper_csharp_max_line_length = {reSharperWidth.Value}`.");
-            output.AppendLine("  Every other tool in the ecosystem therefore does not know the width. `skala config fix` adds it.");
+            output.AppendLine(
+                $"⚠ no `max_line_length`; the column limit lives only in `resharper_csharp_max_line_length = {reSharperWidth.Value}`."
+            );
+            output.AppendLine(
+                "  Every other tool in the ecosystem therefore does not know the width. `skala config fix` adds it."
+            );
         }
 
         output.AppendLine();
@@ -167,9 +183,11 @@ public static class ConfigCommands {
         }
 
         output.AppendLine();
-        output.AppendLine(changes == 0
-            ? "No semantic difference: the two files resolve to the same option set."
-            : $"{changes.ToString(CultureInfo.InvariantCulture)} option(s) differ.");
+        output.AppendLine(
+            changes == 0
+                ? "No semantic difference: the two files resolve to the same option set."
+                : $"{changes.ToString(CultureInfo.InvariantCulture)} option(s) differ."
+        );
 
         return CommandResult.Ok(output.ToString());
     }
@@ -192,10 +210,14 @@ public static class ConfigCommands {
             output.AppendLine("Nothing was dropped, and that is the correct answer rather than a failure:");
             output.AppendLine("  JetBrains' EditorConfig property tables publish each property's name, language and");
             output.AppendLine("  possible values, and never its default. Every entry in options.json therefore records");
-            output.AppendLine("  the export's own value as its default, marked `template` or `unknown`, and distill may");
+            output.AppendLine(
+                "  the export's own value as its default, marked `template` or `unknown`, and distill may"
+            );
             output.AppendLine("  only drop a key whose default is marked `resharper-docs`. Dropping a key on a guessed");
             output.AppendLine("  default would silently change formatting.");
-            output.AppendLine("  A verified default table — an export from a pristine Rider profile — makes this useful.");
+            output.AppendLine(
+                "  A verified default table — an export from a pristine Rider profile — makes this useful."
+            );
         }
 
         if (outputPath is null) {
@@ -240,13 +262,18 @@ public static class ConfigCommands {
 
     static string Counts(ResolutionResult resolution) {
         var configured = resolution.Configured.Count();
-        var tiers = resolution.Resolved.GroupBy(static option => option.Info.Tier).ToDictionary(static g => g.Key, static g => g.Count());
-        string Tier(OptionTier tier) => tiers.TryGetValue(tier, out var count) ? count.ToString(CultureInfo.InvariantCulture) : "0";
+        var tiers = resolution.Resolved.GroupBy(static option => option.Info.Tier).ToDictionary(
+            static g => g.Key,
+            static g => g.Count()
+        );
+
+        string Tier(OptionTier tier) =>
+            tiers.TryGetValue(tier, out var count) ? count.ToString(CultureInfo.InvariantCulture) : "0";
 
         return string.Create(
             CultureInfo.InvariantCulture,
-            $"{OptionRegistry.Count} options known: {configured} set by the configuration, {OptionRegistry.Count - configured} at the registry default." +
-            $"{Environment.NewLine}Tiers — A (implemented): {Tier(OptionTier.A)}, B (approximated): {Tier(OptionTier.B)}, C (accepted, ignored): {Tier(OptionTier.C)}, D (not implemented): {Tier(OptionTier.D)}.");
+            $"{OptionRegistry.Count} options known: {configured} set by the configuration, {OptionRegistry.Count - configured} at the registry default." + $"{Environment.NewLine}Tiers — A (implemented): {Tier(OptionTier.A)}, B (approximated): {Tier(OptionTier.B)}, C (accepted, ignored): {Tier(OptionTier.C)}, D (not implemented): {Tier(OptionTier.D)}."
+        );
     }
 
     static void AppendDiagnostics(StringBuilder output, ImmutableArray<SkalaDiagnostic> diagnostics) {

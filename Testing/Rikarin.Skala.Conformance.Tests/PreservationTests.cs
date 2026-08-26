@@ -63,7 +63,8 @@ public sealed class PreservationTests {
         Assert.True(
             variant.HasFixture(file),
             $"{file} has no fixture for the '{variantName}' configuration. Run ./build.sh Oracle: "
-            + "a configuration that is not measured against the oracle is a configuration nobody has checked.");
+            + "a configuration that is not measured against the oracle is a configuration nobody has checked."
+        );
     }
 
     [Theory]
@@ -78,7 +79,8 @@ public sealed class PreservationTests {
         var second = Format(file, Variant(variantName), SourceText.From(first.Formatted));
         Assert.True(
             second.Edits.IsEmpty,
-            $"{file} under '{variantName}' is not idempotent; the second pass wants {second.Edits.Length} edit(s).");
+            $"{file} under '{variantName}' is not idempotent; the second pass wants {second.Edits.Length} edit(s)."
+        );
     }
 
     [Fact]
@@ -90,7 +92,11 @@ public sealed class PreservationTests {
         foreach (var file in Corpus.Files(Corpus.Constructs).Where(static f => CorpusVariants.For(f).Count > 0)) {
             var text = CSharpFormatter.Read(file.Path);
             var outputs = CorpusVariants.Preservation
-                .ToDictionary(variant => variant.Name, variant => Format(file, variant, text).Formatted, StringComparer.Ordinal);
+                .ToDictionary(
+                    variant => variant.Name,
+                    variant => Format(file, variant, text).Formatted,
+                    StringComparer.Ordinal
+                );
 
             if (!string.Equals(outputs["keep-keep"], outputs["keep-rearrange"], StringComparison.Ordinal)) {
                 moved.Add("keep_existing_*");
@@ -122,10 +128,12 @@ public sealed class PreservationTests {
                 continue;
             }
 
-            results.Add((
-                file.ToString(),
-                OracleFixture.Read(file, variant),
-                Format(file, variant, CSharpFormatter.Read(file.Path)).Formatted));
+            results.Add(
+                (
+                    file.ToString(),
+                    OracleFixture.Read(file, variant),
+                    Format(file, variant, CSharpFormatter.Read(file.Path)).Formatted)
+            );
         }
 
         Assert.NotEmpty(results);
@@ -135,7 +143,8 @@ public sealed class PreservationTests {
         Assert.True(
             report.LineFidelity >= baseline.LineFidelity - 0.0001,
             $"Line fidelity under '{variantName}' fell from {baseline.LineFidelity * 100:F2}% to "
-            + report.LineFidelity.ToString("P2", CultureInfo.InvariantCulture) + ".\n\n" + report.Render(6));
+            + report.LineFidelity.ToString("P2", CultureInfo.InvariantCulture) + ".\n\n" + report.Render(6)
+        );
     }
 
     static CorpusVariant Variant(string name) =>

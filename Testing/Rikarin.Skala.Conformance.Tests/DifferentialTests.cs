@@ -48,11 +48,13 @@ public sealed class DifferentialTests {
             $"Line fidelity on {set} fell from {baseline.LineFidelity * 100:F2}% to {report.LineFidelity * 100:F2}%.\n"
             + "⚠ The gates are cumulative and the next milestone measures against this baseline, so a merged\n"
             + "regression corrupts everything after it. The ranked divergence classes are the work queue:\n\n"
-            + report.Render(8));
+            + report.Render(8)
+        );
 
         Assert.True(
             report.FileFidelity >= baseline.FileFidelity - 0.0001,
-            $"File fidelity on {set} fell from {baseline.FileFidelity * 100:F2}% to {report.FileFidelity * 100:F2}%.");
+            $"File fidelity on {set} fell from {baseline.FileFidelity * 100:F2}% to {report.FileFidelity * 100:F2}%."
+        );
     }
 
     [Fact]
@@ -62,18 +64,22 @@ public sealed class DifferentialTests {
         Assert.True(
             report.LineFidelity >= 0.93,
             $"Milestone 2's bar is 93 % line fidelity on corpus/real/; the measurement is {report.LineFidelity * 100:F2}%.\n\n"
-            + report.Render(10));
+            + report.Render(10)
+        );
     }
 
     [Fact]
     public void EveryCorpusFile_HasAnOracleFixture() {
         // A corpus file with no fixture is a file that is not measured, which is worse than not
         // having it: it looks like coverage.
-        var missing = Corpus.All().Where(static file => !file.HasFixture).Select(static file => file.ToString()).Order(StringComparer.Ordinal).ToArray();
+        var missing = Corpus.All().Where(static file => !file.HasFixture).Select(static file => file.ToString()).Order(
+            StringComparer.Ordinal
+        ).ToArray();
         Assert.True(
             missing.Length == 0,
             $"{missing.Length.ToString(CultureInfo.InvariantCulture)} corpus file(s) have no committed .expected.cs. Run ./build.sh Oracle: "
-            + string.Join(", ", missing.Take(10)));
+            + string.Join(", ", missing.Take(10))
+        );
     }
 
     [Fact]
@@ -81,7 +87,10 @@ public sealed class DifferentialTests {
         foreach (var file in Corpus.All().Where(static file => file.HasFixture)) {
             var header = OracleFixture.ReadHeader(file);
             Assert.True(header is not null, $"{file}: the fixture has no `// skala-oracle:` header.");
-            Assert.False(string.IsNullOrEmpty(header!.ReSharperVersion), $"{file}: the fixture records no ReSharper version.");
+            Assert.False(
+                string.IsNullOrEmpty(header!.ReSharperVersion),
+                $"{file}: the fixture records no ReSharper version."
+            );
             Assert.NotEqual("unknown", header.ReSharperVersion);
         }
     }
@@ -100,7 +109,8 @@ public sealed class DifferentialTests {
             Directory.CreateDirectory(directory);
             File.WriteAllText(
                 Path.Combine(directory, $"conformance-{set}.md"),
-                $"# Conformance — {set}\n\nbaseline: {baseline.LineFidelity * 100:F2}% ({baseline.Milestone})\n\n```\n{report.Render(25)}```\n");
+                $"# Conformance — {set}\n\nbaseline: {baseline.LineFidelity * 100:F2}% ({baseline.Milestone})\n\n```\n{report.Render(25)}```\n"
+            );
         } catch (IOException) {
             // The report is a convenience; a read-only working tree does not fail the suite.
         }

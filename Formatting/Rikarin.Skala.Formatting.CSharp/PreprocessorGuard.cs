@@ -23,7 +23,8 @@ public static class PreprocessorGuard {
         SourceText text,
         HashSet<int> verbatimMembers,
         List<SkalaDiagnostic> diagnostics,
-        string path) {
+        string path
+    ) {
         var directives = new List<DirectiveTriviaSyntax>();
         foreach (var trivia in root.DescendantTrivia(descendIntoTrivia: true)) {
             if (trivia.GetStructure() is DirectiveTriviaSyntax directive && IsConditional(directive)) {
@@ -46,9 +47,10 @@ public static class PreprocessorGuard {
         }
     }
 
-    static bool IsConditional(DirectiveTriviaSyntax directive) => directive.Kind() is
+    static bool IsConditional(DirectiveTriviaSyntax directive) =>
+        directive.Kind() is
         SyntaxKind.IfDirectiveTrivia or SyntaxKind.ElifDirectiveTrivia
-            or SyntaxKind.ElseDirectiveTrivia or SyntaxKind.EndIfDirectiveTrivia;
+        or SyntaxKind.ElseDirectiveTrivia or SyntaxKind.EndIfDirectiveTrivia;
 
     /// <summary>
     /// Walks one <c>#if … #endif</c> group and reports whether its branches agree on how many
@@ -67,7 +69,8 @@ public static class PreprocessorGuard {
         HashSet<int> verbatimMembers,
         List<SkalaDiagnostic> diagnostics,
         string path,
-        SourceText text) {
+        SourceText text
+    ) {
         var index = start + 1;
         var cursor = directives[start].FullSpan.End;
         var branch = 0;
@@ -124,7 +127,8 @@ public static class PreprocessorGuard {
         HashSet<int> verbatimMembers,
         List<SkalaDiagnostic> diagnostics,
         string path,
-        SourceText text) {
+        SourceText text
+    ) {
         var span = TextSpan.FromBounds(first.SpanStart, last.Span.End);
         var member = FindEnclosingMember(root, span);
         if (member is not null) {
@@ -132,24 +136,28 @@ public static class PreprocessorGuard {
         }
 
         var line = text.Lines.GetLineFromPosition(span.Start).LineNumber + 1;
-        diagnostics.Add(new SkalaDiagnostic(
-            FormatDiagnosticIds.UnbalancedPreprocessor,
-            SkalaSeverity.Info,
-            member is null
-                ? "not formatted, unbalanced preprocessor structure"
-                : $"'{Describe(member)}' is not formatted, unbalanced preprocessor structure",
-            path,
-            line,
-            "A branch of this #if opens or closes a brace the other branches do not. Reindenting from the tree Roslyn produced for one branch would move braces the others own."));
+        diagnostics.Add(
+            new SkalaDiagnostic(
+                FormatDiagnosticIds.UnbalancedPreprocessor,
+                SkalaSeverity.Info,
+                member is null
+                    ? "not formatted, unbalanced preprocessor structure"
+                    : $"'{Describe(member)}' is not formatted, unbalanced preprocessor structure",
+                path,
+                line,
+                "A branch of this #if opens or closes a brace the other branches do not. Reindenting from the tree Roslyn produced for one branch would move braces the others own."
+            )
+        );
     }
 
-    static string Describe(SyntaxNode member) => member switch {
-        BaseTypeDeclarationSyntax type => type.Identifier.Text,
-        MethodDeclarationSyntax method => method.Identifier.Text,
-        PropertyDeclarationSyntax property => property.Identifier.Text,
-        ConstructorDeclarationSyntax constructor => constructor.Identifier.Text,
-        _ => member.Kind().ToString()
-    };
+    static string Describe(SyntaxNode member) =>
+        member switch {
+            BaseTypeDeclarationSyntax type => type.Identifier.Text,
+            MethodDeclarationSyntax method => method.Identifier.Text,
+            PropertyDeclarationSyntax property => property.Identifier.Text,
+            ConstructorDeclarationSyntax constructor => constructor.Identifier.Text,
+            _ => member.Kind().ToString()
+        };
 
     static SyntaxNode? FindEnclosingMember(SyntaxNode root, TextSpan span) {
         if (!root.FullSpan.Contains(span)) {

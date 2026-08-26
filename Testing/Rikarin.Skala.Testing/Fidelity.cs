@@ -53,7 +53,9 @@ public sealed record FidelityReport(
                 .AppendLine(group.Key);
 
             var sample = group.First();
-            builder.Append("          ").AppendLine(sample.File + ":" + sample.Line.ToString(CultureInfo.InvariantCulture));
+            builder.Append("          ").AppendLine(
+                sample.File + ":" + sample.Line.ToString(CultureInfo.InvariantCulture)
+            );
             builder.Append("          oracle: ").AppendEscaped(Trim(sample.Expected)).AppendLine();
             builder.Append("          skala:  ").AppendEscaped(Trim(sample.Actual)).AppendLine();
         }
@@ -88,7 +90,11 @@ public static class Fidelity {
             var right = TextNormalisation.Lines(actual);
             lines += Math.Max(left.Length, right.Length);
 
-            if (left.Length == right.Length && string.Equals(string.Join('\n', left), string.Join('\n', right), StringComparison.Ordinal)) {
+            if (left.Length == right.Length && string.Equals(
+                string.Join('\n', left),
+                string.Join('\n', right),
+                StringComparison.Ordinal
+            )) {
                 identicalFiles++;
                 identicalLines += left.Length;
                 continue;
@@ -134,7 +140,9 @@ public static class Fidelity {
             for (var k = 0; k < count; k++) {
                 var left = k < removed.Count ? removed[k] : "(no line)";
                 var right = k < added.Count ? added[k] : "(no line)";
-                divergences.Add(new Divergence(file, start + k, left, right, ClassOf(left, right, removed.Count, added.Count)));
+                divergences.Add(
+                    new Divergence(file, start + k, left, right, ClassOf(left, right, removed.Count, added.Count))
+                );
             }
         }
     }
@@ -219,7 +227,11 @@ public static class LineDiff {
         // Trim the common head and tail first: two formatter outputs agree on most of a file, and
         // the quadratic table is only paid for the middle.
         var head = 0;
-        while (head < left.Length && head < right.Length && string.Equals(left[head], right[head], StringComparison.Ordinal)) {
+        while (head < left.Length && head < right.Length && string.Equals(
+            left[head],
+            right[head],
+            StringComparison.Ordinal
+        )) {
             head++;
         }
 

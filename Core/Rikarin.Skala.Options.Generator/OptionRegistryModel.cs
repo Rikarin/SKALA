@@ -8,9 +8,18 @@ namespace Rikarin.Skala.Options.Generator;
 
 internal sealed record OptionEnumValue(string EditorConfigName, string MemberName, string Summary);
 
-internal sealed record OptionEnum(string Name, IReadOnlyList<OptionEnumValue> Values, IReadOnlyList<KeyValuePair<string, string>> ValueAliases);
+internal sealed record OptionEnum(
+    string Name,
+    IReadOnlyList<OptionEnumValue> Values,
+    IReadOnlyList<KeyValuePair<string, string>> ValueAliases);
 
-internal enum OptionValueKind { Bool, Int, String, Enum, Flags }
+internal enum OptionValueKind {
+    Bool,
+    Int,
+    String,
+    Enum,
+    Flags
+}
 
 internal sealed record OptionEntry(
     string Key,
@@ -63,14 +72,15 @@ internal static class Naming {
     /// <c>resharper_csharp_wrap_arguments_style</c> reads as
     /// <c>Options.ReSharper.CSharp.WrapArgumentsStyle</c> (docs/plan/02 § "Naming").
     /// </summary>
-    public static IReadOnlyList<string> GroupPath(string key) => key switch {
-        _ when key.StartsWith("resharper_csharp_", StringComparison.Ordinal) => CSharpGroup,
-        _ when key.StartsWith("resharper_xmldoc_", StringComparison.Ordinal) => XmlDocGroup,
-        _ when key.StartsWith("resharper_", StringComparison.Ordinal) => ["ReSharper"],
-        _ when key.StartsWith("csharp_", StringComparison.Ordinal) => ["CSharp"],
-        _ when key.StartsWith("dotnet_", StringComparison.Ordinal) => ["DotNet"],
-        _ => ["Standard"]
-    };
+    public static IReadOnlyList<string> GroupPath(string key) =>
+        key switch {
+            _ when key.StartsWith("resharper_csharp_", StringComparison.Ordinal) => CSharpGroup,
+            _ when key.StartsWith("resharper_xmldoc_", StringComparison.Ordinal) => XmlDocGroup,
+            _ when key.StartsWith("resharper_", StringComparison.Ordinal) => ["ReSharper"],
+            _ when key.StartsWith("csharp_", StringComparison.Ordinal) => ["CSharp"],
+            _ when key.StartsWith("dotnet_", StringComparison.Ordinal) => ["DotNet"],
+            _ => ["Standard"]
+        };
 
     public static string LeafName(string key) {
         var path = GroupPath(key);
@@ -127,27 +137,30 @@ internal static class OptionRegistryReader {
                 _ => OptionValueKind.String
             };
 
-            options.Add(new OptionEntry(
-                key,
-                item["aliases"].AsStringList(),
-                item["language"].AsString() ?? "any",
-                kind,
-                kind switch {
-                    OptionValueKind.Enum => type.Substring("enum:".Length),
-                    OptionValueKind.Flags => type.Substring("flags:".Length),
-                    _ => null
-                },
-                item["default"].IsNull ? null : item["default"].AsString(),
-                item["defaultSource"].AsString() ?? "unknown",
-                item["tier"].AsString() ?? "D",
-                item["construct"].AsString() ?? "Other",
-                item["summary"].AsString() ?? string.Empty,
-                item["since"].AsString() ?? "0.1",
-                item["oracle"].IsNull ? null : item["oracle"].AsString(),
-                item["docs"].IsNull ? null : item["docs"].AsString(),
-                item["templateLine"].IsNull ? null : item["templateLine"].AsInt(),
-                item["severitySuffix"].AsBool(),
-                item["expands"].AsStringList()));
+            options.Add(
+                new OptionEntry(
+                    key,
+                    item["aliases"].AsStringList(),
+                    item["language"].AsString() ?? "any",
+                    kind,
+                    kind switch {
+                        OptionValueKind.Enum => type.Substring("enum:".Length),
+                        OptionValueKind.Flags => type.Substring("flags:".Length),
+                        _ => null
+                    },
+                    item["default"].IsNull ? null : item["default"].AsString(),
+                    item["defaultSource"].AsString() ?? "unknown",
+                    item["tier"].AsString() ?? "D",
+                    item["construct"].AsString() ?? "Other",
+                    item["summary"].AsString() ?? string.Empty,
+                    item["since"].AsString() ?? "0.1",
+                    item["oracle"].IsNull ? null : item["oracle"].AsString(),
+                    item["docs"].IsNull ? null : item["docs"].AsString(),
+                    item["templateLine"].IsNull ? null : item["templateLine"].AsInt(),
+                    item["severitySuffix"].AsBool(),
+                    item["expands"].AsStringList()
+                )
+            );
         }
 
         // ⚠ Dense and stable: ids are assigned by ordinal key order so that adding an option does
@@ -157,7 +170,10 @@ internal static class OptionRegistryReader {
     }
 
     public static string Literal(string? value) =>
-        value is null ? "null" : "\"" + value.Replace("\\", "\\\\").Replace("\"", "\\\"").Replace("\n", "\\n").Replace("\r", "\\r") + "\"";
+        value is null ? "null" : "\"" + value.Replace("\\", "\\\\").Replace("\"", "\\\"").Replace("\n", "\\n").Replace(
+            "\r",
+            "\\r"
+        ) + "\"";
 
     public static string IntLiteral(int? value) => value?.ToString(CultureInfo.InvariantCulture) ?? "null";
 }

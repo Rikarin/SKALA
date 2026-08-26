@@ -90,6 +90,7 @@ public sealed class BreakPlan {
     readonly Dictionary<long, GroupPlan> _groups = [];
     readonly string _source;
     readonly PhaseOneOptions _options;
+    int[] _forced = [];
     int _nextGroup;
 
     BreakPlan(string source, in PhaseOneOptions options) {
@@ -103,6 +104,7 @@ public sealed class BreakPlan {
     public static BreakPlan Build(SyntaxNode root, string source, in PhaseOneOptions options) {
         var plan = new BreakPlan(source, options);
         plan.Walk(root);
+        plan.CollectForcedBreaks();
         return plan;
     }
 
@@ -114,6 +116,50 @@ public sealed class BreakPlan {
 
     /// <summary>Every group the plan created, so the builder can describe them to the document.</summary>
     public IEnumerable<GroupPlan> Groups => _groups.Values;
+
+    /// <summary>
+    /// Whether anything between <paramref name="start"/> and <paramref name="end"/> is certain to
+    /// break, whatever the source did.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ The blank-line rules need this, which is not obvious until it bites. Whether a member takes
+    /// <c>blank_lines_around_field</c> or <c>blank_lines_around_single_line_field</c> depends on
+    /// whether it is single-line — in the <em>output</em>. A one-line field the formatter is about to
+    /// chop is not single-line, and reading the input instead makes the first pass emit no blank line
+    /// and the second pass emit one. That is a non-idempotency the corpus does not contain, because
+    /// milestone 1 chopped nothing.
+    /// </remarks>
+    public bool HasForcedBreakIn(int start, int end) {
+        var index = Array.BinarySearch(_forced, start);
+        if (index < 0) {
+            index = ~index;
+        }
+
+        return index < _forced.Length && _forced[index] < end;
+    }
+
+    /// <summary>
+    /// The positions at which a break is certain: a <see cref="GroupMode.Break"/> group's points and
+    /// every <see cref="GapRule.Mandatory"/> gap. Sorted once so the blank-line rules can ask about a
+    /// member's span without walking the whole plan per member.
+    /// </summary>
+    void CollectForcedBreaks() {
+        var forced = new List<int>();
+        foreach (var (key, plan) in _groups) {
+            if (plan.Mode == GroupMode.Break) {
+                forced.Add((int)(key >> 32));
+            }
+        }
+
+        foreach (var (position, spec) in _gaps) {
+            if (spec.Rule == GapRule.Mandatory) {
+                forced.Add(position);
+            }
+        }
+
+        forced.Sort();
+        _forced = [.. forced];
+    }
 
     // ── The walk ─────────────────────────────────────────────────────────────────────────────
 
@@ -152,7 +198,8 @@ public sealed class BreakPlan {
                     InvocationKeeps(arguments),
                     _options.WrapArgumentsStyle,
                     _options.WrapAfterInvocationLpar,
-                    _options.WrapBeforeInvocationRpar);
+                    _options.WrapBeforeInvocationRpar
+                );
                 return;
 
             case AttributeArgumentListSyntax attributeArguments:
@@ -165,7 +212,8 @@ public sealed class BreakPlan {
                     _options.KeepExistingInvocationParensArrangement,
                     _options.WrapArgumentsStyle,
                     _options.WrapAfterInvocationLpar,
-                    _options.WrapBeforeInvocationRpar);
+                    _options.WrapBeforeInvocationRpar
+                );
                 return;
 
             case ParameterListSyntax { Parent: TypeDeclarationSyntax } primaryParameters:
@@ -182,7 +230,8 @@ public sealed class BreakPlan {
                     _options.KeepExistingPrimaryConstructorParensArrangement,
                     _options.WrapPrimaryConstructorParametersStyle,
                     _options.WrapAfterPrimaryConstructorLpar,
-                    _options.WrapBeforePrimaryConstructorRpar);
+                    _options.WrapBeforePrimaryConstructorRpar
+                );
                 return;
 
             case ParameterListSyntax parameters:
@@ -195,7 +244,8 @@ public sealed class BreakPlan {
                     DeclarationKeeps(parameters),
                     _options.WrapParametersStyle,
                     _options.WrapAfterDeclarationLpar,
-                    _options.WrapBeforeDeclarationRpar);
+                    _options.WrapBeforeDeclarationRpar
+                );
                 return;
 
             case BinaryExpressionSyntax binary:
@@ -287,7 +337,9 @@ public sealed class BreakPlan {
             always ? GroupMode.Break : GroupMode.Preserve,
             new GroupFacts(
                 SourceBroken: _options.KeepExistingEnumArrangement && broken,
-                BreaksIfTooLong: _options.WrapEnumDeclaration == WrapStyle.ChopIfLong));
+                BreaksIfTooLong: _options.WrapEnumDeclaration == WrapStyle.ChopIfLong
+            )
+        );
     }
 
     /// <summary>
@@ -320,7 +372,9 @@ public sealed class BreakPlan {
             _options.WrapSwitchExpression == WrapStyle.ChopAlways ? GroupMode.Break : GroupMode.Preserve,
             new GroupFacts(
                 SourceBroken: broken,
-                BreaksIfTooLong: _options.WrapSwitchExpression == WrapStyle.ChopIfLong));
+                BreaksIfTooLong: _options.WrapSwitchExpression == WrapStyle.ChopIfLong
+            )
+        );
     }
 
     /// <summary>
@@ -343,7 +397,8 @@ public sealed class BreakPlan {
         bool keepExisting,
         WrapStyle style,
         bool wrapAfterOpen,
-        bool wrapBeforeClose)
+        bool wrapBeforeClose
+    )
         where T : SyntaxNode {
         if (open.IsKind(SyntaxKind.None) || close.IsKind(SyntaxKind.None) || items.Count == 0) {
             return;
@@ -420,7 +475,8 @@ public sealed class BreakPlan {
             node,
             group,
             style == WrapStyle.ChopAlways ? GroupMode.Break : GroupMode.Preserve,
-            new GroupFacts(SourceBroken: broken, BreaksIfTooLong: true));
+            new GroupFacts(SourceBroken: broken, BreaksIfTooLong: true)
+        );
     }
 
     /// <summary>
@@ -459,7 +515,8 @@ public sealed class BreakPlan {
             group,
             GroupMode.Preserve,
             new GroupFacts(SourceBroken: _options.KeepsUserBreaksBetweenItems && broken),
-            spendsIndent: true);
+            spendsIndent: true
+        );
     }
 
     /// <summary>
@@ -488,7 +545,8 @@ public sealed class BreakPlan {
             group,
             GroupMode.Preserve,
             new GroupFacts(SourceBroken: _options.KeepsUserBreaksBetweenItems && broken),
-            spendsIndent: true);
+            spendsIndent: true
+        );
     }
 
     /// <summary>
@@ -525,8 +583,10 @@ public sealed class BreakPlan {
                 // prefer_wrap_around_eq's ordering. Breaking here whenever the line is long, without
                 // the ordering, lands one line away from the oracle often enough to cost 0.24 points
                 // of line fidelity and five points of file fidelity — measured, not feared. M3.
-                MeasuresHead: true),
-            spendsIndent: true);
+                MeasuresHead: true
+            ),
+            spendsIndent: true
+        );
     }
 
     /// <summary>
@@ -586,8 +646,10 @@ public sealed class BreakPlan {
                 // means the declaration occupies one line, and a body that spans lines makes it not
                 // single-line however short its first line is. `Target Docs => definition => …` with
                 // a chain under it is the shape that shows the difference.
-                BreaksIfTooLong: placement == PlacementStyle.IfOwnerIsSingleLine),
-            spendsIndent: true);
+                BreaksIfTooLong: placement == PlacementStyle.IfOwnerIsSingleLine
+            ),
+            spendsIndent: true
+        );
     }
 
     /// <summary>
@@ -629,7 +691,9 @@ public sealed class BreakPlan {
             new GroupFacts(
                 SourceBroken: BreaksBefore(first),
                 JoinsIfFits: !_options.KeepExistingEmbeddedArrangement,
-                BreaksIfTooLong: !_options.KeepExistingEmbeddedArrangement));
+                BreaksIfTooLong: !_options.KeepExistingEmbeddedArrangement
+            )
+        );
     }
 
     /// <summary>
@@ -703,47 +767,51 @@ public sealed class BreakPlan {
         }
     }
 
-    PlacementStyle AttributePlacement(SyntaxNode node) => node switch {
-        BaseTypeDeclarationSyntax or DelegateDeclarationSyntax => _options.PlaceTypeAttributeOnSameLine,
-        MethodDeclarationSyntax or ConstructorDeclarationSyntax or DestructorDeclarationSyntax
-            or OperatorDeclarationSyntax or ConversionOperatorDeclarationSyntax or LocalFunctionStatementSyntax =>
-            _options.PlaceMethodAttributeOnSameLine,
-        PropertyDeclarationSyntax or IndexerDeclarationSyntax or EventDeclarationSyntax =>
-            _options.PlaceAccessorHolderAttributeOnSameLine,
-        AccessorDeclarationSyntax => _options.PlaceAccessorAttributeOnSameLine,
-        // A record's positional parameter is a field, not a parameter, and has its own key. An
-        // ordinary parameter's attribute always stays on the parameter's line.
-        ParameterSyntax => _options.PlaceRecordFieldAttributeOnSameLine,
-        FieldDeclarationSyntax or EventFieldDeclarationSyntax => _options.PlaceFieldAttributeOnSameLine,
-        _ => _options.PlaceAttributeOnSameLine
-    };
+    PlacementStyle AttributePlacement(SyntaxNode node) =>
+        node switch {
+            BaseTypeDeclarationSyntax or DelegateDeclarationSyntax => _options.PlaceTypeAttributeOnSameLine,
+            MethodDeclarationSyntax or ConstructorDeclarationSyntax or DestructorDeclarationSyntax
+                or OperatorDeclarationSyntax or ConversionOperatorDeclarationSyntax or LocalFunctionStatementSyntax =>
+                _options.PlaceMethodAttributeOnSameLine,
+            PropertyDeclarationSyntax or IndexerDeclarationSyntax or EventDeclarationSyntax =>
+                _options.PlaceAccessorHolderAttributeOnSameLine,
+            AccessorDeclarationSyntax => _options.PlaceAccessorAttributeOnSameLine,
+            // A record's positional parameter is a field, not a parameter, and has its own key. An
+            // ordinary parameter's attribute always stays on the parameter's line.
+            ParameterSyntax => _options.PlaceRecordFieldAttributeOnSameLine,
+            FieldDeclarationSyntax or EventFieldDeclarationSyntax => _options.PlaceFieldAttributeOnSameLine,
+            _ => _options.PlaceAttributeOnSameLine
+        };
 
     // ── Option lookups per construct family ──────────────────────────────────────────────────
 
-    bool InvocationKeeps(ArgumentListSyntax arguments) => arguments.Parent switch {
-        PrimaryConstructorBaseTypeSyntax => _options.KeepExistingPrimaryConstructorParensArrangement,
-        _ => _options.KeepExistingInvocationParensArrangement
-    };
+    bool InvocationKeeps(ArgumentListSyntax arguments) =>
+        arguments.Parent switch {
+            PrimaryConstructorBaseTypeSyntax => _options.KeepExistingPrimaryConstructorParensArrangement,
+            _ => _options.KeepExistingInvocationParensArrangement
+        };
 
-    bool DeclarationKeeps(ParameterListSyntax parameters) => parameters.Parent switch {
-        ParenthesizedLambdaExpressionSyntax or AnonymousMethodExpressionSyntax =>
-            _options.KeepExistingLambdaParensArrangement,
-        _ => _options.KeepExistingDeclarationParensArrangement
-    };
+    bool DeclarationKeeps(ParameterListSyntax parameters) =>
+        parameters.Parent switch {
+            ParenthesizedLambdaExpressionSyntax or AnonymousMethodExpressionSyntax =>
+                _options.KeepExistingLambdaParensArrangement,
+            _ => _options.KeepExistingDeclarationParensArrangement
+        };
 
-    static StatementSyntax? EmbeddedStatementOf(SyntaxNode node) => node switch {
-        IfStatementSyntax statement => statement.Statement,
-        ElseClauseSyntax clause => clause.Statement is IfStatementSyntax ? null : clause.Statement,
-        WhileStatementSyntax statement => statement.Statement,
-        DoStatementSyntax statement => statement.Statement,
-        ForStatementSyntax statement => statement.Statement,
-        ForEachStatementSyntax statement => statement.Statement,
-        ForEachVariableStatementSyntax statement => statement.Statement,
-        UsingStatementSyntax { Statement: not UsingStatementSyntax } statement => statement.Statement,
-        FixedStatementSyntax statement => statement.Statement,
-        LockStatementSyntax statement => statement.Statement,
-        _ => null
-    };
+    static StatementSyntax? EmbeddedStatementOf(SyntaxNode node) =>
+        node switch {
+            IfStatementSyntax statement => statement.Statement,
+            ElseClauseSyntax clause => clause.Statement is IfStatementSyntax ? null : clause.Statement,
+            WhileStatementSyntax statement => statement.Statement,
+            DoStatementSyntax statement => statement.Statement,
+            ForStatementSyntax statement => statement.Statement,
+            ForEachStatementSyntax statement => statement.Statement,
+            ForEachVariableStatementSyntax statement => statement.Statement,
+            UsingStatementSyntax { Statement: not UsingStatementSyntax } statement => statement.Statement,
+            FixedStatementSyntax statement => statement.Statement,
+            LockStatementSyntax statement => statement.Statement,
+            _ => null
+        };
 
     static bool IsLambdaArgument(SyntaxNode item) =>
         item is ArgumentSyntax { Expression: AnonymousFunctionExpressionSyntax };

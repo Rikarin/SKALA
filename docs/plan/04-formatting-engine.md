@@ -234,6 +234,17 @@ must be resolved in a fixed order:
 
 Order: removals ∘ requirements ∘ caps, evaluated on the *gap between two members*, with the gap
 attributed to the member below (so `stick_comment` moves the right blank lines with the comment).
+
+⚠ **"Single-line" is a property of the output, and the requirements branch on it.** Half the
+`blank_lines_around_*` family has an `_around_single_line_*` twin, and a 140-column field is single
+line in the source and four lines after the fitter has had it — so reading the answer off the input
+makes the first pass emit no blank and the second emit one. Milestone 1 never broke a line, so the
+question never arose; milestone 2 answers it by predicting: a member is single-line iff its source
+occupied one line, nothing inside it is certain to break (a `chop_always` group, an attribute the
+placement rules will move), its width fits, and it does not share its line with the member before it.
+⚠ The width must be measured from the *tree* — the member's own span plus the indentation its nesting
+implies — and not from the source line, or an indentation-only mutation changes the answer and
+`format(mutate_whitespace(x)) ≡ format(x)` stops holding.
 ✅ Verified against the oracle on `constructs/blank-lines/*`, which is 90 files, because this is the
 area where hand-reasoning is least reliable.
 

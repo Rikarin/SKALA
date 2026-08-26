@@ -14,7 +14,8 @@ public sealed class DistillTests {
 
         var distilled = EditorConfigDocument.FromText(
             Path.Combine(RepositoryPaths.Root, "distilled.editorconfig"),
-            Distiller.Distill(original).Text);
+            Distiller.Distill(original).Text
+        );
         var after = OptionResolver.Resolve(EditorConfigChain.Of(probe, distilled));
 
         for (var i = 0; i < OptionRegistry.Count; i++) {
@@ -23,7 +24,10 @@ public sealed class DistillTests {
             Assert.Equal(before[id].IsDefault, after[id].IsDefault);
         }
 
-        Assert.Equal(before.Options.GetText(OptionId.ResharperCsharpMaxLineLength), after.Options.GetText(OptionId.ResharperCsharpMaxLineLength));
+        Assert.Equal(
+            before.Options.GetText(OptionId.ResharperCsharpMaxLineLength),
+            after.Options.GetText(OptionId.ResharperCsharpMaxLineLength)
+        );
     }
 
     [Fact]
@@ -35,7 +39,10 @@ public sealed class DistillTests {
 
         Assert.Equal(0, result.Dropped);
         Assert.True(result.RetainedUnverifiedDefault > 400);
-        Assert.DoesNotContain(OptionRegistry.All, static info => info.DefaultSource == OptionDefaultSource.ReSharperDocs);
+        Assert.DoesNotContain(
+            OptionRegistry.All,
+            static info => info.DefaultSource == OptionDefaultSource.ReSharperDocs
+        );
     }
 
     [Theory]

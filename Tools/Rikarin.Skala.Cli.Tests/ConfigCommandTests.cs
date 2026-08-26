@@ -20,7 +20,10 @@ public sealed class ConfigCommandTests {
         var rows = run.Lines.Where(static line => line.Contains(".editorconfig:", StringComparison.Ordinal)).ToArray();
         Assert.True(rows.Length > 400, $"only {rows.Length} options carried provenance");
 
-        var width = Assert.Single(run.Lines, line => line.StartsWith("resharper_csharp_max_line_length ", StringComparison.Ordinal));
+        var width = Assert.Single(
+            run.Lines,
+            line => line.StartsWith("resharper_csharp_max_line_length ", StringComparison.Ordinal)
+        );
         Assert.Contains("120", width, StringComparison.Ordinal);
         Assert.Contains(".editorconfig:", width, StringComparison.Ordinal);
         Assert.Contains(" D ", width, StringComparison.Ordinal);
@@ -39,9 +42,16 @@ public sealed class ConfigCommandTests {
         var run = CliRunner.Run("config", "explain", "Core/Foo.cs", "--config", "editor_config_template");
 
         Assert.Equal(0, run.ExitCode);
-        Assert.Contains("reached the filesystem root without finding `root = true`", run.StandardOutput, StringComparison.Ordinal);
+        Assert.Contains(
+            "reached the filesystem root without finding `root = true`",
+            run.StandardOutput,
+            StringComparison.Ordinal
+        );
 
-        var width = Assert.Single(run.Lines, line => line.StartsWith("resharper_csharp_max_line_length ", StringComparison.Ordinal));
+        var width = Assert.Single(
+            run.Lines,
+            line => line.StartsWith("resharper_csharp_max_line_length ", StringComparison.Ordinal)
+        );
         Assert.Contains("editor_config_template:", width, StringComparison.Ordinal);
     }
 
@@ -63,9 +73,21 @@ public sealed class ConfigCommandTests {
         Assert.Equal(0, run.ExitCode);
 
         Assert.Contains("SK9005", run.StandardOutput, StringComparison.Ordinal);
-        Assert.Contains("'insert_final_newline = false' contradicts 'resharper_csharp_insert_final_newline = true'", run.StandardOutput, StringComparison.Ordinal);
-        Assert.Contains("'trim_trailing_whitespace = false' contradicts 'resharper_remove_spaces_on_blank_lines = true'", run.StandardOutput, StringComparison.Ordinal);
-        Assert.Contains("'end_of_line = lf' contradicts 'resharper_enforce_line_ending_style = false'", run.StandardOutput, StringComparison.Ordinal);
+        Assert.Contains(
+            "'insert_final_newline = false' contradicts 'resharper_csharp_insert_final_newline = true'",
+            run.StandardOutput,
+            StringComparison.Ordinal
+        );
+        Assert.Contains(
+            "'trim_trailing_whitespace = false' contradicts 'resharper_remove_spaces_on_blank_lines = true'",
+            run.StandardOutput,
+            StringComparison.Ordinal
+        );
+        Assert.Contains(
+            "'end_of_line = lf' contradicts 'resharper_enforce_line_ending_style = false'",
+            run.StandardOutput,
+            StringComparison.Ordinal
+        );
 
         Assert.Contains("has no `root = true`", run.StandardOutput, StringComparison.Ordinal);
         Assert.Contains("no `max_line_length`", run.StandardOutput, StringComparison.Ordinal);
@@ -104,9 +126,15 @@ public sealed class ConfigCommandTests {
 
             var probe = Path.Combine(CliRunner.RepositoryRoot, "Probe.cs");
             var before = ConfigCommands.ResolveStandalone(CliRunner.Template, probe);
-            var after = OptionResolver.Resolve(EditorConfigChain.Of(probe, EditorConfigDocument.FromText(
-                Path.Combine(CliRunner.RepositoryRoot, ".x.editorconfig"),
-                File.ReadAllText(output))));
+            var after = OptionResolver.Resolve(
+                EditorConfigChain.Of(
+                    probe,
+                    EditorConfigDocument.FromText(
+                        Path.Combine(CliRunner.RepositoryRoot, ".x.editorconfig"),
+                        File.ReadAllText(output)
+                    )
+                )
+            );
 
             for (var i = 0; i < OptionRegistry.Count; i++) {
                 Assert.Equal(before[(OptionId)i].Value, after[(OptionId)i].Value);
@@ -118,7 +146,13 @@ public sealed class ConfigCommandTests {
 
     [Fact]
     public void Distill_SaysWhyItDroppedNothing() {
-        var run = CliRunner.Run("config", "distill", "editor_config_template", "--out", Path.Combine(Path.GetTempPath(), $"skala-{Guid.NewGuid():N}.editorconfig"));
+        var run = CliRunner.Run(
+            "config",
+            "distill",
+            "editor_config_template",
+            "--out",
+            Path.Combine(Path.GetTempPath(), $"skala-{Guid.NewGuid():N}.editorconfig")
+        );
 
         Assert.Contains("0 key(s) dropped", run.StandardOutput, StringComparison.Ordinal);
         Assert.Contains("never its default", run.StandardOutput, StringComparison.Ordinal);
@@ -144,7 +178,11 @@ public sealed class ConfigCommandTests {
 
             var run = CliRunner.Run("config", "diff", baseline, changed);
 
-            Assert.Contains("resharper_csharp_max_line_length: 120 -> 100", run.StandardOutput, StringComparison.Ordinal);
+            Assert.Contains(
+                "resharper_csharp_max_line_length: 120 -> 100",
+                run.StandardOutput,
+                StringComparison.Ordinal
+            );
             Assert.Contains("1 option(s) differ", run.StandardOutput, StringComparison.Ordinal);
             File.Delete(baseline);
         } finally {

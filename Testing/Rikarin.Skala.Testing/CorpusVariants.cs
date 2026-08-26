@@ -6,8 +6,7 @@ namespace Rikarin.Skala.Testing;
 /// </param>
 /// <param name="Overrides">`.editorconfig` keys and values layered over the resolved configuration.</param>
 public sealed record CorpusVariant(string Name, IReadOnlyList<KeyValuePair<string, string>> Overrides) {
-    public string FixturePath(CorpusFile file) =>
-        Path.ChangeExtension(file.Path, null) + "." + Name + ".expected.cs";
+    public string FixturePath(CorpusFile file) => Path.ChangeExtension(file.Path, null) + "." + Name + ".expected.cs";
 
     public bool HasFixture(CorpusFile file) => File.Exists(FixturePath(file));
 }

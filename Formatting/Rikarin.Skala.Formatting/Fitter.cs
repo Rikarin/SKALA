@@ -73,7 +73,8 @@ public sealed class Fitter {
             facts,
             column,
             _document.FlatWidthOf(node),
-            facts.MeasuresHead ? _document.HeadWidthOf(node) : _document.FlatWidthOf(node));
+            facts.MeasuresHead ? _document.HeadWidthOf(node) : _document.FlatWidthOf(node)
+        );
         _modes[id] = mode;
         _resolved[id] = true;
         return mode;

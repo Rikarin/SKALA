@@ -136,7 +136,13 @@ internal static class Json {
                 case 'r': builder.Append('\r'); break;
                 case 't': builder.Append('\t'); break;
                 case 'u':
-                    builder.Append((char)ushort.Parse(text.Substring(index, 4), NumberStyles.HexNumber, CultureInfo.InvariantCulture));
+                    builder.Append(
+                        (char)ushort.Parse(
+                            text.Substring(index, 4),
+                            NumberStyles.HexNumber,
+                            CultureInfo.InvariantCulture
+                        )
+                    );
                     index += 4;
                     break;
                 default: throw new JsonException($"Unknown escape '\\{escape}'.");
@@ -186,7 +192,13 @@ internal readonly struct JsonValue {
     readonly Dictionary<string, JsonValue>? _members;
     readonly List<JsonValue>? _items;
 
-    JsonValue(JsonKind kind, string? text, double number, Dictionary<string, JsonValue>? members, List<JsonValue>? items) {
+    JsonValue(
+        JsonKind kind,
+        string? text,
+        double number,
+        Dictionary<string, JsonValue>? members,
+        List<JsonValue>? items
+    ) {
         _kind = kind;
         _string = text;
         _number = number;
@@ -196,7 +208,10 @@ internal readonly struct JsonValue {
 
     public static JsonValue FromString(string value) => new(JsonKind.String, value, 0, null, null);
     public static JsonValue FromNumber(double value) => new(JsonKind.Number, null, value, null, null);
-    public static JsonValue FromObject(Dictionary<string, JsonValue> members) => new(JsonKind.Object, null, 0, members, null);
+
+    public static JsonValue FromObject(Dictionary<string, JsonValue> members) =>
+        new(JsonKind.Object, null, 0, members, null);
+
     public static JsonValue FromArray(List<JsonValue> items) => new(JsonKind.Array, null, 0, null, items);
 
     public bool IsNull => _kind == JsonKind.Null;
@@ -206,12 +221,13 @@ internal readonly struct JsonValue {
     public JsonValue this[string name] =>
         _members is not null && _members.TryGetValue(name, out var value) ? value : Null;
 
-    public string? AsString() => _kind switch {
-        JsonKind.String => _string,
-        JsonKind.Number => _number.ToString(CultureInfo.InvariantCulture),
-        JsonKind.Boolean => _number != 0 ? "true" : "false",
-        _ => null
-    };
+    public string? AsString() =>
+        _kind switch {
+            JsonKind.String => _string,
+            JsonKind.Number => _number.ToString(CultureInfo.InvariantCulture),
+            JsonKind.Boolean => _number != 0 ? "true" : "false",
+            _ => null
+        };
 
     public int? AsInt() => _kind == JsonKind.Number ? (int)_number : null;
     public bool AsBool() => _kind == JsonKind.Boolean && _number != 0;
@@ -232,5 +248,12 @@ internal readonly struct JsonValue {
         return result;
     }
 
-    enum JsonKind { Null, Boolean, Number, String, Object, Array }
+    enum JsonKind {
+        Null,
+        Boolean,
+        Number,
+        String,
+        Object,
+        Array
+    }
 }

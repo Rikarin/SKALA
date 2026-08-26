@@ -5,9 +5,9 @@
     "Milestone": "M2 - break presence and position; keep_existing_*; expression-body placement. M1 was 0.9428/0.3684."
   },
   "constructs": {
-    "LineFidelity": 0.9302,
-    "FileFidelity": 0.8638,
-    "Milestone": "M2 - the set grew by 30 files (breaks/, placement/, preservation/), so this number is over a different population than M1's 0.9320. On M1's own 228 files it is 0.9364, up from 0.9320."
+    "LineFidelity": 0.9305,
+    "FileFidelity": 0.8615,
+    "Milestone": "M2 - the set grew by 33 files (breaks/, placement/, preservation/, three idempotency regressions), so this is a different population from M1's 0.9320. On M1's own 228 files it is 0.9364."
   },
   "pathological": {
     "LineFidelity": 0.8843,

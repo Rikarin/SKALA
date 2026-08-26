@@ -24,7 +24,9 @@ public static class Fixer {
 
         if (!document.IsRoot) {
             insertions[1] = ["root = true", string.Empty];
-            applied.Add("added `root = true`, so the walk stops here instead of picking up an .editorconfig above the repository");
+            applied.Add(
+                "added `root = true`, so the walk stops here instead of picking up an .editorconfig above the repository"
+            );
         }
 
         var width = document.Assignments.FirstOrDefault(static a => a.Key == "resharper_csharp_max_line_length");
@@ -35,7 +37,9 @@ public static class Fixer {
             }
 
             list.Add($"max_line_length = {width.Value}");
-            applied.Add($"added `max_line_length = {width.Value}` beside the ReSharper key, so every other tool can see the column limit too");
+            applied.Add(
+                $"added `max_line_length = {width.Value}` beside the ReSharper key, so every other tool can see the column limit too"
+            );
         }
 
         if (resolveContradictions) {
@@ -52,23 +56,32 @@ public static class Fixer {
                 }
 
                 replacements[generic.Line] = $"{rule.Generic} = {value}";
-                applied.Add($"set `{rule.Generic} = {value}` to agree with `{rule.Specific} = {specific.Value}`, which already wins");
+                applied.Add(
+                    $"set `{rule.Generic} = {value}` to agree with `{rule.Specific} = {specific.Value}`, which already wins"
+                );
             }
 
             foreach (var option in OptionRegistry.All) {
-                var byKey = document.Assignments.Where(a => OptionRegistry.TryResolve(a.Key, out var id) && id == option.Id).ToArray();
+                var byKey = document.Assignments.Where(a => OptionRegistry.TryResolve(a.Key, out var id) && id == option.Id
+                ).ToArray();
                 if (byKey.Length < 2) {
                     continue;
                 }
 
                 var winner = byKey.MinBy(static a => OptionResolver.SpecificityOf(a.Key))!;
                 foreach (var loser in byKey) {
-                    if (ReferenceEquals(loser, winner) || string.Equals(loser.Value, winner.Value, StringComparison.Ordinal)) {
+                    if (ReferenceEquals(loser, winner) || string.Equals(
+                        loser.Value,
+                        winner.Value,
+                        StringComparison.Ordinal
+                    )) {
                         continue;
                     }
 
                     replacements[loser.Line] = $"{loser.Key} = {winner.Value}";
-                    applied.Add($"set `{loser.Key} = {winner.Value}` to agree with `{winner.Key}`, the more specific spelling, which already wins");
+                    applied.Add(
+                        $"set `{loser.Key} = {winner.Value}` to agree with `{winner.Key}`, the more specific spelling, which already wins"
+                    );
                 }
             }
         }
@@ -92,12 +105,13 @@ public static class Fixer {
     }
 
     /// <summary>The value the losing generic key would need to stop contradicting the winner.</summary>
-    static string? Agreeing(string genericKey, string specificValue) => genericKey switch {
-        "trim_trailing_whitespace" => specificValue is "true" or "always" ? "true" : "false",
-        "max_line_length" => specificValue,
-        // end_of_line names a line ending and resharper_enforce_line_ending_style is a switch, so
-        // there is no value of end_of_line that agrees with `false`. The fix is to turn enforcement
-        // on, which is a style decision, and `fix` does not make those.
-        _ => null
-    };
+    static string? Agreeing(string genericKey, string specificValue) =>
+        genericKey switch {
+            "trim_trailing_whitespace" => specificValue is "true" or "always" ? "true" : "false",
+            "max_line_length" => specificValue,
+            // end_of_line names a line ending and resharper_enforce_line_ending_style is a switch, so
+            // there is no value of end_of_line that agrees with `false`. The fix is to turn enforcement
+            // on, which is a style decision, and `fix` does not make those.
+            _ => null
+        };
 }

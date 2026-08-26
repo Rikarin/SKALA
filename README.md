@@ -15,9 +15,9 @@ candidate wrap points, which is milestone 3.
 |---|---|
 | **Line fidelity vs. `jb cleanupcode`** on `corpus/real/` (380 files, 76 970 lines) | **97.47 %** (M1: 94.28 %) |
 | File fidelity, same corpus | 49.47 % (M1: 36.84 %) |
-| … on `corpus/constructs/` (257 files) | 93.02 % line, 86.38 % file — 93.64 % on M1's own 228 files, up from 93.20 % |
+| … on `corpus/constructs/` (260 files) | 93.05 % line, 86.15 % file — 93.64 % on M1's own 228 files, up from 93.20 % |
 | … on `corpus/pathological/` (52 files) | 88.43 % line, 67.31 % file |
-| … on `constructs/preservation/` under the four `keep_existing_*` combinations | 81.0 / 87.7 / 85.8 / 88.4 % line |
+| … on `constructs/preservation/` under the four `keep_existing_*` combinations | 81.01 / 87.65 / 85.82 / 88.44 % line |
 | Idempotency, token equivalence, parse stability, determinism, range consistency | 100 % of the corpus, every test run, in every configuration |
 | **Tier A options** — implemented and pinned by an oracle fixture | **172 of 483** (M1: 130) |
 | Documented divergences (`SK-DIV-*`) | 4 |

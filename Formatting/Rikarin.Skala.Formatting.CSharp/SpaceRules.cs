@@ -303,36 +303,38 @@ public static class SpaceRules {
         return true;
     }
 
-    static bool IntroducesAType(SyntaxKind keyword) => keyword is
+    static bool IntroducesAType(SyntaxKind keyword) =>
+        keyword is
         SyntaxKind.NewKeyword or SyntaxKind.IsKeyword or SyntaxKind.AsKeyword
-            or SyntaxKind.StackAllocKeyword or SyntaxKind.TypeOfKeyword or SyntaxKind.SizeOfKeyword
-            or SyntaxKind.DefaultKeyword or SyntaxKind.RefKeyword or SyntaxKind.OutKeyword
-            or SyntaxKind.InKeyword or SyntaxKind.ScopedKeyword or SyntaxKind.ParamsKeyword
-            or SyntaxKind.ReadOnlyKeyword or SyntaxKind.ConstKeyword or SyntaxKind.WhereKeyword;
+        or SyntaxKind.StackAllocKeyword or SyntaxKind.TypeOfKeyword or SyntaxKind.SizeOfKeyword
+        or SyntaxKind.DefaultKeyword or SyntaxKind.RefKeyword or SyntaxKind.OutKeyword
+        or SyntaxKind.InKeyword or SyntaxKind.ScopedKeyword or SyntaxKind.ParamsKeyword
+        or SyntaxKind.ReadOnlyKeyword or SyntaxKind.ConstKeyword or SyntaxKind.WhereKeyword;
 
     /// <summary>
     /// The gap around a <c>..</c>. ⚠ A prefix range with no left operand — which is how Roslyn
     /// parses a spread inside an array initializer — is a spread, not a range, and gets the space.
     /// </summary>
-    static bool SpreadSpacing(SyntaxToken token, in PhaseOneOptions o) => token.Parent switch {
-        SpreadElementSyntax => o.SpaceWithinSpreadPattern,
-        SlicePatternSyntax => o.SpaceWithinSlicePattern,
-        RangeExpressionSyntax { LeftOperand: null, Parent: InitializerExpressionSyntax or CollectionExpressionSyntax } =>
-            o.SpaceWithinSpreadPattern,
-        _ => false
-    };
+    static bool SpreadSpacing(SyntaxToken token, in PhaseOneOptions o) =>
+        token.Parent switch {
+            SpreadElementSyntax => o.SpaceWithinSpreadPattern,
+            SlicePatternSyntax => o.SpaceWithinSlicePattern,
+            RangeExpressionSyntax { LeftOperand: null, Parent: InitializerExpressionSyntax or CollectionExpressionSyntax } =>
+                o.SpaceWithinSpreadPattern,
+            _ => false
+        };
 
     /// <summary>Tokens that never take a space on their left.</summary>
     static bool ClingsLeft(SyntaxKind kind) =>
         kind is SyntaxKind.SemicolonToken or SyntaxKind.CommaToken or SyntaxKind.CloseParenToken
-            or SyntaxKind.CloseBracketToken or SyntaxKind.DotToken or SyntaxKind.ColonColonToken
-            or SyntaxKind.DotDotToken or SyntaxKind.MinusGreaterThanToken or SyntaxKind.ExclamationToken
-            or SyntaxKind.PlusPlusToken or SyntaxKind.MinusMinusToken;
+        or SyntaxKind.CloseBracketToken or SyntaxKind.DotToken or SyntaxKind.ColonColonToken
+        or SyntaxKind.DotDotToken or SyntaxKind.MinusGreaterThanToken or SyntaxKind.ExclamationToken
+        or SyntaxKind.PlusPlusToken or SyntaxKind.MinusMinusToken;
 
     /// <summary>Tokens that never take a space on their right.</summary>
     static bool ClingsRight(SyntaxKind kind) =>
         kind is SyntaxKind.OpenParenToken or SyntaxKind.OpenBracketToken or SyntaxKind.DotToken
-            or SyntaxKind.ColonColonToken or SyntaxKind.DotDotToken or SyntaxKind.MinusGreaterThanToken;
+        or SyntaxKind.ColonColonToken or SyntaxKind.DotDotToken or SyntaxKind.MinusGreaterThanToken;
 
     static bool BeforeOpenParen(SyntaxToken prev, SyntaxToken next, in PhaseOneOptions o) {
         // `!(value is T x)` — a prefix operator binds to its operand whatever the operand is, and
@@ -422,7 +424,7 @@ public static class SpaceRules {
     /// <summary>True when <paramref name="prev"/> would make the following <c>(</c> read as a call.</summary>
     static bool IsCallSite(SyntaxToken prev) =>
         prev.Kind() is SyntaxKind.IdentifierToken or SyntaxKind.CloseParenToken or SyntaxKind.CloseBracketToken
-            or SyntaxKind.GreaterThanToken;
+        or SyntaxKind.GreaterThanToken;
 
     static bool BeforeOpenBracket(SyntaxToken prev, SyntaxToken next, in PhaseOneOptions o) =>
         prev.IsKind(SyntaxKind.OpenBraceToken)
@@ -437,21 +439,23 @@ public static class SpaceRules {
                 _ => o.SpaceBeforeOpenSquareBrackets
             };
 
-    static bool WithinBrackets(SyntaxNode? owner, in PhaseOneOptions o) => owner switch {
-        AttributeListSyntax => o.SpaceWithinAttributeBrackets,
-        ListPatternSyntax => o.SpaceWithinListPatternBrackets,
-        BracketedArgumentListSyntax or ImplicitElementAccessSyntax => o.SpaceWithinArrayAccessBrackets,
-        CollectionExpressionSyntax => o.SpaceWithinSlicePattern && false,
-        _ => false
-    };
+    static bool WithinBrackets(SyntaxNode? owner, in PhaseOneOptions o) =>
+        owner switch {
+            AttributeListSyntax => o.SpaceWithinAttributeBrackets,
+            ListPatternSyntax => o.SpaceWithinListPatternBrackets,
+            BracketedArgumentListSyntax or ImplicitElementAccessSyntax => o.SpaceWithinArrayAccessBrackets,
+            CollectionExpressionSyntax => o.SpaceWithinSlicePattern && false,
+            _ => false
+        };
 
     static bool WithinAngles(SyntaxNode? owner, in PhaseOneOptions o) =>
         owner is TypeParameterListSyntax ? o.SpaceWithinTypeParameterAngles : o.SpaceWithinTypeArgumentAngles;
 
-    static bool BeforeOpenBrace(SyntaxToken prev, SyntaxToken next, in PhaseOneOptions o) => next.Parent switch {
-        AccessorListSyntax => o.SpaceBeforeSinglelineAccessorholder,
-        _ => !ClingsRight(prev.Kind())
-    };
+    static bool BeforeOpenBrace(SyntaxToken prev, SyntaxToken next, in PhaseOneOptions o) =>
+        next.Parent switch {
+            AccessorListSyntax => o.SpaceBeforeSinglelineAccessorholder,
+            _ => !ClingsRight(prev.Kind())
+        };
 
     /// <summary>The gap just inside a brace, on whichever side.</summary>
     static bool WithinBraces(SyntaxNode? owner, SyntaxToken other, in PhaseOneOptions o) {
@@ -467,7 +471,9 @@ public static class SpaceRules {
             BlockSyntax { Parent: BaseMethodDeclarationSyntax or LocalFunctionStatementSyntax or AccessorDeclarationSyntax } =>
                 o.SpaceInSinglelineMethod,
             InitializerExpressionSyntax initializer =>
-                initializer.IsKind(SyntaxKind.ArrayInitializerExpression) || initializer.IsKind(SyntaxKind.CollectionInitializerExpression)
+                initializer.IsKind(SyntaxKind.ArrayInitializerExpression) || initializer.IsKind(
+                    SyntaxKind.CollectionInitializerExpression
+                )
                     ? o.SpaceWithinSingleLineArrayInitializerBraces
                     : true,
             _ => true
@@ -481,7 +487,7 @@ public static class SpaceRules {
     static bool IsTypeAngle(SyntaxToken token) =>
         token.Kind() is SyntaxKind.LessThanToken or SyntaxKind.GreaterThanToken
         && token.Parent is TypeArgumentListSyntax or TypeParameterListSyntax
-            or FunctionPointerUnmanagedCallingConventionListSyntax;
+        or FunctionPointerUnmanagedCallingConventionListSyntax;
 
     static bool IsPrefixOperator(SyntaxToken token) =>
         token.Parent is PrefixUnaryExpressionSyntax prefix && prefix.OperatorToken == token;
@@ -497,15 +503,16 @@ public static class SpaceRules {
         || token.Parent is BinaryPatternSyntax pattern && pattern.OperatorToken == token
         || token.Parent is RelationalPatternSyntax relational && relational.OperatorToken == token;
 
-    static bool BinarySpacing(SyntaxToken op, in PhaseOneOptions o) => op.Kind() switch {
-        SyntaxKind.PlusToken or SyntaxKind.MinusToken => o.SpaceAroundAdditiveOp,
-        SyntaxKind.LessThanLessThanToken or SyntaxKind.GreaterThanGreaterThanToken
-            or SyntaxKind.GreaterThanGreaterThanGreaterThanToken => o.SpaceAroundShiftOp,
-        SyntaxKind.LessThanToken or SyntaxKind.GreaterThanToken or SyntaxKind.LessThanEqualsToken
-            or SyntaxKind.GreaterThanEqualsToken or SyntaxKind.EqualsEqualsToken
-            or SyntaxKind.ExclamationEqualsToken => o.SpaceAroundRelationalOp,
-        _ => true
-    };
+    static bool BinarySpacing(SyntaxToken op, in PhaseOneOptions o) =>
+        op.Kind() switch {
+            SyntaxKind.PlusToken or SyntaxKind.MinusToken => o.SpaceAroundAdditiveOp,
+            SyntaxKind.LessThanLessThanToken or SyntaxKind.GreaterThanGreaterThanToken
+                or SyntaxKind.GreaterThanGreaterThanGreaterThanToken => o.SpaceAroundShiftOp,
+            SyntaxKind.LessThanToken or SyntaxKind.GreaterThanToken or SyntaxKind.LessThanEqualsToken
+                or SyntaxKind.GreaterThanEqualsToken or SyntaxKind.EqualsEqualsToken
+                or SyntaxKind.ExclamationEqualsToken => o.SpaceAroundRelationalOp,
+            _ => true
+        };
 
     static bool IsAssignmentOperator(SyntaxToken token) =>
         token.Parent is AssignmentExpressionSyntax assignment && assignment.OperatorToken == token
@@ -547,14 +554,15 @@ public static class SpaceRules {
 
     static bool IsWordChar(char c) => char.IsLetterOrDigit(c) || c is '_' or '@' or '$';
 
-    static bool Combines(char a, char b) => (a, b) switch {
-        ('+', '+') or ('-', '-') or ('+', '=') or ('-', '=') or ('*', '=') or ('/', '=')
-            or ('%', '=') or ('&', '=') or ('|', '=') or ('^', '=') or ('!', '=') or ('=', '=')
-            or ('<', '=') or ('>', '=') or ('=', '>') or ('-', '>') or ('&', '&') or ('|', '|')
-            or ('<', '<') or ('>', '>') or (':', ':') or ('?', '?')
-            or ('/', '/') or ('/', '*') or ('*', '/') or ('.', '.') => true,
-        // ⚠ `?.` and `?[` are two tokens in C#, not one: writing them adjacent is what a
-        // conditional access IS. Listing them here puts a space in every `a?.B` in a real tree.
-        _ => false
-    };
+    static bool Combines(char a, char b) =>
+        (a, b) switch {
+            ('+', '+') or ('-', '-') or ('+', '=') or ('-', '=') or ('*', '=') or ('/', '=')
+                or ('%', '=') or ('&', '=') or ('|', '=') or ('^', '=') or ('!', '=') or ('=', '=')
+                or ('<', '=') or ('>', '=') or ('=', '>') or ('-', '>') or ('&', '&') or ('|', '|')
+                or ('<', '<') or ('>', '>') or (':', ':') or ('?', '?')
+                or ('/', '/') or ('/', '*') or ('*', '/') or ('.', '.') => true,
+            // ⚠ `?.` and `?[` are two tokens in C#, not one: writing them adjacent is what a
+            // conditional access IS. Listing them here puts a space in every `a?.B` in a real tree.
+            _ => false
+        };
 }

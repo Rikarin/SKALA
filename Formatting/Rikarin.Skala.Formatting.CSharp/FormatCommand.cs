@@ -118,7 +118,13 @@ public static class FormatCommand {
 
             changed++;
             if (request.Diff) {
-                output.Append(UnifiedDiff.Render(Relative(root, file), result.Original.ToString(), EditEmitter.Apply(result.Original.ToString(), edits)));
+                output.Append(
+                    UnifiedDiff.Render(
+                        Relative(root, file),
+                        result.Original.ToString(),
+                        EditEmitter.Apply(result.Original.ToString(), edits)
+                    )
+                );
             } else if (!request.Quiet) {
                 output.Append(Relative(root, file)).AppendLine();
             }
@@ -194,7 +200,10 @@ public static class FormatCommand {
                 continue;
             }
 
-            foreach (var file in Directory.EnumerateFiles(full, "*.cs", SearchOption.AllDirectories).OrderBy(static f => f, StringComparer.Ordinal)) {
+            foreach (var file in Directory.EnumerateFiles(full, "*.cs", SearchOption.AllDirectories).OrderBy(
+                static f => f,
+                StringComparer.Ordinal
+            )) {
                 // A formatter that reformats artifacts/ is a formatter that is quietly very slow.
                 if (IsExcluded(file) || !seen.Add(file)) {
                     continue;
