@@ -1,0 +1,29 @@
+<Project>
+
+  <!-- Analyzer wiring and packaging defaults. See docs/plan/02-repository-layout.md. -->
+
+  <ItemGroup Condition="'$(SkalaProfile)' == 'analyzer'">
+    <!--
+      Nothing an analyzer references may flow to its consumers: the assembly is loaded into csc
+      and into Rider, and a transitive reference that is not netstandard2.0 fails the load with an
+      error message that names none of it.
+    -->
+    <PackageReference Update="@(PackageReference)" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(SkalaIsTestProject)' == 'true'">
+    <PackageReference Include="xunit.v3" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+  <!--
+    Every test project needs to find the repository root at run time (the real
+    editor_config_template is the fixture for all of M0).
+  -->
+  <ItemGroup Condition="'$(SkalaIsTestProject)' == 'true'">
+    <AssemblyMetadata Include="SkalaRepositoryRoot" Value="$(SkalaRepositoryRoot)" />
+  </ItemGroup>
+
+</Project>

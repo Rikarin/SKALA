@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Analyzer profile (netstandard2.0). Reads options.json as an AdditionalFile and emits the
+    OptionId enum, the FormattingOptions struct-of-arrays, the key parser and the option enums.
+    docs/plan/03-configuration-model.md § "The option registry".
+  -->
+
+  <PropertyGroup>
+    <RootNamespace>Rikarin.Skala.Options.Generator</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" PrivateAssets="all" ExcludeAssets="runtime" />
+    <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" PrivateAssets="all" />
+  </ItemGroup>
+
+</Project>

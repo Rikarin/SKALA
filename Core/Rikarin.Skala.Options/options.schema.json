@@ -1,0 +1,92 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Rikarin/Skala/Core/Rikarin.Skala.Options/options.schema.json",
+  "title": "Skala option registry",
+  "description": "The single source of truth for every style option Skala knows about. docs/plan/03-configuration-model.md § \"The option registry\".",
+  "type": "object",
+  "required": ["version", "enums", "options"],
+  "properties": {
+    "version": { "type": "integer" },
+    "generator": { "type": "string" },
+    "notes": { "type": "array", "items": { "type": "string" } },
+    "enums": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["values"],
+        "properties": {
+          "values": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["name"],
+              "properties": {
+                "name": { "type": "string" },
+                "summary": { "type": "string" }
+              }
+            }
+          },
+          "valueAliases": {
+            "description": "ReSharper's alternative spellings for a value, e.g. true -> always.",
+            "type": "object",
+            "additionalProperties": { "type": "string" }
+          }
+        }
+      }
+    },
+    "options": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["key", "aliases", "language", "type", "default", "defaultSource", "tier", "construct", "summary", "since"],
+        "properties": {
+          "key": {
+            "description": "The canonical .editorconfig spelling, verbatim. The most specific one ReSharper documents.",
+            "type": "string",
+            "pattern": "^[a-z0-9_.]+$"
+          },
+          "aliases": {
+            "description": "Every other spelling ReSharper accepts for this one option. An alias that reaches two options is SK9004.",
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "language": { "enum": ["csharp", "xmldoc", "any"] },
+          "type": {
+            "description": "bool | int | string | enum:<Name>, where <Name> is a key of `enums`.",
+            "type": "string"
+          },
+          "default": {
+            "description": "ReSharper's default for this option, in its .editorconfig spelling. Read together with defaultSource: it is only trustworthy when defaultSource is resharper-docs.",
+            "type": ["string", "null"]
+          },
+          "defaultSource": {
+            "description": "Where `default` came from. resharper-docs: verified against JetBrains' published property tables. template: the value the Rider export holds, which is Rider's default for most keys and the author's choice for the rest, with nothing distinguishing the two. unknown: no basis beyond the export. `skala config distill` may only drop a key when this is resharper-docs.",
+            "enum": ["resharper-docs", "template", "unknown"]
+          },
+          "tier": {
+            "description": "docs/plan/03 § \"Four tiers\". A: implemented and pinned by an oracle fixture. B: approximated, with a documented divergence. C: accepted and deliberately ignored. D: known but not implemented.",
+            "enum": ["A", "B", "C", "D"]
+          },
+          "construct": { "type": "string" },
+          "summary": { "type": "string" },
+          "since": { "type": "string" },
+          "oracle": { "type": ["string", "null"] },
+          "docs": { "type": ["string", "null"] },
+          "templateLine": {
+            "description": "The line in editor_config_template this entry was seeded from. Provenance only.",
+            "type": ["integer", "null"]
+          },
+          "severitySuffix": {
+            "description": "True for Microsoft style keys written as value:severity.",
+            "type": "boolean"
+          },
+          "expands": {
+            "description": "For one of ReSharper's generalized properties, the options it sets at once.",
+            "type": "array",
+            "items": { "type": "string" }
+          }
+        }
+      }
+    }
+  }
+}

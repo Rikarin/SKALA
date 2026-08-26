@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    .editorconfig ingestion, option resolution with provenance, the SK9000 configuration
+    diagnostics, and the implementations behind `skala config`.
+  -->
+
+  <PropertyGroup>
+    <RootNamespace>Rikarin.Skala.Core</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../Rikarin.Skala.Options/Rikarin.Skala.Options.csproj" />
+  </ItemGroup>
+
+</Project>

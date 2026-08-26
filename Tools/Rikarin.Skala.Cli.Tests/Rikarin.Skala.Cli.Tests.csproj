@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    ⚠ Nothing references Cli (docs/plan/02). These tests drive the built `skala` binary as a
+    process; the reference guard in Rikarin.Skala.Core.Tests asserts the missing edge stays missing.
+  -->
+
+  <ItemGroup>
+    <ProjectReference Include="../../Core/Rikarin.Skala.Core/Rikarin.Skala.Core.csproj" />
+  </ItemGroup>
+
+</Project>

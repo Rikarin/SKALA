@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    The `skala` tool. Argument parsing and rendering only: every command's logic lives in
+    Rikarin.Skala.Core so that MSBuild, MCP and the server can host it (docs/plan/02 § project graph).
+  -->
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>Rikarin.Skala.Cli</RootNamespace>
+    <AssemblyName>skala</AssemblyName>
+    <PackAsTool>true</PackAsTool>
+    <ToolCommandName>skala</ToolCommandName>
+    <PackageId>Rikarin.Skala.Cli</PackageId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.CommandLine" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../Core/Rikarin.Skala.Core/Rikarin.Skala.Core.csproj" />
+  </ItemGroup>
+
+</Project>
