@@ -86,6 +86,30 @@ across 31 files" is a day's work, findable in no other way.
 CI enforces a ratchet: fidelity may not decrease. Improving it is a commit; regressing it is a build
 break.
 
+⚠ **A ratchet compares numbers over the same population.** Adding fixtures to a set changes the
+denominator, and a set that grows by thirty deliberately-hard files can lose aggregate percentage
+while every file in it improves. When a set's population changes, the commit that changes it re-bases
+the number and says so in `fidelity.json`'s `Milestone` field, *and* records what the old population
+now scores — otherwise the ratchet has been quietly loosened rather than re-based.
+
+### Alternative configurations
+
+Most of the corpus is measured under whatever its `.editorconfig` chain resolves to, and for most
+options that is enough: `OptionCoverageTests` flips one key at a time on a fixture and checks the
+output moves. It is not enough for a question about two keys *in combination*, and
+[05](05-csharp-formatting-rules.md) § "`keep_existing_*`" is exactly that question — a 2×2 whose
+wrong reading is a first-run diff over every call site in a repository.
+
+So a fixture set may declare *variants*: named sets of `.editorconfig` overrides under which the same
+inputs are additionally run. `./build.sh Oracle` regenerates one `jb cleanupcode` fixture per
+(file, variant) into `<file>.<variant>.expected.cs`, and the conformance suite measures each corner
+with its own ratchet line in `fidelity.json`. `constructs/preservation/` is the first set to use it:
+thirteen inputs × four combinations of `keep_user_linebreaks` × `keep_existing_*`.
+
+⚠ The safety properties are asserted in **every** corner, not only the default one. A formatter that
+corrupts a file when `keep_user_linebreaks = false` is still a formatter that corrupts files, and the
+non-default corners are precisely where nobody looks.
+
 ### 3. Properties — where the real bugs are
 
 Run over every corpus file, every commit, and over generated input nightly:

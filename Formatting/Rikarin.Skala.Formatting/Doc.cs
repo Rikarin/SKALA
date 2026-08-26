@@ -63,6 +63,24 @@ public enum LineKind {
     Preserve
 }
 
+/// <summary>What a <see cref="DocKind.Line"/> node carries in <see cref="DocNode.Flags"/>.</summary>
+[Flags]
+public enum LineFlags {
+    None = 0,
+
+    /// <summary>
+    /// A <see cref="LineKind.Soft"/> break renders as one space when its group is flat.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ This is the flat half of the break-position model. <c>Foo(a, b)</c> has three break points
+    /// and they do not render alike when the group stays flat: the one after <c>(</c> and the one
+    /// before <c>)</c> render as nothing, the one after <c>,</c> renders as a space. A soft break
+    /// with a single flat rendering produces <c>Foo( a, b )</c> or <c>Foo(a,b)</c> and there is no
+    /// third choice.
+    /// </remarks>
+    FlatSpace = 1
+}
+
 /// <summary>
 /// The three-state group model, the concrete form of ADR-002.
 /// </summary>
@@ -76,8 +94,22 @@ public enum GroupMode {
     /// <summary>Break iff too wide — the classic Prettier group.</summary>
     Auto,
 
-    /// <summary>⚠ The third state: broken iff it was broken in the source, subject to width.</summary>
-    Preserve
+    /// <summary>
+    /// ⚠ The third state: broken iff it was broken in the source, subject to width — with "subject
+    /// to width" spelled out per group by <see cref="GroupFacts"/>.
+    /// </summary>
+    Preserve,
+
+    /// <summary>
+    /// ⚠ The fourth: broken iff the group named by <see cref="Document.OwnerOf"/> resolved broken.
+    /// </summary>
+    /// <remarks>
+    /// <c>place_*_on_single_line = if_owner_is_single_line</c>, which five keys in the export use.
+    /// The owner resolves first and the child only reads it, so a child may move Flat → Broken and
+    /// never back, which is what makes termination a property of the shape rather than of a
+    /// convergence argument (docs/plan/04 § "The fitting algorithm").
+    /// </remarks>
+    Owner
 }
 
 /// <summary>The indentation flavours from docs/plan/04 § "Indentation".</summary>
@@ -123,6 +155,13 @@ public struct DocNode {
     /// <summary>Kind-specific bit flags: <see cref="LineFlags"/>, <see cref="VerbatimFlags"/>.</summary>
     public int Flags;
 
+    /// <summary>
+    /// Kind-specific: for <see cref="DocKind.Line"/> the group whose mode decides the break, and
+    /// for <see cref="DocKind.Group"/> the owner group of a <see cref="GroupMode.Owner"/> group.
+    /// −1 when there is none.
+    /// </summary>
+    public int Arg2;
+
     /// <summary>The source span this node came from; <see cref="SourceSpan.Length"/> 0 when synthetic.</summary>
     public SourceSpan Source;
 }
@@ -131,19 +170,29 @@ public struct DocNode {
 /// A document: a struct arena of nodes plus the side tables they index.
 /// </summary>
 public sealed class Document {
+    readonly int[] _flatWidth;
+    readonly int[] _headWidth;
+    readonly GroupFacts[] _facts;
+
     internal Document(
         DocNode[] nodes,
         int nodeCount,
         int[] children,
         string[] strings,
         int root,
-        int groupCount) {
+        int groupCount,
+        int[] flatWidth,
+        int[] headWidth,
+        GroupFacts[] facts) {
         Nodes = nodes;
         NodeCount = nodeCount;
         Children = children;
         Strings = strings;
         Root = root;
         GroupCount = groupCount;
+        _flatWidth = flatWidth;
+        _headWidth = headWidth;
+        _facts = facts;
     }
 
     public DocNode[] Nodes { get; }
@@ -158,6 +207,40 @@ public sealed class Document {
 
     public int GroupCount { get; }
 
+    /// <summary>
+    /// The width the subtree at <paramref name="node"/> occupies with every group flat.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ Computed by <see cref="DocumentBuilder"/> as the arena is filled, not by a traversal of
+    /// its own: docs/plan/13 § "The fitting pass" — "the measure pass is fused into the build pass
+    /// where a group's contents are already known, which removes one full traversal". A subtree
+    /// containing a hard break is <see cref="Unbounded"/>.
+    /// </remarks>
+    public int FlatWidthOf(int node) => _flatWidth[node];
+
+    /// <summary>
+    /// The width from the node's start to the first break inside it, or its flat width when there
+    /// is none.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ The second of the two measures a group can be fitted against, and the two are not
+    /// interchangeable. A list — an argument list, an enum body, a switch expression — is chopped
+    /// when it is "long <em>or multiline</em>", which is ReSharper's own wording for
+    /// <c>chop_if_long</c>, so its measure is the flat width and a hard break anywhere inside makes
+    /// it infinite. A tail — the right-hand side of an <c>=</c>, the body after an <c>=&gt;</c> —
+    /// is broken only when what remains of the current line does not fit, because breaking after
+    /// the <c>=</c> of <c>Original = new Thing {</c> gains nothing: the line was going to end at the
+    /// brace either way. Measuring a tail by its flat width costs 7.6 points of line fidelity, which
+    /// is how this distinction was found.
+    /// </remarks>
+    public int HeadWidthOf(int node) => _headWidth[node];
+
+    /// <summary>What the fitter needs to know about one group beyond its mode and its width.</summary>
+    public GroupFacts FactsOf(int group) => _facts[group];
+
+    /// <summary>A subtree that contains a hard break can never be flat; this is its flat width.</summary>
+    public const int Unbounded = int.MaxValue / 4;
+
     public ReadOnlySpan<int> ChildrenOf(int node) {
         ref var slot = ref Nodes[node];
         return new ReadOnlySpan<int>(Children, slot.Payload, slot.Count);
@@ -165,3 +248,51 @@ public sealed class Document {
 
     public string TextOf(int node) => Strings[Nodes[node].Payload];
 }
+
+
+/// <summary>
+/// The per-group half of the <see cref="GroupMode.Preserve"/> rule.
+/// </summary>
+/// <remarks>
+/// ⚠ docs/plan/04 states Preserve as one rule — "broken iff it was broken in the source, subject to
+/// width" — and one rule is not enough, because "subject to width" runs in two directions and the
+/// export wants a different one per construct family.
+/// <list type="bullet">
+/// <item>
+/// An argument list <em>adds</em> breaks for width: <c>chop_if_long</c> chops a call that does not
+/// fit even though the author wrote it on one line. <see cref="BreaksIfTooLong"/>.
+/// </item>
+/// <item>
+/// An expression-bodied member <em>removes</em> one: <c>keep_existing_expr_member_arrangement =
+/// false</c> re-joins <c>int P =&gt;\n 1;</c>, and leaves the break alone when joining would not
+/// fit. <see cref="JoinsIfFits"/>.
+/// </item>
+/// <item>
+/// Neither is the other's default. Giving the arrow the argument list's rule — break after
+/// <c>=&gt;</c> whenever the declaration is over 120 — costs 0.7 points of line fidelity on
+/// <c>corpus/real/</c>, because the oracle wraps such a line at a different point and Skala's break
+/// then lands one line away from the oracle's. Choosing <em>which</em> of a line's candidate points
+/// to wrap at is <c>prefer_wrap_around_eq</c>'s job and belongs to milestone 3.
+/// </item>
+/// </list>
+/// </remarks>
+/// <param name="SourceBroken">
+/// ⚠ Whether the source held a break at one of this group's <em>own</em> break points — not
+/// "somewhere inside the group". <c>var n = aaa +\n bbb;</c> and <c>var n = aaa\n + bbb;</c> are
+/// both breaks inside the same binary chain; the oracle removes the first and keeps the second,
+/// because <c>wrap_before_binary_opsign = true</c> makes only the gap before the operator a break
+/// point. A containment test cannot tell them apart.
+/// </param>
+/// <param name="JoinsIfFits">The group may remove the author's break when the flat form fits.</param>
+/// <param name="BreaksIfTooLong">The group may add breaks the author did not write, to fit.</param>
+/// <param name="MeasuresHead">
+/// Fit against <see cref="Document.HeadWidthOf"/> — what remains of the line — rather than the
+/// whole flat width.
+/// </param>
+/// <param name="Owner">The group a <see cref="GroupMode.Owner"/> group reads its mode from, or −1.</param>
+public readonly record struct GroupFacts(
+    bool SourceBroken = false,
+    bool JoinsIfFits = false,
+    bool BreaksIfTooLong = false,
+    bool MeasuresHead = false,
+    int Owner = -1);

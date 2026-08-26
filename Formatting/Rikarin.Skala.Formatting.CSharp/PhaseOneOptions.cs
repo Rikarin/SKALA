@@ -4,7 +4,7 @@ using Rikarin.Skala.Options;
 namespace Rikarin.Skala.Formatting.CSharp;
 
 /// <summary>
-/// The option subset milestone 1 implements, read once per file into fields.
+/// The option subset the formatter implements, read once per file into fields.
 /// </summary>
 /// <remarks>
 /// ⚠ Every value here is read out of <see cref="FormattingOptions"/> by <see cref="OptionId"/>,
@@ -169,6 +169,60 @@ public readonly struct PhaseOneOptions {
         BlankLinesAfterCase = options.GetInt(Ids.BlankLinesAfterCase);
         BlankLinesBeforeCase = options.GetInt(Ids.BlankLinesBeforeCase);
 
+        // ── Break presence and position (phase 2) ────────────────────────────────────────────
+        KeepUserLinebreaks = options.GetBool(Ids.KeepUserLinebreaks);
+        KeepUserWrapping = options.GetBool(Ids.KeepUserWrapping);
+        KeepExistingInvocationParensArrangement = options.GetBool(Ids.KeepExistingInvocationParensArrangement);
+        KeepExistingDeclarationParensArrangement = options.GetBool(Ids.KeepExistingDeclarationParensArrangement);
+        KeepExistingLambdaParensArrangement = options.GetBool(Ids.KeepExistingLambdaParensArrangement);
+        KeepExistingPrimaryConstructorParensArrangement = options.GetBool(Ids.KeepExistingPrimaryConstructorParensArrangement);
+        KeepExistingExprMemberArrangement = options.GetBool(Ids.KeepExistingExprMemberArrangement);
+        KeepExistingEmbeddedArrangement = options.GetBool(Ids.KeepExistingEmbeddedArrangement);
+        KeepExistingAttributeArrangement = options.GetBool(Ids.KeepExistingAttributeArrangement);
+        KeepExistingEnumArrangement = options.GetBool(Ids.KeepExistingEnumArrangement);
+        KeepExistingLinebreaks = options.GetBool(Ids.KeepExistingLinebreaks);
+
+        WrapEnumDeclaration = (WrapStyle)options.GetRaw(Ids.WrapEnumDeclaration);
+        MaxEnumMembersOnLine = Math.Max(1, options.GetInt(Ids.MaxEnumMembersOnLine));
+        WrapSwitchExpression = (WrapStyle)options.GetRaw(Ids.WrapSwitchExpression);
+        WrapArgumentsStyle = (WrapStyle)options.GetRaw(Ids.WrapArgumentsStyle);
+        WrapParametersStyle = (WrapStyle)options.GetRaw(Ids.WrapParametersStyle);
+        WrapPrimaryConstructorParametersStyle = (WrapStyle)options.GetRaw(Ids.WrapPrimaryConstructorParametersStyle);
+        WrapAfterPrimaryConstructorLpar = options.GetBool(Ids.WrapAfterPrimaryConstructorLpar);
+        WrapBeforePrimaryConstructorRpar = options.GetBool(Ids.WrapBeforePrimaryConstructorRpar);
+
+        WrapBeforeBinaryOpsign = options.GetBool(Ids.WrapBeforeBinaryOpsign);
+        WrapBeforeBinaryPatternOp = options.GetBool(Ids.WrapBeforeBinaryPatternOp);
+        WrapBeforeTernaryOpsigns = options.GetBool(Ids.WrapBeforeTernaryOpsigns);
+        WrapBeforeEq = options.GetBool(Ids.WrapBeforeEq);
+        WrapBeforeComma = options.GetBool(Ids.WrapBeforeComma);
+        WrapAfterInvocationLpar = options.GetBool(Ids.WrapAfterInvocationLpar);
+        WrapBeforeInvocationRpar = options.GetBool(Ids.WrapBeforeInvocationRpar);
+        WrapAfterDeclarationLpar = options.GetBool(Ids.WrapAfterDeclarationLpar);
+        WrapBeforeDeclarationRpar = options.GetBool(Ids.WrapBeforeDeclarationRpar);
+        WrapBeforeArrowWithExpressions = options.GetBool(Ids.WrapBeforeArrowWithExpressions);
+
+        PlaceAttributeOnSameLine = (PlacementStyle)options.GetRaw(Ids.PlaceAttributeOnSameLine);
+        PlaceTypeAttributeOnSameLine = (PlacementStyle)options.GetRaw(Ids.PlaceTypeAttributeOnSameLine);
+        PlaceMethodAttributeOnSameLine = (PlacementStyle)options.GetRaw(Ids.PlaceMethodAttributeOnSameLine);
+        PlaceFieldAttributeOnSameLine = (PlacementStyle)options.GetRaw(Ids.PlaceFieldAttributeOnSameLine);
+        PlaceAccessorAttributeOnSameLine = (PlacementStyle)options.GetRaw(Ids.PlaceAccessorAttributeOnSameLine);
+        PlaceAccessorHolderAttributeOnSameLine = (PlacementStyle)options.GetRaw(Ids.PlaceAccessorHolderAttributeOnSameLine);
+        PlaceRecordFieldAttributeOnSameLine = (PlacementStyle)options.GetRaw(Ids.PlaceRecordFieldAttributeOnSameLine);
+        MaxAttributeLengthForSameLine = options.GetInt(Ids.MaxAttributeLengthForSameLine);
+
+        PlaceSingleMethodArgumentLambdaOnSameLine = options.GetBool(Ids.PlaceSingleMethodArgumentLambdaOnSameLine);
+        PlaceExprMethodOnSingleLine = (PlacementStyle)options.GetRaw(Ids.PlaceExprMethodOnSingleLine);
+        PlaceExprPropertyOnSingleLine = (PlacementStyle)options.GetRaw(Ids.PlaceExprPropertyOnSingleLine);
+        PlaceExprAccessorOnSingleLine = (PlacementStyle)options.GetRaw(Ids.PlaceExprAccessorOnSingleLine);
+        PlaceSimpleEmbeddedStatementOnSameLine = (PlacementStyle)options.GetRaw(Ids.PlaceSimpleEmbeddedStatementOnSameLine);
+        PlaceSimpleCaseStatementOnSameLine = (PlacementStyle)options.GetRaw(Ids.PlaceSimpleCaseStatementOnSameLine);
+        PlaceTypeConstraintsOnSameLine = options.GetBool(Ids.PlaceTypeConstraintsOnSameLine);
+        PlaceConstructorInitializerOnSameLine = options.GetBool(Ids.PlaceConstructorInitializerOnSameLine);
+        PlacePrimaryConstructorInitializerOnSameLine = options.GetBool(Ids.PlacePrimaryConstructorInitializerOnSameLine);
+        PlaceLinqIntoOnNewLine = options.GetBool(Ids.PlaceLinqIntoOnNewLine);
+        NewLineBetweenQueryExpressionClauses = options.GetBool(Ids.NewLineBetweenQueryExpressionClauses);
+
         // ── Escape hatch ─────────────────────────────────────────────────────────────────────
         FormatterTagsEnabled = options.GetBool(Ids.FormatterTagsEnabled);
         FormatterOffTag = options.GetString(Ids.FormatterOffTag) ?? "@formatter:off";
@@ -322,6 +376,72 @@ public readonly struct PhaseOneOptions {
     public int BlankLinesBeforeSingleLineComment { get; }
     public int BlankLinesAfterCase { get; }
     public int BlankLinesBeforeCase { get; }
+
+    public bool KeepUserLinebreaks { get; }
+    public bool KeepUserWrapping { get; }
+    public bool KeepExistingInvocationParensArrangement { get; }
+    public bool KeepExistingDeclarationParensArrangement { get; }
+    public bool KeepExistingLambdaParensArrangement { get; }
+    public bool KeepExistingPrimaryConstructorParensArrangement { get; }
+    public bool KeepExistingExprMemberArrangement { get; }
+    public bool KeepExistingEmbeddedArrangement { get; }
+    public bool KeepExistingAttributeArrangement { get; }
+    public bool KeepExistingEnumArrangement { get; }
+    public bool KeepExistingLinebreaks { get; }
+
+    /// <summary>
+    /// Whether a break the author put <em>between two items of a list</em> survives.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ Not the same question as whether a break next to the list's delimiters survives — that one
+    /// is the construct's own <c>keep_existing_*_arrangement</c>, gated by this. The four corners of
+    /// docs/plan/05's table are pinned by <c>constructs/preservation/*</c> under all four
+    /// configurations, and the corner people get wrong is
+    /// (<c>keep_user_linebreaks = true</c>, <c>keep_existing_X = false</c>): <c>Foo(\n a)</c> re-joins
+    /// there and <c>Foo(\n a,\n b)</c> does not.
+    /// </remarks>
+    public bool KeepsUserBreaksBetweenItems => KeepUserLinebreaks && KeepExistingLinebreaks;
+
+    public WrapStyle WrapEnumDeclaration { get; }
+    public int MaxEnumMembersOnLine { get; }
+    public WrapStyle WrapSwitchExpression { get; }
+    public WrapStyle WrapArgumentsStyle { get; }
+    public WrapStyle WrapParametersStyle { get; }
+    public WrapStyle WrapPrimaryConstructorParametersStyle { get; }
+    public bool WrapAfterPrimaryConstructorLpar { get; }
+    public bool WrapBeforePrimaryConstructorRpar { get; }
+
+    public bool WrapBeforeBinaryOpsign { get; }
+    public bool WrapBeforeBinaryPatternOp { get; }
+    public bool WrapBeforeTernaryOpsigns { get; }
+    public bool WrapBeforeEq { get; }
+    public bool WrapBeforeComma { get; }
+    public bool WrapAfterInvocationLpar { get; }
+    public bool WrapBeforeInvocationRpar { get; }
+    public bool WrapAfterDeclarationLpar { get; }
+    public bool WrapBeforeDeclarationRpar { get; }
+    public bool WrapBeforeArrowWithExpressions { get; }
+
+    public PlacementStyle PlaceAttributeOnSameLine { get; }
+    public PlacementStyle PlaceTypeAttributeOnSameLine { get; }
+    public PlacementStyle PlaceMethodAttributeOnSameLine { get; }
+    public PlacementStyle PlaceFieldAttributeOnSameLine { get; }
+    public PlacementStyle PlaceAccessorAttributeOnSameLine { get; }
+    public PlacementStyle PlaceAccessorHolderAttributeOnSameLine { get; }
+    public PlacementStyle PlaceRecordFieldAttributeOnSameLine { get; }
+    public int MaxAttributeLengthForSameLine { get; }
+
+    public bool PlaceSingleMethodArgumentLambdaOnSameLine { get; }
+    public PlacementStyle PlaceExprMethodOnSingleLine { get; }
+    public PlacementStyle PlaceExprPropertyOnSingleLine { get; }
+    public PlacementStyle PlaceExprAccessorOnSingleLine { get; }
+    public PlacementStyle PlaceSimpleEmbeddedStatementOnSameLine { get; }
+    public PlacementStyle PlaceSimpleCaseStatementOnSameLine { get; }
+    public bool PlaceTypeConstraintsOnSameLine { get; }
+    public bool PlaceConstructorInitializerOnSameLine { get; }
+    public bool PlacePrimaryConstructorInitializerOnSameLine { get; }
+    public bool PlaceLinqIntoOnNewLine { get; }
+    public bool NewLineBetweenQueryExpressionClauses { get; }
 
     public bool FormatterTagsEnabled { get; }
     public string FormatterOffTag { get; }
@@ -496,6 +616,78 @@ public static class Ids {
     public static readonly OptionId BlankLinesBeforeSingleLineComment = Of("resharper_csharp_blank_lines_before_single_line_comment");
     public static readonly OptionId BlankLinesAfterCase = Of("resharper_csharp_blank_lines_after_case");
     public static readonly OptionId BlankLinesBeforeCase = Of("resharper_csharp_blank_lines_before_case");
+
+    // ── Break presence and position (phase 2) ────────────────────────────────────────────────
+    public static readonly OptionId KeepUserLinebreaks = Of("resharper_keep_user_linebreaks");
+
+    // ⚠ Inert, and established against the oracle rather than assumed: with
+    // keep_user_linebreaks = true, setting keep_user_wrapping to false changes nothing on any shape
+    // tried — broken argument lists, ternaries, binary chains and call chains all keep their breaks.
+    // keep_user_linebreaks is the key that governs. See the M2 report.
+    public static readonly OptionId KeepUserWrapping = OfInert("resharper_keep_user_wrapping");
+
+    public static readonly OptionId KeepExistingInvocationParensArrangement = Of("resharper_csharp_keep_existing_invocation_parens_arrangement");
+    public static readonly OptionId KeepExistingDeclarationParensArrangement = Of("resharper_csharp_keep_existing_declaration_parens_arrangement");
+    public static readonly OptionId KeepExistingLambdaParensArrangement = Of("resharper_keep_existing_lambda_and_anonymous_function_parens_arrangement");
+    public static readonly OptionId KeepExistingPrimaryConstructorParensArrangement = Of("resharper_csharp_keep_existing_primary_constructor_declaration_parens_arrangement");
+    public static readonly OptionId KeepExistingExprMemberArrangement = Of("resharper_csharp_keep_existing_expr_member_arrangement");
+    public static readonly OptionId KeepExistingEmbeddedArrangement = Of("resharper_csharp_keep_existing_embedded_arrangement");
+    public static readonly OptionId KeepExistingAttributeArrangement = Of("resharper_csharp_keep_existing_attribute_arrangement");
+    public static readonly OptionId KeepExistingEnumArrangement = Of("resharper_csharp_keep_existing_enum_arrangement");
+    public static readonly OptionId KeepExistingLinebreaks = Of("resharper_csharp_keep_existing_linebreaks");
+
+    public static readonly OptionId WrapEnumDeclaration = Of("resharper_csharp_wrap_enum_declaration");
+    public static readonly OptionId MaxEnumMembersOnLine = Of("resharper_csharp_max_enum_members_on_line");
+    public static readonly OptionId WrapSwitchExpression = Of("resharper_csharp_wrap_switch_expression");
+    public static readonly OptionId WrapArgumentsStyle = Of("resharper_csharp_wrap_arguments_style");
+    public static readonly OptionId WrapParametersStyle = Of("resharper_csharp_wrap_parameters_style");
+    public static readonly OptionId WrapPrimaryConstructorParametersStyle = Of("resharper_csharp_wrap_primary_constructor_parameters_style");
+    public static readonly OptionId WrapAfterPrimaryConstructorLpar = Of("resharper_csharp_wrap_after_primary_constructor_declaration_lpar");
+    public static readonly OptionId WrapBeforePrimaryConstructorRpar = Of("resharper_csharp_wrap_before_primary_constructor_declaration_rpar");
+
+    public static readonly OptionId WrapBeforeBinaryOpsign = Of("resharper_csharp_wrap_before_binary_opsign");
+    public static readonly OptionId WrapBeforeBinaryPatternOp = Of("resharper_csharp_wrap_before_binary_pattern_op");
+    public static readonly OptionId WrapBeforeTernaryOpsigns = Of("resharper_csharp_wrap_before_ternary_opsigns");
+    public static readonly OptionId WrapBeforeEq = OfInert("resharper_csharp_wrap_before_eq");
+    public static readonly OptionId WrapBeforeComma = Of("resharper_csharp_wrap_before_comma");
+    public static readonly OptionId WrapAfterInvocationLpar = Of("resharper_csharp_wrap_after_invocation_lpar");
+    public static readonly OptionId WrapBeforeInvocationRpar = Of("resharper_csharp_wrap_before_invocation_rpar");
+    public static readonly OptionId WrapAfterDeclarationLpar = Of("resharper_csharp_wrap_after_declaration_lpar");
+    public static readonly OptionId WrapBeforeDeclarationRpar = Of("resharper_csharp_wrap_before_declaration_rpar");
+    public static readonly OptionId WrapBeforeArrowWithExpressions = Of("resharper_csharp_wrap_before_arrow_with_expressions");
+
+    public static readonly OptionId PlaceAttributeOnSameLine = OfInert("resharper_place_attribute_on_same_line");
+    public static readonly OptionId PlaceTypeAttributeOnSameLine = Of("resharper_csharp_place_type_attribute_on_same_line");
+    public static readonly OptionId PlaceMethodAttributeOnSameLine = Of("resharper_csharp_place_method_attribute_on_same_line");
+    public static readonly OptionId PlaceFieldAttributeOnSameLine = Of("resharper_csharp_place_field_attribute_on_same_line");
+    public static readonly OptionId PlaceAccessorAttributeOnSameLine = Of("resharper_csharp_place_accessor_attribute_on_same_line");
+    public static readonly OptionId PlaceAccessorHolderAttributeOnSameLine = Of("resharper_csharp_place_accessorholder_attribute_on_same_line");
+    public static readonly OptionId PlaceRecordFieldAttributeOnSameLine = Of("resharper_csharp_place_record_field_attribute_on_same_line");
+
+    // ⚠ Four keys read but never observable, and Tier D with the reason rather than Tier A:
+    //   max_attribute_length_for_same_line — a length threshold for a placement that never happens.
+    //   place_attribute_on_same_line — the six per-owner keys cover every C# attribute target, so
+    //     the generalized key never gets to decide.
+    //   new_line_between_query_expression_clauses and place_linq_into_on_new_line — measured against
+    //     the oracle: `from x in xs where p select x` on one line comes back on one line with both
+    //     set. They permit a break rather than requiring one, and permitting one is what
+    //     keep_user_linebreaks already does.
+    //   wrap_before_eq — it moves the break point from one side of the `=` to the other, and
+    //     milestone 2 never adds a break at either side (that ordering is prefer_wrap_around_eq's,
+    //     which is M3), so no input distinguishes the values.
+    public static readonly OptionId MaxAttributeLengthForSameLine = OfInert("resharper_csharp_max_attribute_length_for_same_line");
+
+    public static readonly OptionId PlaceSingleMethodArgumentLambdaOnSameLine = Of("resharper_place_single_method_argument_lambda_on_same_line");
+    public static readonly OptionId PlaceExprMethodOnSingleLine = Of("resharper_csharp_place_expr_method_on_single_line");
+    public static readonly OptionId PlaceExprPropertyOnSingleLine = Of("resharper_csharp_place_expr_property_on_single_line");
+    public static readonly OptionId PlaceExprAccessorOnSingleLine = Of("resharper_csharp_place_expr_accessor_on_single_line");
+    public static readonly OptionId PlaceSimpleEmbeddedStatementOnSameLine = Of("resharper_csharp_place_simple_embedded_statement_on_same_line");
+    public static readonly OptionId PlaceSimpleCaseStatementOnSameLine = Of("resharper_csharp_place_simple_case_statement_on_same_line");
+    public static readonly OptionId PlaceTypeConstraintsOnSameLine = Of("resharper_csharp_place_type_constraints_on_same_line");
+    public static readonly OptionId PlaceConstructorInitializerOnSameLine = Of("resharper_csharp_place_constructor_initializer_on_same_line");
+    public static readonly OptionId PlacePrimaryConstructorInitializerOnSameLine = Of("resharper_place_primary_constructor_initializer_on_same_line");
+    public static readonly OptionId PlaceLinqIntoOnNewLine = OfInert("resharper_csharp_place_linq_into_on_new_line");
+    public static readonly OptionId NewLineBetweenQueryExpressionClauses = OfInert("csharp_new_line_between_query_expression_clauses");
 
     public static readonly OptionId FormatterTagsEnabled = Of("resharper_formatter_tags_enabled");
     public static readonly OptionId FormatterOffTag = Of("resharper_formatter_off_tag");

@@ -13,7 +13,7 @@ public sealed class DocumentBuilderTests {
         builder.Text("c", new SourceSpan(4, 1));
 
         var document = builder.Build();
-        var layout = LayoutWriter.Write(document, Fitter.Resolve(document, 120), "    ", "\n");
+        var layout = LayoutWriter.Write(document, 120, "    ", "\n");
 
         Assert.Equal("a\n    b\nc", layout.Text);
     }
@@ -27,7 +27,7 @@ public sealed class DocumentBuilderTests {
         builder.Text("b", new SourceSpan(3, 1));
 
         var document = builder.Build();
-        Assert.Equal("a\r\nb", LayoutWriter.Write(document, Fitter.Resolve(document, 120), "    ", "\n").Text);
+        Assert.Equal("a\r\nb", LayoutWriter.Write(document, 120, "    ", "\n").Text);
     }
 
     [Fact]
@@ -40,7 +40,7 @@ public sealed class DocumentBuilderTests {
         builder.Text("b", new SourceSpan(4, 1));
 
         var document = builder.Build();
-        Assert.Equal("a\n\nb", LayoutWriter.Write(document, Fitter.Resolve(document, 120), "    ", "\n").Text);
+        Assert.Equal("a\n\nb", LayoutWriter.Write(document, 120, "    ", "\n").Text);
     }
 
     [Fact]
@@ -64,7 +64,98 @@ public sealed class DocumentBuilderTests {
         var document = builder.Build();
         Assert.Equal(
             "a\n    b\n        c",
-            LayoutWriter.Write(document, Fitter.Resolve(document, 120), "    ", "\n").Text);
+            LayoutWriter.Write(document, 120, "    ", "\n").Text);
+    }
+}
+
+/// <summary>
+/// The three-state group model, and the fourth state <c>if_owner_is_single_line</c> needs.
+/// </summary>
+public sealed class FitterTests {
+    [Fact]
+    public void AutoGroup_BreaksOnlyWhenTheLineRunsOut() {
+        Assert.Equal("a b", Call(GroupMode.Auto, new GroupFacts(), width: 10));
+        Assert.Equal("a\nb", Call(GroupMode.Auto, new GroupFacts(), width: 2));
+    }
+
+    [Fact]
+    public void PreserveGroup_KeepsTheAuthorsBreak_AndDoesNotAddOne() {
+        // ⚠ The two halves of "subject to width" are separate facts, because the export wants a
+        // different one per construct family. A group with neither may only reproduce the source.
+        Assert.Equal("a\nb", Call(GroupMode.Preserve, new GroupFacts(SourceBroken: true), width: 80));
+        Assert.Equal("a b", Call(GroupMode.Preserve, new GroupFacts(), width: 2));
+    }
+
+    [Fact]
+    public void PreserveGroup_JoinsOnlyWhenAskedTo_AndOnlyWhenItFits() {
+        Assert.Equal("a b", Call(GroupMode.Preserve, new GroupFacts(SourceBroken: true, JoinsIfFits: true), width: 80));
+        Assert.Equal("a\nb", Call(GroupMode.Preserve, new GroupFacts(SourceBroken: true, JoinsIfFits: true), width: 2));
+    }
+
+    [Fact]
+    public void PreserveGroup_BreaksOnlyWhenAskedTo_AndOnlyWhenItMust() {
+        Assert.Equal("a\nb", Call(GroupMode.Preserve, new GroupFacts(BreaksIfTooLong: true), width: 2));
+        Assert.Equal("a b", Call(GroupMode.Preserve, new GroupFacts(BreaksIfTooLong: true), width: 80));
+    }
+
+    [Fact]
+    public void OwnerGroup_ReadsItsOwnersResolvedMode_AndOnlyEverBecomesMoreBroken() {
+        // ⚠ The whole content of "two passes per group tree". The owner encloses the child, so a
+        // depth-first walk resolves it first; the child reads the answer and may only move
+        // Flat → Broken, which is why termination is a property of the walk order and not of a
+        // convergence argument (docs/plan/04 § "The fitting algorithm").
+        Assert.Equal("aaaa bbbb", OwnerAndChild(width: 80));
+        Assert.Equal("aaaa\nbbbb", OwnerAndChild(width: 6));
+    }
+
+    [Fact]
+    public void OwnerGroup_ThatIsReachedBeforeItsOwner_IsCountedRatherThanGuessedAt() {
+        var builder = new DocumentBuilder();
+        var child = builder.NextGroupId();
+        var owner = builder.NextGroupId();
+        builder.DescribeGroup(child, new GroupFacts(Owner: owner));
+        builder.OpenGroup(GroupMode.Owner, child);
+        builder.Text("a", new SourceSpan(0, 1));
+        builder.Close();
+        builder.OpenGroup(GroupMode.Auto, owner);
+        builder.Text("b", new SourceSpan(2, 1));
+        builder.Close();
+
+        var layout = LayoutWriter.Write(builder.Build(), 80, "    ", "\n");
+        Assert.Equal(1, layout.OwnerUnresolved);
+    }
+
+    /// <summary>`a` then a break point then `b`, inside one group.</summary>
+    static string Call(GroupMode mode, GroupFacts facts, int width) {
+        var builder = new DocumentBuilder();
+        var group = builder.NextGroupId();
+        builder.DescribeGroup(group, facts);
+        builder.OpenGroup(mode, group);
+        builder.Text("a", new SourceSpan(0, 1));
+        builder.BreakPoint(group, flatSpace: true);
+        builder.Text("b", new SourceSpan(2, 1));
+        builder.Close();
+
+        return LayoutWriter.Write(builder.Build(), width, "    ", "\n").Text;
+    }
+
+    /// <summary>An Auto owner with an Owner-mode child inside it, which is the export's shape.</summary>
+    static string OwnerAndChild(int width) {
+        var builder = new DocumentBuilder();
+        var owner = builder.NextGroupId();
+        var child = builder.NextGroupId();
+        builder.DescribeGroup(owner, new GroupFacts());
+        builder.DescribeGroup(child, new GroupFacts(Owner: owner));
+
+        builder.OpenGroup(GroupMode.Auto, owner);
+        builder.Text("aaaa", new SourceSpan(0, 4));
+        builder.OpenGroup(GroupMode.Owner, child);
+        builder.BreakPoint(child, flatSpace: true);
+        builder.Text("bbbb", new SourceSpan(5, 4));
+        builder.Close();
+        builder.Close();
+
+        return LayoutWriter.Write(builder.Build(), width, "    ", "\n").Text;
     }
 }
 

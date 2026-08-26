@@ -9,7 +9,15 @@ namespace Rikarin.Skala.Formatting;
 public readonly record struct AnchorPoint(SourceSpan Source, int OutputStart, int OutputEnd, int TokenId);
 
 /// <summary>The result of writing a resolved document.</summary>
-public sealed record Layout(string Text, IReadOnlyList<AnchorPoint> Anchors);
+/// <param name="OwnerUnresolved">
+/// ⚠ How many <see cref="GroupMode.Owner"/> groups were reached before their owner. Zero for every
+/// document the C# front end produces; see <see cref="Fitter.OwnerUnresolved"/>.
+/// </param>
+public sealed record Layout(
+    string Text,
+    IReadOnlyList<AnchorPoint> Anchors,
+    IReadOnlyList<ResolvedMode>? Modes = null,
+    int OwnerUnresolved = 0);
 
 /// <summary>Flags a <see cref="DocKind.Verbatim"/> node carries in <see cref="DocNode.Arg0"/>.</summary>
 [Flags]
@@ -31,7 +39,7 @@ public enum VerbatimFlags {
 /// </summary>
 public sealed class LayoutWriter {
     readonly Document _document;
-    readonly ResolvedMode[] _modes;
+    readonly Fitter _fitter;
     readonly StringBuilder _output = new();
     readonly List<AnchorPoint> _anchors = [];
     readonly string _indentUnit;
@@ -48,22 +56,29 @@ public sealed class LayoutWriter {
     bool _hasPendingAnchor;
 
     readonly int _continuousMultiplier;
+    readonly int _indentWidth;
 
-    LayoutWriter(Document document, ResolvedMode[] modes, string indentUnit, string defaultNewLine, int continuousMultiplier) {
+    LayoutWriter(Document document, int width, string indentUnit, string defaultNewLine, int continuousMultiplier) {
         _document = document;
-        _modes = modes;
+        _fitter = new Fitter(document, width);
         _indentUnit = indentUnit;
         _defaultNewLine = defaultNewLine;
         _continuousMultiplier = Math.Max(1, continuousMultiplier);
+        _indentWidth = indentUnit == "\t" ? TextWidth.TabStop : indentUnit.Length;
     }
 
+    /// <param name="width"><c>max_line_length</c>: the budget every Auto group is tested against.</param>
     /// <param name="continuousMultiplier">
     /// <c>continuous_indent_multiplier</c>: how many indent units one continuation level is worth.
     /// </param>
-    public static Layout Write(Document document, ResolvedMode[] modes, string indentUnit, string defaultNewLine, int continuousMultiplier = 1) {
-        var writer = new LayoutWriter(document, modes, indentUnit, defaultNewLine, continuousMultiplier);
+    public static Layout Write(Document document, int width, string indentUnit, string defaultNewLine, int continuousMultiplier = 1) {
+        var writer = new LayoutWriter(document, width, indentUnit, defaultNewLine, continuousMultiplier);
         writer.Walk();
-        return new Layout(writer._output.ToString(), writer._anchors);
+        return new Layout(
+            writer._output.ToString(),
+            writer._anchors,
+            writer._fitter.Modes,
+            writer._fitter.OwnerUnresolved);
     }
 
     void Walk() {
@@ -105,6 +120,12 @@ public sealed class LayoutWriter {
                         Push((IndentKind)slot.Arg0);
                         break;
 
+                    case DocKind.Group:
+                        // ⚠ Resolved here, at the column the group's first character will actually
+                        // land on. See Fitter's remarks for why this is not a separate pass.
+                        _fitter.Enter(node, CurrentColumn());
+                        break;
+
                     default:
                         break;
                 }
@@ -113,7 +134,7 @@ public sealed class LayoutWriter {
             var children = _document.ChildrenOf(node);
 
             if (slot.Kind == DocKind.IfBroken) {
-                var branch = _modes[slot.Arg0] == ResolvedMode.Broken ? 0 : 1;
+                var branch = _fitter.ModeOf(slot.Arg0) == ResolvedMode.Broken ? 0 : 1;
                 if (child == 0 && branch < children.Length) {
                     stack.Push((children[branch], 0));
                 }
@@ -223,12 +244,35 @@ public sealed class LayoutWriter {
 
     readonly record struct Scope(bool IsBlock, int Level, int OpenLine, int CloserLevel);
 
+    /// <summary>
+    /// The column the next character will land on, which is what a group is measured against.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ At a line start the indentation has not been written yet, so <c>_column</c> is 0 and the
+    /// group would look as though it had the whole line. A group at the head of a line 24 columns
+    /// deep has 96, and measuring it against 120 is how a formatter produces a wrap that is one
+    /// level too optimistic on every nested construct in a file.
+    /// </remarks>
+    int CurrentColumn() {
+        if (_atLineStart) {
+            return (_pendingCloserLevel ?? Effective()) * _indentWidth;
+        }
+
+        return _column + (_pendingSpace ? 1 : 0);
+    }
+
     void WriteLine(ref DocNode slot, int node) {
         var kind = (LineKind)slot.Arg0;
         if (kind == LineKind.Soft) {
-            // A soft break is a space when its enclosing group is flat. M1 never emits one.
-            _pendingSpace = true;
-            return;
+            // ⚠ A break point renders as its flat form when its group stayed flat, and the flat
+            // form is per-point: nothing after `(`, a space after `,`.
+            if (slot.Arg2 < 0 || _fitter.ModeOf(slot.Arg2) == ResolvedMode.Flat) {
+                if (((LineFlags)slot.Flags & LineFlags.FlatSpace) != 0) {
+                    _pendingSpace = true;
+                }
+
+                return;
+            }
         }
 
         // ⚠ remove_spaces_on_blank_lines = true: a pending space before a break is never written,
@@ -275,7 +319,7 @@ public sealed class LayoutWriter {
 
         var start = _output.Length;
         _output.Append(text);
-        _column = TextWidth.Measure(text, _column);
+        _column = TextWidth.Advance(text, _column);
 
         if (_hasPendingAnchor) {
             _anchors.Add(new AnchorPoint(_pendingAnchorSpan, start, _output.Length, _pendingAnchorToken));

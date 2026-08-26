@@ -57,11 +57,11 @@ public sealed class DifferentialTests {
 
     [Fact]
     public void LineFidelity_MeetsTheMilestoneBar() {
-        // docs/plan/15 § M1: "line fidelity ≥ 85 % on corpus/real/".
+        // docs/plan/15 § M2: "line fidelity ≥ 93 % on corpus/real/".
         var report = Measure(Corpus.Real);
         Assert.True(
-            report.LineFidelity >= 0.85,
-            $"Milestone 1's bar is 85 % line fidelity on corpus/real/; the measurement is {report.LineFidelity * 100:F2}%.\n\n"
+            report.LineFidelity >= 0.93,
+            $"Milestone 2's bar is 93 % line fidelity on corpus/real/; the measurement is {report.LineFidelity * 100:F2}%.\n\n"
             + report.Render(10));
     }
 

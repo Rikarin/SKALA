@@ -204,6 +204,18 @@ it against the author's export. The difference is, by construction, exactly the 
 keys. Until that exists, `distill` is honest and useless, and no option may claim Tier A on the
 grounds that its default is known.
 
+⚠ **It costs more than `distill`, and M2 measured how much.** A registry entry whose `default` is the
+export's value is not merely unusable for distilling — it is what Skala *applies* to any repository
+whose `.editorconfig` leaves that key unset, which is most repositories. Rider applies its own
+default to the same file, and the two disagree. Formatted with nothing but `indent_style` and
+`indent_size` set, `jb cleanupcode` produces Allman braces, keeps a partly-broken argument list partly
+broken, and leaves `int P =>\n 1;` alone; Skala produces K&R braces, chops the argument list at every
+point, and re-joins the expression body. Over Vixen — 4 703 files, whose `.editorconfig` sets no
+`wrap_*`, `keep_*` or `place_*` key at all — that is the difference between 2 374 files changing and
+1 301: **45 % of the diff on a real repository is this one gap**, and it is invisible on
+`corpus/real/`, which carries the export. The pristine-profile export is the highest-value hour of
+human work available to the project.
+
 It is offered, never imposed. The export must keep working forever (ADR-001), because the workflow
 that produced it — change a setting in Rider, re-export — must keep working. `distill` is for the
 repository that wants its style to be a document rather than a dump; the round trip

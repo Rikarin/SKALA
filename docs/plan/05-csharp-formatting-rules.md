@@ -12,11 +12,11 @@ Counts below are C#-relevant keys after excluding the C++/VB/XAML/HTML/Razor nam
 | Blank lines | ~30 | `Line(Blank(n))` + the three-system resolution | no | 1 |
 | Braces & single-line blocks | ~10 | `Line(Hard)` placement, `Group(Flat)` | no | 1 |
 | Indentation | ~25 | `Indent(Block\|Continuous\|Outdent)` | no | 1 |
-| Line breaks — required/forbidden | ~20 | `Line(Hard)` / `Space` | no | 2 |
+| Line breaks — required/forbidden | ~20 | `Line(Hard)` / `Space` / `Flat` gaps | no | 2 |
 | Placement (`place_*`) | 20 | `Group(Auto)` keyed on owner | no | 2 |
 | Wrapping (`wrap_*`) | 47 | `Group`/`Fill`, the fitting pass | no | 2–3 |
 | Alignment (`align_*`, `int_align_*`) | 28 | `Align` | no | 3 (mostly off — see below) |
-| `keep_existing_*` | 18 | `Group(Preserve)` | no | 2 |
+| `keep_existing_*` | 18 | `Group(Preserve)` — delimiters only; the gaps between items are `keep_user_linebreaks`'s | no | 2 |
 | Attributes | ~8 | `Group`, `Line` | no | 2 |
 | Comments & xmldoc | ~16 | sub-formatter | no | 3 |
 | Arrangement (`arrange_*`, body styles, `var`, qualifiers) | ~40 | tree rewrite | **yes** | doc [06](06-arrangement-and-syntax-styles.md) |
@@ -111,17 +111,48 @@ again simplifies the layout engine.
 
 ## Phase 2 — line breaks, placement, `keep_existing`, attributes
 
-Everything that decides *whether* a break exists at a point, before the fitting pass decides whether
-to take an optional one.
+Everything that decides *whether* a break exists at a point, and *which side of a token* it lands on,
+before the fitting pass decides whether to take an optional one. ✅ Measured: 97.47 % line fidelity
+and 49.47 % file fidelity on `corpus/real/`.
+
+⚠ Deciding which side of a token a break lands on needs a model M1 did not have. M1's gap model
+answers "does this gap hold a break"; the position keys ask "of the several gaps around this
+operator, which one may". The answer is a pre-pass over the syntax tree that labels each gap
+`Point` (a break point of some group), `Flat` (never a break, even if the author wrote one) or
+`Mandatory` — a pre-pass rather than a decision taken during the walk, because a gap can be at the
+structural level of two constructs at once. In `Foo(\n a + b, c)` the gap before `a` is the argument
+list's first break point *and* the binary chain's first non-point, and only a pass that sees both can
+let the point win.
 
 ### Required and forbidden breaks
 
 `resharper_place_simple_embedded_statement_on_same_line = if_owner_is_single_line`,
 `place_simple_case_statement_on_same_line = if_owner_is_single_line`,
 `place_type_constraints_on_same_line = true`, `place_constructor_initializer_on_same_line = true`,
-`place_primary_constructor_initializer_on_same_line = true`, `place_linq_into_on_new_line = true`,
-`csharp_new_line_between_query_expression_clauses = true`, `new_line_before_enumerators = true`
-(one enum member per line), `blank_lines_after_file_scoped_namespace_directive = 1`.
+`place_primary_constructor_initializer_on_same_line = true`,
+`csharp_wrap_enum_declaration = chop_always` with `max_enum_members_on_line = 1` (one enum member per
+line), `blank_lines_after_file_scoped_namespace_directive = 1`.
+
+⚠ Three corrections M2 established, all of them by running the oracle rather than by reading the
+option names:
+
+- **`resharper_new_line_before_enumerators` is not in `options.json`.** It is in the export template
+  and M0's importer dropped it, along with about forty other C#-relevant keys that the export writes
+  without a language prefix (`place_property_attribute_on_same_line`,
+  `place_event_attribute_on_same_line`, `place_namespace_definitions_on_same_line`,
+  `continuous_line_indent`, `indent_wrapped_function_names`, `wrap_base_clause_style`,
+  `wrap_ctor_initializer_style`, `wrap_enumeration_style`, `simple_block_style`,
+  `align_multiline_ctor_init`, `int_align_eq`, …). The mechanism is spelled with the two registered
+  keys named above. Repairing the importer is M3's, and until then the tier matrix is over 483 keys
+  rather than the ~525 the template holds.
+- **`place_*_on_same_line = true` is permissive, not mandatory.** `place_type_constraints_on_same_line`
+  and `place_constructor_initializer_on_same_line` at `true` do not *join* a `where` clause or a
+  `: base(…)` the author put on its own line; they only decline to force a break. Their `false` value
+  is what is observable, and that is what pins them.
+- **`csharp_new_line_between_query_expression_clauses` and `place_linq_into_on_new_line` are inert.**
+  `from x in xs where p select x` on one line comes back on one line with both set to `true`. They
+  permit a break rather than requiring one, which is what `keep_user_linebreaks` already does. Tier D
+  with the reason, not Tier A.
 
 ### `place_*` and `if_owner_is_single_line`
 
@@ -138,10 +169,20 @@ line, which depends on width, which depends on the child. The resolution rule is
 construction: owners resolve first, children read the owner's resolved mode, children may only
 become *more* broken. See [04](04-formatting-engine.md) § "The fitting algorithm", second pass.
 
-`place_attribute_on_same_line = false` / `place_property_attribute_on_same_line = false` /
-`place_event_attribute_on_same_line = false`: attributes always on their own line.
-`max_attribute_length_for_same_line` therefore never applies here, but is Tier A anyway because
-`options.json` requires every key to be either implemented or explicitly tiered.
+Attributes always on their own line — through the six per-owner keys that are in the registry
+(`csharp_place_{type,method,field,accessor,accessorholder,record_field}_attribute_on_same_line`, all
+`never`) rather than through the unprefixed `place_property_…`/`place_event_…` pair, which the
+importer dropped. ⚠ `resharper_place_attribute_on_same_line` (the language-agnostic one) *is* in the
+registry and is Tier D: the six per-owner keys cover every C# attribute target, so it never gets to
+decide. `max_attribute_length_for_same_line` is Tier D for the same kind of reason — a length
+threshold for a placement that never happens cannot change an output. ⚠ An option that cannot change
+behaviour must not claim a tier that says it was verified.
+
+⚠ **`place_single_method_argument_lambda_on_same_line` governs the opening parenthesis only.**
+`Assert.Throws(() => {` keeps the lambda on the call's line however long its body is — and the oracle
+still moves the *closing* parenthesis to a line of its own, so the body gains a continuation level
+and the call ends `}\n);`. Flattening both sides is the intuitive reading of the name and it is
+wrong.
 
 ### `keep_existing_*`
 
@@ -150,19 +191,42 @@ Eighteen keys, all `false` in the export except the ones ReSharper defaults to `
 declaration parens, lambda parens, expression members, switch expressions, list patterns, property
 patterns, attribute arrangement, primary-constructor parens, enum arrangement.
 
-⚠ `keep_existing_* = false` does **not** mean "reflow everything". It means "this construct family
-does not get the per-construct preservation exemption" — the *global*
-`keep_user_linebreaks`/`keep_user_wrapping` still apply, and they are `true`. The interaction is:
+⚠ `keep_existing_* = false` does **not** mean "reflow everything". ⚠ And the table below is not the
+one this document had: M2 measured all four corners against the oracle, and the two keys turn out to
+govern **different gaps of the same construct** rather than the same gap with different strength.
 
-| `keep_user_linebreaks` | `keep_existing_X` | Behaviour for X |
-|---|---|---|
-| true | true | never re-arranged; source layout is law |
-| true | false | source breaks kept, but the wrap style may **add** breaks when too wide |
-| false | true | X preserved, everything else reflowed |
-| false | false | fully reflowed from the wrap style (`--reflow`) |
+| `keep_user_linebreaks` | `keep_existing_X` | break at X's **delimiters** | break **between X's items** |
+|---|---|---|---|
+| true | true | kept | kept |
+| true | false | re-joined | kept |
+| false | true | re-joined | re-joined |
+| false | false | re-joined | re-joined |
+
+Read off the fixtures: with `keep_existing_invocation_parens_arrangement = false`, `Foo(\n a)`
+re-joins and `Foo(\n a,\n b)` does not. The first has only a delimiter break, which the
+per-construct key governs; the second has a break between two items, which the global key governs.
+The row this document had as "source breaks kept, but the wrap style may add breaks when too wide"
+is half of that, and the row it had as "X preserved, everything else reflowed" is backwards — the
+global switch turns the per-construct one off, and the per-construct one does not turn the global one
+on.
+
+The other half of the rule, which no option name suggests: **once a construct is broken at all, a
+`chop_*` style breaks every one of its points**, the two at the delimiters included. `Foo(a,\n b)`
+comes back as four lines, not two. That single rule is most of the distance M2 covered: the oracle's
+output over `corpus/real/` has 1 006 lines that are nothing but a closing parenthesis and milestone
+1's had 573.
 
 Getting this table wrong in either direction is a catastrophic first-run diff. It gets its own
-fixture set, `constructs/preservation/`, run under all four combinations.
+fixture set, `constructs/preservation/`, run under all four combinations — thirteen inputs × four
+configurations × one committed `jb cleanupcode` fixture each, plus the repository's own.
+`PreservationTests` asserts idempotency and token equivalence in every corner, not only the default
+one: a formatter that corrupts a file only when `keep_user_linebreaks = false` is still a formatter
+that corrupts files.
+
+⚠ `resharper_csharp_keep_existing_linebreaks` reads like one of the family and is not: it is the
+per-language form of the global `keep_user_linebreaks`, and putting it on the `keep_existing_*` axis
+collapses the table — both "reflow" corners come out identical to their "keep" neighbours and the
+2×2 stops measuring anything.
 
 ## Phase 3 — wrapping
 
@@ -189,7 +253,10 @@ The export's wrap settings, which are the conformance target:
 | Initializer elements per line | `max_initializer_elements_on_line` | 4 |
 | Everything else per line | `max_{invocation_arguments,formal_parameters,…}_on_line` | 10 000 (= no cap) |
 
-Paired with the *break-position* keys, which decide which side of a token the break lands on:
+Paired with the *break-position* keys, which decide which side of a token the break lands on. ⚠ M2
+implements the position half of these (which gap of a construct may hold a break, and which may not),
+because removing a break the author put on the wrong side is break *presence*; M3 owns the half that
+chooses which of a long line's candidate points to wrap at. The keys:
 `csharp_wrap_before_binary_opsign = true` (operator starts the new line),
 `wrap_after_dot_in_method_calls = false` (the `.` starts the new line),
 `wrap_before_first_method_call = false`, `csharp_wrap_after_invocation_lpar = true` and
@@ -252,8 +319,8 @@ independently shippable and independently measurable against the oracle:
 
 | After phase | `skala format` can be run on | Expected corpus fidelity |
 |---|---|---|
-| 1 | Any file, safely; produces correct spacing/blanks/indent, never moves a line | ~85 % of lines |
-| 2 | Same, plus correct break *presence* | ~93 % |
+| 1 | Any file, safely; produces correct spacing/blanks/indent, never moves a line | ~85 % of lines — ✅ measured 94.28 % |
+| 2 | Same, plus correct break *presence* and *position* | ~93 % — ✅ measured 97.47 % |
 | 3 | Everything the export configures | ≥ 99.9 % (the bar from [00](00-vision-and-principles.md)) |
 | 4 | Same, plus doc comments | ≥ 99.9 % including xmldoc |
 

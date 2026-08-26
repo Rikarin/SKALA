@@ -1,3 +1,4 @@
+using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Text;
 using Rikarin.Skala.Core.Diagnostics;
 using Rikarin.Skala.Options;
@@ -12,6 +13,21 @@ public static class Format {
         CSharpFormatter.Format(path, SourceText.From(source), Options);
 
     public static string Text(string source) => Run(source).Formatted;
+
+    /// <summary>
+    /// How many owner-dependent groups the document put outside their owner.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ Must be zero. It is the invariant that makes docs/plan/04's "second pass" a walk order
+    /// rather than an iteration to a fixed point, and the fitter counts violations rather than
+    /// hiding them behind a guess.
+    /// </remarks>
+    public static int OwnerUnresolved(string source) {
+        var text = SourceText.From(source);
+        var tree = CSharpSyntaxTree.ParseText(text, CSharpFormatter.ParseOptions);
+        var built = CSharpDocumentBuilder.Build("Test.cs", text, tree.GetRoot(), Options);
+        return LayoutWriter.Write(built.Document, Options.MaxLineLength, "    ", "\n").OwnerUnresolved;
+    }
 }
 
 public sealed class SpacingTests {
@@ -442,5 +458,178 @@ public sealed class EditTests {
         var formatted = Format.Text("class C {\r\n    void M( ) {\r\n    }\r\n}\r\n");
         Assert.DoesNotContain("\n\n", formatted.Replace("\r\n", "\n", StringComparison.Ordinal).Replace("\n\n", "|", StringComparison.Ordinal), StringComparison.Ordinal);
         Assert.Contains("\r\n", formatted, StringComparison.Ordinal);
+    }
+}
+
+/// <summary>
+/// Phase 2: which gaps may hold a break, and which side of a token it lands on.
+/// </summary>
+/// <remarks>
+/// ⚠ Every expectation here was read off <c>jb cleanupcode</c>, not off an option name. Where the
+/// name and the behaviour disagree the behaviour wins, and the two disagree more often than the
+/// documentation admits.
+/// </remarks>
+public sealed class BreakPositionTests {
+    [Fact]
+    public void ABreakOnTheWrongSideOfABinaryOperator_IsRemoved() {
+        // wrap_before_binary_opsign = true: the gap before the operator is the break point and the
+        // gap after it is not, so one of these two survives and the other does not.
+        var formatted = Format.Text("""
+            class C {
+                void M() {
+                    var afterTheSign = first +
+                        second;
+                    var beforeTheSign = first
+                        + second;
+                }
+            }
+            """);
+
+        Assert.Contains("var afterTheSign = first + second;", formatted, StringComparison.Ordinal);
+        Assert.Contains("var beforeTheSign = first\n            + second;", formatted, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void ABreakOnTheWrongSideOfATernaryOperator_IsRemoved() {
+        var formatted = Format.Text("""
+            class C {
+                void M() {
+                    var after = condition ?
+                        whenTrue :
+                        whenFalse;
+                }
+            }
+            """);
+
+        Assert.Contains("var after = condition ? whenTrue : whenFalse;", formatted, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void AnInvocationBrokenBetweenItsArguments_IsChoppedAtEveryPoint() {
+        // ⚠ chop_if_long is "chop if long OR multiline": one break between two arguments puts every
+        // argument on its own line and the closing parenthesis on one of its own.
+        var formatted = Format.Text("""
+            class C {
+                void M() {
+                    Foo(first,
+                        second);
+                }
+            }
+            """);
+
+        Assert.Contains("Foo(\n            first,\n            second\n        );", formatted, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void AnInvocationBrokenOnlyAtItsParenthesis_IsRejoined() {
+        // keep_existing_invocation_parens_arrangement = false, and there is no break between items
+        // for keep_user_linebreaks to protect. The asymmetry between this and the test above is the
+        // whole content of docs/plan/05's four-way table.
+        var formatted = Format.Text("""
+            class C {
+                void M() {
+                    Foo(
+                        first);
+                }
+            }
+            """);
+
+        Assert.Contains("Foo(first);", formatted, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void ADeclarationBrokenOnlyAtItsParenthesis_IsKept() {
+        // …and the same shape on a declaration is kept, because
+        // keep_existing_declaration_parens_arrangement is true where the invocation one is false.
+        var formatted = Format.Text("""
+            class C {
+                void M(
+                    int first) { }
+            }
+            """);
+
+        Assert.Contains("void M(\n        int first\n    ) { }", formatted, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void AnEnumBody_PutsOneMemberPerLine_Always() {
+        var formatted = Format.Text("enum E { First, Second, Third }");
+        Assert.Contains("enum E {\n    First,\n    Second,\n    Third\n}", formatted, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void ASwitchExpression_ChopsEveryArm_Always() {
+        var formatted = Format.Text("""
+            class C {
+                int M(int v) => v switch { 1 => 10, _ => 0 };
+            }
+            """);
+
+        Assert.Contains("v switch {\n            1 => 10,\n            _ => 0\n        }", formatted, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void AnAttributeSection_NeverSharesALineWithWhatFollowsIt() {
+        var formatted = Format.Text("""
+            class C {
+                [First] [Second] void M() { }
+            }
+            """);
+
+        Assert.Contains("[First]\n    [Second]\n    void M() { }", formatted, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void AShortExpressionBodiedMember_IsRejoined_AndALongOneIsNot() {
+        // place_expr_property_on_single_line = if_owner_is_single_line, both halves of it.
+        var formatted = Format.Text("""
+            class C {
+                int Short =>
+                    1;
+                int TheLongOne => Helper.Compute(firstArgumentName, secondArgumentName, thirdArgumentName, fourthArgumentName, fifth);
+            }
+            """);
+
+        Assert.Contains("int Short => 1;", formatted, StringComparison.Ordinal);
+        Assert.Contains("int TheLongOne =>\n        Helper.Compute(", formatted, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void ACallWhoseOnlyArgumentIsALambda_KeepsItsOpeningParenthesis_ButNotItsClosingOne() {
+        // ⚠ place_single_method_argument_lambda_on_same_line governs the opening parenthesis only,
+        // which is not what the name suggests and is what the oracle does.
+        var formatted = Format.Text("""
+            class C {
+                void M() {
+                    Run(() => {
+                        FirstStatement();
+                        SecondStatement();
+                    });
+                }
+            }
+            """);
+
+        Assert.Contains("Run(() => {", formatted, StringComparison.Ordinal);
+
+        // ⚠ Only the presence of the break is asserted. Where the closing parenthesis and the
+        // lambda's closing brace land relative to each other is an indentation question that the
+        // oracle answers differently for a lambda inside a broken call than for one inside a
+        // collection expression, and neither shape is milestone 2's to settle.
+        Assert.DoesNotContain("});", formatted, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void NoDocument_EverPutsAnOwnerDependentGroupOutsideItsOwner() {
+        // ⚠ The invariant that makes the second pass of docs/plan/04 § "The fitting algorithm" a
+        // walk order rather than an iteration. If a front end ever breaks it, the only monotone
+        // answer is Broken and the layout is a guess; this counts the guesses and there are none.
+        foreach (var source in new[] {
+            "class C { int P => 1; }",
+            "class C { void M(bool f) { if (f) G(); } }",
+            "class C { void M(int v) { switch (v) { case 1: G(); break; } } }",
+            "class C { int P { get => 1; set => _f = value; } }"
+        }) {
+            Assert.Equal(0, Format.OwnerUnresolved(source));
+        }
     }
 }

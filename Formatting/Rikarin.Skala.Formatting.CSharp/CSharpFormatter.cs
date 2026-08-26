@@ -88,12 +88,16 @@ public static class CSharpFormatter {
         var built = CSharpDocumentBuilder.Build(path, text, tree.GetRoot(), options);
         diagnostics.AddRange(built.Diagnostics);
 
-        var modes = Fitter.Resolve(built.Document, options.MaxLineLength);
         var indentUnit = options.UseTabs ? "\t" : new string(' ', options.IndentSize);
         var newLine = DefaultNewLine(text, options);
-        var layout = LayoutWriter.Write(built.Document, modes, indentUnit, newLine, options.ContinuousIndentMultiplier);
+        var layout = LayoutWriter.Write(
+            built.Document,
+            options.MaxLineLength,
+            indentUnit,
+            newLine,
+            options.ContinuousIndentMultiplier);
         var output = ApplyFileLevelRules(layout.Text, options, newLine);
-        var edits = EditEmitter.Emit(text.ToString(), new Layout(output, layout.Anchors));
+        var edits = EditEmitter.Emit(text.ToString(), layout with { Text = output });
         var formatted = EditEmitter.Apply(text.ToString(), edits);
 
         var after = SourceText.From(formatted, text.Encoding ?? System.Text.Encoding.UTF8);

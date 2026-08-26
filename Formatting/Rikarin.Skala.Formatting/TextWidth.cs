@@ -19,8 +19,20 @@ public static class TextWidth {
     public static int Measure(string value) => Measure(value, 0);
 
     /// <summary>Columns occupied by <paramref name="value"/> when it starts at <paramref name="column"/>.</summary>
-    public static int Measure(string value, int column) {
-        var start = column;
+    public static int Measure(string value, int column) => Advance(value, column) - column;
+
+    /// <summary>
+    /// The column the cursor is at after writing <paramref name="value"/> from
+    /// <paramref name="column"/>.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ Not the same as <see cref="Measure(string, int)"/> plus the column, for text that spans
+    /// lines: a raw string literal ends at the width of its <em>last</em> line, not at the sum.
+    /// Milestone 1 assigned the width to the writer's column and the two happened to agree because
+    /// nothing read the column back; the fitting pass reads it on every group, and the mistake
+    /// showed up as a 126-column line the formatter thought was 72.
+    /// </remarks>
+    public static int Advance(string value, int column) {
         var enumerator = StringInfo.GetTextElementEnumerator(value);
         while (enumerator.MoveNext()) {
             var element = (string)enumerator.Current;
@@ -40,7 +52,7 @@ public static class TextWidth {
             column += ClusterWidth(element);
         }
 
-        return column - start < 0 ? column : column - start;
+        return column;
     }
 
     /// <summary>Columns for one grapheme cluster: 0 for combining marks, 2 for wide, 1 otherwise.</summary>

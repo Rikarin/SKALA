@@ -40,9 +40,13 @@ public sealed partial class CSharpDocumentBuilder {
 
     readonly HashSet<int> _verbatimMembers = [];
     readonly string _path;
+    BreakPlan _plan = null!;
 
     int _cursor;
     int _lastPiece = -1;
+
+    /// <summary>Where <see cref="EmitLeadingGap"/> already wrote a gap, so it is not written twice.</summary>
+    int _gapEmittedAt = -1;
     int _verbatimUntil = -1;
     int _continuousDepth;
 
@@ -62,6 +66,20 @@ public sealed partial class CSharpDocumentBuilder {
 
     void Run(SyntaxNode root) {
         PreprocessorGuard.MarkUnbalancedMembers(root, _text, _verbatimMembers, _diagnostics, _path);
+
+        // ⚠ The break plan is built before the walk, not during it: a gap can belong to two
+        // constructs at once and only a pass that sees both can decide which one owns it
+        // (see BreakPlan's remarks). Ids are handed out here so that the plan's numbering and the
+        // document's agree.
+        _plan = BreakPlan.Build(root, _source, _options);
+        for (var i = 0; i < _plan.GroupCount; i++) {
+            _doc.NextGroupId();
+        }
+
+        foreach (var planned in _plan.Groups) {
+            _doc.DescribeGroup(planned.Id, planned.Facts);
+        }
+
         var group = _doc.NextGroupId();
         _doc.OpenGroup(GroupMode.Flat, group);
         Visit(root);
@@ -86,6 +104,86 @@ public sealed partial class CSharpDocumentBuilder {
     /// </code>
     /// </remarks>
     void Visit(SyntaxNode node) {
+        if (!_plan.TryGroup(node, out var planned)) {
+            VisitInner(node);
+            return;
+        }
+
+        // ⚠ The gap *before* the construct is emitted first, outside the group. It belongs to
+        // whatever encloses the construct, and a group that swallows it is measured wrong twice
+        // over: the break makes its flat width infinite, so it can never be flat, and the column it
+        // is entered at is the one before that break rather than the one after it. The symptom is a
+        // statement-level group that never joins and never fits — `if (flag)\n First();` measured as
+        // starting at column 23 on the previous line.
+        EmitLeadingGap(node);
+        _doc.OpenGroup(planned.Mode, planned.Id);
+
+        // ⚠ The continuation scope a group's own break points need is opened here, inside the group
+        // and closed inside it, rather than lazily at the break. Lazily is what milestone 1 did and
+        // it is fine while the document stack holds nothing but indent scopes; a group on the same
+        // stack closes before the statement that owns the frame does, and pops the indent instead of
+        // itself.
+        var indented = planned.SpendsIndent && CanSpendAContinuationLevel();
+        if (indented) {
+            OpenIndent(IndentKind.Continuous);
+        }
+
+        VisitInner(node);
+        EmitUpTo(node.Span.End);
+        if (indented) {
+            CloseIndent(IndentKind.Continuous);
+        }
+
+        _doc.Close();
+    }
+
+    /// <summary>
+    /// Whether a continuation level is this group's to spend.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ <c>continuous_line_indent = single</c> as docs/plan/04 § "Indentation" corrects it: a
+    /// delimited group already open supplies the level, and an undelimited continuation that is
+    /// already inside another one adds nothing. <c>M(\n a\n + b)</c> takes the parenthesis's level
+    /// and not a second one.
+    /// </remarks>
+    bool CanSpendAContinuationLevel() {
+        if (_continuousDepth != 0) {
+            return false;
+        }
+
+        for (var i = _frames.Count - 1; i >= 0; i--) {
+            if (!_frames[i].Started) {
+                continue;
+            }
+
+            return !_frames[i].Activated;
+        }
+
+        return true;
+    }
+
+    /// <summary>Emits everything before <paramref name="node"/>'s first piece, its gap included.</summary>
+    void EmitLeadingGap(SyntaxNode node) {
+        EmitUpTo(node.SpanStart);
+        if (_cursor >= _pieces.Length || _lastPiece < 0) {
+            return;
+        }
+
+        var piece = _pieces[_cursor];
+
+        // ⚠ Nested groups can start at the same token — a binary chain and its leftmost operand,
+        // an invocation and the member access inside it — and the gap before that token is one gap.
+        // Emitting it twice writes two breaks and, worse, opens a continuation scope that is closed
+        // once.
+        if (piece.Span.Start < _verbatimUntil || piece.Span.Start == _gapEmittedAt) {
+            return;
+        }
+
+        EmitGap(_cursor, piece.Kind, piece.Span.Start, piece.Kind == PieceKind.Token ? _tokens[piece.TokenIndex] : default);
+        _gapEmittedAt = piece.Span.Start;
+    }
+
+    void VisitInner(SyntaxNode node) {
         // ⚠ A chained method call takes a continuation level of its own; a binary chain in the same
         // position does not. Verified against the oracle, because the two look identical on paper:
         //   Q(                         Q(
@@ -602,7 +700,10 @@ public sealed partial class CSharpDocumentBuilder {
     void EmitVerbatim(SyntaxNode node) {
         EmitUpTo(node.SpanStart);
         var span = node.Span;
-        EmitGap(_cursor, PieceKind.Token, span.Start, node.GetFirstToken());
+        if (span.Start != _gapEmittedAt) {
+            EmitGap(_cursor, PieceKind.Token, span.Start, node.GetFirstToken());
+        }
+
         MarkFramesStarted();
 
         var source = new SourceSpan(span.Start, span.Length);
@@ -632,7 +733,10 @@ public sealed partial class CSharpDocumentBuilder {
         }
 
         var token = piece.Kind == PieceKind.Token ? _tokens[piece.TokenIndex] : default;
-        EmitGap(index, piece.Kind, piece.Span.Start, token);
+        if (piece.Span.Start != _gapEmittedAt) {
+            EmitGap(index, piece.Kind, piece.Span.Start, token);
+        }
+
         MarkFramesStarted();
 
         var span = new SourceSpan(piece.Span.Start, piece.Span.Length);
@@ -774,6 +878,41 @@ public sealed partial class CSharpDocumentBuilder {
         // directive that closes the branch is not part of it and the directive indents normally.
         if (previous.Kind == PieceKind.DisabledText) {
             return;
+        }
+
+        // ⚠ The break plan only ever governs a gap between two tokens. A comment or a directive in
+        // the gap makes it untouchable: joining `a + // note` with `b` puts `b` inside the comment,
+        // and breaking before a directive moves code across it.
+        var spec = default(GapSpec);
+        var planned = previous.Kind == PieceKind.Token && nextKind == PieceKind.Token
+            && _plan.TryGap(nextStart, out spec);
+
+        if (planned) {
+            switch (spec.Rule) {
+                case GapRule.Point:
+                    _doc.BreakPoint(
+                        spec.Group,
+                        GapSpace(previous, nextKind, nextToken) != SpaceKind.Forbidden,
+                        newLines == 0 ? 0 : ResolveBlankLines(previous, nextPieceIndex, nextToken, newLines - 1),
+                        newLines == 0
+                            ? DefaultNewLine()
+                            : _options.EnforceLineEndingStyle ? DefaultNewLine() : FirstNewLine(gap) ?? DefaultNewLine());
+                    return;
+
+                case GapRule.Flat:
+                    _doc.Space(GapSpace(previous, nextKind, nextToken));
+                    return;
+
+                default:
+                    Break(
+                        nextPieceIndex,
+                        nextToken,
+                        newLines == 0 ? 0 : ResolveBlankLines(previous, nextPieceIndex, nextToken, newLines - 1),
+                        newLines == 0
+                            ? DefaultNewLine()
+                            : _options.EnforceLineEndingStyle ? DefaultNewLine() : FirstNewLine(gap) ?? DefaultNewLine());
+                    return;
+            }
         }
 
         if (newLines == 0) {
@@ -990,6 +1129,11 @@ public sealed partial class CSharpDocumentBuilder {
         CatchClauseSyntax => true,
         FinallyClauseSyntax => true,
         ElseClauseSyntax => true,
+        // ⚠ Every query clause starts a line of its own — except the first. `item =\n from p in xs`
+        // is a continuation of the assignment and takes its level; `where` and `select` under it are
+        // siblings of that `from` and take none. Treating the leading `from` as a unit too leaves the
+        // whole query flush with the `=` and is 349 lines of the corpus's indentation divergence.
+        FromClauseSyntax { Parent: QueryExpressionSyntax query } from when query.FromClause == from => false,
         QueryClauseSyntax => true,
         SelectOrGroupClauseSyntax => true,
         AnonymousObjectMemberDeclaratorSyntax => true,
