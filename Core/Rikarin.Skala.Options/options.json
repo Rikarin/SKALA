@@ -102,35 +102,40 @@
       ],
       "valueAliases": {}
     },
+    "BraceRequirement": {
+      "values": [
+        {
+          "name": "not_required",
+          "summary": "Do not enforce"
+        },
+        {
+          "name": "required",
+          "summary": "Enforce always"
+        },
+        {
+          "name": "required_for_multiline",
+          "summary": "Enforce if body is multi-line"
+        },
+        {
+          "name": "required_for_multiline_statement",
+          "summary": "Enforce if statement is multi-line"
+        }
+      ],
+      "valueAliases": {}
+    },
     "ChildIndentStyle": {
       "values": [
         {
-          "name": "DoNotTouch",
-          "summary": "Do not change indenting"
-        },
-        {
           "name": "do_not_touch",
           "summary": "Do not change indenting"
-        },
-        {
-          "name": "OneIndent",
-          "summary": "One indent from parent element"
         },
         {
           "name": "one_indent",
           "summary": "One indent from parent element"
         },
         {
-          "name": "ZeroIndent",
-          "summary": "No indent from parent element"
-        },
-        {
           "name": "zero_indent",
           "summary": "No indent from parent element"
-        },
-        {
-          "name": "RemoveIndent",
-          "summary": "No indent at all"
         },
         {
           "name": "remove_indent",
@@ -254,6 +259,19 @@
       ],
       "valueAliases": {}
     },
+    "NamespaceDeclarationStyle": {
+      "values": [
+        {
+          "name": "file_scoped",
+          "summary": "File-scoped"
+        },
+        {
+          "name": "block_scoped",
+          "summary": "Block-scoped"
+        }
+      ],
+      "valueAliases": {}
+    },
     "NestedTernaryStyle": {
       "values": [
         {
@@ -338,20 +356,12 @@
     "PlacementStyle": {
       "values": [
         {
-          "name": "false",
-          "summary": "Never"
-        },
-        {
           "name": "never",
           "summary": "Never"
         },
         {
           "name": "if_owner_is_single_line",
           "summary": "If owner is singleline"
-        },
-        {
-          "name": "true",
-          "summary": "Always"
         },
         {
           "name": "always",

@@ -11,8 +11,18 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <!--
+      Microsoft.CodeAnalysis.Analyzers is not referenced explicitly: Roslyn 5.9.0 requires a
+      prerelease of it, and the 3.3.4 pin in docs/plan/01 predates that. It arrives transitively at
+      the version Roslyn asks for, so the analyzer-authoring analyzers still run.
+    -->
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" PrivateAssets="all" ExcludeAssets="runtime" />
-    <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- ADR-012: rule ids are permanent, and release tracking is what makes that a build failure. -->
+    <AdditionalFiles Include="AnalyzerReleases.Shipped.md" />
+    <AdditionalFiles Include="AnalyzerReleases.Unshipped.md" />
   </ItemGroup>
 
 </Project>

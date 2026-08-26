@@ -454,7 +454,32 @@ def classify_value(value_lines: list[str]) -> tuple[str, list[dict] | None]:
     name = ENUM_NAMES.get(key)
     if name is None:
         return "string", None
-    return "enum:" + name, members
+    return "enum:" + name, dedupe_members(name, members)
+
+
+def dedupe_members(enum_name: str, members: list[dict]) -> list[dict]:
+    """
+    JetBrains lists some values twice, once CamelCase and once snake_case (``OneIndent`` and
+    ``one_indent``). They are one value with two spellings, so the second becomes a value alias.
+    """
+    aliases = ENUM_VALUE_ALIASES.setdefault(enum_name, {})
+    canonical: dict[str, dict] = {}
+    result = []
+    for member in members:
+        # A value that is already declared an alias of another value is not a value of its own.
+        if member["name"] in aliases:
+            continue
+        folded = member["name"].replace("_", "").lower()
+        if folded in canonical:
+            alias, keep = sorted([member["name"], canonical[folded]["name"]], key=lambda n: ("_" in n, n))
+            # keep the snake_case spelling as the member; the other becomes an alias of it
+            if "_" in alias and "_" not in keep:
+                alias, keep = keep, alias
+            aliases[alias] = keep
+            continue
+        canonical[folded] = member
+        result.append(member)
+    return result
 
 
 def pascal(text: str) -> str:
@@ -494,12 +519,23 @@ def build(repo: str, cache: str) -> dict:
     options: list[dict] = []
     seen_keys: set[str] = set()
 
-    def register_enum(type_name: str, members: list[dict] | None) -> None:
-        if not type_name.startswith("enum:") or members is None:
+    # Every documented value domain, by enum name, so that an option added by hand below can still
+    # reference an enum no documented C# property happens to use.
+    domains: dict[str, list[dict]] = {}
+    for prop in props:
+        type_name, members = classify_value(prop["valueLines"])
+        if members is not None:
+            domains.setdefault(type_name[len("enum:") :], members)
+
+    def register_enum(type_name: str, members: list[dict] | None = None) -> None:
+        if not type_name.startswith("enum:"):
             return
         name = type_name[len("enum:") :]
         if name in enums:
             return
+        members = members or domains.get(name)
+        if members is None:
+            raise SystemExit(f"no documented value domain for enum '{name}'")
         enums[name] = {
             "values": members,
             "valueAliases": ENUM_VALUE_ALIASES.get(name, {}),
@@ -606,6 +642,7 @@ def build(repo: str, cache: str) -> dict:
     for key, (option_type, construct, summary, severity_suffix) in MICROSOFT_OPTIONS.items():
         if key not in template_values:
             continue
+        register_enum(option_type)
         value, line = template_values[key]
         add(
             {
@@ -630,6 +667,7 @@ def build(repo: str, cache: str) -> dict:
     for key, (option_type, construct) in UNDOCUMENTED_CSHARP_KEYS.items():
         if key not in template_values or key in seen_keys:
             continue
+        register_enum(option_type)
         value, line = template_values[key]
         add(
             {

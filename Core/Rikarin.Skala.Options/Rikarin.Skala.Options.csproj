@@ -7,6 +7,8 @@
 
   <PropertyGroup>
     <RootNamespace>Rikarin.Skala.Options</RootNamespace>
+    <!-- The generated option model is the assembly's entire public surface; being able to read it matters. -->
+    <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
   </PropertyGroup>
 
   <ItemGroup>
