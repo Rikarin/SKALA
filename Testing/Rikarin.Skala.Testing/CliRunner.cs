@@ -32,7 +32,8 @@ public static class CliRunner {
     public static CliRun Run(params string[] arguments) {
         if (!File.Exists(Assembly)) {
             throw new InvalidOperationException(
-                $"The skala binary is not at '{Assembly}'. Build the solution (or run ./build.sh Test) before running these tests.");
+                $"The skala binary is not at '{Assembly}'. Build the solution (or run ./build.sh Test) before running these tests."
+            );
         }
 
         var start = new ProcessStartInfo("dotnet") {

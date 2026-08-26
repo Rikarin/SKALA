@@ -13,14 +13,20 @@ SourceText
    │
    ├─▶ 3. Build document   syntax tree + trivia ⇒ Document IR
    │
-   ├─▶ 4. Fit              resolve every Group's mode against max_line_length ⇒ concrete layout
-   │
-   ├─▶ 5. Emit             layout ⇒ TextChange[] against the ORIGINAL SourceText
+   ├─▶ 4+5. Fit & emit     resolve every Group's mode against max_line_length while writing the
+   │                       layout ⇒ TextChange[] against the ORIGINAL SourceText
    │
    ├─▶ 6. Verify           token-stream equivalence, input vs. applied output. Mismatch ⇒ fatal.
    │
    └─▶ 7. Write / report   apply, or print a diff, or return edits over LSP/MCP
 ```
+
+⚠ **Steps 4 and 5 are one pass, and this document had them as two.** Whether a group fits is
+`column + flatWidth <= width`, and the column is a function of the indentation stack, of pending
+spaces and of every break taken so far — that is, of exactly the state the writer maintains. A
+standalone fitting pass has to reproduce that state, and two implementations of an indentation model
+that must agree to the column is the kind of duplication that produces a wrap which moves when
+nothing moved. M2 resolves each group on entry, at the column the writer is actually at.
 
 Steps 1, 3–7 need no `Compilation` and no project file. That is what makes `skala format` work on a
 folder, in a git hook, on an agent's scratch directory, and at 4 691 files in under twenty seconds.
@@ -71,21 +77,48 @@ enum GroupMode {
     Break,     // always break       — chop_always, or a rule demands it
     Auto,      // break iff too wide — chop_if_long: classic Prettier group
     Preserve,  // ← the third state: broken iff it was broken in the source, subject to width
+    Owner,     // ← the fourth: broken iff the group it names resolved broken
 }
 ```
+
+⚠ **"Subject to width" is two facts, not one, and this document had it as one.** It runs in both
+directions and the export wants a different direction per construct family:
+
+| Fact | Means | Example |
+|---|---|---|
+| `BreaksIfTooLong` | the group may **add** a break the author did not write | `chop_if_long` chops a call that does not fit even though it was written on one line |
+| `JoinsIfFits` | the group may **remove** one the author did write | `keep_existing_expr_member_arrangement = false` re-joins `int P =>\n 1;` |
+
+Neither is the other's default. Giving an expression body the argument list's rule — break after
+`=>` whenever the declaration is over 120 — costs 0.24 points of line fidelity on `corpus/real/`,
+because the oracle wraps such a line at a different point and Skala's break lands one line away from
+the oracle's. *Which* of a line's candidate points to wrap at is `prefer_wrap_around_eq`'s job and
+belongs to milestone 3.
+
+⚠ **The two directions are also measured against different widths.** Joining needs the whole flat
+width, because the join puts all of it on one line; breaking needs only the width up to the group's
+first unavoidable break, because the line was going to end there anyway. `P => new Thing {\n … };`
+is not improved by a break after the `=>`, and `M() =>\n from x in y\n select x;` is not joinable
+even though its first line fits.
 
 `Preserve` is selected when `resharper_keep_user_linebreaks = true` (it is) and the construct has no
 option forcing otherwise, or when a `resharper_keep_existing_*_arrangement` key is `true`.
 Resolution of a `Preserve` group:
 
 1. Look at the *original* source span of the group. Did it contain a line break at any of this
-   group's break points?
+   group's break points? ⚠ At **its own** break points — not "somewhere inside it".
+   `var n = aaa +\n bbb;` and `var n = aaa\n + bbb;` are both breaks inside the same binary chain,
+   and the oracle removes the first and keeps the second, because `wrap_before_binary_opsign = true`
+   makes only the gap before the operator a break point of that group. A containment test cannot
+   tell them apart, and M1's `ContainsSourceBreak` was a containment test.
 2. If **no**: try `Flat`. If it does not fit in `max_line_length`, fall through to the group's
    configured wrap style (`chop_if_long` ⇒ `Break`, `wrap_if_long` ⇒ `Fill`).
 3. If **yes**: keep the author's break points, and additionally break any point where the resulting
-   line still does not fit. ⚠ It does **not** re-flow the author's breaks away — that is what
-   `keep_user_wrapping = true` means, and getting this wrong turns a formatting run on Vixen into a
-   1.35 M-line diff.
+   line still does not fit. ⚠ It does **not** re-flow the author's breaks away unless `JoinsIfFits`
+   says it may — that is what `keep_user_linebreaks = true` means, and getting this wrong turns a
+   formatting run on Vixen into a 1.35 M-line diff. ⚠ `keep_user_wrapping` is **not** the key that
+   means it: measured against the oracle, setting `keep_user_wrapping = false` while
+   `keep_user_linebreaks = true` changes nothing on any shape tried. It is Tier D with that reason.
 
 The corollary that surprises people: Skala will leave a 40-column call broken across four lines if
 that is how it was written. That is correct. `chop_always` and `--reflow` are how you ask for the
@@ -99,13 +132,21 @@ never in a hook.
 | `chop_always` | `Group(Break)`, one `Line(Hard)` per item |
 | `chop_if_long` | `Group(Auto)` |
 | `wrap_if_long` | `Fill` |
-| `keep_existing_* = true` | `Group(Preserve)` overriding the above |
-| `place_*_on_single_line = if_owner_is_single_line` | `Group(Auto)` whose fit test is the *owner's* resolved mode, not width |
+| `keep_existing_* = true` | `Group(Preserve)` whose *delimiter* break points survive; the gaps between items are `keep_user_linebreaks`'s (see [05](05-csharp-formatting-rules.md)) |
+| `place_*_on_single_line = if_owner_is_single_line` | `Group(Owner)`, or — where owner and construct coincide, which is all five keys in the export — a `Preserve` group over the owner |
 | `max_*_on_line = n` | `Group(Break)` when item count > n, else as configured |
 
 `if_owner_is_single_line` (used by five `place_expr_*` keys in the export) is the reason `Group`
-carries an `Id` and `IfBroken` references one: a child's layout depends on a parent's resolved mode,
-so fitting is two passes over a group tree, not one (see below).
+carries an `Id` and `IfBroken` references one: a child's layout depends on a parent's resolved mode.
+
+⚠ **That does not make fitting two traversals, and this document said it did.** In all five keys the
+owner is the child's syntactic *ancestor* — a declaration owning something inside that declaration —
+so a depth-first walk already resolves owners before children. The walk order gives every property
+the second pass was there to give: owners first, children read the owner's resolved mode, a child may
+only move Flat → Broken, and termination follows from the shape rather than from a convergence
+argument. The fitter counts the cases where the invariant does not hold
+(`Fitter.OwnerUnresolved`) rather than guessing at them; it is zero for every document the C# front
+end produces, and a test asserts it.
 
 ## Indentation
 
@@ -138,6 +179,14 @@ it diverges on real code immediately.
 
 ReSharper's `double` and `resharper_continuous_indent_multiplier` change the level size and are Tier
 A too, but the export uses `single`, so that is the path with fixture coverage.
+
+⚠ **A continuation scope belongs to the construct, not to the break.** M1 opened it lazily, at the
+first break that needed it, and closed it at the enclosing statement. That is fine while the
+document's stack holds nothing but indent scopes; once groups are on the same stack the two
+interleave, and a group that closes before the statement does pops the indent instead of itself.
+M2 opens the scope inside the group that owns the break points and closes it there — and only where
+`_continuousDepth == 0` and no enclosing frame has already spent its level, which is what keeps
+`M(\n a\n + b)` at the parenthesis's one level rather than two.
 
 Nested-statement outdenting (`indent_nested_for_stmt = false`) means
 
@@ -185,6 +234,17 @@ must be resolved in a fixed order:
 
 Order: removals ∘ requirements ∘ caps, evaluated on the *gap between two members*, with the gap
 attributed to the member below (so `stick_comment` moves the right blank lines with the comment).
+
+⚠ **"Single-line" is a property of the output, and the requirements branch on it.** Half the
+`blank_lines_around_*` family has an `_around_single_line_*` twin, and a 140-column field is single
+line in the source and four lines after the fitter has had it — so reading the answer off the input
+makes the first pass emit no blank and the second emit one. Milestone 1 never broke a line, so the
+question never arose; milestone 2 answers it by predicting: a member is single-line iff its source
+occupied one line, nothing inside it is certain to break (a `chop_always` group, an attribute the
+placement rules will move), its width fits, and it does not share its line with the member before it.
+⚠ The width must be measured from the *tree* — the member's own span plus the indentation its nesting
+implies — and not from the source line, or an indentation-only mutation changes the answer and
+`format(mutate_whitespace(x)) ≡ format(x)` stops holding.
 ✅ Verified against the oracle on `constructs/blank-lines/*`, which is 90 files, because this is the
 area where hand-reasoning is least reliable.
 
@@ -194,26 +254,32 @@ Wadler-shaped, iterative rather than recursive (C# has no TCO and files nest 30 
 per group tree because of `if_owner_is_single_line`.
 
 ```
-fit(doc, width):
-  measure:  for each Group, compute flatWidth (∞ if it contains a Hard line)
-            and, for Preserve groups, whether the source was broken
-  resolve:  walk depth-first, maintaining (column, indentStack)
+build(tree):    per node, accumulate flatWidth and headWidth as the arena is filled
+                — ⚠ the measure pass is FUSED into the build (doc 13), not a traversal of its own
+fit+emit(doc, width):
+  walk depth-first, maintaining (column, indentStack), and on entering each Group:
             Group(Flat)     -> flat
-            Group(Break)    -> broken
-            Group(Auto)     -> flat if column + flatWidth <= width else broken
-            Group(Preserve) -> sourceBroken ? broken-at-source-points
-                                            : (fits ? flat : fallbackStyle)
+            Group(Break)    -> broken                        (and its flatWidth is ∞, so nothing
+                                                              containing it can be flat either)
+            Group(Auto)     -> flat if column + headWidth <= width else broken
+            Group(Preserve) -> sourceBroken ? (joinsIfFits && whole group fits ? flat : broken)
+                                            : (breaksIfTooLong && !fits ? broken : flat)
+            Group(Owner)    -> the owner's resolved mode; the owner is an ancestor, so it is known
             Fill(items)     -> emit items, breaking before the first item that would overflow,
                                then continue on the new line (classic fill)
-  second pass: groups whose mode depends on an owner's resolved mode (IfBroken, if_owner_is_single_line)
-               are re-resolved now that owners are known; a group may only move Flat -> Break,
-               never back, which guarantees termination
 ```
 
-Complexity is O(n) in document nodes for measure and O(n) for resolve, with a bounded second pass.
+Complexity is O(n) in document nodes, in one traversal.
 No backtracking, no search. The optimal-layout algorithms (Yelland/Bernardy, "A Pretty Expressive
 Printer") give better output on adversarial input at super-linear cost; they are rejected because
 ReSharper is not optimal either, and matching ReSharper is the requirement.
+
+⚠ **The column is the column, not the width.** `TextWidth.Measure` answers "how many columns does
+this text occupy", and the writer needs "which column am I at afterwards" — the two differ for text
+that spans lines, where the answer is the last line's width rather than the sum. M1 assigned the
+width to its column and nothing read it back; M2's fitter reads it on every group, and the mistake
+showed up as a 126-column line the formatter thought was 72. It was worth 1.4 points of line
+fidelity on `corpus/real/`.
 
 **Width is measured in columns, not chars.** `Text.Width` accounts for tab expansion
 (`alignment_tab_fill_style = use_spaces`, so output has none, but input may) and for wide/combining

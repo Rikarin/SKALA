@@ -38,7 +38,14 @@ public sealed class ToolConfiguration {
             using var document = JsonDocument.Parse(text, options);
             Walk(document.RootElement, path, diagnostics);
         } catch (JsonException exception) {
-            diagnostics.Add(new SkalaDiagnostic("SK9007", SkalaSeverity.Error, $"{FileName} is not valid JSON: {exception.Message}", path));
+            diagnostics.Add(
+                new SkalaDiagnostic(
+                    "SK9007",
+                    SkalaSeverity.Error,
+                    $"{FileName} is not valid JSON: {exception.Message}",
+                    path
+                )
+            );
         }
 
         return new ToolConfiguration(path, diagnostics.ToImmutable());
@@ -49,13 +56,16 @@ public sealed class ToolConfiguration {
             case JsonValueKind.Object:
                 foreach (var property in element.EnumerateObject()) {
                     if (OptionRegistry.TryResolve(property.Name, out var id)) {
-                        diagnostics.Add(new SkalaDiagnostic(
-                            ConfigDiagnosticIds.StyleKeyInToolConfig,
-                            SkalaSeverity.Error,
-                            $"'{property.Name}' is a style option and cannot be set in {FileName}; move it to .editorconfig",
-                            path,
-                            0,
-                            $"It is {OptionRegistry.Get(id).Key} (Tier {OptionRegistry.Get(id).Tier}). ADR-001: .editorconfig is the only style configuration language."));
+                        diagnostics.Add(
+                            new SkalaDiagnostic(
+                                ConfigDiagnosticIds.StyleKeyInToolConfig,
+                                SkalaSeverity.Error,
+                                $"'{property.Name}' is a style option and cannot be set in {FileName}; move it to .editorconfig",
+                                path,
+                                0,
+                                $"It is {OptionRegistry.Get(id).Key} (Tier {OptionRegistry.Get(id).Tier}). ADR-001: .editorconfig is the only style configuration language."
+                            )
+                        );
                     }
 
                     Walk(property.Value, path, diagnostics);

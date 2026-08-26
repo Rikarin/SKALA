@@ -43,7 +43,10 @@ public static class SkalaCommandLine {
             Arity = ArgumentArity.ZeroOrMore
         };
 
-        var command = new Command("format", "Format C# files. Spaces, blank lines, braces and indentation; no wrapping yet.");
+        var command = new Command(
+            "format",
+            "Format C# files. Spaces, blank lines, braces and indentation; no wrapping yet."
+        );
         command.Arguments.Add(paths);
         command.Options.Add(check);
         command.Options.Add(diff);
@@ -70,7 +73,8 @@ public static class SkalaCommandLine {
             };
 
             return Run(() => FormatCommand.Run(request));
-        });
+        }
+        );
 
         return command;
     }
@@ -107,7 +111,10 @@ public static class SkalaCommandLine {
         var configuredOnly = new Option<bool>("--configured-only") { Description = "Only options the configuration actually sets." };
         var configPath = new Option<string?>("--config") { Description = "Resolve against this .editorconfig instead of the chain above the file." };
 
-        var command = new Command("explain", "The effective option set for a file, each with its source file:line and tier.");
+        var command = new Command(
+            "explain",
+            "The effective option set for a file, each with its source file:line and tier."
+        );
         command.Arguments.Add(path);
         command.Options.Add(repositoryRoot);
         command.Options.Add(configuredOnly);
@@ -116,7 +123,10 @@ public static class SkalaCommandLine {
             parse.GetValue(path)!,
             parse.GetValue(repositoryRoot) ?? FindRepositoryRoot(parse.GetValue(path)!),
             parse.GetValue(configuredOnly),
-            parse.GetValue(configPath))));
+            parse.GetValue(configPath)
+        )
+        )
+        );
 
         return command;
     }
@@ -147,7 +157,10 @@ public static class SkalaCommandLine {
         var path = new Argument<string>("path") { Description = "The .editorconfig to distill.", DefaultValueFactory = static _ => ".editorconfig" };
         var output = new Option<string?>("--out", "-o") { Description = "Write the result here instead of to stdout." };
 
-        var command = new Command("distill", "Write back the subset of an export that differs from ReSharper's defaults.");
+        var command = new Command(
+            "distill",
+            "Write back the subset of an export that differs from ReSharper's defaults."
+        );
         command.Arguments.Add(path);
         command.Options.Add(output);
         command.SetAction(parse => Run(() => ConfigCommands.Distill(parse.GetValue(path)!, parse.GetValue(output))));
@@ -159,11 +172,20 @@ public static class SkalaCommandLine {
         var apply = new Option<bool>("--apply") { Description = "Write the file. Without it, fix only says what it would do." };
         var contradictions = new Option<bool>("--resolve-contradictions") { Description = "Also make a losing key agree with the one that already wins." };
 
-        var command = new Command("fix", "Add `root = true` and `max_line_length`, and optionally resolve contradictions.");
+        var command = new Command(
+            "fix",
+            "Add `root = true` and `max_line_length`, and optionally resolve contradictions."
+        );
         command.Arguments.Add(path);
         command.Options.Add(apply);
         command.Options.Add(contradictions);
-        command.SetAction(parse => Run(() => ConfigCommands.Fix(parse.GetValue(path)!, parse.GetValue(apply), parse.GetValue(contradictions))));
+        command.SetAction(parse => Run(() => ConfigCommands.Fix(
+            parse.GetValue(path)!,
+            parse.GetValue(apply),
+            parse.GetValue(contradictions)
+        )
+        )
+        );
         return command;
     }
 

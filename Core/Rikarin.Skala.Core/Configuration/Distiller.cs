@@ -70,8 +70,12 @@ public static class Distiller {
         var line = 0;
 
         builder.Append("# Distilled by skala config distill.").Append(newline);
-        builder.Append("# Every key below either differs from ReSharper's default or has a default Skala could not").Append(newline);
-        builder.Append("# verify. Re-exporting from Rider over this file is safe and supported (ADR-001).").Append(newline);
+        builder.Append("# Every key below either differs from ReSharper's default or has a default Skala could not").Append(
+            newline
+        );
+        builder.Append("# verify. Re-exporting from Rider over this file is safe and supported (ADR-001).").Append(
+            newline
+        );
 
         foreach (var raw in document.Text.Split('\n')) {
             line++;
@@ -85,11 +89,19 @@ public static class Distiller {
             linesOut++;
         }
 
-        return new DistillResult(builder.ToString(), linesIn, linesOut + 3, dropByLine.Count, retained, droppedKeys.ToImmutable());
+        return new DistillResult(
+            builder.ToString(),
+            linesIn,
+            linesOut + 3,
+            dropByLine.Count,
+            retained,
+            droppedKeys.ToImmutable()
+        );
     }
 
     public static string Summary(DistillResult result) =>
         string.Create(
             CultureInfo.InvariantCulture,
-            $"{result.LinesIn} lines in, {result.LinesOut} out; {result.Dropped} key(s) dropped as equal to a verified ReSharper default, {result.RetainedUnverifiedDefault} retained because their default is unverified");
+            $"{result.LinesIn} lines in, {result.LinesOut} out; {result.Dropped} key(s) dropped as equal to a verified ReSharper default, {result.RetainedUnverifiedDefault} retained because their default is unverified"
+        );
 }

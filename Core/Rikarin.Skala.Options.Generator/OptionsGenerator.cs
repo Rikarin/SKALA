@@ -29,7 +29,8 @@ public sealed class OptionsGenerator : IIncrementalGenerator {
         "No AdditionalFile named '{0}' was found; the option model cannot be generated",
         "Skala.Options",
         DiagnosticSeverity.Error,
-        isEnabledByDefault: true);
+        isEnabledByDefault: true
+    );
 
     static readonly DiagnosticDescriptor UnreadableRegistry = new(
         "SKG002",
@@ -37,7 +38,8 @@ public sealed class OptionsGenerator : IIncrementalGenerator {
         "'{0}' could not be read: {1}",
         "Skala.Options",
         DiagnosticSeverity.Error,
-        isEnabledByDefault: true);
+        isEnabledByDefault: true
+    );
 
     static readonly DiagnosticDescriptor DefaultOutOfDomain = new(
         "SKG003",
@@ -46,7 +48,8 @@ public sealed class OptionsGenerator : IIncrementalGenerator {
         "Skala.Options",
         DiagnosticSeverity.Error,
         isEnabledByDefault: true,
-        description: "A default outside the option's domain would be silently replaced by the first enum member, which is a different style than the one configured.");
+        description: "A default outside the option's domain would be silently replaced by the first enum member, which is a different style than the one configured."
+    );
 
     static readonly DiagnosticDescriptor DuplicateAlias = new(
         "SK9004",
@@ -55,7 +58,8 @@ public sealed class OptionsGenerator : IIncrementalGenerator {
         "Skala.Options",
         DiagnosticSeverity.Error,
         isEnabledByDefault: true,
-        description: "docs/plan/02-repository-layout.md § \"Naming\".");
+        description: "docs/plan/02-repository-layout.md § \"Naming\"."
+    );
 
     public void Initialize(IncrementalGeneratorInitializationContext context) {
         var registry = context.AdditionalTextsProvider
@@ -109,9 +113,18 @@ public sealed class OptionsGenerator : IIncrementalGenerator {
         }
 
         var clean = true;
-        foreach (var pair in owners.Where(static p => p.Value.Count > 1).OrderBy(static p => p.Key, StringComparer.Ordinal)) {
-            context.ReportDiagnostic(Diagnostic.Create(
-                DuplicateAlias, Location.None, pair.Key, string.Join(", ", pair.Value.OrderBy(static k => k, StringComparer.Ordinal))));
+        foreach (var pair in owners.Where(static p => p.Value.Count > 1).OrderBy(
+            static p => p.Key,
+            StringComparer.Ordinal
+        )) {
+            context.ReportDiagnostic(
+                Diagnostic.Create(
+                    DuplicateAlias,
+                    Location.None,
+                    pair.Key,
+                    string.Join(", ", pair.Value.OrderBy(static k => k, StringComparer.Ordinal))
+                )
+            );
             clean = false;
         }
 
@@ -125,7 +138,12 @@ public sealed class OptionsGenerator : IIncrementalGenerator {
                 continue;
             }
 
-            var declared = model.Enums.FirstOrDefault(e => string.Equals(e.Name, option.EnumName, StringComparison.Ordinal));
+            var declared = model.Enums.FirstOrDefault(e => string.Equals(
+                e.Name,
+                option.EnumName,
+                StringComparison.Ordinal
+            )
+            );
             var text = option.Default;
             if (option.SeveritySuffix) {
                 var colon = text.LastIndexOf(':');
@@ -140,14 +158,17 @@ public sealed class OptionsGenerator : IIncrementalGenerator {
 
             if (declared is not null && parts.All(part =>
                 IndexOfValue(declared, part) >= 0
-                || declared.ValueAliases.Any(a => string.Equals(a.Key, part, StringComparison.Ordinal)))) {
+                || declared.ValueAliases.Any(a => string.Equals(a.Key, part, StringComparison.Ordinal))
+            )) {
                 continue;
             }
 
             var domain = declared is null
                 ? "no such enum"
                 : string.Join(", ", declared.Values.Select(static v => v.EditorConfigName));
-            context.ReportDiagnostic(Diagnostic.Create(DefaultOutOfDomain, Location.None, option.Key, option.EnumName, text, domain));
+            context.ReportDiagnostic(
+                Diagnostic.Create(DefaultOutOfDomain, Location.None, option.Key, option.EnumName, text, domain)
+            );
             clean = false;
         }
 
@@ -167,7 +188,9 @@ public sealed class OptionsGenerator : IIncrementalGenerator {
         var builder = new StringBuilder(Header());
         builder.AppendLine($"namespace {Namespace};");
         builder.AppendLine();
-        builder.AppendLine("/// <summary>A dense, stable identifier for one style option. Ids are assigned in ordinal key order.</summary>");
+        builder.AppendLine(
+            "/// <summary>A dense, stable identifier for one style option. Ids are assigned in ordinal key order.</summary>"
+        );
         builder.AppendLine("public enum OptionId {");
         for (var i = 0; i < model.Options.Count; i++) {
             var option = model.Options[i];
@@ -201,7 +224,9 @@ public sealed class OptionsGenerator : IIncrementalGenerator {
         }
 
         builder.AppendLine();
-        builder.AppendLine("/// <summary>Text to value, for every option enum, including ReSharper's value aliases.</summary>");
+        builder.AppendLine(
+            "/// <summary>Text to value, for every option enum, including ReSharper's value aliases.</summary>"
+        );
         builder.AppendLine("public static class OptionEnums {");
         builder.AppendLine("    public static bool TryParse(string enumName, string text, out int value) {");
         builder.AppendLine("        switch (enumName) {");
@@ -209,14 +234,18 @@ public sealed class OptionsGenerator : IIncrementalGenerator {
             builder.AppendLine($"            case \"{option.Name}\":");
             builder.AppendLine("                switch (text) {");
             for (var i = 0; i < option.Values.Count; i++) {
-                builder.AppendLine($"                    case {Lit(option.Values[i].EditorConfigName)}: value = {i.ToString(CultureInfo.InvariantCulture)}; return true;");
+                builder.AppendLine(
+                    $"                    case {Lit(option.Values[i].EditorConfigName)}: value = {i.ToString(CultureInfo.InvariantCulture)}; return true;"
+                );
             }
 
             foreach (var alias in option.ValueAliases) {
                 var index = IndexOfValue(option, alias.Value);
                 if (index >= 0) {
                     builder.AppendLine($"                    // ReSharper alias: {alias.Key} == {alias.Value}");
-                    builder.AppendLine($"                    case {Lit(alias.Key)}: value = {index.ToString(CultureInfo.InvariantCulture)}; return true;");
+                    builder.AppendLine(
+                        $"                    case {Lit(alias.Key)}: value = {index.ToString(CultureInfo.InvariantCulture)}; return true;"
+                    );
                 }
             }
 
@@ -237,7 +266,9 @@ public sealed class OptionsGenerator : IIncrementalGenerator {
             builder.AppendLine($"            case \"{option.Name}\":");
             builder.AppendLine("                switch (value) {");
             for (var i = 0; i < option.Values.Count; i++) {
-                builder.AppendLine($"                    case {i.ToString(CultureInfo.InvariantCulture)}: return {Lit(option.Values[i].EditorConfigName)};");
+                builder.AppendLine(
+                    $"                    case {i.ToString(CultureInfo.InvariantCulture)}: return {Lit(option.Values[i].EditorConfigName)};"
+                );
             }
 
             builder.AppendLine("                }");
@@ -294,11 +325,17 @@ public sealed class OptionsGenerator : IIncrementalGenerator {
         builder.AppendLine("    D,");
         builder.AppendLine("}");
         builder.AppendLine();
-        builder.AppendLine("/// <summary>Where an option's recorded default came from. distill may only drop <see cref=\"ReSharperDocs\"/>.</summary>");
+        builder.AppendLine(
+            "/// <summary>Where an option's recorded default came from. distill may only drop <see cref=\"ReSharperDocs\"/>.</summary>"
+        );
         builder.AppendLine("public enum OptionDefaultSource {");
-        builder.AppendLine("    /// <summary>Verified against JetBrains' published EditorConfig property tables.</summary>");
+        builder.AppendLine(
+            "    /// <summary>Verified against JetBrains' published EditorConfig property tables.</summary>"
+        );
         builder.AppendLine("    ReSharperDocs,");
-        builder.AppendLine("    /// <summary>The value the Rider export holds. Rider's default for most keys, the author's choice for the rest, with nothing distinguishing the two.</summary>");
+        builder.AppendLine(
+            "    /// <summary>The value the Rider export holds. Rider's default for most keys, the author's choice for the rest, with nothing distinguishing the two.</summary>"
+        );
         builder.AppendLine("    Template,");
         builder.AppendLine("    /// <summary>No basis beyond the export.</summary>");
         builder.AppendLine("    Unknown,");
@@ -324,7 +361,9 @@ public sealed class OptionsGenerator : IIncrementalGenerator {
         builder.AppendLine("    IReadOnlyList<OptionId> Expands);");
         builder.AppendLine();
         builder.AppendLine("public static class OptionRegistry {");
-        builder.AppendLine($"    public const int Count = {model.Options.Count.ToString(CultureInfo.InvariantCulture)};");
+        builder.AppendLine(
+            $"    public const int Count = {model.Options.Count.ToString(CultureInfo.InvariantCulture)};"
+        );
         builder.AppendLine();
         builder.AppendLine("    static readonly OptionInfo[] Table = CreateTable();");
         builder.AppendLine("    static readonly FrozenDictionary<string, OptionId> BySpelling = CreateIndex();");
@@ -333,8 +372,12 @@ public sealed class OptionsGenerator : IIncrementalGenerator {
         builder.AppendLine();
         builder.AppendLine("    public static OptionInfo Get(OptionId id) => Table[(int)id];");
         builder.AppendLine();
-        builder.AppendLine("    /// <summary>Resolves any spelling ReSharper accepts — canonical key or alias — to its option.</summary>");
-        builder.AppendLine("    public static bool TryResolve(string key, out OptionId id) => BySpelling.TryGetValue(key, out id);");
+        builder.AppendLine(
+            "    /// <summary>Resolves any spelling ReSharper accepts — canonical key or alias — to its option.</summary>"
+        );
+        builder.AppendLine(
+            "    public static bool TryResolve(string key, out OptionId id) => BySpelling.TryGetValue(key, out id);"
+        );
         builder.AppendLine();
         builder.AppendLine("    public static IReadOnlyCollection<string> Spellings => BySpelling.Keys;");
         builder.AppendLine();
@@ -359,14 +402,8 @@ public sealed class OptionsGenerator : IIncrementalGenerator {
                 ? "[]"
                 : "[" + string.Join(", ", option.Expands.Select(e => "OptionId." + Naming.Pascal(e))) + "]";
             builder.AppendLine(
-                $"        new(OptionId.{option.MemberName}, {OptionRegistryReader.Literal(option.Key)}, {aliases}, " +
-                $"{OptionRegistryReader.Literal(option.Language)}, OptionValueKind.{option.Kind}, " +
-                $"{OptionRegistryReader.Literal(option.EnumName)}, {OptionRegistryReader.Literal(option.Default)}, " +
-                $"OptionDefaultSource.{DefaultSourceMember(option.DefaultSource)}, OptionTier.{option.Tier}, " +
-                $"{OptionRegistryReader.Literal(option.Construct)}, {OptionRegistryReader.Literal(option.Summary)}, " +
-                $"{OptionRegistryReader.Literal(option.Since)}, {OptionRegistryReader.Literal(option.Oracle)}, " +
-                $"{OptionRegistryReader.Literal(option.Docs)}, {OptionRegistryReader.IntLiteral(option.TemplateLine)}, " +
-                $"{(option.SeveritySuffix ? "true" : "false")}, {expands}),");
+                $"        new(OptionId.{option.MemberName}, {OptionRegistryReader.Literal(option.Key)}, {aliases}, " + $"{OptionRegistryReader.Literal(option.Language)}, OptionValueKind.{option.Kind}, " + $"{OptionRegistryReader.Literal(option.EnumName)}, {OptionRegistryReader.Literal(option.Default)}, " + $"OptionDefaultSource.{DefaultSourceMember(option.DefaultSource)}, OptionTier.{option.Tier}, " + $"{OptionRegistryReader.Literal(option.Construct)}, {OptionRegistryReader.Literal(option.Summary)}, " + $"{OptionRegistryReader.Literal(option.Since)}, {OptionRegistryReader.Literal(option.Oracle)}, " + $"{OptionRegistryReader.Literal(option.Docs)}, {OptionRegistryReader.IntLiteral(option.TemplateLine)}, " + $"{(option.SeveritySuffix ? "true" : "false")}, {expands}),"
+            );
         }
 
         builder.AppendLine("    ];");
@@ -374,23 +411,27 @@ public sealed class OptionsGenerator : IIncrementalGenerator {
         return builder.ToString();
     }
 
-    static string DefaultSourceMember(string value) => value switch {
-        "resharper-docs" => "ReSharperDocs",
-        "template" => "Template",
-        _ => "Unknown"
-    };
+    static string DefaultSourceMember(string value) =>
+        value switch {
+            "resharper-docs" => "ReSharperDocs",
+            "template" => "Template",
+            _ => "Unknown"
+        };
 
     static string EmitFormattingOptions(OptionRegistry model) {
         var builder = new StringBuilder(Header());
         builder.AppendLine("using System;");
         builder.AppendLine();
-        builder.AppendLine("// Every group struct carries both arrays so that the shape is uniform, even where the group");
+        builder.AppendLine(
+            "// Every group struct carries both arrays so that the shape is uniform, even where the group"
+        );
         builder.AppendLine("// happens to hold no option of one kind.");
         builder.AppendLine("#pragma warning disable CS9113");
         builder.AppendLine();
         builder.AppendLine($"namespace {Namespace};");
         builder.AppendLine();
-        builder.AppendLine("""
+        builder.AppendLine(
+            """
             /// <summary>
             /// The resolved style options for one file, as a struct of arrays keyed by <see cref="OptionId"/>.
             /// </summary>
@@ -399,7 +440,8 @@ public sealed class OptionsGenerator : IIncrementalGenerator {
             /// options tens of millions of times over the corpus and a dictionary there is a 3–4× slowdown
             /// on the whole operation (docs/plan/13-performance.md § "The fitting pass").
             /// </remarks>
-            """);
+            """
+        );
         builder.AppendLine("public readonly struct FormattingOptions {");
         builder.AppendLine("    readonly int[] _scalars;");
         builder.AppendLine("    readonly string?[] _strings;");
@@ -409,7 +451,9 @@ public sealed class OptionsGenerator : IIncrementalGenerator {
         builder.AppendLine("        _strings = strings;");
         builder.AppendLine("    }");
         builder.AppendLine();
-        builder.AppendLine("    public static FormattingOptions Defaults { get; } = new FormattingOptionsBuilder().Build();");
+        builder.AppendLine(
+            "    public static FormattingOptions Defaults { get; } = new FormattingOptionsBuilder().Build();"
+        );
         builder.AppendLine();
         builder.AppendLine("    public bool GetBool(OptionId id) => _scalars[(int)id] != 0;");
         builder.AppendLine();
@@ -419,12 +463,16 @@ public sealed class OptionsGenerator : IIncrementalGenerator {
         builder.AppendLine();
         builder.AppendLine("    public string? GetString(OptionId id) => _strings[(int)id];");
         builder.AppendLine();
-        builder.AppendLine("    /// <summary>The option's value in its .editorconfig spelling, for reporting.</summary>");
+        builder.AppendLine(
+            "    /// <summary>The option's value in its .editorconfig spelling, for reporting.</summary>"
+        );
         builder.AppendLine("    public string GetText(OptionId id) {");
         builder.AppendLine("        var info = OptionRegistry.Get(id);");
         builder.AppendLine("        return info.Kind switch {");
         builder.AppendLine("            OptionValueKind.Bool => _scalars[(int)id] != 0 ? \"true\" : \"false\",");
-        builder.AppendLine("            OptionValueKind.Int => _scalars[(int)id].ToString(System.Globalization.CultureInfo.InvariantCulture),");
+        builder.AppendLine(
+            "            OptionValueKind.Int => _scalars[(int)id].ToString(System.Globalization.CultureInfo.InvariantCulture),"
+        );
         builder.AppendLine("            OptionValueKind.Enum => OptionEnums.ToText(info.EnumName!, _scalars[(int)id]),");
         builder.AppendLine("            OptionValueKind.Flags => _strings[(int)id] ?? string.Empty,");
         builder.AppendLine("            _ => _strings[(int)id] ?? string.Empty");
@@ -466,7 +514,9 @@ public sealed class OptionsGenerator : IIncrementalGenerator {
 
             foreach (var child in nested) {
                 builder.AppendLine();
-                builder.AppendLine($"    public readonly struct {root.Key}{child.Key}Group(int[] scalars, string?[] strings) {{");
+                builder.AppendLine(
+                    $"    public readonly struct {root.Key}{child.Key}Group(int[] scalars, string?[] strings) {{"
+                );
                 EmitAccessors(builder, [.. child], "        ");
                 builder.AppendLine("    }");
             }
@@ -501,13 +551,16 @@ public sealed class OptionsGenerator : IIncrementalGenerator {
                 _ => $"strings[(int)OptionId.{option.MemberName}]"
             };
 
-            builder.AppendLine($"{indent}/// <summary><c>{Xml(option.Key)}</c> — {Xml(option.Summary)} (Tier {option.Tier})</summary>");
+            builder.AppendLine(
+                $"{indent}/// <summary><c>{Xml(option.Key)}</c> — {Xml(option.Summary)} (Tier {option.Tier})</summary>"
+            );
             builder.AppendLine($"{indent}public {type} {name} => {access};");
         }
     }
 
     static void EmitBuilder(StringBuilder builder, OptionRegistry model) {
-        builder.AppendLine("""
+        builder.AppendLine(
+            """
             /// <summary>Accumulates option values, starting from the registry's defaults.</summary>
             public sealed class FormattingOptionsBuilder {
                 readonly int[] _scalars = CreateDefaultScalars();
@@ -590,11 +643,14 @@ public sealed class OptionsGenerator : IIncrementalGenerator {
                             return true;
                     }
                 }
-            """);
+            """
+        );
 
         builder.AppendLine();
         builder.AppendLine("    static int[] CreateDefaultScalars() {");
-        builder.AppendLine($"        var scalars = new int[{model.Options.Count.ToString(CultureInfo.InvariantCulture)}];");
+        builder.AppendLine(
+            $"        var scalars = new int[{model.Options.Count.ToString(CultureInfo.InvariantCulture)}];"
+        );
         foreach (var option in model.Options) {
             if (option.Default is null) {
                 continue;
@@ -610,10 +666,14 @@ public sealed class OptionsGenerator : IIncrementalGenerator {
         builder.AppendLine("    }");
         builder.AppendLine();
         builder.AppendLine("    static string?[] CreateDefaultStrings() {");
-        builder.AppendLine($"        var strings = new string?[{model.Options.Count.ToString(CultureInfo.InvariantCulture)}];");
+        builder.AppendLine(
+            $"        var strings = new string?[{model.Options.Count.ToString(CultureInfo.InvariantCulture)}];"
+        );
         foreach (var option in model.Options) {
             if (option.Kind is OptionValueKind.String or OptionValueKind.Flags && option.Default is not null) {
-                builder.AppendLine($"        strings[(int)OptionId.{option.MemberName}] = {OptionRegistryReader.Literal(StripSeverity(option, option.Default))};");
+                builder.AppendLine(
+                    $"        strings[(int)OptionId.{option.MemberName}] = {OptionRegistryReader.Literal(StripSeverity(option, option.Default))};"
+                );
             }
         }
 
@@ -656,7 +716,12 @@ public sealed class OptionsGenerator : IIncrementalGenerator {
                     ? number.ToString(CultureInfo.InvariantCulture)
                     : "0";
             case OptionValueKind.Enum:
-                var declared = model.Enums.FirstOrDefault(e => string.Equals(e.Name, option.EnumName, StringComparison.Ordinal));
+                var declared = model.Enums.FirstOrDefault(e => string.Equals(
+                    e.Name,
+                    option.EnumName,
+                    StringComparison.Ordinal
+                )
+                );
                 if (declared is null) {
                     return "0";
                 }

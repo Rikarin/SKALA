@@ -37,7 +37,15 @@ public static class EditEmitter {
 
             // The piece itself. In phase 1 a piece is copied verbatim, so this is normally a no-op;
             // it is compared anyway so that a builder that ever rewrites a token cannot lose it.
-            AddIfDifferent(edits, input, output, anchor.Source.Start, anchor.Source.End, anchor.OutputStart, anchor.OutputEnd);
+            AddIfDifferent(
+                edits,
+                input,
+                output,
+                anchor.Source.Start,
+                anchor.Source.End,
+                anchor.OutputStart,
+                anchor.OutputEnd
+            );
 
             inputCursor = anchor.Source.End;
             outputCursor = anchor.OutputEnd;
@@ -54,7 +62,8 @@ public static class EditEmitter {
         int inputStart,
         int inputEnd,
         int outputStart,
-        int outputEnd) {
+        int outputEnd
+    ) {
         if (inputEnd < inputStart || outputEnd < outputStart) {
             return;
         }
@@ -78,9 +87,12 @@ public static class EditEmitter {
             suffix++;
         }
 
-        edits.Add(new TextEdit(
-            SourceSpan.FromBounds(inputStart + prefix, inputEnd - suffix),
-            output[(outputStart + prefix)..(outputEnd - suffix)]));
+        edits.Add(
+            new TextEdit(
+                SourceSpan.FromBounds(inputStart + prefix, inputEnd - suffix),
+                output[(outputStart + prefix)..(outputEnd - suffix)]
+            )
+        );
     }
 
     /// <summary>Applies edits to <paramref name="input"/>. Edits must be ordered and disjoint.</summary>

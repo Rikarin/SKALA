@@ -50,5 +50,6 @@ public static class Corpus {
     public static IReadOnlyList<CorpusFile> All() => [.. Files(Constructs), .. Files(Real), .. Files(Pathological)];
 
     /// <summary>xUnit theory data: one row per file in a set.</summary>
-    public static IEnumerable<object[]> TheoryData(string set) => Files(set).Select(static file => new object[] { file });
+    public static IEnumerable<object[]> TheoryData(string set) =>
+        Files(set).Select(static file => new object[] { file });
 }

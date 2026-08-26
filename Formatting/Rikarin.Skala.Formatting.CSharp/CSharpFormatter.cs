@@ -22,8 +22,9 @@ public sealed record FormatResult(
         get {
             var lines = 0;
             foreach (var edit in Edits) {
-                lines += 1 + CSharpDocumentBuilder.CountNewLines(Original.ToString(
-                    Microsoft.CodeAnalysis.Text.TextSpan.FromBounds(edit.Span.Start, edit.Span.End)));
+                lines += 1 + CSharpDocumentBuilder.CountNewLines(
+                    Original.ToString(Microsoft.CodeAnalysis.Text.TextSpan.FromBounds(edit.Span.Start, edit.Span.End))
+                );
             }
 
             return lines;
@@ -54,12 +55,22 @@ public static class CSharpFormatter {
         new CSharpParseOptions(LanguageVersion.Preview).WithDocumentationMode(DocumentationMode.Parse);
 
     /// <summary>Formats text that has already been read, with options that have already been resolved.</summary>
-    public static FormatResult Format(string path, SourceText text, in FormattingOptions options, string? crashRoot = null) {
+    public static FormatResult Format(
+        string path,
+        SourceText text,
+        in FormattingOptions options,
+        string? crashRoot = null
+    ) {
         var phaseOne = new PhaseOneOptions(options);
         return Format(path, text, phaseOne, crashRoot);
     }
 
-    public static FormatResult Format(string path, SourceText text, in PhaseOneOptions options, string? crashRoot = null) {
+    public static FormatResult Format(
+        string path,
+        SourceText text,
+        in PhaseOneOptions options,
+        string? crashRoot = null
+    ) {
         var diagnostics = ImmutableArray.CreateBuilder<SkalaDiagnostic>();
 
         if (GeneratedCode.IsGenerated(path, text)) {
@@ -75,46 +86,75 @@ public static class CSharpFormatter {
             // ⚠ ADR-003: a file that does not parse is reported and left byte-identical. This is the
             // single most important safety property in the tool.
             var position = diagnostic.Location.GetLineSpan().StartLinePosition;
-            diagnostics.Add(new SkalaDiagnostic(
-                FormatDiagnosticIds.NotParseable,
-                SkalaSeverity.Warning,
-                $"not formatted, the file does not parse: {diagnostic.GetMessage(System.Globalization.CultureInfo.InvariantCulture)}",
-                path,
-                position.Line + 1));
+            diagnostics.Add(
+                new SkalaDiagnostic(
+                    FormatDiagnosticIds.NotParseable,
+                    SkalaSeverity.Warning,
+                    $"not formatted, the file does not parse: {diagnostic.GetMessage(System.Globalization.CultureInfo.InvariantCulture)}",
+                    path,
+                    position.Line + 1
+                )
+            );
 
-            return new FormatResult(path, text, [], text.ToString(), diagnostics.ToImmutable(), FormatOutcome.NotParseable);
+            return new FormatResult(
+                path,
+                text,
+                [],
+                text.ToString(),
+                diagnostics.ToImmutable(),
+                FormatOutcome.NotParseable
+            );
         }
 
         var built = CSharpDocumentBuilder.Build(path, text, tree.GetRoot(), options);
         diagnostics.AddRange(built.Diagnostics);
 
-        var modes = Fitter.Resolve(built.Document, options.MaxLineLength);
         var indentUnit = options.UseTabs ? "\t" : new string(' ', options.IndentSize);
         var newLine = DefaultNewLine(text, options);
-        var layout = LayoutWriter.Write(built.Document, modes, indentUnit, newLine, options.ContinuousIndentMultiplier);
+        var layout = LayoutWriter.Write(
+            built.Document,
+            options.MaxLineLength,
+            indentUnit,
+            newLine,
+            options.ContinuousIndentMultiplier
+        );
         var output = ApplyFileLevelRules(layout.Text, options, newLine);
-        var edits = EditEmitter.Emit(text.ToString(), new Layout(output, layout.Anchors));
+        var edits = EditEmitter.Emit(text.ToString(), layout with { Text = output });
         var formatted = EditEmitter.Apply(text.ToString(), edits);
 
         var after = SourceText.From(formatted, text.Encoding ?? System.Text.Encoding.UTF8);
         if (TokenEquivalence.Compare(text, after, ParseOptions) is { } failure) {
             var artefact = CrashArtifacts.Write(crashRoot, path, text.ToString(), formatted, options);
-            diagnostics.Add(new SkalaDiagnostic(
-                FormatDiagnosticIds.TokenStreamChanged,
-                SkalaSeverity.Error,
-                $"not written, the formatted output has a different token stream (at token {failure.Index.ToString(System.Globalization.CultureInfo.InvariantCulture)}: '{failure.Before}' became '{failure.After}')",
-                path,
-                0,
-                artefact is null ? null : $"A reproduction is in {artefact}. This is a Skala bug; the file was left untouched."));
+            diagnostics.Add(
+                new SkalaDiagnostic(
+                    FormatDiagnosticIds.TokenStreamChanged,
+                    SkalaSeverity.Error,
+                    $"not written, the formatted output has a different token stream (at token {failure.Index.ToString(System.Globalization.CultureInfo.InvariantCulture)}: '{failure.Before}' became '{failure.After}')",
+                    path,
+                    0,
+                    artefact is null ? null : $"A reproduction is in {artefact}. This is a Skala bug; the file was left untouched."
+                )
+            );
 
-            return new FormatResult(path, text, [], text.ToString(), diagnostics.ToImmutable(), FormatOutcome.VerificationFailed);
+            return new FormatResult(
+                path,
+                text,
+                [],
+                text.ToString(),
+                diagnostics.ToImmutable(),
+                FormatOutcome.VerificationFailed
+            );
         }
 
         return new FormatResult(path, text, [.. edits], formatted, diagnostics.ToImmutable(), FormatOutcome.Formatted);
     }
 
     /// <summary>Reads a file, resolves its options from the .editorconfig chain, and formats it.</summary>
-    public static FormatResult FormatFile(string path, IReadOnlyList<KeyValuePair<string, string>>? overrides = null, string? crashRoot = null) {
+    public static FormatResult FormatFile(
+        string path,
+        IReadOnlyList<KeyValuePair<string, string>>? overrides = null,
+        string? crashRoot = null
+    ) {
         var text = Read(path);
         var resolution = OptionResolver.Resolve(path, overrides);
         return Format(path, text, resolution.Options, crashRoot);

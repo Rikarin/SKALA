@@ -32,13 +32,23 @@ one blank line per `#if` region in Newtonsoft.Json, whose files are largely wrap
 
 ## SK-DIV-0002 — Skala leaves a line long rather than guessing at a wrap it has not implemented
 
-Through milestone 2 Skala has no fitting pass, so a line the oracle breaks at 120 columns stays
-whole. This is not a disagreement about style; it is a phase boundary, and it disappears in
-milestone 3.
+Milestone 2 fits the constructs whose break *points* it knows — argument lists, parameter lists,
+enum bodies, switch expressions, expression-bodied members — so a call that does not fit is now
+chopped. What it does not do is choose *which* of a long line's several candidate points to wrap at,
+which is `prefer_wrap_around_eq`, `wrap_chained_method_calls` and the rest of the ordering, and is
+milestone 3's. Where Skala has no ordering it leaves the line whole rather than breaking at the first
+point it can reach: measured, breaking at the first available point costs 0.24 points of line
+fidelity against leaving it alone, because the oracle's break lands one line away.
 
-It is listed here so that the differential report's largest class is a *known* one and does not
-have to be re-diagnosed on every run. Measured cost on `corpus/real/`: 3 180 lines across 205
-files, 4.1 % of the total — which is most of the distance between the current number and 99.9 %.
+It is listed here so that the differential report's largest classes are *known* ones and do not have
+to be re-diagnosed on every run.
+
+Measured cost on `corpus/real/`:
+
+| Milestone | lines | files | % of corpus |
+|---|---:|---:|---:|
+| M1 | 3 180 | 205 | 4.1 % |
+| M2 | 747 | 175 | 0.97 % |
 
 - options: `resharper_csharp_wrap_arguments_style`, `resharper_csharp_wrap_parameters_style`, `resharper_csharp_wrap_chained_method_calls`
 
@@ -50,8 +60,8 @@ if it is done wrong — the indentation of a raw literal is part of what it eval
 docs/plan/04 already puts it at Tier B "until the fixtures cover interpolated raw strings with
 nested braces".
 
-Milestone 1 emits raw string literals verbatim. The option is Tier D, not Tier B, because Tier B
-means "implemented with a documented divergence" and this is not implemented at all.
+Milestones 1 and 2 emit raw string literals verbatim. The option is Tier D, not Tier B, because Tier
+B means "implemented with a documented divergence" and this is not implemented at all.
 
 Measured cost: `corpus/pathological/raw-string-containing-braces.cs` (50 % line fidelity),
 `interpolated-raw-string-with-nested-braces.cs` (14 %), and 79 lines across 4 files in

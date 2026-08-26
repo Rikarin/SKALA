@@ -41,26 +41,32 @@ public sealed class FixTests {
 
     [Fact]
     public void Fix_DoesNotTouchAnAlreadyHealthyFile() {
-        var document = EditorConfigDocument.FromText("/repo/.editorconfig", """
+        var document = EditorConfigDocument.FromText(
+            "/repo/.editorconfig",
+            """
             root = true
             [*]
             max_line_length = 120
             resharper_csharp_max_line_length = 120
-            """);
+            """
+        );
 
         Assert.False(Fixer.Fix(document).Changed);
     }
 
     [Fact]
     public void ResolveContradictions_MakesTheLosingKeyAgreeWithTheWinner() {
-        var document = EditorConfigDocument.FromText("/repo/.editorconfig", """
+        var document = EditorConfigDocument.FromText(
+            "/repo/.editorconfig",
+            """
             root = true
             [*]
             insert_final_newline = false
             trim_trailing_whitespace = false
             resharper_csharp_insert_final_newline = true
             resharper_remove_spaces_on_blank_lines = true
-            """);
+            """
+        );
 
         var result = Fixer.Fix(document, resolveContradictions: true);
         var fixed_ = EditorConfigDocument.FromText("/repo/.editorconfig", result.Text);
@@ -73,15 +79,24 @@ public sealed class FixTests {
     public void ResolveContradictions_LeavesTheLineEndingPairAlone() {
         // There is no value of end_of_line that agrees with `resharper_enforce_line_ending_style =
         // false`. Turning enforcement on is a style decision, and `fix` does not make those.
-        var document = EditorConfigDocument.FromText("/repo/.editorconfig", """
+        var document = EditorConfigDocument.FromText(
+            "/repo/.editorconfig",
+            """
             root = true
             [*]
             end_of_line = lf
             resharper_enforce_line_ending_style = false
-            """);
+            """
+        );
 
-        var fixed_ = EditorConfigDocument.FromText("/repo/.editorconfig", Fixer.Fix(document, resolveContradictions: true).Text);
+        var fixed_ = EditorConfigDocument.FromText(
+            "/repo/.editorconfig",
+            Fixer.Fix(document, resolveContradictions: true).Text
+        );
         Assert.Equal("lf", Assert.Single(fixed_.Assignments, static a => a.Key == "end_of_line").Value);
-        Assert.Equal("false", Assert.Single(fixed_.Assignments, static a => a.Key == "resharper_enforce_line_ending_style").Value);
+        Assert.Equal(
+            "false",
+            Assert.Single(fixed_.Assignments, static a => a.Key == "resharper_enforce_line_ending_style").Value
+        );
     }
 }

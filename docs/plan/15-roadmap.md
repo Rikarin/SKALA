@@ -40,16 +40,26 @@ IR, the emitter, the safety net, the harness.
 **Done when:** line fidelity ≥ 85 % on `corpus/real/`, idempotency and token-equivalence at 100 %,
 and `skala format` has been run over Vixen with the diff reviewed and nothing semantically changed.
 
-## M2 — Formatter, phase 2 · M/L
+## M2 — Formatter, phase 2 · M/L ✅
 
-Break presence: required and forbidden line breaks, `place_*`, `keep_existing_*`, attributes.
+Break presence *and position*: required and forbidden line breaks, `place_*`, `keep_existing_*`,
+attributes.
 
-- Two-pass fitting for `if_owner_is_single_line`.
-- The `Preserve` group and the four-way preservation table — with `constructs/preservation/` run
-  under all four combinations.
+- Owner-dependent groups for `if_owner_is_single_line` — ✅ and the "second pass" turns out to be a
+  walk order rather than a traversal, because the owner is always the child's ancestor
+  ([04](04-formatting-engine.md)).
+- The `Preserve` group and the four-way preservation table — ✅ `constructs/preservation/` runs under
+  all four combinations against committed oracle fixtures, and the table is not the one
+  [05](05-csharp-formatting-rules.md) stated.
+- A break-*position* model: a pre-pass that labels every gap `Point`, `Flat` or `Mandatory`, which is
+  what `wrap_before_binary_opsign` and friends need and what M1's gap model had nowhere to put.
+- The measure pass fused into the build pass ([13](13-performance.md)).
 
 **Done when:** line fidelity ≥ 93 %, and formatting Vixen produces a diff small enough to read in one
-sitting.
+sitting. ✅ **97.47 %**. ⚠ The Vixen diff is *not* small: 2 374 files of 4 703, against milestone 1's
+999. Roughly half of that is a configuration artefact — Vixen sets none of the phase-2 keys, and
+`options.json`'s `default` is the export's value rather than ReSharper's, so the two fall back
+differently. Repairing `defaultSource` is M3's first job and it is worth 45 % of this diff.
 
 ## M3 — Formatter, phase 3–4 · L/XL
 

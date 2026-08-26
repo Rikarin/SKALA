@@ -15,7 +15,7 @@ public sealed record FormatRequest {
     /// <summary>Report, do not write. Exit 1 when there are edits.</summary>
     public bool Check { get; init; }
 
-    /// <summary>Print a unified diff over the edits.</summary>
+    /// <summary>Print a unified diff over the edits. ⚠ Reports; never writes.</summary>
     public bool Diff { get; init; }
 
     /// <summary><c>a:b</c> — character offsets, filtered after full-file fitting.</summary>
@@ -118,12 +118,22 @@ public static class FormatCommand {
 
             changed++;
             if (request.Diff) {
-                output.Append(UnifiedDiff.Render(Relative(root, file), result.Original.ToString(), EditEmitter.Apply(result.Original.ToString(), edits)));
+                output.Append(
+                    UnifiedDiff.Render(
+                        Relative(root, file),
+                        result.Original.ToString(),
+                        EditEmitter.Apply(result.Original.ToString(), edits)
+                    )
+                );
             } else if (!request.Quiet) {
                 output.Append(Relative(root, file)).AppendLine();
             }
 
-            if (request.Check) {
+            // ⚠ `--diff` does not write, any more than `--check` does. docs/plan/04 § "Emitting
+            // minimal edits" says so — "`--diff` is a unified diff over the edits" — and a reporting
+            // flag that also rewrites the tree is the kind of thing a person discovers by running it
+            // on someone else's repository. It rewrote 9 000 files across four worktrees once.
+            if (request.Check || request.Diff) {
                 continue;
             }
 
@@ -147,13 +157,13 @@ public static class FormatCommand {
         if (!request.Quiet) {
             output.Append(changed.ToString(CultureInfo.InvariantCulture))
                 .Append(changed == 1 ? " file " : " files ")
-                .Append(request.Check ? "would be reformatted" : "reformatted")
+                .Append(request.Check || request.Diff ? "would be reformatted" : "reformatted")
                 .Append(", ")
                 .Append((files.Count - changed).ToString(CultureInfo.InvariantCulture))
                 .AppendLine(" left alone");
         }
 
-        var exit = failures > 0 ? Failed : request.Check && changed > 0 ? ChangesFound : 0;
+        var exit = failures > 0 ? Failed : (request.Check || request.Diff) && changed > 0 ? ChangesFound : 0;
         return new CommandResult(exit, output.ToString());
     }
 
@@ -190,7 +200,10 @@ public static class FormatCommand {
                 continue;
             }
 
-            foreach (var file in Directory.EnumerateFiles(full, "*.cs", SearchOption.AllDirectories).OrderBy(static f => f, StringComparer.Ordinal)) {
+            foreach (var file in Directory.EnumerateFiles(full, "*.cs", SearchOption.AllDirectories).OrderBy(
+                static f => f,
+                StringComparer.Ordinal
+            )) {
                 // A formatter that reformats artifacts/ is a formatter that is quietly very slow.
                 if (IsExcluded(file) || !seen.Add(file)) {
                     continue;

@@ -68,7 +68,18 @@ for performance reasons:
   during fitting turns a linear pass quadratic.
 - **No LINQ in the fitting loop or the document builder.** Elsewhere, freely.
 - **The measure pass is fused into the build pass** where a group's contents are already known,
-  which removes one full traversal.
+  which removes one full traversal. ✅ Done in M2: `DocumentBuilder` accumulates each node's flat
+  width and head width as the arena is filled, and `Fitter` has no measure traversal of its own.
+- **The fitting pass is fused into the emit pass** for the same reason and a second one: the column a
+  group is measured against is the writer's state, and a separate fitting pass has to reproduce it.
+  See [04](04-formatting-engine.md) § "The pipeline".
+
+⚠ **`skala format` is a sequential loop over files, and this document's `Parallel.ForEachAsync` with
+`--jobs` does not exist.** Measured on Vixen (4 703 files, 1.37 M lines, Release, warm page cache):
+`format --check` takes 34.3 s of wall time for 36.7 s of CPU — a speedup of 1.07× on a ten-core
+machine. The budget below is 20 s and it has never been met, at M1 or at M2. M2 costs 10 % over M1
+(31.1 s → 34.3 s) for the break-plan pre-pass, which is inside this document's 20 % band; the factor
+of eight that is missing is the parallelism, not the formatter.
 
 ### Analysis
 

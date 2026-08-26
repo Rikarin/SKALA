@@ -34,18 +34,28 @@ public static class ConfigurationAnalyzer {
     /// docs/plan/03-configuration-model.md § "Four things about that file that will bite".
     /// </summary>
     public static ImmutableArray<ContradictionRule> KnownContradictions { get; } = [
-        new("trim_trailing_whitespace",
+        new(
+            "trim_trailing_whitespace",
             "resharper_remove_spaces_on_blank_lines",
             static (generic, specific) => IsFalse(generic) && IsTrue(specific),
-            "trim_trailing_whitespace says leave trailing whitespace alone; resharper_remove_spaces_on_blank_lines says strip it from blank lines."),
-        new("end_of_line",
+            "trim_trailing_whitespace says leave trailing whitespace alone; resharper_remove_spaces_on_blank_lines says strip it from blank lines."
+        ),
+        new(
+            "end_of_line",
             "resharper_enforce_line_ending_style",
             static (generic, specific) => generic.Length > 0 && IsFalse(specific),
-            "end_of_line names a line ending; resharper_enforce_line_ending_style says do not enforce one."),
-        new("max_line_length",
+            "end_of_line names a line ending; resharper_enforce_line_ending_style says do not enforce one."
+        ),
+        new(
+            "max_line_length",
             "resharper_csharp_max_line_length",
-            static (generic, specific) => generic.Length > 0 && specific.Length > 0 && !string.Equals(generic, specific, StringComparison.Ordinal),
-            "Two column limits that disagree. Skala reads the ReSharper key as authoritative.")
+            static (generic, specific) => generic.Length > 0 && specific.Length > 0 && !string.Equals(
+                generic,
+                specific,
+                StringComparison.Ordinal
+            ),
+            "Two column limits that disagree. Skala reads the ReSharper key as authoritative."
+        )
     ];
 
     public static ImmutableArray<SkalaDiagnostic> Analyze(ResolutionResult resolution, string? repositoryRoot = null) {
@@ -70,23 +80,35 @@ public static class ConfigurationAnalyzer {
                 ? $"'{unknown.Assignment.Key}' is not an option Skala knows"
                 : $"'{unknown.Assignment.Key}' is not an option Skala knows; did you mean '{suggestion}'?";
 
-            diagnostics.Add(new SkalaDiagnostic(
-                ConfigDiagnosticIds.UnknownKey,
-                SkalaSeverity.Info,
-                message,
-                unknown.Assignment.File,
-                unknown.Assignment.Line));
+            diagnostics.Add(
+                new SkalaDiagnostic(
+                    ConfigDiagnosticIds.UnknownKey,
+                    SkalaSeverity.Info,
+                    message,
+                    unknown.Assignment.File,
+                    unknown.Assignment.Line
+                )
+            );
         }
     }
 
-    static void AddInheritedFromAbove(ImmutableArray<SkalaDiagnostic>.Builder diagnostics, ResolutionResult resolution, string? repositoryRoot) {
+    static void AddInheritedFromAbove(
+        ImmutableArray<SkalaDiagnostic>.Builder diagnostics,
+        ResolutionResult resolution,
+        string? repositoryRoot
+    ) {
         if (repositoryRoot is null) {
             return;
         }
 
         foreach (var document in resolution.Chain.Above(repositoryRoot)) {
             var keys = resolution.Configured
-                .Where(option => option.Origin is not null && string.Equals(option.Origin.File, document.Path, StringComparison.Ordinal))
+                .Where(option => option.Origin is not null && string.Equals(
+                    option.Origin.File,
+                    document.Path,
+                    StringComparison.Ordinal
+                )
+                )
                 .Select(static option => option.Origin!.Spelling)
                 .OrderBy(static key => key, StringComparer.Ordinal)
                 .ToArray();
@@ -95,13 +117,16 @@ public static class ConfigurationAnalyzer {
                 ? "no option in the effective set came from it"
                 : $"{keys.Length.ToString(CultureInfo.InvariantCulture)} option(s) came from it: {string.Join(", ", keys.Take(8))}{(keys.Length > 8 ? ", …" : string.Empty)}";
 
-            diagnostics.Add(new SkalaDiagnostic(
-                ConfigDiagnosticIds.InheritedFromAbove,
-                SkalaSeverity.Info,
-                $"the effective configuration draws from '{document.Path}', which is above the repository root",
-                document.Path,
-                0,
-                detail));
+            diagnostics.Add(
+                new SkalaDiagnostic(
+                    ConfigDiagnosticIds.InheritedFromAbove,
+                    SkalaSeverity.Info,
+                    $"the effective configuration draws from '{document.Path}', which is above the repository root",
+                    document.Path,
+                    0,
+                    detail
+                )
+            );
         }
     }
 
@@ -116,13 +141,16 @@ public static class ConfigurationAnalyzer {
                     continue;
                 }
 
-                diagnostics.Add(new SkalaDiagnostic(
-                    ConfigDiagnosticIds.DuplicateAlias,
-                    SkalaSeverity.Warning,
-                    $"'{candidate.Spelling}' and '{winner.Spelling}' are two spellings of the same option, are equally specific, and disagree ('{candidate.Value}' vs '{winner.Value}')",
-                    candidate.File,
-                    candidate.Line,
-                    "Precedence cannot choose between them. Delete one."));
+                diagnostics.Add(
+                    new SkalaDiagnostic(
+                        ConfigDiagnosticIds.DuplicateAlias,
+                        SkalaSeverity.Warning,
+                        $"'{candidate.Spelling}' and '{winner.Spelling}' are two spellings of the same option, are equally specific, and disagree ('{candidate.Value}' vs '{winner.Value}')",
+                        candidate.File,
+                        candidate.Line,
+                        "Precedence cannot choose between them. Delete one."
+                    )
+                );
             }
         }
     }
@@ -133,23 +161,34 @@ public static class ConfigurationAnalyzer {
         foreach (var option in resolution.Configured) {
             var winner = option.Origin!;
             foreach (var candidate in option.Candidates) {
-                if (candidate.Specificity <= winner.Specificity || string.Equals(candidate.Value, winner.Value, StringComparison.Ordinal)) {
+                if (candidate.Specificity <= winner.Specificity || string.Equals(
+                    candidate.Value,
+                    winner.Value,
+                    StringComparison.Ordinal
+                )) {
                     continue;
                 }
 
-                diagnostics.Add(new SkalaDiagnostic(
-                    ConfigDiagnosticIds.ContradictoryOptions,
-                    SkalaSeverity.Warning,
-                    $"'{candidate.Spelling} = {candidate.Value}' contradicts '{winner.Spelling} = {winner.Value}'; the C# key wins, so the effective value is '{winner.Value}'",
-                    candidate.File,
-                    candidate.Line,
-                    $"ReSharper resolves this by language specificity. Winner: {winner.File}:{winner.Line.ToString(CultureInfo.InvariantCulture)}."));
+                diagnostics.Add(
+                    new SkalaDiagnostic(
+                        ConfigDiagnosticIds.ContradictoryOptions,
+                        SkalaSeverity.Warning,
+                        $"'{candidate.Spelling} = {candidate.Value}' contradicts '{winner.Spelling} = {winner.Value}'; the C# key wins, so the effective value is '{winner.Value}'",
+                        candidate.File,
+                        candidate.Line,
+                        $"ReSharper resolves this by language specificity. Winner: {winner.File}:{winner.Line.ToString(CultureInfo.InvariantCulture)}."
+                    )
+                );
             }
         }
 
         // Pairs that describe the same behaviour under different names.
         foreach (var rule in KnownContradictions) {
-            if (!TryFind(resolution, rule.Generic, out var generic) || !TryFind(resolution, rule.Specific, out var specific)) {
+            if (!TryFind(resolution, rule.Generic, out var generic) || !TryFind(
+                resolution,
+                rule.Specific,
+                out var specific
+            )) {
                 continue;
             }
 
@@ -157,17 +196,23 @@ public static class ConfigurationAnalyzer {
                 continue;
             }
 
-            diagnostics.Add(new SkalaDiagnostic(
-                ConfigDiagnosticIds.ContradictoryOptions,
-                SkalaSeverity.Warning,
-                $"'{generic.Origin!.Spelling} = {generic.Value}' contradicts '{specific.Origin!.Spelling} = {specific.Value}'; the C# key wins, so the effective behaviour is '{specific.Origin.Spelling} = {specific.Value}'",
-                generic.Origin.File,
-                generic.Origin.Line,
-                rule.Explanation));
+            diagnostics.Add(
+                new SkalaDiagnostic(
+                    ConfigDiagnosticIds.ContradictoryOptions,
+                    SkalaSeverity.Warning,
+                    $"'{generic.Origin!.Spelling} = {generic.Value}' contradicts '{specific.Origin!.Spelling} = {specific.Value}'; the C# key wins, so the effective behaviour is '{specific.Origin.Spelling} = {specific.Value}'",
+                    generic.Origin.File,
+                    generic.Origin.Line,
+                    rule.Explanation
+                )
+            );
         }
     }
 
-    static void AddUnhonourableSettings(ImmutableArray<SkalaDiagnostic>.Builder diagnostics, ResolutionResult resolution) {
+    static void AddUnhonourableSettings(
+        ImmutableArray<SkalaDiagnostic>.Builder diagnostics,
+        ResolutionResult resolution
+    ) {
         // docs/plan/16 § Q1: indentation autodetection makes the IDE and the oracle disagree with
         // each other, and Skala — which has no autodetection — cannot match both.
         foreach (var key in new[] { "resharper_autodetect_indent_settings", "resharper_apply_auto_detected_rules", "resharper_use_indent_from_vs" }) {
@@ -175,13 +220,16 @@ public static class ConfigurationAnalyzer {
                 continue;
             }
 
-            diagnostics.Add(new SkalaDiagnostic(
-                ConfigDiagnosticIds.UnhonourableSetting,
-                SkalaSeverity.Warning,
-                $"'{option.Origin!.Spelling} = {option.Value}' is a setting Skala cannot honour",
-                option.Origin.File,
-                option.Origin.Line,
-                "Skala has no indentation autodetection to switch off, so the IDE would format against a detected indent and Skala against the configured one. docs/plan/16 § Q1."));
+            diagnostics.Add(
+                new SkalaDiagnostic(
+                    ConfigDiagnosticIds.UnhonourableSetting,
+                    SkalaSeverity.Warning,
+                    $"'{option.Origin!.Spelling} = {option.Value}' is a setting Skala cannot honour",
+                    option.Origin.File,
+                    option.Origin.Line,
+                    "Skala has no indentation autodetection to switch off, so the IDE would format against a detected indent and Skala against the configured one. docs/plan/16 § Q1."
+                )
+            );
         }
 
         foreach (var key in new[] { "resharper_old_engine", "resharper_use_old_engine" }) {
@@ -189,12 +237,15 @@ public static class ConfigurationAnalyzer {
                 continue;
             }
 
-            diagnostics.Add(new SkalaDiagnostic(
-                ConfigDiagnosticIds.UnhonourableSetting,
-                SkalaSeverity.Warning,
-                $"'{option.Origin!.Spelling} = {option.Value}' selects ReSharper's previous formatting engine, which Skala does not reproduce",
-                option.Origin.File,
-                option.Origin.Line));
+            diagnostics.Add(
+                new SkalaDiagnostic(
+                    ConfigDiagnosticIds.UnhonourableSetting,
+                    SkalaSeverity.Warning,
+                    $"'{option.Origin!.Spelling} = {option.Value}' selects ReSharper's previous formatting engine, which Skala does not reproduce",
+                    option.Origin.File,
+                    option.Origin.Line
+                )
+            );
         }
     }
 

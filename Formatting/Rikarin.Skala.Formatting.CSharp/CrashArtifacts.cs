@@ -40,8 +40,12 @@ public static class CrashArtifacts {
         builder.AppendLine();
         builder.Append("indent_size = ").AppendLine(options.IndentSize.ToString(CultureInfo.InvariantCulture));
         builder.Append("max_line_length = ").AppendLine(options.MaxLineLength.ToString(CultureInfo.InvariantCulture));
-        builder.Append("keep_blank_lines_in_code = ").AppendLine(options.KeepBlankLinesInCode.ToString(CultureInfo.InvariantCulture));
-        builder.Append("keep_blank_lines_in_declarations = ").AppendLine(options.KeepBlankLinesInDeclarations.ToString(CultureInfo.InvariantCulture));
+        builder.Append("keep_blank_lines_in_code = ").AppendLine(
+            options.KeepBlankLinesInCode.ToString(CultureInfo.InvariantCulture)
+        );
+        builder.Append("keep_blank_lines_in_declarations = ").AppendLine(
+            options.KeepBlankLinesInDeclarations.ToString(CultureInfo.InvariantCulture)
+        );
         builder.Append("new_line_before_open_brace = ").AppendLine(options.NewLineBeforeOpenBrace);
         return builder.ToString();
     }

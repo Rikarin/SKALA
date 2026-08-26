@@ -50,7 +50,8 @@ public sealed class OracleRunner {
         FindExecutableOrNull()
         ?? throw new InvalidOperationException(
             "jb (JetBrains.ReSharper.GlobalTools) is not installed. `dotnet tool install -g JetBrains.ReSharper.GlobalTools --version 2025.2.6`. "
-            + "It is a developer-machine and nightly dependency only; the day-to-day test run reads the committed fixtures (ADR-011).");
+            + "It is a developer-machine and nightly dependency only; the day-to-day test run reads the committed fixtures (ADR-011)."
+        );
 
     static IEnumerable<string> Candidates() {
         var home = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
@@ -59,11 +60,34 @@ public sealed class OracleRunner {
         yield return "/usr/local/bin/jb";
     }
 
-    /// <summary>Formats a directory of <c>.cs</c> files in place and returns what changed.</summary>
-    public IReadOnlyDictionary<string, string> Format(IReadOnlyList<CorpusFile> files, string editorConfigPath) {
+    /// <summary>
+    /// Formats a directory of <c>.cs</c> files in place and returns what changed.
+    /// </summary>
+    /// <param name="overrides">
+    /// Keys appended to the copied <c>.editorconfig</c>'s <c>[*.cs]</c> section, so that one fixture
+    /// set can be regenerated under a configuration other than the repository's. ⚠ Appended rather
+    /// than substituted: an .editorconfig's last assignment of a key within a section wins, so this
+    /// overrides whatever the export set without having to find it.
+    /// </param>
+    public IReadOnlyDictionary<string, string> Format(
+        IReadOnlyList<CorpusFile> files,
+        string editorConfigPath,
+        IReadOnlyList<KeyValuePair<string, string>>? overrides = null
+    ) {
         var scratch = Directory.CreateTempSubdirectory("skala-oracle-");
         try {
             File.Copy(editorConfigPath, Path.Combine(scratch.FullName, ".editorconfig"));
+            if (overrides is { Count: > 0 }) {
+                var appended = new StringBuilder();
+                appended.AppendLine();
+                appended.AppendLine("[*.cs]");
+                foreach (var (key, value) in overrides) {
+                    appended.Append(key).Append(" = ").AppendLine(value);
+                }
+
+                File.AppendAllText(Path.Combine(scratch.FullName, ".editorconfig"), appended.ToString());
+            }
+
             File.WriteAllText(Path.Combine(scratch.FullName, "Oracle.csproj"), ProjectFile);
             File.WriteAllText(Path.Combine(scratch.FullName, "Oracle.sln"), SolutionFile);
             var settings = Path.Combine(scratch.FullName, "Oracle.sln.DotSettings");
@@ -76,8 +100,15 @@ public sealed class OracleRunner {
                 names[name] = files[i].Path;
             }
 
-            Run(scratch.FullName, "cleanupcode", "--no-build", "--profile=" + Profile,
-                "--settings=" + settings, "--verbosity=WARN", Path.Combine(scratch.FullName, "Oracle.sln"));
+            Run(
+                scratch.FullName,
+                "cleanupcode",
+                "--no-build",
+                "--profile=" + Profile,
+                "--settings=" + settings,
+                "--verbosity=WARN",
+                Path.Combine(scratch.FullName, "Oracle.sln")
+            );
 
             var results = new Dictionary<string, string>(StringComparer.Ordinal);
             foreach (var (name, original) in names) {

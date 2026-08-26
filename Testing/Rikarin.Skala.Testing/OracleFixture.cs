@@ -26,7 +26,8 @@ public sealed record OracleHeader(string ReSharperVersion, string ConfigHash, st
             version,
             fields.GetValueOrDefault("config", string.Empty).Replace("sha256:", string.Empty, StringComparison.Ordinal),
             fields.GetValueOrDefault("profile", string.Empty),
-            fields.GetValueOrDefault("generated", string.Empty)) : null;
+            fields.GetValueOrDefault("generated", string.Empty)
+        ) : null;
     }
 }
 
@@ -57,9 +58,22 @@ public static class OracleFixture {
         return reader.ReadLine() is { } line ? OracleHeader.Parse(line) : null;
     }
 
+    /// <summary>The body of a variant fixture, with the header line removed.</summary>
+    public static string Read(CorpusFile file, CorpusVariant variant) {
+        var text = File.ReadAllText(variant.FixturePath(file));
+        var newLine = text.IndexOf('\n');
+        return newLine >= 0 && text.StartsWith(OracleHeader.Prefix, StringComparison.Ordinal)
+            ? text[(newLine + 1)..]
+            : text;
+    }
+
     /// <summary>Only <c>./build.sh Oracle</c> calls this.</summary>
     public static void Write(CorpusFile file, string body, OracleHeader header) =>
         File.WriteAllText(file.ExpectedPath, header + "\n" + body);
+
+    /// <summary>Only <c>./build.sh Oracle</c> calls this.</summary>
+    public static void Write(CorpusFile file, CorpusVariant variant, string body, OracleHeader header) =>
+        File.WriteAllText(variant.FixturePath(file), header + "\n" + body);
 
     /// <summary>The declared divergences on a fixture, which turn a difference into a decision.</summary>
     public static IReadOnlyList<string> Divergences(CorpusFile file) {

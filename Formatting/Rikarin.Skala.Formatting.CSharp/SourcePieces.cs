@@ -49,9 +49,11 @@ public readonly record struct Piece(
     string Text,
     int TokenIndex,
     bool StartsLine) {
-    public bool IsComment => Kind is PieceKind.LineComment or PieceKind.BlockComment or PieceKind.DocCommentLine or PieceKind.BlockDocComment;
+    public bool IsComment =>
+        Kind is PieceKind.LineComment or PieceKind.BlockComment or PieceKind.DocCommentLine or PieceKind.BlockDocComment;
 
-    public bool IsDirective => Kind is PieceKind.ConditionalDirective or PieceKind.RegionDirective or PieceKind.OtherDirective;
+    public bool IsDirective =>
+        Kind is PieceKind.ConditionalDirective or PieceKind.RegionDirective or PieceKind.OtherDirective;
 }
 
 /// <summary>
@@ -71,7 +73,9 @@ public static class SourcePieces {
             // tree — are not pieces. Treated as one, the gap rules fire on both sides of nothing
             // and `int[,]` comes out as `int[, ]`.
             if (!token.IsKind(SyntaxKind.EndOfFileToken) && token.Span.Length > 0) {
-                pieces.Add(new Piece(PieceKind.Token, token.Span, token.Text, tokens.Count, StartsLine(text, token.SpanStart)));
+                pieces.Add(
+                    new Piece(PieceKind.Token, token.Span, token.Text, tokens.Count, StartsLine(text, token.SpanStart))
+                );
                 tokens.Add(token);
             }
 
@@ -178,12 +182,15 @@ public static class SourcePieces {
             }
 
             if (trimmedEnd > trimmedStart) {
-                pieces.Add(new Piece(
-                    PieceKind.DocCommentLine,
-                    TextSpan.FromBounds(start + trimmedStart, start + trimmedEnd),
-                    content[trimmedStart..trimmedEnd],
-                    -1,
-                    StartsLine(text, start + trimmedStart)));
+                pieces.Add(
+                    new Piece(
+                        PieceKind.DocCommentLine,
+                        TextSpan.FromBounds(start + trimmedStart, start + trimmedEnd),
+                        content[trimmedStart..trimmedEnd],
+                        -1,
+                        StartsLine(text, start + trimmedStart)
+                    )
+                );
             }
 
             lineStart = i + 1;

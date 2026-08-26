@@ -42,12 +42,15 @@ public sealed class SyntaxKindInventoryTests {
             $"Roslyn declares {missing.Length.ToString(CultureInfo.InvariantCulture)} SyntaxKind(s) the document builder has never been told about: "
             + string.Join(", ", missing)
             + ". Classify each in NodeLayouts.Classify and add it to Testing/corpus/syntax-kinds.txt. "
-            + "Until then the builder emits them verbatim, which is safe and wrong.");
+            + "Until then the builder emits them verbatim, which is safe and wrong."
+        );
     }
 
     [Fact]
     public void EveryKindInTheInventory_StillExists() {
-        var known = Enum.GetValues<SyntaxKind>().Select(static kind => kind.ToString()).ToHashSet(StringComparer.Ordinal);
+        var known = Enum.GetValues<SyntaxKind>().Select(static kind => kind.ToString()).ToHashSet(
+            StringComparer.Ordinal
+        );
         var gone = Inventory.Keys.Where(name => !known.Contains(name)).Order(StringComparer.Ordinal).ToArray();
         Assert.True(gone.Length == 0, "The inventory names kinds Roslyn no longer declares: " + string.Join(", ", gone));
     }

@@ -19,8 +19,20 @@ public static class TextWidth {
     public static int Measure(string value) => Measure(value, 0);
 
     /// <summary>Columns occupied by <paramref name="value"/> when it starts at <paramref name="column"/>.</summary>
-    public static int Measure(string value, int column) {
-        var start = column;
+    public static int Measure(string value, int column) => Advance(value, column) - column;
+
+    /// <summary>
+    /// The column the cursor is at after writing <paramref name="value"/> from
+    /// <paramref name="column"/>.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ Not the same as <see cref="Measure(string, int)"/> plus the column, for text that spans
+    /// lines: a raw string literal ends at the width of its <em>last</em> line, not at the sum.
+    /// Milestone 1 assigned the width to the writer's column and the two happened to agree because
+    /// nothing read the column back; the fitting pass reads it on every group, and the mistake
+    /// showed up as a 126-column line the formatter thought was 72.
+    /// </remarks>
+    public static int Advance(string value, int column) {
         var enumerator = StringInfo.GetTextElementEnumerator(value);
         while (enumerator.MoveNext()) {
             var element = (string)enumerator.Current;
@@ -40,7 +52,7 @@ public static class TextWidth {
             column += ClusterWidth(element);
         }
 
-        return column - start < 0 ? column : column - start;
+        return column;
     }
 
     /// <summary>Columns for one grapheme cluster: 0 for combining marks, 2 for wide, 1 otherwise.</summary>
@@ -61,17 +73,17 @@ public static class TextWidth {
     /// <summary>The East Asian Wide and Fullwidth blocks, plus emoji.</summary>
     static bool IsWide(int rune) =>
         rune is >= 0x1100 and <= 0x115F
-            or >= 0x2E80 and <= 0x303E
-            or >= 0x3041 and <= 0x33FF
-            or >= 0x3400 and <= 0x4DBF
-            or >= 0x4E00 and <= 0x9FFF
-            or >= 0xA000 and <= 0xA4CF
-            or >= 0xAC00 and <= 0xD7A3
-            or >= 0xF900 and <= 0xFAFF
-            or >= 0xFE30 and <= 0xFE6F
-            or >= 0xFF00 and <= 0xFF60
-            or >= 0xFFE0 and <= 0xFFE6
-            or >= 0x1F300 and <= 0x1F64F
-            or >= 0x1F900 and <= 0x1F9FF
-            or >= 0x20000 and <= 0x3FFFD;
+        or >= 0x2E80 and <= 0x303E
+        or >= 0x3041 and <= 0x33FF
+        or >= 0x3400 and <= 0x4DBF
+        or >= 0x4E00 and <= 0x9FFF
+        or >= 0xA000 and <= 0xA4CF
+        or >= 0xAC00 and <= 0xD7A3
+        or >= 0xF900 and <= 0xFAFF
+        or >= 0xFE30 and <= 0xFE6F
+        or >= 0xFF00 and <= 0xFF60
+        or >= 0xFFE0 and <= 0xFFE6
+        or >= 0x1F300 and <= 0x1F64F
+        or >= 0x1F900 and <= 0x1F9FF
+        or >= 0x20000 and <= 0x3FFFD;
 }

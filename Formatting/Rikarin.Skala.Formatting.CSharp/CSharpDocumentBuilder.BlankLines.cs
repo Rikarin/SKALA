@@ -104,7 +104,9 @@ public sealed partial class CSharpDocumentBuilder {
             required = Math.Max(required, _options.BlankLinesAfterUsingList);
         }
 
-        if (above is FileScopedNamespaceDeclarationSyntax || previous.Kind == PieceKind.Token && EndsFileScopedNamespaceDirective(_tokens[previous.TokenIndex])) {
+        if (above is FileScopedNamespaceDeclarationSyntax || previous.Kind == PieceKind.Token && EndsFileScopedNamespaceDirective(
+            _tokens[previous.TokenIndex]
+        )) {
             required = Math.Max(required, _options.BlankLinesAfterFileScopedNamespaceDirective);
         }
 
@@ -167,17 +169,81 @@ public sealed partial class CSharpDocumentBuilder {
     }
 
     static bool IsAutoProperty(PropertyDeclarationSyntax property) =>
-        property.AccessorList is { } accessors && accessors.Accessors.All(static a => a.Body is null && a.ExpressionBody is null);
+        property.AccessorList is { } accessors && accessors.Accessors.All(static a => a.Body is null && a.ExpressionBody is null
+        );
 
     /// <summary>
     /// One line including whatever <c>stick_comment</c> attached to it: a method with a doc comment
     /// is not single-line even when its body is, which is what docs/plan/05 § "Blank lines" means
     /// by "M() has a doc comment and is not single-line".
     /// </summary>
+    /// <remarks>
+    /// ⚠ "One line" is a property of the <em>output</em>, and reading it off the input is a
+    /// non-idempotency as soon as the formatter can break a line. A 140-column field is single-line
+    /// in the source, gets chopped into four, and then wants the blank line that
+    /// <c>blank_lines_around_single_line_field = 0</c> had just declined to give it — so the first
+    /// pass produces one shape and the second produces another. Milestone 1 never chopped anything,
+    /// so the question never arose; it took a run over Skala's own source to find, because no corpus
+    /// file has a member long enough.
+    /// </remarks>
     bool IsSingleLine(SyntaxNode member) {
         var start = _options.StickComment ? StickyStart(member) : member.Span.Start;
         var lines = _text.Lines;
-        return lines.GetLineFromPosition(start).LineNumber == lines.GetLineFromPosition(member.Span.End).LineNumber;
+        var first = lines.GetLineFromPosition(start);
+        if (first.LineNumber != lines.GetLineFromPosition(member.Span.End).LineNumber) {
+            return false;
+        }
+
+        if (_plan.HasForcedBreakIn(member.Span.Start, member.Span.End)) {
+            return false;
+        }
+
+        // ⚠ A member that shares its line with the member before it is not "single line" in the
+        // sense the blank-line keys mean, and calling it one is unstable: its width test is against
+        // column 0 while the fitter meets it half way along a line, so the first pass calls it
+        // single and the second does not.
+        var previous = member.GetFirstToken().GetPreviousToken();
+        if (!previous.IsKind(SyntaxKind.None)
+            && lines.GetLineFromPosition(previous.Span.End).LineNumber == first.LineNumber
+            && MemberEndingAt(previous) is not null) {
+            return false;
+        }
+
+        // A line the fitter will chop is not a line, so the width has to be the one the fitter will
+        // see. ⚠ Not the source line's width: the member's own span plus the indentation the OUTPUT
+        // gives it. Reading the source's leading whitespace instead makes the answer depend on the
+        // author's indentation, and `format(mutate_indentation(x)) ≡ format(x)` is a property the
+        // suite asserts on every corpus file.
+        var width = OutputIndentColumns(member) + TextWidth.Measure(_source[member.Span.Start..member.Span.End]);
+        return width <= _options.MaxLineLength;
+    }
+
+    /// <summary>The column a member will start at, counted from the tree rather than from the text.</summary>
+    int OutputIndentColumns(SyntaxNode member) {
+        var level = 0;
+        for (var node = member.Parent; node is not null; node = node.Parent) {
+            switch (node) {
+                case BlockSyntax:
+                case BaseTypeDeclarationSyntax:
+                case AccessorListSyntax:
+                case SwitchSectionSyntax:
+                    level++;
+                    break;
+
+                case NamespaceDeclarationSyntax when _options.IndentInsideNamespace:
+                    level++;
+                    break;
+
+                case SwitchStatementSyntax when _options.IndentSwitchLabels:
+                    level++;
+                    break;
+
+                default:
+                    break;
+            }
+        }
+
+        return level * _options.IndentSize;
     }
 
     /// <summary>
@@ -267,7 +333,7 @@ public sealed partial class CSharpDocumentBuilder {
 
     static bool IsBlankLineSubject(SyntaxNode node) =>
         node is MemberDeclarationSyntax or AccessorDeclarationSyntax or UsingDirectiveSyntax
-            or ExternAliasDirectiveSyntax or LocalFunctionStatementSyntax;
+        or ExternAliasDirectiveSyntax or LocalFunctionStatementSyntax;
 
     /// <summary>
     /// Declarations or code? The caps differ (<c>keep_blank_lines_in_declarations</c> against

@@ -51,9 +51,12 @@ public sealed class FormatCommandTests : IDisposable {
 
     [Fact]
     public void Diff_PrintsAUnifiedDiffAndWritesNothing() {
+        // ⚠ Without `--check` too. `--diff` is a reporting mode on its own (docs/plan/04 § "Emitting
+        // minimal edits"); until M2 it printed the diff and then wrote the file, which is a flag
+        // people reach for on a tree they do not own.
         const string source = "class C{void M(){M();}}\n";
         var path = Write("D.cs", source);
-        var run = CliRunner.Run("format", "--check", "--diff", path);
+        var run = CliRunner.Run("format", "--diff", path);
 
         Assert.Equal(1, run.ExitCode);
         Assert.Equal(source, File.ReadAllText(path));
