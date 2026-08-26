@@ -26,7 +26,12 @@ public sealed class ConfigCommandTests {
         );
         Assert.Contains("120", width, StringComparison.Ordinal);
         Assert.Contains(".editorconfig:", width, StringComparison.Ordinal);
-        Assert.Contains(" D ", width, StringComparison.Ordinal);
+
+        // ⚠ Tier A since milestone 3, and it was Tier D before it for a reason worth remembering:
+        // milestone 1 read `max_line_length` and could not act on it, because nothing wrapped. A
+        // tier is a claim about behaviour, so it moved when the behaviour arrived and not when the
+        // option was first read.
+        Assert.Contains(" A ", width, StringComparison.Ordinal);
     }
 
     [Fact]

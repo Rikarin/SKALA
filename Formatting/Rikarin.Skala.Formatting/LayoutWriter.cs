@@ -57,14 +57,16 @@ public sealed class LayoutWriter {
 
     readonly int _continuousMultiplier;
     readonly int _indentWidth;
+    readonly int _width;
 
     LayoutWriter(Document document, int width, string indentUnit, string defaultNewLine, int continuousMultiplier) {
         _document = document;
-        _fitter = new Fitter(document, width);
+        _width = width;
+        _indentWidth = indentUnit == "\t" ? TextWidth.TabStop : indentUnit.Length;
+        _fitter = new Fitter(document, width, _indentWidth);
         _indentUnit = indentUnit;
         _defaultNewLine = defaultNewLine;
         _continuousMultiplier = Math.Max(1, continuousMultiplier);
-        _indentWidth = indentUnit == "\t" ? TextWidth.TabStop : indentUnit.Length;
     }
 
     /// <param name="width"><c>max_line_length</c>: the budget every Auto group is tested against.</param>
@@ -129,8 +131,10 @@ public sealed class LayoutWriter {
 
                     case DocKind.Group:
                         // ⚠ Resolved here, at the column the group's first character will actually
-                        // land on. See Fitter's remarks for why this is not a separate pass.
-                        _fitter.Enter(node, CurrentColumn());
+                        // land on, and against the rest of the line as well as its own width. See
+                        // Fitter's remarks for why this is not a separate pass, and TrailingWidth
+                        // for why the group's own width is not the whole measurement.
+                        _fitter.Enter(node, CurrentColumn(), ContinuationColumn(slot.Arg1), TrailingWidth(stack));
                         break;
 
                     default:
@@ -270,13 +274,105 @@ public sealed class LayoutWriter {
         return _column + (_pendingSpace ? 1 : 0);
     }
 
+    /// <summary>
+    /// How much of the current line is still to come after this node, up to the next break.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ A group's own width is not the length of the line it lands on, and milestone 3 found that
+    /// out on <c>var f = new Thing { A = 1, B = 2, C = 3 };</c> at 121 columns. The initializer's
+    /// group covers <c>{ … }</c> and stops there: it is entered at column 26, measures 94, concludes
+    /// 120 and stays flat — and then the semicolon that is not in it makes the line 121. The oracle
+    /// wraps it. Every construct that ends before its statement does has the same blind spot, so the
+    /// error is not rare: closing parentheses, semicolons, commas and closing braces are exactly what
+    /// follows the constructs that wrap.
+    /// <para>
+    /// The answer is Prettier's <c>fits(next, restCommands)</c>: measure the group plus whatever
+    /// remains of the line. The walk's own stack already holds it — every ancestor frame names the
+    /// sibling the walk will return to — so this is a read of state that exists rather than a second
+    /// traversal, and it stops at the first break point, which is normally one or two nodes away.
+    /// </para>
+    /// </remarks>
+    int TrailingWidth(Stack<(int Node, int Child)> stack) {
+        var total = 0;
+        foreach (var (node, child) in stack) {
+            var children = _document.ChildrenOf(node);
+            for (var i = child; i < children.Length; i++) {
+                var sibling = children[i];
+                var width = _document.PointWidthOf(sibling);
+                total = total >= Document.Unbounded || width >= Document.Unbounded
+                    ? Document.Unbounded
+                    : total + width;
+
+                if (_document.HasBreak(sibling)) {
+                    return total;
+                }
+            }
+        }
+
+        return total;
+    }
+
+    /// <summary>
+    /// The column a line broken at one of this group's own points would start at.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ Not <see cref="Effective"/>. That function answers "what level does a line starting
+    /// <em>now</em> take", and it deliberately ignores a scope opened on the current line — one
+    /// level per opening line is the rule. A break inside such a scope lands on the <em>next</em>
+    /// line, where the scope does count, so the two answers differ by exactly one level on every
+    /// construct whose delimiter opened on this line, which is most of them.
+    /// <para>
+    /// The group's own continuation scope, when it has one, is not on the stack yet: the writer
+    /// resolves the group on entry and the <see cref="DocKind.Indent"/> node is its first child.
+    /// <see cref="GroupFacts.SpendsIndent"/> is how the front end says so.
+    /// </para>
+    /// </remarks>
+    int ContinuationColumn(int group) {
+        var level = 0;
+        var counted = -1;
+        for (var i = _scopes.Count - 1; i >= 0; i--) {
+            var scope = _scopes[i];
+            if (scope.IsBlock) {
+                level += scope.Level;
+                break;
+            }
+
+            if (scope.OpenLine <= _line && scope.OpenLine != counted) {
+                level += scope.Level;
+                counted = scope.OpenLine;
+            }
+        }
+
+        if (_document.FactsOf(group).SpendsIndent) {
+            level += _continuousMultiplier;
+        }
+
+        return level * _indentWidth;
+    }
+
     void WriteLine(ref DocNode slot, int node) {
         var kind = (LineKind)slot.Arg0;
         if (kind == LineKind.Soft) {
+            var flags = (LineFlags)slot.Flags;
+
             // ⚠ A break point renders as its flat form when its group stayed flat, and the flat
             // form is per-point: nothing after `(`, a space after `,`.
-            if (slot.Arg2 < 0 || _fitter.ModeOf(slot.Arg2) == ResolvedMode.Flat) {
-                if (((LineFlags)slot.Flags & LineFlags.FlatSpace) != 0) {
+            var flat = slot.Arg2 < 0 || _fitter.ModeOf(slot.Arg2) == ResolvedMode.Flat;
+
+            // ⚠ A fill point in a broken group is the one break decision that is not the group's.
+            // It breaks when the next item would not fit and stays put otherwise, which is what
+            // makes `wrap_if_long` a fill rather than a chop.
+            if (!flat && (flags & LineFlags.FillPoint) != 0) {
+                var space = _pendingSpace || (flags & LineFlags.FlatSpace) != 0;
+                var column = _atLineStart
+                    ? (_pendingCloserLevel ?? Effective()) * _indentWidth
+                    : _column + (space ? 1 : 0);
+                var segment = _document.SegmentOf(node);
+                flat = segment < Document.Unbounded && column + segment <= _width;
+            }
+
+            if (flat) {
+                if ((flags & LineFlags.FlatSpace) != 0) {
                     _pendingSpace = true;
                 }
 
@@ -297,7 +393,6 @@ public sealed class LayoutWriter {
 
         _atLineStart = true;
         _column = 0;
-        _ = node;
     }
 
     void WritePiece(string text, SourceSpan source, VerbatimFlags flags) {

@@ -35,9 +35,61 @@ switch (args[0]) {
         return Variants(sets);
     case "probe":
         return Probe();
+    case "ask":
+        return Ask(args[1], args[2..]);
     default:
         Console.Error.WriteLine($"unknown command '{args[0]}'");
         return 2;
+}
+
+// `ask <dir> [key=value…]`: run the oracle over a scratch directory of .cs files, in place, under
+// the repository's .editorconfig plus any overrides.
+//
+// ⚠ It is the tool the milestone-3 rules were established with, and it is why they are rules rather
+// than readings of an option name. `wrap_array_initializer_style = wrap_if_long` does not say what
+// happens to `new[] { a, b, c }` at 121 columns; asking cleanupcode does. It is also what derives
+// the default table (docs/plan/03 § "Deriving ReSharper's defaults"), where the override is
+// `root = true` and nothing else.
+static int Ask(string directory, string[] overrides) {
+    if (OracleRunner.FindExecutableOrNull() is null) {
+        Console.Error.WriteLine("jb is not installed.");
+        return 2;
+    }
+
+    var full = Path.GetFullPath(directory);
+    var files = Directory.EnumerateFiles(full, "*.cs", SearchOption.AllDirectories)
+        .OrderBy(static path => path, StringComparer.Ordinal)
+        .Select(path => new CorpusFile("ask", Path.GetRelativePath(full, path), path))
+        .ToArray();
+
+    if (files.Length == 0) {
+        Console.Error.WriteLine($"no .cs files under {full}");
+        return 2;
+    }
+
+    var pairs = new List<KeyValuePair<string, string>>();
+    var config = Path.Combine(Corpus.RepositoryRoot, ".editorconfig");
+    foreach (var entry in overrides) {
+        if (entry.StartsWith("--config=", StringComparison.Ordinal)) {
+            config = Path.GetFullPath(entry["--config=".Length..]);
+            continue;
+        }
+
+        var equals = entry.IndexOf('=', StringComparison.Ordinal);
+        if (equals > 0) {
+            pairs.Add(new KeyValuePair<string, string>(entry[..equals].Trim(), entry[(equals + 1)..].Trim()));
+        }
+    }
+
+    var results = new OracleRunner().Format(files, config, pairs);
+    foreach (var file in files) {
+        if (results.TryGetValue(file.Path, out var body)) {
+            File.WriteAllText(file.Path, body);
+        }
+    }
+
+    Console.WriteLine($"{results.Count.ToString(CultureInfo.InvariantCulture)}/{files.Length.ToString(CultureInfo.InvariantCulture)} files answered.");
+    return 0;
 }
 
 static int Regenerate(string[] sets) {

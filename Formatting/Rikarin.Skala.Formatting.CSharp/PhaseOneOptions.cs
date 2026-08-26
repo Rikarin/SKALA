@@ -229,6 +229,41 @@ public readonly struct PhaseOneOptions {
         PlaceLinqIntoOnNewLine = options.GetBool(Ids.PlaceLinqIntoOnNewLine);
         NewLineBetweenQueryExpressionClauses = options.GetBool(Ids.NewLineBetweenQueryExpressionClauses);
 
+        // ── Wrapping (phase 3) ───────────────────────────────────────────────────────────────
+        WrapArrayInitializerStyle = (WrapStyle)options.GetRaw(Ids.WrapArrayInitializerStyle);
+        MaxInitializerElementsOnLine = Math.Max(1, options.GetInt(Ids.MaxInitializerElementsOnLine));
+        MaxArrayInitializerElementsOnLine = Math.Max(1, options.GetInt(Ids.MaxArrayInitializerElementsOnLine));
+        PlaceSimpleInitializerOnSingleLine = options.GetBool(Ids.PlaceSimpleInitializerOnSingleLine);
+        WrapAfterExpressionLbrace = options.GetBool(Ids.WrapAfterExpressionLbrace);
+        WrapBeforeExpressionRbrace = options.GetBool(Ids.WrapBeforeExpressionRbrace);
+
+        WrapChainedMethodCalls = (WrapStyle)options.GetRaw(Ids.WrapChainedMethodCalls);
+        WrapAfterDotInMethodCalls = options.GetBool(Ids.WrapAfterDotInMethodCalls);
+        WrapBeforeFirstMethodCall = options.GetBool(Ids.WrapBeforeFirstMethodCall);
+        WrapAfterPropertyInChainedMethodCalls = options.GetBool(Ids.WrapAfterPropertyInChainedMethodCalls);
+
+        WrapChainedBinaryExpressions = (WrapStyle)options.GetRaw(Ids.WrapChainedBinaryExpressions);
+        WrapChainedBinaryPatterns = (WrapStyle)options.GetRaw(Ids.WrapChainedBinaryPatterns);
+        WrapTernaryExprStyle = (WrapStyle)options.GetRaw(Ids.WrapTernaryExprStyle);
+        WrapMultipleDeclarationStyle = (WrapStyle)options.GetRaw(Ids.WrapMultipleDeclarationStyle);
+        WrapExtendsListStyle = (WrapStyle)options.GetRaw(Ids.WrapExtendsListStyle);
+        WrapBeforeExtendsColon = options.GetBool(Ids.WrapBeforeExtendsColon);
+        WrapBeforeCommaInBaseClause = options.GetBool(Ids.WrapBeforeCommaInBaseClause);
+        WrapPropertyPattern = (WrapStyle)options.GetRaw(Ids.WrapPropertyPattern);
+        WrapListPattern = (WrapStyle)options.GetRaw(Ids.WrapListPattern);
+
+        KeepExistingListPatternsArrangement = options.GetBool(Ids.KeepExistingListPatternsArrangement);
+        KeepExistingPropertyPatternsArrangement = options.GetBool(Ids.KeepExistingPropertyPatternsArrangement);
+        KeepExistingSwitchExpressionArrangement = options.GetBool(Ids.KeepExistingSwitchExpressionArrangement);
+        PlaceSimpleListPatternOnSingleLine = options.GetBool(Ids.PlaceSimpleListPatternOnSingleLine);
+        PlaceSimplePropertyPatternOnSingleLine = options.GetBool(Ids.PlaceSimplePropertyPatternOnSingleLine);
+        PlaceSimpleSwitchExpressionOnSingleLine = options.GetBool(Ids.PlaceSimpleSwitchExpressionOnSingleLine);
+
+        MaxInvocationArgumentsOnLine = Math.Max(1, options.GetInt(Ids.MaxInvocationArgumentsOnLine));
+        MaxFormalParametersOnLine = Math.Max(1, options.GetInt(Ids.MaxFormalParametersOnLine));
+        MaxPrimaryConstructorParametersOnLine = Math.Max(1, options.GetInt(Ids.MaxPrimaryConstructorParametersOnLine));
+        PreferWrapAroundEq = options.GetString(Ids.PreferWrapAroundEq) ?? "default";
+
         // ── Escape hatch ─────────────────────────────────────────────────────────────────────
         FormatterTagsEnabled = options.GetBool(Ids.FormatterTagsEnabled);
         FormatterOffTag = options.GetString(Ids.FormatterOffTag) ?? "@formatter:off";
@@ -449,6 +484,40 @@ public readonly struct PhaseOneOptions {
     public bool PlaceLinqIntoOnNewLine { get; }
     public bool NewLineBetweenQueryExpressionClauses { get; }
 
+    public WrapStyle WrapArrayInitializerStyle { get; }
+    public int MaxInitializerElementsOnLine { get; }
+    public int MaxArrayInitializerElementsOnLine { get; }
+    public bool PlaceSimpleInitializerOnSingleLine { get; }
+    public bool WrapAfterExpressionLbrace { get; }
+    public bool WrapBeforeExpressionRbrace { get; }
+
+    public WrapStyle WrapChainedMethodCalls { get; }
+    public bool WrapAfterDotInMethodCalls { get; }
+    public bool WrapBeforeFirstMethodCall { get; }
+    public bool WrapAfterPropertyInChainedMethodCalls { get; }
+
+    public WrapStyle WrapChainedBinaryExpressions { get; }
+    public WrapStyle WrapChainedBinaryPatterns { get; }
+    public WrapStyle WrapTernaryExprStyle { get; }
+    public WrapStyle WrapMultipleDeclarationStyle { get; }
+    public WrapStyle WrapExtendsListStyle { get; }
+    public bool WrapBeforeExtendsColon { get; }
+    public bool WrapBeforeCommaInBaseClause { get; }
+    public WrapStyle WrapPropertyPattern { get; }
+    public WrapStyle WrapListPattern { get; }
+
+    public bool KeepExistingListPatternsArrangement { get; }
+    public bool KeepExistingPropertyPatternsArrangement { get; }
+    public bool KeepExistingSwitchExpressionArrangement { get; }
+    public bool PlaceSimpleListPatternOnSingleLine { get; }
+    public bool PlaceSimplePropertyPatternOnSingleLine { get; }
+    public bool PlaceSimpleSwitchExpressionOnSingleLine { get; }
+
+    public int MaxInvocationArgumentsOnLine { get; }
+    public int MaxFormalParametersOnLine { get; }
+    public int MaxPrimaryConstructorParametersOnLine { get; }
+    public string PreferWrapAroundEq { get; }
+
     public bool FormatterTagsEnabled { get; }
     public string FormatterOffTag { get; }
     public string FormatterOnTag { get; }
@@ -479,7 +548,10 @@ public static class Ids {
     public static readonly OptionId IndentSize = Of("resharper_csharp_indent_size");
     public static readonly OptionId TabWidth = OfInert("resharper_csharp_tab_width");
     public static readonly OptionId IndentStyle = Of("resharper_csharp_indent_style");
-    public static readonly OptionId MaxLineLength = OfInert("resharper_csharp_max_line_length");
+    // ⚠ No longer inert. Milestone 1 read it and could not act on it — nothing wrapped — and it was
+    // Tier D for that reason (docs/plan/05 § "Phase 1"). Milestone 3 is the phase where the column
+    // limit is the whole point, and constructs/wrapping/initializers.cs pins it.
+    public static readonly OptionId MaxLineLength = Of("resharper_csharp_max_line_length");
     public static readonly OptionId InsertFinalNewline = Of("resharper_csharp_insert_final_newline");
     public static readonly OptionId RemoveSpacesOnBlankLines = OfInert("resharper_remove_spaces_on_blank_lines");
     public static readonly OptionId EnforceLineEndingStyle = Of("resharper_enforce_line_ending_style");
@@ -962,6 +1034,82 @@ public static class Ids {
     public static readonly OptionId NewLineBetweenQueryExpressionClauses = OfInert(
         "csharp_new_line_between_query_expression_clauses"
     );
+
+    // ── Wrapping (phase 3) ───────────────────────────────────────────────────────────────────
+    public static readonly OptionId WrapArrayInitializerStyle = Of("resharper_csharp_wrap_array_initializer_style");
+    public static readonly OptionId MaxInitializerElementsOnLine = Of("resharper_max_initializer_elements_on_line");
+
+    public static readonly OptionId MaxArrayInitializerElementsOnLine = Of(
+        "resharper_max_array_initializer_elements_on_line"
+    );
+
+    public static readonly OptionId PlaceSimpleInitializerOnSingleLine = Of(
+        "resharper_place_simple_initializer_on_single_line"
+    );
+
+    public static readonly OptionId WrapAfterExpressionLbrace = Of("resharper_wrap_after_expression_lbrace");
+    public static readonly OptionId WrapBeforeExpressionRbrace = Of("resharper_wrap_before_expression_rbrace");
+
+    public static readonly OptionId WrapChainedMethodCalls = Of("resharper_csharp_wrap_chained_method_calls");
+    public static readonly OptionId WrapAfterDotInMethodCalls = Of("resharper_wrap_after_dot_in_method_calls");
+    public static readonly OptionId WrapBeforeFirstMethodCall = Of("resharper_wrap_before_first_method_call");
+
+    public static readonly OptionId WrapAfterPropertyInChainedMethodCalls = Of(
+        "resharper_wrap_after_property_in_chained_method_calls"
+    );
+
+    public static readonly OptionId WrapChainedBinaryExpressions = Of("resharper_csharp_wrap_chained_binary_expressions");
+    public static readonly OptionId WrapChainedBinaryPatterns = Of("resharper_csharp_wrap_chained_binary_patterns");
+    public static readonly OptionId WrapTernaryExprStyle = Of("resharper_csharp_wrap_ternary_expr_style");
+    public static readonly OptionId WrapMultipleDeclarationStyle = Of("resharper_csharp_wrap_multiple_declaration_style");
+    public static readonly OptionId WrapExtendsListStyle = Of("resharper_csharp_wrap_extends_list_style");
+    public static readonly OptionId WrapBeforeExtendsColon = Of("resharper_wrap_before_extends_colon");
+    public static readonly OptionId WrapBeforeCommaInBaseClause = Of("resharper_wrap_before_comma_in_base_clause");
+    public static readonly OptionId WrapPropertyPattern = Of("resharper_csharp_wrap_property_pattern");
+    public static readonly OptionId WrapListPattern = Of("resharper_csharp_wrap_list_pattern");
+
+    public static readonly OptionId KeepExistingListPatternsArrangement = Of(
+        "resharper_keep_existing_list_patterns_arrangement"
+    );
+
+    public static readonly OptionId KeepExistingPropertyPatternsArrangement = Of(
+        "resharper_keep_existing_property_patterns_arrangement"
+    );
+
+    public static readonly OptionId KeepExistingSwitchExpressionArrangement = Of(
+        "resharper_keep_existing_switch_expression_arrangement"
+    );
+
+    // ⚠ Read, implemented, and Tier D — because `keep_existing_list_patterns_arrangement` defaults
+    // to true and outranks it in both directions. With keep on, the placement key neither joins a
+    // list pattern the author broke nor forces a whole one apart, so no input can tell its two
+    // values apart on ReSharper's own defaults. Verified against the oracle rather than assumed:
+    // flipping it alone changes nothing; flipping it with keep off turns `xs is [1, 2, 3]` into
+    // three lines. An option that cannot change behaviour must not claim a tier that says it was.
+    public static readonly OptionId PlaceSimpleListPatternOnSingleLine = OfInert(
+        "resharper_place_simple_list_pattern_on_single_line"
+    );
+
+    public static readonly OptionId PlaceSimplePropertyPatternOnSingleLine = Of(
+        "resharper_place_simple_property_pattern_on_single_line"
+    );
+
+    public static readonly OptionId PlaceSimpleSwitchExpressionOnSingleLine = Of(
+        "resharper_place_simple_switch_expression_on_single_line"
+    );
+
+    public static readonly OptionId MaxInvocationArgumentsOnLine = Of("resharper_max_invocation_arguments_on_line");
+    public static readonly OptionId MaxFormalParametersOnLine = Of("resharper_max_formal_parameters_on_line");
+
+    public static readonly OptionId MaxPrimaryConstructorParametersOnLine = Of(
+        "resharper_max_primary_constructor_parameters_on_line"
+    );
+
+    // ⚠ Read, but Tier D on the evidence rather than on the wiring. `prefer_wrap_around_eq`'s
+    // domain is not published and this export writes `default`; the ordering rule is implemented and
+    // pinned by fixtures, but no second value is known to exist, so nothing can demonstrate the
+    // option changing an output and Tier A would be a claim the corpus cannot support.
+    public static readonly OptionId PreferWrapAroundEq = OfInert("resharper_prefer_wrap_around_eq");
 
     public static readonly OptionId FormatterTagsEnabled = Of("resharper_formatter_tags_enabled");
     public static readonly OptionId FormatterOffTag = Of("resharper_formatter_off_tag");

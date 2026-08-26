@@ -78,7 +78,27 @@ public enum LineFlags {
     /// with a single flat rendering produces <c>Foo( a, b )</c> or <c>Foo(a,b)</c> and there is no
     /// third choice.
     /// </remarks>
-    FlatSpace = 1
+    FlatSpace = 1,
+
+    /// <summary>
+    /// The point belongs to a fill: it breaks only when what follows it would not fit, rather than
+    /// with the rest of its group.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ The flag is on the point and not on the group, because a fill's delimiters and its item
+    /// separators do not behave alike. <c>wrap_array_initializer_style = wrap_if_long</c> puts the
+    /// <c>{</c> at the end of the opening line and the <c>}</c> on a line of its own <em>whenever
+    /// the initializer wraps at all</em>, and fills only the gaps between elements:
+    /// <code>
+    /// var e = new[] {
+    ///     "aaaaaaaaaaaaaaa", "bbbbbbbbbbbbbbb", "ccccccccccccccc", "ddddddddddddddd", "eeeeeeeeeeeeeee",
+    ///     "fffffffffffffff"
+    /// };
+    /// </code>
+    /// A group-wide fill mode would either put the braces in the fill — producing
+    /// <c>new[] { "aaa",</c> — or take the elements out of it. Neither is what the oracle writes.
+    /// </remarks>
+    FillPoint = 2
 }
 
 /// <summary>
@@ -172,6 +192,10 @@ public struct DocNode {
 public sealed class Document {
     readonly int[] _flatWidth;
     readonly int[] _headWidth;
+    readonly int[] _pointWidth;
+    readonly int[] _afterPoint;
+    readonly int[] _segment;
+    readonly bool[] _hasBreak;
     readonly GroupFacts[] _facts;
 
     internal Document(
@@ -183,6 +207,10 @@ public sealed class Document {
         int groupCount,
         int[] flatWidth,
         int[] headWidth,
+        int[] pointWidth,
+        int[] afterPoint,
+        int[] segment,
+        bool[] hasBreak,
         GroupFacts[] facts
     ) {
         Nodes = nodes;
@@ -193,6 +221,10 @@ public sealed class Document {
         GroupCount = groupCount;
         _flatWidth = flatWidth;
         _headWidth = headWidth;
+        _pointWidth = pointWidth;
+        _afterPoint = afterPoint;
+        _segment = segment;
+        _hasBreak = hasBreak;
         _facts = facts;
     }
 
@@ -235,6 +267,53 @@ public sealed class Document {
     /// is how this distinction was found.
     /// </remarks>
     public int HeadWidthOf(int node) => _headWidth[node];
+
+    /// <summary>
+    /// The width from the node's start to the first <em>break point</em> inside it — the one
+    /// measure of the three that treats an optional break as though it were taken.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ The third measure, and milestone 3 could not choose a wrap point without it.
+    /// <see cref="HeadWidthOf"/> stops only at a break that is certain, so for
+    /// <c>= new Dictionary&lt;…&gt; { a, b }</c> — whose only breaks are the initializer's optional
+    /// ones — head and flat are the same number and the question "how much of this lands on the
+    /// current line if the inner construct wraps" has no answer. This measure answers it:
+    /// <c>= new Dictionary&lt;…&gt; {</c>.
+    /// <para>
+    /// It is the pessimistic reading — every break point taken — which is the correct one for the
+    /// question it is asked, because it is only ever consulted once the group is known not to fit
+    /// flat, and a group that does not fit flat has some inner break that will be taken.
+    /// </para>
+    /// </remarks>
+    public int PointWidthOf(int node) => _pointWidth[node];
+
+    /// <summary>
+    /// The width from a group's <em>own</em> first break point to the next break point after it.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ <see cref="PointWidthOf"/> on a group stops at that group's own first point, which for
+    /// <c>schema.Properties = new Dictionary&lt;…&gt; {</c> is <c>schema.Properties = </c> and
+    /// answers nothing. The number the ordering rule needs is what follows that point and precedes
+    /// the next one — <c>new Dictionary&lt;…&gt; {</c> — because that is the rest of the line when
+    /// the group declines to break and lets the construct inside it wrap instead.
+    /// </remarks>
+    public int AfterPointOf(int node) => _afterPoint[node];
+
+    /// <summary>
+    /// The flat width from one break point to the next one of the same group: what a fill puts on
+    /// the current line if it declines to break here.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ Flat, not <see cref="PointWidthOf"/>, and the difference is visible on real code. A
+    /// collection initializer whose second element is itself a 104-column object initializer is
+    /// broken before that element by the oracle — so a fill asks "does the whole next item fit",
+    /// not "does the next item's first line fit". Measuring the head instead leaves multi-line items
+    /// trailing off the end of a line that already has one on it.
+    /// </remarks>
+    public int SegmentOf(int node) => _segment[node];
+
+    /// <summary>Whether the subtree holds a break of any kind — a hard line or a break point.</summary>
+    public bool HasBreak(int node) => _hasBreak[node];
 
     /// <summary>What the fitter needs to know about one group beyond its mode and its width.</summary>
     public GroupFacts FactsOf(int group) => _facts[group];
@@ -290,10 +369,62 @@ public sealed class Document {
 /// Fit against <see cref="Document.HeadWidthOf"/> — what remains of the line — rather than the
 /// whole flat width.
 /// </param>
-/// <param name="Owner">The group a <see cref="GroupMode.Owner"/> group reads its mode from, or −1.</param>
+/// <param name="PrefersOuterBreak">
+/// ⚠ The ordering rule, and the substance of milestone 3. A group with this fact set does not break
+/// merely because it is too long: it breaks when its own break is the one worth taking, and
+/// otherwise stays flat and lets the construct inside it wrap. Measured against the oracle on four
+/// shapes that a "break when too long" rule gets wrong in three different directions:
+/// <list type="table">
+/// <item>
+/// <term><c>JsonObjectContract c = (JsonObjectContract)r.ResolveContract(typeof(T));</c></term>
+/// <description>
+/// The oracle breaks after the <c>=</c> and leaves the call whole, because that alone fits. Two
+/// lines, not the three that chopping the argument list would cost.
+/// </description>
+/// </item>
+/// <item>
+/// <term><c>LogEventInfo e = new LogEventInfo { Message = m, Level = l, Exception = x };</c></term>
+/// <description>Same: the <c>=</c> break alone fits, so the initializer never wraps.</description>
+/// </item>
+/// <item>
+/// <term><c>schema.Properties = new Dictionary&lt;…&gt; { … };</c></term>
+/// <description>
+/// The <c>=</c> break does not make it fit, and the line ends at the initializer's <c>{</c> either
+/// way — so breaking after the <c>=</c> buys a line and gains nothing. The oracle leaves it.
+/// </description>
+/// </item>
+/// <item>
+/// <term><c>ExtensionDataTestClass a = JsonConvert.DeserializeObject&lt;…&gt;(…);</c></term>
+/// <description>
+/// The <c>=</c> break does not make it fit <em>and</em> the head does not fit either — the call's
+/// name alone runs past 120 — so the oracle takes both breaks.
+/// </description>
+/// </item>
+/// </list>
+/// </param>
+/// <param name="SpendsIndent">
+/// The group opens the continuation scope its own break points land in, so the column after one of
+/// its breaks is one level deeper than the line it is on. The fitter needs the number, not the flag,
+/// but only the writer knows the indentation stack.
+/// </param>
+/// <param name="BreaksWithOwner">
+/// ⚠ A <see cref="GroupMode.Preserve"/> group that additionally breaks whenever the group named by
+/// <see cref="Owner"/> broke. It is what lets <c>chop_if_long</c> mean "chop every operator of the
+/// chain at once" while each operator still keeps its own preserve behaviour: the chain group holds
+/// no break points and decides only whether the whole chain fits, and every operator group reads it.
+/// One group cannot do both, because <c>keep_user_linebreaks = true</c> requires a chain the author
+/// broke at one operator to come back with exactly that one break.
+/// </param>
+/// <param name="Owner">
+/// The group a <see cref="GroupMode.Owner"/> group reads its mode from, or the chain group a
+/// <see cref="BreaksWithOwner"/> group reads, or −1.
+/// </param>
 public readonly record struct GroupFacts(
     bool SourceBroken = false,
     bool JoinsIfFits = false,
     bool BreaksIfTooLong = false,
     bool MeasuresHead = false,
+    bool PrefersOuterBreak = false,
+    bool SpendsIndent = false,
+    bool BreaksWithOwner = false,
     int Owner = -1);

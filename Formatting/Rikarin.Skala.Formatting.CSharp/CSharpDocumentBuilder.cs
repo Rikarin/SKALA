@@ -105,7 +105,8 @@ public sealed partial class CSharpDocumentBuilder {
     /// </code>
     /// </remarks>
     void Visit(SyntaxNode node) {
-        if (!_plan.TryGroup(node, out var planned)) {
+        var planned = _plan.GroupsOf(node);
+        if (planned.Count == 0) {
             VisitInner(node);
             return;
         }
@@ -116,26 +117,58 @@ public sealed partial class CSharpDocumentBuilder {
         // is entered at is the one before that break rather than the one after it. The symptom is a
         // statement-level group that never joins and never fits — `if (flag)\n First();` measured as
         // starting at column 23 on the previous line.
-        EmitLeadingGap(node);
-        _doc.OpenGroup(planned.Mode, planned.Id);
+        //
+        // ⚠ Unless the group says otherwise: a construct whose own first break point *is* that gap
+        // has to own it. See GroupPlan.LeadingGapInside.
+        var gapInside = false;
+        for (var i = 0; i < planned.Count; i++) {
+            gapInside |= planned[i].LeadingGapInside;
+        }
 
-        // ⚠ The continuation scope a group's own break points need is opened here, inside the group
-        // and closed inside it, rather than lazily at the break. Lazily is what milestone 1 did and
-        // it is fine while the document stack holds nothing but indent scopes; a group on the same
-        // stack closes before the statement that owns the frame does, and pops the indent instead of
-        // itself.
-        var indented = planned.SpendsIndent && CanSpendAContinuationLevel();
-        if (indented) {
-            OpenIndent(IndentKind.Continuous);
+        if (!gapInside) {
+            EmitLeadingGap(node);
+        }
+
+        // ⚠ Outermost first, and every one of them opened before the body. Two constructs can start
+        // and end at the same token — a binary chain and its outermost operator — and the outer one
+        // has to be the outer group or the fitter resolves the inner first and the ordering is
+        // inverted.
+        var indented = new bool[planned.Count];
+        for (var i = 0; i < planned.Count; i++) {
+            var plan = planned[i];
+            _doc.OpenGroup(plan.Mode, plan.Id);
+
+            // ⚠ The continuation scope a group's own break points need is opened here, inside the
+            // group and closed inside it, rather than lazily at the break. Lazily is what milestone
+            // 1 did and it is fine while the document stack holds nothing but indent scopes; a group
+            // on the same stack closes before the statement that owns the frame does, and pops the
+            // indent instead of itself.
+            indented[i] = plan.SpendsIndent && CanSpendAContinuationLevel();
+
+            // ⚠ Whether the level is actually spent is decided here and not in the plan, and the
+            // fitter needs the answer: the ordering rule asks what column a break inside this group
+            // lands on, and that is one level deeper only when this group is the one paying for it.
+            _doc.DescribeGroup(plan.Id, plan.Facts with { SpendsIndent = indented[i] });
+
+            if (indented[i]) {
+                OpenIndent(IndentKind.Continuous);
+            }
+        }
+
+        if (gapInside) {
+            EmitLeadingGap(node);
         }
 
         VisitInner(node);
         EmitUpTo(node.Span.End);
-        if (indented) {
-            CloseIndent(IndentKind.Continuous);
-        }
 
-        _doc.Close();
+        for (var i = planned.Count - 1; i >= 0; i--) {
+            if (indented[i]) {
+                CloseIndent(IndentKind.Continuous);
+            }
+
+            _doc.Close();
+        }
     }
 
     /// <summary>
@@ -164,8 +197,25 @@ public sealed partial class CSharpDocumentBuilder {
     }
 
     /// <summary>Emits everything before <paramref name="node"/>'s first piece, its gap included.</summary>
-    void EmitLeadingGap(SyntaxNode node) {
-        EmitUpTo(node.SpanStart);
+    void EmitLeadingGap(SyntaxNode node) => EmitLeadingGapAt(node.SpanStart);
+
+    /// <summary>The first element inside a braced construct, or the closing brace when it is empty.</summary>
+    static int FirstElementStart(SyntaxNode node) {
+        var seenOpen = false;
+        foreach (var child in node.ChildNodesAndTokens()) {
+            if (!seenOpen) {
+                seenOpen = child.IsToken && child.AsToken().IsKind(SyntaxKind.OpenBraceToken);
+                continue;
+            }
+
+            return child.SpanStart;
+        }
+
+        return node.Span.End;
+    }
+
+    void EmitLeadingGapAt(int position) {
+        EmitUpTo(position);
         if (_cursor >= _pieces.Length || _lastPiece < 0) {
             return;
         }
@@ -382,9 +432,15 @@ public sealed partial class CSharpDocumentBuilder {
     }
 
     /// <summary>A <c>{ }</c> body: everything between the braces takes one block indent.</summary>
-    void VisitBraced(SyntaxNode node) {
+    internal void VisitBraced(SyntaxNode node) {
         var (open, close) = BraceTokens(node);
         var opened = false;
+
+        // ⚠ A group opened *inside* the braces, at the column its contents land on. An initializer's
+        // elements are measured against the continuation column, not against the column the
+        // construct starts at, and a group opened around the node is entered at the latter. See
+        // BreakPlan's `_inner` for why the two cannot be the same group.
+        var hasInner = _plan.TryInnerGroup(node, out var elements);
 
         // csharp_indent_braces: the braces themselves take the inner level rather than the outer.
         var indentBraces = _options.IndentBraces;
@@ -403,6 +459,10 @@ public sealed partial class CSharpDocumentBuilder {
                 var token = child.AsToken();
                 if (opened && !close.IsKind(SyntaxKind.None) && token.SpanStart == close.SpanStart) {
                     EmitUpTo(close.SpanStart);
+                    if (hasInner) {
+                        _doc.Close();
+                    }
+
                     if (!indentBraces) {
                         CloseIndent(IndentKind.Block, alignsCloser: true);
                     }
@@ -433,6 +493,20 @@ public sealed partial class CSharpDocumentBuilder {
                         OpenIndent(IndentKind.Block);
                     }
 
+                    if (hasInner) {
+                        // ⚠ The gap after the brace is emitted *before* the group opens, and the
+                        // order is the whole point. That gap holds the outer group's break point, so
+                        // emitting it first is what puts the elements group's first character on the
+                        // continuation line — which is the column its contents have to be measured
+                        // against. Opening the group first measures the elements from the column
+                        // just after the `{`, four columns and one line too optimistic, and every
+                        // initializer that would have fitted on one continuation line comes out with
+                        // one element per line instead.
+                        EmitLeadingGapAt(FirstElementStart(node));
+                        _doc.DescribeGroup(elements.Id, elements.Facts);
+                        _doc.OpenGroup(elements.Mode, elements.Id);
+                    }
+
                     opened = true;
                     continue;
                 }
@@ -445,6 +519,10 @@ public sealed partial class CSharpDocumentBuilder {
 
         if (opened) {
             EmitUpTo(close.IsKind(SyntaxKind.None) ? int.MaxValue : close.SpanStart);
+            if (hasInner) {
+                _doc.Close();
+            }
+
             CloseIndent(IndentKind.Block);
         }
     }
@@ -896,9 +974,11 @@ public sealed partial class CSharpDocumentBuilder {
         if (planned) {
             switch (spec.Rule) {
                 case GapRule.Point:
+                case GapRule.FillPoint:
                     _doc.BreakPoint(
                         spec.Group,
                         GapSpace(previous, nextKind, nextToken) != SpaceKind.Forbidden,
+                        spec.Rule == GapRule.FillPoint,
                         newLines == 0 ? 0 : ResolveBlankLines(previous, nextPieceIndex, nextToken, newLines - 1),
                         newLines == 0
                             ? DefaultNewLine()

@@ -246,6 +246,23 @@ MICROSOFT_OPTIONS: dict[str, tuple[str, str, str, bool]] = {
 # ReSharper properties the export sets that JetBrains' tables do not document, and that are
 # nonetheless C#-relevant. Judged by vocabulary; anything whose vocabulary is C++, VB, F#, HTML,
 # XML, Razor, Slate or Unreal is left out of the registry entirely and reported as SK9001.
+#
+# WARNING (M3): this table is also the repair for the M0 pass's blind spot, and the blind spot is
+# worth stating because it is not obvious from the code. An option was registered only when one of
+# the forms JetBrains *documents* for it appears in the template. The export writes about forty
+# C#-relevant keys in a language-generic spelling that the tables do not list among that property's
+# names — `resharper_new_line_before_enumerators`, `resharper_wrap_base_clause_style`,
+# `resharper_continuous_line_indent`, `resharper_prefer_wrap_around_eq`, `resharper_int_align_eq`,
+# `resharper_place_property_attribute_on_same_line` and the rest — so `present` came back empty and
+# the whole option was dropped. It was not reported as a dropped option; it surfaced as an SK9001
+# unknown key, which reads like a stray line in someone's config rather than like a gap in the
+# registry, and docs/plan/05 § "Required and forbidden breaks" names the first of them as the
+# mechanism for a rule milestone 2 had to spell with two other keys instead.
+#
+# The entries below marked "M3" are that repair. They are listed here rather than fixed in the
+# matching pass on purpose: a form that JetBrains does not document as belonging to a property
+# cannot be *derived* to belong to it, and guessing an owner would attach a value to the wrong
+# option, which is worse than not registering it.
 UNDOCUMENTED_CSHARP_KEYS = {
     "resharper_align_multiline_type_parameter_constraints": ("bool", "TypeParameterConstraintClause"),
     "resharper_align_multiline_type_parameter_list": ("bool", "TypeParameterList"),
@@ -314,6 +331,54 @@ UNDOCUMENTED_CSHARP_KEYS = {
     "resharper_autodetect_indent_settings": ("bool", "Indentation"),
     "resharper_xmldoc_insert_final_newline": ("bool", "XmlDocComment"),
     "resharper_xmldoc_wrap_lines": ("bool", "XmlDocComment"),
+    # ── M3: the unprefixed C#-relevant keys the M0 pass dropped ──────────────────────────────
+    "resharper_align_multiline_array_initializer": ("bool", "AlignMultilineConstructs"),
+    "resharper_align_multiline_ctor_init": ("bool", "ConstructorInitializer"),
+    "resharper_align_multiline_expression_braces": ("bool", "Initializer"),
+    "resharper_align_multiline_implements_list": ("bool", "BaseList"),
+    "resharper_align_multiline_type_argument": ("bool", "TypeArgumentList"),
+    "resharper_align_multiline_type_parameter": ("bool", "TypeParameterList"),
+    "resharper_align_ternary": ("string", "ConditionalExpression"),
+    "resharper_blank_lines_around_global_attribute": ("int", "BlankLines"),
+    "resharper_continuous_line_indent": ("enum:ContinuousIndentStyle", "Indentation"),
+    "resharper_enable_wrapping": ("bool", "Wrapping"),
+    "resharper_expression_braces": ("enum:ParenthesesIndentStyle", "Initializer"),
+    "resharper_indent_aligned_ternary": ("bool", "ConditionalExpression"),
+    "resharper_indent_comment": ("bool", "Comment"),
+    "resharper_indent_wrapped_function_names": ("bool", "Wrapping"),
+    "resharper_int_align_declaration_names": ("bool", "IntAlign"),
+    "resharper_int_align_enum_initializers": ("bool", "IntAlign"),
+    "resharper_int_align_eq": ("bool", "IntAlign"),
+    "resharper_new_line_before_enumerators": ("bool", "EnumDeclaration"),
+    "resharper_place_event_attribute_on_same_line": ("enum:PlacementStyle", "Attribute"),
+    "resharper_place_namespace_definitions_on_same_line": ("bool", "NamespaceDeclaration"),
+    "resharper_place_property_attribute_on_same_line": ("enum:PlacementStyle", "Attribute"),
+    "resharper_prefer_wrap_around_eq": ("string", "Assignment"),
+    "resharper_remove_blank_lines_near_braces": ("bool", "BlankLines"),
+    "resharper_simple_block_style": ("string", "Block"),
+    "resharper_simple_case_statement_style": ("string", "SwitchSection"),
+    "resharper_simple_embedded_statement_style": ("string", "EmbeddedStatement"),
+    "resharper_use_continuous_line_indent_in_expression_braces": ("bool", "Initializer"),
+    "resharper_use_continuous_line_indent_in_method_pars": ("bool", "Parentheses"),
+    "resharper_wrap_after_expression_lbrace": ("bool", "Initializer"),
+    "resharper_wrap_arguments": ("enum:WrapStyle", "Wrapping"),
+    "resharper_wrap_base_clause_style": ("enum:WrapStyle", "BaseList"),
+    "resharper_wrap_before_colon": ("bool", "Wrapping"),
+    "resharper_wrap_before_comma_in_base_clause": ("bool", "BaseList"),
+    "resharper_wrap_before_expression_rbrace": ("bool", "Initializer"),
+    "resharper_wrap_braced_init_list_style": ("enum:WrapStyle", "Initializer"),
+    "resharper_wrap_ctor_initializer_style": ("enum:WrapStyle", "ConstructorInitializer"),
+    "resharper_wrap_enumeration_style": ("enum:WrapStyle", "EnumDeclaration"),
+}
+
+# The value domains JetBrains does not publish for the keys above, so that register_enum can find
+# them. ⚠ `single | double` is read off docs/plan/04 § "Indentation" and confirmed by the oracle,
+# not guessed: `= single` sets the size of one continuation level.
+EXTRA_DOMAINS = {
+    "ContinuousIndentStyle": [
+        {"name": "single", "summary": "One indent unit"},
+        {"name": "double", "summary": "Two indent units"},
+    ],
 }
 
 LINE_ENDING_VALUES = ["lf", "crlf", "cr"]
@@ -547,7 +612,7 @@ def build(repo: str, cache: str) -> dict:
         name = type_name[len("enum:") :]
         if name in enums:
             return
-        members = members or domains.get(name)
+        members = members or domains.get(name) or EXTRA_DOMAINS.get(name)
         if members is None:
             raise SystemExit(f"no documented value domain for enum '{name}'")
         enums[name] = {

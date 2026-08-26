@@ -33,6 +33,19 @@ public sealed class DocumentBuilder {
     DocNode[] _nodes = new DocNode[512];
     int[] _flatWidth = new int[512];
     int[] _headWidth = new int[512];
+
+    /// <summary>Width to the first break point, optional ones included. <see cref="Document.PointWidthOf"/>.</summary>
+    int[] _pointWidth = new int[512];
+
+    /// <summary>Width from a group's own first break point to the next. <see cref="Document.AfterPointOf"/>.</summary>
+    int[] _afterPoint = new int[512];
+
+    /// <summary>Flat width from one fill point to the next. <see cref="Document.SegmentOf"/>.</summary>
+    int[] _segment = new int[512];
+
+    /// <summary>Whether the subtree holds a break point of any kind. Stops the two measures above.</summary>
+    bool[] _breaks = new bool[512];
+
     int _nodeCount;
     int _groupCount;
     int _root = -1;
@@ -132,7 +145,11 @@ public sealed class DocumentBuilder {
     /// What the gap renders as when the group stays flat. ⚠ Not uniform across a construct's own
     /// points: the gap after <c>(</c> is nothing and the gap after <c>,</c> is a space.
     /// </param>
-    public void BreakPoint(int group, bool flatSpace, int blankLines = 0, string? newLine = null) {
+    /// <param name="fill">
+    /// The point breaks only when what follows it does not fit, rather than with its group.
+    /// <see cref="LineFlags.FillPoint"/>.
+    /// </param>
+    public void BreakPoint(int group, bool flatSpace, bool fill = false, int blankLines = 0, string? newLine = null) {
         var index = _pending.Count;
         Leaf(
             DocKind.Line,
@@ -145,7 +162,10 @@ public sealed class DocumentBuilder {
         );
         ref var node = ref _nodes[_pending[index]];
         node.Arg2 = group;
-        node.Flags = flatSpace ? (int)LineFlags.FlatSpace : (int)LineFlags.None;
+        node.Flags = (flatSpace ? (int)LineFlags.FlatSpace : 0) | (fill ? (int)LineFlags.FillPoint : 0);
+
+        // ⚠ A break point stops the point measure, which is what distinguishes it from the head.
+        _breaks[_pending[index]] = true;
     }
 
     /// <summary>A sync point between output and input, emitted immediately before what it introduces.</summary>
@@ -175,7 +195,11 @@ public sealed class DocumentBuilder {
         var childStart = _children.Count;
         var width = 0;
         var head = 0;
+        var point = 0;
+        var breaks = false;
         var stopped = false;
+        var pointStopped = false;
+
         for (var i = start; i < _pending.Count; i++) {
             var child = _pending[i];
             _children.Add(child);
@@ -188,10 +212,23 @@ public sealed class DocumentBuilder {
                 head += _headWidth[child];
                 stopped = _flatWidth[child] >= Document.Unbounded;
             }
+
+            // ⚠ The point measure stops at the first *optional* break too, which is the whole
+            // difference between it and the head.
+            if (!pointStopped) {
+                point += _pointWidth[child];
+                pointStopped = _breaks[child];
+            }
+
+            breaks |= _breaks[child];
         }
 
         if (width > Document.Unbounded) {
             width = Document.Unbounded;
+        }
+
+        if (point > Document.Unbounded) {
+            point = Document.Unbounded;
         }
 
         _pending.RemoveRange(start, count);
@@ -200,6 +237,8 @@ public sealed class DocumentBuilder {
         if (frame.Kind == DocKind.IfBroken) {
             width = count > 1 ? _flatWidth[_children[childStart + 1]] : 0;
             head = count > 1 ? _headWidth[_children[childStart + 1]] : 0;
+            point = count > 1 ? _pointWidth[_children[childStart + 1]] : 0;
+            breaks = count > 1 && _breaks[_children[childStart + 1]];
         }
 
         // ⚠ A group that always breaks has no flat form, so nothing that contains it has one either.
@@ -209,6 +248,7 @@ public sealed class DocumentBuilder {
         if (frame.Kind == DocKind.Group && (GroupMode)frame.Arg0 == GroupMode.Break) {
             width = Document.Unbounded;
             head = 0;
+            breaks = true;
             for (var i = 0; i < count; i++) {
                 var child = _children[childStart + i];
                 if (_nodes[child].Kind == DocKind.Line && (LineKind)_nodes[child].Arg0 == LineKind.Soft) {
@@ -220,6 +260,9 @@ public sealed class DocumentBuilder {
         }
 
         var index = Allocate(frame.Kind, frame.Arg0, frame.Arg1, default, childStart, width, head);
+        _pointWidth[index] = point;
+        _breaks[index] = breaks;
+        _afterPoint[index] = frame.Kind == DocKind.Group ? MeasureSegments(childStart, count, frame.Arg1) : 0;
         _nodes[index].Count = count;
         _nodes[index].Flags = alignsCloser ? 1 : 0;
         _nodes[index].Arg2 = frame.Kind == DocKind.Group ? _facts[frame.Arg1].Owner : -1;
@@ -245,8 +288,77 @@ public sealed class DocumentBuilder {
             _groupCount,
             _flatWidth,
             _headWidth,
+            _pointWidth,
+            _afterPoint,
+            _segment,
+            _breaks,
             [.. _facts]
         );
+    }
+
+    /// <summary>
+    /// Measures the stretch after each of a group's own break points, and returns the first one.
+    /// </summary>
+    /// <remarks>
+    /// Two numbers per point, because two rules ask different questions about the same gap.
+    /// <list type="bullet">
+    /// <item>
+    /// <see cref="Document.SegmentOf"/> is the <em>flat</em> width up to the next point: what a fill
+    /// asks, because a fill decides whether the next item goes on this line whole. Verified against
+    /// the oracle on a collection initializer whose second element is a 104-column object
+    /// initializer: the oracle breaks before it, so the question is the item's whole width and not
+    /// the width of its first line.
+    /// </item>
+    /// <item>
+    /// <see cref="Document.AfterPointOf"/> is the <em>point</em> width: what the ordering rule asks,
+    /// because it wants to know where the current line would end if this group declined to break
+    /// and the construct inside it wrapped instead.
+    /// </item>
+    /// </list>
+    /// ⚠ Linear despite the nested loop: the segments partition the children, so each child is
+    /// visited by exactly one of them.
+    /// </remarks>
+    int MeasureSegments(int childStart, int count, int group) {
+        var first = -1;
+        for (var i = 0; i < count; i++) {
+            var child = _children[childStart + i];
+            if (!IsOwnBreakPoint(child, group)) {
+                continue;
+            }
+
+            var flat = 0;
+            var point = 0;
+            var pointStopped = false;
+            for (var j = i + 1; j < count; j++) {
+                var following = _children[childStart + j];
+                if (IsOwnBreakPoint(following, group)) {
+                    break;
+                }
+
+                flat = flat >= Document.Unbounded || _flatWidth[following] >= Document.Unbounded
+                    ? Document.Unbounded
+                    : flat + _flatWidth[following];
+
+                if (!pointStopped) {
+                    point += _pointWidth[following];
+                    pointStopped = _breaks[following];
+                }
+            }
+
+            _segment[child] = flat;
+            _afterPoint[child] = point;
+            if (first < 0) {
+                first = child;
+            }
+        }
+
+        return first < 0 ? 0 : _afterPoint[first];
+    }
+
+    /// <summary>Whether this child is a break point belonging to the group being closed.</summary>
+    bool IsOwnBreakPoint(int child, int group) {
+        ref var node = ref _nodes[child];
+        return node.Kind == DocKind.Line && (LineKind)node.Arg0 == LineKind.Soft && node.Arg2 == group;
     }
 
     void Open(DocKind kind, int arg0, int arg1) => _stack.Add(new Frame(kind, arg0, arg1, _pending.Count));
@@ -259,6 +371,10 @@ public sealed class DocumentBuilder {
             Array.Resize(ref _nodes, _nodes.Length * 2);
             Array.Resize(ref _flatWidth, _flatWidth.Length * 2);
             Array.Resize(ref _headWidth, _headWidth.Length * 2);
+            Array.Resize(ref _pointWidth, _pointWidth.Length * 2);
+            Array.Resize(ref _afterPoint, _afterPoint.Length * 2);
+            Array.Resize(ref _segment, _segment.Length * 2);
+            Array.Resize(ref _breaks, _breaks.Length * 2);
         }
 
         ref var node = ref _nodes[_nodeCount];
@@ -272,6 +388,13 @@ public sealed class DocumentBuilder {
         node.Source = source;
         _flatWidth[_nodeCount] = width;
         _headWidth[_nodeCount] = head;
+
+        // A leaf's point width is its head width and it holds no break; Line and Close override
+        // both. Written here so that every allocation site does not have to.
+        _pointWidth[_nodeCount] = head;
+        _afterPoint[_nodeCount] = 0;
+        _segment[_nodeCount] = 0;
+        _breaks[_nodeCount] = kind == DocKind.Line && (LineKind)arg0 != LineKind.Soft;
         return _nodeCount++;
     }
 

@@ -138,6 +138,14 @@ public sealed class OptionCoverageTests {
                 ) ? number : 0;
                 yield return current.ToString(CultureInfo.InvariantCulture);
                 yield return (current == 0 ? 3 : current == 1 ? 2 : 0).ToString(CultureInfo.InvariantCulture);
+
+                // ⚠ A third value, because two are not enough for a counter whose configured value
+                // is a stand-in for "no cap". `max_invocation_arguments_on_line = 10000` against 0
+                // is observable — 0 clamps to 1 and chops — but `max_line_length = 120` against 0 is
+                // not, because 0 clamps to 120 and the pair is the same number twice. One is a cap
+                // on a count and the other is a width; they do not have a common "obviously
+                // different" second value, so the test tries a third.
+                yield return "1";
                 break;
 
             default:
