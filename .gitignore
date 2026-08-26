@@ -6,3 +6,4 @@ artifacts/
 *.user
 *.binlog
 .DS_Store
+.nuke/temp/
