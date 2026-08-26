@@ -30,7 +30,9 @@ public sealed class EditorConfigChain {
         while (directory is not null) {
             var candidate = Path.Combine(directory, EditorConfigDocument.FileName);
             if (File.Exists(candidate)) {
-                var document = EditorConfigDocument.Load(candidate);
+                // ⚠ Through the cache, which validates (mtime, length) on every call. The walk
+                // itself is not cached — see ConfigurationCache's remarks for why.
+                var document = ConfigurationCache.Load(candidate);
                 found.Add(document);
                 if (document.IsRoot) {
                     stoppedAtRoot = true;

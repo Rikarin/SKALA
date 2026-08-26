@@ -50,15 +50,29 @@ public sealed class EditorConfigSection {
 public sealed class EditorConfigDocument {
     public const string FileName = ".editorconfig";
 
+    static int _nextVersion;
+
     EditorConfigDocument(string path, string text) {
         Path = path;
         Directory = System.IO.Path.GetDirectoryName(System.IO.Path.GetFullPath(path)) ?? path;
         Text = text;
         Sections = Parse(this, text, out var isRoot);
         IsRoot = isRoot;
+        Version = System.Threading.Interlocked.Increment(ref _nextVersion);
     }
 
     public string Path { get; }
+
+    /// <summary>
+    /// A process-unique stamp, handed out at construction.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ It exists so that <see cref="ConfigurationCache"/> can key a resolution on the documents it
+    /// came from without hashing their text. A document that is re-read because the file changed is
+    /// a different instance with a different version, so every cached answer derived from the old
+    /// one is unreachable rather than stale.
+    /// </remarks>
+    public int Version { get; }
 
     public string Directory { get; }
 

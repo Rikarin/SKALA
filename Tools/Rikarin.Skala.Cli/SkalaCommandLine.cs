@@ -43,9 +43,17 @@ public static class SkalaCommandLine {
             Arity = ArgumentArity.ZeroOrMore
         };
 
+        var jobs = new Option<int?>("--jobs", "-j") {
+            Description = "How many files to format at once. Default min(cores, 10); 1 is sequential."
+        };
+
+        var noCache = new Option<bool>("--no-cache") {
+            Description = "Re-read and re-resolve every .editorconfig per file instead of memoising it."
+        };
+
         var command = new Command(
             "format",
-            "Format C# files. Spaces, blank lines, braces and indentation; no wrapping yet."
+            "Format C# files: spaces, blank lines, braces, indentation, breaks and wrapping."
         );
         command.Arguments.Add(paths);
         command.Options.Add(check);
@@ -54,6 +62,8 @@ public static class SkalaCommandLine {
         command.Options.Add(staged);
         command.Options.Add(quiet);
         command.Options.Add(option);
+        command.Options.Add(jobs);
+        command.Options.Add(noCache);
 
         command.SetAction(parse => {
             var stagedValue = parse.GetResult(staged) is null
@@ -62,6 +72,10 @@ public static class SkalaCommandLine {
                     ? StagedMode.Worktree
                     : StagedMode.Strict;
 
+            if (parse.GetValue(noCache)) {
+                ConfigurationCache.Enabled = false;
+            }
+
             var request = new FormatRequest {
                 Paths = parse.GetValue(paths) ?? [],
                 Check = parse.GetValue(check),
@@ -69,7 +83,8 @@ public static class SkalaCommandLine {
                 Range = parse.GetValue(range),
                 Staged = stagedValue,
                 Quiet = parse.GetValue(quiet),
-                Overrides = ParseOverrides(parse.GetValue(option))
+                Overrides = ParseOverrides(parse.GetValue(option)),
+                Jobs = parse.GetValue(jobs)
             };
 
             return Run(() => FormatCommand.Run(request));

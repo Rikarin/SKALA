@@ -156,8 +156,11 @@ public static class CSharpFormatter {
         string? crashRoot = null
     ) {
         var text = Read(path);
-        var resolution = OptionResolver.Resolve(path, overrides);
-        return Format(path, text, resolution.Options, crashRoot);
+        // ⚠ Through ConfigurationCache: resolving 483 options from a re-parsed chain per file is
+        // most of what `format --check` over a large tree spends its time on, and the answer is the
+        // same for every file the same sections match (docs/plan/13 § "The fitting pass").
+        var options = ConfigurationCache.Options(EditorConfigChain.For(path), overrides);
+        return Format(path, text, options, crashRoot);
     }
 
     public static SourceText Read(string path) {
