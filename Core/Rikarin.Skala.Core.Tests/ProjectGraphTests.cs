@@ -49,17 +49,82 @@ public sealed class ProjectGraphTests {
 
     [Fact]
     public void FormattingKnowsNothingAboutCSharp() {
-        // Unimplemented until Milestone 1; the guard is written now so that the first commit that
-        // adds Rikarin.Skala.Formatting cannot quietly give it a Roslyn reference. The IR and the
-        // fitting algorithm are what HTML and CSS reuse (docs/plan/14).
-        var formatting = Projects.FirstOrDefault(static p => p.Name == "Rikarin.Skala.Formatting");
-        if (formatting is null) {
-            Assert.DoesNotContain(Projects, static p => p.Name.StartsWith("Rikarin.Skala.Formatting", StringComparison.Ordinal) && p.Name != "Rikarin.Skala.Formatting.CSharp");
-            return;
-        }
+        // ⚠ The IR and the fitting algorithm are what the HTML and CSS front ends reuse
+        // (docs/plan/14). The moment SyntaxKind appears in Rikarin.Skala.Formatting the
+        // language-plugin seam is gone, and it goes quietly: the project would still build.
+        var formatting = Assert.Single(Projects, static p => p.Name == "Rikarin.Skala.Formatting");
 
         Assert.DoesNotContain(formatting.PackageReferences, static package => package.StartsWith("Microsoft.CodeAnalysis", StringComparison.Ordinal));
         Assert.DoesNotContain(formatting.ProjectReferences, static reference => reference.Path.Contains("CSharp", StringComparison.Ordinal));
+
+        // A package reference is the obvious edge; a transitive one through Core is the edge that
+        // gets added by accident, so the whole closure is walked rather than the direct list.
+        foreach (var reference in Closure(formatting)) {
+            Assert.DoesNotContain(reference.PackageReferences, static package => package.StartsWith("Microsoft.CodeAnalysis", StringComparison.Ordinal));
+        }
+
+        // And the source itself: a `using Microsoft.CodeAnalysis` would not compile today, but a
+        // hand-rolled `SyntaxKind` copy would, and it would be worse.
+        var directory = System.IO.Path.GetDirectoryName(formatting.Path)!;
+        foreach (var source in Directory.EnumerateFiles(directory, "*.cs", SearchOption.AllDirectories)) {
+            if (source.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}", StringComparison.Ordinal)) {
+                continue;
+            }
+
+            // Comments may name Roslyn — one of them explains why this project may not use it.
+            foreach (var line in File.ReadLines(source)) {
+                var code = line.TrimStart();
+                if (code.StartsWith("//", StringComparison.Ordinal) || code.StartsWith("///", StringComparison.Ordinal)) {
+                    continue;
+                }
+
+                Assert.DoesNotContain("Microsoft.CodeAnalysis", line, StringComparison.Ordinal);
+                Assert.DoesNotContain("SyntaxKind", line, StringComparison.Ordinal);
+            }
+        }
+    }
+
+    [Fact]
+    public void TheHarnessIsWhereTheTestsGetTheirCliRunner() {
+        // docs/plan/02 § "The project graph": tests reference a CliRunner in Testing, not the CLI.
+        var testing = Assert.Single(Projects, static p => p.Name == "Rikarin.Skala.Testing");
+        Assert.All(
+            testing.ProjectReferences.Where(static r => r.Path.EndsWith("Rikarin.Skala.Cli.csproj", StringComparison.Ordinal)),
+            static reference => Assert.False(reference.ReferencesOutputAssembly));
+
+        Assert.True(
+            File.Exists(Path.Combine(Path.GetDirectoryName(testing.Path)!, "CliRunner.cs")),
+            "CliRunner belongs in Rikarin.Skala.Testing (docs/plan/02), not in a test project.");
+
+        foreach (var project in Projects.Where(static p => p.Name.EndsWith(".Tests", StringComparison.Ordinal))) {
+            var directory = Path.GetDirectoryName(project.Path)!;
+            Assert.False(
+                File.Exists(Path.Combine(directory, "CliRunner.cs")),
+                $"{project.Name} has its own CliRunner; there is one, and it is in Rikarin.Skala.Testing.");
+        }
+    }
+
+    /// <summary>Every project reachable from <paramref name="project"/> by assembly references.</summary>
+    static IEnumerable<ProjectFile> Closure(ProjectFile project) {
+        var seen = new HashSet<string>(StringComparer.Ordinal);
+        var queue = new Queue<ProjectFile>();
+        queue.Enqueue(project);
+
+        while (queue.Count > 0) {
+            var current = queue.Dequeue();
+            foreach (var reference in current.ProjectReferences.Where(static r => r.ReferencesOutputAssembly)) {
+                var name = Path.GetFileNameWithoutExtension(reference.Path);
+                if (!seen.Add(name)) {
+                    continue;
+                }
+
+                var target = Projects.FirstOrDefault(p => p.Name == name);
+                if (target is not null) {
+                    yield return target;
+                    queue.Enqueue(target);
+                }
+            }
+        }
     }
 
     [Fact]

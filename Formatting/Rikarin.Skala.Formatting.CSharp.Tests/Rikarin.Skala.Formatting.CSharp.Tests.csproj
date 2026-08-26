@@ -1,0 +1,8 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="../Rikarin.Skala.Formatting.CSharp/Rikarin.Skala.Formatting.CSharp.csproj" />
+    <ProjectReference Include="../../Testing/Rikarin.Skala.Testing/Rikarin.Skala.Testing.csproj" />
+  </ItemGroup>
+
+</Project>

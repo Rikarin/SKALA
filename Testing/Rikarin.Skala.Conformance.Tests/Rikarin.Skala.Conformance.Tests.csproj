@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    The Rider differential suite: the fidelity number, the property suite, and the per-option corpus
+    test that keeps Tier A honest.
+  -->
+
+  <ItemGroup>
+    <ProjectReference Include="../Rikarin.Skala.Testing/Rikarin.Skala.Testing.csproj" />
+  </ItemGroup>
+
+</Project>

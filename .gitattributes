@@ -1,0 +1,6 @@
+# ⚠ The corpus is data, not source. Several files exist precisely to carry CRLF, mixed endings or
+# a BOM, and git's end-of-line normalisation would quietly delete the thing they test.
+Testing/corpus/** -text
+
+# The Rider export and the repository's copy of it are compared byte for byte by `config diff`.
+editor_config_template -text
