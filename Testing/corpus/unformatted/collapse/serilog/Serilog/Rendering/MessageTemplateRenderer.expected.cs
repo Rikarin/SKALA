@@ -29,7 +29,8 @@ static class MessageTemplateRenderer {
         bool isLiteral = false, isJson = false;
         if (format != null) {
             for (var i = 0; i < format.Length; ++i) {
-                if (format[i] == 'l') isLiteral = true;
+                if (format[i] == 'l')
+                    isLiteral = true;
                 else if (format[i] == 'j') isJson = true;
             }
         }

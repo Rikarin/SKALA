@@ -1,4 +1,5 @@
 // skala-oracle: resharper=2025.2.6 config=sha256:98ff52570e019fac profile=SkalaFormatOnly generated=2026-08-27
+
 #region License
 
 // Copyright (c) 2007 James Newton-King
@@ -27,12 +28,12 @@
 #endregion
 
 using System
-    ;
+;
 using
-    System.Collections;
+System.Collections;
 using System.Collections.Generic;
 using
-    System.ComponentModel;
+System.ComponentModel;
 using System.IO;
 using System.Reflection;
 using System.Reflection.Emit;
@@ -42,9 +43,9 @@ using System.Threading.Tasks;
 #endif
 using Newtonsoft.Json.Converters;
 using
-    Newtonsoft.Json.Linq;
+Newtonsoft.Json.Linq;
 using Newtonsoft
-    .Json.Serialization;
+.Json.Serialization;
 using Newtonsoft.Json.Utilities;
 #if DNXCORE50
 using Xunit;
@@ -83,10 +84,10 @@ namespace
         public
             void Test_DefaultValue() {
             ExtensionDataWithDefaultValueTestClass a =
-                    JsonConvert.DeserializeObject<ExtensionDataWithDefaultValueTestClass>(
-                        "{\"E\":2}",
-                        new JsonSerializerSettings { DefaultValueHandling = DefaultValueHandling.Ignore, }
-                    )
+                JsonConvert.DeserializeObject<ExtensionDataWithDefaultValueTestClass>(
+                    "{\"E\":2}",
+                    new JsonSerializerSettings { DefaultValueHandling = DefaultValueHandling.Ignore, }
+                )
                 ;
             Assert.IsNull(a.PropertyBag);
         }
@@ -95,7 +96,7 @@ namespace
         class ExtensionDataTestClass {
             public B? E {
                 get
-                ;
+                    ;
                 set;
             }
 
@@ -103,7 +104,7 @@ namespace
             public IDictionary<string, object> PropertyBag {
                 get;
                 set
-                ;
+                    ;
             }
         }
 
@@ -133,7 +134,7 @@ namespace
             [JsonExtensionData]
             public IDictionary<string, object> PropertyBag {
                 get
-                ;
+                    ;
                 set;
             }
         }

@@ -72,8 +72,7 @@ public sealed
 
     /// <summary>What the last tick asked for.</summary>
     public
-        IReadOnlyList<SpawnOrder> Last =>
-        orders;
+        IReadOnlyList<SpawnOrder> Last => orders;
 
     /// <summary>Puts back whatever is due.</summary>
     /// <param name="now">The realm's clock, in seconds since it started.</param>

@@ -12,9 +12,9 @@ public interface IMeasurable {
 
 /// <summary>A measurable thing.</summary>
 public sealed class Measurable : IMeasurable {
-    /// <inheritdoc/>
+    /// <inheritdoc />
     public int Size { get; private set; }
 
-    /// <inheritdoc/>
+    /// <inheritdoc />
     public void Measure() => Size = 1;
 }

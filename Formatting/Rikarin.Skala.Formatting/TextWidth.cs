@@ -3,34 +3,34 @@ using System.Globalization;
 namespace Rikarin.Skala.Formatting;
 
 /// <summary>
-/// Column width, not character count.
+///     Column width, not character count.
 /// </summary>
 /// <remarks>
-/// docs/plan/04 § "The fitting algorithm": a CJK identifier or an emoji in a string literal must
-/// not silently blow the width budget, and a tab in the input is worth more than one column. Widths
-/// are computed once at <c>Text</c> construction — recomputing during fitting turns a linear pass
-/// quadratic (docs/plan/13).
+///     docs/plan/04 § "The fitting algorithm": a CJK identifier or an emoji in a string literal must
+///     not silently blow the width budget, and a tab in the input is worth more than one column. Widths
+///     are computed once at <c>Text</c> construction — recomputing during fitting turns a linear pass
+///     quadratic (docs/plan/13).
 /// </remarks>
 public static class TextWidth {
     /// <summary>The tab stop used when measuring input that still contains tabs.</summary>
     public const int TabStop = 4;
 
-    /// <summary>Columns occupied by <paramref name="value"/> starting at column 0.</summary>
+    /// <summary>Columns occupied by <paramref name="value" /> starting at column 0.</summary>
     public static int Measure(string value) => Measure(value, 0);
 
-    /// <summary>Columns occupied by <paramref name="value"/> when it starts at <paramref name="column"/>.</summary>
+    /// <summary>Columns occupied by <paramref name="value" /> when it starts at <paramref name="column" />.</summary>
     public static int Measure(string value, int column) => Advance(value, column) - column;
 
     /// <summary>
-    /// The column the cursor is at after writing <paramref name="value"/> from
-    /// <paramref name="column"/>.
+    ///     The column the cursor is at after writing <paramref name="value" /> from
+    ///     <paramref name="column" />.
     /// </summary>
     /// <remarks>
-    /// ⚠ Not the same as <see cref="Measure(string, int)"/> plus the column, for text that spans
-    /// lines: a raw string literal ends at the width of its <em>last</em> line, not at the sum.
-    /// Milestone 1 assigned the width to the writer's column and the two happened to agree because
-    /// nothing read the column back; the fitting pass reads it on every group, and the mistake
-    /// showed up as a 126-column line the formatter thought was 72.
+    ///     ⚠ Not the same as <see cref="Measure(string, int)" /> plus the column, for text that spans
+    ///     lines: a raw string literal ends at the width of its <em>last</em> line, not at the sum.
+    ///     Milestone 1 assigned the width to the writer's column and the two happened to agree because
+    ///     nothing read the column back; the fitting pass reads it on every group, and the mistake
+    ///     showed up as a 126-column line the formatter thought was 72.
     /// </remarks>
     public static int Advance(string value, int column) {
         var enumerator = StringInfo.GetTextElementEnumerator(value);

@@ -4,21 +4,21 @@ using System.Text;
 namespace Rikarin.Skala.Testing;
 
 /// <summary>
-/// SK-DIV-0005, swept: where the oracle stops taking the <c>=</c> break, over shapes and depths.
+///     SK-DIV-0005, swept: where the oracle stops taking the <c>=</c> break, over shapes and depths.
 /// </summary>
 /// <remarks>
-/// ⚠ Milestone 3 measured one shape at three depths and read a formula off three numbers. This runs
-/// the same experiment over eleven right-hand-side shapes, five block depths and both values of
-/// <c>wrap_before_eq</c>, one character at a time, and prints the threshold it finds for each cell
-/// beside what <c>120 − (8 + column / indent)</c> predicts. A constant that survives a hundred cells
-/// is a different kind of claim from one that fits three.
-/// <para>
-/// The classification is exact rather than eyeballed. Each statement is written
-/// <c>var subject = &lt;rhs&gt;;</c> with the right-hand side padded to a known length, so the
-/// oracle's answer is one of three things: one line, two lines whose second is exactly the
-/// right-hand side, or anything else — flat, the <c>=</c> break alone, or the construct inside
-/// wrapping.
-/// </para>
+///     ⚠ Milestone 3 measured one shape at three depths and read a formula off three numbers. This runs
+///     the same experiment over eleven right-hand-side shapes, five block depths and both values of
+///     <c>wrap_before_eq</c>, one character at a time, and prints the threshold it finds for each cell
+///     beside what <c>120 − (8 + column / indent)</c> predicts. A constant that survives a hundred cells
+///     is a different kind of claim from one that fits three.
+///     <para>
+///         The classification is exact rather than eyeballed. Each statement is written
+///         <c>var subject = &lt;rhs&gt;;</c> with the right-hand side padded to a known length, so the
+///         oracle's answer is one of three things: one line, two lines whose second is exactly the
+///         right-hand side, or anything else — flat, the <c>=</c> break alone, or the construct inside
+///         wrapping.
+///     </para>
 /// </remarks>
 public static class MarginSweep {
     /// <param name="Build">Produces a right-hand side of exactly <c>length</c> characters.</param>
@@ -43,11 +43,11 @@ public static class MarginSweep {
 
     /// <summary>The two line widths the sweep runs at, both over the margin.</summary>
     /// <remarks>
-    /// ⚠ Two, because the first version of this sweep grew the right-hand side and kept the left one
-    /// fixed — which pins the continuation width at the moment the line first overflows and can only
-    /// ever probe one value of it. Growing the *name* instead, to a chosen total width, sweeps the
-    /// continuation independently of the overflow; running it at two totals is what shows the answer
-    /// does not depend on how far over the line was.
+    ///     ⚠ Two, because the first version of this sweep grew the right-hand side and kept the left one
+    ///     fixed — which pins the continuation width at the moment the line first overflows and can only
+    ///     ever probe one value of it. Growing the *name* instead, to a chosen total width, sweeps the
+    ///     continuation independently of the overflow; running it at two totals is what shows the answer
+    ///     does not depend on how far over the line was.
     /// </remarks>
     static readonly int[] Totals = [121, 137];
 

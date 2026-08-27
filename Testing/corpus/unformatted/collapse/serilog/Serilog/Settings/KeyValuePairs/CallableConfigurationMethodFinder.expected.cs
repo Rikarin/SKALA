@@ -22,7 +22,7 @@ static class CallableConfigurationMethodFinder {
         Type configType
     ) {
         var methods = configurationAssemblies
-            .SelectMany([RequiresUnreferencedCode("Configuration methods are not trimming safe")](a) =>
+            .SelectMany([RequiresUnreferencedCode("Configuration methods are not trimming safe")] (a) =>
                 a.ExportedTypes.Where(t => t.IsSealed && t.IsAbstract && !t.IsNested)
             )
             .SelectMany(t => t.GetMethods(BindingFlags.Static | BindingFlags.Public))
@@ -30,14 +30,14 @@ static class CallableConfigurationMethodFinder {
                 && m.GetParameters()[0].ParameterType == configType
             )
             .ToList(); // some configuration methods are not extension methods. They are added manually
-// so they can be discovered
-// WriteTo.Sink(params ILogEventSink[]) is not an extension method
-// and we want to expose WriteTo.Sink(ILogEventSink sink) to the config system
+        // so they can be discovered
+        // WriteTo.Sink(params ILogEventSink[]) is not an extension method
+        // and we want to expose WriteTo.Sink(ILogEventSink sink) to the config system
         if (configType == typeof(LoggerSinkConfiguration))
             methods.AddRange(
                 SurrogateConfigurationMethods.WriteTo
             ); // AuditTo.Sink(params ILogEventSink[]) is not an extension method
-// and we want to expose WriteTo.Sink(ILogEventSink sink) to the config system
+        // and we want to expose WriteTo.Sink(ILogEventSink sink) to the config system
         if (configType == typeof(LoggerAuditSinkConfiguration))
             methods.AddRange(
                 SurrogateConfigurationMethods.AuditTo

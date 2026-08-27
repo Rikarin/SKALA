@@ -1,16 +1,19 @@
 class SingleLambdaArgument {
     void M() {
-        Run(
-            () => Body());
+        Run(() => Body());
 
         Run(() => {
-            FirstStatement();
-            SecondStatement();
-        });
+                FirstStatement();
+                SecondStatement();
+            }
+        );
 
-        Run(state, () => {
-            FirstStatement();
-            SecondStatement();
-        });
+        Run(
+            state,
+            () => {
+                FirstStatement();
+                SecondStatement();
+            }
+        );
     }
 }

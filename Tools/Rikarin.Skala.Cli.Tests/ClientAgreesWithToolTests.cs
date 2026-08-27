@@ -3,31 +3,31 @@ using System.Diagnostics;
 namespace Rikarin.Skala.Cli.Tests;
 
 /// <summary>
-/// The thin client and the full tool must produce the same answer, byte for byte and code for code.
+///     The thin client and the full tool must produce the same answer, byte for byte and code for code.
 /// </summary>
 /// <remarks>
-/// ⚠ This is the invariant the whole M7 split rests on, and it is the one that cannot be held by the
-/// type system: the client is a separate assembly that references neither the tool nor Roslyn, so
-/// every decision it makes is a second implementation of a decision the tool already makes.
-/// docs/plan/11's correctness rule — "every command works identically with
-/// <c>SKALA_NO_DAEMON=1</c>" — now has a second half: every command works identically through the
-/// client and through the tool.
-/// <para>
-/// ⚠ It has already caught one: the client returned <b>2</b> from <c>format --check</c> on a file
-/// that needed formatting, because <c>ExitCodes.FormattingNeeded</c> is 2. But <c>format</c> did
-/// not use <c>ExitCodes</c> — it used <c>FormatCommand.ChangesFound</c>, which was <b>1</b>, and
-/// <c>FormatCommand.Failed</c>, which was 2. A pre-commit hook reading the exit code would have
-/// passed where the tool failed and vice versa.
-/// </para>
-/// <para>
-/// ⚠ And the resolution was the opposite of the one taken at the time: the <b>client</b> was right
-/// and the tool was wrong. <c>ExitCodes</c> matched docs/plan/09 § "Exit codes" and the README all
-/// along; <c>FormatCommand</c>'s private pair was the documented table inverted. Making the client
-/// agree with the tool made both wrong, and this test went green on the wrong number — which is
-/// what an agreement test does when it is the only thing asserted. M9 moved <c>ExitCodes</c> into
-/// Core so the two cannot diverge again, and <see cref="ExitCodeContractTests"/> asserts the codes
-/// against the document rather than against each other.
-/// </para>
+///     ⚠ This is the invariant the whole M7 split rests on, and it is the one that cannot be held by the
+///     type system: the client is a separate assembly that references neither the tool nor Roslyn, so
+///     every decision it makes is a second implementation of a decision the tool already makes.
+///     docs/plan/11's correctness rule — "every command works identically with
+///     <c>SKALA_NO_DAEMON=1</c>" — now has a second half: every command works identically through the
+///     client and through the tool.
+///     <para>
+///         ⚠ It has already caught one: the client returned <b>2</b> from <c>format --check</c> on a file
+///         that needed formatting, because <c>ExitCodes.FormattingNeeded</c> is 2. But <c>format</c> did
+///         not use <c>ExitCodes</c> — it used <c>FormatCommand.ChangesFound</c>, which was <b>1</b>, and
+///         <c>FormatCommand.Failed</c>, which was 2. A pre-commit hook reading the exit code would have
+///         passed where the tool failed and vice versa.
+///     </para>
+///     <para>
+///         ⚠ And the resolution was the opposite of the one taken at the time: the <b>client</b> was right
+///         and the tool was wrong. <c>ExitCodes</c> matched docs/plan/09 § "Exit codes" and the README all
+///         along; <c>FormatCommand</c>'s private pair was the documented table inverted. Making the client
+///         agree with the tool made both wrong, and this test went green on the wrong number — which is
+///         what an agreement test does when it is the only thing asserted. M9 moved <c>ExitCodes</c> into
+///         Core so the two cannot diverge again, and <see cref="ExitCodeContractTests" /> asserts the codes
+///         against the document rather than against each other.
+///     </para>
 /// </remarks>
 public sealed class ClientAgreesWithToolTests {
     [Fact]
@@ -70,10 +70,10 @@ public sealed class ClientAgreesWithToolTests {
     }
 
     /// <summary>
-    /// ⚠ Everything the client does not serve must reach the tool unchanged. The client execs rather
-    /// than reimplements, so this is really a test that <c>Fallback.Locate</c> found the tool beside
-    /// it — the failure mode being a client that cannot find its other half and says so on every
-    /// command.
+    ///     ⚠ Everything the client does not serve must reach the tool unchanged. The client execs rather
+    ///     than reimplements, so this is really a test that <c>Fallback.Locate</c> found the tool beside
+    ///     it — the failure mode being a client that cannot find its other half and says so on every
+    ///     command.
     /// </summary>
     [Fact]
     public void ACommandTheClientDoesNotServe_IsHandedToTheToolUnchanged() {
@@ -88,9 +88,9 @@ public sealed class ClientAgreesWithToolTests {
     }
 
     /// <summary>
-    /// ⚠ With the daemon deliberately unreachable, the client must still be correct — just slower.
-    /// A client that only works when a daemon happens to be up is a client that fails on the first
-    /// invocation in every repository.
+    ///     ⚠ With the daemon deliberately unreachable, the client must still be correct — just slower.
+    ///     A client that only works when a daemon happens to be up is a client that fails on the first
+    ///     invocation in every repository.
     /// </summary>
     [Fact]
     public void WithNoDaemon_TheClientStillAgrees() {

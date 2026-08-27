@@ -1,4 +1,5 @@
 // skala-oracle: resharper=2025.2.6 config=sha256:98ff52570e019fac profile=SkalaFormatOnly generated=2026-08-27
+
 #region License
 
 // Copyright (c) 2007 James Newton-King
@@ -41,10 +42,10 @@ namespace Newtonsoft
         private const int LineSizeInBytes = 57;
 
         private readonly
-            char[] _charsLine = new char [Base64LineSize];
+            char[] _charsLine = new char[Base64LineSize];
 
         private readonly TextWriter
-            _writer;
+        _writer;
 
         private byte[]? _leftOverBytes;
         private int _leftOverBytesCount;
@@ -76,7 +77,7 @@ namespace Newtonsoft
         public void Encode(byte[] buffer, int index, int count) {
             ValidateEncode(buffer, index, count);
             if (_leftOverBytesCount > 0
-               ) {
+            ) {
                 if (FulfillFromLeftover(buffer, index, ref count)) {
                     return
                         ;

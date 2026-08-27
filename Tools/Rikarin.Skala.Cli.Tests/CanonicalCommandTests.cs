@@ -4,8 +4,8 @@ using Rikarin.Skala.Testing;
 namespace Rikarin.Skala.Cli.Tests;
 
 /// <summary>
-/// The command surface for docs/plan/03 § "Canonical distribution across repositories", driven as a
-/// process. Exit codes are the contract (ADR-010) and are what a gate reads.
+///     The command surface for docs/plan/03 § "Canonical distribution across repositories", driven as a
+///     process. Exit codes are the contract (ADR-010) and are what a gate reads.
 /// </summary>
 public sealed class CanonicalCommandTests {
     [Fact]

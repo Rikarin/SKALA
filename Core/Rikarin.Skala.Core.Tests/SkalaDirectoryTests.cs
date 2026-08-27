@@ -3,13 +3,13 @@ using Rikarin.Skala.Core;
 namespace Rikarin.Skala.Core.Tests;
 
 /// <summary>
-/// The tool must not dirty the repository it runs on.
+///     The tool must not dirty the repository it runs on.
 /// </summary>
 /// <remarks>
-/// ⚠ These exist because it did. <c>.skala/cache/</c> was found inside a reference checkout after a
-/// measurement run, and the daemon leaves a socket in every repository it is ever started in. The
-/// contract is one line — the directory carries a <c>.gitignore</c> containing <c>*</c> — and every
-/// writer goes through <see cref="SkalaDirectory"/> so that a seventh call site cannot forget it.
+///     ⚠ These exist because it did. <c>.skala/cache/</c> was found inside a reference checkout after a
+///     measurement run, and the daemon leaves a socket in every repository it is ever started in. The
+///     contract is one line — the directory carries a <c>.gitignore</c> containing <c>*</c> — and every
+///     writer goes through <see cref="SkalaDirectory" /> so that a seventh call site cannot forget it.
 /// </remarks>
 public sealed class SkalaDirectoryTests : IDisposable {
     readonly string _root = Path.Combine(
@@ -35,12 +35,12 @@ public sealed class SkalaDirectoryTests : IDisposable {
     }
 
     /// <summary>
-    /// ⚠ <b>The baseline is not scratch, and the marker used to swallow it.</b> docs/plan/09 calls
-    /// <c>.skala/baseline.sarif</c> "a reviewed, committed artefact — its diff in a PR is 'we
-    /// suppressed these'", and doc 09's own <c>ci</c> gate names that path. With a marker of bare
-    /// <c>*</c>, Skala wrote the file and then hid it: the first repository to adopt Skala had to
-    /// <c>git add -f</c> the one artefact the design requires be committed, and a baseline nobody
-    /// commits is a baseline the gate cannot read on the next machine.
+    ///     ⚠ <b>The baseline is not scratch, and the marker used to swallow it.</b> docs/plan/09 calls
+    ///     <c>.skala/baseline.sarif</c> "a reviewed, committed artefact — its diff in a PR is 'we
+    ///     suppressed these'", and doc 09's own <c>ci</c> gate names that path. With a marker of bare
+    ///     <c>*</c>, Skala wrote the file and then hid it: the first repository to adopt Skala had to
+    ///     <c>git add -f</c> the one artefact the design requires be committed, and a baseline nobody
+    ///     commits is a baseline the gate cannot read on the next machine.
     /// </summary>
     [Fact]
     public void TheBaseline_IsNotIgnored() {
@@ -59,8 +59,8 @@ public sealed class SkalaDirectoryTests : IDisposable {
     }
 
     /// <summary>
-    /// ⚠ And nothing else moved. The exception is one filename, not a hole: the cache, the report,
-    /// the history and the crash reproductions are still Skala's own and still invisible.
+    ///     ⚠ And nothing else moved. The exception is one filename, not a hole: the cache, the report,
+    ///     the history and the crash reproductions are still Skala's own and still invisible.
     /// </summary>
     [Theory]
     [InlineData("report.sarif")]
@@ -81,9 +81,9 @@ public sealed class SkalaDirectoryTests : IDisposable {
     }
 
     /// <summary>
-    /// ⚠ The marker keeps hiding itself. Un-ignoring it alongside the baseline would put
-    /// <c>?? .skala/.gitignore</c> in the <c>git status</c> of every repository Skala is ever run
-    /// in, which is the exact discourtesy this whole type exists to prevent.
+    ///     ⚠ The marker keeps hiding itself. Un-ignoring it alongside the baseline would put
+    ///     <c>?? .skala/.gitignore</c> in the <c>git status</c> of every repository Skala is ever run
+    ///     in, which is the exact discourtesy this whole type exists to prevent.
     /// </summary>
     [Fact]
     public void TheMarker_StillHidesItself() {
@@ -97,9 +97,9 @@ public sealed class SkalaDirectoryTests : IDisposable {
     }
 
     /// <summary>
-    /// A repository that adopted Skala before M9 has a marker of bare <c>*</c> on disk, and
-    /// <see cref="SkalaDirectory.Mark"/> never overwrites. Without an upgrade those repositories
-    /// keep needing <c>git add -f</c> for ever.
+    ///     A repository that adopted Skala before M9 has a marker of bare <c>*</c> on disk, and
+    ///     <see cref="SkalaDirectory.Mark" /> never overwrites. Without an upgrade those repositories
+    ///     keep needing <c>git add -f</c> for ever.
     /// </summary>
     [Fact]
     public void Mark_UpgradesTheLegacyMarkerInPlace() {
@@ -122,9 +122,9 @@ public sealed class SkalaDirectoryTests : IDisposable {
     }
 
     /// <summary>
-    /// ⚠ The cache, the clone index, the SARIF report and the daemon socket all hold a full file
-    /// path rather than the repository root. That shape has to mark the directory too, or four of
-    /// the six writers silently do not.
+    ///     ⚠ The cache, the clone index, the SARIF report and the daemon socket all hold a full file
+    ///     path rather than the repository root. That shape has to mark the directory too, or four of
+    ///     the six writers silently do not.
     /// </summary>
     [Fact]
     public void EnsureForFile_MarksTheNearestSkalaAbove() {
@@ -137,8 +137,8 @@ public sealed class SkalaDirectoryTests : IDisposable {
     }
 
     /// <summary>
-    /// ⚠ A report the user redirected with <c>--output</c> is theirs. Dropping a `.gitignore` beside
-    /// it would be the same discourtesy this type exists to prevent.
+    ///     ⚠ A report the user redirected with <c>--output</c> is theirs. Dropping a `.gitignore` beside
+    ///     it would be the same discourtesy this type exists to prevent.
     /// </summary>
     [Fact]
     public void EnsureForFile_OutsideSkala_WritesNoMarker() {
@@ -170,8 +170,8 @@ public sealed class SkalaDirectoryTests : IDisposable {
     }
 
     /// <summary>
-    /// The property the marker exists for, asserted against real git rather than against the file's
-    /// contents: a repository that has had Skala run in it reports nothing in <c>git status</c>.
+    ///     The property the marker exists for, asserted against real git rather than against the file's
+    ///     contents: a repository that has had Skala run in it reports nothing in <c>git status</c>.
     /// </summary>
     [Fact]
     public void ASkalaDirectory_IsInvisibleToGitStatus() {

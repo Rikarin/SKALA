@@ -14,10 +14,11 @@
 
 namespace Serilog.Settings.KeyValuePairs;
 
-[RequiresUnreferencedCode("Scans assemblies at runtime")] // RequiresUnreferencedCode couldn't be applied to types in .NET 5.
+[RequiresUnreferencedCode(
+    "Scans assemblies at runtime"
+)] // RequiresUnreferencedCode couldn't be applied to types in .NET 5.
 [RequiresDynamicCode("Creates arrays of unknown element type")]
-class KeyValuePairSettings : ILoggerSettings
-{
+class KeyValuePairSettings : ILoggerSettings {
     const string UsingDirective = "using";
     const string LevelSwitchDirective = "level-switch";
     const string AuditToDirective = "audit-to";
@@ -33,12 +34,13 @@ class KeyValuePairSettings : ILoggerSettings
     const string EnrichWithPropertyDirectivePrefix = "enrich:with-property:";
     const string MinimumLevelOverrideDirectivePrefix = "minimum-level:override:";
 
-    const string CallableDirectiveRegex = @"^(?<directive>audit-to|write-to|enrich|filter|destructure):(?<method>[A-Za-z0-9]*)(\.(?<argument>[A-Za-z0-9]*)){0,1}$";
+    const string CallableDirectiveRegex =
+        @"^(?<directive>audit-to|write-to|enrich|filter|destructure):(?<method>[A-Za-z0-9]*)(\.(?<argument>[A-Za-z0-9]*)){0,1}$";
+
     const string LevelSwitchDeclarationDirectiveRegex = @"^level-switch:(?<switchName>.*)$";
     const string LevelSwitchNameRegex = @"^\$[A-Za-z]+[A-Za-z0-9]*$";
 
-    static readonly string[] _supportedDirectives =
-    [
+    static readonly string[] _supportedDirectives = [
         UsingDirective,
         LevelSwitchDirective,
         AuditToDirective,
@@ -51,8 +53,7 @@ class KeyValuePairSettings : ILoggerSettings
         DestructureDirective
     ];
 
-    static readonly Dictionary<string, Type> CallableDirectiveReceiverTypes = new()
-    {
+    static readonly Dictionary<string, Type> CallableDirectiveReceiverTypes = new() {
         ["audit-to"] = typeof(LoggerAuditSinkConfiguration),
         ["write-to"] = typeof(LoggerSinkConfiguration),
         ["enrich"] = typeof(LoggerEnrichmentConfiguration),
@@ -60,8 +61,7 @@ class KeyValuePairSettings : ILoggerSettings
         ["destructure"] = typeof(LoggerDestructuringConfiguration),
     };
 
-    static readonly Dictionary<Type, Func<LoggerConfiguration, object>> CallableDirectiveReceivers = new()
-    {
+    static readonly Dictionary<Type, Func<LoggerConfiguration, object>> CallableDirectiveReceivers = new() {
         [typeof(LoggerAuditSinkConfiguration)] = lc => lc.AuditTo,
         [typeof(LoggerSinkConfiguration)] = lc => lc.WriteTo,
         [typeof(LoggerEnrichmentConfiguration)] = lc => lc.Enrich,
@@ -75,13 +75,11 @@ class KeyValuePairSettings : ILoggerSettings
     // in .NET 5. In .NET 6+, RUC can be applied to types (as it is above) and it will warn on the
     // constructor and hide warnings in members.
     [RequiresUnreferencedCode("Finds accessors by name")]
-    public KeyValuePairSettings(IReadOnlyDictionary<string, string> settings)
-    {
+    public KeyValuePairSettings(IReadOnlyDictionary<string, string> settings) {
         _settings = Guard.AgainstNull(settings);
     }
 
-    public void Configure(LoggerConfiguration loggerConfiguration)
-    {
+    public void Configure(LoggerConfiguration loggerConfiguration) {
         Guard.AgainstNull(loggerConfiguration);
 
         var directives = _settings
@@ -90,36 +88,38 @@ class KeyValuePairSettings : ILoggerSettings
 
         var declaredLevelSwitches = ParseNamedLevelSwitchDeclarationDirectives(directives);
 
-        if (directives.TryGetValue(MinimumLevelDirective, out var minimumLevelDirective) &&
-            Enum.TryParse(minimumLevelDirective, out LogEventLevel minimumLevel))
-        {
+        if (directives.TryGetValue(MinimumLevelDirective, out var minimumLevelDirective)
+            && Enum.TryParse(minimumLevelDirective, out LogEventLevel minimumLevel)) {
             loggerConfiguration.MinimumLevel.Is(minimumLevel);
         }
 
         foreach (var enrichPropertyDirective in directives.Where(dir =>
-                     dir.Key.StartsWith(EnrichWithPropertyDirectivePrefix) && dir.Key.Length > EnrichWithPropertyDirectivePrefix.Length))
-        {
+                     dir.Key.StartsWith(EnrichWithPropertyDirectivePrefix)
+                     && dir.Key.Length > EnrichWithPropertyDirectivePrefix.Length
+                 )) {
             var name = enrichPropertyDirective.Key.Substring(EnrichWithPropertyDirectivePrefix.Length);
             loggerConfiguration.Enrich.WithProperty(name, enrichPropertyDirective.Value);
         }
 
-        if (directives.TryGetValue(MinimumLevelControlledByDirective, out var minimumLevelControlledByLevelSwitchName))
-        {
-            var globalMinimumLevelSwitch = LookUpSwitchByName(minimumLevelControlledByLevelSwitchName, declaredLevelSwitches);
+        if (directives.TryGetValue(
+                MinimumLevelControlledByDirective,
+                out var minimumLevelControlledByLevelSwitchName
+            )) {
+            var globalMinimumLevelSwitch =
+                LookUpSwitchByName(minimumLevelControlledByLevelSwitchName, declaredLevelSwitches);
             loggerConfiguration.MinimumLevel.ControlledBy(globalMinimumLevelSwitch);
         }
 
         foreach (var minimumLevelOverrideDirective in directives.Where(dir =>
-                     dir.Key.StartsWith(MinimumLevelOverrideDirectivePrefix) && dir.Key.Length > MinimumLevelOverrideDirectivePrefix.Length))
-        {
-            var namespacePrefix = minimumLevelOverrideDirective.Key.Substring(MinimumLevelOverrideDirectivePrefix.Length);
+                     dir.Key.StartsWith(MinimumLevelOverrideDirectivePrefix)
+                     && dir.Key.Length > MinimumLevelOverrideDirectivePrefix.Length
+                 )) {
+            var namespacePrefix =
+                minimumLevelOverrideDirective.Key.Substring(MinimumLevelOverrideDirectivePrefix.Length);
 
-            if (Enum.TryParse(minimumLevelOverrideDirective.Value, out LogEventLevel overriddenLevel))
-            {
+            if (Enum.TryParse(minimumLevelOverrideDirective.Value, out LogEventLevel overriddenLevel)) {
                 loggerConfiguration.MinimumLevel.Override(namespacePrefix, overriddenLevel);
-            }
-            else
-            {
+            } else {
                 var overrideSwitch = LookUpSwitchByName(minimumLevelOverrideDirective.Value, declaredLevelSwitches);
                 loggerConfiguration.MinimumLevel.Override(namespacePrefix, overrideSwitch);
             }
@@ -128,124 +128,137 @@ class KeyValuePairSettings : ILoggerSettings
         var matchCallables = new Regex(CallableDirectiveRegex);
 
         var callableDirectives = (from wt in directives
-                                  where matchCallables.IsMatch(wt.Key)
-                                  let match = matchCallables.Match(wt.Key)
-                                  select new
-                                  {
-                                      ReceiverType = CallableDirectiveReceiverTypes[match.Groups["directive"].Value],
-                                      Call = new ConfigurationMethodCall(
-                                          match.Groups["method"].Value,
-                                          match.Groups["argument"].Value,
-                                          wt.Value)
-                                  }).ToList();
+            where matchCallables.IsMatch(wt.Key)
+            let match = matchCallables.Match(wt.Key)
+            select new {
+                ReceiverType = CallableDirectiveReceiverTypes[match.Groups["directive"].Value],
+                Call = new ConfigurationMethodCall(
+                    match.Groups["method"].Value,
+                    match.Groups["argument"].Value,
+                    wt.Value
+                )
+            }).ToList();
 
         if (!callableDirectives.Any()) return;
 
         var configurationAssemblies = LoadConfigurationAssemblies(directives).ToList();
 
-        foreach (var receiverGroup in callableDirectives.GroupBy(d => d.ReceiverType))
-        {
-            var methods = CallableConfigurationMethodFinder.FindConfigurationMethods(configurationAssemblies, receiverGroup.Key);
+        foreach (var receiverGroup in callableDirectives.GroupBy(d => d.ReceiverType)) {
+            var methods = CallableConfigurationMethodFinder.FindConfigurationMethods(
+                configurationAssemblies,
+                receiverGroup.Key
+            );
 
             var calls = receiverGroup
                 .Select(d => d.Call)
                 .GroupBy(call => call.MethodName)
                 .ToList();
 
-            ApplyDirectives(calls, methods, CallableDirectiveReceivers[receiverGroup.Key](loggerConfiguration), declaredLevelSwitches);
+            ApplyDirectives(
+                calls,
+                methods,
+                CallableDirectiveReceivers[receiverGroup.Key](loggerConfiguration),
+                declaredLevelSwitches
+            );
         }
     }
 
-    internal static bool IsValidSwitchName(string input)
-    {
+    internal static bool IsValidSwitchName(string input) {
         return Regex.IsMatch(input, LevelSwitchNameRegex);
     }
 
     [RequiresUnreferencedCode("Reflects against accessors using dynamic string")]
-    static IReadOnlyDictionary<string, LoggingLevelSwitch> ParseNamedLevelSwitchDeclarationDirectives(IReadOnlyDictionary<string, string> directives)
-    {
+    static IReadOnlyDictionary<string, LoggingLevelSwitch> ParseNamedLevelSwitchDeclarationDirectives(
+        IReadOnlyDictionary<string, string> directives
+    ) {
         var matchLevelSwitchDeclarations = new Regex(LevelSwitchDeclarationDirectiveRegex);
 
         var switchDeclarationDirectives = (from wt in directives
-                                           where matchLevelSwitchDeclarations.IsMatch(wt.Key)
-                                           let match = matchLevelSwitchDeclarations.Match(wt.Key)
-                                           select new
-                                           {
-                                               SwitchName = match.Groups["switchName"].Value,
-                                               InitialSwitchLevel = wt.Value
-                                           }).ToList();
+            where matchLevelSwitchDeclarations.IsMatch(wt.Key)
+            let match = matchLevelSwitchDeclarations.Match(wt.Key)
+            select new { SwitchName = match.Groups["switchName"].Value, InitialSwitchLevel = wt.Value }).ToList();
 
         var namedSwitches = new Dictionary<string, LoggingLevelSwitch>();
-        foreach (var switchDeclarationDirective in switchDeclarationDirectives)
-        {
+        foreach (var switchDeclarationDirective in switchDeclarationDirectives) {
             var switchName = switchDeclarationDirective.SwitchName;
             var switchInitialLevel = switchDeclarationDirective.InitialSwitchLevel;
             // switchName must be something like $switch to avoid ambiguities
-            if (!IsValidSwitchName(switchName))
-            {
-                throw new FormatException($"\"{switchName}\" is not a valid name for a Level Switch declaration. Level switch must be declared with a '$' sign, like \"level-switch:$switchName\"");
+            if (!IsValidSwitchName(switchName)) {
+                throw new FormatException(
+                    $"\"{switchName}\" is not a valid name for a Level Switch declaration. Level switch must be declared with a '$' sign, like \"level-switch:$switchName\""
+                );
             }
+
             LoggingLevelSwitch newSwitch;
-            if (switchInitialLevel == string.Empty)
-            {
+            if (switchInitialLevel == string.Empty) {
                 newSwitch = new();
-            }
-            else
-            {
+            } else {
                 var initialLevel = (LogEventLevel)Enum.Parse(typeof(LogEventLevel), switchInitialLevel);
                 newSwitch = new(initialLevel);
             }
 
             namedSwitches.Add(switchName, newSwitch);
         }
+
         return namedSwitches;
     }
 
-    static LoggingLevelSwitch LookUpSwitchByName(string switchName, IReadOnlyDictionary<string, LoggingLevelSwitch> declaredLevelSwitches)
-    {
-        if (declaredLevelSwitches.TryGetValue(switchName, out var levelSwitch))
-        {
+    static LoggingLevelSwitch LookUpSwitchByName(
+        string switchName,
+        IReadOnlyDictionary<string, LoggingLevelSwitch> declaredLevelSwitches
+    ) {
+        if (declaredLevelSwitches.TryGetValue(switchName, out var levelSwitch)) {
             return levelSwitch;
         }
 
-        throw new InvalidOperationException($"No LoggingLevelSwitch has been declared with name \"{switchName}\". You might be missing a key \"{LevelSwitchDirective}:{switchName}\"");
+        throw new InvalidOperationException(
+            $"No LoggingLevelSwitch has been declared with name \"{switchName}\". You might be missing a key \"{LevelSwitchDirective}:{switchName}\""
+        );
     }
 
     [RequiresUnreferencedCode("Finds accessors by name")]
     [RequiresDynamicCode("Creates arrays of unknown element type")]
-    static object ConvertOrLookupByName(string valueOrSwitchName, Type type, IReadOnlyDictionary<string, LoggingLevelSwitch> declaredSwitches)
-    {
-        if (type == typeof(LoggingLevelSwitch))
-        {
+    static object ConvertOrLookupByName(
+        string valueOrSwitchName,
+        Type type,
+        IReadOnlyDictionary<string, LoggingLevelSwitch> declaredSwitches
+    ) {
+        if (type == typeof(LoggingLevelSwitch)) {
             return LookUpSwitchByName(valueOrSwitchName, declaredSwitches);
         }
+
         return SettingValueConversions.ConvertToType(valueOrSwitchName, type)!;
     }
 
     [RequiresUnreferencedCode("Finds accessors by name")]
     [RequiresDynamicCode("Creates arrays of unknown element type")]
-    static void ApplyDirectives(List<IGrouping<string, ConfigurationMethodCall>> directives, IList<MethodInfo> configurationMethods, object loggerConfigMethod, IReadOnlyDictionary<string, LoggingLevelSwitch> declaredSwitches)
-    {
-        foreach (var directiveInfo in directives)
-        {
+    static void ApplyDirectives(
+        List<IGrouping<string, ConfigurationMethodCall>> directives,
+        IList<MethodInfo> configurationMethods,
+        object loggerConfigMethod,
+        IReadOnlyDictionary<string, LoggingLevelSwitch> declaredSwitches
+    ) {
+        foreach (var directiveInfo in directives) {
             var target = SelectConfigurationMethod(configurationMethods, directiveInfo.Key, directiveInfo);
 
-            if (target == null)
-            {
-                SelfLog.WriteLine("Setting \"{0}\" could not be matched to an implementation in any of the loaded assemblies. " +
-                                  "To use settings from additional assemblies, specify them with the \"serilog:using\" key.", directiveInfo.Key);
-            }
-            else
-            {
+            if (target == null) {
+                SelfLog.WriteLine(
+                    "Setting \"{0}\" could not be matched to an implementation in any of the loaded assemblies. "
+                    + "To use settings from additional assemblies, specify them with the \"serilog:using\" key.",
+                    directiveInfo.Key
+                );
+            } else {
                 var call = (from p in target.GetParameters().Skip(1)
-                            let directive = directiveInfo.FirstOrDefault(s => s.ArgumentName == p.Name)
-                            select SuppressConvertCall(directive, p)).ToList();
+                    let directive = directiveInfo.FirstOrDefault(s => s.ArgumentName == p.Name)
+                    select SuppressConvertCall(directive, p)).ToList();
 
                 // Work around inability to annotate lambdas in query expressions. The parent *must* have RUC for safety.
                 [UnconditionalSuppressMessage("Trimming", "IL2026")]
                 [UnconditionalSuppressMessage("AOT", "IL3050")]
-                object? SuppressConvertCall(ConfigurationMethodCall? directive, ParameterInfo p)
-                    => directive == null ? p.DefaultValue : ConvertOrLookupByName(directive.Value, p.ParameterType, declaredSwitches);
+                object? SuppressConvertCall(ConfigurationMethodCall? directive, ParameterInfo p) =>
+                    directive == null
+                        ? p.DefaultValue
+                        : ConvertOrLookupByName(directive.Value, p.ParameterType, declaredSwitches);
 
                 call.Insert(0, loggerConfigMethod);
 
@@ -254,26 +267,33 @@ class KeyValuePairSettings : ILoggerSettings
         }
     }
 
-    internal static MethodInfo? SelectConfigurationMethod(IEnumerable<MethodInfo> candidateMethods, string name, IEnumerable<ConfigurationMethodCall> suppliedArgumentValues)
-    {
+    internal static MethodInfo? SelectConfigurationMethod(
+        IEnumerable<MethodInfo> candidateMethods,
+        string name,
+        IEnumerable<ConfigurationMethodCall> suppliedArgumentValues
+    ) {
         return candidateMethods
-            .Where(m => m.Name == name &&
-                        m.GetParameters().Skip(1)
-                            .All(p => p.HasDefaultValue ||
-                                      suppliedArgumentValues.Any(s => s.ArgumentName == p.Name)))
-            .OrderByDescending(m => m.GetParameters().Count(p => suppliedArgumentValues.Any(s => s.ArgumentName == p.Name)))
+            .Where(m => m.Name == name
+                && m.GetParameters()
+                    .Skip(1)
+                    .All(p => p.HasDefaultValue || suppliedArgumentValues.Any(s => s.ArgumentName == p.Name))
+            )
+            .OrderByDescending(m => m.GetParameters()
+                    .Count(p => suppliedArgumentValues.Any(s => s.ArgumentName == p.Name))
+            )
             .FirstOrDefault();
     }
 
-    internal static IEnumerable<Assembly> LoadConfigurationAssemblies(IReadOnlyDictionary<string, string> directives)
-    {
+    internal static IEnumerable<Assembly> LoadConfigurationAssemblies(IReadOnlyDictionary<string, string> directives) {
         var configurationAssemblies = new List<Assembly> { typeof(ILogger).Assembly };
 
-        foreach (var usingDirective in directives.Where(d => d.Key.Equals(UsingDirective) ||
-                                                             d.Key.StartsWith(UsingDirectiveFullFormPrefix)))
-        {
+        foreach (var usingDirective in directives.Where(d => d.Key.Equals(UsingDirective)
+                     || d.Key.StartsWith(UsingDirectiveFullFormPrefix)
+                 )) {
             if (string.IsNullOrWhiteSpace(usingDirective.Value))
-                throw new InvalidOperationException("A zero-length or whitespace assembly name was supplied to a serilog:using configuration statement.");
+                throw new InvalidOperationException(
+                    "A zero-length or whitespace assembly name was supplied to a serilog:using configuration statement."
+                );
 
             var assemblyName = new AssemblyName(usingDirective.Value);
             configurationAssemblies.Add(Assembly.Load(assemblyName));
@@ -282,10 +302,8 @@ class KeyValuePairSettings : ILoggerSettings
         return configurationAssemblies.Distinct();
     }
 
-    internal class ConfigurationMethodCall
-    {
-        public ConfigurationMethodCall(string methodName, string argumentName, string value)
-        {
+    internal class ConfigurationMethodCall {
+        public ConfigurationMethodCall(string methodName, string argumentName, string value) {
             MethodName = methodName;
             ArgumentName = argumentName;
             Value = value;

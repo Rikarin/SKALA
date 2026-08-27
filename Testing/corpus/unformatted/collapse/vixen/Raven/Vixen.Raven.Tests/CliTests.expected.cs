@@ -79,7 +79,7 @@ public class CliTests : IDisposable {
     [Fact]
     public void A_named_file_cannot_hold_more_than_one_stage() {
         // Two stages need two files, and guessing a second name would be worse
-// than saying so.
+        // than saying so.
         Assert.Equal(2, Invoke("compile", Fixture("lambert.rvn"), At("everything.glsl")));
         Assert.Contains("names a single file", error.ToString());
         Assert.False(File.Exists(At("everything.glsl")));
@@ -135,8 +135,8 @@ public class CliTests : IDisposable {
     [Fact]
     public void An_informational_diagnostic_is_reported_once_and_does_not_fail_the_run() {
         // The shader gives a binding a default; a descriptor-backed variable cannot carry
-// one, so it stays host-side data and SPIR-V says so — once, however many stages
-// come out of the shader.
+        // one, so it stays host-side data and SPIR-V says so — once, however many stages
+        // come out of the shader.
         Assert.Equal(0, Invoke("compile", "-t", "spirv", Fixture("lambert.rvn"), At("")));
         var reported = error.ToString();
         Assert.Contains("info RVN4003", reported);
@@ -175,7 +175,7 @@ public class CliTests : IDisposable {
     [Fact]
     public void A_bad_command_line_is_a_usage_error() {
         // No arguments, a missing output, and a target that does not exist —
-// each is caught by the parser, so `raven` never starts compiling.
+        // each is caught by the parser, so `raven` never starts compiling.
         Assert.NotEmpty(Parse("compile").Errors);
         Assert.NotEmpty(Parse("compile", Fixture("lambert.rvn")).Errors);
         Assert.NotEmpty(Parse("compile", "-t", "metal", Fixture("lambert.rvn"), At("")).Errors);

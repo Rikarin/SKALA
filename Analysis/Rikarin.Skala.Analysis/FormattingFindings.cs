@@ -7,19 +7,20 @@ using Rikarin.Skala.Rules.Metadata;
 namespace Rikarin.Skala.Analysis;
 
 /// <summary>
-/// The <c>SK0xxx</c> half of the report: what the formatter would change, as findings with fixes.
+///     The <c>SK0xxx</c> half of the report: what the formatter would change, as findings with fixes.
 /// </summary>
 /// <remarks>
-/// ⚠ Not an analyzer. <c>SK0001</c> cannot be a <see cref="Microsoft.CodeAnalysis.Diagnostics.DiagnosticAnalyzer"/>
-/// because its answer is "run the whole formatter over this file and see", which is a document
-/// build and a fitting pass rather than a syntax-node visit — and because its fix is the formatter's
-/// own <c>TextChange</c> list, which is already exactly what a SARIF <c>artifactChange</c> is.
-/// <para>
-/// ⚠ It carries the real edits rather than a message telling the reader to run the formatter. That
-/// is what lets an agent apply the whole report — formatting and modernization together — in one
-/// pass, and it is why formatting is in the report at all instead of being a separate command with
-/// a separate exit code.
-/// </para>
+///     ⚠ Not an analyzer. <c>SK0001</c> cannot be a
+///     <see cref="Microsoft.CodeAnalysis.Diagnostics.DiagnosticAnalyzer" />
+///     because its answer is "run the whole formatter over this file and see", which is a document
+///     build and a fitting pass rather than a syntax-node visit — and because its fix is the formatter's
+///     own <c>TextChange</c> list, which is already exactly what a SARIF <c>artifactChange</c> is.
+///     <para>
+///         ⚠ It carries the real edits rather than a message telling the reader to run the formatter. That
+///         is what lets an agent apply the whole report — formatting and modernization together — in one
+///         pass, and it is why formatting is in the report at all instead of being a separate command with
+///         a separate exit code.
+///     </para>
 /// </remarks>
 public static class FormattingFindings {
     public static ImmutableArray<Finding> Collect(

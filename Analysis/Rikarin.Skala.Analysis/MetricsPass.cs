@@ -8,29 +8,29 @@ using Rikarin.Skala.Rules.Maintainability;
 namespace Rikarin.Skala.Analysis;
 
 /// <summary>
-/// The aggregate half of docs/plan/07 § "Metrics": the numbers a gate reads and a trend plots.
+///     The aggregate half of docs/plan/07 § "Metrics": the numbers a gate reads and a trend plots.
 /// </summary>
 /// <remarks>
-/// ⚠ <b>The same <see cref="MemberMetrics"/> the analyzer uses, deliberately.</b> A finding says
-/// "this member is over the threshold" and an aggregate says "the codebase's p95 is 9"; those are
-/// two surfaces over one measurement, and a second implementation of the measurement is a way for
-/// the gate and the findings to disagree about the same method.
-/// <para>
-/// ⚠ It is nonetheless a <em>second walk</em> of the syntax trees, and that is a real cost the
-/// design could not avoid: a <c>DiagnosticAnalyzer</c> can report diagnostics and cannot publish
-/// anything else out of Roslyn's driver, so an aggregate computed inside the analyzer has no way
-/// out. The alternatives were worse — emitting a hidden diagnostic per member turns 1.35 M lines
-/// into a diagnostic per member, and computing the aggregate outside the analyzer from a *different*
-/// walker reintroduces exactly the disagreement above. The walk is syntax-only and shares the trees
-/// the loader already parsed, so it costs no re-parse; measured on Vixen it is the smaller half of
-/// the run.
-/// </para>
-/// <para>
-/// ⚠ Generated files are counted here even though the rules ignore them — doc 07 § binlog: "SK7xxx
-/// metrics count them separately, because a generator that emits 200 000 lines of pathological code
-/// is a fact worth having". They are kept out of the reported percentiles and carried in their own
-/// counters.
-/// </para>
+///     ⚠ <b>The same <see cref="MemberMetrics" /> the analyzer uses, deliberately.</b> A finding says
+///     "this member is over the threshold" and an aggregate says "the codebase's p95 is 9"; those are
+///     two surfaces over one measurement, and a second implementation of the measurement is a way for
+///     the gate and the findings to disagree about the same method.
+///     <para>
+///         ⚠ It is nonetheless a <em>second walk</em> of the syntax trees, and that is a real cost the
+///         design could not avoid: a <c>DiagnosticAnalyzer</c> can report diagnostics and cannot publish
+///         anything else out of Roslyn's driver, so an aggregate computed inside the analyzer has no way
+///         out. The alternatives were worse — emitting a hidden diagnostic per member turns 1.35 M lines
+///         into a diagnostic per member, and computing the aggregate outside the analyzer from a *different*
+///         walker reintroduces exactly the disagreement above. The walk is syntax-only and shares the trees
+///         the loader already parsed, so it costs no re-parse; measured on Vixen it is the smaller half of
+///         the run.
+///     </para>
+///     <para>
+///         ⚠ Generated files are counted here even though the rules ignore them — doc 07 § binlog: "SK7xxx
+///         metrics count them separately, because a generator that emits 200 000 lines of pathological code
+///         is a fact worth having". They are kept out of the reported percentiles and carried in their own
+///         counters.
+///     </para>
 /// </remarks>
 public static class MetricsPass {
     public static MetricsSummary Run(LoadedProject loaded, CancellationToken cancellation) {

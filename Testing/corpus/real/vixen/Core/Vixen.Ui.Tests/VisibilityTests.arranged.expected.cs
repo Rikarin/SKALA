@@ -9,8 +9,11 @@ namespace Vixen.Ui.Tests;
 /// </summary>
 /// <remarks>
 ///     <para>
-///         ⚠ <b>The <c>shown</c> branch in <see cref="DrawListBuilder" /> had no test at all, and
-///         that is the reason this file exists rather than the keyword being a one-line change.</b>
+///         ⚠
+///         <b>
+///             The <c>shown</c> branch in <see cref="DrawListBuilder" /> had no test at all, and
+///             that is the reason this file exists rather than the keyword being a one-line change.
+///         </b>
 ///         The property was read; nothing anywhere asserted that reading it did anything, so the
 ///         difference between "honoured" and "parsed and dropped" was invisible to the suite. Two of
 ///         the four behaviours below turned out to be missing when they were finally written down.

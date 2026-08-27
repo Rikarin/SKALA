@@ -4,51 +4,51 @@ using System.Text;
 namespace Rikarin.Skala.Testing;
 
 /// <summary>
-/// <c>Testing/corpus/unformatted/</c> — the third corpus, and the second differential.
+///     <c>Testing/corpus/unformatted/</c> — the third corpus, and the second differential.
 /// </summary>
 /// <remarks>
-/// ⚠ The reason it exists is a number. Comparing each <c>corpus/real/</c> <b>input</b> directly
-/// against its <c>.expected.cs</c> — scoring a formatter that returns its input unchanged — gives
-/// 90.95 % of lines and 26.84 % of files. The 99.63 % headline therefore sits on a 91 % floor: 91 %
-/// of corpus lines never needed changing, so the whole discriminating power of that differential
-/// lives in the other 9 %, and the test mostly asks <em>"does Skala leave good code alone"</em>
-/// rather than <em>"does Skala make the same decisions ReSharper makes"</em>. The second question is
-/// the one that decides whether ReSharper can be retired.
-/// <para>
-/// ⚠ The degraded inputs are <b>committed</b>, like every other oracle input, and so are the
-/// fixtures beside them (ADR-011). A degraded input regenerated on the fly is an input nobody
-/// reviewed, and a fixture regenerated beside it is a tautology.
-/// </para>
+///     ⚠ The reason it exists is a number. Comparing each <c>corpus/real/</c> <b>input</b> directly
+///     against its <c>.expected.cs</c> — scoring a formatter that returns its input unchanged — gives
+///     90.95 % of lines and 26.84 % of files. The 99.63 % headline therefore sits on a 91 % floor: 91 %
+///     of corpus lines never needed changing, so the whole discriminating power of that differential
+///     lives in the other 9 %, and the test mostly asks <em>"does Skala leave good code alone"</em>
+///     rather than <em>"does Skala make the same decisions ReSharper makes"</em>. The second question is
+///     the one that decides whether ReSharper can be retired.
+///     <para>
+///         ⚠ The degraded inputs are <b>committed</b>, like every other oracle input, and so are the
+///         fixtures beside them (ADR-011). A degraded input regenerated on the fly is an input nobody
+///         reviewed, and a fixture regenerated beside it is a tautology.
+///     </para>
 /// </remarks>
 public static class UnformatCorpus {
     public const string Set = "unformatted";
 
     /// <summary>
-    /// The seed the sample is drawn with, mixed into every path's hash.
+    ///     The seed the sample is drawn with, mixed into every path's hash.
     /// </summary>
     /// <remarks>
-    /// ⚠ Its own seed rather than <see cref="CorpusSample.Seed"/>, so that redrawing this sample and
-    /// redrawing <c>corpus/real/vixen/</c> are independent actions. Sharing one seed would make a
-    /// Vixen redraw silently reshuffle this corpus too.
+    ///     ⚠ Its own seed rather than <see cref="CorpusSample.Seed" />, so that redrawing this sample and
+    ///     redrawing <c>corpus/real/vixen/</c> are independent actions. Sharing one seed would make a
+    ///     Vixen redraw silently reshuffle this corpus too.
     /// </remarks>
     public const string Seed = "skala-unformat-20260827";
 
     /// <summary>
-    /// How many of <c>corpus/real/</c>'s 380 files each mode is degraded from.
+    ///     How many of <c>corpus/real/</c>'s 380 files each mode is degraded from.
     /// </summary>
     /// <remarks>
-    /// ⚠ All of them, and the arithmetic behind that is in
-    /// docs/plan/12 § "The unformat differential". Oracle runs dominate — <c>jb cleanupcode</c>'s
-    /// startup is tens of seconds and its per-file marginal cost is milliseconds — so the only
-    /// variable worth tuning is the batch, and at a batch of 60 the measured cost is 0.37 s/file
-    /// amortised: 14 invocations and 4 min 38 s for all 760 files across both modes. That is cheap
-    /// enough that there is no sample to argue about.
-    /// <para>
-    /// ⚠ <see cref="Sources"/> still draws by <c>SHA-256(seed + "\n" + path)</c> rather than by
-    /// enumeration order, so a smaller <c>--count=N</c> is reproducible if the corpus grows or the
-    /// modes multiply. A sample that cannot be redrawn is not a sample, it is whatever somebody
-    /// copied — which is the mistake milestone 3.1 found in <c>corpus/real/vixen/</c>.
-    /// </para>
+    ///     ⚠ All of them, and the arithmetic behind that is in
+    ///     docs/plan/12 § "The unformat differential". Oracle runs dominate — <c>jb cleanupcode</c>'s
+    ///     startup is tens of seconds and its per-file marginal cost is milliseconds — so the only
+    ///     variable worth tuning is the batch, and at a batch of 60 the measured cost is 0.37 s/file
+    ///     amortised: 14 invocations and 4 min 38 s for all 760 files across both modes. That is cheap
+    ///     enough that there is no sample to argue about.
+    ///     <para>
+    ///         ⚠ <see cref="Sources" /> still draws by <c>SHA-256(seed + "\n" + path)</c> rather than by
+    ///         enumeration order, so a smaller <c>--count=N</c> is reproducible if the corpus grows or the
+    ///         modes multiply. A sample that cannot be redrawn is not a sample, it is whatever somebody
+    ///         copied — which is the mistake milestone 3.1 found in <c>corpus/real/vixen/</c>.
+    ///     </para>
     /// </remarks>
     public const int SampleSize = 380;
 
@@ -58,10 +58,10 @@ public static class UnformatCorpus {
 
     /// <summary>The <c>corpus/real/</c> files the sample draws from, in hash order.</summary>
     /// <remarks>
-    /// ⚠ Ordered by <c>SHA-256(seed + "\n" + path)</c> for <see cref="CorpusSample"/>'s reason: a
-    /// hash of the path depends on nothing but the path, so the same commit gives the same files on
-    /// any machine, in any order, forever — while a seeded sequence depends on the order the file
-    /// system happened to enumerate in.
+    ///     ⚠ Ordered by <c>SHA-256(seed + "\n" + path)</c> for <see cref="CorpusSample" />'s reason: a
+    ///     hash of the path depends on nothing but the path, so the same commit gives the same files on
+    ///     any machine, in any order, forever — while a seeded sequence depends on the order the file
+    ///     system happened to enumerate in.
     /// </remarks>
     public static IReadOnlyList<CorpusFile> Sources(int count) => [
         .. Corpus.Files(Corpus.Real)
@@ -91,19 +91,19 @@ public static class UnformatCorpus {
     }
 
     /// <summary>
-    /// Degrades the sample and writes it, replacing whatever was there.
+    ///     Degrades the sample and writes it, replacing whatever was there.
     /// </summary>
     /// <remarks>
-    /// ⚠ A deliberate developer action whose diff is reviewed in its own commit, exactly like
-    /// <c>sample</c> and <c>oracle</c>. It replaces a corpus, and a corpus that changes without a
-    /// commit is not a measurement.
-    /// <para>
-    /// ⚠ <b>It deletes the fixtures with the inputs, and that is deliberate.</b> A degraded input
-    /// and the oracle's answer for it are one artefact; a new input beside the previous input's
-    /// fixture is a comparison of two unrelated files, which is the one failure the whole design is
-    /// arranged to prevent. Follow it with <c>unformat oracle</c>, or use
-    /// <c>unformat regenerate</c>, which is the pair. <c>UnformatTests</c> fails loudly in between.
-    /// </para>
+    ///     ⚠ A deliberate developer action whose diff is reviewed in its own commit, exactly like
+    ///     <c>sample</c> and <c>oracle</c>. It replaces a corpus, and a corpus that changes without a
+    ///     commit is not a measurement.
+    ///     <para>
+    ///         ⚠ <b>It deletes the fixtures with the inputs, and that is deliberate.</b> A degraded input
+    ///         and the oracle's answer for it are one artefact; a new input beside the previous input's
+    ///         fixture is a comparison of two unrelated files, which is the one failure the whole design is
+    ///         arranged to prevent. Follow it with <c>unformat oracle</c>, or use
+    ///         <c>unformat regenerate</c>, which is the pair. <c>UnformatTests</c> fails loudly in between.
+    ///     </para>
     /// </remarks>
     public static string Generate(int count, TextWriter log) {
         var sources = Sources(count);

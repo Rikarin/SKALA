@@ -167,10 +167,10 @@ public sealed record EffectBindingData(
 [DataContract("EffectPushConstantData")]
 public sealed record EffectPushConstantData(
     ShaderStage Stages =
-        ShaderStage.None,
+    ShaderStage.None,
     int Offset = 0,
     int
-        Size = 0,
+    Size = 0,
     EffectPushConstantMember[]? Members = null
 );
 
@@ -181,7 +181,7 @@ public sealed record EffectPushConstantData(
 [DataContract("EffectPushConstantMember")]
 public sealed record EffectPushConstantMember(
     string
-        Name = "",
+    Name = "",
     int Offset = 0,
     int Size = 0);
 
@@ -208,7 +208,7 @@ public sealed record EffectPushConstantMember(
 public sealed record EffectVertexInputData(
     string Name = "",
     int Location =
-        0,
+    0,
     ShaderValueKind Kind = ShaderValueKind.Unknown
 );
 
@@ -221,7 +221,7 @@ public sealed record EffectVertexInputData(
 [DataContract("EffectParameterData")]
 public sealed record EffectParameterData(
     string
-        Name = "",
+    Name = "",
     ShaderValueKind Kind = ShaderValueKind.Unknown,
     int Offset = 0,
     int Size = 0,
@@ -234,8 +234,10 @@ public sealed record EffectParameterData(
 /// </summary>
 /// <remarks>
 ///     <para>
-///         <strong>This is what makes "zero runtime shader compilation" a structural claim rather
-///         than a policy.</strong> Raven's own <c>.rvnfx</c> already holds bytecode and reflection —
+///         <strong>
+///             This is what makes "zero runtime shader compilation" a structural claim rather
+///             than a policy.
+///         </strong> Raven's own <c>.rvnfx</c> already holds bytecode and reflection —
 ///         but <c>CompiledEffectReader</c> lives in the compiler assembly, so a runtime that read one
 ///         would link the parser, the lowerer and both backends. Every tier below the in-memory
 ///         dictionary reads <em>this</em> instead: the disk cache, the baked bundle and the answer
@@ -277,7 +279,7 @@ public sealed record EffectData {
     /// <summary>The compiled stages.</summary>
     public EffectStageData[] Stages {
         get
-        ;
+            ;
         init;
     } = [];
 

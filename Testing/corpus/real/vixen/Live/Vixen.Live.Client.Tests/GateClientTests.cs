@@ -133,7 +133,14 @@ public class GateClientTests {
     [Fact]
     public async Task Playing_returns_the_endpoint_and_the_ticket_untouched() {
         using var gate = new FakeGate().Answers(
-            new PlayResponse(PlayStatus.Placed, "realm.example:30000", "a ticket", "9c1f", "it has room", TimeSpan.Zero),
+            new PlayResponse(
+                PlayStatus.Placed,
+                "realm.example:30000",
+                "a ticket",
+                "9c1f",
+                "it has room",
+                TimeSpan.Zero
+            ),
             GateJson.Default.PlayResponse
         );
 
@@ -239,6 +246,5 @@ public class GateClientTests {
     static PlayResponse Starting() =>
         new(PlayStatus.Starting, "", "", "", "a shard is being started", TimeSpan.FromMilliseconds(1));
 
-    static PlayRequest Play() =>
-        new(Guid.NewGuid(), "maps/queensdale", Running, "en-GB", default, default);
+    static PlayRequest Play() => new(Guid.NewGuid(), "maps/queensdale", Running, "en-GB", default, default);
 }

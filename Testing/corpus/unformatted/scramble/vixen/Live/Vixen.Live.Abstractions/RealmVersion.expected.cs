@@ -46,8 +46,7 @@ public readonly record struct RealmVersion(string Build, ulong Content) {
     ///     which is not a rejection, it is a corrupted world.
     /// </remarks>
     public
-        bool Admits(RealmVersion other) =>
-        this == other;
+        bool Admits(RealmVersion other) => this == other;
 
     /// <summary>Reads one back.</summary>
     /// <param name="text">What <see cref="ToString" /> wrote.</param>
@@ -70,7 +69,7 @@ public readonly record struct RealmVersion(string Build, ulong Content) {
                 CultureInfo.InvariantCulture,
                 out var content
             )
-           ) {
+        ) {
             return false;
         }
 

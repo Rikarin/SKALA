@@ -18,7 +18,12 @@ public class Heuristics {
     // ⚠ Converted, at 190 columns. Doc 06's condition (c) — "fits max_line_length" — is not a
     // condition the oracle applies; it converts and the reformat wraps after the `=>`.
     public string Long(string aaaaaaaaaaaaaaaa, string bbbbbbbbbbbbbbbb, string cccccccccccccccc) {
-        return aaaaaaaaaaaaaaaa + bbbbbbbbbbbbbbbb + cccccccccccccccc + aaaaaaaaaaaaaaaa + bbbbbbbbbbbbbbbb + cccccccccccccccc;
+        return aaaaaaaaaaaaaaaa
+            + bbbbbbbbbbbbbbbb
+            + cccccccccccccccc
+            + aaaaaaaaaaaaaaaa
+            + bbbbbbbbbbbbbbbb
+            + cccccccccccccccc;
     }
 
     // (a) a throw in statement position stays a block.

@@ -41,8 +41,10 @@ public readonly record struct AiBreakpointHit(AiBreakpoint Breakpoint, Entity En
 /// </summary>
 /// <remarks>
 ///     <para>
-///         <b>Unreal has these and they are the difference between reading a tree and debugging
-///         one</b> — doc 37 § Part 5 says so in as many words. A tree that gets to the wrong branch
+///         <b>
+///             Unreal has these and they are the difference between reading a tree and debugging
+///             one
+///         </b> — doc 37 § Part 5 says so in as many words. A tree that gets to the wrong branch
 ///         once every few minutes cannot be caught by watching; stopping the agent <i>at</i> the node
 ///         leaves the blackboard, the active path and every decorator's last answer exactly as they
 ///         were when the decision was made.
@@ -124,8 +126,8 @@ public sealed class AiBreakpoints {
             return false;
         } // Up the parents rather than over the set, because a path is a handful of nodes and the set
 
-// is however many somebody has clicked. Nearest first, so a breakpoint on a task wins over
-// one on the composite that contains it and the hit names the closer of the two.
+        // is however many somebody has clicked. Nearest first, so a breakpoint on a task wins over
+        // one on the composite that contains it and the hit names the closer of the two.
         for (var walk = node; walk >= 0; walk = template[walk].Parent) {
             var candidate = new AiBreakpoint(template.Name, walk);
             if (!breakpoints.Contains(candidate)) {

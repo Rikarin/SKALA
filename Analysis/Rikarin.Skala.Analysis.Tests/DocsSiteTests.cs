@@ -5,16 +5,16 @@ using Rikarin.Skala.Rules.Metadata;
 namespace Rikarin.Skala.Analysis.Tests;
 
 /// <summary>
-/// <c>docs/site/</c> is generated and never hand-edited, and it is byte-identical every time.
+///     <c>docs/site/</c> is generated and never hand-edited, and it is byte-identical every time.
 /// </summary>
 /// <remarks>
-/// The sibling of <c>RuleCatalogTests.DocsPages_AreUpToDate</c>, and stricter than it in the one
-/// way that matters here. That test asserts <em>containment</em> after normalising whitespace,
-/// because <c>Rikarin.Skala.Rules.Tests</c> may not reference <c>Analysis</c> and so cannot call
-/// the renderer at all. This assembly can, so the comparison is byte for byte — which is the only
-/// comparison that catches the failure a committed site actually has, namely a regeneration on
-/// another machine that produces a different file for a reason that has nothing to do with
-/// <c>rules.json</c>.
+///     The sibling of <c>RuleCatalogTests.DocsPages_AreUpToDate</c>, and stricter than it in the one
+///     way that matters here. That test asserts <em>containment</em> after normalising whitespace,
+///     because <c>Rikarin.Skala.Rules.Tests</c> may not reference <c>Analysis</c> and so cannot call
+///     the renderer at all. This assembly can, so the comparison is byte for byte — which is the only
+///     comparison that catches the failure a committed site actually has, namely a regeneration on
+///     another machine that produces a different file for a reason that has nothing to do with
+///     <c>rules.json</c>.
 /// </remarks>
 public sealed class DocsSiteTests {
     static string RepositoryRoot { get; } =
@@ -26,15 +26,15 @@ public sealed class DocsSiteTests {
     static string SiteDirectory { get; } = Path.Combine(RepositoryRoot, "docs", "site");
 
     /// <summary>
-    /// ⚠ The test that makes the site worth committing: a <c>rules.json</c> or <c>options.json</c>
-    /// edit with no <c>skala docs site</c> after it is a red build, not a page that quietly
-    /// describes the previous behaviour.
+    ///     ⚠ The test that makes the site worth committing: a <c>rules.json</c> or <c>options.json</c>
+    ///     edit with no <c>skala docs site</c> after it is a red build, not a page that quietly
+    ///     describes the previous behaviour.
     /// </summary>
     /// <remarks>
-    /// It asserts both directions. A missing or stale page is the obvious half; a file in
-    /// <c>docs/site/</c> that the renderer no longer produces is the half that rots silently, because
-    /// nothing links to it and every other assertion here only ever looks at pages that exist on
-    /// both sides.
+    ///     It asserts both directions. A missing or stale page is the obvious half; a file in
+    ///     <c>docs/site/</c> that the renderer no longer produces is the half that rots silently, because
+    ///     nothing links to it and every other assertion here only ever looks at pages that exist on
+    ///     both sides.
     /// </remarks>
     [Fact]
     public void Site_IsUpToDateWithTheSources() {
@@ -62,14 +62,14 @@ public sealed class DocsSiteTests {
     }
 
     /// <summary>
-    /// ⚠ The committed-artefact condition, the way <c>CloneIndex</c> states it: two runs over the
-    /// same sources produce byte-identical files.
+    ///     ⚠ The committed-artefact condition, the way <c>CloneIndex</c> states it: two runs over the
+    ///     same sources produce byte-identical files.
     /// </summary>
     /// <remarks>
-    /// Cheap and worth having anyway, because the failure it catches is a dictionary or a
-    /// <c>GroupBy</c> whose enumeration order is stable within a process and not across processes —
-    /// which shows up as a several-hundred-line diff on a colleague's machine and as nothing at all
-    /// on the author's.
+    ///     Cheap and worth having anyway, because the failure it catches is a dictionary or a
+    ///     <c>GroupBy</c> whose enumeration order is stable within a process and not across processes —
+    ///     which shows up as a several-hundred-line diff on a colleague's machine and as nothing at all
+    ///     on the author's.
     /// </remarks>
     [Fact]
     public void TwoRenders_ProduceByteIdenticalPages() {
@@ -90,16 +90,16 @@ public sealed class DocsSiteTests {
     }
 
     /// <summary>
-    /// ⚠ Every newline is <c>\n</c> and no carriage return survives.
+    ///     ⚠ Every newline is <c>\n</c> and no carriage return survives.
     /// </summary>
     /// <remarks>
-    /// The determinism above is per-process; this is the cross-platform half of it, and it is the
-    /// defect <c>ExplainCommand</c> has today. That renderer is written with
-    /// <see cref="System.Text.StringBuilder.AppendLine()"/>, which emits
-    /// <see cref="Environment.NewLine"/>, so <c>skala rules docs</c> run on Windows rewrites all 33
-    /// committed markdown pages to CRLF — and <c>DocsPages_AreUpToDate</c> cannot see it, because it
-    /// normalises whitespace before comparing. A whole-file diff produced by the operating system
-    /// rather than by a change is how a generated artefact stops being reviewed.
+    ///     The determinism above is per-process; this is the cross-platform half of it, and it is the
+    ///     defect <c>ExplainCommand</c> has today. That renderer is written with
+    ///     <see cref="System.Text.StringBuilder.AppendLine()" />, which emits
+    ///     <see cref="Environment.NewLine" />, so <c>skala rules docs</c> run on Windows rewrites all 33
+    ///     committed markdown pages to CRLF — and <c>DocsPages_AreUpToDate</c> cannot see it, because it
+    ///     normalises whitespace before comparing. A whole-file diff produced by the operating system
+    ///     rather than by a change is how a generated artefact stops being reviewed.
     /// </remarks>
     [Fact]
     public void NoPage_CarriesACarriageReturn() {
@@ -138,19 +138,19 @@ public sealed class DocsSiteTests {
     }
 
     /// <summary>
-    /// ⚠ Every internal link resolves — to a page the renderer produces, and to an anchor that page
-    /// actually carries.
+    ///     ⚠ Every internal link resolves — to a page the renderer produces, and to an anchor that page
+    ///     actually carries.
     /// </summary>
     /// <remarks>
-    /// The whole argument for a generated site over a directory of markdown is that it is
-    /// cross-linked, and a cross-link is worth nothing the moment one of them 404s. The two ways
-    /// that happens here are both mechanical and both silent: a construct renamed in options.json
-    /// moves every key's anchor to a new page, and a rule id referenced in another rule's
-    /// <c>configuration</c> prose need not be a rule that exists.
-    /// <para>
-    /// ⚠ Fragments are checked as well as paths. A link to the right page and a dead anchor lands
-    /// the reader at the top of a page holding 27 keys, which is worse than an error.
-    /// </para>
+    ///     The whole argument for a generated site over a directory of markdown is that it is
+    ///     cross-linked, and a cross-link is worth nothing the moment one of them 404s. The two ways
+    ///     that happens here are both mechanical and both silent: a construct renamed in options.json
+    ///     moves every key's anchor to a new page, and a rule id referenced in another rule's
+    ///     <c>configuration</c> prose need not be a rule that exists.
+    ///     <para>
+    ///         ⚠ Fragments are checked as well as paths. A link to the right page and a dead anchor lands
+    ///         the reader at the top of a page holding 27 keys, which is worse than an error.
+    ///     </para>
     /// </remarks>
     [Fact]
     public void EveryInternalLink_ResolvesToAPageAndAnAnchor() {
@@ -202,7 +202,7 @@ public sealed class DocsSiteTests {
     }
 
     /// <summary>
-    /// The 107 constructs must produce 107 pages, because a slug collision loses one of them whole.
+    ///     The 107 constructs must produce 107 pages, because a slug collision loses one of them whole.
     /// </summary>
     [Fact]
     public void EveryConstruct_GetsItsOwnPage() {
@@ -222,10 +222,10 @@ public sealed class DocsSiteTests {
 
     /// <summary>⚠ No external asset: the site renders from a checkout with no network.</summary>
     /// <remarks>
-    /// A <c>&lt;script&gt;</c>, a webfont or a CDN stylesheet is one commit away at any time and
-    /// nothing else in the tree would notice. Outbound <c>&lt;a href&gt;</c> links are fine and
-    /// there are several — options.json carries a <c>docs</c> URL per key — so the assertion is
-    /// about what the page <em>loads</em>, not about what it points at.
+    ///     A <c>&lt;script&gt;</c>, a webfont or a CDN stylesheet is one commit away at any time and
+    ///     nothing else in the tree would notice. Outbound <c>&lt;a href&gt;</c> links are fine and
+    ///     there are several — options.json carries a <c>docs</c> URL per key — so the assertion is
+    ///     about what the page <em>loads</em>, not about what it points at.
     /// </remarks>
     [Fact]
     public void NoPage_LoadsAnythingFromTheNetwork() {
@@ -250,12 +250,12 @@ public sealed class DocsSiteTests {
     static IEnumerable<string> Anchors(string content) => Attributes(content, "id=\"");
 
     /// <summary>
-    /// Every value of one attribute spelling, by scanning rather than by regular expression.
+    ///     Every value of one attribute spelling, by scanning rather than by regular expression.
     /// </summary>
     /// <remarks>
-    /// The renderer writes the attributes; it never quotes them differently and never puts a
-    /// <c>"</c> inside one, because every value it writes has been through <c>Esc</c>. So a scan is
-    /// exact here in a way it would not be over arbitrary HTML.
+    ///     The renderer writes the attributes; it never quotes them differently and never puts a
+    ///     <c>"</c> inside one, because every value it writes has been through <c>Esc</c>. So a scan is
+    ///     exact here in a way it would not be over arbitrary HTML.
     /// </remarks>
     static IEnumerable<string> Attributes(string content, string prefix) {
         var i = content.IndexOf(prefix, StringComparison.Ordinal);

@@ -36,7 +36,7 @@ public class CommandChainTests {
             Title("Verb"),
             () => ran++
         ); // ⚠ Before the fix this was null: `Resolve` stopped at the root, and every one of the
-// editor's commands was unreachable from a `Vixen.Ui` surface.
+        // editor's commands was unreachable from a `Vixen.Ui` surface.
         var handler = CommandRoute.Resolve(shell.Document, "test.verb");
         Assert.NotNull(handler);
         Assert.Null(handler!.Value.Element);
@@ -59,7 +59,7 @@ public class CommandChainTests {
             "view",
             ran
         ); // And the editor's is what is left when the focus goes away, which is the whole point of a
-// level at the end rather than a special case in each surface.
+        // level at the end rather than a special case in each surface.
         shell.Document.Focus(null);
         Assert.True(CommandRoute.Execute(shell.Document, "edit.copy"));
         Assert.Equal("application", ran);
@@ -74,8 +74,8 @@ public class CommandChainTests {
         shell.Commands.Add(new EditorCommand("test.verb", Title("Verb"), () => ran++) { Enablement = () => enabled });
         shell.Commands.Executed +=
             _ => announced++; // ⚠ It answers while it is disabled rather than declining the id. Declining would let the id
-// fall out of the chain entirely, and there is nothing after the application to catch it —
-// "this verb is mine and I cannot do it right now" is a greyed item, not an absent one.
+        // fall out of the chain entirely, and there is nothing after the application to catch it —
+        // "this verb is mine and I cannot do it right now" is a greyed item, not an absent one.
         Assert.NotNull(CommandRoute.Resolve(shell.Document, "test.verb"));
         Assert.False(CommandRoute.CanExecute(shell.Document, "test.verb"));
         Assert.False(CommandRoute.Execute(shell.Document, "test.verb"));
@@ -86,9 +86,9 @@ public class CommandChainTests {
             1,
             ran
         ); // ⚠ And it lands on the same single `Execute` the palette, the menu and the keymap land on.
-// A fourth entry point that called `EditorCommand.Run` directly would run the command behind
-// `Executed`'s back, which is where the "recently used" list and the bug-report log line
-// both hang.
+        // A fourth entry point that called `EditorCommand.Run` directly would run the command behind
+        // `Executed`'s back, which is where the "recently used" list and the bug-report log line
+        // both hang.
         Assert.Equal(1, announced);
     }
 
@@ -110,8 +110,8 @@ public class CommandChainTests {
         Assert.NotNull(
             CommandRoute.Resolve(shell.Document, "test.verb")
         ); // ⚠ The unload case. A handler left behind for a command that is gone is a menu line that
-// runs a plugin which is no longer there, and the registry keeps two tables that have to go
-// out together.
+        // runs a plugin which is no longer there, and the registry keeps two tables that have to go
+        // out together.
         Assert.True(shell.Commands.Remove("test.verb"));
         Assert.Null(CommandRoute.Resolve(shell.Document, "test.verb"));
     }
@@ -130,7 +130,7 @@ public class CommandChainTests {
 
         Frame();
         raised = 0; // ⚠ Forty registrations, one raise. A plugin load is the case this exists for: without the
-// coalescing every visible command would be re-asked forty times for one answer.
+        // coalescing every visible command would be re-asked forty times for one answer.
         for (var i = 0; i < 40; i++) {
             shell.Commands.Add($"test.verb-{i}", Title("Verb"), () => { });
         }
@@ -146,11 +146,11 @@ public class CommandChainTests {
         var shell = new EditorShell(1280f, 800f);
         var document = shell.Document;
         shell.Dispose(); // The document's direction: it has let go of the registry, so the editor's commands — and
-// the plugin assemblies behind their closures — are not held by a window that has closed.
+        // the plugin assemblies behind their closures — are not held by a window that has closed.
         Assert.Null(
             document.ApplicationCommandResponder
         ); // And the registry works afterwards, so the teardown took the subscription off rather than
-// breaking the table.
+        // breaking the table.
         shell.Commands.Add("test.after-dispose", Title("Verb"), () => { });
         Assert.True(shell.Commands.TryGetCommandHandler("test.after-dispose", out _));
     }
@@ -158,11 +158,11 @@ public class CommandChainTests {
     [Fact]
     public void A_kept_registry_no_longer_reaches_the_shell_that_made_it() {
         // ⚠ What the unsubscription is actually worth, stated without overclaiming. `EditorShell` is
-// the only place a `CommandRegistry` is made and it owns the one it makes, so the
-// subscription is a cycle inside one ownership unit and the pair is collected together —
-// this is not the ~95 MB-a-reload shape, and a test that said it was would be asserting a
-// leak that is not there. What it is worth is this: a caller that keeps the registry after
-// disposing the shell must not find the old shell still listening on it.
+        // the only place a `CommandRegistry` is made and it owns the one it makes, so the
+        // subscription is a cycle inside one ownership unit and the pair is collected together —
+        // this is not the ~95 MB-a-reload shape, and a test that said it was would be asserting a
+        // leak that is not there. What it is worth is this: a caller that keeps the registry after
+        // disposing the shell must not find the old shell still listening on it.
         var shell = new EditorShell(1280f, 800f);
         var registry = shell.Commands;
         shell.Dispose();
@@ -173,8 +173,8 @@ public class CommandChainTests {
             Title("Verb"),
             () => { }
         ); // One subscriber left, and it is the one this test added. Had the shell's survived, the
-// registry would still be driving a disposed document's invalidation every time a plugin
-// registered anything.
+        // registry would still be driving a disposed document's invalidation every time a plugin
+        // registered anything.
         Assert.Equal(1, raised);
         Assert.Equal(1, registry.ChangedSubscriberCount);
     }

@@ -8,21 +8,21 @@ using Rikarin.Skala.Rules.Metadata;
 namespace Rikarin.Skala.Rules.Design;
 
 /// <summary>
-/// <c>SK6003</c> — a <c>public</c> constructor on an <c>abstract class</c> is a <c>protected</c> one.
+///     <c>SK6003</c> — a <c>public</c> constructor on an <c>abstract class</c> is a <c>protected</c> one.
 /// </summary>
 /// <remarks>
-/// docs/plan/08-rule-catalogue.md § "SK6000 — API and design". An abstract class cannot be
-/// instantiated, so the only caller its constructor can ever have is a derived constructor's
-/// initializer — which is what <c>protected</c> means. <c>public</c> there claims an audience that
-/// cannot exist, and a reader scanning the type's public surface has to work out that this member
-/// is not part of it.
-/// <para>
-/// ⚠ Purely syntactic, and that is the whole design. The two facts the rule needs — "this
-/// declaration carries <c>abstract</c>" and "this constructor carries <c>public</c>" — are both
-/// tokens in the same file, so the rule runs under <c>--load=loose</c> and cannot be silenced by an
-/// unresolved symbol. The cost is a miss rather than a wrong answer: a partial class whose
-/// <c>abstract</c> modifier sits in another file is not reported.
-/// </para>
+///     docs/plan/08-rule-catalogue.md § "SK6000 — API and design". An abstract class cannot be
+///     instantiated, so the only caller its constructor can ever have is a derived constructor's
+///     initializer — which is what <c>protected</c> means. <c>public</c> there claims an audience that
+///     cannot exist, and a reader scanning the type's public surface has to work out that this member
+///     is not part of it.
+///     <para>
+///         ⚠ Purely syntactic, and that is the whole design. The two facts the rule needs — "this
+///         declaration carries <c>abstract</c>" and "this constructor carries <c>public</c>" — are both
+///         tokens in the same file, so the rule runs under <c>--load=loose</c> and cannot be silenced by an
+///         unresolved symbol. The cost is a miss rather than a wrong answer: a partial class whose
+///         <c>abstract</c> modifier sits in another file is not reported.
+///     </para>
 /// </remarks>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class AbstractTypeConstructorAnalyzer : DiagnosticAnalyzer {

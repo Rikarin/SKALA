@@ -7,15 +7,15 @@ using Rikarin.Skala.Core.Diagnostics;
 namespace Rikarin.Skala.Formatting.CSharp;
 
 /// <summary>
-/// Finds members whose braces are split across a preprocessor branch.
+///     Finds members whose braces are split across a preprocessor branch.
 /// </summary>
 /// <remarks>
-/// ⚠ docs/plan/04 § "Trivia": a construct written
-/// <c>#if X</c> … <c>{</c> … <c>#else</c> … <c>{</c> … has a brace structure that depends on which
-/// branch is active. Roslyn parses one of them and hands back a tree that describes only that one.
-/// Reindenting from it moves braces the other branch owns. Skala emits the whole member verbatim
-/// and says so (<c>SK9011</c>, info). Silently doing something clever here is how formatters
-/// destroy code.
+///     ⚠ docs/plan/04 § "Trivia": a construct written
+///     <c>#if X</c> … <c>{</c> … <c>#else</c> … <c>{</c> … has a brace structure that depends on which
+///     branch is active. Roslyn parses one of them and hands back a tree that describes only that one.
+///     Reindenting from it moves braces the other branch owns. Skala emits the whole member verbatim
+///     and says so (<c>SK9011</c>, info). Silently doing something clever here is how formatters
+///     destroy code.
 /// </remarks>
 public static class PreprocessorGuard {
     public static void MarkUnbalancedMembers(
@@ -55,13 +55,13 @@ public static class PreprocessorGuard {
             or SyntaxKind.EndIfDirectiveTrivia;
 
     /// <summary>
-    /// Walks one <c>#if … #endif</c> group and reports whether its branches agree on how many
-    /// braces they open.
+    ///     Walks one <c>#if … #endif</c> group and reports whether its branches agree on how many
+    ///     braces they open.
     /// </summary>
     /// <remarks>
-    /// ⚠ Recursive, and it has to be. A branch may contain a whole nested group, and counting
-    /// braces lexically across a nested group counts <em>all</em> of that group's branches at once —
-    /// which is how an ordinary, perfectly balanced file gets reported as unbalanced.
+    ///     ⚠ Recursive, and it has to be. A branch may contain a whole nested group, and counting
+    ///     braces lexically across a nested group counts <em>all</em> of that group's branches at once —
+    ///     which is how an ordinary, perfectly balanced file gets reported as unbalanced.
     /// </remarks>
     static (int Next, int Delta, bool Balanced) Evaluate(
         SyntaxNode root,
@@ -177,9 +177,9 @@ public static class PreprocessorGuard {
     }
 
     /// <summary>
-    /// Net <c>{</c> minus <c>}</c> in a stretch of raw source, skipping string and character
-    /// literals and comments. Deliberately lexical: a disabled branch is unstructured text and
-    /// there is no tree to ask.
+    ///     Net <c>{</c> minus <c>}</c> in a stretch of raw source, skipping string and character
+    ///     literals and comments. Deliberately lexical: a disabled branch is unstructured text and
+    ///     there is no tree to ask.
     /// </summary>
     static int BraceBalance(string source, int start, int end) {
         var balance = 0;

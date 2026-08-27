@@ -4,16 +4,16 @@ using Rikarin.Skala.Testing;
 namespace Rikarin.Skala.Cli.Tests;
 
 /// <summary>
-/// A scratch repository the cross-platform tests drive the real binary inside.
+///     A scratch repository the cross-platform tests drive the real binary inside.
 /// </summary>
 /// <remarks>
-/// ⚠ Every one of doc 12 § "Cross-platform"'s hazards is about what a path or a byte looks like on
-/// disk, so all of them have to be asserted through the process rather than through a library call:
-/// a unit test of <c>SarifWriter.Relative</c> cannot see that the repository root the CLI computed
-/// disagreed with the paths the loader produced, and a unit test of the line-ending option cannot
-/// see that the writer opened the file in text mode. <see cref="CliRunner"/> runs from the
-/// repository root; these tests need their own working directory, their own <c>.editorconfig</c>
-/// and their own <c>.git</c>, so they carry their own runner.
+///     ⚠ Every one of doc 12 § "Cross-platform"'s hazards is about what a path or a byte looks like on
+///     disk, so all of them have to be asserted through the process rather than through a library call:
+///     a unit test of <c>SarifWriter.Relative</c> cannot see that the repository root the CLI computed
+///     disagreed with the paths the loader produced, and a unit test of the line-ending option cannot
+///     see that the writer opened the file in text mode. <see cref="CliRunner" /> runs from the
+///     repository root; these tests need their own working directory, their own <c>.editorconfig</c>
+///     and their own <c>.git</c>, so they carry their own runner.
 /// </remarks>
 public sealed class CrossPlatformScratch : IDisposable {
     public CrossPlatformScratch(string prefix) => Root = Directory.CreateTempSubdirectory(prefix).FullName;

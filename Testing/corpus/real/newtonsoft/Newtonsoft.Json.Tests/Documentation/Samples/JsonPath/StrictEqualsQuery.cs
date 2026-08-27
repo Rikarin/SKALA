@@ -1,4 +1,5 @@
 ﻿#region License
+
 // Copyright (c) 2007 James Newton-King
 //
 // Permission is hereby granted, free of charge, to any person
@@ -21,6 +22,7 @@
 // WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 // OTHER DEALINGS IN THE SOFTWARE.
+
 #endregion
 
 using Newtonsoft.Json.Linq;
@@ -40,16 +42,15 @@ using System.Linq;
 #endif
 using System.Text;
 
-namespace Newtonsoft.Json.Tests.Documentation.Samples.JsonPath
-{
+namespace Newtonsoft.Json.Tests.Documentation.Samples.JsonPath {
     [TestFixture]
-    public class StrictEqualsQuery : TestFixtureBase
-    {
+    public class StrictEqualsQuery : TestFixtureBase {
         [Test]
-        public void Example()
-        {
+        public void Example() {
             #region Usage
-            JArray items = JArray.Parse(@"[
+
+            JArray items = JArray.Parse(
+                @"[
               {
                 'Name': 'Valid JSON',
                 'Valid': true
@@ -58,16 +59,18 @@ namespace Newtonsoft.Json.Tests.Documentation.Samples.JsonPath
                 'Name': 'Invalid JSON',
                 'Valid': 'true'
               }
-            ]");
+            ]"
+            );
 
             // Use === operator. Compared types must be the same to be valid
             List<JToken> strictResults = items.SelectTokens(@"$.[?(@.Valid === true)]").ToList();
 
-            foreach (JToken item in strictResults)
-            {
+            foreach (JToken item in strictResults) {
                 Console.WriteLine((string)item["Name"]);
             }
+
             // Valid JSON
+
             #endregion
 
             Assert.AreEqual(1, strictResults.Count);

@@ -57,7 +57,7 @@ partial class PropertyValueConverter :
         int maximumDestructuringDepth,
         int maximumStringLength,
         int
-            maximumCollectionCount,
+        maximumCollectionCount,
         IEnumerable<Type
         > additionalScalarTypes,
         IEnumerable<Type> additionalDictionaryTypes,
@@ -149,8 +149,7 @@ partial class PropertyValueConverter :
             }
         }
 
-        if (value is
-            string)
+        if (value is string)
             return new ScalarValue(value);
 
         foreach (var scalarConversionPolicy in _scalarConversionPolicies) {
@@ -177,7 +176,7 @@ partial class PropertyValueConverter :
         if (TryConvertEnumerable(value, type, destructuring, out var enumerableResult)) return enumerableResult;
         if (TryConvertValueTuple(value, type, destructuring, out var tupleResult)) return tupleResult;
         if (TryConvertStructure(value, type, destructuring, out var structureResult)
-           )
+        )
             return structureResult;
         return new ScalarValue(value.ToString() ?? "");
     }
@@ -190,12 +189,12 @@ partial class PropertyValueConverter :
     ) {
         if (value is IEnumerable enumerable) {
             // Only dictionaries with 'scalar' keys are permitted, as
-// more complex keys may not serialize to unique values for
+            // more complex keys may not serialize to unique values for
             // representation in sinks. This check strengthens the expectation
-// that resulting dictionary is representable in JSON as well
+            // that resulting dictionary is representable in JSON as well
             // as richer formats (e.g. XML, .NET type-aware...).
             // Only actual dictionaries are supported, as arbitrary types
-// can implement multiple IDictionary interfaces and thus introduce
+            // can implement multiple IDictionary interfaces and thus introduce
             // multiple different interpretations.
             if
                 (TryGetDictionary(value, type, out var dictionary)) {
@@ -212,15 +211,15 @@ partial class PropertyValueConverter :
                     foreach
                         (DictionaryEntry entry in dictionaryEntries) {
                         if (++count > _maximumCollectionCount
-                           ) {
+                        ) {
                             yield break;
                         }
 
                         var pair = new KeyValuePair<ScalarValue
                             , LogEventPropertyValue>(
-                            (ScalarValue)_depthLimiter.CreatePropertyValue(entry.Key, destructure),
-                            _depthLimiter.CreatePropertyValue(entry.Value, destructure)
-                        );
+                                (ScalarValue)_depthLimiter.CreatePropertyValue(entry.Key, destructure),
+                                _depthLimiter.CreatePropertyValue(entry.Value, destructure)
+                            );
                         if (pair.Key.Value != null)
                             yield return pair;
                     }
@@ -273,7 +272,7 @@ partial class PropertyValueConverter :
     }
 
     /// <summary>
-    /// Recursively traverses a multidimensional array and constructs a nested SequenceValue representation.
+    ///     Recursively traverses a multidimensional array and constructs a nested SequenceValue representation.
     /// </summary>
     /// <param name="array">The multidimensional array to traverse.</param>
     /// <param name="indices">An array of indices representing the current position in each dimension.</param>
@@ -359,7 +358,7 @@ partial class PropertyValueConverter :
              || definition == typeof(ValueTuple<,,,,,>)
              || definition == typeof(ValueTuple<,,,,,,>)) {
             var fields = type.GetFields(BindingFlags.Instance | BindingFlags.Public);
-            var elements = new LogEventPropertyValue [fields.Length];
+            var elements = new LogEventPropertyValue[fields.Length];
             for (var index = 0; index < fields.Length; index++) {
                 var field = fields[index];
                 var fieldValue = field.GetValue(value);
@@ -380,7 +379,7 @@ partial class PropertyValueConverter :
         Type type,
         Destructuring destructuring,
         [NotNullWhen(true)] out StructureValue
-            ? result
+        ? result
     ) {
         if (destructuring == Destructuring.Destructure) {
             if (TrimConfiguration.IsStructureValueSupported) {
@@ -409,7 +408,7 @@ partial class PropertyValueConverter :
 
     ScalarValue Stringify(object value) {
         var
-            stringified = value.ToString();
+        stringified = value.ToString();
         var truncated = stringified == null ? "" : TruncateIfNecessary(stringified);
         return
             new ScalarValue(truncated);
@@ -434,14 +433,14 @@ partial class PropertyValueConverter :
 
             if (valueType.IsConstructedGenericType) {
                 var
-                    definition = valueType.GetGenericTypeDefinition();
+                definition = valueType.GetGenericTypeDefinition();
                 if ((definition
                         == typeof(Dictionary<,
                         >)
                         || definition == typeof(System.Collections.ObjectModel.ReadOnlyDictionary<,>))
                     && IsValidDictionaryKeyType(
                         valueType
-                            .GenericTypeArguments[0]
+                        .GenericTypeArguments[0]
                     )) {
                     dictionary = iDictionary;
                     return true;
@@ -480,7 +479,7 @@ partial class PropertyValueConverter :
             | BindingFlags.FlattenHierarchy
         );
         var
-            result = new LogEventProperty[properties.Length];
+        result = new LogEventProperty[properties.Length];
         var nextResult =
             0;
         for (var i = 0; i < properties.Length; ++i) {
@@ -504,24 +503,24 @@ partial class PropertyValueConverter :
                 propValue = property.GetValue(value);
             } catch
                 (TargetParameterCountException) {
-                // These properties would ideally be ignored; since they never produce values they're not
+                    // These properties would ideally be ignored; since they never produce values they're not
 
-                // of concern to auditing and exceptions can be suppressed.
-                SelfLog.WriteLine("The property accessor {0} is a non-default indexer", property);
-                continue;
-            } catch (TargetInvocationException ex) {
-                SelfLog.WriteLine("The property accessor {0} threw exception: {1}", property, ex);
+                    // of concern to auditing and exceptions can be suppressed.
+                    SelfLog.WriteLine("The property accessor {0} is a non-default indexer", property);
+                    continue;
+                } catch (TargetInvocationException ex) {
+                    SelfLog.WriteLine("The property accessor {0} threw exception: {1}", property, ex);
 
-                if (_propagateExceptions)
-                    throw;
+                    if (_propagateExceptions)
+                        throw;
 
-                propValue = "The property accessor threw an exception: " + ex.InnerException?.GetType().Name;
-            } catch (NotSupportedException) {
-                SelfLog.WriteLine("The property accessor {0} is not supported via Reflection API", property);
-                if (_propagateExceptions)
-                    throw;
-                propValue = "Accessing this property is not supported via Reflection API";
-            }
+                    propValue = "The property accessor threw an exception: " + ex.InnerException?.GetType().Name;
+                } catch (NotSupportedException) {
+                    SelfLog.WriteLine("The property accessor {0} is not supported via Reflection API", property);
+                    if (_propagateExceptions)
+                        throw;
+                    propValue = "Accessing this property is not supported via Reflection API";
+                }
 
             result[nextResult] = new(
                 property.Name,

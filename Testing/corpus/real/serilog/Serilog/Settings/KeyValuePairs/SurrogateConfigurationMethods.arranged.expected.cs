@@ -16,13 +16,11 @@
 namespace Serilog.Settings.KeyValuePairs;
 
 /// <summary>
-/// Contains "fake extension" methods for the Serilog configuration API.
-/// By default the settings knows how to find extension methods, but some configuration
-/// are actually "regular" method calls and would not be found otherwise.
-///
-/// This static class contains internal methods that can be used instead.
-///
-/// See also <seealso cref="CallableConfigurationMethodFinder"/>
+///     Contains "fake extension" methods for the Serilog configuration API.
+///     By default the settings knows how to find extension methods, but some configuration
+///     are actually "regular" method calls and would not be found otherwise.
+///     This static class contains internal methods that can be used instead.
+///     See also <seealso cref="CallableConfigurationMethodFinder" />
 /// </summary>
 static class SurrogateConfigurationMethods {
     static readonly Dictionary<Type, MethodInfo[]> SurrogateMethodCandidates = typeof(SurrogateConfigurationMethods)

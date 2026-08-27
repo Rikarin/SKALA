@@ -1,4 +1,5 @@
 // skala-oracle: resharper=2025.2.6 config=sha256:98ff52570e019fac profile=SkalaFormatOnly generated=2026-08-27
+
 #region License
 
 // Copyright (c) 2007 James Newton-King
@@ -29,7 +30,7 @@
 #endregion
 
 using Newtonsoft.Json.
-    Serialization;
+Serialization;
 using System;
 using System.Collections.Generic;
 using System.Runtime.Serialization;
@@ -40,7 +41,7 @@ using Test = Xunit.FactAttribute;
 using Assert = Newtonsoft.Json.Tests.XUnitAssert;
 #else
 using NUnit.Framework
-    ;
+;
 #endif
 
 namespace Newtonsoft.Json.Tests.Documentation.Samples.Serializer {
@@ -51,7 +52,7 @@ namespace Newtonsoft.Json.Tests.Documentation.Samples.Serializer {
 
         public class Employee {
             private List<string>
-                _roles;
+            _roles;
 
             public string
                 Name { get; set; }
@@ -71,7 +72,7 @@ namespace Newtonsoft.Json.Tests.Documentation.Samples.Serializer {
 
             public string Title {
                 get
-                ;
+                    ;
                 set;
             }
 
@@ -96,7 +97,7 @@ namespace Newtonsoft.Json.Tests.Documentation.Samples.Serializer {
             // {
             //   "Name": "George Michael Bluth",
             //   "Age": 16,
-//   "Title": "Mister Manager"
+            //   "Title": "Mister Manager"
             // }
 
             #endregion

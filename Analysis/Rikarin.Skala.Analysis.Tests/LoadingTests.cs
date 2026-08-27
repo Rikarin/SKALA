@@ -43,8 +43,8 @@ public sealed class LoadingTests {
     }
 
     /// <summary>
-    /// ⚠ The framework is referenced, so BCL types resolve even with no project. That is what makes
-    /// the loose mode's syntactic rules trustworthy rather than "silent because nothing bound".
+    ///     ⚠ The framework is referenced, so BCL types resolve even with no project. That is what makes
+    ///     the loose mode's syntactic rules trustworthy rather than "silent because nothing bound".
     /// </summary>
     [Fact]
     public void Loose_ResolvesTheBclEvenWithNoProject() {
@@ -83,8 +83,8 @@ public sealed class LoadingTests {
     }
 
     /// <summary>
-    /// ⚠ Falling through is allowed and is reported; falling through <em>silently</em> is not. A
-    /// loose result must never be mistakable for a binlog one.
+    ///     ⚠ Falling through is allowed and is reported; falling through <em>silently</em> is not. A
+    ///     loose result must never be mistakable for a binlog one.
     /// </summary>
     [Fact]
     public void Binlog_WithNoBinlog_FallsThroughToLooseAndSaysSo() {
@@ -102,8 +102,8 @@ public sealed class LoadingTests {
     }
 
     /// <summary>
-    /// ⚠ Asking for loose is asking for speed and for the semantics-free rule set. Quietly running a
-    /// build's worth of work instead would blow the budget the mode exists to meet.
+    ///     ⚠ Asking for loose is asking for speed and for the semantics-free rule set. Quietly running a
+    ///     build's worth of work instead would blow the budget the mode exists to meet.
     /// </summary>
     [Fact]
     public void Loose_NeverFallsUpwards() {

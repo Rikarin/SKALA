@@ -1,4 +1,5 @@
 // skala-oracle: resharper=2025.2.6 config=sha256:98ff52570e019fac profile=SkalaFormatOnly generated=2026-08-27
+
 #region License
 
 // Copyright (c) 2007 James Newton-King
@@ -39,7 +40,7 @@ using Test = Xunit.FactAttribute;
 using Assert = Newtonsoft.Json.Tests.XUnitAssert;
 #else
 using
-    NUnit.Framework;
+NUnit.Framework;
 #endif
 
 namespace Newtonsoft.Json
@@ -51,9 +52,9 @@ namespace Newtonsoft.Json
             () {
             // Arrange
             var
-                jsonWithUppercase = "{\"state\": \"APPROVED\"}";
+            jsonWithUppercase = "{\"state\": \"APPROVED\"}";
             var jsonWithLowercase = "{\"state\": \"approved\"}";
-// Act
+            // Act
             var jsonObjectWithUppercase = JsonConvert.DeserializeObject<GitHubPullRequestReview>(jsonWithUppercase);
             var jsonObjectWithLowercase = JsonConvert.DeserializeObject<GitHubPullRequestReview>(jsonWithLowercase);
 
@@ -69,11 +70,11 @@ namespace Newtonsoft.Json
             var jsonWithLowercase = "{\"state\": \"changes_requested\"}"
                 ;
 
-// Act
+            // Act
             var jsonObjectWithUppercase = JsonConvert.DeserializeObject<GitHubPullRequestReview>(jsonWithUppercase);
             var jsonObjectWithLowercase = JsonConvert.DeserializeObject<GitHubPullRequestReview>(jsonWithLowercase);
 
-// Assert
+            // Assert
             Assert.AreEqual(GitHubPullRequestReviewState.ChangesRequested, jsonObjectWithUppercase.State);
             Assert.AreEqual(GitHubPullRequestReviewState.ChangesRequested, jsonObjectWithLowercase.State);
         }

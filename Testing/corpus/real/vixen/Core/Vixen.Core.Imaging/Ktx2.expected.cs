@@ -184,8 +184,11 @@ public static class Ktx2 {
     /// <param name="file">The file's bytes, or at least <see cref="LayoutLength" /> of the front of it.</param>
     /// <returns>The layout.</returns>
     /// <remarks>
-    ///     ⚠ <b>This validates the level index against the format and the extents, and not against
-    ///     the file's length.</b> A caller holding only the head has no length to check against, and
+    ///     ⚠
+    ///     <b>
+    ///         This validates the level index against the format and the extents, and not against
+    ///         the file's length.
+    ///     </b> A caller holding only the head has no length to check against, and
     ///     one holding the whole file gets the check from <see cref="Read" /> and
     ///     <see cref="ReadTail" /> where the copy happens. What is checked here is the part a short
     ///     read cannot excuse: a level whose declared size disagrees with what its extent and format

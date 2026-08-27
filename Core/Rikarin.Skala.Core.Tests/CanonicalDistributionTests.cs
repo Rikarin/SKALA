@@ -5,7 +5,7 @@ using Rikarin.Skala.Options;
 namespace Rikarin.Skala.Core.Tests;
 
 /// <summary>
-/// docs/plan/03-configuration-model.md § "Canonical distribution across repositories" (Q4).
+///     docs/plan/03-configuration-model.md § "Canonical distribution across repositories" (Q4).
 /// </summary>
 public sealed class CanonicalDistributionTests {
     static CanonicalManifest Tool => CanonicalEditorConfig.Manifest;
@@ -48,7 +48,13 @@ public sealed class CanonicalDistributionTests {
         );
 
         Assert.Equal(CanonicalEditorConfig.Hash(Payload), Tool.Sha256);
-        Assert.Equal(4228, Tool.Assignments);
+        // ⚠ Measured, not pinned. The template is an input the author edits — stripping the C++,
+        // VB and F# namespaces took it from 4 238 lines to 2 178 — and a literal here turns a
+        // deliberate edit into a red test that says nothing about the canonical.
+        Assert.Equal(
+            EditorConfigDocument.FromText("canonical", Payload).Assignments.Count(),
+            Tool.Assignments
+        );
     }
 
     [Fact]

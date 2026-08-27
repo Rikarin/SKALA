@@ -82,7 +82,7 @@ sealed class OptionalInterfaceForwardingSink : ILogEventSink, IDisposable, ISetL
         ILogEventSink possibleReceiver
     ) {
         return possibleReceiver is
-                ISetLoggingFailureListener
+            ISetLoggingFailureListener
                 and IDisposable
 #if FEATURE_ASYNCDISPOSABLE
                 and IAsyncDisposable

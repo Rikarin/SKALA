@@ -36,15 +36,20 @@ public sealed partial class RadialItem : ButtonBase {
 /// <summary>A pie menu: wedges round a centre, aimed with the pointer.</summary>
 /// <remarks>
 ///     <para>
-///         <b>Blender's pie menu, which is the fastest menu anybody has shipped and is fast for one
-///         reason.</b> A drop-down costs a read — the items are in an order you have to scan — and a
+///         <b>
+///             Blender's pie menu, which is the fastest menu anybody has shipped and is fast for one
+///             reason.
+///         </b> A drop-down costs a read — the items are in an order you have to scan — and a
 ///         pie costs a direction. After a week the direction is muscle memory and the menu is a
 ///         flick; the items being in fixed positions is the whole mechanism, which is why nothing
 ///         here sorts or filters what it was given.
 ///     </para>
 ///     <para>
-///         ⚠ <b>Two gestures, and both have to work or neither is used.</b> <i>Press the key, then
-///         click a wedge</i> is what somebody does the first fifty times, while they are still
+///         ⚠ <b>Two gestures, and both have to work or neither is used.</b>
+///         <i>
+///             Press the key, then
+///             click a wedge
+///         </i> is what somebody does the first fifty times, while they are still
 ///         reading the labels. <i>Hold the key, flick, release</i> is what they do afterwards, and it
 ///         is the one that makes the menu worth having. They are the same menu in the same place —
 ///         see <see cref="Hold" />.
@@ -108,19 +113,19 @@ public sealed partial class RadialMenu : Overlay {
         LightDismiss = true;
         CloseOnEscape =
             true; // ⚠ On the root and capturing, like the light dismiss above it. A pie menu is aimed by moving
-// the pointer *outside* it — the ring is 92 pixels out and the pointer starts in the middle —
-// so a handler on this element would hear nothing until the pointer had already crossed a
-// wedge. This is the one control in the set that has to watch the whole document.
+        // the pointer *outside* it — the ring is 92 pixels out and the pointer starts in the middle —
+        // so a handler on this element would hear nothing until the pointer had already crossed a
+        // wedge. This is the one control in the set that has to watch the whole document.
         aimed = (_, args) => Aimed(args);
         Document.Root.AddHandler(
             aimed,
             RoutingStrategy.Capture,
             handledEventsToo: true
         ); // ⚠ And the key going up, on the root for the same reason. The gesture this menu is for is
-// "hold a key, flick, let go" — so the commit is a key *release*, which arrives wherever the
-// focus happens to be and never at a menu that has only just opened. Watching it here is
-// what makes the held-key form work at all; without it the menu would open on the press and
-// then sit there waiting for a click nobody is going to make.
+        // "hold a key, flick, let go" — so the commit is a key *release*, which arrives wherever the
+        // focus happens to be and never at a menu that has only just opened. Watching it here is
+        // what makes the held-key form work at all; without it the menu would open on the press and
+        // then sit there waiting for a click nobody is going to make.
         lifted = (_, args) => Lifted(args);
         Document.Root.AddHandler(lifted, RoutingStrategy.Capture, handledEventsToo: true);
         AddHandler<ClickEvent>(static (element, args) => ((RadialMenu)element).Chosen(args));
@@ -193,11 +198,11 @@ public sealed partial class RadialMenu : Overlay {
             x - (Bounds.Width * 0.5f),
             y - (Bounds.Height * 0.5f)
         ); // ⚠ Placed, laid out, and placed again — which is one pass more than it looks like it needs.
-// Writing `left` on an absolutely positioned child changes how much room is left to its
-// right, so a wedge whose label is long is measured at one width before the offset and a
-// different one after it; centring against the first leaves that wedge off the ring by half
-// the difference. The second pass centres against the width it actually ended up with, and
-// it converges there because the offset no longer moves.
+        // Writing `left` on an absolutely positioned child changes how much room is left to its
+        // right, so a wedge whose label is long is measured at one width before the offset and a
+        // different one after it; centring against the first leaves that wedge off the ring by half
+        // the difference. The second pass centres against the width it actually ended up with, and
+        // it converges there because the offset no longer moves.
         Place();
         Restyle();
     }
@@ -210,9 +215,9 @@ public sealed partial class RadialMenu : Overlay {
         }
 
         var
-            item = items[
-                highlighted]; // Closed before the command runs, for `CommandPalette.Accept`'s reason: a command that opens
-// a dialog would otherwise be covered by the menu that started it.
+        item = items[
+            highlighted]; // Closed before the command runs, for `CommandPalette.Accept`'s reason: a command that opens
+        // a dialog would otherwise be covered by the menu that started it.
         Close(CloseReason.Committed);
         Chose?.Invoke(this, item);
         return true;
@@ -239,7 +244,7 @@ public sealed partial class RadialMenu : Overlay {
             return -1;
         } // Zero points up and grows clockwise, which is what `Place` lays the wedges out by. Screen y
 
-// grows downwards, so this is `Atan2(x, -y)` rather than the usual argument order.
+        // grows downwards, so this is `Atan2(x, -y)` rather than the usual argument order.
         var angle = MathF.Atan2(offset.X, -offset.Y);
         if (angle < 0f) {
             angle += MathF.Tau;
@@ -251,8 +256,11 @@ public sealed partial class RadialMenu : Overlay {
 
     /// <summary>Puts each wedge on the ring.</summary>
     /// <remarks>
-    ///     ⚠ <b>Positioned by an inline offset rather than by a rule, because the ring's geometry is
-    ///     arithmetic no stylesheet can do.</b> The radius is a property, the count is whatever was
+    ///     ⚠
+    ///     <b>
+    ///         Positioned by an inline offset rather than by a rule, because the ring's geometry is
+    ///         arithmetic no stylesheet can do.
+    ///     </b> The radius is a property, the count is whatever was
     ///     added, and each wedge has to be centred on its own point rather than starting at it — an
     ///     item placed by its top-left corner makes a ring that leans down and to the right by half a
     ///     button.
@@ -292,9 +300,9 @@ public sealed partial class RadialMenu : Overlay {
             return;
         } // ⚠ Only a release that belongs to the gesture that opened it. A menu opened by a click is
 
-// opened *by* a press whose release arrives a few milliseconds later, over the middle of the
-// menu — committing on that would make every click-opened pie close again instantly, having
-// chosen whatever the dead zone let through.
+        // opened *by* a press whose release arrives a few milliseconds later, over the middle of the
+        // menu — committing on that would make every click-opened pie close again instantly, having
+        // chosen whatever the dead zone let through.
         if (args.Action == PointerAction.Released) {
             Commit();
         }
@@ -324,7 +332,7 @@ public sealed partial class RadialMenu : Overlay {
         held = false;
         if (!Accept()) {
             // A release with nothing aimed at is somebody who opened the menu to look at it. It stays
-// up and becomes the click-to-choose kind, which is the first of the two gestures.
+            // up and becomes the click-to-choose kind, which is the first of the two gestures.
             Hold = false;
         }
     }

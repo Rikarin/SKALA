@@ -493,7 +493,7 @@ precisely the artefact that makes agent-written formatter changes reviewable.
 
 ## Open questions
 
-### Q1 — Does `jb cleanupcode` reproduce Rider's *editor* formatting exactly? — ✅ **narrowed**
+### Q1 — Does `jb cleanupcode` reproduce Rider's *editor* formatting exactly? — ⚠ **reopened**
 
 The oracle assumption is that CLI cleanup and the IDE's "Reformat Code" produce identical output for
 the same `.editorconfig`. Mostly true; ReSharper has settings that exist only in the IDE
@@ -515,8 +515,62 @@ are Tier C (accepted, ignored) for Skala — it has no autodetection to switch o
 check` reports `SK9006` if either is ever set back to `true`, because that reintroduces a
 disagreement Skala cannot resolve.
 
-What remains of Q1 is the smaller question of cleanup-profile parity, which the oracle harness
-handles by pinning the profile explicitly ([12](12-conformance-and-testing.md)).
+⚠ **What was called "what remains of Q1" is the whole of Q1, and it has now bitten once.** The
+sentence used to read: "What remains of Q1 is the smaller question of cleanup-profile parity, which
+the oracle harness handles by pinning the profile explicitly." Pinning the profile explicitly is not
+a handling of that question. It is a *choice* of answer, made once, in `OracleProfile.FormatOnly`,
+and never re-examined — and the profile that was chosen is `Built-in: Reformat Code`, which is
+precisely the built-in profile that switches documentation-comment formatting **off**.
+
+#### The second instance: documentation comments (SK-DIV-0006)
+
+M3 asked the oracle whether it formats documentation comments, got "no" under every shape of the
+`resharper_xmldoc_*` family, and recorded it as a property of `jb cleanupcode`. It is a property of
+the profile: `CSharpFormatDocComments` is a real cleanup task, `Full Cleanup` enables it, `Reformat
+Code` does not, and the pinned profile is the latter. The consequence stood for six milestones — an
+entire sub-formatter built behind an opt-in flag, its seventeen keys held at Tier D, and one key
+actively *demoted* from Tier A for doing the right thing. See
+[../divergences.md](../divergences.md) § SK-DIV-0006 and
+[../oracle-cleanup-profile.md](../oracle-cleanup-profile.md).
+
+This is not the same failure as the autodetect one. Autodetect was the IDE having a setting the CLI
+does not; this is the CLI and the IDE agreeing perfectly and Skala asking the wrong one of the CLI's
+profiles. The first is a tool difference and the second is a configuration difference, and the
+second is worse, because nothing about it looks like a difference at all.
+
+#### ⚠ What it costs, and why it matters more later
+
+For any area where the pinned profile and Rider disagree, **ADR-011's oracle is not the
+specification and Skala has no differential safety net there.** Both halves are load-bearing:
+
+- *Not the specification.* The differential scores agreement with the profile. Where the profile
+  does less than the editor, agreement is the wrong target and the ratchet quietly rewards matching
+  it — which is exactly how `resharper_space_after_triple_slash` came to be demoted for being
+  correct. A number that goes down when the formatter improves is worse than no number.
+- *No safety net.* Every other option in Skala is checked, on every commit, against a machine that
+  answers independently. In such an area the only evidence is hand-written fixtures and properties
+  Skala checks against itself — and a formatter checking its own answer against its own signature is
+  the thing an oracle exists to replace.
+
+⚠ **This is the reason to care now rather than at the point of replacement.** The roadmap ends with
+ReSharper removed and the oracle gone. Every fixture is a snapshot taken under one profile, and once
+the tool is gone, a profile the fixtures were generated under wrongly cannot be re-asked — the
+snapshot *is* the specification, and its gaps become permanent. The remaining lifetime of the oracle
+is the only window in which "which profile" is still a question with an answer.
+
+#### What would close it
+
+The instance is closable and closing it is cheap: one element in `OracleProfile.FormatOnly` plus
+`./build.sh Oracle`. Q1 itself needs the general form, which nobody has done — **enumerate the
+cleanup tasks the built-in profiles enable and diff them against the pinned profile**, rather than
+probing task names one at a time as a milestone happens to need them. The task list is recoverable
+(`CodeCleanupTask_*` in the resource strings; 113 names on 2025.2.6) and
+[../oracle-cleanup-profile.md](../oracle-cleanup-profile.md) already records the method. That sweep
+was run against the names the roadmap named, which is why it missed this one: the roadmap did not
+name documentation comments, because M3 had already concluded the oracle would not format them.
+
+⚠ Until that sweep exists, treat "the oracle does not do X" as **"the pinned profile does not do
+X"** wherever it appears in this repository, and check before building anything on it.
 
 ### Q2 — How aggressive should the first run be?
 

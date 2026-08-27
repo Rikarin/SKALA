@@ -71,8 +71,11 @@ public enum TextDecorationStyle : byte {
 /// <param name="Thickness">How thick, in pixels, or NaN for the face's.</param>
 /// <param name="Offset">How much further down the underline sits, in pixels. Zero for <c>auto</c>.</param>
 /// <remarks>
-///     ⚠ <b><c>default(TextDecoration)</c> is not "a decoration with the defaults" — it is no
-///     decoration at all, and its <see cref="Thickness" /> is zero rather than NaN.</b> A record
+///     ⚠
+///     <b>
+///         <c>default(TextDecoration)</c> is not "a decoration with the defaults" — it is no
+///         decoration at all, and its <see cref="Thickness" /> is zero rather than NaN.
+///     </b> A record
 ///     struct's parameter defaults belong to its <i>constructor</i>; the zero-initialised value has
 ///     never run one. That is harmless because <see cref="Lines" /> is then
 ///     <see cref="TextDecorationLine.None" /> and <see cref="IsNone" /> catches it first — but it is
@@ -82,9 +85,9 @@ public enum TextDecorationStyle : byte {
 public readonly record struct TextDecoration(
     TextDecorationLine Lines,
     TextDecorationStyle
-        Style = TextDecorationStyle.Solid,
+    Style = TextDecorationStyle.Solid,
     Color4? Color =
-        null,
+    null,
     float Thickness = float.NaN,
     float Offset = 0f
 ) {

@@ -1,4 +1,5 @@
 #region License
+
 // Copyright (c) 2007 James Newton-King
 //
 // Permission is hereby granted, free of charge, to any person
@@ -21,9 +22,11 @@
 // WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 // OTHER DEALINGS IN THE SOFTWARE.
+
 #endregion
+
 #if !NET20
-using System;using System.Runtime.Serialization;using Newtonsoft.Json.Converters;
+using System; using System.Runtime.Serialization; using Newtonsoft.Json.Converters;
 #if DNXCORE50
 using System.Reflection;
 using Xunit;
@@ -32,11 +35,51 @@ using Assert = Newtonsoft.Json.Tests.XUnitAssert;
 #else
 using NUnit.Framework;
 #endif
-namespace Newtonsoft.Json.Tests.Issues{[TestFixture]public class Issue1566:TestFixtureBase{[Test]public void Github_deserialize_pr_state_should_be_case_insensitive(){ // Arrange
-var jsonWithUppercase="{\"state\": \"APPROVED\"}" ;var jsonWithLowercase="{\"state\": \"approved\"}" ; // Act
-var jsonObjectWithUppercase=JsonConvert.DeserializeObject<GitHubPullRequestReview>(jsonWithUppercase);var jsonObjectWithLowercase=JsonConvert.DeserializeObject<GitHubPullRequestReview>(jsonWithLowercase); // Assert
-Assert.AreEqual(GitHubPullRequestReviewState.Approved,jsonObjectWithUppercase.State);Assert.AreEqual(GitHubPullRequestReviewState.Approved,jsonObjectWithLowercase.State);}[Test]public void Github_deserialize_pr_state_changes_requested_should_be_case_insensitive(){ // Arrange
-var jsonWithUppercase="{\"state\": \"CHANGES_REQUESTED\"}" ;var jsonWithLowercase="{\"state\": \"changes_requested\"}" ; // Act
-var jsonObjectWithUppercase=JsonConvert.DeserializeObject<GitHubPullRequestReview>(jsonWithUppercase);var jsonObjectWithLowercase=JsonConvert.DeserializeObject<GitHubPullRequestReview>(jsonWithLowercase); // Assert
-Assert.AreEqual(GitHubPullRequestReviewState.ChangesRequested,jsonObjectWithUppercase.State);Assert.AreEqual(GitHubPullRequestReviewState.ChangesRequested,jsonObjectWithLowercase.State);}public enum GitHubPullRequestReviewState{[EnumMember(Value="approved" )]Approved,[EnumMember(Value="changes_requested" )]ChangesRequested,[EnumMember(Value="commented" )]Commented,[EnumMember(Value="dismissed" )]Dismissed,[EnumMember(Value="pending" )]Pending}public class GitHubPullRequestReview{[JsonProperty("state" )][JsonConverter(typeof(StringEnumConverter))]public GitHubPullRequestReviewState State;}}}
+namespace Newtonsoft.Json.Tests.Issues {
+    [TestFixture]
+    public class Issue1566 : TestFixtureBase {
+        [Test]
+        public void Github_deserialize_pr_state_should_be_case_insensitive() {
+            // Arrange
+            var jsonWithUppercase = "{\"state\": \"APPROVED\"}";
+            var jsonWithLowercase = "{\"state\": \"approved\"}"; // Act
+            var jsonObjectWithUppercase = JsonConvert.DeserializeObject<GitHubPullRequestReview>(jsonWithUppercase);
+            var jsonObjectWithLowercase =
+                JsonConvert.DeserializeObject<GitHubPullRequestReview>(jsonWithLowercase); // Assert
+            Assert.AreEqual(GitHubPullRequestReviewState.Approved, jsonObjectWithUppercase.State);
+            Assert.AreEqual(GitHubPullRequestReviewState.Approved, jsonObjectWithLowercase.State);
+        }
+
+        [Test]
+        public void Github_deserialize_pr_state_changes_requested_should_be_case_insensitive() {
+            // Arrange
+            var jsonWithUppercase = "{\"state\": \"CHANGES_REQUESTED\"}";
+            var jsonWithLowercase = "{\"state\": \"changes_requested\"}"; // Act
+            var jsonObjectWithUppercase = JsonConvert.DeserializeObject<GitHubPullRequestReview>(jsonWithUppercase);
+            var jsonObjectWithLowercase =
+                JsonConvert.DeserializeObject<GitHubPullRequestReview>(jsonWithLowercase); // Assert
+            Assert.AreEqual(GitHubPullRequestReviewState.ChangesRequested, jsonObjectWithUppercase.State);
+            Assert.AreEqual(GitHubPullRequestReviewState.ChangesRequested, jsonObjectWithLowercase.State);
+        }
+
+        public enum GitHubPullRequestReviewState {
+            [EnumMember(Value = "approved")]
+            Approved,
+            [EnumMember(Value = "changes_requested")]
+            ChangesRequested,
+            [EnumMember(Value = "commented")]
+            Commented,
+            [EnumMember(Value = "dismissed")]
+            Dismissed,
+            [EnumMember(Value = "pending")]
+            Pending
+        }
+
+        public class GitHubPullRequestReview {
+            [JsonProperty("state")]
+            [JsonConverter(typeof(StringEnumConverter))]
+            public GitHubPullRequestReviewState State;
+        }
+    }
+}
 #endif

@@ -123,7 +123,7 @@ public sealed record RealmSpec {
 
         foreach (var option in Options) {
             // Prefixed, so a game's option can never collide with a field this record grows later —
-// and so a reader can tell at a glance which half of the string is the engine's.
+            // and so a reader can tell at a glance which half of the string is the engine's.
             KeyValueText.Write(text, "x-" + option.Key, option.Value);
         }
 

@@ -10,13 +10,22 @@ using Rikarin.Skala.Options;
 namespace Rikarin.Skala.Formatting.CSharp;
 
 /// <summary>What formatting one file produced.</summary>
+/// <param name="ReflowedComments">
+///     ⚠ How many documentation comments the sub-formatter rewrote, and it is on the result rather
+///     than inside the pipeline because the property cannot be checked from outside without it.
+///     A re-wrapped <c>///</c> comment changes documentation trivia, which
+///     <see cref="TokenEquivalence" /> only forgives when told a reflow happened; a caller that
+///     compares the two texts itself and cannot ask will report every reflowed file as a violation.
+///     The fuzzer did exactly that the day the sub-formatter became the default.
+/// </param>
 public sealed record FormatResult(
     string Path,
     SourceText Original,
     ImmutableArray<TextEdit> Edits,
     string Formatted,
     ImmutableArray<SkalaDiagnostic> Diagnostics,
-    FormatOutcome Outcome) {
+    FormatOutcome Outcome,
+    int ReflowedComments = 0) {
     public bool Changed => !Edits.IsEmpty;
 
     public int ChangedLines {
@@ -51,8 +60,8 @@ public enum FormatOutcome {
 }
 
 /// <summary>
-/// The pipeline of docs/plan/04 § "The pipeline", minus the arrangement and fitting stages that
-/// milestones 2–4 fill in.
+///     The pipeline of docs/plan/04 § "The pipeline", minus the arrangement and fitting stages that
+///     milestones 2–4 fill in.
 /// </summary>
 public static class CSharpFormatter {
     public static readonly CSharpParseOptions ParseOptions =
@@ -61,19 +70,19 @@ public static class CSharpFormatter {
     static readonly ConcurrentDictionary<string, CSharpParseOptions> SymbolisedOptions = new(StringComparer.Ordinal);
 
     /// <summary>
-    /// The parse options for a file, given the preprocessor symbols that are defined for it.
+    ///     The parse options for a file, given the preprocessor symbols that are defined for it.
     /// </summary>
     /// <remarks>
-    /// ⚠ SK-DIV-0004. With no symbols Roslyn hands back every <c>#if DEBUG</c> body as
-    /// <see cref="SyntaxKind.DisabledTextTrivia"/> — an unstructured string the formatter is not
-    /// allowed to touch — while the oracle runs against a project where <c>DEBUG</c> is defined and
-    /// formats it. Nothing else in the pipeline needs to change: which branch is disabled text is
-    /// entirely a parse-time decision, so supplying the symbols is the whole fix.
-    /// <para>
-    /// Memoised because the symbol set is per-compilation and the file count per compilation is in
-    /// the thousands; <see cref="CSharpParseOptions.WithPreprocessorSymbols(IEnumerable{string})"/>
-    /// allocates a new options object and a new symbol map every call.
-    /// </para>
+    ///     ⚠ SK-DIV-0004. With no symbols Roslyn hands back every <c>#if DEBUG</c> body as
+    ///     <see cref="SyntaxKind.DisabledTextTrivia" /> — an unstructured string the formatter is not
+    ///     allowed to touch — while the oracle runs against a project where <c>DEBUG</c> is defined and
+    ///     formats it. Nothing else in the pipeline needs to change: which branch is disabled text is
+    ///     entirely a parse-time decision, so supplying the symbols is the whole fix.
+    ///     <para>
+    ///         Memoised because the symbol set is per-compilation and the file count per compilation is in
+    ///         the thousands; <see cref="CSharpParseOptions.WithPreprocessorSymbols(IEnumerable{string})" />
+    ///         allocates a new options object and a new symbol map every call.
+    ///     </para>
     /// </remarks>
     public static CSharpParseOptions ParseOptionsFor(IReadOnlyList<string>? symbols) {
         if (symbols is null || symbols.Count == 0) {
@@ -95,30 +104,33 @@ public static class CSharpFormatter {
         in FormattingOptions options,
         string? crashRoot = null,
         IReadOnlyList<string>? preprocessorSymbols = null,
-        bool xmlDoc = false
+        bool xmlDoc = true
     ) {
         var phaseOne = new PhaseOneOptions(options);
-        return Format(
-            path,
-            text,
-            phaseOne,
-            crashRoot,
-            preprocessorSymbols,
-            xmlDoc ? new XmlDocOptions(options) : null
-        );
+        return Format(path, text, phaseOne, crashRoot, preprocessorSymbols, xmlDoc);
     }
 
     /// <summary>
-    /// ⚠ <paramref name="xmlDoc"/> is null unless <c>skala format --xmldoc</c> asked for the
-    /// documentation-comment sub-formatter.
+    ///     ⚠ <paramref name="xmlDoc" /> defaults to <c>true</c>: documentation comments are formatted.
     /// </summary>
     /// <remarks>
-    /// ⚠ Off by default, and that is a measurement rather than caution. <c>jb cleanupcode</c> does
-    /// not format doc comments (SK-DIV-0006), so a Skala that re-wrapped them by default would
-    /// disagree with Rider on every doc comment in every repository — which is the divergence
-    /// SK-DIV-0009 spells out as "an option Skala honours and Rider ignores is a divergence wearing
-    /// a tier badge". The flag has the same shape and the same reason as <c>arrange
-    /// --aggressive</c> in SK-DIV-0014.
+    ///     ⚠ On by default, and the default changed. It was off from milestone 9 because
+    ///     <c>jb cleanupcode</c> does not format documentation comments (SK-DIV-0006) and the oracle is
+    ///     the definition of correct under ADR-011 — so re-wrapping them by default read as a 3.59-point
+    ///     fidelity regression. The premise was wrong in one specific way —
+    ///     Rider formats them and
+    ///     the pinned profile does not — so the two disagree, and matching the oracle here
+    ///     means diverging from Rider on every documentation comment in every repository. Skala follows
+    ///     Rider. The consequence is that this is the one area of the formatter with no differential
+    ///     safety net at all, which is why <see cref="XmlDocFormatter" /> carries a round-trip check on
+    ///     every comment of every run rather than a fixture.
+    ///     <para>
+    ///         ⚠ The escape hatch is <c>skala format --no-xmldoc</c> and not
+    ///         <c>resharper_xmldoc_wrap_lines = false</c>. That key means "do not wrap long lines" — with it
+    ///         false the sub-formatter still re-indents, still collapses blank lines between tags, still
+    ///         inserts the marker space — so making it the kill switch would attach a meaning to a
+    ///         ReSharper key that ReSharper does not give it, which is the mistake this change is undoing.
+    ///     </para>
     /// </remarks>
     public static FormatResult Format(
         string path,
@@ -126,7 +138,7 @@ public static class CSharpFormatter {
         in PhaseOneOptions options,
         string? crashRoot = null,
         IReadOnlyList<string>? preprocessorSymbols = null,
-        XmlDocOptions? xmlDoc = null
+        bool xmlDoc = true
     ) {
         var diagnostics = ImmutableArray.CreateBuilder<SkalaDiagnostic>();
 
@@ -194,8 +206,8 @@ public static class CSharpFormatter {
         var output = layout.Text;
 
         var reflowed = 0;
-        if (xmlDoc is { } xml) {
-            var outcome = XmlDocFormatter.Rewrite(output, xml, parseOptions, newLine, options.Tags);
+        if (xmlDoc) {
+            var outcome = XmlDocFormatter.Rewrite(output, options.XmlDoc, parseOptions, newLine, options.Tags);
             layout = XmlDocFormatter.Reanchor(layout, outcome.Text, outcome.Replacements);
             output = outcome.Text;
             reflowed = outcome.Reflowed;
@@ -233,18 +245,26 @@ public static class CSharpFormatter {
             );
         }
 
-        return new FormatResult(path, text, [.. edits], formatted, diagnostics.ToImmutable(), FormatOutcome.Formatted);
+        return new FormatResult(
+            path,
+            text,
+            [.. edits],
+            formatted,
+            diagnostics.ToImmutable(),
+            FormatOutcome.Formatted,
+            reflowed
+        );
     }
 
     /// <summary>
-    /// Reports every line the formatter could not fit, at <c>hint</c>.
+    ///     Reports every line the formatter could not fit, at <c>hint</c>.
     /// </summary>
     /// <remarks>
-    /// ⚠ docs/plan/04 § "The fitting algorithm": "Unfittable lines are left long. […] It never
-    /// breaks a token, never breaks inside a string, and never emits a diagnostic for it by default
-    /// (SK0002 at hint for the audit)." A 200-character string literal and a deeply-qualified
-    /// generic type are not the formatter's to shorten, and a formatter that tried would be breaking
-    /// tokens.
+    ///     ⚠ docs/plan/04 § "The fitting algorithm": "Unfittable lines are left long. […] It never
+    ///     breaks a token, never breaks inside a string, and never emits a diagnostic for it by default
+    ///     (SK0002 at hint for the audit)." A 200-character string literal and a deeply-qualified
+    ///     generic type are not the formatter's to shorten, and a formatter that tried would be breaking
+    ///     tokens.
     /// </remarks>
     static void ReportLongLines(
         string path,
@@ -283,7 +303,7 @@ public static class CSharpFormatter {
         IReadOnlyList<KeyValuePair<string, string>>? overrides = null,
         string? crashRoot = null,
         IReadOnlyList<string>? preprocessorSymbols = null,
-        bool xmlDoc = false
+        bool xmlDoc = true
     ) {
         var text = Read(path);
         // ⚠ Through ConfigurationCache: resolving 483 options from a re-parsed chain per file is
@@ -299,13 +319,16 @@ public static class CSharpFormatter {
     }
 
     /// <summary>
-    /// Final newline and the trailing-whitespace sweep, applied last and as ordinary edits.
+    ///     Final newline and the trailing-whitespace sweep, applied last and as ordinary edits.
     /// </summary>
     /// <remarks>
-    /// ⚠ <c>resharper_csharp_insert_final_newline = true</c> wins over <c>[*] insert_final_newline
-    /// = false</c> by language specificity (docs/plan/03, hazard 3). The BOM is preserved exactly:
-    /// it lives in <see cref="SourceText.Encoding"/> and never in the text, so nothing here can add
-    /// or remove one.
+    ///     ⚠ <c>resharper_csharp_insert_final_newline = true</c> wins over
+    ///     <c>
+    ///[*] insert_final_newline
+    /// = false
+    ///     </c> by language specificity (docs/plan/03, hazard 3). The BOM is preserved exactly:
+    ///     it lives in <see cref="SourceText.Encoding" /> and never in the text, so nothing here can add
+    ///     or remove one.
     /// </remarks>
     static string ApplyFileLevelRules(string output, in PhaseOneOptions options, string newLine) {
         var trimmed = output.TrimEnd(' ', '\t', '\r', '\n');
@@ -317,9 +340,9 @@ public static class CSharpFormatter {
     }
 
     /// <summary>
-    /// The ending a newly inserted break gets. ⚠ <c>enforce_line_ending_style = false</c> means
-    /// existing endings are preserved rather than normalised, so this is only consulted where the
-    /// source had no break to copy.
+    ///     The ending a newly inserted break gets. ⚠ <c>enforce_line_ending_style = false</c> means
+    ///     existing endings are preserved rather than normalised, so this is only consulted where the
+    ///     source had no break to copy.
     /// </summary>
     static string DefaultNewLine(SourceText text, in PhaseOneOptions options) {
         if (options.EnforceLineEndingStyle) {
@@ -341,7 +364,7 @@ public static class CSharpFormatter {
 }
 
 /// <summary>
-/// ⚠ The formatter does not touch generated files (docs/plan/04 § "What the engine does not do").
+///     ⚠ The formatter does not touch generated files (docs/plan/04 § "What the engine does not do").
 /// </summary>
 public static class GeneratedCode {
     public static bool IsGenerated(string path, SourceText text) {

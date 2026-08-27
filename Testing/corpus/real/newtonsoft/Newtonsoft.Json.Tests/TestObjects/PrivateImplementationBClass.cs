@@ -1,4 +1,5 @@
 ﻿#region License
+
 // Copyright (c) 2007 James Newton-King
 //
 // Permission is hereby granted, free of charge, to any person
@@ -21,25 +22,24 @@
 // WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 // OTHER DEALINGS IN THE SOFTWARE.
+
 #endregion
 
-namespace Newtonsoft.Json.Tests.TestObjects
-{
-    public class PrivateImplementationBClass : PrivateImplementationAClass, IPrivateImplementationB, IPrivateOverriddenImplementation
-    {
+namespace Newtonsoft.Json.Tests.TestObjects {
+    public class PrivateImplementationBClass : PrivateImplementationAClass,
+        IPrivateImplementationB,
+        IPrivateOverriddenImplementation {
         [JsonIgnore]
         public string PropertyB { get; set; }
 
         [JsonProperty("PropertyB")]
-        string IPrivateImplementationB.PropertyB
-        {
+        string IPrivateImplementationB.PropertyB {
             get { return PropertyB; }
             set { PropertyB = value; }
         }
 
         [JsonProperty("OverriddenProperty")]
-        private string OverriddenPropertyString
-        {
+        private string OverriddenPropertyString {
             get { return OverriddenProperty.ToString(); }
             set { OverriddenProperty = value; }
         }
@@ -48,8 +48,7 @@ namespace Newtonsoft.Json.Tests.TestObjects
         public object OverriddenProperty { get; set; }
 
         [JsonIgnore]
-        object IPrivateOverriddenImplementation.OverriddenProperty
-        {
+        object IPrivateOverriddenImplementation.OverriddenProperty {
             get { return OverriddenProperty; }
             set { OverriddenProperty = value; }
         }

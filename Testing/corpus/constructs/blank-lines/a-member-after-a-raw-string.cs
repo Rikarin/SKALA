@@ -1,7 +1,8 @@
 class C {
     const string A = """
-        one
-        two
-        """;
+                     one
+                     two
+                     """;
+
     const string B = "b";
 }

@@ -1,4 +1,5 @@
 // skala-oracle: resharper=2025.2.6 config=sha256:98ff52570e019fac profile=SkalaCleanup generated=2026-08-27
+
 #region License
 
 // Copyright (c) 2007 James Newton-King
@@ -36,7 +37,7 @@ using System.Reflection;
 
 namespace Newtonsoft.Json.Serialization {
     /// <summary>
-    /// Get and set values for a <see cref="MemberInfo"/> using dynamic methods.
+    ///     Get and set values for a <see cref="MemberInfo" /> using dynamic methods.
     /// </summary>
     [RequiresDynamicCode(MiscellaneousUtils.AotWarning)]
     public class ExpressionValueProvider : IValueProvider {
@@ -45,7 +46,7 @@ namespace Newtonsoft.Json.Serialization {
         Action<object, object?>? _setter;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="ExpressionValueProvider"/> class.
+        ///     Initializes a new instance of the <see cref="ExpressionValueProvider" /> class.
         /// </summary>
         /// <param name="memberInfo">The member info.</param>
         public ExpressionValueProvider(MemberInfo memberInfo) {
@@ -54,7 +55,7 @@ namespace Newtonsoft.Json.Serialization {
         }
 
         /// <summary>
-        /// Sets the value.
+        ///     Sets the value.
         /// </summary>
         /// <param name="target">The target to set the value on.</param>
         /// <param name="value">The value to set on the target.</param>
@@ -93,7 +94,7 @@ namespace Newtonsoft.Json.Serialization {
         }
 
         /// <summary>
-        /// Gets the value.
+        ///     Gets the value.
         /// </summary>
         /// <param name="target">The target to get the value from.</param>
         /// <returns>The value.</returns>

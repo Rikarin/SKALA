@@ -3,9 +3,9 @@
 // SPDX-License-Identifier: Apache-2.0
 
 using Vixen.
-    Core;
+Core;
 using
-    Vixen.Core.Curves;
+Vixen.Core.Curves;
 
 namespace Vixen.Ai;
 
@@ -26,7 +26,9 @@ public enum UtilityInputKind : byte {
     Registered
 }
 
-/// <summary>One consideration, as a file holds it: where the number comes from and what shape it goes through.</summary>
+/// <summary>
+///     One consideration, as a file holds it: where the number comes from and what shape it goes through.
+/// </summary>
 /// <remarks>
 ///     ⚠ <b>Every member is settable, and that is not laziness.</b> The YAML binder takes part only in
 ///     members it can write on both sides, so a get-only collection is written out and then silently
@@ -40,7 +42,7 @@ public sealed class UtilityConsiderationContent {
     /// <summary>Where its number comes from.</summary>
     public UtilityInputKind Input {
         get
-        ;
+            ;
         set;
     }
 
@@ -73,7 +75,7 @@ public sealed class UtilityConsiderationContent {
     /// <summary>Horizontal shift.</summary>
     public float Centre {
         get
-        ;
+            ;
         set;
     }
 
@@ -139,13 +141,13 @@ public sealed class
     public string Task {
         get;
         set
-        ;
+            ;
     } = string.Empty;
 
     /// <summary>The task's fields, by name.</summary>
     public Dictionary<string, string> Fields {
         get
-        ;
+            ;
         set;
     } = [];
 
@@ -159,7 +161,7 @@ public sealed class
     /// <summary>Which group it is in. Higher wins, under the bucketed selector.</summary>
     public int Bucket {
         get
-        ;
+            ;
         set;
     }
 
@@ -246,8 +248,8 @@ public
                 builder.Add(key.Name, key.Type);
             } catch (Exception error) when
                 (error is InvalidOperationException or ArgumentException) {
-                diagnostics?.Add(new(Symbol.Intern(key.Name), error.Message));
-            }
+                    diagnostics?.Add(new(Symbol.Intern(key.Name), error.Message));
+                }
         }
 
         return builder.Build();

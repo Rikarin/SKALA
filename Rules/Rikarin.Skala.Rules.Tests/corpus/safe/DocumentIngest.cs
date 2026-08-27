@@ -8,9 +8,9 @@ public static class DocumentIngest {
         new XmlReaderSettings { DtdProcessing = DtdProcessing.Prohibit, XmlResolver = null };
 
     /// <summary>
-    /// ⚠ The file that carries the rule's argument. On .NET Core the default resolver is null, so
-    /// parsing a DTD resolves nothing external. Reporting this would be reporting a program that is
-    /// not vulnerable, on a platform where the one-fact version of the rule is simply wrong.
+    ///     ⚠ The file that carries the rule's argument. On .NET Core the default resolver is null, so
+    ///     parsing a DTD resolves nothing external. Reporting this would be reporting a program that is
+    ///     not vulnerable, on a platform where the one-fact version of the rule is simply wrong.
     /// </summary>
     public static XmlReaderSettings ParsesButResolvesNothing() =>
         new XmlReaderSettings { DtdProcessing = DtdProcessing.Parse, XmlResolver = null };

@@ -1,4 +1,5 @@
 // skala-oracle: resharper=2025.2.6 config=sha256:98ff52570e019fac profile=SkalaFormatOnly generated=2026-08-27
+
 #region License
 
 // Copyright (c) 2007 James Newton-King
@@ -30,22 +31,22 @@
 
 namespace Newtonsoft.Json {
     /// <summary>
-    /// Specifies how strings are escaped when writing JSON text.
+    ///     Specifies how strings are escaped when writing JSON text.
     /// </summary>
     public enum StringEscapeHandling {
         /// <summary>
-        /// Only control characters (e.g. newline) are escaped.
+        ///     Only control characters (e.g. newline) are escaped.
         /// </summary>
         Default
             = 0,
 
         /// <summary>
-        /// All non-ASCII and control characters (e.g. newline) are escaped.
+        ///     All non-ASCII and control characters (e.g. newline) are escaped.
         /// </summary>
         EscapeNonAscii = 1,
 
         /// <summary>
-        /// HTML (&lt;, &gt;, &amp;, &apos;, &quot;) and control characters (e.g. newline) are escaped.
+        ///     HTML (&lt;, &gt;, &amp;, &apos;, &quot;) and control characters (e.g. newline) are escaped.
         /// </summary>
         EscapeHtml = 2
     }

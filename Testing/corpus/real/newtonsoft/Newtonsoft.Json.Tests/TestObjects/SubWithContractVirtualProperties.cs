@@ -1,4 +1,5 @@
 #region License
+
 // Copyright (c) 2007 James Newton-King
 //
 // Permission is hereby granted, free of charge, to any person
@@ -21,16 +22,15 @@
 // WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 // OTHER DEALINGS IN THE SOFTWARE.
+
 #endregion
 
 using System.Runtime.Serialization;
 
-namespace Newtonsoft.Json.Tests.TestObjects
-{
+namespace Newtonsoft.Json.Tests.TestObjects {
 #if !NET20
     [DataContract]
-    public class SubWithContractVirtualProperties : BaseWithContract
-    {
+    public class SubWithContractVirtualProperties : BaseWithContract {
 #pragma warning disable 108, 114
         [DataMember(Name = "VirtualWithDataMemberSub")]
         public virtual string VirtualWithDataMember { get; set; }

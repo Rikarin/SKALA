@@ -6,36 +6,36 @@ using Rikarin.Skala.Reporting;
 namespace Rikarin.Skala.Analysis;
 
 /// <summary>
-/// <c>--no-new-suppressions</c>: everything that makes a finding go away without fixing it.
+///     <c>--no-new-suppressions</c>: everything that makes a finding go away without fixing it.
 /// </summary>
 /// <remarks>
-/// docs/plan/09 § "Gates". ⚠ <b>A grep for <c>#pragma</c> is not a constraint.</b> There are four
-/// ways to silence a rule and the pragma is the only one that shows up in review as an obvious
-/// suppression; the other three are the ones that get used when somebody would rather not have the
-/// conversation:
-/// <list type="number">
-/// <item><c>#pragma warning disable</c> — visible, local, and the one everybody checks for.</item>
-/// <item><c>[SuppressMessage]</c> — visible, but attached to a symbol and easy to read past.</item>
-/// <item>
-/// ⚠ An <c>.editorconfig</c> severity turned down. The widest of the four by a long way: one line
-/// under a section header silences a rule for a whole directory tree, and its diff looks like
-/// configuration rather than like a suppression.
-/// </item>
-/// <item>
-/// ⚠ A baseline addition. Invisible in the source entirely. The baseline's diff is meant to be the
-/// conversation (doc 09 § "The baseline"), and this is what makes it one.
-/// </item>
-/// </list>
-/// <para>
-/// The comparison is against a git ref, because "new" is only meaningful relative to something. The
-/// old side is read with <c>git grep</c> and <c>git show</c> rather than from a checkout, so the
-/// audit never touches the working tree.
-/// </para>
+///     docs/plan/09 § "Gates". ⚠ <b>A grep for <c>#pragma</c> is not a constraint.</b> There are four
+///     ways to silence a rule and the pragma is the only one that shows up in review as an obvious
+///     suppression; the other three are the ones that get used when somebody would rather not have the
+///     conversation:
+///     <list type="number">
+///         <item><c>#pragma warning disable</c> — visible, local, and the one everybody checks for.</item>
+///         <item><c>[SuppressMessage]</c> — visible, but attached to a symbol and easy to read past.</item>
+///         <item>
+///             ⚠ An <c>.editorconfig</c> severity turned down. The widest of the four by a long way: one line
+///             under a section header silences a rule for a whole directory tree, and its diff looks like
+///             configuration rather than like a suppression.
+///         </item>
+///         <item>
+///             ⚠ A baseline addition. Invisible in the source entirely. The baseline's diff is meant to be the
+///             conversation (doc 09 § "The baseline"), and this is what makes it one.
+///         </item>
+///     </list>
+///     <para>
+///         The comparison is against a git ref, because "new" is only meaningful relative to something. The
+///         old side is read with <c>git grep</c> and <c>git show</c> rather than from a checkout, so the
+///         audit never touches the working tree.
+///     </para>
 /// </remarks>
 public static class SuppressionAuditor {
     /// <summary>
-    /// ⚠ Only the disable half. <c>#pragma warning restore</c> ends a suppression rather than
-    /// starting one, and counting both would make every correctly-scoped pragma look like two.
+    ///     ⚠ Only the disable half. <c>#pragma warning restore</c> ends a suppression rather than
+    ///     starting one, and counting both would make every correctly-scoped pragma look like two.
     /// </summary>
     static readonly Regex PragmaPattern = new(
         @"#\s*pragma\s+warning\s+disable\s+(?<ids>[^\r\n/]+)",
@@ -54,22 +54,22 @@ public static class SuppressionAuditor {
     );
 
     /// <summary>
-    /// ⚠ The severities that silence or soften, in order — because "turned down" is a comparison
-    /// and not a membership test. <c>warning</c> → <c>suggestion</c> is a downgrade even though
-    /// neither end is <c>none</c>.
+    ///     ⚠ The severities that silence or soften, in order — because "turned down" is a comparison
+    ///     and not a membership test. <c>warning</c> → <c>suggestion</c> is a downgrade even though
+    ///     neither end is <c>none</c>.
     /// </summary>
     static readonly string[] SeverityOrder = ["none", "silent", "hint", "suggestion", "info", "warning", "error"];
 
     /// <summary>
-    /// One <c>git grep</c> pattern for both single-line source forms.
+    ///     One <c>git grep</c> pattern for both single-line source forms.
     /// </summary>
     /// <remarks>
-    /// ⚠ POSIX bracket expressions rather than <c>\s</c>: <c>git grep -E</c> is POSIX ERE, where
-    /// <c>\s</c> is not a character class and matches a literal <c>s</c> on some builds.
+    ///     ⚠ POSIX bracket expressions rather than <c>\s</c>: <c>git grep -E</c> is POSIX ERE, where
+    ///     <c>\s</c> is not a character class and matches a literal <c>s</c> on some builds.
     /// </remarks>
     const string GrepPattern = "#[[:space:]]*pragma[[:space:]]+warning[[:space:]]+disable|SuppressMessage";
 
-    /// <summary>Compares the working tree's suppressions to those at <paramref name="reference"/>.</summary>
+    /// <summary>Compares the working tree's suppressions to those at <paramref name="reference" />.</summary>
     public static SuppressionAudit Compare(
         string repositoryRoot,
         string reference,
@@ -155,21 +155,21 @@ public static class SuppressionAuditor {
     static bool IsEditorConfig(string path) => path.EndsWith(".editorconfig", StringComparison.OrdinalIgnoreCase);
 
     /// <summary>
-    /// Every source line in a tree that could carry a suppression, in <b>one</b> git invocation.
+    ///     Every source line in a tree that could carry a suppression, in <b>one</b> git invocation.
     /// </summary>
     /// <remarks>
-    /// ⚠ A performance decision with a correctness consequence, so it is worth writing down. The
-    /// obvious implementation reads each file's old side with <c>git show ref:path</c>, which is one
-    /// subprocess per file: measured on a 2 705-file tree that took <b>3 m 19 s</b>, and a gate
-    /// condition costing three minutes is a gate condition somebody deletes. <c>git grep</c>
-    /// searches a whole tree — the worktree, or any ref — in one process, and both C# suppression
-    /// forms are single-line, so a line-oriented search loses nothing. Measured after: under a
-    /// second on the same tree.
-    /// <para>
-    /// ⚠ <c>.editorconfig</c> is deliberately <em>not</em> read this way: its entries mean nothing
-    /// without their section header and a grep hit carries no section. There are a handful of those
-    /// files and they are read whole.
-    /// </para>
+    ///     ⚠ A performance decision with a correctness consequence, so it is worth writing down. The
+    ///     obvious implementation reads each file's old side with <c>git show ref:path</c>, which is one
+    ///     subprocess per file: measured on a 2 705-file tree that took <b>3 m 19 s</b>, and a gate
+    ///     condition costing three minutes is a gate condition somebody deletes. <c>git grep</c>
+    ///     searches a whole tree — the worktree, or any ref — in one process, and both C# suppression
+    ///     forms are single-line, so a line-oriented search loses nothing. Measured after: under a
+    ///     second on the same tree.
+    ///     <para>
+    ///         ⚠ <c>.editorconfig</c> is deliberately <em>not</em> read this way: its entries mean nothing
+    ///         without their section header and a grep hit carries no section. There are a handful of those
+    ///         files and they are read whole.
+    ///     </para>
     /// </remarks>
     static List<(string Path, string Line)> Grep(
         string repositoryRoot,
@@ -234,13 +234,13 @@ public static class SuppressionAuditor {
     }
 
     /// <summary>
-    /// The <c>.editorconfig</c> half, tracked per section.
+    ///     The <c>.editorconfig</c> half, tracked per section.
     /// </summary>
     /// <remarks>
-    /// ⚠ The section header is part of the identity. Moving
-    /// <c>dotnet_diagnostic.SK3002.severity = none</c> from <c>[Tools/**/*.cs]</c> to
-    /// <c>[**/*.cs]</c> changes nothing textually about the line and changes everything about what
-    /// it suppresses, so an audit that ignored the section would call that edit a no-op.
+    ///     ⚠ The section header is part of the identity. Moving
+    ///     <c>dotnet_diagnostic.SK3002.severity = none</c> from <c>[Tools/**/*.cs]</c> to
+    ///     <c>[**/*.cs]</c> changes nothing textually about the line and changes everything about what
+    ///     it suppresses, so an audit that ignored the section would call that edit a no-op.
     /// </remarks>
     static void ScanEditorConfig(ImmutableArray<SuppressionEntry>.Builder entries, string path, string content) {
         var section = "*";
@@ -304,16 +304,16 @@ public static class SuppressionAuditor {
     }
 
     /// <summary>
-    /// Whether a tracked path is one this audit reads whole.
+    ///     Whether a tracked path is one this audit reads whole.
     /// </summary>
     /// <remarks>
-    /// ⚠ Filtered here rather than by a git pathspec, and that is not a style preference.
-    /// <c>git ls-files "*.cs"</c> matches nested paths; <c>git ls-tree -r -- "*.cs"</c> does
-    /// <b>not</b>. Measured on a 2 705-file tree: <c>ls-files</c> returned 2 705 and
-    /// <c>ls-tree</c> returned <b>0</b>, so every suppression in the repository read as newly added
-    /// and the gate failed with 1 012 violations that did not exist. Two commands with the
-    /// same-looking pathspec and different matching rules is exactly the asymmetry to keep out of
-    /// the query and put in one predicate both sides share.
+    ///     ⚠ Filtered here rather than by a git pathspec, and that is not a style preference.
+    ///     <c>git ls-files "*.cs"</c> matches nested paths; <c>git ls-tree -r -- "*.cs"</c> does
+    ///     <b>not</b>. Measured on a 2 705-file tree: <c>ls-files</c> returned 2 705 and
+    ///     <c>ls-tree</c> returned <b>0</b>, so every suppression in the repository read as newly added
+    ///     and the gate failed with 1 012 violations that did not exist. Two commands with the
+    ///     same-looking pathspec and different matching rules is exactly the asymmetry to keep out of
+    ///     the query and put in one predicate both sides share.
     /// </remarks>
     static IEnumerable<string> Tracked(string repositoryRoot, CancellationToken cancellation) =>
         Lines(repositoryRoot, ["ls-files"], cancellation);

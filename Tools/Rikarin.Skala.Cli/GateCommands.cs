@@ -7,23 +7,23 @@ using Rikarin.Skala.Reporting;
 namespace Rikarin.Skala.Cli;
 
 /// <summary>
-/// The lifecycle half of the command surface: <c>baseline</c>, <c>report</c>, <c>trend</c>.
+///     The lifecycle half of the command surface: <c>baseline</c>, <c>report</c>, <c>trend</c>.
 /// </summary>
 /// <remarks>
-/// docs/plan/09. ⚠ SonarQube's genuinely valuable part is not its rules — it is the lifecycle: a
-/// baseline, a new-code definition, a gate that fails a build, and a report a human reads in thirty
-/// seconds. These three commands and <c>check --since/--gate</c> are that lifecycle, without a
-/// server.
+///     docs/plan/09. ⚠ SonarQube's genuinely valuable part is not its rules — it is the lifecycle: a
+///     baseline, a new-code definition, a gate that fails a build, and a report a human reads in thirty
+///     seconds. These three commands and <c>check --since/--gate</c> are that lifecycle, without a
+///     server.
 /// </remarks>
 public static partial class SkalaCommandLine {
     /// <summary>
-    /// <c>skala baseline create | update | prune | show</c>.
+    ///     <c>skala baseline create | update | prune | show</c>.
     /// </summary>
     /// <remarks>
-    /// ⚠ Every writing verb needs <c>--apply</c>. The baseline is a committed artefact whose diff
-    /// is the review conversation, so writing it is never something a command does because it was
-    /// run — it is something a person asked for. The same rule <c>config fix</c> and
-    /// <c>hooks install</c> already follow.
+    ///     ⚠ Every writing verb needs <c>--apply</c>. The baseline is a committed artefact whose diff
+    ///     is the review conversation, so writing it is never something a command does because it was
+    ///     run — it is something a person asked for. The same rule <c>config fix</c> and
+    ///     <c>hooks install</c> already follow.
     /// </remarks>
     static Command CreateBaselineCommand() {
         var baseline = new Command(
@@ -109,12 +109,12 @@ public static partial class SkalaCommandLine {
     }
 
     /// <summary>
-    /// <c>skala report</c> — re-render a stored SARIF, running nothing.
+    ///     <c>skala report</c> — re-render a stored SARIF, running nothing.
     /// </summary>
     /// <remarks>
-    /// ⚠ doc 09: "which is what CI uses to produce a PR comment from an artifact". The job that
-    /// comments is not the job that analysed, and making it re-analyse would have it analyse a
-    /// different tree.
+    ///     ⚠ doc 09: "which is what CI uses to produce a PR comment from an artifact". The job that
+    ///     comments is not the job that analysed, and making it re-analyse would have it analyse a
+    ///     different tree.
     /// </remarks>
     static Command CreateReportCommand() {
         var file = new Argument<string>("sarif") {

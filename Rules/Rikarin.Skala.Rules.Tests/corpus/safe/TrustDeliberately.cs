@@ -7,7 +7,7 @@ using System.Security.Cryptography.X509Certificates;
 namespace Corpus.Safe;
 
 /// <summary>
-/// SK5007's twin: callbacks that are written for the same reason and actually decide something.
+///     SK5007's twin: callbacks that are written for the same reason and actually decide something.
 /// </summary>
 public static class TrustDeliberately {
     const string Pinned = "9E99A48A9960B14926BB7F3B02E22DA2B0AB7280";

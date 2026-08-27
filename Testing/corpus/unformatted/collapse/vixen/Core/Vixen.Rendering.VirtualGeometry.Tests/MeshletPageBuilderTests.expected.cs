@@ -122,7 +122,7 @@ public class MeshletPageBuilderTests {
             }
         } // Not a vacuous pass: a DAG whose clusters shared no vertices would satisfy the loop above
 
-// trivially, and would also not be a DAG of a closed mesh.
+        // trivially, and would also not be a DAG of a closed mesh.
         Assert.True(shared > 100, $"Only {shared} shared references — the fixture is not exercising the property.");
     }
 
@@ -150,12 +150,12 @@ public class MeshletPageBuilderTests {
             }
         } // Half a step per axis, so the worst a three-dimensional offset can be is √3 halves. Stated
 
-// as the diagonal rather than as the reported error, which is the per-axis number.
+        // as the diagonal rather than as the reported error, which is the per-axis number.
         Assert.True(
             worst <= pages.QuantizationError * MathF.Sqrt(3f) * 1.001f,
             $"A vertex moved {worst}, and half a step is {pages.QuantizationError}."
         ); // And the error is far below the finest level that is not level zero, or the pages would be
-// changing what the DAG says it drew.
+        // changing what the DAG says it drew.
         var finest = mesh.Meshlets.Where(m => m.Error > 0f).Min(m => m.Error);
         Assert.True(
             pages.QuantizationError < finest * 0.1f,
@@ -189,7 +189,7 @@ public class MeshletPageBuilderTests {
         var mesh = MeshletBuilder.Build(
             input
         ); // One recognisable int per vertex, so a misplacement is a wrong number rather than a subtly
-// wrong normal.
+        // wrong normal.
         var attributes = new byte[input.VertexCount * 4];
         for (var v = 0; v < input.VertexCount; v++) {
             BitConverter.TryWriteBytes(attributes.AsSpan(v * 4), v * 7);

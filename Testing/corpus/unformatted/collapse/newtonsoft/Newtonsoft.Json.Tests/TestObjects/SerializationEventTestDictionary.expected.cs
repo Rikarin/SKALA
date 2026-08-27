@@ -1,4 +1,5 @@
 // skala-oracle: resharper=2025.2.6 config=sha256:98ff52570e019fac profile=SkalaFormatOnly generated=2026-08-27
+
 #region License
 
 // Copyright (c) 2007 James Newton-King
@@ -34,10 +35,10 @@ namespace Newtonsoft.Json.Tests.TestObjects {
         // This member is serialized and deserialized with no change.
         public int Member1 { get; private set; } // The value of this field is set and reset during and 
 
-// after serialization.
+        // after serialization.
         public string Member2 { get; private set; } // This field is not serialized. The OnDeserializedAttribute 
 
-// is used to set the member value after serialization.
+        // is used to set the member value after serialization.
         public string Member3 { get; private set; } // This field is set to null, but populated after deserialization.
         public string Member4 { get; private set; }
 

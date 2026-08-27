@@ -5,21 +5,21 @@ namespace Rikarin.Skala.Formatting.CSharp;
 
 /// <summary>One line of a re-wrapped documentation comment, minus the <c>///</c> marker.</summary>
 /// <param name="Verbatim">
-/// ⚠ The line already carries whatever followed the marker in the source, so the marker space is
-/// <em>not</em> re-applied to it. Applying it would add a column to every line of every
-/// <c>&lt;code&gt;</c> block, which is the "re-wrapping changes what it says" hazard in its
-/// quietest form.
+///     ⚠ The line already carries whatever followed the marker in the source, so the marker space is
+///     <em>not</em> re-applied to it. Applying it would add a column to every line of every
+///     <c>&lt;code&gt;</c> block, which is the "re-wrapping changes what it says" hazard in its
+///     quietest form.
 /// </param>
 public readonly record struct XmlDocLine(string Text, bool Verbatim);
 
 /// <summary>
-/// Lays out an <see cref="XmlDocNode"/> tree as lines.
+///     Lays out an <see cref="XmlDocNode" /> tree as lines.
 /// </summary>
 /// <remarks>
-/// ⚠ Greedy, single pass, no backtracking — deliberately not the <see cref="Fitter"/>. The fitting
-/// algorithm of docs/plan/04 chooses between break points that a construct owns; prose has no
-/// construct, and every gap between two words is the same kind of gap, so the machinery would buy
-/// nothing and would have to be taught about text.
+///     ⚠ Greedy, single pass, no backtracking — deliberately not the <see cref="Fitter" />. The fitting
+///     algorithm of docs/plan/04 chooses between break points that a construct owns; prose has no
+///     construct, and every gap between two words is the same kind of gap, so the machinery would buy
+///     nothing and would have to be taught about text.
 /// </remarks>
 public sealed class XmlDocRenderer {
     readonly XmlDocOptions _options;
@@ -50,7 +50,7 @@ public sealed class XmlDocRenderer {
     }
 
     /// <summary>
-    /// The comment's lines, or null when the layout could not be produced without changing the text.
+    ///     The comment's lines, or null when the layout could not be produced without changing the text.
     /// </summary>
     public static ImmutableArray<XmlDocLine>? Render(
         ImmutableArray<XmlDocNode> nodes,
@@ -140,13 +140,13 @@ public sealed class XmlDocRenderer {
     }
 
     /// <summary>
-    /// Whether the element has to occupy more than one line.
+    ///     Whether the element has to occupy more than one line.
     /// </summary>
     /// <remarks>
-    /// ⚠ Structure is asked before width.
-    /// <c>linebreaks_inside_tags_for_elements_with_child_elements</c> fires on an element that would
-    /// have fitted: <c>&lt;remarks&gt;&lt;para&gt;x&lt;/para&gt;&lt;/remarks&gt;</c> is 38 columns
-    /// and still goes on three lines when the key is true.
+    ///     ⚠ Structure is asked before width.
+    ///     <c>linebreaks_inside_tags_for_elements_with_child_elements</c> fires on an element that would
+    ///     have fitted: <c>&lt;remarks&gt;&lt;para&gt;x&lt;/para&gt;&lt;/remarks&gt;</c> is 38 columns
+    ///     and still goes on three lines when the key is true.
     /// </remarks>
     bool IsMultiline(XmlDocElement element, string? flat) {
         // ⚠ A self-closing element has no inside to break open, and treating one as multi-line
@@ -196,13 +196,13 @@ public sealed class XmlDocRenderer {
     }
 
     /// <summary>
-    /// The element on one line, or null when it cannot be one.
+    ///     The element on one line, or null when it cannot be one.
     /// </summary>
     /// <remarks>
-    /// ⚠ Null for anything holding a break the author is entitled to keep, a verbatim block of more
-    /// than one line, or a child element that owns its own line. It says nothing about width; that
-    /// is <see cref="FitsAlone"/>'s question, and the two are separate so that an element which is
-    /// short enough but structurally multi-line is still handled as multi-line.
+    ///     ⚠ Null for anything holding a break the author is entitled to keep, a verbatim block of more
+    ///     than one line, or a child element that owns its own line. It says nothing about width; that
+    ///     is <see cref="FitsAlone" />'s question, and the two are separate so that an element which is
+    ///     short enough but structurally multi-line is still handled as multi-line.
     /// </remarks>
     string? Flat(XmlDocElement element) {
         if (element.SelfClosing) {
@@ -263,11 +263,11 @@ public sealed class XmlDocRenderer {
     }
 
     /// <summary>
-    /// Whether a token fits on a line of its own at the current level.
+    ///     Whether a token fits on a line of its own at the current level.
     /// </summary>
     /// <remarks>
-    /// ⚠ Everything fits when <c>wrap_lines</c> is false: with no hard wrap there is no width to
-    /// fail, so a long element is left long rather than opened up.
+    ///     ⚠ Everything fits when <c>wrap_lines</c> is false: with no hard wrap there is no width to
+    ///     fail, so a long element is left long rather than opened up.
     /// </remarks>
     bool FitsAlone(string text) => !_options.WrapLines || TextWidth.Measure(text) + IndentWidth() <= _budget;
 
@@ -286,10 +286,10 @@ public sealed class XmlDocRenderer {
 
     /// <summary>Ends the unbreakable unit and places it, wrapping the line first if it must.</summary>
     /// <remarks>
-    /// ⚠ <c>wrap_text</c> and <c>wrap_tags_and_pi</c> are asked separately, and which one applies is
-    /// decided by what the unit contains rather than by what started it: a word with a
-    /// <c>&lt;see/&gt;</c> glued to it is a tag as far as the permission to move it goes, because
-    /// moving it moves the tag.
+    ///     ⚠ <c>wrap_text</c> and <c>wrap_tags_and_pi</c> are asked separately, and which one applies is
+    ///     decided by what the unit contains rather than by what started it: a word with a
+    ///     <c>&lt;see/&gt;</c> glued to it is a tag as far as the permission to move it goes, because
+    ///     moving it moves the tag.
     /// </remarks>
     void Flush() {
         if (_token.Length == 0) {

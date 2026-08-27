@@ -1,8 +1,7 @@
-class Before {
-}
+class Before { }
+
 namespace N {
-    class C {
-    }
+    class C { }
 }
-class After {
-}
+
+class After { }

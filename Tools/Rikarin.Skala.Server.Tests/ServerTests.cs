@@ -61,6 +61,30 @@ public sealed class DaemonTests {
     }
 
     [Fact]
+    public async Task Format_OverTheSocket_FormatsDocumentationComments() {
+        // ⚠ The same correctness rule, aimed at the one default that changed. The daemon protocol
+        // carries no xmldoc switch, so the daemon formats with the default — and if that default
+        // ever diverges from the CLI's, `skala format` means one thing warm and another cold, which
+        // is the failure mode a daemon exists to introduce and this suite exists to refuse.
+        using var scratch = new Scratch();
+        var path = scratch.Write("Doc.cs", "class C{///<summary>Docs.</summary>\nvoid M(){}}\n");
+
+        await using var daemon = new Daemon(scratch.Root);
+        daemon.Listen();
+        using var stopping = new CancellationTokenSource();
+        var running = daemon.RunAsync(stopping.Token);
+
+        var response = DaemonClient.Send(scratch.Root, new DaemonRequest { Command = "format", Path = path });
+
+        await stopping.CancelAsync();
+        await running;
+
+        Assert.NotNull(response);
+        Assert.True(response.Ok, response.Error);
+        Assert.Contains("/// <summary>Docs.</summary>", response.Formatted!, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task Format_AnsweredTwice_ComesFromTheCacheTheSecondTime() {
         using var scratch = new Scratch();
         var path = scratch.Write("B.cs", "class C{void M(){M();}}\n");

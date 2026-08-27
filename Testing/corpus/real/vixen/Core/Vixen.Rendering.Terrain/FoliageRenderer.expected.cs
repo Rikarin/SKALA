@@ -52,8 +52,10 @@ public readonly record struct FoliageBatch(
 ///         survivors and fills a <c>DrawIndexedIndirect</c> command.
 ///     </para>
 ///     <para>
-///         <b>The LOD decision is in that second pass, and it is a deliberate divergence from
-///         <c>LodRenderFeature</c>.</b> That feature is right for its case — a LOD group is several
+///         <b>
+///             The LOD decision is in that second pass, and it is a deliberate divergence from
+///             <c>LodRenderFeature</c>.
+///         </b> That feature is right for its case — a LOD group is several
 ///         render objects and it clears bits — and it cannot express "these four thousand trees in
 ///         this cell are at level 1 and those six hundred are at level 2", because its level is per
 ///         object and here it is per instance. So the pass bins each instance into its level's own

@@ -1,10 +1,11 @@
 class DeclarationBlocks {
     void Empty() { }
 
-    void EmptyBroken() {
-    }
+    void EmptyBroken() { }
 
-    void OneStatementOnOneLine() { Body(); }
+    void OneStatementOnOneLine() {
+        Body();
+    }
 
     void OneStatementBroken() {
         Body();

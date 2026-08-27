@@ -15,12 +15,14 @@
 namespace Serilog.Core.Sinks;
 
 /// <summary>
-/// Forwards log events to another logging pipeline. Copies the events so
-/// that mutations performed on the copies do not affect the originals.
+///     Forwards log events to another logging pipeline. Copies the events so
+///     that mutations performed on the copies do not affect the originals.
 /// </summary>
-/// <remarks>The properties dictionary is copied, however the values within
-/// the dictionary (of type <see cref="LogEventProperty"/> are expected to
-/// be immutable.</remarks>
+/// <remarks>
+///     The properties dictionary is copied, however the values within
+///     the dictionary (of type <see cref="LogEventProperty" /> are expected to
+///     be immutable.
+/// </remarks>
 sealed class SecondaryLoggerSink : ILogEventSink, IDisposable
 #if FEATURE_ASYNCDISPOSABLE
     , IAsyncDisposable
@@ -29,22 +31,19 @@ sealed class SecondaryLoggerSink : ILogEventSink, IDisposable
     readonly ILogger _logger;
     readonly bool _attemptDispose;
 
-    public SecondaryLoggerSink(ILogger logger, bool attemptDispose = false)
-    {
+    public SecondaryLoggerSink(ILogger logger, bool attemptDispose = false) {
         _logger = Guard.AgainstNull(logger);
         _attemptDispose = attemptDispose;
     }
 
-    public void Emit(LogEvent logEvent)
-    {
+    public void Emit(LogEvent logEvent) {
         Guard.AgainstNull(logEvent);
 
         var copy = logEvent.Copy();
         _logger.Write(copy);
     }
 
-    public void Dispose()
-    {
+    public void Dispose() {
         if (!_attemptDispose)
             return;
 

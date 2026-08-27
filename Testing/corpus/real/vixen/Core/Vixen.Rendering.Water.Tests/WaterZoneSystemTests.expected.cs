@@ -234,8 +234,10 @@ public sealed class WaterZoneSystemTests : IDisposable {
     /// </summary>
     /// <remarks>
     ///     <para>
-    ///         <b>The claim the whole amortisation rests on, and the one that is invisible when it
-    ///         fails.</b> A field re-rasterised every frame looks identical to one re-rasterised every
+    ///         <b>
+    ///             The claim the whole amortisation rests on, and the one that is invisible when it
+    ///             fails.
+    ///         </b> A field re-rasterised every frame looks identical to one re-rasterised every
     ///         hundredth; the only symptom is frame time.
     ///     </para>
     ///     <para>
@@ -476,8 +478,10 @@ public sealed class WaterZoneSystemTests : IDisposable {
     /// </summary>
     /// <remarks>
     ///     <para>
-    ///         <b>The fold caches a body against its component and its placement, and it used to cache
-    ///         the <em>failure</em> with it.</b> A body whose <c>SplineFor</c> answered null was
+    ///         <b>
+    ///             The fold caches a body against its component and its placement, and it used to cache
+    ///             the <em>failure</em> with it.
+    ///         </b> A body whose <c>SplineFor</c> answered null was
     ///         recorded as unresolved, and because nothing about the component or the transform then
     ///         changed it was never asked again for the life of the world — so a lake named in a scene
     ///         could never appear in a running game, and the failure was permanent rather than
@@ -584,8 +588,11 @@ public sealed class WaterZoneSystemTests : IDisposable {
 
     /// <summary>A named sea state replaces the inline one, in the component every consumer reads.</summary>
     /// <remarks>
-    ///     ⚠ <b>Asserted through <see cref="WaterZoneSystem.Zones" /> rather than through a resolver
-    ///     the test calls itself.</b> The whole design is that the name becomes a value in exactly one
+    ///     ⚠
+    ///     <b>
+    ///         Asserted through <see cref="WaterZoneSystem.Zones" /> rather than through a resolver
+    ///         the test calls itself.
+    ///     </b> The whole design is that the name becomes a value in exactly one
     ///     place, so that the vertex stage and the underwater shape cannot disagree about what sea
     ///     this is — and the only way to check that is to read what those two read.
     /// </remarks>

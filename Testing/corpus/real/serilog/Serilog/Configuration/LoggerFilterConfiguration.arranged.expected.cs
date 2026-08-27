@@ -16,7 +16,7 @@
 namespace Serilog.Configuration;
 
 /// <summary>
-/// Controls filter configuration.
+///     Controls filter configuration.
 /// </summary>
 public class LoggerFilterConfiguration {
     readonly LoggerConfiguration _loggerConfiguration;
@@ -31,12 +31,14 @@ public class LoggerFilterConfiguration {
     }
 
     /// <summary>
-    /// Filter out log events from the stream based on the provided filter.
+    ///     Filter out log events from the stream based on the provided filter.
     /// </summary>
     /// <param name="filters">The filters to apply.</param>
     /// <returns>Configuration object allowing method chaining.</returns>
-    /// <exception cref="ArgumentNullException">When <paramref name="filters"/> is <code>null</code></exception>
-    /// <exception cref="ArgumentException">When any element of <paramref name="filters"/> is <code>null</code></exception>
+    /// <exception cref="ArgumentNullException">When <paramref name="filters" /> is <code>null</code></exception>
+    /// <exception cref="ArgumentException">
+    ///     When any element of <paramref name="filters" /> is <code>null</code>
+    /// </exception>
     public LoggerConfiguration With(params ILogEventFilter[] filters) {
         Guard.AgainstNull(filters);
 
@@ -50,29 +52,32 @@ public class LoggerFilterConfiguration {
     }
 
     /// <summary>
-    /// Filter out log events from the stream based on the provided filter.
+    ///     Filter out log events from the stream based on the provided filter.
     /// </summary>
     /// <typeparam name="TFilter">The filters to apply.</typeparam>
     /// <returns>Configuration object allowing method chaining.</returns>
     public LoggerConfiguration With<TFilter>()
-        where TFilter : ILogEventFilter, new() =>
-        With(new TFilter());
+        where TFilter : ILogEventFilter, new() => With(new TFilter());
 
     /// <summary>
-    /// Filter out log events that match a predicate.
+    ///     Filter out log events that match a predicate.
     /// </summary>
-    /// <param name="exclusionPredicate">Function that returns true when an event
-    /// should be excluded (silenced).</param>
+    /// <param name="exclusionPredicate">
+    ///     Function that returns true when an event
+    ///     should be excluded (silenced).
+    /// </param>
     /// <returns>Configuration object allowing method chaining.</returns>
     public LoggerConfiguration ByExcluding(Func<LogEvent, bool> exclusionPredicate) {
         return With(new DelegateFilter(logEvent => !exclusionPredicate(logEvent)));
     }
 
     /// <summary>
-    /// Filter log events to include only those that match a predicate.
+    ///     Filter log events to include only those that match a predicate.
     /// </summary>
-    /// <param name="inclusionPredicate">Function that returns true when an event
-    /// should be included (emitted).</param>
+    /// <param name="inclusionPredicate">
+    ///     Function that returns true when an event
+    ///     should be included (emitted).
+    /// </param>
     /// <returns>Configuration object allowing method chaining.</returns>
     public LoggerConfiguration ByIncludingOnly(Func<LogEvent, bool> inclusionPredicate) =>
         With(new DelegateFilter(inclusionPredicate));

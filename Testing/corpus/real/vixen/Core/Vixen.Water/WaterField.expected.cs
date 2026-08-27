@@ -9,8 +9,11 @@ namespace Vixen.Water;
 /// <summary>Where the ground is, for a field that has to know what its water sits on.</summary>
 /// <remarks>
 ///     <para>
-///         ⚠ <b>The terrain is a first-class producer, not a component somebody remembers to
-///         attach</b> —
+///         ⚠
+///         <b>
+///             The terrain is a first-class producer, not a component somebody remembers to
+///             attach
+///         </b> —
 ///         [35 § D3](../../docs/plan/35-water.md#d3-the-water-info-texture-is-the-interchange-and-it-is-a-zone-render).
 ///         Unreal's <c>UWaterTerrainComponent</c> is opt-in per actor, which is why "my water has no
 ///         depth" is a common question there with a non-obvious answer. Here a zone asks whatever
@@ -49,8 +52,11 @@ public readonly record struct FlatWaterGround(float Height) : IWaterGround {
 ///         first.
 ///     </para>
 ///     <para>
-///         ⚠ <b>The origin is snapped, and the snap is to a texel of the <em>coarsest</em> thing that
-///         reads the field.</b> Snapping to the window's own grid is not enough once a ripple
+///         ⚠
+///         <b>
+///             The origin is snapped, and the snap is to a texel of the <em>coarsest</em> thing that
+///             reads the field.
+///         </b> Snapping to the window's own grid is not enough once a ripple
 ///         simulation samples it at a different resolution: the two grids beat against each other and
 ///         produce a crawl along the shoreline that appears only while the camera moves. That is the
 ///         same class of bug as the terrain quadtree's morph, and it gets the same treatment — a test
@@ -84,8 +90,11 @@ public readonly record struct WaterFieldDescription {
     ///         at 257 texels is two metres a texel and not 1.992.
     ///     </para>
     ///     <para>
-    ///         ⚠ <b>It shipped as <c>Extent / Resolution</c> for a day and that was a real bug, not a
-    ///         rounding preference.</b> The rasteriser and the sampler both used the inclusive spacing
+    ///         ⚠
+    ///         <b>
+    ///             It shipped as <c>Extent / Resolution</c> for a day and that was a real bug, not a
+    ///             rounding preference.
+    ///         </b> The rasteriser and the sampler both used the inclusive spacing
     ///         while the panel and the <em>snap</em> used the other one, so a window snapped to a
     ///         four-metre grid was landing on a grid that was not a whole number of texels — and the
     ///         two beat against each other and produced exactly the shoreline crawl § D3 warns about.
@@ -276,8 +285,11 @@ public sealed class WaterField {
     ///         has to say how high the beach is or the falloff has nothing to fall to.
     ///     </para>
     ///     <para>
-    ///         ⚠ <b>The result does not depend on the order the bodies arrive in, and that is a
-    ///         stated property rather than a happy accident</b> ([§ Part 4]). Priority decides which
+    ///         ⚠
+    ///         <b>
+    ///             The result does not depend on the order the bodies arrive in, and that is a
+    ///             stated property rather than a happy accident
+    ///         </b> ([§ Part 4]). Priority decides which
     ///         body is on top; bodies <em>at one priority</em> are averaged by their coverage, which
     ///         is commutative. A field that depended on the order a scene happened to walk its
     ///         entities in is one where moving an unrelated entity changes the shoreline by a texel —

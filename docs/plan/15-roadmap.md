@@ -161,7 +161,7 @@ What landed, and what it is short of:
 | [16](16-risks-and-open-questions.md) § R1 | 27 of the 54 constructs occurring more than 50 times are at 100 % |
 | Divergences | eight `SK-DIV-*` entries, each with a measurement; SK-DIV-0002 is resolved |
 | Wrapping | ✅ `Fill`, the counters, the ordering rule, chains, ternaries, declarators, base lists |
-| xmldoc | ⚠ the oracle does not format doc comments (SK-DIV-0006); the well-formedness hint is done, and the sub-formatter shipped later, behind `format --xmldoc` |
+| xmldoc | ✅ done, and on by default. ⚠ It shipped behind `format --xmldoc` on the reading that the oracle declines to format doc comments; the oracle's *pinned profile* declines and Rider does not (SK-DIV-0006), so the flag became `--no-xmldoc` |
 | Daemon, LSP, hooks | ✅ all three, with tests |
 | 40 ms warm | ⚠ 60–70 ms, of which ~60 is the client's process start; NativeAOT is the fix |
 | Daemon lazy start | ✅ the first single-file format leaves one behind: 310 ms, then 70 ms |
@@ -863,7 +863,7 @@ configuration is hundreds of options deep.
 | Gate | Status at `8cbd66d` |
 |---|---|
 | Line fidelity on C# at the bar and stable | ⚠ **Not met.** 99.70 % against a 99.9 % bar, and [../divergences.md](../divergences.md) § SK-DIV-0005 says the largest remaining class is not reachable by more of the same work |
-| `ISkalaLanguage` exercised by a second implementation | ❌ **The interface does not exist.** `ISkalaLanguage` appears in documents [01](01-technology-decisions.md), [14](14-web-languages.md) and in this file, and in no C# source in the tree. Nor is there anything to lift out: [14](14-web-languages.md) describes the xmldoc sub-formatter as already built inside the C# front end and it is not — `XmlDocComments.cs` detects malformed XML and reports `SK0003` ([../divergences.md](../divergences.md) § SK-DIV-0006) |
+| `ISkalaLanguage` exercised by a second implementation | ❌ **The interface does not exist.** `ISkalaLanguage` appears in documents [01](01-technology-decisions.md), [14](14-web-languages.md) and in this file, and in no C# source in the tree. ⚠ There is something to lift out now, and there was not when this row was written: [14](14-web-languages.md) describes the xmldoc sub-formatter as already built inside the C# front end, and since M9 it is — four files in `Formatting.CSharp` sharing no state with the document builder, on by default since the SK-DIV-0006 correction. The seam still does not exist, so the row stays ❌ on the interface rather than on the subject |
 | Vixen's `.vxml`/`.vcss` parsers stable enough to build against | Not assessed here |
 
 So M9's prerequisite is not "lift the sub-formatter out"; it is "write the sub-formatter, then lift

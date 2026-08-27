@@ -1,6 +1,7 @@
 class C {
     int _a;
-    ~C() {
-    }
+
+    ~C() { }
+
     int _b;
 }

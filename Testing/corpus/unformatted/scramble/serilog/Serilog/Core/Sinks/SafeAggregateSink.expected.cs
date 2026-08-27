@@ -22,7 +22,7 @@ class SafeAggregateSink : ILogEventSink {
 
     public SafeAggregateSink(
         IEnumerable<ILogEventSink>
-            sinks
+        sinks
     ) {
         Guard.AgainstNull(sinks);
         _sinks

@@ -197,8 +197,11 @@ public sealed class ConsoleCommands {
     /// <exception cref="ArgumentNullException"><paramref name="register" /> is null.</exception>
     /// <remarks>
     ///     <para>
-    ///         ⚠ <b>Because <c>[ConsoleCommand]</c> alone has never made a verb typable, and the
-    ///         count is what said so.</b> Water's six were the only ones in the tree — not because no
+    ///         ⚠
+    ///         <b>
+    ///             Because <c>[ConsoleCommand]</c> alone has never made a verb typable, and the
+    ///             count is what said so.
+    ///         </b> Water's six were the only ones in the tree — not because no
     ///         other subsystem wanted verbs, but because reaching an attributed method needs
     ///         <see cref="RegisterFrom(Assembly)" />, which is
     ///         <see cref="RequiresUnreferencedCodeAttribute" /> and had no callers, so anybody who
@@ -229,9 +232,11 @@ public sealed class ConsoleCommands {
         lock (ContributionLock) {
             Contributions.Add(register);
 
-            existing = [.. Live
-                .Select(reference => reference.TryGetTarget(out var live) ? live : null)
-                .OfType<ConsoleCommands>()];
+            existing = [
+                .. Live
+                    .Select(reference => reference.TryGetTarget(out var live) ? live : null)
+                    .OfType<ConsoleCommands>()
+            ];
         }
 
         foreach (var registry in existing) {

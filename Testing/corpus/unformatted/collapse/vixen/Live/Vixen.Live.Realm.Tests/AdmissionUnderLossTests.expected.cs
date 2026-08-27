@@ -10,8 +10,11 @@ namespace Vixen.Live.Realms.Tests;
 /// <summary>Admission over a wire that loses, delays, reorders and duplicates.</summary>
 /// <remarks>
 ///     <para>
-///         <b>Doc 27 § Testing asks for this leg by name</b> — <em>"end-to-end over
-///         <c>Vixen.Net.Transport.Local</c> with <c>NetworkSimulation</c>"</em> — and until now every
+///         <b>Doc 27 § Testing asks for this leg by name</b> —
+///         <em>
+///             "end-to-end over
+///             <c>Vixen.Net.Transport.Local</c> with <c>NetworkSimulation</c>"
+///         </em> — and until now every
 ///         admission test in this project ran on a perfect transport. A perfect transport cannot fail
 ///         the interesting way: admission is a handshake with a deadline, and a deadline only means
 ///         anything when something can be late.
@@ -44,8 +47,8 @@ public class AdmissionUnderLossTests {
             "Awful" =>
                 NetworkSimulationProfile
                     .Awful, // ⚠ Not a shipped profile, and it is here because duplication is the failure mode
-// admission is most likely to get wrong: the same handshake arriving twice must be one
-// player, not two, and not a refusal of the second copy that kicks the first.
+            // admission is most likely to get wrong: the same handshake arriving twice must be one
+            // player, not two, and not a refusal of the second copy that kicks the first.
             _ => NetworkSimulationProfile.Broadband with { DuplicateChance = 0.25 }
         };
 
@@ -68,8 +71,8 @@ public class AdmissionUnderLossTests {
     [MemberData(nameof(Wires))]
     public void AClientWithNoTicketIsStillRefused(string wire) {
         // ⚠ The direction that matters more than the one above. A dropped packet must never become
-// an admission — a handshake that gave up and let somebody in would be a fleet where the way
-// past the ticket check is a bad connection.
+        // an admission — a handshake that gave up and let somebody in would be a fleet where the way
+        // past the ticket check is a bad connection.
         using var realm = new RealmFixture(wire: Profile(wire));
         realm.MapIsUp();
         realm.Connect(ticket: null);
@@ -92,7 +95,7 @@ public class AdmissionUnderLossTests {
     [Fact]
     public void ADuplicatedHandshakeIsOnePlayer() {
         // Every packet has a one-in-four chance of arriving twice, which over a whole handshake means
-// the realm sees the authentication more than once with near certainty.
+        // the realm sees the authentication more than once with near certainty.
         using var realm = new RealmFixture(wire: Profile("Duplicating"));
         var admitted = new List<RealmPlayer>();
         realm.Host.PlayerAdmitted += admitted.Add;
@@ -106,7 +109,7 @@ public class AdmissionUnderLossTests {
     [Fact]
     public void TwentyClientsOnAnAwfulWireAllGetIn() {
         // ⚠ One client succeeding is a handshake that works; twenty is one that works *concurrently*,
-// which is the case where a shared buffer or a shared sequence number shows up.
+        // which is the case where a shared buffer or a shared sequence number shows up.
         using var realm = new RealmFixture(capacity: new(64, 64), wire: NetworkSimulationProfile.Awful);
         var admitted = new List<RealmPlayer>();
         realm.Host.PlayerAdmitted += admitted.Add;
@@ -124,7 +127,7 @@ public class AdmissionUnderLossTests {
     [Fact]
     public void APerfectWireIsNotWrappedAtAll() {
         // The fixture's own contract, asserted because everything else in this project depends on it:
-// wrapping the default would re-time every existing test for no reason.
+        // wrapping the default would re-time every existing test for no reason.
         using var realm = new RealmFixture();
         Assert.Equal(NetworkSimulationProfile.Perfect, realm.Wire);
     }

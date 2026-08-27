@@ -12,8 +12,11 @@ namespace Vixen.Editor.Inspector.Tests;
 
 /// <summary>Doc 36 § P4: a tree that names members, joined to what it is editing after it is built.</summary>
 /// <remarks>
-///     ⚠ <b>Built by hand here rather than from a <c>.vxml</c>, and that is the right seam to test
-///     at.</b> What the markup contributes is a <c>PropertyField</c> with a <c>Path</c> and an
+///     ⚠
+///     <b>
+///         Built by hand here rather than from a <c>.vxml</c>, and that is the right seam to test
+///         at.
+///     </b> What the markup contributes is a <c>PropertyField</c> with a <c>Path</c> and an
 ///     attribute called <c>binding-path</c>; whether the emitter writes those correctly is
 ///     <c>Vixen.Ui.Markup</c>'s own suite. What this asserts is the half that has to be right for
 ///     either of them to mean anything — that the join finds the member, draws the row the generated
@@ -54,7 +57,7 @@ public class MarkupBindingTests : IDisposable {
         Assert.NotNull(
             field.Row
         ); // The label the descriptor supplies, not the member name — which is the visible difference
-// between "a row" and "the row the panel already draws".
+        // between "a row" and "the row the panel already draws".
         Assert.Equal("Roughness", field.Row.Field.Member.DisplayName);
     }
 
@@ -103,8 +106,11 @@ public class MarkupBindingTests : IDisposable {
     }
 
     /// <summary>
-    ///     ⚠ <b>A slider is a <c>float</c> and a numeric input is a <c>double</c>, and the member is
-    ///     whichever it is.</b> Writing the control's own type straight through put a boxed
+    ///     ⚠
+    ///     <b>
+    ///         A slider is a <c>float</c> and a numeric input is a <c>double</c>, and the member is
+    ///         whichever it is.
+    ///     </b> Writing the control's own type straight through put a boxed
     ///     <c>double</c> on a <c>float</c> field — a row that appears to work and changes nothing.
     /// </summary>
     [Fact]
@@ -165,7 +171,7 @@ public class MarkupBindingTests : IDisposable {
         var field = document.Root.Add<PropertyField>();
         field.Path = "Roughness";
         document.Update(); // The prefab agrees with the object to begin with, so neither mark is showing and both of
-// them have to be raised by the write rather than by the build.
+        // them have to be raised by the write rather than by the build.
         MarkupBinding.Bind(document.Root, Target(new StubPrefab { Roughness = 0.2f }, water));
         var row = field.Row;
         Assert.NotNull(row);

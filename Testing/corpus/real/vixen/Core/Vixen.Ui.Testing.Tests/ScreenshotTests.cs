@@ -107,8 +107,7 @@ public sealed class ScreenshotTests : IDisposable {
             48,
             48,
             new UiTestOptions {
-                BaselineDirectory = Path.Combine(root, "baselines"),
-                ArtifactDirectory = Path.Combine(root, "artifacts")
+                BaselineDirectory = Path.Combine(root, "baselines"), ArtifactDirectory = Path.Combine(root, "artifacts")
             }
         );
 

@@ -48,8 +48,11 @@ public readonly record struct GrassBatch(
 ///         nothing else.
 ///     </para>
 ///     <para>
-///         ⚠ <b>The scatter happens on entry and the cull happens every frame, and keeping those
-///         apart is the whole shape of the feature.</b> Scattering per frame would probe the surface
+///         ⚠
+///         <b>
+///             The scatter happens on entry and the cull happens every frame, and keeping those
+///             apart is the whole shape of the feature.
+///         </b> Scattering per frame would probe the surface
 ///         for every blade of every cell every frame — which is the cost the ring exists to pay once —
 ///         and culling on entry would draw the far half of every cell for as long as it stayed
 ///         resident.

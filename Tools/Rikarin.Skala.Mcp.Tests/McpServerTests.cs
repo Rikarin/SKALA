@@ -7,7 +7,7 @@ using Rikarin.Skala.Mcp;
 namespace Rikarin.Skala.Mcp.Tests;
 
 /// <summary>
-/// The MCP surface, and the part of it that is a policy rather than a feature.
+///     The MCP surface, and the part of it that is a policy rather than a feature.
 /// </summary>
 public sealed class McpServerTests {
     static IReadOnlyList<McpServerTool> Tools() => McpServerInspection.Tools(Directory.GetCurrentDirectory());
@@ -25,9 +25,9 @@ public sealed class McpServerTests {
     }
 
     /// <summary>
-    /// ⚠ docs/plan/10: "The MCP server exposes no tool that can disable a rule, edit
-    /// <c>.editorconfig</c>, or update a baseline. Those are human operations and their absence from
-    /// the tool list is the enforcement."
+    ///     ⚠ docs/plan/10: "The MCP server exposes no tool that can disable a rule, edit
+    ///     <c>.editorconfig</c>, or update a baseline. Those are human operations and their absence from
+    ///     the tool list is the enforcement."
     /// </summary>
     [Fact]
     public void NoTool_CanDisableARuleOrEditTheConfiguration() {
@@ -48,8 +48,8 @@ public sealed class McpServerTests {
     }
 
     /// <summary>
-    /// ⚠ doc 10 calls this "the single highest-leverage integration in this document": an agent can
-    /// format a file it has not written yet, which turns formatting from a correction into a step.
+    ///     ⚠ doc 10 calls this "the single highest-leverage integration in this document": an agent can
+    ///     format a file it has not written yet, which turns formatting from a correction into a step.
     /// </summary>
     [Fact]
     public void Format_AcceptsContentAndReturnsFormattedText() {
@@ -63,8 +63,26 @@ public sealed class McpServerTests {
     }
 
     /// <summary>
-    /// ⚠ ADR-003 reaches the MCP surface too: an agent mid-refactor writes text that does not parse,
-    /// and the answer is to say so and change nothing, never to guess.
+    ///     ⚠ Documentation comments too, because an agent's draft is mostly documentation comments.
+    /// </summary>
+    /// <remarks>
+    ///     The MCP surface takes no flags, so whatever the formatter's default is, this is what an agent
+    ///     gets — and the default changed (SK-DIV-0006). An agent that formats its draft and still has
+    ///     to fix the doc comment by hand has been told the file is formatted when it is not.
+    /// </remarks>
+    [Fact]
+    public void Format_FormatsDocumentationCommentsToo() {
+        var formatted = McpServerInspection.FormatContent(
+            Directory.GetCurrentDirectory(),
+            "public sealed class Draft{///<summary>Docs.</summary>\npublic int Value;}"
+        );
+
+        Assert.Contains("/// <summary>Docs.</summary>", formatted, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     ⚠ ADR-003 reaches the MCP surface too: an agent mid-refactor writes text that does not parse,
+    ///     and the answer is to say so and change nothing, never to guess.
     /// </summary>
     [Fact]
     public void Format_LeavesTextThatDoesNotParseExactlyAsItIs() {
@@ -77,15 +95,15 @@ public sealed class McpServerTests {
     }
 
     /// <summary>
-    /// The whole server, over a real transport, answering a real <c>tools/list</c>.
+    ///     The whole server, over a real transport, answering a real <c>tools/list</c>.
     /// </summary>
     /// <remarks>
-    /// ⚠ This exists because of a bug the tool-list unit tests could not see:
-    /// <c>McpServerOptions.ToolCollection</c> is <b>null</b> until something assigns one, so
-    /// <c>options.ToolCollection?.Add(tool)</c> compiled, ran, added nothing, and produced a server
-    /// that completed the handshake and answered <c>tools/list</c> with an empty array. Every unit
-    /// test passed, because they asked <c>SkalaTools</c> for the list rather than the server. A
-    /// transport-level test is the only kind that could have caught it.
+    ///     ⚠ This exists because of a bug the tool-list unit tests could not see:
+    ///     <c>McpServerOptions.ToolCollection</c> is <b>null</b> until something assigns one, so
+    ///     <c>options.ToolCollection?.Add(tool)</c> compiled, ran, added nothing, and produced a server
+    ///     that completed the handshake and answered <c>tools/list</c> with an empty array. Every unit
+    ///     test passed, because they asked <c>SkalaTools</c> for the list rather than the server. A
+    ///     transport-level test is the only kind that could have caught it.
     /// </remarks>
     [Fact]
     public async Task TheServer_AnswersToolsListOverATransport() {
@@ -136,7 +154,7 @@ public sealed class McpServerTests {
     }
 
     /// <summary>
-    /// A read-only stream that stays open until the server has written two JSON-RPC results.
+    ///     A read-only stream that stays open until the server has written two JSON-RPC results.
     /// </summary>
     sealed class HoldOpen(Stream source, MemoryStream written) : Stream {
         public override bool CanRead => true;

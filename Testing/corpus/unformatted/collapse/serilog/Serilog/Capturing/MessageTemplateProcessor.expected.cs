@@ -19,6 +19,7 @@ class MessageTemplateProcessor : ILogEventPropertyFactory, ILogEventPropertyValu
     readonly MessageTemplateCache _parser = new(new MessageTemplateParser());
     readonly PropertyBinder _propertyBinder;
     readonly PropertyValueConverter _propertyValueConverter;
+
     public MessageTemplateProcessor(PropertyValueConverter propertyValueConverter) {
         _propertyValueConverter = propertyValueConverter;
         _propertyBinder = new(_propertyValueConverter);

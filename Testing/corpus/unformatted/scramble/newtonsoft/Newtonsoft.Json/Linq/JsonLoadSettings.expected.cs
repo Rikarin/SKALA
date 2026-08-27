@@ -1,4 +1,5 @@
 // skala-oracle: resharper=2025.2.6 config=sha256:98ff52570e019fac profile=SkalaFormatOnly generated=2026-08-27
+
 #region License
 
 // Copyright (c) 2007 James Newton-King
@@ -34,7 +35,7 @@ using System;
 
 namespace Newtonsoft.Json.Linq {
     /// <summary>
-    /// Specifies the settings used when loading JSON.
+    ///     Specifies the settings used when loading JSON.
     /// </summary>
     public class JsonLoadSettings {
         private
@@ -44,7 +45,7 @@ namespace Newtonsoft.Json.Linq {
         private DuplicatePropertyNameHandling _duplicatePropertyNameHandling;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="JsonLoadSettings"/> class.
+        ///     Initializes a new instance of the <see cref="JsonLoadSettings" /> class.
         /// </summary>
         public JsonLoadSettings() {
             _lineInfoHandling = LineInfoHandling.Load;
@@ -53,8 +54,8 @@ namespace Newtonsoft.Json.Linq {
         }
 
         /// <summary>
-        /// Gets or sets how JSON comments are handled when loading JSON.
-        /// The default value is <see cref="CommentHandling.Ignore" />.
+        ///     Gets or sets how JSON comments are handled when loading JSON.
+        ///     The default value is <see cref="CommentHandling.Ignore" />.
         /// </summary>
         /// <value>The JSON comment handling.</value>
         public CommentHandling CommentHandling {
@@ -69,8 +70,8 @@ namespace Newtonsoft.Json.Linq {
         }
 
         /// <summary>
-        /// Gets or sets how JSON line info is handled when loading JSON.
-        /// The default value is <see cref="LineInfoHandling.Load" />.
+        ///     Gets or sets how JSON line info is handled when loading JSON.
+        ///     The default value is <see cref="LineInfoHandling.Load" />.
         /// </summary>
         /// <value>The JSON line info handling.</value>
         public
@@ -87,8 +88,8 @@ namespace Newtonsoft.Json.Linq {
         }
 
         /// <summary>
-        /// Gets or sets how duplicate property names in JSON objects are handled when loading JSON.
-        /// The default value is <see cref="DuplicatePropertyNameHandling.Replace" />.
+        ///     Gets or sets how duplicate property names in JSON objects are handled when loading JSON.
+        ///     The default value is <see cref="DuplicatePropertyNameHandling.Replace" />.
         /// </summary>
         /// <value>The JSON duplicate property name handling.</value>
         public DuplicatePropertyNameHandling DuplicatePropertyNameHandling {

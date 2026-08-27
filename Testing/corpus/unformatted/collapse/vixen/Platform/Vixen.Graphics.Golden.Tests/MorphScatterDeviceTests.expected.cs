@@ -19,8 +19,10 @@ namespace Vixen.Graphics.Golden.Tests;
 /// </summary>
 /// <remarks>
 ///     <para>
-///         <b>The claim is that a weight moves a vertex to a computed position, and it is checked
-///         against arithmetic rather than against a picture.</b> A morph applied in the wrong space,
+///         <b>
+///             The claim is that a weight moves a vertex to a computed position, and it is checked
+///             against arithmetic rather than against a picture.
+///         </b> A morph applied in the wrong space,
 ///         at the wrong stride, or with the weight folded in twice renders <em>plausibly</em> — the
 ///         face still has a face on it — so a golden image would pass on all three. What cannot pass
 ///         is a float that is not the float the host computed.
@@ -213,8 +215,10 @@ public class MorphScatterDeviceTests {
     /// </summary>
     /// <remarks>
     ///     <para>
-    ///         <b>The legs above prove the kernel; this proves the wiring, and they are different
-    ///         claims.</b> Everything above uploads the mesh into a buffer of the test's own, writes
+    ///         <b>
+    ///             The legs above prove the kernel; this proves the wiring, and they are different
+    ///             claims.
+    ///         </b> Everything above uploads the mesh into a buffer of the test's own, writes
     ///         the constants by reflected offset and dispatches by hand — so it would pass unchanged
     ///         against a feature that allocated nothing, copied nothing and pointed no draw anywhere.
     ///         Here the only things the test does are attach an object, set its weights and record
@@ -250,11 +254,11 @@ public class MorphScatterDeviceTests {
             rest,
             targets
         ); // ⚠ From the *packed* mesh, not from the fixture the packing was built out of, and this is a
-// real trap rather than a formality. SurfaceGeometry.Pack normalises the normal — see its own
-// remarks on why a zero one becomes +Y — so the rest pose that reaches the device is not the
-// one this file's Mesh() returns, whose normals are deliberately not unit. Comparing against
-// the unpacked fixture reports a difference of about 1.4 × 10⁻⁴ in every moved normal, which
-// looks exactly like a kernel that is doing slightly different arithmetic and is not.
+        // real trap rather than a formality. SurfaceGeometry.Pack normalises the normal — see its own
+        // remarks on why a zero one becomes +Y — so the rest pose that reaches the device is not the
+        // one this file's Mesh() returns, whose normals are deliberately not unit. Comparing against
+        // the unpacked fixture reports a difference of about 1.4 × 10⁻⁴ in every moved normal, which
+        // looks exactly like a kernel that is doing slightly different arithmetic and is not.
         var packed = SurfaceGeometry.Packed(mesh);
         var expected = new SurfaceVertex[Vertices];
         MorphKernel.Apply(
@@ -263,7 +267,7 @@ public class MorphScatterDeviceTests {
             weights,
             expected
         ); // ⚠ A pad, so the mesh does not start at vertex zero of the scene buffer. Both bases being
-// zero would make "the draw was re-based" true of a feature that rewrote nothing.
+        // zero would make "the draw was re-based" true of a feature that rewrote nothing.
         using var scene = new GeometryBuffer(device, SurfaceVertex.SizeInBytes, 512, 512, name: "Morph.Scene");
         Assert.True(scene.TryAllocate(9, 0, out _));
         var residency = new GeometryResidency(scene);
@@ -289,7 +293,7 @@ public class MorphScatterDeviceTests {
         Assert.True(
             morph.SetWeights(id, weights)
         ); // The draw the mesh feature would record now reads the morph buffer, which is the seam the
-// whole feature exists to move.
+        // whole feature exists to move.
         Assert.Equal(morph.Buffer, draw.VertexBuffer);
         Assert.NotEqual(scene.Vertices, draw.VertexBuffer);
         var bytes = Vertices * SurfaceVertex.SizeInBytes;
@@ -301,13 +305,13 @@ public class MorphScatterDeviceTests {
         descriptors.BeginFrame();
         using (var commands = device.BeginCommandList(QueueKind.Graphics, "morph feature")) {
             // The order WorldRenderer.Draw keeps: the scene's own bytes reach the device, and then the
-// pre-pass copies the rest pose out of them.
+            // pre-pass copies the rest pose out of them.
             scene.Flush(commands);
             Assert.True(
                 morph.Record(commands)
             ); // ⚠ Declared from VertexInput because that is what Record leaves the buffer in — the
-// barrier between the dispatch and the draw is the pass's to record, so a test that
-// declared any other state here would be saying the pass had left it somewhere else.
+            // barrier between the dispatch and the draw is the pass's to record, so a test that
+            // declared any other state here would be saying the pass had left it somewhere else.
             commands.Barrier(new([new(morph.Buffer, ResourceState.VertexInput, ResourceState.CopySource)], []));
             commands.CopyBuffer(morph.Buffer, (long)draw.VertexOffset * SurfaceVertex.SizeInBytes, readback, 0, bytes);
             commands.Finish();
@@ -460,7 +464,7 @@ public class MorphScatterDeviceTests {
         using (var commands = device.BeginCommandList(QueueKind.Compute, "morph scatter")) {
             commands.Barrier(new([new(vertices, ResourceState.Undefined, ResourceState.ShaderWrite)], []));
             commands.BindPipeline(pipeline);
-            foreach (var (set, groups)in passes) {
+            foreach (var (set, groups) in passes) {
                 commands.BindDescriptorSet(DescriptorSetSlot.PerDraw, set);
                 commands.Dispatch(groups);
                 commands.Barrier(new([new(vertices, ResourceState.ShaderWrite, ResourceState.ShaderWrite)], []));

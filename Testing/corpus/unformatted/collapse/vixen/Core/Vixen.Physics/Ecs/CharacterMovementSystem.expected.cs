@@ -55,7 +55,7 @@ public sealed class CharacterMovementSystem(PhysicsScene scene) : SystemBase, ID
     /// <inheritdoc />
     public override JobHandle Update(in SystemContext context, JobHandle dependency) {
         // The step has moved everything a character is about to sweep against, and the sweep is a
-// native call the ECS cannot see into. Nothing scheduled may still be reading what it writes.
+        // native call the ECS cannot see into. Nothing scheduled may still be reading what it writes.
         dependency.Complete();
         scene.StepCharacters((float)context.Time.Elapsed.TotalSeconds);
         return default;

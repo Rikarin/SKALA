@@ -13,29 +13,32 @@ using Rikarin.Skala.Server;
 namespace Rikarin.Skala.Cli;
 
 /// <summary>
-/// The <c>skala</c> command surface.
+///     The <c>skala</c> command surface.
 /// </summary>
 /// <remarks>
-/// Argument parsing and rendering only. Every command's behaviour lives in
-/// <see cref="ConfigCommands"/> in Core, because the daemon, MSBuild and MCP host the same logic
-/// and nothing may reference this assembly (docs/plan/02 § "The project graph").
+///     Argument parsing and rendering only. Every command's behaviour lives in
+///     <see cref="ConfigCommands" /> in Core, because the daemon, MSBuild and MCP host the same logic
+///     and nothing may reference this assembly (docs/plan/02 § "The project graph").
 /// </remarks>
 public static partial class SkalaCommandLine {
     /// <summary>
-    /// ⚠ Global, recursive, and it exists.
+    ///     ⚠ Global, recursive, and it exists.
     /// </summary>
     /// <remarks>
-    /// docs/plan/04 § "What it does not do" says generated files are "reported as skipped in
-    /// <c>--verbose</c>", and until M9 there was no such option: <c>skala check --load loose
-    /// --verbose</c> bound <c>--verbose</c> to the variadic <c>&lt;paths&gt;</c> argument, looked
-    /// for C# files in a directory of that name, found none and exited 4. The flag being missing was
-    /// bad; the flag being silently eaten was the defect.
-    /// <para>
-    /// It is declared once on the root and marked recursive, so every subcommand accepts it and no
-    /// subcommand can spell it differently. <c>format</c>, <c>arrange</c> and <c>check</c> act on
-    /// it — each has something it currently swallows — and the rest accept it without effect rather
-    /// than rejecting it, which is what "global" has to mean for a flag a script puts in a variable.
-    /// </para>
+    ///     docs/plan/04 § "What it does not do" says generated files are "reported as skipped in
+    ///     <c>--verbose</c>", and until M9 there was no such option:
+    ///     <c>
+    ///skala check --load loose
+    /// --verbose
+    ///     </c> bound <c>--verbose</c> to the variadic <c>&lt;paths&gt;</c> argument, looked
+    ///     for C# files in a directory of that name, found none and exited 4. The flag being missing was
+    ///     bad; the flag being silently eaten was the defect.
+    ///     <para>
+    ///         It is declared once on the root and marked recursive, so every subcommand accepts it and no
+    ///         subcommand can spell it differently. <c>format</c>, <c>arrange</c> and <c>check</c> act on
+    ///         it — each has something it currently swallows — and the rest accept it without effect rather
+    ///         than rejecting it, which is what "global" has to mean for a flag a script puts in a variable.
+    ///     </para>
     /// </remarks>
     public static Option<bool> Verbose { get; } = new("--verbose") {
         Description = "Report what was skipped and why: generated files, unparseable files, rules that did not run.",
@@ -67,29 +70,29 @@ public static partial class SkalaCommandLine {
     }
 
     /// <summary>
-    /// ⚠ A positional token that begins with <c>-</c> is a mistyped option, not a path.
+    ///     ⚠ A positional token that begins with <c>-</c> is a mistyped option, not a path.
     /// </summary>
     /// <remarks>
-    /// <para>
-    /// <c>skala check --load loose --verbose</c> used to report <c>SK9023: no C# files were found</c>
-    /// and exit 4 from a repository full of C# files. <c>&lt;paths&gt;</c> is variadic, so
-    /// System.CommandLine handed it every token it could not match as an option — and a variadic
-    /// argument matches anything. Every typo'd or unimplemented flag on every command with a
-    /// variadic argument behaved the same way, and the failure was indistinguishable from an empty
-    /// directory, which is why it survived: the tool answered a question nobody had asked and
-    /// sounded confident doing it.
-    /// </para>
-    /// <para>
-    /// This is docs/plan/00's non-negotiable 4 — unknown configuration is a diagnostic, never a
-    /// silent default — applied to argv. It is installed by walking the finished command tree
-    /// rather than at each <c>new Argument&lt;T&gt;</c> site, so an argument added later is covered
-    /// without anybody remembering to do it. That is the whole reason it lives here.
-    /// </para>
-    /// <para>
-    /// ⚠ A path that genuinely starts with <c>-</c> is spelled <c>./-weird.cs</c>, which is also
-    /// what every other POSIX tool requires. A lone <c>-</c> is left alone: it is a stdin
-    /// convention, not an option.
-    /// </para>
+    ///     <para>
+    ///         <c>skala check --load loose --verbose</c> used to report <c>SK9023: no C# files were found</c>
+    ///         and exit 4 from a repository full of C# files. <c>&lt;paths&gt;</c> is variadic, so
+    ///         System.CommandLine handed it every token it could not match as an option — and a variadic
+    ///         argument matches anything. Every typo'd or unimplemented flag on every command with a
+    ///         variadic argument behaved the same way, and the failure was indistinguishable from an empty
+    ///         directory, which is why it survived: the tool answered a question nobody had asked and
+    ///         sounded confident doing it.
+    ///     </para>
+    ///     <para>
+    ///         This is docs/plan/00's non-negotiable 4 — unknown configuration is a diagnostic, never a
+    ///         silent default — applied to argv. It is installed by walking the finished command tree
+    ///         rather than at each <c>new Argument&lt;T&gt;</c> site, so an argument added later is covered
+    ///         without anybody remembering to do it. That is the whole reason it lives here.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ A path that genuinely starts with <c>-</c> is spelled <c>./-weird.cs</c>, which is also
+    ///         what every other POSIX tool requires. A lone <c>-</c> is left alone: it is a stdin
+    ///         convention, not an option.
+    ///     </para>
     /// </remarks>
     static void RejectOptionLikeTokens(Command command) {
         foreach (var argument in command.Arguments) {
@@ -139,24 +142,24 @@ public static partial class SkalaCommandLine {
     }
 
     /// <summary>
-    /// A token carrying glob metacharacters, which is matched later rather than opened now.
+    ///     A token carrying glob metacharacters, which is matched later rather than opened now.
     /// </summary>
     /// <remarks>
-    /// ⚠ `paths` is documented as "files, directories or globs", so the existence check has to skip
-    /// the third kind. A glob that matches nothing is a different question from a path that is not
-    /// there, and it is <see cref="FormatCommand.Collect"/>'s to answer.
+    ///     ⚠ `paths` is documented as "files, directories or globs", so the existence check has to skip
+    ///     the third kind. A glob that matches nothing is a different question from a path that is not
+    ///     there, and it is <see cref="FormatCommand.Collect" />'s to answer.
     /// </remarks>
     static bool IsGlob(string token) => token.AsSpan().IndexOfAny('*', '?', '[') >= 0;
 
     /// <summary>A token that begins with <c>-</c> and is longer than a bare <c>-</c>.</summary>
     /// <remarks>
-    /// ⚠ A negative number is not excluded, because no Skala argument takes one. If one is ever
-    /// added, the exemption belongs on that argument rather than on this predicate.
+    ///     ⚠ A negative number is not excluded, because no Skala argument takes one. If one is ever
+    ///     added, the exemption belongs on that argument rather than on this predicate.
     /// </remarks>
     static bool LooksLikeAnOption(string token) => token.Length > 1 && token[0] == '-';
 
     /// <summary>
-    /// <c>skala format</c> — docs/plan/11 § "Command surface".
+    ///     <c>skala format</c> — docs/plan/11 § "Command surface".
     /// </summary>
     static Command CreateFormatCommand() {
         var paths = new Argument<string[]>("paths") {
@@ -195,14 +198,16 @@ public static partial class SkalaCommandLine {
             Description = "Do everything in this process. The daemon is only ever an optimisation."
         };
 
-        // ⚠ SK-DIV-0006, and the same shape as `arrange --aggressive`. The export configures the
-        // whole `resharper_xmldoc_*` family and `jb cleanupcode` honours none of it — measured — so
-        // a Skala that re-wrapped doc comments by default would disagree with Rider on every doc
-        // comment in every repository. This is the flag for a tree that wants the layout its
-        // .editorconfig describes and accepts that Rider will not reproduce it.
-        var xmlDoc = new Option<bool>("--xmldoc") {
+        // ⚠ SK-DIV-0006, inverted. Documentation comments are formatted by default because Rider's
+        // editor formats them; `jb cleanupcode` does not, which makes this the one place the oracle
+        // and the editor are known to disagree and Skala sides with the editor. `--no-xmldoc` is
+        // for a tree that would rather keep the oracle's answer, and it is a flag rather than
+        // `resharper_xmldoc_wrap_lines = false` because that key means "do not wrap long lines" and
+        // would still leave the comment re-indented — inventing a ReSharper semantic to get a kill
+        // switch is the mistake this default is undoing.
+        var noXmlDoc = new Option<bool>("--no-xmldoc") {
             Description =
-                "Also re-wrap documentation comments. Off by default: Rider's cleanup does not format them."
+                "Leave documentation comments exactly as written. On by default because Rider formats them."
         };
 
         // ⚠ SK-DIV-0004. Without symbols Roslyn hands back every `#if DEBUG` body as disabled text
@@ -245,7 +250,7 @@ public static partial class SkalaCommandLine {
         command.Options.Add(noDaemon);
         command.Options.Add(define);
         command.Options.Add(load);
-        command.Options.Add(xmlDoc);
+        command.Options.Add(noXmlDoc);
 
         command.SetAction(parse => {
                 var stagedValue = parse.GetResult(staged) is null
@@ -310,7 +315,7 @@ public static partial class SkalaCommandLine {
                     Verbose = parse.GetValue(Verbose),
                     Overrides = ParseOverrides(parse.GetValue(option)),
                     Jobs = parse.GetValue(jobs),
-                    XmlDoc = parse.GetValue(xmlDoc)
+                    XmlDoc = !parse.GetValue(noXmlDoc)
                 };
 
                 // ⚠ The daemon is tried first and its failure is never an error. docs/plan/11's
@@ -329,14 +334,14 @@ public static partial class SkalaCommandLine {
     }
 
     /// <summary>
-    /// <c>skala arrange</c> — docs/plan/06, docs/plan/11 § "Command surface".
+    ///     <c>skala arrange</c> — docs/plan/06, docs/plan/11 § "Command surface".
     /// </summary>
     /// <remarks>
-    /// ⚠ A separate verb from <c>format</c>, and deliberately. <c>format</c> changes whitespace,
-    /// needs no project, runs in under a second on a file an agent just wrote, and is reversible by
-    /// reformatting. <c>arrange</c> changes the tree, wants a <c>Compilation</c>, is minutes-scale on
-    /// a large tree, and is reversible by <c>git revert</c>. Making the second the default for the
-    /// first would put a tree rewrite inside every save.
+    ///     ⚠ A separate verb from <c>format</c>, and deliberately. <c>format</c> changes whitespace,
+    ///     needs no project, runs in under a second on a file an agent just wrote, and is reversible by
+    ///     reformatting. <c>arrange</c> changes the tree, wants a <c>Compilation</c>, is minutes-scale on
+    ///     a large tree, and is reversible by <c>git revert</c>. Making the second the default for the
+    ///     first would put a tree rewrite inside every save.
     /// </remarks>
     static Command CreateArrangeCommand() {
         var paths = new Argument<string[]>("paths") {
@@ -451,13 +456,13 @@ public static partial class SkalaCommandLine {
     }
 
     /// <summary>
-    /// Every loaded compilation, so that <c>arrange</c> can intersect its using removal across them.
+    ///     Every loaded compilation, so that <c>arrange</c> can intersect its using removal across them.
     /// </summary>
     /// <remarks>
-    /// ⚠ All of them, not the one that covers the first path. docs/plan/06: "Skala removes a using
-    /// only when it is unused in *every* compilation the file participates in — multi-targeting is
-    /// not an edge case in this ecosystem." Handing back one compilation would make a multi-targeted
-    /// repository lose the usings only one of its targets needs.
+    ///     ⚠ All of them, not the one that covers the first path. docs/plan/06: "Skala removes a using
+    ///     only when it is unused in *every* compilation the file participates in — multi-targeting is
+    ///     not an edge case in this ecosystem." Handing back one compilation would make a multi-targeted
+    ///     repository lose the usings only one of its targets needs.
     /// </remarks>
     static IReadOnlyList<Microsoft.CodeAnalysis.CSharp.CSharpCompilation> CompilationsFor(
         IReadOnlyList<string> files,
@@ -486,13 +491,13 @@ public static partial class SkalaCommandLine {
     }
 
     /// <summary>
-    /// <c>skala daemon status|stop|run</c> — docs/plan/11 § "The daemon".
+    ///     <c>skala daemon status|stop|run</c> — docs/plan/11 § "The daemon".
     /// </summary>
     /// <remarks>
-    /// ⚠ There is no `start`. The daemon is started lazily by whatever needs it and exits after
-    /// thirty minutes idle; a `start` verb invites a person to run one by hand and then wonder why
-    /// their editor is using a different one. `run` is the foreground form, for a supervisor and for
-    /// the tests.
+    ///     ⚠ There is no `start`. The daemon is started lazily by whatever needs it and exits after
+    ///     thirty minutes idle; a `start` verb invites a person to run one by hand and then wonder why
+    ///     their editor is using a different one. `run` is the foreground form, for a supervisor and for
+    ///     the tests.
     /// </remarks>
     static Command CreateDaemonCommand() {
         var daemon = new Command("daemon", "The per-repository format daemon.");
@@ -562,7 +567,7 @@ public static partial class SkalaCommandLine {
     static string Root(string path) => FindRepositoryRoot(path) ?? Path.GetFullPath(path);
 
     /// <summary>
-    /// <c>--define A --define B,C</c> — both spellings, because both are what people type.
+    ///     <c>--define A --define B,C</c> — both spellings, because both are what people type.
     /// </summary>
     static List<string> ParseDefines(string[]? values) {
         var result = new List<string>();
@@ -579,14 +584,14 @@ public static partial class SkalaCommandLine {
     }
 
     /// <summary>
-    /// The preprocessor symbols of whatever compilation covers the first path.
+    ///     The preprocessor symbols of whatever compilation covers the first path.
     /// </summary>
     /// <remarks>
-    /// ⚠ The union across every compilation that names the file, not the intersection. A file
-    /// compiled for two target frameworks is formatted once, and the branch that is disabled under
-    /// one target is still code someone maintains; formatting it under the union means every branch
-    /// that any target compiles is laid out, and the ones nobody compiles stay verbatim. Taking the
-    /// intersection would mean a multi-targeted repository formats nothing conditional at all.
+    ///     ⚠ The union across every compilation that names the file, not the intersection. A file
+    ///     compiled for two target frameworks is formatted once, and the branch that is disabled under
+    ///     one target is still code someone maintains; formatting it under the union means every branch
+    ///     that any target compiles is laid out, and the ones nobody compiles stay verbatim. Taking the
+    ///     intersection would mean a multi-targeted repository formats nothing conditional at all.
     /// </remarks>
     static List<string> SymbolsFromProject(string[] paths, string mode) {
         try {
@@ -836,15 +841,15 @@ public static partial class SkalaCommandLine {
     }
 
     /// <summary>
-    /// The nearest directory above <paramref name="path"/> that looks like a repository.
+    ///     The nearest directory above <paramref name="path" /> that looks like a repository.
     /// </summary>
     /// <remarks>
-    /// ⚠ Delegates rather than duplicating. This was a second copy of
-    /// <see cref="FormatCommand.FindRepositoryRoot"/> that had drifted: it tested only
-    /// <c>Directory.Exists(".git")</c>, so in a git <b>worktree</b> or a <b>submodule</b> — where
-    /// <c>.git</c> is a file containing <c>gitdir: …</c> and not a directory — it walked past the
-    /// root, returned null, and every path the daemon commands printed came out absolute. Two
-    /// implementations of "where is the repository" is one more than the number that can be right.
+    ///     ⚠ Delegates rather than duplicating. This was a second copy of
+    ///     <see cref="FormatCommand.FindRepositoryRoot" /> that had drifted: it tested only
+    ///     <c>Directory.Exists(".git")</c>, so in a git <b>worktree</b> or a <b>submodule</b> — where
+    ///     <c>.git</c> is a file containing <c>gitdir: …</c> and not a directory — it walked past the
+    ///     root, returned null, and every path the daemon commands printed came out absolute. Two
+    ///     implementations of "where is the repository" is one more than the number that can be right.
     /// </remarks>
     public static string? FindRepositoryRoot(string path) => FormatCommand.FindRepositoryRoot(path);
 }

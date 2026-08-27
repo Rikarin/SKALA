@@ -3,23 +3,23 @@ using System.Text.Json;
 namespace Rikarin.Skala.Cli.Tests;
 
 /// <summary>
-/// doc 12 § "Cross-platform", hazard 2: paths in SARIF must be repo-relative with forward slashes.
+///     doc 12 § "Cross-platform", hazard 2: paths in SARIF must be repo-relative with forward slashes.
 /// </summary>
 /// <remarks>
-/// ⚠ <c>RelativePathTests</c> in <c>Rikarin.Skala.Reporting.Tests</c> already pins
-/// <c>SarifWriter.Relative</c> as a function, and it is not enough. The function was correct and
-/// the report was still absolute for three milestones, because the defect was never in the string
-/// arithmetic — it was in what the two arguments were: a repository root the CLI found with its own
-/// second copy of <c>FindRepositoryRoot</c> that returned null inside a git worktree, against file
-/// paths the loader had produced through a different API. Both halves are outside the function, and
-/// only a real run can see them.
-/// <para>
-/// So this drives <c>skala check</c> over a real git repository, reads the SARIF it wrote, and
-/// walks every <c>artifactLocation</c> in the document. What it asserts is what
-/// <a href="https://docs.github.com/code-security">code scanning</a> requires and silently drops
-/// results for rather than reporting: a URI reference, which a Windows absolute path
-/// (<c>C:\src\a.cs</c>) is not, and which a backslash cannot appear in.
-/// </para>
+///     ⚠ <c>RelativePathTests</c> in <c>Rikarin.Skala.Reporting.Tests</c> already pins
+///     <c>SarifWriter.Relative</c> as a function, and it is not enough. The function was correct and
+///     the report was still absolute for three milestones, because the defect was never in the string
+///     arithmetic — it was in what the two arguments were: a repository root the CLI found with its own
+///     second copy of <c>FindRepositoryRoot</c> that returned null inside a git worktree, against file
+///     paths the loader had produced through a different API. Both halves are outside the function, and
+///     only a real run can see them.
+///     <para>
+///         So this drives <c>skala check</c> over a real git repository, reads the SARIF it wrote, and
+///         walks every <c>artifactLocation</c> in the document. What it asserts is what
+///         <a href="https://docs.github.com/code-security">code scanning</a> requires and silently drops
+///         results for rather than reporting: a URI reference, which a Windows absolute path
+///         (<c>C:\src\a.cs</c>) is not, and which a backslash cannot appear in.
+///     </para>
 /// </remarks>
 public sealed class SarifPathTests : IDisposable {
     readonly CrossPlatformScratch _scratch = new("skala-sarif-");
@@ -103,9 +103,9 @@ public sealed class SarifPathTests : IDisposable {
     }
 
     /// <summary>
-    /// ⚠ The URIs must round-trip as URI references, which is the actual contract — SARIF 2.1.0
-    /// § 3.4.3 says <c>artifactLocation.uri</c> is a URI, and the ingest that reads it will not
-    /// repair one.
+    ///     ⚠ The URIs must round-trip as URI references, which is the actual contract — SARIF 2.1.0
+    ///     § 3.4.3 says <c>artifactLocation.uri</c> is a URI, and the ingest that reads it will not
+    ///     repair one.
     /// </summary>
     [Fact]
     public void EveryArtifactUri_ParsesAsARelativeUri() {

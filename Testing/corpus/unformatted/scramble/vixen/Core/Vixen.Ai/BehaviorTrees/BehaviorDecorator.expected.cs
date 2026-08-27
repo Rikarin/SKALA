@@ -58,16 +58,14 @@ public
     ///     letting it ship.
     /// </remarks>
     public
-        virtual ObserverAborts Aborts =>
-        ObserverAborts.None;
+        virtual ObserverAborts Aborts => ObserverAborts.None;
 
     /// <summary>The blackboard keys it reads.</summary>
     public virtual ReadOnlySpan<BlackboardKey> ObservedKeys => default;
 
     /// <summary>How many bytes of per-agent state it needs.</summary>
     public virtual
-        int StateSize =>
-        0;
+        int StateSize => 0;
 
     /// <summary>
     ///     Whether it is re-tested every step while the branch it gates is running.
@@ -81,8 +79,7 @@ public
     ///     <c>KeepInCone</c> in doc 37 § Part 3 means.
     /// </remarks>
     public
-        virtual bool Continuous =>
-        false;
+        virtual bool Continuous => false;
 
     /// <summary>Whether the node may be entered, or may keep running.</summary>
     /// <param name="context">The agent and the node.</param>

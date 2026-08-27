@@ -1,4 +1,5 @@
 #region License
+
 // Copyright (c) 2007 James Newton-King
 //
 // Permission is hereby granted, free of charge, to any person
@@ -21,8 +22,10 @@
 // WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 // OTHER DEALINGS IN THE SOFTWARE.
+
 #endregion
-using System;using System.Collections.Generic;using System.Text;using Newtonsoft.Json.Linq;
+
+using System; using System.Collections.Generic; using System.Text; using Newtonsoft.Json.Linq;
 #if DNXCORE50
 using Xunit;
 using Test = Xunit.FactAttribute;
@@ -30,26 +33,41 @@ using Assert = Newtonsoft.Json.Tests.XUnitAssert;
 #else
 using NUnit.Framework;
 #endif
-namespace Newtonsoft.Json.Tests.Documentation.Samples.Linq{[TestFixture]public class ParseJsonObject:TestFixtureBase{[Test]public void Example(){
-#region Usage
-string json=@"{
+namespace Newtonsoft.Json.Tests.Documentation.Samples.Linq {
+    [TestFixture]
+    public class ParseJsonObject : TestFixtureBase {
+        [Test]
+        public void Example() {
+            #region Usage
+
+            string json = @"{
               CPU: 'Intel',
               Drives: [
                 'DVD read/writer',
                 '500 gigabyte hard drive'
               ]
-            }" ;JObject o=JObject.Parse(json);Console.WriteLine(o.ToString()); // {
-//   "CPU": "Intel",
-//   "Drives": [
-//     "DVD read/writer",
-//     "500 gigabyte hard drive"
-//   ]
-// }
-#endregion
-StringAssert.AreEqual(@"{
+            }";
+            JObject o = JObject.Parse(json);
+            Console.WriteLine(o.ToString()); // {
+            //   "CPU": "Intel",
+            //   "Drives": [
+            //     "DVD read/writer",
+            //     "500 gigabyte hard drive"
+            //   ]
+            // }
+
+            #endregion
+
+            StringAssert.AreEqual(
+                @"{
   ""CPU"": ""Intel"",
   ""Drives"": [
     ""DVD read/writer"",
     ""500 gigabyte hard drive""
   ]
-}" ,o.ToString());}}}
+}",
+                o.ToString()
+            );
+        }
+    }
+}

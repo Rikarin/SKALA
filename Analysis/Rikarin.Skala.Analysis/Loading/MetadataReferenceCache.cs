@@ -5,18 +5,18 @@ using Microsoft.CodeAnalysis;
 namespace Rikarin.Skala.Analysis.Loading;
 
 /// <summary>
-/// Process-wide cache of <see cref="MetadataReference"/> by <c>(path, mtime, size)</c>.
+///     Process-wide cache of <see cref="MetadataReference" /> by <c>(path, mtime, size)</c>.
 /// </summary>
 /// <remarks>
-/// ⚠ docs/plan/07 § binlog: "a large solution references the same 300 assemblies from every project
-/// and re-reading them is the single biggest avoidable cost." Every compilation in a solution
-/// references much the same framework set; without this the loader reads the same hundreds of
-/// megabytes of metadata once per project.
-/// <para>
-/// ⚠ The key carries mtime and size rather than the path alone. A process that stays alive across a
-/// rebuild — the daemon — would otherwise hold the previous build's metadata and answer questions
-/// about a program that no longer exists.
-/// </para>
+///     ⚠ docs/plan/07 § binlog: "a large solution references the same 300 assemblies from every project
+///     and re-reading them is the single biggest avoidable cost." Every compilation in a solution
+///     references much the same framework set; without this the loader reads the same hundreds of
+///     megabytes of metadata once per project.
+///     <para>
+///         ⚠ The key carries mtime and size rather than the path alone. A process that stays alive across a
+///         rebuild — the daemon — would otherwise hold the previous build's metadata and answer questions
+///         about a program that no longer exists.
+///     </para>
 /// </remarks>
 public static class MetadataReferenceCache {
     static readonly ConcurrentDictionary<string, MetadataReference> Cache = new(StringComparer.Ordinal);

@@ -6,7 +6,7 @@ using System.Diagnostics.CodeAnalysis;
 using Vixen.Core;
 using Vixen.Editor.Core;
 using
-    Vixen.Ui;
+Vixen.Ui;
 
 namespace Vixen.Editor.AssetEditors;
 
@@ -23,7 +23,7 @@ public sealed record AssetEditorRequest(
     EditorProject Project,
     AssetId Asset,
     string
-        Path);
+    Path);
 
 /// <summary>One asset kind's editor: which files it claims, the document it opens, and the view over it.</summary>
 /// <remarks>
@@ -50,7 +50,9 @@ public interface IAssetEditorFactory {
 
     /// <summary>Opens an asset as a document.</summary>
     /// <param name="request">What to open.</param>
-    /// <returns>The document, already registered with the project by <see cref="EditorDocument" />'s constructor.</returns>
+    /// <returns>
+    ///     The document, already registered with the project by <see cref="EditorDocument" />'s constructor.
+    /// </returns>
     EditorDocument Open(AssetEditorRequest request);
 
     /// <summary>Builds the editor's controls into a panel.</summary>
@@ -89,13 +91,14 @@ public sealed class AssetEditorRegistry {
 
     /// <summary>Everything registered, in no particular order.</summary>
     public IReadOnlyCollection<IAssetEditorFactory>
-        Editors =>
-        byName.Values;
+        Editors => byName.Values;
 
     /// <summary>Registers an editor.</summary>
     /// <param name="editor">The editor.</param>
     /// <returns>This registry, for chaining.</returns>
-    /// <exception cref="InvalidOperationException">Something already claims its name or one of its extensions.</exception>
+    /// <exception cref="InvalidOperationException">
+    ///     Something already claims its name or one of its extensions.
+    /// </exception>
     public AssetEditorRegistry Add(IAssetEditorFactory editor) {
         ArgumentNullException.ThrowIfNull(editor);
 
@@ -173,8 +176,11 @@ public sealed class AssetEditorRegistry {
     ///         document is one that answers twice.
     ///     </para>
     ///     <para>
-    ///         ⚠ <b>And not from <c>EditorProject.Register</c>, which is where it looks like it
-    ///         belongs.</b> That runs from <c>EditorDocument</c>'s base constructor, so a subscriber
+    ///         ⚠
+    ///         <b>
+    ///             And not from <c>EditorProject.Register</c>, which is where it looks like it
+    ///             belongs.
+    ///         </b> That runs from <c>EditorDocument</c>'s base constructor, so a subscriber
     ///         would be handed a half-built document — the one thing that class's own remarks promise
     ///         does not happen.
     ///     </para>

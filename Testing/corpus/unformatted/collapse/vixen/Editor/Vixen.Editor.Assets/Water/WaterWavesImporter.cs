@@ -1,19 +1,26 @@
 // SPDX-FileCopyrightText: Copyright (c) Rikarin
 // SPDX-License-Identifier: Apache-2.0
-using Vixen.Core;using Vixen.Core.Serialization;using Vixen.Core.Yaml;using Vixen.Core.Yaml.Meta;using Vixen.Water;namespace Vixen.Editor.Assets.Water;
+using Vixen.Core; using Vixen.Core.Serialization; using Vixen.Core.Yaml; using Vixen.Core.Yaml.Meta; using Vixen.Water; namespace Vixen.Editor.Assets.Water;
+
 /// <summary>How a sea state is imported.</summary>
 /// <remarks>
 ///     Empty, like <c>TerrainAssetImportSettings</c> and for the same reason: a <c>.vxwaves</c> already
 ///     <em>is</em> engine data, so there is nothing about the conversion to decide.
 /// </remarks>
-[DataContract("WaterWavesImporter" )]public sealed record WaterWavesImportSettings:IImportSettings{
-/// <inheritdoc />
-public int Version{get;init;}=1;}
+[DataContract("WaterWavesImporter")]
+public sealed record WaterWavesImportSettings : IImportSettings {
+    /// <inheritdoc />
+    public int Version { get; init; } = 1;
+}
+
 /// <summary>Imports a <c>.vxwaves</c> — the one asset kind water adds.</summary>
 /// <remarks>
 ///     <para>
-///         <b>[35 § D6](../../docs/plan/35-water.md#d6-a-water-body-is-a-spline-and-a-profile-and-there-is-no-new-spline)
-///         admits exactly one new asset kind and this is it.</b> A water body is a spline reference and
+///         <b>
+///             [35 §
+///             D6](../../docs/plan/35-water.md#d6-a-water-body-is-a-spline-and-a-profile-and-there-is-no-new-spline)
+///             admits exactly one new asset kind and this is it.
+///         </b> A water body is a spline reference and
 ///         eleven numbers, so it stays in the scene where the merge is; a sea state is shared between
 ///         every body in a region <em>and between levels</em>, so it does not.
 ///     </para>
@@ -25,8 +32,11 @@ public int Version{get;init;}=1;}
 ///         deserialises. A text chunk would be a sea state that quietly never arrives.
 ///     </para>
 ///     <para>
-///         ⚠ <b>An unsummable spectrum is an <em>error</em>, and that is the one place this is
-///         stricter than its terrain sibling.</b> A foliage type with no mesh is an author part-way
+///         ⚠
+///         <b>
+///             An unsummable spectrum is an <em>error</em>, and that is the one place this is
+///             stricter than its terrain sibling.
+///         </b> A foliage type with no mesh is an author part-way
 ///         through and warns; a spectrum whose wavelength range runs backwards has no defensible
 ///         partial state — <see cref="WaterWaveSpectrum.Generate" /> throws on it, so what a build that
 ///         accepted it produces is a zone that renders no waves at all, which reads as the water being
@@ -39,25 +49,64 @@ public int Version{get;init;}=1;}
 ///         sees one file and cannot know which scenes point at it; the count is where that shows.
 ///     </para>
 /// </remarks>
-[Importer(WaterWavesAsset.Extension)]public sealed class WaterWavesImporter:AssetImporter<WaterWavesImportSettings>{
-/// <summary>The alias of the type this writes.</summary>
+[Importer(WaterWavesAsset.Extension)]
+public sealed class WaterWavesImporter : AssetImporter<WaterWavesImportSettings> {
+    /// <summary>The alias of the type this writes.</summary>
     /// <remarks>
     ///     ⚠ <b>The alias of the type actually written, which is what a chunk's reader resolves.</b>
     ///     <c>MaterialImporter</c>'s own remarks record what the other spelling costs: the bytes of one
     ///     record handed to the reader of another, thrown from inside the asset manager about content
     ///     the build had just declared good.
     /// </remarks>
-public const string WavesType=nameof(WaterWavesAsset);
-/// <summary>The vector forms a spectrum's document may write.</summary>
-    /// <remarks>On <c>TerrainAssetImporter</c>'s terms: from a static constructor rather than a module
-    ///     initializer, for the reason <see cref="MathScalars" /> gives about a process-wide table.</remarks>
-static WaterWavesImporter()=>MathScalars.Register();
-/// <inheritdoc />
-public override int Version=>1;
-/// <inheritdoc />
-protected override async ValueTask<ImportResult>ImportAsync(ImportContext context,WaterWavesImportSettings settings,CancellationToken cancellationToken){ArgumentNullException.ThrowIfNull(context);string text;await using(var source=await context.OpenSourceAsync(cancellationToken).ConfigureAwait(false)){using var reader=new StreamReader(source);text=await reader.ReadToEndAsync(cancellationToken).ConfigureAwait(false);}WaterWavesAsset waves;try{waves=YamlSerializer.Parse<WaterWavesAsset>(text);}catch(Exception exception)when(exception is YamlBindingException or YamlParseException){ // Reported rather than thrown, so an author gets every broken file in one pass.
-context.Report(ImportSeverity.Error,exception.Message);return context.Finish();}if(waves.Name.Length==0){waves.Name=Path.GetFileNameWithoutExtension(context.SourcePath.Value);}if(waves.Validate()is{}problem){context.Report(ImportSeverity.Error,problem);return context.Finish();}Advise(context,waves.Spectrum);context.Write(SubAssetId.Main,WavesType,Serializer.ToBytes(waves));return context.Finish();}
-/// <summary>The two seas that are legal, load, and are not what anybody meant.</summary>
+    public const string WavesType = nameof(WaterWavesAsset);
+
+    /// <summary>The vector forms a spectrum's document may write.</summary>
+    /// <remarks>
+    ///     On <c>TerrainAssetImporter</c>'s terms: from a static constructor rather than a module
+    ///     initializer, for the reason <see cref="MathScalars" /> gives about a process-wide table.
+    /// </remarks>
+    static WaterWavesImporter() => MathScalars.Register();
+
+    /// <inheritdoc />
+    public override int Version => 1;
+
+    /// <inheritdoc />
+    protected override async ValueTask<ImportResult> ImportAsync(
+        ImportContext context,
+        WaterWavesImportSettings settings,
+        CancellationToken cancellationToken
+    ) {
+        ArgumentNullException.ThrowIfNull(context);
+        string text;
+        await using (var source = await context.OpenSourceAsync(cancellationToken).ConfigureAwait(false)) {
+            using var reader = new StreamReader(source);
+            text = await reader.ReadToEndAsync(cancellationToken).ConfigureAwait(false);
+        }
+
+        WaterWavesAsset waves;
+        try {
+            waves = YamlSerializer.Parse<WaterWavesAsset>(text);
+        } catch (Exception exception) when (exception is YamlBindingException or YamlParseException) {
+            // Reported rather than thrown, so an author gets every broken file in one pass.
+            context.Report(ImportSeverity.Error, exception.Message);
+            return context.Finish();
+        }
+
+        if (waves.Name.Length == 0) {
+            waves.Name = Path.GetFileNameWithoutExtension(context.SourcePath.Value);
+        }
+
+        if (waves.Validate() is { } problem) {
+            context.Report(ImportSeverity.Error, problem);
+            return context.Finish();
+        }
+
+        Advise(context, waves.Spectrum);
+        context.Write(SubAssetId.Main, WavesType, Serializer.ToBytes(waves));
+        return context.Finish();
+    }
+
+    /// <summary>The two seas that are legal, load, and are not what anybody meant.</summary>
     /// <remarks>
     ///     <para>
     ///         ⚠ <b>Warnings and not errors, because both are things somebody may want.</b> A dead calm
@@ -71,4 +120,22 @@ context.Report(ImportSeverity.Error,exception.Message);return context.Finish();}
     ///         raised here because a remark in a docstring is not read by the person whose file it is.
     ///     </para>
     /// </remarks>
-static void Advise(ImportContext context,in WaterWaveSpectrum spectrum){if(spectrum.WindSpeed<=0f||spectrum.AmplitudeScale<=0f){context.Report(ImportSeverity.Warning,"Every wave in this sea state has zero amplitude, so the surface is a mirror. That is " +"a legitimate dead calm and it is also what a file nobody finished looks like — the " +"wind speed or the amplitude scale is zero." );}if(spectrum.DirectionalSpread<=0f){context.Report(ImportSeverity.Warning,"Every wave travels in exactly one direction, so no crests cross and the surface reads " +"as corrugated iron from any height. Half a radian is a reasonable open sea." );}}}
+    static void Advise(ImportContext context, in WaterWaveSpectrum spectrum) {
+        if (spectrum.WindSpeed <= 0f || spectrum.AmplitudeScale <= 0f) {
+            context.Report(
+                ImportSeverity.Warning,
+                "Every wave in this sea state has zero amplitude, so the surface is a mirror. That is "
+                + "a legitimate dead calm and it is also what a file nobody finished looks like — the "
+                + "wind speed or the amplitude scale is zero."
+            );
+        }
+
+        if (spectrum.DirectionalSpread <= 0f) {
+            context.Report(
+                ImportSeverity.Warning,
+                "Every wave travels in exactly one direction, so no crests cross and the surface reads "
+                + "as corrugated iron from any height. Half a radian is a reasonable open sea."
+            );
+        }
+    }
+}

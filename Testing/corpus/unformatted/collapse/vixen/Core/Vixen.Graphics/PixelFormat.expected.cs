@@ -58,8 +58,10 @@ public enum PixelFormat : ushort {
     Rgba8UNormSrgb = 21,
 
     /// <summary>Four 8-bit channels in blue-green-red-alpha order, <c>[0, 1]</c>.</summary>
-    /// <remarks>What a Windows swapchain usually hands back, which is why it is named rather than
-    /// swizzled at upload.</remarks>
+    /// <remarks>
+    ///     What a Windows swapchain usually hands back, which is why it is named rather than
+    ///     swizzled at upload.
+    /// </remarks>
     Bgra8UNorm = 22,
 
     /// <summary>Four 8-bit channels in blue-green-red-alpha order, sRGB-encoded.</summary>
@@ -78,13 +80,17 @@ public enum PixelFormat : ushort {
     R32UInt = 27,
 
     /// <summary>Ten bits each for red, green and blue and two for alpha, <c>[0, 1]</c>.</summary>
-    /// <remarks>The HDR swapchain format on every desktop, and the usual choice for a normal buffer
-    /// where the extra precision earns its place.</remarks>
+    /// <remarks>
+    ///     The HDR swapchain format on every desktop, and the usual choice for a normal buffer
+    ///     where the extra precision earns its place.
+    /// </remarks>
     Rgb10A2UNorm = 28,
 
     /// <summary>Eleven bits each for red and green and ten for blue, as small floats.</summary>
-    /// <remarks>The standard HDR colour target: no alpha, no sign, and half the memory of
-    /// <see cref="Rgba16Float" />.</remarks>
+    /// <remarks>
+    ///     The standard HDR colour target: no alpha, no sign, and half the memory of
+    ///     <see cref="Rgba16Float" />.
+    /// </remarks>
     Rg11B10Float = 29, // ── 64-bit ──────────────────────────────────────────────────────────────────────────────
 
     /// <summary>Four 16-bit channels as half floats.</summary>
@@ -200,7 +206,7 @@ public static class PixelFormats {
                 or PixelFormat.Rg11B10Float
                 or PixelFormat.Depth32Float =>
                 4, // Five bytes of data in an eight-byte slot on every real implementation, and it is the
-// allocation size that matters here rather than the useful bits.
+            // allocation size that matters here rather than the useful bits.
             PixelFormat.Depth32FloatStencil8 => 8,
             PixelFormat.Rgba16Float or PixelFormat.Rg32Float or PixelFormat.Rgba16UNorm => 8,
             PixelFormat.Rgba32Float or PixelFormat.Rgba32UInt => 16, // 4×4 blocks at half a byte per pixel.

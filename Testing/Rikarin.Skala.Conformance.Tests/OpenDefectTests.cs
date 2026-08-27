@@ -4,21 +4,21 @@ using Rikarin.Skala.Testing;
 namespace Rikarin.Skala.Conformance.Tests;
 
 /// <summary>
-/// The fuzz findings that are minimised, reproduced and <b>not fixed</b>, asserted as still broken.
+///     The fuzz findings that are minimised, reproduced and <b>not fixed</b>, asserted as still broken.
 /// </summary>
 /// <remarks>
-/// ⚠ A suite that asserts a bug is still a bug reads backwards until you ask what the alternative
-/// is. docs/plan/12 § "Corpus expansion" requires a minimised failure to be committed and the corpus
-/// only to grow; the formatter cannot process two of these three files at all, so committing them to
-/// a measured set would take the fidelity number and the differential report down with them. The
-/// choice is therefore between a comment in a bug tracker and a test — and a test is the one that
-/// cannot rot: when someone fixes <c>EditEmitter</c>, this suite fails, names the entry, and says
-/// where the file goes next.
-/// <para>
-/// ⚠ It is deliberately *not* an <c>[Fact(Skip = …)]</c> on the real property. A skipped test is
-/// invisible in a green run and stays skipped for a year; this one is visible, counts, and its
-/// failure message is an instruction.
-/// </para>
+///     ⚠ A suite that asserts a bug is still a bug reads backwards until you ask what the alternative
+///     is. docs/plan/12 § "Corpus expansion" requires a minimised failure to be committed and the corpus
+///     only to grow; the formatter cannot process two of these three files at all, so committing them to
+///     a measured set would take the fidelity number and the differential report down with them. The
+///     choice is therefore between a comment in a bug tracker and a test — and a test is the one that
+///     cannot rot: when someone fixes <c>EditEmitter</c>, this suite fails, names the entry, and says
+///     where the file goes next.
+///     <para>
+///         ⚠ It is deliberately *not* an <c>[Fact(Skip = …)]</c> on the real property. A skipped test is
+///         invisible in a green run and stays skipped for a year; this one is visible, counts, and its
+///         failure message is an instruction.
+///     </para>
 /// </remarks>
 public sealed class OpenDefectTests {
     public static TheoryData<string> Entries {
@@ -50,7 +50,7 @@ public sealed class OpenDefectTests {
     }
 
     /// <summary>
-    /// ⚠ None of these may reach a measured set while it is still broken.
+    ///     ⚠ None of these may reach a measured set while it is still broken.
     /// </summary>
     [Fact]
     public void OpenDefects_AreNotInTheMeasuredCorpus() {
@@ -111,19 +111,19 @@ public sealed class OpenDefectTests {
     }
 
     /// <summary>
-    /// ⚠ The register is a queue, not a filing cabinet.
+    ///     ⚠ The register is a queue, not a filing cabinet.
     /// </summary>
     /// <remarks>
-    /// A cap rather than a rule about any one entry: a handful of open defects is a to-do list and
-    /// thirty is a policy of not fixing them. The number is deliberately close to what is there, so
-    /// that adding one more is a decision somebody makes rather than a thing that happens.
-    /// <para>
-    /// ⚠ It was six, and seven arrived from the same fifteen-minute run that produced the sixth.
-    /// Raising it rather than dropping a finding is the honest move — a register that only ever
-    /// holds what fits under its own cap is a register that hides what it cannot hold, which is the
-    /// failure this whole directory exists to prevent. Seven findings from a fuzzer's first day is a
-    /// first harvest, not a backlog; the next commit to touch this number should be lowering it.
-    /// </para>
+    ///     A cap rather than a rule about any one entry: a handful of open defects is a to-do list and
+    ///     thirty is a policy of not fixing them. The number is deliberately close to what is there, so
+    ///     that adding one more is a decision somebody makes rather than a thing that happens.
+    ///     <para>
+    ///         ⚠ It was six, and seven arrived from the same fifteen-minute run that produced the sixth.
+    ///         Raising it rather than dropping a finding is the honest move — a register that only ever
+    ///         holds what fits under its own cap is a register that hides what it cannot hold, which is the
+    ///         failure this whole directory exists to prevent. Seven findings from a fuzzer's first day is a
+    ///         first harvest, not a backlog; the next commit to touch this number should be lowering it.
+    ///     </para>
     /// </remarks>
     [Fact]
     public void TheRegister_HasNotBecomeAFilingCabinet() {

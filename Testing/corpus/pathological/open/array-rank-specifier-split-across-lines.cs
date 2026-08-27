@@ -1,4 +1,4 @@
 class R {
-  byte[
-] f;
+    byte[
+        ] f;
 }

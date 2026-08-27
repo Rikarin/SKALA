@@ -55,26 +55,26 @@ public sealed class VfxGpuSimulation : IDisposable {
     readonly VfxShaderBinding[] bindings;
 
     readonly VfxShaderBinding[]
-        particles; // Two full sets of the particle attributes, and which one is the live set flips on every reap.
+    particles; // Two full sets of the particle attributes, and which one is the live set flips on every reap.
 
-// See `Reap`: a compaction cannot be done in place, so the alternative to a second set is
-// copying the whole of it back every frame.
+    // See `Reap`: a compaction cannot be done in place, so the alternative to a second set is
+    // copying the whole of it back every frame.
     readonly BufferHandle[][] sets;
     readonly DescriptorSetHandle[] descriptorSets;
     int current;
     readonly long[] offsets;
 
     readonly byte[]
-        scratch; // Rebuilt in place rather than allocated per call: a dispatch pair is a per-frame path, and this
+    scratch; // Rebuilt in place rather than allocated per call: a dispatch pair is a per-frame path, and this
 
-// is the only array in it.
+    // is the only array in it.
     readonly BufferBarrier[] barriers;
     readonly BufferHandle staging;
 
     readonly BufferHandle
-        readback; // Only when the shader reaps. An invalid handle is what "this effect has no lifetime" looks like
+    readback; // Only when the shader reaps. An invalid handle is what "this effect has no lifetime" looks like
 
-// everywhere below, which is one test rather than a parallel `hasReap` flag to keep in step.
+    // everywhere below, which is one test rather than a parallel `hasReap` flag to keep in step.
     readonly BufferHandle counter;
     readonly BufferHandle zero;
     readonly BufferHandle counterReadback;
@@ -83,9 +83,9 @@ public sealed class VfxGpuSimulation : IDisposable {
     readonly DescriptorSetLayoutHandle setLayout;
 
     readonly PipelineLayoutHandle
-        layout; // What the storage buffers were last left in, so a barrier can name a truthful `before`. One
+    layout; // What the storage buffers were last left in, so a barrier can name a truthful `before`. One
 
-// state for all of them because every path here touches all of them together.
+    // state for all of them because every path here touches all of them together.
     ResourceState state = ResourceState.Undefined;
     ResourceState argumentState = ResourceState.Undefined;
     bool disposed;
@@ -94,7 +94,9 @@ public sealed class VfxGpuSimulation : IDisposable {
     /// <param name="device">The device.</param>
     /// <param name="shader">The emitted shader, for its bindings.</param>
     /// <param name="capacity">The most particles that can be alive at once.</param>
-    /// <exception cref="ArgumentNullException"><paramref name="device" /> or <paramref name="shader" /> is null.</exception>
+    /// <exception cref="ArgumentNullException">
+    ///     <paramref name="device" /> or <paramref name="shader" /> is null.
+    /// </exception>
     /// <exception cref="ArgumentOutOfRangeException"><paramref name="capacity" /> is not positive.</exception>
     public VfxGpuSimulation(IGraphicsDevice device, VfxShader shader, int capacity) {
         ArgumentNullException.ThrowIfNull(device);
@@ -114,11 +116,11 @@ public sealed class VfxGpuSimulation : IDisposable {
 
         Bytes = total;
         scratch = new byte[total]; // ⚠ **A second full set of the attribute buffers when the shader reaps, and it is the whole
-// memory cost of GPU compaction.** A survivor claims its destination with an atomic, so two
-// invocations can be given slots in either order and writing into the buffer being read
-// would let one overwrite a particle the other has not looked at yet. The alternative to a
-// second set is copying the whole live set back after every reap, which is the same
-// bandwidth every frame instead of the same memory once.
+        // memory cost of GPU compaction.** A survivor claims its destination with an atomic, so two
+        // invocations can be given slots in either order and writing into the buffer being read
+        // would let one overwrite a particle the other has not looked at yet. The alternative to a
+        // second set is copying the whole live set back after every reap, which is the same
+        // bandwidth every frame instead of the same memory once.
         var copies = shader.HasReap ? 2 : 1;
         sets = new BufferHandle[copies][];
         for (var copy = 0; copy < copies; copy++) {
@@ -135,8 +137,8 @@ public sealed class VfxGpuSimulation : IDisposable {
             }
         } // One staging buffer and one readback buffer covering every attribute, rather than a pair
 
-// each. A transfer moves all of them or none of them, and one buffer means one copy list and
-// one host write instead of a walk of small ones.
+        // each. A transfer moves all of them or none of them, and one buffer means one copy list and
+        // one host write instead of a walk of small ones.
         staging = device.CreateBuffer(
             new(total, BufferUsage.CopySource, MemoryAccess.HostUpload, $"{shader.Name}.Staging")
         );
@@ -152,8 +154,8 @@ public sealed class VfxGpuSimulation : IDisposable {
                     $"{shader.Name}.Survivors"
                 )
             ); // ⚠ A four-byte upload buffer holding zero, written once here and copied over the counter
-// before every reap. `Vixen.Graphics` has no fill, and a host write during recording is
-// the hazard `Upload` documents — so the zero lives on the device and the clear is a copy.
+            // before every reap. `Vixen.Graphics` has no fill, and a host write during recording is
+            // the hazard `Upload` documents — so the zero lives on the device and the clear is a copy.
             zero = device.CreateBuffer(
                 new(sizeof(uint), BufferUsage.CopySource, MemoryAccess.HostUpload, $"{shader.Name}.Zero")
             );
@@ -169,9 +171,9 @@ public sealed class VfxGpuSimulation : IDisposable {
             template = device.CreateBuffer(
                 new(DrawArgumentsSize, BufferUsage.CopySource, MemoryAccess.HostUpload, $"{shader.Name}.DrawTemplate")
             ); // ⚠ `CopySource` as well, which a draw does not need. A command a device assembles and
-// nothing can read is a command nobody can check: the gate that says this buffer really
-// did get the reap's count copies it back, and so would anyone debugging a frame that
-// drew the wrong number of particles. Twenty bytes, and the usage costs nothing else.
+            // nothing can read is a command nobody can check: the gate that says this buffer really
+            // did get the reap's count copies it back, and so would anyone debugging a frame that
+            // drew the wrong number of particles. Twenty bytes, and the usage costs nothing else.
             arguments = device.CreateBuffer(
                 new(
                     DrawArgumentsSize,
@@ -185,9 +187,9 @@ public sealed class VfxGpuSimulation : IDisposable {
 
         barriers = new BufferBarrier[(particles.Length * copies)
             + (shader.HasReap
-                ? 1
-                : 0)]; // Set 0, because the emitted bindings are [PerFrame] — see VfxShaderEmitter, which explains
-// why a compute pipeline with nothing else in it does not want the material set.
+                    ? 1
+                    : 0)]; // Set 0, because the emitted bindings are [PerFrame] — see VfxShaderEmitter, which explains
+        // why a compute pipeline with nothing else in it does not want the material set.
         var entries = new DescriptorBinding[bindings.Length];
         for (var index = 0; index < bindings.Length; index++) {
             entries[index] = new((uint)index, DescriptorKind.StorageBuffer, ShaderStage.Compute);
@@ -199,10 +201,10 @@ public sealed class VfxGpuSimulation : IDisposable {
         layout = device.CreatePipelineLayout(
             new([setLayout], [new(ShaderStage.Compute, 0, VfxShaderUniforms.Size)], $"{shader.Name}.Layout")
         ); // ⚠ **One descriptor set per direction, rather than one set rewritten between frames.**
-// Updating a set names buffers a submission in flight is still reading, and the two sets
-// differ only in which way round they are — so a reap is a flip of an index rather than a
-// device call. The emitted binding order is source, then out, then the counter, which is the
-// order `VfxShaderEmitter.Emit` assembles them in.
+        // Updating a set names buffers a submission in flight is still reading, and the two sets
+        // differ only in which way round they are — so a reap is a flip of an index rather than a
+        // device call. The emitted binding order is source, then out, then the counter, which is the
+        // order `VfxShaderEmitter.Emit` assembles them in.
         descriptorSets = new DescriptorSetHandle[copies];
         for (var copy = 0; copy < copies; copy++) {
             descriptorSets[copy] = device.CreateDescriptorSet(setLayout, $"{shader.Name}.Particles{copy}");
@@ -238,8 +240,10 @@ public sealed class VfxGpuSimulation : IDisposable {
     /// <summary>How many compute dispatches this has recorded since it was built.</summary>
     /// <remarks>
     ///     <para>
-    ///         <b>Counted because "the GPU path ran" and "the GPU path was constructed" look identical
-    ///         from everywhere else.</b> A host that builds one of these, never records a dispatch and
+    ///         <b>
+    ///             Counted because "the GPU path ran" and "the GPU path was constructed" look identical
+    ///             from everywhere else.
+    ///         </b> A host that builds one of these, never records a dispatch and
     ///         draws the CPU expansion produces exactly the frame a working device path produces, at
     ///         exactly the cost — and there is no validation error, no log line and no counter to tell
     ///         the two apart. This is that counter.
@@ -295,8 +299,8 @@ public sealed class VfxGpuSimulation : IDisposable {
                 return;
             } // indexCount, instanceCount, firstIndex, vertexOffset, firstInstance. The instance count
 
-// is left at zero and overwritten from the counter, which is the one field a device
-// decides.
+            // is left at zero and overwritten from the counter, which is the one field a device
+            // decides.
             Span<uint> command = [(uint)value, 0u, 0u, 0u, 0u];
             device.Write(template, 0, MemoryMarshal.AsBytes(command));
         }
@@ -344,8 +348,12 @@ public sealed class VfxGpuSimulation : IDisposable {
     /// <param name="list">An open command list.</param>
     /// <param name="particles">Where the particles are.</param>
     /// <param name="count">How many, from the start of the buffer.</param>
-    /// <exception cref="ArgumentNullException"><paramref name="list" /> or <paramref name="particles" /> is null.</exception>
-    /// <exception cref="ArgumentOutOfRangeException"><paramref name="count" /> is negative or above the capacity.</exception>
+    /// <exception cref="ArgumentNullException">
+    ///     <paramref name="list" /> or <paramref name="particles" /> is null.
+    /// </exception>
+    /// <exception cref="ArgumentOutOfRangeException">
+    ///     <paramref name="count" /> is negative or above the capacity.
+    /// </exception>
     /// <remarks>
     ///     The host write happens now and the copies happen when the list runs, so the staging buffer
     ///     must not be written again until this submission has completed. That is the usual shape of
@@ -447,7 +455,9 @@ public sealed class VfxGpuSimulation : IDisposable {
     /// <param name="list">An open command list.</param>
     /// <param name="count">How many particles, from the start of the buffer.</param>
     /// <exception cref="ArgumentNullException"><paramref name="list" /> is null.</exception>
-    /// <exception cref="ArgumentOutOfRangeException"><paramref name="count" /> is negative or above the capacity.</exception>
+    /// <exception cref="ArgumentOutOfRangeException">
+    ///     <paramref name="count" /> is negative or above the capacity.
+    /// </exception>
     /// <remarks>
     ///     Pairs with <see cref="Read" />, which is the half that has to happen after the submission
     ///     has completed. Split rather than combined because only the caller knows when that is.
@@ -479,7 +489,9 @@ public sealed class VfxGpuSimulation : IDisposable {
     /// <param name="particles">Where to put them. Its count is not changed.</param>
     /// <param name="count">How many, and the same number <see cref="Download" /> was given.</param>
     /// <exception cref="ArgumentNullException"><paramref name="particles" /> is null.</exception>
-    /// <exception cref="ArgumentOutOfRangeException"><paramref name="count" /> is negative or above the capacity.</exception>
+    /// <exception cref="ArgumentOutOfRangeException">
+    ///     <paramref name="count" /> is negative or above the capacity.
+    /// </exception>
     public void Read(ParticleBuffer particles, int count) {
         ObjectDisposedException.ThrowIf(disposed, this);
         ArgumentNullException.ThrowIfNull(particles);
@@ -509,21 +521,29 @@ public sealed class VfxGpuSimulation : IDisposable {
     /// <exception cref="InvalidOperationException">The shader has no reap kernel.</exception>
     /// <remarks>
     ///     <para>
-    ///         <b>What was owed after the dispatch pair: the last thing the CPU still did for a device
-    ///         effect.</b> The kernels age a particle and stop; this is what removes the finished ones
+    ///         <b>
+    ///             What was owed after the dispatch pair: the last thing the CPU still did for a device
+    ///             effect.
+    ///         </b> The kernels age a particle and stop; this is what removes the finished ones
     ///         without the state leaving the device. The counter is zeroed by a copy first — an
     ///         <c>atomicAdd</c> onto last frame's count appends past the end of the buffer, which is
     ///         the failure <c>DrawArguments.rvn</c> warns about in the same words.
     ///     </para>
     ///     <para>
-    ///         ⚠ <b>The live set flips, so <see cref="Descriptors" /> and <see cref="Storage" /> mean
-    ///         something different after this returns.</b> Nothing is copied back: the survivors are
+    ///         ⚠
+    ///         <b>
+    ///             The live set flips, so <see cref="Descriptors" /> and <see cref="Storage" /> mean
+    ///             something different after this returns.
+    ///         </b> Nothing is copied back: the survivors are
     ///         in the set that was the spare, and it becomes the live one. A renderer that cached a
     ///         buffer handle across a reap draws the particles as they were before it.
     ///     </para>
     ///     <para>
-    ///         ⚠ <b>The survivors come out in an order neither backend promises and the two do not
-    ///         share.</b> The CPU fills each hole from the tail; here a slot is whatever the atomic
+    ///         ⚠
+    ///         <b>
+    ///             The survivors come out in an order neither backend promises and the two do not
+    ///             share.
+    ///         </b> The CPU fills each hole from the tail; here a slot is whatever the atomic
     ///         handed back, which depends on how the invocations interleaved and is not reproducible
     ///         between two runs of one frame. A particle's randomness follows its identifier rather
     ///         than its slot exactly so that this cannot matter — which is what
@@ -636,7 +656,7 @@ public sealed class VfxGpuSimulation : IDisposable {
             0,
             DrawArgumentsSize
         ); // The counter is in CopySource from the end of `Reap`, which is where a copy out of it wants
-// it — so the only barrier this needs is the argument buffer's own.
+        // it — so the only barrier this needs is the argument buffer's own.
         list.CopyBuffer(counter, 0, arguments, sizeof(uint), sizeof(uint));
         list.Barrier(new([new(arguments, ResourceState.CopyDestination, ResourceState.IndirectArgument)], []));
         argumentState = ResourceState.IndirectArgument;
@@ -687,8 +707,8 @@ public sealed class VfxGpuSimulation : IDisposable {
         list.PushConstants(ShaderStage.Compute, 0, Raw(constants));
         list.Dispatch(Groups(constants.ParticleCount));
         Dispatches++; // Left in ShaderWrite, so a second dispatch — an initialize followed by an update, the usual
-// pair — gets a barrier between them rather than reading what the first had not finished
-// writing. Two dispatches with no barrier is the bug this exists to make impossible.
+        // pair — gets a barrier between them rather than reading what the first had not finished
+        // writing. Two dispatches with no barrier is the bug this exists to make impossible.
         state = ResourceState.ShaderWrite;
     }
 

@@ -46,8 +46,7 @@ public static class YamlSerializer {
     /// <param name="options">How to bind it, or <see langword="null" /> for the defaults.</param>
     /// <returns>The YAML, ending in a newline.</returns>
     public static
-        string ToYaml<T>(T value, YamlSerializerOptions? options = null) =>
-        YamlWriter.Write(Serialize(value, options));
+        string ToYaml<T>(T value, YamlSerializerOptions? options = null) => YamlWriter.Write(Serialize(value, options));
 
     /// <summary>Binds a node to a value.</summary>
     /// <typeparam name="T">What to bind it as.</typeparam>
@@ -56,8 +55,8 @@ public static class YamlSerializer {
     /// <returns>The value.</returns>
     public
         static T Deserialize<T>(YamlNode node, YamlSerializerOptions? options = null) =>
-    (
-        T)Deserialize(node, typeof(T), options) !;
+        (
+        T)Deserialize(node, typeof(T), options)!;
 
     /// <summary>Binds a node to a value.</summary>
     /// <param name="node">The node.</param>
@@ -103,14 +102,14 @@ public static class YamlSerializer {
         YamlNode node,
         Type expected,
         YamlSerializerOptions
-            options,
+        options,
         string path,
         bool declaredNullable = true
     ) {
         var underlying = Nullable.GetUnderlyingType(expected) ?? expected;
         var nullable = (underlying != expected || !expected.IsValueType) && declaredNullable;
         if (IsNull(node)) {
-// A few types have a null of their own — AssetReference's is a real reference to
+            // A few types have a null of their own — AssetReference's is a real reference to
             // nothing, not the absence of a reference — so the converter gets asked before the
             // document's null is treated as C#'s.
             if (
@@ -146,7 +145,7 @@ public static class YamlSerializer {
         // no type for.
         //
         // ⚠ The declared type has to *be* a node type, not merely accept one. `IsInstanceOfType`
-// alone is true for `object` as well — and a member declared `object` is how a scene's
+        // alone is true for `object` as well — and a member declared `object` is how a scene's
         // components arrive, so the loose test handed every one of them back as a raw mapping and
         // the compiler reported that nothing had declared them.
         if (typeof(YamlNode)
@@ -160,10 +159,10 @@ public static class YamlSerializer {
             YamlScalar scalar => BindScalar(scalar.Value, target, path),
             YamlSequence sequence => BindSequence(sequence, target, options, path),
             YamlMapping mapping when IsDictionary(
-                    target,
-                    out var
-                        valueType
-                ) =>
+                target,
+                out var
+                valueType
+            ) =>
                 BindDictionary(mapping, target, valueType, options, path),
             YamlMapping mapping => BindContract(mapping, target, options, path),
             _ => throw new YamlBindingException(path, $"Cannot read {node.GetType().Name} as {target.Name}.")
@@ -211,7 +210,7 @@ public static class YamlSerializer {
         string text,
         Type type,
         string
-            path
+        path
     ) {
         try {
             if (type == typeof(string)) {
@@ -263,7 +262,7 @@ public static class YamlSerializer {
         YamlScalarConverters.TryGet(
             type,
             out var
-                converter
+            converter
         )
             ? converter.Parse(text)
             : throw new YamlBindingException(
@@ -300,7 +299,7 @@ public static class YamlSerializer {
             )created;
 
         for (var index
-                 = 0;
+             = 0;
              index < sequence.Count;
              index++) {
             list.Add(Bind(sequence[index], element, options, $"{path}[{index}]"));
@@ -319,7 +318,7 @@ public static class YamlSerializer {
         var dictionary = (IDictionary
             )Make(type, mapping.Count, path);
         foreach (var
-                     (key, value) in mapping.Entries) {
+                 (key, value) in mapping.Entries) {
             dictionary.Add(key, Bind(value, valueType, options, Join(path, key)));
         }
 
@@ -404,7 +403,7 @@ public static class YamlSerializer {
     /// </remarks>
     static MemberDescriptor? FindMember(
         TypeDescriptor
-            descriptor,
+        descriptor,
         string key,
         YamlSerializerOptions options
     ) {
@@ -445,7 +444,7 @@ public static class YamlSerializer {
         if (runtime
             != (Nullable.GetUnderlyingType(declared) ?? declared)
             && TypeRegistry.TryGet(runtime, out var descriptor)
-           ) {
+        ) {
             node.Tag
                 = descriptor.Alias;
         }
@@ -461,7 +460,7 @@ public static class YamlSerializer {
         }
 
         if (runtime.IsEnum) {
-            return new YamlScalar(value.ToString() !, YamlScalarStyle.Plain);
+            return new YamlScalar(value.ToString()!, YamlScalarStyle.Plain);
         }
 
         if (YamlScalarConverters.TryGet(runtime, out var converter)) {
@@ -470,22 +469,25 @@ public static class YamlSerializer {
 
         switch
             (value) {
-            case bool flag:
-                return new YamlScalar(flag ? "true" : "false", YamlScalarStyle.Plain)
-                    ;
+                case bool flag:
+                    return new YamlScalar(flag ? "true" : "false", YamlScalarStyle.Plain)
+                        ;
 
-            case IFormattable formattable when runtime.IsPrimitive || runtime == typeof(decimal):
-                return new YamlScalar(formattable.ToString(null, CultureInfo.InvariantCulture), YamlScalarStyle.Plain);
+                case IFormattable formattable when runtime.IsPrimitive || runtime == typeof(decimal):
+                    return new YamlScalar(
+                        formattable.ToString(null, CultureInfo.InvariantCulture),
+                        YamlScalarStyle.Plain
+                    );
 
-            case IDictionary
-                dictionary:
-                return
-                    EmitDictionary(dictionary, runtime, options, path);
+                case IDictionary
+                    dictionary:
+                    return
+                        EmitDictionary(dictionary, runtime, options, path);
 
-            case IEnumerable items: return EmitSequence(items, runtime, options, path);
-            default:
-                return EmitContract(value, runtime, options, path);
-        }
+                case IEnumerable items: return EmitSequence(items, runtime, options, path);
+                default:
+                    return EmitContract(value, runtime, options, path);
+            }
     }
 
     static YamlMapping EmitDictionary(
@@ -494,7 +496,7 @@ public static class YamlSerializer {
         YamlSerializerOptions options,
         string path
     ) {
-        var valueType = runtime.IsGenericType ? runtime.GetGenericArguments()[^ 1] : typeof(object);
+        var valueType = runtime.IsGenericType ? runtime.GetGenericArguments()[^1] : typeof(object);
         var mapping = new YamlMapping();
 
         foreach (DictionaryEntry entry in dictionary) {
@@ -509,16 +511,16 @@ public static class YamlSerializer {
         IEnumerable items,
         Type runtime,
         YamlSerializerOptions
-            options,
+        options,
         string path
     ) {
         var element = runtime.IsArray
             ? runtime.GetElementType()!
             : runtime.IsGenericType
-                ? runtime
-                    .GetGenericArguments()[0]
-                : typeof
-                    (object);
+            ? runtime
+            .GetGenericArguments()[0]
+            : typeof
+            (object);
 
         var sequence = new
             YamlSequence();
@@ -556,7 +558,7 @@ public static class YamlSerializer {
             // inspector may still want it — the two flags are deliberately separate, see
             // `MemberDescriptor.IsSerialized` — and a file is exactly what it is not for.
             // `Behavior.Position` is the case that needed it: a façade over the entity's transform,
-// which would be written beside the transform that already holds it and then, on load,
+            // which would be written beside the transform that already holds it and then, on load,
             // assigned through an object not yet attached to an entity.
             if (!member
                     .IsSerialized) {
@@ -608,12 +610,12 @@ public static class YamlSerializer {
             if (definition == typeof(List<>)
                 || definition
                 == typeof(
-                    IList<>)
+                IList<>)
                 || definition == typeof(ICollection<>)
                 || definition == typeof(IEnumerable<>)
                 || definition
                 == typeof
-                    (IReadOnlyList<>)
+                (IReadOnlyList<>)
                 || definition == typeof(IReadOnlyCollection<>)) {
                 return type.GetGenericArguments()[0];
             }
@@ -643,7 +645,7 @@ public static class YamlSerializer {
         }
 
         valueType = typeof(object
-        );
+            );
 
         return false;
     }

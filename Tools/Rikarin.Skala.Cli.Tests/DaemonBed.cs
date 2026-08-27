@@ -4,14 +4,14 @@ using Rikarin.Skala.Testing;
 namespace Rikarin.Skala.Cli.Tests;
 
 /// <summary>
-/// A throwaway repository with one real corpus file in it, and optionally a daemon serving it.
+///     A throwaway repository with one real corpus file in it, and optionally a daemon serving it.
 /// </summary>
 /// <remarks>
-/// ⚠ The root is deliberately <b>short</b>. A Unix domain socket path is capped at 104 bytes by the
-/// kernel, and the default temp directory on macOS (<c>/var/folders/xx/…/T/</c>) plus a GUID plus
-/// <c>.skala/daemon.sock</c> is already close to it. <c>DaemonProtocol.SocketPath</c> handles the
-/// overflow by moving the socket, but a bed that exercises the fallback every time is a bed that
-/// never exercises the documented path.
+///     ⚠ The root is deliberately <b>short</b>. A Unix domain socket path is capped at 104 bytes by the
+///     kernel, and the default temp directory on macOS (<c>/var/folders/xx/…/T/</c>) plus a GUID plus
+///     <c>.skala/daemon.sock</c> is already close to it. <c>DaemonProtocol.SocketPath</c> handles the
+///     overflow by moving the socket, but a bed that exercises the fallback every time is a bed that
+///     never exercises the documented path.
 /// </remarks>
 public sealed class DaemonBed : IDisposable {
     readonly Process? _daemon;

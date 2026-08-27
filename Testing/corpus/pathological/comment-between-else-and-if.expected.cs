@@ -4,7 +4,7 @@ class C {
         if (a == 1) {
             M(a);
         } else
-            // a note
+        // a note
         if (a == 2) {
             M(a);
         }

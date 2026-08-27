@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 using System.
-    Buffers.Binary;
+Buffers.Binary;
 using Xunit;
 
 namespace Vixen.Terrain.Tests;
@@ -28,8 +28,7 @@ namespace Vixen.Terrain.Tests;
 /// </remarks>
 public sealed class MalformedHeightmapPngTests {
     static byte[
-    ] Valid() =>
-        TerrainHeightmapPng.Encode(8, 8, new ushort [64]);
+    ] Valid() => TerrainHeightmapPng.Encode(8, 8, new ushort[64]);
 
     /// <summary>The IHDR body starts at 16: width, height, then depth, colour and the rest.</summary>
     static
@@ -186,7 +185,7 @@ public sealed class MalformedHeightmapPngTests {
         var samples = new ushort[37 * 23];
 
         for (var index
-                 = 0;
+             = 0;
              index < samples.Length;
              index++) {
             samples[index

@@ -41,8 +41,10 @@ public class ColorTests {
     /// </summary>
     /// <remarks>
     ///     <para>
-    ///         <strong>Asserted with a tolerance, not with a decimal-place count, and the difference
-    ///         is why this test used to be flaky.</strong> <c>Assert.Equal(expected, actual, 4)</c>
+    ///         <strong>
+    ///             Asserted with a tolerance, not with a decimal-place count, and the difference
+    ///             is why this test used to be flaky.
+    ///         </strong> <c>Assert.Equal(expected, actual, 4)</c>
     ///         does not compare <c>|a - b|</c> to <c>1e-4</c> — it rounds <em>both</em> values to
     ///         four decimals and compares the results. That comparison has a discontinuity at every
     ///         <c>0.00005</c> boundary, so a value sitting on one fails however small the error is:
@@ -90,7 +92,7 @@ public class ColorTests {
             round,
             RoundTripTolerance
         ); // And the error is far smaller than the bound: these are one-ULP results that a rounding
-// comparison called wrong, not values the transfer functions struggle with.
+        // comparison called wrong, not values the transfer functions struggle with.
         Assert.True(
             MathF.Abs(round - value) < 1e-7f,
             $"{value:R} came back as {round:R}, off by {MathF.Abs(round - value):E3} — the transfer "
@@ -115,8 +117,8 @@ public class ColorTests {
     [Fact]
     public void Mid_grey_is_not_half_way_which_is_the_whole_point() {
         // #808080 is the mid grey a designer picks. Its linear value is about 0.216, not 0.5 —
-// treating the byte as linear is what washes a render out, and this is the number that
-// makes the difference concrete.
+        // treating the byte as linear is what washes a render out, and this is the number that
+        // makes the difference concrete.
         var midGrey = new Color(128, 128, 128);
         Assert.Equal(0.502f, midGrey.ToColor4().R, 3);
         Assert.Equal(0.216f, midGrey.ToLinear().R, 3); // And back the other way: linear 0.5 encodes to 188, not 128.
@@ -126,7 +128,7 @@ public class ColorTests {
     [Fact]
     public void Alpha_is_never_passed_through_the_transfer_function() {
         // Alpha is a coverage fraction, not a light level. Encoding it is a classic and very
-// visible mistake — semi-transparent things come out the wrong opacity.
+        // visible mistake — semi-transparent things come out the wrong opacity.
         var colour = new Color4(0.5f, 0.5f, 0.5f, 0.5f);
         Assert.Equal(0.5f, colour.ToSrgb().A, 5);
         Assert.Equal(0.5f, Color4.FromSrgb(colour).A, 5);

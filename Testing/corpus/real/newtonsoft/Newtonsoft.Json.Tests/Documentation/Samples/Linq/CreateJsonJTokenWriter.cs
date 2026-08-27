@@ -1,4 +1,5 @@
 ﻿#region License
+
 // Copyright (c) 2007 James Newton-King
 //
 // Permission is hereby granted, free of charge, to any person
@@ -21,6 +22,7 @@
 // WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 // OTHER DEALINGS IN THE SOFTWARE.
+
 #endregion
 
 using System;
@@ -36,15 +38,13 @@ using NUnit.Framework;
 
 #endif
 
-namespace Newtonsoft.Json.Tests.Documentation.Samples.Linq
-{
+namespace Newtonsoft.Json.Tests.Documentation.Samples.Linq {
     [TestFixture]
-    public class CreateJsonJTokenWriter : TestFixtureBase
-    {
+    public class CreateJsonJTokenWriter : TestFixtureBase {
         [Test]
-        public void Example()
-        {
+        public void Example() {
             #region Usage
+
             JTokenWriter writer = new JTokenWriter();
             writer.WriteStartObject();
             writer.WritePropertyName("name1");
@@ -66,15 +66,19 @@ namespace Newtonsoft.Json.Tests.Documentation.Samples.Linq
             //     2
             //   ]
             // }
+
             #endregion
 
-            StringAssert.AreEqual(@"{
+            StringAssert.AreEqual(
+                @"{
   ""name1"": ""value1"",
   ""name2"": [
     1,
     2
   ]
-}", o.ToString());
+}",
+                o.ToString()
+            );
         }
     }
 }

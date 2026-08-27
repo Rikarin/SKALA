@@ -21,9 +21,9 @@ namespace Rikarin.Skala.Analysis.Hosting;
 
 /// <summary>What one analyzer cost, for <c>--profile</c>.</summary>
 /// <remarks>
-/// docs/plan/13 § "Analysis": "<c>--profile</c> surfaces <c>logAnalyzerExecutionTime</c> output
-/// ranked by cost. This is how a rule that is accidentally O(n²) in a method's statement count gets
-/// found, and every Skala rule's cost is reviewed against it before release."
+///     docs/plan/13 § "Analysis": "<c>--profile</c> surfaces <c>logAnalyzerExecutionTime</c> output
+///     ranked by cost. This is how a rule that is accidentally O(n²) in a method's statement count gets
+///     found, and every Skala rule's cost is reviewed against it before release."
 /// </remarks>
 public sealed record AnalyzerCost(string Analyzer, ImmutableArray<string> Rules, TimeSpan Elapsed);
 
@@ -38,24 +38,28 @@ public sealed record AnalysisOutcome(
 }
 
 /// <summary>
-/// <c>CompilationWithAnalyzers</c>, configured the way docs/plan/07 § "Running analyzers" says.
+///     <c>CompilationWithAnalyzers</c>, configured the way docs/plan/07 § "Running analyzers" says.
 /// </summary>
 /// <remarks>
-/// Four settings, each of which is a decision:
-/// <list type="bullet">
-/// <item>
-/// ⚠ <c>reportSuppressedDiagnostics: true</c> — Skala needs to distinguish "not found" from "found
-/// and suppressed by <c>#pragma</c>", because a baseline has to see what was suppressed and because
-/// a suppression audit is the SonarQube feature worth keeping.
-/// </item>
-/// <item>
-/// ⚠ <c>onAnalyzerException</c> records <c>SK9030</c> and never aborts. A third-party analyzer that
-/// throws on one syntax shape must not be able to turn a CI gate red for unrelated reasons — or,
-/// worse, green by aborting the run early.
-/// </item>
-/// <item>Compiler diagnostics are part of the report, so one command answers "does this build and is it clean".</item>
-/// <item><c>concurrentAnalysis: true</c>, with determinism restored by sorting afterwards, never by serialising.</item>
-/// </list>
+///     Four settings, each of which is a decision:
+///     <list type="bullet">
+///         <item>
+///             ⚠ <c>reportSuppressedDiagnostics: true</c> — Skala needs to distinguish "not found" from "found
+///             and suppressed by <c>#pragma</c>", because a baseline has to see what was suppressed and because
+///             a suppression audit is the SonarQube feature worth keeping.
+///         </item>
+///         <item>
+///             ⚠ <c>onAnalyzerException</c> records <c>SK9030</c> and never aborts. A third-party analyzer that
+///             throws on one syntax shape must not be able to turn a CI gate red for unrelated reasons — or,
+///             worse, green by aborting the run early.
+///         </item>
+///         <item>
+///             Compiler diagnostics are part of the report, so one command answers "does this build and is it clean".
+///         </item>
+///         <item>
+///             <c>concurrentAnalysis: true</c>, with determinism restored by sorting afterwards, never by serialising.
+///         </item>
+///     </list>
 /// </remarks>
 public static class AnalyzerHost {
     /// <summary>Skala's own analyzers. One instance set, reused across compilations (ADR-006).</summary>
@@ -76,12 +80,12 @@ public static class AnalyzerHost {
     ];
 
     /// <summary>
-    /// The rules that cannot run under a given load mode, with the reason, for the SARIF.
+    ///     The rules that cannot run under a given load mode, with the reason, for the SARIF.
     /// </summary>
     /// <remarks>
-    /// ⚠ docs/plan/07 § loose: the mode "is honest, because the SARIF says <c>loadMode: loose</c>
-    /// and lists the rules that were skipped". A report that omits this is a report whose clean
-    /// result means something different from another clean result.
+    ///     ⚠ docs/plan/07 § loose: the mode "is honest, because the SARIF says <c>loadMode: loose</c>
+    ///     and lists the rules that were skipped". A report that omits this is a report whose clean
+    ///     result means something different from another clean result.
     /// </remarks>
     public static ImmutableArray<SkippedRule> SkippedFor(LoadMode mode) {
         if (mode != LoadMode.Loose) {
@@ -114,13 +118,13 @@ public static class AnalyzerHost {
         Execute(unit, options, hosted, mode, trees: null, profile, cancellation);
 
     /// <summary>
-    /// The warm path: run the analyzers over only the trees whose cache key moved.
+    ///     The warm path: run the analyzers over only the trees whose cache key moved.
     /// </summary>
     /// <remarks>
-    /// ⚠ Syntax <em>and</em> semantic actions, per tree. Running only
-    /// <c>GetAnalyzerSyntaxDiagnosticsAsync</c> would silently drop every semantic rule from a warm
-    /// run, so a file would produce different findings depending on whether the cache was cold —
-    /// which is the cache lying, in the direction that looks like progress.
+    ///     ⚠ Syntax <em>and</em> semantic actions, per tree. Running only
+    ///     <c>GetAnalyzerSyntaxDiagnosticsAsync</c> would silently drop every semantic rule from a warm
+    ///     run, so a file would produce different findings depending on whether the cache was cold —
+    ///     which is the cache lying, in the direction that looks like progress.
     /// </remarks>
     public static AnalysisOutcome RunForTrees(
         CompilationUnit unit,
@@ -258,12 +262,12 @@ public static class AnalyzerHost {
     }
 
     /// <summary>
-    /// What each analyzer cost, taken off the result rather than asked for afterwards.
+    ///     What each analyzer cost, taken off the result rather than asked for afterwards.
     /// </summary>
     /// <remarks>
-    /// ⚠ <c>logAnalyzerExecutionTime: true</c> had been set on every run since M5 and nothing
-    /// ever read it, so doc 13's promise that "every Skala rule's cost is reviewed against it
-    /// before release" had no instrument behind it. This is that instrument.
+    ///     ⚠ <c>logAnalyzerExecutionTime: true</c> had been set on every run since M5 and nothing
+    ///     ever read it, so doc 13's promise that "every Skala rule's cost is reviewed against it
+    ///     before release" had no instrument behind it. This is that instrument.
     /// </remarks>
     static ImmutableArray<AnalyzerCost> Measure(
         AnalysisResult result,
@@ -400,21 +404,21 @@ public static class AnalyzerHost {
     }
 
     /// <summary>
-    /// The display string of the symbol a finding sits in — the fingerprint's third term.
+    ///     The display string of the symbol a finding sits in — the fingerprint's third term.
     /// </summary>
     /// <remarks>
-    /// docs/plan/09 § "The fingerprint": <c>Vixen.Core.Foo.Bar(int, string)</c>, "stable across file
-    /// moves".
-    /// <para>
-    /// ⚠ A lambda or a local function reports its <em>containing</em> member instead of itself.
-    /// Roslyn's display string for an anonymous function contains its position in the file, so a
-    /// fingerprint built on it would move whenever anything above it moved — which is the one
-    /// failure this term exists to prevent, reintroduced through the back door.
-    /// </para>
-    /// <para>
-    /// ⚠ Empty rather than throwing when the model cannot be built. A finding with no enclosing
-    /// symbol still gets a fingerprint; it is simply a weaker one, which is better than no finding.
-    /// </para>
+    ///     docs/plan/09 § "The fingerprint": <c>Vixen.Core.Foo.Bar(int, string)</c>, "stable across file
+    ///     moves".
+    ///     <para>
+    ///         ⚠ A lambda or a local function reports its <em>containing</em> member instead of itself.
+    ///         Roslyn's display string for an anonymous function contains its position in the file, so a
+    ///         fingerprint built on it would move whenever anything above it moved — which is the one
+    ///         failure this term exists to prevent, reintroduced through the back door.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ Empty rather than throwing when the model cannot be built. A finding with no enclosing
+    ///         symbol still gets a fingerprint; it is simply a weaker one, which is better than no finding.
+    ///     </para>
     /// </remarks>
     static string EnclosingSymbol(
         CompilationUnit unit,
@@ -442,12 +446,12 @@ public static class AnalyzerHost {
     }
 
     /// <summary>
-    /// The finding's own span, whitespace collapsed — the fingerprint's second term.
+    ///     The finding's own span, whitespace collapsed — the fingerprint's second term.
     /// </summary>
     /// <remarks>
-    /// ⚠ Bounded. A finding whose span is a whole 4 000-line type would otherwise put 4 000 lines
-    /// into every fingerprint computation and into the baseline's memory; the leading window is
-    /// enough to identify it and the ordinal disambiguates what is left.
+    ///     ⚠ Bounded. A finding whose span is a whole 4 000-line type would otherwise put 4 000 lines
+    ///     into every fingerprint computation and into the baseline's memory; the leading window is
+    ///     enough to identify it and the ordinal disambiguates what is left.
     /// </remarks>
     static string Snippet(SyntaxTree tree, TextSpan span) {
         const int Limit = 400;
@@ -493,13 +497,13 @@ public static class AnalyzerHost {
         };
 
     /// <summary>
-    /// Merges near-duplicate findings from a multi-targeted build.
+    ///     Merges near-duplicate findings from a multi-targeted build.
     /// </summary>
     /// <remarks>
-    /// ⚠ docs/plan/07 § "Multi-targeting": merged on <c>(ruleId, file, line, column, message)</c>,
-    /// with the target-framework list carried as a property, "so a finding that only occurs under
-    /// one target is visibly a one-target finding". Dropping the list would make the two cases
-    /// indistinguishable, which is the whole reason the merge is allowed at all.
+    ///     ⚠ docs/plan/07 § "Multi-targeting": merged on <c>(ruleId, file, line, column, message)</c>,
+    ///     with the target-framework list carried as a property, "so a finding that only occurs under
+    ///     one target is visibly a one-target finding". Dropping the list would make the two cases
+    ///     indistinguishable, which is the whole reason the merge is allowed at all.
     /// </remarks>
     public static ImmutableArray<Finding> Merge(IEnumerable<Finding> findings) {
         var order = new List<(string, string, int, int, string)>();

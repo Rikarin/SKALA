@@ -8,22 +8,22 @@ using Rikarin.Skala.Core.Diagnostics;
 namespace Rikarin.Skala.Formatting.CSharp.Arrangement;
 
 /// <summary>
-/// Layers 2 and 3 of docs/plan/06 § "Safety".
+///     Layers 2 and 3 of docs/plan/06 § "Safety".
 /// </summary>
 /// <remarks>
-/// Layer 1 — conservative preconditions — lives in the rules, because a precondition is about one
-/// rewrite. These two are about the document, and they are what stands between "the rewrite was
-/// legal in isolation" and "the rewrite was legal here".
-/// <para>
-/// ⚠ Layer 2 costs a re-bind per changed document, and that is the whole reason <c>arrange</c> is
-/// minutes-scale on a large tree while <c>format</c> is seconds-scale. It is the correct trade:
-/// whitespace is cheap and constant, tree rewrites are rare and must be right.
-/// </para>
+///     Layer 1 — conservative preconditions — lives in the rules, because a precondition is about one
+///     rewrite. These two are about the document, and they are what stands between "the rewrite was
+///     legal in isolation" and "the rewrite was legal here".
+///     <para>
+///         ⚠ Layer 2 costs a re-bind per changed document, and that is the whole reason <c>arrange</c> is
+///         minutes-scale on a large tree while <c>format</c> is seconds-scale. It is the correct trade:
+///         whitespace is cheap and constant, tree rewrites are rare and must be right.
+///     </para>
 /// </remarks>
 public static class ArrangementSafety {
     /// <summary>
-    /// Re-binds the rewritten document and returns the diagnostic that says it must be reverted, or
-    /// null when it is safe.
+    ///     Re-binds the rewritten document and returns the diagnostic that says it must be reverted, or
+    ///     null when it is safe.
     /// </summary>
     public static SkalaDiagnostic? Check(
         string path,
@@ -87,23 +87,23 @@ public static class ArrangementSafety {
     }
 
     /// <summary>
-    /// Layer 3: for every identifier that survived the rewrite, the same name must still mean the
-    /// same thing.
+    ///     Layer 3: for every identifier that survived the rewrite, the same name must still mean the
+    ///     same thing.
     /// </summary>
     /// <remarks>
-    /// ⚠ This is the check that catches the genuinely dangerous case — the code still compiles, and
-    /// now calls something else. Layer 2 cannot see it, because nothing about it is a diagnostic:
-    /// removing a <c>this.</c> in a class that also has a static of that name, or removing a using
-    /// that was the only source of an extension method with a viable instance-method fallback, both
-    /// bind cleanly to the wrong symbol.
-    /// <para>
-    /// ⚠ Keyed by (name, containing member, ordinal within that member) rather than by position.
-    /// Positions move — that is what arrangement *is* — so a position-keyed comparison compares an
-    /// identifier against whatever the rewrite happened to slide into its offset, which is noise. A
-    /// name that is the 3rd <c>Foo</c> in <c>C.M</c> before must be the 3rd <c>Foo</c> in <c>C.M</c>
-    /// after, and if the rewrite deleted one the counts differ and the key stops matching, which is
-    /// reported rather than ignored.
-    /// </para>
+    ///     ⚠ This is the check that catches the genuinely dangerous case — the code still compiles, and
+    ///     now calls something else. Layer 2 cannot see it, because nothing about it is a diagnostic:
+    ///     removing a <c>this.</c> in a class that also has a static of that name, or removing a using
+    ///     that was the only source of an extension method with a viable instance-method fallback, both
+    ///     bind cleanly to the wrong symbol.
+    ///     <para>
+    ///         ⚠ Keyed by (name, containing member, ordinal within that member) rather than by position.
+    ///         Positions move — that is what arrangement *is* — so a position-keyed comparison compares an
+    ///         identifier against whatever the rewrite happened to slide into its offset, which is noise. A
+    ///         name that is the 3rd <c>Foo</c> in <c>C.M</c> before must be the 3rd <c>Foo</c> in <c>C.M</c>
+    ///         after, and if the rewrite deleted one the counts differ and the key stops matching, which is
+    ///         reported rather than ignored.
+    ///     </para>
     /// </remarks>
     static SkalaDiagnostic? SymbolIdentity(
         string path,
@@ -220,12 +220,12 @@ public static class ArrangementSafety {
     }
 
     /// <summary>
-    /// The member an identifier sits in, as a stable name.
+    ///     The member an identifier sits in, as a stable name.
     /// </summary>
     /// <remarks>
-    /// ⚠ The *declared symbol* of the enclosing member rather than its span, for the same reason the
-    /// key is not a position: a member that moved is still the same member, and a member that was
-    /// re-bodied has a different span and the same identity.
+    ///     ⚠ The *declared symbol* of the enclosing member rather than its span, for the same reason the
+    ///     key is not a position: a member that moved is still the same member, and a member that was
+    ///     re-bodied has a different span and the same identity.
     /// </remarks>
     static string ContainerOf(SyntaxNode node, SemanticModel model, CancellationToken cancellation) {
         for (var current = node.Parent; current is not null; current = current.Parent) {
@@ -241,10 +241,10 @@ public static class ArrangementSafety {
     }
 
     /// <summary>
-    /// ⚠ Id plus message, not id plus position. A rewrite moves text, so the position of an
-    /// unchanged diagnostic changes and a position-keyed set reports every surviving diagnostic as
-    /// both removed and added. The message distinguishes two CS0103s about different names, which is
-    /// the distinction that matters.
+    ///     ⚠ Id plus message, not id plus position. A rewrite moves text, so the position of an
+    ///     unchanged diagnostic changes and a position-keyed set reports every surviving diagnostic as
+    ///     both removed and added. The message distinguishes two CS0103s about different names, which is
+    ///     the distinction that matters.
     /// </summary>
     static ImmutableHashSet<string> Signature(IEnumerable<Diagnostic> diagnostics) {
         var set = ImmutableHashSet.CreateBuilder(StringComparer.Ordinal);

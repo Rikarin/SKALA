@@ -10,20 +10,22 @@ public sealed class ALambdaRestartsTheCount {
             if (flags[1]) {
                 if (flags[2]) {
                     total = run(() => {
-                        var inner = 0;
-                        if (flags[0]) {
-                            if (flags[1]) {
-                                if (flags[2]) {
-                                    if (flags[3]) {
-                                        if (flags[4]) {
-                                            inner++;
+                            var inner = 0;
+                            if (flags[0]) {
+                                if (flags[1]) {
+                                    if (flags[2]) {
+                                        if (flags[3]) {
+                                            if (flags[4]) {
+                                                inner++;
+                                            }
                                         }
                                     }
                                 }
                             }
+
+                            return inner;
                         }
-                        return inner;
-                    });
+                    );
                 }
             }
         }

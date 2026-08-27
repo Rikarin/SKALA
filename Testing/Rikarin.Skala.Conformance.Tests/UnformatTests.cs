@@ -4,20 +4,20 @@ using Rikarin.Skala.Testing;
 namespace Rikarin.Skala.Conformance.Tests;
 
 /// <summary>
-/// The differential over <em>degraded</em> input — docs/plan/12 § "The unformat differential".
+///     The differential over <em>degraded</em> input — docs/plan/12 § "The unformat differential".
 /// </summary>
 /// <remarks>
-/// ⚠ These are the ratchets for the second differential, and the reason there is a second one is a
-/// number: <c>corpus/real/</c>'s inputs are already 90.95 % line-identical to their fixtures, so the
-/// 99.63 % headline is mostly a measurement of Skala leaving good code alone. Here the input's
-/// formatting has been destroyed first, so what is measured is whether Skala <em>decides</em> what
-/// ReSharper decides.
-/// <para>
-/// ⚠ Every number is asserted against the null hypothesis as well as against its baseline. A ratchet
-/// on its own cannot tell "the formatter improved" from "the corpus got easier", and
-/// <see cref="TheNullHypothesis_IsFarBelowSkala"/> is what fails if a future regeneration softens
-/// the degradation.
-/// </para>
+///     ⚠ These are the ratchets for the second differential, and the reason there is a second one is a
+///     number: <c>corpus/real/</c>'s inputs are already 90.95 % line-identical to their fixtures, so the
+///     99.63 % headline is mostly a measurement of Skala leaving good code alone. Here the input's
+///     formatting has been destroyed first, so what is measured is whether Skala <em>decides</em> what
+///     ReSharper decides.
+///     <para>
+///         ⚠ Every number is asserted against the null hypothesis as well as against its baseline. A ratchet
+///         on its own cannot tell "the formatter improved" from "the corpus got easier", and
+///         <see cref="TheNullHypothesis_IsFarBelowSkala" /> is what fails if a future regeneration softens
+///         the degradation.
+///     </para>
 /// </remarks>
 public sealed class UnformatTests {
     public static TheoryData<UnformatMode> Modes {
@@ -32,12 +32,12 @@ public sealed class UnformatTests {
     }
 
     /// <summary>
-    /// ⚠ Re-checked from the committed bytes rather than trusted because the generator said so.
+    ///     ⚠ Re-checked from the committed bytes rather than trusted because the generator said so.
     /// </summary>
     /// <remarks>
-    /// A degraded input is one half of a fixture pair. A hand-edit to it — tidying a line, fixing
-    /// what looks like a typo — turns every subsequent measurement into a comparison of two
-    /// unrelated files, and nothing else in the suite would notice.
+    ///     A degraded input is one half of a fixture pair. A hand-edit to it — tidying a line, fixing
+    ///     what looks like a typo — turns every subsequent measurement into a comparison of two
+    ///     unrelated files, and nothing else in the suite would notice.
     /// </remarks>
     [Theory]
     [MemberData(nameof(Modes))]
@@ -96,9 +96,9 @@ public sealed class UnformatTests {
 
     /// <summary>The ratchet, over its own population.</summary>
     /// <remarks>
-    /// ⚠ Its own entries in <c>fidelity.json</c>, beside the existing ones rather than replacing
-    /// them. The two differentials answer different questions over different inputs and neither
-    /// number is the other's successor.
+    ///     ⚠ Its own entries in <c>fidelity.json</c>, beside the existing ones rather than replacing
+    ///     them. The two differentials answer different questions over different inputs and neither
+    ///     number is the other's successor.
     /// </remarks>
     [Theory]
     [MemberData(nameof(Modes))]
@@ -123,14 +123,14 @@ public sealed class UnformatTests {
     }
 
     /// <summary>
-    /// ⚠ The calibration, asserted rather than printed.
+    ///     ⚠ The calibration, asserted rather than printed.
     /// </summary>
     /// <remarks>
-    /// A ratchet on its own cannot tell a formatter that improved from a corpus that got easier. If
-    /// a future regeneration softens the degradation — a weight nudged, a mode quietly narrowed —
-    /// the null hypothesis rises towards the measured number and this fails, which is the only place
-    /// that failure is visible. The margins are wide on purpose: they are a tripwire on the corpus,
-    /// not a second bar on the formatter.
+    ///     A ratchet on its own cannot tell a formatter that improved from a corpus that got easier. If
+    ///     a future regeneration softens the degradation — a weight nudged, a mode quietly narrowed —
+    ///     the null hypothesis rises towards the measured number and this fails, which is the only place
+    ///     that failure is visible. The margins are wide on purpose: they are a tripwire on the corpus,
+    ///     not a second bar on the formatter.
     /// </remarks>
     [Fact]
     public void TheNullHypothesis_IsFarBelowSkala() {

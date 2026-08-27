@@ -1,12 +1,12 @@
 using System;
 
 [AttributeUsage(AttributeTargets.All)]
-class MyAttribute : Attribute {
-}
+class MyAttribute : Attribute { }
 
 [My]
-class C<[My] T> {
-    [My] int _a;
+class C< [My] T> {
+    [My]
+    int _a;
 
     [return: My]
     [My]

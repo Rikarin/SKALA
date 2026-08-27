@@ -1,4 +1,5 @@
 // skala-oracle: resharper=2025.2.6 config=sha256:98ff52570e019fac profile=SkalaFormatOnly generated=2026-08-27
+
 #region License
 
 // Copyright (c) 2007 James Newton-King
@@ -37,12 +38,12 @@ using System.Globalization;
 using System.Runtime.Serialization;
 #if !HAVE_LINQ
 using
-    Newtonsoft.Json.Utilities.LinqBridge;
+Newtonsoft.Json.Utilities.LinqBridge;
 #else
 using System.Linq;
 #endif
 using
-    System.Reflection;
+System.Reflection;
 using System.Text;
 using Newtonsoft.Json.Serialization;
 using System.Runtime.CompilerServices;
@@ -53,7 +54,7 @@ namespace Newtonsoft.Json.Utilities {
         private const char EnumSeparatorChar = ',';
 
         private const string
-            EnumSeparatorString = ", ";
+        EnumSeparatorString = ", ";
 
         private static readonly ThreadSafeStore<StructMultiKey<Type, NamingStrategy?>, EnumInfo> ValuesAndNamesPerEnum =
             new ThreadSafeStore<StructMultiKey<Type, NamingStrategy?>, EnumInfo>(InitializeValuesAndNames);
@@ -65,7 +66,7 @@ namespace Newtonsoft.Json.Utilities {
         ) {
             Type enumType = key.Value1;
             string[] names = Enum.GetNames(enumType);
-            string[] resolvedNames = new string [names.Length
+            string[] resolvedNames = new string[names.Length
             ];
             ulong
                 [] values = new ulong[names.Length];
@@ -75,9 +76,9 @@ namespace Newtonsoft.Json.Utilities {
                 string name = names[i];
                 FieldInfo f = enumType
                     .GetField(name, BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Static)!;
-                values[i] = ToUInt64(f.GetValue(null) !);
+                values[i] = ToUInt64(f.GetValue(null)!);
                 string
-                    resolvedName;
+                resolvedName;
 #if HAVE_DATA_CONTRACTS
                 string? specifiedName = f.GetCustomAttributes(typeof(EnumMemberAttribute), true)
                          .Cast<EnumMemberAttribute>()
@@ -243,7 +244,7 @@ namespace Newtonsoft.Json.Utilities {
             GetEnumValuesAndNames(Type enumType) {
             return ValuesAndNamesPerEnum.Get(
                 new
-                    StructMultiKey<Type, NamingStrategy?>(enumType, null)
+                StructMultiKey<Type, NamingStrategy?>(enumType, null)
             );
         }
 
@@ -267,7 +268,7 @@ namespace Newtonsoft.Json.Utilities {
                     return (char)value;
                 case PrimitiveTypeCode.UInt32:
                     return (uint
-                        )value;
+                    )value;
 
                 case PrimitiveTypeCode.Int32:
                     return (ulong)(int)value;
@@ -290,7 +291,7 @@ namespace Newtonsoft.Json.Utilities {
                 .ArgumentNotNull(enumType, nameof(enumType));
             ValidationUtils.ArgumentNotNull(value, nameof(value));
             if (!enumType.IsEnum()
-               ) {
+            ) {
                 throw
                     new ArgumentException("Type provided must be an Enum.", nameof(enumType));
             }
@@ -300,10 +301,10 @@ namespace Newtonsoft.Json.Utilities {
             string[] enumNames = entry.Names;
             string[] resolvedNames = entry.ResolvedNames;
             ulong[] enumValues = entry.Values;
-// first check if the entire text (including commas) matches a resolved name
+            // first check if the entire text (including commas) matches a resolved name
             int? matchingIndex = FindIndexByName(resolvedNames, value, 0, value.Length, StringComparison.Ordinal);
             if (matchingIndex != null
-               ) {
+            ) {
                 return Enum.ToObject(enumType, enumValues[matchingIndex.Value]);
             }
 
@@ -331,7 +332,7 @@ namespace Newtonsoft.Json.Utilities {
                 value = value
                     .Trim();
                 object?
-                    temp = null;
+                temp = null;
 
                 try {
                     temp =
@@ -361,7 +362,7 @@ namespace Newtonsoft.Json.Utilities {
                 int endIndex =
                     value.IndexOf(EnumSeparatorChar, valueIndex);
                 if (endIndex == -1
-                   ) {
+                ) {
                     endIndex = value.Length;
                 }
 
@@ -405,12 +406,12 @@ namespace Newtonsoft.Json.Utilities {
                     // still can't find a match
                     // before we throw an error, check whether the entire string has a case insensitive match against resolve names
                     matchingIndex = FindIndexByName(
-                            resolvedNames,
-                            value,
-                            0,
-                            value.Length,
-                            StringComparison.OrdinalIgnoreCase
-                        )
+                        resolvedNames,
+                        value,
+                        0,
+                        value.Length,
+                        StringComparison.OrdinalIgnoreCase
+                    )
                         ;
                     if (matchingIndex != null) {
                         return Enum.ToObject(enumType, enumValues[matchingIndex.Value]);

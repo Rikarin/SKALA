@@ -8,15 +8,15 @@ using Rikarin.Skala.Rules.Metadata;
 namespace Rikarin.Skala.Rules.Modernization;
 
 /// <summary>
-/// <c>SK1035</c> — <c>Enum.GetValues(typeof(T))</c> where <c>Enum.GetValues&lt;T&gt;()</c> exists.
+///     <c>SK1035</c> — <c>Enum.GetValues(typeof(T))</c> where <c>Enum.GetValues&lt;T&gt;()</c> exists.
 /// </summary>
 /// <remarks>
-/// ⚠ The non-generic overload returns <c>System.Array</c> and the generic one returns <c>T[]</c>,
-/// so the rewrite changes the expression's type. That is an improvement everywhere it compiles and
-/// a break where the <c>Array</c>-ness was being used, and there is no cheap way to prove which. So
-/// the rule fires only in the two positions where <c>T[]</c> is unambiguously fine: the collection
-/// of a <c>foreach</c>, and the receiver of a LINQ call. Everywhere else it is silent — which on a
-/// corpus means it fires rarely, and that is the intended trade.
+///     ⚠ The non-generic overload returns <c>System.Array</c> and the generic one returns <c>T[]</c>,
+///     so the rewrite changes the expression's type. That is an improvement everywhere it compiles and
+///     a break where the <c>Array</c>-ness was being used, and there is no cheap way to prove which. So
+///     the rule fires only in the two positions where <c>T[]</c> is unambiguously fine: the collection
+///     of a <c>foreach</c>, and the receiver of a LINQ call. Everywhere else it is silent — which on a
+///     corpus means it fires rarely, and that is the intended trade.
 /// </remarks>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class EnumGetValuesAnalyzer : DiagnosticAnalyzer {

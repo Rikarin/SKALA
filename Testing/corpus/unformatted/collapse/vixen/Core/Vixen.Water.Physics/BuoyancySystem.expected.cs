@@ -14,22 +14,31 @@ namespace Vixen.Water.Physics;
 /// <summary>Floats every <see cref="BuoyancyBody" /> on the one surface everything else reads.</summary>
 /// <remarks>
 ///     <para>
-///         <b>[35 § D10](../../docs/plan/35-water.md#d10-buoyancy-is-pontoons-over-jolt-evaluated-at-the-fixed-steps-water-time),
-///         and the whole of what this assembly is for.</b> Per fixed step, per pontoon: ask the
+///         <b>
+///             [35 §
+///             D10](../../docs/plan/35-water.md#d10-buoyancy-is-pontoons-over-jolt-evaluated-at-the-fixed-steps-water-time),
+///             and the whole of what this assembly is for.
+///         </b> Per fixed step, per pontoon: ask the
 ///         surface where it is, work out how much of the sphere is under it, and apply the force at
 ///         the pontoon's own world position — which is what makes a hull pitch when somebody stands at
 ///         the bow rather than bob level.
 ///     </para>
 ///     <para>
-///         ⚠ <b>Before <see cref="PhysicsStepSystem" /> and after <see cref="PhysicsSyncSystem" />,
-///         and both halves of that matter.</b> Jolt accumulates forces and clears them at the step, so
+///         ⚠
+///         <b>
+///             Before <see cref="PhysicsStepSystem" /> and after <see cref="PhysicsSyncSystem" />,
+///             and both halves of that matter.
+///         </b> Jolt accumulates forces and clears them at the step, so
 ///         a force applied after the step is a force that is thrown away — a boat that sinks with the
 ///         system visibly running. And a force applied before the sync is a force on a body the sync
 ///         is about to create, which is the first frame of every boat lost.
 ///     </para>
 ///     <para>
-///         ⚠ <b>It reads the simulation's water time off <see cref="IWaterSurface" /> and never its
-///         own <c>GameTime</c>.</b> A force computed from a frame time changes when the frame rate
+///         ⚠
+///         <b>
+///             It reads the simulation's water time off <see cref="IWaterSurface" /> and never its
+///             own <c>GameTime</c>.
+///         </b> A force computed from a frame time changes when the frame rate
 ///         does, which in a networked game is a client and a server disagreeing about where a boat is
 ///         — [16](../../docs/plan/16-networking.md)'s determinism requirement applied to a force.
 ///         <c>WaterClockSystem</c> is what advances that clock, and it does so in
@@ -63,8 +72,11 @@ public sealed class BuoyancySystem(PhysicsScene scene, IWaterSurface surface) : 
     /// <summary>Where this step's wakes and splashes go, or null to produce none.</summary>
     /// <remarks>
     ///     <para>
-    ///         <b>[35 § D12](../../docs/plan/35-water.md#d12-ripples-are-a-sliding-window-height-field-and-they-are-displacement-not-geometry)'s
-    ///         wake and splash hooks, produced where the facts are.</b> A hull's speed, how much of it
+    ///         <b>
+    ///             [35 §
+    ///             D12](../../docs/plan/35-water.md#d12-ripples-are-a-sliding-window-height-field-and-they-are-displacement-not-geometry)'s
+    ///             wake and splash hooks, produced where the facts are.
+    ///         </b> A hull's speed, how much of it
     ///         is under, and the step it first touched water are all here and nowhere else — a system
     ///         that wanted to make spray would otherwise have to re-derive them from a transform,
     ///         which is a second opinion about whether a boat is moving.
@@ -125,8 +137,11 @@ public sealed class BuoyancySystem(PhysicsScene scene, IWaterSurface surface) : 
 
     /// <summary>How many of those touched water.</summary>
     /// <remarks>
-    ///     ⚠ <b>Zero while <see cref="Pontoons" /> is not is the reading that says the water is
-    ///     somewhere else.</b> It is the buoyancy equivalent of <c>ZonelessBodies</c>: a boat outside
+    ///     ⚠
+    ///     <b>
+    ///         Zero while <see cref="Pontoons" /> is not is the reading that says the water is
+    ///         somewhere else.
+    ///     </b> It is the buoyancy equivalent of <c>ZonelessBodies</c>: a boat outside
     ///     every zone's window falls, and nothing about the falling says why.
     /// </remarks>
     public int WetPontoons { get; private set; }
@@ -146,8 +161,8 @@ public sealed class BuoyancySystem(PhysicsScene scene, IWaterSurface surface) : 
     /// <inheritdoc />
     public override JobHandle Update(in SystemContext context, JobHandle dependency) {
         // The sync has just created bodies and pushed authored velocities in, and applying a force
-// is a native call the ECS cannot see into. Nothing scheduled may still be reading what it
-// writes.
+        // is a native call the ECS cannot see into. Nothing scheduled may still be reading what it
+        // writes.
         dependency.Complete();
         Step(context.World);
         return dependency;
@@ -166,9 +181,9 @@ public sealed class BuoyancySystem(PhysicsScene scene, IWaterSurface surface) : 
         var gravity =
             scene.World.Gravity
                 .Y; // ⚠ One entity at a time, and not a span. BuoyancyBody holds an array of pontoons, which
-// makes it a managed component: its values live in the world's store and the chunk holds
-// handles, so ReadValues would throw. The transforms and velocities beside it are unmanaged
-// and are read per entity here anyway, because the loop is already one at a time.
+        // makes it a managed component: its values live in the world's store and the chunk holds
+        // handles, so ReadValues would throw. The transforms and velocities beside it are unmanaged
+        // and are read per entity here anyway, because the loop is already one at a time.
         asked.Clear();
         foreach (var chunk in world.Chunks(bodies)) {
             asked.AddRange(chunk.Entities[.. chunk.Count]);
@@ -187,24 +202,24 @@ public sealed class BuoyancySystem(PhysicsScene scene, IWaterSurface surface) : 
 
         var body = world.Read<PhysicsBody>(entity)
             .Handle; // ⚠ Out of the simulation and not out of a component. `WorldTransform` is written by
-// `TransformSystem`, which runs in LateUpdate — so in this phase it holds *last frame's*
-// pose, and a boat would be floated where it was rather than where it is. The one-frame lag
-// that produces is exactly the class of bug § D2's whole seam exists to prevent, and the
-// simulation already has the answer to hand.
+        // `TransformSystem`, which runs in LateUpdate — so in this phase it holds *last frame's*
+        // pose, and a boat would be floated where it was rather than where it is. The one-frame lag
+        // that produces is exactly the class of bug § D2's whole seam exists to prevent, and the
+        // simulation already has the answer to hand.
         scene.World.GetTransform(
             body,
             out var position,
             out var rotation
         ); // ⚠ Unit scale, and it is not an oversight: Jolt has no notion of a scaled body — a scaled
-// shape is baked into the shape itself — so a placement built with the entity's authored
-// scale would move the pontoons somewhere the collider is not.
+        // shape is baked into the shape itself — so a placement built with the entity's authored
+        // scale would move the pontoons somewhere the collider is not.
         var placement = Matrix4x4.Compose(Vector3.One, rotation, position);
         var velocity = scene.World.GetLinearVelocity(body);
         Pontoons += pontoons
             .Length; // ⚠ The centre of the body, not of a pontoon — QueryAt picks a *zone*, and a hull is smaller
-// than a window by orders of magnitude. Asking per pontoon would be four containment walks
-// per step for an answer that differs only for a boat straddling two zones, which is the
-// authoring mistake QueryAt's own remarks refuse to resolve.
+        // than a window by orders of magnitude. Asking per pontoon would be four containment walks
+        // per step for an answer that differs only for a boat straddling two zones, which is the
+        // authoring mistake QueryAt's own remarks refuse to resolve.
         var origin = position;
         if (Surface.QueryAt(new(origin.X, origin.Z)) is not { } query) {
             Dry(world, entity, pontoons.Length);
@@ -245,7 +260,7 @@ public sealed class BuoyancySystem(PhysicsScene scene, IWaterSurface surface) : 
                 velocity,
                 entered: was == 0
             ); // At the pontoon's own world position, which is what makes the hull pitch. A force at
-// the centre of mass would be a boat that bobs and never rolls.
+            // the centre of mass would be a boat that bobs and never rolls.
             scene.World.ApplyForce(body, force.Force, force.Position);
         }
 
@@ -268,14 +283,20 @@ public sealed class BuoyancySystem(PhysicsScene scene, IWaterSurface surface) : 
     /// <summary>Queues whatever this pontoon is doing to the surface, if anything.</summary>
     /// <remarks>
     ///     <para>
-    ///         ⚠ <b>Scaled by the submerged fraction, so a pontoon skimming the surface makes less
-    ///         than one driving through it.</b> Without that, the loudest wake in a scene is the one
+    ///         ⚠
+    ///         <b>
+    ///             Scaled by the submerged fraction, so a pontoon skimming the surface makes less
+    ///             than one driving through it.
+    ///         </b> Without that, the loudest wake in a scene is the one
     ///         from a hull that is barely touching the water — because it is the one whose pontoon is
     ///         crossing the surface, and crossing is what a wake looks like from the outside.
     ///     </para>
     ///     <para>
-    ///         ⚠ <b>A splash is the frame a body <em>arrives</em>, which is why the previous state is
-    ///         read.</b> A rule on the vertical speed alone fires again every time a bobbing hull
+    ///         ⚠
+    ///         <b>
+    ///             A splash is the frame a body <em>arrives</em>, which is why the previous state is
+    ///             read.
+    ///         </b> A rule on the vertical speed alone fires again every time a bobbing hull
     ///         crosses the surface, which is a crate dropped in a lake splashing four times before it
     ///         settles.
     ///     </para>

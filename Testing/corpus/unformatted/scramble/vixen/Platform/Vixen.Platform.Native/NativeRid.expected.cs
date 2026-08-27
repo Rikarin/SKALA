@@ -4,7 +4,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 using System.Runtime.
-    InteropServices;
+InteropServices;
 
 namespace Vixen.Platform.Native;
 

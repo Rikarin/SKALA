@@ -70,7 +70,7 @@ public class UiShapeLayoutTests {
     [Fact]
     public void Every_lane_sits_at_the_offset_the_shader_reads_it_from() {
         var members = Reflected().Members;
-        foreach (var (property, field)in Lanes) {
+        foreach (var (property, field) in Lanes) {
             Assert.True(
                 members.TryGetValue(field, out var member),
                 $"`Ui.rvn`'s UiShape has no `{field}`, which `UiShape.{property}` is supposed to be."
@@ -79,8 +79,8 @@ public class UiShapeLayoutTests {
                 member.Offset,
                 OffsetOf(property)
             ); // Every lane is a `float4` on both sides. A scalar beside a vector is the specific
-// mistake std430 and sequential layout disagree about, so its size is worth asserting
-// rather than assuming from the type name.
+            // mistake std430 and sequential layout disagree about, so its size is worth asserting
+            // rather than assuming from the type name.
             Assert.Equal(16, member.Size);
         }
     }
@@ -132,8 +132,8 @@ public class UiShapeLayoutTests {
         var members =
             Reflected()
                 .Members; // The four radii are stored across two lanes rather than in the pair order they were given —
-// clockwise from the top left, horizontal in one and vertical in the other — so a record that
-// wrote them as pairs would round-trip through `CornerRadii` and draw the wrong corners.
+        // clockwise from the top left, horizontal in one and vertical in the other — so a record that
+        // wrote them as pairs would round-trip through `CornerRadii` and draw the wrong corners.
         AssertLane(floats, members["size"], [10f, 20f, 3f, (float)GradientShape.Conic]);
         AssertLane(floats, members["radiiX"], [1f, 2f, 3f, 4f]);
         AssertLane(floats, members["radiiY"], [1f, 2f, 3f, 4f]);
@@ -176,7 +176,7 @@ public class UiShapeLayoutTests {
     }
 
     /// <summary>What the committed reflection says the <c>shapes</c> buffer's element looks like.</summary>
-    static (int Size, IReadOnlyDictionary<string, Member>Members) Reflected() {
+    static (int Size, IReadOnlyDictionary<string, Member> Members) Reflected() {
         using var document = JsonDocument.Parse(File.ReadAllText(ReflectionPath()));
         var shapes = document.RootElement.GetProperty("Sets")
             .EnumerateArray()
@@ -186,8 +186,8 @@ public class UiShapeLayoutTests {
         foreach (var member in shapes.GetProperty("Members").EnumerateArray()) {
             var name = member.GetProperty("Name")
                 .GetString()!; // The buffer's own entry is the whole struct under the binding's name; the lanes are
-// `shapes.<field>`. Skipping by shape rather than by name keeps this working if the
-// binding is ever renamed.
+            // `shapes.<field>`. Skipping by shape rather than by name keeps this working if the
+            // binding is ever renamed.
             if (!name.StartsWith("shapes.", StringComparison.Ordinal)) {
                 continue;
             }

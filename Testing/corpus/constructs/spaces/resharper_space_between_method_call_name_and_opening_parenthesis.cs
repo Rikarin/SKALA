@@ -4,6 +4,5 @@ class C {
         M();
     }
 
-    void M() {
-    }
+    void M() { }
 }

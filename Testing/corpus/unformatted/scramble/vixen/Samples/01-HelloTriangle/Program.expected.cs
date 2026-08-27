@@ -39,7 +39,7 @@ static class
     // the factory — so `--vixen-headless` was parsed into `AppConfig.Headless` and then never asked,
     // and a run that said it wanted no display server opened an SDL window regardless. The reason
     // given was that SDL fixes a window's graphics API at creation and the Vulkan flag has to be
-// requested up front; that is true and already handled, because
+    // requested up front; that is true and already handled, because
     // `DesktopPlatformOptions.RequestGpuSurface` defaults to true and `PlatformHost.Create` leaves it
 
     // at the default. The hand-built platform bought nothing and cost the flag.
@@ -50,7 +50,7 @@ static class
     // the thirty lines this sample used to carry now live.
     static int Main(
         string
-            [] arguments
+        [] arguments
     ) =>
         VixenApp.Run<TriangleGame>(arguments);
 }

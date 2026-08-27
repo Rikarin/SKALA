@@ -8,7 +8,7 @@ using Vixen.Raven.IR;
 using Vixen.Raven.Reflection;
 using Vixen.Shaders;
 using RavenStage = Vixen
-    .Raven.Symbols.ShaderStage;
+.Raven.Symbols.ShaderStage;
 
 
 namespace Vixen.ShaderCompiler;
@@ -29,8 +29,11 @@ namespace Vixen.ShaderCompiler;
 ///     </para>
 ///     <para>
 ///         <strong>The naming has to match the generator, not merely resemble it.</strong>
-///         <c>Vixen.Shaders.Generators</c> emits <c>ParameterKeys.New&lt;float&gt;
-///         ("Lighting.exposure")</c> from the same reflection at build time; this produces the key a
+///         <c>Vixen.Shaders.Generators</c> emits
+///         <c>
+///ParameterKeys.New&lt;float&gt;
+///         ("Lighting.exposure")
+///         </c> from the same reflection at build time; this produces the key a
 ///         loaded effect writes through. They are interned by name, so agreeing means they are the
 ///         same object and disagreeing means two keys for one offset — a value set through the
 ///         generated one landing nowhere.
@@ -46,7 +49,7 @@ public static class EffectTranslator {
     /// </param>
     public static EffectData Translate(
         CompiledEffect
-            effect,
+        effect,
         ShaderComposition composition = default
     ) {
         ArgumentNullException.ThrowIfNull(effect);
@@ -110,7 +113,7 @@ public static class EffectTranslator {
     static IEnumerable
         <EffectPermutationValue> Permutations(CompiledEffect effect) {
         foreach (var
-                     (name, value) in effect.PermutationKey) {
+                 (name, value) in effect.PermutationKey) {
             var declared = effect
                 .Reflection.Permutations.FirstOrDefault(permutation => permutation.Name == name);
             yield return new(
@@ -128,7 +131,7 @@ public static class EffectTranslator {
 
     static IEnumerable<EffectBindingData> Bindings(RavenReflection reflection) {
         foreach (var
-                     set in reflection.Sets) {
+                 set in reflection.Sets) {
             foreach (var binding in set.Bindings) {
                 yield return new(
                     binding.Name,
@@ -197,7 +200,7 @@ public static class EffectTranslator {
             }
 
             var
-                kind = Kind(parameter.Type);
+            kind = Kind(parameter.Type);
             var marker = parameter.Name.IndexOf(
                 "[]",
                 StringComparison
@@ -256,7 +259,7 @@ public static class EffectTranslator {
             if (
                 string.Equals(member.Name, arrayName, StringComparison.Ordinal)) {
                 return member
-                        .Type.ArrayLength
+                    .Type.ArrayLength
                     ?? 0;
             }
         }
@@ -340,7 +343,7 @@ public static class EffectTranslator {
             DescriptorType.Sampler => DescriptorKind.Sampler,
             DescriptorType.StorageImage => DescriptorKind.StorageTexture,
             // Spelled out rather than left to the fallback below, which would silently make the
-// scene's hierarchy a uniform buffer — a layout the driver refuses at best.
+            // scene's hierarchy a uniform buffer — a layout the driver refuses at best.
             DescriptorType.AccelerationStructure => DescriptorKind.AccelerationStructure,
             _
                 => DescriptorKind.UniformBuffer

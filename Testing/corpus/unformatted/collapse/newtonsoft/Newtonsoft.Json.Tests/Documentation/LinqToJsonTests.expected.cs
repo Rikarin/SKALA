@@ -1,4 +1,5 @@
 // skala-oracle: resharper=2025.2.6 config=sha256:98ff52570e019fac profile=SkalaFormatOnly generated=2026-08-27
+
 #region License
 
 // Copyright (c) 2007 James Newton-King
@@ -86,7 +87,7 @@ namespace Newtonsoft.Json.Tests.Documentation {
             string cpu = (string)o["CPU"]; // Intel
             string firstDrive = (string)o["Drives"][0]; // DVD read/writer
             IList<string> allDrives = o["Drives"].Select(t => (string)t).ToList(); // DVD read/writer
-// 500 gigabyte hard drive
+            // 500 gigabyte hard drive
 
             #endregion
         }
@@ -101,9 +102,9 @@ namespace Newtonsoft.Json.Tests.Documentation {
             array.Add(text);
             array.Add(date);
             string json = array.ToString(); // [
-//   "Manual text",
-//   "2000-05-23T00:00:00"
-// ]
+            //   "Manual text",
+            //   "2000-05-23T00:00:00"
+            // ]
 
             #endregion
         }
@@ -148,32 +149,32 @@ namespace Newtonsoft.Json.Tests.Documentation {
                 )
             );
             Console.WriteLine(rss.ToString()); //{
-//  "channel": {
-//    "title": "James Newton-King",
-//    "link": "http://james.newtonking.com",
-//    "description": "James Newton-King\'s blog.",
-//    "item": [
-//      {
-//        "title": "Json.NET 1.3 + New license + Now on CodePlex",
-//        "description": "Announcing the release of Json.NET 1.3, the MIT license and being available on CodePlex",
-//        "link": "http://james.newtonking.com/projects/json-net.aspx",
-//        "category": [
-//          "Json.NET",
-//          "CodePlex"
-//        ]
-//      },
-//      {
-//        "title": "LINQ to JSON beta",
-//        "description": "Announcing LINQ to JSON",
-//        "link": "http://james.newtonking.com/projects/json-net.aspx",
-//        "category": [
-//          "Json.NET",
-//          "LINQ"
-//        ]
-//      }
-//    ]
-//  }
-//}
+            //  "channel": {
+            //    "title": "James Newton-King",
+            //    "link": "http://james.newtonking.com",
+            //    "description": "James Newton-King\'s blog.",
+            //    "item": [
+            //      {
+            //        "title": "Json.NET 1.3 + New license + Now on CodePlex",
+            //        "description": "Announcing the release of Json.NET 1.3, the MIT license and being available on CodePlex",
+            //        "link": "http://james.newtonking.com/projects/json-net.aspx",
+            //        "category": [
+            //          "Json.NET",
+            //          "CodePlex"
+            //        ]
+            //      },
+            //      {
+            //        "title": "LINQ to JSON beta",
+            //        "description": "Announcing LINQ to JSON",
+            //        "link": "http://james.newtonking.com/projects/json-net.aspx",
+            //        "category": [
+            //          "Json.NET",
+            //          "LINQ"
+            //        ]
+            //      }
+            //    ]
+            //  }
+            //}
 
             #endregion
         }
@@ -191,10 +192,10 @@ namespace Newtonsoft.Json.Tests.Documentation {
                         link = "http://james.newtonking.com",
                         description = "James Newton-King's blog.",
                         item = from p in posts
-                            orderby p.Title
-                            select new {
-                                title = p.Title, description = p.Description, link = p.Link, category = p.Categories
-                            }
+                        orderby p.Title
+                        select new {
+                            title = p.Title, description = p.Description, link = p.Link, category = p.Categories
+                        }
                     }
                 }
             );
@@ -280,7 +281,7 @@ namespace Newtonsoft.Json.Tests.Documentation {
                 (string)rss["channel"]["item"][0]["title"]; // Json.NET 1.3 + New license + Now on CodePlex
             JArray categories = (JArray)rss["channel"]["item"][0]["categories"]; // ["Json.NET", "CodePlex"]
             IList<string> categoriesText = categories.Select(c => (string)c).ToList(); // Json.NET
-// CodePlex
+            // CodePlex
 
             #endregion
         }
@@ -324,7 +325,7 @@ namespace Newtonsoft.Json.Tests.Documentation {
                 Console.WriteLine(item);
             } //LINQ to JSON beta
 
-//Json.NET 1.3 + New license + Now on CodePlex
+            //Json.NET 1.3 + New license + Now on CodePlex
             var categories = from c in rss["channel"]["item"].SelectMany(i => i["categories"]).Values<string>()
                 group c by c
                 into g
@@ -334,8 +335,8 @@ namespace Newtonsoft.Json.Tests.Documentation {
                 Console.WriteLine(c.Category + " - Count: " + c.Count);
             } //Json.NET - Count: 2
 
-//LINQ - Count: 1
-//CodePlex - Count: 1
+            //LINQ - Count: 1
+            //CodePlex - Count: 1
 
             #endregion
 
@@ -519,10 +520,10 @@ namespace Newtonsoft.Json.Tests.Documentation {
             #region SelectTokenLinq
 
             IList<string> storeNames = o.SelectToken("Stores").Select(s => (string)s).ToList(); // Lambton Quay
-// Willis Street
+            // Willis Street
             IList<string> firstProductNames =
                 o["Manufacturers"].Select(m => (string)m.SelectToken("Products[1].Name")).ToList(); // null
-// Headlight Fluid
+            // Headlight Fluid
             decimal totalPrice = o["Manufacturers"].Sum(m => (decimal)m.SelectToken("Products[0].Price")); // 149.95
 
             #endregion

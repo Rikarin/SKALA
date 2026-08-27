@@ -10,12 +10,12 @@ using Rikarin.Skala.Testing;
 namespace Rikarin.Skala.Conformance.Tests;
 
 /// <summary>
-/// Runs the arrange-and-format pipeline over the corpus, with one compilation for the whole set.
+///     Runs the arrange-and-format pipeline over the corpus, with one compilation for the whole set.
 /// </summary>
 /// <remarks>
-/// ⚠ One compilation, built once, shared by every test in the class. Building it per test would
-/// re-parse 390 files per assertion; building it per *file* would answer "is this using unused"
-/// against a compilation of one file, which is a different question with a different answer.
+///     ⚠ One compilation, built once, shared by every test in the class. Building it per test would
+///     re-parse 390 files per assertion; building it per *file* would answer "is this using unused"
+///     against a compilation of one file, which is a different question with a different answer.
 /// </remarks>
 public static class CorpusArranger {
     static readonly Lock Gate = new();
@@ -67,14 +67,14 @@ public static class CorpusArranger {
     }
 
     /// <summary>
-    /// One file arranged under an explicit option set — the coverage test's subject.
+    ///     One file arranged under an explicit option set — the coverage test's subject.
     /// </summary>
     /// <remarks>
-    /// ⚠ <see cref="Arranger"/> rather than <see cref="ArrangementPipeline"/>, deliberately. The
-    /// question is "does this key change what the arranger does", and running the formatter
-    /// afterwards can absorb a difference — a body style that converts and is then wrapped back
-    /// across two lines is a different tree that lays out the same. Asking the arranger directly
-    /// keeps the test measuring the option rather than the fitter.
+    ///     ⚠ <see cref="Arranger" /> rather than <see cref="ArrangementPipeline" />, deliberately. The
+    ///     question is "does this key change what the arranger does", and running the formatter
+    ///     afterwards can absorb a difference — a body style that converts and is then wrapped back
+    ///     across two lines is a different tree that lays out the same. Asking the arranger directly
+    ///     keeps the test measuring the option rather than the fitter.
     /// </remarks>
     public static string RunWith(CorpusFile file, Rikarin.Skala.Options.FormattingOptions options) {
         var compilation = CompilationFor(false);
@@ -102,19 +102,19 @@ public static class CorpusArranger {
 }
 
 /// <summary>
-/// docs/plan/12 § "Properties", asserted over the <b>pair</b> rather than over either half.
+///     docs/plan/12 § "Properties", asserted over the <b>pair</b> rather than over either half.
 /// </summary>
 /// <remarks>
-/// ⚠ Milestone 4's need #3. Formatting is idempotent on its own and arrangement is idempotent on its
-/// own, and neither fact implies the pair is: arrangement moves text, the result is re-formatted,
-/// and re-formatting can expose an arrangement that was not visible before. The property that has to
-/// hold is <c>pipeline(pipeline(x)) == pipeline(x)</c>, and it is asserted here rather than reasoned
-/// about.
-/// <para>
-/// ⚠ Token equivalence is deliberately absent, and its absence is the definition of arrangement:
-/// doc 06 § "Safety" — "Arrangement changes the tree, so 04's token-equivalence check does not
-/// apply." Its place is taken by the three layers, of which layers 2 and 3 are asserted below.
-/// </para>
+///     ⚠ Milestone 4's need #3. Formatting is idempotent on its own and arrangement is idempotent on its
+///     own, and neither fact implies the pair is: arrangement moves text, the result is re-formatted,
+///     and re-formatting can expose an arrangement that was not visible before. The property that has to
+///     hold is <c>pipeline(pipeline(x)) == pipeline(x)</c>, and it is asserted here rather than reasoned
+///     about.
+///     <para>
+///         ⚠ Token equivalence is deliberately absent, and its absence is the definition of arrangement:
+///         doc 06 § "Safety" — "Arrangement changes the tree, so 04's token-equivalence check does not
+///         apply." Its place is taken by the three layers, of which layers 2 and 3 are asserted below.
+///     </para>
 /// </remarks>
 public sealed class ArrangementPropertyTests {
     public static TheoryData<CorpusFile, bool> AllFiles {
@@ -212,14 +212,14 @@ public sealed class ArrangementPropertyTests {
     }
 
     /// <summary>
-    /// ⚠ The milestone's own bar, per file: arrangement introduces no compiler diagnostic.
+    ///     ⚠ The milestone's own bar, per file: arrangement introduces no compiler diagnostic.
     /// </summary>
     /// <remarks>
-    /// ⚠ This is layer 2 asserted rather than trusted. The layer reverts a file whose re-bind found a
-    /// new diagnostic, so a passing arrangement is by construction diagnostic-free — but "by
-    /// construction" is what every bug says about itself, and the assertion here is independent of
-    /// the code path that makes it true: it re-binds the *written* text against the *original*
-    /// compilation and compares, without going through ArrangementSafety at all.
+    ///     ⚠ This is layer 2 asserted rather than trusted. The layer reverts a file whose re-bind found a
+    ///     new diagnostic, so a passing arrangement is by construction diagnostic-free — but "by
+    ///     construction" is what every bug says about itself, and the assertion here is independent of
+    ///     the code path that makes it true: it re-binds the *written* text against the *original*
+    ///     compilation and compares, without going through ArrangementSafety at all.
     /// </remarks>
     [Theory]
     [MemberData(nameof(AllFiles))]
@@ -258,15 +258,15 @@ public sealed class ArrangementPropertyTests {
     }
 
     /// <summary>
-    /// ⚠ <c>--range</c> over a real edit-to-span map, which is what M4's need #4 asked for.
+    ///     ⚠ <c>--range</c> over a real edit-to-span map, which is what M4's need #4 asked for.
     /// </summary>
     /// <remarks>
-    /// ⚠ The property is the same one the formatter's range consistency asserts — a range result is
-    /// the whole-file result filtered — but it is a much stronger claim here, because the edit list
-    /// is no longer a by-product of writing. If <see cref="ArrangementEdits.Diff"/> collapsed to one
-    /// whole-file edit, this test would still pass while range formatting silently became whole-file
-    /// formatting, so the count assertion below is the one that matters: a file the pipeline changed
-    /// in two separate places must produce two separate edits.
+    ///     ⚠ The property is the same one the formatter's range consistency asserts — a range result is
+    ///     the whole-file result filtered — but it is a much stronger claim here, because the edit list
+    ///     is no longer a by-product of writing. If <see cref="ArrangementEdits.Diff" /> collapsed to one
+    ///     whole-file edit, this test would still pass while range formatting silently became whole-file
+    ///     formatting, so the count assertion below is the one that matters: a file the pipeline changed
+    ///     in two separate places must produce two separate edits.
     /// </remarks>
     [Theory]
     [MemberData(nameof(AllFiles))]

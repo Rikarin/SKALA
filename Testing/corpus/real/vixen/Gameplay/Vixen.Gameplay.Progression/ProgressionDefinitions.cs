@@ -23,7 +23,9 @@ public sealed record ExperienceCurveDefinition : Definition {
     /// <summary>The highest level anybody reaches.</summary>
     public int MaximumLevel { get; set; } = 80;
 
-    /// <summary>What each level costs, from level one upwards. Shorter than the maximum falls through to the formula.</summary>
+    /// <summary>
+    ///     What each level costs, from level one upwards. Shorter than the maximum falls through to the formula.
+    /// </summary>
     public List<int> Thresholds { get; set; } = [];
 
     /// <summary>What level one costs, when the table has run out.</summary>
@@ -101,8 +103,11 @@ public sealed record TalentTreeDefinition : Definition {
 
 /// <summary>A class specialisation: one of a set, chosen and changeable.</summary>
 /// <remarks>
-///     A definition rather than a talent node, because a specialisation is a <em>choice among
-///     alternatives</em> and a tree is a set of independent yeses. Modelling it as a node would need
+///     A definition rather than a talent node, because a specialisation is a
+///     <em>
+///         choice among
+///         alternatives
+///     </em> and a tree is a set of independent yeses. Modelling it as a node would need
 ///     an "and none of these others" rule the tree does not have.
 /// </remarks>
 [DataContract("SpecialisationDefinition")]

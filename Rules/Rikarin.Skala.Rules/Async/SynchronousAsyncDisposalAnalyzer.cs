@@ -9,21 +9,21 @@ using Rikarin.Skala.Rules.Metadata;
 namespace Rikarin.Skala.Rules.Async;
 
 /// <summary>
-/// <c>SK3503</c> — a plain <c>using</c>, or a bare <c>Dispose()</c>, on a type that offers
-/// <c>DisposeAsync</c>.
+///     <c>SK3503</c> — a plain <c>using</c>, or a bare <c>Dispose()</c>, on a type that offers
+///     <c>DisposeAsync</c>.
 /// </summary>
 /// <remarks>
-/// docs/plan/08-rule-catalogue.md § "SK3000 — Async, concurrency, lifetime". A type implements
-/// <c>IAsyncDisposable</c> because its cleanup has to be waited for; its synchronous
-/// <c>Dispose</c> therefore either blocks the thread on that work or skips it, and which one is a
-/// decision the type made rather than the caller.
-/// <para>
-/// ⚠ The rule reports only where <c>await using</c> — or <c>await x.DisposeAsync()</c> — would
-/// actually compile: the nearest enclosing body is already <c>async</c> and the position is one an
-/// <c>await</c> is legal in. A <c>using</c> in a synchronous method is the same pattern and is not
-/// reported, because the repair there is to make the method <c>async</c>, which changes its
-/// signature and every caller with it.
-/// </para>
+///     docs/plan/08-rule-catalogue.md § "SK3000 — Async, concurrency, lifetime". A type implements
+///     <c>IAsyncDisposable</c> because its cleanup has to be waited for; its synchronous
+///     <c>Dispose</c> therefore either blocks the thread on that work or skips it, and which one is a
+///     decision the type made rather than the caller.
+///     <para>
+///         ⚠ The rule reports only where <c>await using</c> — or <c>await x.DisposeAsync()</c> — would
+///         actually compile: the nearest enclosing body is already <c>async</c> and the position is one an
+///         <c>await</c> is legal in. A <c>using</c> in a synchronous method is the same pattern and is not
+///         reported, because the repair there is to make the method <c>async</c>, which changes its
+///         signature and every caller with it.
+///     </para>
 /// </remarks>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class SynchronousAsyncDisposalAnalyzer : DiagnosticAnalyzer {
@@ -118,13 +118,13 @@ public sealed class SynchronousAsyncDisposalAnalyzer : DiagnosticAnalyzer {
     }
 
     /// <summary>
-    /// <c>x.Dispose();</c> on a value that also offers <c>DisposeAsync</c>.
+    ///     <c>x.Dispose();</c> on a value that also offers <c>DisposeAsync</c>.
     /// </summary>
     /// <remarks>
-    /// ⚠ Only as a whole expression statement. <c>Dispose()</c> returns <c>void</c> and
-    /// <c>DisposeAsync()</c> returns a <c>ValueTask</c>, so the rewrite is a statement-level one:
-    /// anywhere the call's value is used the two are not interchangeable, and there is nothing to
-    /// rewrite into.
+    ///     ⚠ Only as a whole expression statement. <c>Dispose()</c> returns <c>void</c> and
+    ///     <c>DisposeAsync()</c> returns a <c>ValueTask</c>, so the rewrite is a statement-level one:
+    ///     anywhere the call's value is used the two are not interchangeable, and there is nothing to
+    ///     rewrite into.
     /// </remarks>
     static void AnalyzeDisposeCall(
         SyntaxNodeAnalysisContext context,
@@ -178,8 +178,8 @@ public sealed class SynchronousAsyncDisposalAnalyzer : DiagnosticAnalyzer {
         FixEdits.Pack((new TextSpan(position, 0), "await "));
 
     /// <summary>
-    /// ⚠ Both halves of "the fix compiles": the body is <c>async</c>, and the position allows an
-    /// <c>await</c>.
+    ///     ⚠ Both halves of "the fix compiles": the body is <c>async</c>, and the position allows an
+    ///     <c>await</c>.
     /// </summary>
     static bool CanAwaitHere(SyntaxNode node) =>
         AsyncContext.IsInsideAsyncBody(node) && !AsyncContext.IsUnawaitablePosition(node);

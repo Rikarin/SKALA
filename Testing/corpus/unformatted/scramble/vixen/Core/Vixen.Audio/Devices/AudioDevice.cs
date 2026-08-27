@@ -1,8 +1,9 @@
 // SPDX-FileCopyrightText: Copyright (c) Rikarin
-      // SPDX-License-Identifier: Apache-2.0
-              
- 
-   namespace Vixen.Audio  .Devices ;
+// SPDX-License-Identifier: Apache-2.0
+
+
+namespace Vixen.Audio.Devices;
+
 /// <summary>One output a backend could play through.</summary>
 /// <param name="Id">What to pass back as <see cref="AudioDeviceOptions.DeviceId" /> to choose it.</param>
 /// <param name="Name">What to show a human.</param>
@@ -11,11 +12,13 @@
 ///     The format it would rather be given. Opening it with something else is legal and costs a
 ///     conversion somewhere below.
 /// </param>
-          public readonly record struct    AudioDeviceInfo(
-    string Id, string Name,
-        bool IsDefault, AudioFormat PreferredFormat
-         ) ;
-               
+public readonly record struct AudioDeviceInfo(
+    string Id,
+    string Name,
+    bool IsDefault,
+    AudioFormat PreferredFormat
+);
+
 /// <summary>What to open a device with.</summary>
 /// <remarks>
 ///     Every field is a request. <see cref="IAudioDevice.Format" /> and
@@ -23,14 +26,16 @@
 ///     read them back rather than assume — a browser, in particular, decides the sample rate itself
 ///     and will not be argued with.
 /// </remarks>
-         public  readonly record struct AudioDeviceOptions(
-)   {
+public readonly record struct AudioDeviceOptions(
+) {
     /// <summary>Which device, or <see langword="null" /> for whichever one is default.</summary>
     public
-			string? DeviceId { get;    init; } 
+        string? DeviceId { get; init; }
+
     /// <summary>The format to render in.</summary>
-    public AudioFormat    Format {
-            get    ; init    ;   }  = AudioFormat.   Stereo48k;
+    public AudioFormat Format {
+        get; init; } = AudioFormat.Stereo48k;
+
     /// <summary>How many frames the device asks for at a time.</summary>
     /// <remarks>
     ///     <para>
@@ -45,18 +50,18 @@
     ///         buys latency with dropouts.
     ///     </para>
     /// </remarks>
-         public
-int BufferFrames { get; init;   } =   480;
+    public
+        int BufferFrames { get; init; } = 480;
 
     /// <summary>How many buffers are queued ahead of the device.</summary>
     /// <remarks>
     ///     Four, so a render that misses its slot has three more to catch up in. Two is the point at
     ///     which any hitch anywhere in the process is audible.
     /// </remarks>
- public int
- BufferCount {  get;   init  ; } = 4  ;
+    public int
+        BufferCount { get; init; } = 4;
 }
-      
+
 /// <summary>Where a device gets the samples it is about to play.</summary>
 /// <remarks>
 ///     <para>
@@ -73,7 +78,7 @@ int BufferFrames { get; init;   } =   480;
 ///         <see cref="Render" /> drains, and results leave as counters it publishes.
 ///     </para>
 /// </remarks>
- public  interface IAudioRenderSource {
+public interface IAudioRenderSource {
     /// <summary>Told what the device settled on, before the first <see cref="Render" />.</summary>
     /// <param name="format">The device's format.</param>
     /// <param name="maxFrames">The most frames one <see cref="Render" /> will ever ask for.</param>
@@ -81,68 +86,76 @@ int BufferFrames { get; init;   } =   480;
     ///     Every buffer the mixer needs is allocated here, which is what lets <see cref="Render" />
     ///     allocate nothing.
     /// </remarks>
-    void Prepare  (in AudioFormat format    ,   int maxFrames )  ;
-  
+    void Prepare(in AudioFormat format, int maxFrames);
+
     /// <summary>Fills a buffer with the next frames.</summary>
     /// <param name="destination">
     ///     Interleaved, <c>frameCount × channels</c> floats long. Its previous contents mean
     ///     nothing; the source overwrites all of it, including with silence.
     /// </param>
     /// <param name="frameCount">How many frames to produce. Never more than <c>maxFrames</c>.</param>
-     void Render(    Span  <float>  destination    ,   int frameCount);
-                }
+    void Render(Span<float> destination, int frameCount);
+}
+
 /// <summary>An open output.</summary>
-            public interface IAudioDevice   : IDisposable   {
+public interface IAudioDevice : IDisposable {
     /// <summary>Which device this is.</summary>
-          AudioDeviceInfo Info { get  ; }
+    AudioDeviceInfo Info { get; }
+
     /// <summary>The format it was actually opened in.</summary>
-           AudioFormat   Format   { get   ;  }
+    AudioFormat Format { get; }
+
     /// <summary>How many frames it asks for at a time.</summary>
-         int BufferFrames    { get
-   ; }
-                
+    int BufferFrames { get
+            ; }
+
     /// <summary>Whether it is currently pulling.</summary>
-    bool IsRunning    { get; }
- 
+    bool IsRunning { get; }
+
     /// <summary>How many times it wanted frames and did not get them in time.</summary>
     /// <remarks>
     ///     The one number that says whether the audio budget is being met. It is written from the
     ///     audio thread and read from anywhere, so it is a <see cref="long" /> updated with
     ///     <see cref="System.Threading.Interlocked" /> rather than a property with a setter.
     /// </remarks>
-long Underruns   { get  ; }
-           
+    long Underruns { get; }
+
     /// <summary>Starts pulling from a source.</summary>
     /// <param name="source">Where the frames come from.</param>
     /// <exception cref="InvalidOperationException">It is already running.</exception>
-             void  Start(  IAudioRenderSource source
-            );
+    void Start(
+        IAudioRenderSource source
+    );
+
     /// <summary>Stops pulling. Starting again is legal.</summary>
-			void  Stop(); 
+    void Stop();
 }
-                
+
 /// <summary>A way of getting at the machine's audio outputs.</summary>
- public   interface  
-IAudioBackend : IDisposable {
+public interface
+    IAudioBackend : IDisposable {
     /// <summary>What to call it in a log — <c>OpenAL</c>, <c>WebAudio</c>, <c>Null</c>.</summary>
-                string Name {    get; }
+    string Name { get; }
+
     /// <summary>Whether this process could actually open a device through it.</summary>
     /// <remarks>
     ///     False rather than throwing, because "no audio" is an ordinary state — a CI runner, a
     ///     dedicated server, a container, a machine whose only sound card is in use by something
     ///     exclusive. Backend selection asks this and moves on to the next candidate.
     /// </remarks>
-    bool IsAvailable  { get;  }
+    bool IsAvailable { get; }
+
     /// <summary>Every output it can see, default first if it knows which one that is.</summary>
     /// <returns>The devices. Empty if there are none, rather than <see langword="null" />.</returns>
-    IReadOnlyList   < AudioDeviceInfo>   EnumerateDevices 
-();
-       
+    IReadOnlyList<AudioDeviceInfo> EnumerateDevices
+        ();
+
     /// <summary>Opens one.</summary>
     /// <param name="options">What to ask for.</param>
     /// <returns>The device, stopped.</returns>
     /// <exception cref="AudioDeviceException">It could not be opened.</exception>
- IAudioDevice OpenDevice    (    in    AudioDeviceOptions options );
+    IAudioDevice OpenDevice(in AudioDeviceOptions options);
+
     /// <summary>Whether this backend can open a microphone as well as a speaker.</summary>
     /// <remarks>
     ///     <b>Separate from <see cref="IsAvailable" />, because they genuinely differ.</b> OpenAL's
@@ -151,10 +164,12 @@ IAudioBackend : IDisposable {
     ///     game that needs a microphone asks this and says something useful rather than discovering
     ///     it in an exception.
     /// </remarks>
-          bool    SupportsCapture    =>   false;
+    bool SupportsCapture => false;
+
     /// <summary>Every microphone it can see, default first if it knows which one that is.</summary>
     /// <returns>The devices. Empty if there are none.</returns>
-        IReadOnlyList<AudioDeviceInfo   > EnumerateCaptureDevices(  ) => [   ];
+    IReadOnlyList<AudioDeviceInfo> EnumerateCaptureDevices() => [];
+
     /// <summary>Opens one.</summary>
     /// <param name="options">What to ask for.</param>
     /// <returns>The device, stopped.</returns>
@@ -164,22 +179,25 @@ IAudioBackend : IDisposable {
     ///     through <see cref="SupportsCapture" />.
     /// </remarks>
     /// <exception cref="AudioDeviceException">This backend has no capture, or it could not be opened.</exception>
-	IAudioCaptureDevice OpenCaptureDevice(in AudioCaptureOptions   options) =>
-        throw new   AudioDeviceException  ($"The {Name} backend cannot capture audio."
-          );
-              }
-    
+    IAudioCaptureDevice OpenCaptureDevice(in AudioCaptureOptions options) =>
+        throw new AudioDeviceException($"The {Name} backend cannot capture audio.");
+}
+
 /// <summary>A device would not open, or stopped being one.</summary>
-       public   sealed class AudioDeviceException : Exception {
+public sealed class AudioDeviceException : Exception {
     /// <summary>A new exception.</summary>
-              public    AudioDeviceException(   ) { }
-   
+    public AudioDeviceException() { }
+
     /// <summary>A new exception.</summary>
     /// <param name="message">What went wrong.</param>
-           public AudioDeviceException(    string message ) : base(message    ) { }
+    public AudioDeviceException(string message) : base(message) { }
+
     /// <summary>A new exception.</summary>
     /// <param name="message">What went wrong.</param>
     /// <param name="innerException">What the backend said.</param>
-      public  AudioDeviceException(string    message, Exception
-   innerException) : base(    message, innerException) {    }
-        }
+    public AudioDeviceException(
+        string message,
+        Exception
+        innerException
+    ) : base(message, innerException) { }
+}

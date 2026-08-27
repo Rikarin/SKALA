@@ -7,10 +7,10 @@ namespace Rikarin.Skala.Reporting;
 
 /// <summary>One named gate from <c>skala.jsonc</c>.</summary>
 /// <remarks>
-/// docs/plan/09 § "Gates" defines six conditions and M6 implements all six. ⚠ A condition this
-/// build does not understand is still <em>rejected</em> rather than ignored, for the reason M5
-/// wrote down and that has not changed: a gate that silently drops the condition someone relies on
-/// passes for the wrong reason, which is worse than one that says it cannot run.
+///     docs/plan/09 § "Gates" defines six conditions and M6 implements all six. ⚠ A condition this
+///     build does not understand is still <em>rejected</em> rather than ignored, for the reason M5
+///     wrote down and that has not changed: a gate that silently drops the condition someone relies on
+///     passes for the wrong reason, which is worse than one that says it cannot run.
 /// </remarks>
 public sealed record GateDefinition {
     public required string Name { get; init; }
@@ -22,7 +22,7 @@ public sealed record GateDefinition {
     public bool RequireCleanFormatting { get; init; }
 
     /// <summary>
-    /// The maximum number of <em>new</em> findings, relative to the baseline and/or <c>--since</c>.
+    ///     The maximum number of <em>new</em> findings, relative to the baseline and/or <c>--since</c>.
     /// </summary>
     public int? MaxNewIssues { get; init; }
 
@@ -32,13 +32,13 @@ public sealed record GateDefinition {
     /// <summary>The baseline path the gate names, relative to the repository root.</summary>
     public string? BaselinePath { get; init; }
 
-    /// <summary>⚠ Ceilings, except <c>commentDensity</c>. See <see cref="MetricsSummary.IsFloor"/>.</summary>
+    /// <summary>⚠ Ceilings, except <c>commentDensity</c>. See <see cref="MetricsSummary.IsFloor" />.</summary>
     public ImmutableDictionary<string, double> Metrics { get; init; } =
         ImmutableDictionary<string, double>.Empty;
 
     /// <summary>
-    /// Per-rule tightening, e.g. <c>"SK5*": 0</c> — at most this many findings for rules matching
-    /// the pattern, regardless of the rest of the gate.
+    ///     Per-rule tightening, e.g. <c>"SK5*": 0</c> — at most this many findings for rules matching
+    ///     the pattern, regardless of the rest of the gate.
     /// </summary>
     public ImmutableDictionary<string, int> RuleOverrides { get; init; } =
         ImmutableDictionary<string, int>.Empty;
@@ -54,19 +54,19 @@ public sealed record GateDefinition {
 }
 
 /// <summary>
-/// The one place a finding turns into a verdict.
+///     The one place a finding turns into a verdict.
 /// </summary>
 /// <remarks>
-/// ⚠ ADR-009's corollary: renderers read, the gate decides. Nothing downstream of
-/// <see cref="Evaluate"/> may look at severities again and reach its own conclusion.
+///     ⚠ ADR-009's corollary: renderers read, the gate decides. Nothing downstream of
+///     <see cref="Evaluate" /> may look at severities again and reach its own conclusion.
 /// </remarks>
 public static class Gate {
     /// <param name="formattingClean">
-    /// ⚠ Three states, not two. <c>true</c> and <c>false</c> are the answers to "would
-    /// <c>format --check</c> edit anything"; <c>null</c> means the run never asked — <c>--no-formatting</c>
-    /// — and a gate that names <c>formatting</c> must fail rather than pass on an unasked question.
-    /// Before M9 this was a <c>bool</c> defaulting to <c>true</c>, so <c>--no-formatting</c> turned a
-    /// red gate green without saying it had dropped the condition.
+    ///     ⚠ Three states, not two. <c>true</c> and <c>false</c> are the answers to "would
+    ///     <c>format --check</c> edit anything"; <c>null</c> means the run never asked — <c>--no-formatting</c>
+    ///     — and a gate that names <c>formatting</c> must fail rather than pass on an unasked question.
+    ///     Before M9 this was a <c>bool</c> defaulting to <c>true</c>, so <c>--no-formatting</c> turned a
+    ///     red gate green without saying it had dropped the condition.
     /// </param>
     public static GateResult Evaluate(GateDefinition definition, RunReport report, bool? formattingClean) {
         var failures = ImmutableArray.CreateBuilder<string>();
@@ -128,19 +128,19 @@ public static class Gate {
     }
 
     /// <summary>
-    /// <c>newIssues</c> — the condition that makes adoption possible.
+    ///     <c>newIssues</c> — the condition that makes adoption possible.
     /// </summary>
     /// <remarks>
-    /// ⚠ "New" is the intersection of the two scopings that are in play, not the union. With a
-    /// baseline, new means "not in the baseline"; with <c>--since</c>, new means "on a line this
-    /// branch touched"; with both, it means both, because a gate that fired on either would fail a
-    /// PR for a pre-existing finding that happens to sit near an edit.
-    /// <para>
-    /// ⚠ A gate naming <c>newIssues</c> with neither scoping in play is a configuration error and
-    /// is reported as one. Counting every finding in the repository as new would make
-    /// <c>newIssues: 0</c> mean "the repository is perfect", which is not what anybody who wrote it
-    /// meant.
-    /// </para>
+    ///     ⚠ "New" is the intersection of the two scopings that are in play, not the union. With a
+    ///     baseline, new means "not in the baseline"; with <c>--since</c>, new means "on a line this
+    ///     branch touched"; with both, it means both, because a gate that fired on either would fail a
+    ///     PR for a pre-existing finding that happens to sit near an edit.
+    ///     <para>
+    ///         ⚠ A gate naming <c>newIssues</c> with neither scoping in play is a configuration error and
+    ///         is reported as one. Counting every finding in the repository as new would make
+    ///         <c>newIssues: 0</c> mean "the repository is perfect", which is not what anybody who wrote it
+    ///         meant.
+    ///     </para>
     /// </remarks>
     static void EvaluateNewIssues(
         GateDefinition definition,
@@ -230,12 +230,12 @@ public static class Gate {
     }
 
     /// <summary>
-    /// <c>ruleOverrides</c> — per-rule tightening, e.g. <c>"SK5*": 0</c>.
+    ///     <c>ruleOverrides</c> — per-rule tightening, e.g. <c>"SK5*": 0</c>.
     /// </summary>
     /// <remarks>
-    /// ⚠ The pattern is a prefix glob rather than a regular expression, because the only shape doc
-    /// 09 asks for is a range (<c>SK5*</c>) or an id, and a regular expression in a configuration
-    /// file is a thing people get wrong silently.
+    ///     ⚠ The pattern is a prefix glob rather than a regular expression, because the only shape doc
+    ///     09 asks for is a range (<c>SK5*</c>) or an id, and a regular expression in a configuration
+    ///     file is a thing people get wrong silently.
     /// </remarks>
     static void EvaluateRuleOverrides(
         GateDefinition definition,
@@ -263,12 +263,12 @@ public static class Gate {
             : string.Equals(pattern, ruleId, StringComparison.OrdinalIgnoreCase);
 
     /// <summary>
-    /// <c>--no-new-suppressions</c>, evaluated wherever the suppression audit ran.
+    ///     <c>--no-new-suppressions</c>, evaluated wherever the suppression audit ran.
     /// </summary>
     /// <remarks>
-    /// ⚠ The audit is computed in <c>Rikarin.Skala.Analysis</c> because it needs the source and the
-    /// configuration; the gate only reads its verdict, so that "renderers read, the gate decides"
-    /// keeps holding and there is exactly one place a suppression turns into a failure.
+    ///     ⚠ The audit is computed in <c>Rikarin.Skala.Analysis</c> because it needs the source and the
+    ///     configuration; the gate only reads its verdict, so that "renderers read, the gate decides"
+    ///     keeps holding and there is exactly one place a suppression turns into a failure.
     /// </remarks>
     static void EvaluateSuppressions(RunReport report, ImmutableArray<string>.Builder failures) {
         if (report.Suppressions is not { Enforced: true } audit || audit.Added.IsEmpty) {

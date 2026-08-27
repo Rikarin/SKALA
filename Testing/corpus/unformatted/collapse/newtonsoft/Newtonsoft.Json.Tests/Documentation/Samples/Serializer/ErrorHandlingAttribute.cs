@@ -1,4 +1,5 @@
 #region License
+
 // Copyright (c) 2007 James Newton-King
 //
 // Permission is hereby granted, free of charge, to any person
@@ -21,8 +22,10 @@
 // WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 // OTHER DEALINGS IN THE SOFTWARE.
+
 #endregion
-using Newtonsoft.Json.Serialization;using System;using System.Collections.Generic;using System.Runtime.Serialization;using System.Text;
+
+using Newtonsoft.Json.Serialization; using System; using System.Collections.Generic; using System.Runtime.Serialization; using System.Text;
 #if DNXCORE50
 using Xunit;
 using Test = Xunit.FactAttribute;
@@ -30,20 +33,54 @@ using Assert = Newtonsoft.Json.Tests.XUnitAssert;
 #else
 using NUnit.Framework;
 #endif
-namespace Newtonsoft.Json.Tests.Documentation.Samples.Serializer{[TestFixture]public class ErrorHandlingAttribute:TestFixtureBase{
-#region Types
-public class Employee{private List<string>_roles;public string Name{get;set;}public int Age{get;set;}public List<string>Roles{get{if(_roles==null){throw new Exception("Roles not loaded!" );}return _roles;}set{_roles=value;}}public string Title{get;set;}[OnError]internal void OnError(StreamingContext context,ErrorContext errorContext){errorContext.Handled=true;}}
-#endregion
-[Test]public void Example(){
-#region Usage
-Employee person=new Employee{Name="George Michael Bluth" ,Age=16,Roles=null,Title="Mister Manager" };string json=JsonConvert.SerializeObject(person,Formatting.Indented);Console.WriteLine(json); // {
-//   "Name": "George Michael Bluth",
-//   "Age": 16,
-//   "Title": "Mister Manager"
-// }
-#endregion
-StringAssert.AreEqual(@"{
+namespace Newtonsoft.Json.Tests.Documentation.Samples.Serializer {
+    [TestFixture]
+    public class ErrorHandlingAttribute : TestFixtureBase {
+        #region Types
+
+        public class Employee {
+            private List<string> _roles;
+            public string Name { get; set; }
+            public int Age { get; set; }
+
+            public List<string> Roles { get { if (_roles == null) {
+                        throw new Exception("Roles not loaded!");
+                    } return _roles; } set { _roles = value; } }
+
+            public string Title { get; set; }
+
+            [OnError]
+            internal void OnError(StreamingContext context, ErrorContext errorContext) {
+                errorContext.Handled = true;
+            }
+        }
+
+        #endregion
+
+        [Test]
+        public void Example() {
+            #region Usage
+
+            Employee person = new Employee {
+                Name = "George Michael Bluth", Age = 16, Roles = null, Title = "Mister Manager"
+            };
+            string json = JsonConvert.SerializeObject(person, Formatting.Indented);
+            Console.WriteLine(json); // {
+            //   "Name": "George Michael Bluth",
+            //   "Age": 16,
+            //   "Title": "Mister Manager"
+            // }
+
+            #endregion
+
+            StringAssert.AreEqual(
+                @"{
   ""Name"": ""George Michael Bluth"",
   ""Age"": 16,
   ""Title"": ""Mister Manager""
-}" ,json);}}}
+}",
+                json
+            );
+        }
+    }
+}

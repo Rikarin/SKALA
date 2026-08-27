@@ -1,4 +1,5 @@
 // skala-oracle: resharper=2025.2.6 config=sha256:98ff52570e019fac profile=SkalaCleanup generated=2026-08-27
+
 #region License
 
 // Copyright (c) 2007 James Newton-King
@@ -29,16 +30,16 @@
 namespace Newtonsoft.Json.Tests.TestObjects.Events {
     public sealed class Event {
         /// <summary>
-        /// If no current user is specified, returns Nothing (0 from VB)
+        ///     If no current user is specified, returns Nothing (0 from VB)
         /// </summary>
         /// <returns></returns>
         /// <remarks></remarks>
         static int GetCurrentUserId() => 0;
 
         /// <summary>
-        /// Gets either the application path or the current stack trace.
-        /// NOTE: You MUST call this from the top level entry point. Otherwise,
-        /// the stack trace will be buried in Logger itself.
+        ///     Gets either the application path or the current stack trace.
+        ///     NOTE: You MUST call this from the top level entry point. Otherwise,
+        ///     the stack trace will be buried in Logger itself.
         /// </summary>
         /// <returns></returns>
         /// <remarks></remarks>

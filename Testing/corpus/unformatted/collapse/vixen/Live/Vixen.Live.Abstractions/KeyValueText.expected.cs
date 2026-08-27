@@ -118,8 +118,8 @@ static class KeyValueText {
                 }
             } // A stray `%` is kept rather than rejected. This is not a URL and nothing else escapes
 
-// here, so the only way to produce one is to have written it, and losing it would make
-// the round trip lossy for a character no rule forbids.
+            // here, so the only way to produce one is to have written it, and losing it would make
+            // the round trip lossy for a character no rule forbids.
             text.Append(value[index]);
         }
 

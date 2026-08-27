@@ -15,34 +15,34 @@ public sealed record LoadRequest {
     /// <summary>Where the binlog is. Null means look in the usual places.</summary>
     public string? BinlogPath { get; init; }
 
-    /// <summary>The solution or project for <see cref="LoadMode.Workspace"/>. Null means find one.</summary>
+    /// <summary>The solution or project for <see cref="LoadMode.Workspace" />. Null means find one.</summary>
     public string? ProjectPath { get; init; }
 
     /// <summary>⚠ Fail rather than analyse against a binlog older than the sources.</summary>
     public bool RequireFreshBinlog { get; init; }
 
-    /// <summary>For <see cref="LoadMode.Loose"/>: the files or directories to parse.</summary>
+    /// <summary>For <see cref="LoadMode.Loose" />: the files or directories to parse.</summary>
     public IReadOnlyList<string> Paths { get; init; } = [];
 
     /// <summary>Extra preprocessor symbols, from <c>--define</c>.</summary>
     public IReadOnlyList<string> Define { get; init; } = [];
 
     /// <summary>
-    /// ⚠ Fall through to a lesser mode rather than failing. Default on, because "I asked for binlog
-    /// and there is no binlog" is the common case for the agent path and a hard failure there means
-    /// the agent gets nothing rather than the syntactic half.
+    ///     ⚠ Fall through to a lesser mode rather than failing. Default on, because "I asked for binlog
+    ///     and there is no binlog" is the common case for the agent path and a hard failure there means
+    ///     the agent gets nothing rather than the syntactic half.
     /// </summary>
     public bool AllowFallback { get; init; } = true;
 }
 
 /// <summary>
-/// One <see cref="Compilation"/>, with everything about how it was obtained that the report needs.
+///     One <see cref="Compilation" />, with everything about how it was obtained that the report needs.
 /// </summary>
 /// <remarks>
-/// ⚠ <see cref="ReportablePaths"/> is not <see cref="Compilation.SyntaxTrees"/>. Generated sources
-/// are <em>analysed</em> — they are part of the program and leaving them out changes what the
-/// semantic model says — and never <em>reported on</em>, because a diagnostic in a file the user
-/// cannot edit is noise (docs/plan/07 § binlog, "Generated sources").
+///     ⚠ <see cref="ReportablePaths" /> is not <see cref="Compilation.SyntaxTrees" />. Generated sources
+///     are <em>analysed</em> — they are part of the program and leaving them out changes what the
+///     semantic model says — and never <em>reported on</em>, because a diagnostic in a file the user
+///     cannot edit is noise (docs/plan/07 § binlog, "Generated sources").
 /// </remarks>
 public sealed record CompilationUnit {
     public required string Name { get; init; }
@@ -73,8 +73,8 @@ public sealed record LoadedProject {
     public ImmutableArray<CompilationUnit> Units { get; init; } = [];
 
     /// <summary>
-    /// ⚠ Surfaced verbatim, never swallowed. A partially-loaded workspace that silently analyses
-    /// half a solution is the thing to avoid, and the only way to avoid it is to say so.
+    ///     ⚠ Surfaced verbatim, never swallowed. A partially-loaded workspace that silently analyses
+    ///     half a solution is the thing to avoid, and the only way to avoid it is to say so.
     /// </summary>
     public ImmutableArray<SkalaDiagnostic> Diagnostics { get; init; } = [];
 

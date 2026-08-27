@@ -26,39 +26,41 @@ public sealed record VerifyRequest {
     public IReadOnlyList<string> Define { get; init; } = [];
 
     /// <summary>
-    /// A git reference; only findings on lines this branch touched are "to do".
+    ///     A git reference; only findings on lines this branch touched are "to do".
     /// </summary>
     /// <remarks>
-    /// ⚠ Same shape as <see cref="CheckRequest.Since"/>, and it exists here for the reason doc 10
-    /// gives for <c>verify</c> existing at all: an agent has to be able to tell what it is
-    /// responsible for. Without it, an agent that changed five lines is handed the repository's
-    /// whole history of findings and has no way to tell which five are its own.
+    ///     ⚠ Same shape as <see cref="CheckRequest.Since" />, and it exists here for the reason doc 10
+    ///     gives for <c>verify</c> existing at all: an agent has to be able to tell what it is
+    ///     responsible for. Without it, an agent that changed five lines is handed the repository's
+    ///     whole history of findings and has no way to tell which five are its own.
     /// </remarks>
     public string? Since { get; init; }
 
     /// <summary>
-    /// <c>null</c> for no baseline, <c>""</c> for <c>.skala/baseline.sarif</c> if it exists, or a
-    /// path. Same tri-state as <see cref="CheckRequest.BaselinePath"/>.
+    ///     <c>null</c> for no baseline, <c>""</c> for <c>.skala/baseline.sarif</c> if it exists, or a
+    ///     path. Same tri-state as <see cref="CheckRequest.BaselinePath" />.
     /// </summary>
     public string? BaselinePath { get; init; }
 }
 
 /// <summary>
-/// <c>skala verify</c> — the one command an agent runs.
+///     <c>skala verify</c> — the one command an agent runs.
 /// </summary>
 /// <remarks>
-/// docs/plan/10 § "`skala verify` — the one command". It is <c>format --check</c> plus
-/// <c>check --gate=local</c> in one pass, with output shaped for a model rather than a terminal,
-/// and its contract is deliberately narrow so that it can be memorised:
-/// <list type="bullet">
-/// <item>⚠ <b>Exit 0 means "nothing to do". Nothing else means that.</b></item>
-/// <item>Every finding either carries a fix or carries a one-sentence instruction. Never both, never neither.</item>
-/// <item>Output is bounded and ordered by actionability, not by file.</item>
-/// <item>
-/// It works with no project, no build and no network, so an agent that just wrote a file into a
-/// scratch directory can run it.
-/// </item>
-/// </list>
+///     docs/plan/10 § "`skala verify` — the one command". It is <c>format --check</c> plus
+///     <c>check --gate=local</c> in one pass, with output shaped for a model rather than a terminal,
+///     and its contract is deliberately narrow so that it can be memorised:
+///     <list type="bullet">
+///         <item>⚠ <b>Exit 0 means "nothing to do". Nothing else means that.</b></item>
+///         <item>
+///             Every finding either carries a fix or carries a one-sentence instruction. Never both, never neither.
+///         </item>
+///         <item>Output is bounded and ordered by actionability, not by file.</item>
+///         <item>
+///             It works with no project, no build and no network, so an agent that just wrote a file into a
+///             scratch directory can run it.
+///         </item>
+///     </list>
 /// </remarks>
 public static class VerifyCommand {
     public static CommandResult Run(VerifyRequest request, CancellationToken cancellation = default) {

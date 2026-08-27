@@ -3,34 +3,34 @@ using Rikarin.Skala.Formatting;
 namespace Rikarin.Skala.Formatting.CSharp.Arrangement;
 
 /// <summary>
-/// A real edit-to-span map: the minimal edit list that turns one text into another.
+///     A real edit-to-span map: the minimal edit list that turns one text into another.
 /// </summary>
 /// <remarks>
-/// ⚠ Milestone 4's need #4. The formatter can emit minimal edits without diffing anything, because
-/// <see cref="LayoutWriter"/> hands it an <see cref="AnchorPoint"/> per token and every edit is the
-/// gap between two of them — the map from output back to input is a by-product of writing. That
-/// works while every edit is *local*, which is true of whitespace and false of arrangement: a member
-/// that moves 200 lines has no anchor relating where it was to where it is, and
-/// <see cref="EditEmitter.Emit"/> over an anchor-less layout collapses to a single edit spanning the
-/// whole file.
-/// <para>
-/// ⚠ A whole-file edit is not merely ugly — it breaks two things that are load-bearing.
-/// <c>--range a:b</c> and the LSP's range formatting are <see cref="EditEmitter.Restrict"/> over the
-/// whole-file edit list, so a single edit spanning the file means every range "intersects" and range
-/// formatting silently becomes whole-file formatting. And <c>arrange --check</c>'s output is a diff
-/// a person reads before allowing a tree rewrite; one hunk covering every line is not reviewable.
-/// </para>
-/// <para>
-/// Line-level rather than character-level, and deliberately: an arrangement edit is a member, a
-/// statement, or a using — never half a line — and a line-keyed diff makes the hunks land on the
-/// boundaries a reviewer already reads by. The character-level prefix/suffix trim inside each hunk
-/// then recovers the precision for the common one-token case.
-/// </para>
+///     ⚠ Milestone 4's need #4. The formatter can emit minimal edits without diffing anything, because
+///     <see cref="LayoutWriter" /> hands it an <see cref="AnchorPoint" /> per token and every edit is the
+///     gap between two of them — the map from output back to input is a by-product of writing. That
+///     works while every edit is *local*, which is true of whitespace and false of arrangement: a member
+///     that moves 200 lines has no anchor relating where it was to where it is, and
+///     <see cref="EditEmitter.Emit" /> over an anchor-less layout collapses to a single edit spanning the
+///     whole file.
+///     <para>
+///         ⚠ A whole-file edit is not merely ugly — it breaks two things that are load-bearing.
+///         <c>--range a:b</c> and the LSP's range formatting are <see cref="EditEmitter.Restrict" /> over the
+///         whole-file edit list, so a single edit spanning the file means every range "intersects" and range
+///         formatting silently becomes whole-file formatting. And <c>arrange --check</c>'s output is a diff
+///         a person reads before allowing a tree rewrite; one hunk covering every line is not reviewable.
+///     </para>
+///     <para>
+///         Line-level rather than character-level, and deliberately: an arrangement edit is a member, a
+///         statement, or a using — never half a line — and a line-keyed diff makes the hunks land on the
+///         boundaries a reviewer already reads by. The character-level prefix/suffix trim inside each hunk
+///         then recovers the precision for the common one-token case.
+///     </para>
 /// </remarks>
 public static class ArrangementEdits {
     /// <summary>
-    /// The edits that turn <paramref name="before"/> into <paramref name="after"/>, ordered and
-    /// disjoint, against the ORIGINAL text (ADR-005).
+    ///     The edits that turn <paramref name="before" /> into <paramref name="after" />, ordered and
+    ///     disjoint, against the ORIGINAL text (ADR-005).
     /// </summary>
     public static IReadOnlyList<TextEdit> Diff(string before, string after) {
         if (string.Equals(before, after, StringComparison.Ordinal)) {
@@ -97,15 +97,15 @@ public static class ArrangementEdits {
     }
 
     /// <summary>
-    /// The changed regions, from a longest-common-subsequence over lines.
+    ///     The changed regions, from a longest-common-subsequence over lines.
     /// </summary>
     /// <remarks>
-    /// ⚠ Bounded, and the bound is the point. The table is O(n·m) cells, so a pathological pair of
-    /// windows — two files that share no line at all — would allocate a matrix the size of their
-    /// product. Above <see cref="TableLimit"/> the whole window becomes one hunk, which is exactly
-    /// what the anchor-less emitter did and is correct, only coarse. Corpus measurement: the largest
-    /// window over <c>corpus/real/</c> is far below the limit, so this path is a guard rather than a
-    /// mode.
+    ///     ⚠ Bounded, and the bound is the point. The table is O(n·m) cells, so a pathological pair of
+    ///     windows — two files that share no line at all — would allocate a matrix the size of their
+    ///     product. Above <see cref="TableLimit" /> the whole window becomes one hunk, which is exactly
+    ///     what the anchor-less emitter did and is correct, only coarse. Corpus measurement: the largest
+    ///     window over <c>corpus/real/</c> is far below the limit, so this path is a guard rather than a
+    ///     mode.
     /// </remarks>
     static IEnumerable<Hunk> Hunks(string before, string after, List<Line> left, List<Line> right) {
         if (left.Count == 0 && right.Count == 0) {
@@ -186,9 +186,9 @@ public static class ArrangementEdits {
     static int End(List<Line> lines, int fallback) => lines.Count > 0 ? lines[^1].End : fallback;
 
     /// <summary>
-    /// ⚠ Recovers character precision inside a line-shaped hunk. Without it, changing
-    /// <c>String</c> to <c>string</c> reports the whole line as replaced, and a reviewer reading
-    /// <c>arrange --check</c> cannot see which token moved.
+    ///     ⚠ Recovers character precision inside a line-shaped hunk. Without it, changing
+    ///     <c>String</c> to <c>string</c> reports the whole line as replaced, and a reviewer reading
+    ///     <c>arrange --check</c> cannot see which token moved.
     /// </summary>
     static void Add(List<TextEdit> edits, string before, string after, Hunk hunk) {
         var beforeLength = hunk.BeforeEnd - hunk.BeforeStart;

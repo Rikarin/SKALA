@@ -7,15 +7,15 @@ using Rikarin.Skala.Formatting.CSharp;
 namespace Rikarin.Skala.Testing;
 
 /// <summary>
-/// The differential over <em>degraded</em> input, with the null hypothesis beside every number.
+///     The differential over <em>degraded</em> input, with the null hypothesis beside every number.
 /// </summary>
 /// <remarks>
-/// ⚠ The null hypothesis is not decoration and it is not optional. <c>corpus/real/</c>'s inputs are
-/// already 90.95 % line-identical to their fixtures, so a formatter that returns its input unchanged
-/// scores 91 % there — and the absence of that figure beside the 99.63 % headline is what made the
-/// headline look better than it was. Every number this file prints is printed next to what "change
-/// nothing" scores on the same population, because the difference between them is the only part that
-/// is the formatter's.
+///     ⚠ The null hypothesis is not decoration and it is not optional. <c>corpus/real/</c>'s inputs are
+///     already 90.95 % line-identical to their fixtures, so a formatter that returns its input unchanged
+///     scores 91 % there — and the absence of that figure beside the 99.63 % headline is what made the
+///     headline look better than it was. Every number this file prints is printed next to what "change
+///     nothing" scores on the same population, because the difference between them is the only part that
+///     is the formatter's.
 /// </remarks>
 public static class UnformatDifferential {
     /// <summary>Where one mode's numbers came from.</summary>
@@ -23,9 +23,9 @@ public static class UnformatDifferential {
     /// <param name="Bare">Skala over the degraded input, no preprocessor symbols.</param>
     /// <param name="Defined">Skala over the degraded input, with symbols supplied.</param>
     /// <param name="OracleDrift">
-    /// The oracle over the degraded input against the oracle over the <em>original</em>. ⚠ This is a
-    /// ceiling rather than a floor: where it is below 100 %, the oracle itself does not recover the
-    /// canonical form from the degraded one, and no formatter that agrees with the oracle could.
+    ///     The oracle over the degraded input against the oracle over the <em>original</em>. ⚠ This is a
+    ///     ceiling rather than a floor: where it is below 100 %, the oracle itself does not recover the
+    ///     canonical form from the degraded one, and no formatter that agrees with the oracle could.
     /// </param>
     public sealed record ModeResult(
         UnformatMode Mode,
@@ -35,12 +35,12 @@ public static class UnformatDifferential {
         FidelityReport OracleDrift);
 
     /// <summary>
-    /// Measures one mode against its committed fixtures.
+    ///     Measures one mode against its committed fixtures.
     /// </summary>
     /// <remarks>
-    /// ⚠ Reads files, never JetBrains (ADR-011). The degraded inputs and their fixtures are both
-    /// committed, so this runs on a machine with no ReSharper installed and its answer does not
-    /// depend on which version of the tool the person running it happens to have.
+    ///     ⚠ Reads files, never JetBrains (ADR-011). The degraded inputs and their fixtures are both
+    ///     committed, so this runs on a machine with no ReSharper installed and its answer does not
+    ///     depend on which version of the tool the person running it happens to have.
     /// </remarks>
     public static ModeResult? Measure(UnformatMode mode, IReadOnlyList<string> symbols) {
         // ⚠ Memoised. Four assertions and a report all want the same numbers, and each call formats
@@ -111,14 +111,14 @@ public static class UnformatDifferential {
         Corpus.Files(Corpus.Real).ToDictionary(static file => file.RelativePath, StringComparer.Ordinal);
 
     /// <summary>
-    /// <c>corpus/real/</c>'s own null hypothesis: its inputs scored directly against its fixtures.
+    ///     <c>corpus/real/</c>'s own null hypothesis: its inputs scored directly against its fixtures.
     /// </summary>
     /// <remarks>
-    /// ⚠ Measured here, through <see cref="Fidelity.Compare"/>, rather than quoted from anywhere.
-    /// It is the calibration for the number the whole project is steered by, and a calibration that
-    /// came from a different diff basis than the number it calibrates is worse than none — the
-    /// LCS/positional gap on this corpus is forty points (docs/plan/12 § 2). Printed at the top of
-    /// every unformat report so the two floors are read side by side.
+    ///     ⚠ Measured here, through <see cref="Fidelity.Compare" />, rather than quoted from anywhere.
+    ///     It is the calibration for the number the whole project is steered by, and a calibration that
+    ///     came from a different diff basis than the number it calibrates is worse than none — the
+    ///     LCS/positional gap on this corpus is forty points (docs/plan/12 § 2). Printed at the top of
+    ///     every unformat report so the two floors are read side by side.
     /// </remarks>
     public static FidelityReport RealCorpusNullHypothesis() {
         var results = new List<(string File, string Expected, string Actual)>();
@@ -176,13 +176,13 @@ public static class UnformatDifferential {
     }
 
     /// <summary>
-    /// The construct attribution docs/plan/16 § R1 asks for, over the degraded corpus.
+    ///     The construct attribution docs/plan/16 § R1 asks for, over the degraded corpus.
     /// </summary>
     /// <remarks>
-    /// ⚠ <c>ConstructReport</c> is reused as-is by naming the mode subdirectory as the set, rather
-    /// than copied. Its attribution — every divergent line charged to the innermost node of the
-    /// <em>oracle's</em> output that owns it — is exactly the question here, and a second
-    /// implementation of it would be a second answer to "which construct is this line".
+    ///     ⚠ <c>ConstructReport</c> is reused as-is by naming the mode subdirectory as the set, rather
+    ///     than copied. Its attribution — every divergent line charged to the innermost node of the
+    ///     <em>oracle's</em> output that owns it — is exactly the question here, and a second
+    ///     implementation of it would be a second answer to "which construct is this line".
     /// </remarks>
     static string Constructs(string set, IReadOnlyList<string> symbols, int top) {
         var builder = new StringBuilder();
@@ -222,15 +222,15 @@ public static class UnformatDifferential {
     // ── regeneration ─────────────────────────────────────────────────────────────────────────────
 
     /// <summary>
-    /// Runs <c>jb cleanupcode</c> over the committed degraded inputs and writes the fixtures.
+    ///     Runs <c>jb cleanupcode</c> over the committed degraded inputs and writes the fixtures.
     /// </summary>
     /// <remarks>
-    /// ⚠ Only <c>unformat regenerate</c> and <c>unformat oracle</c> call this, and both are
-    /// deliberate reviewed actions (ADR-011). ⚠ Oracle runs dominate the cost of this whole
-    /// exercise — <c>cleanupcode</c>'s startup is tens of seconds and its per-file marginal cost is
-    /// milliseconds — so the batch is as large as the tool will hold rather than as small as is
-    /// tidy. The wall-clock cost per batch is printed, because "budget it and report the real cost"
-    /// is only possible if somebody measured it.
+    ///     ⚠ Only <c>unformat regenerate</c> and <c>unformat oracle</c> call this, and both are
+    ///     deliberate reviewed actions (ADR-011). ⚠ Oracle runs dominate the cost of this whole
+    ///     exercise — <c>cleanupcode</c>'s startup is tens of seconds and its per-file marginal cost is
+    ///     milliseconds — so the batch is as large as the tool will hold rather than as small as is
+    ///     tidy. The wall-clock cost per batch is printed, because "budget it and report the real cost"
+    ///     is only possible if somebody measured it.
     /// </remarks>
     public static int Regenerate(OracleRunner runner, string editorConfig, TextWriter log) {
         var version = runner.Version;

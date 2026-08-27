@@ -53,14 +53,19 @@ public readonly record struct GoapConsidered(int Action, GoapRejection Why);
 
 /// <summary>What bounds a search.</summary>
 /// <remarks>
-///     ⚠ <b>A GOAP search is exponential in depth and the engine must not hang on a badly authored
-///     action set.</b> That is doc 37 § D10's mandatory bound, and the two numbers are the whole of
+///     ⚠
+///     <b>
+///         A GOAP search is exponential in depth and the engine must not hang on a badly authored
+///         action set.
+///     </b> That is doc 37 § D10's mandatory bound, and the two numbers are the whole of
 ///     it: exceeding either produces <see cref="PlanFailure.BudgetExhausted" /> or
 ///     <see cref="PlanFailure.DepthExceeded" /> naming the goal, which the debugger shows and a test
 ///     asserts.
-///
-///     The defaults target doc 28's stated scale — <i>"the few dozen agents where emergent behaviour
-///     is the point, not the thousand critters"</i> — and a project that wants deeper plans says so
+///     The defaults target doc 28's stated scale —
+///     <i>
+///         "the few dozen agents where emergent behaviour
+///         is the point, not the thousand critters"
+///     </i> — and a project that wants deeper plans says so
 ///     and pays for them.
 /// </remarks>
 public sealed record GoapSettings {
@@ -84,14 +89,16 @@ public sealed record GoapSettings {
 public readonly record struct GoapTarget(bool Found, Vector3 Position, Entity Entity) {
     /// <summary>Nowhere. What an action with no target sensor resolves to.</summary>
     public static GoapTarget
-        None =>
-        new(false, Vector3.Zero, Entity.Null);
+        None => new(false, Vector3.Zero, Entity.Null);
 }
 
 /// <summary>What an action costs to reach.</summary>
 /// <remarks>
-///     doc 37 § Part 4's seam. ⚠ <b>The distance cost is a straight line by default, not a path
-///     length.</b> A path query per candidate action per resolve is a nav search per edge of the
+///     doc 37 § Part 4's seam. ⚠
+///     <b>
+///         The distance cost is a straight line by default, not a path
+///         length.
+///     </b> A path query per candidate action per resolve is a nav search per edge of the
 ///     search graph, which is the cost of the whole system in one line — so the shipped model is
 ///     arithmetic, and the one that asks the navmesh lives in <c>Vixen.Ai.Nodes</c> where the navmesh
 ///     does, with the guide saying plainly what it costs.
@@ -113,7 +120,7 @@ public static class ActionCostModels {
     /// <remarks>What a set whose actions happen where the agent stands wants, and the cheapest.</remarks>
     public static IActionCostModel Flat {
         get
-        ;
+            ;
     } = new FlatCostModel();
 
     /// <summary>The action's cost plus the straight-line distance to its target.</summary>
@@ -121,7 +128,7 @@ public static class ActionCostModels {
     /// <returns>The model.</returns>
     public static IActionCostModel StraightLine(
         float perMetre
-            = 0.1f
+        = 0.1f
     ) =>
         new StraightLineCostModel(perMetre);
 }
@@ -135,7 +142,7 @@ sealed class
 }
 
 sealed class StraightLineCostModel(float perMetre) :
-    IActionCostModel {
+IActionCostModel {
     public float Cost(in AgentContext context, GoapAction action, Vector3 from, in GoapTarget target) {
         ArgumentNullException.ThrowIfNull(action);
         var distance = target.Found ? (target.Position - from).Length() : 0f
@@ -156,7 +163,6 @@ sealed class StraightLineCostModel(float perMetre) :
 ///     ⚠ <b>A mask on the agent rather than a domain per capability set.</b> A domain describes what a
 ///     <i>kind</i> of agent can do; whether this particular one has a gun, a key or a broken leg is
 ///     per agent, and a domain per permutation is a graph rebuild per permutation.
-///
 ///     Sixty-four actions is the limit of a mask, and an action past it is treated as allowed rather
 ///     than silently forbidden — a domain that large is one nobody is masking.
 /// </remarks>
@@ -178,14 +184,13 @@ public readonly record struct GoapCapabilities(ulong Bits) {
     public GoapCapabilities Without(
         int action
     ) =>
-        action >= 64 ? this : new(Bits & ~ (1UL << action));
+        action >= 64 ? this : new(Bits & ~(1UL << action));
 
     /// <summary>The same mask with one action turned on.</summary>
     /// <param name="action">Its index.</param>
     /// <returns>The mask.</returns>
     public GoapCapabilities
-        With(int action) =>
-        action >= 64 ? this : new(Bits | (1UL << action));
+        With(int action) => action >= 64 ? this : new(Bits | (1UL << action));
 }
 
 /// <summary>A sequence of actions, of which only the head is committed.</summary>
@@ -223,8 +228,7 @@ public sealed class GoapPlan {
 
     /// <summary>The action to run now, or <c>-1</c>.</summary>
     public
-        int Head =>
-        steps.Count > 0 ? steps[0] : -1;
+        int Head => steps.Count > 0 ? steps[0] : -1;
 
     /// <summary>Forgets everything.</summary>
     public void Clear() {
@@ -277,8 +281,11 @@ public sealed class GoapPlan {
 ///         plan.
 ///     </para>
 ///     <para>
-///         ⚠ <b>A plan is a chain, so an action with two unmet conditions is served one at a time —
-///         and that is correct rather than a simplification.</b> Only the head is committed
+///         ⚠
+///         <b>
+///             A plan is a chain, so an action with two unmet conditions is served one at a time —
+///             and that is correct rather than a simplification.
+///         </b> Only the head is committed
 ///         (§ D11): the head is by construction runnable now, running it changes the world, and the
 ///         next resolve plans from what the world then is. A search that instead tried to satisfy
 ///         every branch of a conjunction at once would be a hyper-graph search whose plans go stale
@@ -310,7 +317,7 @@ public sealed class GoapPlanner {
         ArgumentNullException.ThrowIfNull(domain);
         Domain = domain;
         Settings = settings ?? GoapSettings.Default;
-        candidates = new int [Math.Max(1, domain.Count)];
+        candidates = new int[Math.Max(1, domain.Count)];
     }
 
     /// <summary>The domain being searched.</summary>
@@ -324,7 +331,7 @@ public sealed class GoapPlanner {
     public int LastExpanded {
         get;
         private set
-        ;
+            ;
     }
 
     /// <summary>
@@ -332,8 +339,11 @@ public sealed class GoapPlanner {
     /// </summary>
     /// <remarks>
     ///     <para>
-    ///         doc 37 § Part 5's GOAP viewer: <i>"the actions that were considered and rejected with
-    ///         why"</i>. A plan says what will happen; a designer staring at an agent that does
+    ///         doc 37 § Part 5's GOAP viewer:
+    ///         <i>
+    ///             "the actions that were considered and rejected with
+    ///             why"
+    ///         </i>. A plan says what will happen; a designer staring at an agent that does
     ///         nothing needs the other half — which actions the search looked at, and what it did not
     ///         like about each.
     ///     </para>
@@ -361,7 +371,7 @@ public sealed class GoapPlanner {
     public PlanFailure
         Resolve(
             in
-                AgentContext context,
+            AgentContext context,
             GoapPlan plan,
             int goal = -1,
             IActionCostModel? costs = null,
@@ -385,7 +395,9 @@ public sealed class GoapPlanner {
     /// <param name="snapshot">What the world looked like.</param>
     /// <param name="plan">Where to put the plan.</param>
     /// <returns>Why there is no plan, or <see cref="PlanFailure.None" />.</returns>
-    /// <exception cref="ArgumentNullException"><paramref name="snapshot" /> or <paramref name="plan" /> is null.</exception>
+    /// <exception cref="ArgumentNullException">
+    ///     <paramref name="snapshot" /> or <paramref name="plan" /> is null.
+    /// </exception>
     public PlanFailure Search(
         GoapSnapshot snapshot,
         GoapPlan plan
@@ -397,7 +409,7 @@ public sealed class GoapPlanner {
             ?.Clear();
         LastExpanded = 0;
         if ((
-                uint)snapshot.Goal
+            uint)snapshot.Goal
             >= (uint)Domain.Goals.Length) {
             plan.Failure =
                 PlanFailure.NoGoal;
@@ -406,14 +418,14 @@ public sealed class GoapPlanner {
         }
 
         var
-            wanted = Domain.Goals[snapshot.Goal];
+        wanted = Domain.Goals[snapshot.Goal];
         var world =
             (ReadOnlySpan<int>)snapshot.World;
         plan.Goal = wanted.Name;
         plan
             .GoalIndex = snapshot.Goal;
         if (wanted.Met(world)
-           ) {
+        ) {
             plan.Failure = PlanFailure
                 .AlreadyMet;
             return PlanFailure.AlreadyMet;
@@ -443,7 +455,7 @@ public sealed class GoapPlanner {
         var deepest = false;
 
         while (
-            open.Count > 0) {
+               open.Count > 0) {
             if (LastExpanded >= Settings.NodeBudget) {
                 return Give(plan, PlanFailure.BudgetExhausted);
             }
@@ -508,13 +520,13 @@ public sealed class GoapPlanner {
              slot < action.Conditions.Length;
              slot++) {
             if (action
-                .Conditions[slot]
-                .Holds(world)) {
+                    .Conditions[slot]
+                    .Holds(world)) {
                 continue;
             }
 
             foreach (
-                var server in Domain.Servers(node.Action, slot)) {
+                     var server in Domain.Servers(node.Action, slot)) {
                 Push(snapshot, server, index);
             }
         }
@@ -536,7 +548,7 @@ public sealed class GoapPlanner {
 
         var cost = (parent >= 0
                 ? nodes
-                    [parent].Cost
+                [parent].Cost
                 : 0f)
             + snapshot.Costs[action];
         var node = new Node {
@@ -558,10 +570,10 @@ public sealed class GoapPlanner {
     bool Repeats(
         int parent,
         int
-            action
+        action
     ) {
         for (var index
-                 = parent;
+             = parent;
              index >= 0;
              index = nodes[index].Parent) {
             if (nodes[index].Action == action) {
@@ -618,7 +630,7 @@ public sealed class GoapPlanner {
         for (var node = index;
              node >= 0;
              node
-                 = nodes[node].Parent) {
+             = nodes[node].Parent) {
             plan.Add(nodes[node].Action);
         }
     }

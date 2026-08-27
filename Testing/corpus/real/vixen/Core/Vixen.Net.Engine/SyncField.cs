@@ -187,6 +187,7 @@ public static class SyncCodecs {
 
         public void Write(ref BitWriter writer, in Quaternion value) => MathCodec.WriteRotation(ref writer, value);
 
-        public bool Read(ref BitReader reader, out Quaternion value) => MathCodec.TryReadRotation(ref reader, out value);
+        public bool Read(ref BitReader reader, out Quaternion value) =>
+            MathCodec.TryReadRotation(ref reader, out value);
     }
 }

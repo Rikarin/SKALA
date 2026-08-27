@@ -7,12 +7,12 @@ public sealed record OpenDefect(string Id, string Summary, string File, string P
     public string Path => System.IO.Path.Combine(OpenDefects.Root, File);
 
     /// <summary>
-    /// The unmutated half, for an absorption entry. <c>null</c> when there is none.
+    ///     The unmutated half, for an absorption entry. <c>null</c> when there is none.
     /// </summary>
     /// <remarks>
-    /// ⚠ Absorption is a statement about a <b>pair</b> — <c>format(mutate(x)) ≡ format(x)</c> — and
-    /// there is no single string that carries it. One file would let the entry rot into "this file
-    /// formats to something", which is true of every file.
+    ///     ⚠ Absorption is a statement about a <b>pair</b> — <c>format(mutate(x)) ≡ format(x)</c> — and
+    ///     there is no single string that carries it. One file would let the entry rot into "this file
+    ///     formats to something", which is true of every file.
     /// </remarks>
     public string? BaselinePath {
         get {
@@ -25,20 +25,20 @@ public sealed record OpenDefect(string Id, string Summary, string File, string P
 }
 
 /// <summary>
-/// The register in <c>Testing/corpus/pathological/open/register.md</c>.
+///     The register in <c>Testing/corpus/pathological/open/register.md</c>.
 /// </summary>
 /// <remarks>
-/// ⚠ Read out of a markdown file rather than declared in code, for the reason
-/// <see cref="Divergences"/> is: the argument for each entry is the point, an argument does not fit
-/// in an attribute, and the person who has to decide whether a defect is still worth having is
-/// reading prose. The code here needs four fields; the file carries the case.
+///     ⚠ Read out of a markdown file rather than declared in code, for the reason
+///     <see cref="Divergences" /> is: the argument for each entry is the point, an argument does not fit
+///     in an attribute, and the person who has to decide whether a defect is still worth having is
+///     reading prose. The code here needs four fields; the file carries the case.
 /// </remarks>
 public static class OpenDefects {
     public static string Root { get; } =
         Path.Combine(Corpus.SetRoot(Corpus.Pathological), OpenDirectory);
 
     /// <summary>
-    /// ⚠ Excluded from <see cref="Corpus.Files"/>. See the register for why.
+    ///     ⚠ Excluded from <see cref="Corpus.Files" />. See the register for why.
     /// </summary>
     public const string OpenDirectory = "open";
 
@@ -47,11 +47,11 @@ public static class OpenDefects {
     public static IReadOnlyList<OpenDefect> Register { get; } = Read();
 
     /// <summary>
-    /// The <c>.cs</c> files in the directory, which the register must account for exactly.
+    ///     The <c>.cs</c> files in the directory, which the register must account for exactly.
     /// </summary>
     /// <remarks>
-    /// ⚠ <c>*.baseline.cs</c> is excluded on the same argument that excludes <c>*.expected.cs</c>
-    /// from the corpus: it is the other half of an entry, not an entry.
+    ///     ⚠ <c>*.baseline.cs</c> is excluded on the same argument that excludes <c>*.expected.cs</c>
+    ///     from the corpus: it is the other half of an entry, not an entry.
     /// </remarks>
     public static IReadOnlyList<string> Files() =>
         Directory.Exists(Root)

@@ -3,7 +3,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 
-
 // The whole of the entry point. Everything worth testing is in `Arguments` and `StyleGenRunner`,
 // which is deliberate: a build step whose behaviour lives in `Main` is one whose tests have to spawn
 // a process to find out what it did.

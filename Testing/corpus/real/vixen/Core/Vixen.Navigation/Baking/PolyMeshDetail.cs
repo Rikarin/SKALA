@@ -81,13 +81,21 @@ internal sealed class PolyMeshDetail {
     /// <param name="mesh">The polygons, in voxel coordinates.</param>
     /// <param name="field">The surface they were built from.</param>
     /// <param name="sampleDistance">How far apart to sample, in voxel columns. Zero or less builds nothing.</param>
-    /// <param name="maxError">How far the flat polygon may be from the ground before a vertex is added, in voxels of height.</param>
+    /// <param name="maxError">
+    ///     How far the flat polygon may be from the ground before a vertex is added, in voxels of height.
+    /// </param>
     /// <param name="walkableHeight">
     ///     The agent's height in voxels, which is how far a sample may look for its own surface. See
     ///     <see cref="TryGroundHeight" /> — this is not a tolerance, it is a proof.
     /// </param>
     /// <returns>The detail mesh, or an empty one if sampling was switched off.</returns>
-    public static PolyMeshDetail Build(PolyMesh mesh, CompactHeightfield field, float sampleDistance, float maxError, int walkableHeight) {
+    public static PolyMeshDetail Build(
+        PolyMesh mesh,
+        CompactHeightfield field,
+        float sampleDistance,
+        float maxError,
+        int walkableHeight
+    ) {
         var detail = new PolyMeshDetail();
 
         if (sampleDistance <= 0) {
@@ -108,7 +116,9 @@ internal sealed class PolyMeshDetail {
             for (var slot = 0; slot < count; slot++) {
                 var vertex = mesh.Polys[offset + slot];
 
-                hull.Add(new(mesh.Vertices[vertex * 3], mesh.Vertices[(vertex * 3) + 1], mesh.Vertices[(vertex * 3) + 2]));
+                hull.Add(
+                    new(mesh.Vertices[vertex * 3], mesh.Vertices[(vertex * 3) + 1], mesh.Vertices[(vertex * 3) + 2])
+                );
             }
 
             vertices.Clear();
@@ -131,7 +141,9 @@ internal sealed class PolyMeshDetail {
 
             // Counted in triangles, not in indices — the reader multiplies by three, and doing it
             // twice is a read three polygons further down the array.
-            detail.Polys.Add(new(detail.Vertices.Count, vertices.Count - count, detail.Triangles.Count / 3, triangles.Count / 3));
+            detail.Polys.Add(
+                new(detail.Vertices.Count, vertices.Count - count, detail.Triangles.Count / 3, triangles.Count / 3)
+            );
 
             for (var index = count; index < vertices.Count; index++) {
                 detail.Vertices.Add(vertices[index]);
@@ -161,7 +173,14 @@ internal sealed class PolyMeshDetail {
     ///         bake guarantees.
     ///     </para>
     /// </remarks>
-    static bool TryGroundHeight(CompactHeightfield field, int x, int z, float expected, int walkableHeight, out float height) {
+    static bool TryGroundHeight(
+        CompactHeightfield field,
+        int x,
+        int z,
+        float expected,
+        int walkableHeight,
+        out float height
+    ) {
         height = expected;
 
         if (x < 0 || z < 0 || x >= field.Width || z >= field.Depth) {
@@ -245,7 +264,14 @@ internal sealed class PolyMeshDetail {
                     from.Z + ((to.Z - from.Z) * fraction)
                 );
 
-                if (!TryGroundHeight(field, (int)MathF.Floor(point.X), (int)MathF.Floor(point.Z), point.Y, walkableHeight, out var ground)) {
+                if (!TryGroundHeight(
+                        field,
+                        (int)MathF.Floor(point.X),
+                        (int)MathF.Floor(point.Z),
+                        point.Y,
+                        walkableHeight,
+                        out var ground
+                    )) {
                     continue;
                 }
 
@@ -259,7 +285,9 @@ internal sealed class PolyMeshDetail {
         }
     }
 
-    /// <summary>Adds vertices inside the polygon, worst first, until nothing is out by more than the tolerance.</summary>
+    /// <summary>
+    ///     Adds vertices inside the polygon, worst first, until nothing is out by more than the tolerance.
+    /// </summary>
     static void RefineInterior(
         CompactHeightfield field,
         List<Vector3> vertices,
@@ -287,14 +315,22 @@ internal sealed class PolyMeshDetail {
         // Anchored to a multiple of the spacing rather than to the polygon's own corner, so that two
         // polygons over the same ground sample the same places and describe it the same way.
         for (var z = MathF.Ceiling(minimumZ / sampleDistance) * sampleDistance; z <= maximumZ; z += sampleDistance) {
-            for (var x = MathF.Ceiling(minimumX / sampleDistance) * sampleDistance; x <= maximumX; x += sampleDistance) {
+            for (var x = MathF.Ceiling(minimumX / sampleDistance) * sampleDistance; x <= maximumX; x +=
+                 sampleDistance) {
                 var point = new Vector3(x, 0, z);
 
                 if (!Contains(hull, point)) {
                     continue;
                 }
 
-                if (TryGroundHeight(field, (int)MathF.Floor(x), (int)MathF.Floor(z), Height(vertices, triangles, point), walkableHeight, out var ground)) {
+                if (TryGroundHeight(
+                        field,
+                        (int)MathF.Floor(x),
+                        (int)MathF.Floor(z),
+                        Height(vertices, triangles, point),
+                        walkableHeight,
+                        out var ground
+                    )) {
                     samples.Add(new(x, ground, z));
                 }
             }
@@ -472,8 +508,8 @@ internal sealed class PolyMeshDetail {
 
                     // The quadrilateral has to be convex, or the flip produces two triangles that
                     // overlap instead of two that tile it.
-                    if (Side(vertices[apex], vertices[from], vertices[far]) <= 0 ||
-                        Side(vertices[apex], vertices[far], vertices[to]) <= 0) {
+                    if (Side(vertices[apex], vertices[from], vertices[far]) <= 0
+                        || Side(vertices[apex], vertices[far], vertices[to]) <= 0) {
                         continue;
                     }
 
@@ -535,8 +571,7 @@ internal sealed class PolyMeshDetail {
     }
 
     /// <summary>Twice the signed area of a triangle in XZ. Positive when it turns counter-clockwise.</summary>
-    static float Side(Vector3 a, Vector3 b, Vector3 c) =>
-        ((b.X - a.X) * (c.Z - a.Z)) - ((c.X - a.X) * (b.Z - a.Z));
+    static float Side(Vector3 a, Vector3 b, Vector3 c) => ((b.X - a.X) * (c.Z - a.Z)) - ((c.X - a.X) * (b.Z - a.Z));
 
     static bool Contains(List<Vector3> hull, Vector3 point) {
         for (var index = 0; index < hull.Count; index++) {

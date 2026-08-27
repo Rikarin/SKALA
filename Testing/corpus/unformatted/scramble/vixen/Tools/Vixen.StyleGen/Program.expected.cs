@@ -21,14 +21,14 @@ if (request is null) {
 var result = StyleGenRunner.Run(request);
 
 foreach (var error in result.Errors
-        ) {
+) {
     Console.Error.WriteLine($"Vixen.StyleGen : error VXSTYLE002: {error}");
 }
 
 if (result.Errors.Count > 0) {
     // ⚠ Nothing is written on failure, and it matters which way round that is. A half-written
     // stylesheet left in obj/ is one a later incremental build considers up to date — so the next
-// build succeeds against the broken output and the error appears once, in a log nobody kept.
+    // build succeeds against the broken output and the error appears once, in a log nobody kept.
     return 1;
 }
 

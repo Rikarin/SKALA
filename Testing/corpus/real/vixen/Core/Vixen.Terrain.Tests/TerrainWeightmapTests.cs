@@ -9,8 +9,12 @@ namespace Vixen.Terrain.Tests;
 public sealed class TerrainWeightmapTests {
     static TerrainDescription Shape =>
         TerrainDescription.Default with {
-            TileSamples = 32, TilesX = 2, TilesZ = 2,
-            MetresPerQuad = 1f, MinHeight = -100f, MaxHeight = 100f
+            TileSamples = 32,
+            TilesX = 2,
+            TilesZ = 2,
+            MetresPerQuad = 1f,
+            MinHeight = -100f,
+            MaxHeight = 100f
         };
 
     static Terrain Built() {
@@ -112,8 +116,7 @@ public sealed class TerrainWeightmapTests {
     public void A_layer_that_does_not_exist_is_refused() {
         var terrain = Built();
 
-        Assert.Throws<ArgumentOutOfRangeException>(
-            () => TerrainWeightmap.Import(terrain, 5, new byte[64 * 64], 64, 64)
+        Assert.Throws<ArgumentOutOfRangeException>(() => TerrainWeightmap.Import(terrain, 5, new byte[64 * 64], 64, 64)
         );
     }
 

@@ -10,8 +10,7 @@ class LambdaParens {
                 int second
             ) => first
         );
-        Use(
-            delegate(
+        Use(delegate(
                 int first
             ) {
                 return first;

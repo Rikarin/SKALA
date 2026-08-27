@@ -1,4 +1,5 @@
 // skala-oracle: resharper=2025.2.6 config=sha256:98ff52570e019fac profile=SkalaFormatOnly generated=2026-08-27
+
 #region License
 
 // Copyright (c) 2007 James Newton-King
@@ -29,11 +30,11 @@
 
 #if !(NET20 || NET35 || NET40)
 using System
-    ;
+;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text
-    ;
+;
 #if DNXCORE50
 using Xunit;
 using Test = Xunit.FactAttribute;
@@ -42,11 +43,11 @@ using Assert = Newtonsoft.Json.Tests.XUnitAssert;
 using NUnit.Framework;
 #endif
 using System.Runtime.Serialization
-    ;
+;
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json.Serialization;
 using
-    Newtonsoft.Json.Tests.Serialization;
+Newtonsoft.Json.Tests.Serialization;
 using System.Collections.Immutable;
 
 namespace Newtonsoft.Json.Tests.Documentation.Samples.Serializer {
@@ -65,7 +66,7 @@ namespace Newtonsoft.Json.Tests.Documentation.Samples.Serializer {
             //   "One",
             //   "II",
             //   "3"
-// ]
+            // ]
 
             #endregion
 

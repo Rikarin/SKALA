@@ -56,7 +56,9 @@ sealed class Level {
 
     public Vector3 Where(Entity entity) => World.Get<LocalTransform>(entity).Position;
 
-    /// <summary>One frame: think, then walk. ⚠ In that order — a destination written this frame is walked this frame.</summary>
+    /// <summary>
+    ///     One frame: think, then walk. ⚠ In that order — a destination written this frame is walked this frame.
+    /// </summary>
     public void Step(int frames = 1, Action<int>? before = null) {
         for (var index = 0; index < frames; index++) {
             before?.Invoke(frame);
@@ -67,13 +69,14 @@ sealed class Level {
         }
     }
 
-    public static GameTime Frame(int index) => new(
-        TimeSpan.FromSeconds((index + 1) / 60.0),
-        TimeSpan.FromSeconds(1 / 60.0),
-        TimeSpan.FromSeconds(1 / 60.0),
-        index,
-        1f
-    );
+    public static GameTime Frame(int index) =>
+        new(
+            TimeSpan.FromSeconds((index + 1) / 60.0),
+            TimeSpan.FromSeconds(1 / 60.0),
+            TimeSpan.FromSeconds(1 / 60.0),
+            index,
+            1f
+        );
 }
 
 /// <summary>A flat floor, wound so that its upward face is the front one.</summary>

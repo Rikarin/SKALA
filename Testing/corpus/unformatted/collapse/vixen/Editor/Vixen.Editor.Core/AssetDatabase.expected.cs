@@ -52,31 +52,31 @@ public sealed class AssetDatabase {
     Dictionary<AssetId, AssetEntry> byGuid = [];
 
     Dictionary<string, AssetEntry>
-        byPath = new(
-            StringComparer.Ordinal
-        ); // The sidecar stamp each entry was read from, by the entry's project-relative path. Held beside
+    byPath = new(
+        StringComparer.Ordinal
+    ); // The sidecar stamp each entry was read from, by the entry's project-relative path. Held beside
 
-// the entries rather than inside AssetEntry, which is documented as being the envelope and only
-// the envelope: this is a fact about the file the envelope came out of, not about the asset.
-//
-// An entry whose sidecar this scan *wrote* — minted, or re-GUIDed — records MetaStamp.Unknown
-// rather than the stamp the write left behind, which is what makes the next scan open it again.
+    // the entries rather than inside AssetEntry, which is documented as being the envelope and only
+    // the envelope: this is a fact about the file the envelope came out of, not about the asset.
+    //
+    // An entry whose sidecar this scan *wrote* — minted, or re-GUIDed — records MetaStamp.Unknown
+    // rather than the stamp the write left behind, which is what makes the next scan open it again.
     Dictionary<string, MetaStamp>
-        stamps = new(
-            StringComparer.Ordinal
-        ); // A second, weaker filter over the same question: nothing whose sidecar was written at or after
+    stamps = new(
+        StringComparer.Ordinal
+    ); // A second, weaker filter over the same question: nothing whose sidecar was written at or after
 
-// this instant is trusted, however well its stamp matches. It catches an edit by *somebody else*
-// that raced this scan — which the stamps cannot know about — on a filesystem whose write times
-// are fine-grained enough to place it. See MetaStamp for what it cannot do. Kinded UTC so that
-// it round trips through "O" as a UTC instant rather than as a local one nobody named.
+    // this instant is trusted, however well its stamp matches. It catches an edit by *somebody else*
+    // that raced this scan — which the stamps cannot know about — on a filesystem whose write times
+    // are fine-grained enough to place it. See MetaStamp for what it cannot do. Kinded UTC so that
+    // it round trips through "O" as a UTC instant rather than as a local one nobody named.
     DateTime
-        trustedBeforeUtc = DateTime.SpecifyKind(
-            DateTime.MinValue,
-            DateTimeKind.Utc
-        ); // Injectable only so that a test can run a clock that leads the filesystem, which is what NTFS
+    trustedBeforeUtc = DateTime.SpecifyKind(
+        DateTime.MinValue,
+        DateTimeKind.Utc
+    ); // Injectable only so that a test can run a clock that leads the filesystem, which is what NTFS
 
-// and DateTime.UtcNow do to each other on Windows. Production always gets the system clock.
+    // and DateTime.UtcNow do to each other on Windows. Production always gets the system clock.
     readonly TimeProvider time;
 
     /// <summary>Where the project's directories are.</summary>
@@ -138,17 +138,17 @@ public sealed class AssetDatabase {
         var clock = Stopwatch.StartNew();
         var issues =
             new ConcurrentBag<AssetIssue>(); // Taken before the walk, and it is what the *next* scan will refuse to trust from. It catches
-// an edit by somebody else that landed while this scan was walking, which nothing else here
-// can see.
-//
-// ⚠ It is not, and cannot be, the defence against the scan's own writes, which is what this
-// comment used to claim. "A sidecar written while this scan runs has a write time at or after
-// startedUtc" is false wherever the clock is finer-grained than the filesystem's write times:
-// on Windows DateTime.UtcNow resolves through GetSystemTimePreciseAsFileTime while NTFS
-// stamps a write from the coarse clock, so a sidecar written a millisecond *after* this line
-// carries a write time up to a tick *before* it, and the next scan trusts it. The scan's own
-// writes are therefore recorded as MetaStamp.Unknown instead — a fact, not an inference from
-// two clocks that do not agree.
+        // an edit by somebody else that landed while this scan was walking, which nothing else here
+        // can see.
+        //
+        // ⚠ It is not, and cannot be, the defence against the scan's own writes, which is what this
+        // comment used to claim. "A sidecar written while this scan runs has a write time at or after
+        // startedUtc" is false wherever the clock is finer-grained than the filesystem's write times:
+        // on Windows DateTime.UtcNow resolves through GetSystemTimePreciseAsFileTime while NTFS
+        // stamps a write from the coarse clock, so a sidecar written a millisecond *after* this line
+        // carries a write time up to a tick *before* it, and the next scan trusts it. The scan's own
+        // writes are therefore recorded as MetaStamp.Unknown instead — a fact, not an inference from
+        // two clocks that do not agree.
         var startedUtc = time.GetUtcNow().UtcDateTime;
         var previousEntries = byPath;
         var previousStamps = stamps;
@@ -167,7 +167,7 @@ public sealed class AssetDatabase {
         var claimed =
             new bool[candidates
                 .Count]; // Parallel because this is an I/O walk over thousands of small files and the cores are idle
-// during it. Each index is written by exactly one iteration, so the arrays need no locking.
+        // during it. Each index is written by exactly one iteration, so the arrays need no locking.
         Parallel.For(
             0,
             candidates.Count,
@@ -184,22 +184,22 @@ public sealed class AssetDatabase {
                 );
             }
         ); // After the read rather than before it, because "an orphan" is exactly "a sidecar no asset
-// claimed" and the read has just worked out which those are. A project in order — every
-// sidecar spoken for — never builds the set of paths the search would need.
+        // claimed" and the read has just worked out which those are. A project in order — every
+        // sidecar spoken for — never builds the set of paths the search would need.
         Quarantine(
             survey,
             claimed,
             options,
             issues
         ); // Built into fresh dictionaries and swapped in at the end, so the previous index stays whole
-// for the reuse lookups above and a scan that throws leaves the database as it found it.
-// Sized from the walk: growing three dictionaries from empty to ten thousand string keys
-// rehashes every key a dozen times over, and the final size is already known here.
+        // for the reuse lookups above and a scan that throws leaves the database as it found it.
+        // Sized from the walk: growing three dictionaries from empty to ten thousand string keys
+        // rehashes every key a dozen times over, and the final size is already known here.
         byGuid = new(candidates.Count);
         byPath = new(candidates.Count, StringComparer.Ordinal);
         stamps = new(candidates.Count, StringComparer.Ordinal);
         var reused = 0; // Insertion is sequential and in path order, so two machines scanning one checkout resolve a
-// duplicate the same way. A parallel insert would make the winner depend on thread timing.
+        // duplicate the same way. A parallel insert would make the winner depend on thread timing.
         foreach (var scanned in found) {
             if (scanned is not { } present) {
                 continue;
@@ -291,10 +291,10 @@ public sealed class AssetDatabase {
         while (reader.ReadLine() is { } line) {
             if (line.StartsWith(TerminatorPrefix, StringComparison.Ordinal)) {
                 terminated = int.TryParse(
-                        line[TerminatorPrefix.Length ..],
-                        CultureInfo.InvariantCulture,
-                        out var declared
-                    )
+                    line[TerminatorPrefix.Length ..],
+                    CultureInfo.InvariantCulture,
+                    out var declared
+                )
                     && declared == entries.Count;
                 break;
             }
@@ -311,9 +311,9 @@ public sealed class AssetDatabase {
                     out var written
                 )) {
                 // Skipped, which the terminator then catches: one line fewer than the count the file
-// declares means the whole index is refused. Salvaging the readable lines would be
-// the tempting thing and the wrong one — an index missing an entry it does not know
-// it is missing is exactly the "fresh but incomplete" state this must never reach.
+                // declares means the whole index is refused. Salvaging the readable lines would be
+                // the tempting thing and the wrong one — an index missing an entry it does not know
+                // it is missing is exactly the "fresh but incomplete" state this must never reach.
                 continue;
             }
 
@@ -397,14 +397,14 @@ public sealed class AssetDatabase {
             new Dictionary<string, MetaStamp>(
                 StringComparer.Ordinal
             ); // DirectoryInfo rather than the string overloads: the enumerator already has each entry's
-// length and write time from the directory read, so the per-entry stamp costs no extra stat.
-// Asking File.GetLastWriteTimeUtc afterwards would be a syscall per file for the same answer.
+        // length and write time from the directory read, so the per-entry stamp costs no extra stat.
+        // Asking File.GetLastWriteTimeUtc afterwards would be a syscall per file for the same answer.
         foreach (var info in
                  new DirectoryInfo(Paths.Assets).EnumerateFileSystemInfos("*", SearchOption.AllDirectories)) {
             if (info is FileInfo file && file.Name.EndsWith(AssetMetaFile.Extension, StringComparison.Ordinal)) {
                 // Keyed by the asset it belongs to rather than by its own name, so that asking "what
-// is the stamp of this asset's sidecar" is a lookup and not a string concatenation
-// per asset. At ten thousand assets that concatenation was measurable.
+                // is the stamp of this asset's sidecar" is a lookup and not a string concatenation
+                // per asset. At ten thousand assets that concatenation was measurable.
                 sidecars[file.FullName[.. ^AssetMetaFile.Extension.Length]] = new(file.Length, file.LastWriteTimeUtc);
                 continue;
             }
@@ -412,7 +412,7 @@ public sealed class AssetDatabase {
             candidates.Add((info.FullName, info is DirectoryInfo));
         } // Sorted so that the scan, the duplicate resolution and the report are the same on every
 
-// machine. Directory enumeration order is not a promise any filesystem makes.
+        // machine. Directory enumeration order is not a promise any filesystem makes.
         candidates.Sort(static (left, right) => string.CompareOrdinal(left.Absolute, right.Absolute));
         return new(candidates, sidecars);
     }
@@ -465,7 +465,7 @@ public sealed class AssetDatabase {
             candidate.Absolute,
             out var stamp
         ); // The whole point: an asset whose sidecar is the size and age the index left it does not get
-// opened, parsed, or thought about again.
+        // opened, parsed, or thought about again.
         if (hasMeta
             && IsFresh(stamp, relative, previousStamps, cutoff)
             && previousEntries.TryGetValue(relative, out var kept)
@@ -484,8 +484,8 @@ public sealed class AssetDatabase {
             issues.Add(
                 new(AssetIssueKind.MetaCreated, relative, $"Had no .meta; created one with GUID {minted}.")
             ); // No stamp, rather than the one the write just left behind. This scan cannot tell an edit
-// that lands a microsecond after its own write from the write itself — the two share a
-// filesystem tick — so it records nothing to trust and the next scan opens the file.
+            // that lands a microsecond after its own write from the write itself — the two share a
+            // filesystem tick — so it records nothing to trust and the next scan opens the file.
             return new(
                 new(minted, relative, null, MetaMigrationChain.CurrentVersion, candidate.IsFolder),
                 MetaStamp.Unknown,
@@ -520,21 +520,21 @@ public sealed class AssetDatabase {
             return;
         } // Two assets claiming one GUID: someone copied a folder, or merged two branches that each
 
-// added a file. The one whose recorded source hash still matches its file is the original.
+        // added a file. The one whose recorded source hash still matches its file is the original.
         var incomingMatches = SourceHashMatches(entry);
         var existingMatches =
             SourceHashMatches(
                 existing
             ); // If the hashes do not settle it, the one already in the index keeps the GUID — and because
-// insertion is in path order, that is "the first path in order", which is a rule rather than
-// an accident of which file the filesystem handed over first.
+        // insertion is in path order, that is "the first path in order", which is a rule rather than
+        // an accident of which file the filesystem handed over first.
         var incomingWins = incomingMatches && !existingMatches;
         var winner = incomingWins ? entry : existing;
         var loser = incomingWins ? existing : entry;
         var message = $"'{winner.Path}' and '{loser.Path}' both claim GUID {entry.Guid}. "
             + (incomingMatches != existingMatches
-                ? "The one whose recorded sourceHash still matches its file kept it."
-                : "Neither sourceHash settled it, so the first path in order kept it.");
+                    ? "The one whose recorded sourceHash still matches its file kept it."
+                    : "Neither sourceHash settled it, so the first path in order kept it.");
         if (!options.ResolveDuplicateGuids) {
             byGuid[winner.Guid] = winner;
             issues.Add(new(AssetIssueKind.DuplicateGuid, loser.Path, message + " Nothing was changed."));
@@ -547,10 +547,10 @@ public sealed class AssetDatabase {
         byGuid[minted] = repaired;
         byPath[repaired.Path] =
             repaired; // Its sidecar was just rewritten, so the pre-rewrite stamp is a claim about a file that no
-// longer says what it says — the one shape of wrong an index must not persist. Re-stamping it
-// from the rewrite would only move the problem: this scan has no way to distinguish its own
-// write from an edit landing in the same filesystem tick. So it records no stamp at all and
-// the next scan reads the repaired sidecar back, which costs one file and settles it.
+        // longer says what it says — the one shape of wrong an index must not persist. Re-stamping it
+        // from the rewrite would only move the problem: this scan has no way to distinguish its own
+        // write from an edit landing in the same filesystem tick. So it records no stamp at all and
+        // the next scan reads the repaired sidecar back, which costs one file and settles it.
         stamps[repaired.Path] = MetaStamp.Unknown;
         issues.Add(
             new(AssetIssueKind.DuplicateGuid, loser.Path, $"{message} '{loser.Path}' was re-GUIDed to {minted}.")
@@ -565,7 +565,7 @@ public sealed class AssetDatabase {
             }
         } // The overwhelmingly common case, and the one worth not paying for: every sidecar belongs to
 
-// an asset, so there is nothing to search for and no set of paths to build in order to search.
+        // an asset, so there is nothing to search for and no set of paths to build in order to search.
         if (spokenFor == survey.Sidecars.Count) {
             return;
         }
@@ -575,11 +575,11 @@ public sealed class AssetDatabase {
             owners.Add(candidate.Absolute);
         } // Ordered so that two machines quarantining the same wreckage write the same files in the
 
-// same order.
+        // same order.
         foreach (var owner in survey.Sidecars.Keys.Order(StringComparer.Ordinal).ToList()) {
             // A sidecar for a sidecar — `foo.meta.meta` beside a real `foo.meta` — is not an orphan,
-// however little sense it makes, because the file it names is right there. Sidecars are
-// keyed by what they belong to, so "does foo.meta exist" is "is there a sidecar for foo".
+            // however little sense it makes, because the file it names is right there. Sidecars are
+            // keyed by what they belong to, so "does foo.meta exist" is "is there a sidecar for foo".
             if (owners.Contains(owner)
                 || (owner.EndsWith(AssetMetaFile.Extension, StringComparison.Ordinal)
                     && survey.Sidecars.ContainsKey(owner[.. ^AssetMetaFile.Extension.Length]))) {
@@ -593,8 +593,8 @@ public sealed class AssetDatabase {
                 continue;
             } // Moved, never deleted. A mis-ordered git operation — the asset removed before its
 
-// sidecar, a partial checkout — is recoverable if the GUID is still somewhere on disk,
-// and is not if the editor helpfully tidied it away.
+            // sidecar, a partial checkout — is recoverable if the GUID is still somewhere on disk,
+            // and is not if the editor helpfully tidied it away.
             var destination = Path.Combine(Paths.OrphanMeta, Paths.Relative(meta));
             Directory.CreateDirectory(Path.GetDirectoryName(destination)!);
             File.Move(meta, destination, overwrite: true);
@@ -632,7 +632,7 @@ public sealed class AssetDatabase {
             }
 
             return string.Equals(recorded.Value, HashOf(absolute), StringComparison.OrdinalIgnoreCase);
-        } catch (Exception failure)when (failure is IOException or YamlParseException) {
+        } catch (Exception failure) when (failure is IOException or YamlParseException) {
             return false;
         }
     }
@@ -641,7 +641,7 @@ public sealed class AssetDatabase {
         var metaPath = AssetMetaFile.PathFor(Paths.Absolute(entry.Path));
         var minted =
             AssetId.New(); // Read and rewrite as nodes, so everything the file said other than its GUID — the importer
-// settings, the addressable block, the comments — comes back out byte for byte.
+        // settings, the addressable block, the comments — comes back out byte for byte.
         var root = YamlReader.Read(File.ReadAllText(metaPath)) as YamlMapping ?? new YamlMapping();
         root.Set("guid", new YamlScalar(minted.ToString()));
         File.WriteAllText(metaPath, YamlWriter.Write(root));
@@ -651,7 +651,7 @@ public sealed class AssetDatabase {
     static AssetId CreateMeta(string metaPath) {
         var minted =
             AssetId.New(); // No importer key: which importer claims a file is decided at import time, and writing a
-// guess here would be a fact the file asserts and nothing checks.
+        // guess here would be a fact the file asserts and nothing checks.
         var root = new YamlMapping().Set("guid", new YamlScalar(minted.ToString()))
             .Set(
                 "metaVersion",
@@ -691,8 +691,10 @@ public sealed class AssetDatabase {
 /// <param name="WrittenUtc">When it was last written, UTC.</param>
 /// <remarks>
 ///     <para>
-///         <b>A size and a write time, because the honest answer costs a read and the read is the
-///         thing being avoided.</b> Hashing a sidecar's contents would never be wrong; it would also
+///         <b>
+///             A size and a write time, because the honest answer costs a read and the read is the
+///             thing being avoided.
+///         </b> Hashing a sidecar's contents would never be wrong; it would also
 ///         mean opening every file in the project on every cold start, which is precisely the work
 ///         the index exists to skip. A size alone is far too weak — a sidecar is mostly fixed-width
 ///         fields, so most edits leave it exactly as long. The pair is the cheapest thing that is
@@ -721,8 +723,11 @@ public sealed class AssetDatabase {
 ///         ⚠ <b>The write-time cutoff is a weaker second filter</b>, and what it adds is the one
 ///         thing the stamps cannot know: an edit by <em>somebody else</em> that raced the recording
 ///         scan. A stamp is only trusted when its write time is strictly earlier than the instant
-///         that scan began. <b>Where the clock is finer-grained than the filesystem's write times it
-///         under-fires</b> — a file written after that instant can carry a write time floored below
+///         that scan began.
+///         <b>
+///             Where the clock is finer-grained than the filesystem's write times it
+///             under-fires
+///         </b> — a file written after that instant can carry a write time floored below
 ///         it, which is exactly what NTFS and <c>DateTime.UtcNow</c> do to each other — and no cutoff
 ///         can fix that. Flooring it to the filesystem's own resolution would make it sound and would
 ///         also refuse every file written in the tick before a scan, turning an untouched project

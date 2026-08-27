@@ -108,7 +108,7 @@ public interface IAudioDevice : IDisposable {
     /// <summary>How many frames it asks for at a time.</summary>
     int BufferFrames {
         get
-        ;
+            ;
     }
 
     /// <summary>Whether it is currently pulling.</summary>
@@ -200,6 +200,6 @@ public sealed class AudioDeviceException : Exception {
     public AudioDeviceException(
         string message,
         Exception
-            innerException
+        innerException
     ) : base(message, innerException) { }
 }

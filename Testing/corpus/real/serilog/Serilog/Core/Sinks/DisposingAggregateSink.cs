@@ -21,23 +21,17 @@ sealed class DisposingAggregateSink : ILogEventSink, IDisposable
 {
     readonly ILogEventSink[] _sinks;
 
-    public DisposingAggregateSink(IEnumerable<ILogEventSink> sinks)
-    {
+    public DisposingAggregateSink(IEnumerable<ILogEventSink> sinks) {
         Guard.AgainstNull(sinks);
         _sinks = sinks.ToArray();
     }
 
-    public void Emit(LogEvent logEvent)
-    {
+    public void Emit(LogEvent logEvent) {
         List<Exception>? exceptions = null;
-        foreach (var sink in _sinks)
-        {
-            try
-            {
+        foreach (var sink in _sinks) {
+            try {
                 sink.Emit(logEvent);
-            }
-            catch (Exception ex)
-            {
+            } catch (Exception ex) {
                 SelfLog.WriteLine("Caught exception while emitting to sink {0}: {1}", sink, ex);
                 exceptions ??= [];
                 exceptions.Add(ex);
@@ -48,18 +42,13 @@ sealed class DisposingAggregateSink : ILogEventSink, IDisposable
             throw new AggregateException("Failed to emit a log event.", exceptions);
     }
 
-    public void Dispose()
-    {
-        foreach (var sink in _sinks)
-        {
+    public void Dispose() {
+        foreach (var sink in _sinks) {
             if (sink is not IDisposable disposable) continue;
 
-            try
-            {
+            try {
                 disposable.Dispose();
-            }
-            catch (Exception ex)
-            {
+            } catch (Exception ex) {
                 ReportDisposingException(sink, ex);
             }
         }
@@ -96,8 +85,7 @@ sealed class DisposingAggregateSink : ILogEventSink, IDisposable
     }
 #endif
 
-    static void ReportDisposingException(ILogEventSink sink, Exception ex)
-    {
+    static void ReportDisposingException(ILogEventSink sink, Exception ex) {
         SelfLog.WriteLine("Caught exception while disposing sink {0}: {1}", sink, ex);
     }
 }

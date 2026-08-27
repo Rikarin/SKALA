@@ -233,7 +233,7 @@ is the right way to ship it, and the number above is the whole of what it runs.
 
 | | |
 |---|---|
-| Documentation comments | ⚠ **Not formatted by default, deliberately** — the oracle does not format them ([`divergences.md`](divergences.md) § SK-DIV-0006). `XmlDocComments.cs` detects malformed XML and reports `SK0003`, always. ✅ `skala format --xmldoc` turns on the sub-formatter (`XmlDocFormatter`), which honours 17 of the 27 `resharper_xmldoc_*` keys, refuses ten with a reason each, and writes no comment whose content does not survive a round trip. Off by default because on costs 3.59 points of line fidelity against Rider; measured, not assumed |
+| Documentation comments | ✅ **Formatted, by default** — Rider formats them and the oracle profile Skala pins does not ([`divergences.md`](divergences.md) § SK-DIV-0006). `XmlDocComments.cs` detects malformed XML and reports `SK0003`, always, and such a comment is left byte-identical. The sub-formatter (`XmlDocFormatter`) honours 17 of the 27 `resharper_xmldoc_*` keys, refuses ten with a reason each, and writes no comment whose content does not survive a round trip. `--no-xmldoc` turns it off. ⚠ The 3.59 points it costs against the committed fixtures are the fixtures' profile, not a fidelity cost — the differential's basis is the lines outside doc comments until they are regenerated |
 | Interpolated raw string literals | ⛔ Emitted verbatim (SK-DIV-0003) |
 | Disabled `#if` text | ⛔ Never touched, byte for byte (SK-DIV-0001) |
 | Arrangement | ⬜ M4 |

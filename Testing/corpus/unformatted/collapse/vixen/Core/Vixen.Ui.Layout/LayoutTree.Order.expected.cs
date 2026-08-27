@@ -87,8 +87,11 @@ public sealed partial class LayoutTree {
 
     /// <summary>Rebuilds every stale order-modified child list, before the pass descends.</summary>
     /// <remarks>
-    ///     ⚠ <b>Here rather than lazily inside <see cref="ChildIds" />, and that is a correctness
-    ///     rule rather than a preference.</b> Building a block can grow the arena, and growing the
+    ///     ⚠
+    ///     <b>
+    ///         Here rather than lazily inside <see cref="ChildIds" />, and that is a correctness
+    ///         rule rather than a preference.
+    ///     </b> Building a block can grow the arena, and growing the
     ///     arena moves the one array every outstanding child span points into — while the algorithm
     ///     is holding such a span across the recursive call that lays each child out. A lazy sort
     ///     would therefore leave an ancestor's loop iterating freed memory, intermittently and only
@@ -101,7 +104,7 @@ public sealed partial class LayoutTree {
 
         foreach (var index in queue) {
             // The slot may have been destroyed, or destroyed and handed to a new node, since it was
-// queued. Both are caught here: `CreateNode` clears the flag it would have inherited.
+            // queued. Both are caught here: `CreateNode` clears the flag it would have inherited.
             if ((flags[index] & (LayoutNodeState.Live | LayoutNodeState.ChildOrderStale))
                 == (LayoutNodeState.Live | LayoutNodeState.ChildOrderStale)) {
                 RebuildChildOrder(index);
@@ -117,8 +120,8 @@ public sealed partial class LayoutTree {
         var count = links[index].ChildCount;
         if (count <= 1 || !AnyChildIsOrdered(index, count)) {
             // Every item defaulted, so order-modified document order *is* document order and the
-// block would be a copy of one that already exists. Handing it back is what makes
-// `order-0` on the last styled child cost nothing afterwards.
+            // block would be a copy of one that already exists. Handing it back is what makes
+            // `order-0` on the last styled child cost nothing afterwards.
             ReleaseOrderedBlock(index);
             return;
         } // Allocated before either span is taken: this is the call that can move the arena.
@@ -133,12 +136,12 @@ public sealed partial class LayoutTree {
         var keys = orderKeys.AsSpan(0, count);
         for (var i = 0; i < count; i++) {
             // ⚠ <b>The document position is packed into the low half of the key, which is what makes
-// this stable.</b> `Span.Sort` is an introsort and introsort is not stable, so two items
-// with the same `order` would otherwise come out in whichever arrangement the
-// partitioning happened to leave them in — the classic bug in this property, and one
-// that hides until a list has enough equal-order items to trip the quicksort path.
-// Distinct keys mean the comparison never has a tie to resolve, so stability stops
-// depending on the algorithm at all.
+            // this stable.</b> `Span.Sort` is an introsort and introsort is not stable, so two items
+            // with the same `order` would otherwise come out in whichever arrangement the
+            // partitioning happened to leave them in — the classic bug in this property, and one
+            // that hides until a list has enough equal-order items to trip the quicksort path.
+            // Distinct keys mean the comparison never has a tie to resolve, so stability stops
+            // depending on the algorithm at all.
             keys[i] = ((long)styles[target[i]].Order << 32) | (uint)i;
         }
 
@@ -164,7 +167,7 @@ public sealed partial class LayoutTree {
         ref var ordered = ref orderedChildren[index];
         while (ordered.Capacity < count) {
             // A live count of zero: nothing in the old block is worth copying, because every id is
-// about to be written over from the document block.
+            // about to be written over from the document block.
             var grown = children.Grow(ordered.Offset, 0, ordered.Capacity);
             ordered.Offset = grown.Offset;
             ordered.Capacity = grown.Capacity;

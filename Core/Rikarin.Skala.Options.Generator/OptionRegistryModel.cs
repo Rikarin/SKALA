@@ -69,9 +69,9 @@ internal static class Naming {
     }
 
     /// <summary>
-    /// The <c>resharper_</c>/<c>csharp_</c>/<c>dotnet_</c> prefix is retained as a group, so
-    /// <c>resharper_csharp_wrap_arguments_style</c> reads as
-    /// <c>Options.ReSharper.CSharp.WrapArgumentsStyle</c> (docs/plan/02 § "Naming").
+    ///     The <c>resharper_</c>/<c>csharp_</c>/<c>dotnet_</c> prefix is retained as a group, so
+    ///     <c>resharper_csharp_wrap_arguments_style</c> reads as
+    ///     <c>Options.ReSharper.CSharp.WrapArgumentsStyle</c> (docs/plan/02 § "Naming").
     /// </summary>
     public static IReadOnlyList<string> GroupPath(string key) =>
         key switch {

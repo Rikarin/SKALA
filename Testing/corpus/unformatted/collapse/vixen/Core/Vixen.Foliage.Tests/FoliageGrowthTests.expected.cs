@@ -10,7 +10,7 @@ namespace Vixen.Foliage.Tests;
 /// <summary>The offline ecology — [docs/plan/31 § T9].</summary>
 public sealed class FoliageGrowthTests {
     static FoliageType Pine =>
-        FoliageType.Of("Pine")with {
+        FoliageType.Of("Pine") with {
             Mesh = "Meshes/pine",
             Radius = 2f,
             MinScale = 1f,
@@ -18,7 +18,7 @@ public sealed class FoliageGrowthTests {
             Ecology = FoliageEcology.Tree with { SeedDensity = 0.004f, SpreadDistance = 10f }
         };
 
-    static FoliageGrowthSettings Field => FoliageGrowthSettings.Over(new(0f, 0f), new(200f, 200f))with { Steps = 6 };
+    static FoliageGrowthSettings Field => FoliageGrowthSettings.Over(new(0f, 0f), new(200f, 200f)) with { Steps = 6 };
 
     static (FoliageVolume Volume, int Type) Sown(FoliageType? type = null) {
         var volume = new FoliageVolume(new(32f));
@@ -183,10 +183,10 @@ public sealed class FoliageGrowthTests {
     /// <summary>A higher-priority species displaces a lower one it lands on.</summary>
     [Fact]
     public void PriorityDisplacesRatherThanTies() {
-        var scrub = FoliageType.Of("Scrub")with {
+        var scrub = FoliageType.Of("Scrub") with {
             Radius = 3f, Ecology = FoliageEcology.Tree with { SeedDensity = 0.01f, Priority = 1, ShadeTolerance = 1f }
         };
-        var oak = FoliageType.Of("Oak")with {
+        var oak = FoliageType.Of("Oak") with {
             Radius = 3f, Ecology = FoliageEcology.Tree with { SeedDensity = 0.004f, Priority = 20, ShadeTolerance = 1f }
         };
         var volume = new FoliageVolume(new(32f));
@@ -242,8 +242,8 @@ public sealed class FoliageGrowthTests {
     public void SaplingsAreSmallerThanTrees() {
         var (volume, _) =
             Sown(); // Past the maximum age, so the sowing is grown and the last step's seedlings are not. At or
-// below it every plant is one cohort and every scale is the same, which is correct and
-// measures nothing.
+        // below it every plant is one cohort and every scale is the same, which is correct and
+        // measures nothing.
         FoliageGrowth.Simulate(volume, Ground.Flat, Field with { Steps = 6 });
         var scales = volume.Chunks.SelectMany(chunk => chunk.Instances).Select(i => i.Scale).ToArray();
         Assert.True(scales.Length > 10);

@@ -1,4 +1,5 @@
 // skala-oracle: resharper=2025.2.6 config=sha256:98ff52570e019fac profile=SkalaFormatOnly generated=2026-08-27
+
 #region License
 
 // Copyright (c) 2007 James Newton-King
@@ -31,16 +32,16 @@
 
 using System;
 using System.
-    Collections.Generic;
+Collections.Generic;
 using System.Runtime.Serialization.Formatters;
 using System.Text;
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json.
-    Serialization;
+Serialization;
 using Newtonsoft.Json.Tests.TestObjects;
 using Newtonsoft.Json.Tests.TestObjects.Organization;
 using Newtonsoft.Json.
-    Utilities;
+Utilities;
 #if DNXCORE50
 using Xunit;
 using Test = Xunit.FactAttribute;
@@ -57,7 +58,7 @@ namespace Newtonsoft.Json.Tests.Serialization {
         [Test]
         public void DeserializeObject() {
             string json
-                    = @"
+                = @"
   {
     ""Value"": ""2017-12-05T21:59:00""
   }"
@@ -97,17 +98,15 @@ namespace Newtonsoft.Json.Tests.Serialization {
                     )
                 );
             DateTimeWrapper c2 = jo.ToObject<DateTimeWrapper>(
-                    JsonSerializer.Create(
-                        new JsonSerializerSettings { DateTimeZoneHandling = DateTimeZoneHandling.Local }
-                    )
-                )
+                JsonSerializer.Create(new JsonSerializerSettings { DateTimeZoneHandling = DateTimeZoneHandling.Local })
+            )
                 ;
             DateTimeWrapper c3 = jo
-                    .ToObject<DateTimeWrapper>(
-                        JsonSerializer.Create(
-                            new JsonSerializerSettings { DateTimeZoneHandling = DateTimeZoneHandling.Unspecified }
-                        )
+                .ToObject<DateTimeWrapper>(
+                    JsonSerializer.Create(
+                        new JsonSerializerSettings { DateTimeZoneHandling = DateTimeZoneHandling.Unspecified }
                     )
+                )
                 ;
             DateTimeWrapper c4 =
                 jo.ToObject<DateTimeWrapper>();

@@ -61,8 +61,10 @@ static class DibImage {
     /// <summary>Reads a clipboard DIB into straight RGBA8, top-down.</summary>
     /// <param name="dib">The bytes behind <c>CF_DIB</c> or <c>CF_DIBV5</c>, with no file header.</param>
     /// <param name="image">The decoded image.</param>
-    /// <returns><see langword="false" /> for a truncated, palettised or otherwise unreadable
-    /// bitmap, which is not an error: the caller's contract is that a clipboard read can fail.</returns>
+    /// <returns>
+    ///     <see langword="false" /> for a truncated, palettised or otherwise unreadable
+    ///     bitmap, which is not an error: the caller's contract is that a clipboard read can fail.
+    /// </returns>
     public static bool TryDecode(ReadOnlySpan<byte> dib, out ClipboardImage image) {
         image = default;
         if (dib.Length < InfoHeaderSize) {
@@ -94,7 +96,7 @@ static class DibImage {
 
         if (bits is not (16 or 24 or 32)) {
             // 1, 4 and 8 bits per pixel are palettised, and nothing has put one on a clipboard since
-// the display it was written for went out of production.
+            // the display it was written for went out of production.
             return false;
         }
 
@@ -134,7 +136,7 @@ static class DibImage {
             return false;
         } // Present on a V5 header even at 32 bits per pixel, where it is a colour table for the
 
-// benefit of palettised displays and has to be stepped over rather than read.
+        // benefit of palettised displays and has to be stepped over rather than read.
         offset += paletteEntries * 4;
         var stride = ((width * bits + 31) / 32) * 4;
         if (offset < 0 || stride <= 0 || (long)offset + (long)stride * height > dib.Length) {
@@ -145,7 +147,7 @@ static class DibImage {
         var alphaSeen = false;
         for (var y = 0; y < height; y++) {
             // A bottom-up DIB stores the last row first, which is the common case and not the
-// interesting one — it is only ever this arithmetic.
+            // interesting one — it is only ever this arithmetic.
             var source = dib.Slice(offset + (topDown ? y : height - 1 - y) * stride, stride);
             var destination = pixels.AsSpan(y * width * 4);
             for (var x = 0; x < width; x++) {
@@ -165,8 +167,8 @@ static class DibImage {
 
         if (!alphaSeen) {
             // Every pixel fully transparent is what an application that left the fourth byte alone
-// produces, and is never what one that meant it produces — an image nobody can see is
-// not something anybody copies. See the remarks.
+            // produces, and is never what one that meant it produces — an image nobody can see is
+            // not something anybody copies. See the remarks.
             for (var index = 3; index < pixels.Length; index += 4) {
                 pixels[index] = 255;
             }
@@ -178,8 +180,10 @@ static class DibImage {
 
     /// <summary>Writes straight RGBA8 as a <c>CF_DIBV5</c> bitmap.</summary>
     /// <param name="image">The image, <c>Size.X * Size.Y * 4</c> bytes from the top-left.</param>
-    /// <returns>The bytes to put on the clipboard, or <see langword="null" /> if the image is not
-    /// the size it says it is.</returns>
+    /// <returns>
+    ///     The bytes to put on the clipboard, or <see langword="null" /> if the image is not
+    ///     the size it says it is.
+    /// </returns>
     /// <remarks>
     ///     <c>BITMAPV5HEADER</c> rather than <c>BITMAPINFOHEADER</c> because only V5 can say that the
     ///     fourth channel is alpha and that the colours are sRGB, and Windows synthesises
@@ -209,7 +213,7 @@ static class DibImage {
             header[4 ..],
             width
         ); // Positive, so bottom-up. A negative height is legal and is mishandled by enough
-// applications that writing one is a way to be pasted upside down.
+        // applications that writing one is a way to be pasted upside down.
         BinaryPrimitives.WriteInt32LittleEndian(header[8 ..], height);
         BinaryPrimitives.WriteUInt16LittleEndian(header[12 ..], 1);
         BinaryPrimitives.WriteUInt16LittleEndian(header[14 ..], 32);

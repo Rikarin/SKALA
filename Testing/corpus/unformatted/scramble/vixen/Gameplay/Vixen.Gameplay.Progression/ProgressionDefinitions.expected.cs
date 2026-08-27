@@ -25,7 +25,9 @@ public sealed record ExperienceCurveDefinition : Definition {
     public int MaximumLevel { get; set; } =
         80;
 
-    /// <summary>What each level costs, from level one upwards. Shorter than the maximum falls through to the formula.</summary>
+    /// <summary>
+    ///     What each level costs, from level one upwards. Shorter than the maximum falls through to the formula.
+    /// </summary>
     public
         List<int> Thresholds { get; set; } = [];
 
@@ -47,7 +49,7 @@ public sealed class TalentPrerequisiteDefinition {
     /// <summary>How many ranks of it.</summary>
     public int Ranks {
         get
-        ;
+            ;
         set;
     } = 1;
 }
@@ -79,7 +81,7 @@ public sealed class TalentNodeDefinition {
     public int RequiredPoints {
         get;
         set
-        ;
+            ;
     }
 
     /// <summary>What else must be taken first.</summary>
@@ -118,8 +120,11 @@ public sealed record TalentTreeDefinition : Definition {
 
 /// <summary>A class specialisation: one of a set, chosen and changeable.</summary>
 /// <remarks>
-///     A definition rather than a talent node, because a specialisation is a <em>choice among
-///     alternatives</em> and a tree is a set of independent yeses. Modelling it as a node would need
+///     A definition rather than a talent node, because a specialisation is a
+///     <em>
+///         choice among
+///         alternatives
+///     </em> and a tree is a set of independent yeses. Modelling it as a node would need
 ///     an "and none of these others" rule the tree does not have.
 /// </remarks>
 [DataContract("SpecialisationDefinition")]
@@ -129,7 +134,7 @@ public sealed record SpecialisationDefinition
     public string DisplayName {
         get;
         set
-        ;
+            ;
     } = string.Empty;
 
     /// <summary>What having it is — <c>Specialisation.Fire</c>.</summary>
@@ -140,7 +145,7 @@ public sealed record SpecialisationDefinition
     public string TalentTree {
         get;
         set
-        ;
+            ;
     } = string.Empty;
 
     /// <summary>What has to be true to choose it.</summary>
@@ -178,7 +183,7 @@ public sealed class ProfessionTierDefinition {
     public int Skill {
         get;
         set
-        ;
+            ;
     }
 
     /// <summary>What reaching it is — <c>Profession.Smithing.Journeyman</c>.</summary>
@@ -199,7 +204,7 @@ public sealed record ProfessionDefinition : Definition {
     /// </remarks>
     public string Tag {
         get
-        ;
+            ;
         set;
     } = string.Empty;
 
@@ -210,7 +215,7 @@ public sealed record ProfessionDefinition : Definition {
     /// <summary>Its tiers, in ascending order of skill.</summary>
     public List<ProfessionTierDefinition> Tiers {
         get
-        ;
+            ;
         set;
     } = [];
 
@@ -269,7 +274,7 @@ public sealed record ReputationDefinition : Definition {
     public List<ReputationRankDefinition> Ranks {
         get;
         set
-        ;
+            ;
     } = [];
 
     /// <inheritdoc />

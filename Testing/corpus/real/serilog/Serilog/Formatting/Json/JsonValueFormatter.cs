@@ -15,33 +15,32 @@
 namespace Serilog.Formatting.Json;
 
 /// <summary>
-/// Converts Serilog's structured property value format into JSON.
+///     Converts Serilog's structured property value format into JSON.
 /// </summary>
-public class JsonValueFormatter : LogEventPropertyValueVisitor<TextWriter, bool>
-{
+public class JsonValueFormatter : LogEventPropertyValueVisitor<TextWriter, bool> {
     readonly string? _typeTagName;
 
     const string DefaultTypeTagName = "_typeTag";
 
     /// <summary>
-    /// Construct a <see cref="JsonFormatter"/>.
+    ///     Construct a <see cref="JsonFormatter" />.
     /// </summary>
-    /// <param name="typeTagName">When serializing structured (object) values,
-    /// the property name to use for the Serilog <see cref="StructureValue.TypeTag"/> field
-    /// in the resulting JSON. If null, no type tag field will be written. The default is
-    /// "_typeTag".</param>
-    public JsonValueFormatter(string? typeTagName = DefaultTypeTagName)
-    {
+    /// <param name="typeTagName">
+    ///     When serializing structured (object) values,
+    ///     the property name to use for the Serilog <see cref="StructureValue.TypeTag" /> field
+    ///     in the resulting JSON. If null, no type tag field will be written. The default is
+    ///     "_typeTag".
+    /// </param>
+    public JsonValueFormatter(string? typeTagName = DefaultTypeTagName) {
         _typeTagName = typeTagName;
     }
 
     /// <summary>
-    /// Format <paramref name="value"/> as JSON to <paramref name="output"/>.
+    ///     Format <paramref name="value" /> as JSON to <paramref name="output" />.
     /// </summary>
     /// <param name="value">The value to format</param>
     /// <param name="output">The output</param>
-    public void Format(LogEventPropertyValue value, TextWriter output)
-    {
+    public void Format(LogEventPropertyValue value, TextWriter output) {
         // Parameter order of ITextFormatter is the reverse of the visitor one.
         // In this class, public methods and methods with Format*() names use the
         // (x, output) parameter naming convention.
@@ -49,14 +48,13 @@ public class JsonValueFormatter : LogEventPropertyValueVisitor<TextWriter, bool>
     }
 
     /// <summary>
-    /// Visit a <see cref="ScalarValue"/> value.
+    ///     Visit a <see cref="ScalarValue" /> value.
     /// </summary>
     /// <param name="state">Operation state.</param>
     /// <param name="scalar">The value to visit.</param>
-    /// <returns>The result of visiting <paramref name="scalar"/>.</returns>
-    /// <exception cref="ArgumentNullException">When <paramref name="scalar"/> is <code>null</code></exception>
-    protected override bool VisitScalarValue(TextWriter state, ScalarValue scalar)
-    {
+    /// <returns>The result of visiting <paramref name="scalar" />.</returns>
+    /// <exception cref="ArgumentNullException">When <paramref name="scalar" /> is <code>null</code></exception>
+    protected override bool VisitScalarValue(TextWriter state, ScalarValue scalar) {
         Guard.AgainstNull(scalar);
 
         FormatLiteralValue(scalar.Value, state);
@@ -64,49 +62,46 @@ public class JsonValueFormatter : LogEventPropertyValueVisitor<TextWriter, bool>
     }
 
     /// <summary>
-    /// Visit a <see cref="SequenceValue"/> value.
+    ///     Visit a <see cref="SequenceValue" /> value.
     /// </summary>
     /// <param name="state">Operation state.</param>
     /// <param name="sequence">The value to visit.</param>
-    /// <returns>The result of visiting <paramref name="sequence"/>.</returns>
-    /// <exception cref="ArgumentNullException">When <paramref name="sequence"/> is <code>null</code></exception>
-    protected override bool VisitSequenceValue(TextWriter state, SequenceValue sequence)
-    {
+    /// <returns>The result of visiting <paramref name="sequence" />.</returns>
+    /// <exception cref="ArgumentNullException">When <paramref name="sequence" /> is <code>null</code></exception>
+    protected override bool VisitSequenceValue(TextWriter state, SequenceValue sequence) {
         Guard.AgainstNull(sequence);
 
         state.Write('[');
         char? delim = null;
-        for (var i = 0; i < sequence.Elements.Count; i++)
-        {
-            if (delim != null)
-            {
+        for (var i = 0; i < sequence.Elements.Count; i++) {
+            if (delim != null) {
                 state.Write(delim.Value);
             }
+
             delim = ',';
             Visit(state, sequence.Elements[i]);
         }
+
         state.Write(']');
         return false;
     }
 
     /// <summary>
-    /// Visit a <see cref="StructureValue"/> value.
+    ///     Visit a <see cref="StructureValue" /> value.
     /// </summary>
     /// <param name="state">Operation state.</param>
     /// <param name="structure">The value to visit.</param>
-    /// <returns>The result of visiting <paramref name="structure"/>.</returns>
-    protected override bool VisitStructureValue(TextWriter state, StructureValue structure)
-    {
+    /// <returns>The result of visiting <paramref name="structure" />.</returns>
+    protected override bool VisitStructureValue(TextWriter state, StructureValue structure) {
         state.Write('{');
 
         char? delim = null;
 
-        for (var i = 0; i < structure.Properties.Count; i++)
-        {
-            if (delim != null)
-            {
+        for (var i = 0; i < structure.Properties.Count; i++) {
+            if (delim != null) {
                 state.Write(delim.Value);
             }
+
             delim = ',';
             var prop = structure.Properties[i];
             WriteQuotedJsonString(prop.Name, state);
@@ -114,8 +109,7 @@ public class JsonValueFormatter : LogEventPropertyValueVisitor<TextWriter, bool>
             Visit(state, prop.Value);
         }
 
-        if (_typeTagName != null && structure.TypeTag != null)
-        {
+        if (_typeTagName != null && structure.TypeTag != null) {
             state.Write(delim);
             WriteQuotedJsonString(_typeTagName, state);
             state.Write(':');
@@ -127,30 +121,24 @@ public class JsonValueFormatter : LogEventPropertyValueVisitor<TextWriter, bool>
     }
 
     /// <summary>
-    /// Visit a <see cref="DictionaryValue"/> value.
+    ///     Visit a <see cref="DictionaryValue" /> value.
     /// </summary>
     /// <param name="state">Operation state.</param>
     /// <param name="dictionary">The value to visit.</param>
-    /// <returns>The result of visiting <paramref name="dictionary"/>.</returns>
-    protected override bool VisitDictionaryValue(TextWriter state, DictionaryValue dictionary)
-    {
+    /// <returns>The result of visiting <paramref name="dictionary" />.</returns>
+    protected override bool VisitDictionaryValue(TextWriter state, DictionaryValue dictionary) {
         state.Write('{');
         char? delim = null;
-        foreach (var element in dictionary.Elements)
-        {
-            if (delim != null)
-            {
+        foreach (var element in dictionary.Elements) {
+            if (delim != null) {
                 state.Write(delim.Value);
             }
 
             delim = ',';
             var key = element.Key.Value;
-            if (key is null)
-            {
+            if (key is null) {
                 state.Write("\"null\":");
-            }
-            else
-            {
+            } else {
                 WriteQuotedJsonString(key.ToString()!, state);
                 state.Write(':');
             }
@@ -163,17 +151,15 @@ public class JsonValueFormatter : LogEventPropertyValueVisitor<TextWriter, bool>
     }
 
     /// <summary>
-    /// Write a literal as a single JSON value, e.g. as a number or string. Override to
-    /// support more value types. Don't write arrays/structures through this method - the
-    /// active destructuring policies have already indicated the value should be scalar at
-    /// this point.
+    ///     Write a literal as a single JSON value, e.g. as a number or string. Override to
+    ///     support more value types. Don't write arrays/structures through this method - the
+    ///     active destructuring policies have already indicated the value should be scalar at
+    ///     this point.
     /// </summary>
     /// <param name="value">The value to write.</param>
     /// <param name="output">The output</param>
-    protected virtual void FormatLiteralValue(object? value, TextWriter output)
-    {
-        if (value == null)
-        {
+    protected virtual void FormatLiteralValue(object? value, TextWriter output) {
+        if (value == null) {
             FormatNullValue(output);
             return;
         }
@@ -184,106 +170,88 @@ public class JsonValueFormatter : LogEventPropertyValueVisitor<TextWriter, bool>
         // numeric (a handful) or an object (two comparisons) the real-world performance of the code
         // as written is as fast or faster.
 
-        if (value is string str)
-        {
+        if (value is string str) {
             FormatStringValue(str, output);
             return;
         }
 
-        if (value is ValueType)
-        {
-            if (value is int i)
-            {
+        if (value is ValueType) {
+            if (value is int i) {
                 FormatExactNumericValue(i, output);
                 return;
             }
 
-            if (value is uint ui)
-            {
+            if (value is uint ui) {
                 FormatExactNumericValue(ui, output);
                 return;
             }
 
-            if (value is long l)
-            {
+            if (value is long l) {
                 FormatExactNumericValue(l, output);
                 return;
             }
 
-            if (value is ulong ul)
-            {
+            if (value is ulong ul) {
                 FormatExactNumericValue(ul, output);
                 return;
             }
 
-            if (value is decimal dc)
-            {
+            if (value is decimal dc) {
                 FormatExactNumericValue(dc, output);
                 return;
             }
 
-            if (value is byte bt)
-            {
+            if (value is byte bt) {
                 FormatExactNumericValue(bt, output);
                 return;
             }
 
-            if (value is sbyte sb)
-            {
+            if (value is sbyte sb) {
                 FormatExactNumericValue(sb, output);
                 return;
             }
 
-            if (value is short s)
-            {
+            if (value is short s) {
                 FormatExactNumericValue(s, output);
                 return;
             }
 
-            if (value is ushort us)
-            {
+            if (value is ushort us) {
                 FormatExactNumericValue(us, output);
                 return;
             }
 
-            if (value is double d)
-            {
+            if (value is double d) {
                 FormatDoubleValue(d, output);
                 return;
             }
 
-            if (value is float f)
-            {
+            if (value is float f) {
                 FormatFloatValue(f, output);
                 return;
             }
 
-            if (value is bool b)
-            {
+            if (value is bool b) {
                 FormatBooleanValue(b, output);
                 return;
             }
 
-            if (value is char)
-            {
+            if (value is char) {
                 FormatStringValue(value.ToString()!, output);
                 return;
             }
 
-            if (value is DateTime dt)
-            {
+            if (value is DateTime dt) {
                 FormatDateTimeValue(dt, output);
                 return;
             }
 
-            if (value is DateTimeOffset dto)
-            {
+            if (value is DateTimeOffset dto) {
                 FormatDateTimeOffsetValue(dto, output);
                 return;
             }
 
-            if (value is TimeSpan timeSpan)
-            {
+            if (value is TimeSpan timeSpan) {
                 FormatTimeSpanValue(timeSpan, output);
                 return;
             }
@@ -306,15 +274,12 @@ public class JsonValueFormatter : LogEventPropertyValueVisitor<TextWriter, bool>
         FormatLiteralObjectValue(value, output);
     }
 
-    static void FormatBooleanValue(bool value, TextWriter output)
-    {
+    static void FormatBooleanValue(bool value, TextWriter output) {
         output.Write(value ? "true" : "false");
     }
 
-    static void FormatFloatValue(float value, TextWriter output)
-    {
-        if (float.IsNaN(value) || float.IsInfinity(value))
-        {
+    static void FormatFloatValue(float value, TextWriter output) {
+        if (float.IsNaN(value) || float.IsInfinity(value)) {
             FormatStringValue(value.ToString(CultureInfo.InvariantCulture), output);
             return;
         }
@@ -330,10 +295,8 @@ public class JsonValueFormatter : LogEventPropertyValueVisitor<TextWriter, bool>
 #endif
     }
 
-    static void FormatDoubleValue(double value, TextWriter output)
-    {
-        if (double.IsNaN(value) || double.IsInfinity(value))
-        {
+    static void FormatDoubleValue(double value, TextWriter output) {
+        if (double.IsNaN(value) || double.IsInfinity(value)) {
             FormatStringValue(value.ToString(CultureInfo.InvariantCulture), output);
             return;
         }
@@ -349,8 +312,7 @@ public class JsonValueFormatter : LogEventPropertyValueVisitor<TextWriter, bool>
 #endif
     }
 
-    static void FormatExactNumericValue(int value, TextWriter output)
-    {
+    static void FormatExactNumericValue(int value, TextWriter output) {
 #if FEATURE_SPAN
         Span<char> buffer = stackalloc char[64];
         if (value.TryFormat(buffer, out var written, provider: CultureInfo.InvariantCulture))
@@ -362,8 +324,7 @@ public class JsonValueFormatter : LogEventPropertyValueVisitor<TextWriter, bool>
 #endif
     }
 
-    static void FormatExactNumericValue(uint value, TextWriter output)
-    {
+    static void FormatExactNumericValue(uint value, TextWriter output) {
 #if FEATURE_SPAN
         Span<char> buffer = stackalloc char[64];
         if (value.TryFormat(buffer, out var written, provider: CultureInfo.InvariantCulture))
@@ -375,8 +336,7 @@ public class JsonValueFormatter : LogEventPropertyValueVisitor<TextWriter, bool>
 #endif
     }
 
-    static void FormatExactNumericValue(long value, TextWriter output)
-    {
+    static void FormatExactNumericValue(long value, TextWriter output) {
 #if FEATURE_SPAN
         Span<char> buffer = stackalloc char[64];
         if (value.TryFormat(buffer, out var written, provider: CultureInfo.InvariantCulture))
@@ -388,8 +348,7 @@ public class JsonValueFormatter : LogEventPropertyValueVisitor<TextWriter, bool>
 #endif
     }
 
-    static void FormatExactNumericValue(ulong value, TextWriter output)
-    {
+    static void FormatExactNumericValue(ulong value, TextWriter output) {
 #if FEATURE_SPAN
         Span<char> buffer = stackalloc char[64];
         if (value.TryFormat(buffer, out var written, provider: CultureInfo.InvariantCulture))
@@ -401,8 +360,7 @@ public class JsonValueFormatter : LogEventPropertyValueVisitor<TextWriter, bool>
 #endif
     }
 
-    static void FormatExactNumericValue(decimal value, TextWriter output)
-    {
+    static void FormatExactNumericValue(decimal value, TextWriter output) {
 #if FEATURE_SPAN
         Span<char> buffer = stackalloc char[64];
         if (value.TryFormat(buffer, out var written, provider: CultureInfo.InvariantCulture))
@@ -414,8 +372,7 @@ public class JsonValueFormatter : LogEventPropertyValueVisitor<TextWriter, bool>
 #endif
     }
 
-    static void FormatExactNumericValue(byte value, TextWriter output)
-    {
+    static void FormatExactNumericValue(byte value, TextWriter output) {
 #if FEATURE_SPAN
         Span<char> buffer = stackalloc char[64];
         if (value.TryFormat(buffer, out var written, provider: CultureInfo.InvariantCulture))
@@ -427,8 +384,7 @@ public class JsonValueFormatter : LogEventPropertyValueVisitor<TextWriter, bool>
 #endif
     }
 
-    static void FormatExactNumericValue(sbyte value, TextWriter output)
-    {
+    static void FormatExactNumericValue(sbyte value, TextWriter output) {
 #if FEATURE_SPAN
         Span<char> buffer = stackalloc char[64];
         if (value.TryFormat(buffer, out var written, provider: CultureInfo.InvariantCulture))
@@ -440,8 +396,7 @@ public class JsonValueFormatter : LogEventPropertyValueVisitor<TextWriter, bool>
 #endif
     }
 
-    static void FormatExactNumericValue(short value, TextWriter output)
-    {
+    static void FormatExactNumericValue(short value, TextWriter output) {
 #if FEATURE_SPAN
         Span<char> buffer = stackalloc char[64];
         if (value.TryFormat(buffer, out var written, provider: CultureInfo.InvariantCulture))
@@ -453,8 +408,7 @@ public class JsonValueFormatter : LogEventPropertyValueVisitor<TextWriter, bool>
 #endif
     }
 
-    static void FormatExactNumericValue(ushort value, TextWriter output)
-    {
+    static void FormatExactNumericValue(ushort value, TextWriter output) {
 #if FEATURE_SPAN
         Span<char> buffer = stackalloc char[64];
         if (value.TryFormat(buffer, out var written, provider: CultureInfo.InvariantCulture))
@@ -466,8 +420,7 @@ public class JsonValueFormatter : LogEventPropertyValueVisitor<TextWriter, bool>
 #endif
     }
 
-    static void FormatDateTimeValue(DateTime value, TextWriter output)
-    {
+    static void FormatDateTimeValue(DateTime value, TextWriter output) {
         output.Write('\"');
 
 #if FEATURE_SPAN
@@ -483,8 +436,7 @@ public class JsonValueFormatter : LogEventPropertyValueVisitor<TextWriter, bool>
         output.Write('\"');
     }
 
-    static void FormatDateTimeOffsetValue(DateTimeOffset value, TextWriter output)
-    {
+    static void FormatDateTimeOffsetValue(DateTimeOffset value, TextWriter output) {
         output.Write('\"');
 
 #if FEATURE_SPAN
@@ -500,8 +452,7 @@ public class JsonValueFormatter : LogEventPropertyValueVisitor<TextWriter, bool>
         output.Write('\"');
     }
 
-    static void FormatTimeSpanValue(TimeSpan value, TextWriter output)
-    {
+    static void FormatTimeSpanValue(TimeSpan value, TextWriter output) {
         output.Write('\"');
 #if FEATURE_SPAN
         Span<char> buffer = stackalloc char[64];
@@ -545,40 +496,34 @@ public class JsonValueFormatter : LogEventPropertyValueVisitor<TextWriter, bool>
 
 #endif
 
-    static void FormatLiteralObjectValue(object value, TextWriter output)
-    {
+    static void FormatLiteralObjectValue(object value, TextWriter output) {
         Guard.AgainstNull(value);
 
         FormatStringValue(value.ToString() ?? "", output);
     }
 
-    static void FormatStringValue(string str, TextWriter output)
-    {
+    static void FormatStringValue(string str, TextWriter output) {
         WriteQuotedJsonString(str, output);
     }
 
-    static void FormatNullValue(TextWriter output)
-    {
+    static void FormatNullValue(TextWriter output) {
         output.Write("null");
     }
 
     /// <summary>
-    /// Write a valid JSON string literal, escaping as necessary.
+    ///     Write a valid JSON string literal, escaping as necessary.
     /// </summary>
     /// <param name="str">The string value to write.</param>
     /// <param name="output">The output.</param>
-    public static void WriteQuotedJsonString(string str, TextWriter output)
-    {
+    public static void WriteQuotedJsonString(string str, TextWriter output) {
         output.Write('\"');
 
         var cleanSegmentStart = 0;
         var anyEscaped = false;
 
-        for (var i = 0; i < str.Length; ++i)
-        {
+        for (var i = 0; i < str.Length; ++i) {
             var c = str[i];
-            if (c is < (char)32 or '\\' or '"')
-            {
+            if (c is < (char)32 or '\\' or '"') {
                 anyEscaped = true;
 
 #if FEATURE_SPAN
@@ -588,8 +533,7 @@ public class JsonValueFormatter : LogEventPropertyValueVisitor<TextWriter, bool>
 #endif
                 cleanSegmentStart = i + 1;
 
-                switch (c)
-                {
+                switch (c) {
                     case '"':
                         output.Write("\\\"");
                         break;
@@ -616,17 +560,14 @@ public class JsonValueFormatter : LogEventPropertyValueVisitor<TextWriter, bool>
             }
         }
 
-        if (anyEscaped)
-        {
+        if (anyEscaped) {
             if (cleanSegmentStart != str.Length)
 #if FEATURE_SPAN
                 output.Write(str.AsSpan().Slice(cleanSegmentStart));
 #else
                 output.Write(str.Substring(cleanSegmentStart));
 #endif
-        }
-        else
-        {
+        } else {
             output.Write(str);
         }
 

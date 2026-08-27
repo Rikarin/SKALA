@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: Copyright (c) Rikarin
 // SPDX-License-Identifier: Apache-2.0
 namespace Vixen.Raven.Symbols;
+
 /// <summary>A storage buffer: <c>Buffer&lt;T&gt;</c> read-only, <c>RWBuffer&lt;T&gt;</c> read-write.</summary>
 /// <remarks>
 ///     <para>
@@ -22,14 +23,31 @@ namespace Vixen.Raven.Symbols;
 ///         can hoist loads out of a loop from a read-only buffer and cannot from a writable one.
 ///     </para>
 /// </remarks>
-public sealed class BufferTypeSymbol:TypeSymbol,IEquatable<BufferTypeSymbol>{
-/// <summary>The source name of the read-only form.</summary>
-public const string ReadOnlyName="Buffer" ;
-/// <summary>The source name of the read-write form.</summary>
-public const string ReadWriteName="RWBuffer" ;public TypeSymbol ElementType{get;}
-/// <summary>Whether an element may be assigned to.</summary>
-public bool IsWritable{get;}public override SymbolKind Kind=>SymbolKind.NamedType;public override TypeKind TypeKind=>TypeKind.Resource;public override ResourceKind ResourceKind=>ResourceKind.StorageBuffer;public override bool IsWritableResource=>IsWritable;public override string Name=>IsWritable?ReadWriteName:ReadOnlyName;public override Symbol?ContainingSymbol=>null;public BufferTypeSymbol(TypeSymbol elementType,bool isWritable){ElementType=elementType;IsWritable=isWritable;}
-/// <summary>
+public sealed class BufferTypeSymbol : TypeSymbol, IEquatable<BufferTypeSymbol> {
+    /// <summary>The source name of the read-only form.</summary>
+    public const string ReadOnlyName = "Buffer";
+
+    /// <summary>The source name of the read-write form.</summary>
+    public const string ReadWriteName = "RWBuffer";
+
+    public TypeSymbol ElementType { get; }
+
+    /// <summary>Whether an element may be assigned to.</summary>
+    public bool IsWritable { get; }
+
+    public override SymbolKind Kind => SymbolKind.NamedType;
+    public override TypeKind TypeKind => TypeKind.Resource;
+    public override ResourceKind ResourceKind => ResourceKind.StorageBuffer;
+    public override bool IsWritableResource => IsWritable;
+    public override string Name => IsWritable ? ReadWriteName : ReadOnlyName;
+    public override Symbol? ContainingSymbol => null;
+
+    public BufferTypeSymbol(TypeSymbol elementType, bool isWritable) {
+        ElementType = elementType;
+        IsWritable = isWritable;
+    }
+
+    /// <summary>
     ///     A buffer exposes <c>Length</c>; indexing is handled by the binder.
     /// </summary>
     /// <remarks>
@@ -38,4 +56,14 @@ public bool IsWritable{get;}public override SymbolKind Kind=>SymbolKind.NamedTyp
     ///     SPIR-V. That is the whole point of a buffer over an array, and it is why the
     ///     <c>ArrayLength</c> intrinsic exists.
     /// </remarks>
-public override IReadOnlyList<Symbol>GetMembers()=>[new SynthesizedFieldSymbol(this,"Length" ,BuiltInTypes.Int,true)];public override string ToDisplayString()=>$"{Name}<{ElementType.ToDisplayString()}>" ;public bool Equals(BufferTypeSymbol?other)=>other is not null&&IsWritable==other.IsWritable&&ElementType.Equals(other.ElementType);public override bool Equals(object?obj)=>Equals(obj as BufferTypeSymbol);public override int GetHashCode()=>HashCode.Combine(ElementType,IsWritable);}
+    public override IReadOnlyList<Symbol> GetMembers() =>
+        [new SynthesizedFieldSymbol(this, "Length", BuiltInTypes.Int, true)];
+
+    public override string ToDisplayString() => $"{Name}<{ElementType.ToDisplayString()}>";
+
+    public bool Equals(BufferTypeSymbol? other) =>
+        other is not null && IsWritable == other.IsWritable && ElementType.Equals(other.ElementType);
+
+    public override bool Equals(object? obj) => Equals(obj as BufferTypeSymbol);
+    public override int GetHashCode() => HashCode.Combine(ElementType, IsWritable);
+}

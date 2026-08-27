@@ -1,10 +1,17 @@
 class LambdaParens {
     void M() {
         Use((
-            int first) => first);
-        Use((int first,
-            int second) => first);
+                int first
+            ) => first
+        );
+        Use((
+                int first,
+                int second
+            ) => first
+        );
         Use(delegate(
-            int first) { return first; });
+                int first
+            ) { return first; }
+        );
     }
 }

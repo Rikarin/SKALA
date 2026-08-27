@@ -141,10 +141,10 @@ public class UiShapeLayoutTests {
         // The four radii are stored across two lanes rather than in the pair order they were given —
         // clockwise from the top left, horizontal in one and vertical in the other — so a record that
         // wrote them as pairs would round-trip through `CornerRadii` and draw the wrong corners.
-        AssertLane(floats, members["size"], [10f, 20f, 3f, (float) GradientShape.Conic]);
+        AssertLane(floats, members["size"], [10f, 20f, 3f, (float)GradientShape.Conic]);
         AssertLane(floats, members["radiiX"], [1f, 2f, 3f, 4f]);
         AssertLane(floats, members["radiiY"], [1f, 2f, 3f, 4f]);
-        AssertLane(floats, members["axis"], [0.5f, -0.25f, 7f, (float) GradientSpace.Oklab]);
+        AssertLane(floats, members["axis"], [0.5f, -0.25f, 7f, (float)GradientSpace.Oklab]);
         AssertLane(floats, members["endColour"], [0.11f, 0.12f, 0.13f, 0.14f]);
         AssertLane(floats, members["midColour"], [0.21f, 0.22f, 0.23f, 0.24f]);
         AssertLane(floats, members["stops"], [0.1f, 0.4f, 0.9f, 1f]);
@@ -191,7 +191,7 @@ public class UiShapeLayoutTests {
 
         Assert.True(field is not null, $"UiShape has no field behind `{property}`.");
 
-        return (int) Marshal.OffsetOf<UiShape>(field!.Name);
+        return (int)Marshal.OffsetOf<UiShape>(field!.Name);
     }
 
     /// <summary>What the committed reflection says the <c>shapes</c> buffer's element looks like.</summary>
@@ -231,7 +231,11 @@ public class UiShapeLayoutTests {
              directory is not null;
              directory = directory.Parent) {
             var candidate = Path.Combine(
-                directory.FullName, "Editor", "Vixen.Editor.Host", "Shaders", "UiBox.reflect.json"
+                directory.FullName,
+                "Editor",
+                "Vixen.Editor.Host",
+                "Shaders",
+                "UiBox.reflect.json"
             );
 
             if (File.Exists(candidate)) {

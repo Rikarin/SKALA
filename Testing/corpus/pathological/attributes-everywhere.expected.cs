@@ -5,7 +5,7 @@ using System;
 class MyAttribute : Attribute { }
 
 [My]
-class C<[My] T> {
+class C< [My] T> {
     [My]
     int _a;
 

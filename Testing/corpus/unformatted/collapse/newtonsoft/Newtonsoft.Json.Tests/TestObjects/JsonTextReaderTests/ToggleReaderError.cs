@@ -1,4 +1,5 @@
 #region License
+
 // Copyright (c) 2007 James Newton-King
 //
 // Permission is hereby granted, free of charge, to any person
@@ -21,5 +22,24 @@
 // WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 // OTHER DEALINGS IN THE SOFTWARE.
+
 #endregion
-using System;using System.IO;namespace Newtonsoft.Json.Tests.TestObjects.JsonTextReaderTests{public class ToggleReaderError:TextReader{private readonly TextReader _inner;public bool Error{get;set;}public ToggleReaderError(TextReader inner){_inner=inner;}public override int Read(char[]buffer,int index,int count){if(Error){throw new Exception("Read error" );}return _inner.Read(buffer,index,1);}}}
+
+using System; using System.IO; namespace Newtonsoft.Json.Tests.TestObjects.JsonTextReaderTests {
+    public class ToggleReaderError : TextReader {
+        private readonly TextReader _inner;
+        public bool Error { get; set; }
+
+        public ToggleReaderError(TextReader inner) {
+            _inner = inner;
+        }
+
+        public override int Read(char[] buffer, int index, int count) {
+            if (Error) {
+                throw new Exception("Read error");
+            }
+
+            return _inner.Read(buffer, index, 1);
+        }
+    }
+}

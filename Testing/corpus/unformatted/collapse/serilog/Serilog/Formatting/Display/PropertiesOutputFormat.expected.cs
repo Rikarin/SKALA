@@ -29,9 +29,9 @@ static class PropertiesOutputFormat {
         if (format?.Contains("j") == true) {
             var sv = new StructureValue(
                 properties.Where(kvp =>
-                        !(TemplateContainsPropertyName(template, kvp.Key)
-                            || TemplateContainsPropertyName(outputTemplate, kvp.Key))
-                    )
+                    !(TemplateContainsPropertyName(template, kvp.Key)
+                        || TemplateContainsPropertyName(outputTemplate, kvp.Key))
+                )
                     .Select(kvp => new LogEventProperty(kvp.Key, kvp.Value))
             );
             JsonValueFormatter.Format(sv, output);

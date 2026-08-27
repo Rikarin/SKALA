@@ -27,8 +27,11 @@ namespace Vixen.ShaderCompiler;
 ///     </para>
 ///     <para>
 ///         <strong>The naming has to match the generator, not merely resemble it.</strong>
-///         <c>Vixen.Shaders.Generators</c> emits <c>ParameterKeys.New&lt;float&gt;
-///         ("Lighting.exposure")</c> from the same reflection at build time; this produces the key a
+///         <c>Vixen.Shaders.Generators</c> emits
+///         <c>
+///ParameterKeys.New&lt;float&gt;
+///         ("Lighting.exposure")
+///         </c> from the same reflection at build time; this produces the key a
 ///         loaded effect writes through. They are interned by name, so agreeing means they are the
 ///         same object and disagreeing means two keys for one offset — a value set through the
 ///         generated one landing nowhere.
@@ -95,15 +98,15 @@ public static class EffectTranslator {
     ///     values from the wrong one is how a variant ends up keyed on a flag it never branched on.
     /// </remarks>
     static IEnumerable<EffectPermutationValue> Permutations(CompiledEffect effect) {
-        foreach (var (name, value)in effect.PermutationKey) {
+        foreach (var (name, value) in effect.PermutationKey) {
             var declared = effect.Reflection.Permutations.FirstOrDefault(permutation => permutation.Name == name);
             yield return new(
                 Qualified(
                     effect.Name,
                     name
                 ), // "default" is Raven's way of saying nobody supplied one, which the engine spells as
-// the declared value — a key has to hold what the variant was actually built with or
-// two spellings of one variant get two cache entries.
+                // the declared value — a key has to hold what the variant was actually built with or
+                // two spellings of one variant get two cache entries.
                 value == "default" ? declared?.DefaultValue ?? value : value,
                 Kind(declared?.Type),
                 declared?.DefaultValue ?? string.Empty
@@ -285,7 +288,7 @@ public static class EffectTranslator {
             DescriptorType.StorageImage =>
                 DescriptorKind
                     .StorageTexture, // Spelled out rather than left to the fallback below, which would silently make the
-// scene's hierarchy a uniform buffer — a layout the driver refuses at best.
+            // scene's hierarchy a uniform buffer — a layout the driver refuses at best.
             DescriptorType.AccelerationStructure => DescriptorKind.AccelerationStructure,
             _ => DescriptorKind.UniformBuffer
         };
@@ -304,7 +307,7 @@ public static class EffectTranslator {
         }
 
         if (type.IsMatrix) {
-            return (type.Rows, type.Columns)switch {
+            return (type.Rows, type.Columns) switch {
                 (4, 4) => ShaderValueKind.Matrix4x4,
                 (3, 3) => ShaderValueKind.Matrix3x3,
                 _ => ShaderValueKind.Unknown

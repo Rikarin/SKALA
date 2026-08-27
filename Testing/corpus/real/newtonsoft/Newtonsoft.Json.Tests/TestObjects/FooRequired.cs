@@ -1,4 +1,5 @@
 #region License
+
 // Copyright (c) 2007 James Newton-King
 //
 // Permission is hereby granted, free of charge, to any person
@@ -21,22 +22,19 @@
 // WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 // OTHER DEALINGS IN THE SOFTWARE.
+
 #endregion
 
 using System.Collections.Generic;
 
-namespace Newtonsoft.Json.Tests.TestObjects
-{
-    public class FooRequired
-    {
+namespace Newtonsoft.Json.Tests.TestObjects {
+    public class FooRequired {
         [JsonProperty(Required = Required.Always)]
         public List<string> Bars { get; private set; }
 
-        public FooRequired(IEnumerable<string> bars)
-        {
+        public FooRequired(IEnumerable<string> bars) {
             Bars = new List<string>();
-            if (bars != null)
-            {
+            if (bars != null) {
                 Bars.AddRange(bars);
             }
         }

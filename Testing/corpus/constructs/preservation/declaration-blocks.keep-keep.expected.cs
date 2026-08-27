@@ -4,7 +4,9 @@ class DeclarationBlocks {
 
     void EmptyBroken() { }
 
-    void OneStatementOnOneLine() { Body(); }
+    void OneStatementOnOneLine() {
+        Body();
+    }
 
     void OneStatementBroken() {
         Body();

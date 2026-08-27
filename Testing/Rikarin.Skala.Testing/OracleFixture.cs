@@ -35,12 +35,12 @@ public sealed record OracleHeader(string ReSharperVersion, string ConfigHash, st
 }
 
 /// <summary>
-/// Reads and writes the committed <c>jb cleanupcode</c> fixtures.
+///     Reads and writes the committed <c>jb cleanupcode</c> fixtures.
 /// </summary>
 /// <remarks>
-/// ⚠ docs/plan/12 § "The oracle": regenerating a fixture on failure is forbidden. An oracle that
-/// updates itself when it disagrees is a tautology. Only <c>./build.sh Oracle</c> writes here, and
-/// its diff is reviewed in its own commit.
+///     ⚠ docs/plan/12 § "The oracle": regenerating a fixture on failure is forbidden. An oracle that
+///     updates itself when it disagrees is a tautology. Only <c>./build.sh Oracle</c> writes here, and
+///     its diff is reviewed in its own commit.
 /// </remarks>
 public static class OracleFixture {
     /// <summary>The format-only fixture's body, with the header line removed.</summary>
@@ -114,8 +114,8 @@ public static class OracleFixture {
 }
 
 /// <summary>
-/// A tiny helper so a fixture body can be compared after normalising the line endings the oracle
-/// happens to have written.
+///     A tiny helper so a fixture body can be compared after normalising the line endings the oracle
+///     happens to have written.
 /// </summary>
 public static class TextNormalisation {
     public static string[] Lines(string text) =>

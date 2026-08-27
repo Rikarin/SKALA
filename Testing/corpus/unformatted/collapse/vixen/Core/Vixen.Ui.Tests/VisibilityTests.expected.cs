@@ -11,8 +11,11 @@ namespace Vixen.Ui.Tests;
 /// </summary>
 /// <remarks>
 ///     <para>
-///         ⚠ <b>The <c>shown</c> branch in <see cref="DrawListBuilder" /> had no test at all, and
-///         that is the reason this file exists rather than the keyword being a one-line change.</b>
+///         ⚠
+///         <b>
+///             The <c>shown</c> branch in <see cref="DrawListBuilder" /> had no test at all, and
+///             that is the reason this file exists rather than the keyword being a one-line change.
+///         </b>
 ///         The property was read; nothing anywhere asserted that reading it did anything, so the
 ///         difference between "honoured" and "parsed and dropped" was invisible to the suite. Two of
 ///         the four behaviours below turned out to be missing when they were finally written down.
@@ -75,9 +78,9 @@ public class VisibilityTests {
             command.Width,
             Tolerance
         ); // ⚠ The load-bearing half, and the reason the root is a block rather than the default flex
-// row: stacked, the sibling's offset is the hidden box's height, so the number below is the
-// space the hidden box still occupies. It reads 0 under `display: none` and 40 under
-// `visibility: hidden`, which is the entire difference between the two properties.
+        // row: stacked, the sibling's offset is the hidden box's height, so the number below is the
+        // space the hidden box still occupies. It reads 0 under `display: none` and 40 under
+        // `visibility: hidden`, which is the entire difference between the two properties.
         var box = document.Root.Children[0];
         Assert.Equal(60f, box.Width, Tolerance);
         Assert.Equal(40f, box.Height, Tolerance);

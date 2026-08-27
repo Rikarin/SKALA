@@ -1,4 +1,5 @@
 // skala-oracle: resharper=2025.2.6 config=sha256:98ff52570e019fac profile=SkalaCleanup generated=2026-08-27
+
 #region License
 
 // Copyright (c) 2007 James Newton-King
@@ -33,7 +34,7 @@ using System.Runtime.Serialization;
 
 namespace Newtonsoft.Json.Serialization {
     /// <summary>
-    /// The default serialization binder used when resolving and loading classes from type names.
+    ///     The default serialization binder used when resolving and loading classes from type names.
     /// </summary>
     [RequiresUnreferencedCode(MiscellaneousUtils.TrimWarning)]
     [RequiresDynamicCode(MiscellaneousUtils.AotWarning)]
@@ -47,7 +48,7 @@ namespace Newtonsoft.Json.Serialization {
         readonly ThreadSafeStore<StructMultiKey<string?, string>, Type> _typeCache;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="DefaultSerializationBinder"/> class.
+        ///     Initializes a new instance of the <see cref="DefaultSerializationBinder" /> class.
         /// </summary>
         public DefaultSerializationBinder() {
             _typeCache = new ThreadSafeStore<StructMultiKey<string?, string>, Type>(GetTypeFromTypeNameKey);
@@ -179,22 +180,22 @@ namespace Newtonsoft.Json.Serialization {
         Type GetTypeByName(StructMultiKey<string?, string> typeNameKey) => _typeCache.Get(typeNameKey);
 
         /// <summary>
-        /// When overridden in a derived class, controls the binding of a serialized object to a type.
+        ///     When overridden in a derived class, controls the binding of a serialized object to a type.
         /// </summary>
-        /// <param name="assemblyName">Specifies the <see cref="Assembly"/> name of the serialized object.</param>
-        /// <param name="typeName">Specifies the <see cref="System.Type"/> name of the serialized object.</param>
+        /// <param name="assemblyName">Specifies the <see cref="Assembly" /> name of the serialized object.</param>
+        /// <param name="typeName">Specifies the <see cref="System.Type" /> name of the serialized object.</param>
         /// <returns>
-        /// The type of the object the formatter creates a new instance of.
+        ///     The type of the object the formatter creates a new instance of.
         /// </returns>
         public override Type BindToType(string? assemblyName, string typeName) =>
             GetTypeByName(new StructMultiKey<string?, string>(assemblyName, typeName));
 
         /// <summary>
-        /// When overridden in a derived class, controls the binding of a serialized object to a type.
+        ///     When overridden in a derived class, controls the binding of a serialized object to a type.
         /// </summary>
         /// <param name="serializedType">The type of the object the formatter creates a new instance of.</param>
-        /// <param name="assemblyName">Specifies the <see cref="Assembly"/> name of the serialized object.</param>
-        /// <param name="typeName">Specifies the <see cref="System.Type"/> name of the serialized object.</param>
+        /// <param name="assemblyName">Specifies the <see cref="Assembly" /> name of the serialized object.</param>
+        /// <param name="typeName">Specifies the <see cref="System.Type" /> name of the serialized object.</param>
         public
 #if HAVE_SERIALIZATION_BINDER_BIND_TO_NAME
         override

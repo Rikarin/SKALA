@@ -84,8 +84,8 @@ public static class Ktx2 {
         var descriptorOffset =
             HeaderLength
             + indexLength; // Where every level starts, worked out smallest first because that is the order the bytes
-// run in. The padding between them is mipPadding and it has to be there — see the remarks
-// on LevelAlignmentOf.
+        // run in. The padding between them is mipPadding and it has to be there — see the remarks
+        // on LevelAlignmentOf.
         var alignment = LevelAlignmentOf(texture.Format);
         var offsets = new int[texture.LevelCount];
         var cursor = descriptorOffset + descriptor.Length;
@@ -106,7 +106,7 @@ public static class Ktx2 {
             header[12 ..],
             (uint)texture.Height
         ); // Zero rather than one for a 2D texture: the specification says pixelDepth is 0 when the
-// texture is not 3D, and a reader that saw 1 would build a 3D texture one slice deep.
+        // texture is not 3D, and a reader that saw 1 would build a 3D texture one slice deep.
         BinaryPrimitives.WriteUInt32LittleEndian(header[16 ..], texture.Depth > 1 ? (uint)texture.Depth : 0);
         BinaryPrimitives.WriteUInt32LittleEndian(header[20 ..], texture.LayerCount > 1 ? (uint)texture.LayerCount : 0);
         BinaryPrimitives.WriteUInt32LittleEndian(header[24 ..], (uint)texture.FaceCount);
@@ -176,8 +176,11 @@ public static class Ktx2 {
     /// <param name="file">The file's bytes, or at least <see cref="LayoutLength" /> of the front of it.</param>
     /// <returns>The layout.</returns>
     /// <remarks>
-    ///     ⚠ <b>This validates the level index against the format and the extents, and not against
-    ///     the file's length.</b> A caller holding only the head has no length to check against, and
+    ///     ⚠
+    ///     <b>
+    ///         This validates the level index against the format and the extents, and not against
+    ///         the file's length.
+    ///     </b> A caller holding only the head has no length to check against, and
     ///     one holding the whole file gets the check from <see cref="Read" /> and
     ///     <see cref="ReadTail" /> where the copy happens. What is checked here is the part a short
     ///     read cannot excuse: a level whose declared size disagrees with what its extent and format
@@ -214,7 +217,7 @@ public static class Ktx2 {
         }
 
         var format = VkFormats.To(vkFormat);
-        var levels = new Ktx2Level [levelCount];
+        var levels = new Ktx2Level[levelCount];
         for (var level = 0; level < levelCount; level++) {
             var entry = file[(HeaderLength + (level * LevelIndexEntryLength)) ..];
             var offset = (long)BinaryPrimitives.ReadUInt64LittleEndian(entry);

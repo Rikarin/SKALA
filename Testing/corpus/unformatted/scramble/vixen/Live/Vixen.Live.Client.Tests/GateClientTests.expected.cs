@@ -66,13 +66,13 @@ public class GateClientTests {
     [Fact]
     public async Task Signing_out_forgets_the_token_locally() {
         using var
-            gate = new FakeGate().Answers(
-                new SignInResponse("a.b.c", Guid.NewGuid(), Noon),
-                GateJson.Default.SignInResponse
-            );
+        gate = new FakeGate().Answers(
+            new SignInResponse("a.b.c", Guid.NewGuid(), Noon),
+            GateJson.Default.SignInResponse
+        );
 
         using var
-            http = gate.Client;
+        http = gate.Client;
         var client = new GateClient(http);
         await client.SignInAsync("development", "alice", TestContext.Current.CancellationToken);
         client.SignOut();
@@ -136,7 +136,7 @@ public class GateClientTests {
         var client = new GateClient(http);
 
         var
-            answer = await client.CatalogAsync(TestContext.Current.CancellationToken);
+        answer = await client.CatalogAsync(TestContext.Current.CancellationToken);
         Assert.Equal(502, answer.Status);
         Assert.Equal("unexplained", answer.Problem!.Code);
         Assert.False(answer.Unreachable);
@@ -146,14 +146,14 @@ public class GateClientTests {
     public async Task Playing_returns_the_endpoint_and_the_ticket_untouched() {
         using var gate = new FakeGate().Answers(
             new
-                PlayResponse(
-                    PlayStatus.Placed,
-                    "realm.example:30000",
-                    "a ticket",
-                    "9c1f",
-                    "it has room",
-                    TimeSpan.Zero
-                ),
+            PlayResponse(
+                PlayStatus.Placed,
+                "realm.example:30000",
+                "a ticket",
+                "9c1f",
+                "it has room",
+                TimeSpan.Zero
+            ),
             GateJson.Default.PlayResponse
         );
         using var http =
@@ -185,7 +185,7 @@ public class GateClientTests {
         var client = new GateClient(http);
 
         var
-            answer = await client.EnterAsync(Play(), 5, TestContext.Current.CancellationToken);
+        answer = await client.EnterAsync(Play(), 5, TestContext.Current.CancellationToken);
         Assert.Equal(PlayStatus.Placed, answer.Value!.Status);
         Assert.Equal(3, gate.Seen.Count);
     }
@@ -205,7 +205,7 @@ public class GateClientTests {
         Assert.Equal(
             PlayStatus.Starting,
             answer.Value
-                !.Status
+            !.Status
         );
         Assert.Equal(2, gate.Seen.Count);
     }
@@ -220,7 +220,7 @@ public class GateClientTests {
         Task Entering_does_not_retry_an_update_and_hands_it_straight_back() {
         using var gate = new FakeGate().Answers(
             new
-                PlayResponse(PlayStatus.UpdateRequired, "", "", "", "fetch the catalog", TimeSpan.Zero),
+            PlayResponse(PlayStatus.UpdateRequired, "", "", "", "fetch the catalog", TimeSpan.Zero),
             GateJson.Default.PlayResponse
         );
 
@@ -229,7 +229,7 @@ public class GateClientTests {
             GateClient(http);
 
         var
-            answer = await client.EnterAsync(Play(), 5, TestContext.Current.CancellationToken);
+        answer = await client.EnterAsync(Play(), 5, TestContext.Current.CancellationToken);
         Assert.Equal(
             PlayStatus.UpdateRequired,
             answer
@@ -242,12 +242,12 @@ public class GateClientTests {
     public async Task Entering_stops_at_a_refusal_rather_than_retrying_it() {
         using var gate = new FakeGate().Answers(
             new
-                PlayResponse(PlayStatus.Refused, "", "", "", "the map is at MaxShards", TimeSpan.Zero),
+            PlayResponse(PlayStatus.Refused, "", "", "", "the map is at MaxShards", TimeSpan.Zero),
             GateJson.Default.PlayResponse
         );
 
         using var
-            http = gate.Client;
+        http = gate.Client;
         var client = new GateClient(http);
         var answer = await client.EnterAsync(Play(), 5, TestContext.Current.CancellationToken);
         Assert.Equal(PlayStatus.Refused, answer.Value!.Status);

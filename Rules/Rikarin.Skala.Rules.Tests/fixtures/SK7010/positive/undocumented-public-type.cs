@@ -1,2 +1,1 @@
-public sealed class Undocumented {
-}
+public sealed class Undocumented { }

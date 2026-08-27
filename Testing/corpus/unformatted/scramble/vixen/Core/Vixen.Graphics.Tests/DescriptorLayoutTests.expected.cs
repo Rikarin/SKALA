@@ -34,7 +34,7 @@ public class DescriptorLayoutTests {
     [Fact]
     public void ABindingThatSaysNothingIsAFilterableFloat() {
         var
-            binding = new DescriptorBinding(0, DescriptorKind.SampledTexture, ShaderStage.Fragment);
+        binding = new DescriptorBinding(0, DescriptorKind.SampledTexture, ShaderStage.Fragment);
 
         Assert.Equal(DescriptorSampleType.Float, binding.SampleType);
         Assert.True(binding.Filters);

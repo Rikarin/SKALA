@@ -1,4 +1,5 @@
 #region License
+
 // Copyright (c) 2007 James Newton-King
 //
 // Permission is hereby granted, free of charge, to any person
@@ -21,9 +22,56 @@
 // WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 // OTHER DEALINGS IN THE SOFTWARE.
+
 #endregion
-using System;namespace Newtonsoft.Json.Tests.TestObjects.JsonTextReaderTests{public class UnmanagedResourceFakingJsonReader:JsonReader{public static int DisposalCalls;public static void CreateAndDispose(){((IDisposable)new UnmanagedResourceFakingJsonReader()).Dispose();}public UnmanagedResourceFakingJsonReader(){DisposalCalls=0;}protected override void Dispose(bool disposing){base.Dispose(disposing);++DisposalCalls;}~UnmanagedResourceFakingJsonReader(){Dispose(false);}public override bool Read(){throw new NotImplementedException();}public override byte[]ReadAsBytes(){throw new NotImplementedException();}public override DateTime?ReadAsDateTime(){throw new NotImplementedException();}
+
+using System; namespace Newtonsoft.Json.Tests.TestObjects.JsonTextReaderTests {
+    public class UnmanagedResourceFakingJsonReader : JsonReader {
+        public static int DisposalCalls;
+
+        public static void CreateAndDispose() {
+            ((IDisposable)new UnmanagedResourceFakingJsonReader()).Dispose();
+        }
+
+        public UnmanagedResourceFakingJsonReader() {
+            DisposalCalls = 0;
+        }
+
+        protected override void Dispose(bool disposing) {
+            base.Dispose(disposing);
+            ++DisposalCalls;
+        }
+
+        ~UnmanagedResourceFakingJsonReader() {
+            Dispose(false);
+        }
+
+        public override bool Read() {
+            throw new NotImplementedException();
+        }
+
+        public override byte[] ReadAsBytes() {
+            throw new NotImplementedException();
+        }
+
+        public override DateTime? ReadAsDateTime() {
+            throw new NotImplementedException();
+        }
 #if !NET20
-public override DateTimeOffset?ReadAsDateTimeOffset(){throw new NotImplementedException();}
+        public override DateTimeOffset? ReadAsDateTimeOffset() {
+            throw new NotImplementedException();
+        }
 #endif
-public override decimal?ReadAsDecimal(){throw new NotImplementedException();}public override int?ReadAsInt32(){throw new NotImplementedException();}public override string ReadAsString(){throw new NotImplementedException();}}}
+        public override decimal? ReadAsDecimal() {
+            throw new NotImplementedException();
+        }
+
+        public override int? ReadAsInt32() {
+            throw new NotImplementedException();
+        }
+
+        public override string ReadAsString() {
+            throw new NotImplementedException();
+        }
+    }
+}

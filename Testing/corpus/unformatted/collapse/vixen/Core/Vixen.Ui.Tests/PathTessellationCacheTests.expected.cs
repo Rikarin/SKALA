@@ -45,7 +45,7 @@ public class PathTessellationCacheTests {
             1,
             builder.TessellatedPaths
         ); // A *fresh* list with the same content, which is what a frame actually hands over — the list
-// is rebuilt every frame and never mutated in place.
+        // is rebuilt every frame and never mutated in place.
         builder.Build(Drawn(Blob(), Color4.White), glyphs, Viewport);
         Assert.Equal(0, builder.TessellatedPaths);
         Assert.Equal(1, builder.CachedPaths);
@@ -97,8 +97,11 @@ public class PathTessellationCacheTests {
     }
 
     /// <summary>
-    ///     ⚠ <b>Every input the tessellator reads is in the key, and a stroke's width is the one most
-    ///     easily forgotten.</b> Leaving it out is a line that keeps the weight it had.
+    ///     ⚠
+    ///     <b>
+    ///         Every input the tessellator reads is in the key, and a stroke's width is the one most
+    ///         easily forgotten.
+    ///     </b> Leaving it out is a line that keeps the weight it had.
     /// </summary>
     [Fact]
     public void A_stroke_that_changed_width_is_tessellated_again() {

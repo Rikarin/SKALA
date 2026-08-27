@@ -11,39 +11,39 @@ using Rikarin.Skala.Rules.Metadata;
 namespace Rikarin.Skala.Rules.Performance;
 
 /// <summary>
-/// <c>SK4010</c> — <c>xs.Where(p).First()</c> is <c>xs.First(p)</c>.
+///     <c>SK4010</c> — <c>xs.Where(p).First()</c> is <c>xs.First(p)</c>.
 /// </summary>
 /// <remarks>
-/// docs/plan/08-rule-catalogue.md § "SK4000 — Performance". <c>Enumerable.Where</c> allocates an
-/// iterator that the next operator wraps and drives, so every element crosses two
-/// <c>MoveNext</c> frames instead of one. Nine operators have an overload that takes the predicate
-/// directly and does the same work in one loop, and LINQ defines the two forms to select the same
-/// elements in the same order — so the rewrite has no semantic content, which is exactly what makes
-/// it a rule rather than a review comment.
-/// <para>
-/// ⚠ The predicate overload must exist on the <em>compilation's</em> <c>Enumerable</c>, and it is
-/// looked up rather than assumed. The rule ships into a netstandard2.0 analyzer that runs against
-/// whatever framework the project targets, and a name that happens to match is not a proof that the
-/// overload the fix writes will bind.
-/// </para>
-/// <para>
-/// ⚠ <c>Queryable</c> is deliberately excluded. A provider is free to translate
-/// <c>Where(p).First()</c> and not <c>First(p)</c>, and a fix that turns a working query into a
-/// runtime "unsupported expression" is worse than the allocation it saved.
-/// </para>
+///     docs/plan/08-rule-catalogue.md § "SK4000 — Performance". <c>Enumerable.Where</c> allocates an
+///     iterator that the next operator wraps and drives, so every element crosses two
+///     <c>MoveNext</c> frames instead of one. Nine operators have an overload that takes the predicate
+///     directly and does the same work in one loop, and LINQ defines the two forms to select the same
+///     elements in the same order — so the rewrite has no semantic content, which is exactly what makes
+///     it a rule rather than a review comment.
+///     <para>
+///         ⚠ The predicate overload must exist on the <em>compilation's</em> <c>Enumerable</c>, and it is
+///         looked up rather than assumed. The rule ships into a netstandard2.0 analyzer that runs against
+///         whatever framework the project targets, and a name that happens to match is not a proof that the
+///         overload the fix writes will bind.
+///     </para>
+///     <para>
+///         ⚠ <c>Queryable</c> is deliberately excluded. A provider is free to translate
+///         <c>Where(p).First()</c> and not <c>First(p)</c>, and a fix that turns a working query into a
+///         runtime "unsupported expression" is worse than the allocation it saved.
+///     </para>
 /// </remarks>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class WhereBeforeOperatorAnalyzer : DiagnosticAnalyzer {
     static readonly DiagnosticDescriptor Descriptor = SkalaRule.Descriptor(RuleIds.WhereBeforeLinqOperator);
 
     /// <summary>
-    /// The operators whose predicate overload is defined to iterate identically.
+    ///     The operators whose predicate overload is defined to iterate identically.
     /// </summary>
     /// <remarks>
-    /// ⚠ Not every operator that takes a predicate belongs here. <c>Where(p).All(q)</c> and
-    /// <c>Where(p).Sum(f)</c> take a <em>different</em> function, so folding them is a rewrite of
-    /// the program rather than of the pipeline; <c>Where(p).Select(f)</c> has no predicate overload
-    /// at all. This list is the set where the second argument is the same predicate.
+    ///     ⚠ Not every operator that takes a predicate belongs here. <c>Where(p).All(q)</c> and
+    ///     <c>Where(p).Sum(f)</c> take a <em>different</em> function, so folding them is a rewrite of
+    ///     the program rather than of the pipeline; <c>Where(p).Select(f)</c> has no predicate overload
+    ///     at all. This list is the set where the second argument is the same predicate.
     /// </remarks>
     static readonly string[] Consumers = [
         "Any", "Count", "First", "FirstOrDefault", "Last", "LastOrDefault", "LongCount", "Single",
@@ -180,13 +180,13 @@ public sealed class WhereBeforeOperatorAnalyzer : DiagnosticAnalyzer {
     }
 
     /// <summary>
-    /// The method as <c>Enumerable</c> declares it, whether it was called as an extension or not.
+    ///     The method as <c>Enumerable</c> declares it, whether it was called as an extension or not.
     /// </summary>
     /// <remarks>
-    /// ⚠ <c>Enumerable.Where(xs, p).First()</c> and <c>xs.Where(p).First()</c> are the same call
-    /// and the same fix — the second edit is written from the argument list's parentheses, which
-    /// both forms have in the same place. <c>ReducedFrom</c> is what makes the extension form's
-    /// parameter count comparable to the static form's.
+    ///     ⚠ <c>Enumerable.Where(xs, p).First()</c> and <c>xs.Where(p).First()</c> are the same call
+    ///     and the same fix — the second edit is written from the argument list's parentheses, which
+    ///     both forms have in the same place. <c>ReducedFrom</c> is what makes the extension form's
+    ///     parameter count comparable to the static form's.
     /// </remarks>
     static IMethodSymbol Original(IMethodSymbol method) => (method.ReducedFrom ?? method).OriginalDefinition;
 
@@ -201,13 +201,13 @@ public sealed class WhereBeforeOperatorAnalyzer : DiagnosticAnalyzer {
     }
 
     /// <summary>
-    /// Whether everything between the end of <paramref name="first"/> and the end of
-    /// <paramref name="last"/> is whitespace and tokens — no comment, no directive.
+    ///     Whether everything between the end of <paramref name="first" /> and the end of
+    ///     <paramref name="last" /> is whitespace and tokens — no comment, no directive.
     /// </summary>
     /// <remarks>
-    /// ⚠ <paramref name="last"/>'s own trailing trivia is deliberately not examined: the deleted
-    /// span ends at <c>Span.End</c>, which is before it. Checking it would refuse a fix over
-    /// `…First(); // why` and there is nothing wrong with that comment.
+    ///     ⚠ <paramref name="last" />'s own trailing trivia is deliberately not examined: the deleted
+    ///     span ends at <c>Span.End</c>, which is before it. Checking it would refuse a fix over
+    ///     `…First(); // why` and there is nothing wrong with that comment.
     /// </remarks>
     static bool IsLayoutOnlyBetween(SyntaxToken first, SyntaxToken last) {
         for (var token = first; token.RawKind != (int)SyntaxKind.None && token != last; token = token.GetNextToken()) {

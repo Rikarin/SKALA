@@ -52,7 +52,7 @@ public sealed class MalformedHeightmapPngTests {
         var failure =
             Assert.Throws<ArgumentException>(() => TerrainHeightmapPng.Decode(file)
             ); // The message names the file rather than repeating "Specified argument was out of the range
-// of valid values", which is what the slice said and is what an importer used to report.
+        // of valid values", which is what the slice said and is what an importer used to report.
         Assert.Contains("chunk", failure.Message, StringComparison.OrdinalIgnoreCase);
     }
 

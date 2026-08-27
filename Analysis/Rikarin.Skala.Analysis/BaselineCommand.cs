@@ -7,28 +7,28 @@ using Rikarin.Skala.Reporting;
 namespace Rikarin.Skala.Analysis;
 
 /// <summary>
-/// <c>skala baseline create | update | prune | show</c>.
+///     <c>skala baseline create | update | prune | show</c>.
 /// </summary>
 /// <remarks>
-/// docs/plan/09 § "The baseline". The baseline is "a reviewed, committed artefact — its diff in a
-/// PR is 'we suppressed these', which is exactly the conversation that should happen".
-/// <para>
-/// ⚠ The three verbs are three different decisions and collapsing any two of them loses the point:
-/// <list type="bullet">
-/// <item><b>create</b> — accept everything that fires now. The one-time adoption step.</item>
-/// <item>
-/// <b>update</b> — accept what fires now <em>in addition to</em> what is already accepted. It never
-/// removes an entry, so running it can only ever widen what is suppressed, and the diff shows
-/// exactly by how much.
-/// </item>
-/// <item>
-/// ⚠ <b>prune</b> — drop the entries that no longer fire. Separate, and never automatic:
-/// "a baseline that self-prunes lets a rule that silently stopped working look like progress".
-/// A rule that was accidentally disabled and a rule whose findings were fixed produce identical
-/// prunes, and only a person can tell them apart.
-/// </item>
-/// </list>
-/// </para>
+///     docs/plan/09 § "The baseline". The baseline is "a reviewed, committed artefact — its diff in a
+///     PR is 'we suppressed these', which is exactly the conversation that should happen".
+///     <para>
+///         ⚠ The three verbs are three different decisions and collapsing any two of them loses the point:
+///         <list type="bullet">
+///             <item><b>create</b> — accept everything that fires now. The one-time adoption step.</item>
+///             <item>
+///                 <b>update</b> — accept what fires now <em>in addition to</em> what is already accepted. It never
+///                 removes an entry, so running it can only ever widen what is suppressed, and the diff shows
+///                 exactly by how much.
+///             </item>
+///             <item>
+///                 ⚠ <b>prune</b> — drop the entries that no longer fire. Separate, and never automatic:
+///                 "a baseline that self-prunes lets a rule that silently stopped working look like progress".
+///                 A rule that was accidentally disabled and a rule whose findings were fixed produce identical
+///                 prunes, and only a person can tell them apart.
+///             </item>
+///         </list>
+///     </para>
 /// </remarks>
 public static class BaselineCommand {
     public enum Verb {
@@ -151,14 +151,14 @@ public static class BaselineCommand {
     }
 
     /// <summary>
-    /// Everything the baseline should hold after an <c>update</c>.
+    ///     Everything the baseline should hold after an <c>update</c>.
     /// </summary>
     /// <remarks>
-    /// ⚠ Entries that no longer fire cannot be reconstructed as <see cref="Finding"/>s — there is
-    /// no source span behind them any more — so they are carried through as the SARIF results they
-    /// already are. That is why <see cref="Baseline.Write"/> takes findings and this method has to
-    /// merge at the finding level: the fired half is fresh, the unfired half is preserved verbatim
-    /// by writing the old file's results back alongside.
+    ///     ⚠ Entries that no longer fire cannot be reconstructed as <see cref="Finding" />s — there is
+    ///     no source span behind them any more — so they are carried through as the SARIF results they
+    ///     already are. That is why <see cref="Baseline.Write" /> takes findings and this method has to
+    ///     merge at the finding level: the fired half is fresh, the unfired half is preserved verbatim
+    ///     by writing the old file's results back alongside.
     /// </remarks>
     static IEnumerable<Finding> Union(Baseline existing, RunReport report) {
         var firing = report.Findings;

@@ -3,6 +3,5 @@ class C {
     void   M( )   {
     }
     // @formatter:on
-    void   N( )   {
-    }
+    void N() { }
 }

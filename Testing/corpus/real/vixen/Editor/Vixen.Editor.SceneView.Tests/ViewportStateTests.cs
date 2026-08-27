@@ -289,7 +289,7 @@ public class ViewportStateTests : IDisposable {
         var camera = new EditorCamera { Pivot = Vector3.Zero, Distance = 12f };
         var point = new Vector3(1f, 2f, 3f);
 
-        foreach (var orthographic in (bool[]) [false, true]) {
+        foreach (var orthographic in (bool[])[false, true]) {
             camera.IsOrthographic = orthographic;
 
             var view = new MeshInstanceView(

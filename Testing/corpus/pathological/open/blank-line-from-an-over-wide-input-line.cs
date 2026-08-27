@@ -1,4 +1,5 @@
 interface I {
     int P { get; }
-    void M(int                                                                                                            a);
+
+    void M(int a);
 }

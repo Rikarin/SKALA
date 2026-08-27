@@ -17,35 +17,34 @@
 
 namespace Serilog.Core.Sinks
 
-;
+    ;
 
-sealed class
+    sealed class
     ConditionalSink : ILogEventSink, IDisposable
 #if FEATURE_ASYNCDISPOSABLE
     , IAsyncDisposable
 #endif
-{
-    readonly ILogEventSink _wrapped;
+    {
+        readonly ILogEventSink _wrapped;
 
-    readonly Func<
-        LogEvent, bool> _condition;
+        readonly Func<
+            LogEvent, bool> _condition;
 
-    public
-        ConditionalSink(ILogEventSink wrapped, Func<LogEvent, bool> condition) {
-        _wrapped = Guard.AgainstNull(wrapped);
-        _condition = Guard.AgainstNull(condition);
-    }
+        public
+            ConditionalSink(ILogEventSink wrapped, Func<LogEvent, bool> condition) {
+            _wrapped = Guard.AgainstNull(wrapped);
+            _condition = Guard.AgainstNull(condition);
+        }
 
-    public void Emit(LogEvent logEvent) {
-        if (_condition(logEvent))
-            _wrapped.Emit(logEvent);
-    }
+        public void Emit(LogEvent logEvent) {
+            if (_condition(logEvent))
+                _wrapped.Emit(logEvent);
+        }
 
-    public void Dispose
-        () {
-        (_wrapped as
-            IDisposable)?.Dispose();
-    }
+        public void Dispose
+            () {
+            (_wrapped as IDisposable)?.Dispose();
+        }
 
 #if FEATURE_ASYNCDISPOSABLE
     public ValueTask DisposeAsync()
@@ -57,4 +56,4 @@ sealed class
         return default;
     }
 #endif
-}
+    }

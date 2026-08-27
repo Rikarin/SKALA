@@ -16,26 +16,30 @@
 namespace Serilog.Parsing;
 
 /// <summary>
-/// Parses message template strings into sequences of text or property
-/// tokens.
+///     Parses message template strings into sequences of text or property
+///     tokens.
 /// </summary>
 public class MessageTemplateParser : IMessageTemplateParser {
     static readonly TextToken EmptyTextToken = new("");
 
     /// <summary>
-    /// Construct a <see cref="MessageTemplateParser"/>.
+    ///     Construct a <see cref="MessageTemplateParser" />.
     /// </summary>
     public MessageTemplateParser() { }
 
     /// <summary>
-    /// Parse the supplied message template.
+    ///     Parse the supplied message template.
     /// </summary>
     /// <param name="messageTemplate">The message template to parse.</param>
-    /// <returns>A sequence of text or property tokens. Where the template
-    /// is not syntactically valid, text tokens will be returned. The parser
-    /// will make a best effort to extract valid property tokens even in the
-    /// presence of parsing issues.</returns>
-    /// <exception cref="ArgumentNullException">When <paramref name="messageTemplate"/> is <code>null</code></exception>
+    /// <returns>
+    ///     A sequence of text or property tokens. Where the template
+    ///     is not syntactically valid, text tokens will be returned. The parser
+    ///     will make a best effort to extract valid property tokens even in the
+    ///     presence of parsing issues.
+    /// </returns>
+    /// <exception cref="ArgumentNullException">
+    ///     When <paramref name="messageTemplate" /> is <code>null</code>
+    /// </exception>
     public MessageTemplate Parse(string messageTemplate) {
         Guard.AgainstNull(messageTemplate);
         return new(messageTemplate, Tokenize(messageTemplate));
@@ -205,10 +209,10 @@ public class MessageTemplateParser : IMessageTemplateParser {
 
     static TextToken ParseTextToken(int startAt, string messageTemplate, out int next) {
         // If we encounter escape sequences like {{ or }}, the result is not a strict substring of the
-// template. But, this requires allocating a StringBuilder, so we try to parse as far as we can first, and
-// only allocate the StringBuilder/fall through to the slow string-building path if we actually need to.
-// Most of the time we won't hit escapes, so we can get away with just a single Substring() allocation at
-// the end.
+        // template. But, this requires allocating a StringBuilder, so we try to parse as far as we can first, and
+        // only allocate the StringBuilder/fall through to the slow string-building path if we actually need to.
+        // Most of the time we won't hit escapes, so we can get away with just a single Substring() allocation at
+        // the end.
         var i = messageTemplate.IndexOfAny(CurlyBraceChars, startAt);
         if (i == -1) {
             // No more interesting characters in the template, everything left is text.
@@ -222,7 +226,7 @@ public class MessageTemplateParser : IMessageTemplateParser {
         if (ch == '{') {
             if (i < messageTemplate.Length && messageTemplate[i] == '{') {
                 // Hit an escape sequence; ignore the second (duplicate) `{`, and push the rest onto the
-// accumulator to start the slow path.
+                // accumulator to start the slow path.
                 accum = new(messageTemplate, startAt, i - startAt, messageTemplate.Length - startAt);
                 ++i;
             } else {
@@ -239,7 +243,7 @@ public class MessageTemplateParser : IMessageTemplateParser {
             }
         } // We must have encountered an escaped character sequence: finish the text token, using the
 
-// accumulator. This is relatively uncommon so we just do it char-by-char.
+        // accumulator. This is relatively uncommon so we just do it char-by-char.
         while (i < messageTemplate.Length) {
             ch = messageTemplate[i];
             ++i;

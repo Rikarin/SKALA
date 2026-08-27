@@ -10,20 +10,20 @@ using Rikarin.Skala.Reporting;
 namespace Rikarin.Skala.Testing;
 
 /// <summary>
-/// The false-positive instrument: run every rule over a tree and print what it said, per rule.
+///     The false-positive instrument: run every rule over a tree and print what it said, per rule.
 /// </summary>
 /// <remarks>
-/// ⚠ docs/plan/16 § R3's shipping bar is <b>zero false positives on the reference corpus</b>, and a
-/// percentage cannot say whether that is met — only a list of findings a person read can. This
-/// prints that list, grouped so that a rule with four findings is four lines to check and a rule
-/// with four hundred is visibly not ready.
-/// <para>
-/// ⚠ It deliberately runs the <em>semantic</em> rules under a loose compilation, which the product
-/// does not. The product's rule is right — a semantic rule that answers "no finding" because a
-/// symbol did not resolve makes a clean report mean two things — but for an audit the asymmetry is
-/// in the safe direction: every finding it produces is one to check, and the ones it misses are
-/// misses rather than false positives. The count is therefore a floor, and it is labelled one.
-/// </para>
+///     ⚠ docs/plan/16 § R3's shipping bar is <b>zero false positives on the reference corpus</b>, and a
+///     percentage cannot say whether that is met — only a list of findings a person read can. This
+///     prints that list, grouped so that a rule with four findings is four lines to check and a rule
+///     with four hundred is visibly not ready.
+///     <para>
+///         ⚠ It deliberately runs the <em>semantic</em> rules under a loose compilation, which the product
+///         does not. The product's rule is right — a semantic rule that answers "no finding" because a
+///         symbol did not resolve makes a clean report mean two things — but for an audit the asymmetry is
+///         in the safe direction: every finding it produces is one to check, and the ones it misses are
+///         misses rather than false positives. The count is therefore a floor, and it is labelled one.
+///     </para>
 /// </remarks>
 public static class RuleAudit {
     public static string Run(IReadOnlyList<string> paths, bool semanticInLoose, bool implicitUsings = false) {
@@ -31,26 +31,29 @@ public static class RuleAudit {
     }
 
     /// <summary>
-    /// A stand-in for the <c>ImplicitUsings</c> file the SDK generates into <c>obj/</c>.
+    ///     A stand-in for the <c>ImplicitUsings</c> file the SDK generates into <c>obj/</c>.
     /// </summary>
     /// <remarks>
-    /// ⚠ <b>Without this, a tree that sets <c>ImplicitUsings</c> silences most of the semantic rule
-    /// set, and the silence looks like a clean result.</b> The loose loader skips <c>obj/</c>, which
-    /// is where the generated global-usings file lives, so every <c>Dictionary&lt;,&gt;</c>,
-    /// <c>List&lt;&gt;</c> and <c>Task</c> in the tree binds to an error type and every rule that
-    /// asks a question about a type answers "no finding" for the wrong reason. Measured over Vixen:
-    /// 195 724 errors without it and 128 833 with, <c>SK3002</c> 7 → 44, <c>SK8005</c> 0 → 25,
-    /// <c>SK1033</c> 0 → 5.
-    /// <para>
-    /// ⚠ It is generated here rather than committed as a fixture because docs/plan/15 § M7 records
-    /// exactly this file being used and never committed, which made M7's figures unreproducible from
-    /// the repository. A constant in the harness cannot go missing.
-    /// </para>
-    /// <para>
-    /// ⚠ Opt-in, not automatic. <c>corpus/real/</c> is vendored code from projects that predate
-    /// implicit usings, and adding global usings to it would introduce ambiguities and move numbers
-    /// that other documents record.
-    /// </para>
+    ///     ⚠
+    ///     <b>
+    ///         Without this, a tree that sets <c>ImplicitUsings</c> silences most of the semantic rule
+    ///         set, and the silence looks like a clean result.
+    ///     </b> The loose loader skips <c>obj/</c>, which
+    ///     is where the generated global-usings file lives, so every <c>Dictionary&lt;,&gt;</c>,
+    ///     <c>List&lt;&gt;</c> and <c>Task</c> in the tree binds to an error type and every rule that
+    ///     asks a question about a type answers "no finding" for the wrong reason. Measured over Vixen:
+    ///     195 724 errors without it and 128 833 with, <c>SK3002</c> 7 → 44, <c>SK8005</c> 0 → 25,
+    ///     <c>SK1033</c> 0 → 5.
+    ///     <para>
+    ///         ⚠ It is generated here rather than committed as a fixture because docs/plan/15 § M7 records
+    ///         exactly this file being used and never committed, which made M7's figures unreproducible from
+    ///         the repository. A constant in the harness cannot go missing.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ Opt-in, not automatic. <c>corpus/real/</c> is vendored code from projects that predate
+    ///         implicit usings, and adding global usings to it would introduce ambiguities and move numbers
+    ///         that other documents record.
+    ///     </para>
     /// </remarks>
     const string ImplicitUsings =
         """
@@ -154,13 +157,13 @@ public static class RuleAudit {
     }
 
     /// <summary>
-    /// Applies every fix the audit produced and reports what stopped compiling.
+    ///     Applies every fix the audit produced and reports what stopped compiling.
     /// </summary>
     /// <remarks>
-    /// ⚠ This is the part that catches a rule being <em>wrong</em> rather than merely noisy. A
-    /// finding a person glances at looks fine; a fix that turns <c>x != null</c> into a pattern
-    /// inside an expression tree is CS8122 and cannot be glanced past. docs/plan/10: "A fixing tool
-    /// that can break the build is a tool an agent will use to break the build."
+    ///     ⚠ This is the part that catches a rule being <em>wrong</em> rather than merely noisy. A
+    ///     finding a person glances at looks fine; a fix that turns <c>x != null</c> into a pattern
+    ///     inside an expression tree is CS8122 and cannot be glanced past. docs/plan/10: "A fixing tool
+    ///     that can break the build is a tool an agent will use to break the build."
     /// </remarks>
     static string VerifyFixes(LoadedProject loaded, List<Finding> findings) {
         var byPath = findings
@@ -245,14 +248,14 @@ public static class RuleAudit {
     }
 
     /// <summary>
-    /// Error counts per <c>(file, diagnostic id)</c>.
+    ///     Error counts per <c>(file, diagnostic id)</c>.
     /// </summary>
     /// <remarks>
-    /// ⚠ Not per <c>(file, line, id)</c>. SK1005's fix deletes the namespace braces, so every
-    /// pre-existing error in that file moves down a line; keyed on the line, an unchanged error
-    /// reads as a new one and the audit reports dozens of regressions that are all the same shrug.
-    /// Per <c>(file, id)</c> is insensitive to a fix <em>moving</em> text and sensitive to a fix
-    /// <em>breaking</em> it, which is the question being asked.
+    ///     ⚠ Not per <c>(file, line, id)</c>. SK1005's fix deletes the namespace braces, so every
+    ///     pre-existing error in that file moves down a line; keyed on the line, an unchanged error
+    ///     reads as a new one and the audit reports dozens of regressions that are all the same shrug.
+    ///     Per <c>(file, id)</c> is insensitive to a fix <em>moving</em> text and sensitive to a fix
+    ///     <em>breaking</em> it, which is the question being asked.
     /// </remarks>
     static Dictionary<string, int> Errors(Compilation compilation) {
         var result = new Dictionary<string, int>(StringComparer.Ordinal);

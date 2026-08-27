@@ -26,31 +26,31 @@ public sealed class MinimiseBudget(int evaluations) {
 }
 
 /// <summary>
-/// Delta debugging, from docs/plan/12 § "Corpus expansion".
+///     Delta debugging, from docs/plan/12 § "Corpus expansion".
 /// </summary>
 /// <remarks>
-/// ⚠ "Any crash, non-idempotent case or token-equivalence failure is minimised (delta-debugging on
-/// the input) and committed to <c>corpus/pathological/</c>. The corpus only grows." The minimiser is
-/// the half of that sentence that decides whether the other half is worth doing: a fuzz failure
-/// arrives as a 400-line file with nineteen mutations applied to it, and a 400-line corpus entry
-/// documents nothing — nobody can tell which of its lines is the bug, the fixture is unreadable, and
-/// the next person to touch the area cannot tell whether their change fixed it or moved it.
-/// <para>
-/// ⚠ The predicate is "this input still fails <b>the same property</b>", not "this input fails
-/// something". Delta debugging on the weaker predicate slides: a non-idempotency shrinks into an
-/// unrelated token-equivalence failure and the committed file pins the wrong bug.
-/// </para>
+///     ⚠ "Any crash, non-idempotent case or token-equivalence failure is minimised (delta-debugging on
+///     the input) and committed to <c>corpus/pathological/</c>. The corpus only grows." The minimiser is
+///     the half of that sentence that decides whether the other half is worth doing: a fuzz failure
+///     arrives as a 400-line file with nineteen mutations applied to it, and a 400-line corpus entry
+///     documents nothing — nobody can tell which of its lines is the bug, the fixture is unreadable, and
+///     the next person to touch the area cannot tell whether their change fixed it or moved it.
+///     <para>
+///         ⚠ The predicate is "this input still fails <b>the same property</b>", not "this input fails
+///         something". Delta debugging on the weaker predicate slides: a non-idempotency shrinks into an
+///         unrelated token-equivalence failure and the committed file pins the wrong bug.
+///     </para>
 /// </remarks>
 public static class FuzzMinimiser {
     /// <summary>
-    /// Shrinks <paramref name="source"/> while <paramref name="stillFails"/> holds.
+    ///     Shrinks <paramref name="source" /> while <paramref name="stillFails" /> holds.
     /// </summary>
     /// <remarks>
-    /// Classic ddmin over lines, then a greedy per-line pass, then a greedy shortening of the long
-    /// identifiers and string literals the mutation catalogue's <c>widen-identifier</c> leaves
-    /// behind. ⚠ Lines rather than characters at the top level: a C# file that has had half of a
-    /// token deleted stops parsing, the property stops failing for the reason it was failing, and
-    /// ddmin spends its whole budget on candidates that are rejected for the wrong reason.
+    ///     Classic ddmin over lines, then a greedy per-line pass, then a greedy shortening of the long
+    ///     identifiers and string literals the mutation catalogue's <c>widen-identifier</c> leaves
+    ///     behind. ⚠ Lines rather than characters at the top level: a C# file that has had half of a
+    ///     token deleted stops parsing, the property stops failing for the reason it was failing, and
+    ///     ddmin spends its whole budget on candidates that are rejected for the wrong reason.
     /// </remarks>
     public static string Minimise(string source, Func<string, bool> stillFails, MinimiseBudget budget) {
         if (source.Length == 0 || !stillFails(source)) {
@@ -83,13 +83,13 @@ public static class FuzzMinimiser {
     }
 
     /// <summary>
-    /// Removes whole members and whole statements, largest first, while the failure survives.
+    ///     Removes whole members and whole statements, largest first, while the failure survives.
     /// </summary>
     /// <remarks>
-    /// ⚠ Largest first and re-parsed after every accepted removal. Deleting the outermost node that
-    /// can go removes everything under it in one evaluation, and re-parsing keeps every subsequent
-    /// span valid — a stale span list after an accepted edit is how a reducer produces a file that
-    /// is smaller and is not the failure any more.
+    ///     ⚠ Largest first and re-parsed after every accepted removal. Deleting the outermost node that
+    ///     can go removes everything under it in one evaluation, and re-parsing keeps every subsequent
+    ///     span valid — a stale span list after an accepted edit is how a reducer produces a file that
+    ///     is smaller and is not the failure any more.
     /// </remarks>
     static string Nodes(string source, Func<string, bool> stillFails, MinimiseBudget budget) {
         var changed = true;
@@ -131,15 +131,15 @@ public static class FuzzMinimiser {
     }
 
     /// <summary>
-    /// Splits on <c>\n</c> only, leaving any <c>\r</c> attached to the line it ends.
+    ///     Splits on <c>\n</c> only, leaving any <c>\r</c> attached to the line it ends.
     /// </summary>
     /// <remarks>
-    /// ⚠ Not <see cref="string.ReplaceLineEndings()"/>, and this was a real defect rather than a
-    /// stylistic preference. Normalising here makes the split/join round trip *lossy*: a pass that
-    /// removes no line still hands back a different string, one that was never put to the predicate,
-    /// and the minimiser silently returns an artefact that does not fail. It cost this fuzzer its
-    /// first real finding — a mixed-line-ending case whose whole content was the <c>\r</c> that the
-    /// normalisation deleted on the way past.
+    ///     ⚠ Not <see cref="string.ReplaceLineEndings()" />, and this was a real defect rather than a
+    ///     stylistic preference. Normalising here makes the split/join round trip *lossy*: a pass that
+    ///     removes no line still hands back a different string, one that was never put to the predicate,
+    ///     and the minimiser silently returns an artefact that does not fail. It cost this fuzzer its
+    ///     first real finding — a mixed-line-ending case whose whole content was the <c>\r</c> that the
+    ///     normalisation deleted on the way past.
     /// </remarks>
     static List<string> Split(string source) => [.. source.Split('\n')];
 
@@ -208,15 +208,15 @@ public static class FuzzMinimiser {
     }
 
     /// <summary>
-    /// Shortens the long runs a mutation left behind, without changing the line structure.
+    ///     Shortens the long runs a mutation left behind, without changing the line structure.
     /// </summary>
     /// <remarks>
-    /// ⚠ <c>widen-identifier</c> is the mutation most likely to produce a finding, because it is the
-    /// only one that changes a line's width and the fitting engine's every decision is a function of
-    /// width. It is also the one that leaves a 40-character name in the minimised file, where the
-    /// interesting fact is usually "the line was two characters too long" rather than "the name was
-    /// <c>value_wwwwwwwwwwwwwwwwwwwwwwww</c>". Halving the runs while the failure survives keeps the
-    /// width that matters and drops the noise around it.
+    ///     ⚠ <c>widen-identifier</c> is the mutation most likely to produce a finding, because it is the
+    ///     only one that changes a line's width and the fitting engine's every decision is a function of
+    ///     width. It is also the one that leaves a 40-character name in the minimised file, where the
+    ///     interesting fact is usually "the line was two characters too long" rather than "the name was
+    ///     <c>value_wwwwwwwwwwwwwwwwwwwwwwww</c>". Halving the runs while the failure survives keeps the
+    ///     width that matters and drops the noise around it.
     /// </remarks>
     static string Narrow(string text, Func<string, bool> stillFails) {
         var runs = new[] { 'w', 's', ' ' };

@@ -133,12 +133,12 @@ public sealed class IrradianceRepairDeviceTests {
         var loader = new EffectLoader(device);
         var effects = new EffectSystem();
 
-        effects.AddProvider(new Compiling(loader, _ => RavenEffects.Only(["Core", "DistanceFields", "IrradianceFields"])));
+        effects.AddProvider(
+            new Compiling(loader, _ => RavenEffects.Only(["Core", "DistanceFields", "IrradianceFields"]))
+        );
 
         using var repair = new IrradianceFieldRepair(device) {
-            Effects = effects,
-            Pipelines = new ComputePipelineCache(device),
-            Descriptors = allocator
+            Effects = effects, Pipelines = new ComputePipelineCache(device), Descriptors = allocator
         };
 
         var probes = new IrradianceProbe[field.Pool.Texels.Length];

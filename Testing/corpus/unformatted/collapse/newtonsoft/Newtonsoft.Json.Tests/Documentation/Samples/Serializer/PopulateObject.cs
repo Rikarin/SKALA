@@ -1,4 +1,5 @@
 #region License
+
 // Copyright (c) 2007 James Newton-King
 //
 // Permission is hereby granted, free of charge, to any person
@@ -21,8 +22,10 @@
 // WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 // OTHER DEALINGS IN THE SOFTWARE.
+
 #endregion
-using System;using System.Collections.Generic;
+
+using System; using System.Collections.Generic;
 #if NET20
 using Newtonsoft.Json.Utilities.LinqBridge;
 #else
@@ -36,19 +39,44 @@ using Assert = Newtonsoft.Json.Tests.XUnitAssert;
 #else
 using NUnit.Framework;
 #endif
-namespace Newtonsoft.Json.Tests.Documentation.Samples.Serializer{[TestFixture]public class PopulateObject:TestFixtureBase{
-#region Types
-public class Account{public string Email{get;set;}public bool Active{get;set;}public DateTime CreatedDate{get;set;}public List<string>Roles{get;set;}}
-#endregion
-[Test]public void Example(){
-#region Usage
-Account account=new Account{Email="james@example.com" ,Active=true,CreatedDate=new DateTime(2013,1,20,0,0,0,DateTimeKind.Utc),Roles=new List<string>{"User","Admin" }};string json=@"{
+namespace Newtonsoft.Json.Tests.Documentation.Samples.Serializer {
+    [TestFixture]
+    public class PopulateObject : TestFixtureBase {
+        #region Types
+
+        public class Account {
+            public string Email { get; set; }
+            public bool Active { get; set; }
+            public DateTime CreatedDate { get; set; }
+            public List<string> Roles { get; set; }
+        }
+
+        #endregion
+
+        [Test]
+        public void Example() {
+            #region Usage
+
+            Account account = new Account {
+                Email = "james@example.com",
+                Active = true,
+                CreatedDate = new DateTime(2013, 1, 20, 0, 0, 0, DateTimeKind.Utc),
+                Roles = new List<string> { "User", "Admin" }
+            };
+            string json = @"{
               'Active': false,
               'Roles': [
                 'Expired'
               ]
-            }" ;JsonConvert.PopulateObject(json,account);Console.WriteLine(account.Email); // james@example.com
-Console.WriteLine(account.Active); // false
-Console.WriteLine(string.Join(", ",account.Roles.ToArray())); // User, Admin, Expired
-#endregion
-Assert.AreEqual("User, Admin, Expired" ,string.Join(", ",account.Roles.ToArray()));}}}
+            }";
+            JsonConvert.PopulateObject(json, account);
+            Console.WriteLine(account.Email); // james@example.com
+            Console.WriteLine(account.Active); // false
+            Console.WriteLine(string.Join(", ", account.Roles.ToArray())); // User, Admin, Expired
+
+            #endregion
+
+            Assert.AreEqual("User, Admin, Expired", string.Join(", ", account.Roles.ToArray()));
+        }
+    }
+}

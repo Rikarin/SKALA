@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: Copyright (c) Rikarin
 // SPDX-License-Identifier: Apache-2.0
 namespace Vixen.Audio.Music;
+
 /// <summary>A named place in a segment, in beats from its start.</summary>
 /// <param name="Name">What it is called.</param>
 /// <param name="Beat">How far in, in beats.</param>
@@ -10,7 +11,8 @@ namespace Vixen.Audio.Music;
 ///     therefore late by up to a frame — which is fine for anything visual and is not what a
 ///     <em>musical</em> change is scheduled with.
 /// </remarks>
-public readonly record struct MusicMarker(string Name,float Beat);
+public readonly record struct MusicMarker(string Name, float Beat);
+
 /// <summary>One piece of music, and what follows it.</summary>
 /// <remarks>
 ///     <para>
@@ -26,16 +28,20 @@ public readonly record struct MusicMarker(string Name,float Beat);
 ///         and it is arranged so that gameplay says nothing at all until it wants something to change.
 ///     </para>
 /// </remarks>
-public sealed record MusicSegment{
-/// <summary>What it is called, and what a transition names it by.</summary>
-public string Name{get;init;}=string.Empty;
-/// <summary>The audio.</summary>
-public AudioClip?Clip{get;init;}
-/// <summary>How fast it is, and how it is counted, where it begins.</summary>
-public MusicTempo Tempo{get;init;}=new();
-/// <summary>Where it changes tempo or metre, if it does.</summary>
-public MusicTempoChange[]TempoChanges{get;init;}=[];
-/// <summary>Whether it vamps here rather than moving on, until gameplay releases it.</summary>
+public sealed record MusicSegment {
+    /// <summary>What it is called, and what a transition names it by.</summary>
+    public string Name { get; init; } = string.Empty;
+
+    /// <summary>The audio.</summary>
+    public AudioClip? Clip { get; init; }
+
+    /// <summary>How fast it is, and how it is counted, where it begins.</summary>
+    public MusicTempo Tempo { get; init; } = new();
+
+    /// <summary>Where it changes tempo or metre, if it does.</summary>
+    public MusicTempoChange[] TempoChanges { get; init; } = [];
+
+    /// <summary>Whether it vamps here rather than moving on, until gameplay releases it.</summary>
     /// <remarks>
     ///     <para>
     ///         <b>An intro that waits for the player.</b> A door that opens when they are ready, a
@@ -50,18 +56,23 @@ public MusicTempoChange[]TempoChanges{get;init;}=[];
     ///         anyway.
     ///     </para>
     /// </remarks>
-public bool Sustains{get;init;}
-/// <summary>How many times it repeats before moving on. Zero plays it once; negative is forever.</summary>
+    public bool Sustains { get; init; }
+
+    /// <summary>How many times it repeats before moving on. Zero plays it once; negative is forever.</summary>
     /// <remarks>
     ///     Forever is the normal state of a loop and the reason a piece of music can be left alone.
     ///     A segment that loops forever and names no <see cref="Next" /> is where music sits between
     ///     the moments gameplay cares about.
     /// </remarks>
-public int LoopCount{get;init;}=-1;
-/// <summary>Which segment follows when this one runs out. Empty stops.</summary>
-public string Next{get;init;}=string.Empty;
-/// <summary>Named places in it, for gameplay to hang on.</summary>
-public MusicMarker[]Markers{get;init;}=[];}
+    public int LoopCount { get; init; } = -1;
+
+    /// <summary>Which segment follows when this one runs out. Empty stops.</summary>
+    public string Next { get; init; } = string.Empty;
+
+    /// <summary>Named places in it, for gameplay to hang on.</summary>
+    public MusicMarker[] Markers { get; init; } = [];
+}
+
 /// <summary>A route from one segment to another, and when it is allowed to be taken.</summary>
 /// <remarks>
 ///     <para>
@@ -75,16 +86,22 @@ public MusicMarker[]Markers{get;init;}=[];}
 ///         so a specific one goes above a general one exactly as it would in any other rule list.
 ///     </para>
 /// </remarks>
-public sealed record MusicTransition{
-/// <summary>Which segment it leads out of. Empty means any of them.</summary>
-public string From{get;init;}=string.Empty;
-/// <summary>Which segment it leads to.</summary>
-public string To{get;init;}=string.Empty;
-/// <summary>Where it is allowed to land.</summary>
-public MusicQuantize Quantize{get;init;}=MusicQuantize.Bar;
-/// <summary>Which engine-wide parameter decides, or empty for one gameplay takes by name.</summary>
-public string Parameter{get;init;}=string.Empty;
-/// <summary>The bottom of the range it applies over.</summary>
-public float Minimum{get;init;}
-/// <summary>The top of the range it applies over.</summary>
-public float Maximum{get;init;}=1f;}
+public sealed record MusicTransition {
+    /// <summary>Which segment it leads out of. Empty means any of them.</summary>
+    public string From { get; init; } = string.Empty;
+
+    /// <summary>Which segment it leads to.</summary>
+    public string To { get; init; } = string.Empty;
+
+    /// <summary>Where it is allowed to land.</summary>
+    public MusicQuantize Quantize { get; init; } = MusicQuantize.Bar;
+
+    /// <summary>Which engine-wide parameter decides, or empty for one gameplay takes by name.</summary>
+    public string Parameter { get; init; } = string.Empty;
+
+    /// <summary>The bottom of the range it applies over.</summary>
+    public float Minimum { get; init; }
+
+    /// <summary>The top of the range it applies over.</summary>
+    public float Maximum { get; init; } = 1f;
+}

@@ -16,10 +16,10 @@
 namespace Serilog.Formatting.Display;
 
 /// <summary>
-/// Implements the {Level} element.
-/// can now have a fixed width applied to it, as well as casing rules.
-/// Width is set through formats like "u3" (uppercase three chars),
-/// "w1" (one lowercase char), or "t4" (title case four chars).
+///     Implements the {Level} element.
+///     can now have a fixed width applied to it, as well as casing rules.
+///     Width is set through formats like "u3" (uppercase three chars),
+///     "w1" (one lowercase char), or "t4" (title case four chars).
 /// </summary>
 static class LevelOutputFormat {
     static readonly string[][] _titleCaseLevelMap = [
@@ -51,7 +51,7 @@ static class LevelOutputFormat {
                 GetLevelMoniker(_titleCaseLevelMap, value),
                 format
             ); // Using int.Parse() here requires allocating a string to exclude the first character prefix.
-// Junk like "wxy" will be accepted but produce benign results.
+        // Junk like "wxy" will be accepted but produce benign results.
         var width = format[1] - '0';
         if (format.Length == 3) {
             width *= 10;
@@ -59,7 +59,7 @@ static class LevelOutputFormat {
         }
 
         if (width < 1) return string.Empty;
-        return format[0]switch {
+        return format[0] switch {
             'w' => GetLevelMoniker(_lowerCaseLevelMap, value, width),
             'u' => GetLevelMoniker(_upperCaseLevelMap, value, width),
             't' => GetLevelMoniker(_titleCaseLevelMap, value, width),

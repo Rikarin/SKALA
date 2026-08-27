@@ -12,7 +12,9 @@ public enum NodeLayout {
     /// <summary>Children in order, no indentation scope of its own. Most kinds.</summary>
     Transparent,
 
-    /// <summary>A <c>{ }</c> body whose contents take one block indent: blocks, types, namespaces, accessor lists.</summary>
+    /// <summary>
+    ///     A <c>{ }</c> body whose contents take one block indent: blocks, types, namespaces, accessor lists.
+    /// </summary>
     BracedBlock,
 
     /// <summary>An initializer <c>{ }</c>: block indent, and members go on their own lines.</summary>
@@ -36,41 +38,45 @@ public enum NodeLayout {
     /// <summary>One <c>case</c> group: the statements indent one level from the label.</summary>
     SwitchSection,
 
-    /// <summary>A continuation scope that is not delimited: a binary chain, a member-access chain, an initializer value.</summary>
+    /// <summary>
+    ///     A continuation scope that is not delimited: a binary chain, a member-access chain, an initializer value.
+    /// </summary>
     Continuation,
 
     /// <summary>
-    /// Emitted byte-for-byte from its source span: a construct where a moved space changes the
-    /// program's meaning.
+    ///     Emitted byte-for-byte from its source span: a construct where a moved space changes the
+    ///     program's meaning.
     /// </summary>
     Verbatim,
 
-    /// <summary>Directive trivia. A node in Roslyn, but the trivia model owns it and it never reaches the walker.</summary>
+    /// <summary>
+    ///     Directive trivia. A node in Roslyn, but the trivia model owns it and it never reaches the walker.
+    /// </summary>
     DirectiveNode,
 
     /// <summary>
-    /// ⚠ Not classified: a kind this Skala has never been told about.
+    ///     ⚠ Not classified: a kind this Skala has never been told about.
     /// </summary>
     /// <remarks>
-    /// The builder emits the node's original span verbatim rather than throwing or guessing. This
-    /// is the run-time half of the R5 mitigation (docs/plan/16): a formatter that meets C# 15
-    /// syntax must leave it alone, not mangle it. The build-time half is
-    /// <c>SyntaxKindInventoryTests</c> against <c>Testing/corpus/syntax-kinds.txt</c>.
+    ///     The builder emits the node's original span verbatim rather than throwing or guessing. This
+    ///     is the run-time half of the R5 mitigation (docs/plan/16): a formatter that meets C# 15
+    ///     syntax must leave it alone, not mangle it. The build-time half is
+    ///     <c>SyntaxKindInventoryTests</c> against <c>Testing/corpus/syntax-kinds.txt</c>.
     /// </remarks>
     Unknown
 }
 
 /// <summary>
-/// The total function over <see cref="SyntaxKind"/> that R5 requires: every node kind Roslyn 5.9.0
-/// declares is named here, and the fallback is <see cref="NodeLayout.Unknown"/>.
+///     The total function over <see cref="SyntaxKind" /> that R5 requires: every node kind Roslyn 5.9.0
+///     declares is named here, and the fallback is <see cref="NodeLayout.Unknown" />.
 /// </summary>
 /// <remarks>
-/// ⚠ Do not replace the explicit arms with a range check. The point of listing all 293 node kinds
-/// is that adding a kind to Roslyn produces a kind that is <em>not</em> listed, which the inventory
-/// test turns into a build failure. A range check would silently absorb it.
+///     ⚠ Do not replace the explicit arms with a range check. The point of listing all 293 node kinds
+///     is that adding a kind to Roslyn produces a kind that is <em>not</em> listed, which the inventory
+///     test turns into a build failure. A range check would silently absorb it.
 /// </remarks>
 public static class NodeLayouts {
-    /// <summary>The lowest <see cref="SyntaxKind"/> value that names a node rather than a token or trivia.</summary>
+    /// <summary>The lowest <see cref="SyntaxKind" /> value that names a node rather than a token or trivia.</summary>
     public const int FirstNodeKind = 8598;
 
     public static NodeLayout Classify(SyntaxKind kind) =>
@@ -394,6 +400,6 @@ public static class NodeLayouts {
             _ => NodeLayout.Unknown
         };
 
-    /// <summary>True for the kinds that name a <see cref="Microsoft.CodeAnalysis.SyntaxNode"/>.</summary>
+    /// <summary>True for the kinds that name a <see cref="Microsoft.CodeAnalysis.SyntaxNode" />.</summary>
     public static bool IsNodeKind(SyntaxKind kind) => (int)kind >= FirstNodeKind;
 }

@@ -1,5 +1,3 @@
 class C {
-    void M() {
-
-    }
+    void M() { }
 }

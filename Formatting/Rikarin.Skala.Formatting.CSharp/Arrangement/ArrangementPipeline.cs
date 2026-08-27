@@ -21,32 +21,30 @@ public sealed record PipelineResult(
 }
 
 /// <summary>
-/// Arrangement and formatting, run to a fixed point.
+///     Arrangement and formatting, run to a fixed point.
 /// </summary>
 /// <remarks>
-/// ⚠ This is milestone 4's need #3, and it exists because neither half is a fixed point of the
-/// other. Formatting is one document build and one emit and is idempotent on its own; arrangement
-/// moves text and the result has to be re-formatted; and re-formatting can expose a *new*
-/// arrangement — a block body that was three statements becomes one after a redundant block is
-/// lifted out of it, and only then is it a body-style candidate. So the property that has to hold is
-/// about the pair:
-/// <code>
-///     pipeline(pipeline(x)) == pipeline(x)
-/// </code>
-/// and it is asserted over every corpus file under both symbol sets, not reasoned about.
-/// <para>
-/// ⚠ <see cref="MaxPasses"/> is the bound. It is not a safety net that is never reached and quietly
-/// papers over an oscillation: reaching it sets <see cref="PipelineResult.Converged"/> false and
-/// reports <c>SK9097</c>, and the conformance suite fails on any corpus file that does not converge.
-/// Measured over <c>corpus/real/</c>, the observed maximum is 2 — one pass to arrange and format,
-/// one to prove nothing more wants to change.
-/// </para>
+///     ⚠ This is milestone 4's need #3, and it exists because neither half is a fixed point of the
+///     other. Formatting is one document build and one emit and is idempotent on its own; arrangement
+///     moves text and the result has to be re-formatted; and re-formatting can expose a *new*
+///     arrangement — a block body that was three statements becomes one after a redundant block is
+///     lifted out of it, and only then is it a body-style candidate. So the property that has to hold is
+///     about the pair:
+///     <code>     pipeline(pipeline(x)) == pipeline(x)</code>
+///     and it is asserted over every corpus file under both symbol sets, not reasoned about.
+///     <para>
+///         ⚠ <see cref="MaxPasses" /> is the bound. It is not a safety net that is never reached and quietly
+///         papers over an oscillation: reaching it sets <see cref="PipelineResult.Converged" /> false and
+///         reports <c>SK9097</c>, and the conformance suite fails on any corpus file that does not converge.
+///         Measured over <c>corpus/real/</c>, the observed maximum is 2 — one pass to arrange and format,
+///         one to prove nothing more wants to change.
+///     </para>
 /// </remarks>
 public static class ArrangementPipeline {
     /// <summary>
-    /// ⚠ Four, and the number is a decision. Two is what convergence costs; a third pass means a
-    /// rule and the formatter disagree about something; a fourth is the margin that turns a
-    /// two-cycle into a reported failure rather than an infinite loop. Higher would hide the bug.
+    ///     ⚠ Four, and the number is a decision. Two is what convergence costs; a third pass means a
+    ///     rule and the formatter disagree about something; a fourth is the margin that turns a
+    ///     two-cycle into a reported failure rather than an infinite loop. Higher would hide the bug.
     /// </summary>
     public const int MaxPasses = 4;
 

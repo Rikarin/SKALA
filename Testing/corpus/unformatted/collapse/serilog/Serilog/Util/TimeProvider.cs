@@ -12,11 +12,28 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 #if !NET8_0_OR_GREATER
-using System.Diagnostics;namespace System;
+using System.Diagnostics; namespace System;
+
 /// <summary>
-/// A super-simple, cut-down subset of `System.TimeProvider` which we use internally to avoid a package dependency
-/// on platforms without it.
+///     A super-simple, cut-down subset of `System.TimeProvider` which we use internally to avoid a package dependency
+///     on platforms without it.
 /// </summary>
-abstract class TimeProvider{public static TimeProvider System{get;}=new SystemTimeProvider();public DateTimeOffset GetLocalNow()=>DateTimeOffset.Now;public virtual DateTimeOffset GetUtcNow()=>DateTimeOffset.UtcNow;public virtual long TimestampFrequency=>Stopwatch.Frequency;public virtual long GetTimestamp()=>Stopwatch.GetTimestamp();public TimeSpan GetElapsedTime(long startingTimestamp,long endingTimestamp){ // Assumes Stopwatch.Frequency is never zero, safe for our internal usage.
-return new TimeSpan((long)((endingTimestamp-startingTimestamp)*((double)TimeSpan.TicksPerSecond/TimestampFrequency)));}public TimeSpan GetElapsedTime(long startingTimestamp)=>GetElapsedTime(startingTimestamp,GetTimestamp());sealed class SystemTimeProvider:TimeProvider;}
+abstract class TimeProvider {
+    public static TimeProvider System { get; } = new SystemTimeProvider();
+    public DateTimeOffset GetLocalNow() => DateTimeOffset.Now;
+    public virtual DateTimeOffset GetUtcNow() => DateTimeOffset.UtcNow;
+    public virtual long TimestampFrequency => Stopwatch.Frequency;
+    public virtual long GetTimestamp() => Stopwatch.GetTimestamp();
+
+    public TimeSpan GetElapsedTime(long startingTimestamp, long endingTimestamp) {
+        // Assumes Stopwatch.Frequency is never zero, safe for our internal usage.
+        return new TimeSpan(
+            (long)((endingTimestamp - startingTimestamp) * ((double)TimeSpan.TicksPerSecond / TimestampFrequency))
+        );
+    }
+
+    public TimeSpan GetElapsedTime(long startingTimestamp) => GetElapsedTime(startingTimestamp, GetTimestamp());
+
+    sealed class SystemTimeProvider : TimeProvider;
+}
 #endif

@@ -39,7 +39,7 @@ sealed class SilentLogger : ILogger {
 
     public void Write(
         LogEventLevel
-            level,
+        level,
         string messageTemplate
     ) { }
 
@@ -52,7 +52,7 @@ sealed class SilentLogger : ILogger {
     public void Write<T0, T1, T2>(
         LogEventLevel level,
         string
-            messageTemplate,
+        messageTemplate,
         T0 propertyValue0,
         T1 propertyValue1,
         T2 propertyValue2
@@ -69,7 +69,7 @@ sealed class SilentLogger : ILogger {
     public void Write<T>(
         LogEventLevel level,
         Exception
-            ? exception,
+        ? exception,
         string messageTemplate,
         T propertyValue
     ) { }
@@ -97,7 +97,7 @@ sealed class SilentLogger : ILogger {
         Exception? exception,
         string messageTemplate,
         params object?[]
-            ? propertyValues
+        ? propertyValues
     ) { }
 
     public bool IsEnabled(
@@ -166,7 +166,7 @@ sealed class SilentLogger : ILogger {
 
     public void Information(
         string
-            messageTemplate
+        messageTemplate
     ) { }
 
     public void Information<T>(string messageTemplate, T propertyValue) { }
@@ -180,7 +180,7 @@ sealed class SilentLogger : ILogger {
 
     public void Information(
         Exception
-            ? exception,
+        ? exception,
         string messageTemplate
     ) { }
 
@@ -239,7 +239,7 @@ sealed class SilentLogger : ILogger {
 
     public void Warning(
         Exception?
-            exception,
+        exception,
         string messageTemplate,
         params object?[]? propertyValues
     ) { }

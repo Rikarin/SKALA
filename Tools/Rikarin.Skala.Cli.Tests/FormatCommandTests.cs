@@ -4,8 +4,8 @@ using Rikarin.Skala.Testing;
 namespace Rikarin.Skala.Cli.Tests;
 
 /// <summary>
-/// <c>skala format</c> through the real binary: argument parsing, exit codes and the text a user
-/// sees are the only part of the tool that is a contract (ADR-010).
+///     <c>skala format</c> through the real binary: argument parsing, exit codes and the text a user
+///     sees are the only part of the tool that is a contract (ADR-010).
 /// </summary>
 public sealed class FormatCommandTests : IDisposable {
     readonly string _directory = Directory.CreateTempSubdirectory("skala-format-").FullName;

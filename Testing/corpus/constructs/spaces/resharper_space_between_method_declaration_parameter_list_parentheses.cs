@@ -1,4 +1,3 @@
 class C {
-    void M(int a, int b) {
-    }
+    void M(int a, int b) { }
 }

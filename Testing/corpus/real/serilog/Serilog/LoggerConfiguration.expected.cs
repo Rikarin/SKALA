@@ -16,7 +16,7 @@
 namespace Serilog;
 
 /// <summary>
-/// Configuration object for creating <see cref="ILogger"/> instances.
+///     Configuration object for creating <see cref="ILogger" /> instances.
 /// </summary>
 public class LoggerConfiguration {
     readonly List<ILogEventSink> _logEventSinks = [];
@@ -35,7 +35,7 @@ public class LoggerConfiguration {
     bool _loggerCreated;
 
     /// <summary>
-    /// Construct a <see cref="LoggerConfiguration"/>.
+    ///     Construct a <see cref="LoggerConfiguration" />.
     /// </summary>
     public LoggerConfiguration() {
         WriteTo = new(this, s => _logEventSinks.Add(s));
@@ -43,27 +43,28 @@ public class LoggerConfiguration {
     }
 
     /// <summary>
-    /// Configures the sinks that log events will be emitted to.
+    ///     Configures the sinks that log events will be emitted to.
     /// </summary>
     public LoggerSinkConfiguration WriteTo { get; internal set; }
 
     /// <summary>
-    /// Configures sinks for auditing, instead of regular (safe) logging. When auditing is used,
-    /// exceptions from sinks and any intermediate filters propagate back to the caller. Most callers
-    /// should use <see cref="WriteTo"/> instead.
+    ///     Configures sinks for auditing, instead of regular (safe) logging. When auditing is used,
+    ///     exceptions from sinks and any intermediate filters propagate back to the caller. Most callers
+    ///     should use <see cref="WriteTo" /> instead.
     /// </summary>
     /// <remarks>
-    /// Not all sinks are compatible with transactional auditing requirements (many will use asynchronous
-    /// batching to improve write throughput and latency). Sinks need to opt-in to auditing support by
-    /// extending <see cref="LoggerAuditSinkConfiguration"/>, though the generic <see cref="LoggerAuditSinkConfiguration.Sink"/>
-    /// method allows any sink class to be adapted for auditing.
+    ///     Not all sinks are compatible with transactional auditing requirements (many will use asynchronous
+    ///     batching to improve write throughput and latency). Sinks need to opt-in to auditing support by
+    ///     extending <see cref="LoggerAuditSinkConfiguration" />, though the generic
+    ///     <see cref="LoggerAuditSinkConfiguration.Sink" />
+    ///     method allows any sink class to be adapted for auditing.
     /// </remarks>
     public LoggerAuditSinkConfiguration AuditTo => new(this, s => _auditSinks.Add(s));
 
     /// <summary>
-    /// Configures the minimum level at which events will be passed to sinks. If
-    /// not specified, only events at the <see cref="LogEventLevel.Information"/>
-    /// level and above will be passed through.
+    ///     Configures the minimum level at which events will be passed to sinks. If
+    ///     not specified, only events at the <see cref="LogEventLevel.Information" />
+    ///     level and above will be passed through.
     /// </summary>
     /// <returns>Configuration object allowing method chaining.</returns>
     public LoggerMinimumLevelConfiguration MinimumLevel {
@@ -81,18 +82,18 @@ public class LoggerConfiguration {
     }
 
     /// <summary>
-    /// Configures enrichment of <see cref="LogEvent"/>s. Enrichers can add, remove and
-    /// modify the properties associated with events.
+    ///     Configures enrichment of <see cref="LogEvent" />s. Enrichers can add, remove and
+    ///     modify the properties associated with events.
     /// </summary>
     public LoggerEnrichmentConfiguration Enrich { get; internal set; }
 
     /// <summary>
-    /// Configures global filtering of <see cref="LogEvent"/>s.
+    ///     Configures global filtering of <see cref="LogEvent" />s.
     /// </summary>
     public LoggerFilterConfiguration Filter => new(this, f => _filters.Add(f));
 
     /// <summary>
-    /// Configures destructuring of message template parameters.
+    ///     Configures destructuring of message template parameters.
     /// </summary>
     public LoggerDestructuringConfiguration Destructure {
         get {
@@ -109,17 +110,19 @@ public class LoggerConfiguration {
     }
 
     /// <summary>
-    /// Apply external settings to the logger configuration.
+    ///     Apply external settings to the logger configuration.
     /// </summary>
     public LoggerSettingsConfiguration ReadFrom => new(this);
 
     /// <summary>
-    /// Create a logger using the configured sinks, enrichers and minimum level.
+    ///     Create a logger using the configured sinks, enrichers and minimum level.
     /// </summary>
     /// <returns>The logger.</returns>
-    /// <remarks>To free resources held by sinks ahead of program shutdown,
-    /// the returned logger may be cast to <see cref="IDisposable"/> and
-    /// disposed.</remarks>
+    /// <remarks>
+    ///     To free resources held by sinks ahead of program shutdown,
+    ///     the returned logger may be cast to <see cref="IDisposable" /> and
+    ///     disposed.
+    /// </remarks>
     /// <exception cref="InvalidOperationException">When the logger is already created</exception>
     public Logger CreateLogger() {
         if (_loggerCreated)

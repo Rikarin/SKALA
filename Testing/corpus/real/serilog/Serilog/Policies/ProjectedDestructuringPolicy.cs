@@ -14,23 +14,23 @@
 
 namespace Serilog.Policies;
 
-class ProjectedDestructuringPolicy : IDestructuringPolicy
-{
+class ProjectedDestructuringPolicy : IDestructuringPolicy {
     readonly Func<Type, bool> _canApply;
     readonly Func<object, object> _projection;
 
-    public ProjectedDestructuringPolicy(Func<Type, bool> canApply, Func<object, object> projection)
-    {
+    public ProjectedDestructuringPolicy(Func<Type, bool> canApply, Func<object, object> projection) {
         _canApply = Guard.AgainstNull(canApply);
         _projection = Guard.AgainstNull(projection);
     }
 
-    public bool TryDestructure(object value, ILogEventPropertyValueFactory propertyValueFactory, [NotNullWhen(true)] out LogEventPropertyValue? result)
-    {
+    public bool TryDestructure(
+        object value,
+        ILogEventPropertyValueFactory propertyValueFactory,
+        [NotNullWhen(true)] out LogEventPropertyValue? result
+    ) {
         Guard.AgainstNull(value);
 
-        if (!_canApply(value.GetType()))
-        {
+        if (!_canApply(value.GetType())) {
             result = null;
             return false;
         }

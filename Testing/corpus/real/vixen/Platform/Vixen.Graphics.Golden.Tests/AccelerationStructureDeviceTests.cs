@@ -82,9 +82,7 @@ public sealed class AccelerationStructureDeviceTests {
             new(positions.Length * 4L, Input, MemoryAccess.HostUpload, "as-vertices")
         );
 
-        var indexBuffer = device.CreateBuffer(
-            new(indices.Length * 4L, Input, MemoryAccess.HostUpload, "as-indices")
-        );
+        var indexBuffer = device.CreateBuffer(new(indices.Length * 4L, Input, MemoryAccess.HostUpload, "as-indices"));
 
         owned.Owns(() => device.Destroy(vertexBuffer));
         owned.Owns(() => device.Destroy(indexBuffer));
@@ -97,7 +95,9 @@ public sealed class AccelerationStructureDeviceTests {
         );
 
         var bottomSizes = device.GetAccelerationStructureSizes(bottomInput);
-        var bottom = device.CreateAccelerationStructure(new(AccelerationStructureKind.BottomLevel, bottomSizes.Structure, "as-bottom"));
+        var bottom = device.CreateAccelerationStructure(
+            new(AccelerationStructureKind.BottomLevel, bottomSizes.Structure, "as-bottom")
+        );
 
         owned.Owns(() => device.Destroy(bottom));
 
@@ -114,7 +114,9 @@ public sealed class AccelerationStructureDeviceTests {
         );
 
         var topSizes = device.GetAccelerationStructureSizes(topInput);
-        var top = device.CreateAccelerationStructure(new(AccelerationStructureKind.TopLevel, topSizes.Structure, "as-top"));
+        var top = device.CreateAccelerationStructure(
+            new(AccelerationStructureKind.TopLevel, topSizes.Structure, "as-top")
+        );
 
         owned.Owns(() => device.Destroy(top));
 
@@ -141,7 +143,10 @@ public sealed class AccelerationStructureDeviceTests {
         var effects = new EffectSystem();
 
         effects.AddProvider(
-            new Compiling(loader, _ => RavenEffects.Only(["Core", "DistanceFields", "IrradianceFields", "ScreenProbes", "SurfaceCache"]))
+            new Compiling(
+                loader,
+                _ => RavenEffects.Only(["Core", "DistanceFields", "IrradianceFields", "ScreenProbes", "SurfaceCache"])
+            )
         );
 
         const float Bias = 0.01f;

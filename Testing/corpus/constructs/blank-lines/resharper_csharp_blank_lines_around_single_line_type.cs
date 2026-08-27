@@ -1,2 +1,3 @@
 class A { }
+
 class B { }

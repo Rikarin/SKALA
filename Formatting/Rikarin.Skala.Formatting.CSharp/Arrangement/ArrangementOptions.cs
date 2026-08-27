@@ -6,26 +6,26 @@ namespace Rikarin.Skala.Formatting.CSharp.Arrangement;
 /// <summary>How much of the catalogue may run.</summary>
 public enum ArrangementScope {
     /// <summary>
-    /// The subset that needs no compilation (docs/plan/06 § "A few arrangements need no semantics").
-    /// This is what <c>skala format --arrange=syntactic</c> gives an agent on a loose file.
+    ///     The subset that needs no compilation (docs/plan/06 § "A few arrangements need no semantics").
+    ///     This is what <c>skala format --arrange=syntactic</c> gives an agent on a loose file.
     /// </summary>
     Syntactic,
 
-    /// <summary>Everything, which needs a <see cref="Microsoft.CodeAnalysis.SemanticModel"/>.</summary>
+    /// <summary>Everything, which needs a <see cref="Microsoft.CodeAnalysis.SemanticModel" />.</summary>
     Full
 }
 
 /// <summary>
-/// The <c>arrange_*</c> and body-style settings of docs/plan/06, resolved.
+///     The <c>arrange_*</c> and body-style settings of docs/plan/06, resolved.
 /// </summary>
 /// <remarks>
-/// ⚠ A separate struct from <see cref="PhaseOneOptions"/> rather than more properties on it, and the
-/// reason is a test rather than taste. <c>OptionCoverageTests</c> reads
-/// <c>PhaseOneOptions.Implemented</c> and asserts that every option in it changes the output of
-/// <em>the formatter</em> on some corpus file. An arrangement option changes the output of the
-/// <em>arranger</em> and leaves the formatter's alone, so folding the two sets together would make
-/// that assertion unprovable for a dozen keys and the honest fix — measure each family against the
-/// thing that implements it — is two structs and two coverage lists.
+///     ⚠ A separate struct from <see cref="PhaseOneOptions" /> rather than more properties on it, and the
+///     reason is a test rather than taste. <c>OptionCoverageTests</c> reads
+///     <c>PhaseOneOptions.Implemented</c> and asserts that every option in it changes the output of
+///     <em>the formatter</em> on some corpus file. An arrangement option changes the output of the
+///     <em>arranger</em> and leaves the formatter's alone, so folding the two sets together would make
+///     that assertion unprovable for a dozen keys and the honest fix — measure each family against the
+///     thing that implements it — is two structs and two coverage lists.
 /// </remarks>
 public readonly struct ArrangementOptions {
     public ArrangementOptions(
@@ -85,9 +85,9 @@ public readonly struct ArrangementOptions {
     public ArrangementScope Scope { get; }
 
     /// <summary>
-    /// ⚠ Parenthesis removal only. docs/plan/06 § "Qualification and redundancy": it is the
-    /// highest-risk rewrite in the tool and it is gated for the first release regardless of what the
-    /// export says, and revisited when the corpus differential shows zero divergences.
+    ///     ⚠ Parenthesis removal only. docs/plan/06 § "Qualification and redundancy": it is the
+    ///     highest-risk rewrite in the tool and it is gated for the first release regardless of what the
+    ///     export says, and revisited when the corpus differential shows zero divergences.
     /// </summary>
     public bool Aggressive { get; }
 
@@ -121,14 +121,14 @@ public readonly struct ArrangementOptions {
     public int IndentSize { get; }
 
     /// <summary>
-    /// The escape hatch, read by <see cref="FormatterTagGuard"/>.
+    ///     The escape hatch, read by <see cref="FormatterTagGuard" />.
     /// </summary>
     /// <remarks>
-    /// ⚠ Inert in the option-coverage sense and not in any other: the formatter already claims these
-    /// four keys and its fixtures pin them, so claiming them again here would make the Tier A set
-    /// ambiguous about which component proves them. What arrangement adds is a *refusal*, and a
-    /// refusal has no output to differential — it is pinned by
-    /// <c>constructs/arrangement/formatter-tags/</c> instead.
+    ///     ⚠ Inert in the option-coverage sense and not in any other: the formatter already claims these
+    ///     four keys and its fixtures pin them, so claiming them again here would make the Tier A set
+    ///     ambiguous about which component proves them. What arrangement adds is a *refusal*, and a
+    ///     refusal has no output to differential — it is pinned by
+    ///     <c>constructs/arrangement/formatter-tags/</c> instead.
     /// </remarks>
     public bool FormatterTagsEnabled { get; }
 
@@ -136,21 +136,21 @@ public readonly struct ArrangementOptions {
     public string FormatterOnTag { get; }
     public bool FormatterTagsAcceptRegexp { get; }
 
-    /// <summary>The four keys as <see cref="FormatterTagGuard"/> wants them.</summary>
+    /// <summary>The four keys as <see cref="FormatterTagGuard" /> wants them.</summary>
     public FormatterTags Tags => new(FormatterTagsEnabled, FormatterOffTag, FormatterOnTag, FormatterTagsAcceptRegexp);
 
     /// <summary>Every option the arranger reads — the arrangement half of the Tier A claim.</summary>
     public static ImmutableArray<OptionId> Implemented => Ids.All;
 
     /// <summary>
-    /// The <c>.editorconfig</c> spellings, resolved once.
+    ///     The <c>.editorconfig</c> spellings, resolved once.
     /// </summary>
     /// <remarks>
-    /// ⚠ The same shape as <see cref="PhaseOneOptions"/>'s <c>Ids</c>, including the inert list:
-    /// <see cref="MaxLineLength"/> and <see cref="IndentSize"/> are read because the body-style
-    /// heuristic needs a column budget, not because arrangement implements them — the formatter
-    /// already claims both, and claiming them twice would make the Tier A set ambiguous about which
-    /// component's fixture pins them.
+    ///     ⚠ The same shape as <see cref="PhaseOneOptions" />'s <c>Ids</c>, including the inert list:
+    ///     <see cref="MaxLineLength" /> and <see cref="IndentSize" /> are read because the body-style
+    ///     heuristic needs a column budget, not because arrangement implements them — the formatter
+    ///     already claims both, and claiming them twice would make the Tier A set ambiguous about which
+    ///     component's fixture pins them.
     /// </remarks>
     public static class Ids {
         static readonly List<OptionId> Collected = [];

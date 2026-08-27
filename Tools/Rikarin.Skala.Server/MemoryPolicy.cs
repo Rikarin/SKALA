@@ -3,46 +3,46 @@ using System.Globalization;
 namespace Rikarin.Skala.Server;
 
 /// <summary>
-/// What the daemon does when it is holding too much.
+///     What the daemon does when it is holding too much.
 /// </summary>
 /// <remarks>
-/// docs/plan/13 § "Memory", in full and in order:
-/// <list type="bullet">
-/// <item>Parsed trees: LRU by content hash, capped at 400 MB, dropped first.</item>
-/// <item>Compilations: at most 4 retained; the rest rebuilt on demand.</item>
-/// <item>
-/// On RSS above the cap: drop the tree cache, then compilations, then <b>exit rather than swap</b>.
-/// </item>
-/// </list>
-/// <para>
-/// ⚠ <b>The exit is the part that matters and the part that is easy to leave out.</b> A daemon that
-/// pushes a laptop into swap is worse than no daemon: the machine becomes unusable, the cause is
-/// invisible, and the blame lands on the editor. Exiting is always safe — every command works
-/// identically with <c>SKALA_NO_DAEMON=1</c>, so a daemon that is gone costs the next invocation its
-/// cold path and nothing else, and the lazy start brings a fresh one back.
-/// </para>
-/// <para>
-/// ⚠ The trigger is <see cref="GCMemoryInfo"/> and the process's working set, polled, rather than
-/// <c>GC.RegisterForFullGCNotification</c>: that API is only raised for blocking gen-2 collections
-/// and the server GC configuration the daemon inherits mostly does not produce them, so the
-/// notification that was supposed to be the signal never arrives. A poll every few seconds costs
-/// nothing on a process that is idle by design.
-/// </para>
+///     docs/plan/13 § "Memory", in full and in order:
+///     <list type="bullet">
+///         <item>Parsed trees: LRU by content hash, capped at 400 MB, dropped first.</item>
+///         <item>Compilations: at most 4 retained; the rest rebuilt on demand.</item>
+///         <item>
+///             On RSS above the cap: drop the tree cache, then compilations, then <b>exit rather than swap</b>.
+///         </item>
+///     </list>
+///     <para>
+///         ⚠ <b>The exit is the part that matters and the part that is easy to leave out.</b> A daemon that
+///         pushes a laptop into swap is worse than no daemon: the machine becomes unusable, the cause is
+///         invisible, and the blame lands on the editor. Exiting is always safe — every command works
+///         identically with <c>SKALA_NO_DAEMON=1</c>, so a daemon that is gone costs the next invocation its
+///         cold path and nothing else, and the lazy start brings a fresh one back.
+///     </para>
+///     <para>
+///         ⚠ The trigger is <see cref="GCMemoryInfo" /> and the process's working set, polled, rather than
+///         <c>GC.RegisterForFullGCNotification</c>: that API is only raised for blocking gen-2 collections
+///         and the server GC configuration the daemon inherits mostly does not produce them, so the
+///         notification that was supposed to be the signal never arrives. A poll every few seconds costs
+///         nothing on a process that is idle by design.
+///     </para>
 /// </remarks>
 public sealed class MemoryPolicy {
     /// <summary>Trees are dropped above this. docs/plan/13: "capped at 400 MB, dropped first".</summary>
     public long TreeCacheBytes { get; init; } = 400L * 1024 * 1024;
 
     /// <summary>
-    /// The whole process's ceiling. docs/plan/13's budget row is "Daemon RSS, idle after a corpus
-    /// run &lt; 1.5 GB"; this is the point at which the daemon starts giving things back, set below
-    /// the budget so that the budget is what is *observed* rather than what is aimed at.
+    ///     The whole process's ceiling. docs/plan/13's budget row is "Daemon RSS, idle after a corpus
+    ///     run &lt; 1.5 GB"; this is the point at which the daemon starts giving things back, set below
+    ///     the budget so that the budget is what is *observed* rather than what is aimed at.
     /// </summary>
     public long SoftLimitBytes { get; init; } = 1_200L * 1024 * 1024;
 
     /// <summary>
-    /// Above this, after dropping everything droppable, the daemon exits. ⚠ Deliberately below the
-    /// point at which a 16 GB laptop with an IDE and a browser open begins to swap.
+    ///     Above this, after dropping everything droppable, the daemon exits. ⚠ Deliberately below the
+    ///     point at which a 16 GB laptop with an IDE and a browser open begins to swap.
     /// </summary>
     public long HardLimitBytes { get; init; } = 1_500L * 1024 * 1024;
 
@@ -66,8 +66,8 @@ public sealed class MemoryPolicy {
     }
 
     /// <summary>
-    /// One step of the policy, given the current usage. Pure, so that it is testable without
-    /// allocating a gigabyte.
+    ///     One step of the policy, given the current usage. Pure, so that it is testable without
+    ///     allocating a gigabyte.
     /// </summary>
     /// <param name="workingSet">The process's resident set.</param>
     /// <param name="alreadyDroppedTrees">Whether this pass has already dropped the tree cache.</param>
@@ -84,9 +84,9 @@ public sealed class MemoryPolicy {
     }
 
     /// <summary>
-    /// Polls until cancelled, applying the policy. Returns when the daemon should stop.
+    ///     Polls until cancelled, applying the policy. Returns when the daemon should stop.
     /// </summary>
-    /// <returns><see langword="true"/> when the caller must exit the process.</returns>
+    /// <returns><see langword="true" /> when the caller must exit the process.</returns>
     public async Task<bool> WatchAsync(
         FormatService trees,
         RetainedCompilations compilations,

@@ -12,8 +12,11 @@ namespace Vixen.Ui.Tests;
 /// <summary>The frame pass restyling incrementally, judged against a document built cold.</summary>
 /// <remarks>
 ///     <para>
-///         ⚠ <b>Deliberately driven through <see cref="UiDocument" /> rather than through
-///         <see cref="StyleUpdater" />.</b> <c>Vixen.Ui.Styling.Tests.IncrementalRestyleOracleTests</c>
+///         ⚠
+///         <b>
+///             Deliberately driven through <see cref="UiDocument" /> rather than through
+///             <see cref="StyleUpdater" />.
+///         </b> <c>Vixen.Ui.Styling.Tests.IncrementalRestyleOracleTests</c>
 ///         already runs this property against the updater and has been green since Phase 4b — while
 ///         <see cref="UiDocument.Update" /> called <c>StyleEngine.ResolveAll</c> and never touched the
 ///         updater at all. Every claim about incremental restyling was true of an object nothing in
@@ -60,10 +63,10 @@ public class IncrementalDocumentTests {
                         incrementalPasses++;
                     } // The oracle is a second document built *directly* in the state the mutations left
 
-// the first one in — not the same document with the same mutations replayed. Both
-// sides would then reach their final state through the same mutation code, so
-// anything that code gets wrong is wrong identically on both and the comparison sees
-// nothing. `IncrementalRestyleOracleTests` learned that the hard way in 4b.
+                    // the first one in — not the same document with the same mutations replayed. Both
+                    // sides would then reach their final state through the same mutation code, so
+                    // anything that code gets wrong is wrong identically on both and the comparison sees
+                    // nothing. `IncrementalRestyleOracleTests` learned that the hard way in 4b.
                     using var cold = new UiDocument(400f, 300f);
                     cold.Load(css);
                     var reference = Build(cold, seed, depth, breadth);
@@ -77,30 +80,30 @@ public class IncrementalDocumentTests {
                 },
                 iter: 300
             ); // ⚠ **Three coverage assertions, and the first version of this test had only one.** A
-// property that compares two documents is perfectly happy comparing two documents where
-// nothing matched anything — and that is what the first draft did, because `Build` gave its
-// elements no classes and every generated rule needed one. Every rule was dead, both sides
-// resolved to nothing, and dropping state changes from the replay entirely **passed 300 of
-// 300 iterations**. Found by sabotage, which is the only thing that could have found it: the
-// property was green, the vacuity guard about incremental passes was green, and the suite was
-// asserting that two empty documents agree.
+        // property that compares two documents is perfectly happy comparing two documents where
+        // nothing matched anything — and that is what the first draft did, because `Build` gave its
+        // elements no classes and every generated rule needed one. Every rule was dead, both sides
+        // resolved to nothing, and dropping state changes from the replay entirely **passed 300 of
+        // 300 iterations**. Found by sabotage, which is the only thing that could have found it: the
+        // property was green, the vacuity guard about incremental passes was green, and the suite was
+        // asserting that two empty documents agree.
         Assert.True(incrementalPasses > 250, $"only {incrementalPasses} of 300 passes were incremental.");
         Assert.True(styledElements > 2_000, $"only {styledElements} elements resolved to a non-empty style.");
         Assert.True(stateMutations > 200, $"only {stateMutations} mutations were state changes.");
     } // Verified by sabotage, against the whole of Vixen.Ui.Tests:
 
-//
-//   dropping state changes from the replay          fails 2  (1 before the coverage assertions)
-//   a structural change staying narrow              fails 74
-//   the inline block dropped from a resolve         fails 7
-//   a record that keeps only the last change        fails 2
-//   a scroll invalidating everything, as before     fails 1
-//   a cold pass that does not clear the flag        fails 7
-//
-// ⚠ **One failed to fail**: deleting `Restyler.Compact` from `UiDocument.CompactStyles`. It is
-// unreachable, not untested — compaction forces the next pass to be cold and a cold pass rewrites
-// every entry of the array the remap just fixed. Labelled as insurance where it lives, with what
-// would make it necessary written beside it.
+    //
+    //   dropping state changes from the replay          fails 2  (1 before the coverage assertions)
+    //   a structural change staying narrow              fails 74
+    //   the inline block dropped from a resolve         fails 7
+    //   a record that keeps only the last change        fails 2
+    //   a scroll invalidating everything, as before     fails 1
+    //   a cold pass that does not clear the flag        fails 7
+    //
+    // ⚠ **One failed to fail**: deleting `Restyler.Compact` from `UiDocument.CompactStyles`. It is
+    // unreachable, not untested — compaction forces the next pass to be cold and a cold pass rewrites
+    // every entry of the array the remap just fixed. Labelled as insurance where it lives, with what
+    // would make it necessary written beside it.
     [Fact]
     public void Toggling_one_class_on_a_grid_resolves_a_handful_of_elements() {
         // Phase 4b's invalidation-minimality gate, asked of the document instead of the updater.
@@ -129,8 +132,8 @@ public class IncrementalDocumentTests {
         Assert.False(
             document.LastPassWasCold
         ); // ⚠ The number that used to be 10 101 — and `StylesApplied` read 1 either way, which is why
-// nothing noticed. `background-color` is not inherited, so the row's hundred cells are
-// correctly not descended into.
+        // nothing noticed. `background-color` is not inherited, so the row's hundred cells are
+        // correctly not descended into.
         Assert.Equal(1, document.StylesResolved);
         Assert.Equal(1, document.StylesApplied);
     }
@@ -159,9 +162,9 @@ public class IncrementalDocumentTests {
     [Fact]
     public void An_inline_style_survives_an_incremental_pass() {
         // The bug wiring this up found. `StyleUpdater.Resolve` did not pass the element's inline
-// block, because inline styles arrived in 4e and the updater was written in 4b with nothing
-// between them to notice. Every declaration written on an element vanished the moment the
-// pass became incremental — a splitter losing its ratio on the first hover.
+        // block, because inline styles arrived in 4e and the updater was written in 4b with nothing
+        // between them to notice. Every declaration written on an element vanished the moment the
+        // pass became incremental — a splitter losing its ratio on the first hover.
         using var document = new UiDocument(400f, 300f);
         document.Load(
             """
@@ -194,7 +197,7 @@ public class IncrementalDocumentTests {
         Assert.False(
             document.LastPassWasCold
         ); // Creating an element is not, and must not be quietly treated as one — a new element has no
-// resolved style at all, and no invalidation root reaches it.
+        // resolved style at all, and no invalidation root reaches it.
         var fresh = document.Root.Add("div");
         document.Update();
         Assert.True(document.LastPassWasCold);
@@ -224,7 +227,7 @@ public class IncrementalDocumentTests {
         var second = document.Root.Add("div");
         var third = document.Root.Add("div");
         document.Update(); // Three changes, one pass. A record that kept only the last would leave two of them unstyled
-// and look completely correct on any test that made one change at a time.
+        // and look completely correct on any test that made one change at a time.
         first.AddClass("marked");
         second.AddClass("lit");
         third.AddClass("marked");
@@ -238,7 +241,7 @@ public class IncrementalDocumentTests {
     [Fact]
     public void An_ancestors_state_still_reaches_its_descendants() {
         // The sharing-cache regression from 4e, re-asserted against the incremental path — where the
-// pass scoping is `StyleUpdater`'s to get right rather than `StyleEngine.ResolveAll`'s.
+        // pass scoping is `StyleUpdater`'s to get right rather than `StyleEngine.ResolveAll`'s.
         using var document = new UiDocument(400f, 300f);
         document.Load(
             """

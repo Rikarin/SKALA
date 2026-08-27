@@ -5,11 +5,11 @@ namespace Rikarin.Skala.Testing;
 
 /// <summary>One corpus file and the oracle fixtures beside it.</summary>
 /// <remarks>
-/// ⚠ "the fixture" became "the fixtures" at milestone 4. A file now carries one committed
-/// <c>jb cleanupcode</c> output per <see cref="OracleProfile"/>: the format-only one every milestone
-/// since 1 has measured, and the cleanup one arrangement is measured against. The no-argument
-/// members below are the format-only ones, unchanged, so that no existing call site silently starts
-/// measuring the other question.
+///     ⚠ "the fixture" became "the fixtures" at milestone 4. A file now carries one committed
+///     <c>jb cleanupcode</c> output per <see cref="OracleProfile" />: the format-only one every milestone
+///     since 1 has measured, and the cleanup one arrangement is measured against. The no-argument
+///     members below are the format-only ones, unchanged, so that no existing call site silently starts
+///     measuring the other question.
 /// </remarks>
 public sealed record CorpusFile(string Set, string RelativePath, string Path) {
     /// <summary>The committed format-only <c>jb cleanupcode</c> output.</summary>
@@ -25,7 +25,7 @@ public sealed record CorpusFile(string Set, string RelativePath, string Path) {
 }
 
 /// <summary>
-/// <c>Testing/corpus/</c>: the three sets from docs/plan/02 § "The corpus".
+///     <c>Testing/corpus/</c>: the three sets from docs/plan/02 § "The corpus".
 /// </summary>
 public static class Corpus {
     /// <summary>~1 200 small files, one C# construct each. Every option × every value.</summary>
@@ -38,32 +38,32 @@ public static class Corpus {
     public const string Pathological = "pathological";
 
     /// <summary>
-    /// The subtree of <see cref="Constructs"/> that arrangement owns, and the only part of it that
-    /// carries a cleanup fixture.
+    ///     The subtree of <see cref="Constructs" /> that arrangement owns, and the only part of it that
+    ///     carries a cleanup fixture.
     /// </summary>
     /// <remarks>
-    /// ⚠ Not every construct file gets a second fixture. A cleanup fixture costs an oracle run and a
-    /// committed file, and for the 250-odd whitespace constructs the answer is "the same as the
-    /// format-only fixture" — a fixture whose content is predictable measures nothing. The
-    /// arrangement subtree and <see cref="Real"/> are where the second profile has something to say.
+    ///     ⚠ Not every construct file gets a second fixture. A cleanup fixture costs an oracle run and a
+    ///     committed file, and for the 250-odd whitespace constructs the answer is "the same as the
+    ///     format-only fixture" — a fixture whose content is predictable measures nothing. The
+    ///     arrangement subtree and <see cref="Real" /> are where the second profile has something to say.
     /// </remarks>
     public const string ArrangementPrefix = "arrangement/";
 
     /// <summary>
-    /// A symbol set that makes a conditional body live, for the properties to be asserted under.
+    ///     A symbol set that makes a conditional body live, for the properties to be asserted under.
     /// </summary>
     /// <remarks>
-    /// ⚠ Not the oracle's own eighteen, and it does not need to be. What a *fidelity* measurement
-    /// needs is the symbols the oracle actually had (<c>fidelity preprocessor</c> reads them out of
-    /// a binary log for exactly that reason); what a *property* needs is only that <c>#if</c> bodies
-    /// stop being disabled text, because that is the code path the properties were never asserted
-    /// over. A hard-coded list keeps the suite runnable on a machine with no SDK probe and no
-    /// oracle.
-    /// <para>
-    /// ⚠ It lives here rather than in the conformance test project because the fuzzer needs it too
-    /// and the fuzzer is a library, not a test. Two lists would be two answers to "what does
-    /// <c>defined</c> mean", and the second one would drift.
-    /// </para>
+    ///     ⚠ Not the oracle's own eighteen, and it does not need to be. What a *fidelity* measurement
+    ///     needs is the symbols the oracle actually had (<c>fidelity preprocessor</c> reads them out of
+    ///     a binary log for exactly that reason); what a *property* needs is only that <c>#if</c> bodies
+    ///     stop being disabled text, because that is the code path the properties were never asserted
+    ///     over. A hard-coded list keeps the suite runnable on a machine with no SDK probe and no
+    ///     oracle.
+    ///     <para>
+    ///         ⚠ It lives here rather than in the conformance test project because the fuzzer needs it too
+    ///         and the fuzzer is a library, not a test. Two lists would be two answers to "what does
+    ///         <c>defined</c> mean", and the second one would drift.
+    ///     </para>
     /// </remarks>
     public static readonly ImmutableArray<string> PropertySymbols = [
         "DEBUG",
@@ -107,17 +107,20 @@ public static class Corpus {
     }
 
     /// <summary>
-    /// <c>pathological/open/</c> — minimised fuzz findings whose defect is not fixed yet.
+    ///     <c>pathological/open/</c> — minimised fuzz findings whose defect is not fixed yet.
     /// </summary>
     /// <remarks>
-    /// ⚠ Excluded from every measured set, and the exclusion is the point rather than a dodge. One
-    /// of the entries makes <c>skala format</c> throw an unhandled exception, and a file that throws
-    /// does not fail one assertion — it takes down every harness path that formats the corpus, the
-    /// fidelity number and the differential report included. What holds those files to account
-    /// instead is <c>OpenDefectTests</c>, which asserts that each of them <b>still fails, in the way
-    /// its register entry records</b>: a defect that gets fixed breaks that suite and is told to
-    /// move its file into <c>pathological/</c> proper with an oracle fixture. See
-    /// <c>Testing/corpus/pathological/open/register.md</c>.
+    ///     ⚠ Excluded from every measured set, and the exclusion is the point rather than a dodge. One
+    ///     of the entries makes <c>skala format</c> throw an unhandled exception, and a file that throws
+    ///     does not fail one assertion — it takes down every harness path that formats the corpus, the
+    ///     fidelity number and the differential report included. What holds those files to account
+    ///     instead is <c>OpenDefectTests</c>, which asserts that each of them
+    ///     <b>
+    ///         still fails, in the way
+    ///         its register entry records
+    ///     </b>: a defect that gets fixed breaks that suite and is told to
+    ///     move its file into <c>pathological/</c> proper with an oracle fixture. See
+    ///     <c>Testing/corpus/pathological/open/register.md</c>.
     /// </remarks>
     static bool IsOpenDefect(string relativePath) =>
         relativePath.StartsWith(OpenDefects.OpenDirectory + "/", StringComparison.Ordinal);
@@ -125,9 +128,9 @@ public static class Corpus {
     public static IReadOnlyList<CorpusFile> All() => [.. Files(Constructs), .. Files(Real), .. Files(Pathological)];
 
     /// <summary>
-    /// The files a cleanup fixture is expected for: all of <see cref="Real"/>, plus the arrangement
-    /// constructs. This is the set <c>./build.sh Oracle</c> regenerates under the second profile and
-    /// the set the M4 differential is measured over.
+    ///     The files a cleanup fixture is expected for: all of <see cref="Real" />, plus the arrangement
+    ///     constructs. This is the set <c>./build.sh Oracle</c> regenerates under the second profile and
+    ///     the set the M4 differential is measured over.
     /// </summary>
     public static IReadOnlyList<CorpusFile> Arrangeable() => [
         .. Files(Constructs)

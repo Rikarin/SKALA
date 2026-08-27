@@ -12,19 +12,19 @@ using Rikarin.Skala.Rules.Metadata;
 namespace Rikarin.Skala.Rules.Async;
 
 /// <summary>
-/// <c>SK3007</c> — a task built from a <c>using</c> variable is returned instead of awaited.
+///     <c>SK3007</c> — a task built from a <c>using</c> variable is returned instead of awaited.
 /// </summary>
 /// <remarks>
-/// docs/plan/08-rule-catalogue.md § "SK3000 — Async, concurrency, lifetime". The <c>using</c>
-/// disposes at the <c>return</c>, not when the task finishes, so the operation runs on against a
-/// disposed stream, connection or scope. What the caller sees is an <c>ObjectDisposedException</c>
-/// with no visible connection to the <c>using</c> — or nothing at all, when the operation happened
-/// to complete first, which is how the bug survives every test and appears under load.
-/// <para>
-/// ⚠ The finding is withheld unless the whole repair is available. Adding <c>async</c> obliges
-/// every other <c>return</c> in the method to be awaited too, so the rule collects them, refuses
-/// the shapes it cannot rewrite, and reports nothing where it could only rewrite half the method.
-/// </para>
+///     docs/plan/08-rule-catalogue.md § "SK3000 — Async, concurrency, lifetime". The <c>using</c>
+///     disposes at the <c>return</c>, not when the task finishes, so the operation runs on against a
+///     disposed stream, connection or scope. What the caller sees is an <c>ObjectDisposedException</c>
+///     with no visible connection to the <c>using</c> — or nothing at all, when the operation happened
+///     to complete first, which is how the bug survives every test and appears under load.
+///     <para>
+///         ⚠ The finding is withheld unless the whole repair is available. Adding <c>async</c> obliges
+///         every other <c>return</c> in the method to be awaited too, so the rule collects them, refuses
+///         the shapes it cannot rewrite, and reports nothing where it could only rewrite half the method.
+///     </para>
 /// </remarks>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class TaskReturnedFromUsingAnalyzer : DiagnosticAnalyzer {
@@ -123,9 +123,9 @@ public sealed class TaskReturnedFromUsingAnalyzer : DiagnosticAnalyzer {
 
     /// <summary>The method or local function the return belongs to; null across a lambda.</summary>
     /// <remarks>
-    /// ⚠ Lambdas are excluded rather than handled. <c>async</c> goes in a different place in each
-    /// of their four spellings, and a delegate's return type is inferred from a conversion the rule
-    /// would have to re-check after the edit.
+    ///     ⚠ Lambdas are excluded rather than handled. <c>async</c> goes in a different place in each
+    ///     of their four spellings, and a delegate's return type is inferred from a conversion the rule
+    ///     would have to re-check after the edit.
     /// </remarks>
     static SyntaxNode? EnclosingFunction(SyntaxNode node) {
         for (var current = node.Parent; current is not null; current = current.Parent) {
@@ -152,7 +152,7 @@ public sealed class TaskReturnedFromUsingAnalyzer : DiagnosticAnalyzer {
             : ((LocalFunctionStatementSyntax)function).ReturnType;
 
     /// <summary>
-    /// Whether <c>async</c> can be added to this function at all, and what it returns.
+    ///     Whether <c>async</c> can be added to this function at all, and what it returns.
     /// </summary>
     static bool IsRewritable(
         SyntaxNodeAnalysisContext context,
@@ -258,7 +258,7 @@ public sealed class TaskReturnedFromUsingAnalyzer : DiagnosticAnalyzer {
             .OfType<ReturnStatementSyntax>();
 
     /// <summary>
-    /// The name of a <c>using</c> resource the returned expression mentions, or null.
+    ///     The name of a <c>using</c> resource the returned expression mentions, or null.
     /// </summary>
     static string? DisposedResourceNamedIn(ReturnStatementSyntax statement, BlockSyntax? body) {
         if (body is null) {
@@ -309,12 +309,12 @@ public sealed class TaskReturnedFromUsingAnalyzer : DiagnosticAnalyzer {
     }
 
     /// <summary>
-    /// Whether falling off the end of the body would reach the same place this <c>return</c> does.
+    ///     Whether falling off the end of the body would reach the same place this <c>return</c> does.
     /// </summary>
     /// <remarks>
-    /// ⚠ Syntactic and conservative: the statement is the last of its block, and so is every block
-    /// between it and the body. Anything else and dropping the `return` keyword would run code the
-    /// original never ran.
+    ///     ⚠ Syntactic and conservative: the statement is the last of its block, and so is every block
+    ///     between it and the body. Anything else and dropping the `return` keyword would run code the
+    ///     original never ran.
     /// </remarks>
     static bool IsInTailPosition(StatementSyntax statement, BlockSyntax body) {
         var current = (SyntaxNode)statement;

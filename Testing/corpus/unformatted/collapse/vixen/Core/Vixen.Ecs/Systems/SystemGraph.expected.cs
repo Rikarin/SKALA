@@ -54,8 +54,11 @@ public sealed record SystemPlacement(Type SystemType, SystemPhase Phase, int Ord
 ///         second.
 ///     </para>
 ///     <para>
-///         ⚠ <b>There are no <c>DependsOn</c> edges here and that is not an omission to be fixed
-///         later.</b> Those come from <see cref="SystemAccess.ConflictsWith" />, and an undeclared
+///         ⚠
+///         <b>
+///             There are no <c>DependsOn</c> edges here and that is not an omission to be fixed
+///             later.
+///         </b> Those come from <see cref="SystemAccess.ConflictsWith" />, and an undeclared
 ///         access conflicts with everything — so guessing at it would not produce a cautious answer,
 ///         it would produce a confident wrong one.
 ///     </para>
@@ -128,7 +131,7 @@ public sealed class SystemGraph {
             members.Add(system);
         }
 
-        foreach (var (phase, members)in grouped) {
+        foreach (var (phase, members) in grouped) {
             var types = new Type[members.Count];
             for (var position = 0; position < members.Count; position++) {
                 types[position] = members[position].GetType();
@@ -201,7 +204,9 @@ public sealed class SystemGraph {
         return new(placements, unsatisfied);
     }
 
-    /// <summary>Which phase a system type belongs to. Without an attribute, <see cref="SystemPhase.Update" />.</summary>
+    /// <summary>
+    ///     Which phase a system type belongs to. Without an attribute, <see cref="SystemPhase.Update" />.
+    /// </summary>
     static SystemPhase PhaseOf(Type systemType) =>
         systemType.GetCustomAttribute<UpdateInGroupAttribute>(inherit: true)?.Phase ?? SystemPhase.Update;
 
@@ -251,8 +256,8 @@ public sealed class SystemGraph {
             }
         } // Kahn's algorithm with a ready set ordered by registration position, so a graph with no
 
-// constraints comes out in the order it was written and a graph with some constraints keeps
-// that order everywhere the constraints do not speak.
+        // constraints comes out in the order it was written and a graph with some constraints keeps
+        // that order everywhere the constraints do not speak.
         var ready = new PriorityQueue<int, int>();
         for (var position = 0; position < members.Count; position++) {
             if (incoming[position] == 0) {

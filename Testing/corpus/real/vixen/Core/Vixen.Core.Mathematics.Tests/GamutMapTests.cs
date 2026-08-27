@@ -98,8 +98,8 @@ public sealed class GamutMapTests {
     [InlineData(ColorGamut.Rec2020)]
     public void Rebasing_onto_a_gamut_and_back_is_an_identity(ColorGamut gamut) {
         foreach (var colour in new[] {
-            new Vector3(0.2f, 0.7f, 0.4f), new Vector3(1f, 0f, 0f), new Vector3(0.05f, 0.05f, 0.9f)
-        }) {
+                     new Vector3(0.2f, 0.7f, 0.4f), new Vector3(1f, 0f, 0f), new Vector3(0.05f, 0.05f, 0.9f)
+                 }) {
             var round = GamutMap.ToLinearSrgb(GamutMap.FromLinearSrgb(colour, gamut), gamut);
 
             Assert.Equal(colour.X, round.X, 4);
@@ -308,17 +308,18 @@ public sealed class GamutMapTests {
 
         Gen.Select(channel, channel, channel, Gen.Int[0, 2])
             .Sample(sample => {
-                var (r, g, b, which) = sample;
-                var colour = new Vector3(r, g, b);
-                var gamut = (ColorGamut) which;
+                    var (r, g, b, which) = sample;
+                    var colour = new Vector3(r, g, b);
+                    var gamut = (ColorGamut)which;
 
-                var actual = GamutMap.Map(colour, gamut);
-                var expected = SpecificationOrder(colour, gamut);
+                    var actual = GamutMap.Map(colour, gamut);
+                    var expected = SpecificationOrder(colour, gamut);
 
-                Assert.Equal(expected.X, actual.X, 4);
-                Assert.Equal(expected.Y, actual.Y, 4);
-                Assert.Equal(expected.Z, actual.Z, 4);
-            });
+                    Assert.Equal(expected.X, actual.X, 4);
+                    Assert.Equal(expected.Y, actual.Y, 4);
+                    Assert.Equal(expected.Z, actual.Z, 4);
+                }
+            );
     }
 
     /// <summary>The lightness branches ahead of the in-gamut test, as CSS Color 4 § 14.2 writes them.</summary>

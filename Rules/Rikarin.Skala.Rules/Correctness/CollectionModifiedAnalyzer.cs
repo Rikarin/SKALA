@@ -11,20 +11,20 @@ using Rikarin.Skala.Rules.Metadata;
 namespace Rikarin.Skala.Rules.Correctness;
 
 /// <summary>
-/// <c>SK2007</c> — the <c>foreach</c> modifies the collection it is enumerating.
+///     <c>SK2007</c> — the <c>foreach</c> modifies the collection it is enumerating.
 /// </summary>
 /// <remarks>
-/// docs/plan/08-rule-catalogue.md § "SK2000 — Correctness". The BCL collections carry a version
-/// counter and <c>MoveNext</c> throws <c>InvalidOperationException</c> as soon as it moves. Because
-/// the rule reports only loops with no way out — no <c>break</c>, no <c>return</c>, no
-/// <c>throw</c>, no <c>goto</c> — the enumerator is certain to be advanced again after the
-/// mutation, including past the last element where <c>MoveNext</c> still runs to return
-/// <c>false</c>. This is a throw on every execution that reaches the mutation rather than a risk.
-/// <para>
-/// ⚠ The collection type is matched against a closed list, never against <c>ICollection&lt;T&gt;</c>.
-/// A concurrent collection is designed to be written while it is read, and a custom implementation
-/// may be; a rule that assumed otherwise would report the code that got it right.
-/// </para>
+///     docs/plan/08-rule-catalogue.md § "SK2000 — Correctness". The BCL collections carry a version
+///     counter and <c>MoveNext</c> throws <c>InvalidOperationException</c> as soon as it moves. Because
+///     the rule reports only loops with no way out — no <c>break</c>, no <c>return</c>, no
+///     <c>throw</c>, no <c>goto</c> — the enumerator is certain to be advanced again after the
+///     mutation, including past the last element where <c>MoveNext</c> still runs to return
+///     <c>false</c>. This is a throw on every execution that reaches the mutation rather than a risk.
+///     <para>
+///         ⚠ The collection type is matched against a closed list, never against <c>ICollection&lt;T&gt;</c>.
+///         A concurrent collection is designed to be written while it is read, and a custom implementation
+///         may be; a rule that assumed otherwise would report the code that got it right.
+///     </para>
 /// </remarks>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class CollectionModifiedAnalyzer : DiagnosticAnalyzer {
@@ -156,12 +156,12 @@ public sealed class CollectionModifiedAnalyzer : DiagnosticAnalyzer {
     }
 
     /// <summary>
-    /// Whether anything in the body could leave the loop before the next <c>MoveNext</c>.
+    ///     Whether anything in the body could leave the loop before the next <c>MoveNext</c>.
     /// </summary>
     /// <remarks>
-    /// ⚠ Deliberately blunt. A <c>break</c> inside a nested loop does not leave this one and a
-    /// <c>throw</c> inside a nested lambda does not either, but withholding the finding in those
-    /// cases costs a report; keeping it would cost a wrong one.
+    ///     ⚠ Deliberately blunt. A <c>break</c> inside a nested loop does not leave this one and a
+    ///     <c>throw</c> inside a nested lambda does not either, but withholding the finding in those
+    ///     cases costs a report; keeping it would cost a wrong one.
     /// </remarks>
     static bool HasAnExit(SyntaxNode body) {
         foreach (var node in body.DescendantNodes(static child => child is not AnonymousFunctionExpressionSyntax

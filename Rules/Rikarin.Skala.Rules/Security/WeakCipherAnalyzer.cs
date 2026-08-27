@@ -7,40 +7,43 @@ using Rikarin.Skala.Rules.Metadata;
 namespace Rikarin.Skala.Rules.Security;
 
 /// <summary>
-/// <c>SK5005</c> — a cipher that is broken, or a mode that leaks the plaintext's structure.
+///     <c>SK5005</c> — a cipher that is broken, or a mode that leaks the plaintext's structure.
 /// </summary>
 /// <remarks>
-/// docs/plan/08 § "SK5000 — Security".
-/// <para>
-/// ⚠ <b>The id was allocated narrower than doc 08's sentence, and the reason is that the hash half
-/// cannot be decided correctly.</b> The catalogue's entry reads "weak hash/cipher (<c>MD5</c>,
-/// <c>SHA1</c>, <c>DES</c>, ECB)". The hash half was cut, and not because it would be noisy —
-/// a rule that fires often is work for the repository, not a defect in the rule. It was cut because
-/// <b>the finding would frequently be wrong</b>, which is a different thing. <c>MD5</c> and
-/// <c>SHA-1</c> have a large legitimate population in which they are not security controls at all:
-/// cache keys, ETags, content addressing, bucket selection, and every wire protocol that froze its
-/// digest choice a decade ago and specifies it normatively. An RFC 6455 WebSocket handshake, for
-/// instance, is <em>defined</em> as a SHA-1 of the client key and a fixed GUID; reporting it would
-/// be asserting a vulnerability in code that has none and cannot have one. Separating that
-/// population from a password digest requires knowing what the hash is compared against and what
-/// happens when it matches — a data-flow question about the value's use, which this rule does
-/// not ask and which the intra-procedural engine could not answer if it did. ADR-012 makes an id's
-/// meaning permanent and forbids widening it later, so the hash half is not this id's to claim: it
-/// needs its own number, and an argument about how it will decide the question, before it is built.
-/// </para>
-/// <para>
-/// A cipher has no such population. <c>DES</c> has a 56-bit key and is brute-forced in hours;
-/// <c>RC2</c> is worse; ECB encrypts identical blocks to identical ciphertext, which is why the
-/// famous penguin is still recognisable through it. None of the three has a non-security use,
-/// because a cipher <em>is</em> the security control.
-/// </para>
-/// <para>
-/// ⚠ <c>hasFix: false</c>, and this is the range's "rarely" column doing its job rather than a gap.
-/// Rewriting <c>DES.Create()</c> to <c>Aes.Create()</c> compiles, and it changes the key length,
-/// the block size and the ciphertext format — so every value already encrypted with the old
-/// algorithm becomes unreadable. That is a migration, and a tool that performed it silently under
-/// <c>--fix</c> would be destroying data on its own advice.
-/// </para>
+///     docs/plan/08 § "SK5000 — Security".
+///     <para>
+///         ⚠
+///         <b>
+///             The id was allocated narrower than doc 08's sentence, and the reason is that the hash half
+///             cannot be decided correctly.
+///         </b> The catalogue's entry reads "weak hash/cipher (<c>MD5</c>,
+///         <c>SHA1</c>, <c>DES</c>, ECB)". The hash half was cut, and not because it would be noisy —
+///         a rule that fires often is work for the repository, not a defect in the rule. It was cut because
+///         <b>the finding would frequently be wrong</b>, which is a different thing. <c>MD5</c> and
+///         <c>SHA-1</c> have a large legitimate population in which they are not security controls at all:
+///         cache keys, ETags, content addressing, bucket selection, and every wire protocol that froze its
+///         digest choice a decade ago and specifies it normatively. An RFC 6455 WebSocket handshake, for
+///         instance, is <em>defined</em> as a SHA-1 of the client key and a fixed GUID; reporting it would
+///         be asserting a vulnerability in code that has none and cannot have one. Separating that
+///         population from a password digest requires knowing what the hash is compared against and what
+///         happens when it matches — a data-flow question about the value's use, which this rule does
+///         not ask and which the intra-procedural engine could not answer if it did. ADR-012 makes an id's
+///         meaning permanent and forbids widening it later, so the hash half is not this id's to claim: it
+///         needs its own number, and an argument about how it will decide the question, before it is built.
+///     </para>
+///     <para>
+///         A cipher has no such population. <c>DES</c> has a 56-bit key and is brute-forced in hours;
+///         <c>RC2</c> is worse; ECB encrypts identical blocks to identical ciphertext, which is why the
+///         famous penguin is still recognisable through it. None of the three has a non-security use,
+///         because a cipher <em>is</em> the security control.
+///     </para>
+///     <para>
+///         ⚠ <c>hasFix: false</c>, and this is the range's "rarely" column doing its job rather than a gap.
+///         Rewriting <c>DES.Create()</c> to <c>Aes.Create()</c> compiles, and it changes the key length,
+///         the block size and the ciphertext format — so every value already encrypted with the old
+///         algorithm becomes unreadable. That is a migration, and a tool that performed it silently under
+///         <c>--fix</c> would be destroying data on its own advice.
+///     </para>
 /// </remarks>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class WeakCipherAnalyzer : DiagnosticAnalyzer {
@@ -87,13 +90,13 @@ public sealed class WeakCipherAnalyzer : DiagnosticAnalyzer {
     }
 
     /// <summary>
-    /// <c>new DESCryptoServiceProvider()</c>, <c>DES.Create()</c>, and the <c>TripleDES</c> and
-    /// <c>RC2</c> equivalents.
+    ///     <c>new DESCryptoServiceProvider()</c>, <c>DES.Create()</c>, and the <c>TripleDES</c> and
+    ///     <c>RC2</c> equivalents.
     /// </summary>
     /// <remarks>
-    /// ⚠ Matched by the <em>type produced</em> rather than by the name written, so
-    /// <c>DESCryptoServiceProvider</c>, <c>TripleDESCng</c> and anything else deriving from one of
-    /// the three abstract bases is covered without being listed.
+    ///     ⚠ Matched by the <em>type produced</em> rather than by the name written, so
+    ///     <c>DESCryptoServiceProvider</c>, <c>TripleDESCng</c> and anything else deriving from one of
+    ///     the three abstract bases is covered without being listed.
     /// </remarks>
     static void Algorithm(OperationAnalysisContext context, ImmutableArray<INamedTypeSymbol> weak) {
         if (weak.IsEmpty) {
@@ -144,13 +147,16 @@ public sealed class WeakCipherAnalyzer : DiagnosticAnalyzer {
     }
 
     /// <summary>
-    /// <c>algorithm.Mode = CipherMode.ECB</c>, including inside an object initialiser.
+    ///     <c>algorithm.Mode = CipherMode.ECB</c>, including inside an object initialiser.
     /// </summary>
     /// <remarks>
-    /// ⚠ Only where <c>ECB</c> is the value <em>being assigned to a cipher's</em> <c>Mode</c>. A
-    /// bare mention of the enum member is not a finding: <c>if (algorithm.Mode == CipherMode.ECB)
-    /// throw new …</c> is a guard against exactly this, and reporting it would mean the rule fires
-    /// on the code written to satisfy it.
+    ///     ⚠ Only where <c>ECB</c> is the value <em>being assigned to a cipher's</em> <c>Mode</c>. A
+    ///     bare mention of the enum member is not a finding:
+    ///     <c>
+    ///if (algorithm.Mode == CipherMode.ECB)
+    /// throw new …
+    ///     </c> is a guard against exactly this, and reporting it would mean the rule fires
+    ///     on the code written to satisfy it.
     /// </remarks>
     static void Mode(OperationAnalysisContext context, INamedTypeSymbol symmetric, INamedTypeSymbol cipherMode) {
         var assignment = (ISimpleAssignmentOperation)context.Operation;

@@ -1,4 +1,5 @@
 #region License
+
 // Copyright (c) 2007 James Newton-King
 //
 // Permission is hereby granted, free of charge, to any person
@@ -21,8 +22,10 @@
 // WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 // OTHER DEALINGS IN THE SOFTWARE.
+
 #endregion
-using System;using System.Collections.Generic;using System.Text;using Newtonsoft.Json.Linq;
+
+using System; using System.Collections.Generic; using System.Text; using Newtonsoft.Json.Linq;
 #if DNXCORE50
 using Xunit;
 using Test = Xunit.FactAttribute;
@@ -30,23 +33,36 @@ using Assert = Newtonsoft.Json.Tests.XUnitAssert;
 #else
 using NUnit.Framework;
 #endif
-namespace Newtonsoft.Json.Tests.Documentation.Samples.Linq{[TestFixture]public class Clone:TestFixtureBase{[Test]public void Example(){
-#region Usage
-JObject o1=new JObject{{"String" ,"A string!" },{"Items" ,new JArray(1,2)}};Console.WriteLine(o1.ToString()); // {
-//   "String": "A string!",
-//   "Items": [
-//     1,
-//     2
-//   ]
-// }
-JObject o2=(JObject)o1.DeepClone();Console.WriteLine(o2.ToString()); // {
-//   "String": "A string!",
-//   "Items": [
-//     1,
-//     2
-//   ]
-// }
-Console.WriteLine(JToken.DeepEquals(o1,o2)); // true
-Console.WriteLine(Object.ReferenceEquals(o1,o2)); // false
-#endregion
-Assert.IsTrue(JToken.DeepEquals(o1,o2));Assert.IsFalse(Object.ReferenceEquals(o1,o2));}}}
+namespace Newtonsoft.Json.Tests.Documentation.Samples.Linq {
+    [TestFixture]
+    public class Clone : TestFixtureBase {
+        [Test]
+        public void Example() {
+            #region Usage
+
+            JObject o1 = new JObject { { "String", "A string!" }, { "Items", new JArray(1, 2) } };
+            Console.WriteLine(o1.ToString()); // {
+            //   "String": "A string!",
+            //   "Items": [
+            //     1,
+            //     2
+            //   ]
+            // }
+            JObject o2 = (JObject)o1.DeepClone();
+            Console.WriteLine(o2.ToString()); // {
+            //   "String": "A string!",
+            //   "Items": [
+            //     1,
+            //     2
+            //   ]
+            // }
+            Console.WriteLine(JToken.DeepEquals(o1, o2)); // true
+            Console.WriteLine(Object.ReferenceEquals(o1, o2)); // false
+
+            #endregion
+
+            Assert.IsTrue(JToken.DeepEquals(o1, o2));
+            Assert.IsFalse(Object.ReferenceEquals(o1, o2));
+        }
+    }
+}

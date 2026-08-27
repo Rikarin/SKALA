@@ -2,8 +2,6 @@ class C {
     void M() {
         try {
             M();
-        }
-        catch (System.Exception) {
-        }
+        } catch (System.Exception) { }
     }
 }

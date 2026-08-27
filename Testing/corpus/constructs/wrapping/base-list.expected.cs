@@ -2,7 +2,7 @@
 class ShortBase : IFirstInterfaceName { }
 
 class ASingleBaseTypeButAVeryLongDeclarationIndeedThatGoesOnAndOnAndOnForever :
-    SomeVeryLongBaseClassNameIndeedForThisParticularTestCase { }
+SomeVeryLongBaseClassNameIndeedForThisParticularTestCase { }
 
 class LongBaseClassNameHereOkAndMore : SomeVeryLongBaseClassNameIndeed,
     IFirstInterfaceName,

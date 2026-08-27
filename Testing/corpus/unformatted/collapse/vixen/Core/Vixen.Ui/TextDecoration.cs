@@ -1,20 +1,24 @@
 // SPDX-FileCopyrightText: Copyright (c) Rikarin
 // SPDX-License-Identifier: Apache-2.0
-using Vixen.Core.Mathematics;namespace Vixen.Ui;
+using Vixen.Core.Mathematics; namespace Vixen.Ui;
+
 /// <summary>Which lines <c>text-decoration-line</c> asks for.</summary>
 /// <remarks>
 ///     Flags, because CSS takes a space-separated list and <c>underline overline</c> is two lines on
 ///     one run rather than a fifth value.
 /// </remarks>
-[Flags]public enum TextDecorationLine:byte{
-/// <summary>None. CSS's initial value, and what <c>no-underline</c> writes.</summary>
-None=0,
-/// <summary>A line below the baseline, at the position the face asks for.</summary>
-Underline=1,
-/// <summary>A line at the top of the ascent.</summary>
-Overline=2,
-/// <summary>A line across the glyphs, at the face's strikeout position.</summary>
-LineThrough=4}
+[Flags]
+public enum TextDecorationLine : byte {
+    /// <summary>None. CSS's initial value, and what <c>no-underline</c> writes.</summary>
+    None = 0,
+    /// <summary>A line below the baseline, at the position the face asks for.</summary>
+    Underline = 1,
+    /// <summary>A line at the top of the ascent.</summary>
+    Overline = 2,
+    /// <summary>A line across the glyphs, at the face's strikeout position.</summary>
+    LineThrough = 4
+}
+
 /// <summary>How <c>text-decoration-style</c> draws that line.</summary>
 /// <remarks>
 ///     ⚠ <b>Two of CSS's five, and the other three are absent rather than approximated.</b>
@@ -25,11 +29,13 @@ LineThrough=4}
 ///     inert family <c>UtilityConsumptionGateTests</c> exists to keep out, and registering one to
 ///     round the table out would be the same mistake with a nicer name.
 /// </remarks>
-public enum TextDecorationStyle:byte{
-/// <summary>One bar. CSS's initial value.</summary>
-Solid,
-/// <summary>Two bars, separated by a gap of the same thickness.</summary>
-Double}
+public enum TextDecorationStyle : byte {
+    /// <summary>One bar. CSS's initial value.</summary>
+    Solid,
+    /// <summary>Two bars, separated by a gap of the same thickness.</summary>
+    Double
+}
+
 /// <summary>An element's resolved <c>text-decoration</c>, ready to draw.</summary>
 /// <remarks>
 ///     <para>
@@ -54,18 +60,28 @@ Double}
 /// <param name="Thickness">How thick, in pixels, or NaN for the face's.</param>
 /// <param name="Offset">How much further down the underline sits, in pixels. Zero for <c>auto</c>.</param>
 /// <remarks>
-///     ⚠ <b><c>default(TextDecoration)</c> is not "a decoration with the defaults" — it is no
-///     decoration at all, and its <see cref="Thickness" /> is zero rather than NaN.</b> A record
+///     ⚠
+///     <b>
+///         <c>default(TextDecoration)</c> is not "a decoration with the defaults" — it is no
+///         decoration at all, and its <see cref="Thickness" /> is zero rather than NaN.
+///     </b> A record
 ///     struct's parameter defaults belong to its <i>constructor</i>; the zero-initialised value has
 ///     never run one. That is harmless because <see cref="Lines" /> is then
 ///     <see cref="TextDecorationLine.None" /> and <see cref="IsNone" /> catches it first — but it is
 ///     why <c>TextRun.Bar</c> takes its decoration as a required argument rather than an optional
 ///     one. An optional there would read as "ask the font" and would silently mean "draw nothing".
 /// </remarks>
-public readonly record struct TextDecoration(TextDecorationLine Lines,TextDecorationStyle Style=TextDecorationStyle.Solid,Color4?Color=null,float Thickness=float.NaN,float Offset=0f){
-/// <summary>Nothing to draw. The overwhelmingly common case, and the one that must cost nothing.</summary>
-public bool IsNone=>Lines==TextDecorationLine.None;}
+public readonly record struct TextDecoration(
+    TextDecorationLine Lines,
+    TextDecorationStyle Style = TextDecorationStyle.Solid,
+    Color4? Color = null,
+    float Thickness = float.NaN,
+    float Offset = 0f) {
+    /// <summary>Nothing to draw. The overwhelmingly common case, and the one that must cost nothing.</summary>
+    public bool IsNone => Lines == TextDecorationLine.None;
+}
+
 /// <summary>One decoration bar, placed against a baseline.</summary>
 /// <param name="Top">How far below the baseline its top edge sits. Negative is above.</param>
 /// <param name="Thickness">How tall it is. Always positive.</param>
-public readonly record struct DecorationBar(float Top,float Thickness);
+public readonly record struct DecorationBar(float Top, float Thickness);

@@ -111,10 +111,10 @@ public sealed class LocalAvoidance {
             maxSpeed,
             neighbours
         ); // Standing still is deliberately not a candidate. It is very often the lowest-penalty
-// velocity — nothing can be hit at zero speed — and it is a *stable* one: two agents who both
-// choose it are then two stationary obstacles for whom it is still the best answer, and they
-// face each other for ever. Every candidate here moves, so a jam resolves itself even when
-// the resolution is somebody taking the long way round.
+        // velocity — nothing can be hit at zero speed — and it is a *stable* one: two agents who both
+        // choose it are then two stationary obstacles for whom it is still the best answer, and they
+        // face each other for ever. Every candidate here moves, so a jam resolves itself even when
+        // the resolution is somebody taking the long way round.
         var heading = desired.LengthSquared() > 1e-6f ? desired : velocity;
         var baseAngle = heading.LengthSquared() > 1e-6f ? MathF.Atan2(heading.Z, heading.X) : 0f;
         var step = MathF.Tau / Settings.Samples;
@@ -122,7 +122,7 @@ public sealed class LocalAvoidance {
             var speed = maxSpeed * ring / Settings.Rings;
             for (var sample = 0; sample < Settings.Samples; sample++) {
                 // Every other ring is offset by half a step, so the samples do not all lie on the
-// same few directions — the same reason a dither pattern is not a grid.
+                // same few directions — the same reason a dither pattern is not a grid.
                 var angle = baseAngle + (sample * step) + (ring % 2 == 0 ? step * 0.5f : 0f);
                 var candidate = new Vector3(MathF.Cos(angle) * speed, 0f, MathF.Sin(angle) * speed);
                 var penalty = Penalty(position, radius, velocity, desired, candidate, maxSpeed, neighbours);
@@ -152,7 +152,7 @@ public sealed class LocalAvoidance {
         var counted = 0;
         foreach (var neighbour in neighbours) {
             // The reciprocal assumption: both agents are expected to move, so the relative velocity
-// this candidate implies is twice it, less both agents' current velocities.
+            // this candidate implies is twice it, less both agents' current velocities.
             var relative = (candidate * 2f) - velocity - neighbour.Velocity;
             var towards = neighbour.Position - position;
             var distance = towards.Length();
@@ -160,7 +160,7 @@ public sealed class LocalAvoidance {
                 distance > 1e-6f
                     ? towards / distance
                     : Vector3.UnitX; // Which way this encounter is already leaning. Passing that way is cheaper than passing
-// the other, and the two agents work it out from the same geometry, so they agree.
+            // the other, and the two agents work it out from the same geometry, so they agree.
             var perpendicular = NavGeometry.Cross2D(direction, neighbour.Velocity - desired) < 0.01f
                 ? new Vector3(-direction.Z, 0f, direction.X)
                 : new Vector3(direction.Z, 0f, -direction.X);
@@ -174,7 +174,7 @@ public sealed class LocalAvoidance {
                 continue;
             } // Already overlapping. Half the exit time, so that getting out is urgent but not
 
-// infinitely so — an agent standing inside another one still has to choose a direction.
+            // infinitely so — an agent standing inside another one still has to choose a direction.
             if (enter < 0f && exit > 0f) {
                 enter = -enter * 0.5f;
             }

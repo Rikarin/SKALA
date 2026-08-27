@@ -8,7 +8,7 @@ using Vixen.Graphics.Vulkan;
 using Vixen.Rendering;
 using Vixen.Rendering.Lighting;
 using
-    Vixen.Rendering.Materials;
+Vixen.Rendering.Materials;
 using Vixen.Rendering.RayTracing;
 using Vixen.Rendering.ScreenProbes;
 using Vixen.Shaders;
@@ -94,10 +94,10 @@ public sealed class AccelerationStructureDeviceTests {
         device.Write(vertexBuffer, 0, MemoryMarshal.AsBytes(positions.AsSpan()));
         device.Write(indexBuffer, 0, MemoryMarshal.AsBytes(indices));
         var
-            bottomInput = new AccelerationStructureBuildInput(
-                AccelerationStructureKind.BottomLevel,
-                Triangles: new(vertexBuffer, 0, vertices.Length, 12, indexBuffer, 0, indices.Length)
-            );
+        bottomInput = new AccelerationStructureBuildInput(
+            AccelerationStructureKind.BottomLevel,
+            Triangles: new(vertexBuffer, 0, vertices.Length, 12, indexBuffer, 0, indices.Length)
+        );
         var bottomSizes = device.GetAccelerationStructureSizes(bottomInput);
         var bottom
             = device.CreateAccelerationStructure(
@@ -207,7 +207,7 @@ public sealed class AccelerationStructureDeviceTests {
         AssertClean();
 
         // The referee: a hit is the cache's black with a valid alpha, a miss is the sky. Edge
-// grazers may differ — watertightness is the hardware's own rule — so up to two of the
+        // grazers may differ — watertightness is the hardware's own rule — so up to two of the
         // sixty-four texels may flip, and the fixture keeps the count honest by keeping the
         // triangles few and large.
         var layout
@@ -229,10 +229,10 @@ public sealed class AccelerationStructureDeviceTests {
                 var atlasOrigin = layout.AtlasOrigin(new(0, 0));
                 var texel = texels[((atlasOrigin.Y + y) * layout.AtlasSize.X) + atlasOrigin.X + x];
                 var sky = new Vector3(
-                        0.6f,
-                        0.45f,
-                        0.3f
-                    )
+                    0.6f,
+                    0.45f,
+                    0.3f
+                )
                     + (new Vector3(0.2f) * direction.Y);
                 var actualHit = (new Vector3(texel.X, texel.Y, texel.Z) - sky).Length() > 0.05f;
                 if (expectedHit != actualHit) {

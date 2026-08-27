@@ -8,23 +8,23 @@ using Rikarin.Skala.Rules.Metadata;
 namespace Rikarin.Skala.Rules.Modernization;
 
 /// <summary>
-/// <c>SK1031</c> — <c>if (x is not null) x.P = v;</c> is <c>x?.P = v;</c> in C# 14.
+///     <c>SK1031</c> — <c>if (x is not null) x.P = v;</c> is <c>x?.P = v;</c> in C# 14.
 /// </summary>
 /// <remarks>
-/// ⚠ The rewrite is exact, and it is exact for a reason that is easy to assume rather than check:
-/// C# 14's null-conditional assignment <b>does not evaluate the right-hand side</b> when the
-/// receiver is null. Were that not so this would be a different program whenever <c>v</c> has a side
-/// effect, and the rule would be wrong in precisely the cases that matter most.
-/// <para>
-/// ⚠ It only fires on a receiver that is a chain of plain names. The original evaluates the receiver
-/// twice — once in the test, once in the assignment — and <c>x?.P = v</c> evaluates it once; on
-/// anything with a side effect that is a change, and on a name it is free.
-/// </para>
-/// <para>
-/// ⚠ <c>x != null</c> is admitted only where the operand's type declares no <c>operator ==</c>, the
-/// same proof <c>SK1010</c> and <c>SK1020</c> make: <c>?.</c> tests for null, and a user-defined
-/// operator can mean anything at all.
-/// </para>
+///     ⚠ The rewrite is exact, and it is exact for a reason that is easy to assume rather than check:
+///     C# 14's null-conditional assignment <b>does not evaluate the right-hand side</b> when the
+///     receiver is null. Were that not so this would be a different program whenever <c>v</c> has a side
+///     effect, and the rule would be wrong in precisely the cases that matter most.
+///     <para>
+///         ⚠ It only fires on a receiver that is a chain of plain names. The original evaluates the receiver
+///         twice — once in the test, once in the assignment — and <c>x?.P = v</c> evaluates it once; on
+///         anything with a side effect that is a change, and on a name it is free.
+///     </para>
+///     <para>
+///         ⚠ <c>x != null</c> is admitted only where the operand's type declares no <c>operator ==</c>, the
+///         same proof <c>SK1010</c> and <c>SK1020</c> make: <c>?.</c> tests for null, and a user-defined
+///         operator can mean anything at all.
+///     </para>
 /// </remarks>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class NullConditionalAssignmentAnalyzer : DiagnosticAnalyzer {
@@ -157,13 +157,13 @@ public sealed class NullConditionalAssignmentAnalyzer : DiagnosticAnalyzer {
     }
 
     /// <summary>
-    /// The link of the target's member-access chain that the condition proved non-null.
+    ///     The link of the target's member-access chain that the condition proved non-null.
     /// </summary>
     /// <remarks>
-    /// ⚠ Not simply the leftmost link. <c>if (a.B is not null) a.B.C = v;</c> is guarded on
-    /// <c>a.B</c>, and <c>a?.B.C = v</c> would be a different program — it would leave the
-    /// assignment happening when <c>a.B</c> is null, which is the NullReferenceException the
-    /// original was written to avoid. The <c>?</c> goes exactly where the test was.
+    ///     ⚠ Not simply the leftmost link. <c>if (a.B is not null) a.B.C = v;</c> is guarded on
+    ///     <c>a.B</c>, and <c>a?.B.C = v</c> would be a different program — it would leave the
+    ///     assignment happening when <c>a.B</c> is null, which is the NullReferenceException the
+    ///     original was written to avoid. The <c>?</c> goes exactly where the test was.
     /// </remarks>
     static ExpressionSyntax? MatchInChain(MemberAccessExpressionSyntax target, ExpressionSyntax guarded) {
         var current = target.Expression;

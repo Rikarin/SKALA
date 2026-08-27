@@ -1,5 +1,3 @@
-class B {
-}
+class B { }
 
-class C : B {
-}
+class C : B { }

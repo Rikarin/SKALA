@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: Copyright (c) Rikarin
 // SPDX-License-Identifier: Apache-2.0
-using System.Diagnostics.CodeAnalysis;using System.Runtime.InteropServices;using Silk.NET.Core.Contexts;using Silk.NET.WebGPU;using Vixen.Platform.Native;namespace Vixen.Graphics.WebGPU.Native;
+using System.Diagnostics.CodeAnalysis; using System.Runtime.InteropServices; using Silk.NET.Core.Contexts; using Silk.NET.WebGPU; using Vixen.Platform.Native; namespace Vixen.Graphics.WebGPU.Native;
+
 /// <summary>Finding Dawn or wgpu-native, wherever it was installed.</summary>
 /// <remarks>
 ///     <para>
@@ -22,10 +23,15 @@ using System.Diagnostics.CodeAnalysis;using System.Runtime.InteropServices;using
 ///         put the library rather than "install WebGPU".
 ///     </para>
 /// </remarks>
-static class WebGpuLoader{static readonly Lock Gate=new();static Silk.NET.WebGPU.WebGPU?loaded;static string?failure;
-/// <summary>Where the library was found, for logging at boot.</summary>
-public static string?ResolvedPath{get;private set;}
-/// <summary>
+static class WebGpuLoader {
+    static readonly Lock Gate = new();
+    static Silk.NET.WebGPU.WebGPU? loaded;
+    static string? failure;
+
+    /// <summary>Where the library was found, for logging at boot.</summary>
+    public static string? ResolvedPath { get; private set; }
+
+    /// <summary>
     ///     <c>wgpuDevicePoll</c>, if the implementation is wgpu-native and exports it.
     /// </summary>
     /// <remarks>
@@ -42,8 +48,9 @@ public static string?ResolvedPath{get;private set;}
     ///         extension. The binding calls whichever it has.
     ///     </para>
     /// </remarks>
-public static nint DevicePoll{get;private set;}
-/// <summary>Whether the loaded implementation is wgpu-native rather than Dawn.</summary>
+    public static nint DevicePoll { get; private set; }
+
+    /// <summary>Whether the loaded implementation is wgpu-native rather than Dawn.</summary>
     /// <remarks>
     ///     <para>
     ///         <b>This decides one struct's layout, and getting it wrong is a crash.</b>
@@ -62,8 +69,9 @@ public static nint DevicePoll{get;private set;}
     ///         guess from a version string nobody publishes.
     ///     </para>
     /// </remarks>
-public static bool IsWgpuNative{get;private set;}
-/// <summary>
+    public static bool IsWgpuNative { get; private set; }
+
+    /// <summary>
     ///     Entry points <c>Silk.NET.WebGPU</c> declares that a newer implementation has removed.
     /// </summary>
     /// <remarks>
@@ -73,15 +81,69 @@ public static bool IsWgpuNative{get;private set;}
     ///     stack that names nothing useful. Three names cost microseconds and turn that into a
     ///     sentence.
     /// </remarks>
-static readonly string[]Required=["wgpuCreateInstance" ,"wgpuAdapterGetProperties" ,"wgpuDeviceSetUncapturedErrorCallback" ,"wgpuSurfaceGetPreferredFormat" ];
-/// <summary>Loads Dawn or wgpu-native, reporting failure rather than throwing.</summary>
+    static readonly string[] Required = [
+        "wgpuCreateInstance", "wgpuAdapterGetProperties", "wgpuDeviceSetUncapturedErrorCallback",
+        "wgpuSurfaceGetPreferredFormat"
+    ];
+
+    /// <summary>Loads Dawn or wgpu-native, reporting failure rather than throwing.</summary>
     /// <param name="api">The API, when it loaded.</param>
     /// <param name="reason">Why it did not, when it did not.</param>
-public static bool TryLoad([NotNullWhen(true)]out Silk.NET.WebGPU.WebGPU?api,[NotNullWhen(false)]out string?reason){lock(Gate){if(loaded is not null){api=loaded;reason=null;return true;}if(failure is not null){api=null;reason=failure;return false;}foreach(var library in Libraries){NativeLibraries.Describe(new(library,[],[ .. Prefixes()]));}NativeLibraries.Register(typeof(Silk.NET.WebGPU.WebGPU).Assembly);foreach(var candidate in Candidates()){if(!NativeLibrary.TryLoad(candidate,out var handle)){continue;}var missing=Required.Where(name=>!NativeLibrary.TryGetExport(handle,name,out _)).ToArray();if(missing.Length>0){ // Not `continue`: a library that loaded under the right name and exports the
-// wrong entry points is the version problem, not a search problem, and trying
-// the next candidate would report "not found" for something that was found.
-failure=TooNew(candidate,missing);api=null;reason=failure;return false;}loaded=FromHandle(handle);ResolvedPath=candidate;DevicePoll=NativeLibrary.TryGetExport(handle,"wgpuDevicePoll" ,out var poll)?poll:0;IsWgpuNative=DevicePoll!=0;api=loaded;reason=null;return true;}failure=InstallHint();api=null;reason=failure;return false;}}
-/// <summary>
+    public static bool TryLoad(
+        [NotNullWhen(true)] out Silk.NET.WebGPU.WebGPU? api,
+        [NotNullWhen(false)] out string? reason
+    ) {
+        lock (Gate) {
+            if (loaded is not null) {
+                api = loaded;
+                reason = null;
+                return true;
+            }
+
+            if (failure is not null) {
+                api = null;
+                reason = failure;
+                return false;
+            }
+
+            foreach (var library in Libraries) {
+                NativeLibraries.Describe(new(library, [], [.. Prefixes()]));
+            }
+
+            NativeLibraries.Register(typeof(Silk.NET.WebGPU.WebGPU).Assembly);
+            foreach (var candidate in Candidates()) {
+                if (!NativeLibrary.TryLoad(candidate, out var handle)) {
+                    continue;
+                }
+
+                var missing = Required.Where(name => !NativeLibrary.TryGetExport(handle, name, out _)).ToArray();
+                if (missing.Length > 0) {
+                    // Not `continue`: a library that loaded under the right name and exports the
+                    // wrong entry points is the version problem, not a search problem, and trying
+                    // the next candidate would report "not found" for something that was found.
+                    failure = TooNew(candidate, missing);
+                    api = null;
+                    reason = failure;
+                    return false;
+                }
+
+                loaded = FromHandle(handle);
+                ResolvedPath = candidate;
+                DevicePoll = NativeLibrary.TryGetExport(handle, "wgpuDevicePoll", out var poll) ? poll : 0;
+                IsWgpuNative = DevicePoll != 0;
+                api = loaded;
+                reason = null;
+                return true;
+            }
+
+            failure = InstallHint();
+            api = null;
+            reason = failure;
+            return false;
+        }
+    }
+
+    /// <summary>
     ///     The names the two implementations ship under.
     /// </summary>
     /// <remarks>
@@ -90,7 +152,58 @@ failure=TooNew(candidate,missing);api=null;reason=failure;return false;}loaded=F
     ///     used either name. Both are tried; neither is preferred, because the API they expose is the
     ///     same header.
     /// </remarks>
-static readonly string[]Libraries=["wgpu_native" ,"webgpu_dawn" ,"webgpu" ];static Silk.NET.WebGPU.WebGPU FromHandle(nint handle)=>new(new LamdaNativeContext(name=>NativeLibrary.TryGetExport(handle,name,out var address)?address:0));static IEnumerable<string>Candidates(){foreach(var library in Libraries){foreach(var candidate in NativeLibraries.Candidates(library)){yield return candidate;}} // Undecorated last, so the OS searches its own paths only after the application's own layout
-// has been given the chance to answer. A machine-wide copy beating the one an application
-// shipped and was tested against is the failure this ordering exists to prevent.
-foreach(var library in Libraries){foreach(var name in NativeLibraryNames.For(library)){yield return name;}}}static IEnumerable<string>Prefixes(){var explicitly=Environment.GetEnvironmentVariable("VIXEN_WEBGPU_PATH" );if(!string.IsNullOrEmpty(explicitly)){yield return explicitly;}if(OperatingSystem.IsMacOS()){yield return"/opt/homebrew/lib" ;yield return"/usr/local/lib" ;yield break;}if(OperatingSystem.IsLinux()){yield return"/usr/lib/x86_64-linux-gnu" ;yield return"/usr/lib64" ;yield return"/usr/local/lib" ;}}static string TooNew(string path,string[]missing)=>$"'{path}' is a WebGPU implementation this binding cannot call: it does not export " +$"{string.Join(", ", missing)}. Those entry points were removed from webgpu.h in 2024 and " +"Silk.NET.WebGPU 2.23.0 still declares them, so a newer Dawn or wgpu-native is not " +"loadable here — calling one would be a null function pointer rather than an error. " +"build/native-dependencies.json pins the last release that works, and moving past it " +"means moving Silk.NET.WebGPU first." ;static string InstallHint()=>"No WebGPU implementation could be loaded. Silk.NET.WebGPU is bindings only and no desktop " +"operating system ships Dawn or wgpu-native, so one has to be provided: drop " +"libwgpu_native (or webgpu_dawn) beside the executable, into " +"runtimes/<rid>/native/, or somewhere on the loader's path — or point VIXEN_WEBGPU_PATH at " +"the directory holding it. In a browser none of this applies: WebGPU is reached through " +"navigator.gpu by Vixen.Graphics.WebGPU.Browser." ;}
+    static readonly string[] Libraries = ["wgpu_native", "webgpu_dawn", "webgpu"];
+
+    static Silk.NET.WebGPU.WebGPU FromHandle(nint handle) =>
+        new(new LamdaNativeContext(name => NativeLibrary.TryGetExport(handle, name, out var address) ? address : 0));
+
+    static IEnumerable<string> Candidates() {
+        foreach (var library in Libraries) {
+            foreach (var candidate in NativeLibraries.Candidates(library)) {
+                yield return candidate;
+            }
+        } // Undecorated last, so the OS searches its own paths only after the application's own layout
+        // has been given the chance to answer. A machine-wide copy beating the one an application
+        // shipped and was tested against is the failure this ordering exists to prevent.
+        foreach (var library in Libraries) {
+            foreach (var name in NativeLibraryNames.For(library)) {
+                yield return name;
+            }
+        }
+    }
+
+    static IEnumerable<string> Prefixes() {
+        var explicitly = Environment.GetEnvironmentVariable("VIXEN_WEBGPU_PATH");
+        if (!string.IsNullOrEmpty(explicitly)) {
+            yield return explicitly;
+        }
+
+        if (OperatingSystem.IsMacOS()) {
+            yield return "/opt/homebrew/lib";
+            yield return "/usr/local/lib";
+            yield break;
+        }
+
+        if (OperatingSystem.IsLinux()) {
+            yield return "/usr/lib/x86_64-linux-gnu";
+            yield return "/usr/lib64";
+            yield return "/usr/local/lib";
+        }
+    }
+
+    static string TooNew(string path, string[] missing) =>
+        $"'{path}' is a WebGPU implementation this binding cannot call: it does not export "
+        + $"{string.Join(", ", missing)}. Those entry points were removed from webgpu.h in 2024 and "
+        + "Silk.NET.WebGPU 2.23.0 still declares them, so a newer Dawn or wgpu-native is not "
+        + "loadable here — calling one would be a null function pointer rather than an error. "
+        + "build/native-dependencies.json pins the last release that works, and moving past it "
+        + "means moving Silk.NET.WebGPU first.";
+
+    static string InstallHint() =>
+        "No WebGPU implementation could be loaded. Silk.NET.WebGPU is bindings only and no desktop "
+        + "operating system ships Dawn or wgpu-native, so one has to be provided: drop "
+        + "libwgpu_native (or webgpu_dawn) beside the executable, into "
+        + "runtimes/<rid>/native/, or somewhere on the loader's path — or point VIXEN_WEBGPU_PATH at "
+        + "the directory holding it. In a browser none of this applies: WebGPU is reached through "
+        + "navigator.gpu by Vixen.Graphics.WebGPU.Browser.";
+}

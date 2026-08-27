@@ -33,9 +33,7 @@ public class DefaultLiteral {
         Console.WriteLine(count + label);
     }
 
-    public void Overloaded(int value) {
-    }
+    public void Overloaded(int value) { }
 
-    public void Overloaded(string value) {
-    }
+    public void Overloaded(string value) { }
 }

@@ -1,7 +1,8 @@
 using System;
 
 class C {
-    Action M() => delegate {
-        M();
-    };
+    Action M() =>
+        delegate {
+            M();
+        };
 }

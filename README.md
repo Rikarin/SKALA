@@ -35,7 +35,7 @@ it was produced by running something.
 | Idempotency, token equivalence, parse stability, determinism, range consistency | **100 %** of all three corpora, under both symbol sets — 8 981 conformance cases |
 | Documented divergences (`SK-DIV-*`) | **12**, each with a current measurement: 3 resolved, 2 half closed, 7 open |
 | **Tier A options** — implemented and pinned by an oracle fixture | **201 of 520** |
-| Documentation comments | ⚠ **not formatted by default** — Rider's cleanup does not format them (SK-DIV-0006). `format --xmldoc` turns on the sub-formatter: 17 of the 27 `resharper_xmldoc_*` keys honoured, 10 refused with a reason, none Tier A and none able to become Tier A. Worth **−3.59 points** of line fidelity when on, and **zero** on the lines it may not touch |
+| Documentation comments | ✅ **formatted by default**, because Rider formats them (SK-DIV-0006). `format --no-xmldoc` turns the sub-formatter off: 17 of the 27 `resharper_xmldoc_*` keys honoured and asserted observable, 10 refused with a reason, none Tier A yet. ⚠ The **−3.59 points** against the committed fixtures is those fixtures' cleanup profile declining to format doc comments, not a fidelity cost; on the lines the sub-formatter may not touch it is **zero**, asserted over all 716 corpus files |
 | Defaults derived from the oracle rather than guessed | **123** keys |
 | **Rules shipped** | **24 of the 109** the catalogue names — 13 analyzers, 8 metrics, 3 formatter findings — plus 8 tool diagnostics |
 | False positives on the reference trees | **zero**, every finding read at the milestone that shipped it |

@@ -1,4 +1,5 @@
 ﻿#region License
+
 // Copyright (c) 2007 James Newton-King
 //
 // Permission is hereby granted, free of charge, to any person
@@ -21,6 +22,7 @@
 // WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 // OTHER DEALINGS IN THE SOFTWARE.
+
 #endregion
 
 using System;
@@ -33,14 +35,11 @@ using Assert = Newtonsoft.Json.Tests.XUnitAssert;
 using NUnit.Framework;
 #endif
 
-namespace Newtonsoft.Json.Tests.Issues
-{
+namespace Newtonsoft.Json.Tests.Issues {
     [TestFixture]
-    public class Issue1545 : TestFixtureBase
-    {
+    public class Issue1545 : TestFixtureBase {
         [Test]
-        public void Test_Populate()
-        {
+        public void Test_Populate() {
             string json = @"{
                 ""array"": [
                     /* comment0 */
@@ -62,8 +61,7 @@ namespace Newtonsoft.Json.Tests.Issues
         }
 
         [Test]
-        public void Test_Multidimensional()
-        {
+        public void Test_Multidimensional() {
             string json = @"[
                 /* comment0 */
                 [1,2,3],
@@ -90,20 +88,17 @@ namespace Newtonsoft.Json.Tests.Issues
         }
     }
 
-    public class Simple
-    {
+    public class Simple {
         [JsonProperty(Required = Required.Always)]
         public SimpleObject[] Array { get; set; }
     }
 
     [JsonConverter(typeof(LineInfoConverter))]
-    public class SimpleObject : JsonLineInfo
-    {
+    public class SimpleObject : JsonLineInfo {
         public string Value { get; set; }
     }
 
-    public class JsonLineInfo
-    {
+    public class JsonLineInfo {
         [JsonIgnore]
         public int? LineNumber { get; set; }
 
@@ -111,20 +106,16 @@ namespace Newtonsoft.Json.Tests.Issues
         public int? LinePosition { get; set; }
     }
 
-    public class LineInfoConverter : JsonConverter
-    {
-        public override bool CanWrite
-        {
+    public class LineInfoConverter : JsonConverter {
+        public override bool CanWrite {
             get { return false; }
         }
 
-        public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
-        {
+        public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer) {
             throw new NotImplementedException("Converter is not writable. Method should not be invoked");
         }
 
-        public override bool CanConvert(Type objectType)
-        {
+        public override bool CanConvert(Type objectType) {
 #if DNXCORE50
             return typeof(JsonLineInfo).GetTypeInfo().IsAssignableFrom(objectType.GetTypeInfo());
 #else
@@ -132,10 +123,13 @@ namespace Newtonsoft.Json.Tests.Issues
 #endif
         }
 
-        public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
-        {
-            if (reader.TokenType == JsonToken.Null)
-            {
+        public override object ReadJson(
+            JsonReader reader,
+            Type objectType,
+            object existingValue,
+            JsonSerializer serializer
+        ) {
+            if (reader.TokenType == JsonToken.Null) {
                 return null;
             }
 
@@ -143,8 +137,7 @@ namespace Newtonsoft.Json.Tests.Issues
             serializer.Populate(reader, lineInfoObject);
 
             IJsonLineInfo jsonLineInfo = reader as IJsonLineInfo;
-            if (jsonLineInfo != null && jsonLineInfo.HasLineInfo())
-            {
+            if (jsonLineInfo != null && jsonLineInfo.HasLineInfo()) {
                 lineInfoObject.LineNumber = jsonLineInfo.LineNumber;
                 lineInfoObject.LinePosition = jsonLineInfo.LinePosition;
             }

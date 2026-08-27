@@ -16,17 +16,17 @@
 namespace Serilog.Events;
 
 /// <summary>
-/// A property value corresponding to a simple, scalar type.
+///     A property value corresponding to a simple, scalar type.
 /// </summary>
 public class ScalarValue : LogEventPropertyValue {
     /// <summary>
-    /// Scalar value representing <see langword="null"/>.
+    ///     Scalar value representing <see langword="null" />.
     /// </summary>
     public static ScalarValue Null { get; } = new(null);
 
     /// <summary>
-    /// Construct a <see cref="ScalarValue"/> with the specified
-    /// value.
+    ///     Construct a <see cref="ScalarValue" /> with the specified
+    ///     value.
     /// </summary>
     /// <param name="value">The value, which may be <code>null</code>.</param>
     public ScalarValue(object? value) {
@@ -34,23 +34,23 @@ public class ScalarValue : LogEventPropertyValue {
     }
 
     /// <summary>
-    /// The value, which may be <code>null</code>.
+    ///     The value, which may be <code>null</code>.
     /// </summary>
     public object? Value { get; }
 
     /// <summary>
-    /// Render the value to the output.
+    ///     Render the value to the output.
     /// </summary>
     /// <param name="output">The output.</param>
     /// <param name="format">A format string applied to the value, or null.</param>
     /// <param name="formatProvider">A format provider to apply to the value, or null to use the default.</param>
-    /// <seealso cref="LogEventPropertyValue.ToString(string, IFormatProvider)"/>.
-    /// <exception cref="ArgumentNullException">When <paramref name="output"/> is <code>null</code></exception>
+    /// <seealso cref="LogEventPropertyValue.ToString(string, IFormatProvider)" />.
+    /// <exception cref="ArgumentNullException">When <paramref name="output" /> is <code>null</code></exception>
     public override void Render(TextWriter output, string? format = null, IFormatProvider? formatProvider = null) {
         Render(Value, output, format, formatProvider);
     }
 
-    /// <exception cref="ArgumentNullException">When <paramref name="output"/> is <code>null</code></exception>
+    /// <exception cref="ArgumentNullException">When <paramref name="output" /> is <code>null</code></exception>
     internal static void Render(
         object? value,
         TextWriter output,
@@ -129,14 +129,14 @@ public class ScalarValue : LogEventPropertyValue {
 #endif
 
     /// <summary>
-    /// Determine if this instance is equal to <paramref name="obj"/>.
+    ///     Determine if this instance is equal to <paramref name="obj" />.
     /// </summary>
     /// <param name="obj">The instance to compare with.</param>
-    /// <returns><see langword="true"/> if the instances are equal; otherwise, <see langword="false"/>.</returns>
+    /// <returns><see langword="true" /> if the instances are equal; otherwise, <see langword="false" />.</returns>
     public override bool Equals(object? obj) => obj is ScalarValue sv && Equals(Value, sv.Value);
 
     /// <summary>
-    /// Get a hash code representing the value.
+    ///     Get a hash code representing the value.
     /// </summary>
     /// <returns>The instance's hash code.</returns>
     public override int GetHashCode() {

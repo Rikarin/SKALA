@@ -1,8 +1,9 @@
-            // SPDX-FileCopyrightText: Copyright (c) Rikarin
-             // SPDX-License-Identifier: Apache-2.0
-        
-using Xunit;   using static Tests.SemanticTestBase    ;
-        namespace Tests;
+// SPDX-FileCopyrightText: Copyright (c) Rikarin
+// SPDX-License-Identifier: Apache-2.0
+
+using Xunit; using static Tests.SemanticTestBase;
+
+namespace Tests;
 
 /// <summary>
 ///     A modifier that changes nothing where it stands is named (<c>RVN2093</c>)
@@ -10,25 +11,30 @@ using Xunit;   using static Tests.SemanticTestBase    ;
 ///     (<c>RVN2095</c>) because nothing reads them, and a <c>where</c> clause is
 ///     enforced (<c>RVN2096</c>) rather than stored and forgotten.
 /// </summary>
-             public class ModifierAndConstraintTests {
-   [Theory]
+public class ModifierAndConstraintTests {
+    [Theory]
     // `override` participates only in method dispatch; on a field it does nothing.
-          [    InlineData   ("package A\n\nshader S {\n    override var x: float\n}\n"   )   ]
-               // `compose` declares a shader-typed slot, which only a field can be.
- 
-         [InlineData("package A\n\nshader S {\n    compose func M() {\n    }\n}\n"   )]
-   // No modifier means anything on a type declaration.
-  [InlineData("package A\n\nstatic shader S {\n}\n")]
-    [InlineData("package A\n\nreadonly struct P {\n    var x: float\n}\n"   )   ] // Or on an `init`.
-[   InlineData    (  "package A\n\nstruct P {\n    var x: float\n\n    static init() {\n        x = 1f\n    }\n}\n")
- ]
-      public  void A_modifier_with_no_effect_is_a_warning( string source) { var diagnostics   = Diagnose (source    );
-  Assert.Contains ("RVN2093", diagnostics
-.Select   ( d => d   . Id) );
-     }
+    [InlineData("package A\n\nshader S {\n    override var x: float\n}\n")]
+    // `compose` declares a shader-typed slot, which only a field can be.
 
-        [Fact]
-              public void    A_modifier_in_its_place_is_silent() => AssertNoDiagnostics(  
+    [InlineData("package A\n\nshader S {\n    compose func M() {\n    }\n}\n")]
+    // No modifier means anything on a type declaration.
+    [InlineData("package A\n\nstatic shader S {\n}\n")]
+    [InlineData("package A\n\nreadonly struct P {\n    var x: float\n}\n")] // Or on an `init`.
+    [InlineData("package A\n\nstruct P {\n    var x: float\n\n    static init() {\n        x = 1f\n    }\n}\n")
+    ]
+    public void A_modifier_with_no_effect_is_a_warning(string source) {
+        var diagnostics = Diagnose(source);
+        Assert.Contains(
+            "RVN2093",
+            diagnostics
+                .Select(d => d.Id)
+        );
+    }
+
+    [Fact]
+    public void A_modifier_in_its_place_is_silent() =>
+        AssertNoDiagnostics(
             """
             package A
 
@@ -42,10 +48,11 @@ using Xunit;   using static Tests.SemanticTestBase    ;
             }
 
             """
-        )    ;
-    [Fact   ] public void Attributes_on_a_statement_are_a_warning() {
+        );
 
-            var diagnostics  =  Diagnose(
+    [Fact]
+    public void Attributes_on_a_statement_are_a_warning() {
+        var diagnostics = Diagnose(
             """
             package A
 
@@ -58,13 +65,14 @@ using Xunit;   using static Tests.SemanticTestBase    ;
             }
 
             """
-           )  ;
-           Assert.   Contains (   "RVN2095",  diagnostics.Select(    d => d.Id  )); }
-      
-              [ Fact
-     ] 
-    public void  A_type_argument_must_satisfy_the_constraint(
-                ) {
+        );
+        Assert.Contains("RVN2095", diagnostics.Select(d => d.Id));
+    }
+
+    [Fact
+    ]
+    public void A_type_argument_must_satisfy_the_constraint(
+    ) {
         var diagnostics = Diagnose(
             """
             package A
@@ -86,12 +94,17 @@ using Xunit;   using static Tests.SemanticTestBase    ;
             }
 
             """
-             ); 
-          Assert  .Contains   ("RVN2096"  , diagnostics.
-Select(d =>  d  .  Id));
+        );
+        Assert.Contains(
+            "RVN2096",
+            diagnostics.
+            Select(d => d.Id)
+        );
     }
-    [   Fact] public void   A_satisfying_type_argument_is_silent  (    )   =>
-			AssertNoDiagnostics(
+
+    [Fact]
+    public void A_satisfying_type_argument_is_silent() =>
+        AssertNoDiagnostics(
             """
             package A
 
@@ -112,6 +125,5 @@ Select(d =>  d  .  Id));
             }
 
             """
-    );
-    }
-         
+        );
+}

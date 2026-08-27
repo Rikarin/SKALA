@@ -48,7 +48,9 @@ sealed class Level {
     public ref LocalTransform Transform(Entity entity) => ref World.Get<LocalTransform>(entity);
     public Vector3 Where(Entity entity) => World.Get<LocalTransform>(entity).Position;
 
-    /// <summary>One frame: think, then walk. ⚠ In that order — a destination written this frame is walked this frame.</summary>
+    /// <summary>
+    ///     One frame: think, then walk. ⚠ In that order — a destination written this frame is walked this frame.
+    /// </summary>
     public void Step(int frames = 1, Action<int>? before = null) {
         for (var index = 0; index < frames; index++) {
             before?.Invoke(frame);

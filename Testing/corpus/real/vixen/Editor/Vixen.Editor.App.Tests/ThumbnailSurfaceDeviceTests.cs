@@ -13,8 +13,11 @@ namespace Vixen.Editor.App.Tests;
 /// <summary>A thumbnail, uploaded on a real device, asserted to be the picture that went in.</summary>
 /// <remarks>
 ///     <para>
-///         ⚠ <b>A thumbnail that uploaded nothing is indistinguishable from one that has not been
-///         decoded yet.</b> The grid draws a type glyph either way, the process exits zero, and there
+///         ⚠
+///         <b>
+///             A thumbnail that uploaded nothing is indistinguishable from one that has not been
+///             decoded yet.
+///         </b> The grid draws a type glyph either way, the process exits zero, and there
 ///         is no validation error because nothing was submitted to validate — which is how
 ///         <c>ThumbnailSurface.Upload</c> came to record a barrier, a copy and a second barrier into a
 ///         command list it then dropped on the floor. <c>VulkanCommandList.Dispose</c> returns
@@ -27,8 +30,11 @@ namespace Vixen.Editor.App.Tests;
 ///         the others exactly — which corner is which.
 ///     </para>
 ///     <para>
-///         ⚠ <b>Skips when there is no Vulkan, and <c>VIXEN_REQUIRE_VULKAN=1</c> turns the skip into a
-///         failure.</b> A gate that silently skips is a gate that passes, which is what makes a device
+///         ⚠
+///         <b>
+///             Skips when there is no Vulkan, and <c>VIXEN_REQUIRE_VULKAN=1</c> turns the skip into a
+///             failure.
+///         </b> A gate that silently skips is a gate that passes, which is what makes a device
 ///         test worth less than nothing on a machine where nobody reads the skip count.
 ///     </para>
 /// </remarks>
@@ -109,8 +115,11 @@ public sealed class ThumbnailSurfaceDeviceTests {
 
     /// <summary>Uploads a picture through the surface and reads the texture back.</summary>
     /// <remarks>
-    ///     ⚠ <b><c>Upload</c> is called outside the frame and <c>Flush</c> inside it, which is exactly
-    ///     where the editor calls each.</b> <c>ThumbnailCache.Pump</c> runs from the application's
+    ///     ⚠
+    ///     <b>
+    ///         <c>Upload</c> is called outside the frame and <c>Flush</c> inside it, which is exactly
+    ///         where the editor calls each.
+    ///     </b> <c>ThumbnailCache.Pump</c> runs from the application's
     ///     update, before <c>EditorHost.Present</c> opens the frame; a test that uploaded inside the
     ///     frame would be testing an arrangement the editor does not have.
     /// </remarks>
@@ -208,7 +217,10 @@ public sealed class ThumbnailSurfaceDeviceTests {
 
             // Sixty-four reds by sixty-four greens is 4 096 colours. A thousand is far above what a
             // flat fill, a cleared texture or an undefined one produces, and far below this.
-            Assert.True(distinct >= 1000, $"the thumbnail holds {distinct} distinct colour(s), which is not a gradient");
+            Assert.True(
+                distinct >= 1000,
+                $"the thumbnail holds {distinct} distinct colour(s), which is not a gradient"
+            );
 
             // Red and green ramp 0…1 and blue is 1, so the mean channel is about (0.5 + 0.5 + 1) / 3
             // of 255 — near 170. A blank texture is 0 and a white one 255.

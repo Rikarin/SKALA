@@ -231,7 +231,7 @@ partial class PropertyValueConverter : ILogEventPropertyFactory, ILogEventProper
     }
 
     /// <summary>
-    /// Recursively traverses a multidimensional array and constructs a nested SequenceValue representation.
+    ///     Recursively traverses a multidimensional array and constructs a nested SequenceValue representation.
     /// </summary>
     /// <param name="array">The multidimensional array to traverse.</param>
     /// <param name="indices">An array of indices representing the current position in each dimension.</param>

@@ -1,5 +1,6 @@
 class C {
-    void M() { // why
+    void M() {
+        // why
         M();
     }
 }

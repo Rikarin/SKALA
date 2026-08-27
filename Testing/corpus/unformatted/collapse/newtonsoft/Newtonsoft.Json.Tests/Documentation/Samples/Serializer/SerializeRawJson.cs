@@ -1,4 +1,5 @@
 #region License
+
 // Copyright (c) 2007 James Newton-King
 //
 // Permission is hereby granted, free of charge, to any person
@@ -21,8 +22,10 @@
 // WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 // OTHER DEALINGS IN THE SOFTWARE.
+
 #endregion
-using System;using System.Collections.Generic;using System.Text;using Newtonsoft.Json.Linq;
+
+using System; using System.Collections.Generic; using System.Text; using Newtonsoft.Json.Linq;
 #if DNXCORE50
 using Xunit;
 using Test = Xunit.FactAttribute;
@@ -30,18 +33,40 @@ using Assert = Newtonsoft.Json.Tests.XUnitAssert;
 #else
 using NUnit.Framework;
 #endif
-namespace Newtonsoft.Json.Tests.Documentation.Samples.Serializer{[TestFixture]public class SerializeRawJson:TestFixtureBase{
-#region Types
-public class JavaScriptSettings{public JRaw OnLoadFunction{get;set;}public JRaw OnUnloadFunction{get;set;}}
-#endregion
-[Test]public void Example(){
-#region Usage
-JavaScriptSettings settings=new JavaScriptSettings{OnLoadFunction=new JRaw("OnLoad" ),OnUnloadFunction=new JRaw("function(e) { alert(e); }" )};string json=JsonConvert.SerializeObject(settings,Formatting.Indented);Console.WriteLine(json); // {
-//   "OnLoadFunction": OnLoad,
-//   "OnUnloadFunction": function(e) { alert(e); }
-// }
-#endregion
-StringAssert.AreEqual(@"{
+namespace Newtonsoft.Json.Tests.Documentation.Samples.Serializer {
+    [TestFixture]
+    public class SerializeRawJson : TestFixtureBase {
+        #region Types
+
+        public class JavaScriptSettings {
+            public JRaw OnLoadFunction { get; set; }
+            public JRaw OnUnloadFunction { get; set; }
+        }
+
+        #endregion
+
+        [Test]
+        public void Example() {
+            #region Usage
+
+            JavaScriptSettings settings = new JavaScriptSettings {
+                OnLoadFunction = new JRaw("OnLoad"), OnUnloadFunction = new JRaw("function(e) { alert(e); }")
+            };
+            string json = JsonConvert.SerializeObject(settings, Formatting.Indented);
+            Console.WriteLine(json); // {
+            //   "OnLoadFunction": OnLoad,
+            //   "OnUnloadFunction": function(e) { alert(e); }
+            // }
+
+            #endregion
+
+            StringAssert.AreEqual(
+                @"{
   ""OnLoadFunction"": OnLoad,
   ""OnUnloadFunction"": function(e) { alert(e); }
-}" ,json);}}}
+}",
+                json
+            );
+        }
+    }
+}

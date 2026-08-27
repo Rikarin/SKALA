@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 using Vixen.
-    Core.Threading;
+Core.Threading;
 
 namespace Vixen.Ai;
 
@@ -14,8 +14,7 @@ public readonly record struct
     GoapPlanRequest(int Index, uint Generation) {
     /// <summary>No request.</summary>
     public
-        static GoapPlanRequest Null =>
-        new(-1, 0);
+        static GoapPlanRequest Null => new(-1, 0);
 
     /// <summary>Whether it names nothing.</summary>
     public bool IsNull => Index < 0;
@@ -90,8 +89,8 @@ public sealed class GoapPlanQueue {
         Domain =
             domain;
         Settings = settings ?? GoapSettings.Default;
-        planners = new GoapPlanner [parallelSearches];
-        slots = new Slot [capacity];
+        planners = new GoapPlanner[parallelSearches];
+        slots = new Slot[capacity];
         for (var
              index = 0;
              index < parallelSearches;
@@ -125,7 +124,7 @@ public sealed class GoapPlanQueue {
     public int PendingCount {
         get;
         private
-        set;
+            set;
     }
 
     /// <summary>How many searches the last <see cref="Update" /> ran.</summary>
@@ -215,7 +214,7 @@ public sealed class GoapPlanQueue {
 
         var batch = Math.Min(resolves, waiting.Count);
         var taken =
-            new int [batch];
+            new int[batch];
 
         for (var index = 0;
              index
@@ -271,7 +270,7 @@ public sealed class GoapPlanQueue {
         int index
     ) {
         // One planner per parallel slot, round-robin over the batch: a planner is a node pool and an
-// open list, and two searches in one would be the race this arrangement exists to avoid.
+        // open list, and two searches in one would be the race this arrangement exists to avoid.
         var planner = planners
             [index % planners.Length];
         var slot = slots[taken[index]];
@@ -280,7 +279,7 @@ public sealed class GoapPlanQueue {
 
     int Free() {
         for (var index
-                 = 0;
+             = 0;
              index < slots.Length;
              index++) {
             if (slots[index].State == GoapRequestState.Unknown) {
@@ -314,7 +313,7 @@ public sealed class GoapPlanQueue {
     sealed class Slot {
         public uint Generation;
         public GoapRequestState State;
-        public GoapSnapshot Snapshot = null !;
+        public GoapSnapshot Snapshot = null!;
         public GoapPlan Plan = null!;
     }
 

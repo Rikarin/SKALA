@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: Copyright (c) Rikarin
 // SPDX-License-Identifier: Apache-2.0
 namespace Vixen.Core.Imaging.BlockCompression;
+
 /// <summary>The direction a block's colours vary along most.</summary>
 /// <remarks>
 ///     <para>
@@ -21,13 +22,71 @@ namespace Vixen.Core.Imaging.BlockCompression;
 ///         it is a vector the data itself produced.
 ///     </para>
 /// </remarks>
-static class PrincipalAxis{
-/// <summary>How many times to iterate. It converges long before this on real blocks.</summary>
-const int Iterations=8;
-/// <summary>Finds the dominant eigenvector of a covariance matrix.</summary>
+static class PrincipalAxis {
+    /// <summary>How many times to iterate. It converges long before this on real blocks.</summary>
+    const int Iterations = 8;
+
+    /// <summary>Finds the dominant eigenvector of a covariance matrix.</summary>
     /// <param name="covariance">The matrix, row-major, <paramref name="dimensions" /> squared.</param>
     /// <param name="dimensions">How many channels.</param>
     /// <param name="axis">The direction, normalised. All ones if the block has no extent at all.</param>
-public static void Find(ReadOnlySpan<float>covariance,int dimensions,Span<float>axis){Span<float>next=stackalloc float[dimensions];var bestRow=-1;var bestNorm=0f;for(var row=0;row<dimensions;row++){var norm=0f;for(var column=0;column<dimensions;column++){var value=covariance[(row*dimensions)+column];norm+=value*value;}if(norm>bestNorm){bestNorm=norm;bestRow=row;}}if(bestRow<0){ // Every colour in the block is the same one. Any direction will do; both endpoints are
-// going to land on the same texel whatever this says.
-axis.Fill(1f);return;}covariance.Slice(bestRow*dimensions,dimensions).CopyTo(axis);Normalise(axis);for(var iteration=0;iteration<Iterations;iteration++){next.Clear();for(var row=0;row<dimensions;row++){for(var column=0;column<dimensions;column++){next[row]+=covariance[(row*dimensions)+column]*axis[column];}}if(!Normalise(next)){break;}next.CopyTo(axis);}}static bool Normalise(Span<float>vector){var length=0f;foreach(var value in vector){length+=value*value;}length=MathF.Sqrt(length);if(length<1e-6f){return false;}for(var index=0;index<vector.Length;index++){vector[index]/=length;}return true;}}
+    public static void Find(ReadOnlySpan<float> covariance, int dimensions, Span<float> axis) {
+        Span<float> next = stackalloc float[dimensions];
+        var bestRow = -1;
+        var bestNorm = 0f;
+        for (var row = 0; row < dimensions; row++) {
+            var norm = 0f;
+            for (var column = 0; column < dimensions; column++) {
+                var value = covariance[(row * dimensions) + column];
+                norm += value * value;
+            }
+
+            if (norm > bestNorm) {
+                bestNorm = norm;
+                bestRow = row;
+            }
+        }
+
+        if (bestRow < 0) {
+            // Every colour in the block is the same one. Any direction will do; both endpoints are
+            // going to land on the same texel whatever this says.
+            axis.Fill(1f);
+            return;
+        }
+
+        covariance.Slice(bestRow * dimensions, dimensions).CopyTo(axis);
+        Normalise(axis);
+        for (var iteration = 0; iteration < Iterations; iteration++) {
+            next.Clear();
+            for (var row = 0; row < dimensions; row++) {
+                for (var column = 0; column < dimensions; column++) {
+                    next[row] += covariance[(row * dimensions) + column] * axis[column];
+                }
+            }
+
+            if (!Normalise(next)) {
+                break;
+            }
+
+            next.CopyTo(axis);
+        }
+    }
+
+    static bool Normalise(Span<float> vector) {
+        var length = 0f;
+        foreach (var value in vector) {
+            length += value * value;
+        }
+
+        length = MathF.Sqrt(length);
+        if (length < 1e-6f) {
+            return false;
+        }
+
+        for (var index = 0; index < vector.Length; index++) {
+            vector[index] /= length;
+        }
+
+        return true;
+    }
+}

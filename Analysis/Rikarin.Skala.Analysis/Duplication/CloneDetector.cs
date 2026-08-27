@@ -9,31 +9,31 @@ using Rikarin.Skala.Rules.Metadata;
 namespace Rikarin.Skala.Analysis.Duplication;
 
 /// <summary>
-/// Token-level type-2 clone detection — <c>SK7020</c>, and the duplication percentage the
-/// <c>metrics.duplication</c> gate reads.
+///     Token-level type-2 clone detection — <c>SK7020</c>, and the duplication percentage the
+///     <c>metrics.duplication</c> gate reads.
 /// </summary>
 /// <remarks>
-/// docs/plan/09 § "Duplication", verbatim: lex to a normalised token stream; roll a hash over windows
-/// of <c>minTokens</c>; bucket by hash, <b>verify candidates exactly</b>, extend greedily in both
-/// directions; report each maximal group once, at its first occurrence.
-/// <para>
-/// ⚠ The hash proposes; the comparison decides. A bucket is a list of <i>candidates</i> and every one
-/// of them is compared token for token before it can become a finding, which is what
-/// <c>rules.json</c> promises for <c>SK7020</c>: "the match is verified exactly rather than trusted
-/// from the rolling hash, so a hash collision cannot produce a finding". Nothing in this file may be
-/// changed in a way that lets a hash value reach the output.
-/// </para>
-/// <para>
-/// ⚠ Cost is one pass and is bounded by I/O. The corpus is concatenated into one token array, hashed
-/// once per window, and sorted — <c>O(n log n)</c> in tokens. Nothing here is quadratic in the number
-/// of files, and the only <c>O(k²)</c>-looking step, comparing the members of a hash bucket, is a
-/// sort by content rather than a pairwise scan.
-/// </para>
-/// <para>
-/// ⚠ Determinism is explicit everywhere it could be accidental: files are ordered by path, buckets by
-/// their first token position, groups by their first occurrence. Nothing reads a hash table's
-/// enumeration order.
-/// </para>
+///     docs/plan/09 § "Duplication", verbatim: lex to a normalised token stream; roll a hash over windows
+///     of <c>minTokens</c>; bucket by hash, <b>verify candidates exactly</b>, extend greedily in both
+///     directions; report each maximal group once, at its first occurrence.
+///     <para>
+///         ⚠ The hash proposes; the comparison decides. A bucket is a list of <i>candidates</i> and every one
+///         of them is compared token for token before it can become a finding, which is what
+///         <c>rules.json</c> promises for <c>SK7020</c>: "the match is verified exactly rather than trusted
+///         from the rolling hash, so a hash collision cannot produce a finding". Nothing in this file may be
+///         changed in a way that lets a hash value reach the output.
+///     </para>
+///     <para>
+///         ⚠ Cost is one pass and is bounded by I/O. The corpus is concatenated into one token array, hashed
+///         once per window, and sorted — <c>O(n log n)</c> in tokens. Nothing here is quadratic in the number
+///         of files, and the only <c>O(k²)</c>-looking step, comparing the members of a hash bucket, is a
+///         sort by content rather than a pairwise scan.
+///     </para>
+///     <para>
+///         ⚠ Determinism is explicit everywhere it could be accidental: files are ordered by path, buckets by
+///         their first token position, groups by their first occurrence. Nothing reads a hash table's
+///         enumeration order.
+///     </para>
 /// </remarks>
 public static class CloneDetector {
     /// <summary>docs/plan/09: "windows of <c>minTokens</c> (default 100 ≈ 25 lines, Sonar's default for C#)".</summary>
@@ -46,16 +46,16 @@ public static class CloneDetector {
     const int NamedOccurrences = 10;
 
     /// <summary>
-    /// Measures one file set.
+    ///     Measures one file set.
     /// </summary>
     /// <param name="files">
-    /// Every file to consider. Generated ones are dropped here, which is what takes them out of the
-    /// findings and out of both halves of the percentage.
+    ///     Every file to consider. Generated ones are dropped here, which is what takes them out of the
+    ///     findings and out of both halves of the percentage.
     /// </param>
-    /// <param name="minTokens">The shortest run that counts as a clone. <see cref="DefaultMinTokens"/>.</param>
+    /// <param name="minTokens">The shortest run that counts as a clone. <see cref="DefaultMinTokens" />.</param>
     /// <param name="cacheDirectory">
-    /// Where <c>clones.idx</c> lives, normally <c>&lt;root&gt;/.skala/cache</c>. Null disables the
-    /// persisted index; a corrupt or stale one degrades to a cold run and never to a wrong answer.
+    ///     Where <c>clones.idx</c> lives, normally <c>&lt;root&gt;/.skala/cache</c>. Null disables the
+    ///     persisted index; a corrupt or stale one degrades to a cold run and never to a wrong answer.
     /// </param>
     /// <param name="cancellation">Checked per file and per hash bucket.</param>
     public static DuplicationResult Detect(
@@ -67,13 +67,13 @@ public static class CloneDetector {
         Detect(files, minTokens, cacheDirectory, collapseHashes: false, cancellation);
 
     /// <summary>
-    /// The test seam for the rule's central promise.
+    ///     The test seam for the rule's central promise.
     /// </summary>
     /// <remarks>
-    /// ⚠ <paramref name="collapseHashes"/> gives every window the same hash — the worst bucket
-    /// collision there is — and the answer must come out identical, because bucketing only proposes
-    /// candidates. This is the only way to exercise the verification step without waiting for a real
-    /// 2⁻⁶⁴ collision, and it is the property <c>SK7020</c>'s <c>falsePositives</c> field claims.
+    ///     ⚠ <paramref name="collapseHashes" /> gives every window the same hash — the worst bucket
+    ///     collision there is — and the answer must come out identical, because bucketing only proposes
+    ///     candidates. This is the only way to exercise the verification step without waiting for a real
+    ///     2⁻⁶⁴ collision, and it is the property <c>SK7020</c>'s <c>falsePositives</c> field claims.
     /// </remarks>
     internal static DuplicationResult Detect(
         IReadOnlyList<DuplicationInput> files,
@@ -134,22 +134,24 @@ public static class CloneDetector {
     }
 
     /// <summary>
-    /// Turns a result into <c>SK7020</c> findings: one per group, at the first occurrence, the rest
-    /// named in the message.
+    ///     Turns a result into <c>SK7020</c> findings: one per group, at the first occurrence, the rest
+    ///     named in the message.
     /// </summary>
     /// <remarks>
-    /// ⚠ Production groups only. <c>rules.json</c>: test duplication "is often the readable choice and
-    /// gating it drives people to write worse tests" — a warning-severity finding in a test file is a
-    /// gate on test duplication however the gate is phrased. Tests are reported through
-    /// <see cref="DuplicationResult.TestPercentage"/> and <see cref="DuplicationResult.TestGroups"/>,
-    /// beside the number rather than inside it.
-    /// <para>
-    /// ⚠ <c>Column</c> is 1 and <c>EndColumn</c> is 1: a duplicated block is a range of lines and the
-    /// column of its first token is not information anyone acts on. The exact span is in
-    /// <c>Start</c>/<c>Length</c>, which is what the fingerprint and the SARIF region use anyway.
-    /// </para>
+    ///     ⚠ Production groups only. <c>rules.json</c>: test duplication "is often the readable choice and
+    ///     gating it drives people to write worse tests" — a warning-severity finding in a test file is a
+    ///     gate on test duplication however the gate is phrased. Tests are reported through
+    ///     <see cref="DuplicationResult.TestPercentage" /> and <see cref="DuplicationResult.TestGroups" />,
+    ///     beside the number rather than inside it.
+    ///     <para>
+    ///         ⚠ <c>Column</c> is 1 and <c>EndColumn</c> is 1: a duplicated block is a range of lines and the
+    ///         column of its first token is not information anyone acts on. The exact span is in
+    ///         <c>Start</c>/<c>Length</c>, which is what the fingerprint and the SARIF region use anyway.
+    ///     </para>
     /// </remarks>
-    /// <param name="result">A result from <see cref="Detect(IReadOnlyList{DuplicationInput}, int, string?, CancellationToken)"/>.</param>
+    /// <param name="result">
+    ///     A result from <see cref="Detect(IReadOnlyList{DuplicationInput}, int, string?, CancellationToken)" />.
+    /// </param>
     /// <param name="repositoryRoot">Only used to render the other occurrences relative in the message.</param>
     public static ImmutableArray<Finding> ToFindings(DuplicationResult result, string repositoryRoot) {
         ArgumentNullException.ThrowIfNull(result);
@@ -231,8 +233,8 @@ public static class CloneDetector {
 
     /// <summary>One universe — production or test — measured end to end.</summary>
     /// <remarks>
-    /// ⚠ Production and test files are never in the same universe, so a group can never straddle the
-    /// two and its bucket is never a judgement call.
+    ///     ⚠ Production and test files are never in the same universe, so a group can never straddle the
+    ///     two and its bucket is never a judgement call.
     /// </remarks>
     static (ImmutableArray<CloneGroup> Groups, int DuplicatedLines) Analyse(
         LexedFile[] universe,
@@ -310,17 +312,17 @@ public static class CloneDetector {
     }
 
     /// <summary>
-    /// Step 2 — one hash per window of <c>minTokens</c>, rolled rather than recomputed.
+    ///     Step 2 — one hash per window of <c>minTokens</c>, rolled rather than recomputed.
     /// </summary>
     /// <remarks>
-    /// ⚠ Windows never span two files: the roll restarts at each file boundary. A window straddling
-    /// the join would be a clone of nothing.
-    /// <para>
-    /// ⚠ Token classes are mixed before they enter the polynomial. Raw <c>SyntaxKind</c> values are
-    /// small and clustered, and a polynomial over them modulo 2⁶⁴ leaves the low bits determined by
-    /// the last few tokens alone — which costs bucket quality, never correctness, but costs it over
-    /// the whole corpus.
-    /// </para>
+    ///     ⚠ Windows never span two files: the roll restarts at each file boundary. A window straddling
+    ///     the join would be a clone of nothing.
+    ///     <para>
+    ///         ⚠ Token classes are mixed before they enter the polynomial. Raw <c>SyntaxKind</c> values are
+    ///         small and clustered, and a polynomial over them modulo 2⁶⁴ leaves the low bits determined by
+    ///         the last few tokens alone — which costs bucket quality, never correctness, but costs it over
+    ///         the whole corpus.
+    ///     </para>
     /// </remarks>
     static void RollingHash(
         ushort[] codes,
@@ -378,16 +380,16 @@ public static class CloneDetector {
     }
 
     /// <summary>
-    /// Step 3's first half — turn hash buckets into <b>exactly verified</b> classes.
+    ///     Step 3's first half — turn hash buckets into <b>exactly verified</b> classes.
     /// </summary>
     /// <remarks>
-    /// ⚠ This is the guarantee. A bucket holds every window with one hash value, colliding ones
-    /// included; it is split into classes of windows that are equal token for token, and only a class
-    /// with two or more members survives. A collision leaves two singletons and produces nothing.
-    /// <para>
-    /// Splitting is a sort by content, so a pathologically large bucket costs <c>k log k</c>
-    /// comparisons and not <c>k²</c>.
-    /// </para>
+    ///     ⚠ This is the guarantee. A bucket holds every window with one hash value, colliding ones
+    ///     included; it is split into classes of windows that are equal token for token, and only a class
+    ///     with two or more members survives. A collision leaves two singletons and produces nothing.
+    ///     <para>
+    ///         Splitting is a sort by content, so a pathologically large bucket costs <c>k log k</c>
+    ///         comparisons and not <c>k²</c>.
+    ///     </para>
     /// </remarks>
     static List<int[]> Verify(
         ushort[] codes,
@@ -451,29 +453,29 @@ public static class CloneDetector {
     }
 
     /// <summary>
-    /// Step 3's second half and step 4 — extend one verified class to its maximal length and emit it
-    /// as one group.
+    ///     Step 3's second half and step 4 — extend one verified class to its maximal length and emit it
+    ///     as one group.
     /// </summary>
     /// <remarks>
-    /// ⚠ <paramref name="consumed"/> is what makes "report each maximal clone group once" true, and
-    /// what it spends is <b>every window overlapping a reported occurrence</b>, not only the windows
-    /// that start inside one. A 250-token match contains 151 verified classes that all extend to the
-    /// same 250 tokens, and spending the interior collapses those into one finding — which is also
-    /// what keeps the pass linear instead of quadratic in the length of the duplicated region. The
-    /// windows straddling an occurrence's edge matter just as much: where A, B and C share 120 tokens
-    /// and B and C happen to share the token before them as well, the window one to the left is a
-    /// second verified class, and reporting it turns one duplication into a 120-token group of three
-    /// plus a 121-token group of two saying the same thing. A window stopping one token short of an
-    /// occurrence, or starting one token past its end, is untouched — that is a different clone.
-    /// <para>
-    /// The price is the standard greedy trade: a clone group that genuinely overlaps an
-    /// already-reported one is folded into it rather than reported beside it.
-    /// </para>
-    /// <para>
-    /// ⚠ Occurrences of one group may not overlap each other. A run of identical tokens
-    /// (<c>0, 0, 0, …</c>, a long initialiser) matches itself shifted by one, and without the gap cap
-    /// the group would be one region reported as a clone of itself.
-    /// </para>
+    ///     ⚠ <paramref name="consumed" /> is what makes "report each maximal clone group once" true, and
+    ///     what it spends is <b>every window overlapping a reported occurrence</b>, not only the windows
+    ///     that start inside one. A 250-token match contains 151 verified classes that all extend to the
+    ///     same 250 tokens, and spending the interior collapses those into one finding — which is also
+    ///     what keeps the pass linear instead of quadratic in the length of the duplicated region. The
+    ///     windows straddling an occurrence's edge matter just as much: where A, B and C share 120 tokens
+    ///     and B and C happen to share the token before them as well, the window one to the left is a
+    ///     second verified class, and reporting it turns one duplication into a 120-token group of three
+    ///     plus a 121-token group of two saying the same thing. A window stopping one token short of an
+    ///     occurrence, or starting one token past its end, is untouched — that is a different clone.
+    ///     <para>
+    ///         The price is the standard greedy trade: a clone group that genuinely overlaps an
+    ///         already-reported one is folded into it rather than reported beside it.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ Occurrences of one group may not overlap each other. A run of identical tokens
+    ///         (<c>0, 0, 0, …</c>, a long initialiser) matches itself shifted by one, and without the gap cap
+    ///         the group would be one region reported as a clone of itself.
+    ///     </para>
     /// </remarks>
     static CloneGroup? Extend(
         int[] members,
@@ -551,7 +553,7 @@ public static class CloneDetector {
         return new CloneGroup(minTokens + left + right, occurrences.ToImmutable());
     }
 
-    /// <summary>Whether every occurrence has the same token at <paramref name="offset"/> from its seed.</summary>
+    /// <summary>Whether every occurrence has the same token at <paramref name="offset" /> from its seed.</summary>
     static bool Agrees(ushort[] codes, List<int> positions, List<int> owners, int[] fileStart, int offset) {
         var expected = (ushort)0;
         for (var i = 0; i < positions.Count; i++) {

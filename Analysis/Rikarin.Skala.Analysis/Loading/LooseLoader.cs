@@ -9,20 +9,23 @@ using Rikarin.Skala.Reporting;
 namespace Rikarin.Skala.Analysis.Loading;
 
 /// <summary>
-/// No project at all: parse the files, reference the running framework, and say so.
+///     No project at all: parse the files, reference the running framework, and say so.
 /// </summary>
 /// <remarks>
-/// ⚠ This mode exists for one consumer: <b>an agent that has just written a file and wants to know
-/// whether it is acceptable, before anything is wired into a project</b> (docs/plan/07 § loose,
-/// docs/plan/10). It is fast — no build, no MSBuild, no restore — it is honest, because the SARIF
-/// says <c>loadMode: loose</c> and lists the rules that were skipped, and it is the default for the
-/// MCP <c>skala_check</c> tool when no project is named.
-/// <para>
-/// ⚠ Most type resolution fails and that is expected. Rules that declare
-/// <c>requiresSemantics</c> do not run here; the alternative — running them and letting them
-/// silently answer "no finding" because a symbol did not resolve — would make a clean report mean
-/// two different things depending on something invisible.
-/// </para>
+///     ⚠ This mode exists for one consumer:
+///     <b>
+///         an agent that has just written a file and wants to know
+///         whether it is acceptable, before anything is wired into a project
+///     </b> (docs/plan/07 § loose,
+///     docs/plan/10). It is fast — no build, no MSBuild, no restore — it is honest, because the SARIF
+///     says <c>loadMode: loose</c> and lists the rules that were skipped, and it is the default for the
+///     MCP <c>skala_check</c> tool when no project is named.
+///     <para>
+///         ⚠ Most type resolution fails and that is expected. Rules that declare
+///         <c>requiresSemantics</c> do not run here; the alternative — running them and letting them
+///         silently answer "no finding" because a symbol did not resolve — would make a clean report mean
+///         two different things depending on something invisible.
+///     </para>
 /// </remarks>
 public static class LooseLoader {
     public static LoadedProject Load(LoadRequest request) {
@@ -124,13 +127,13 @@ public static class LooseLoader {
 }
 
 /// <summary>
-/// The running framework's assemblies, as <see cref="MetadataReference"/>s.
+///     The running framework's assemblies, as <see cref="MetadataReference" />s.
 /// </summary>
 /// <remarks>
-/// ⚠ The <em>running</em> framework, not a reference pack: a global tool has the shared framework
-/// it is executing on and nothing else guaranteed on disk. It is close enough for the syntactic
-/// rule set and for the BCL-shaped questions the semantic ones ask, and it costs no restore, which
-/// is what keeps the agent path under a second.
+///     ⚠ The <em>running</em> framework, not a reference pack: a global tool has the shared framework
+///     it is executing on and nothing else guaranteed on disk. It is close enough for the syntactic
+///     rule set and for the BCL-shaped questions the semantic ones ask, and it costs no restore, which
+///     is what keeps the agent path under a second.
 /// </remarks>
 public static class SharedFrameworkReferences {
     public static ImmutableArray<MetadataReference> Value { get; } = Build();

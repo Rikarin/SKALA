@@ -6,8 +6,5 @@ using System.Xml;
 // declarations — on a platform where that is not a vulnerability.
 public static class Loader {
     public static XmlReaderSettings Settings() =>
-        new XmlReaderSettings {
-            DtdProcessing = DtdProcessing.Parse,
-            XmlResolver = null
-        };
+        new XmlReaderSettings { DtdProcessing = DtdProcessing.Parse, XmlResolver = null };
 }

@@ -141,7 +141,7 @@ public sealed class TerrainWeightmapTests {
         var terrain = Built();
         TerrainPaint.Paint(terrain, 1, TerrainBrush.Default with { Radius = 8f }, new(new(30f, 30f)), 255);
         var painted = terrain.Weights.WeightAt(1, 30, 30);
-        terrain.Weights.SetLayer(1, TerrainLayerDescription.Of("Gravel")with { TilingMetres = 3f });
+        terrain.Weights.SetLayer(1, TerrainLayerDescription.Of("Gravel") with { TilingMetres = 3f });
         Assert.Equal("Gravel", terrain.Weights.Names[1]);
         Assert.Equal(painted, terrain.Weights.WeightAt(1, 30, 30));
     }
@@ -226,8 +226,8 @@ public sealed class TerrainWeightmapTests {
     [Fact]
     public void The_ground_at_a_place_is_the_layer_asset_that_claims_it() {
         var terrain = new Terrain(Shape);
-        terrain.Weights.AddLayer(TerrainLayerDescription.Of("Grass")with { PhysicsMaterial = "Materials/grass" });
-        terrain.Weights.AddLayer(TerrainLayerDescription.Of("Gravel")with { PhysicsMaterial = "Materials/gravel" });
+        terrain.Weights.AddLayer(TerrainLayerDescription.Of("Grass") with { PhysicsMaterial = "Materials/grass" });
+        terrain.Weights.AddLayer(TerrainLayerDescription.Of("Gravel") with { PhysicsMaterial = "Materials/gravel" });
         Assert.Equal("Materials/grass", terrain.Weights.GroundAt(10, 10)!.Value.PhysicsMaterial);
         TerrainPaint.Paint(
             terrain,
@@ -251,13 +251,13 @@ public sealed class TerrainWeightmapTests {
         Assert.Contains("needs a name", new TerrainLayerDescription("").Validate(), StringComparison.Ordinal);
         Assert.Contains(
             "not a distance",
-            (TerrainLayerDescription.Of("Grass")with { TilingMetres = 0f }).Validate(),
+            (TerrainLayerDescription.Of("Grass") with { TilingMetres = 0f }).Validate(),
             StringComparison.Ordinal
         ); // ⚠ A height blend with nothing to read the height from degrades silently to a weight blend,
-// which is the class of failure reported as "the height blending does not work".
+        // which is the class of failure reported as "the height blending does not work".
         Assert.Contains(
             "no surface texture",
-            (TerrainLayerDescription.Of("Gravel")with { Blend = TerrainLayerBlend.Height }).Validate(),
+            (TerrainLayerDescription.Of("Gravel") with { Blend = TerrainLayerBlend.Height }).Validate(),
             StringComparison.Ordinal
         );
     }

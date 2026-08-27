@@ -444,8 +444,8 @@ public static class YamlSerializer {
         var element = runtime.IsArray
             ? runtime.GetElementType()!
             : runtime.IsGenericType
-                ? runtime.GetGenericArguments()[0]
-                : typeof(object);
+            ? runtime.GetGenericArguments()[0]
+            : typeof(object);
 
         var sequence = new YamlSequence();
         var index = 0;

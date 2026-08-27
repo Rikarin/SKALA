@@ -1,4 +1,5 @@
 // skala-oracle: resharper=2025.2.6 config=sha256:98ff52570e019fac profile=SkalaFormatOnly generated=2026-08-27
+
 #region License
 
 // Copyright (c) 2007 James Newton-King
@@ -36,7 +37,7 @@ using System.Collections.Generic;
 
 namespace Newtonsoft.Json.Serialization {
     /// <summary>
-    /// The default serialization binder used when resolving and loading classes from type names.
+    ///     The default serialization binder used when resolving and loading classes from type names.
     /// </summary>
     [RequiresUnreferencedCode(MiscellaneousUtils.TrimWarning)]
     [RequiresDynamicCode(MiscellaneousUtils.AotWarning)]
@@ -49,7 +50,7 @@ namespace Newtonsoft.Json.Serialization {
         private readonly ThreadSafeStore<StructMultiKey<string?, string>, Type> _typeCache;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="DefaultSerializationBinder"/> class.
+        ///     Initializes a new instance of the <see cref="DefaultSerializationBinder" /> class.
         /// </summary>
         public DefaultSerializationBinder() {
             _typeCache = new ThreadSafeStore<StructMultiKey<string?, string>, Type>(GetTypeFromTypeNameKey);
@@ -61,8 +62,8 @@ namespace Newtonsoft.Json.Serialization {
             if (assemblyName != null) {
                 Assembly? assembly;
 #if !(DOTNET || PORTABLE40 || PORTABLE)
-// look, I don't like using obsolete methods as much as you do but this is the only way
-// Assembly.Load won't check the GAC for a partial name
+                // look, I don't like using obsolete methods as much as you do but this is the only way
+                // Assembly.Load won't check the GAC for a partial name
 #pragma warning disable 618,612
                 assembly = Assembly.LoadWithPartialName(assemblyName);
 #pragma warning restore 618,612
@@ -96,7 +97,7 @@ namespace Newtonsoft.Json.Serialization {
                 Type? type = assembly.GetType(typeName);
                 if (type == null) {
                     // if generic type, try manually parsing the type arguments for the case of dynamically loaded assemblies
-// example generic typeName format: System.Collections.Generic.Dictionary`2[[System.String, mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089],[System.String, mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089]]
+                    // example generic typeName format: System.Collections.Generic.Dictionary`2[[System.String, mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089],[System.String, mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089]]
                     if (StringUtils.IndexOf(typeName, '`') >= 0) {
                         try {
                             type = GetGenericTypeFromTypeName(typeName, assembly);
@@ -178,23 +179,23 @@ namespace Newtonsoft.Json.Serialization {
         }
 
         /// <summary>
-        /// When overridden in a derived class, controls the binding of a serialized object to a type.
+        ///     When overridden in a derived class, controls the binding of a serialized object to a type.
         /// </summary>
-        /// <param name="assemblyName">Specifies the <see cref="Assembly"/> name of the serialized object.</param>
-        /// <param name="typeName">Specifies the <see cref="System.Type"/> name of the serialized object.</param>
+        /// <param name="assemblyName">Specifies the <see cref="Assembly" /> name of the serialized object.</param>
+        /// <param name="typeName">Specifies the <see cref="System.Type" /> name of the serialized object.</param>
         /// <returns>
-        /// The type of the object the formatter creates a new instance of.
+        ///     The type of the object the formatter creates a new instance of.
         /// </returns>
         public override Type BindToType(string? assemblyName, string typeName) {
             return GetTypeByName(new StructMultiKey<string?, string>(assemblyName, typeName));
         }
 
         /// <summary>
-        /// When overridden in a derived class, controls the binding of a serialized object to a type.
+        ///     When overridden in a derived class, controls the binding of a serialized object to a type.
         /// </summary>
         /// <param name="serializedType">The type of the object the formatter creates a new instance of.</param>
-        /// <param name="assemblyName">Specifies the <see cref="Assembly"/> name of the serialized object.</param>
-        /// <param name="typeName">Specifies the <see cref="System.Type"/> name of the serialized object.</param>
+        /// <param name="assemblyName">Specifies the <see cref="Assembly" /> name of the serialized object.</param>
+        /// <param name="typeName">Specifies the <see cref="System.Type" /> name of the serialized object.</param>
         public
 #if HAVE_SERIALIZATION_BINDER_BIND_TO_NAME
         override

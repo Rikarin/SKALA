@@ -1,4 +1,5 @@
 // skala-oracle: resharper=2025.2.6 config=sha256:98ff52570e019fac profile=SkalaFormatOnly generated=2026-08-27
+
 #region License
 
 // Copyright (c) 2007 James Newton-King
@@ -64,10 +65,10 @@ namespace Newtonsoft.Json.Tests.Serialization {
 
         protected override IList<JsonProperty> CreateProperties(Type type, MemberSerialization memberSerialization) {
             IList<JsonProperty>
-                properties = base.CreateProperties(
-                    type,
-                    memberSerialization
-                ); // only serializer properties that start with the specified character
+            properties = base.CreateProperties(
+                type,
+                memberSerialization
+            ); // only serializer properties that start with the specified character
             properties = properties.Where(p => p.PropertyName.StartsWith(_startingWithChar.ToString())).ToList();
             return properties;
         }
@@ -453,18 +454,18 @@ namespace Newtonsoft.Json.Tests.Serialization {
                 Formatting.Indented,
                 new JsonSerializerSettings { ContractResolver = new DynamicContractResolver('A') }
             ); // {
-//   "AuthorName": "Brandon Sanderson",
-//   "AuthorAge": 34,
-//   "AuthorCountry": "United States of America"
-// }
+            //   "AuthorName": "Brandon Sanderson",
+            //   "AuthorAge": 34,
+            //   "AuthorCountry": "United States of America"
+            // }
             string startingWithB = JsonConvert.SerializeObject(
                 book,
                 Formatting.Indented,
                 new JsonSerializerSettings { ContractResolver = new DynamicContractResolver('B') }
             ); // {
-//   "BookName": "The Gathering Storm",
-//   "BookPrice": 16.19
-// }
+            //   "BookName": "The Gathering Storm",
+            //   "BookPrice": 16.19
+            // }
             StringAssert.AreEqual(
                 @"{
   ""AuthorName"": ""Brandon Sanderson"",

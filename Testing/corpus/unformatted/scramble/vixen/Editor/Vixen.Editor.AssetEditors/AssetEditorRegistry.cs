@@ -1,14 +1,14 @@
 // SPDX-FileCopyrightText: Copyright (c) Rikarin
-           // SPDX-License-Identifier: Apache-2.0
-       
-using  System .Diagnostics   .CodeAnalysis ;
-             using Vixen.   Core;
-           using Vixen.Editor.Core;
-		using
- Vixen   .Ui    ; 
-         
-     namespace Vixen.   Editor.AssetEditors;
-	
+// SPDX-License-Identifier: Apache-2.0
+
+using System.Diagnostics.CodeAnalysis;
+using Vixen.Core;
+using Vixen.Editor.Core;
+using
+Vixen.Ui;
+
+namespace Vixen.Editor.AssetEditors;
+
 /// <summary>What an editor is handed when something asks for an asset to be opened.</summary>
 /// <param name="Project">The project it belongs to.</param>
 /// <param name="Asset">Its identity, which is what a reopened tab is found by.</param>
@@ -18,8 +18,12 @@ using  System .Diagnostics   .CodeAnalysis ;
 ///     <see cref="AssetDatabase" /> stores project-relative paths and an editor that did its own
 ///     combining is an editor that would eventually do it differently from the next one.
 /// </remarks>
-public    sealed record AssetEditorRequest(EditorProject Project , AssetId Asset, string
-Path);
+public sealed record AssetEditorRequest(
+    EditorProject Project,
+    AssetId Asset,
+    string
+    Path);
+
 /// <summary>One asset kind's editor: which files it claims, the document it opens, and the view over it.</summary>
 /// <remarks>
 ///     <para>
@@ -35,26 +39,31 @@ Path);
 ///         in a view. What has to survive a reopen belongs on the document.
 ///     </para>
 /// </remarks>
-     public interface IAssetEditorFactory {
+public interface IAssetEditorFactory {
     /// <summary>What this editor is called, in a menu and in a message about two of them clashing.</summary>
-           string Name    { get;  }
- 
+    string Name { get; }
+
     /// <summary>The extensions it claims, each with its leading dot.</summary>
-     IReadOnlyList   <string
-      >  Extensions { get   ; }
+    IReadOnlyList<string
+    > Extensions { get; }
+
     /// <summary>Opens an asset as a document.</summary>
     /// <param name="request">What to open.</param>
-    /// <returns>The document, already registered with the project by <see cref="EditorDocument" />'s constructor.</returns>
-         EditorDocument  Open    (AssetEditorRequest request);
-       
+    /// <returns>
+    ///     The document, already registered with the project by <see cref="EditorDocument" />'s constructor.
+    /// </returns>
+    EditorDocument Open(AssetEditorRequest request);
+
     /// <summary>Builds the editor's controls into a panel.</summary>
     /// <param name="document">The document, as this factory's <see cref="Open" /> returned it.</param>
     /// <param name="panel">Where the controls go.</param>
     /// <returns>The root of what was built, for a caller that wants to reach it.</returns>
-    UiElement CreateView  (
-EditorDocument document, UiElement    panel);   
-     }
-    
+    UiElement CreateView(
+        EditorDocument document,
+        UiElement panel
+    );
+}
+
 /// <summary>Which editor opens a file.</summary>
 /// <remarks>
 ///     <para>
@@ -72,62 +81,78 @@ EditorDocument document, UiElement    panel);
 ///         is what the inspector panel is for.
 ///     </para>
 /// </remarks>
-           public   sealed   class AssetEditorRegistry {
-    readonly Dictionary<string   , IAssetEditorFactory> byExtension    =   new   (  StringComparer. OrdinalIgnoreCase);   readonly Dictionary  <string, IAssetEditorFactory> byName = new(StringComparer.Ordinal  ); 
+public sealed class AssetEditorRegistry {
+    readonly Dictionary<string, IAssetEditorFactory> byExtension = new(StringComparer.OrdinalIgnoreCase);
+    readonly Dictionary<string, IAssetEditorFactory> byName = new(StringComparer.Ordinal);
+
     /// <summary>How many editors are registered.</summary>
-             public  int Count => byName.Count;   
+    public int Count => byName.Count;
+
     /// <summary>Everything registered, in no particular order.</summary>
- public IReadOnlyCollection<IAssetEditorFactory>
-     Editors => byName.   Values;
+    public IReadOnlyCollection<IAssetEditorFactory>
+        Editors => byName.Values;
+
     /// <summary>Registers an editor.</summary>
     /// <param name="editor">The editor.</param>
     /// <returns>This registry, for chaining.</returns>
-    /// <exception cref="InvalidOperationException">Something already claims its name or one of its extensions.</exception>
-    public AssetEditorRegistry Add(IAssetEditorFactory    editor    )  {
-     ArgumentNullException   . ThrowIfNull(    editor) ;
+    /// <exception cref="InvalidOperationException">
+    ///     Something already claims its name or one of its extensions.
+    /// </exception>
+    public AssetEditorRegistry Add(IAssetEditorFactory editor) {
+        ArgumentNullException.ThrowIfNull(editor);
 
-               if (!   byName   .TryAdd    (  editor.
-          Name, editor)    ) {
-       throw new  InvalidOperationException(
+        if (!byName.TryAdd(
+                editor.
+                Name,
+                editor
+            )) {
+            throw new InvalidOperationException(
                 $"Both {byName[editor.Name].GetType().Name} and {editor.GetType().Name} are called "
-                +    $"'{editor.Name}'. Two editors under one name make a menu that cannot say which is which."
-              );
-            }
-foreach  (var  extension   in editor    .Extensions ) {
-   if (!  byExtension.TryAdd(extension, editor    ))    { throw new InvalidOperationException (
-                    $"Both '{byExtension[extension].Name}' and '{editor.Name}' claim '{extension}'. One of them "
-    +
-               "has to give it up; whichever registered first is not a rule anyone can rely on."
- )   ;
-  }
+                + $"'{editor.Name}'. Two editors under one name make a menu that cannot say which is which."
+            );
         }
-        return    this; }
- 
+
+        foreach (var extension in editor.Extensions) {
+            if (!byExtension.TryAdd(extension, editor)) {
+                throw new InvalidOperationException(
+                    $"Both '{byExtension[extension].Name}' and '{editor.Name}' claim '{extension}'. One of them "
+                    + "has to give it up; whichever registered first is not a rule anyone can rely on."
+                );
+            }
+        }
+
+        return this;
+    }
+
     /// <summary>Finds the editor for a file.</summary>
     /// <param name="path">The file's path or name.</param>
     /// <param name="editor">The editor.</param>
     /// <returns>Whether anything claims it.</returns>
-    public bool TryGetForFile  
-         (string path    , [NotNullWhen  (    true  )    ] out IAssetEditorFactory? editor) {
-        ArgumentException. ThrowIfNullOrEmpty    (    path
-    ) ;
-          var  extension
-    = Path.GetExtension(    path);
+    public bool TryGetForFile
+        (string path, [NotNullWhen(true)] out IAssetEditorFactory? editor) {
+        ArgumentException.ThrowIfNullOrEmpty(path);
+        var extension
+            = Path.GetExtension(path);
 
-        if   (    extension
-              .Length   ==    0  ) {
-             editor = null  ; return false;
+        if (extension
+                .Length
+            == 0) {
+            editor = null;
+            return false;
         }
-           return   byExtension    .TryGetValue(extension   
-    , out editor)  ;
+
+        return byExtension.TryGetValue(extension, out editor);
     }
+
     /// <summary>Finds an editor by name.</summary>
     /// <param name="name">The name.</param>
     /// <param name="editor">The editor.</param>
     /// <returns>Whether this build has it.</returns>
-               public  bool TryGetByName  (   string name  , [   NotNullWhen(  true)]   out   IAssetEditorFactory? editor) {  ArgumentException   .    ThrowIfNullOrEmpty( name);
-        return byName   .   TryGetValue(  name ,    out editor); }
-           
+    public bool TryGetByName(string name, [NotNullWhen(true)] out IAssetEditorFactory? editor) {
+        ArgumentException.ThrowIfNullOrEmpty(name);
+        return byName.TryGetValue(name, out editor);
+    }
+
     /// <summary>Opens an asset, or brings the document already editing it forward.</summary>
     /// <param name="project">The project.</param>
     /// <param name="asset">Which asset.</param>
@@ -155,39 +180,50 @@ foreach  (var  extension   in editor    .Extensions ) {
     ///         document is one that answers twice.
     ///     </para>
     ///     <para>
-    ///         ⚠ <b>And not from <c>EditorProject.Register</c>, which is where it looks like it
-    ///         belongs.</b> That runs from <c>EditorDocument</c>'s base constructor, so a subscriber
+    ///         ⚠
+    ///         <b>
+    ///             And not from <c>EditorProject.Register</c>, which is where it looks like it
+    ///             belongs.
+    ///         </b> That runs from <c>EditorDocument</c>'s base constructor, so a subscriber
     ///         would be handed a half-built document — the one thing that class's own remarks promise
     ///         does not happen.
     ///     </para>
     /// </remarks>
-    public  event Action<EditorDocument>
- ? Opened ;
-public bool TryOpen(EditorProject project, AssetId asset ,    [NotNullWhen (true    )    ] out    EditorDocument    ?    opened  ) { ArgumentNullException.    ThrowIfNull (project);
-            
-    if
-(project .    TryGetDocument( asset, out var existing )) {
-   project.  Activate(existing);
-            
-    opened =    existing ;
- 
-            return true;
- 
-     }  
+    public event Action<EditorDocument>
+        ? Opened;
 
-         if (!project.Assets.TryGetByGuid (asset, out
-var   entry) || entry.IsFolder) { 
-opened
-=  null;   
-         return false   ;  }
-           if (!TryGetForFile   (  entry.    Path, out var  editor  ) ) { opened   = null;
-             return false;
+    public bool TryOpen(EditorProject project, AssetId asset, [NotNullWhen(true)] out EditorDocument? opened) {
+        ArgumentNullException.ThrowIfNull(project);
+
+        if
+            (project.TryGetDocument(asset, out var existing)) {
+            project.Activate(existing);
+
+            opened = existing;
+
+            return true;
         }
- 
-   opened = editor.   Open(new   (  project, asset    , project.Paths .Absolute (entry .   Path  ))   )    ; Opened?.Invoke (    opened   );
-   
-     return  
- true  ;   
+
+        if (!project.Assets.TryGetByGuid(
+                asset,
+                out
+                var entry
+            )
+            || entry.IsFolder) {
+            opened
+                = null;
+            return false;
+        }
+
+        if (!TryGetForFile(entry.Path, out var editor)) {
+            opened = null;
+            return false;
+        }
+
+        opened = editor.Open(new(project, asset, project.Paths.Absolute(entry.Path)));
+        Opened?.Invoke(opened);
+
+        return
+            true;
     }
 }
-          

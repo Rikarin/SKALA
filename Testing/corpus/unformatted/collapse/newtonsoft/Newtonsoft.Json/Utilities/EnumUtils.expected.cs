@@ -1,4 +1,5 @@
 // skala-oracle: resharper=2025.2.6 config=sha256:98ff52570e019fac profile=SkalaFormatOnly generated=2026-08-27
+
 #region License
 
 // Copyright (c) 2007 James Newton-King
@@ -159,10 +160,10 @@ namespace Newtonsoft.Json.Utilities {
             StringBuilder sb = new StringBuilder();
             bool firstTime = true;
             ulong
-                saveResult =
-                    result; // We will not optimize this code further to keep it maintainable. There are some boundary checks that can be applied
-// to minimize the comparsions required. This code works the same for the best/worst case. In general the number of
-// items in an enum are sufficiently small and not worth the optimization.
+            saveResult =
+                result; // We will not optimize this code further to keep it maintainable. There are some boundary checks that can be applied
+            // to minimize the comparsions required. This code works the same for the best/worst case. In general the number of
+            // items in an enum are sufficiently small and not worth the optimization.
             while (index >= 0) {
                 if (index == 0 && values[index] == 0) {
                     break;
@@ -239,7 +240,7 @@ namespace Newtonsoft.Json.Utilities {
             string[] enumNames = entry.Names;
             string[] resolvedNames = entry.ResolvedNames;
             ulong[]
-                enumValues = entry.Values; // first check if the entire text (including commas) matches a resolved name
+            enumValues = entry.Values; // first check if the entire text (including commas) matches a resolved name
             int? matchingIndex = FindIndexByName(resolvedNames, value, 0, value.Length, StringComparison.Ordinal);
             if (matchingIndex != null) {
                 return Enum.ToObject(enumType, enumValues[matchingIndex.Value]);
@@ -268,8 +269,8 @@ namespace Newtonsoft.Json.Utilities {
                     temp = Convert.ChangeType(value, underlyingType, CultureInfo.InvariantCulture);
                 } catch (FormatException) {
                     // We need to Parse this as a String instead. There are cases
-// when you tlbimp enums that can have values of the form "3D".
-// Don't fix this code.
+                    // when you tlbimp enums that can have values of the form "3D".
+                    // Don't fix this code.
                 }
 
                 if (temp != null) {
@@ -324,7 +325,7 @@ namespace Newtonsoft.Json.Utilities {
 
                 if (matchingIndex == null) {
                     // still can't find a match
-// before we throw an error, check whether the entire string has a case insensitive match against resolve names
+                    // before we throw an error, check whether the entire string has a case insensitive match against resolve names
                     matchingIndex = FindIndexByName(
                         resolvedNames,
                         value,

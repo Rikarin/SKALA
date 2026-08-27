@@ -30,7 +30,9 @@ class C {
                                                                                                                     if (b) {
                                                                                                                         if (b) {
                                                                                                                             if (b) {
-                                                                                                                                M(b);
+                                                                                                                                M(
+                                                                                                                                    b
+                                                                                                                                );
                                                                                                                             }
                                                                                                                         }
                                                                                                                     }

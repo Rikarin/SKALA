@@ -78,8 +78,10 @@ public sealed class BrowserWebGpuBinding : IWebGpuBinding {
     /// <summary>Loads the module, asks for an adapter and a device, and configures the canvas.</summary>
     /// <param name="options">What to create.</param>
     /// <returns>The binding.</returns>
-    /// <exception cref="PlatformNotSupportedException">This browser has no WebGPU, or refused a
-    /// device.</exception>
+    /// <exception cref="PlatformNotSupportedException">
+    ///     This browser has no WebGPU, or refused a
+    ///     device.
+    /// </exception>
     /// <remarks>
     ///     Asynchronous because <c>navigator.gpu.requestAdapter</c> is, and no amount of wanting
     ///     changes that: there is nothing to spin on. An application head awaits this once at boot,
@@ -109,8 +111,10 @@ public sealed class BrowserWebGpuBinding : IWebGpuBinding {
         Wrap(WebGpuInterop.CreateBuffer(descriptor.Size, (int)descriptor.Usage, descriptor.Label));
 
     /// <inheritdoc />
-    /// <remarks>Layout: format, width, height, depthOrArrayLayers, mipLevelCount, sampleCount,
-    /// dimension, usage — eight 32-bit integers.</remarks>
+    /// <remarks>
+    ///     Layout: format, width, height, depthOrArrayLayers, mipLevelCount, sampleCount,
+    ///     dimension, usage — eight 32-bit integers.
+    /// </remarks>
     public WebGpuObject CreateTexture(in WgpuTextureDescriptor descriptor) {
         var packed = packer.Reset()
             .Enum((uint)descriptor.Format)
@@ -125,8 +129,10 @@ public sealed class BrowserWebGpuBinding : IWebGpuBinding {
     }
 
     /// <inheritdoc />
-    /// <remarks>Layout: format, dimension, baseMipLevel, mipLevelCount, baseArrayLayer,
-    /// arrayLayerCount, aspect — seven 32-bit integers.</remarks>
+    /// <remarks>
+    ///     Layout: format, dimension, baseMipLevel, mipLevelCount, baseArrayLayer,
+    ///     arrayLayerCount, aspect — seven 32-bit integers.
+    /// </remarks>
     public WebGpuObject CreateTextureView(WebGpuObject texture, in WgpuTextureViewDescriptor descriptor) {
         var packed = packer.Reset()
             .Enum((uint)descriptor.Format)
@@ -140,9 +146,11 @@ public sealed class BrowserWebGpuBinding : IWebGpuBinding {
     }
 
     /// <inheritdoc />
-    /// <remarks>Layout: addressU, addressV, addressW, magFilter, minFilter, mipmapFilter, compare,
-    /// maxAnisotropy — eight 32-bit integers — then lodMinClamp and lodMaxClamp as 32-bit
-    /// floats.</remarks>
+    /// <remarks>
+    ///     Layout: addressU, addressV, addressW, magFilter, minFilter, mipmapFilter, compare,
+    ///     maxAnisotropy — eight 32-bit integers — then lodMinClamp and lodMaxClamp as 32-bit
+    ///     floats.
+    /// </remarks>
     public WebGpuObject CreateSampler(in WgpuSamplerDescriptor descriptor) {
         var packed = packer.Reset()
             .Enum((uint)descriptor.AddressU)
@@ -234,25 +242,33 @@ public sealed class BrowserWebGpuBinding : IWebGpuBinding {
     /// <remarks>
     ///     <para>The one big one. Layout, in order:</para>
     ///     <list type="number">
-    ///         <item><description>
-    ///             twelve 32-bit integers — layout, vertexModule, fragmentModule, topology,
-    ///             stripIndexFormat, frontFace, cullMode, unclippedDepth, sampleCount,
-    ///             vertexBufferCount, colourTargetCount, hasDepthStencil;
-    ///         </description></item>
-    ///         <item><description>
-    ///             per vertex buffer — arrayStride as a 64-bit float, then stepMode and an attribute
-    ///             count as integers, then per attribute format and shaderLocation as integers and
-    ///             offset as a 64-bit float;
-    ///         </description></item>
-    ///         <item><description>
-    ///             per colour target — format, blendEnabled, writeMask, colour operation, source and
-    ///             destination, alpha operation, source and destination: nine integers;
-    ///         </description></item>
-    ///         <item><description>
-    ///             the depth-stencil state, when present — format, depthWriteEnabled, depthCompare,
-    ///             stencilReadMask, stencilWriteMask, depthBias, then four integers for each stencil
-    ///             face, then depthBiasSlopeScale and depthBiasClamp as 32-bit floats.
-    ///         </description></item>
+    ///         <item>
+    ///             <description>
+    ///                 twelve 32-bit integers — layout, vertexModule, fragmentModule, topology,
+    ///                 stripIndexFormat, frontFace, cullMode, unclippedDepth, sampleCount,
+    ///                 vertexBufferCount, colourTargetCount, hasDepthStencil;
+    ///             </description>
+    ///         </item>
+    ///         <item>
+    ///             <description>
+    ///                 per vertex buffer — arrayStride as a 64-bit float, then stepMode and an attribute
+    ///                 count as integers, then per attribute format and shaderLocation as integers and
+    ///                 offset as a 64-bit float;
+    ///             </description>
+    ///         </item>
+    ///         <item>
+    ///             <description>
+    ///                 per colour target — format, blendEnabled, writeMask, colour operation, source and
+    ///                 destination, alpha operation, source and destination: nine integers;
+    ///             </description>
+    ///         </item>
+    ///         <item>
+    ///             <description>
+    ///                 the depth-stencil state, when present — format, depthWriteEnabled, depthCompare,
+    ///                 stencilReadMask, stencilWriteMask, depthBias, then four integers for each stencil
+    ///                 face, then depthBiasSlopeScale and depthBiasClamp as 32-bit floats.
+    ///             </description>
+    ///         </item>
     ///     </list>
     /// </remarks>
     public WebGpuObject CreateRenderPipeline(in WgpuRenderPipelineDescriptor descriptor) {
@@ -343,8 +359,8 @@ public sealed class BrowserWebGpuBinding : IWebGpuBinding {
     /// <inheritdoc />
     public void WriteBuffer(WebGpuObject buffer, long offset, ReadOnlySpan<byte> data) {
         // The marshaller needs a writable view; the data is only read on the other side. Copying
-// would be a per-write allocation on the upload path, so the span is un-consted here rather
-// than duplicated.
+        // would be a per-write allocation on the upload path, so the span is un-consted here rather
+        // than duplicated.
         var writable = System.Runtime.InteropServices.MemoryMarshal.CreateSpan(
             ref System.Runtime.InteropServices.MemoryMarshal.GetReference(data),
             data.Length

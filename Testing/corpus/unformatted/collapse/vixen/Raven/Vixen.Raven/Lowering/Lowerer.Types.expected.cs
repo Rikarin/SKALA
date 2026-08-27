@@ -20,12 +20,12 @@ public sealed partial class Lowerer {
     /// </summary>
     IrType LowerType(TypeSymbol type, SyntaxNode? syntax) {
         // Substitution first, and before the cache: inside `Box<float4>` a `T` is an `f32`, and
-// caching the unsubstituted symbol would hand the next instantiation the wrong answer.
+        // caching the unsubstituted symbol would hand the next instantiation the wrong answer.
         if (substitution is { IsEmpty: false }) {
             type = substitution.Substitute(type);
         } // Two uses of one instantiation must reach one struct, and a constructed symbol is built
 
-// fresh at each use — so the canonical instance is what the struct table is keyed by.
+        // fresh at each use — so the canonical instance is what the struct table is keyed by.
         if (type is ConstructedNamedTypeSymbol constructed && monomorphiser is not null) {
             type = monomorphiser.Canonical(constructed);
         }
@@ -60,31 +60,31 @@ public sealed partial class Lowerer {
                 var element = LowerType(array.ElementType, syntax);
                 return element.IsVoid ? NotRepresentable(type, syntax) : new IrArrayType(element, array.Length);
             } // A storage buffer *is* a runtime-sized array in the IR. Nothing else is needed: the
-// block that wraps it is the backends' business, the std430 layout comes from the
-// binding kind, and read-only-ness from the binding's flag. Modelling it as its own IR
-// type would have added a second array-like thing for indexing to know about.
+            // block that wraps it is the backends' business, the std430 layout comes from the
+            // binding kind, and read-only-ness from the binding's flag. Modelling it as its own IR
+            // type would have added a second array-like thing for indexing to know about.
             case BufferTypeSymbol buffer: {
                 var element = LowerType(buffer.ElementType, syntax);
                 return element.IsVoid ? NotRepresentable(type, syntax) : new IrArrayType(element);
             } // The same IR type the built-in Texture2D lowers to, with the element as the sampled
-// type — which is all the backends need: OpTypeImage's sampled type and GLSL's
-// `utexture2D` prefix both come off IrTextureType.SampledType.
+            // type — which is all the backends need: OpTypeImage's sampled type and GLSL's
+            // `utexture2D` prefix both come off IrTextureType.SampledType.
             case SampledTextureTypeSymbol sampled: {
                 var element = LowerType(sampled.ElementType, syntax);
                 return element.IsVoid
                     ? NotRepresentable(type, syntax)
                     : new IrTextureType(IrTextureDimension.Texture2D, element);
             } // Its own IR type rather than a flag on IrTextureType, because a sampled image and a
-// storage image are two descriptor types and two SPIR-V image types. The format is
-// already on the symbol — the binder folded the declaration's `[Format]` in — and it
-// has to survive to both backends, so it travels in the type.
+            // storage image are two descriptor types and two SPIR-V image types. The format is
+            // already on the symbol — the binder folded the declaration's `[Format]` in — and it
+            // has to survive to both backends, so it travels in the type.
             case StorageImageTypeSymbol { Format: { } format } image:
                 return new IrStorageImageType(
                     image.IsVolume ? IrTextureDimension.Texture3D : IrTextureDimension.Texture2D,
                     LowerType(image.ElementType, syntax),
                     format
                 ); // Only reachable when RVN2123 already refused the declaration, which stops the
-// compilation before this runs; kept honest rather than assumed.
+            // compilation before this runs; kept honest rather than assumed.
             case StorageImageTypeSymbol: return NotRepresentable(type, syntax);
             case NamedTypeSymbol { TypeKind: TypeKind.Enum }
                 : // An enum is its underlying integer once the constants are folded.
@@ -170,11 +170,11 @@ public sealed partial class Lowerer {
         var name = TupleName(
             fields
         ); // A linked library's copy of the same shape, reused rather than duplicated. This is
-// necessary, not an optimisation: a tuple has no declaration to match on, so without it a
-// library function returning `(float, float)` would return a different type from the one the
-// caller's local holds, and storing the result would fail the verifier with two structs of
-// the same name. Matching by name is sound precisely because a tuple's name is derived from
-// its element types — the name *is* the structural identity.
+        // necessary, not an optimisation: a tuple has no declaration to match on, so without it a
+        // library function returning `(float, float)` would return a different type from the one the
+        // caller's local holds, and storing the result would fail the verifier with two structs of
+        // the same name. Matching by name is sound precisely because a tuple's name is derived from
+        // its element types — the name *is* the structural identity.
         if (importedStructsByName.TryGetValue(name, out var linked)) {
             tuples[tuple] = linked;
             return linked;

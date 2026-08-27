@@ -4,27 +4,35 @@ using Rikarin.Skala.Options;
 namespace Rikarin.Skala.Formatting.CSharp;
 
 /// <summary>
-/// The <c>resharper_xmldoc_*</c> subset the documentation-comment sub-formatter reads.
+///     The <c>resharper_xmldoc_*</c> subset the documentation-comment sub-formatter reads.
 /// </summary>
 /// <remarks>
-/// ⚠ These keys are pinned differently from every other formatter option in Skala, and the
-/// difference is not a shortcut — it is the only thing available. Every other option is Tier A
-/// because a committed <c>.expected.cs</c> produced by <c>jb cleanupcode</c> shows the oracle doing
-/// the thing the option names. <c>jb cleanupcode</c> 2025.2.6 does not format documentation
-/// comments at all (SK-DIV-0006, measured), so no fixture can ever show it, and an oracle that
-/// never moves would score a correct re-wrap as a divergence.
-/// <para>
-/// So the sub-formatter is <b>off unless asked for</b> — <c>skala format --xmldoc</c>, the same
-/// shape as <c>arrange --aggressive</c> in SK-DIV-0014 — and these ids are registered
-/// <c>OfInert</c>: read, never claiming Tier A. What pins them is two things that need no oracle:
-/// hand-written fixtures asserting the semantics JetBrains' own settings pages state, and the
-/// round-trip property in <see cref="XmlDocFormatter"/>, which is checked on every comment of every
-/// run rather than on a fixture.
-/// </para>
-/// <para>
-/// ⚠ The ten keys of the family that are <em>not</em> here are refused rather than pending, and
-/// <see cref="XmlDocIds.Refused"/> carries the reason for each.
-/// </para>
+///     ⚠ These keys are pinned differently from every other formatter option in Skala, and the
+///     difference is the fixtures rather than the oracle. Every other option is Tier A because a
+///     committed <c>.expected.cs</c> produced by <c>jb cleanupcode</c> shows the oracle doing the thing
+///     the option names. Every committed fixture was generated under
+///     <see cref="OracleProfile.FormatOnly" />, which does not enable ReSharper's own
+///     <c>CSharpFormatDocComments</c> task, so every one of them returns its documentation comments
+///     exactly as written and none of them can show any of this (SK-DIV-0006).
+///     <para>
+///         ⚠ That was read for six milestones as "the oracle declines to format documentation comments",
+///         and it was the wrong conclusion from a correct measurement: Rider formats them and the pinned
+///         profile does not. Where the two disagree, ADR-011's oracle is not the specification — Rider is.
+///         So the sub-formatter runs by default, these keys govern real output, and the only way to
+///         switch them off wholesale is <c>skala format --no-xmldoc</c>.
+///     </para>
+///     <para>
+///         The ids are registered <c>OfUnoracled</c> rather than <c>OfInert</c>: read, honoured, and never
+///         claiming Tier A, because Tier A is fixture evidence and there is none to be had. What pins them
+///         instead is two things that need no oracle: hand-written fixtures asserting the semantics
+///         JetBrains' own settings pages state, and the round-trip property in
+///         <see cref="XmlDocFormatter" />, which is checked on every comment of every run rather than on a
+///         fixture.
+///     </para>
+///     <para>
+///         ⚠ The ten keys of the family that are <em>not</em> here are refused rather than pending, and
+///         <see cref="XmlDocIds.Refused" /> carries the reason for each.
+///     </para>
 /// </remarks>
 public readonly struct XmlDocOptions {
     public XmlDocOptions(in FormattingOptions options) {
@@ -57,10 +65,10 @@ public readonly struct XmlDocOptions {
 
     /// <summary><c>resharper_xmldoc_max_line_length</c>: the column the whole line must fit in.</summary>
     /// <remarks>
-    /// ⚠ Measured from column 0 of the file, including the code indentation and the <c>///</c>
-    /// marker. The alternative reading — a budget for the comment's own text — would make the same
-    /// sentence wrap differently at two nesting depths and produce lines past the margin, which is
-    /// the one thing a hard wrap exists to prevent.
+    ///     ⚠ Measured from column 0 of the file, including the code indentation and the <c>///</c>
+    ///     marker. The alternative reading — a budget for the comment's own text — would make the same
+    ///     sentence wrap differently at two nesting depths and produce lines past the margin, which is
+    ///     the one thing a hard wrap exists to prevent.
     /// </remarks>
     public int MaxLineLength { get; }
 
@@ -71,14 +79,14 @@ public readonly struct XmlDocOptions {
     public bool WrapTagsAndPi { get; }
 
     /// <summary>
-    /// <c>resharper_xmldoc_keep_user_linebreaks</c>: a line break the author wrote is a line break.
+    ///     <c>resharper_xmldoc_keep_user_linebreaks</c>: a line break the author wrote is a line break.
     /// </summary>
     /// <remarks>
-    /// ⚠ The key with the largest effect, and the export leaves it at <c>true</c>. True means the
-    /// sub-formatter may <em>split</em> a line that does not fit and may never <em>join</em> two the
-    /// author separated, so a hand-shaped paragraph and an ASCII table in a <c>&lt;remarks&gt;</c>
-    /// keep their shape. Implementing <c>wrap_text</c> without deciding this is not possible, which
-    /// is why it is in the implemented set rather than the refused one.
+    ///     ⚠ The key with the largest effect, and the export leaves it at <c>true</c>. True means the
+    ///     sub-formatter may <em>split</em> a line that does not fit and may never <em>join</em> two the
+    ///     author separated, so a hand-shaped paragraph and an ASCII table in a <c>&lt;remarks&gt;</c>
+    ///     keep their shape. Implementing <c>wrap_text</c> without deciding this is not possible, which
+    ///     is why it is in the implemented set rather than the refused one.
     /// </remarks>
     public bool KeepUserLinebreaks { get; }
 
@@ -87,9 +95,9 @@ public readonly struct XmlDocOptions {
 
     /// <summary><c>resharper_xmldoc_indent_child_elements</c>: inside an element with no text.</summary>
     /// <remarks>
-    /// ⚠ <c>do_not_touch</c> is mapped to "no indent", not to "keep the author's". Under a re-wrap
-    /// the author's indentation no longer exists to keep — the line breaks it hung off have been
-    /// recomputed — so honouring the name literally would mean honouring an input that is gone.
+    ///     ⚠ <c>do_not_touch</c> is mapped to "no indent", not to "keep the author's". Under a re-wrap
+    ///     the author's indentation no longer exists to keep — the line breaks it hung off have been
+    ///     recomputed — so honouring the name literally would mean honouring an input that is gone.
     /// </remarks>
     public ChildIndentStyle IndentChildElements { get; }
 
@@ -97,20 +105,20 @@ public readonly struct XmlDocOptions {
     public ChildIndentStyle IndentText { get; }
 
     /// <summary>
-    /// <c>resharper_xmldoc_linebreaks_inside_tags_for_elements_with_child_elements</c>: whether
-    /// <c>&lt;remarks&gt;&lt;para&gt;…&lt;/para&gt;&lt;/remarks&gt;</c> puts its children on their
-    /// own lines even when they would fit.
+    ///     <c>resharper_xmldoc_linebreaks_inside_tags_for_elements_with_child_elements</c>: whether
+    ///     <c>&lt;remarks&gt;&lt;para&gt;…&lt;/para&gt;&lt;/remarks&gt;</c> puts its children on their
+    ///     own lines even when they would fit.
     /// </summary>
     public bool LinebreaksInsideTagsForElementsWithChildElements { get; }
 
     /// <summary>
-    /// <c>resharper_xmldoc_linebreaks_inside_tags_for_multiline_elements</c>: whether an element
-    /// that does not fit on one line puts its content on lines of its own.
+    ///     <c>resharper_xmldoc_linebreaks_inside_tags_for_multiline_elements</c>: whether an element
+    ///     that does not fit on one line puts its content on lines of its own.
     /// </summary>
     /// <remarks>
-    /// False means the start tag keeps the first words of its content —
-    /// <c>&lt;summary&gt;Some text that</c> — which is the layout ReSharper calls "do not break
-    /// inside the tag".
+    ///     False means the start tag keeps the first words of its content —
+    ///     <c>&lt;summary&gt;Some text that</c> — which is the layout ReSharper calls "do not break
+    ///     inside the tag".
     /// </remarks>
     public bool LinebreaksInsideTagsForMultilineElements { get; }
 
@@ -121,7 +129,7 @@ public readonly struct XmlDocOptions {
     public bool LinebreakBeforeSinglelineElements { get; }
 
     /// <summary>
-    /// <c>resharper_xmldoc_spaces_inside_tags</c>: <c>&lt;summary&gt; Text &lt;/summary&gt;</c>.
+    ///     <c>resharper_xmldoc_spaces_inside_tags</c>: <c>&lt;summary&gt; Text &lt;/summary&gt;</c>.
     /// </summary>
     public bool SpacesInsideTags { get; }
 
@@ -129,13 +137,15 @@ public readonly struct XmlDocOptions {
     public bool SpaceBeforeSelfClosing { get; }
 
     /// <summary>
-    /// <c>resharper_space_after_triple_slash</c>, live only inside the sub-formatter.
+    ///     <c>resharper_space_after_triple_slash</c>, live only inside the sub-formatter.
     /// </summary>
     /// <remarks>
-    /// ⚠ Demoted from Tier A in milestone 3 because the oracle does not insert the space and doing
-    /// it anyway cost 79 lines across 15 files of <c>corpus/real/</c> (SK-DIV-0006). It stays
-    /// demoted: the default pipeline still does not insert it. It is honoured only when the
-    /// sub-formatter has been asked for, where the marker is being rewritten anyway.
+    ///     ⚠ Demoted from Tier A in milestone 3 because the oracle does not insert the space and doing
+    ///     it anyway cost 79 lines across 15 files of <c>corpus/real/</c> (SK-DIV-0006). The demotion
+    ///     stands and its reason does not: those 79 lines were <c>jb cleanupcode</c> declining to do
+    ///     what Rider does, charged to Skala. The space is inserted again — by the sub-formatter, on
+    ///     every well-formed comment, which is every comment whose marker is being rewritten anyway —
+    ///     and the key is Tier D for ever, because no fixture can pin it.
     /// </remarks>
     public bool SpaceAfterTripleSlash { get; }
 
@@ -146,15 +156,15 @@ public readonly struct XmlDocOptions {
     public bool UseTabs { get; }
 
     /// <summary>
-    /// <c>resharper_xmldoc_linebreak_before_elements</c>: the export lists
-    /// <c>summary,remarks,example,returns,param,typeparam,value,para</c>.
+    ///     <c>resharper_xmldoc_linebreak_before_elements</c>: the export lists
+    ///     <c>summary,remarks,example,returns,param,typeparam,value,para</c>.
     /// </summary>
     /// <remarks>
-    /// ⚠ Read as "this element owns its own line", which is a line break before it <em>and</em>
-    /// before whatever follows it. JetBrains' page says only "always place the following elements on
-    /// a new line"; the strict reading leaves <c>&lt;/param&gt;&lt;param …&gt;</c> pairs sharing a
-    /// line with the text after them, which is not a layout anyone configuring this key is asking
-    /// for. The choice is recorded because it is a choice and no oracle settles it.
+    ///     ⚠ Read as "this element owns its own line", which is a line break before it <em>and</em>
+    ///     before whatever follows it. JetBrains' page says only "always place the following elements on
+    ///     a new line"; the strict reading leaves <c>&lt;/param&gt;&lt;param …&gt;</c> pairs sharing a
+    ///     line with the text after them, which is not a layout anyone configuring this key is asking
+    ///     for. The choice is recorded because it is a choice and no oracle settles it.
     /// </remarks>
     public ImmutableArray<string> LinebreakBeforeElements { get; }
 
@@ -181,12 +191,14 @@ public readonly struct XmlDocOptions {
 }
 
 /// <summary>
-/// The registry ids the sub-formatter reads, and the ones it refuses.
+///     The registry ids the sub-formatter reads, and the ones it refuses.
 /// </summary>
 /// <remarks>
-/// ⚠ Every id here is registered through <see cref="Ids"/>'s inert path, so none of them enters
-/// <see cref="PhaseOneOptions.Implemented"/> and none of them claims Tier A. That is the honest
-/// state: Tier A means "pinned by an oracle fixture" and the oracle has nothing to say here.
+///     ⚠ Every id here is registered through <see cref="Ids" />'s unoracled path, so none of them enters
+///     <see cref="PhaseOneOptions.Implemented" /> and none of them claims Tier A. That is the honest
+///     state: Tier A means "pinned by an oracle fixture" and the oracle has nothing to say here. It is
+///     <em>not</em> the inert path, which would say these keys change nothing, and they change output on
+///     every file with a documentation comment in it.
 /// </remarks>
 public static class XmlDocIds {
     public static readonly OptionId WrapLines = Ids.XmlDocWrapLines;
@@ -235,13 +247,13 @@ public static class XmlDocIds {
     ];
 
     /// <summary>
-    /// The ten keys of the family the sub-formatter refuses, and why each one.
+    ///     The ten keys of the family the sub-formatter refuses, and why each one.
     /// </summary>
     /// <remarks>
-    /// ⚠ Refused, not pending. Each of these needs a fact the project does not have and cannot get:
-    /// six of them describe rewriting the inside of a tag header, which Skala does not do at all;
-    /// three describe a behaviour that only becomes observable at a value the export does not set,
-    /// so choosing one would be inventing it; and one has no meaning for a <c>///</c> comment.
+    ///     ⚠ Refused, not pending. Each of these needs a fact the project does not have and cannot get:
+    ///     six of them describe rewriting the inside of a tag header, which Skala does not do at all;
+    ///     three describe a behaviour that only becomes observable at a value the export does not set,
+    ///     so choosing one would be inventing it; and one has no meaning for a <c>///</c> comment.
     /// </remarks>
     public static ImmutableArray<KeyValuePair<string, string>> Refused => [
         new(

@@ -49,11 +49,13 @@ public static class NativeRid {
     }
 
     static string OperatingSystemPart() =>
-        OperatingSystem.IsWindows() ? "win" :
-        OperatingSystem.IsMacOS() || OperatingSystem.IsMacCatalyst() ? "osx" :
-        OperatingSystem.IsIOS() ? "ios" :
-        OperatingSystem.IsAndroid() ? "android" :
-        OperatingSystem.IsBrowser() ? "browser" : "linux";
+        OperatingSystem.IsWindows()
+        ? "win"
+        : OperatingSystem.IsMacOS() || OperatingSystem.IsMacCatalyst()
+        ? "osx"
+        : OperatingSystem.IsIOS()
+        ? "ios"
+        : OperatingSystem.IsAndroid() ? "android" : OperatingSystem.IsBrowser() ? "browser" : "linux";
 
     static string ArchitecturePart() =>
         RuntimeInformation.ProcessArchitecture switch {

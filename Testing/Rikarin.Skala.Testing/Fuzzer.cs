@@ -24,30 +24,30 @@ public sealed record FuzzOptions {
     public ulong Seed { get; init; } = 1;
 
     /// <summary>
-    /// The wall-clock budget, which is what doc 12 asks the nightly job to be bounded by.
+    ///     The wall-clock budget, which is what doc 12 asks the nightly job to be bounded by.
     /// </summary>
     /// <remarks>
-    /// ⚠ A time budget rather than a case count, deliberately, and it is the one place the clock is
-    /// allowed to reach the fuzzer. It bounds the *loop*; it does not enter a case. Case <c>i</c> is
-    /// <c>FuzzRandom.Derive(seed, i)</c> and nothing else, so a run that stopped after 11 042 cases
-    /// on a fast machine and 3 118 on a slow one executed the same first 3 118 cases, and any of
-    /// them replays from its own seed in a second.
+    ///     ⚠ A time budget rather than a case count, deliberately, and it is the one place the clock is
+    ///     allowed to reach the fuzzer. It bounds the *loop*; it does not enter a case. Case <c>i</c> is
+    ///     <c>FuzzRandom.Derive(seed, i)</c> and nothing else, so a run that stopped after 11 042 cases
+    ///     on a fast machine and 3 118 on a slow one executed the same first 3 118 cases, and any of
+    ///     them replays from its own seed in a second.
     /// </remarks>
     public TimeSpan Budget { get; init; } = TimeSpan.FromMinutes(2);
 
-    /// <summary>An exact case count, which overrides <see cref="Budget"/> when set.</summary>
+    /// <summary>An exact case count, which overrides <see cref="Budget" /> when set.</summary>
     public long? Cases { get; init; }
 
     public FuzzMode Mode { get; init; } = FuzzMode.Both;
 
     /// <summary>
-    /// Run the arrange-and-format pair on one case in every <c>n</c>. Zero turns it off.
+    ///     Run the arrange-and-format pair on one case in every <c>n</c>. Zero turns it off.
     /// </summary>
     /// <remarks>
-    /// ⚠ Sampled rather than universal because it costs a Roslyn compilation with the whole shared
-    /// framework referenced, which is tens of times a format. Running it on every case would buy one
-    /// property at the price of an order of magnitude of throughput, and a fuzzer's yield is roughly
-    /// linear in cases executed.
+    ///     ⚠ Sampled rather than universal because it costs a Roslyn compilation with the whole shared
+    ///     framework referenced, which is tens of times a format. Running it on every case would buy one
+    ///     property at the price of an order of magnitude of throughput, and a fuzzer's yield is roughly
+    ///     linear in cases executed.
     /// </remarks>
     public int ArrangeEvery { get; init; } = 25;
 
@@ -198,13 +198,13 @@ public sealed record FuzzReport(
         whole == 0 ? "0 %" : (part * 100.0 / whole).ToString("F1", CultureInfo.InvariantCulture) + " %";
 
     /// <summary>
-    /// The artefact with its invisible characters made visible.
+    ///     The artefact with its invisible characters made visible.
     /// </summary>
     /// <remarks>
-    /// ⚠ A fuzz finding is very often *about* a character that a code block does not render: a
-    /// trailing space, a tab where the file uses spaces, a lone `\r`, a BOM. Printing the artefact
-    /// raw produces a report where the interesting difference is invisible and the reader concludes
-    /// the tool is confused.
+    ///     ⚠ A fuzz finding is very often *about* a character that a code block does not render: a
+    ///     trailing space, a tab where the file uses spaces, a lone `\r`, a BOM. Printing the artefact
+    ///     raw produces a report where the interesting difference is invisible and the reader concludes
+    ///     the tool is confused.
     /// </remarks>
     static string Visible(string text) =>
         text.Replace("﻿", "<BOM>", StringComparison.Ordinal)
@@ -215,35 +215,41 @@ public sealed record FuzzReport(
 }
 
 /// <summary>
-/// The fuzzer of docs/plan/12 § "4. Fuzzing".
+///     The fuzzer of docs/plan/12 § "4. Fuzzing".
 /// </summary>
 /// <remarks>
-/// ⚠ M7 installed the nightly job and did not write this, and the workflow's header said so rather
-/// than implying otherwise by existing. What the job ran was the *assertion half*: the six properties
-/// over the committed corpus, which is a regression suite. The three things that were missing are
-/// here — a seeded mutation driver (<see cref="FuzzMutations"/>), a weighted generative grammar
-/// (<see cref="FuzzGenerator"/>) and a delta-debugging minimiser (<see cref="FuzzMinimiser"/>) — and
-/// the reason to want them is that every defect the milestones actually found was one a fixed corpus
-/// could not see:
-/// <list type="bullet">
-/// <item>M3: two of the fitter's four measures had returned zero since the milestone they were
-/// written in, and no property caught it.</item>
-/// <item>M3: a non-idempotency no corpus file contains, which took a 4 708-file tree to surface.</item>
-/// <item>M4: <c>PredefinedTypeRule</c> rewriting <c>out var value</c> into <c>out string value</c> on
-/// 2 210 of 4 606 files, hidden because a later rule mostly re-converted the damage.</item>
-/// <item>M8: for a category the corpus has none of the shape of, a correct rule and a rule that never
-/// runs produce the same zero.</item>
-/// </list>
+///     ⚠ M7 installed the nightly job and did not write this, and the workflow's header said so rather
+///     than implying otherwise by existing. What the job ran was the *assertion half*: the six properties
+///     over the committed corpus, which is a regression suite. The three things that were missing are
+///     here — a seeded mutation driver (<see cref="FuzzMutations" />), a weighted generative grammar
+///     (<see cref="FuzzGenerator" />) and a delta-debugging minimiser (<see cref="FuzzMinimiser" />) — and
+///     the reason to want them is that every defect the milestones actually found was one a fixed corpus
+///     could not see:
+///     <list type="bullet">
+///         <item>
+///             M3: two of the fitter's four measures had returned zero since the milestone they were
+///             written in, and no property caught it.
+///         </item>
+///         <item>M3: a non-idempotency no corpus file contains, which took a 4 708-file tree to surface.</item>
+///         <item>
+///             M4: <c>PredefinedTypeRule</c> rewriting <c>out var value</c> into <c>out string value</c> on
+///             2 210 of 4 606 files, hidden because a later rule mostly re-converted the damage.
+///         </item>
+///         <item>
+///             M8: for a category the corpus has none of the shape of, a correct rule and a rule that never
+///             runs produce the same zero.
+///         </item>
+///     </list>
 /// </remarks>
 public static class Fuzzer {
     /// <summary>
-    /// The path a generated unit is formatted as.
+    ///     The path a generated unit is formatted as.
     /// </summary>
     /// <remarks>
-    /// ⚠ It does not exist and does not need to; <see cref="OptionResolver"/> walks directories for
-    /// <c>.editorconfig</c> files and does not require the file itself. Putting it under the corpus
-    /// root means a generated unit is formatted under exactly the configuration a corpus file is,
-    /// which is what makes the two halves of the fuzzer comparable.
+    ///     ⚠ It does not exist and does not need to; <see cref="OptionResolver" /> walks directories for
+    ///     <c>.editorconfig</c> files and does not require the file itself. Putting it under the corpus
+    ///     root means a generated unit is formatted under exactly the configuration a corpus file is,
+    ///     which is what makes the two halves of the fuzzer comparable.
     /// </remarks>
     public static string GeneratedPath { get; } = Path.Combine(Corpus.Root, "generated", "fuzz.cs");
 
@@ -553,7 +559,7 @@ public static class Fuzzer {
         Violations(subject, candidate, property).FirstOrDefault()?.ToString()
         ?? "⚠ the minimised input no longer exhibits the failure; the reduction is not trustworthy";
 
-    /// <summary>Does <paramref name="candidate"/> still break <paramref name="property"/>?</summary>
+    /// <summary>Does <paramref name="candidate" /> still break <paramref name="property" />?</summary>
     static bool Fails(FuzzCase subject, string candidate, string property) =>
         Violations(subject, candidate, property).Any();
 
@@ -621,15 +627,15 @@ public static class Fuzzer {
     }
 
     /// <summary>
-    /// <c>fuzz --grammar-check</c>: does the generator emit C# that parses?
+    ///     <c>fuzz --grammar-check</c>: does the generator emit C# that parses?
     /// </summary>
     /// <remarks>
-    /// ⚠ The generator's contract is "no parse errors, semantic nonsense welcome", and this is how
-    /// the contract is checked rather than assumed. A production that emits a parse error costs more
-    /// than the case it wastes: ADR-003 leaves an unparseable file byte-identical, so the case still
-    /// *passes* every property, and a grammar that is 40 % broken looks exactly like a grammar that
-    /// is 0 % broken from the outside. The histogram below names the diagnostic and shows the line,
-    /// which is what turns "the generator is broken" into "the generator parenthesises nothing".
+    ///     ⚠ The generator's contract is "no parse errors, semantic nonsense welcome", and this is how
+    ///     the contract is checked rather than assumed. A production that emits a parse error costs more
+    ///     than the case it wastes: ADR-003 leaves an unparseable file byte-identical, so the case still
+    ///     *passes* every property, and a grammar that is 40 % broken looks exactly like a grammar that
+    ///     is 0 % broken from the outside. The histogram below names the diagnostic and shows the line,
+    ///     which is what turns "the generator is broken" into "the generator parenthesises nothing".
     /// </remarks>
     public static string GrammarCheck(ulong seed, int count) {
         var errors = new Dictionary<string, (int Count, string Sample)>(StringComparer.Ordinal);
@@ -677,14 +683,14 @@ public static class Fuzzer {
     }
 
     /// <summary>
-    /// <c>fuzz --mutation-test</c>: break the formatter deliberately and check that the fuzzer notices.
+    ///     <c>fuzz --mutation-test</c>: break the formatter deliberately and check that the fuzzer notices.
     /// </summary>
     /// <remarks>
-    /// ⚠ This is the answer to "a fuzzer that finds nothing on its first outing is more likely to be
-    /// weak than the code to be perfect". Each saboteur in
-    /// <see cref="FuzzProperties.Saboteurs"/> breaks one property; this runs cases until the property
-    /// that should notice does, and reports the case count. A saboteur that survives the whole budget
-    /// is a property that is not being asserted, and the row says so.
+    ///     ⚠ This is the answer to "a fuzzer that finds nothing on its first outing is more likely to be
+    ///     weak than the code to be perfect". Each saboteur in
+    ///     <see cref="FuzzProperties.Saboteurs" /> breaks one property; this runs cases until the property
+    ///     that should notice does, and reports the case count. A saboteur that survives the whole budget
+    ///     is a property that is not being asserted, and the row says so.
     /// </remarks>
     public static string MutationTest(FuzzOptions options, TextWriter log) {
         var corpus = Corpus.All();

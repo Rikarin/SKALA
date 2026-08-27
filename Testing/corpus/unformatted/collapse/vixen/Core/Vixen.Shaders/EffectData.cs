@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: Copyright (c) Rikarin
 // SPDX-License-Identifier: Apache-2.0
-using Vixen.Core;using Vixen.Graphics;namespace Vixen.Shaders;
+using Vixen.Core; using Vixen.Graphics; namespace Vixen.Shaders;
+
 /// <summary>
 ///     The CLR type one shader value is written as.
 /// </summary>
@@ -20,39 +21,41 @@ using Vixen.Core;using Vixen.Graphics;namespace Vixen.Shaders;
 ///         quietly goes to the wrong offset.
 ///     </para>
 /// </remarks>
-public enum ShaderValueKind:byte{
-/// <summary>A type the engine has no C# equivalent for — a struct, or an odd matrix shape.</summary>
+public enum ShaderValueKind : byte {
+    /// <summary>A type the engine has no C# equivalent for — a struct, or an odd matrix shape.</summary>
     /// <remarks>
     ///     Not an error. The generator skips such a parameter too, so it is a value the host writes
     ///     through its leaves or not at all, and an effect carrying one is still perfectly usable.
     /// </remarks>
-Unknown=0,
-/// <summary><c>bool</c>.</summary>
-Bool=1,
-/// <summary><c>int</c>.</summary>
-Int=2,
-/// <summary><c>int2</c>.</summary>
-Int2=3,
-/// <summary><c>int3</c>.</summary>
-Int3=4,
-/// <summary><c>int4</c>.</summary>
-Int4=5,
-/// <summary><c>uint</c>.</summary>
-UInt=6,
-/// <summary><c>float</c>.</summary>
-Float=7,
-/// <summary><c>float2</c>.</summary>
-Float2=8,
-/// <summary><c>float3</c>.</summary>
-Float3=9,
-/// <summary><c>float4</c>.</summary>
-Float4=10,
-/// <summary><c>float3x3</c>.</summary>
-Matrix3x3=11,
-/// <summary><c>float4x4</c>.</summary>
-Matrix4x4=12,
-/// <summary><c>double</c>.</summary>
-Double=13}
+    Unknown = 0,
+    /// <summary><c>bool</c>.</summary>
+    Bool = 1,
+    /// <summary><c>int</c>.</summary>
+    Int = 2,
+    /// <summary><c>int2</c>.</summary>
+    Int2 = 3,
+    /// <summary><c>int3</c>.</summary>
+    Int3 = 4,
+    /// <summary><c>int4</c>.</summary>
+    Int4 = 5,
+    /// <summary><c>uint</c>.</summary>
+    UInt = 6,
+    /// <summary><c>float</c>.</summary>
+    Float = 7,
+    /// <summary><c>float2</c>.</summary>
+    Float2 = 8,
+    /// <summary><c>float3</c>.</summary>
+    Float3 = 9,
+    /// <summary><c>float4</c>.</summary>
+    Float4 = 10,
+    /// <summary><c>float3x3</c>.</summary>
+    Matrix3x3 = 11,
+    /// <summary><c>float4x4</c>.</summary>
+    Matrix4x4 = 12,
+    /// <summary><c>double</c>.</summary>
+    Double = 13
+}
+
 /// <summary>One permutation value, as the text that names a variant.</summary>
 /// <param name="Name">The permutation key.</param>
 /// <param name="Value">Its value, in <see cref="EffectKey" />'s normal form.</param>
@@ -65,18 +68,32 @@ Double=13}
 ///     used keys on <see cref="EffectData" />: a variant's permutation values <em>are</em> the keys
 ///     it read, and two lists that have to agree would eventually not.
 /// </remarks>
-[DataContract("EffectPermutationValue" )]public sealed record EffectPermutationValue(string Name="",string Value="",ShaderValueKind Kind=ShaderValueKind.Bool,string DefaultValue="");
+[DataContract("EffectPermutationValue")]
+public sealed record EffectPermutationValue(
+    string Name = "",
+    string Value = "",
+    ShaderValueKind Kind = ShaderValueKind.Bool,
+    string DefaultValue = "");
+
 /// <summary>One filled <c>compose</c> slot.</summary>
 /// <param name="Slot">The slot, qualified as the compiler qualifies it.</param>
 /// <param name="Shader">The shader filling it.</param>
-[DataContract("EffectComposeBinding" )]public sealed record EffectComposeBinding(string Slot="",string Shader="");
+[DataContract("EffectComposeBinding")]
+public sealed record EffectComposeBinding(string Slot = "", string Shader = "");
+
 /// <summary>One stage's compiled module.</summary>
 /// <param name="Stage">Which stage.</param>
 /// <param name="Bytecode">The module, as the device takes it.</param>
 /// <param name="EntryPoint">Its entry point.</param>
-[DataContract("EffectStageData" )]public sealed record EffectStageData(ShaderStage Stage=ShaderStage.None,byte[]?Bytecode=null,string EntryPoint="main"){
-/// <summary>The module, never null.</summary>
-public byte[]Bytecode{get;init;}=Bytecode??[];}
+[DataContract("EffectStageData")]
+public sealed record EffectStageData(
+    ShaderStage Stage = ShaderStage.None,
+    byte[]? Bytecode = null,
+    string EntryPoint = "main") {
+    /// <summary>The module, never null.</summary>
+    public byte[] Bytecode { get; init; } = Bytecode ?? [];
+}
+
 /// <summary>One resource the shader binds, with everything a set layout needs.</summary>
 /// <param name="Name">The shader's own name for it.</param>
 /// <param name="Set">Which of the four conventional sets holds it.</param>
@@ -94,7 +111,16 @@ public byte[]Bytecode{get;init;}=Bytecode??[];}
 ///     They were separate in the compiler's reflection and separating them here too would leave two
 ///     lists that have to agree and no reason they would.
 /// </remarks>
-[DataContract("EffectBindingData" )]public sealed record EffectBindingData(string Name="",DescriptorSetSlot Set=DescriptorSetSlot.PerMaterial,uint Binding=0,DescriptorKind Kind=DescriptorKind.UniformBuffer,ShaderStage Stages=ShaderStage.None,int Count=1,int Size=0);
+[DataContract("EffectBindingData")]
+public sealed record EffectBindingData(
+    string Name = "",
+    DescriptorSetSlot Set = DescriptorSetSlot.PerMaterial,
+    uint Binding = 0,
+    DescriptorKind Kind = DescriptorKind.UniformBuffer,
+    ShaderStage Stages = ShaderStage.None,
+    int Count = 1,
+    int Size = 0);
+
 /// <summary>
 ///     One push-constant range: what a shader is handed per draw without a descriptor.
 /// </summary>
@@ -118,12 +144,20 @@ public byte[]Bytecode{get;init;}=Bytecode??[];}
 ///         a declared range is accepted by every layer there is.
 ///     </para>
 /// </remarks>
-[DataContract("EffectPushConstantData" )]public sealed record EffectPushConstantData(ShaderStage Stages=ShaderStage.None,int Offset=0,int Size=0,EffectPushConstantMember[]?Members=null);
+[DataContract("EffectPushConstantData")]
+public sealed record EffectPushConstantData(
+    ShaderStage Stages = ShaderStage.None,
+    int Offset = 0,
+    int Size = 0,
+    EffectPushConstantMember[]? Members = null);
+
 /// <summary>One member of a push-constant block, and where in it the member sits.</summary>
 /// <param name="Name">The name the shader gave it, unqualified.</param>
 /// <param name="Offset">Where it starts within the block, in bytes.</param>
 /// <param name="Size">How many bytes it occupies.</param>
-[DataContract("EffectPushConstantMember" )]public sealed record EffectPushConstantMember(string Name="",int Offset=0,int Size=0);
+[DataContract("EffectPushConstantMember")]
+public sealed record EffectPushConstantMember(string Name = "", int Offset = 0, int Size = 0);
+
 /// <summary>
 ///     One vertex attribute the shader reads, and the location it reads it at.
 /// </summary>
@@ -143,22 +177,36 @@ public byte[]Bytecode{get;init;}=Bytecode??[];}
 ///         What the shader knows is which name it wants at which location, which is this.
 ///     </para>
 /// </remarks>
-[DataContract("EffectVertexInputData" )]public sealed record EffectVertexInputData(string Name="",int Location=0,ShaderValueKind Kind=ShaderValueKind.Unknown);
+[DataContract("EffectVertexInputData")]
+public sealed record EffectVertexInputData(
+    string Name = "",
+    int Location = 0,
+    ShaderValueKind Kind = ShaderValueKind.Unknown);
+
 /// <summary>Where one value sits in the constant buffer, and what type it is.</summary>
 /// <param name="Name">The dotted name the shader's reflection gave it.</param>
 /// <param name="Kind">Its CLR type, for interning the key.</param>
 /// <param name="Offset">Byte offset within the block.</param>
 /// <param name="Size">Bytes occupied.</param>
 /// <param name="Set">Which set's block that offset is into.</param>
-[DataContract("EffectParameterData" )]public sealed record EffectParameterData(string Name="",ShaderValueKind Kind=ShaderValueKind.Unknown,int Offset=0,int Size=0,DescriptorSetSlot Set=DescriptorSetSlot.PerMaterial);
+[DataContract("EffectParameterData")]
+public sealed record EffectParameterData(
+    string Name = "",
+    ShaderValueKind Kind = ShaderValueKind.Unknown,
+    int Offset = 0,
+    int Size = 0,
+    DescriptorSetSlot Set = DescriptorSetSlot.PerMaterial);
+
 /// <summary>
 ///     One compiled variant of a shader, in a form that outlives the process that compiled it and
 ///     needs nothing from the compiler to read.
 /// </summary>
 /// <remarks>
 ///     <para>
-///         <strong>This is what makes "zero runtime shader compilation" a structural claim rather
-///         than a policy.</strong> Raven's own <c>.rvnfx</c> already holds bytecode and reflection —
+///         <strong>
+///             This is what makes "zero runtime shader compilation" a structural claim rather
+///             than a policy.
+///         </strong> Raven's own <c>.rvnfx</c> already holds bytecode and reflection —
 ///         but <c>CompiledEffectReader</c> lives in the compiler assembly, so a runtime that read one
 ///         would link the parser, the lowerer and both backends. Every tier below the in-memory
 ///         dictionary reads <em>this</em> instead: the disk cache, the baked bundle and the answer
@@ -177,37 +225,56 @@ public byte[]Bytecode{get;init;}=Bytecode??[];}
 ///         the same variant, and the hash is what says whether one of them is stale.
 ///     </para>
 /// </remarks>
-[DataContract("EffectData" )]public sealed record EffectData{
-/// <summary>The shader this is a variant of.</summary>
-public string ShaderName{get;init;}=string.Empty;
-/// <summary>The permutation values that selected it — only the keys it read.</summary>
-public EffectPermutationValue[]Permutations{get;init;}=[];
-/// <summary>What filled its <c>compose</c> slots.</summary>
-public EffectComposeBinding[]Composition{get;init;}=[];
-/// <summary>The backend that produced the modules, as Raven's <c>TargetBackends</c> names it.</summary>
-public string Target{get;init;}=string.Empty;
-/// <summary>A hash of the source it was compiled from, for detecting a stale artefact.</summary>
-public string SourceHash{get;init;}=string.Empty;
-/// <summary>The compiled stages.</summary>
-public EffectStageData[]Stages{get;init;}=[];
-/// <summary>Every resource it binds.</summary>
-public EffectBindingData[]Bindings{get;init;}=[];
-/// <summary>How many bytes its uniform block needs.</summary>
-public int ConstantBufferSize{get;init;}
-/// <summary>Every value in that block, one entry per value.</summary>
-public EffectParameterData[]Parameters{get;init;}=[];
-/// <summary>The push-constant ranges its pipeline layout has to declare.</summary>
-public EffectPushConstantData[]PushConstants{get;init;}=[];
-/// <summary>The vertex attributes its vertex stage reads, with the locations it reads them at.</summary>
-public EffectVertexInputData[]VertexInputs{get;init;}=[];
-/// <summary>The key that selects this variant.</summary>
+[DataContract("EffectData")]
+public sealed record EffectData {
+    /// <summary>The shader this is a variant of.</summary>
+    public string ShaderName { get; init; } = string.Empty;
+
+    /// <summary>The permutation values that selected it — only the keys it read.</summary>
+    public EffectPermutationValue[] Permutations { get; init; } = [];
+
+    /// <summary>What filled its <c>compose</c> slots.</summary>
+    public EffectComposeBinding[] Composition { get; init; } = [];
+
+    /// <summary>The backend that produced the modules, as Raven's <c>TargetBackends</c> names it.</summary>
+    public string Target { get; init; } = string.Empty;
+
+    /// <summary>A hash of the source it was compiled from, for detecting a stale artefact.</summary>
+    public string SourceHash { get; init; } = string.Empty;
+
+    /// <summary>The compiled stages.</summary>
+    public EffectStageData[] Stages { get; init; } = [];
+
+    /// <summary>Every resource it binds.</summary>
+    public EffectBindingData[] Bindings { get; init; } = [];
+
+    /// <summary>How many bytes its uniform block needs.</summary>
+    public int ConstantBufferSize { get; init; }
+
+    /// <summary>Every value in that block, one entry per value.</summary>
+    public EffectParameterData[] Parameters { get; init; } = [];
+
+    /// <summary>The push-constant ranges its pipeline layout has to declare.</summary>
+    public EffectPushConstantData[] PushConstants { get; init; } = [];
+
+    /// <summary>The vertex attributes its vertex stage reads, with the locations it reads them at.</summary>
+    public EffectVertexInputData[] VertexInputs { get; init; } = [];
+
+    /// <summary>The key that selects this variant.</summary>
     /// <remarks>
     ///     Rebuilt rather than stored, so a record whose permutation list was edited cannot end up
     ///     filed under the key it used to have. The normal form is <see cref="EffectKey" />'s, which
     ///     is what makes a key built here and a key built from a
     ///     <see cref="ParameterCollection" /> at draw time compare equal.
     /// </remarks>
-public EffectKey ToKey()=>EffectKey.Of(ShaderName,Permutations.Select(value=>new KeyValuePair<string,string>(value.Name,value.Value)),ShaderComposition.Of(Composition.Select(slot=>new KeyValuePair<string,string>(slot.Slot,slot.Shader))));}
+    public EffectKey ToKey() =>
+        EffectKey.Of(
+            ShaderName,
+            Permutations.Select(value => new KeyValuePair<string, string>(value.Name, value.Value)),
+            ShaderComposition.Of(Composition.Select(slot => new KeyValuePair<string, string>(slot.Slot, slot.Shader)))
+        );
+}
+
 /// <summary>A set of pre-compiled variants: what a content build bakes and a shipping build loads.</summary>
 /// <remarks>
 ///     <para>
@@ -217,6 +284,8 @@ public EffectKey ToKey()=>EffectKey.Of(ShaderName,Permutations.Select(value=>new
 ///         <see cref="EffectStore" /> indexes it on load, where there is exactly one answer.
 ///     </para>
 /// </remarks>
-[DataContract("EffectBundle" )]public sealed record EffectBundle{
-/// <summary>What the build was told to produce.</summary>
-public EffectData[]Effects{get;init;}=[];}
+[DataContract("EffectBundle")]
+public sealed record EffectBundle {
+    /// <summary>What the build was told to produce.</summary>
+    public EffectData[] Effects { get; init; } = [];
+}

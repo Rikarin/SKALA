@@ -1,4 +1,5 @@
 #region License
+
 // Copyright (c) 2007 James Newton-King
 //
 // Permission is hereby granted, free of charge, to any person
@@ -21,15 +22,14 @@
 // WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 // OTHER DEALINGS IN THE SOFTWARE.
+
 #endregion
 
 using System.Collections.Generic;
 using System.Runtime.Serialization;
 
-namespace Newtonsoft.Json.Tests.TestObjects
-{
-    public class SerializationEventTestDictionary : Dictionary<decimal, string>
-    {
+namespace Newtonsoft.Json.Tests.TestObjects {
+    public class SerializationEventTestDictionary : Dictionary<decimal, string> {
         // This member is serialized and deserialized with no change.
         public int Member1 { get; private set; }
 
@@ -44,8 +44,7 @@ namespace Newtonsoft.Json.Tests.TestObjects
         // This field is set to null, but populated after deserialization.
         public string Member4 { get; private set; }
 
-        public SerializationEventTestDictionary()
-        {
+        public SerializationEventTestDictionary() {
             Member1 = 11;
             Member2 = "Hello World!";
             Member3 = "This is a nonserialized value";
@@ -53,27 +52,23 @@ namespace Newtonsoft.Json.Tests.TestObjects
         }
 
         [OnSerializing]
-        internal void OnSerializingMethod(StreamingContext context)
-        {
+        internal void OnSerializingMethod(StreamingContext context) {
             Member2 = "This value went into the data file during serialization.";
             Add(decimal.MaxValue, "Inserted on serializing");
         }
 
         [OnSerialized]
-        internal void OnSerializedMethod(StreamingContext context)
-        {
+        internal void OnSerializedMethod(StreamingContext context) {
             Member2 = "This value was reset after serialization.";
         }
 
         [OnDeserializing]
-        internal void OnDeserializingMethod(StreamingContext context)
-        {
+        internal void OnDeserializingMethod(StreamingContext context) {
             Member3 = "This value was set during deserialization";
         }
 
         [OnDeserialized]
-        internal void OnDeserializedMethod(StreamingContext context)
-        {
+        internal void OnDeserializedMethod(StreamingContext context) {
             Member4 = "This value was set after deserialization.";
         }
     }

@@ -47,8 +47,11 @@ public readonly record struct GrassBatch(
 ///         nothing else.
 ///     </para>
 ///     <para>
-///         ⚠ <b>The scatter happens on entry and the cull happens every frame, and keeping those
-///         apart is the whole shape of the feature.</b> Scattering per frame would probe the surface
+///         ⚠
+///         <b>
+///             The scatter happens on entry and the cull happens every frame, and keeping those
+///             apart is the whole shape of the feature.
+///         </b> Scattering per frame would probe the surface
 ///         for every blade of every cell every frame — which is the cost the ring exists to pay once —
 ///         and culling on entry would draw the far half of every cell for as long as it stayed
 ///         resident.
@@ -75,10 +78,10 @@ public sealed class GrassRenderer {
     readonly List<InstanceBounds> bounds = [];
 
     readonly List<InstanceParameters>
-        source = []; // [slot][field]. Rectangular and allocated once, because the ring is fixed and the field list is
+    source = []; // [slot][field]. Rectangular and allocated once, because the ring is fixed and the field list is
 
-// the frame's — a jagged structure keyed by cell would allocate on every cell that enters range,
-// which is the allocation a ring exists to remove.
+    // the frame's — a jagged structure keyed by cell would allocate on every cell that enters range,
+    // which is the allocation a ring exists to remove.
     List<GrassBlade>[,] blades;
     BoundingBox[,] extents;
 
@@ -181,9 +184,9 @@ public sealed class GrassRenderer {
             }
         } // Every resident cell, not only the ones that just arrived: a field whose own range the cell
 
-// has just come inside has to fill in, and one whose range it has just left has to empty.
-// Walking only `change.Created` would leave a near field permanently unscattered in a cell
-// that entered while it was still far away.
+        // has just come inside has to fill in, and one whose range it has just left has to empty.
+        // Walking only `change.Created` would leave a near field permanently unscattered in a cell
+        // that entered while it was still far away.
         var at = new Vector2(viewPosition.X, viewPosition.Z);
         foreach (var resident in Residency.Resident) {
             var distance = Residency.DistanceTo(resident.Cell, at);
@@ -384,8 +387,8 @@ public sealed class GrassRenderer {
         var bounds = new BoundingBox(new(float.PositiveInfinity), new(float.NegativeInfinity));
         foreach (var blade in held) {
             // The vertical reach is the blade's own height rather than the horizontal step, which is
-// the one direction grass is bigger than its spacing. Scaled, because a blade drawn at
-// 1.3 is 1.3 tall.
+            // the one direction grass is bigger than its spacing. Scaled, because a blade drawn at
+            // 1.3 is 1.3 tall.
             var extent = new Vector3(type.MaxScale) * blade.Instance.Scale;
             bounds = new(
                 Vector3.Min(bounds.Minimum, blade.Instance.Position - extent),

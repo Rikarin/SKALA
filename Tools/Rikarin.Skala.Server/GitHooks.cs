@@ -4,18 +4,18 @@ using Rikarin.Skala.Core.Configuration;
 namespace Rikarin.Skala.Server;
 
 /// <summary>
-/// <c>skala hooks install</c> — docs/plan/11 § "Git hooks".
+///     <c>skala hooks install</c> — docs/plan/11 § "Git hooks".
 /// </summary>
 /// <remarks>
-/// ⚠ It detects an existing hook manager rather than clobbering it. A tool that overwrites somebody's
-/// husky, lefthook or pre-commit configuration to install itself has, from that moment, broken every
-/// other check the repository ran — and it will be blamed for the one that fails next week rather
-/// than for the one it deleted today.
-/// <para>
-/// The hook is deliberately two lines and deliberately not clever. It calls the same CLI a person
-/// calls; there is no second code path to keep in step, which is the same rule the daemon and the
-/// LSP server are held to.
-/// </para>
+///     ⚠ It detects an existing hook manager rather than clobbering it. A tool that overwrites somebody's
+///     husky, lefthook or pre-commit configuration to install itself has, from that moment, broken every
+///     other check the repository ran — and it will be blamed for the one that fails next week rather
+///     than for the one it deleted today.
+///     <para>
+///         The hook is deliberately two lines and deliberately not clever. It calls the same CLI a person
+///         calls; there is no second code path to keep in step, which is the same rule the daemon and the
+///         LSP server are held to.
+///     </para>
 /// </remarks>
 public static class GitHooks {
     public const string Marker = "# installed by skala hooks install";

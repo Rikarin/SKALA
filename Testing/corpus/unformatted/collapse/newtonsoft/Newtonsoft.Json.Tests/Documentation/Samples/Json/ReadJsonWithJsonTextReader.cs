@@ -1,4 +1,5 @@
 #region License
+
 // Copyright (c) 2007 James Newton-King
 //
 // Permission is hereby granted, free of charge, to any person
@@ -21,8 +22,10 @@
 // WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 // OTHER DEALINGS IN THE SOFTWARE.
+
 #endregion
-using System;using System.Collections.Generic;using System.IO;using System.Text;
+
+using System; using System.Collections.Generic; using System.IO; using System.Text;
 #if DNXCORE50
 using Xunit;
 using Test = Xunit.FactAttribute;
@@ -30,9 +33,14 @@ using Assert = Newtonsoft.Json.Tests.XUnitAssert;
 #else
 using NUnit.Framework;
 #endif
-namespace Newtonsoft.Json.Tests.Documentation.Samples.Json{[TestFixture]public class ReadJsonWithJsonTextReader:TestFixtureBase{[Test]public void Example(){
-#region Usage
-string json=@"{
+namespace Newtonsoft.Json.Tests.Documentation.Samples.Json {
+    [TestFixture]
+    public class ReadJsonWithJsonTextReader : TestFixtureBase {
+        [Test]
+        public void Example() {
+            #region Usage
+
+            string json = @"{
                'CPU': 'Intel',
                'PSU': '500W',
                'Drives': [
@@ -41,18 +49,29 @@ string json=@"{
                  '500 gigabyte hard drive',
                  '200 gigabyte hard drive'
                ]
-            }" ;JsonTextReader reader=new JsonTextReader(new StringReader(json));while(reader.Read()){if(reader.Value!=null){Console.WriteLine("Token: {0}, Value: {1}" ,reader.TokenType,reader.Value);}else{Console.WriteLine("Token: {0}" ,reader.TokenType);}} // Token: StartObject
-// Token: PropertyName, Value: CPU
-// Token: String, Value: Intel
-// Token: PropertyName, Value: PSU
-// Token: String, Value: 500W
-// Token: PropertyName, Value: Drives
-// Token: StartArray
-// Token: String, Value: DVD read/writer
-// Token: Comment, Value: (broken)
-// Token: String, Value: 500 gigabyte hard drive
-// Token: String, Value: 200 gigabyte hard drive
-// Token: EndArray
-// Token: EndObject
-#endregion
-}}}
+            }";
+            JsonTextReader reader = new JsonTextReader(new StringReader(json));
+            while (reader.Read()) {
+                if (reader.Value != null) {
+                    Console.WriteLine("Token: {0}, Value: {1}", reader.TokenType, reader.Value);
+                } else {
+                    Console.WriteLine("Token: {0}", reader.TokenType);
+                }
+            } // Token: StartObject
+            // Token: PropertyName, Value: CPU
+            // Token: String, Value: Intel
+            // Token: PropertyName, Value: PSU
+            // Token: String, Value: 500W
+            // Token: PropertyName, Value: Drives
+            // Token: StartArray
+            // Token: String, Value: DVD read/writer
+            // Token: Comment, Value: (broken)
+            // Token: String, Value: 500 gigabyte hard drive
+            // Token: String, Value: 200 gigabyte hard drive
+            // Token: EndArray
+            // Token: EndObject
+
+            #endregion
+        }
+    }
+}

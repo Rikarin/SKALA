@@ -4,7 +4,7 @@
 
 using System.Net;
 using
-    System.Text;
+System.Text;
 using Vixen.Net.Tests.Transport;
 using Xunit;
 
@@ -46,15 +46,15 @@ public sealed class RealSocketTests {
         var clientEvents = new EventRecorder();
 
         Assert.True(
-                Until(() => {
-                        client.Poll(Step, clientEvents);
-                        server.Poll(Step, serverEvents);
+            Until(() => {
+                    client.Poll(Step, clientEvents);
+                    server.Poll(Step, serverEvents);
 
-                        return clientEvents.Connects(TransportRole.Client).Count == 1;
-                    }
-                ),
-                "The handshake did not complete over loopback."
-            )
+                    return clientEvents.Connects(TransportRole.Client).Count == 1;
+                }
+            ),
+            "The handshake did not complete over loopback."
+        )
             ;
 
         client.SendToServer(

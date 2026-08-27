@@ -5,8 +5,8 @@ using System.Text;
 namespace Corpus.Safe;
 
 /// <summary>
-/// SK5001's twin. ⚠ The builder and the loop are still here — the difference is that what goes
-/// into the builder is a placeholder and what goes into the command is a bound parameter.
+///     SK5001's twin. ⚠ The builder and the loop are still here — the difference is that what goes
+///     into the builder is a placeholder and what goes into the command is a bound parameter.
 /// </summary>
 public static class AuditTrail {
     public static void Search(HttpListenerRequest request, IDbCommand command) {

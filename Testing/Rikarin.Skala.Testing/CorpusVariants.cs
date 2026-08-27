@@ -2,7 +2,7 @@ namespace Rikarin.Skala.Testing;
 
 /// <summary>One configuration a fixture set is run under besides the repository's own.</summary>
 /// <param name="Name">
-/// The infix in the fixture's file name: <c>invocation-parens.reflow-keep.expected.cs</c>.
+///     The infix in the fixture's file name: <c>invocation-parens.reflow-keep.expected.cs</c>.
 /// </param>
 /// <param name="Overrides">`.editorconfig` keys and values layered over the resolved configuration.</param>
 public sealed record CorpusVariant(string Name, IReadOnlyList<KeyValuePair<string, string>> Overrides) {
@@ -12,35 +12,35 @@ public sealed record CorpusVariant(string Name, IReadOnlyList<KeyValuePair<strin
 }
 
 /// <summary>
-/// The alternative configurations a fixture set is measured under.
+///     The alternative configurations a fixture set is measured under.
 /// </summary>
 /// <remarks>
-/// ⚠ Milestone 1's harness had no notion of this: a corpus file was formatted with whatever its
-/// <c>.editorconfig</c> chain resolved to, and nothing else. That is enough for an option whose two
-/// values can be told apart on one file with the option flipped
-/// (<c>OptionCoverageTests.EveryImplementedOption_ChangesTheOutputOfItsCorpusFile</c> does exactly
-/// that), and it is not enough for docs/plan/05's four-way table, where the question is what two
-/// keys do <em>in combination</em> and the answer has to be checked against the oracle in all four
-/// corners rather than reasoned about.
-/// <para>
-/// ⚠ The corner that costs a repository its diff is (<c>keep_user_linebreaks = true</c>,
-/// <c>keep_existing_X = false</c>), which reads like "reflow X" and is not. Measured against the
-/// oracle: <c>Foo(\n a)</c> re-joins there and <c>Foo(\n a,\n b)</c> does not, because the two keys
-/// govern different gaps — the delimiters belong to <c>keep_existing_X</c> and the gaps between
-/// items belong to <c>keep_user_linebreaks</c>. Getting that backwards turns a first run on a large
-/// tree into a rewrite of every call site.
-/// </para>
+///     ⚠ Milestone 1's harness had no notion of this: a corpus file was formatted with whatever its
+///     <c>.editorconfig</c> chain resolved to, and nothing else. That is enough for an option whose two
+///     values can be told apart on one file with the option flipped
+///     (<c>OptionCoverageTests.EveryImplementedOption_ChangesTheOutputOfItsCorpusFile</c> does exactly
+///     that), and it is not enough for docs/plan/05's four-way table, where the question is what two
+///     keys do <em>in combination</em> and the answer has to be checked against the oracle in all four
+///     corners rather than reasoned about.
+///     <para>
+///         ⚠ The corner that costs a repository its diff is (<c>keep_user_linebreaks = true</c>,
+///         <c>keep_existing_X = false</c>), which reads like "reflow X" and is not. Measured against the
+///         oracle: <c>Foo(\n a)</c> re-joins there and <c>Foo(\n a,\n b)</c> does not, because the two keys
+///         govern different gaps — the delimiters belong to <c>keep_existing_X</c> and the gaps between
+///         items belong to <c>keep_user_linebreaks</c>. Getting that backwards turns a first run on a large
+///         tree into a rewrite of every call site.
+///     </para>
 /// </remarks>
 public static class CorpusVariants {
     /// <summary>
-    /// The per-construct preservation keys, set together so the table is 2×2.
+    ///     The per-construct preservation keys, set together so the table is 2×2.
     /// </summary>
     /// <remarks>
-    /// ⚠ <c>resharper_csharp_keep_existing_linebreaks</c> is deliberately not here. It reads like one
-    /// of the family and it is not: it is the per-language form of the global
-    /// <c>keep_user_linebreaks</c>, so putting it on the <c>keep_existing_*</c> axis collapses the
-    /// table — both "reflow" corners come out identical to their "keep" neighbours and the 2×2 stops
-    /// measuring anything. Its own effect is pinned by its own fixture instead.
+    ///     ⚠ <c>resharper_csharp_keep_existing_linebreaks</c> is deliberately not here. It reads like one
+    ///     of the family and it is not: it is the per-language form of the global
+    ///     <c>keep_user_linebreaks</c>, so putting it on the <c>keep_existing_*</c> axis collapses the
+    ///     table — both "reflow" corners come out identical to their "keep" neighbours and the 2×2 stops
+    ///     measuring anything. Its own effect is pinned by its own fixture instead.
     /// </remarks>
     public static readonly string[] KeepExistingKeys = [
         "resharper_csharp_keep_existing_attribute_arrangement",
@@ -58,7 +58,7 @@ public static class CorpusVariants {
         "resharper_keep_existing_line_break_before_declaration_body"
     ];
 
-    /// <summary>The set whose files are run under <see cref="Preservation"/>.</summary>
+    /// <summary>The set whose files are run under <see cref="Preservation" />.</summary>
     public const string PreservationSet = "preservation/";
 
     /// <summary>docs/plan/05 § "keep_existing_*": all four combinations, named as they read.</summary>

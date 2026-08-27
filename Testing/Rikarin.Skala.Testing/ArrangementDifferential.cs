@@ -14,10 +14,10 @@ namespace Rikarin.Skala.Testing;
 
 /// <summary>One region of the original that at least one of the two tools rewrote.</summary>
 /// <remarks>
-/// ⚠ M4's bar is per-*span* rather than per-line, which is the shape milestone 3.1's <c>locate</c>
-/// established the need for. A line-keyed number would score a member that moved as dozens of
-/// divergent lines and a <c>String</c> that became <c>string</c> as one, which ranks the cheap
-/// disagreement above the expensive one.
+///     ⚠ M4's bar is per-*span* rather than per-line, which is the shape milestone 3.1's <c>locate</c>
+///     established the need for. A line-keyed number would score a member that moved as dozens of
+///     divergent lines and a <c>String</c> that became <c>string</c> as one, which ranks the cheap
+///     disagreement above the expensive one.
 /// </remarks>
 public sealed record ChangedSpan(string File, int Line, string Original, string Oracle, string Skala) {
     public bool Agrees =>
@@ -125,20 +125,20 @@ public sealed record ArrangementReport(
 }
 
 /// <summary>
-/// Runs the arrangement pipeline over a corpus set and compares it to the cleanup fixtures.
+///     Runs the arrangement pipeline over a corpus set and compares it to the cleanup fixtures.
 /// </summary>
 public static class ArrangementDifferential {
     /// <summary>
-    /// ⚠ The SDK's implicit usings for a library, as an explicit tree.
+    ///     ⚠ The SDK's implicit usings for a library, as an explicit tree.
     /// </summary>
     /// <remarks>
-    /// ⚠ This is the difference between a measurement and a systematic 100 %-disagreement on every
-    /// using in the corpus. <see cref="OracleRunner.ProjectFile"/> sets
-    /// <c>&lt;ImplicitUsings&gt;enable&lt;/ImplicitUsings&gt;</c>, so the oracle sees
-    /// <c>using System;</c> as redundant and deletes it; a compilation built without them sees it as
-    /// load-bearing and keeps it. Neither is wrong — they are answers to different questions — and
-    /// comparing them measures the scratch project rather than the arranger. The fix is to ask both
-    /// sides the same question.
+    ///     ⚠ This is the difference between a measurement and a systematic 100 %-disagreement on every
+    ///     using in the corpus. <see cref="OracleRunner.ProjectFile" /> sets
+    ///     <c>&lt;ImplicitUsings&gt;enable&lt;/ImplicitUsings&gt;</c>, so the oracle sees
+    ///     <c>using System;</c> as redundant and deletes it; a compilation built without them sees it as
+    ///     load-bearing and keeps it. Neither is wrong — they are answers to different questions — and
+    ///     comparing them measures the scratch project rather than the arranger. The fix is to ask both
+    ///     sides the same question.
     /// </remarks>
     public const string ImplicitUsings = """
                                          global using global::System;
@@ -151,13 +151,13 @@ public static class ArrangementDifferential {
                                          """;
 
     /// <summary>
-    /// A loose compilation over a set of files, which is what gives the semantic half its model.
+    ///     A loose compilation over a set of files, which is what gives the semantic half its model.
     /// </summary>
     /// <remarks>
-    /// ⚠ One compilation for the whole set rather than one per file, and it is not only for speed:
-    /// "is this using unused" is a question about a compilation, and a compilation of one file
-    /// answers it differently from a compilation of the project the file lives in. A per-file
-    /// compilation would report every cross-file using as removable.
+    ///     ⚠ One compilation for the whole set rather than one per file, and it is not only for speed:
+    ///     "is this using unused" is a question about a compilation, and a compilation of one file
+    ///     answers it differently from a compilation of the project the file lives in. A per-file
+    ///     compilation would report every cross-file using as removable.
     /// </remarks>
     public static CSharpCompilation Compile(IEnumerable<CorpusFile> files, IReadOnlyList<string>? symbols = null) {
         var options = CSharpFormatter.ParseOptionsFor(symbols);
@@ -210,14 +210,14 @@ public static class ArrangementDifferential {
     }
 
     /// <summary>
-    /// The usings this file may lose.
+    ///     The usings this file may lose.
     /// </summary>
     /// <remarks>
-    /// ⚠ The intersection across every compilation that names the file, and with one compilation the
-    /// intersection is that compilation's own answer. docs/plan/06: "Skala removes a using only when
-    /// it is unused in *every* compilation the file participates in — multi-targeting is not an edge
-    /// case in this ecosystem." The corpus is single-target, so this call site exercises the
-    /// degenerate case; <c>ArrangeCommand</c> exercises the real one.
+    ///     ⚠ The intersection across every compilation that names the file, and with one compilation the
+    ///     intersection is that compilation's own answer. docs/plan/06: "Skala removes a using only when
+    ///     it is unused in *every* compilation the file participates in — multi-targeting is not an edge
+    ///     case in this ecosystem." The corpus is single-target, so this call site exercises the
+    ///     degenerate case; <c>ArrangeCommand</c> exercises the real one.
     /// </remarks>
     public static ImmutableHashSet<string> Removable(CSharpCompilation compilation, string path) {
         foreach (var tree in compilation.SyntaxTrees) {
@@ -302,19 +302,19 @@ public static class ArrangementDifferential {
     }
 
     /// <summary>
-    /// The changed spans of one file, and what each tool made of each.
+    ///     The changed spans of one file, and what each tool made of each.
     /// </summary>
     /// <remarks>
-    /// ⚠ The definition, written down because "agree on 99 % of changed spans" is only a number once
-    /// "a changed span" is one. Both tools' edits are computed against the same original text and
-    /// their spans are merged into maximal disjoint regions; a region is a *changed span*, and it
-    /// *agrees* when applying each tool's own edits to that region produces the same text.
-    /// <para>
-    /// ⚠ Merging matters. Comparing the two edit lists pairwise would count one tool's single
-    /// three-line rewrite against the other's three one-line rewrites as six disagreements over the
-    /// same code; merging first asks the question once per region of the original, which is the
-    /// question a reviewer asks.
-    /// </para>
+    ///     ⚠ The definition, written down because "agree on 99 % of changed spans" is only a number once
+    ///     "a changed span" is one. Both tools' edits are computed against the same original text and
+    ///     their spans are merged into maximal disjoint regions; a region is a *changed span*, and it
+    ///     *agrees* when applying each tool's own edits to that region produces the same text.
+    ///     <para>
+    ///         ⚠ Merging matters. Comparing the two edit lists pairwise would count one tool's single
+    ///         three-line rewrite against the other's three one-line rewrites as six disagreements over the
+    ///         same code; merging first asks the question once per region of the original, which is the
+    ///         question a reviewer asks.
+    ///     </para>
     /// </remarks>
     public static IEnumerable<ChangedSpan> Compare(
         string name,
@@ -349,12 +349,12 @@ public static class ArrangementDifferential {
     }
 
     /// <summary>
-    /// The offset just past the file's last using directive, or 0 when it has none.
+    ///     The offset just past the file's last using directive, or 0 when it has none.
     /// </summary>
     /// <remarks>
-    /// ⚠ Parsed rather than scanned for the string "using": a `using` *statement* inside a method
-    /// and a `using` inside a raw string are both text that looks like a directive, and treating
-    /// either as one would exclude a span in the middle of the file from the measurement.
+    ///     ⚠ Parsed rather than scanned for the string "using": a `using` *statement* inside a method
+    ///     and a `using` inside a raw string are both text that looks like a directive, and treating
+    ///     either as one would exclude a span in the middle of the file from the measurement.
     /// </remarks>
     static int UsingBlockEnd(string source) {
         var root = CSharpSyntaxTree.ParseText(SourceText.From(source), CSharpFormatter.ParseOptions).GetRoot();

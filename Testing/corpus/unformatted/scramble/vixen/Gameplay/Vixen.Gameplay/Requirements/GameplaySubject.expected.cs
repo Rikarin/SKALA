@@ -40,8 +40,7 @@ public sealed class GameplaySubject : IRequirementContext {
 
     /// <inheritdoc />
     GameplayTagSet? IRequirementContext.
-        Tags =>
-        Tags;
+        Tags => Tags;
 
     /// <inheritdoc />
     /// <remarks>

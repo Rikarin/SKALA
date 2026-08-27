@@ -14,23 +14,22 @@ public sealed record DistillResult(
     ImmutableArray<string> DroppedKeys);
 
 /// <summary>
-/// Rewrites a Rider export as the subset that differs from ReSharper's defaults.
+///     Rewrites a Rider export as the subset that differs from ReSharper's defaults.
 /// </summary>
 /// <remarks>
-/// ⚠ The rule in <see cref="ShouldDrop"/> is the whole safety argument. A key may only be dropped
-/// when the registry's default for it was <em>checked</em> — against JetBrains' documentation, or
-/// against the oracle. Dropping a key because the default *looks* like the configured value silently
-/// changes formatting, and a formatter that silently changes formatting is worse than no formatter,
-/// because it is trusted.
-///
-/// ⚠ Until milestone 3 this dropped nothing at all, and the reason was not a bug: JetBrains'
-/// EditorConfig property tables publish names, languages and possible values and no defaults, so no
-/// entry could be <see cref="OptionDefaultSource.ReSharperDocs"/> and the rule had nothing to fire
-/// on. M3 derived the defaults from the oracle instead — a run under a configuration carrying
-/// nothing but <c>root = true</c> is ReSharper-with-defaults by construction — and
-/// <see cref="OptionDefaultSource.OracleProbe"/> is the resulting evidence class. It is a strong
-/// signal rather than proof, which is exactly the standard a key has to meet before it may be
-/// deleted from somebody's configuration.
+///     ⚠ The rule in <see cref="ShouldDrop" /> is the whole safety argument. A key may only be dropped
+///     when the registry's default for it was <em>checked</em> — against JetBrains' documentation, or
+///     against the oracle. Dropping a key because the default *looks* like the configured value silently
+///     changes formatting, and a formatter that silently changes formatting is worse than no formatter,
+///     because it is trusted.
+///     ⚠ Until milestone 3 this dropped nothing at all, and the reason was not a bug: JetBrains'
+///     EditorConfig property tables publish names, languages and possible values and no defaults, so no
+///     entry could be <see cref="OptionDefaultSource.ReSharperDocs" /> and the rule had nothing to fire
+///     on. M3 derived the defaults from the oracle instead — a run under a configuration carrying
+///     nothing but <c>root = true</c> is ReSharper-with-defaults by construction — and
+///     <see cref="OptionDefaultSource.OracleProbe" /> is the resulting evidence class. It is a strong
+///     signal rather than proof, which is exactly the standard a key has to meet before it may be
+///     deleted from somebody's configuration.
 /// </remarks>
 public static class Distiller {
     public static bool ShouldDrop(OptionInfo info, string value) =>

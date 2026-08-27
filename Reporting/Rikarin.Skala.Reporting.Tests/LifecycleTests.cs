@@ -4,13 +4,13 @@ using Rikarin.Skala.Core.Diagnostics;
 namespace Rikarin.Skala.Reporting.Tests;
 
 /// <summary>
-/// docs/plan/09's lifecycle: the fingerprint, the baseline, the new-code definition and the gate.
+///     docs/plan/09's lifecycle: the fingerprint, the baseline, the new-code definition and the gate.
 /// </summary>
 /// <remarks>
-/// ⚠ These are the tests that decide whether the analysis half is adoptable. A rule that
-/// over-fires costs a team some triage; a fingerprint that moves costs them the baseline, every
-/// commit, permanently — and the failure is silent, because a baseline that matches nothing looks
-/// exactly like a repository where everything is new.
+///     ⚠ These are the tests that decide whether the analysis half is adoptable. A rule that
+///     over-fires costs a team some triage; a fingerprint that moves costs them the baseline, every
+///     commit, permanently — and the failure is silent, because a baseline that matches nothing looks
+///     exactly like a repository where everything is new.
 /// </remarks>
 public sealed class LifecycleTests {
     static readonly string Root = Path.GetFullPath("/tmp/repo");
@@ -51,11 +51,11 @@ public sealed class LifecycleTests {
     // ---------------------------------------------------------------- the fingerprint
 
     /// <summary>
-    /// ⚠ The property the whole baseline mechanism rests on.
+    ///     ⚠ The property the whole baseline mechanism rests on.
     /// </summary>
     /// <remarks>
-    /// doc 09: "No line numbers. A fingerprint that moves when a line moves is a baseline that
-    /// expires every commit."
+    ///     doc 09: "No line numbers. A fingerprint that moves when a line moves is a baseline that
+    ///     expires every commit."
     /// </remarks>
     [Fact]
     public void FingerprintV2_SurvivesTheFindingMovingDownTheFile() =>
@@ -84,11 +84,11 @@ public sealed class LifecycleTests {
         Assert.NotEqual(Fingerprints.V2(Finding(snippet: "a != null")), Fingerprints.V2(Finding(snippet: "b != null")));
 
     /// <summary>
-    /// ⚠ Two identical findings in one method are two findings.
+    ///     ⚠ Two identical findings in one method are two findings.
     /// </summary>
     /// <remarks>
-    /// Without the ordinal they share a fingerprint, and a baseline that accepts one accepts both —
-    /// so fixing one of them silently keeps the other suppressed forever.
+    ///     Without the ordinal they share a fingerprint, and a baseline that accepts one accepts both —
+    ///     so fixing one of them silently keeps the other suppressed forever.
     /// </remarks>
     [Fact]
     public void Ordinal_SeparatesTwoIdenticalFindingsInOneSymbol() {
@@ -99,12 +99,12 @@ public sealed class LifecycleTests {
     }
 
     /// <summary>
-    /// ⚠ The ordinal is assigned by position, not by the order the analyzers happened to finish in.
+    ///     ⚠ The ordinal is assigned by position, not by the order the analyzers happened to finish in.
     /// </summary>
     /// <remarks>
-    /// Analyzers run concurrently (doc 07 § "Parallelism"). If the ordinal followed arrival order,
-    /// the same tree would fingerprint differently between two runs and the baseline would expire
-    /// at random.
+    ///     Analyzers run concurrently (doc 07 § "Parallelism"). If the ordinal followed arrival order,
+    ///     the same tree would fingerprint differently between two runs and the baseline would expire
+    ///     at random.
     /// </remarks>
     [Fact]
     public void Ordinal_IsIndependentOfTheOrderFindingsArriveIn() {
@@ -165,7 +165,7 @@ public sealed class LifecycleTests {
         }
     }
 
-    /// <summary>⚠ An absent baseline is empty; an unreadable one throws. See <see cref="Baseline.Read"/>.</summary>
+    /// <summary>⚠ An absent baseline is empty; an unreadable one throws. See <see cref="Baseline.Read" />.</summary>
     [Fact]
     public void Baseline_AbsentIsEmptyAndCorruptThrows() {
         Assert.Equal(0, Baseline.Read(Path.Combine(Path.GetTempPath(), "nothing-here.sarif")).Count);
@@ -182,11 +182,11 @@ public sealed class LifecycleTests {
     // ---------------------------------------------------------------- the gate
 
     /// <summary>
-    /// ⚠ <c>newIssues</c> with nothing to define "new" is a configuration error, not a pass.
+    ///     ⚠ <c>newIssues</c> with nothing to define "new" is a configuration error, not a pass.
     /// </summary>
     /// <remarks>
-    /// Counting every finding in the repository as new would make <c>newIssues: 0</c> mean "the
-    /// repository is perfect", which nobody who wrote it meant.
+    ///     Counting every finding in the repository as new would make <c>newIssues: 0</c> mean "the
+    ///     repository is perfect", which nobody who wrote it meant.
     /// </remarks>
     [Fact]
     public void Gate_NewIssuesWithoutABaselineOrSince_Fails() {
@@ -204,13 +204,13 @@ public sealed class LifecycleTests {
     }
 
     /// <summary>
-    /// ⚠ With a baseline in play, <c>maxSeverity</c> is about the new findings.
+    ///     ⚠ With a baseline in play, <c>maxSeverity</c> is about the new findings.
     /// </summary>
     /// <remarks>
-    /// Read literally, doc 09's own `ci` gate — a baseline plus `maxSeverity: warning` — is
-    /// unsatisfiable on any repository that has ever had a warning, which contradicts the
-    /// adoption story § "New-code definition" is built on. Measured on Vixen's Core: 994 accepted,
-    /// 0 new, and a literal reading still failing on 308 of the accepted ones.
+    ///     Read literally, doc 09's own `ci` gate — a baseline plus `maxSeverity: warning` — is
+    ///     unsatisfiable on any repository that has ever had a warning, which contradicts the
+    ///     adoption story § "New-code definition" is built on. Measured on Vixen's Core: 994 accepted,
+    ///     0 new, and a literal reading still failing on 308 of the accepted ones.
     /// </remarks>
     [Fact]
     public void Gate_MaxSeverityIsScopedToNewFindingsWhenABaselineIsInPlay() {
@@ -337,7 +337,7 @@ public sealed class LifecycleTests {
     }
 
     /// <summary>
-    /// ⚠ Doc 09's exit codes are a contract hooks, CI and agents depend on. 2 is distinct from 1.
+    ///     ⚠ Doc 09's exit codes are a contract hooks, CI and agents depend on. 2 is distinct from 1.
     /// </summary>
     [Fact]
     public void ExitCodes_AreTheDocumentedValues() {

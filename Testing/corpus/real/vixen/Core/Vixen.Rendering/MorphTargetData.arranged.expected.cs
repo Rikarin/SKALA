@@ -13,8 +13,10 @@ namespace Vixen.Rendering;
 ///         hundred zero deltas per target. Twenty targets stored densely is more bytes than the mesh.
 ///     </para>
 ///     <para>
-///         <b>An entry is a vertex index and two deltas, and the deltas are quantised against a range
-///         this target carries.</b> Sixteen-bit signed normals against
+///         <b>
+///             An entry is a vertex index and two deltas, and the deltas are quantised against a range
+///             this target carries.
+///         </b> Sixteen-bit signed normals against
 ///         <see cref="PositionScale" />/<see cref="NormalScale" /> rather than floats: a delta's
 ///         magnitude is bounded by the shape's own extent, so the quantum is a ten-thousandth of the
 ///         largest movement in <em>this</em> target — which for a face is a few micrometres — and the
@@ -177,8 +179,11 @@ public sealed record MorphTargetData {
     /// <exception cref="ArgumentException"><paramref name="normals" /> disagrees in length.</exception>
     /// <remarks>
     ///     <para>
-    ///         ⚠ <b>The threshold is absolute and is the caller's, because there is no scale-free
-    ///         answer.</b> A millimetre is a rounding error on a building and the whole of an eyelid
+    ///         ⚠
+    ///         <b>
+    ///             The threshold is absolute and is the caller's, because there is no scale-free
+    ///             answer.
+    ///         </b> A millimetre is a rounding error on a building and the whole of an eyelid
     ///         shape; an importer knows the unit scale it applied and this does not. What it must not
     ///         be is zero-by-default: an exporter writes a delta for every vertex of the mesh, so a
     ///         zero threshold keeps every one of them and there is nothing sparse about the result.

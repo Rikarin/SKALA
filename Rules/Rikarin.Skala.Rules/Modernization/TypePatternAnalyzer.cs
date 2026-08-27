@@ -8,21 +8,21 @@ using Rikarin.Skala.Rules.Metadata;
 namespace Rikarin.Skala.Rules.Modernization;
 
 /// <summary>
-/// <c>SK1015</c> — <c>is T</c> followed by a cast to <c>T</c> is <c>is T t</c>.
+///     <c>SK1015</c> — <c>is T</c> followed by a cast to <c>T</c> is <c>is T t</c>.
 /// </summary>
 /// <remarks>
-/// ⚠ M5 recorded this as a rule whose guard is most of the work, because "followed by a cast"
-/// covers a cast anywhere in the body and the fix would then have to invent a name, place a
-/// declaration and rewrite every use. It ships in the one shape where none of that is true: the
-/// declaration is <b>already there</b>, as the first statement of the block, and the fix moves it
-/// into the condition and deletes it. The variable's name, its scope and its number of evaluations
-/// are all unchanged — <c>var t = (T)x;</c> runs once on entry to the block and <c>x is T t</c>
-/// assigns once at the same instant.
-/// <para>
-/// ⚠ The cast is required to name the same type as the test, checked by symbol rather than by
-/// spelling. <c>if (x is IList) { var l = (IList&lt;int&gt;)x; }</c> shares a prefix and nothing
-/// else, and the two conversions can succeed and fail independently.
-/// </para>
+///     ⚠ M5 recorded this as a rule whose guard is most of the work, because "followed by a cast"
+///     covers a cast anywhere in the body and the fix would then have to invent a name, place a
+///     declaration and rewrite every use. It ships in the one shape where none of that is true: the
+///     declaration is <b>already there</b>, as the first statement of the block, and the fix moves it
+///     into the condition and deletes it. The variable's name, its scope and its number of evaluations
+///     are all unchanged — <c>var t = (T)x;</c> runs once on entry to the block and <c>x is T t</c>
+///     assigns once at the same instant.
+///     <para>
+///         ⚠ The cast is required to name the same type as the test, checked by symbol rather than by
+///         spelling. <c>if (x is IList) { var l = (IList&lt;int&gt;)x; }</c> shares a prefix and nothing
+///         else, and the two conversions can succeed and fail independently.
+///     </para>
 /// </remarks>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class TypePatternAnalyzer : DiagnosticAnalyzer {

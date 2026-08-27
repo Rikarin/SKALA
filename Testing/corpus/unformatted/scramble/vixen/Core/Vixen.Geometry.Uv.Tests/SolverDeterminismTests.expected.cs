@@ -50,7 +50,7 @@ public class SolverDeterminismTests {
             var data = new TheoryData<int, int>();
 
             foreach (var workers in new[] { 1, 4, 16 }
-                    ) {
+            ) {
                 foreach
                     (var batch in new[] { 0, 1, 37, 512 }) {
                     data.Add(workers, batch);
@@ -72,7 +72,7 @@ public class SolverDeterminismTests {
         var right =
             RightHandSide(matrix.RowCount);
         var serial = new
-            double [matrix.RowCount];
+            double[matrix.RowCount];
         var serialReport = new ConjugateGradient(matrix).Solve(
             right,
             serial,
@@ -113,7 +113,7 @@ public class SolverDeterminismTests {
         Assert.True(serial.Distinct().Count() > matrix.ColumnCount / 2, "The answer is too uniform to compare.");
         using var scheduler = new JobScheduler(workers);
         var parallel =
-            new double [matrix.ColumnCount];
+            new double[matrix.ColumnCount];
         var parallelReport = new
             LeastSquaresSolver(matrix).Solve(right, parallel, 16, scheduler, batch);
         Assert.Equal(serialReport, parallelReport)
@@ -131,9 +131,9 @@ public class SolverDeterminismTests {
         matrix
             .Multiply(source, serial);
         using var
-            scheduler = new JobScheduler(workers);
+        scheduler = new JobScheduler(workers);
         var parallel =
-            new double [matrix.RowCount];
+            new double[matrix.RowCount];
         matrix.Multiply(source, parallel, scheduler, batch);
         AssertSameBits(serial, parallel);
     }
@@ -145,7 +145,7 @@ public class SolverDeterminismTests {
         var matrix = PoissonGrid.Matrix(Extent);
         var right = RightHandSide(matrix.RowCount);
         var answers = new List<double[]>();
-// ⚠ Sequential, and disposed each time round. Sixteen schedulers alive at once would be
+        // ⚠ Sequential, and disposed each time round. Sixteen schedulers alive at once would be
         // twice the process-wide cap, and the exception it throws names the cap rather than this.
         foreach (var workers in new[] { 1, 2, 4, 8, 16 }) {
             using var scheduler = new JobScheduler(workers);
@@ -155,7 +155,7 @@ public class SolverDeterminismTests {
         }
 
         foreach (
-            var answer in answers) {
+                 var answer in answers) {
             AssertSameBits(answers[0], answer);
         }
     }
@@ -166,10 +166,8 @@ public class SolverDeterminismTests {
             size];
 
         for (var index = 0; index < size; index++) {
-            right[index] = Math.Sin(
-                    index
-                    * 0.618d
-                )
+            right[index] = Math.Sin(index
+                * 0.618d)
                 + (0.25d * Math.Cos(index * 0.137d));
         }
 

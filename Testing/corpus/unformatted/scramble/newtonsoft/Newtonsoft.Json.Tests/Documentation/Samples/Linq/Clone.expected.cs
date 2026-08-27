@@ -1,4 +1,5 @@
 // skala-oracle: resharper=2025.2.6 config=sha256:98ff52570e019fac profile=SkalaFormatOnly generated=2026-08-27
+
 #region License
 
 // Copyright (c) 2007 James Newton-King
@@ -30,9 +31,9 @@
 using System;
 using System.Collections.Generic;
 using
-    System.Text;
+System.Text;
 using Newtonsoft
-    .Json.Linq;
+.Json.Linq;
 #if DNXCORE50
 using Xunit;
 using Test = Xunit.FactAttribute;
@@ -62,7 +63,7 @@ namespace Newtonsoft.Json.Tests.Documentation.Samples.
             JObject o2 = (JObject)o1.DeepClone();
 
             Console.WriteLine(o2.ToString()); // {
-//   "String": "A string!",
+            //   "String": "A string!",
             //   "Items": [
             //     1,
             //     2

@@ -11,9 +11,10 @@ using Rikarin.Skala.Testing;
 //                     disagrees is a tautology (docs/plan/12 § "The oracle").
 //   fidelity [set…]   print the differential report without failing anything, which is the work
 //                     queue the divergence classes rank.
-//   xmldoc [set]      what `--xmldoc` costs against an oracle that does not format doc comments
-//                     (SK-DIV-0006): the number with it, without it, and with every `///` line
-//                     excluded from both sides.
+//   xmldoc [set]      what the doc-comment sub-formatter costs against an oracle profile that
+//                     does not run ReSharper's own doc-comment task (SK-DIV-0006): the number
+//                     with the sub-formatter and without it, over every line and over the lines
+//                     outside doc comments.
 //   dump <set> <dir> [defined]
 //                     write Skala's output and the oracle's side by side, so a class named in the
 //                     report can be read as a diff rather than as two sample lines. `defined`
@@ -105,9 +106,10 @@ switch (args[0]) {
     case "fidelity":
         return Report(sets);
     case "xmldoc":
-        // ⚠ SK-DIV-0006's assertion, measured. Three numbers: the oracle agreement without the
-        // sub-formatter, with it, and with every `///` line removed from both sides — the third is
-        // the one that says whether anything the flag is not allowed to touch has moved.
+        // ⚠ SK-DIV-0006's assertion, measured. Four numbers: the oracle agreement with the
+        // sub-formatter and without it, each over every line and over the lines outside doc
+        // comments. The last pair is the one that says whether anything the sub-formatter is not
+        // allowed to touch has moved.
         Console.Write(XmlDocFidelity.Measure(sets[0]));
         return 0;
     case "dump":
@@ -854,8 +856,17 @@ static int Report(string[] sets) {
 
         Console.WriteLine($"── {set} ──────────────────────────────────────────────────────────");
         Console.WriteLine("                    line      file      lines");
+        Console.WriteLine($"  basis: {without.BasisName}");
         Row("no symbols", without);
         Row("with symbols", with);
+
+        // ⚠ Both bases, always, and the second one is not decoration. The ratchet excludes `///`
+        // lines because Skala formats documentation comments and the pinned oracle profile does
+        // not (SK-DIV-0006); an excluded category that is never printed is an excluded category
+        // that can grow unwatched. docs/plan/12 § "A ratchet compares numbers over the same
+        // population".
+        var everyLine = Fidelity.Compare(bare, FidelityBasis.EveryLine);
+        Row("no symbols, " + everyLine.BasisName, everyLine);
         Console.WriteLine();
 
         foreach (var origin in defined.GroupBy(static r => r.File.Split('/')[1], StringComparer.Ordinal)
@@ -878,7 +889,7 @@ static int Report(string[] sets) {
 
 static void Row(string label, FidelityReport report) =>
     Console.WriteLine(
-        $"  {label,-16} {report.LineFidelity * 100,7:F2} % {report.FileFidelity * 100,7:F2} %   "
+        $"  {label,-34} {report.LineFidelity * 100,7:F2} % {report.FileFidelity * 100,7:F2} %   "
         + $"({report.IdenticalLines.ToString(CultureInfo.InvariantCulture)}/{report.Lines.ToString(CultureInfo.InvariantCulture)})"
     );
 
@@ -1148,8 +1159,8 @@ static Rikarin.Skala.Options.FormattingOptions Resolve(string path) =>
 
 /// <summary>The memoised symbol set behind <c>Symbols()</c>.</summary>
 /// <remarks>
-/// ⚠ A holder type rather than a top-level local, because a top-level local is a local of the
-/// generated <c>Main</c> and a static local function may not capture one.
+///     ⚠ A holder type rather than a top-level local, because a top-level local is a local of the
+///     generated <c>Main</c> and a static local function may not capture one.
 /// </remarks>
 static class SymbolCache {
     public static IReadOnlyList<string>? Value { get; set; }

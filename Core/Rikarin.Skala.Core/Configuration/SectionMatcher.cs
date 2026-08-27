@@ -5,14 +5,14 @@ using Microsoft.CodeAnalysis.Text;
 namespace Rikarin.Skala.Core.Configuration;
 
 /// <summary>
-/// Answers "does this <c>[glob]</c> apply to this file" using Roslyn's own matcher.
+///     Answers "does this <c>[glob]</c> apply to this file" using Roslyn's own matcher.
 /// </summary>
 /// <remarks>
-/// ADR-001 requires that section globbing match the compiler exactly. Roslyn's
-/// <c>SectionNameMatcher</c> is internal, so the question is asked through the public API instead:
-/// a one-section <c>AnalyzerConfigSet</c> rooted at the real config's directory, carrying a single
-/// probe key. If the probe comes back, the section matched. The template has three sections, so
-/// this is three parses per config, cached.
+///     ADR-001 requires that section globbing match the compiler exactly. Roslyn's
+///     <c>SectionNameMatcher</c> is internal, so the question is asked through the public API instead:
+///     a one-section <c>AnalyzerConfigSet</c> rooted at the real config's directory, carrying a single
+///     probe key. If the probe comes back, the section matched. The template has three sections, so
+///     this is three parses per config, cached.
 /// </remarks>
 public static class SectionMatcher {
     const string ProbeKey = "skala_section_probe";
@@ -41,8 +41,8 @@ public static class SectionMatcher {
     }
 
     /// <summary>
-    /// The effective option map the compiler itself would produce for <paramref name="sourcePath"/>
-    /// from this chain. Used to cross-check Skala's own resolution, never as its source.
+    ///     The effective option map the compiler itself would produce for <paramref name="sourcePath" />
+    ///     from this chain. Used to cross-check Skala's own resolution, never as its source.
     /// </summary>
     public static IReadOnlyDictionary<string, string> CompilerView(
         IEnumerable<EditorConfigDocument> chain,

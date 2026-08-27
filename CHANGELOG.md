@@ -13,6 +13,75 @@ missed it says so and by how much; three of them were, and one of those is still
 
 ## Unreleased
 
+### Changed — ⚠ documentation comments are formatted by default; `--xmldoc` is now `--no-xmldoc`
+
+**This changes formatting output on almost every file with a documentation comment in it**, which by
+the rule at the top of this file is a minor bump at minimum.
+
+⚠ **The flag existed because of a measurement that was read wrongly, and the correction is worth
+more than the change.** M3 asked `jb cleanupcode` whether it formats documentation comments, got
+"no" under every shape of the `resharper_xmldoc_*` family, and recorded it as a property of the
+tool. It is a property of the **profile**: `CSharpFormatDocComments` is a real cleanup task,
+ReSharper's `Full Cleanup` enables it, `Built-in: Reformat Code` does not, and
+`OracleProfile.FormatOnly` is `<CSReformatCode>True</CSReformatCode>` — `Built-in: Reformat Code`,
+exactly. JetBrains documents the same thing in prose: "the Built-in: Reformat Code profile does not
+reformat XML doc comments". Rider formats them. **Not formatting them was the divergence.**
+
+The consequence had stood for six milestones: a whole sub-formatter behind an opt-in flag, its
+seventeen keys held at Tier D, and `resharper_space_after_triple_slash` actively *demoted* from
+Tier A for doing the right thing. See `docs/divergences.md` § SK-DIV-0006 and
+`docs/oracle-cleanup-profile.md`, which carries the probe with its negative control.
+
+- The escape hatch is `skala format --no-xmldoc`, not `resharper_xmldoc_wrap_lines = false`. That
+  key means "do not wrap long lines" — with it false the sub-formatter still re-indents, still
+  collapses blank lines between tags and still inserts the marker space, which is what Rider does
+  with it false too — and JetBrains' `.editorconfig` index does not document it at all. Attaching a
+  meaning to a ReSharper key that ReSharper does not give it is the class of mistake being undone.
+- ⚠ The daemon's exclusion inverted with the default. It carries no xmldoc switch and formats with
+  the default, so `--no-xmldoc` falls through to the CLI. A daemon that does *more* than it was
+  asked makes one command mean two things, the same rule read the other way round.
+- The seventeen keys move from `Ids.OfInert` to a new `Ids.OfUnoracled`: honoured, observable, and
+  unable to claim Tier A because every committed fixture was generated under the profile that
+  leaves doc comments alone. `AnInertKey_StillCannotBeObserved` would have failed on seven of them
+  the moment the default flipped, correctly — they are not inert any more.
+  `AnUnoracledKey_IsObservable` is its mirror and asserts all seventeen do change output.
+
+### Changed — ⚠ the fidelity number's basis is now `outside doc comments`, and says so
+
+The differential compares against fixtures that do not format doc comments, so with the
+sub-formatter on, `///` lines measure a profile gap rather than a formatter defect. The basis is
+named in `FidelityBasis`, in every message the ratchet prints, and in `fidelity.json`'s own `Basis`
+field, which `FidelityBaseline.Read()` refuses to compare across.
+
+`corpus/real/`, 380 files, no symbols:
+
+| basis | line | file |
+|---|---:|---:|
+| outside doc comments (the ratchet) | **99.53 %** | 85.26 % |
+| every line | 96.04 % | 47.89 % |
+| every line, `--no-xmldoc` (the old population) | 99.63 % | 85.26 % |
+
+⚠ The 0.10 between 99.63 and 99.53 is the `///` lines leaving the denominator, where they were
+counted as agreeing because neither side touched them. It is not a regression and not an
+improvement. The 3.59 to 96.04 is the fixtures' profile.
+
+An excluded category that nobody looks at again can grow unwatched, so the every-line number is
+asserted alongside the ratchet by `TheEveryLineNumber_IsStillReported`, and
+`TheCodeAroundTheComments_IsUntouched` asserts over all 716 corpus files that nothing outside a
+`///` line moves. ⚠ The exclusion has an expiry: enabling `CSharpFormatDocComments` in
+`OracleProfile.FormatOnly` and running `./build.sh Oracle` returns the basis to every line and makes
+these keys promotable to Tier A.
+
+### Changed — `docs/plan/16` § Q1 reopened
+
+Q1 — "does `jb cleanupcode` reproduce Rider's editor formatting exactly?" — was recorded as
+**narrowed** on the strength of the autodetect keys, with cleanup-profile parity dismissed as
+"handled by pinning the profile explicitly". Pinning a profile is a choice of answer, not a handling
+of the question. Autodetect was the IDE having a setting the CLI lacks; this is the CLI and the IDE
+agreeing and Skala asking the wrong profile — which is worse, because nothing about it looks like a
+difference. ⚠ It matters most at the end of the roadmap: once ReSharper is removed the fixtures
+*are* the specification, and a profile they were generated under wrongly can no longer be re-asked.
+
 ### Added — five `SK1xxx` modernization rules
 
 The range doc 08 calls "the reason the tool exists in an AI-heavy workflow", which was a quarter

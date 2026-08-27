@@ -42,7 +42,7 @@ readonly record struct GlBindingSlot(DescriptorKind Kind, uint Index);
 /// </remarks>
 sealed class GlBindingPlan {
     readonly Dictionary<(DescriptorSetSlot Slot, uint Binding
-        ), GlBindingSlot> slots = [];
+    ), GlBindingSlot> slots = [];
 
     GlBindingPlan(int pushConstantVectors) => PushConstantVectors = pushConstantVectors;
 
@@ -58,8 +58,7 @@ sealed class GlBindingPlan {
 
     /// <summary>Every binding the plan resolved, for the link-time pass and for tests.</summary>
     public IReadOnlyDictionary<
-        ( DescriptorSetSlot Slot, uint Binding), GlBindingSlot> Slots =>
-        slots;
+        (DescriptorSetSlot Slot, uint Binding), GlBindingSlot> Slots => slots;
 
     /// <summary>Builds the plan for a pipeline layout.</summary>
     /// <param name="sets">The set layouts, as declared.</param>
@@ -72,7 +71,7 @@ sealed class GlBindingPlan {
     /// </remarks>
     public static GlBindingPlan Build(
         IReadOnlyList<
-            ( DescriptorSetSlot Slot, DescriptorBinding[] Bindings, string Name )> sets,
+            (DescriptorSetSlot Slot, DescriptorBinding[] Bindings, string Name)> sets,
         int pushConstantBytes
     ) {
         var plan
@@ -81,7 +80,7 @@ sealed class GlBindingPlan {
 
         foreach (var set in sets.OrderBy(entry => entry.Slot)) {
             foreach (var binding in (set.Bindings ?? []).OrderBy(entry => entry
-                         .Binding
+                             .Binding
                      )) {
                 // An array binding takes a contiguous run, because that is what GLSL's
                 // `uniform sampler2D atlas[4]` occupies: units n..n+3, consecutively.
@@ -89,28 +88,28 @@ sealed class GlBindingPlan {
                     )Math.Max(1, binding.Count);
 
                 var index = binding.Kind switch {
-                        DescriptorKind.UniformBuffer or DescriptorKind.DynamicUniformBuffer =>
-                            Take(ref uniforms, count),
-                        DescriptorKind.StorageBuffer or DescriptorKind.DynamicStorageBuffer =>
-                            Take(ref storages, count),
-                        DescriptorKind.SampledTexture => Take(ref textures, count),
-                        DescriptorKind.StorageTexture => Take(ref images, count),
-                        DescriptorKind.Sampler => Take(ref samplers, count),
+                    DescriptorKind.UniformBuffer or DescriptorKind.DynamicUniformBuffer =>
+                        Take(ref uniforms, count),
+                    DescriptorKind.StorageBuffer or DescriptorKind.DynamicStorageBuffer =>
+                        Take(ref storages, count),
+                    DescriptorKind.SampledTexture => Take(ref textures, count),
+                    DescriptorKind.StorageTexture => Take(ref images, count),
+                    DescriptorKind.Sampler => Take(ref samplers, count),
 
-                        // Named rather than left to the catch-all: a layout carrying one is a caller
-                        // that skipped the capability check, and "no binding class" would send it
-                        // hunting for a GL feature that does not exist to enable.
-                        DescriptorKind.AccelerationStructure => throw new NotSupportedException(
-                            "A descriptor set layout declares an acceleration structure on the OpenGL "
-                            + "backend, which has no ray tracing. Ask Features.HasRayTracing and take "
-                            + "the distance-field tracer."
-                        ),
-                        _ => throw new ArgumentOutOfRangeException(
-                            nameof(sets),
-                            binding.Kind,
-                            "This descriptor kind has no OpenGL binding class."
-                        )
-                    }
+                    // Named rather than left to the catch-all: a layout carrying one is a caller
+                    // that skipped the capability check, and "no binding class" would send it
+                    // hunting for a GL feature that does not exist to enable.
+                    DescriptorKind.AccelerationStructure => throw new NotSupportedException(
+                        "A descriptor set layout declares an acceleration structure on the OpenGL "
+                        + "backend, which has no ray tracing. Ask Features.HasRayTracing and take "
+                        + "the distance-field tracer."
+                    ),
+                    _ => throw new ArgumentOutOfRangeException(
+                        nameof(sets),
+                        binding.Kind,
+                        "This descriptor kind has no OpenGL binding class."
+                    )
+                }
                     ;
                 plan.slots[(set.Slot, binding.Binding)] = new(binding.Kind, index);
             }

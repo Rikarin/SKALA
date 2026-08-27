@@ -1,13 +1,13 @@
-           // SPDX-FileCopyrightText: Copyright (c) Rikarin
-           // SPDX-License-Identifier: Apache-2.0
-         using Vixen.Core.  Mathematics;
+// SPDX-FileCopyrightText: Copyright (c) Rikarin
+// SPDX-License-Identifier: Apache-2.0
+using Vixen.Core.Mathematics;
 using
-Vixen .Graphics;
-    using Vixen  .Graphics   .RenderGraph; using Vixen.Shaders ;
-      
-          
- namespace  Vixen .Rendering.Compositor;
-      
+Vixen.Graphics;
+using Vixen.Graphics.RenderGraph; using Vixen.Shaders;
+
+
+namespace Vixen.Rendering.Compositor;
+
 /// <summary>What a compute node's body is given to bind anything its declaration cannot express.</summary>
 /// <remarks>
 ///     The escape hatch, no longer the mechanism. A node with
@@ -15,29 +15,33 @@ Vixen .Graphics;
 ///     it declared; this stays for the bindings that are not frame resources at all — a persistent
 ///     buffer the compositor never hears about, or a second set the node has no way to name.
 /// </remarks>
-  public sealed    class ComputeDispatch { internal   ComputeDispatch(RenderGraphContext  context, ComputeRenderer node) {
-        Context = context   ;  Node = node;
-             }
-    /// <summary>The command list the dispatch is recorded into.</summary>
-     public ICommandList  CommandList => Context.CommandList;
-     
-    /// <summary>The node being dispatched.</summary>
-	
- public ComputeRenderer Node {  get;    }
-    /// <summary>The effect resolved for this dispatch.</summary>
-public   required   Effect  Effect { get
-        ; init  ; }
-    /// <summary>The buffer a name resolved to, for this frame.</summary>
-        public BufferHandle Buffer
-        (string name) {
-        ArgumentException .ThrowIfNullOrEmpty(name) ;    return Context.   Buffer   (Node .    Resolved (name));
-    
-          }
+public sealed class ComputeDispatch {
+    internal ComputeDispatch(RenderGraphContext context, ComputeRenderer node) {
+        Context = context;
+        Node = node;
+    }
 
- RenderGraphContext Context
-                { get ; }
-	}
-         
+    /// <summary>The command list the dispatch is recorded into.</summary>
+    public ICommandList CommandList => Context.CommandList;
+
+    /// <summary>The node being dispatched.</summary>
+
+    public ComputeRenderer Node { get; }
+
+    /// <summary>The effect resolved for this dispatch.</summary>
+    public required Effect Effect { get
+            ; init; }
+
+    /// <summary>The buffer a name resolved to, for this frame.</summary>
+    public BufferHandle Buffer
+        (string name) {
+        ArgumentException.ThrowIfNullOrEmpty(name);
+        return Context.Buffer(Node.Resolved(name));
+    }
+
+    RenderGraphContext Context { get; }
+}
+
 /// <summary>
 ///     A compute pass: what it reads, what it writes, and how many groups of it to run.
 /// </summary>
@@ -56,17 +60,20 @@ public   required   Effect  Effect { get
 ///         cannot compile one for the same structural reason it cannot compile a vertex shader.
 ///     </para>
 /// </remarks>
-        public   sealed
-class ComputeRenderer : SceneRenderer    , IDisposable {
-      readonly Dictionary<  string    , GraphBuffer> buffers   = new(StringComparer.Ordinal   ) ;
-          readonly Dictionary<
- string, GraphTexture> textures = new(   StringComparer.Ordinal);
-          
-             
-           EffectConstants? constants  ;
+public sealed
+    class ComputeRenderer : SceneRenderer, IDisposable {
+    readonly Dictionary<string, GraphBuffer> buffers = new(StringComparer.Ordinal);
+
+    readonly Dictionary<
+        string, GraphTexture> textures = new(StringComparer.Ordinal);
+
+
+    EffectConstants? constants;
+
     /// <summary>The compute shader to run.</summary>
-public   required   
-       string ShaderName    { get;   init; }
+    public required
+        string ShaderName { get; init; }
+
     /// <summary>
     ///     The permutations selecting which variant of it, and the values its block is filled from.
     /// </summary>
@@ -77,30 +84,31 @@ public   required
     ///     bind through <see cref="OnBind" /> — see <see cref="ConstantBinding" />.
     /// </remarks>
     public ParameterCollection
-          Parameters  { get; } =  new ();
-         
+        Parameters { get; } = new();
+
     /// <summary>Which permutation keys the shader's variants are selected by.</summary>
-     public IReadOnlyList  
-       <   ParameterKey > PermutationKeys {   get   ;    set ;   } = []  ;
-        
+    public IReadOnlyList
+        <ParameterKey> PermutationKeys { get; set; } = [];
+
     /// <summary>The names of buffers the dispatch reads.</summary>
-               public IList<    string
-          > BufferReads { get    ; }  = [] ;
+    public IList<string
+    > BufferReads { get; } = [];
+
     /// <summary>The names of buffers it writes.</summary>
-           public IList
-       <  string    > BufferWrites {    get;    } = [];
+    public IList
+        <string> BufferWrites { get; } = [];
 
     /// <summary>The names of textures it samples or reads.</summary>
-                public IList<string> Reads    { get ; } =    [    ];
-               
+    public IList<string> Reads { get; } = [];
+
     /// <summary>The names of textures it writes, as storage images.</summary>
     /// <remarks>
     ///     The half of a compute pass that a bloom chain, a GTAO pass or a mip generator is made of.
     ///     Separate from <see cref="BufferWrites" /> only because the graph tracks the two resource
     ///     kinds separately; the edge either declares is the same one.
     /// </remarks>
-              public IList  <string> Writes
-           { get  ; }  =    [    ]; 
+    public IList<string> Writes { get; } = [];
+
     /// <summary>The names of storage images it binds and produces nothing in.</summary>
     /// <remarks>
     ///     <para>
@@ -112,8 +120,11 @@ public   required
     ///         three stores a texel.
     ///     </para>
     ///     <para>
-    ///         ⚠ <b>Neither <see cref="Reads" /> nor <see cref="Writes" /> says this, and both say
-    ///         something false.</b> <see cref="Writes" /> claims a result, so a run of passes that each
+    ///         ⚠
+    ///         <b>
+    ///             Neither <see cref="Reads" /> nor <see cref="Writes" /> says this, and both say
+    ///             something false.
+    ///         </b> <see cref="Writes" /> claims a result, so a run of passes that each
     ///         bind the same image reads to the graph as a frame's work overwritten before anybody
     ///         looked — which is VX2101, correctly reported against a declaration that was wrong.
     ///         <see cref="Reads" /> claims contents <em>and</em> asks for the read-only layout, and a
@@ -131,27 +142,33 @@ public   required
     ///     </para>
     /// </remarks>
     public
-           IList<string  > Bound { get; }    =  []  ;  
-            
+        IList<string> Bound { get; } = [];
+
     /// <summary>How many workgroups to run.</summary>
-       public
-Int3 Groups   { get   ; set; } = new  (1    , 1,    1)   ;
+    public
+        Int3 Groups { get; set; } = new(1, 1, 1);
+
     /// <summary>Where a described sampler comes from, for a binding that names one by value.</summary>
     /// <remarks>
     ///     Shared rather than owned, because a sampler is pure state and a device caps how many exist
     ///     — a chain of post passes each making its own reaches that cap on drivers that allow four
     ///     thousand.
     /// </remarks>
-        public
-SamplerCache? Samplers    { get;    set;   }
+    public
+        SamplerCache? Samplers { get; set; }
+
     /// <summary>Where compute pipelines come from. Set before the first frame that builds.</summary>
-             public   ComputePipelineCache?
-Pipelines { get; set; }
+    public ComputePipelineCache?
+        Pipelines { get; set; }
+
     /// <summary>What fills the compose slots the compilation declares.</summary>
     /// <remarks>
     ///     <para>
-    ///         ⚠ <b>The same fix <see cref="FullScreenRenderer.Composition" /> carries, and this type
-    ///         was missed when that one was made.</b> A compilation is the whole library and every
+    ///         ⚠
+    ///         <b>
+    ///             The same fix <see cref="FullScreenRenderer.Composition" /> carries, and this type
+    ///             was missed when that one was made.
+    ///         </b> A compilation is the whole library and every
     ///         compose slot any shader in it declares must be bound — RVN2073 — so a dispatch that has
     ///         no opinion about a material's third surface feature still has to name one.
     ///         <c>MaterialCompiler.PassComposition</c>'s own remarks predict this exact case: "a
@@ -168,7 +185,7 @@ Pipelines { get; set; }
     ///     </para>
     /// </remarks>
 
-    public ShaderComposition Composition {   get; set;   } = Materials .MaterialCompiler  .PassComposition()  ;
+    public ShaderComposition Composition { get; set; } = Materials.MaterialCompiler.PassComposition();
 
     /// <summary>The set it writes for itself, out of the resources it declared.</summary>
     /// <remarks>
@@ -177,8 +194,8 @@ Pipelines { get; set; }
     ///     from actually lives — supplying a different one is how a set gets bound to a pipeline it is
     ///     not compatible with.
     /// </remarks>
-            public DescriptorBindings Descriptors {  get;    } =    new () { 
-Slot = DescriptorSetSlot  .PerMaterial };
+    public DescriptorBindings Descriptors { get; } = new() { Slot = DescriptorSetSlot.PerMaterial };
+
     /// <summary>
     ///     Which binding this shader's own uniform block occupies, or null for one with none.
     /// </summary>
@@ -203,32 +220,34 @@ Slot = DescriptorSetSlot  .PerMaterial };
     ///         so it is a pass with no output rather than a pass this cannot serve.
     ///     </para>
     /// </remarks>
-          public uint? ConstantBinding
-       { get; set  ; }
-     
+    public uint? ConstantBinding { get; set; }
+
     /// <summary>The block as it was last filled, for a test or an inspector.</summary>
     /// <remarks>
     ///     What the GPU was given, which is the only way to check that a value landed at the offset
     ///     the shader's plan said — a device that took the bytes cannot be asked what they were.
     /// </remarks>
-public   ReadOnlySpan<byte  >  Constants => constants is {    } filled   ?   filled.Bytes : default   ;
+    public ReadOnlySpan<byte> Constants => constants is { } filled ? filled.Bytes : default;
+
     /// <summary>How many times the block has actually gone to the GPU.</summary>
     /// <remarks>
     ///     For the test that a pass whose values did not change is not re-uploading them, which is
     ///     the whole reason <see cref="ParameterCollection.Version" /> exists.
     /// </remarks>
-            public int UploadCount   => constants  ?.  UploadCount ?? 0    ;
-      
+    public int UploadCount => constants?.UploadCount ?? 0;
+
     /// <summary>What binds anything the declaration cannot express, before the dispatch.</summary>
-            public Action<ComputeDispatch >?
-OnBind { get; init   ; }
+    public Action<ComputeDispatch>?
+        OnBind { get; init; }
+
     /// <summary>The buffer a name resolved to this frame, for <see cref="ComputeDispatch" />.</summary>
-     
+
     internal GraphBuffer Resolved(string name) =>
-         buffers.TryGetValue(name , out var buffer    )
-            ?    buffer
-                : throw new  CompositorBindingException
-(   ToString(), "buffer", name  );
+        buffers.TryGetValue(name, out var buffer)
+            ? buffer
+            : throw new CompositorBindingException
+            (ToString(), "buffer", name);
+
     /// <inheritdoc />
     /// <remarks>
     ///     ⚠ <b>The body is <see cref="Declare" /> so that declining has to say why.</b> A dispatch that
@@ -236,130 +255,151 @@ OnBind { get; init   ; }
     ///     metering or a clear chain is a plausible number rather than an obviously wrong one — the
     ///     failure this engine is characteristically bad at seeing.
     /// </remarks>
-           protected   internal override   void  Build   (GraphicsCompositor  compositor, CompositorFrame frame ) {
-              ArgumentNullException .ThrowIfNull   (compositor  )    ; ArgumentNullException  .ThrowIfNull    (frame)    ;
-     
-        Degrade(Declare   (frame   )) ;
+    protected internal override void Build(GraphicsCompositor compositor, CompositorFrame frame) {
+        ArgumentNullException.ThrowIfNull(compositor);
+        ArgumentNullException.ThrowIfNull(frame);
+
+        Degrade(Declare(frame));
     }
-        string? Declare(    CompositorFrame frame) {
-    if (Pipelines    is null) {
-          return "no Pipelines, so this dispatch was never declared and whatever it writes still " + "holds the last value written to it";
- }
-     if (Groups
-         .    X <= 0  || Groups   .   Y <= 0 ||    Groups.Z <= 0  ) {
-            return  $"Groups is {Groups.X}×{Groups.Y}×{Groups.Z}, so there is no work to dispatch and "
-               + "whatever this pass writes still holds the last value written to it"    ;    }
-    var key    =  EffectKey.From(
-               ShaderName  ,    Parameters, PermutationKeys, Composition);
-  
-             if (frame  .Effects.  Resolve  (key ) is not {    }
-effect) {
-     // Also reported by EffectSystem.Misses, which is what makes "no runtime compilation in a
-  // shipping build" a test rather than a hope. Said here as well because a miss is a list
-             // of keys and this is the node that wanted one.
-            return $"the compute effect '{ShaderName}' did not resolve, so this dispatch was never "
-      
-         + "declared and whatever it writes still holds the last value written to it";
-         }
- var pipeline =   Pipelines .   GetOrCreate(effect
-        );
-    if (  !pipeline.IsValid    ) {
-            return $"the compute pipeline for '{ShaderName}' is not valid — the module was missing or "
-     + "the device refused it — so this dispatch was never declared"; }
-         buffers  . Clear    ();
-        textures  .    Clear   ()   ;
-                foreach (var name in BufferReads .   Concat(BufferWrites    ))  {   buffers[name] = frame.   Buffer   (  ToString   ( )   , name);
-        }
-         foreach (var name    in  Reads.Concat  (Writes).Concat(Bound
-            ))    {
-                textures [name   ] =
-  frame  .  Texture(ToString   (  ), name );
-          }
-               // The layout the effect was compiled with, unless the host insisted on one of its own. A set
-    // is only bindable to a pipeline whose layout it was allocated from, so guessing here would
-        // produce something the validation layers reject and a release driver does not.
-        if  (!Descriptors  .Layout.IsValid  && (    int)Descriptors.    Slot <  effect.  SetLayouts   .Length) { Descriptors.Layout =   effect.SetLayouts[ (int)Descriptors.    Slot   ];
+
+    string? Declare(CompositorFrame frame) {
+        if (Pipelines is null) {
+            return "no Pipelines, so this dispatch was never declared and whatever it writes still "
+                + "holds the last value written to it";
         }
 
-  var bound = Descriptors  .Resolve    ( ToString()
-,  textures, buffers, effect, Samplers)   ;
-            // Filled here rather than in the pass body: the values are the host's, and writing a
- // host-visible buffer inside a command list is a map and a copy between two dispatches.
-        constants  ??= frame.Device  is   { } device  ? new(device, $"{this}.Constants") : null   ;
-            var hasConstants  = ConstantBinding is not    null    &&
-constants?.  Update    ( effect, Parameters  )  == true;
-             
-              // At the block's own offset, not at zero: the buffer holds one region per frame in flight, so
-            // changing a value does not overwrite what an unfinished frame is reading.
-        var extra =  
-               hasConstants
-		?    new[]  { DescriptorWrite.Uniform(
-                    ConstantBinding  !.
-      Value,
-    constants  !.Buffer, constants    .Offset ,
-        constants.   Size
-	)
-               }
-	: [
-           ];
-            var bufferReads = BufferReads.Select(   name  =>  buffers[name 
-          ]).ToArray() ;
-  var  bufferWrites   = BufferWrites   .Select  (name => buffers   [ name    ] ).ToArray  (    );
-            var textureReads = Reads.Select
-                (name => textures[   name]  ).ToArray( )   ; 
-var textureWrites    =   Writes .Select(name   => textures[
-            name]    ).  ToArray(   );
-        var textureBound = Bound.Select
-	(name => textures   [    name] )  .ToArray();
-              var groups  = Groups;
-        frame.Graph    .AddPass(
-         ToString()  ,
-		pass  => {  
-            pass.
-          Kind = PassKind.Compute    ;
-			
-           foreach (   var read in bufferReads) {    pass    .Reads(read )    ;
-      }
-               
-                foreach (var write
-     in bufferWrites   ) {
-              pass.Writes
-      (write);
+        if (Groups
+                .X
+            <= 0
+            || Groups.Y <= 0
+            || Groups.Z <= 0) {
+            return $"Groups is {Groups.X}×{Groups.Y}×{Groups.Z}, so there is no work to dispatch and "
+                + "whatever this pass writes still holds the last value written to it";
         }
-       
-         
-         foreach (var    read in    textureReads) {
-                    pass.Reads
-     (read  )   ;
- }
-   
-                foreach  
-   (var write in textureWrites) {
-     pass   .   Writes
-        (write  )  ;
-             }
-         
-                // A use and not a production — see Bound. The state is the one a storage descriptor
-         // is written with, so the barrier that lands the image in General is placed and the
-       // graph is told nothing about contents that do not exist.
-                foreach
-     (var  bound    in   textureBound) {
-               
-        pass.   Reads(  bound    ,    ResourceState    .ShaderWrite );
-      }  
-              pass.Execute    ( context => {
-             context.CommandList.BindPipeline(pipeline)   ; bound?.  Bind (context, extra)   ;  
-                        OnBind?
-         .Invoke (    new(context,    this) { Effect    = effect })    ;
-     context.CommandList.Dispatch(groups.    X,  groups.Y   , groups.    Z   )  ;
-}
-)  ;  }
-        );
-             return  null;
-               }  
-             
-    /// <inheritdoc />
-    public void Dispose   ( ) {
-         constants?.Dispose()   ; constants  = null; 
+
+        var key = EffectKey.From(ShaderName, Parameters, PermutationKeys, Composition);
+
+        if (frame.Effects.Resolve(key) is not { }
+            effect) {
+            // Also reported by EffectSystem.Misses, which is what makes "no runtime compilation in a
+            // shipping build" a test rather than a hope. Said here as well because a miss is a list
+            // of keys and this is the node that wanted one.
+            return $"the compute effect '{ShaderName}' did not resolve, so this dispatch was never "
+
+                + "declared and whatever it writes still holds the last value written to it";
+        }
+
+        var pipeline = Pipelines.GetOrCreate(effect);
+        if (!pipeline.IsValid) {
+            return $"the compute pipeline for '{ShaderName}' is not valid — the module was missing or "
+                + "the device refused it — so this dispatch was never declared";
+        }
+
+        buffers.Clear();
+        textures.Clear();
+        foreach (var name in BufferReads.Concat(BufferWrites)) {
+            buffers[name] = frame.Buffer(ToString(), name);
+        }
+
+        foreach (var name in Reads.Concat(Writes).Concat(Bound)) {
+            textures[name] =
+                frame.Texture(ToString(), name);
+        }
+
+        // The layout the effect was compiled with, unless the host insisted on one of its own. A set
+        // is only bindable to a pipeline whose layout it was allocated from, so guessing here would
+        // produce something the validation layers reject and a release driver does not.
+        if (!Descriptors.Layout.IsValid && (int)Descriptors.Slot < effect.SetLayouts.Length) {
+            Descriptors.Layout = effect.SetLayouts[(int)Descriptors.Slot];
+        }
+
+        var bound = Descriptors.Resolve(ToString(), textures, buffers, effect, Samplers);
+        // Filled here rather than in the pass body: the values are the host's, and writing a
+        // host-visible buffer inside a command list is a map and a copy between two dispatches.
+        constants ??= frame.Device is { } device ? new(device, $"{this}.Constants") : null;
+        var hasConstants = ConstantBinding is not null && constants?.Update(effect, Parameters) == true;
+
+        // At the block's own offset, not at zero: the buffer holds one region per frame in flight, so
+        // changing a value does not overwrite what an unfinished frame is reading.
+        var extra =
+            hasConstants
+                ? new[] {
+                    DescriptorWrite.Uniform(
+                        ConstantBinding!.
+                        Value,
+                        constants!.Buffer,
+                        constants.Offset,
+                        constants.Size
+                    )
                 }
-			}
+                : [
+                ];
+        var bufferReads = BufferReads.Select(name => buffers[name
+            ]
+        )
+            .ToArray();
+        var bufferWrites = BufferWrites.Select(name => buffers[name]).ToArray();
+        var textureReads = Reads.Select
+            (name => textures[name])
+            .ToArray();
+        var textureWrites = Writes.Select(name => textures[
+                name]
+        )
+            .ToArray();
+        var textureBound = Bound.Select
+            (name => textures[name])
+            .ToArray();
+        var groups = Groups;
+        frame.Graph.AddPass(
+            ToString(),
+            pass => {
+                pass.
+                    Kind = PassKind.Compute;
+
+                foreach (var read in bufferReads) {
+                    pass.Reads(read);
+                }
+
+                foreach (var write
+                         in bufferWrites) {
+                    pass.Writes
+                        (write);
+                }
+
+
+                foreach (var read in textureReads) {
+                    pass.Reads
+                        (read);
+                }
+
+                foreach
+                    (var write in textureWrites) {
+                    pass.Writes
+                        (write);
+                }
+
+                // A use and not a production — see Bound. The state is the one a storage descriptor
+                // is written with, so the barrier that lands the image in General is placed and the
+                // graph is told nothing about contents that do not exist.
+                foreach
+                    (var bound in textureBound) {
+                    pass.Reads(bound, ResourceState.ShaderWrite);
+                }
+
+                pass.Execute(context => {
+                        context.CommandList.BindPipeline(pipeline); bound?.Bind(context, extra);
+                        OnBind?
+                            .Invoke(new(context, this) { Effect = effect });
+                        context.CommandList.Dispatch(groups.X, groups.Y, groups.Z);
+                    }
+                ); }
+        );
+        return null;
+    }
+
+    /// <inheritdoc />
+    public void Dispose() {
+        constants?.Dispose();
+        constants = null;
+    }
+}

@@ -17,8 +17,11 @@ namespace Vixen.Geometry.Uv.Flattening;
 ///         keeps the three of them agreeing about what the triangle was before it was flattened.
 ///     </para>
 ///     <para>
-///         ⚠ <b><paramref name="Y2" /> is a length and therefore non-negative, so the frame is always
-///         counter-clockwise.</b> That is what makes <c>Orient2D &lt; 0</c> in the parameter plane mean
+///         ⚠
+///         <b>
+///             <paramref name="Y2" /> is a length and therefore non-negative, so the frame is always
+///             counter-clockwise.
+///         </b> That is what makes <c>Orient2D &lt; 0</c> in the parameter plane mean
 ///         <i>flipped</i> without a per-triangle reference orientation to compare against — see
 ///         <see cref="Distortion" />.
 ///     </para>
@@ -32,8 +35,11 @@ readonly record struct TriangleFrame(double X1, double X2, double Y2) {
     ///     cotangent in it is infinite.
     /// </summary>
     /// <remarks>
-    ///     ⚠ <b>Against zero rather than against an epsilon, and <c>EditMesh.Normal</c> records the
-    ///     same decision for the same reason.</b> Twice the area carries the mesh's units squared, so a
+    ///     ⚠
+    ///     <b>
+    ///         Against zero rather than against an epsilon, and <c>EditMesh.Normal</c> records the
+    ///         same decision for the same reason.
+    ///     </b> Twice the area carries the mesh's units squared, so a
     ///     fixed threshold is a claim about how big the model is — and a hemisphere's pole triangles
     ///     are genuinely small. A model arriving in millimetres would have had its whole cap declared
     ///     degenerate.

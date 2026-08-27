@@ -1,12 +1,16 @@
 // SPDX-FileCopyrightText: Copyright (c) Rikarin
 // SPDX-License-Identifier: Apache-2.0
-using System.Runtime.InteropServices;using Vixen.Core.Mathematics;using Vixen.Engine.Renderer;using Vixen.Graphics;using Vixen.Rendering;using Vixen.Rendering.Lighting;using Vixen.Rendering.PostFx;using Vixen.Shaders;using Vixen.Shaders.Generated;namespace Vixen.Samples.ThirdPersonShooter;
+using System.Runtime.InteropServices; using Vixen.Core.Mathematics; using Vixen.Engine.Renderer; using Vixen.Graphics; using Vixen.Rendering; using Vixen.Rendering.Lighting; using Vixen.Rendering.PostFx; using Vixen.Shaders; using Vixen.Shaders.Generated; namespace Vixen.Samples.ThirdPersonShooter;
+
 /// <summary>What this project contributes to two of the frame's sets: a baked sky, and stand-ins.</summary>
 /// <remarks>
 ///     <para>
 ///         <b>The rule that makes this type necessary.</b> <c>ForwardPlus</c> declares thirteen
-///         bindings in its per-frame set and declares all of them <i>whatever the permutations
-///         say</i> — a variant with shadows, image-based lighting, reflection probes, the probe field
+///         bindings in its per-frame set and declares all of them
+///         <i>
+///             whatever the permutations
+///             say
+///         </i> — a variant with shadows, image-based lighting, reflection probes, the probe field
 ///         and clustered lights all switched off still has a <c>shadowMap</c>, an <c>environment</c>,
 ///         a <c>probes</c> array, a <c>clusters</c> buffer and five irradiance volumes in its plan.
 ///         <c>EffectSetWriter</c> writes every binding of a set or none, so one unfilled resource is
@@ -46,44 +50,69 @@ using System.Runtime.InteropServices;using Vixen.Core.Mathematics;using Vixen.En
 ///         shaders, which is why this lives in the project and not in the engine.
 ///     </para>
 /// </remarks>
-public sealed class ArenaFrame:IDisposable{
-/// <summary>One side of the source cube, before prefiltering.</summary>
+public sealed class ArenaFrame : IDisposable {
+    /// <summary>One side of the source cube, before prefiltering.</summary>
     /// <remarks>
     ///     Small deliberately. The convolution is on the CPU at sixty-four importance samples per
     ///     texel per face per level, so the source size is the load time — and a daylight sky has no
     ///     detail below the sun's aureole that a larger cube would preserve.
     /// </remarks>
-const int SourceSize=48;
-/// <summary>How many roughness levels the chain holds.</summary>
-const int Levels=5;readonly IGraphicsDevice device;BufferHandle clusterStandIn;TextureHandle opaque;TextureViewHandle opaqueView;SamplerHandle opaqueSampler;BufferHandle bindPose;bool disposed;ArenaFrame(IGraphicsDevice graphics,EnvironmentTexture texture,ShCoefficients irradiance,SkyParameters sky){device=graphics;Sky=texture;Irradiance=irradiance;Atmosphere=sky;}
-/// <summary>The three numbers the whole frame's light comes out of.</summary>
-public SkyParameters Atmosphere{get;}
-/// <summary>How much light the sun delivers to a surface facing it, in lux.</summary>
+    const int SourceSize = 48;
+
+    /// <summary>How many roughness levels the chain holds.</summary>
+    const int Levels = 5;
+
+    readonly IGraphicsDevice device;
+    BufferHandle clusterStandIn;
+    TextureHandle opaque;
+    TextureViewHandle opaqueView;
+    SamplerHandle opaqueSampler;
+    BufferHandle bindPose;
+    bool disposed;
+
+    ArenaFrame(IGraphicsDevice graphics, EnvironmentTexture texture, ShCoefficients irradiance, SkyParameters sky) {
+        device = graphics;
+        Sky = texture;
+        Irradiance = irradiance;
+        Atmosphere = sky;
+    }
+
+    /// <summary>The three numbers the whole frame's light comes out of.</summary>
+    public SkyParameters Atmosphere { get; }
+
+    /// <summary>How much light the sun delivers to a surface facing it, in lux.</summary>
     /// <remarks>
-    ///     ⚠ <b>Read off the atmosphere rather than typed into the scene, and that is the point of
-    ///     the model being here.</b> A scene file naming both a sun direction and a sun brightness is
+    ///     ⚠
+    ///     <b>
+    ///         Read off the atmosphere rather than typed into the scene, and that is the point of
+    ///         the model being here.
+    ///     </b> A scene file naming both a sun direction and a sun brightness is
     ///     a scene that can be a sunset sky over a noon sun, and nothing reports it — so the level
     ///     says where the sun <em>is</em> and this says what that means. At eight degrees of
     ///     elevation it is about a tenth of what it is overhead.
     /// </remarks>
-public float SunIlluminance=>PhysicalSky.SunIlluminance(Atmosphere);
-/// <summary>What colour the sun is at that elevation, as a tint of unit luminance.</summary>
+    public float SunIlluminance => PhysicalSky.SunIlluminance(Atmosphere);
+
+    /// <summary>What colour the sun is at that elevation, as a tint of unit luminance.</summary>
     /// <remarks>
     ///     From Rayleigh and Mie transmittance along the same air mass the sky above was computed
     ///     for, so the disc and the horizon redden together. Golden hour is a position, not a palette.
     /// </remarks>
-public Color3 SunTint=>PhysicalSky.SunTint(Atmosphere);
-/// <summary>The prefiltered cube, uploaded by <c>WorldRenderer.Draw</c> before the first pass.</summary>
-public EnvironmentTexture Sky{get;}
-/// <summary>The diffuse half, projected from the same source the chain was filtered from.</summary>
+    public Color3 SunTint => PhysicalSky.SunTint(Atmosphere);
+
+    /// <summary>The prefiltered cube, uploaded by <c>WorldRenderer.Draw</c> before the first pass.</summary>
+    public EnvironmentTexture Sky { get; }
+
+    /// <summary>The diffuse half, projected from the same source the chain was filtered from.</summary>
     /// <remarks>
     ///     From the <em>source</em>, not from level zero of the chain. Level zero is already convolved
     ///     with the narrowest lobe, so projecting it would give a surface whose ambient and whose
     ///     reflection disagree — which reads as the wrong roughness rather than as two bakes that do
     ///     not match. <c>EnvironmentLight</c> says the same thing in its own remarks.
     /// </remarks>
-public ShCoefficients Irradiance{get;}
-/// <summary>Bakes the sky the sun's own direction implies, and the stand-ins beside it.</summary>
+    public ShCoefficients Irradiance { get; }
+
+    /// <summary>Bakes the sky the sun's own direction implies, and the stand-ins beside it.</summary>
     /// <param name="graphics">The device the resources live on.</param>
     /// <param name="sunDirection">Which way the sun's light travels — the level's own sun.</param>
     /// <returns>The frame's contribution.</returns>
@@ -104,21 +133,44 @@ public ShCoefficients Irradiance{get;}
     ///         is black and every surface's ambient stops dead at its equator.
     ///     </para>
     /// </remarks>
-public static ArenaFrame Bake(IGraphicsDevice graphics,Vector3 sunDirection){ArgumentNullException.ThrowIfNull(graphics);var sky=new SkyParameters(sunDirection,Turbidity:2.6f,GroundAlbedo:0.15f);var source=PhysicalSky.Bake(SourceSize,sky);return new(graphics,EnvironmentTexture.Bake(graphics,source,Levels),SphericalHarmonics.Project(source),sky);}
-/// <summary>Points the frame's lighting at the sky, and fills what the frame does not produce.</summary>
+    public static ArenaFrame Bake(IGraphicsDevice graphics, Vector3 sunDirection) {
+        ArgumentNullException.ThrowIfNull(graphics);
+        var sky = new SkyParameters(sunDirection, Turbidity: 2.6f, GroundAlbedo: 0.15f);
+        var source = PhysicalSky.Bake(SourceSize, sky);
+        return new(
+            graphics,
+            EnvironmentTexture.Bake(graphics, source, Levels),
+            SphericalHarmonics.Project(source),
+            sky
+        );
+    }
+
+    /// <summary>Points the frame's lighting at the sky, and fills what the frame does not produce.</summary>
     /// <param name="lighting">The scene's lighting — <c>WorldRenderer.SceneEnvironment</c>.</param>
     /// <param name="parameters">The frame's set — <c>WorldRenderer.SceneBlock.Parameters</c>.</param>
     /// <exception cref="ArgumentNullException">An argument is null.</exception>
-public void Apply(SceneLighting lighting,ParameterCollection parameters){ArgumentNullException.ThrowIfNull(lighting);ArgumentNullException.ThrowIfNull(parameters);ObjectDisposedException.ThrowIf(disposed,this);var light=lighting.Environment??new EnvironmentLight();Sky.Apply(light);light.Irradiance=Irradiance;lighting.Environment=light;CreateStandIns();parameters.Set(ForwardPlusKeys.Clusters,clusterStandIn);}
-/// <summary>The shader a caster stage imposes, which is what says a stage is one.</summary>
+    public void Apply(SceneLighting lighting, ParameterCollection parameters) {
+        ArgumentNullException.ThrowIfNull(lighting);
+        ArgumentNullException.ThrowIfNull(parameters);
+        ObjectDisposedException.ThrowIf(disposed, this);
+        var light = lighting.Environment ?? new EnvironmentLight();
+        Sky.Apply(light);
+        light.Irradiance = Irradiance;
+        lighting.Environment = light;
+        CreateStandIns();
+        parameters.Set(ForwardPlusKeys.Clusters, clusterStandIn);
+    }
+
+    /// <summary>The shader a caster stage imposes, which is what says a stage is one.</summary>
     /// <remarks>
     ///     ⚠ Here rather than spelled in the caller, because the caller now asks the *document* which
     ///     of its stages are caster stages instead of listing their names — this level has three, and
     ///     a stage that imposes this shader and is not given the values below draws with an empty
     ///     per-material set. See <c>Arena.SupplyFrame</c>.
     /// </remarks>
-public const string CasterShader="ShadowCaster" ;
-/// <summary>Fills what a caster stage owes the shader it imposes.</summary>
+    public const string CasterShader = "ShadowCaster";
+
+    /// <summary>Fills what a caster stage owes the shader it imposes.</summary>
     /// <param name="stage">The stage whose <c>shader:</c> is <see cref="CasterShader" />.</param>
     /// <exception cref="ArgumentNullException"><paramref name="stage" /> is null.</exception>
     /// <remarks>
@@ -137,12 +189,19 @@ public const string CasterShader="ShadowCaster" ;
     ///         so nothing reads it and the variant folds the read away.
     ///     </para>
     /// </remarks>
-public void ApplyCaster(RenderStage stage){ArgumentNullException.ThrowIfNull(stage);ObjectDisposedException.ThrowIf(disposed,this);CreateStandIns(); // Named rather than taken from a generated `ShadowCasterKeys`, because there is no such
-// class: the key generator reads a shader's committed `.reflect.json` and `ShadowCaster` has
-// none. `ParameterKeys.New` interns exactly the string `EffectSetWriter` looks the binding
-// up under, which is the shader's name and the binding's.
-stage.Parameters.Set(ParameterKeys.New<TextureViewHandle>("ShadowCaster.opacityMap" ),opaqueView);stage.Parameters.Set(ParameterKeys.New<SamplerHandle>("ShadowCaster.opacitySampler" ),opaqueSampler);stage.Parameters.Set(ParameterKeys.New<BufferHandle>("ShadowCaster.bones" ),bindPose);}
-/// <summary>Hands the frame's sky node the cube a document cannot name.</summary>
+    public void ApplyCaster(RenderStage stage) {
+        ArgumentNullException.ThrowIfNull(stage);
+        ObjectDisposedException.ThrowIf(disposed, this);
+        CreateStandIns(); // Named rather than taken from a generated `ShadowCasterKeys`, because there is no such
+        // class: the key generator reads a shader's committed `.reflect.json` and `ShadowCaster` has
+        // none. `ParameterKeys.New` interns exactly the string `EffectSetWriter` looks the binding
+        // up under, which is the shader's name and the binding's.
+        stage.Parameters.Set(ParameterKeys.New<TextureViewHandle>("ShadowCaster.opacityMap"), opaqueView);
+        stage.Parameters.Set(ParameterKeys.New<SamplerHandle>("ShadowCaster.opacitySampler"), opaqueSampler);
+        stage.Parameters.Set(ParameterKeys.New<BufferHandle>("ShadowCaster.bones"), bindPose);
+    }
+
+    /// <summary>Hands the frame's sky node the cube a document cannot name.</summary>
     /// <param name="host">The renderer's host, whose builder holds the nodes the document made.</param>
     /// <exception cref="ArgumentNullException"><paramref name="host" /> is null.</exception>
     /// <remarks>
@@ -158,10 +217,48 @@ stage.Parameters.Set(ParameterKeys.New<TextureViewHandle>("ShadowCaster.opacityM
     ///         nothing in the frame graph would transition it.
     ///     </para>
     /// </remarks>
-public void ApplySky(SceneRenderHost host){ArgumentNullException.ThrowIfNull(host);ObjectDisposedException.ThrowIf(disposed,this);foreach(var node in host.Builder.Nodes.Values){if(node is SkyRenderer sky){sky.Environment=Sky.View;sky.EnvironmentSampler=Sky.Sampler;sky.MipCount=Sky.MipCount;}}}
-/// <inheritdoc />
-public void Dispose(){if(disposed){return;}disposed=true;Sky.Dispose();if(clusterStandIn.IsValid){device.Destroy(clusterStandIn);}if(opaqueView.IsValid){device.Destroy(opaqueView);}if(opaque.IsValid){device.Destroy(opaque);}if(opaqueSampler.IsValid){device.Destroy(opaqueSampler);}if(bindPose.IsValid){device.Destroy(bindPose);}}
-/// <summary>The one resource nothing in this frame produces, made once.</summary>
+    public void ApplySky(SceneRenderHost host) {
+        ArgumentNullException.ThrowIfNull(host);
+        ObjectDisposedException.ThrowIf(disposed, this);
+        foreach (var node in host.Builder.Nodes.Values) {
+            if (node is SkyRenderer sky) {
+                sky.Environment = Sky.View;
+                sky.EnvironmentSampler = Sky.Sampler;
+                sky.MipCount = Sky.MipCount;
+            }
+        }
+    }
+
+    /// <inheritdoc />
+    public void Dispose() {
+        if (disposed) {
+            return;
+        }
+
+        disposed = true;
+        Sky.Dispose();
+        if (clusterStandIn.IsValid) {
+            device.Destroy(clusterStandIn);
+        }
+
+        if (opaqueView.IsValid) {
+            device.Destroy(opaqueView);
+        }
+
+        if (opaque.IsValid) {
+            device.Destroy(opaque);
+        }
+
+        if (opaqueSampler.IsValid) {
+            device.Destroy(opaqueSampler);
+        }
+
+        if (bindPose.IsValid) {
+            device.Destroy(bindPose);
+        }
+    }
+
+    /// <summary>The one resource nothing in this frame produces, made once.</summary>
     /// <remarks>
     ///     <para>
     ///         It is zeroed, and that is the meaningful value rather than a tidy one: a grid in which
@@ -175,14 +272,66 @@ public void Dispose(){if(disposed){return;}disposed=true;Sky.Dispose();if(cluste
     ///         also publishes is a value that is right until the ordering changes.
     ///     </para>
     /// </remarks>
-void CreateStandIns(){if(clusterStandIn.IsValid){return;}clusterStandIn=device.CreateBuffer(new BufferDescription(ClusterGrid.BufferSize,BufferUsage.Storage,MemoryAccess.HostUpload,"ClusterLights.StandIn" ));device.Write(clusterStandIn,0,new byte[ClusterGrid.BufferSize]);opaque=device.CreateTexture(new TextureDescription(PixelFormat.Rgba8UNorm ,1,1,TextureUsage.Sampled|TextureUsage.CopyDestination,Name:"Opacity.Opaque" ));opaqueView=device.CreateTextureView(opaque);opaqueSampler=device.CreateSampler(SamplerDescription.LinearClamp with{Name="Opacity.Opaque" });bindPose=device.CreateBuffer(new BufferDescription(64,BufferUsage.Storage,MemoryAccess.HostUpload,"Bones.BindPose" ));var identity=Matrix4x4.Identity;device.Write(bindPose,0,MemoryMarshal.AsBytes(MemoryMarshal.CreateReadOnlySpan(ref identity,1))); // The four opaque bytes, staged, because a texture is device memory and only a copy reaches it.
-var staging=device.CreateBuffer(new BufferDescription(4,BufferUsage.CopySource,MemoryAccess.HostUpload,"Opacity.Staging" ));device.Write(staging,0,[byte.MaxValue,byte.MaxValue,byte.MaxValue,byte.MaxValue]); // ⚠ The texture's *content* is written, not just its layout, and both are needed. A
-// descriptor written against a sampled image promises the image is in ShaderRead when the
-// draw executes and the validation layers check that promise whether or not any instruction
-// reads it — a texture created and never transitioned is UNDEFINED, which was an error every
-// frame about a resource the shader ignores. These are not graph resources, so no pass will
-// transition them: one list, submitted at load, is the whole of it.
-using var commands=device.BeginCommandList(name:"StandIns" );commands.Barrier(new([],[new TextureBarrier(opaque,ResourceState.Undefined,ResourceState.CopyDestination)]));commands.CopyBufferToTexture(staging,0,new TextureRegion(opaque),new Int3(1,1,1));commands.Barrier(new([],[new TextureBarrier(opaque,ResourceState.CopyDestination,ResourceState.ShaderRead)]));commands.Finish();device.GraphicsQueue.Submit([commands]); // At load time and once, so waiting here costs a few microseconds and removes any question
-// of whether the upload has run by the first frame — and lets the staging buffer go now
-// rather than being tracked for a frame.
-device.GraphicsQueue.WaitIdle();device.Destroy(staging);}}
+    void CreateStandIns() {
+        if (clusterStandIn.IsValid) {
+            return;
+        }
+
+        clusterStandIn = device.CreateBuffer(
+            new BufferDescription(
+                ClusterGrid.BufferSize,
+                BufferUsage.Storage,
+                MemoryAccess.HostUpload,
+                "ClusterLights.StandIn"
+            )
+        );
+        device.Write(clusterStandIn, 0, new byte[ClusterGrid.BufferSize]);
+        opaque = device.CreateTexture(
+            new TextureDescription(
+                PixelFormat.Rgba8UNorm,
+                1,
+                1,
+                TextureUsage.Sampled | TextureUsage.CopyDestination,
+                Name: "Opacity.Opaque"
+            )
+        );
+        opaqueView = device.CreateTextureView(opaque);
+        opaqueSampler = device.CreateSampler(SamplerDescription.LinearClamp with { Name = "Opacity.Opaque" });
+        bindPose = device.CreateBuffer(
+            new BufferDescription(64, BufferUsage.Storage, MemoryAccess.HostUpload, "Bones.BindPose")
+        );
+        var identity = Matrix4x4.Identity;
+        device.Write(
+            bindPose,
+            0,
+            MemoryMarshal.AsBytes(MemoryMarshal.CreateReadOnlySpan(ref identity, 1))
+        ); // The four opaque bytes, staged, because a texture is device memory and only a copy reaches it.
+        var staging = device.CreateBuffer(
+            new BufferDescription(4, BufferUsage.CopySource, MemoryAccess.HostUpload, "Opacity.Staging")
+        );
+        device.Write(
+            staging,
+            0,
+            [byte.MaxValue, byte.MaxValue, byte.MaxValue, byte.MaxValue]
+        ); // ⚠ The texture's *content* is written, not just its layout, and both are needed. A
+        // descriptor written against a sampled image promises the image is in ShaderRead when the
+        // draw executes and the validation layers check that promise whether or not any instruction
+        // reads it — a texture created and never transitioned is UNDEFINED, which was an error every
+        // frame about a resource the shader ignores. These are not graph resources, so no pass will
+        // transition them: one list, submitted at load, is the whole of it.
+        using var commands = device.BeginCommandList(name: "StandIns");
+        commands.Barrier(new([], [new TextureBarrier(opaque, ResourceState.Undefined, ResourceState.CopyDestination)]));
+        commands.CopyBufferToTexture(staging, 0, new TextureRegion(opaque), new Int3(1, 1, 1));
+        commands.Barrier(
+            new([], [new TextureBarrier(opaque, ResourceState.CopyDestination, ResourceState.ShaderRead)])
+        );
+        commands.Finish();
+        device.GraphicsQueue.Submit(
+            [commands]
+        ); // At load time and once, so waiting here costs a few microseconds and removes any question
+        // of whether the upload has run by the first frame — and lets the staging buffer go now
+        // rather than being tracked for a frame.
+        device.GraphicsQueue.WaitIdle();
+        device.Destroy(staging);
+    }
+}

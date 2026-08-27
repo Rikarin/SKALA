@@ -1,5 +1,1 @@
-class C {
-}
-
-
-
+class C { }

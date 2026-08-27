@@ -9,26 +9,26 @@ using Rikarin.Skala.Rules.Metadata;
 namespace Rikarin.Skala.Rules.TestQuality;
 
 /// <summary>
-/// <c>SK8005</c> — <c>Thread.Sleep</c> inside a test method.
+///     <c>SK8005</c> — <c>Thread.Sleep</c> inside a test method.
 /// </summary>
 /// <remarks>
-/// docs/plan/08-rule-catalogue.md § "SK8000 — Tests". A sleep encodes a guess about how long the
-/// thing under test takes. The guess holds on an idle laptop and fails on a CI agent running
-/// sixteen jobs, and because it fails intermittently it is triaged as flakiness rather than as a
-/// defect — which is how a suite stops being read.
-/// <para>
-/// ⚠ There is no fix, and <c>hasFix: false</c> in the catalogue says so. The replacement is a
-/// change to what the test synchronises on — a handle, a task, a polled predicate with a generous
-/// timeout — and that is a design decision rather than an edit. docs/plan/10: a fixing tool that
-/// guesses is a tool an agent will use to break the build.
-/// </para>
-/// <para>
-/// ⚠ Scoped by attribute rather than by path, which is the same choice
-/// <see cref="AsyncContext.IsTestMethod"/> already made for <c>SK3002</c> and for the same reason:
-/// a rule staying silent has to be right in a repository whose tests do not live under a
-/// <c>*.Tests</c> folder. The category-wide instrument is still the <c>.editorconfig</c> section
-/// doc 08 describes, and this rule's <c>suggestion</c> default is what a repository promotes there.
-/// </para>
+///     docs/plan/08-rule-catalogue.md § "SK8000 — Tests". A sleep encodes a guess about how long the
+///     thing under test takes. The guess holds on an idle laptop and fails on a CI agent running
+///     sixteen jobs, and because it fails intermittently it is triaged as flakiness rather than as a
+///     defect — which is how a suite stops being read.
+///     <para>
+///         ⚠ There is no fix, and <c>hasFix: false</c> in the catalogue says so. The replacement is a
+///         change to what the test synchronises on — a handle, a task, a polled predicate with a generous
+///         timeout — and that is a design decision rather than an edit. docs/plan/10: a fixing tool that
+///         guesses is a tool an agent will use to break the build.
+///     </para>
+///     <para>
+///         ⚠ Scoped by attribute rather than by path, which is the same choice
+///         <see cref="AsyncContext.IsTestMethod" /> already made for <c>SK3002</c> and for the same reason:
+///         a rule staying silent has to be right in a repository whose tests do not live under a
+///         <c>*.Tests</c> folder. The category-wide instrument is still the <c>.editorconfig</c> section
+///         doc 08 describes, and this rule's <c>suggestion</c> default is what a repository promotes there.
+///     </para>
 /// </remarks>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class ThreadSleepInTestAnalyzer : DiagnosticAnalyzer {
@@ -86,9 +86,9 @@ public sealed class ThreadSleepInTestAnalyzer : DiagnosticAnalyzer {
     }
 
     /// <summary>
-    /// ⚠ The message names the duration when it is written as a literal, because that is the number
-    /// the reader is deciding about. A sleep of 5 ms and a sleep of 5 s are the same finding and
-    /// very different conversations.
+    ///     ⚠ The message names the duration when it is written as a literal, because that is the number
+    ///     the reader is deciding about. A sleep of 5 ms and a sleep of 5 s are the same finding and
+    ///     very different conversations.
     /// </summary>
     static string Describe(InvocationExpressionSyntax invocation) {
         const string Advice = "; a test that waits for a duration passes or fails on how loaded the machine is";

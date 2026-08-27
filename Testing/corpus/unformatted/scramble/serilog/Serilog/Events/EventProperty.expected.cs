@@ -16,34 +16,39 @@
 namespace Serilog.Events;
 
 /// <summary>
-/// A property associated with a <see cref="LogEvent"/>.
+///     A property associated with a <see cref="LogEvent" />.
 /// </summary>
-/// <remarks>This type is currently internal, while we consider future directions for the logging pipeline, but should end up public
-/// in future.</remarks>
+/// <remarks>
+///     This type is currently internal, while we consider future directions for the logging pipeline, but should end up
+///     public
+///     in future.
+/// </remarks>
 readonly struct EventProperty {
     /// <summary>
-    /// No property.
+    ///     No property.
     /// </summary>
     public static EventProperty None = default;
 
     /// <summary>
-    /// The name of the property.
+    ///     The name of the property.
     /// </summary>
     public string Name { get; }
 
     /// <summary>
-    /// The value of the property.
+    ///     The value of the property.
     /// </summary>
     public LogEventPropertyValue Value { get; }
 
     /// <summary>
-    /// Construct a <see cref="LogEventProperty"/> with the specified name and value.
+    ///     Construct a <see cref="LogEventProperty" /> with the specified name and value.
     /// </summary>
     /// <param name="name">The name of the property.</param>
     /// <param name="value">The value of the property.</param>
-    /// <exception cref="ArgumentNullException">When <paramref name="name"/> is <code>null</code></exception>
-    /// <exception cref="ArgumentException">When <paramref name="name"/> is empty or only contains whitespace</exception>
-    /// <exception cref="ArgumentNullException">When <paramref name="value"/> is <code>null</code></exception>
+    /// <exception cref="ArgumentNullException">When <paramref name="name" /> is <code>null</code></exception>
+    /// <exception cref="ArgumentException">
+    ///     When <paramref name="name" /> is empty or only contains whitespace
+    /// </exception>
+    /// <exception cref="ArgumentNullException">When <paramref name="value" /> is <code>null</code></exception>
     public EventProperty(string name, LogEventPropertyValue value) {
         Guard.AgainstNull(value);
         LogEventProperty.EnsureValidName(name);
@@ -52,7 +57,7 @@ readonly struct EventProperty {
     }
 
     /// <summary>
-    /// Permit deconstruction of the property into a name/value pair.
+    ///     Permit deconstruction of the property into a name/value pair.
     /// </summary>
     /// <param name="name">The name of the property.</param>
     /// <param name="value">The value of the property.</param>
@@ -64,20 +69,22 @@ readonly struct EventProperty {
     /// <inheritdoc />
     public override bool Equals(
         object
-            ? obj
+        ? obj
     ) {
         return obj is EventProperty other && Equals(other);
     }
 
-    /// <summary>Indicates whether this instance and a specified <see cref="EventProperty"/> are equal.</summary>
-    /// <param name="other">The <see cref="EventProperty"/> to compare with the current instance. </param>
+    /// <summary>Indicates whether this instance and a specified <see cref="EventProperty" /> are equal.</summary>
+    /// <param name="other">The <see cref="EventProperty" /> to compare with the current instance.</param>
     /// <returns>
-    /// <see langword="true" /> if <paramref name="other" /> and this instance represent the same value; otherwise, <see langword="false" />. </returns>
+    ///     <see langword="true" /> if <paramref name="other" /> and this instance represent the same value; otherwise,
+    ///     <see langword="false" />.
+    /// </returns>
     public bool Equals(
         EventProperty other
     ) {
         return string
-                .Equals(Name, other.Name)
+            .Equals(Name, other.Name)
             && Equals(Value, other.Value);
     }
 
@@ -88,7 +95,7 @@ readonly struct EventProperty {
             return ((Name != null
                         ? Name.GetHashCode()
                         : 0)
-                    * 397)
+                * 397)
                 ^ (Value != null ? Value.GetHashCode() : 0);
         }
     }

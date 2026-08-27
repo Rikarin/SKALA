@@ -12,8 +12,11 @@ namespace Vixen.Editor.AssetEditors.Fonts;
 /// <summary>A font asset: a face, the faces behind it, and how it is put in an atlas.</summary>
 /// <remarks>
 ///     <para>
-///         ⚠ <b>A document beside the <c>.ttf</c> rather than settings on it, and the reason is the
-///         fallback chain.</b> A chain is a property of *this use* of a face: the same
+///         ⚠
+///         <b>
+///             A document beside the <c>.ttf</c> rather than settings on it, and the reason is the
+///             fallback chain.
+///         </b> A chain is a property of *this use* of a face: the same
 ///         <c>NotoSans.ttf</c> is the primary face of one font asset and the CJK fallback of another,
 ///         and import settings on the file could only express one of those. Doc 11's row names three
 ///         things — coverage, atlas preview, fallback chain — and the third is what makes this an
@@ -59,8 +62,11 @@ public sealed class FontAsset {
 
     /// <summary>How many pixels of margin each glyph gets.</summary>
     /// <remarks>
-    ///     ⚠ <b>Not decoration: it is what a distance field needs to have somewhere to fall off
-    ///     into.</b> A field packed with no padding clips its own gradient at the glyph's edge, which
+    ///     ⚠
+    ///     <b>
+    ///         Not decoration: it is what a distance field needs to have somewhere to fall off
+    ///         into.
+    ///     </b> A field packed with no padding clips its own gradient at the glyph's edge, which
     ///     shows up as a hard stair-step exactly where the antialiasing was supposed to be.
     /// </remarks>
     public int Padding { get; set; } = 4;
@@ -115,8 +121,11 @@ public sealed class FontRangeData {
 /// <param name="Covered">How many of them the face has a glyph for.</param>
 /// <param name="Assigned">How many of them are assigned characters at all.</param>
 /// <remarks>
-///     ⚠ <b>Coverage is reported against <i>assigned</i> code points rather than against the block's
-///     width.</b> Most blocks have unassigned holes, and a font that has every character in Latin-1
+///     ⚠
+///     <b>
+///         Coverage is reported against <i>assigned</i> code points rather than against the block's
+///         width.
+///     </b> Most blocks have unassigned holes, and a font that has every character in Latin-1
 ///     Supplement would otherwise report 87 % and read as incomplete. What a person wants to know is
 ///     "is anything missing", and the answer has to be able to be yes-nothing.
 /// </remarks>

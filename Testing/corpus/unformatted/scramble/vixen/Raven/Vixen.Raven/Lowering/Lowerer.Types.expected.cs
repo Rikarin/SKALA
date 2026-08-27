@@ -5,11 +5,11 @@
 using Vixen.Core.Syntax;
 using Vixen.Raven.Diagnostics;
 using
-    Vixen.Raven.IR;
+Vixen.Raven.IR;
 using Vixen.Raven.
-    Symbols;
+Symbols;
 using Vixen.
-    Raven.Syntax;
+Raven.Syntax;
 
 namespace Vixen.Raven.Lowering;
 
@@ -23,11 +23,11 @@ public sealed partial class Lowerer {
     /// </summary>
     IrType LowerType(
         TypeSymbol
-            type,
+        type,
         SyntaxNode? syntax
     ) {
         // Substitution first, and before the cache: inside `Box<float4>` a `T` is an `f32`, and
-// caching the unsubstituted symbol would hand the next instantiation the wrong answer.
+        // caching the unsubstituted symbol would hand the next instantiation the wrong answer.
         if (substitution is { IsEmpty: false }) {
             type = substitution.Substitute(type);
         }
@@ -58,19 +58,20 @@ public sealed partial class Lowerer {
             case PrimitiveTypeSymbol primitive: return LowerPrimitive(primitive, syntax);
             case BuiltInNamedTypeSymbol builtIn:
                 return builtIn.SpecialType switch {
-                        SpecialType.Texture2D => new IrTextureType(IrTextureDimension.Texture2D, Float4),
-                        SpecialType
-                            .Texture3D => new IrTextureType(IrTextureDimension.Texture3D, Float4),
-                        SpecialType.TextureCube => new IrTextureType(IrTextureDimension.Cube, Float4),
-                        SpecialType.Sampler => IrSamplerType.Instance,
-                        SpecialType.AccelerationStructure => IrAccelerationStructureType.Instance,
-                        _ => NotRepresentable(type, syntax)
-                    }
+                    SpecialType.Texture2D => new IrTextureType(IrTextureDimension.Texture2D, Float4),
+                    SpecialType
+                        .Texture3D => new IrTextureType(IrTextureDimension.Texture3D, Float4),
+                    SpecialType.TextureCube => new IrTextureType(IrTextureDimension.Cube, Float4),
+                    SpecialType.Sampler => IrSamplerType.Instance,
+                    SpecialType.AccelerationStructure => IrAccelerationStructureType.Instance,
+                    _ => NotRepresentable(type, syntax)
+                }
                     ;
             case ArrayTypeSymbol { Rank: 1 } array: {
                 var element = LowerType(array.ElementType, syntax);
                 return element.IsVoid ? NotRepresentable(type, syntax) : new IrArrayType(element, array.Length);
             }
+
             // A storage buffer *is* a runtime-sized array in the IR. Nothing else is needed: the
             // block that wraps it is the backends' business, the std430 layout comes from the
             // binding kind, and read-only-ness from the binding's flag. Modelling it as its own IR
@@ -95,12 +96,13 @@ public sealed partial class Lowerer {
                     ? NotRepresentable(type, syntax)
                     : new IrTextureType(IrTextureDimension.Texture2D, element);
             }
+
             // Its own IR type rather than a flag on IrTextureType, because a sampled image and a
             // storage image are two descriptor types and two SPIR-V image types. The format is
 
-// already on the symbol — the binder folded the declaration's `[Format]` in — and it
+            // already on the symbol — the binder folded the declaration's `[Format]` in — and it
             // has to survive to both backends, so it travels in the type.
-            case StorageImageTypeSymbol { Format : { } format } image:
+            case StorageImageTypeSymbol { Format: { } format } image:
                 return new IrStorageImageType(
                     image.IsVolume ? IrTextureDimension.Texture3D : IrTextureDimension.Texture2D,
                     LowerType(image.ElementType, syntax),
@@ -112,7 +114,7 @@ public sealed partial class Lowerer {
                 return NotRepresentable(type, syntax);
             case NamedTypeSymbol {
                 TypeKind
-                : TypeKind.Enum
+                    : TypeKind.Enum
             }:
                 // An enum is its underlying integer once the constants are folded.
                 return IrScalarType.Int;
@@ -132,14 +134,14 @@ public sealed partial class Lowerer {
         SyntaxNode? syntax
     ) {
         switch (type.TypeKind
-               ) {
+        ) {
             case TypeKind.Void:
                 return IrScalarType.Void;
             case TypeKind.Scalar: return LowerScalar(type.SpecialType) ?? NotRepresentable(type, syntax);
 
             case TypeKind.Vector: {
                 var
-                    component = LowerScalar(type.ComponentSpecialType);
+                component = LowerScalar(type.ComponentSpecialType);
                 return component is null
                     ? NotRepresentable(type, syntax)
                     : new IrVectorType(component, type.ComponentCount);
@@ -197,7 +199,7 @@ public sealed partial class Lowerer {
     /// <param name="syntax">Where to report a element type that has no representation.</param>
     IrType LowerTuple(TupleTypeSymbol tuple, SyntaxNode? syntax) {
         if (tuples.TryGetValue(tuple, out var existing)
-           ) {
+        ) {
             return existing;
         }
 

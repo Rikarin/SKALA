@@ -8,27 +8,33 @@ using Rikarin.Skala.Testing;
 namespace Rikarin.Skala.Conformance.Tests;
 
 /// <summary>
-/// The fuzzer, under test.
+///     The fuzzer, under test.
 /// </summary>
 /// <remarks>
-/// ⚠ A fuzzer is a test that finds bugs, which makes it the one piece of test code whose own defects
-/// are invisible: a fuzzer whose mutations never reach the formatter reports the same green run as a
-/// formatter with no bugs in it. Every assertion here exists because the fuzzer had that defect at
-/// some point during the day it was written —
-/// <list type="bullet">
-/// <item>the grammar emitted a parse error in 147 units of 300, and ADR-003 leaves such a file
-/// byte-identical, so every property held over it for free;</item>
-/// <item>the minimiser normalised line endings in its split and returned an artefact that did not
-/// fail;</item>
-/// <item>the mutations wrote into text that is <c>DisabledTextTrivia</c> under the *other* symbol
-/// set, and reported 1 639 absorption failures that were the fuzzer's own.</item>
-/// </list>
-/// ⚠ The budgets here are small on purpose. This suite runs on every commit and its job is to prove
-/// the machine works, not to find bugs; finding bugs is the nightly job's, with a time budget.
+///     ⚠ A fuzzer is a test that finds bugs, which makes it the one piece of test code whose own defects
+///     are invisible: a fuzzer whose mutations never reach the formatter reports the same green run as a
+///     formatter with no bugs in it. Every assertion here exists because the fuzzer had that defect at
+///     some point during the day it was written —
+///     <list type="bullet">
+///         <item>
+///             the grammar emitted a parse error in 147 units of 300, and ADR-003 leaves such a file
+///             byte-identical, so every property held over it for free;
+///         </item>
+///         <item>
+///             the minimiser normalised line endings in its split and returned an artefact that did not
+///             fail;
+///         </item>
+///         <item>
+///             the mutations wrote into text that is <c>DisabledTextTrivia</c> under the *other* symbol
+///             set, and reported 1 639 absorption failures that were the fuzzer's own.
+///         </item>
+///     </list>
+///     ⚠ The budgets here are small on purpose. This suite runs on every commit and its job is to prove
+///     the machine works, not to find bugs; finding bugs is the nightly job's, with a time budget.
 /// </remarks>
 public sealed class FuzzerTests {
     /// <summary>
-    /// ⚠ The seed is the input: the same seed must rebuild the same case, byte for byte, forever.
+    ///     ⚠ The seed is the input: the same seed must rebuild the same case, byte for byte, forever.
     /// </summary>
     [Fact]
     public void ACase_IsAFunctionOfItsSeedAndNothingElse() {
@@ -47,9 +53,9 @@ public sealed class FuzzerTests {
     }
 
     /// <summary>
-    /// ⚠ SplitMix64 is pinned by its constants, so this vector is the contract with every future
-    /// runtime. <see cref="Random"/> would not have one — its stream for a given seed has changed
-    /// between .NET versions, which would make a seed recorded in a nightly log a decoration.
+    ///     ⚠ SplitMix64 is pinned by its constants, so this vector is the contract with every future
+    ///     runtime. <see cref="Random" /> would not have one — its stream for a given seed has changed
+    ///     between .NET versions, which would make a seed recorded in a nightly log a decoration.
     /// </summary>
     [Fact]
     public void TheStream_IsPinned() {
@@ -63,12 +69,12 @@ public sealed class FuzzerTests {
     }
 
     /// <summary>
-    /// The generator's contract: semantic nonsense is welcome, a parse error is not.
+    ///     The generator's contract: semantic nonsense is welcome, a parse error is not.
     /// </summary>
     /// <remarks>
-    /// ⚠ Zero, not "few". A generated unit that does not parse is a case the formatter refuses to
-    /// touch by policy, so it passes every property while asserting none of them — the failure mode
-    /// where the fuzzer looks healthiest.
+    ///     ⚠ Zero, not "few". A generated unit that does not parse is a case the formatter refuses to
+    ///     touch by policy, so it passes every property while asserting none of them — the failure mode
+    ///     where the fuzzer looks healthiest.
     /// </remarks>
     [Fact]
     public void TheGrammar_EmitsNoParseErrors() {
@@ -106,14 +112,14 @@ public sealed class FuzzerTests {
     }
 
     /// <summary>
-    /// ⚠ A mutation that breaks the parse is a case that asserted nothing.
+    ///     ⚠ A mutation that breaks the parse is a case that asserted nothing.
     /// </summary>
     /// <remarks>
-    /// A small allowance rather than zero, because "parse-preserving" is a property of nineteen text
-    /// transforms over arbitrary C# and the last fraction of a percent is not worth the coverage it
-    /// would cost to buy. What the bound stops is a *regression* — a new mutation, or a widened
-    /// existing one, that quietly starts throwing away one case in five. The measured rate over
-    /// 15 624 cases of `corpus/` is 0.3 % of property checks.
+    ///     A small allowance rather than zero, because "parse-preserving" is a property of nineteen text
+    ///     transforms over arbitrary C# and the last fraction of a percent is not worth the coverage it
+    ///     would cost to buy. What the bound stops is a *regression* — a new mutation, or a widened
+    ///     existing one, that quietly starts throwing away one case in five. The measured rate over
+    ///     15 624 cases of `corpus/` is 0.3 % of property checks.
     /// </remarks>
     [Fact]
     public void TheMutations_KeepTheFileParsing() {
@@ -142,15 +148,15 @@ public sealed class FuzzerTests {
     }
 
     /// <summary>
-    /// ⚠ Break the formatter deliberately, one property at a time, and check that the fuzzer notices.
+    ///     ⚠ Break the formatter deliberately, one property at a time, and check that the fuzzer notices.
     /// </summary>
     /// <remarks>
-    /// This is the answer to "a fuzzer that finds nothing on its first outing is more likely to be
-    /// weak than the code to be perfect". It caught a real gap: <c>range-consistency</c> as first
-    /// written could not tell a correct edit list from one collapsed into a single whole-file edit —
-    /// the count matched, the containment held, nothing overlapped — so range formatting could have
-    /// become whole-file formatting with every property still green. The `edit-merge` saboteur
-    /// survived 400 cases and the property was strengthened until it did not.
+    ///     This is the answer to "a fuzzer that finds nothing on its first outing is more likely to be
+    ///     weak than the code to be perfect". It caught a real gap: <c>range-consistency</c> as first
+    ///     written could not tell a correct edit list from one collapsed into a single whole-file edit —
+    ///     the count matched, the containment held, nothing overlapped — so range formatting could have
+    ///     become whole-file formatting with every property still green. The `edit-merge` saboteur
+    ///     survived 400 cases and the property was strengthened until it did not.
     /// </remarks>
     [Fact]
     public void EverySaboteur_IsCaughtByThePropertyItBreaks() {
@@ -185,14 +191,14 @@ public sealed class FuzzerTests {
     }
 
     /// <summary>
-    /// ⚠ The minimiser's answer must still fail, and must be smaller.
+    ///     ⚠ The minimiser's answer must still fail, and must be smaller.
     /// </summary>
     /// <remarks>
-    /// The predicate here is synthetic — "the text contains the marker" — so that this test measures
-    /// the reducer and not the formatter. A reducer that returns an artefact which does not exhibit
-    /// the failure is worse than one that returns the original: the corpus entry it produces pins
-    /// nothing and looks as though it does, which is what happened before <c>Split</c> stopped
-    /// normalising line endings.
+    ///     The predicate here is synthetic — "the text contains the marker" — so that this test measures
+    ///     the reducer and not the formatter. A reducer that returns an artefact which does not exhibit
+    ///     the failure is worse than one that returns the original: the corpus entry it produces pins
+    ///     nothing and looks as though it does, which is what happened before <c>Split</c> stopped
+    ///     normalising line endings.
     /// </remarks>
     [Fact]
     public void TheMinimiser_ReturnsSomethingSmallerThatStillFails() {
@@ -214,30 +220,30 @@ public sealed class FuzzerTests {
     }
 
     /// <summary>
-    /// ⚠ A whitespace-only mutation must never touch a byte that is data.
+    ///     ⚠ A whitespace-only mutation must never touch a byte that is data.
     /// </summary>
     /// <remarks>
-    /// Asserted as token equivalence over the mutation itself, under <b>both</b> symbol sets, which
-    /// is the only statement of "this was whitespace" that does not beg the question. It is the
-    /// assertion that would have caught the two defects that produced 3 500 false absorption reports
-    /// between them: a space written into a `#if` branch that is disabled under the other set, and a
-    /// space written into an XML text token in the middle of a `///` run.
+    ///     Asserted as token equivalence over the mutation itself, under <b>both</b> symbol sets, which
+    ///     is the only statement of "this was whitespace" that does not beg the question. It is the
+    ///     assertion that would have caught the two defects that produced 3 500 false absorption reports
+    ///     between them: a space written into a `#if` branch that is disabled under the other set, and a
+    ///     space written into an XML text token in the middle of a `///` run.
     /// </remarks>
     /// <remarks>
-    /// ⚠ <b>One fixture is excluded, and it is a known-open defect rather than a tidy-up.</b>
-    /// <c>pathological/interpolated-raw-string-with-nested-braces.cs</c> makes the <c>indent</c>
-    /// mutation write four spaces into a raw interpolated string's text token, which is data. That
-    /// is a misclassification in the <i>fuzzer's</i> catalogue — the mutation is declared absorbed
-    /// and is not — and not a formatter defect: the formatter never sees the mutated text, because
-    /// this assertion fails first. Three attempts to fix it in <c>SourceMap</c> did not (protecting
-    /// raw-string nodes as verbatim regions, intersecting rather than containing, and protecting
-    /// every line a multi-line token spans — the first two are kept because they are correct in
-    /// their own right). It is <c>SK-FUZZ-0008</c> in the open register, which is the mechanism for
-    /// exactly this: a defect that is reproduced, minimised, and not yet understood.
-    /// <para>
-    /// ⚠ The exclusion is by name and by name only. Widening it to "skip raw strings" would
-    /// silence the whole class this fuzzer exists to find.
-    /// </para>
+    ///     ⚠ <b>One fixture is excluded, and it is a known-open defect rather than a tidy-up.</b>
+    ///     <c>pathological/interpolated-raw-string-with-nested-braces.cs</c> makes the <c>indent</c>
+    ///     mutation write four spaces into a raw interpolated string's text token, which is data. That
+    ///     is a misclassification in the <i>fuzzer's</i> catalogue — the mutation is declared absorbed
+    ///     and is not — and not a formatter defect: the formatter never sees the mutated text, because
+    ///     this assertion fails first. Three attempts to fix it in <c>SourceMap</c> did not (protecting
+    ///     raw-string nodes as verbatim regions, intersecting rather than containing, and protecting
+    ///     every line a multi-line token spans — the first two are kept because they are correct in
+    ///     their own right). It is <c>SK-FUZZ-0008</c> in the open register, which is the mechanism for
+    ///     exactly this: a defect that is reproduced, minimised, and not yet understood.
+    ///     <para>
+    ///         ⚠ The exclusion is by name and by name only. Widening it to "skip raw strings" would
+    ///         silence the whole class this fuzzer exists to find.
+    ///     </para>
     /// </remarks>
     [Fact]
     public void AnAbsorbedMutation_ChangesNoToken() {
@@ -278,13 +284,13 @@ public sealed class FuzzerTests {
     }
 
     /// <summary>
-    /// A short, fixed-seed run, so the driver itself is exercised on every commit.
+    ///     A short, fixed-seed run, so the driver itself is exercised on every commit.
     /// </summary>
     /// <remarks>
-    /// ⚠ It asserts *coverage*, not absence of findings. Whether a 250-case run finds something is
-    /// not this suite's business — the nightly job runs for an hour and the register in
-    /// <c>corpus/pathological/open/</c> holds what it found. What must hold on every commit is that
-    /// the cases reach the formatter at all, which is the one thing a broken fuzzer cannot fake.
+    ///     ⚠ It asserts *coverage*, not absence of findings. Whether a 250-case run finds something is
+    ///     not this suite's business — the nightly job runs for an hour and the register in
+    ///     <c>corpus/pathological/open/</c> holds what it found. What must hold on every commit is that
+    ///     the cases reach the formatter at all, which is the one thing a broken fuzzer cannot fake.
     /// </remarks>
     [Fact]
     public void AShortRun_ReachesTheFormatter() {

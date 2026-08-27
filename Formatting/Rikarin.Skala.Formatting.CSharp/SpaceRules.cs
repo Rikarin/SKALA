@@ -5,17 +5,20 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 namespace Rikarin.Skala.Formatting.CSharp;
 
 /// <summary>
-/// One inter-token gap resolved to Required or Forbidden.
+///     One inter-token gap resolved to Required or Forbidden.
 /// </summary>
 /// <remarks>
-/// docs/plan/05 § "Spaces": ninety keys, each of which resolves one gap. <c>extra_spaces =
-/// remove_all</c> is the global backstop — any run of spaces not required by a rule collapses to
-/// one or to none — which is why this function is total: there is no "leave it alone" answer.
-/// <para>
-/// ⚠ <see cref="MustSeparate"/> overrides everything. A Forbidden gap between two tokens that would
-/// lex as one produces a corrupted file. The safety net would catch it and abandon the file, which
-/// is correct behaviour for a bug but is still a bug; this is the place not to make it.
-/// </para>
+///     docs/plan/05 § "Spaces": ninety keys, each of which resolves one gap.
+///     <c>
+///extra_spaces =
+/// remove_all
+///     </c> is the global backstop — any run of spaces not required by a rule collapses to
+///     one or to none — which is why this function is total: there is no "leave it alone" answer.
+///     <para>
+///         ⚠ <see cref="MustSeparate" /> overrides everything. A Forbidden gap between two tokens that would
+///         lex as one produces a corrupted file. The safety net would catch it and abandon the file, which
+///         is correct behaviour for a bug but is still a bug; this is the place not to make it.
+///     </para>
 /// </remarks>
 public static class SpaceRules {
     public static SpaceKind Decide(SyntaxToken prev, SyntaxToken next, in PhaseOneOptions o) {
@@ -29,23 +32,23 @@ public static class SpaceRules {
     }
 
     /// <summary>
-    /// The gaps no rule in the export governs, where the oracle leaves whatever the author wrote.
+    ///     The gaps no rule in the export governs, where the oracle leaves whatever the author wrote.
     /// </summary>
     /// <remarks>
-    /// ⚠ <see cref="SpaceKind.Preserve"/> exists in the IR from milestone 1 and nothing produced it
-    /// until now, which made this class total in the wrong way: every gap got an answer and two of
-    /// them were answers the oracle does not give. Asked directly, <c>[1, ..a]</c> comes back
-    /// <c>..a</c> and <c>[1, ..   a]</c> comes back <c>.. a</c>; <c>a[1..3]</c> stays closed up and
-    /// <c>a[1  ..  3]</c> comes back <c>a[1 .. 3]</c>. That is not a rule with a value, it is
-    /// <c>extra_spaces = remove_all</c> collapsing a run in a gap nobody legislated.
-    /// <para>
-    /// ⚠ A slice pattern is <em>not</em> in this set and looks as though it should be:
-    /// <c>a is [1, ..var r]</c> comes back <c>.. var r</c>, a space the oracle inserts, because
-    /// <c>space_within_slice_pattern = true</c> really does govern that one. Reading
-    /// <c>space_within_spread_pattern</c> as the collection-expression twin of it — which is what
-    /// its name says — is what put a space Skala had no evidence for into 58 lines of
-    /// <c>corpus/real/</c>.
-    /// </para>
+    ///     ⚠ <see cref="SpaceKind.Preserve" /> exists in the IR from milestone 1 and nothing produced it
+    ///     until now, which made this class total in the wrong way: every gap got an answer and two of
+    ///     them were answers the oracle does not give. Asked directly, <c>[1, ..a]</c> comes back
+    ///     <c>..a</c> and <c>[1, ..   a]</c> comes back <c>.. a</c>; <c>a[1..3]</c> stays closed up and
+    ///     <c>a[1  ..  3]</c> comes back <c>a[1 .. 3]</c>. That is not a rule with a value, it is
+    ///     <c>extra_spaces = remove_all</c> collapsing a run in a gap nobody legislated.
+    ///     <para>
+    ///         ⚠ A slice pattern is <em>not</em> in this set and looks as though it should be:
+    ///         <c>a is [1, ..var r]</c> comes back <c>.. var r</c>, a space the oracle inserts, because
+    ///         <c>space_within_slice_pattern = true</c> really does govern that one. Reading
+    ///         <c>space_within_spread_pattern</c> as the collection-expression twin of it — which is what
+    ///         its name says — is what put a space Skala had no evidence for into 58 lines of
+    ///         <c>corpus/real/</c>.
+    ///     </para>
     /// </remarks>
     static bool Ungoverned(SyntaxToken prev, SyntaxToken next) =>
         prev.IsKind(SyntaxKind.DotDotToken)
@@ -327,16 +330,16 @@ public static class SpaceRules {
             or SyntaxKind.WhereKeyword;
 
     /// <summary>
-    /// The gap around a <c>..</c>. ⚠ A prefix range with no left operand — which is how Roslyn
-    /// parses a spread inside an array initializer — is a spread, not a range, and gets the space.
+    ///     The gap around a <c>..</c>. ⚠ A prefix range with no left operand — which is how Roslyn
+    ///     parses a spread inside an array initializer — is a spread, not a range, and gets the space.
     /// </summary>
     /// <summary>
-    /// The gap beside a <c>..</c> that a rule really does govern: a slice pattern's.
+    ///     The gap beside a <c>..</c> that a rule really does govern: a slice pattern's.
     /// </summary>
     /// <remarks>
-    /// ⚠ A collection expression's spread element used to be answered here too, out of
-    /// <c>space_within_spread_pattern</c>. It is not governed at all — see <see cref="Ungoverned"/>
-    /// — and the key is inert at both values.
+    ///     ⚠ A collection expression's spread element used to be answered here too, out of
+    ///     <c>space_within_spread_pattern</c>. It is not governed at all — see <see cref="Ungoverned" />
+    ///     — and the key is inert at both values.
     /// </remarks>
     static bool SpreadSpacing(SyntaxToken token, in PhaseOneOptions o) =>
         token.Parent is SlicePatternSyntax && o.SpaceWithinSlicePattern;
@@ -476,15 +479,15 @@ public static class SpaceRules {
     }
 
     /// <summary>
-    /// True when <paramref name="prev"/> would make the following <c>(</c> read as a call.
+    ///     True when <paramref name="prev" /> would make the following <c>(</c> read as a call.
     /// </summary>
     /// <remarks>
-    /// ⚠ A <c>&gt;</c> qualifies only when it closes a type argument list — <c>Foo&lt;int&gt;(x)</c>
-    /// is a call and <c>count &gt; (buffer.Length - index)</c> is a comparison. Treating every
-    /// <c>&gt;</c> as a call site removed the space after the operator and produced
-    /// <c>count &gt;(buffer.Length - index)</c>. It survived milestone 3 because every corpus line
-    /// that shows it sits inside a <c>#if</c> body, which the formatter could not see until M5
-    /// supplied preprocessor symbols — the symbols did not cause the bug, they revealed it.
+    ///     ⚠ A <c>&gt;</c> qualifies only when it closes a type argument list — <c>Foo&lt;int&gt;(x)</c>
+    ///     is a call and <c>count &gt; (buffer.Length - index)</c> is a comparison. Treating every
+    ///     <c>&gt;</c> as a call site removed the space after the operator and produced
+    ///     <c>count &gt;(buffer.Length - index)</c>. It survived milestone 3 because every corpus line
+    ///     that shows it sits inside a <c>#if</c> body, which the formatter could not see until M5
+    ///     supplied preprocessor symbols — the symbols did not cause the bug, they revealed it.
     /// </remarks>
     static bool IsCallSite(SyntaxToken prev) =>
         prev.Kind() is SyntaxKind.IdentifierToken or SyntaxKind.CloseParenToken or SyntaxKind.CloseBracketToken
@@ -519,19 +522,19 @@ public static class SpaceRules {
             };
 
     /// <summary>
-    /// The gap just inside a parenthesis, decided by what the parenthesis belongs to.
+    ///     The gap just inside a parenthesis, decided by what the parenthesis belongs to.
     /// </summary>
     /// <remarks>
-    /// ⚠ Fifteen keys where <c>space_within_parentheses</c> used to answer for all of them, which
-    /// left every one of the fifteen inert. Each was asked of the oracle on its own before being
-    /// wired: <c>space_within_if_parentheses = true</c> gives <c>if ( n &gt; 0 )</c> and nothing
-    /// else moves. <c>space_within_parentheses</c> keeps the gap it really owns — a parenthesized
-    /// expression's, which is what its own fixture pins.
-    /// <para>
-    /// ⚠ <paramref name="empty"/> is a separate question rather than "no space": the oracle writes
-    /// <c>Empty( )</c> and <c>new object( )</c> when the empty-parentheses keys are set, so an empty
-    /// pair is governed rather than always closed up.
-    /// </para>
+    ///     ⚠ Fifteen keys where <c>space_within_parentheses</c> used to answer for all of them, which
+    ///     left every one of the fifteen inert. Each was asked of the oracle on its own before being
+    ///     wired: <c>space_within_if_parentheses = true</c> gives <c>if ( n &gt; 0 )</c> and nothing
+    ///     else moves. <c>space_within_parentheses</c> keeps the gap it really owns — a parenthesized
+    ///     expression's, which is what its own fixture pins.
+    ///     <para>
+    ///         ⚠ <paramref name="empty" /> is a separate question rather than "no space": the oracle writes
+    ///         <c>Empty( )</c> and <c>new object( )</c> when the empty-parentheses keys are set, so an empty
+    ///         pair is governed rather than always closed up.
+    ///     </para>
     /// </remarks>
     static bool WithinParentheses(SyntaxNode? owner, bool empty, in PhaseOneOptions o) =>
         owner switch {
@@ -643,12 +646,12 @@ public static class SpaceRules {
         token.Parent is PostfixUnaryExpressionSyntax postfix && postfix.OperatorToken == token;
 
     /// <summary>
-    /// The <c>*</c> of a pointer type, <c>delegate*</c>'s included.
+    ///     The <c>*</c> of a pointer type, <c>delegate*</c>'s included.
     /// </summary>
     /// <remarks>
-    /// ⚠ A function pointer's asterisk hangs from <see cref="FunctionPointerTypeSyntax"/> rather
-    /// than from a <see cref="PointerTypeSyntax"/>, so it fell through to the operator rules and
-    /// came back as a multiplication: <c>readonly delegate * unmanaged &lt; nint, nint &gt; f;</c>.
+    ///     ⚠ A function pointer's asterisk hangs from <see cref="FunctionPointerTypeSyntax" /> rather
+    ///     than from a <see cref="PointerTypeSyntax" />, so it fell through to the operator rules and
+    ///     came back as a multiplication: <c>readonly delegate * unmanaged &lt; nint, nint &gt; f;</c>.
     /// </remarks>
     static bool IsPointerDeclarator(SyntaxToken token) =>
         token.IsKind(SyntaxKind.AsteriskToken)
@@ -684,7 +687,7 @@ public static class SpaceRules {
         && token.Parent is EqualsValueClauseSyntax or NameEqualsSyntax;
 
     /// <summary>
-    /// ⚠ True when omitting the space would let the two tokens lex as one.
+    ///     ⚠ True when omitting the space would let the two tokens lex as one.
     /// </summary>
     public static bool MustSeparate(SyntaxToken prev, SyntaxToken next) {
         var left = prev.Text;

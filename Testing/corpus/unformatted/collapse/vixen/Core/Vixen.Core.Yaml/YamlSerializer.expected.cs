@@ -104,8 +104,8 @@ public static class YamlSerializer {
         var nullable = (underlying != expected || !expected.IsValueType) && declaredNullable;
         if (IsNull(node)) {
             // A few types have a null of their own — AssetReference's is a real reference to
-// nothing, not the absence of a reference — so the converter gets asked before the
-// document's null is treated as C#'s.
+            // nothing, not the absence of a reference — so the converter gets asked before the
+            // document's null is treated as C#'s.
             if (!nullable
                 && YamlScalarConverters.TryGet(underlying, out var nullConverter)
                 && nullConverter.AcceptsNull) {
@@ -116,10 +116,10 @@ public static class YamlSerializer {
                 return null;
             } // Two different refusals wearing one word. A value type has no null at all, and naming it
 
-// is the whole message; a reference type has one and this member promised not to hold it —
-// where naming the type would read as nonsense, because of course an array can be null,
-// and would send somebody looking at the binder instead of at the declaration. The path
-// already says which member it was, which is the part they need.
+            // is the whole message; a reference type has one and this member promised not to hold it —
+            // where naming the type would read as nonsense, because of course an array can be null,
+            // and would send somebody looking at the binder instead of at the declaration. The path
+            // already says which member it was, which is the part they need.
             throw new YamlBindingException(
                 path,
                 underlying.IsValueType
@@ -129,15 +129,15 @@ public static class YamlSerializer {
             );
         } // A member declared as a node takes the subtree as it stands. This is what lets a format
 
-// reserve a block it does not interpret — an extension somebody else's build understands —
-// and write it back out unchanged instead of dropping it, which is what an unknown key
-// otherwise suffers. No tag is resolved, because the point is to carry what this build has
-// no type for.
-//
-// ⚠ The declared type has to *be* a node type, not merely accept one. `IsInstanceOfType`
-// alone is true for `object` as well — and a member declared `object` is how a scene's
-// components arrive, so the loose test handed every one of them back as a raw mapping and
-// the compiler reported that nothing had declared them.
+        // reserve a block it does not interpret — an extension somebody else's build understands —
+        // and write it back out unchanged instead of dropping it, which is what an unknown key
+        // otherwise suffers. No tag is resolved, because the point is to carry what this build has
+        // no type for.
+        //
+        // ⚠ The declared type has to *be* a node type, not merely accept one. `IsInstanceOfType`
+        // alone is true for `object` as well — and a member declared `object` is how a scene's
+        // components arrive, so the loose test handed every one of them back as a raw mapping and
+        // the compiler reported that nothing had declared them.
         if (typeof(YamlNode).IsAssignableFrom(underlying) && underlying.IsInstanceOfType(node)) {
             return node;
         }
@@ -205,7 +205,7 @@ public static class YamlSerializer {
                 return Enum.Parse(type, text, ignoreCase: true);
             }
 
-            return Type.GetTypeCode(type)switch {
+            return Type.GetTypeCode(type) switch {
                 TypeCode.Boolean => ParseBoolean(text, path),
                 TypeCode.SByte => sbyte.Parse(text, CultureInfo.InvariantCulture),
                 TypeCode.Byte => byte.Parse(text, CultureInfo.InvariantCulture),
@@ -223,7 +223,7 @@ public static class YamlSerializer {
                     : throw new YamlBindingException(path, $"'{text}' is not a single character."),
                 _ => BindOtherScalar(text, type, path)
             };
-        } catch (Exception failure)when (failure is FormatException or OverflowException or ArgumentException) {
+        } catch (Exception failure) when (failure is FormatException or OverflowException or ArgumentException) {
             throw new YamlBindingException(path, $"'{text}' is not a {type.Name}.", failure);
         }
     }
@@ -251,7 +251,7 @@ public static class YamlSerializer {
             sequence.Count,
             path
         ); // An array is already the right length and cannot grow; a List<T> is empty with the capacity
-// reserved. Both are ILists, and that is the only difference between them here.
+        // reserved. Both are ILists, and that is the only difference between them here.
         if (created is Array array) {
             for (var index = 0; index < sequence.Count; index++) {
                 array.SetValue(Bind(sequence[index], element, options, $"{path}[{index}]"), index);
@@ -276,7 +276,7 @@ public static class YamlSerializer {
         string path
     ) {
         var dictionary = (IDictionary)Make(type, mapping.Count, path);
-        foreach (var (key, value)in mapping.Entries) {
+        foreach (var (key, value) in mapping.Entries) {
             dictionary.Add(key, Bind(value, valueType, options, Join(path, key)));
         }
 
@@ -318,7 +318,7 @@ public static class YamlSerializer {
         }
 
         var instance = descriptor.Create();
-        foreach (var (key, value)in mapping.Entries) {
+        foreach (var (key, value) in mapping.Entries) {
             var member = FindMember(descriptor, key, options);
             if (member is null) {
                 options.OnUnknownKey?.Invoke(Join(path, key));
@@ -372,8 +372,8 @@ public static class YamlSerializer {
             return new YamlScalar("null", YamlScalarStyle.Plain);
         } // The other half of the passthrough in Bind: a node was carried verbatim, so it goes back out
 
-// verbatim — including whatever tag it arrived with, which is why this returns before the
-// tagging below rather than falling through it.
+        // verbatim — including whatever tag it arrived with, which is why this returns before the
+        // tagging below rather than falling through it.
         if (value is YamlNode carried) {
             return carried;
         }
@@ -385,7 +385,7 @@ public static class YamlSerializer {
             options,
             path
         ); // A tag only when the reader could not have worked it out: the declared type already says
-// what to expect, and tagging every node would make a .meta file unreadable.
+        // what to expect, and tagging every node would make a .meta file unreadable.
         if (runtime != (Nullable.GetUnderlyingType(declared) ?? declared)
             && TypeRegistry.TryGet(runtime, out var descriptor)) {
             node.Tag = descriptor.Alias;
@@ -434,8 +434,9 @@ public static class YamlSerializer {
     }
 
     static YamlSequence EmitSequence(IEnumerable items, Type runtime, YamlSerializerOptions options, string path) {
-        var element = runtime.IsArray ? runtime.GetElementType()! :
-            runtime.IsGenericType ? runtime.GetGenericArguments()[0] : typeof(object);
+        var element = runtime.IsArray
+            ? runtime.GetElementType()!
+            : runtime.IsGenericType ? runtime.GetGenericArguments()[0] : typeof(object);
         var sequence = new YamlSequence();
         var index = 0;
         foreach (var item in items) {
@@ -458,16 +459,16 @@ public static class YamlSerializer {
         foreach (var member in descriptor.Members) {
             if (!member.CanWrite) {
                 // Nothing can read it back, so writing it would be a key that vanishes on the next
-// load — a diff that appears and disappears with no edit behind it.
+                // load — a diff that appears and disappears with no edit behind it.
                 continue;
             } // ⚠ And `[DataMemberIgnore]`, which is the same question asked the other way: a member
 
-// that is settable and is not this type's data. It stays in the descriptor because an
-// inspector may still want it — the two flags are deliberately separate, see
-// `MemberDescriptor.IsSerialized` — and a file is exactly what it is not for.
-// `Behavior.Position` is the case that needed it: a façade over the entity's transform,
-// which would be written beside the transform that already holds it and then, on load,
-// assigned through an object not yet attached to an entity.
+            // that is settable and is not this type's data. It stays in the descriptor because an
+            // inspector may still want it — the two flags are deliberately separate, see
+            // `MemberDescriptor.IsSerialized` — and a file is exactly what it is not for.
+            // `Behavior.Position` is the case that needed it: a façade over the entity's transform,
+            // which would be written beside the transform that already holds it and then, on load,
+            // assigned through an object not yet attached to an entity.
             if (!member.IsSerialized) {
                 continue;
             }

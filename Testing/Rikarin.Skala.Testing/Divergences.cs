@@ -6,13 +6,13 @@ namespace Rikarin.Skala.Testing;
 public sealed record DivergenceEntry(string Id, string Summary, IReadOnlyList<string> Options);
 
 /// <summary>
-/// The divergence register, read out of <c>docs/divergences.md</c>.
+///     The divergence register, read out of <c>docs/divergences.md</c>.
 /// </summary>
 /// <remarks>
-/// ⚠ docs/plan/12 § "Where the oracle is wrong": a divergence is a decision, an unexplained
-/// difference is a bug, and the harness cannot tell them apart without this file. The register is
-/// the file, not a table in code, because the argument for each entry is the point and an argument
-/// does not fit in an attribute.
+///     ⚠ docs/plan/12 § "Where the oracle is wrong": a divergence is a decision, an unexplained
+///     difference is a bug, and the harness cannot tell them apart without this file. The register is
+///     the file, not a table in code, because the argument for each entry is the point and an argument
+///     does not fit in an attribute.
 /// </remarks>
 public static class Divergences {
     public static string Path { get; } = System.IO.Path.Combine(Corpus.RepositoryRoot, "docs", "divergences.md");

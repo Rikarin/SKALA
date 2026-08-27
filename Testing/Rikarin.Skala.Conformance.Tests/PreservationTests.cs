@@ -7,32 +7,32 @@ using Rikarin.Skala.Testing;
 namespace Rikarin.Skala.Conformance.Tests;
 
 /// <summary>
-/// docs/plan/05 § "<c>keep_existing_*</c>": the four-way table, measured rather than reasoned about.
+///     docs/plan/05 § "<c>keep_existing_*</c>": the four-way table, measured rather than reasoned about.
 /// </summary>
 /// <remarks>
-/// ⚠ This is the milestone's highest-risk item, and the risk is not that the formatter is slightly
-/// off — it is that the wrong reading of two booleans turns a first run on a large tree into a
-/// rewrite of every call site. The plan's own warning: "Getting this table wrong in either direction
-/// is a catastrophic first-run diff."
-/// <para>
-/// The table the oracle actually implements, pinned by the fixtures beside
-/// <c>constructs/preservation/*.cs</c>:
-/// </para>
-/// <code>
+///     ⚠ This is the milestone's highest-risk item, and the risk is not that the formatter is slightly
+///     off — it is that the wrong reading of two booleans turns a first run on a large tree into a
+///     rewrite of every call site. The plan's own warning: "Getting this table wrong in either direction
+///     is a catastrophic first-run diff."
+///     <para>
+///         The table the oracle actually implements, pinned by the fixtures beside
+///         <c>constructs/preservation/*.cs</c>:
+///     </para>
+///     <code>
 ///   keep_user_linebreaks │ keep_existing_X │ break at the delimiters │ break between items
 ///   ─────────────────────┼─────────────────┼─────────────────────────┼────────────────────
 ///   true                 │ true            │ kept                    │ kept
 ///   true                 │ false           │ re-joined               │ kept
 ///   false                │ true            │ re-joined               │ re-joined
 ///   false                │ false           │ re-joined               │ re-joined
-/// </code>
-/// <para>
-/// ⚠ Row two is the one docs/plan/05 stated as "source breaks kept, but the wrap style may add
-/// breaks when too wide", which is half the story: <c>Foo(\n a)</c> is re-joined there and
-/// <c>Foo(\n a,\n b)</c> is not, because the two keys govern different gaps. Row three is the one
-/// the naive reading gets backwards in the other direction — the per-construct key does not rescue
-/// a construct once the global switch is off.
-/// </para>
+///     </code>
+///     <para>
+///         ⚠ Row two is the one docs/plan/05 stated as "source breaks kept, but the wrap style may add
+///         breaks when too wide", which is half the story: <c>Foo(\n a)</c> is re-joined there and
+///         <c>Foo(\n a,\n b)</c> is not, because the two keys govern different gaps. Row three is the one
+///         the naive reading gets backwards in the other direction — the per-construct key does not rescue
+///         a construct once the global switch is off.
+///     </para>
 /// </remarks>
 public sealed class PreservationTests {
     public static TheoryData<CorpusFile, string> Pairs {
@@ -113,7 +113,7 @@ public sealed class PreservationTests {
     }
 
     /// <summary>
-    /// The differential number for each corner, with the same ratchet the main corpus has.
+    ///     The differential number for each corner, with the same ratchet the main corpus has.
     /// </summary>
     [Theory]
     [InlineData("keep-keep")]

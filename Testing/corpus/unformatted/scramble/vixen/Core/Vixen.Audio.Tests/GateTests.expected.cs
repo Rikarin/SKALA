@@ -3,9 +3,9 @@
 // SPDX-License-Identifier: Apache-2.0
 
 using Vixen.Audio.
-    Effects;
+Effects;
 using
-    Xunit;
+Xunit;
 
 namespace Vixen.Audio.Tests;
 
@@ -15,16 +15,16 @@ public sealed class GateTests {
 
     static GateEffect Gate(float thresholdDb = -40f, float holdSeconds = 0f, float releaseSeconds = 0.001f) {
         var gate = new
-                GateEffect {
-                    ThresholdDb
-                        = thresholdDb,
-                    HoldSeconds = holdSeconds,
-                    ReleaseSeconds = releaseSeconds,
-                    AttackSeconds = 0.0005f,
-                    RangeDb =
-                        -60f,
-                    KneeDb = 6f
-                }
+            GateEffect {
+                ThresholdDb
+                    = thresholdDb,
+                HoldSeconds = holdSeconds,
+                ReleaseSeconds = releaseSeconds,
+                AttackSeconds = 0.0005f,
+                RangeDb =
+                    -60f,
+                KneeDb = 6f
+            }
             ;
         gate.Prepare(AudioFormat.Mono48k, 4_800);
         return gate;
@@ -67,9 +67,9 @@ public sealed class GateTests {
     public void TheHoldCarriesItThroughAGapInSpeech() {
         var chattering = Gate(holdSeconds: 0f, releaseSeconds: 0.02f);
         var
-            held = Gate(holdSeconds: 0.15f, releaseSeconds: 0.02f);
+        held = Gate(holdSeconds: 0.15f, releaseSeconds: 0.02f);
         foreach (
-            var gate in new[] { chattering, held }) {
+                 var gate in new[] { chattering, held }) {
             var opening = Level(0.5f, 4_800);
             gate.Process(
                 opening,

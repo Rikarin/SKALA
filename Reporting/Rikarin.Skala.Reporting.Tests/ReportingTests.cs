@@ -7,7 +7,7 @@ using Rikarin.Skala.Rules.Metadata;
 namespace Rikarin.Skala.Reporting.Tests;
 
 /// <summary>
-/// ADR-009 as tests: one serialisation, and every other surface a renderer over it.
+///     ADR-009 as tests: one serialisation, and every other surface a renderer over it.
 /// </summary>
 public sealed class ReportingTests {
     static RunReport Sample(params Finding[] findings) =>
@@ -80,8 +80,8 @@ public sealed class ReportingTests {
     }
 
     /// <summary>
-    /// ⚠ doc 09: "No line numbers. A fingerprint that moves when a line moves is a baseline that
-    /// expires every commit."
+    ///     ⚠ doc 09: "No line numbers. A fingerprint that moves when a line moves is a baseline that
+    ///     expires every commit."
     /// </summary>
     [Fact]
     public void Fingerprint_SurvivesTheFindingMovingDownTheFile() {
@@ -107,9 +107,9 @@ public sealed class ReportingTests {
     }
 
     /// <summary>
-    /// ⚠ docs/plan/10: three buckets, always in this order. Formatting is free and unconditional,
-    /// fixable is mechanical, decisions need the model to think — so an agent reading top-down
-    /// arrives at the hard part with a clean tree.
+    ///     ⚠ docs/plan/10: three buckets, always in this order. Formatting is free and unconditional,
+    ///     fixable is mechanical, decisions need the model to think — so an agent reading top-down
+    ///     arrives at the hard part with a clean tree.
     /// </summary>
     [Fact]
     public void AgentRenderer_OrdersTheBucketsFormattingThenFixableThenDecisions() {
@@ -161,8 +161,8 @@ public sealed class ReportingTests {
     }
 
     /// <summary>
-    /// ⚠ Determinism is enforced after the fact, not during (docs/plan/07). Parallelism may never be
-    /// observable in output.
+    ///     ⚠ Determinism is enforced after the fact, not during (docs/plan/07). Parallelism may never be
+    ///     observable in output.
     /// </summary>
     [Fact]
     public void Renderers_SortIndependentlyOfTheOrderFindingsArrivedIn() {
@@ -190,8 +190,8 @@ public sealed class ReportingTests {
         Assert.True(Gate.Evaluate(GateDefinition.Local, Sample(Modernization()), formattingClean: true).Passed);
 
     /// <summary>
-    /// ⚠ A condition this build cannot evaluate fails the gate rather than being dropped. A gate
-    /// that silently loses the condition someone relies on passes for the wrong reason.
+    ///     ⚠ A condition this build cannot evaluate fails the gate rather than being dropped. A gate
+    ///     that silently loses the condition someone relies on passes for the wrong reason.
     /// </summary>
     [Fact]
     public void Gate_FailsRatherThanIgnoringAConditionItCannotEvaluate() {
@@ -215,11 +215,11 @@ public sealed class ReportingTests {
         );
 
     /// <summary>
-    /// ⚠ <b>`--no-formatting` used to satisfy a gate that names `formatting`.</b> The bit defaulted
-    /// to <c>true</c> when the run never collected formatting, so the flag that suppressed the
-    /// measurement also suppressed the check — the same "passing for the wrong reason" that
-    /// <see cref="Gate_FailsRatherThanIgnoringAConditionItCannotEvaluate"/> already forbids for an
-    /// unrecognized condition. <c>null</c> is "nobody asked", and an unasked question fails.
+    ///     ⚠ <b>`--no-formatting` used to satisfy a gate that names `formatting`.</b> The bit defaulted
+    ///     to <c>true</c> when the run never collected formatting, so the flag that suppressed the
+    ///     measurement also suppressed the check — the same "passing for the wrong reason" that
+    ///     <see cref="Gate_FailsRatherThanIgnoringAConditionItCannotEvaluate" /> already forbids for an
+    ///     unrecognized condition. <c>null</c> is "nobody asked", and an unasked question fails.
     /// </summary>
     [Fact]
     public void Gate_RequiringCleanFormatting_FailsWhenTheRunNeverLooked() {

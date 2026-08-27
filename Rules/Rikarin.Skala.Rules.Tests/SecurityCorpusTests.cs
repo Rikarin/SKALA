@@ -9,31 +9,37 @@ using Rikarin.Skala.Rules.Security;
 namespace Rikarin.Skala.Rules.Tests;
 
 /// <summary>
-/// The <c>SK5xxx</c> corpus: known-vulnerable code on one side, known-safe code on the other.
+///     The <c>SK5xxx</c> corpus: known-vulnerable code on one side, known-safe code on the other.
 /// </summary>
 /// <remarks>
-/// ⚠ <b>This is the only measurement that means anything for the security range, and it exists
-/// because the reference corpus cannot make it.</b> <c>Testing/corpus/real</c> and the vendored
-/// trees are a logging library, a JSON serialiser and a game engine: between them they contain no
-/// SQL reaching a request, no disabled certificate validation, no broken cipher and no XXE. A
-/// <c>SK5xxx</c> run over them returns zero, and zero there proves only that the trees have none of
-/// the shape — not that a rule works, and not that it is safe. So both halves of the evidence are
-/// written here deliberately.
-/// <para>
-/// ⚠ <b>The safe half is the half that decides whether a rule ships, and it is not "code with no
-/// security in it".</b> Every file under <c>corpus/safe</c> is the <em>same shape</em> as its twin
-/// under <c>corpus/vulnerable</c> — the same request read, the same builder, the same loop, the
-/// same callback, the same XML settings — with the vulnerability removed the way a reviewer would
-/// remove it: a bound parameter, an <c>ArgumentList</c>, a parsed integer, an allow-list, a pinned
-/// thumbprint, a null resolver. A rule that is really a keyword search passes the vulnerable half
-/// and fails here, which is the entire point of writing the pair.
-/// </para>
-/// <para>
-/// ⚠ <b>It is kept out of <c>Testing/corpus</c> on purpose.</b> That tree is the formatting
-/// fidelity measurement, and these files are deliberately-shaped inputs rather than a sample of how
-/// anyone writes code. Mixing them would let hand-written fixtures move a number that is supposed
-/// to be about real code.
-/// </para>
+///     ⚠
+///     <b>
+///         This is the only measurement that means anything for the security range, and it exists
+///         because the reference corpus cannot make it.
+///     </b> <c>Testing/corpus/real</c> and the vendored
+///     trees are a logging library, a JSON serialiser and a game engine: between them they contain no
+///     SQL reaching a request, no disabled certificate validation, no broken cipher and no XXE. A
+///     <c>SK5xxx</c> run over them returns zero, and zero there proves only that the trees have none of
+///     the shape — not that a rule works, and not that it is safe. So both halves of the evidence are
+///     written here deliberately.
+///     <para>
+///         ⚠
+///         <b>
+///             The safe half is the half that decides whether a rule ships, and it is not "code with no
+///             security in it".
+///         </b> Every file under <c>corpus/safe</c> is the <em>same shape</em> as its twin
+///         under <c>corpus/vulnerable</c> — the same request read, the same builder, the same loop, the
+///         same callback, the same XML settings — with the vulnerability removed the way a reviewer would
+///         remove it: a bound parameter, an <c>ArgumentList</c>, a parsed integer, an allow-list, a pinned
+///         thumbprint, a null resolver. A rule that is really a keyword search passes the vulnerable half
+///         and fails here, which is the entire point of writing the pair.
+///     </para>
+///     <para>
+///         ⚠ <b>It is kept out of <c>Testing/corpus</c> on purpose.</b> That tree is the formatting
+///         fidelity measurement, and these files are deliberately-shaped inputs rather than a sample of how
+///         anyone writes code. Mixing them would let hand-written fixtures move a number that is supposed
+///         to be about real code.
+///     </para>
 /// </remarks>
 public sealed class SecurityCorpusTests {
     /// <summary>The security analyzers, and only those — the corpus is about this range.</summary>
@@ -48,8 +54,8 @@ public sealed class SecurityCorpusTests {
     );
 
     /// <summary>
-    /// ⚠ 100 %, no exceptions. A single <c>SK5xxx</c> finding here is a false positive at
-    /// <c>error</c> severity, which is a build somebody cannot fix by fixing their code.
+    ///     ⚠ 100 %, no exceptions. A single <c>SK5xxx</c> finding here is a false positive at
+    ///     <c>error</c> severity, which is a build somebody cannot fix by fixing their code.
     /// </summary>
     [Fact]
     public void TheSafeHalf_ProducesNoFindingAtAll() {
@@ -65,10 +71,10 @@ public sealed class SecurityCorpusTests {
 
     /// <summary>Every rule that ships has at least one file here that it catches.</summary>
     /// <remarks>
-    /// ⚠ Without this, <see cref="TheSafeHalf_ProducesNoFindingAtAll"/> passes perfectly for an
-    /// analyzer that reports nothing ever — which is the failure mode a "nothing is wrong"
-    /// assertion always has, and the one <c>ToolDiagnosticIdTests</c> shipped with for a whole
-    /// milestone.
+    ///     ⚠ Without this, <see cref="TheSafeHalf_ProducesNoFindingAtAll" /> passes perfectly for an
+    ///     analyzer that reports nothing ever — which is the failure mode a "nothing is wrong"
+    ///     assertion always has, and the one <c>ToolDiagnosticIdTests</c> shipped with for a whole
+    ///     milestone.
     /// </remarks>
     [Fact]
     public void EverySecurityRule_CatchesSomethingInTheVulnerableHalf() {
@@ -86,12 +92,12 @@ public sealed class SecurityCorpusTests {
     }
 
     /// <summary>
-    /// The per-rule counts, pinned, so a change in what the engine sees is visible in a diff.
+    ///     The per-rule counts, pinned, so a change in what the engine sees is visible in a diff.
     /// </summary>
     /// <remarks>
-    /// ⚠ These are not a target, they are a ratchet. A number that moves is not necessarily wrong —
-    /// it means the corpus or the engine changed — but it must never move without somebody
-    /// having decided that it should, which is what an assertion on a literal buys.
+    ///     ⚠ These are not a target, they are a ratchet. A number that moves is not necessarily wrong —
+    ///     it means the corpus or the engine changed — but it must never move without somebody
+    ///     having decided that it should, which is what an assertion on a literal buys.
     /// </remarks>
     [Theory]
     [InlineData(RuleIds.SqlFromRequestConcatenation, 6)]
@@ -110,8 +116,8 @@ public sealed class SecurityCorpusTests {
     }
 
     /// <summary>
-    /// ⚠ Asserts the harness read the corpus. Every other test in this class is a count, and a
-    /// count over an empty directory is a very convincing zero.
+    ///     ⚠ Asserts the harness read the corpus. Every other test in this class is a count, and a
+    ///     count over an empty directory is a very convincing zero.
     /// </summary>
     [Fact]
     public void TheCorpus_IsWhereTheHarnessLooks() {
@@ -127,12 +133,12 @@ public sealed class SecurityCorpusTests {
     }
 
     /// <summary>
-    /// One compilation per half, out of every file in it.
+    ///     One compilation per half, out of every file in it.
     /// </summary>
     /// <remarks>
-    /// ⚠ All the files together rather than one at a time, which is what <c>skala check</c> does
-    /// and what the fixture harness deliberately does not. The fixtures are units; this is the
-    /// closest thing to the product that a test can be.
+    ///     ⚠ All the files together rather than one at a time, which is what <c>skala check</c> does
+    ///     and what the fixture harness deliberately does not. The fixtures are units; this is the
+    ///     closest thing to the product that a test can be.
     /// </remarks>
     static ImmutableArray<Diagnostic> Analyze(string half) {
         var directory = Path.Combine(Root, half);

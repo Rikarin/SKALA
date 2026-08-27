@@ -7,20 +7,20 @@ using Rikarin.Skala.Protocol;
 namespace Rikarin.Skala.Server;
 
 /// <summary>
-/// The one place the CLI reaches for the daemon.
+///     The one place the CLI reaches for the daemon.
 /// </summary>
 /// <remarks>
-/// ⚠ It serves exactly one shape — a single named file, no <c>--staged</c>, no <c>--range</c>, no
-/// overrides — because that is the shape the budget is about. docs/plan/13 § "Budgets" puts the
-/// 40 ms warm number on "format one 500-line file", which is the agent hook and the editor's
-/// format-on-save; a whole-corpus run is already parallel and is bounded by the formatter rather
-/// than by process start. Serving more shapes here would mean a second implementation of the
-/// reporting, the writing and the exit codes, and docs/plan/11's rule is that the daemon may not
-/// have behaviour the CLI does not.
-/// <para>
-/// ⚠ Every failure returns null and the caller falls through. A daemon is an optimisation, and an
-/// optimisation that can fail a pre-commit hook is not one.
-/// </para>
+///     ⚠ It serves exactly one shape — a single named file, no <c>--staged</c>, no <c>--range</c>, no
+///     overrides — because that is the shape the budget is about. docs/plan/13 § "Budgets" puts the
+///     40 ms warm number on "format one 500-line file", which is the agent hook and the editor's
+///     format-on-save; a whole-corpus run is already parallel and is bounded by the formatter rather
+///     than by process start. Serving more shapes here would mean a second implementation of the
+///     reporting, the writing and the exit codes, and docs/plan/11's rule is that the daemon may not
+///     have behaviour the CLI does not.
+///     <para>
+///         ⚠ Every failure returns null and the caller falls through. A daemon is an optimisation, and an
+///         optimisation that can fail a pre-commit hook is not one.
+///     </para>
 /// </remarks>
 public static class DaemonUse {
     public static CommandResult? TryFormat(FormatRequest request) {
@@ -28,10 +28,12 @@ public static class DaemonUse {
             || request.Staged != StagedMode.Off
             || request.Range is not null
             || request.Overrides.Count > 0
-            // ⚠ The daemon protocol carries no `--xmldoc`, so serving this request would silently
-            // format without the sub-formatter. docs/plan/11's rule cuts both ways: a daemon that
-            // does *less* than the CLI is a daemon that makes the same command mean two things.
-            || request.XmlDoc
+            // ⚠ The daemon protocol carries no xmldoc switch and the daemon formats with the
+            // default, which is now *on* — so the shape it cannot serve is `--no-xmldoc`, and
+            // serving it would silently re-wrap the comments the caller asked to be left alone.
+            // docs/plan/11's rule cuts both ways: a daemon that does *more* than the CLI was asked
+            // for is a daemon that makes the same command mean two things.
+            || !request.XmlDoc
             || request.Paths.Count != 1
             || !File.Exists(request.Paths[0])) {
             return null;

@@ -1,6 +1,6 @@
 // skala-oracle: resharper=2025.2.6 config=sha256:98ff52570e019fac profile=SkalaFormatOnly generated=2026-08-27
 using System.
-    Collections.Generic;
+Collections.Generic;
 using System.Globalization;
 using Newtonsoft.Json.Utilities;
 
@@ -15,7 +15,7 @@ namespace Newtonsoft.Json.Linq.JsonPath {
 
         public override IEnumerable<JToken> ExecuteFilter(
             JToken
-                root,
+            root,
             IEnumerable<JToken> current,
             JsonSelectSettings? settings
         ) {

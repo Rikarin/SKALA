@@ -1,4 +1,5 @@
 // skala-oracle: resharper=2025.2.6 config=sha256:98ff52570e019fac profile=SkalaFormatOnly generated=2026-08-27
+
 #region License
 
 // Copyright (c) 2007 James Newton-King
@@ -90,7 +91,8 @@ namespace Newtonsoft.Json.Utilities {
                 case DateTimeZoneHandling.Local: value = SwitchToLocalTime(value); break;
                 case DateTimeZoneHandling.Utc: value = SwitchToUtcTime(value); break;
                 case DateTimeZoneHandling.Unspecified:
-                    value = new DateTime(value.Ticks, DateTimeKind.Unspecified); break;
+                    value = new DateTime(value.Ticks, DateTimeKind.Unspecified);
+                    break;
                 case DateTimeZoneHandling.RoundtripKind: break;
                 default: throw new ArgumentException("Invalid date time handling value.");
             }
@@ -128,7 +130,7 @@ namespace Newtonsoft.Json.Utilities {
 
         private static long ToUniversalTicks(DateTime dateTime, TimeSpan offset) {
             // special case min and max value
-// they never have a timezone appended to avoid issues
+            // they never have a timezone appended to avoid issues
             if (dateTime.Kind == DateTimeKind.Utc || dateTime == DateTime.MaxValue || dateTime == DateTime.MinValue) {
                 return dateTime.Ticks;
             }
@@ -479,7 +481,8 @@ namespace Newtonsoft.Json.Utilities {
             DateTime utcDateTime = ConvertJavaScriptTicksToDateTime(ticks);
             switch (kind) {
                 case DateTimeKind.Unspecified:
-                    dt = DateTime.SpecifyKind(utcDateTime.ToLocalTime(), DateTimeKind.Unspecified); break;
+                    dt = DateTime.SpecifyKind(utcDateTime.ToLocalTime(), DateTimeKind.Unspecified);
+                    break;
                 case DateTimeKind.Local: dt = utcDateTime.ToLocalTime(); break;
                 default: dt = utcDateTime; break;
             }
@@ -614,7 +617,8 @@ namespace Newtonsoft.Json.Utilities {
                 pos = WriteDefaultIsoDate(chars, pos, value);
                 switch (kind) {
                     case DateTimeKind.Local:
-                        pos = WriteDateTimeOffset(chars, pos, offset ?? value.GetUtcOffset(), format); break;
+                        pos = WriteDateTimeOffset(chars, pos, offset ?? value.GetUtcOffset(), format);
+                        break;
                     case DateTimeKind.Utc: chars[pos++] = 'Z'; break;
                 }
             }
@@ -713,13 +717,13 @@ namespace Newtonsoft.Json.Utilities {
 
             year = y400 * 400 + y100 * 100 + y4 * 4 + y1 + 1; // n = day number within year
             n -= y1 * DaysPerYear; // Leap year calculation looks different from IsLeapYear since y1, y4,
-// and y100 are relative to year 1, not year 0
+            // and y100 are relative to year 1, not year 0
             bool leapYear = y1 == 3 && (y4 != 24 || y100 == 3);
             int[] days =
                 leapYear
                     ? DaysToMonth366
                     : DaysToMonth365; // All months have less than 32 days, so n >> 5 is a good conservative
-// estimate for the month
+            // estimate for the month
             int m = n >> 5 + 1; // m = 1-based month number
             while (n >= days[m]) {
                 m++;

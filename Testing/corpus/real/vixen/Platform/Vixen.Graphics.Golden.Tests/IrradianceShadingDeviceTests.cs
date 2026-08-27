@@ -141,8 +141,10 @@ public class IrradianceShadingDeviceTests {
     /// <summary>Which half of doc 19 § L2 fills the field this frame reads.</summary>
     /// <remarks>
     ///     <para>
-    ///         <b>Both, separately, because until now each had only ever been checked against the
-    ///         other's absence.</b> <c>IrradianceFillDeviceTests</c> dispatches the fill and reads the
+    ///         <b>
+    ///             Both, separately, because until now each had only ever been checked against the
+    ///             other's absence.
+    ///         </b> <c>IrradianceFillDeviceTests</c> dispatches the fill and reads the
     ///         pool back; this file shades from a field the CPU filled. Neither had ever run the
     ///         renderer's own device path — the <c>PassKind.Compute</c> branch, the pool created as a
     ///         storage image, the upload that carries the index volume and nothing else — so the two
@@ -246,8 +248,7 @@ public class IrradianceShadingDeviceTests {
         using var system = new RenderSystem();
 
         using var view = new ViewConstants(device) {
-            Descriptors = allocator,
-            Layout = effect!.SetLayouts[(int)DescriptorSetSlot.PerView]
+            Descriptors = allocator, Layout = effect!.SetLayouts[(int)DescriptorSetSlot.PerView]
         };
 
         using var scene = new SceneConstants(device) { Descriptors = allocator };
@@ -265,25 +266,28 @@ public class IrradianceShadingDeviceTests {
 
         var offsets = new[] { 0, 12, 24, 40 };
 
-        describer.VertexLayouts.Add([
-            new VertexBufferLayout(
-                Vertex.Stride,
-                [
-                    .. effect!.VertexInputs.Select(
-                        (input, index) => new VertexElement((uint)input.Location, formats[index], offsets[index])
-                    )
-                ]
-            )
-        ]);
+        describer.VertexLayouts.Add(
+            [
+                new VertexBufferLayout(
+                    Vertex.Stride,
+                    [
+                        .. effect!.VertexInputs.Select((input, index) => new VertexElement(
+                                (uint)input.Location,
+                                formats[index],
+                                offsets[index]
+                            )
+                        )
+                    ]
+                )
+            ]
+        );
 
         var meshes = new MeshRenderFeature { Pipelines = new(device), Describer = describer };
         var materials = new MaterialRenderFeature { Effects = effects, Device = device, Descriptors = allocator };
         // Its layout is the effect's, which is what makes the non-clustered path drawable at all —
         // see ForwardLightingRenderFeature.Layout.
         var lighting = new ForwardLightingRenderFeature {
-            Device = device,
-            Clustered = Clustered,
-            Layout = effect.SetLayouts[(int)DescriptorSetSlot.PerDraw]
+            Device = device, Clustered = Clustered, Layout = effect.SetLayouts[(int)DescriptorSetSlot.PerDraw]
         };
         var transforms = new TransformRenderFeature { Device = device, Scene = scene.Parameters };
 
@@ -342,7 +346,9 @@ public class IrradianceShadingDeviceTests {
         using var probes = new IrradianceFieldRenderer {
             Name = "IrradianceField",
             Field = field,
-            Filler = fills is Fills.Device ? null : new TracedIrradianceFiller(new EmptyWorld(), new UniformSky(Radiance)),
+            Filler = fills is Fills.Device
+                ? null
+                : new TracedIrradianceFiller(new EmptyWorld(), new UniformSky(Radiance)),
             DeviceFiller = dispatch,
             SceneConstants = scene,
             Device = device,
@@ -418,7 +424,14 @@ public class IrradianceShadingDeviceTests {
             list => list.Barrier(
                 new(
                     [],
-                    [.. unused.Select(texture => new TextureBarrier(texture, ResourceState.Undefined, ResourceState.ShaderRead))]
+                    [
+                        .. unused.Select(texture => new TextureBarrier(
+                                texture,
+                                ResourceState.Undefined,
+                                ResourceState.ShaderRead
+                            )
+                        )
+                    ]
                 )
             )
         );
@@ -488,9 +501,16 @@ public class IrradianceShadingDeviceTests {
     static (TextureHandle Texture, TextureViewHandle View) Flat(IGraphicsDevice device, Fixture fixture) {
         var texture = device.CreateTexture(
             new() {
-                Width = 4, Height = 4, Depth = 1, MipLevels = 1, ArrayLayers = 1, SampleCount = 1,
+                Width = 4,
+                Height = 4,
+                Depth = 1,
+                MipLevels = 1,
+                ArrayLayers = 1,
+                SampleCount = 1,
                 Dimension = TextureDimension.Texture2D,
-                Format = PixelFormat.Rgba8UNorm, Usage = TextureUsage.Sampled, Name = "unused"
+                Format = PixelFormat.Rgba8UNorm,
+                Usage = TextureUsage.Sampled,
+                Name = "unused"
             }
         );
 
@@ -504,9 +524,16 @@ public class IrradianceShadingDeviceTests {
     static (TextureHandle Texture, TextureViewHandle View) Cube(IGraphicsDevice device, Fixture fixture) {
         var texture = device.CreateTexture(
             new() {
-                Width = 4, Height = 4, Depth = 1, MipLevels = 1, ArrayLayers = 6, SampleCount = 1,
+                Width = 4,
+                Height = 4,
+                Depth = 1,
+                MipLevels = 1,
+                ArrayLayers = 6,
+                SampleCount = 1,
                 Dimension = TextureDimension.TextureCube,
-                Format = PixelFormat.Rgba8UNorm, Usage = TextureUsage.Sampled, Name = "unused"
+                Format = PixelFormat.Rgba8UNorm,
+                Usage = TextureUsage.Sampled,
+                Name = "unused"
             }
         );
 

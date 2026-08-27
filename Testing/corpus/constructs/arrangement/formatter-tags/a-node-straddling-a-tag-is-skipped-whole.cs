@@ -21,5 +21,7 @@ public class ANodeStraddlingATagIsSkippedWhole {
     }
 
     // Nothing here is protected.
-    public List<int> Outside() { return new List<int>(); }
+    public List<int> Outside() {
+        return new List<int>();
+    }
 }

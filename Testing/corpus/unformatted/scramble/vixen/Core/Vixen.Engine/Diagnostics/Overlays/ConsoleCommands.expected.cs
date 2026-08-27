@@ -4,7 +4,7 @@
 
 using System.Diagnostics.CodeAnalysis;
 using System.
-    Reflection;
+Reflection;
 
 namespace Vixen.Engine.Diagnostics.Overlays;
 
@@ -66,9 +66,8 @@ public sealed class ConsoleContext {
     /// <param name="index">Which one, from zero.</param>
     public string? this[
         int
-            index
-    ] =>
-        index >= 0 && index < arguments.Count ? arguments[index] : null;
+        index
+    ] => index >= 0 && index < arguments.Count ? arguments[index] : null;
 
     /// <summary>Writes a line back to whoever ran the command.</summary>
     /// <param name="text">What to say.</param>
@@ -80,12 +79,12 @@ public sealed class ConsoleContext {
     /// <returns><see langword="false" /> if it is missing or is not one.</returns>
     public bool TryNumber(
         int
-            index,
+        index,
         out float value
     ) =>
         float.TryParse(
             this
-                [index],
+            [index],
             System.Globalization.CultureInfo.InvariantCulture,
             out value
         );
@@ -102,7 +101,7 @@ public sealed class ConsoleContext {
         value = false;
 
         switch (this
-                    [index]
+                [index]
                     ?.ToLowerInvariant()) {
             case "on" or "1" or "true" or "yes":
                 value = true;
@@ -179,7 +178,7 @@ public sealed
 
     /// <summary>How many entered lines are remembered.</summary>
     public const int
-        MaxHistory = 64;
+    MaxHistory = 64;
 
     static readonly Lock ContributionLock = new();
     static readonly List<Action<ConsoleCommands>> Contributions = [];
@@ -200,7 +199,7 @@ public sealed
         Action
             <ConsoleCommands>[] contributed;
         lock (ContributionLock
-             ) {
+        ) {
             contributed = [.. Contributions];
 
             Live.RemoveAll(reference =>
@@ -221,8 +220,11 @@ public sealed
     /// <exception cref="ArgumentNullException"><paramref name="register" /> is null.</exception>
     /// <remarks>
     ///     <para>
-    ///         ⚠ <b>Because <c>[ConsoleCommand]</c> alone has never made a verb typable, and the
-    ///         count is what said so.</b> Water's six were the only ones in the tree — not because no
+    ///         ⚠
+    ///         <b>
+    ///             Because <c>[ConsoleCommand]</c> alone has never made a verb typable, and the
+    ///             count is what said so.
+    ///         </b> Water's six were the only ones in the tree — not because no
     ///         other subsystem wanted verbs, but because reaching an attributed method needs
     ///         <see cref="RegisterFrom(Assembly)" />, which is
     ///         <see cref="RequiresUnreferencedCodeAttribute" /> and had no callers, so anybody who
@@ -269,13 +271,11 @@ public sealed
 
     /// <summary>The lines commands have written, oldest first.</summary>
     public
-        IReadOnlyList<string> Output =>
-        output;
+        IReadOnlyList<string> Output => output;
 
     /// <summary>The lines that have been entered, oldest first.</summary>
     public IReadOnlyList<
-        string> History =>
-        history;
+        string> History => history;
 
     /// <summary>Adds a command.</summary>
     /// <param name="name">What is typed to run it.</param>
@@ -365,12 +365,10 @@ public sealed
     /// <summary>Writes a line of output.</summary>
     /// <param name="text">What to say.</param>
     public void Write(string text) {
-        output.Add(
-            text
-            ?? string.Empty
-        );
+        output.Add(text
+            ?? string.Empty);
         if (output.Count > MaxOutput
-           ) {
+        ) {
             output
                 .RemoveRange(0, output.Count - MaxOutput);
         }
@@ -421,7 +419,7 @@ public sealed
             }
 
             var
-                parameters = method.GetParameters();
+            parameters = method.GetParameters();
             // Refused rather than skipped: a method somebody marked and got the shape wrong on is a
 
             // command they expect to be able to type, and silence is the worst possible answer.

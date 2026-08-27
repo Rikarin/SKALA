@@ -13,7 +13,21 @@ public sealed class EditorConfigIngestionTests {
         Assert.Equal("*", named[0].Name);
         Assert.Equal("*.csv", named[1].Name);
         Assert.Contains("cs,", named[2].Name, StringComparison.Ordinal);
-        Assert.Equal(4226, document.Assignments.Count());
+        // ⚠ Measured from the file rather than pinned to a literal. The template is an *input*: the
+        // author stripped the C++, VB and F# namespaces from it (4 238 lines to 2 178, 1 896
+        // resharper_cpp_* keys among them) and a hard-coded 4 226 turned a deliberate edit into four
+        // red tests. What is worth asserting is that ingestion sees every assignment the file has.
+        var expected = File.ReadAllLines(RepositoryPaths.Template)
+            .Count(static line => {
+                    var trimmed = line.Trim();
+                    return trimmed.Length > 0
+                        && !trimmed.StartsWith('#')
+                        && !trimmed.StartsWith('[')
+                        && trimmed.Contains('=', StringComparison.Ordinal);
+                }
+            );
+
+        Assert.Equal(expected, document.Assignments.Count());
         Assert.False(document.IsRoot);
     }
 

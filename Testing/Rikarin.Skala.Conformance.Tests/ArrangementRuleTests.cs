@@ -9,23 +9,23 @@ using Rikarin.Skala.Formatting.CSharp.Arrangement;
 namespace Rikarin.Skala.Conformance.Tests;
 
 /// <summary>
-/// The rules the oracle has no opinion about, pinned by hand.
+///     The rules the oracle has no opinion about, pinned by hand.
 /// </summary>
 /// <remarks>
-/// ⚠ SK-DIV-0013. <c>jb cleanupcode</c> 2025.2.6 performs none of <c>is not null</c>,
-/// <c>string.Empty</c> ⇒ <c>""</c>, or redundant-brace removal, under any profile shape and with the
-/// inspections raised to <c>warning</c> — the sweep is in <c>docs/oracle-cleanup-profile.md</c>. The
-/// export configures all three and doc 06 lists all three, so Skala performs them; but an oracle
-/// that never moves cannot pin them, and pretending otherwise would score every correct rewrite as
-/// a divergence. These are the fixtures that stand in for it.
-/// <para>
-/// ⚠ The <c>operator ==</c> case is the reason this file is not a formality. <c>a != null</c> and
-/// <c>a is not null</c> are different expressions when the operand's type overloads <c>==</c>: the
-/// first calls the user's operator, the second is a reference comparison the language performs. The
-/// rewritten code still compiles, so no diagnostic appears and layer 2 cannot see it; and no
-/// identifier changes meaning, so layer 3 cannot either. Only the rule's own precondition stops it,
-/// which makes this test the only thing standing between the tool and a silent behaviour change.
-/// </para>
+///     ⚠ SK-DIV-0013. <c>jb cleanupcode</c> 2025.2.6 performs none of <c>is not null</c>,
+///     <c>string.Empty</c> ⇒ <c>""</c>, or redundant-brace removal, under any profile shape and with the
+///     inspections raised to <c>warning</c> — the sweep is in <c>docs/oracle-cleanup-profile.md</c>. The
+///     export configures all three and doc 06 lists all three, so Skala performs them; but an oracle
+///     that never moves cannot pin them, and pretending otherwise would score every correct rewrite as
+///     a divergence. These are the fixtures that stand in for it.
+///     <para>
+///         ⚠ The <c>operator ==</c> case is the reason this file is not a formality. <c>a != null</c> and
+///         <c>a is not null</c> are different expressions when the operand's type overloads <c>==</c>: the
+///         first calls the user's operator, the second is a reference comparison the language performs. The
+///         rewritten code still compiles, so no diagnostic appears and layer 2 cannot see it; and no
+///         identifier changes meaning, so layer 3 cannot either. Only the rule's own precondition stops it,
+///         which makes this test the only thing standing between the tool and a silent behaviour change.
+///     </para>
 /// </remarks>
 public sealed class ArrangementRuleTests {
     static string Arrange(string source, bool aggressive = false, string? only = null) {
@@ -121,9 +121,9 @@ public sealed class ArrangementRuleTests {
     }
 
     /// <summary>
-    /// ⚠ <c>string</c> overloads <c>==</c> and the pattern form matches it, so the rewrite is safe —
-    /// a naive "does the type declare operator ==" check would refuse every string null check in the
-    /// corpus.
+    ///     ⚠ <c>string</c> overloads <c>==</c> and the pattern form matches it, so the rewrite is safe —
+    ///     a naive "does the type declare operator ==" check would refuse every string null check in the
+    ///     corpus.
     /// </summary>
     [Fact]
     public void IsNotNull_RewritesForString() {

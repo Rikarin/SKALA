@@ -1,1 +1,5 @@
-class   C   {   void    M (  )   {   M (  )  ;   }   }
+class C {
+    void M() {
+        M();
+    }
+}

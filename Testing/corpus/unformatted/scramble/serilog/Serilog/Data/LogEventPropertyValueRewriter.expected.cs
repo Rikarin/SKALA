@@ -16,35 +16,36 @@
 namespace Serilog.Data;
 
 /// <summary>
-/// A base class for visitors that rewrite the value with modifications. For example, implementations
-/// might remove all structure properties with a certain name, apply size/length limits, or convert scalar properties of
-/// one type into scalar properties of another.
+///     A base class for visitors that rewrite the value with modifications. For example, implementations
+///     might remove all structure properties with a certain name, apply size/length limits, or convert scalar
+///     properties of
+///     one type into scalar properties of another.
 /// </summary>
 /// <typeparam name="TState"></typeparam>
 public abstract
     class LogEventPropertyValueRewriter<TState> : LogEventPropertyValueVisitor<TState, LogEventPropertyValue> {
     /// <summary>
-    /// Visit a <see cref="ScalarValue"/> value.
+    ///     Visit a <see cref="ScalarValue" /> value.
     /// </summary>
     /// <param name="state">Operation state.</param>
     /// <param name="scalar">The value to visit.</param>
-    /// <returns>The result of visiting <paramref name="scalar"/>.</returns>
-    /// <exception cref="ArgumentNullException">When <paramref name="scalar"/> is <code>null</code></exception>
+    /// <returns>The result of visiting <paramref name="scalar" />.</returns>
+    /// <exception cref="ArgumentNullException">When <paramref name="scalar" /> is <code>null</code></exception>
     protected override LogEventPropertyValue VisitScalarValue(
         TState
-            state,
+        state,
         ScalarValue scalar
     ) {
         return Guard.AgainstNull(scalar);
     }
 
     /// <summary>
-    /// Visit a <see cref="SequenceValue"/> value.
+    ///     Visit a <see cref="SequenceValue" /> value.
     /// </summary>
     /// <param name="state">Operation state.</param>
     /// <param name="sequence">The value to visit.</param>
-    /// <returns>The result of visiting <paramref name="sequence"/>.</returns>
-    /// <exception cref="ArgumentNullException">When <paramref name="sequence"/> is <code>null</code></exception>
+    /// <returns>The result of visiting <paramref name="sequence" />.</returns>
+    /// <exception cref="ArgumentNullException">When <paramref name="sequence" /> is <code>null</code></exception>
     protected override LogEventPropertyValue VisitSequenceValue(TState state, SequenceValue sequence) {
         Guard.AgainstNull(sequence);
 
@@ -80,12 +81,12 @@ public abstract
     }
 
     /// <summary>
-    /// Visit a <see cref="StructureValue"/> value.
+    ///     Visit a <see cref="StructureValue" /> value.
     /// </summary>
     /// <param name="state">Operation state.</param>
     /// <param name="structure">The value to visit.</param>
-    /// <returns>The result of visiting <paramref name="structure"/>.</returns>
-    /// <exception cref="ArgumentNullException">When <paramref name="structure"/> is <code>null</code></exception>
+    /// <returns>The result of visiting <paramref name="structure" />.</returns>
+    /// <exception cref="ArgumentNullException">When <paramref name="structure" /> is <code>null</code></exception>
     protected override LogEventPropertyValue VisitStructureValue(TState state, StructureValue structure) {
         Guard.AgainstNull(structure);
 
@@ -102,7 +103,7 @@ public abstract
                 for (var k = i;
                      k < properties.Length;
                      ++k
-                    ) {
+                ) {
                     var property = structure.Properties[k];
                     properties[k] = new(property.Name, Visit(state, property.Value));
                 }
@@ -115,16 +116,16 @@ public abstract
     }
 
     /// <summary>
-    /// Visit a <see cref="DictionaryValue"/> value.
+    ///     Visit a <see cref="DictionaryValue" /> value.
     /// </summary>
     /// <param name="state">Operation state.</param>
     /// <param name="dictionary">The value to visit.</param>
-    /// <returns>The result of visiting <paramref name="dictionary"/>.</returns>
-    /// <exception cref="ArgumentNullException">When <paramref name="dictionary"/> is <code>null</code></exception>
+    /// <returns>The result of visiting <paramref name="dictionary" />.</returns>
+    /// <exception cref="ArgumentNullException">When <paramref name="dictionary" /> is <code>null</code></exception>
     protected override LogEventPropertyValue VisitDictionaryValue(TState state, DictionaryValue dictionary) {
         Guard.AgainstNull(dictionary);
         foreach (
-            var original in dictionary.Elements) {
+                 var original in dictionary.Elements) {
             if (!ReferenceEquals(original.Value, Visit(state, original.Value))) {
                 var elements = new Dictionary<ScalarValue, LogEventPropertyValue>(dictionary.Elements.Count);
                 foreach (var element in dictionary.Elements) {
@@ -139,11 +140,11 @@ public abstract
     }
 
     /// <summary>
-    /// Visit a value of an unsupported type. Returns the value unchanged.
+    ///     Visit a value of an unsupported type. Returns the value unchanged.
     /// </summary>
     /// <param name="state">Operation state.</param>
     /// <param name="value">The value to visit.</param>
-    /// <returns>The result of visiting <paramref name="value"/>.</returns>
+    /// <returns>The result of visiting <paramref name="value" />.</returns>
     // ReSharper disable once UnusedParameter.Global
     // ReSharper disable once VirtualMemberNeverOverriden.Global
     protected override LogEventPropertyValue VisitUnsupportedValue(TState state, LogEventPropertyValue value) {

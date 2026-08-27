@@ -87,23 +87,23 @@ public class ImplicitLodTests {
     public void
         An_explicit_level_says_what_the_author_meant() {
         var
-            diagnostics = LoweringDiagnosticsOf(
-                """
-                package A
+        diagnostics = LoweringDiagnosticsOf(
+            """
+            package A
 
-                shader S {
-                    var albedo: Texture2D
-                    var linear: Sampler
-                    var output: RWBuffer<float>
+            shader S {
+                var albedo: Texture2D
+                var linear: Sampler
+                var output: RWBuffer<float>
 
-                    [ComputeShader(64)]
-                    func Main(id: uint3) {
-                        output[0] = albedo.SampleLevel(linear, float2(0f, 0f), 0f).r
-                    }
+                [ComputeShader(64)]
+                func Main(id: uint3) {
+                    output[0] = albedo.SampleLevel(linear, float2(0f, 0f), 0f).r
                 }
+            }
 
-                """
-            );
+            """
+        );
 
         Assert
             .DoesNotContain(diagnostics, d => d.Id == "RVN3013");
@@ -117,26 +117,26 @@ public class ImplicitLodTests {
     [Fact]
     public void The_stage_rule_follows_the_call_graph() {
         var diagnostics = LoweringDiagnosticsOf(
-                """
-                package A
+            """
+            package A
 
-                shader S {
-                    var albedo: Texture2D
-                    var linear: Sampler
-                    var output: RWBuffer<float>
+            shader S {
+                var albedo: Texture2D
+                var linear: Sampler
+                var output: RWBuffer<float>
 
-                    func Tap(uv: float2): float {
-                        return albedo.Sample(linear, uv).r
-                    }
-
-                    [ComputeShader(64)]
-                    func Main(id: uint3) {
-                        output[0] = Tap(float2(0f, 0f))
-                    }
+                func Tap(uv: float2): float {
+                    return albedo.Sample(linear, uv).r
                 }
 
-                """
-            )
+                [ComputeShader(64)]
+                func Main(id: uint3) {
+                    output[0] = Tap(float2(0f, 0f))
+                }
+            }
+
+            """
+        )
             ;
         Assert.Contains(
             diagnostics,

@@ -19,7 +19,7 @@ internal static class ConstantEvaluator {
         switch (expression) {
             case BoundLiteralExpression literal:
                 return literal.ConstantValue; // A const field's value may itself still be evaluating — a cycle — in
-// which case it answers null and the caller reports.
+            // which case it answers null and the caller reports.
             case BoundFieldExpression { Field.IsConst: true } field: return field.Field.ConstantValue;
             case BoundConversionExpression conversion: return Convert(Evaluate(conversion.Operand), conversion.Type);
             case BoundUnaryExpression unary: return EvaluateUnary(unary.OperatorKind, Evaluate(unary.Operand));
@@ -29,13 +29,14 @@ internal static class ConstantEvaluator {
                     Evaluate(binary.Left),
                     Evaluate(binary.Right)
                 ); // `float4(1f, 1f, 1f, 1f)`, and the reason vectors are here at all: a scalar's default is
-// a *literal* and a vector's is a *construction*, so everything that reads a declared
-// default through this saw one and not the other. What that cost is written down at
-// `SourceFieldSymbol.DeclaredValue` — the short version is that a shader's declared vector
-// default reached no host, and the parameter arrived as zero.
+            // a *literal* and a vector's is a *construction*, so everything that reads a declared
+            // default through this saw one and not the other. What that cost is written down at
+            // `SourceFieldSymbol.DeclaredValue` — the short version is that a shader's declared vector
+            // default reached no host, and the parameter arrived as zero.
             case BoundObjectCreationExpression {
                 Type: PrimitiveTypeSymbol { TypeKind: TypeKind.Vector } vector
-            } creation: return EvaluateVector(vector, creation.Arguments);
+            } creation:
+                return EvaluateVector(vector, creation.Arguments);
             default: return null;
         }
     }
@@ -96,13 +97,13 @@ internal static class ConstantEvaluator {
                 SpecialType.UInt64 => System.Convert.ToUInt64(value),
                 _ => null
             };
-        } catch (Exception e)when (e is OverflowException or InvalidCastException or FormatException) {
+        } catch (Exception e) when (e is OverflowException or InvalidCastException or FormatException) {
             return null;
         }
     }
 
     static object? EvaluateUnary(UnaryOperatorKind kind, object? operand) =>
-        (kind, operand)switch {
+        (kind, operand) switch {
             (UnaryOperatorKind.Plus, int or uint or float or double) => operand,
             (UnaryOperatorKind.Minus, int i) => -i,
             (UnaryOperatorKind.Minus, float f) => -f,
@@ -119,7 +120,7 @@ internal static class ConstantEvaluator {
         }
 
         try {
-            return (left, right)switch {
+            return (left, right) switch {
                 (bool a, bool b) => EvaluateBool(kind, a, b),
                 (int a, int b) => EvaluateInt(kind, a, b),
                 (uint a, uint b) =>
@@ -131,7 +132,7 @@ internal static class ConstantEvaluator {
                 (double a, double b) => EvaluateDouble(kind, a, b) ?? EvaluateComparison(kind, a, b),
                 _ => null
             };
-        } catch (Exception e)when (e is DivideByZeroException or OverflowException) {
+        } catch (Exception e) when (e is DivideByZeroException or OverflowException) {
             return null;
         }
     }

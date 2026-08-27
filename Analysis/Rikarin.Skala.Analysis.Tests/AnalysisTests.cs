@@ -35,9 +35,9 @@ public sealed class AnalysisTests {
         };
 
     /// <summary>
-    /// ⚠ In loose mode there is no project, so half the references are missing and CS0246 is the
-    /// expected state. Reporting the compiler's opinion there would bury the findings the mode
-    /// exists to produce under complaints about code that is fine.
+    ///     ⚠ In loose mode there is no project, so half the references are missing and CS0246 is the
+    ///     expected state. Reporting the compiler's opinion there would bury the findings the mode
+    ///     exists to produce under complaints about code that is fine.
     /// </summary>
     [Fact]
     public void Check_InLooseMode_ReportsNoCompilerDiagnostics() {
@@ -62,9 +62,9 @@ public sealed class AnalysisTests {
     }
 
     /// <summary>
-    /// ⚠ docs/plan/07 § loose: the mode "is honest, because the SARIF says loadMode: loose and lists
-    /// the rules that were skipped". A report that omits this is a report whose clean result means
-    /// something different from another clean result.
+    ///     ⚠ docs/plan/07 § loose: the mode "is honest, because the SARIF says loadMode: loose and lists
+    ///     the rules that were skipped". A report that omits this is a report whose clean result means
+    ///     something different from another clean result.
     /// </summary>
     [Fact]
     public void Check_InLooseMode_ListsEverySemanticRuleAsSkipped() {
@@ -133,8 +133,8 @@ public sealed class AnalysisTests {
     }
 
     /// <summary>
-    /// ⚠ docs/plan/10: "without --safe you must name the rules, which makes the choice visible in
-    /// its transcript."
+    ///     ⚠ docs/plan/10: "without --safe you must name the rules, which makes the choice visible in
+    ///     its transcript."
     /// </summary>
     [Fact]
     public void Fix_WithoutSafeAndWithoutNamedRules_Refuses() {
@@ -164,12 +164,12 @@ public sealed class AnalysisTests {
     }
 
     /// <summary>
-    /// The cache's whole reason for existing, and its whole risk.
+    ///     The cache's whole reason for existing, and its whole risk.
     /// </summary>
     /// <remarks>
-    /// ⚠ A stale finding looks exactly like a real one and a missing finding looks exactly like a
-    /// clean file, so the cache is only allowed to be a speed-up if a second run over a changed
-    /// tree produces byte-identical findings to a run with no cache at all.
+    ///     ⚠ A stale finding looks exactly like a real one and a missing finding looks exactly like a
+    ///     clean file, so the cache is only allowed to be a speed-up if a second run over a changed
+    ///     tree produces byte-identical findings to a run with no cache at all.
     /// </remarks>
     [Fact]
     public void Cache_ASecondRunAgreesWithAnUncachedOne() {
@@ -190,10 +190,10 @@ public sealed class AnalysisTests {
     }
 
     /// <summary>
-    /// ⚠ docs/plan/07 § "Suppression", mechanism 3: <c>dotnet_diagnostic.SK1005.severity = none</c>
-    /// in a scoped section is the right way to turn a rule off for a folder. Roslyn reads it from
-    /// the compilation's <c>SyntaxTreeOptionsProvider</c>, which a hand-built compilation does not
-    /// have unless something puts one there.
+    ///     ⚠ docs/plan/07 § "Suppression", mechanism 3: <c>dotnet_diagnostic.SK1005.severity = none</c>
+    ///     in a scoped section is the right way to turn a rule off for a folder. Roslyn reads it from
+    ///     the compilation's <c>SyntaxTreeOptionsProvider</c>, which a hand-built compilation does not
+    ///     have unless something puts one there.
     /// </summary>
     [Fact]
     public void EditorConfigSeverities_TurnARuleOff() {
@@ -216,9 +216,9 @@ public sealed class AnalysisTests {
     }
 
     /// <summary>
-    /// ⚠ The cache key carries the .editorconfig's text, so a severity change in a scoped section
-    /// invalidates it. Hashing the *resolved global* view instead would leave every key unmoved when
-    /// only a scoped section changed, which is a stale finding by construction.
+    ///     ⚠ The cache key carries the .editorconfig's text, so a severity change in a scoped section
+    ///     invalidates it. Hashing the *resolved global* view instead would leave every key unmoved when
+    ///     only a scoped section changed, which is a stale finding by construction.
     /// </summary>
     [Fact]
     public void Cache_IsInvalidatedByAnEditorConfigChange() {
@@ -242,8 +242,8 @@ public sealed class AnalysisTests {
     }
 
     /// <summary>
-    /// ⚠ The cache's correctness condition. A compilation-scoped rule's answer for A.cs depends on
-    /// files the key for A.cs does not name, so it may never be stored per file.
+    ///     ⚠ The cache's correctness condition. A compilation-scoped rule's answer for A.cs depends on
+    ///     files the key for A.cs does not name, so it may never be stored per file.
     /// </summary>
     [Fact]
     public void Cache_NeverStoresACompilationScopedRulesFindings() {
@@ -274,9 +274,9 @@ public sealed class AnalysisTests {
     }
 
     /// <summary>
-    /// ⚠ docs/plan/08 § `supersedes`: one span, one finding, and which one wins is deterministic and
-    /// documented. The loser stays in the report, marked suppressed, so the SARIF still records that
-    /// the other analyzer had an opinion.
+    ///     ⚠ docs/plan/08 § `supersedes`: one span, one finding, and which one wins is deterministic and
+    ///     documented. The loser stays in the report, marked suppressed, so the SARIF still records that
+    ///     the other analyzer had an opinion.
     /// </summary>
     [Fact]
     public void Supersession_DropsTheSupersededRuleAndKeepsItInTheReport() {
@@ -300,12 +300,12 @@ public sealed class AnalysisTests {
     }
 
     /// <summary>
-    /// docs/plan/15 § M5's definition of done, as a test rather than as a claim.
+    ///     docs/plan/15 § M5's definition of done, as a test rather than as a claim.
     /// </summary>
     /// <remarks>
-    /// ⚠ The budget is one second on a five-file change with no project loaded, cold, including
-    /// everything the command does. It is asserted with a generous band because a shared CI machine
-    /// is not the reference machine; the measured number is in docs/plan/13.
+    ///     ⚠ The budget is one second on a five-file change with no project loaded, cold, including
+    ///     everything the command does. It is asserted with a generous band because a shared CI machine
+    ///     is not the reference machine; the measured number is in docs/plan/13.
     /// </remarks>
     [Fact]
     public void Verify_OnAFiveFileChangeWithNoProject_IsUnderASecond() {

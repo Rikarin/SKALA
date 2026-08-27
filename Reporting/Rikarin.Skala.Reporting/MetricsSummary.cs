@@ -4,18 +4,18 @@ using System.Globalization;
 namespace Rikarin.Skala.Reporting;
 
 /// <summary>
-/// The aggregate numbers a run produced, and what <c>metrics.*</c> in a gate reads.
+///     The aggregate numbers a run produced, and what <c>metrics.*</c> in a gate reads.
 /// </summary>
 /// <remarks>
-/// docs/plan/07 § "Metrics" and docs/plan/09 § "Gates". ⚠ These are <em>aggregates</em>, and they
-/// are a different surface from the <c>SK70xx</c> findings: a finding says "this member is over the
-/// threshold", an aggregate says "the codebase's p95 is 9". A gate that read the findings instead
-/// would be gating on how the thresholds happen to be configured rather than on the code.
-/// <para>
-/// ⚠ Percentiles rather than means. A mean cognitive complexity is dominated by the thousands of
-/// three-line members every codebase has and moves by 0.01 when something terrible is added; p95
-/// moves. doc 09's own example line is "cognitive complexity p95 9 (gate 15)".
-/// </para>
+///     docs/plan/07 § "Metrics" and docs/plan/09 § "Gates". ⚠ These are <em>aggregates</em>, and they
+///     are a different surface from the <c>SK70xx</c> findings: a finding says "this member is over the
+///     threshold", an aggregate says "the codebase's p95 is 9". A gate that read the findings instead
+///     would be gating on how the thresholds happen to be configured rather than on the code.
+///     <para>
+///         ⚠ Percentiles rather than means. A mean cognitive complexity is dominated by the thousands of
+///         three-line members every codebase has and moves by 0.01 when something terrible is added; p95
+///         moves. doc 09's own example line is "cognitive complexity p95 9 (gate 15)".
+///     </para>
 /// </remarks>
 public sealed record MetricsSummary {
     public static MetricsSummary Empty { get; } = new();
@@ -54,12 +54,12 @@ public sealed record MetricsSummary {
     public bool HasDuplication => TotalLines > 0;
 
     /// <summary>
-    /// Reads a named metric the way a gate spells it.
+    ///     Reads a named metric the way a gate spells it.
     /// </summary>
     /// <remarks>
-    /// ⚠ An unknown name returns null and the gate reports it as an unknown condition rather than
-    /// silently passing. A gate that ignores the condition somebody relies on passes for the wrong
-    /// reason, which doc 09 calls out as worse than one that says it cannot run.
+    ///     ⚠ An unknown name returns null and the gate reports it as an unknown condition rather than
+    ///     silently passing. A gate that ignores the condition somebody relies on passes for the wrong
+    ///     reason, which doc 09 calls out as worse than one that says it cannot run.
     /// </remarks>
     public double? Read(string name) =>
         name switch {
@@ -74,7 +74,7 @@ public sealed record MetricsSummary {
             _ => null
         };
 
-    /// <summary>The names <see cref="Read"/> understands, for the diagnostic on an unknown one.</summary>
+    /// <summary>The names <see cref="Read" /> understands, for the diagnostic on an unknown one.</summary>
     public static ImmutableArray<string> Names { get; } = [
         "duplication", "cognitiveComplexity", "cognitiveComplexityMax", "cyclomaticComplexity", "methodLength",
         "nestingDepth",
@@ -82,13 +82,13 @@ public sealed record MetricsSummary {
     ];
 
     /// <summary>
-    /// ⚠ <c>commentDensity</c> is a floor and everything else is a ceiling.
+    ///     ⚠ <c>commentDensity</c> is a floor and everything else is a ceiling.
     /// </summary>
     /// <remarks>
-    /// A gate saying <c>commentDensity: 60</c> means "at least 60 % documented"; one saying
-    /// <c>duplication: 3.0</c> means "at most 3 %". Getting this backwards is a gate that passes
-    /// exactly when it should fail, so the direction is a property of the metric rather than
-    /// something each gate has to spell out.
+    ///     A gate saying <c>commentDensity: 60</c> means "at least 60 % documented"; one saying
+    ///     <c>duplication: 3.0</c> means "at most 3 %". Getting this backwards is a gate that passes
+    ///     exactly when it should fail, so the direction is a property of the metric rather than
+    ///     something each gate has to spell out.
     /// </remarks>
     public static bool IsFloor(string name) => name == "commentDensity";
 
@@ -121,13 +121,13 @@ public sealed record MetricsSummary {
             : string.Empty;
 
     /// <summary>
-    /// Folds a set of per-member measurements into the aggregate.
+    ///     Folds a set of per-member measurements into the aggregate.
     /// </summary>
     /// <remarks>
-    /// ⚠ The p95 is the nearest-rank one: sort, take the value at <c>ceil(0.95 n)</c>. Not
-    /// interpolated, because an interpolated percentile over integers produces a number that is not
-    /// any member's actual score, and every one of these numbers is meant to be traceable back to
-    /// the member that produced it.
+    ///     ⚠ The p95 is the nearest-rank one: sort, take the value at <c>ceil(0.95 n)</c>. Not
+    ///     interpolated, because an interpolated percentile over integers produces a number that is not
+    ///     any member's actual score, and every one of these numbers is meant to be traceable back to
+    ///     the member that produced it.
     /// </remarks>
     public static int Percentile(IReadOnlyList<int> sorted, double fraction) {
         if (sorted.Count == 0) {

@@ -4,15 +4,15 @@ using Rikarin.Skala.Options;
 namespace Rikarin.Skala.Formatting.CSharp;
 
 /// <summary>
-/// The option subset the formatter implements, read once per file into fields.
+///     The option subset the formatter implements, read once per file into fields.
 /// </summary>
 /// <remarks>
-/// ⚠ Every value here is read out of <see cref="FormattingOptions"/> by <see cref="OptionId"/>,
-/// which is an array index and not a dictionary lookup (docs/plan/13 § "The fitting pass"). The
-/// façade exists for two more reasons: the generated accessor names follow whichever spelling the
-/// export happened to use, which is not a name a rule should be written against; and
-/// <see cref="Implemented"/> is then a single honest list of what phase 1 consumes, which is what
-/// the Tier A promotion and the per-option corpus test are checked against.
+///     ⚠ Every value here is read out of <see cref="FormattingOptions" /> by <see cref="OptionId" />,
+///     which is an array index and not a dictionary lookup (docs/plan/13 § "The fitting pass"). The
+///     façade exists for two more reasons: the generated accessor names follow whichever spelling the
+///     export happened to use, which is not a name a rule should be written against; and
+///     <see cref="Implemented" /> is then a single honest list of what phase 1 consumes, which is what
+///     the Tier A promotion and the per-option corpus test are checked against.
 /// </remarks>
 public readonly struct PhaseOneOptions {
     public PhaseOneOptions(in FormattingOptions options) {
@@ -335,6 +335,12 @@ public readonly struct PhaseOneOptions {
         FormatterOffTag = options.GetString(Ids.FormatterOffTag) ?? "@formatter:off";
         FormatterOnTag = options.GetString(Ids.FormatterOnTag) ?? "@formatter:on";
         FormatterTagsAcceptRegexp = options.GetBool(Ids.FormatterTagsAcceptRegexp);
+
+        // ── Documentation comments ───────────────────────────────────────────────────────────
+        // ⚠ Read here, and therefore read on every path, because the sub-formatter is on by
+        // default. It used to be built only where a caller passed `--xmldoc`, which meant a caller
+        // that held a `PhaseOneOptions` and nothing else could not turn it on at all.
+        XmlDoc = new XmlDocOptions(options);
     }
 
     public int IndentSize { get; }
@@ -354,15 +360,15 @@ public readonly struct PhaseOneOptions {
     public bool SpaceAfterCast { get; }
 
     /// <summary>
-    /// <c>space_around_dot</c>: the gap beside a <c>.</c> or a <c>?.</c>.
+    ///     <c>space_around_dot</c>: the gap beside a <c>.</c> or a <c>?.</c>.
     /// </summary>
     /// <remarks>
-    /// ⚠ Read out of the specific key rather than out of the generalized
-    /// <c>space_around_member_access_operator</c> that used to supply it. The two agree in this
-    /// export, and the generalized one is still honoured — through
-    /// <see cref="Rikarin.Skala.Options.OptionInfo.Expands"/>, applied by the resolver — but a
-    /// configuration that sets only <c>space_around_dot</c> is one the oracle answers and Skala
-    /// used to ignore.
+    ///     ⚠ Read out of the specific key rather than out of the generalized
+    ///     <c>space_around_member_access_operator</c> that used to supply it. The two agree in this
+    ///     export, and the generalized one is still honoured — through
+    ///     <see cref="Rikarin.Skala.Options.OptionInfo.Expands" />, applied by the resolver — but a
+    ///     configuration that sets only <c>space_around_dot</c> is one the oracle answers and Skala
+    ///     used to ignore.
     /// </remarks>
     public bool SpaceAroundDot { get; }
 
@@ -382,16 +388,16 @@ public readonly struct PhaseOneOptions {
     public bool SpaceBetweenKeywordAndType { get; }
 
     /// <summary>
-    /// The nine <c>space_before_&lt;keyword&gt;_parentheses</c> keys, one per control-flow keyword.
+    ///     The nine <c>space_before_&lt;keyword&gt;_parentheses</c> keys, one per control-flow keyword.
     /// </summary>
     /// <remarks>
-    /// ⚠ One key per keyword rather than the single generalized
-    /// <c>space_after_keywords_in_control_flow_statements</c> the export writes. The oracle answers
-    /// each of the nine separately — <c>space_before_if_parentheses = false</c> alone produces
-    /// <c>if(n &gt; 0)</c> and leaves every other keyword's space — so a rule written against the
-    /// generalized key silently ignores eight of the nine. The generalized key still reaches these
-    /// fields, through the resolver's expansion of
-    /// <see cref="Rikarin.Skala.Options.OptionInfo.Expands"/>.
+    ///     ⚠ One key per keyword rather than the single generalized
+    ///     <c>space_after_keywords_in_control_flow_statements</c> the export writes. The oracle answers
+    ///     each of the nine separately — <c>space_before_if_parentheses = false</c> alone produces
+    ///     <c>if(n &gt; 0)</c> and leaves every other keyword's space — so a rule written against the
+    ///     generalized key silently ignores eight of the nine. The generalized key still reaches these
+    ///     fields, through the resolver's expansion of
+    ///     <see cref="Rikarin.Skala.Options.OptionInfo.Expands" />.
     /// </remarks>
     public bool SpaceBeforeIfParentheses { get; }
 
@@ -405,14 +411,14 @@ public readonly struct PhaseOneOptions {
     public bool SpaceBeforeFixedParentheses { get; }
 
     /// <summary>
-    /// The <c>space_within_&lt;construct&gt;_parentheses</c> keys: the gap just inside a
-    /// parenthesis, by what the parenthesis belongs to.
+    ///     The <c>space_within_&lt;construct&gt;_parentheses</c> keys: the gap just inside a
+    ///     parenthesis, by what the parenthesis belongs to.
     /// </summary>
     /// <remarks>
-    /// ⚠ <see cref="SpaceWithinParentheses"/> used to answer all of them, which made every one of
-    /// these fifteen keys inert. Each is observable on its own against the oracle:
-    /// <c>space_within_if_parentheses = true</c> produces <c>if ( n &gt; 0 )</c> and touches
-    /// nothing else.
+    ///     ⚠ <see cref="SpaceWithinParentheses" /> used to answer all of them, which made every one of
+    ///     these fifteen keys inert. Each is observable on its own against the oracle:
+    ///     <c>space_within_if_parentheses = true</c> produces <c>if ( n &gt; 0 )</c> and touches
+    ///     nothing else.
     /// </remarks>
     public bool SpaceWithinIfParentheses { get; }
 
@@ -429,11 +435,11 @@ public readonly struct PhaseOneOptions {
     public bool SpaceWithinNameofParentheses { get; }
 
     /// <summary>
-    /// ⚠ Read and never consulted. <c>space_within_new_parentheses</c> names the gap inside
-    /// <c>new T(…)</c>'s parentheses, and the oracle does not answer it at either value: asked with
-    /// <c>new List&lt;int&gt;(4)</c> and with <c>new object()</c>, the argument list comes back
-    /// governed by <c>space_between_method_call_parameter_list_parentheses</c> instead. It stays
-    /// Tier D with that measurement rather than being wired to a gap it does not own.
+    ///     ⚠ Read and never consulted. <c>space_within_new_parentheses</c> names the gap inside
+    ///     <c>new T(…)</c>'s parentheses, and the oracle does not answer it at either value: asked with
+    ///     <c>new List&lt;int&gt;(4)</c> and with <c>new object()</c>, the argument list comes back
+    ///     governed by <c>space_between_method_call_parameter_list_parentheses</c> instead. It stays
+    ///     Tier D with that measurement rather than being wired to a gap it does not own.
     /// </summary>
     public bool SpaceWithinNewParentheses { get; }
 
@@ -464,12 +470,12 @@ public readonly struct PhaseOneOptions {
     public bool SpaceWithinArrayAccessBrackets { get; }
 
     /// <summary>
-    /// <c>space_within_array_rank_brackets</c>: <c>new int[ 2, 3 ]</c> and <c>int[ , ]</c>.
+    ///     <c>space_within_array_rank_brackets</c>: <c>new int[ 2, 3 ]</c> and <c>int[ , ]</c>.
     /// </summary>
     /// <remarks>
-    /// ⚠ A rank specifier that is nothing but <c>[]</c> is <see cref="SpaceWithinArrayRankEmptyBrackets"/>'s
-    /// instead, and <c>[,]</c> is not: the oracle answers <c>new[]</c> out of the empty key and
-    /// <c>int[,]</c> out of this one, so the line is one omitted size rather than "no sizes".
+    ///     ⚠ A rank specifier that is nothing but <c>[]</c> is <see cref="SpaceWithinArrayRankEmptyBrackets" />'s
+    ///     instead, and <c>[,]</c> is not: the oracle answers <c>new[]</c> out of the empty key and
+    ///     <c>int[,]</c> out of this one, so the line is one omitted size rather than "no sizes".
     /// </remarks>
     public bool SpaceWithinArrayRankBrackets { get; }
 
@@ -529,8 +535,8 @@ public readonly struct PhaseOneOptions {
     public bool IndentBraces { get; }
 
     /// <summary>
-    /// <c>align_multiline_statement_conditions</c>: a condition broken across lines is laid out from
-    /// the column just after the statement's <c>(</c> rather than from an indent level.
+    ///     <c>align_multiline_statement_conditions</c>: a condition broken across lines is laid out from
+    ///     the column just after the statement's <c>(</c> rather than from an indent level.
     /// </summary>
     public bool AlignMultilineStatementConditions { get; }
 
@@ -559,13 +565,13 @@ public readonly struct PhaseOneOptions {
     public bool IntAlignEnumInitializers { get; }
 
     /// <summary>
-    /// Whether any construct is column-aligned at all, and therefore whether <see cref="IntAlign"/>
-    /// has to parse the output.
+    ///     Whether any construct is column-aligned at all, and therefore whether <see cref="IntAlign" />
+    ///     has to parse the output.
     /// </summary>
     /// <remarks>
-    /// ⚠ <c>disable_int_align</c> is honoured here and only here: it is the family's master switch
-    /// and it wins over every member, which the oracle confirms — with <c>int_align = true</c> and
-    /// <c>disable_int_align = true</c> together, the output is the unaligned one.
+    ///     ⚠ <c>disable_int_align</c> is honoured here and only here: it is the family's master switch
+    ///     and it wins over every member, which the oracle confirms — with <c>int_align = true</c> and
+    ///     <c>disable_int_align = true</c> together, the output is the unaligned one.
     /// </remarks>
     public bool IntAlignAnything =>
         !DisableIntAlign
@@ -644,15 +650,15 @@ public readonly struct PhaseOneOptions {
     public bool KeepExistingLinebreaks { get; }
 
     /// <summary>
-    /// Whether a break the author put <em>between two items of a list</em> survives.
+    ///     Whether a break the author put <em>between two items of a list</em> survives.
     /// </summary>
     /// <remarks>
-    /// ⚠ Not the same question as whether a break next to the list's delimiters survives — that one
-    /// is the construct's own <c>keep_existing_*_arrangement</c>, gated by this. The four corners of
-    /// docs/plan/05's table are pinned by <c>constructs/preservation/*</c> under all four
-    /// configurations, and the corner people get wrong is
-    /// (<c>keep_user_linebreaks = true</c>, <c>keep_existing_X = false</c>): <c>Foo(\n a)</c> re-joins
-    /// there and <c>Foo(\n a,\n b)</c> does not.
+    ///     ⚠ Not the same question as whether a break next to the list's delimiters survives — that one
+    ///     is the construct's own <c>keep_existing_*_arrangement</c>, gated by this. The four corners of
+    ///     docs/plan/05's table are pinned by <c>constructs/preservation/*</c> under all four
+    ///     configurations, and the corner people get wrong is
+    ///     (<c>keep_user_linebreaks = true</c>, <c>keep_existing_X = false</c>): <c>Foo(\n a)</c> re-joins
+    ///     there and <c>Foo(\n a,\n b)</c> does not.
     /// </remarks>
     public bool KeepsUserBreaksBetweenItems => KeepUserLinebreaks && KeepExistingLinebreaks;
 
@@ -743,32 +749,45 @@ public readonly struct PhaseOneOptions {
     public bool FormatterTagsAcceptRegexp { get; }
 
     /// <summary>
-    /// The four keys as <see cref="FormatterTagGuard"/> wants them — for the passes that run
-    /// <em>outside</em> the document builder and would otherwise not see a tag at all.
+    ///     The four keys as <see cref="FormatterTagGuard" /> wants them — for the passes that run
+    ///     <em>outside</em> the document builder and would otherwise not see a tag at all.
     /// </summary>
     public FormatterTags Tags => new(FormatterTagsEnabled, FormatterOffTag, FormatterOnTag, FormatterTagsAcceptRegexp);
 
     /// <summary>
-    /// Every option milestone 1 reads, in registry order. The Tier A promotion and the per-option
-    /// corpus test are checked against this list, so an option that stops being read here stops
-    /// claiming to be implemented.
+    ///     The <c>resharper_xmldoc_*</c> subset, resolved from the same configuration.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ It is not part of <see cref="Implemented" /> and never can be. See
+    ///     <see cref="XmlDocOptions" />: these keys govern real output and no oracle fixture can pin
+    ///     them, which is a combination the tier table has no row for.
+    /// </remarks>
+    public XmlDocOptions XmlDoc { get; }
+
+    /// <summary>
+    ///     Every option milestone 1 reads, in registry order. The Tier A promotion and the per-option
+    ///     corpus test are checked against this list, so an option that stops being read here stops
+    ///     claiming to be implemented.
     /// </summary>
     public static ImmutableArray<OptionId> Implemented => Ids.All;
 }
 
 /// <summary>
-/// The option ids phase 1 reads, resolved once through the registry.
+///     The option ids phase 1 reads, resolved once through the registry.
 /// </summary>
 /// <remarks>
-/// Written as <c>.editorconfig</c> spellings rather than as generated accessor names, because the
-/// spelling is the thing the plan, the export and the ReSharper documentation all agree on, while
-/// the accessor name depends on which spelling the importer happened to pick as canonical.
+///     Written as <c>.editorconfig</c> spellings rather than as generated accessor names, because the
+///     spelling is the thing the plan, the export and the ReSharper documentation all agree on, while
+///     the accessor name depends on which spelling the importer happened to pick as canonical.
 /// </remarks>
 public static class Ids {
     static readonly List<OptionId> Collected = [];
 
-    /// <summary>Ids <see cref="OfInert"/> marked; read but excluded from <see cref="All"/>.</summary>
+    /// <summary>Ids <see cref="OfInert" /> marked; read but excluded from <see cref="All" />.</summary>
     static readonly List<OptionId> Inert = [];
+
+    /// <summary>Ids <see cref="OfUnoracled" /> marked; observable, and excluded from <see cref="All" />.</summary>
+    static readonly List<OptionId> Unoracled = [];
 
     public static readonly OptionId IndentSize = Of("resharper_csharp_indent_size");
     public static readonly OptionId TabWidth = OfInert("resharper_csharp_tab_width");
@@ -1041,11 +1060,14 @@ public static class Ids {
 
     public static readonly OptionId SpaceBeforeTrailingComment = Of("resharper_csharp_space_before_trailing_comment");
     public static readonly OptionId SpaceBeforeTrailingCommentText = Of("resharper_space_before_trailing_comment_text");
-    // ⚠ Inert since milestone 3, and it was Tier A before it — wrongly. The oracle does not insert
-    // the space, on this option's own fixture or anywhere else, because `jb cleanupcode` does not
-    // format doc comments (SK-DIV-0006). An option Skala honours and Rider ignores is a divergence
-    // wearing a tier badge.
-    public static readonly OptionId SpaceAfterTripleSlash = OfInert("resharper_space_after_triple_slash");
+    // ⚠ Unoracled, not inert, and it has now been both. Milestone 1 had it Tier A; milestone 3
+    // demoted it to inert because the oracle does not insert the space and doing it anyway cost 79
+    // lines across 15 files of `corpus/real/`. That demotion rested on `jb cleanupcode` being the
+    // definition of correct, and SK-DIV-0006 no longer says it is: Rider's editor formats
+    // documentation comments and cleanup does not, so the 79 lines were the oracle's divergence
+    // being charged to Skala. The space is inserted again, by the sub-formatter, on every
+    // well-formed comment — and the key still cannot be Tier A, because no fixture can pin it.
+    public static readonly OptionId SpaceAfterTripleSlash = OfUnoracled("resharper_space_after_triple_slash");
     public static readonly OptionId StickComment = Of("resharper_csharp_stick_comment");
     public static readonly OptionId PlaceCommentsAtFirstColumn = Of("resharper_csharp_place_comments_at_first_column");
 
@@ -1559,46 +1581,47 @@ public static class Ids {
     public static readonly OptionId FormatterTagsAcceptRegexp = Of("resharper_formatter_tags_accept_regexp");
 
     // ── The xmldoc sub-formatter's subset ────────────────────────────────────────────────────
-    // ⚠ Every one of these is inert on the default path and stays Tier D, and the reason is not
-    // that the wiring is missing. `jb cleanupcode` does not format documentation comments at all
-    // (SK-DIV-0006), so there is no fixture that can show the oracle honouring any of them, and
-    // Tier A rests on fixture evidence and nothing else. They come alive only under
-    // `skala format --xmldoc`, where what pins them is hand-written fixtures plus the round-trip
-    // property in XmlDocFormatter. See XmlDocOptions for the full argument.
-    public static readonly OptionId XmlDocWrapLines = OfInert("resharper_xmldoc_wrap_lines");
-    public static readonly OptionId XmlDocMaxLineLength = OfInert("resharper_xmldoc_max_line_length");
-    public static readonly OptionId XmlDocWrapText = OfInert("resharper_xmldoc_wrap_text");
-    public static readonly OptionId XmlDocWrapTagsAndPi = OfInert("resharper_xmldoc_wrap_tags_and_pi");
-    public static readonly OptionId XmlDocKeepUserLinebreaks = OfInert("resharper_xmldoc_keep_user_linebreaks");
+    // ⚠ Every one of these governs real output on the default path and every one of them stays
+    // Tier D, which is a combination no other key in the registry has. `jb cleanupcode` does not
+    // format documentation comments at all, so there is no fixture that can show the oracle
+    // honouring any of them — and Rider's editor does format them, so leaving them off would be
+    // the divergence rather than turning them on (SK-DIV-0006). What pins them is hand-written
+    // fixtures plus the round-trip property in XmlDocFormatter. See XmlDocOptions for the full
+    // argument, and `OfUnoracled` for what the mark means.
+    public static readonly OptionId XmlDocWrapLines = OfUnoracled("resharper_xmldoc_wrap_lines");
+    public static readonly OptionId XmlDocMaxLineLength = OfUnoracled("resharper_xmldoc_max_line_length");
+    public static readonly OptionId XmlDocWrapText = OfUnoracled("resharper_xmldoc_wrap_text");
+    public static readonly OptionId XmlDocWrapTagsAndPi = OfUnoracled("resharper_xmldoc_wrap_tags_and_pi");
+    public static readonly OptionId XmlDocKeepUserLinebreaks = OfUnoracled("resharper_xmldoc_keep_user_linebreaks");
 
     public static readonly OptionId XmlDocMaxBlankLinesBetweenTags =
-        OfInert("resharper_xmldoc_max_blank_lines_between_tags");
+        OfUnoracled("resharper_xmldoc_max_blank_lines_between_tags");
 
-    public static readonly OptionId XmlDocIndentChildElements = OfInert("resharper_xmldoc_indent_child_elements");
-    public static readonly OptionId XmlDocIndentText = OfInert("resharper_xmldoc_indent_text");
+    public static readonly OptionId XmlDocIndentChildElements = OfUnoracled("resharper_xmldoc_indent_child_elements");
+    public static readonly OptionId XmlDocIndentText = OfUnoracled("resharper_xmldoc_indent_text");
 
     public static readonly OptionId XmlDocLinebreaksInsideTagsForElementsWithChildElements =
-        OfInert("resharper_xmldoc_linebreaks_inside_tags_for_elements_with_child_elements");
+        OfUnoracled("resharper_xmldoc_linebreaks_inside_tags_for_elements_with_child_elements");
 
     public static readonly OptionId XmlDocLinebreaksInsideTagsForMultilineElements =
-        OfInert("resharper_xmldoc_linebreaks_inside_tags_for_multiline_elements");
+        OfUnoracled("resharper_xmldoc_linebreaks_inside_tags_for_multiline_elements");
 
     public static readonly OptionId XmlDocLinebreakBeforeMultilineElements =
-        OfInert("resharper_xmldoc_linebreak_before_multiline_elements");
+        OfUnoracled("resharper_xmldoc_linebreak_before_multiline_elements");
 
     public static readonly OptionId XmlDocLinebreakBeforeSinglelineElements =
-        OfInert("resharper_xmldoc_linebreak_before_singleline_elements");
+        OfUnoracled("resharper_xmldoc_linebreak_before_singleline_elements");
 
-    public static readonly OptionId XmlDocSpacesInsideTags = OfInert("resharper_xmldoc_spaces_inside_tags");
+    public static readonly OptionId XmlDocSpacesInsideTags = OfUnoracled("resharper_xmldoc_spaces_inside_tags");
 
     public static readonly OptionId XmlDocSpaceBeforeSelfClosing =
-        OfInert("resharper_xmldoc_space_before_self_closing");
+        OfUnoracled("resharper_xmldoc_space_before_self_closing");
 
-    public static readonly OptionId XmlDocIndentSize = OfInert("resharper_xmldoc_indent_size");
-    public static readonly OptionId XmlDocIndentStyle = OfInert("resharper_xmldoc_indent_style");
+    public static readonly OptionId XmlDocIndentSize = OfUnoracled("resharper_xmldoc_indent_size");
+    public static readonly OptionId XmlDocIndentStyle = OfUnoracled("resharper_xmldoc_indent_style");
 
     public static readonly OptionId XmlDocLinebreakBeforeElements =
-        OfInert("resharper_xmldoc_linebreak_before_elements");
+        OfUnoracled("resharper_xmldoc_linebreak_before_elements");
 
     // ── Generalized keys ─────────────────────────────────────────────────────────────────────
     // ⚠ These are not read by the formatter and never will be. A generalized key is a way of
@@ -1633,34 +1656,61 @@ public static class Ids {
     public static readonly OptionId GeneralizedIndentStyle = OfGeneralized("indent_style");
 
     /// <summary>Every id above that phase 1 can actually be observed to honour.</summary>
-    public static ImmutableArray<OptionId> All { get; } = [.. Collected.Distinct().Except(Inert).Order()];
+    /// <remarks>
+    ///     ⚠ <see cref="Unoracled" /> is subtracted as well as <see cref="Inert" />, and for the opposite
+    ///     reason. An inert id is excluded because it changes nothing; an unoracled id is excluded
+    ///     because what it changes cannot be checked against the oracle, and this list is what the Tier
+    ///     A promotion reads.
+    /// </remarks>
+    public static ImmutableArray<OptionId> All { get; } =
+        [.. Collected.Distinct().Except(Inert).Except(Unoracled).Order()];
 
     /// <summary>
-    /// The ids phase 1 reads and cannot be observed to honour, each with a reason at its
-    /// declaration.
+    ///     The ids phase 1 reads and cannot be observed to honour, each with a reason at its
+    ///     declaration.
     /// </summary>
     /// <remarks>
-    /// ⚠ Exposed so that the reason can be checked rather than believed. "Inert" is the sentence a
-    /// key gets when it is honoured vacuously — another rule decides first, or the oracle ignores
-    /// it too — and it is also the sentence an unimplemented key gets when nobody looks. The
-    /// difference is measurable: an inert key produces one output across its whole domain, and a
-    /// key that has quietly become observable produces two.
+    ///     ⚠ Exposed so that the reason can be checked rather than believed. "Inert" is the sentence a
+    ///     key gets when it is honoured vacuously — another rule decides first, or the oracle ignores
+    ///     it too — and it is also the sentence an unimplemented key gets when nobody looks. The
+    ///     difference is measurable: an inert key produces one output across its whole domain, and a
+    ///     key that has quietly become observable produces two.
     /// </remarks>
     public static ImmutableArray<OptionId> ReadButInert { get; } = [.. Inert.Distinct().Order()];
 
     /// <summary>
-    /// ⚠ An option phase 1 reads but whose value it cannot yet make a difference to. No fitting
-    /// pass means <c>max_line_length</c> changes nothing; no tabs in the output means
-    /// <c>tab_width</c> changes nothing; the removal rules win over <c>blank_lines_inside_type</c>
-    /// outright; <c>end_of_line</c> is inert while <c>enforce_line_ending_style</c> is false;
-    /// <c>remove_spaces_on_blank_lines</c> is inert because a blank line is a break followed by a
-    /// break and the writer never puts anything between them (the one place trailing whitespace
-    /// survives is inside a comment's own text, which is never a blank line); and <c>space_between_keyword_and_type</c> is inert because a type after a
-    /// keyword is always word-like, so the separation is mandatory whatever the option says.
-    /// <para>
-    /// They are read so the plumbing exists and so the crash snapshot can record them, and they
-    /// stay Tier D, because Tier A is a claim about behaviour and not about wiring.
-    /// </para>
+    ///     The ids phase 1 reads and honours, and that no oracle fixture can pin.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ The third shape, and it exists because the second one stopped being true. Until the
+    ///     documentation-comment sub-formatter became the default these were <see cref="OfInert" /> —
+    ///     "read, and unable to change anything" — which was accurate only because nothing ran them.
+    ///     They run on every file now, so "inert" would be a lie, and Tier A would be a different lie:
+    ///     Tier A means "pinned by at least one oracle fixture" and <c>jb cleanupcode</c> returns every
+    ///     documentation comment exactly as written, so no fixture can ever show it agreeing or
+    ///     disagreeing (SK-DIV-0006).
+    ///     <para>
+    ///         So they stay Tier D and out of <see cref="All" />, and what is checked instead is the
+    ///         opposite of the inert claim: an unoracled key must be <em>observable</em>, or it is an
+    ///         unimplemented key hiding behind a reason. <c>OptionObservabilityTests</c> asserts it.
+    ///     </para>
+    /// </remarks>
+    public static ImmutableArray<OptionId> ReadButUnoracled { get; } = [.. Unoracled.Distinct().Order()];
+
+    /// <summary>
+    ///     ⚠ An option phase 1 reads but whose value it cannot yet make a difference to. No fitting
+    ///     pass means <c>max_line_length</c> changes nothing; no tabs in the output means
+    ///     <c>tab_width</c> changes nothing; the removal rules win over <c>blank_lines_inside_type</c>
+    ///     outright; <c>end_of_line</c> is inert while <c>enforce_line_ending_style</c> is false;
+    ///     <c>remove_spaces_on_blank_lines</c> is inert because a blank line is a break followed by a
+    ///     break and the writer never puts anything between them (the one place trailing whitespace
+    ///     survives is inside a comment's own text, which is never a blank line); and
+    ///     <c>space_between_keyword_and_type</c> is inert because a type after a
+    ///     keyword is always word-like, so the separation is mandatory whatever the option says.
+    ///     <para>
+    ///         They are read so the plumbing exists and so the crash snapshot can record them, and they
+    ///         stay Tier D, because Tier A is a claim about behaviour and not about wiring.
+    ///     </para>
     /// </summary>
     static OptionId OfInert(string key) {
         var id = Of(key);
@@ -1669,16 +1719,36 @@ public static class Ids {
     }
 
     /// <summary>
-    /// A key the formatter honours without reading: the resolver expands it into the specific keys
-    /// it names, and those are what the rules consult.
+    ///     A key the formatter honours and that the oracle cannot be asked about.
     /// </summary>
     /// <remarks>
-    /// ⚠ Declared after every id it expands to, and checked rather than trusted: a generalized key
-    /// none of whose targets is implemented would be a Tier A claim with nothing behind it, which
-    /// is the exact failure mode M3.1 found. At least one target must be implemented and not
-    /// <see cref="OfInert"/>; the rest may belong to a component that does not exist yet —
-    /// <c>indent_size</c> also names <c>resharper_xmldoc_indent_size</c>, and Skala's honouring it
-    /// for C# is not made less true by the doc-comment formatter being unwritten.
+    ///     ⚠ See <see cref="ReadButUnoracled" />. It is not a softer <see cref="Of" />: it is the mark
+    ///     that says the evidence for this key is hand-written fixtures and a round-trip property
+    ///     rather than a committed <c>.expected.cs</c>, and it keeps the key out of the Tier A claim so
+    ///     that "Tier A" keeps meaning one thing.
+    /// </remarks>
+    static OptionId OfUnoracled(string key) {
+        var id = Of(key);
+        Unoracled.Add(id);
+        return id;
+    }
+
+    /// <summary>
+    ///     A key the formatter honours without reading: the resolver expands it into the specific keys
+    ///     it names, and those are what the rules consult.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Declared after every id it expands to, and checked rather than trusted: a generalized key
+    ///     none of whose targets is implemented would be a Tier A claim with nothing behind it, which
+    ///     is the exact failure mode M3.1 found. At least one target must be implemented and not
+    ///     <see cref="OfInert" />; the rest may belong to a component that does not exist yet —
+    ///     <c>indent_size</c> also names <c>resharper_xmldoc_indent_size</c>, and Skala's honouring it
+    ///     for C# is not made less true by the doc-comment target being pinned differently.
+    ///     <para>
+    ///         ⚠ <see cref="OfUnoracled" /> targets do not satisfy the requirement either, for the same
+    ///         reason <see cref="OfInert" /> ones do not: a generalized key inherits the tier claim of what
+    ///         it expands to, and an unoracled target carries no Tier A claim to inherit.
+    ///     </para>
     /// </remarks>
     static OptionId OfGeneralized(string key) {
         var id = Of(key);
@@ -1689,7 +1759,8 @@ public static class Ids {
             );
         }
 
-        if (!targets.Any(target => Collected.Contains(target) && !Inert.Contains(target))) {
+        if (!targets.Any(target => Collected.Contains(target) && !Inert.Contains(target) && !Unoracled.Contains(target)
+            )) {
             throw new InvalidOperationException(
                 $"'{key}' expands to [{string.Join(", ", targets.Select(static t => OptionRegistry.Get(t).Key))}] and phase 1 implements none of them. A generalized key is honoured through its targets or not at all."
             );

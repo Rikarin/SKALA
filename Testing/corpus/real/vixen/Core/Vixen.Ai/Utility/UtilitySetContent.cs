@@ -23,7 +23,9 @@ public enum UtilityInputKind : byte {
     Registered
 }
 
-/// <summary>One consideration, as a file holds it: where the number comes from and what shape it goes through.</summary>
+/// <summary>
+///     One consideration, as a file holds it: where the number comes from and what shape it goes through.
+/// </summary>
 /// <remarks>
 ///     ⚠ <b>Every member is settable, and that is not laziness.</b> The YAML binder takes part only in
 ///     members it can write on both sides, so a get-only collection is written out and then silently
@@ -69,16 +71,17 @@ public sealed class UtilityConsiderationContent {
 
     /// <summary>The curve this describes.</summary>
     /// <returns>The curve.</returns>
-    public ResponseCurve BuildCurve() => new() {
-        Kind = Curve,
-        Slope = Slope,
-        Exponent = Exponent,
-        Shift = Shift,
-        Centre = Centre,
-        Keys = Curve == ResponseCurveKind.Sampled && Keys.Count > 0
-            ? [.. Keys.OrderBy(key => key.Time).Select(key => key.ToSample())]
-            : null
-    };
+    public ResponseCurve BuildCurve() =>
+        new() {
+            Kind = Curve,
+            Slope = Slope,
+            Exponent = Exponent,
+            Shift = Shift,
+            Centre = Centre,
+            Keys = Curve == ResponseCurveKind.Sampled && Keys.Count > 0
+                ? [.. Keys.OrderBy(key => key.Time).Select(key => key.ToSample())]
+                : null
+        };
 }
 
 /// <summary>One key of a sampled curve, as a file holds it.</summary>
@@ -216,10 +219,11 @@ public sealed class UtilitySetContent {
 
     /// <summary>The selector this describes.</summary>
     /// <returns>The selector.</returns>
-    public IUtilitySelector BuildSelector() => Selector switch {
-        UtilitySelectorKind.WeightedRandom => UtilitySelectors.WeightedRandom,
-        UtilitySelectorKind.TopWeightedRandom => UtilitySelectors.TopWeightedRandom(Math.Max(1, SelectorCount)),
-        UtilitySelectorKind.Bucketed => UtilitySelectors.Bucketed,
-        _ => UtilitySelectors.Highest
-    };
+    public IUtilitySelector BuildSelector() =>
+        Selector switch {
+            UtilitySelectorKind.WeightedRandom => UtilitySelectors.WeightedRandom,
+            UtilitySelectorKind.TopWeightedRandom => UtilitySelectors.TopWeightedRandom(Math.Max(1, SelectorCount)),
+            UtilitySelectorKind.Bucketed => UtilitySelectors.Bucketed,
+            _ => UtilitySelectors.Highest
+        };
 }

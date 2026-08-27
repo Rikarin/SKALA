@@ -56,18 +56,18 @@ public static class DaemonClient {
     static int _started;
 
     /// <summary>
-    /// Starts a daemon for <paramref name="repositoryRoot"/> in the background and returns
-    /// immediately. ⚠ It does not wait for it and the caller does not use it: this run stays cold
-    /// and does its own work, and the *next* one finds a socket. Waiting here would put the daemon's
-    /// own start — parse, JIT, the first configuration resolution — inside the budget the daemon
-    /// exists to meet, which is the shape that makes lazy starting feel slower than no daemon at all.
+    ///     Starts a daemon for <paramref name="repositoryRoot" /> in the background and returns
+    ///     immediately. ⚠ It does not wait for it and the caller does not use it: this run stays cold
+    ///     and does its own work, and the *next* one finds a socket. Waiting here would put the daemon's
+    ///     own start — parse, JIT, the first configuration resolution — inside the budget the daemon
+    ///     exists to meet, which is the shape that makes lazy starting feel slower than no daemon at all.
     /// </summary>
     /// <remarks>
-    /// ⚠ At most once per process, and only when the running executable is one that can host a
-    /// daemon. Under `dotnet run`, under a test host, or wherever else the formatter is being used
-    /// as a library, <see cref="Environment.ProcessPath"/> is somebody else's program and
-    /// re-launching it with `daemon run` would start something nobody asked for. Every failure is
-    /// silent, for the reason in the type's remarks.
+    ///     ⚠ At most once per process, and only when the running executable is one that can host a
+    ///     daemon. Under `dotnet run`, under a test host, or wherever else the formatter is being used
+    ///     as a library, <see cref="Environment.ProcessPath" /> is somebody else's program and
+    ///     re-launching it with `daemon run` would start something nobody asked for. Every failure is
+    ///     silent, for the reason in the type's remarks.
     /// </remarks>
     public static void StartInBackground(string repositoryRoot) {
         if (!Enabled || Interlocked.Exchange(ref _started, 1) != 0) {
@@ -83,9 +83,9 @@ public static class DaemonClient {
     }
 
     /// <summary>
-    /// ⚠ <c>skala</c> is the NativeAOT client after M7 and cannot host a daemon — it has no Roslyn.
-    /// <c>skala-tool</c> is the full tool. Accepting both keeps a development build (where the full
-    /// tool is still called <c>skala</c>) working alongside a published layout.
+    ///     ⚠ <c>skala</c> is the NativeAOT client after M7 and cannot host a daemon — it has no Roslyn.
+    ///     <c>skala-tool</c> is the full tool. Accepting both keeps a development build (where the full
+    ///     tool is still called <c>skala</c>) working alongside a published layout.
     /// </summary>
     public static bool HostsADaemon(string executable) {
         var name = Path.GetFileNameWithoutExtension(executable);

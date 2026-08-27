@@ -6,25 +6,25 @@ using Rikarin.Skala.Rules.Maintainability;
 namespace Rikarin.Skala.Rules.Tests;
 
 /// <summary>
-/// The metrics themselves, pinned to numbers rather than to whether a rule fired.
+///     The metrics themselves, pinned to numbers rather than to whether a rule fired.
 /// </summary>
 /// <remarks>
-/// ⚠ A cognitive-complexity implementation that is not pinned to worked examples drifts, and the
-/// drift is invisible: the rule keeps firing on the same methods and the number quietly stops being
-/// the one SonarQube would print. Every expectation in the § "Sonar's worked examples" region is a
-/// number SonarSource published in "Cognitive Complexity — a new way of measuring understandability"
-/// (G. Ann Campbell, v1.7), transcribed from Java to C# without changing the control flow. The
-/// citation is in the test name; if one of these moves, the metric has stopped being comparable and
-/// that is the whole value of it.
+///     ⚠ A cognitive-complexity implementation that is not pinned to worked examples drifts, and the
+///     drift is invisible: the rule keeps firing on the same methods and the number quietly stops being
+///     the one SonarQube would print. Every expectation in the § "Sonar's worked examples" region is a
+///     number SonarSource published in "Cognitive Complexity — a new way of measuring understandability"
+///     (G. Ann Campbell, v1.7), transcribed from Java to C# without changing the control flow. The
+///     citation is in the test name; if one of these moves, the metric has stopped being comparable and
+///     that is the whole value of it.
 /// </remarks>
 public sealed class MemberMetricsTests {
     // ---- Sonar's worked examples, with the paper's own totals ----
 
     /// <summary>Paper § "The implications": <c>getWords</c> scores <b>1</b>.</summary>
     /// <remarks>
-    /// ⚠ The headline result. Cyclomatic complexity scores this 4 and cognitive complexity scores it
-    /// 1, "because a switch — which compares a single variable to an explicitly named set of literal
-    /// values — can often be taken in at a glance".
+    ///     ⚠ The headline result. Cyclomatic complexity scores this 4 and cognitive complexity scores it
+    ///     1, "because a switch — which compares a single variable to an explicitly named set of literal
+    ///     values — can often be taken in at a glance".
     /// </remarks>
     [Fact]
     public void Paper_GetWords_ASwitchOfFourCases_Scores1() =>
@@ -53,8 +53,8 @@ public sealed class MemberMetricsTests {
 
     /// <summary>Paper § "Increment for nested flow-break structures": <c>myMethod</c> scores <b>9</b>.</summary>
     /// <remarks>
-    /// try is +0 and catch is +1; the if/for/while chain pays 1 + 2 + 3 for its nesting and the if
-    /// inside the catch pays 2 because the catch put it one level down.
+    ///     try is +0 and catch is +1; the if/for/while chain pays 1 + 2 + 3 for its nesting and the if
+    ///     inside the catch pays 2 because the catch put it one level down.
     /// </remarks>
     [Fact]
     public void Paper_MyMethod_NestedInsideATryAndACatch_Scores9() =>
@@ -82,8 +82,8 @@ public sealed class MemberMetricsTests {
 
     /// <summary>Paper § "Increment for nested flow-break structures": <c>myMethod2</c> scores <b>2</b>.</summary>
     /// <remarks>
-    /// ⚠ "there is no structural increment for lambdas, nested methods, and similar features, such
-    /// methods do increment the nesting level". The lambda costs 0 and makes the <c>if</c> cost 2.
+    ///     ⚠ "there is no structural increment for lambdas, nested methods, and similar features, such
+    ///     methods do increment the nesting level". The lambda costs 0 and makes the <c>if</c> cost 2.
     /// </remarks>
     [Fact]
     public void Paper_MyMethod2_AnIfInsideALambda_Scores2() =>
@@ -105,9 +105,9 @@ public sealed class MemberMetricsTests {
 
     /// <summary>Paper Appendix C, <c>JavaSymbol.overriddenSymbolFrom</c>: <b>19</b>.</summary>
     /// <remarks>
-    /// 1 + 1 + (2 + 1) + 3 + 4 + 5 + 1 + 1. The <c>else if</c> at the bottom of the chain is the
-    /// single +1 that proves it takes no nesting increment: at four levels deep, a nesting increment
-    /// would have made it +5.
+    ///     1 + 1 + (2 + 1) + 3 + 4 + 5 + 1 + 1. The <c>else if</c> at the bottom of the chain is the
+    ///     single +1 that proves it takes no nesting increment: at four levels deep, a nesting increment
+    ///     would have made it +5.
     /// </remarks>
     [Fact]
     public void Paper_OverriddenSymbolFrom_Scores19() =>
@@ -155,8 +155,8 @@ public sealed class MemberMetricsTests {
 
     /// <summary>Paper Appendix C, <c>WildcardPattern.toRegexp</c>: <b>20</b>.</summary>
     /// <remarks>
-    /// The long <c>else if</c> chain, four of them, each +1, plus two conditions three and four
-    /// levels deep. It is the example that catches an implementation which lets a chain grow.
+    ///     The long <c>else if</c> chain, four of them, each +1, plus two conditions three and four
+    ///     levels deep. It is the example that catches an implementation which lets a chain grow.
     /// </remarks>
     [Fact]
     public void Paper_ToRegexp_Scores20() =>
@@ -213,16 +213,16 @@ public sealed class MemberMetricsTests {
         );
 
     /// <summary>
-    /// Paper § "The implications": <c>sumOfPrimes</c> scores <b>7</b> in Java and <b>10</b> here.
+    ///     Paper § "The implications": <c>sumOfPrimes</c> scores <b>7</b> in Java and <b>10</b> here.
     /// </summary>
     /// <remarks>
-    /// ⚠ The one worked example that does not transcribe. Java's <c>continue OUT;</c> is a jump to a
-    /// label and the paper charges it a flat +1; C# has no labelled <c>continue</c>, so the same
-    /// control flow is written with <c>goto</c> — and SonarSource's own C# analyzer charges
-    /// <c>goto</c> a <em>nesting</em> increment rather than a flat one. At nesting 3 that is +4
-    /// rather than +1, so 7 becomes 10. The divergence is SonarAnalyzer's, not Skala's, and it is
-    /// kept deliberately: a number that does not match what SonarQube prints for this file is a
-    /// number with no reason to exist.
+    ///     ⚠ The one worked example that does not transcribe. Java's <c>continue OUT;</c> is a jump to a
+    ///     label and the paper charges it a flat +1; C# has no labelled <c>continue</c>, so the same
+    ///     control flow is written with <c>goto</c> — and SonarSource's own C# analyzer charges
+    ///     <c>goto</c> a <em>nesting</em> increment rather than a flat one. At nesting 3 that is +4
+    ///     rather than +1, so 7 becomes 10. The divergence is SonarAnalyzer's, not Skala's, and it is
+    ///     kept deliberately: a number that does not match what SonarQube prints for this file is a
+    ///     number with no reason to exist.
     /// </remarks>
     [Fact]
     public void Paper_SumOfPrimes_WithGotoInPlaceOfALabelledContinue_Scores10() =>
@@ -255,11 +255,11 @@ public sealed class MemberMetricsTests {
     // ---- Sequences of binary logical operators ----
 
     /// <summary>
-    /// Paper § "Sequences of logical operators", every published pair and the mixed examples.
+    ///     Paper § "Sequences of logical operators", every published pair and the mixed examples.
     /// </summary>
     /// <remarks>
-    /// ⚠ Each expectation is the score of the <em>expression</em>: the enclosing <c>if</c>'s own +1
-    /// is subtracted, so these are directly the paper's per-line annotations.
+    ///     ⚠ Each expectation is the score of the <em>expression</em>: the enclosing <c>if</c>'s own +1
+    ///     is subtracted, so these are directly the paper's per-line annotations.
     /// </remarks>
     [Theory]
     [InlineData("a && b", 1)]
@@ -303,12 +303,12 @@ public sealed class MemberMetricsTests {
     // ---- The two shapes rules.json calls out by name ----
 
     /// <summary>
-    /// ⚠ A twenty-case <c>switch</c> scores 1 and a triple-nested condition scores 6.
+    ///     ⚠ A twenty-case <c>switch</c> scores 1 and a triple-nested condition scores 6.
     /// </summary>
     /// <remarks>
-    /// rules.json's <c>SK7002</c> rationale in one assertion: "a switch over twenty cases costs one,
-    /// because a reader takes it in at a glance, and a condition nested three deep costs four rather
-    /// than one". Both sides of that sentence have to be true for the metric to mean anything.
+    ///     rules.json's <c>SK7002</c> rationale in one assertion: "a switch over twenty cases costs one,
+    ///     because a reader takes it in at a glance, and a condition nested three deep costs four rather
+    ///     than one". Both sides of that sentence have to be true for the metric to mean anything.
     /// </remarks>
     [Fact]
     public void ATwentyCaseSwitch_ScoresLessThanATripleNestedCondition() {
@@ -341,12 +341,12 @@ public sealed class MemberMetricsTests {
     }
 
     /// <summary>
-    /// ⚠ An <c>else if</c> chain does not take a nesting increment; a nested <c>if</c> chain does.
+    ///     ⚠ An <c>else if</c> chain does not take a nesting increment; a nested <c>if</c> chain does.
     /// </summary>
     /// <remarks>
-    /// The same five conditions written two ways. The chain is 5 — one per branch — and the nest is
-    /// 1 + 2 + 3 + 4 + 5 = 15. If an implementation lets <c>else if</c> take a nesting increment the
-    /// two converge, which is the single most common way to get this metric wrong.
+    ///     The same five conditions written two ways. The chain is 5 — one per branch — and the nest is
+    ///     1 + 2 + 3 + 4 + 5 = 15. If an implementation lets <c>else if</c> take a nesting increment the
+    ///     two converge, which is the single most common way to get this metric wrong.
     /// </remarks>
     [Fact]
     public void AnElseIfChain_TakesNoNestingIncrement() {
@@ -399,7 +399,7 @@ public sealed class MemberMetricsTests {
     }
 
     /// <summary>
-    /// ⚠ The paper ignores null-coalescing operators by name; <c>try</c> and <c>finally</c> too.
+    ///     ⚠ The paper ignores null-coalescing operators by name; <c>try</c> and <c>finally</c> too.
     /// </summary>
     [Theory]
     [InlineData("class C { object M(object a, object b) { return a ?? b; } }", 0)]
@@ -589,14 +589,14 @@ public sealed class MemberMetricsTests {
     // ---- Cyclomatic complexity: the control-flow graph, and the fallback that has to agree ----
 
     /// <summary>
-    /// ⚠ The control-flow-graph number and the syntactic fallback must agree.
+    ///     ⚠ The control-flow-graph number and the syntactic fallback must agree.
     /// </summary>
     /// <remarks>
-    /// docs/plan/07 § "Metrics" specifies Roslyn's <c>ControlFlowGraph</c>, and docs/plan/07 §
-    /// "loose" gives a whole load mode no semantic model at all. If the two disagree, the same member
-    /// measures differently depending on how the run was loaded — which is the cache's failure mode
-    /// (a number that changes for a reason nothing in the report names) arriving through a different
-    /// door. Every shape here is one the two could plausibly count differently.
+    ///     docs/plan/07 § "Metrics" specifies Roslyn's <c>ControlFlowGraph</c>, and docs/plan/07 §
+    ///     "loose" gives a whole load mode no semantic model at all. If the two disagree, the same member
+    ///     measures differently depending on how the run was loaded — which is the cache's failure mode
+    ///     (a number that changes for a reason nothing in the report names) arriving through a different
+    ///     door. Every shape here is one the two could plausibly count differently.
     /// </remarks>
     [Theory]
     [InlineData("void M() { }")]
@@ -629,19 +629,19 @@ public sealed class MemberMetricsTests {
     }
 
     /// <summary>
-    /// ⚠ The one shape where the graph and the fallback do not agree, pinned rather than hidden.
+    ///     ⚠ The one shape where the graph and the fallback do not agree, pinned rather than hidden.
     /// </summary>
     /// <remarks>
-    /// <c>foreach</c> over an <c>IEnumerable</c> or an array compiles to a loop plus an implicit
-    /// <c>finally</c> that asks whether the enumerator is disposable, and that question is a
-    /// conditional edge in Roslyn's graph. No amount of looking at the source finds it, because it
-    /// is not in the source. The graph is the definition docs/plan/07 § "Metrics" chose, so the
-    /// graph's number is the right one and the fallback is one short — which is exactly what
-    /// <see cref="MemberMetricValues.CyclomaticFromControlFlowGraph"/> exists to tell a consumer.
-    /// <para>
-    /// It is pinned here so that the day Roslyn changes the lowering, this test fails rather than a
-    /// repository's numbers moving with no explanation.
-    /// </para>
+    ///     <c>foreach</c> over an <c>IEnumerable</c> or an array compiles to a loop plus an implicit
+    ///     <c>finally</c> that asks whether the enumerator is disposable, and that question is a
+    ///     conditional edge in Roslyn's graph. No amount of looking at the source finds it, because it
+    ///     is not in the source. The graph is the definition docs/plan/07 § "Metrics" chose, so the
+    ///     graph's number is the right one and the fallback is one short — which is exactly what
+    ///     <see cref="MemberMetricValues.CyclomaticFromControlFlowGraph" /> exists to tell a consumer.
+    ///     <para>
+    ///         It is pinned here so that the day Roslyn changes the lowering, this test fails rather than a
+    ///         repository's numbers moving with no explanation.
+    ///     </para>
     /// </remarks>
     [Theory]
     [InlineData("void M(int[] xs) { foreach (var x in xs) { A(); } }", 3, 2)]
@@ -658,7 +658,7 @@ public sealed class MemberMetricsTests {
     }
 
     /// <summary>
-    /// A property is one member with two bodies, and scores as one member.
+    ///     A property is one member with two bodies, and scores as one member.
     /// </summary>
     [Fact]
     public void CyclomaticComplexity_OfAProperty_CoversBothAccessorsOnce() {
@@ -772,8 +772,8 @@ public sealed class MemberMetricsTests {
     }
 
     /// <summary>
-    /// Parse only, no compilation: cognitive complexity is a <c>Syntax</c>-scoped metric and the
-    /// examples above are transcriptions rather than compilable programs.
+    ///     Parse only, no compilation: cognitive complexity is a <c>Syntax</c>-scoped metric and the
+    ///     examples above are transcriptions rather than compilable programs.
     /// </summary>
     static MemberMetricValues Parse(string source, string memberName) {
         var tree = CSharpSyntaxTree.ParseText(

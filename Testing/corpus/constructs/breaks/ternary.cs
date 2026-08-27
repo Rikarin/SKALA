@@ -4,9 +4,7 @@ class Ternary {
             ? whenTrue
             : whenFalse;
 
-        var afterTheSigns = condition ?
-            whenTrue :
-            whenFalse;
+        var afterTheSigns = condition ? whenTrue : whenFalse;
 
         var joined = condition ? whenTrue : whenFalse;
     }

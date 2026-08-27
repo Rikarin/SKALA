@@ -295,11 +295,11 @@ public sealed class TerrainBrushTests {
     [Fact]
     public void AnyBrushIsMonotonicFromItsCentreToItsEdge() {
         Gen.Select(
-                Gen.Float[0.01f, 200f],
-                Gen.Float[0f, 1f],
-                Gen.Float[0f, 1f],
-                Gen.Int[0, 3]
-            )
+            Gen.Float[0.01f, 200f],
+            Gen.Float[0f, 1f],
+            Gen.Float[0f, 1f],
+            Gen.Int[0, 3]
+        )
             .Sample(
                 input => {
                     var (radius, strength, falloff, curve) = input;

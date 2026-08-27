@@ -11,8 +11,11 @@ namespace Vixen.Ui.Tests;
 /// <summary>The frame pass restyling incrementally, judged against a document built cold.</summary>
 /// <remarks>
 ///     <para>
-///         ⚠ <b>Deliberately driven through <see cref="UiDocument" /> rather than through
-///         <see cref="StyleUpdater" />.</b> <c>Vixen.Ui.Styling.Tests.IncrementalRestyleOracleTests</c>
+///         ⚠
+///         <b>
+///             Deliberately driven through <see cref="UiDocument" /> rather than through
+///             <see cref="StyleUpdater" />.
+///         </b> <c>Vixen.Ui.Styling.Tests.IncrementalRestyleOracleTests</c>
 ///         already runs this property against the updater and has been green since Phase 4b — while
 ///         <see cref="UiDocument.Update" /> called <c>StyleEngine.ResolveAll</c> and never touched the
 ///         updater at all. Every claim about incremental restyling was true of an object nothing in
@@ -36,51 +39,54 @@ public class IncrementalDocumentTests {
         var styledElements = 0;
         var stateMutations = 0;
 
-        Gen.Select(Gen.Int[0, 100_000], Gen.Int[2, 4], Gen.Int[2, 3], Gen.Int[4, 12]).Sample(shape => {
-                var (seed, depth, breadth, mutations) = shape;
-                var css = Stylesheet(seed);
-                var random = new Random(seed ^ 0x51D2);
+        Gen.Select(Gen.Int[0, 100_000], Gen.Int[2, 4], Gen.Int[2, 3], Gen.Int[4, 12])
+            .Sample(
+                shape => {
+                    var (seed, depth, breadth, mutations) = shape;
+                    var css = Stylesheet(seed);
+                    var random = new Random(seed ^ 0x51D2);
 
-                using var live = new UiDocument(400f, 300f);
-                live.Load(css);
-                var elements = Build(live, seed, depth, breadth);
+                    using var live = new UiDocument(400f, 300f);
+                    live.Load(css);
+                    var elements = Build(live, seed, depth, breadth);
 
-                // The baseline pass. Everything after it must be incremental.
-                live.Update();
+                    // The baseline pass. Everything after it must be incremental.
+                    live.Update();
 
-                for (var m = 0; m < mutations; m++) {
-                    stateMutations += Mutate(elements, random) ? 1 : 0;
-                }
+                    for (var m = 0; m < mutations; m++) {
+                        stateMutations += Mutate(elements, random) ? 1 : 0;
+                    }
 
-                live.Update();
+                    live.Update();
 
-                if (!live.LastPassWasCold) {
-                    incrementalPasses++;
-                }
+                    if (!live.LastPassWasCold) {
+                        incrementalPasses++;
+                    }
 
-                // The oracle is a second document built *directly* in the state the mutations left
-                // the first one in — not the same document with the same mutations replayed. Both
-                // sides would then reach their final state through the same mutation code, so
-                // anything that code gets wrong is wrong identically on both and the comparison sees
-                // nothing. `IncrementalRestyleOracleTests` learned that the hard way in 4b.
-                using var cold = new UiDocument(400f, 300f);
-                cold.Load(css);
-                var reference = Build(cold, seed, depth, breadth);
-                Copy(elements, reference);
-                cold.Update();
+                    // The oracle is a second document built *directly* in the state the mutations left
+                    // the first one in — not the same document with the same mutations replayed. Both
+                    // sides would then reach their final state through the same mutation code, so
+                    // anything that code gets wrong is wrong identically on both and the comparison sees
+                    // nothing. `IncrementalRestyleOracleTests` learned that the hard way in 4b.
+                    using var cold = new UiDocument(400f, 300f);
+                    cold.Load(css);
+                    var reference = Build(cold, seed, depth, breadth);
+                    Copy(elements, reference);
+                    cold.Update();
 
-                Assert.True(cold.LastPassWasCold);
+                    Assert.True(cold.LastPassWasCold);
 
-                for (var i = 0; i < elements.Count; i++) {
-                    styledElements += elements[i].Style.Count > 0 ? 1 : 0;
+                    for (var i = 0; i < elements.Count; i++) {
+                        styledElements += elements[i].Style.Count > 0 ? 1 : 0;
 
-                    Assert.Equal(
-                        Describe(cold, reference[i].Style),
-                        Describe(live, elements[i].Style)
-                    );
-                }
-            }, iter: 300
-        );
+                        Assert.Equal(
+                            Describe(cold, reference[i].Style),
+                            Describe(live, elements[i].Style)
+                        );
+                    }
+                },
+                iter: 300
+            );
 
         // ⚠ **Three coverage assertions, and the first version of this test had only one.** A
         // property that compares two documents is perfectly happy comparing two documents where
@@ -113,12 +119,14 @@ public class IncrementalDocumentTests {
     public void Toggling_one_class_on_a_grid_resolves_a_handful_of_elements() {
         // Phase 4b's invalidation-minimality gate, asked of the document instead of the updater.
         using var document = new UiDocument(1000f, 1000f);
-        document.Load("""
-            root { flex-direction: column; }
-            .row { flex-direction: row; }
-            .cell { width: 8px; height: 8px; }
-            .row.selected { background-color: #ff0000; }
-        """);
+        document.Load(
+            """
+                root { flex-direction: column; }
+                .row { flex-direction: row; }
+                .cell { width: 8px; height: 8px; }
+                .row.selected { background-color: #ff0000; }
+            """
+        );
 
         var rows = new UiElement[100];
 
@@ -149,10 +157,12 @@ public class IncrementalDocumentTests {
     [Fact]
     public void A_scroll_resolves_nothing_at_all() {
         using var document = new UiDocument(400f, 300f);
-        document.Load("""
-            root { width: 400px; height: 300px; }
-            .box { width: 100px; height: 100px; }
-        """);
+        document.Load(
+            """
+                root { width: 400px; height: 300px; }
+                .box { width: 100px; height: 100px; }
+            """
+        );
 
         var box = document.Root.Add("div", classNames: "box");
         document.Update();
@@ -174,10 +184,12 @@ public class IncrementalDocumentTests {
         // between them to notice. Every declaration written on an element vanished the moment the
         // pass became incremental — a splitter losing its ratio on the first hover.
         using var document = new UiDocument(400f, 300f);
-        document.Load("""
-            root { width: 400px; height: 300px; }
-            .box { width: 50px; height: 20px; }
-        """);
+        document.Load(
+            """
+                root { width: 400px; height: 300px; }
+                .box { width: 50px; height: 20px; }
+            """
+        );
 
         var box = document.Root.Add("div", classNames: "box");
         box.SetStyle("width", "137px");
@@ -230,11 +242,13 @@ public class IncrementalDocumentTests {
     [Fact]
     public void Several_changes_in_one_frame_are_all_replayed() {
         using var document = new UiDocument(400f, 300f);
-        document.Load("""
-            root { width: 400px; height: 300px; }
-            .marked { width: 33px; }
-            .lit { height: 21px; }
-        """);
+        document.Load(
+            """
+                root { width: 400px; height: 300px; }
+                .marked { width: 33px; }
+                .lit { height: 21px; }
+            """
+        );
 
         var first = document.Root.Add("div");
         var second = document.Root.Add("div");
@@ -259,11 +273,13 @@ public class IncrementalDocumentTests {
         // The sharing-cache regression from 4e, re-asserted against the incremental path — where the
         // pass scoping is `StyleUpdater`'s to get right rather than `StyleEngine.ResolveAll`'s.
         using var document = new UiDocument(400f, 300f);
-        document.Load("""
-            root { width: 400px; height: 300px; }
-            .card .button { width: 10px; }
-            .card:hover .button { width: 80px; }
-        """);
+        document.Load(
+            """
+                root { width: 400px; height: 300px; }
+                .card .button { width: 10px; }
+                .card:hover .button { width: 80px; }
+            """
+        );
 
         var card = document.Root.Add("div", classNames: "card");
         var button = card.Add("div", classNames: "button");

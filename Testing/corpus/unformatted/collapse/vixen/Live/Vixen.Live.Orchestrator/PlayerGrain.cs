@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: Copyright (c) Rikarin
 // SPDX-License-Identifier: Apache-2.0
-using Vixen.Live.Cluster;namespace Vixen.Live.Orchestration;
+using Vixen.Live.Cluster; namespace Vixen.Live.Orchestration;
+
 /// <summary>How long a lease survives without a renewal, and how the cluster tells the time.</summary>
 /// <remarks>
 ///     ⚠ <b>The lease has to outlive a realm's worst pause, and no longer.</b> Too short and a
@@ -9,9 +10,11 @@ using Vixen.Live.Cluster;namespace Vixen.Live.Orchestration;
 /// </remarks>
 /// <param name="Lifetime">How long a lease lasts from its last renewal.</param>
 /// <param name="Now">The clock. A parameter so a test does not have to wait.</param>
-public sealed record LeaseOptions(TimeSpan Lifetime,Func<DateTimeOffset>Now){
-/// <summary>The defaults.</summary>
-public static LeaseOptions Default{get;}=new(TimeSpan.FromSeconds(20),()=>DateTimeOffset.UtcNow);}
+public sealed record LeaseOptions(TimeSpan Lifetime, Func<DateTimeOffset> Now) {
+    /// <summary>The defaults.</summary>
+    public static LeaseOptions Default { get; } = new(TimeSpan.FromSeconds(20), () => DateTimeOffset.UtcNow);
+}
+
 /// <summary>One character's lease. ADR-021, and the reason duplication is not expressible.</summary>
 /// <remarks>
 ///     <para>
@@ -34,11 +37,17 @@ public static LeaseOptions Default{get;}=new(TimeSpan.FromSeconds(20),()=>DateTi
 ///         before it can be written. The repository is L3.
 ///     </para>
 /// </remarks>
-public sealed class PlayerLeaseState{readonly LeaseOptions options;long epoch;ShardId holder;DateTimeOffset expires;
-/// <summary>Stands one up.</summary>
+public sealed class PlayerLeaseState {
+    readonly LeaseOptions options;
+    long epoch;
+    ShardId holder;
+    DateTimeOffset expires;
+
+    /// <summary>Stands one up.</summary>
     /// <param name="options">The lifetime and clock, or null for the defaults.</param>
-public PlayerLeaseState(LeaseOptions?options=null)=>this.options=options??LeaseOptions.Default;
-/// <summary>Takes the lease, superseding whoever held it.</summary>
+    public PlayerLeaseState(LeaseOptions? options = null) => this.options = options ?? LeaseOptions.Default;
+
+    /// <summary>Takes the lease, superseding whoever held it.</summary>
     /// <param name="shard">Which shard is asking.</param>
     /// <returns>The lease, always granted.</returns>
     /// <remarks>
@@ -48,30 +57,61 @@ public PlayerLeaseState(LeaseOptions?options=null)=>this.options=options??LeaseO
     ///     holder finds out — rather than the acquisition failing and the character being stuck until
     ///     a timeout nobody can see has elapsed.
     /// </remarks>
-public PlayerLease Acquire(ShardId shard){epoch++;holder=shard;expires=options.Now()+options.Lifetime;return new(true,epoch,holder,expires);}
-/// <summary>Says the holder is still alive.</summary>
+    public PlayerLease Acquire(ShardId shard) {
+        epoch++;
+        holder = shard;
+        expires = options.Now() + options.Lifetime;
+        return new(true, epoch, holder, expires);
+    }
+
+    /// <summary>Says the holder is still alive.</summary>
     /// <param name="shard">Which shard claims to hold it.</param>
     /// <param name="presented">Which epoch it thinks it has.</param>
     /// <returns>The lease. Not granted when it has been superseded.</returns>
-public PlayerLease Renew(ShardId shard,long presented){var now=options.Now();if(presented!=epoch||holder!=shard){ // Superseded. The realm keeps simulating — doc 27 is explicit that a lease loss
-// mid-combat must be survivable — and buffers its durable mutations until the lease
-// returns or the transfer hands them to the new holder.
-return new(false,epoch,holder,expires);}if(expires<=now){ // It lapsed while they were away, so the epoch moves and anything written under the old
-// one is refused. A renewal that resurrected a lapsed lease would let two realms believe
-// they hold the same character across a partition, which is the one thing this type
-// exists to make impossible.
-epoch++;}expires=now+options.Lifetime;return new(true,epoch,holder,expires);}
-/// <summary>Gives it back. A stale epoch is ignored rather than refused.</summary>
+    public PlayerLease Renew(ShardId shard, long presented) {
+        var now = options.Now();
+        if (presented != epoch || holder != shard) {
+            // Superseded. The realm keeps simulating — doc 27 is explicit that a lease loss
+            // mid-combat must be survivable — and buffers its durable mutations until the lease
+            // returns or the transfer hands them to the new holder.
+            return new(false, epoch, holder, expires);
+        }
+
+        if (expires <= now) {
+            // It lapsed while they were away, so the epoch moves and anything written under the old
+            // one is refused. A renewal that resurrected a lapsed lease would let two realms believe
+            // they hold the same character across a partition, which is the one thing this type
+            // exists to make impossible.
+            epoch++;
+        }
+
+        expires = now + options.Lifetime;
+        return new(true, epoch, holder, expires);
+    }
+
+    /// <summary>Gives it back. A stale epoch is ignored rather than refused.</summary>
     /// <param name="shard">Which shard held it.</param>
     /// <param name="presented">Which epoch.</param>
-public void Release(ShardId shard,long presented){if(presented!=epoch||holder!=shard){return;}holder=ShardId.None;expires=options.Now();}
-/// <summary>Who holds it, without taking it.</summary>
+    public void Release(ShardId shard, long presented) {
+        if (presented != epoch || holder != shard) {
+            return;
+        }
+
+        holder = ShardId.None;
+        expires = options.Now();
+    }
+
+    /// <summary>Who holds it, without taking it.</summary>
     /// <returns>The lease as it stands.</returns>
-public PlayerLease Current()=>new(IsHeld,epoch,holder,expires);
-/// <summary>Which shard this character is on, as far as the cluster knows.</summary>
-public ShardId Holder=>IsHeld?holder:ShardId.None;
-/// <summary>Whether anybody currently holds it.</summary>
-public bool IsHeld=>holder.IsValid&&expires>options.Now();}
+    public PlayerLease Current() => new(IsHeld, epoch, holder, expires);
+
+    /// <summary>Which shard this character is on, as far as the cluster knows.</summary>
+    public ShardId Holder => IsHeld ? holder : ShardId.None;
+
+    /// <summary>Whether anybody currently holds it.</summary>
+    public bool IsHeld => holder.IsValid && expires > options.Now();
+}
+
 /// <summary>The grain around <see cref="PlayerLeaseState" />. A scheduling decision, and nothing more.</summary>
 /// <remarks>
 ///     ⚠ <b>Every grain in this assembly is this thin, on purpose.</b> The logic is a plain class
@@ -80,14 +120,24 @@ public bool IsHeld=>holder.IsValid&&expires>options.Now();}
 ///     the grain would make it untestable without a silo, which is how a coordination layer ends up
 ///     with no tests at all.
 /// </remarks>
-public sealed class PlayerGrain(LeaseOptions?options=null):Grain,IPlayerGrain{readonly PlayerLeaseState lease=new(options);
-/// <inheritdoc />
-public Task<PlayerLease>AcquireLease(ShardId shard)=>Task.FromResult(lease.Acquire(shard));
-/// <inheritdoc />
-public Task<PlayerLease>RenewLease(ShardId shard,long epoch)=>Task.FromResult(lease.Renew(shard,epoch));
-/// <inheritdoc />
-public Task ReleaseLease(ShardId shard,long epoch){lease.Release(shard,epoch);return Task.CompletedTask;}
-/// <inheritdoc />
-public Task<PlayerLease>Lease()=>Task.FromResult(lease.Current());
-/// <inheritdoc />
-public Task<ShardId>Where()=>Task.FromResult(lease.Holder);}
+public sealed class PlayerGrain(LeaseOptions? options = null) : Grain, IPlayerGrain {
+    readonly PlayerLeaseState lease = new(options);
+
+    /// <inheritdoc />
+    public Task<PlayerLease> AcquireLease(ShardId shard) => Task.FromResult(lease.Acquire(shard));
+
+    /// <inheritdoc />
+    public Task<PlayerLease> RenewLease(ShardId shard, long epoch) => Task.FromResult(lease.Renew(shard, epoch));
+
+    /// <inheritdoc />
+    public Task ReleaseLease(ShardId shard, long epoch) {
+        lease.Release(shard, epoch);
+        return Task.CompletedTask;
+    }
+
+    /// <inheritdoc />
+    public Task<PlayerLease> Lease() => Task.FromResult(lease.Current());
+
+    /// <inheritdoc />
+    public Task<ShardId> Where() => Task.FromResult(lease.Holder);
+}

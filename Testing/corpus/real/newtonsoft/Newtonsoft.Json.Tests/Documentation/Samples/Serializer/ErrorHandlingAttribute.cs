@@ -1,4 +1,5 @@
 ﻿#region License
+
 // Copyright (c) 2007 James Newton-King
 //
 // Permission is hereby granted, free of charge, to any person
@@ -21,6 +22,7 @@
 // WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 // OTHER DEALINGS IN THE SOFTWARE.
+
 #endregion
 
 using Newtonsoft.Json.Serialization;
@@ -37,25 +39,20 @@ using NUnit.Framework;
 
 #endif
 
-namespace Newtonsoft.Json.Tests.Documentation.Samples.Serializer
-{
+namespace Newtonsoft.Json.Tests.Documentation.Samples.Serializer {
     [TestFixture]
-    public class ErrorHandlingAttribute : TestFixtureBase
-    {
+    public class ErrorHandlingAttribute : TestFixtureBase {
         #region Types
-        public class Employee
-        {
+
+        public class Employee {
             private List<string> _roles;
 
             public string Name { get; set; }
             public int Age { get; set; }
 
-            public List<string> Roles
-            {
-                get
-                {
-                    if (_roles == null)
-                    {
+            public List<string> Roles {
+                get {
+                    if (_roles == null) {
                         throw new Exception("Roles not loaded!");
                     }
 
@@ -67,23 +64,19 @@ namespace Newtonsoft.Json.Tests.Documentation.Samples.Serializer
             public string Title { get; set; }
 
             [OnError]
-            internal void OnError(StreamingContext context, ErrorContext errorContext)
-            {
+            internal void OnError(StreamingContext context, ErrorContext errorContext) {
                 errorContext.Handled = true;
             }
         }
+
         #endregion
 
         [Test]
-        public void Example()
-        {
+        public void Example() {
             #region Usage
-            Employee person = new Employee
-            {
-                Name = "George Michael Bluth",
-                Age = 16,
-                Roles = null,
-                Title = "Mister Manager"
+
+            Employee person = new Employee {
+                Name = "George Michael Bluth", Age = 16, Roles = null, Title = "Mister Manager"
             };
 
             string json = JsonConvert.SerializeObject(person, Formatting.Indented);
@@ -94,13 +87,17 @@ namespace Newtonsoft.Json.Tests.Documentation.Samples.Serializer
             //   "Age": 16,
             //   "Title": "Mister Manager"
             // }
+
             #endregion
 
-            StringAssert.AreEqual(@"{
+            StringAssert.AreEqual(
+                @"{
   ""Name"": ""George Michael Bluth"",
   ""Age"": 16,
   ""Title"": ""Mister Manager""
-}", json);
+}",
+                json
+            );
         }
     }
 }

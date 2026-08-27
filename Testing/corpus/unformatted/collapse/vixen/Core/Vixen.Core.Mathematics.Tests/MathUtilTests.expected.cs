@@ -26,8 +26,8 @@ public class MathUtilTests {
         Assert.False(
             MathUtil.NearEqual(0f, 1e-4f)
         ); // Out where float steps in units of thousands, the same fixed epsilon would call nothing
-// equal — including a number and itself plus one ulp. This is the case a fixed epsilon gets
-// wrong and the reason the tolerance scales.
+        // equal — including a number and itself plus one ulp. This is the case a fixed epsilon gets
+        // wrong and the reason the tolerance scales.
         Assert.True(MathUtil.NearEqual(1e7f, 1e7f + 1f));
         Assert.False(MathUtil.NearEqual(1e7f, 1.1e7f));
     }

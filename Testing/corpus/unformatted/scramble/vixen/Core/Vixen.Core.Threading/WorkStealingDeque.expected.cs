@@ -104,7 +104,7 @@ sealed class WorkStealingDeque {
         Volatile.Write(ref bottom.Value, b)
             ;
         // The claim above and the read below must not be reordered, or the owner and a thief can
-// both conclude they have the last item.
+        // both conclude they have the last item.
         Interlocked.MemoryBarrier();
         var t = Volatile.Read(ref top.Value)
             ;

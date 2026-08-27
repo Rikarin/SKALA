@@ -1,5 +1,5 @@
 class C {
-    void M() {
-    }
+    void M() { }
+
     int _a;
 }

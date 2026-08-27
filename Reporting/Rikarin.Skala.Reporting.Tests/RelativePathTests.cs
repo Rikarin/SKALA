@@ -1,13 +1,13 @@
 namespace Rikarin.Skala.Reporting.Tests;
 
 /// <summary>
-/// <see cref="SarifWriter.Relative"/> — the one function every surface displays a path through.
+///     <see cref="SarifWriter.Relative" /> — the one function every surface displays a path through.
 /// </summary>
 /// <remarks>
-/// ⚠ It was three lines and wrong three ways, and the symptom was a <c>FORMAT</c> line of absolute
-/// paths against an output doc 10 caps at 8 000 characters. Two of the three are also entries on
-/// doc 12 § "Cross-platform"'s list of Windows hazards, reached through the reporting layer rather
-/// than through the cache key everyone expects them in.
+///     ⚠ It was three lines and wrong three ways, and the symptom was a <c>FORMAT</c> line of absolute
+///     paths against an output doc 10 caps at 8 000 characters. Two of the three are also entries on
+///     doc 12 § "Cross-platform"'s list of Windows hazards, reached through the reporting layer rather
+///     than through the cache key everyone expects them in.
 /// </remarks>
 public sealed class RelativePathTests {
     static string Root => OperatingSystem.IsWindows() ? @"C:\src\repo" : "/src/repo";
@@ -27,10 +27,10 @@ public sealed class RelativePathTests {
     }
 
     /// <summary>
-    /// ⚠ doc 12 § "Cross-platform": case-insensitive path comparison. On Windows and on a
-    /// case-insensitive macOS volume the root and the file routinely differ in case because they
-    /// came from different APIs — and the old ordinal prefix test then printed every path in the
-    /// report absolute. On Linux the two really are different files, and it must not fold.
+    ///     ⚠ doc 12 § "Cross-platform": case-insensitive path comparison. On Windows and on a
+    ///     case-insensitive macOS volume the root and the file routinely differ in case because they
+    ///     came from different APIs — and the old ordinal prefix test then printed every path in the
+    ///     report absolute. On Linux the two really are different files, and it must not fold.
     /// </summary>
     [Fact]
     public void ARootWhoseCaseDiffers_IsStillTheRoot_WhereTheFileSystemSaysSo() {
@@ -46,8 +46,8 @@ public sealed class RelativePathTests {
     }
 
     /// <summary>
-    /// ⚠ The prefix test had no component boundary, so a sibling directory whose name merely starts
-    /// with the root's rendered as a "repository-relative" path that climbs out of the repository.
+    ///     ⚠ The prefix test had no component boundary, so a sibling directory whose name merely starts
+    ///     with the root's rendered as a "repository-relative" path that climbs out of the repository.
     /// </summary>
     [Fact]
     public void ASiblingWhoseNameStartsWithTheRoot_IsNotUnderIt() {
@@ -60,8 +60,8 @@ public sealed class RelativePathTests {
     }
 
     /// <summary>
-    /// <c>RunReport.RepositoryRoot</c> is nullable and the renderers reach this with it. A renderer
-    /// whose job is to always produce something must not throw on the null.
+    ///     <c>RunReport.RepositoryRoot</c> is nullable and the renderers reach this with it. A renderer
+    ///     whose job is to always produce something must not throw on the null.
     /// </summary>
     [Fact]
     public void ANullOrEmptyRoot_ReturnsThePathRatherThanThrowing() {
@@ -82,9 +82,9 @@ public sealed class RelativePathTests {
     }
 
     /// <summary>
-    /// ⚠ doc 12 § "Cross-platform": SARIF paths must be repo-relative with forward slashes on every
-    /// OS. A backslash in a SARIF <c>artifactLocation.uri</c> is not a valid URI reference, and the
-    /// GitHub code-scanning ingest silently drops the result rather than reporting the error.
+    ///     ⚠ doc 12 § "Cross-platform": SARIF paths must be repo-relative with forward slashes on every
+    ///     OS. A backslash in a SARIF <c>artifactLocation.uri</c> is not a valid URI reference, and the
+    ///     GitHub code-scanning ingest silently drops the result rather than reporting the error.
     /// </summary>
     [Fact]
     public void NoSeparatorSurvivesAsABackslash() {

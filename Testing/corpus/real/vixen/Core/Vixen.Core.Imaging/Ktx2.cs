@@ -61,7 +61,8 @@ public sealed class Ktx2Exception(string message) : Exception(message);
 /// </remarks>
 public static class Ktx2 {
     /// <summary>The twelve bytes every KTX2 file starts with.</summary>
-    public static ReadOnlySpan<byte> Identifier => [0xAB, 0x4B, 0x54, 0x58, 0x20, 0x32, 0x30, 0xBB, 0x0D, 0x0A, 0x1A, 0x0A];
+    public static ReadOnlySpan<byte> Identifier =>
+        [0xAB, 0x4B, 0x54, 0x58, 0x20, 0x32, 0x30, 0xBB, 0x0D, 0x0A, 0x1A, 0x0A];
 
     /// <summary>How long the header is, up to and including the supercompression global data pointers.</summary>
     public const int HeaderLength = 80;
@@ -182,8 +183,11 @@ public static class Ktx2 {
     /// <param name="file">The file's bytes, or at least <see cref="LayoutLength" /> of the front of it.</param>
     /// <returns>The layout.</returns>
     /// <remarks>
-    ///     ⚠ <b>This validates the level index against the format and the extents, and not against
-    ///     the file's length.</b> A caller holding only the head has no length to check against, and
+    ///     ⚠
+    ///     <b>
+    ///         This validates the level index against the format and the extents, and not against
+    ///         the file's length.
+    ///     </b> A caller holding only the head has no length to check against, and
     ///     one holding the whole file gets the check from <see cref="Read" /> and
     ///     <see cref="ReadTail" /> where the copy happens. What is checked here is the part a short
     ///     read cannot excuse: a level whose declared size disagrees with what its extent and format
@@ -402,9 +406,7 @@ public static class Ktx2 {
             var got = await stream.ReadAsync(buffer[read..], cancellation).ConfigureAwait(false);
 
             if (got == 0) {
-                throw new Ktx2Exception(
-                    $"The file ended after {read} of the {buffer.Length} bytes this read wanted."
-                );
+                throw new Ktx2Exception($"The file ended after {read} of the {buffer.Length} bytes this read wanted.");
             }
 
             read += got;
@@ -453,10 +455,15 @@ public static class Ktx2 {
         format.IsCompressed()
             ? 1u
             : format switch {
-                PixelFormat.Rgba16Float or PixelFormat.Rg16Float or PixelFormat.R16Float
+                PixelFormat.Rgba16Float
+                    or PixelFormat.Rg16Float
+                    or PixelFormat.R16Float
                     or PixelFormat.Rgba16UNorm => 2u,
-                PixelFormat.Rgba32Float or PixelFormat.Rg32Float or PixelFormat.R32Float
-                    or PixelFormat.Rgba32UInt or PixelFormat.R32UInt => 4u,
+                PixelFormat.Rgba32Float
+                    or PixelFormat.Rg32Float
+                    or PixelFormat.R32Float
+                    or PixelFormat.Rgba32UInt
+                    or PixelFormat.R32UInt => 4u,
                 _ => 1u
             };
 }

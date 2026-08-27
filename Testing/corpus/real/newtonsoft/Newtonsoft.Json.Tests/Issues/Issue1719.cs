@@ -1,4 +1,5 @@
 ﻿#region License
+
 // Copyright (c) 2007 James Newton-King
 //
 // Permission is hereby granted, free of charge, to any person
@@ -21,6 +22,7 @@
 // WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 // OTHER DEALINGS IN THE SOFTWARE.
+
 #endregion
 
 using System;
@@ -46,54 +48,48 @@ using Assert = Newtonsoft.Json.Tests.XUnitAssert;
 using NUnit.Framework;
 #endif
 
-namespace Newtonsoft.Json.Tests.Issues
-{
+namespace Newtonsoft.Json.Tests.Issues {
     [TestFixture]
-    public class Issue1719 : TestFixtureBase
-    {
+    public class Issue1719 : TestFixtureBase {
         [Test]
-        public void Test()
-        {
-            ExtensionDataTestClass a = JsonConvert.DeserializeObject<ExtensionDataTestClass>("{\"E\":null}", new JsonSerializerSettings
-            {
-                NullValueHandling = NullValueHandling.Ignore,
-            });
+        public void Test() {
+            ExtensionDataTestClass a = JsonConvert.DeserializeObject<ExtensionDataTestClass>(
+                "{\"E\":null}",
+                new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore, }
+            );
 
             Assert.IsNull(a.PropertyBag);
         }
 
         [Test]
-        public void Test_PreviousWorkaround()
-        {
-            ExtensionDataTestClassWorkaround a = JsonConvert.DeserializeObject<ExtensionDataTestClassWorkaround>("{\"E\":null}", new JsonSerializerSettings
-            {
-                NullValueHandling = NullValueHandling.Ignore,
-            });
+        public void Test_PreviousWorkaround() {
+            ExtensionDataTestClassWorkaround a = JsonConvert.DeserializeObject<ExtensionDataTestClassWorkaround>(
+                "{\"E\":null}",
+                new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore, }
+            );
 
             Assert.IsNull(a.PropertyBag);
         }
 
         [Test]
-        public void Test_DefaultValue()
-        {
-            ExtensionDataWithDefaultValueTestClass a = JsonConvert.DeserializeObject<ExtensionDataWithDefaultValueTestClass>("{\"E\":2}", new JsonSerializerSettings
-            {
-                DefaultValueHandling = DefaultValueHandling.Ignore,
-            });
+        public void Test_DefaultValue() {
+            ExtensionDataWithDefaultValueTestClass a =
+                JsonConvert.DeserializeObject<ExtensionDataWithDefaultValueTestClass>(
+                    "{\"E\":2}",
+                    new JsonSerializerSettings { DefaultValueHandling = DefaultValueHandling.Ignore, }
+                );
 
             Assert.IsNull(a.PropertyBag);
         }
 
-        class ExtensionDataTestClass
-        {
+        class ExtensionDataTestClass {
             public B? E { get; set; }
 
             [JsonExtensionData]
             public IDictionary<string, object> PropertyBag { get; set; }
         }
 
-        class ExtensionDataWithDefaultValueTestClass
-        {
+        class ExtensionDataWithDefaultValueTestClass {
             [DefaultValue(2)]
             public int? E { get; set; }
 
@@ -101,15 +97,16 @@ namespace Newtonsoft.Json.Tests.Issues
             public IDictionary<string, object> PropertyBag { get; set; }
         }
 
-        enum B
-        {
+        enum B {
             One,
             Two
         }
 
-        class ExtensionDataTestClassWorkaround
-        {
-            [JsonProperty(DefaultValueHandling = DefaultValueHandling.IgnoreAndPopulate, NullValueHandling = NullValueHandling.Include)]
+        class ExtensionDataTestClassWorkaround {
+            [JsonProperty(
+                DefaultValueHandling = DefaultValueHandling.IgnoreAndPopulate,
+                NullValueHandling = NullValueHandling.Include
+            )]
             public B? E { get; set; }
 
             [JsonExtensionData]

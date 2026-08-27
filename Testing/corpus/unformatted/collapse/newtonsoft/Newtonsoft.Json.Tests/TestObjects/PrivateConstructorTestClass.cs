@@ -1,4 +1,5 @@
 #region License
+
 // Copyright (c) 2007 James Newton-King
 //
 // Permission is hereby granted, free of charge, to any person
@@ -21,7 +22,17 @@
 // WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 // OTHER DEALINGS IN THE SOFTWARE.
+
 #endregion
-namespace Newtonsoft.Json.Tests.TestObjects{public class PrivateConstructorTestClass{public string Name{get;set;}public int Age{get;set;}private PrivateConstructorTestClass(){} // multiple constructors with arguments so the serializer doesn't know what to fall back to
-private PrivateConstructorTestClass(object a){} // multiple constructors with arguments so the serializer doesn't know what to fall back to
-private PrivateConstructorTestClass(object a,object b){}}}
+
+namespace Newtonsoft.Json.Tests.TestObjects {
+    public class PrivateConstructorTestClass {
+        public string Name { get; set; }
+        public int Age { get; set; }
+        private PrivateConstructorTestClass() { } // multiple constructors with arguments so the serializer doesn't know what to fall back to
+        private PrivateConstructorTestClass(
+            object a
+        ) { } // multiple constructors with arguments so the serializer doesn't know what to fall back to
+        private PrivateConstructorTestClass(object a, object b) { }
+    }
+}

@@ -19,11 +19,10 @@ using System.Diagnostics;
 namespace System;
 
 /// <summary>
-/// A super-simple, cut-down subset of `System.TimeProvider` which we use internally to avoid a package dependency
-/// on platforms without it.
+///     A super-simple, cut-down subset of `System.TimeProvider` which we use internally to avoid a package dependency
+///     on platforms without it.
 /// </summary>
-abstract class TimeProvider
-{
+abstract class TimeProvider {
     public static TimeProvider System { get; } = new SystemTimeProvider();
 
     public DateTimeOffset GetLocalNow() => DateTimeOffset.Now;
@@ -34,10 +33,11 @@ abstract class TimeProvider
 
     public virtual long GetTimestamp() => Stopwatch.GetTimestamp();
 
-    public TimeSpan GetElapsedTime(long startingTimestamp, long endingTimestamp)
-    {
+    public TimeSpan GetElapsedTime(long startingTimestamp, long endingTimestamp) {
         // Assumes Stopwatch.Frequency is never zero, safe for our internal usage.
-        return new TimeSpan((long)((endingTimestamp - startingTimestamp) * ((double)TimeSpan.TicksPerSecond / TimestampFrequency)));
+        return new TimeSpan(
+            (long)((endingTimestamp - startingTimestamp) * ((double)TimeSpan.TicksPerSecond / TimestampFrequency))
+        );
     }
 
     public TimeSpan GetElapsedTime(long startingTimestamp) => GetElapsedTime(startingTimestamp, GetTimestamp());

@@ -15,15 +15,13 @@
 namespace Serilog.Formatting.Display;
 
 /// <summary>
-/// Implements the {Level} element.
-/// can now have a fixed width applied to it, as well as casing rules.
-/// Width is set through formats like "u3" (uppercase three chars),
-/// "w1" (one lowercase char), or "t4" (title case four chars).
+///     Implements the {Level} element.
+///     can now have a fixed width applied to it, as well as casing rules.
+///     Width is set through formats like "u3" (uppercase three chars),
+///     "w1" (one lowercase char), or "t4" (title case four chars).
 /// </summary>
-static class LevelOutputFormat
-{
-    static readonly string[][] _titleCaseLevelMap =
-    [
+static class LevelOutputFormat {
+    static readonly string[][] _titleCaseLevelMap = [
         ["V", "Vb", "Vrb", "Verb", "Verbo", "Verbos", "Verbose"],
         ["D", "De", "Dbg", "Dbug", "Debug"],
         ["I", "In", "Inf", "Info", "Infor", "Inform", "Informa", "Informat", "Informati", "Informatio", "Information"],
@@ -32,8 +30,7 @@ static class LevelOutputFormat
         ["F", "Fa", "Ftl", "Fatl", "Fatal"]
     ];
 
-    static readonly string[][] _lowerCaseLevelMap =
-    [
+    static readonly string[][] _lowerCaseLevelMap = [
         ["v", "vb", "vrb", "verb", "verbo", "verbos", "verbose"],
         ["d", "de", "dbg", "dbug", "debug"],
         ["i", "in", "inf", "info", "infor", "inform", "informa", "informat", "informati", "informatio", "information"],
@@ -42,8 +39,7 @@ static class LevelOutputFormat
         ["f", "fa", "ftl", "fatl", "fatal"]
     ];
 
-    static readonly string[][] _upperCaseLevelMap =
-    [
+    static readonly string[][] _upperCaseLevelMap = [
         ["V", "VB", "VRB", "VERB", "VERBO", "VERBOS", "VERBOSE"],
         ["D", "DE", "DBG", "DBUG", "DEBUG"],
         ["I", "IN", "INF", "INFO", "INFOR", "INFORM", "INFORMA", "INFORMAT", "INFORMATI", "INFORMATIO", "INFORMATION"],
@@ -52,8 +48,7 @@ static class LevelOutputFormat
         ["F", "FA", "FTL", "FATL", "FATAL"]
     ];
 
-    public static string GetLevelMoniker(LogEventLevel value, string? format = null)
-    {
+    public static string GetLevelMoniker(LogEventLevel value, string? format = null) {
         // handle unknown LogEventLevel
         if (value is < 0 or > LogEventLevel.Fatal)
             return Casing.Format(value.ToString(), format);
@@ -64,8 +59,7 @@ static class LevelOutputFormat
         // Using int.Parse() here requires allocating a string to exclude the first character prefix.
         // Junk like "wxy" will be accepted but produce benign results.
         var width = format[1] - '0';
-        if (format.Length == 3)
-        {
+        if (format.Length == 3) {
             width *= 10;
             width += format[2] - '0';
         }
@@ -73,8 +67,7 @@ static class LevelOutputFormat
         if (width < 1)
             return string.Empty;
 
-        return format[0] switch
-        {
+        return format[0] switch {
             'w' => GetLevelMoniker(_lowerCaseLevelMap, value, width),
             'u' => GetLevelMoniker(_upperCaseLevelMap, value, width),
             't' => GetLevelMoniker(_titleCaseLevelMap, value, width),
@@ -82,14 +75,12 @@ static class LevelOutputFormat
         };
     }
 
-    static string GetLevelMoniker(string[][] caseLevelMap, LogEventLevel level, int width)
-    {
+    static string GetLevelMoniker(string[][] caseLevelMap, LogEventLevel level, int width) {
         var caseLevel = caseLevelMap[(int)level];
         return caseLevel[Math.Min(width, caseLevel.Length) - 1];
     }
 
-    static string GetLevelMoniker(string[][] caseLevelMap, LogEventLevel level)
-    {
+    static string GetLevelMoniker(string[][] caseLevelMap, LogEventLevel level) {
         var caseLevel = caseLevelMap[(int)level];
         return caseLevel[caseLevel.Length - 1];
     }

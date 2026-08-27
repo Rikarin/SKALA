@@ -142,9 +142,7 @@ public sealed class InstanceCullingTests {
     public void ParametersMustMatchTheInstancesOrBeAbsent() {
         var culler = new InstanceCuller();
 
-        Assert.Throws<ArgumentException>(
-            () => culler.Cull(Line(4), new InstanceParameters[3], Settings(), [])
-        );
+        Assert.Throws<ArgumentException>(() => culler.Cull(Line(4), new InstanceParameters[3], Settings(), []));
     }
 
     // --- Parameters and fading ----------------------------------------------

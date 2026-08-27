@@ -1,4 +1,5 @@
 // skala-oracle: resharper=2025.2.6 config=sha256:98ff52570e019fac profile=SkalaFormatOnly generated=2026-08-27
+
 #region License
 
 // Copyright (c) 2007 James Newton-King
@@ -31,7 +32,7 @@ using System;
 namespace Newtonsoft.Json.Tests.TestObjects.Events {
     public sealed class Event {
         /// <summary>
-        /// If no current user is specified, returns Nothing (0 from VB)
+        ///     If no current user is specified, returns Nothing (0 from VB)
         /// </summary>
         /// <returns></returns>
         /// <remarks></remarks>
@@ -40,9 +41,9 @@ namespace Newtonsoft.Json.Tests.TestObjects.Events {
         }
 
         /// <summary>
-        /// Gets either the application path or the current stack trace.
-        /// NOTE: You MUST call this from the top level entry point. Otherwise,
-        /// the stack trace will be buried in Logger itself.
+        ///     Gets either the application path or the current stack trace.
+        ///     NOTE: You MUST call this from the top level entry point. Otherwise,
+        ///     the stack trace will be buried in Logger itself.
         /// </summary>
         /// <returns></returns>
         /// <remarks></remarks>
@@ -66,7 +67,7 @@ namespace Newtonsoft.Json.Tests.TestObjects.Events {
                 _userId = GetCurrentUserId();
             } //This call only works at top level for now.
 
-//If _stackTrace = Nothing Then _stackTrace = Environment.StackTrace
+            //If _stackTrace = Nothing Then _stackTrace = Environment.StackTrace
             if (_sublocation == null) {
                 _sublocation = GetCurrentSubLocation();
             }

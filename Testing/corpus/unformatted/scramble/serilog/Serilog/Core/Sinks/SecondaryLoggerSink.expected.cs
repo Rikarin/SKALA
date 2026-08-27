@@ -18,12 +18,14 @@
 namespace Serilog.Core.Sinks;
 
 /// <summary>
-/// Forwards log events to another logging pipeline. Copies the events so
-/// that mutations performed on the copies do not affect the originals.
+///     Forwards log events to another logging pipeline. Copies the events so
+///     that mutations performed on the copies do not affect the originals.
 /// </summary>
-/// <remarks>The properties dictionary is copied, however the values within
-/// the dictionary (of type <see cref="LogEventProperty"/> are expected to
-/// be immutable.</remarks>
+/// <remarks>
+///     The properties dictionary is copied, however the values within
+///     the dictionary (of type <see cref="LogEventProperty" /> are expected to
+///     be immutable.
+/// </remarks>
 sealed class SecondaryLoggerSink : ILogEventSink, IDisposable
 #if FEATURE_ASYNCDISPOSABLE
     , IAsyncDisposable

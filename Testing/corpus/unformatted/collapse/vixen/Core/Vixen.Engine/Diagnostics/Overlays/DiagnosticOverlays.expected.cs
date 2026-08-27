@@ -80,17 +80,17 @@ public sealed class DiagnosticOverlays {
             .ThrowIfNull(
                 overlay
             ); // Names are what the console types and what a settings file writes down, so two overlays
-// answering to one name is a toggle that flips whichever was registered first and silently
-// ignores the other — a bug that only shows up as "the console command does nothing".
+        // answering to one name is a toggle that flips whichever was registered first and silently
+        // ignores the other — a bug that only shows up as "the console command does nothing".
         if (Find(overlay.Name) is not null) {
             throw new ArgumentException($"An overlay called '{overlay.Name}' is already registered.", nameof(overlay));
         }
 
         overlays.Add(overlay); // ⚠ Applied on registration and not once at start-up, because a subsystem's panel is
-// registered by whoever owns its numbers and that is generally after the host has finished
-// reading its command line — `Samples/13` adds the audio panel from `OnInitialise`. A switch
-// applied once would turn on the host's own panels and silently miss every other one, which
-// reads as "that overlay's name does not work".
+        // registered by whoever owns its numbers and that is generally after the host has finished
+        // reading its command line — `Samples/13` adds the audio panel from `OnInitialise`. A switch
+        // applied once would turn on the host's own panels and silently miss every other one, which
+        // reads as "that overlay's name does not work".
         if (requested.Contains(overlay.Name)) {
             overlay.Enabled = true;
         }

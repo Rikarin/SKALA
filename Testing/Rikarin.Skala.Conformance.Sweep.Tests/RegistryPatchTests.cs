@@ -1,13 +1,13 @@
 namespace Rikarin.Skala.Conformance.Sweep.Tests;
 
 /// <summary>
-/// The patcher that writes verified defaults back into <c>options.json</c>.
+///     The patcher that writes verified defaults back into <c>options.json</c>.
 /// </summary>
 /// <remarks>
-/// ⚠ It edits a tracked file that is reviewed in its diff, and it edits it as text rather than by
-/// reserialising, because a round trip through a different serialiser reformats all 520 entries and
-/// buries five real changes in a twelve-thousand-line diff. Text editing is only safe if it changes
-/// exactly the lines it means to, which is what these pin.
+///     ⚠ It edits a tracked file that is reviewed in its diff, and it edits it as text rather than by
+///     reserialising, because a round trip through a different serialiser reformats all 520 entries and
+///     buries five real changes in a twelve-thousand-line diff. Text editing is only safe if it changes
+///     exactly the lines it means to, which is what these pin.
 /// </remarks>
 public sealed class RegistryPatchTests {
     const string Registry = """
@@ -71,8 +71,8 @@ public sealed class RegistryPatchTests {
 
     /// <summary>An entry already carrying the same verified default is not rewritten.</summary>
     /// <remarks>
-    /// ⚠ Otherwise every nightly run produces a diff that says nothing, and a file whose diff always
-    /// has content is a file whose diff nobody reads.
+    ///     ⚠ Otherwise every nightly run produces a diff that says nothing, and a file whose diff always
+    ///     has content is a file whose diff nobody reads.
     /// </remarks>
     [Fact]
     public void AnEntryAlreadyVerifiedAtTheSameValue_IsNotAChange() {

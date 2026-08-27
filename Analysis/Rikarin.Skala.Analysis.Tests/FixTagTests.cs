@@ -4,18 +4,18 @@ using Rikarin.Skala.Reporting;
 namespace Rikarin.Skala.Analysis.Tests;
 
 /// <summary>
-/// <c>skala fix</c> reports inside a <c>@formatter:off</c> region and rewrites nothing there.
+///     <c>skala fix</c> reports inside a <c>@formatter:off</c> region and rewrites nothing there.
 /// </summary>
 /// <remarks>
-/// ⚠ The decision, and it is a decision rather than an omission. <c>@formatter:off</c> says "do not
-/// rewrite this", not "do not look at this": a finding inside a region is still a true finding, and
-/// swallowing it would make the tag a fifth suppression mechanism beside doc 09's four — one with no
-/// audit, no <c>--no-new-suppressions</c> and no way to count. So <c>check</c> keeps naming the line
-/// and <c>fix</c> declines to touch it. docs/plan/09 § "The four suppression mechanisms".
-/// <para>
-/// ⚠ <c>FixCommand.ApplyToFile</c> splices a rule's edits into raw text with no tree involved, which
-/// is why the document builder's own check could never have covered it.
-/// </para>
+///     ⚠ The decision, and it is a decision rather than an omission. <c>@formatter:off</c> says "do not
+///     rewrite this", not "do not look at this": a finding inside a region is still a true finding, and
+///     swallowing it would make the tag a fifth suppression mechanism beside doc 09's four — one with no
+///     audit, no <c>--no-new-suppressions</c> and no way to count. So <c>check</c> keeps naming the line
+///     and <c>fix</c> declines to touch it. docs/plan/09 § "The four suppression mechanisms".
+///     <para>
+///         ⚠ <c>FixCommand.ApplyToFile</c> splices a rule's edits into raw text with no tree involved, which
+///         is why the document builder's own check could never have covered it.
+///     </para>
 /// </remarks>
 public sealed class FixTagTests {
     const string Source = """
@@ -66,7 +66,7 @@ public sealed class FixTagTests {
     }
 
     /// <summary>
-    /// ⚠ Report, never rewrite: the finding inside the region is still reported, by name and line.
+    ///     ⚠ Report, never rewrite: the finding inside the region is still reported, by name and line.
     /// </summary>
     [Fact]
     public void TheFindingInsideTheRegion_IsStillReported() {

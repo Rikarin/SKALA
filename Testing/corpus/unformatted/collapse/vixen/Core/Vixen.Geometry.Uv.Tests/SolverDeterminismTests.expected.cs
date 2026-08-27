@@ -73,7 +73,7 @@ public class SolverDeterminismTests {
                 serial,
                 24
             ); // Non-trivial: the solve has to have done real work, or identical output is identical
-// because nothing happened.
+        // because nothing happened.
         Assert.Equal(24, serialReport.Iterations);
         Assert.True(serial.Distinct().Count() > matrix.RowCount / 2, "The answer is too uniform to compare.");
         using var scheduler = new JobScheduler(workers);
@@ -121,7 +121,7 @@ public class SolverDeterminismTests {
         var right = RightHandSide(matrix.RowCount);
         var answers =
             new List<double[]>(); // ⚠ Sequential, and disposed each time round. Sixteen schedulers alive at once would be
-// twice the process-wide cap, and the exception it throws names the cap rather than this.
+        // twice the process-wide cap, and the exception it throws names the cap rather than this.
         foreach (var workers in new[] { 1, 2, 4, 8, 16 }) {
             using var scheduler = new JobScheduler(workers);
             var solution = new double[matrix.RowCount];

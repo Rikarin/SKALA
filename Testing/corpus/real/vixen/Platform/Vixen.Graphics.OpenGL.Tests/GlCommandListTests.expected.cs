@@ -124,8 +124,10 @@ public sealed class GlCommandListTests {
     }
 
     /// <summary>Submitting twice is refused.</summary>
-    /// <remarks>A list is a one-shot recording; replaying it again would replay it against state the
-    /// first replay left behind.</remarks>
+    /// <remarks>
+    ///     A list is a one-shot recording; replaying it again would replay it against state the
+    ///     first replay left behind.
+    /// </remarks>
     [Fact]
     public void RefusesASecondSubmission() {
         var gl = new RecordingGlApi();

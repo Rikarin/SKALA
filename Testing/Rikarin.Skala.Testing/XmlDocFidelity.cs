@@ -6,19 +6,27 @@ using Rikarin.Skala.Formatting.CSharp;
 namespace Rikarin.Skala.Testing;
 
 /// <summary>
-/// What the documentation-comment sub-formatter would cost against an oracle that never moves.
+///     What the documentation-comment sub-formatter costs against an oracle profile that never moves.
 /// </summary>
 /// <remarks>
-/// ⚠ SK-DIV-0006 asserted the cost and nobody had measured it: "a Skala that re-wrapped them would
-/// diverge from the oracle on every doc comment in the corpus". This turns that sentence into a
-/// number, which is what this project does with sentences like it.
-/// <para>
-/// ⚠ The exclusion is the point of the second column, and it is drawn the only honest way: every
-/// <c>///</c> line is removed from <b>both</b> sides before the comparison. Not "the lines Skala
-/// changed" — that would be marking one's own homework — and not "the files with doc comments",
-/// which would hide a real regression in the code around them. What is left is every line of the
-/// corpus the sub-formatter is not allowed to touch, and it may not move at all.
-/// </para>
+///     ⚠ SK-DIV-0006 asserted the cost and nobody had measured it: "a Skala that re-wrapped them would
+///     diverge from the oracle on every doc comment in the corpus". This turns that sentence into a
+///     number, which is what this project does with sentences like it.
+///     <para>
+///         ⚠ What the number is <em>of</em> changed when the sub-formatter became the default. The oracle
+///         does not decline to format documentation comments — the profile Skala pins does not ask it to.
+///         <c>CSharpFormatDocComments</c> is a real <c>jb cleanupcode</c> task and
+///         <see cref="OracleProfile.FormatOnly" /> does not enable it, so these rows measure a profile gap
+///         and not a formatter defect. They are kept because the gap is real until the fixtures are
+///         regenerated, and because the fourth row is the containment claim.
+///     </para>
+///     <para>
+///         ⚠ The exclusion is drawn the only honest way: every <c>///</c> line is removed from <b>both</b>
+///         sides before the comparison. Not "the lines Skala changed" — that would be marking one's own
+///         homework — and not "the files with doc comments", which would hide a real regression in the code
+///         around them. What is left is every line of the corpus the sub-formatter is not allowed to touch,
+///         and it may not move at all.
+///     </para>
 /// </remarks>
 public static class XmlDocFidelity {
     public static string Measure(string set = Corpus.Real) {
@@ -38,13 +46,13 @@ public static class XmlDocFidelity {
             var options = OptionResolver.Resolve(file.Path).Options;
             var expected = OracleFixture.Read(file);
 
-            var without = CSharpFormatter.Format(file.Path, text, options).Formatted;
-            var with = CSharpFormatter.Format(file.Path, text, options, null, null, xmlDoc: true).Formatted;
+            var without = CSharpFormatter.Format(file.Path, text, options, null, null, xmlDoc: false).Formatted;
+            var with = CSharpFormatter.Format(file.Path, text, options).Formatted;
 
             plain.Add((file.ToString(), expected, without));
             reflowed.Add((file.ToString(), expected, with));
-            outside.Add((file.ToString(), WithoutDocLines(expected), WithoutDocLines(with)));
-            baseline.Add((file.ToString(), WithoutDocLines(expected), WithoutDocLines(without)));
+            outside.Add((file.ToString(), expected, with));
+            baseline.Add((file.ToString(), expected, without));
 
             var outcome = XmlDocFormatter.Rewrite(
                 without,
@@ -81,10 +89,10 @@ public static class XmlDocFidelity {
         builder.Append("── ").Append(set).AppendLine(" ── the xmldoc sub-formatter against the oracle ──");
         builder.AppendLine();
         builder.AppendLine("                                        line      file");
-        Row(builder, "default (--xmldoc off)", Fidelity.Compare(plain));
-        Row(builder, "--xmldoc, every line counted", Fidelity.Compare(reflowed));
-        Row(builder, "default, /// lines excluded", Fidelity.Compare(baseline));
-        Row(builder, "--xmldoc, /// lines excluded", Fidelity.Compare(outside));
+        Row(builder, "--no-xmldoc, every line", Fidelity.Compare(plain, FidelityBasis.EveryLine));
+        Row(builder, "default, every line", Fidelity.Compare(reflowed, FidelityBasis.EveryLine));
+        Row(builder, "--no-xmldoc, outside doc comments", Fidelity.Compare(baseline));
+        Row(builder, "default, outside doc comments", Fidelity.Compare(outside));
         builder.AppendLine();
         builder.Append("doc comments seen: ")
             .Append(comments.ToString(CultureInfo.InvariantCulture))
@@ -98,7 +106,7 @@ public static class XmlDocFidelity {
                 )
             )
             .Append(']')
-            .Append(", files the flag changes: ")
+            .Append(", files the sub-formatter changes: ")
             .Append(changed.ToString(CultureInfo.InvariantCulture))
             .Append(" of ")
             .AppendLine(files.Length.ToString(CultureInfo.InvariantCulture));
@@ -109,21 +117,6 @@ public static class XmlDocFidelity {
 
         return builder.ToString();
     }
-
-    /// <summary>
-    /// The text with every <c>///</c> line removed.
-    /// </summary>
-    /// <remarks>
-    /// ⚠ A <c>///</c> inside a string literal would be removed too. It does not matter here and it
-    /// would matter in a gate: this is a report, and the third row is only ever compared with
-    /// itself across runs.
-    /// </remarks>
-    static string WithoutDocLines(string text) =>
-        string.Join(
-            '\n',
-            TextNormalisation.Lines(text)
-                .Where(static line => !line.TrimStart().StartsWith("///", StringComparison.Ordinal))
-        );
 
     static void Row(StringBuilder builder, string label, FidelityReport report) {
         builder.Append("  ")

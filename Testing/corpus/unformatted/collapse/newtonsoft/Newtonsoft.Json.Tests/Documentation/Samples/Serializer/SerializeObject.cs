@@ -1,4 +1,5 @@
 #region License
+
 // Copyright (c) 2007 James Newton-King
 //
 // Permission is hereby granted, free of charge, to any person
@@ -21,8 +22,10 @@
 // WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 // OTHER DEALINGS IN THE SOFTWARE.
+
 #endregion
-using System;using System.Collections.Generic;using System.Text;
+
+using System; using System.Collections.Generic; using System.Text;
 #if DNXCORE50
 using Xunit;
 using Test = Xunit.FactAttribute;
@@ -30,24 +33,45 @@ using Assert = Newtonsoft.Json.Tests.XUnitAssert;
 #else
 using NUnit.Framework;
 #endif
-namespace Newtonsoft.Json.Tests.Documentation.Samples.Serializer{[TestFixture]public class SerializeObject:TestFixtureBase{
-#region Types
-public class Account{public string Email{get;set;}public bool Active{get;set;}public DateTime CreatedDate{get;set;}public IList<string>Roles{get;set;}}
-#endregion
-[Test]public void Example(){
-#region Usage
-Account account=new Account{Email="james@example.com" ,Active=true,CreatedDate=new DateTime(2013,1,20,0,0,0,DateTimeKind.Utc),Roles=new List<string>{"User","Admin" }};string json=JsonConvert.SerializeObject(account,Formatting.Indented); // {
-//   "Email": "james@example.com",
-//   "Active": true,
-//   "CreatedDate": "2013-01-20T00:00:00Z",
-//   "Roles": [
-//     "User",
-//     "Admin"
-//   ]
-// }
-Console.WriteLine(json);
-#endregion
-StringAssert.AreEqual(@"{
+namespace Newtonsoft.Json.Tests.Documentation.Samples.Serializer {
+    [TestFixture]
+    public class SerializeObject : TestFixtureBase {
+        #region Types
+
+        public class Account {
+            public string Email { get; set; }
+            public bool Active { get; set; }
+            public DateTime CreatedDate { get; set; }
+            public IList<string> Roles { get; set; }
+        }
+
+        #endregion
+
+        [Test]
+        public void Example() {
+            #region Usage
+
+            Account account = new Account {
+                Email = "james@example.com",
+                Active = true,
+                CreatedDate = new DateTime(2013, 1, 20, 0, 0, 0, DateTimeKind.Utc),
+                Roles = new List<string> { "User", "Admin" }
+            };
+            string json = JsonConvert.SerializeObject(account, Formatting.Indented); // {
+            //   "Email": "james@example.com",
+            //   "Active": true,
+            //   "CreatedDate": "2013-01-20T00:00:00Z",
+            //   "Roles": [
+            //     "User",
+            //     "Admin"
+            //   ]
+            // }
+            Console.WriteLine(json);
+
+            #endregion
+
+            StringAssert.AreEqual(
+                @"{
   ""Email"": ""james@example.com"",
   ""Active"": true,
   ""CreatedDate"": ""2013-01-20T00:00:00Z"",
@@ -55,4 +79,9 @@ StringAssert.AreEqual(@"{
     ""User"",
     ""Admin""
   ]
-}" ,json);}}}
+}",
+                json
+            );
+        }
+    }
+}

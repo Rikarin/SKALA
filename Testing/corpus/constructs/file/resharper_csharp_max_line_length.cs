@@ -1,4 +1,3 @@
 class C {
-    void M(int aLongParameterName, int anotherLongParameterName, int aThirdLongParameterName) {
-    }
+    void M(int aLongParameterName, int anotherLongParameterName, int aThirdLongParameterName) { }
 }

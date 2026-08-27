@@ -35,15 +35,17 @@ public class ColorTests {
     ///     </para>
     /// </remarks>
     const double
-        RoundTripTolerance = 1e-6;
+    RoundTripTolerance = 1e-6;
 
     /// <summary>
     ///     Encoding then decoding gets the value back.
     /// </summary>
     /// <remarks>
     ///     <para>
-    ///         <strong>Asserted with a tolerance, not with a decimal-place count, and the difference
-    ///         is why this test used to be flaky.</strong> <c>Assert.Equal(expected, actual, 4)</c>
+    ///         <strong>
+    ///             Asserted with a tolerance, not with a decimal-place count, and the difference
+    ///             is why this test used to be flaky.
+    ///         </strong> <c>Assert.Equal(expected, actual, 4)</c>
     ///         does not compare <c>|a - b|</c> to <c>1e-4</c> — it rounds <em>both</em> values to
     ///         four decimals and compares the results. That comparison has a discontinuity at every
     ///         <c>0.00005</c> boundary, so a value sitting on one fails however small the error is:
@@ -96,10 +98,8 @@ public class ColorTests {
 
         // comparison called wrong, not values the transfer functions struggle with.
         Assert.True(
-            MathF.Abs(
-                round
-                - value
-            )
+            MathF.Abs(round
+                - value)
             < 1e-7f,
             $"{value:R} came back as {round:R}, off by {MathF.Abs(round - value):E3} — the transfer "
             + "functions were accurate to a ULP when this bound was measured."
@@ -141,7 +141,7 @@ public class ColorTests {
 
     [Fact]
     public void Alpha_is_never_passed_through_the_transfer_function() {
-// Alpha is a coverage fraction, not a light level. Encoding it is a classic and very
+        // Alpha is a coverage fraction, not a light level. Encoding it is a classic and very
         // visible mistake — semi-transparent things come out the wrong opacity.
         var colour = new Color4(0.5f, 0.5f, 0.5f, 0.5f);
 
@@ -189,7 +189,7 @@ public class ColorTests {
         );
         Assert.Equal(new(255, 128, 0, 128), withAlpha);
 
-// Compact form doubles each digit, so f is 255 rather than 15.
+        // Compact form doubles each digit, so f is 255 rather than 15.
         Assert.True(Color.TryParseHex("#F80", out var compact));
         Assert.Equal(
             new(255, 136, 0, 255),
@@ -232,7 +232,7 @@ public class ColorTests {
     public void Colours_are_unbounded_above_because_lights_are() {
         // Clamping here would throw away the range tonemapping exists to compress.
         var
-            bright = new Color4(4f, 2f, 1f, 1f);
+        bright = new Color4(4f, 2f, 1f, 1f);
 
         Assert
             .Equal(4f, bright.R);
@@ -271,7 +271,7 @@ public class ColorTests {
         Assert.Equal(colour, (Color4)vector);
 
         var
-            rgb = (Vector3)new Color3(0.1f, 0.2f, 0.3f);
+        rgb = (Vector3)new Color3(0.1f, 0.2f, 0.3f);
         Assert.Equal(0.2f, rgb.Y);
     }
 

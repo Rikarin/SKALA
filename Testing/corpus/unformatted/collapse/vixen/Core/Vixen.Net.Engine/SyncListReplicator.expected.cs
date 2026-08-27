@@ -54,8 +54,10 @@ public interface ISyncList {
 /// <summary>Replicates one kind of <see cref="NetworkBehaviour" />'s lists.</summary>
 /// <remarks>
 ///     <para>
-///         <b>The whole list, every time it changes — and that is a correction to what this package
-///         used to claim.</b> <see cref="SyncList{T}" /> keeps a log of operations, and the design note
+///         <b>
+///             The whole list, every time it changes — and that is a correction to what this package
+///             used to claim.
+///         </b> <see cref="SyncList{T}" /> keeps a log of operations, and the design note
 ///         beside it said those ops go on the wire and that the reliable channel's ordering makes
 ///         per-connection bookkeeping unnecessary. That is true of a broadcast and false of a
 ///         snapshot, which is why it was never wired up: a snapshot goes to the connections an
@@ -145,8 +147,8 @@ public sealed class SyncListReplicator<T> : IComponentReplicator where T : Netwo
             return;
         } // Every list, in declaration order, which both ends walk. No count and no names on the wire:
 
-// the behaviour type is what the record's type index already names, and its lists are a
-// property of the type rather than of the instance.
+        // the behaviour type is what the record's type index already names, and its lists are a
+        // property of the type rather than of the instance.
         foreach (var list in behaviour.Lists) {
             list.WriteWhole(ref writer);
             list.ClearPending();

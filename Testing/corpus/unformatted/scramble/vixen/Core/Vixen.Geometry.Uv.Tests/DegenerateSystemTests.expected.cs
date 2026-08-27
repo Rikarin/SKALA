@@ -4,15 +4,18 @@
 
 using Vixen.Geometry.Uv.Solving;
 using
-    Xunit;
+Xunit;
 
 namespace Vixen.Geometry.Uv.Tests;
 
 /// <summary>Every input where zero means something, and what the answer is when it does.</summary>
 /// <remarks>
 ///     <para>
-///         ⚠ <b>This engine has the general form of this bug written down: a frame that draws and
-///         looks wrong, because a struct field was left zero and its zero means disabled.</b> A solver
+///         ⚠
+///         <b>
+///             This engine has the general form of this bug written down: a frame that draws and
+///             looks wrong, because a struct field was left zero and its zero means disabled.
+///         </b> A solver
 ///         has four of them and they all arrive as ordinary geometry — a chart with one vertex nothing
 ///         references, a mesh whose conditioning pass dropped the only triangle touching an unknown, a
 ///         local–global step whose right-hand side came out exactly zero because nothing moved. None
@@ -54,9 +57,9 @@ public class DegenerateSystemTests {
     public void A_zero_right_hand_side_from_a_wrong_start_converges_to_zero() {
         var matrix = PoissonGrid.Matrix(6);
         var solution = Enumerable.Range(
-                0,
-                matrix.RowCount
-            )
+            0,
+            matrix.RowCount
+        )
             .Select(index => 1d + (index % 5))
             .ToArray();
 
@@ -177,11 +180,11 @@ public class DegenerateSystemTests {
     public void Scaling_the_right_hand_side_scales_the_answer(double scale) {
         var matrix = PoissonGrid.Matrix(8);
         var right = Enumerable.Range(0, matrix.RowCount).Select(index => Math.Cos(index * 0.37d)).ToArray();
-        var plain = new double [matrix
+        var plain = new double[matrix
             .RowCount];
         new ConjugateGradient(matrix).Solve(right, plain, matrix.RowCount);
         var
-            scaled = new double[matrix.RowCount];
+        scaled = new double[matrix.RowCount];
         new ConjugateGradient(matrix).Solve(right.Select(value => value * scale).ToArray(), scaled, matrix.RowCount);
         for (var
              index = 0;

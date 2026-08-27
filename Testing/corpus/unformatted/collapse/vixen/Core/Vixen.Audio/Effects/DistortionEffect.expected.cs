@@ -119,7 +119,7 @@ public sealed class DistortionEffect : IAudioEffect {
         var mix = Math.Clamp(Mix, 0f, 1f);
         var samples = frameCount * channels;
         var curve = Curve; // Rebuilt rather than refused when the knob moved since Prepare: an effect that silently did
-// the wrong thing until something else happened to re-prepare it would be a bad afternoon.
+        // the wrong thing until something else happened to re-prepare it would be a bad afternoon.
         if (oversampling > 1 && (sampler is null || sampler.Factor != oversampling || sampler.Channels != channels)) {
             sampler = new Oversampler(channels, oversampling);
         }
@@ -206,13 +206,13 @@ public sealed class DistortionEffect : IAudioEffect {
             case DistortionCurve.HardClip: return Math.Clamp(value, -1f, 1f);
             case DistortionCurve.Overdrive: {
                 // 1.5x − 0.5x³: flat-topped at exactly ±1, with a slope of 1.5 through zero, which is
-// why it is louder than it went in before it is louder than the rail.
+                // why it is louder than it went in before it is louder than the rail.
                 var clamped = Math.Clamp(value, -1f, 1f);
                 return (1.5f * clamped) - (0.5f * clamped * clamped * clamped);
             }
             case DistortionCurve.Foldback: {
                 // Reflected about the rail, repeatedly, so an input of 3 comes out as −1 rather than
-// as 1. The loop terminates because each reflection halves the distance past it.
+                // as 1. The loop terminates because each reflection halves the distance past it.
                 var folded = value;
                 while (MathF.Abs(folded) > 1f) {
                     folded = folded > 0f ? 2f - folded : -2f - folded;
@@ -221,7 +221,8 @@ public sealed class DistortionEffect : IAudioEffect {
                 return folded;
             }
             case DistortionCurve.SoftClip:
-            default: return MathF.Tanh(value);
+            default:
+                return MathF.Tanh(value);
         }
     }
 }

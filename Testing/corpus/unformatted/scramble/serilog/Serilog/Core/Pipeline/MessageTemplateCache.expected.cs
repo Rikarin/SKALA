@@ -23,10 +23,10 @@ class MessageTemplateCache : IMessageTemplateParser {
     // Hashtable is used, instead of Dictionary<,> for thread safety reasons.
     //
     // > Hashtable is thread safe for multi-thread use when only one of the threads perform write (update)
-// https://learn.microsoft.com/en-us/dotnet/api/system.collections.hashtable#thread-safety
+    // https://learn.microsoft.com/en-us/dotnet/api/system.collections.hashtable#thread-safety
     //
     // > Dictionary<,> can support multiple readers concurrently, as long as the collection is not modified
-// https://learn.microsoft.com/en-us/dotnet/api/system.collections.generic.dictionary-2#thread-safety
+    // https://learn.microsoft.com/en-us/dotnet/api/system.collections.generic.dictionary-2#thread-safety
 
     //
     // Hence the reason to use Hashtable, otherwise read operation should have been placed into the lock section

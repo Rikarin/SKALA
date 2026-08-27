@@ -9,11 +9,11 @@ using Rikarin.Skala.Rules.Metadata;
 namespace Rikarin.Skala.Rules.Modernization;
 
 /// <summary>
-/// <c>SK1005</c> — a file with exactly one block-scoped namespace and nothing beside it.
+///     <c>SK1005</c> — a file with exactly one block-scoped namespace and nothing beside it.
 /// </summary>
 /// <remarks>
-/// docs/plan/08-rule-catalogue.md § "Language shape". Syntactic, so it runs under
-/// <c>--load=loose</c>, which is the mode an agent's scratch file is analysed in.
+///     docs/plan/08-rule-catalogue.md § "Language shape". Syntactic, so it runs under
+///     <c>--load=loose</c>, which is the mode an agent's scratch file is analysed in.
 /// </remarks>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class FileScopedNamespaceAnalyzer : DiagnosticAnalyzer {

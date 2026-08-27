@@ -10,32 +10,32 @@ namespace Rikarin.Skala.Testing;
 
 /// <summary>How a corpus file's formatting is destroyed before both tools are asked to repair it.</summary>
 /// <remarks>
-/// ⚠ Two modes rather than one, and the reason is a property of this configuration rather than
-/// thoroughness. The export sets <c>resharper_keep_user_linebreaks = true</c> and
-/// <c>keep_user_wrapping = true</c> — ADR-002's preserve-and-repair model — so
-/// <b>destroying the author's line breaks destroys the input those options act on</b>. A
-/// collapse-everything test measures the <em>reflow</em> path and says nothing about the
-/// <em>preserve</em> path, which is the one that runs in production.
+///     ⚠ Two modes rather than one, and the reason is a property of this configuration rather than
+///     thoroughness. The export sets <c>resharper_keep_user_linebreaks = true</c> and
+///     <c>keep_user_wrapping = true</c> — ADR-002's preserve-and-repair model — so
+///     <b>destroying the author's line breaks destroys the input those options act on</b>. A
+///     collapse-everything test measures the <em>reflow</em> path and says nothing about the
+///     <em>preserve</em> path, which is the one that runs in production.
 /// </remarks>
 public enum UnformatMode {
     /// <summary>
-    /// Plausible bad formatting: random indentation, line breaks moved to legal-but-wrong places,
-    /// blank lines added and removed, inter-token spacing randomised.
+    ///     Plausible bad formatting: random indentation, line breaks moved to legal-but-wrong places,
+    ///     blank lines added and removed, inter-token spacing randomised.
     /// </summary>
     /// <remarks>
-    /// ⚠ This is the mode that matters most. The author's breaks are <b>different</b>, not absent,
-    /// so both tools still exercise <c>keep_existing_*</c> and the preserve machinery — and it is
-    /// what real input looks like and what an AI writes.
+    ///     ⚠ This is the mode that matters most. The author's breaks are <b>different</b>, not absent,
+    ///     so both tools still exercise <c>keep_existing_*</c> and the preserve machinery — and it is
+    ///     what real input looks like and what an AI writes.
     /// </remarks>
     Scramble,
 
     /// <summary>
-    /// Minimal legal whitespace, everything joined onto as few lines as the language allows.
+    ///     Minimal legal whitespace, everything joined onto as few lines as the language allows.
     /// </summary>
     /// <remarks>
-    /// No line-break information survives, so both tools must build the layout from nothing. This is
-    /// the hardest test of the fitting engine and the wrap options, and the one whose null
-    /// hypothesis is near zero.
+    ///     No line-break information survives, so both tools must build the layout from nothing. This is
+    ///     the hardest test of the fitting engine and the wrap options, and the one whose null
+    ///     hypothesis is near zero.
     /// </remarks>
     Collapse
 }
@@ -44,34 +44,37 @@ public enum UnformatMode {
 public sealed record DegradedSource(UnformatMode Mode, string Text, int Lines, bool Glued);
 
 /// <summary>
-/// Degrades a file's formatting without changing the program.
+///     Degrades a file's formatting without changing the program.
 /// </summary>
 /// <remarks>
-/// ⚠ Both modes are <b>parse-preserving and token-preserving</b>, and neither re-derives what is
-/// safe to touch: <see cref="FuzzMutations.SourceMap"/> already knows which bytes are data —
-/// disabled <c>#if</c> text under <em>either</em> symbol set, verbatim and raw strings,
-/// interpolation holes, <c>///</c> runs — and it cost that agent 3 500 false reports to get right.
-/// This file consumes that map through its public surface and edits nothing in it.
-/// <para>
-/// ⚠ The duplication that remains is <see cref="Splice"/> and the sampling, which are private in
-/// <c>FuzzMutations</c>. They are eight lines each and copying them was cheaper than widening a file
-/// another agent is working in; the two copies want folding into one helper once both land.
-/// </para>
-/// <para>
-/// ⚠ Everything here is verified rather than argued: <see cref="Degrade"/> returns <c>null</c> when
-/// the degraded text's token stream is not identical to the original's <b>under both symbol
-/// sets</b>, or when it introduces a parse error. A degradation that changes the program measures
-/// the degrader rather than the formatter, and the fuzzer's history says that is the failure mode to
-/// expect.
-/// </para>
+///     ⚠ Both modes are <b>parse-preserving and token-preserving</b>, and neither re-derives what is
+///     safe to touch: <see cref="FuzzMutations.SourceMap" /> already knows which bytes are data —
+///     disabled <c>#if</c> text under <em>either</em> symbol set, verbatim and raw strings,
+///     interpolation holes, <c>///</c> runs — and it cost that agent 3 500 false reports to get right.
+///     This file consumes that map through its public surface and edits nothing in it.
+///     <para>
+///         ⚠ The duplication that remains is <see cref="Splice" /> and the sampling, which are private in
+///         <c>FuzzMutations</c>. They are eight lines each and copying them was cheaper than widening a file
+///         another agent is working in; the two copies want folding into one helper once both land.
+///     </para>
+///     <para>
+///         ⚠ Everything here is verified rather than argued: <see cref="Degrade" /> returns <c>null</c> when
+///         the degraded text's token stream is not identical to the original's
+///         <b>
+///             under both symbol
+///             sets
+///         </b>, or when it introduces a parse error. A degradation that changes the program measures
+///         the degrader rather than the formatter, and the fuzzer's history says that is the failure mode to
+///         expect.
+///     </para>
 /// </remarks>
 public static class Unformat {
     /// <summary>The two symbol sets every degradation is checked under.</summary>
     /// <remarks>
-    /// ⚠ Empty and <see cref="Corpus.PropertySymbols"/>, for the reason
-    /// <c>FuzzMutations.SourceMap.BuildOtherSet</c> records: which text is
-    /// <see cref="SyntaxKind.DisabledTextTrivia"/> is entirely a function of the symbol set, so a
-    /// check run under one set walks straight into the other's data.
+    ///     ⚠ Empty and <see cref="Corpus.PropertySymbols" />, for the reason
+    ///     <c>FuzzMutations.SourceMap.BuildOtherSet</c> records: which text is
+    ///     <see cref="SyntaxKind.DisabledTextTrivia" /> is entirely a function of the symbol set, so a
+    ///     check run under one set walks straight into the other's data.
     /// </remarks>
     public static IReadOnlyList<IReadOnlyList<string>> CheckedSymbolSets { get; } = [[], Corpus.PropertySymbols];
 
@@ -88,13 +91,13 @@ public static class Unformat {
         Modes.Cast<UnformatMode?>().FirstOrDefault(mode => Name(mode!.Value) == name);
 
     /// <summary>
-    /// Degrades <paramref name="source"/>, or returns <c>null</c> when the result cannot be proved
-    /// to be the same program.
+    ///     Degrades <paramref name="source" />, or returns <c>null</c> when the result cannot be proved
+    ///     to be the same program.
     /// </summary>
     /// <param name="seed">
-    /// ⚠ Derived from the file's path rather than drawn from a stream, exactly as
-    /// <see cref="CorpusSample"/> draws its sample: a corpus whose content depends on enumeration
-    /// order is a corpus that cannot be regenerated by the next person.
+    ///     ⚠ Derived from the file's path rather than drawn from a stream, exactly as
+    ///     <see cref="CorpusSample" /> draws its sample: a corpus whose content depends on enumeration
+    ///     order is a corpus that cannot be regenerated by the next person.
     /// </param>
     public static DegradedSource? Degrade(UnformatMode mode, string source, ulong seed) {
         var normalised = Normalise(source);
@@ -138,9 +141,9 @@ public static class Unformat {
 
     /// <summary>⚠ The corpus carries CRLF and BOMs; the degraded corpus is LF and nothing else.</summary>
     /// <remarks>
-    /// Line endings are their own measurement (<c>FuzzMutations.LineEndings</c>) and mixing them
-    /// into this one would put a whole-file transform with one bit of information in it beside the
-    /// wrapping decisions this is trying to see.
+    ///     Line endings are their own measurement (<c>FuzzMutations.LineEndings</c>) and mixing them
+    ///     into this one would put a whole-file transform with one bit of information in it beside the
+    ///     wrapping decisions this is trying to see.
     /// </remarks>
     static string Normalise(string source) {
         var text = source.Replace("\r\n", "\n", StringComparison.Ordinal).Replace('\r', '\n');
@@ -148,14 +151,14 @@ public static class Unformat {
     }
 
     /// <summary>
-    /// Whether two texts are the same program: identical token streams under every checked symbol
-    /// set, with no new parse error.
+    ///     Whether two texts are the same program: identical token streams under every checked symbol
+    ///     set, with no new parse error.
     /// </summary>
     /// <remarks>
-    /// ⚠ Public so that the committed corpus can be re-checked from its committed bytes rather than
-    /// trusted because the generator said so. A degraded input is only half of a fixture pair, and a
-    /// hand-edit to either half turns the whole measurement into a comparison of two unrelated
-    /// files.
+    ///     ⚠ Public so that the committed corpus can be re-checked from its committed bytes rather than
+    ///     trusted because the generator said so. A degraded input is only half of a fixture pair, and a
+    ///     hand-edit to either half turns the whole measurement into a comparison of two unrelated
+    ///     files.
     /// </remarks>
     public static bool IsSameProgram(string original, string degraded) {
         var expected = Fingerprints(Normalise(original));
@@ -187,25 +190,25 @@ public static class Unformat {
     }
 
     /// <summary>
-    /// Everything in a file that is not whitespace, in order.
+    ///     Everything in a file that is not whitespace, in order.
     /// </summary>
     /// <remarks>
-    /// ⚠ Tokens <em>and</em> non-whitespace trivia. A token stream alone does not see a comment, and
-    /// it does not see disabled <c>#if</c> text at all — that text is one
-    /// <see cref="SyntaxKind.DisabledTextTrivia"/> and a degradation that ate half of it would
-    /// compare equal. Trailing whitespace inside a trivia is trimmed on both sides because neither
-    /// mode creates it and no formatter is obliged to keep it.
-    /// <para>
-    /// ⚠ Disabled text is compared with its whitespace removed, and that relaxation is the
-    /// whole reason the fingerprint is taken once <em>per symbol set</em> rather than once. Under
-    /// set S, disabled text is not part of the program — it is part of the program under some other
-    /// set, and that set has its own fingerprint where the same bytes are live tokens and are
-    /// compared exactly. Serilog's <c>TimeProvider.cs</c> is the case that forced this: the entire
-    /// file sits under <c>#if !NET8_0_OR_GREATER</c>, so collapsing it is a legitimate degradation
-    /// of live code under the empty symbol set and a byte-for-byte rewrite of disabled text under
-    /// <see cref="Corpus.PropertySymbols"/>. The relaxation keeps the corruption guard — a deletion
-    /// or a reordering still fails — without rejecting the file for being conditional.
-    /// </para>
+    ///     ⚠ Tokens <em>and</em> non-whitespace trivia. A token stream alone does not see a comment, and
+    ///     it does not see disabled <c>#if</c> text at all — that text is one
+    ///     <see cref="SyntaxKind.DisabledTextTrivia" /> and a degradation that ate half of it would
+    ///     compare equal. Trailing whitespace inside a trivia is trimmed on both sides because neither
+    ///     mode creates it and no formatter is obliged to keep it.
+    ///     <para>
+    ///         ⚠ Disabled text is compared with its whitespace removed, and that relaxation is the
+    ///         whole reason the fingerprint is taken once <em>per symbol set</em> rather than once. Under
+    ///         set S, disabled text is not part of the program — it is part of the program under some other
+    ///         set, and that set has its own fingerprint where the same bytes are live tokens and are
+    ///         compared exactly. Serilog's <c>TimeProvider.cs</c> is the case that forced this: the entire
+    ///         file sits under <c>#if !NET8_0_OR_GREATER</c>, so collapsing it is a legitimate degradation
+    ///         of live code under the empty symbol set and a byte-for-byte rewrite of disabled text under
+    ///         <see cref="Corpus.PropertySymbols" />. The relaxation keeps the corruption guard — a deletion
+    ///         or a reordering still fails — without rejecting the file for being conditional.
+    ///     </para>
     /// </remarks>
     static string Fingerprint(SyntaxNode root) {
         var builder = new StringBuilder();
@@ -243,11 +246,11 @@ public static class Unformat {
 
     /// <summary>Every whitespace character removed.</summary>
     /// <remarks>
-    /// ⚠ Removed rather than collapsed to one space, because collapse removes a separator entirely
-    /// wherever the two tokens beside it do not need one — Serilog's <c>PropertyBinder.cs</c> has
-    /// <c>EventProperty[] ConstructProperties(…)</c> in an <c>#else</c> branch and it comes back as
-    /// <c>EventProperty[]ConstructProperties(…)</c>, which is the same program and not the same
-    /// number of spaces.
+    ///     ⚠ Removed rather than collapsed to one space, because collapse removes a separator entirely
+    ///     wherever the two tokens beside it do not need one — Serilog's <c>PropertyBinder.cs</c> has
+    ///     <c>EventProperty[] ConstructProperties(…)</c> in an <c>#else</c> branch and it comes back as
+    ///     <c>EventProperty[]ConstructProperties(…)</c>, which is the same program and not the same
+    ///     number of spaces.
     /// </remarks>
     static string Squash(string text) {
         var builder = new StringBuilder(text.Length);
@@ -272,15 +275,15 @@ public static class Unformat {
     // ── collapse ─────────────────────────────────────────────────────────────────────────────────
 
     /// <summary>
-    /// Rebuilds the file from its token and trivia stream with no line break that the language does
-    /// not force.
+    ///     Rebuilds the file from its token and trivia stream with no line break that the language does
+    ///     not force.
     /// </summary>
     /// <remarks>
-    /// ⚠ Four things force a line: a preprocessor directive, the disabled text between two of them,
-    /// a <c>//</c> or <c>///</c> comment (which runs to the end of its line), and the file's end.
-    /// Everything else is joined. A file of ordinary C# collapses to one line; a documented one
-    /// collapses to one line per <c>///</c> run, which is the honest answer to "as few lines as the
-    /// language allows" rather than a softened degradation.
+    ///     ⚠ Four things force a line: a preprocessor directive, the disabled text between two of them,
+    ///     a <c>//</c> or <c>///</c> comment (which runs to the end of its line), and the file's end.
+    ///     Everything else is joined. A file of ordinary C# collapses to one line; a documented one
+    ///     collapses to one line per <c>///</c> run, which is the honest answer to "as few lines as the
+    ///     language allows" rather than a softened degradation.
     /// </remarks>
     static string? Collapse(string source, bool alwaysSpace) {
         var tree = CSharpSyntaxTree.ParseText(SourceText.From(source), CSharpFormatter.ParseOptions);
@@ -428,15 +431,15 @@ public static class Unformat {
     // ── scramble ─────────────────────────────────────────────────────────────────────────────────
 
     /// <summary>
-    /// Two passes: first the line structure, then the whitespace within it.
+    ///     Two passes: first the line structure, then the whitespace within it.
     /// </summary>
     /// <remarks>
-    /// ⚠ Two passes and two parses, rather than one set of edits. Indentation is a rewrite of a
-    /// line's <em>start</em> and a join is a deletion <em>through</em> the next line's start, so a
-    /// single-pass version has to either drop overlapping edits silently — which is how a
-    /// degradation quietly becomes weaker than it reports — or claim so many lines that most of the
-    /// file is left alone. Re-parsing between the two costs one parse per file and makes the second
-    /// pass's map describe the text it is actually editing.
+    ///     ⚠ Two passes and two parses, rather than one set of edits. Indentation is a rewrite of a
+    ///     line's <em>start</em> and a join is a deletion <em>through</em> the next line's start, so a
+    ///     single-pass version has to either drop overlapping edits silently — which is how a
+    ///     degradation quietly becomes weaker than it reports — or claim so many lines that most of the
+    ///     file is left alone. Re-parsing between the two costs one parse per file and makes the second
+    ///     pass's map describe the text it is actually editing.
     /// </remarks>
     static string? Scramble(string source, FuzzRandom random) {
         var restructured = Restructure(source, random) ?? source;
@@ -548,15 +551,15 @@ public static class Unformat {
     }
 
     /// <summary>
-    /// The weights, which are the whole definition of "plausible bad formatting".
+    ///     The weights, which are the whole definition of "plausible bad formatting".
     /// </summary>
     /// <remarks>
-    /// ⚠ Indentation is drawn hard and joins are drawn softly, and the asymmetry is deliberate.
-    /// Indentation carries no information at all — every tool is expected to rebuild it, and a
-    /// degradation that leaves it alone is measuring almost nothing. A join or a split *destroys*
-    /// author information that <c>keep_user_linebreaks</c> is configured to preserve, so drawing
-    /// them at 1 in 3 leaves two thirds of the author's breaks in place, which is what makes this
-    /// mode a test of the preserve path rather than a slower collapse.
+    ///     ⚠ Indentation is drawn hard and joins are drawn softly, and the asymmetry is deliberate.
+    ///     Indentation carries no information at all — every tool is expected to rebuild it, and a
+    ///     degradation that leaves it alone is measuring almost nothing. A join or a split *destroys*
+    ///     author information that <c>keep_user_linebreaks</c> is configured to preserve, so drawing
+    ///     them at 1 in 3 leaves two thirds of the author's breaks in place, which is what makes this
+    ///     mode a test of the preserve path rather than a slower collapse.
     /// </remarks>
     const double JoinChance = 0.30;
 
@@ -580,11 +583,11 @@ public static class Unformat {
     }
 
     /// <summary>
-    /// Applies non-overlapping edits, right to left.
+    ///     Applies non-overlapping edits, right to left.
     /// </summary>
     /// <remarks>
-    /// ⚠ A copy of <c>FuzzMutations.Splice</c>, which is private. Lifted rather than shared because
-    /// another agent is working in that file; the two want folding into one helper once both land.
+    ///     ⚠ A copy of <c>FuzzMutations.Splice</c>, which is private. Lifted rather than shared because
+    ///     another agent is working in that file; the two want folding into one helper once both land.
     /// </remarks>
     static string Splice(string source, IReadOnlyList<(int Position, int Delete, string Insert)> edits) {
         var ordered = edits.OrderByDescending(static edit => edit.Position).ToArray();
@@ -605,19 +608,19 @@ public static class Unformat {
 }
 
 /// <summary>
-/// Whether two adjacent token texts may be written with nothing between them.
+///     Whether two adjacent token texts may be written with nothing between them.
 /// </summary>
 /// <remarks>
-/// ⚠ Answered by lexing rather than by a table of operator pairs, because the table is where the
-/// bug lives: <c>1</c> and <c>_2</c> merge, <c>0x1</c> and <c>e5</c> merge, <c>&gt;&gt;&gt;</c> and
-/// <c>=</c> merge, and a hand-written list of those is a list somebody forgot a case from.
-/// <para>
-/// ⚠ The key is a six-character window on each side rather than the whole token, so that a file with
-/// four thousand distinct identifiers does not lex four thousand pairs. Truncation can only make the
-/// answer <em>more</em> conservative: the check demands that the window lex back to exactly its two
-/// halves, and a truncated window that no longer does so answers "needs a space". The longest C#
-/// operator is four characters (<c>&gt;&gt;&gt;=</c>), so six is margin rather than a guess.
-/// </para>
+///     ⚠ Answered by lexing rather than by a table of operator pairs, because the table is where the
+///     bug lives: <c>1</c> and <c>_2</c> merge, <c>0x1</c> and <c>e5</c> merge, <c>&gt;&gt;&gt;</c> and
+///     <c>=</c> merge, and a hand-written list of those is a list somebody forgot a case from.
+///     <para>
+///         ⚠ The key is a six-character window on each side rather than the whole token, so that a file with
+///         four thousand distinct identifiers does not lex four thousand pairs. Truncation can only make the
+///         answer <em>more</em> conservative: the check demands that the window lex back to exactly its two
+///         halves, and a truncated window that no longer does so answers "needs a space". The longest C#
+///         operator is four characters (<c>&gt;&gt;&gt;=</c>), so six is margin rather than a guess.
+///     </para>
 /// </remarks>
 static class TokenGlue {
     const int Window = 6;

@@ -58,7 +58,7 @@ public interface IDiagnosticOverlay {
 public sealed class
     DiagnosticOverlays {
     readonly List<IDiagnosticOverlay>
-        overlays = [];
+    overlays = [];
 
     readonly OverlaySurface surface = new();
     readonly HashSet<string> requested = new(StringComparer.OrdinalIgnoreCase);
@@ -80,7 +80,7 @@ public sealed class
     /// <exception cref="ArgumentException">Something with that name is already registered.</exception>
     public void Add(
         IDiagnosticOverlay
-            overlay
+        overlay
     ) {
         ArgumentNullException.ThrowIfNull(overlay);
 
@@ -117,7 +117,7 @@ public sealed class
     /// </remarks>
     public void Request(IEnumerable<string>? names) {
         if (names is null
-           ) {
+        ) {
             return;
         }
 
@@ -166,7 +166,7 @@ public sealed class
     public bool? Set(string name, bool? enabled = null) {
         var overlay = Find(name);
         if (overlay is null
-           ) {
+        ) {
             return null
                 ;
         }

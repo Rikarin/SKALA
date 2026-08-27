@@ -7,7 +7,7 @@ namespace Rikarin.Skala.Protocol;
 
 /// <summary>What a client asks the daemon to do.</summary>
 public sealed record DaemonRequest {
-    /// <summary>Exact match, no negotiation. See <see cref="DaemonProtocol.Version"/>.</summary>
+    /// <summary>Exact match, no negotiation. See <see cref="DaemonProtocol.Version" />.</summary>
     public string Version { get; init; } = DaemonProtocol.Version;
 
     /// <summary><c>format</c>, <c>status</c> or <c>stop</c>.</summary>
@@ -21,13 +21,13 @@ public sealed record DaemonRequest {
     public IReadOnlyList<KeyValuePair<string, string>> Overrides { get; init; } = [];
 
     /// <summary>
-    /// The preprocessor symbols the file is parsed with (<c>--define</c>, or a loaded compilation's).
+    ///     The preprocessor symbols the file is parsed with (<c>--define</c>, or a loaded compilation's).
     /// </summary>
     /// <remarks>
-    /// ⚠ Part of the request rather than of the daemon's own state. Two clients of one repository
-    /// may hold different symbol sets — a `#if DEBUG` file formatted for a Debug compilation and the
-    /// same file formatted for Release are different answers — so the symbols travel with the
-    /// question and are part of the cache key, never a property of the daemon.
+    ///     ⚠ Part of the request rather than of the daemon's own state. Two clients of one repository
+    ///     may hold different symbol sets — a `#if DEBUG` file formatted for a Debug compilation and the
+    ///     same file formatted for Release are different answers — so the symbols travel with the
+    ///     question and are part of the cache key, never a property of the daemon.
     /// </remarks>
     public IReadOnlyList<string> Define { get; init; } = [];
 }
@@ -53,9 +53,9 @@ public sealed record DaemonResponse {
 }
 
 /// <summary>
-/// ⚠ Source-generated serialisation, because the thin client is NativeAOT and reflection-based
-/// <c>JsonSerializer</c> does not survive trimming. This is also why the protocol types are plain
-/// records with no polymorphism: the generator has to be able to see the whole shape.
+///     ⚠ Source-generated serialisation, because the thin client is NativeAOT and reflection-based
+///     <c>JsonSerializer</c> does not survive trimming. This is also why the protocol types are plain
+///     records with no polymorphism: the generator has to be able to see the whole shape.
 /// </summary>
 [JsonSourceGenerationOptions(
     PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase,
@@ -66,17 +66,17 @@ public sealed record DaemonResponse {
 public sealed partial class DaemonJson : JsonSerializerContext;
 
 /// <summary>
-/// The daemon's wire format: a 4-byte big-endian length, then UTF-8 JSON.
+///     The daemon's wire format: a 4-byte big-endian length, then UTF-8 JSON.
 /// </summary>
 /// <remarks>
-/// ⚠ Private, and versioned by <em>exact match</em> (docs/plan/11 § "The daemon"): a client that
-/// meets a daemon of another version kills it and starts its own. There is no negotiation and no
-/// compatibility window, because the two halves ship in one package and a daemon that half-speaks an
-/// older protocol is a source of formatting differences between two developers on one repository —
-/// which is the failure the whole tool exists to prevent.
+///     ⚠ Private, and versioned by <em>exact match</em> (docs/plan/11 § "The daemon"): a client that
+///     meets a daemon of another version kills it and starts its own. There is no negotiation and no
+///     compatibility window, because the two halves ship in one package and a daemon that half-speaks an
+///     older protocol is a source of formatting differences between two developers on one repository —
+///     which is the failure the whole tool exists to prevent.
 /// </remarks>
 public static class DaemonProtocol {
-    /// <summary>Bumped whenever <see cref="DaemonRequest"/> or <see cref="DaemonResponse"/> changes.</summary>
+    /// <summary>Bumped whenever <see cref="DaemonRequest" /> or <see cref="DaemonResponse" /> changes.</summary>
     public const string Version = "skala/2";
 
     /// <summary>The socket lives beside the crash artefacts, under the repository root.</summary>
@@ -89,26 +89,26 @@ public static class DaemonProtocol {
     public const int MaxFrame = 64 * 1024 * 1024;
 
     /// <summary>
-    /// ⚠ <b>The kernel caps a Unix domain socket path at 104 bytes on macOS and 108 on Linux</b>,
-    /// and it is a hard limit in <c>struct sockaddr_un</c> rather than a policy anyone can raise.
+    ///     ⚠ <b>The kernel caps a Unix domain socket path at 104 bytes on macOS and 108 on Linux</b>,
+    ///     and it is a hard limit in <c>struct sockaddr_un</c> rather than a policy anyone can raise.
     /// </summary>
     /// <remarks>
-    /// ⚠ This was found by measurement in M7 and it was a real, live defect: a repository checked
-    /// out anywhere deeper than about eighty-five characters — a CI workspace, a nested monorepo, a
-    /// path under <c>~/Library/…</c>, a git worktree under <c>.claude/worktrees/…</c> — produced
-    /// <c>&lt;repo&gt;/.skala/daemon.sock</c> over the cap, and <c>Daemon.Listen</c> threw
-    /// <see cref="ArgumentOutOfRangeException"/>. <c>DaemonCommands.RunAsync</c> catches only
-    /// <see cref="IOException"/>, so the daemon died with an unhandled exception and exit code 0,
-    /// every subsequent format silently took the cold path, and doc 13's warm row was unreachable
-    /// for those repositories with no message that said so. That is exactly the failure doc 13
-    /// § "Memory" warns about in another form: "silent, and blamed on the editor".
-    /// <para>
-    /// The socket stays in <c>.skala/</c> whenever it fits, because that is discoverable, is cleaned
-    /// up with the rest of the directory, and is what the documentation says. When it does not fit,
-    /// it moves to the system temp directory under a name hashed from the repository root — one
-    /// daemon per repository still, and per user, just not beside the repository. Both ends compute
-    /// this the same way because both ends call this method.
-    /// </para>
+    ///     ⚠ This was found by measurement in M7 and it was a real, live defect: a repository checked
+    ///     out anywhere deeper than about eighty-five characters — a CI workspace, a nested monorepo, a
+    ///     path under <c>~/Library/…</c>, a git worktree under <c>.claude/worktrees/…</c> — produced
+    ///     <c>&lt;repo&gt;/.skala/daemon.sock</c> over the cap, and <c>Daemon.Listen</c> threw
+    ///     <see cref="ArgumentOutOfRangeException" />. <c>DaemonCommands.RunAsync</c> catches only
+    ///     <see cref="IOException" />, so the daemon died with an unhandled exception and exit code 0,
+    ///     every subsequent format silently took the cold path, and doc 13's warm row was unreachable
+    ///     for those repositories with no message that said so. That is exactly the failure doc 13
+    ///     § "Memory" warns about in another form: "silent, and blamed on the editor".
+    ///     <para>
+    ///         The socket stays in <c>.skala/</c> whenever it fits, because that is discoverable, is cleaned
+    ///         up with the rest of the directory, and is what the documentation says. When it does not fit,
+    ///         it moves to the system temp directory under a name hashed from the repository root — one
+    ///         daemon per repository still, and per user, just not beside the repository. Both ends compute
+    ///         this the same way because both ends call this method.
+    ///     </para>
     /// </remarks>
     public static string SocketPath(string repositoryRoot) {
         var preferred = Path.Combine(repositoryRoot, ".skala", SocketName);
@@ -144,19 +144,19 @@ public static class DaemonProtocol {
     }
 
     /// <summary>
-    /// The Windows transport's name. ⚠ doc 12 § "Cross-platform" lists "the named-pipe daemon
-    /// transport" as a hazard needing a test, and until M7 there was nothing to test: both ends
-    /// constructed <c>AddressFamily.Unix</c> unconditionally, and only a comment in
-    /// <c>Daemon.Restrict</c> claimed otherwise. Windows 10 1803 and later do support AF_UNIX, but
-    /// the socket file must live on a local NTFS volume, which a repository on a network share or a
-    /// mapped drive is not — so the pipe is the transport there and the socket path is only ever a
-    /// name.
-    /// <para>
-    /// The pipe is named from the repository root's full path so that two repositories get two
-    /// daemons, hashed because a pipe name may not contain a backslash and is capped in length.
-    /// It is per-user: a pipe is machine-global, and two developers on one machine must not share
-    /// a daemon that holds the other's file contents.
-    /// </para>
+    ///     The Windows transport's name. ⚠ doc 12 § "Cross-platform" lists "the named-pipe daemon
+    ///     transport" as a hazard needing a test, and until M7 there was nothing to test: both ends
+    ///     constructed <c>AddressFamily.Unix</c> unconditionally, and only a comment in
+    ///     <c>Daemon.Restrict</c> claimed otherwise. Windows 10 1803 and later do support AF_UNIX, but
+    ///     the socket file must live on a local NTFS volume, which a repository on a network share or a
+    ///     mapped drive is not — so the pipe is the transport there and the socket path is only ever a
+    ///     name.
+    ///     <para>
+    ///         The pipe is named from the repository root's full path so that two repositories get two
+    ///         daemons, hashed because a pipe name may not contain a backslash and is capped in length.
+    ///         It is per-user: a pipe is machine-global, and two developers on one machine must not share
+    ///         a daemon that holds the other's file contents.
+    ///     </para>
     /// </summary>
     public static string PipeName(string repositoryRoot) =>
         "skala." + Environment.UserName + "." + Hash(Path.GetFullPath(repositoryRoot).Replace('\\', '/').TrimEnd('/'));

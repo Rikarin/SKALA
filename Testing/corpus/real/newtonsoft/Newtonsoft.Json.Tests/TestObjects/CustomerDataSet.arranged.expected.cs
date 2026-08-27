@@ -1,4 +1,5 @@
 // skala-oracle: resharper=2025.2.6 config=sha256:98ff52570e019fac profile=SkalaCleanup generated=2026-08-27
+
 #region License
 
 // Copyright (c) 2007 James Newton-King
@@ -29,8 +30,8 @@
 #if !(PORTABLE40 || PORTABLE || DNXCORE50) || NETSTANDARD2_0 || NET6_0_OR_GREATER
 namespace Newtonsoft.Json.Tests.TestObjects {
     /// <summary>
-    ///Represents a strongly typed in-memory cache of data.
-    ///</summary>
+    ///     Represents a strongly typed in-memory cache of data.
+    /// </summary>
     [Serializable]
     [System.ComponentModel.DesignerCategoryAttribute("code")]
     [System.ComponentModel.ToolboxItem(true)]
@@ -41,7 +42,7 @@ namespace Newtonsoft.Json.Tests.TestObjects {
         CustomersDataTable tableCustomers;
 
         System.Data.SchemaSerializationMode
-            _schemaSerializationMode = System.Data.SchemaSerializationMode.IncludeSchema;
+        _schemaSerializationMode = System.Data.SchemaSerializationMode.IncludeSchema;
 
         [System.Diagnostics.DebuggerNonUserCodeAttribute]
         [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "4.0.0.0")]
@@ -283,8 +284,8 @@ namespace Newtonsoft.Json.Tests.TestObjects {
         public delegate void CustomersRowChangeEventHandler(object sender, CustomersRowChangeEvent e);
 
         /// <summary>
-        ///Represents the strongly named DataTable class.
-        ///</summary>
+        ///     Represents the strongly named DataTable class.
+        /// </summary>
         [Serializable]
         [global::System.Xml.Serialization.XmlSchemaProviderAttribute("GetTypedTableSchema")]
         public partial class CustomersDataTable : System.Data.DataTable, System.Collections.IEnumerable {
@@ -524,8 +525,8 @@ namespace Newtonsoft.Json.Tests.TestObjects {
         }
 
         /// <summary>
-        ///Represents strongly named DataRow class.
-        ///</summary>
+        ///     Represents strongly named DataRow class.
+        /// </summary>
         public partial class CustomersRow : System.Data.DataRow {
             CustomersDataTable tableCustomers;
 
@@ -564,8 +565,8 @@ namespace Newtonsoft.Json.Tests.TestObjects {
         }
 
         /// <summary>
-        ///Row event argument class
-        ///</summary>
+        ///     Row event argument class
+        /// </summary>
         [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "4.0.0.0")]
         public class CustomersRowChangeEvent : EventArgs {
             CustomersRow eventRow;

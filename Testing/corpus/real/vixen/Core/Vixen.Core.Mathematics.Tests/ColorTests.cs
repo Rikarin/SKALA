@@ -40,8 +40,10 @@ public class ColorTests {
     /// </summary>
     /// <remarks>
     ///     <para>
-    ///         <strong>Asserted with a tolerance, not with a decimal-place count, and the difference
-    ///         is why this test used to be flaky.</strong> <c>Assert.Equal(expected, actual, 4)</c>
+    ///         <strong>
+    ///             Asserted with a tolerance, not with a decimal-place count, and the difference
+    ///             is why this test used to be flaky.
+    ///         </strong> <c>Assert.Equal(expected, actual, 4)</c>
     ///         does not compare <c>|a - b|</c> to <c>1e-4</c> — it rounds <em>both</em> values to
     ///         four decimals and compares the results. That comparison has a discontinuity at every
     ///         <c>0.00005</c> boundary, so a value sitting on one fails however small the error is:
@@ -58,8 +60,7 @@ public class ColorTests {
     /// </remarks>
     [Fact]
     public void The_transfer_functions_invert_each_other() =>
-        Gen.Float[0f, 1f].Sample(
-            value => Assert.Equal(
+        Gen.Float[0f, 1f].Sample(value => Assert.Equal(
                 value,
                 ColorSpace.LinearToSrgb(ColorSpace.SrgbToLinear(value)),
                 RoundTripTolerance

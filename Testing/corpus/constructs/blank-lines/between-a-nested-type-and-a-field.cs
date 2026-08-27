@@ -1,5 +1,5 @@
 class C {
-    class A {
-    }
+    class A { }
+
     int _a;
 }

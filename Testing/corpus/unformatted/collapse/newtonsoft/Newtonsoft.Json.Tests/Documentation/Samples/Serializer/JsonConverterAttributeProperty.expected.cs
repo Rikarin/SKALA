@@ -1,4 +1,5 @@
 // skala-oracle: resharper=2025.2.6 config=sha256:98ff52570e019fac profile=SkalaFormatOnly generated=2026-08-27
+
 #region License
 
 // Copyright (c) 2007 James Newton-King
@@ -65,9 +66,9 @@ namespace Newtonsoft.Json.Tests.Documentation.Samples.Serializer {
             User user = new User { UserName = @"domain\username", Status = UserStatus.Deleted };
             string json = JsonConvert.SerializeObject(user, Formatting.Indented);
             Console.WriteLine(json); // {
-//   "UserName": "domain\\username",
-//   "Status": "Deleted"
-// }
+            //   "UserName": "domain\\username",
+            //   "Status": "Deleted"
+            // }
 
             #endregion
 

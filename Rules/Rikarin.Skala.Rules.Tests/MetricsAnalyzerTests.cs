@@ -9,13 +9,13 @@ using Rikarin.Skala.Rules.Metadata;
 namespace Rikarin.Skala.Rules.Tests;
 
 /// <summary>
-/// The analyzer's two contracts with the outside world: the <c>.editorconfig</c> keys it reads, and
-/// the measurement it puts on every diagnostic.
+///     The analyzer's two contracts with the outside world: the <c>.editorconfig</c> keys it reads, and
+///     the measurement it puts on every diagnostic.
 /// </summary>
 /// <remarks>
-/// ⚠ Both are plumbing, and untested plumbing is the kind that silently does not work: a threshold
-/// key that never resolves looks exactly like a repository whose code is fine, and a missing
-/// property looks exactly like a reader that forgot to ask.
+///     ⚠ Both are plumbing, and untested plumbing is the kind that silently does not work: a threshold
+///     key that never resolves looks exactly like a repository whose code is fine, and a missing
+///     property looks exactly like a reader that forgot to ask.
 /// </remarks>
 public sealed class MetricsAnalyzerTests {
     const string ModeratelyNested = """
@@ -37,8 +37,8 @@ public sealed class MetricsAnalyzerTests {
                                     """;
 
     /// <summary>
-    /// ⚠ docs/plan/07 § "Metrics": <c>dotnet_code_quality.SK7002.threshold = 15</c>, "the standard
-    /// mechanism Roslyn analyzers already use for configuration and therefore needs no invention".
+    ///     ⚠ docs/plan/07 § "Metrics": <c>dotnet_code_quality.SK7002.threshold = 15</c>, "the standard
+    ///     mechanism Roslyn analyzers already use for configuration and therefore needs no invention".
     /// </summary>
     [Fact]
     public void ALoweredThreshold_MakesTheRuleFire() {
@@ -55,12 +55,12 @@ public sealed class MetricsAnalyzerTests {
     }
 
     /// <summary>
-    /// ⚠ "A missing or unparseable value falls back to the documented default silently."
+    ///     ⚠ "A missing or unparseable value falls back to the documented default silently."
     /// </summary>
     /// <remarks>
-    /// A metric rule that fails a build because someone wrote <c>threshold = fifteen</c> is a metric
-    /// rule that gets switched off, and a zero threshold fires on every member in the repository,
-    /// which is indistinguishable from the tool being broken.
+    ///     A metric rule that fails a build because someone wrote <c>threshold = fifteen</c> is a metric
+    ///     rule that gets switched off, and a zero threshold fires on every member in the repository,
+    ///     which is indistinguishable from the tool being broken.
     /// </remarks>
     [Theory]
     [InlineData("fifteen")]
@@ -89,8 +89,8 @@ public sealed class MetricsAnalyzerTests {
         );
 
     /// <summary>
-    /// ⚠ Every <c>SK70xx</c> diagnostic carries its measurement, so a reader sees the number without
-    /// re-deriving it — and therefore cannot re-derive it differently.
+    ///     ⚠ Every <c>SK70xx</c> diagnostic carries its measurement, so a reader sees the number without
+    ///     re-deriving it — and therefore cannot re-derive it differently.
     /// </summary>
     [Fact]
     public void EveryMetricDiagnostic_CarriesTheMeasuredValue() {

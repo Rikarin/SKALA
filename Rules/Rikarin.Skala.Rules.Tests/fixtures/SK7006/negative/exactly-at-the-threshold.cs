@@ -15,6 +15,7 @@ public sealed class ExactlyAtTheThreshold {
                 }
             }
         }
+
         return total;
     }
 }

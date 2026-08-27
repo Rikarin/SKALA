@@ -11,4 +11,21 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-namespace Serilog.Core.Sinks;class SafeAggregateSink:ILogEventSink{readonly ILogEventSink[]_sinks;public SafeAggregateSink(IEnumerable<ILogEventSink>sinks){Guard.AgainstNull(sinks);_sinks=sinks.ToArray();}public void Emit(LogEvent logEvent){foreach(var sink in _sinks){try{sink.Emit(logEvent);}catch(Exception ex){SelfLog.WriteLine("Caught exception while emitting to sink {0}: {1}" ,sink,ex);}}}}
+namespace Serilog.Core.Sinks; class SafeAggregateSink : ILogEventSink {
+    readonly ILogEventSink[] _sinks;
+
+    public SafeAggregateSink(IEnumerable<ILogEventSink> sinks) {
+        Guard.AgainstNull(sinks);
+        _sinks = sinks.ToArray();
+    }
+
+    public void Emit(LogEvent logEvent) {
+        foreach (var sink in _sinks) {
+            try {
+                sink.Emit(logEvent);
+            } catch (Exception ex) {
+                SelfLog.WriteLine("Caught exception while emitting to sink {0}: {1}", sink, ex);
+            }
+        }
+    }
+}

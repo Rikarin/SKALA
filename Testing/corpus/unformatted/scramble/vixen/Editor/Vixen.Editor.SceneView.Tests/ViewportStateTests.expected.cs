@@ -5,9 +5,9 @@
 using Vixen.Core;
 using Vixen.Core.Mathematics;
 using Vixen.
-    Ecs;
+Ecs;
 using Vixen.Editor.Core
-    ;
+;
 using Vixen.Editor.Core.Scenes;
 using Vixen.Engine.Transforms;
 using Vixen.Rendering;
@@ -59,13 +59,13 @@ public class ViewportStateTests : IDisposable {
         Fact]
     public void A_pane_comes_up_showing_everything_but_the_bounds() {
         using var
-            pane = new Pane();
+        pane = new Pane();
 
         Assert
             .Equal(SceneShow.Default, pane.Viewport.Show);
 
         // A box round every object is the one flag that makes a busy scene less legible rather than
-// more, which is why it is the one thing off by default.
+        // more, which is why it is the one thing off by default.
         Assert.Equal(SceneShow.None, pane.Viewport.Show & SceneShow.Bounds);
     }
 
@@ -171,13 +171,13 @@ public class ViewportStateTests : IDisposable {
         Assert.Equal(ShowFlags.All.Count, ShowFlags.All.Select(ShowFlags.SlugOf).Distinct().Count());
     }
 
-// ── View modes ──────────────────────────────────────────────────────────────────────────────
+    // ── View modes ──────────────────────────────────────────────────────────────────────────────
     [Fact]
     public void
         A_wireframe_view_draws_edges_and_no_surfaces() {
         using var pane = new Pane();
         var
-            meshes = new SceneMeshes();
+        meshes = new SceneMeshes();
         Shape(
             PrimitiveKind.Cube,
             Vector3
@@ -202,7 +202,7 @@ public class ViewportStateTests : IDisposable {
     public void A_shaded_wireframe_draws_both() {
         using var pane = new Pane();
         var
-            meshes = new SceneMeshes();
+        meshes = new SceneMeshes();
 
         Shape(
             PrimitiveKind
@@ -214,10 +214,8 @@ public class ViewportStateTests : IDisposable {
             .Modes.Current = ViewMode.ShadedWireframe;
         meshes.Build(scene, pane.Viewport);
 
-        Assert.True(
-            meshes.Triangles
-            > 0
-        );
+        Assert.True(meshes.Triangles
+            > 0);
         Assert.Contains(meshes.Batches, batch => batch.Edges);
         Assert.Contains(meshes.Batches, batch => !batch.Edges);
         // One entity, drawn twice. The pass costs a second instance rather than a second copy of the
@@ -239,7 +237,7 @@ public class ViewportStateTests : IDisposable {
         // ⚠ A style lane rather than a colour per vertex, because there are no vertices here to put
         // one on: the shader remaps the world normal from −1..1 into a colour, and remaps rather than
         // clamps because half of every normal is negative and a colour is not — clamping would paint
-// three of a cube's six faces black.
+        // three of a cube's six faces black.
         var instance =
             Assert.Single(meshes.Instances.ToArray());
         Assert.Equal(1f, instance.Style.W);
@@ -257,9 +255,9 @@ public class ViewportStateTests : IDisposable {
     [Fact]
     public void The_two_modes_the_tool_renderer_cannot_draw_say_so
         () {
-// ⚠ A mode with no compositor falls back to shaded, which for a menu line means drawing the
+        // ⚠ A mode with no compositor falls back to shaded, which for a menu line means drawing the
         // same picture as the line above it. `IsSupported` is what lets those two be registered as
-// declared-and-disabled with the reason instead.
+        // declared-and-disabled with the reason instead.
         Assert.False(ViewShading.IsSupported(ViewMode.Overdraw));
         Assert.False(ViewShading.IsSupported(ViewMode.LightComplexity));
         Assert.True(ViewShading.IsSupported(ViewMode.Shaded));
@@ -311,7 +309,7 @@ public class ViewportStateTests : IDisposable {
         scene.Selection.Set(cube);
         meshes.Build(scene, pane.Viewport);
 
-// The same geometry and the same triangle count as before it was selected: no second copy.
+        // The same geometry and the same triangle count as before it was selected: no second copy.
         Assert.Equal(plain, meshes.Triangles);
 
         var instance = Assert.Single(meshes.Instances.ToArray());
@@ -376,6 +374,7 @@ public class ViewportStateTests : IDisposable {
         Assert.Equal(0, meshes.Triangles);
         Assert.DoesNotContain(meshes.Instances.ToArray(), instance => instance.Style.X > 0f);
     }
+
     // ── Stats ───────────────────────────────────────────────────────────────────────────────────
 
     [Fact]
@@ -385,7 +384,7 @@ public class ViewportStateTests : IDisposable {
             .Sample(TimeSpan.FromMilliseconds(16d));
 
 
-// ⚠ Not eased in from zero: a frame rate climbing from infinity for the first second of every
+        // ⚠ Not eased in from zero: a frame rate climbing from infinity for the first second of every
         // session reads as the editor warming up and is an artefact of the filter.
         Assert
             .Equal(16f, stats.FrameMilliseconds, 3);
@@ -417,7 +416,7 @@ public class ViewportStateTests : IDisposable {
         stats.Clear();
         Assert.Equal(0, stats.Triangles);
         // The pane still took a frame; a collapsed panel reporting zero milliseconds would be the one
-// place the readout lies about the editor being fast.
+        // place the readout lies about the editor being fast.
         Assert.Equal(16f, stats.FrameMilliseconds, 3);
     }
 

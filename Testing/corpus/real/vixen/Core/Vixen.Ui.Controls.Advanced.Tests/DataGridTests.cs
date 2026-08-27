@@ -26,13 +26,13 @@ public class DataGridTests {
     static DataGrid Grid(AdvancedFixture fixture, IEnumerable<Unit> units, int columns = 3) {
         var grid = fixture.Add<DataGrid>();
 
-        grid.AddColumn("Name", static item => ((Unit) item).Name);
-        grid.AddColumn("Level", static item => ((Unit) item).Level);
-        grid.AddColumn("Faction", static item => ((Unit) item).Faction);
+        grid.AddColumn("Name", static item => ((Unit)item).Name);
+        grid.AddColumn("Level", static item => ((Unit)item).Level);
+        grid.AddColumn("Faction", static item => ((Unit)item).Faction);
 
         for (var i = 3; i < columns; i++) {
             var index = i;
-            grid.AddColumn($"Extra {index}", item => ((Unit) item).Level + index);
+            grid.AddColumn($"Extra {index}", item => ((Unit)item).Level + index);
         }
 
         grid.SetItems(units);
@@ -255,7 +255,7 @@ public class DataGridTests {
         var units = Sample();
         var grid = Grid(fixture, units);
 
-        grid.Columns[0].Commit = static (item, text) => ((Unit) item).Name = text;
+        grid.Columns[0].Commit = static (item, text) => ((Unit)item).Name = text;
 
         var edited = 0;
         grid.CellEdited += (_, _, _) => edited++;
@@ -290,7 +290,7 @@ public class DataGridTests {
         var units = Sample();
         var grid = Grid(fixture, units);
 
-        grid.Columns[0].Commit = static (item, text) => ((Unit) item).Name = text;
+        grid.Columns[0].Commit = static (item, text) => ((Unit)item).Name = text;
 
         var cell = grid.Rows[0].Cells[0];
         grid.BeginEdit(cell);
@@ -307,7 +307,7 @@ public class DataGridTests {
         using var fixture = new AdvancedFixture();
         var grid = fixture.Add<DataGrid>();
 
-        var column = grid.AddColumn("Health", static item => ((Unit) item).Level);
+        var column = grid.AddColumn("Health", static item => ((Unit)item).Level);
 
         column.Template = static (cell, item) => {
             if (cell.Children.OfType<ProgressBar>().FirstOrDefault() is not { } bar) {
@@ -315,7 +315,7 @@ public class DataGridTests {
             }
 
             bar.Maximum = 40f;
-            bar.Value = ((Unit) item).Level;
+            bar.Value = ((Unit)item).Level;
         };
 
         grid.SetItems(Sample());
@@ -401,7 +401,7 @@ public class DataGridTests {
         using var fixture = new AdvancedFixture();
         var grid = fixture.Add<DataGrid>();
 
-        var column = grid.AddColumn("Mixed", static item => ((Unit) item).Level % 2 == 0 ? item : ((Unit) item).Name);
+        var column = grid.AddColumn("Mixed", static item => ((Unit)item).Level % 2 == 0 ? item : ((Unit)item).Name);
         grid.SetItems(Sample());
 
         fixture.Update();
@@ -430,6 +430,5 @@ public class DataGridTests {
         );
     }
 
-    static string Cell(DataGrid grid, int row, int column) =>
-        grid.Columns[column].TextOf(grid.Items[grid.ItemAt(row)]);
+    static string Cell(DataGrid grid, int row, int column) => grid.Columns[column].TextOf(grid.Items[grid.ItemAt(row)]);
 }

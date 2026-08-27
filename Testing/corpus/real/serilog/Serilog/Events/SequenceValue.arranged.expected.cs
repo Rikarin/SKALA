@@ -16,21 +16,21 @@
 namespace Serilog.Events;
 
 /// <summary>
-/// A value represented as an ordered sequence of values.
+///     A value represented as an ordered sequence of values.
 /// </summary>
 public class SequenceValue : LogEventPropertyValue {
     readonly LogEventPropertyValue[] _elements;
 
     /// <summary>
-    /// Empty sequence of values.
+    ///     Empty sequence of values.
     /// </summary>
     public static SequenceValue Empty { get; } = new(Array.Empty<LogEventPropertyValue>());
 
     /// <summary>
-    /// Create a <see cref="SequenceValue"/> with the provided <paramref name="elements"/>.
+    ///     Create a <see cref="SequenceValue" /> with the provided <paramref name="elements" />.
     /// </summary>
     /// <param name="elements">The elements of the sequence.</param>
-    /// <exception cref="ArgumentNullException">When <paramref name="elements"/> is <code>null</code></exception>
+    /// <exception cref="ArgumentNullException">When <paramref name="elements" /> is <code>null</code></exception>
     public SequenceValue(IEnumerable<LogEventPropertyValue> elements) {
         Guard.AgainstNull(elements);
 
@@ -44,18 +44,18 @@ public class SequenceValue : LogEventPropertyValue {
     }
 
     /// <summary>
-    /// The elements of the sequence.
+    ///     The elements of the sequence.
     /// </summary>
     public IReadOnlyList<LogEventPropertyValue> Elements => _elements;
 
     /// <summary>
-    /// Render the value to the output.
+    ///     Render the value to the output.
     /// </summary>
     /// <param name="output">The output.</param>
     /// <param name="format">A format string applied to the value, or null.</param>
     /// <param name="formatProvider">A format provider to apply to the value, or null to use the default.</param>
-    /// <seealso cref="LogEventPropertyValue.ToString(string, IFormatProvider)"/>.
-    /// <exception cref="ArgumentNullException">When <paramref name="output"/> is <code>null</code></exception>
+    /// <seealso cref="LogEventPropertyValue.ToString(string, IFormatProvider)" />.
+    /// <exception cref="ArgumentNullException">When <paramref name="output" /> is <code>null</code></exception>
     public override void Render(TextWriter output, string? format = null, IFormatProvider? formatProvider = null) {
         Guard.AgainstNull(output);
 

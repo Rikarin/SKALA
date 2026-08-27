@@ -87,8 +87,11 @@ public sealed partial class LayoutTree {
 
     /// <summary>Rebuilds every stale order-modified child list, before the pass descends.</summary>
     /// <remarks>
-    ///     ⚠ <b>Here rather than lazily inside <see cref="ChildIds" />, and that is a correctness
-    ///     rule rather than a preference.</b> Building a block can grow the arena, and growing the
+    ///     ⚠
+    ///     <b>
+    ///         Here rather than lazily inside <see cref="ChildIds" />, and that is a correctness
+    ///         rule rather than a preference.
+    ///     </b> Building a block can grow the arena, and growing the
     ///     arena moves the one array every outstanding child span points into — while the algorithm
     ///     is holding such a span across the recursive call that lays each child out. A lazy sort
     ///     would therefore leave an ancestor's loop iterating freed memory, intermittently and only

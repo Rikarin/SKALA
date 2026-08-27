@@ -20,7 +20,7 @@ public sealed class TerrainWeightmapTests {
 
     static Terrain Built() {
         var
-            terrain = new Terrain(Shape);
+        terrain = new Terrain(Shape);
         terrain.Weights.AddLayer("Grass");
         terrain.Weights.AddLayer("Rock");
         return terrain;
@@ -39,7 +39,7 @@ public sealed class TerrainWeightmapTests {
         );
 
         var
-            bytes = new byte [TerrainWeightmap.ByteCount(terrain.Description)];
+        bytes = new byte[TerrainWeightmap.ByteCount(terrain.Description)];
         Assert
             .Equal(bytes.Length, TerrainWeightmap.Export(terrain, 1, bytes));
         var round = Built();
@@ -70,7 +70,7 @@ public sealed class TerrainWeightmapTests {
     public void
         An_import_restores_the_invariant_rather_than_trusting_the_file() {
         var terrain = Built();
-        var mask = new byte [terrain.Description.SampleCount];
+        var mask = new byte[terrain.Description.SampleCount];
 
         // A mask that means nothing about the other layers: half of it fully covered.
         for (var z = 0; z < terrain.Description.SamplesZ; z++) {
@@ -98,7 +98,7 @@ public sealed class TerrainWeightmapTests {
         var mask = new byte[64 * 64];
         // A ramp along X, so the corners are checkable.
         for (var z =
-                 0;
+             0;
              z < 64;
              z++) {
             for (var x = 0; x < 64; x++) {
@@ -119,7 +119,7 @@ public sealed class TerrainWeightmapTests {
 
         Assert.Throws<ArgumentException>(() => TerrainWeightmap.Import(terrain, 0, new byte[10], 64, 64));
         Assert.Throws
-            <ArgumentException>(() => TerrainWeightmap.Import(terrain, 0, new byte [64], 0, 64));
+            <ArgumentException>(() => TerrainWeightmap.Import(terrain, 0, new byte[64], 0, 64));
         Assert.Throws
             <ArgumentException>(() => TerrainWeightmap.Export(terrain, 0, new byte[10]));
     }
@@ -132,7 +132,7 @@ public sealed class TerrainWeightmapTests {
 
         Assert.Throws<ArgumentOutOfRangeException
         >((
-            ) => TerrainWeightmap.Import(terrain, 5, new byte [64 * 64], 64, 64)
+            ) => TerrainWeightmap.Import(terrain, 5, new byte[64 * 64], 64, 64)
         );
     }
 
@@ -204,7 +204,7 @@ public sealed class TerrainWeightmapTests {
     [Fact]
     public void The_dominant_layer_is_what_a_footstep_reads() {
         var
-            terrain = Built();
+        terrain = Built();
 
         Assert.Equal(0, terrain.Weights.DominantAt(30, 30));
 
@@ -257,7 +257,7 @@ public sealed class TerrainWeightmapTests {
         terrain.Weights.SetWeight(1, 11, 10, 255);
         terrain.Weights.SetWeight(1, 10, 11, 255);
         var quads = terrain.Description.TileQuads;
-        var materials = new sbyte [quads * quads];
+        var materials = new sbyte[quads * quads];
 
         terrain.Weights.FillCollisionMaterials(0, 0, materials);
 
@@ -270,9 +270,9 @@ public sealed class TerrainWeightmapTests {
         var terrain = new Terrain(Shape);
         var quads = terrain.Description.TileQuads;
         var
-            materials = new sbyte [quads * quads];
+        materials = new sbyte[quads * quads];
         terrain.Weights.FillCollisionMaterials(0, 0, materials);
-// ⚠ −1, not 0: zero is a layer index and would claim every quad is the first ground.
+        // ⚠ −1, not 0: zero is a layer index and would claim every quad is the first ground.
         Assert
             .All(materials, material => Assert.Equal(-1, material));
         Assert.Null(
@@ -298,7 +298,7 @@ public sealed class TerrainWeightmapTests {
             amount: 255
         );
 
-        Assert.Equal("Materials/gravel", terrain.Weights.GroundAt(10, 10) !.Value.PhysicsMaterial);
+        Assert.Equal("Materials/gravel", terrain.Weights.GroundAt(10, 10)!.Value.PhysicsMaterial);
     }
 
     [Fact]
@@ -319,9 +319,7 @@ public sealed class TerrainWeightmapTests {
         Assert.Contains(
             "not a distance",
             (TerrainLayerDescription
-                .Of("Grass") with {
-                TilingMetres = 0f
-            }).Validate(),
+                    .Of("Grass") with { TilingMetres = 0f }).Validate(),
             StringComparison.Ordinal
         );
         // ⚠ A height blend with nothing to read the height from degrades silently to a weight blend,

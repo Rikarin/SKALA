@@ -12,21 +12,28 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 namespace Serilog.Core;
+
 /// <summary>
-/// Event arguments for <see cref="LoggingLevelSwitch.MinimumLevelChanged"/> event.
+///     Event arguments for <see cref="LoggingLevelSwitch.MinimumLevelChanged" /> event.
 /// </summary>
-public class LoggingLevelSwitchChangedEventArgs:EventArgs{
-/// <summary>
-    /// Creates an instance of <see cref="LoggingLevelSwitchChangedEventArgs"/> specifying old and new levels.
+public class LoggingLevelSwitchChangedEventArgs : EventArgs {
+    /// <summary>
+    ///     Creates an instance of <see cref="LoggingLevelSwitchChangedEventArgs" /> specifying old and new levels.
     /// </summary>
     /// <param name="oldLevel">Old level.</param>
     /// <param name="newLevel">New level.</param>
-public LoggingLevelSwitchChangedEventArgs(LogEventLevel oldLevel,LogEventLevel newLevel){OldLevel=oldLevel;NewLevel=newLevel;}
-/// <summary>
-    /// Old level.
+    public LoggingLevelSwitchChangedEventArgs(LogEventLevel oldLevel, LogEventLevel newLevel) {
+        OldLevel = oldLevel;
+        NewLevel = newLevel;
+    }
+
+    /// <summary>
+    ///     Old level.
     /// </summary>
-public LogEventLevel OldLevel{get;}
-/// <summary>
-    /// New level.
+    public LogEventLevel OldLevel { get; }
+
+    /// <summary>
+    ///     New level.
     /// </summary>
-public LogEventLevel NewLevel{get;}}
+    public LogEventLevel NewLevel { get; }
+}

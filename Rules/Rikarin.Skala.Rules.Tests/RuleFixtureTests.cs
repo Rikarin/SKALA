@@ -15,13 +15,13 @@ using Rikarin.Skala.Rules.TestQuality;
 namespace Rikarin.Skala.Rules.Tests;
 
 /// <summary>
-/// Every shipped rule, against its positive and its "should not fire" fixture set.
+///     Every shipped rule, against its positive and its "should not fire" fixture set.
 /// </summary>
 /// <remarks>
-/// ⚠ The negative direction is the one that decides whether a rule ships. docs/plan/16 § R3: a 5 %
-/// false-positive rate on a corpus producing 5 000 findings is 250 wrong findings, which is where
-/// the analysis half gets switched off — and the rules most likely to over-fire are exactly the
-/// ones with the most value.
+///     ⚠ The negative direction is the one that decides whether a rule ships. docs/plan/16 § R3: a 5 %
+///     false-positive rate on a corpus producing 5 000 findings is 250 wrong findings, which is where
+///     the analysis half gets switched off — and the rules most likely to over-fire are exactly the
+///     ones with the most value.
 /// </remarks>
 public sealed class RuleFixtureTests {
     static readonly ImmutableArray<DiagnosticAnalyzer> Analyzers = [
@@ -141,19 +141,19 @@ public sealed class RuleFixtureTests {
     }
 
     /// <summary>
-    /// ⚠ The other half of "the fix works": apply every edit, re-bind, and the rule is quiet.
+    ///     ⚠ The other half of "the fix works": apply every edit, re-bind, and the rule is quiet.
     /// </summary>
     /// <remarks>
-    /// <see cref="EveryFix_ProducesTextThatStillParses"/> asks only whether the result parses, and a
-    /// fix can parse, bind and still leave the finding standing — an edit in the wrong place, or one
-    /// that repairs the symptom the message names and not the shape the rule matches. That failure
-    /// looks exactly like a working fix in a report and turns <c>skala fix</c> into a loop.
-    /// <para>
-    /// ⚠ It re-binds rather than re-parsing, so it also catches the fix that compiles as text and
-    /// not as a program: a <c>.ToList()</c> where <c>System.Linq</c> is not imported, an
-    /// <c>async</c> added to a method holding a byref-like local. The comparison is against the
-    /// fixture's own diagnostics before the edit, because a fixture is allowed to carry warnings.
-    /// </para>
+    ///     <see cref="EveryFix_ProducesTextThatStillParses" /> asks only whether the result parses, and a
+    ///     fix can parse, bind and still leave the finding standing — an edit in the wrong place, or one
+    ///     that repairs the symptom the message names and not the shape the rule matches. That failure
+    ///     looks exactly like a working fix in a report and turns <c>skala fix</c> into a loop.
+    ///     <para>
+    ///         ⚠ It re-binds rather than re-parsing, so it also catches the fix that compiles as text and
+    ///         not as a program: a <c>.ToList()</c> where <c>System.Linq</c> is not imported, an
+    ///         <c>async</c> added to a method holding a byref-like local. The comparison is against the
+    ///         fixture's own diagnostics before the edit, because a fixture is allowed to carry warnings.
+    ///     </para>
     /// </remarks>
     [Theory]
     [MemberData(nameof(Fixtures))]
@@ -219,9 +219,9 @@ public sealed class RuleFixtureTests {
     }
 
     /// <summary>
-    /// ⚠ Id and message, never the location. A fix that deletes a line moves every diagnostic below
-    /// it, and keyed on position an unchanged warning reads as a new one — the same shrug
-    /// <c>RuleAudit</c> keys per <c>(file, id)</c> to avoid.
+    ///     ⚠ Id and message, never the location. A fix that deletes a line moves every diagnostic below
+    ///     it, and keyed on position an unchanged warning reads as a new one — the same shrug
+    ///     <c>RuleAudit</c> keys per <c>(file, id)</c> to avoid.
     /// </summary>
     static IEnumerable<string> Signatures(
         IEnumerable<Diagnostic> diagnostics,
@@ -232,9 +232,9 @@ public sealed class RuleFixtureTests {
             .Select(static diagnostic => diagnostic.Id + ": " + diagnostic.GetMessage());
 
     /// <summary>
-    /// ⚠ docs/plan/08: every modernization rule declares its floor and is silent below it, checked
-    /// against the compilation's effective LangVersion and not the SDK's. A rule that suggests C# 12
-    /// syntax to a project pinned at C# 10 produces uncompilable fixes.
+    ///     ⚠ docs/plan/08: every modernization rule declares its floor and is silent below it, checked
+    ///     against the compilation's effective LangVersion and not the SDK's. A rule that suggests C# 12
+    ///     syntax to a project pinned at C# 10 produces uncompilable fixes.
     /// </summary>
     [Fact]
     public void ARuleWithALanguageFloor_IsSilentBelowIt() {

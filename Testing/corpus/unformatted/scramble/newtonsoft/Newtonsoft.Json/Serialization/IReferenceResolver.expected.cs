@@ -1,4 +1,5 @@
 // skala-oracle: resharper=2025.2.6 config=sha256:98ff52570e019fac profile=SkalaFormatOnly generated=2026-08-27
+
 #region License
 
 // Copyright (c) 2007 James Newton-King
@@ -29,11 +30,11 @@
 
 namespace Newtonsoft.Json.Serialization {
     /// <summary>
-    /// Used to resolve references when serializing and deserializing JSON by the <see cref="JsonSerializer"/>.
+    ///     Used to resolve references when serializing and deserializing JSON by the <see cref="JsonSerializer" />.
     /// </summary>
     public interface IReferenceResolver {
         /// <summary>
-        /// Resolves a reference to its object.
+        ///     Resolves a reference to its object.
         /// </summary>
         /// <param name="context">The serialization context.</param>
         /// <param name="reference">The reference to resolve.</param>
@@ -41,7 +42,7 @@ namespace Newtonsoft.Json.Serialization {
         object ResolveReference(object context, string reference);
 
         /// <summary>
-        /// Gets the reference for the specified object.
+        ///     Gets the reference for the specified object.
         /// </summary>
         /// <param name="context">The serialization context.</param>
         /// <param name="value">The object to get a reference for.</param>
@@ -49,17 +50,17 @@ namespace Newtonsoft.Json.Serialization {
         string GetReference(object context, object value);
 
         /// <summary>
-        /// Determines whether the specified object is referenced.
+        ///     Determines whether the specified object is referenced.
         /// </summary>
         /// <param name="context">The serialization context.</param>
         /// <param name="value">The object to test for a reference.</param>
         /// <returns>
-        /// 	<c>true</c> if the specified object is referenced; otherwise, <c>false</c>.
+        ///     <c>true</c> if the specified object is referenced; otherwise, <c>false</c>.
         /// </returns>
         bool IsReferenced(object context, object value);
 
         /// <summary>
-        /// Adds a reference to the specified object.
+        ///     Adds a reference to the specified object.
         /// </summary>
         /// <param name="context">The serialization context.</param>
         /// <param name="reference">The reference.</param>

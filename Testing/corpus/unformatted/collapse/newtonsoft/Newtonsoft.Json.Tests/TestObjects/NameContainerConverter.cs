@@ -1,4 +1,5 @@
 #region License
+
 // Copyright (c) 2007 James Newton-King
 //
 // Permission is hereby granted, free of charge, to any person
@@ -21,5 +22,33 @@
 // WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 // OTHER DEALINGS IN THE SOFTWARE.
+
 #endregion
-using System;namespace Newtonsoft.Json.Tests.TestObjects{public class NameContainerConverter:JsonConverter{public override void WriteJson(JsonWriter writer,object value,JsonSerializer serializer){NameContainer nameContainer=value as NameContainer;if(nameContainer!=null){writer.WriteValue(nameContainer.Value);}else{writer.WriteNull();}}public override object ReadJson(JsonReader reader,Type objectType,object existingValue,JsonSerializer serializer){NameContainer nameContainer=new NameContainer();nameContainer.Value=(string)reader.Value;return nameContainer;}public override bool CanConvert(Type objectType){return objectType==typeof(NameContainer);}}}
+
+using System; namespace Newtonsoft.Json.Tests.TestObjects {
+    public class NameContainerConverter : JsonConverter {
+        public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer) {
+            NameContainer nameContainer = value as NameContainer;
+            if (nameContainer != null) {
+                writer.WriteValue(nameContainer.Value);
+            } else {
+                writer.WriteNull();
+            }
+        }
+
+        public override object ReadJson(
+            JsonReader reader,
+            Type objectType,
+            object existingValue,
+            JsonSerializer serializer
+        ) {
+            NameContainer nameContainer = new NameContainer();
+            nameContainer.Value = (string)reader.Value;
+            return nameContainer;
+        }
+
+        public override bool CanConvert(Type objectType) {
+            return objectType == typeof(NameContainer);
+        }
+    }
+}

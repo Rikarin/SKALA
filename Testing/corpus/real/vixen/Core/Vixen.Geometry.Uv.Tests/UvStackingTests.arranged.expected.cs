@@ -50,8 +50,11 @@ public class UvStackingTests {
 
     /// <summary>A mirror image is offered as a mirror, and nothing else is.</summary>
     /// <remarks>
-    ///     ⚠ <b>The mirror is in <c>u</c> and the residual is taken after both islands are put in their
-    ///     own lower corner</b> — which is the same normalization <see cref="UvPlacement.Apply" />
+    ///     ⚠
+    ///     <b>
+    ///         The mirror is in <c>u</c> and the residual is taken after both islands are put in their
+    ///         own lower corner
+    ///     </b> — which is the same normalization <see cref="UvPlacement.Apply" />
     ///     makes. Comparing raw coordinates would measure where the flattener left the gauge, and a
     ///     conformal map's gauge is arbitrary.
     /// </remarks>
@@ -204,8 +207,11 @@ public class UvStackingTests {
 
     /// <summary>A right-angled wedge, optionally reflected in <c>u</c> with its corners in the same order.</summary>
     /// <remarks>
-    ///     ⚠ <b>The same order is what makes this docs/plan/41 § D11's case rather than a shape-matching
-    ///     problem.</b> A symmetry-preserving remesh emits vertex <i>k</i> and its mirror as exact
+    ///     ⚠
+    ///     <b>
+    ///         The same order is what makes this docs/plan/41 § D11's case rather than a shape-matching
+    ///         problem.
+    ///     </b> A symmetry-preserving remesh emits vertex <i>k</i> and its mirror as exact
     ///     negations, so the two charts come out with corresponding corners at corresponding indices —
     ///     which is exactly the correspondence a detector cannot recover on an arbitrary mesh, and the
     ///     limitation <see cref="UvStacking" /> names rather than papers over.

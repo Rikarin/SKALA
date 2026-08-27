@@ -1,4 +1,5 @@
 // skala-oracle: resharper=2025.2.6 config=sha256:98ff52570e019fac profile=SkalaFormatOnly generated=2026-08-27
+
 #region License
 
 // Copyright (c) 2007 James Newton-King
@@ -28,7 +29,7 @@
 #endregion
 
 using System
-    ;
+;
 using System.Runtime.Serialization;
 
 #nullable disable
@@ -36,12 +37,14 @@ using System.Runtime.Serialization;
 namespace Newtonsoft.
     Json.Schema {
     /// <summary>
-    /// <para>
-    /// Returns detailed information about the schema exception.
-    /// </para>
-    /// <note type="caution">
-    /// JSON Schema validation has been moved to its own package. See <see href="https://www.newtonsoft.com/jsonschema">https://www.newtonsoft.com/jsonschema</see> for more details.
-    /// </note>
+    ///     <para>
+    ///         Returns detailed information about the schema exception.
+    ///     </para>
+    ///     <note type="caution">
+    ///         JSON Schema validation has been moved to its own package. See
+    ///         <see href="https://www.newtonsoft.com/jsonschema">https://www.newtonsoft.com/jsonschema</see> for more
+    ///         details.
+    ///     </note>
     /// </summary>
 #if HAVE_BINARY_EXCEPTION_SERIALIZATION
     [Serializable]
@@ -51,32 +54,32 @@ namespace Newtonsoft.
     )]
     public class JsonSchemaException : JsonException {
         /// <summary>
-        /// Gets the line number indicating where the error occurred.
+        ///     Gets the line number indicating where the error occurred.
         /// </summary>
         /// <value>The line number indicating where the error occurred.</value>
         public int LineNumber { get; }
 
         /// <summary>
-        /// Gets the line position indicating where the error occurred.
+        ///     Gets the line position indicating where the error occurred.
         /// </summary>
         /// <value>The line position indicating where the error occurred.</value>
         public int LinePosition { get; }
 
         /// <summary>
-        /// Gets the path to the JSON where the error occurred.
+        ///     Gets the path to the JSON where the error occurred.
         /// </summary>
         /// <value>The path to the JSON where the error occurred.</value>
         public
             string Path { get; }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="JsonSchemaException"/> class.
+        ///     Initializes a new instance of the <see cref="JsonSchemaException" /> class.
         /// </summary>
         public JsonSchemaException() { }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="JsonSchemaException"/> class
-        /// with a specified error message.
+        ///     Initializes a new instance of the <see cref="JsonSchemaException" /> class
+        ///     with a specified error message.
         /// </summary>
         /// <param name="message">The error message that explains the reason for the exception.</param>
         public JsonSchemaException(
@@ -85,11 +88,15 @@ namespace Newtonsoft.
             : base(message) { }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="JsonSchemaException"/> class
-        /// with a specified error message and a reference to the inner exception that is the cause of this exception.
+        ///     Initializes a new instance of the <see cref="JsonSchemaException" /> class
+        ///     with a specified error message and a reference to the inner exception that is the cause of this
+        ///     exception.
         /// </summary>
         /// <param name="message">The error message that explains the reason for the exception.</param>
-        /// <param name="innerException">The exception that is the cause of the current exception, or <c>null</c> if no inner exception is specified.</param>
+        /// <param name="innerException">
+        ///     The exception that is the cause of the current exception, or <c>null</c> if no inner exception is
+        ///     specified.
+        /// </param>
         public JsonSchemaException(
             string message,
             Exception innerException

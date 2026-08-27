@@ -95,7 +95,7 @@ public sealed class MusicTransport(int sampleRate) {
                     return end;
                 } // Past its first pass, so the next whole one — a looping segment has as many ends as
 
-// it has times round.
+                // it has times round.
                 var offset = frame - Origin;
                 var steps = MusicTempoMap.FloorDivide(offset, segmentFrames);
                 if (steps * segmentFrames < offset) {

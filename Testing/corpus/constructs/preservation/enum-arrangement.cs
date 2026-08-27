@@ -1,7 +1,12 @@
-enum OnOneLine { First, Second, Third }
+enum OnOneLine {
+    First,
+    Second,
+    Third
+}
 
 enum PartlyBroken {
-    First, Second,
+    First,
+    Second,
     Third
 }
 

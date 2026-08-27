@@ -3,11 +3,11 @@
 // SPDX-License-Identifier: Apache-2.0
 
 using Vixen.Core
-    .Threading;
+.Threading;
 using Vixen
-    .Ecs.Systems;
+.Ecs.Systems;
 using Vixen.Engine
-    .Players;
+.Players;
 using Vixen.Engine.Transforms;
 using Vixen.Physics.Characters;
 

@@ -3,7 +3,8 @@ public class AroundEq {
     // Milestone 2 could not observe it because M2 never added one; the ordering rule M3 built
     // (GroupFacts.PrefersOuterBreak) adds it, and the two values put it on different lines.
     void Assignment() {
-        someRatherLongAssignmentTargetNameHere = someOtherRatherLongSourceExpressionName + anotherOperandNameHere + 1234567;
+        someRatherLongAssignmentTargetNameHere =
+            someOtherRatherLongSourceExpressionName + anotherOperandNameHere + 1234567;
     }
 
     void Declaration() {

@@ -1,4 +1,5 @@
 ﻿#region License
+
 // Copyright (c) 2007 James Newton-King
 //
 // Permission is hereby granted, free of charge, to any person
@@ -21,6 +22,7 @@
 // WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 // OTHER DEALINGS IN THE SOFTWARE.
+
 #endregion
 
 using Newtonsoft.Json.Serialization;
@@ -39,39 +41,29 @@ using NUnit.Framework;
 
 #if !(DNXCORE50 || NET20 || NET35) || NETSTANDARD2_0 || NET6_0_OR_GREATER
 
-namespace Newtonsoft.Json.Tests.Documentation.Samples.Serializer
-{
+namespace Newtonsoft.Json.Tests.Documentation.Samples.Serializer {
     [TestFixture]
-    public class CustomTraceWriter : TestFixtureBase
-    {
+    public class CustomTraceWriter : TestFixtureBase {
         #region Types
-        public class NLogTraceWriter : ITraceWriter
-        {
+
+        public class NLogTraceWriter : ITraceWriter {
             private static readonly Logger Logger = LogManager.GetLogger("NLogTraceWriter");
 
-            public TraceLevel LevelFilter
-            {
+            public TraceLevel LevelFilter {
                 // trace all messages. nlog can handle filtering
                 get { return TraceLevel.Verbose; }
             }
 
-            public void Trace(TraceLevel level, string message, Exception ex)
-            {
-                LogEventInfo logEvent = new LogEventInfo
-                {
-                    Message = message,
-                    Level = GetLogLevel(level),
-                    Exception = ex
-                };
+            public void Trace(TraceLevel level, string message, Exception ex) {
+                LogEventInfo logEvent =
+                    new LogEventInfo { Message = message, Level = GetLogLevel(level), Exception = ex };
 
                 // log Json.NET message to NLog
                 Logger.Log(logEvent);
             }
 
-            private LogLevel GetLogLevel(TraceLevel level)
-            {
-                switch (level)
-                {
+            private LogLevel GetLogLevel(TraceLevel level) {
+                switch (level) {
                     case TraceLevel.Error:
                         return LogLevel.Error;
                     case TraceLevel.Warning:
@@ -85,24 +77,20 @@ namespace Newtonsoft.Json.Tests.Documentation.Samples.Serializer
                 }
             }
         }
+
         #endregion
 
         [Test]
-        public void Example()
-        {
+        public void Example() {
             #region Usage
-            IList<string> countries = new List<string>
-            {
-                "New Zealand",
-                "Australia",
-                "Denmark",
-                "China"
-            };
 
-            string json = JsonConvert.SerializeObject(countries, Formatting.Indented, new JsonSerializerSettings
-            {
-                TraceWriter = new NLogTraceWriter()
-            });
+            IList<string> countries = new List<string> { "New Zealand", "Australia", "Denmark", "China" };
+
+            string json = JsonConvert.SerializeObject(
+                countries,
+                Formatting.Indented,
+                new JsonSerializerSettings { TraceWriter = new NLogTraceWriter() }
+            );
 
             Console.WriteLine(json);
             // [
@@ -111,14 +99,18 @@ namespace Newtonsoft.Json.Tests.Documentation.Samples.Serializer
             //   "Denmark",
             //   "China"
             // ]
+
             #endregion
 
-            StringAssert.AreEqual(@"[
+            StringAssert.AreEqual(
+                @"[
   ""New Zealand"",
   ""Australia"",
   ""Denmark"",
   ""China""
-]", json);
+]",
+                json
+            );
         }
     }
 }

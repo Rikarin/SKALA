@@ -54,8 +54,11 @@ public sealed record SystemPlacement(Type SystemType, SystemPhase Phase, int Ord
 ///         second.
 ///     </para>
 ///     <para>
-///         ⚠ <b>There are no <c>DependsOn</c> edges here and that is not an omission to be fixed
-///         later.</b> Those come from <see cref="SystemAccess.ConflictsWith" />, and an undeclared
+///         ⚠
+///         <b>
+///             There are no <c>DependsOn</c> edges here and that is not an omission to be fixed
+///             later.
+///         </b> Those come from <see cref="SystemAccess.ConflictsWith" />, and an undeclared
 ///         access conflicts with everything — so guessing at it would not produce a cautious answer,
 ///         it would produce a confident wrong one.
 ///     </para>
@@ -213,7 +216,9 @@ public sealed class SystemGraph {
         return new(placements, unsatisfied);
     }
 
-    /// <summary>Which phase a system type belongs to. Without an attribute, <see cref="SystemPhase.Update" />.</summary>
+    /// <summary>
+    ///     Which phase a system type belongs to. Without an attribute, <see cref="SystemPhase.Update" />.
+    /// </summary>
     static SystemPhase PhaseOf(Type systemType) =>
         systemType.GetCustomAttribute<UpdateInGroupAttribute>(inherit: true)?.Phase ?? SystemPhase.Update;
 

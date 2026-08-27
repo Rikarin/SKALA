@@ -11,4 +11,28 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-namespace Serilog.Policies;class ProjectedDestructuringPolicy:IDestructuringPolicy{readonly Func<Type,bool>_canApply;readonly Func<object,object>_projection;public ProjectedDestructuringPolicy(Func<Type,bool>canApply,Func<object,object>projection){_canApply=Guard.AgainstNull(canApply);_projection=Guard.AgainstNull(projection);}public bool TryDestructure(object value,ILogEventPropertyValueFactory propertyValueFactory,[NotNullWhen(true)]out LogEventPropertyValue?result){Guard.AgainstNull(value);if(!_canApply(value.GetType())){result=null;return false;}var projected=_projection(value);result=propertyValueFactory.CreatePropertyValue(projected,destructureObjects:true);return true;}}
+namespace Serilog.Policies; class ProjectedDestructuringPolicy : IDestructuringPolicy {
+    readonly Func<Type, bool> _canApply;
+    readonly Func<object, object> _projection;
+
+    public ProjectedDestructuringPolicy(Func<Type, bool> canApply, Func<object, object> projection) {
+        _canApply = Guard.AgainstNull(canApply);
+        _projection = Guard.AgainstNull(projection);
+    }
+
+    public bool TryDestructure(
+        object value,
+        ILogEventPropertyValueFactory propertyValueFactory,
+        [NotNullWhen(true)] out LogEventPropertyValue? result
+    ) {
+        Guard.AgainstNull(value);
+        if (!_canApply(value.GetType())) {
+            result = null;
+            return false;
+        }
+
+        var projected = _projection(value);
+        result = propertyValueFactory.CreatePropertyValue(projected, destructureObjects: true);
+        return true;
+    }
+}

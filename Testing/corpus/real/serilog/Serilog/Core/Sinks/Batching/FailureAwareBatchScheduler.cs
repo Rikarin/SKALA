@@ -15,18 +15,17 @@
 namespace Serilog.Core.Sinks.Batching;
 
 /// <summary>
-/// Manages reconnection period and transient fault response for <see cref="BatchingSink"/>.
-/// During normal operation an object of this type will simply echo the configured batch transmission
-/// period. When availability fluctuates, the class tracks the number of failed attempts, each time
-/// increasing the interval before reconnection is attempted (up to a set maximum) and at predefined
-/// points indicating that either the current batch, or entire waiting queue, should be dropped. This
-/// Serves two purposes - first, a loaded receiver may need a temporary reduction in traffic while coming
-/// back online. Second, the sender needs to account for both bad batches (the first fault response) and
-/// also overproduction (the second, queue-dropping response). In combination these should provide a
-/// reasonable delivery effort but ultimately protect the sender from memory exhaustion.
+///     Manages reconnection period and transient fault response for <see cref="BatchingSink" />.
+///     During normal operation an object of this type will simply echo the configured batch transmission
+///     period. When availability fluctuates, the class tracks the number of failed attempts, each time
+///     increasing the interval before reconnection is attempted (up to a set maximum) and at predefined
+///     points indicating that either the current batch, or entire waiting queue, should be dropped. This
+///     Serves two purposes - first, a loaded receiver may need a temporary reduction in traffic while coming
+///     back online. Second, the sender needs to account for both bad batches (the first fault response) and
+///     also overproduction (the second, queue-dropping response). In combination these should provide a
+///     reasonable delivery effort but ultimately protect the sender from memory exhaustion.
 /// </summary>
-class FailureAwareBatchScheduler
-{
+class FailureAwareBatchScheduler {
     static readonly TimeSpan MinimumBackoffPeriod = TimeSpan.FromSeconds(5);
     static readonly TimeSpan MaximumBackoffInterval = TimeSpan.FromMinutes(1);
     const int DroppedBatchesBeforeDroppingQueue = 10;
@@ -38,32 +37,37 @@ class FailureAwareBatchScheduler
     int _failuresSinceSuccessfulBatch, _consecutiveDroppedBatches;
 
     public FailureAwareBatchScheduler(TimeSpan bufferingTimeLimit, TimeSpan retryTimeLimit)
-        : this(bufferingTimeLimit, retryTimeLimit, TimeProvider.System)
-    {
-    }
+        : this(bufferingTimeLimit, retryTimeLimit, TimeProvider.System) { }
 
-    internal FailureAwareBatchScheduler(TimeSpan bufferingTimeLimit, TimeSpan retryTimeLimit, TimeProvider timeProvider)
-    {
+    internal FailureAwareBatchScheduler(
+        TimeSpan bufferingTimeLimit,
+        TimeSpan retryTimeLimit,
+        TimeProvider timeProvider
+    ) {
         if (bufferingTimeLimit < TimeSpan.Zero)
-            throw new ArgumentOutOfRangeException(nameof(bufferingTimeLimit), "The buffering time limit must be a positive timespan.");
+            throw new ArgumentOutOfRangeException(
+                nameof(bufferingTimeLimit),
+                "The buffering time limit must be a positive timespan."
+            );
 
         if (retryTimeLimit < TimeSpan.Zero)
-            throw new ArgumentOutOfRangeException(nameof(retryTimeLimit), "The retry time limit must be a positive timespan.");
+            throw new ArgumentOutOfRangeException(
+                nameof(retryTimeLimit),
+                "The retry time limit must be a positive timespan."
+            );
 
         _bufferingTimeLimit = bufferingTimeLimit;
         _retryTimeLimit = retryTimeLimit;
         _timeProvider = timeProvider;
     }
 
-    public void MarkSuccess()
-    {
+    public void MarkSuccess() {
         _failuresSinceSuccessfulBatch = 0;
         _consecutiveDroppedBatches = 0;
         _firstFailureTimestamp = null;
     }
 
-    public void MarkFailure(out bool shouldDropBatch, out bool shouldDropQueue)
-    {
+    public void MarkFailure(out bool shouldDropBatch, out bool shouldDropQueue) {
         ++_failuresSinceSuccessfulBatch;
         _firstFailureTimestamp ??= _timeProvider.GetTimestamp();
 
@@ -72,8 +76,7 @@ class FailureAwareBatchScheduler
         var wouldRetryAt = now.Add(NextInterval);
         shouldDropBatch = wouldRetryAt >= _retryTimeLimit;
 
-        if (shouldDropBatch)
-        {
+        if (shouldDropBatch) {
             ++_consecutiveDroppedBatches;
         }
 
@@ -83,10 +86,8 @@ class FailureAwareBatchScheduler
         shouldDropQueue = _consecutiveDroppedBatches >= DroppedBatchesBeforeDroppingQueue;
     }
 
-    public TimeSpan NextInterval
-    {
-        get
-        {
+    public TimeSpan NextInterval {
+        get {
             // Available, and first failure, just try the batch interval
             if (_failuresSinceSuccessfulBatch <= 1) return _bufferingTimeLimit;
 
@@ -98,7 +99,7 @@ class FailureAwareBatchScheduler
             var backoffPeriod = Math.Max(_bufferingTimeLimit.Ticks, MinimumBackoffPeriod.Ticks);
 
             // The "ideal" interval
-            var backedOff = (long) (backoffPeriod * backoffFactor);
+            var backedOff = (long)(backoffPeriod * backoffFactor);
 
             // Capped to the maximum interval
             var cappedBackoff = Math.Min(MaximumBackoffInterval.Ticks, backedOff);

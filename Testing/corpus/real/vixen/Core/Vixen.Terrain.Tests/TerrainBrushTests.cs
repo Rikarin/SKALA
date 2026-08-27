@@ -184,9 +184,7 @@ public sealed class TerrainBrushTests {
 
     [Fact]
     public void AnAlphaStampReadsItsMaskOverTheStampsOwnSquare() {
-        var brush = TerrainBrush.Default with {
-            Radius = 4f, Strength = 1f, Falloff = 0f, Shape = BrushShape.Alpha
-        };
+        var brush = TerrainBrush.Default with { Radius = 4f, Strength = 1f, Falloff = 0f, Shape = BrushShape.Alpha };
 
         var mask = new RecordingMask();
 
@@ -208,7 +206,11 @@ public sealed class TerrainBrushTests {
     [Fact]
     public void APatternStampReadsItsMaskInWorldSpaceSoAStrokeRevealsOneTexture() {
         var brush = TerrainBrush.Default with {
-            Radius = 4f, Strength = 1f, Falloff = 0f, Shape = BrushShape.Pattern, PatternScale = 4f
+            Radius = 4f,
+            Strength = 1f,
+            Falloff = 0f,
+            Shape = BrushShape.Pattern,
+            PatternScale = 4f
         };
 
         var mask = new RecordingMask();
@@ -225,7 +227,11 @@ public sealed class TerrainBrushTests {
     [Fact]
     public void APatternWrapsRatherThanRunningOffTheUnitSquare() {
         var brush = TerrainBrush.Default with {
-            Radius = 100f, Strength = 1f, Falloff = 0f, Shape = BrushShape.Pattern, PatternScale = 4f
+            Radius = 100f,
+            Strength = 1f,
+            Falloff = 0f,
+            Shape = BrushShape.Pattern,
+            PatternScale = 4f
         };
 
         var mask = new RecordingMask();
@@ -242,9 +248,7 @@ public sealed class TerrainBrushTests {
 
     [Fact]
     public void AMaskMultipliesTheFalloffRatherThanReplacingIt() {
-        var brush = TerrainBrush.Default with {
-            Radius = 4f, Strength = 1f, Falloff = 0.5f, Shape = BrushShape.Alpha
-        };
+        var brush = TerrainBrush.Default with { Radius = 4f, Strength = 1f, Falloff = 0.5f, Shape = BrushShape.Alpha };
 
         var circle = brush with { Shape = BrushShape.Circle };
         var half = new ConstantMask(0.5f);
@@ -295,20 +299,17 @@ public sealed class TerrainBrushTests {
     [Fact]
     public void AnyBrushIsMonotonicFromItsCentreToItsEdge() {
         Gen.Select(
-                Gen.Float[0.01f, 200f],
-                Gen.Float[0f, 1f],
-                Gen.Float[0f, 1f],
-                Gen.Int[0, 3]
-            )
+            Gen.Float[0.01f, 200f],
+            Gen.Float[0f, 1f],
+            Gen.Float[0f, 1f],
+            Gen.Int[0, 3]
+        )
             .Sample(
                 input => {
                     var (radius, strength, falloff, curve) = input;
 
                     var brush = TerrainBrush.Default with {
-                        Radius = radius,
-                        Strength = strength,
-                        Falloff = falloff,
-                        Curve = (BrushFalloffKind)curve
+                        Radius = radius, Strength = strength, Falloff = falloff, Curve = (BrushFalloffKind)curve
                     };
 
                     var stamp = new BrushStamp(Vector2.Zero);

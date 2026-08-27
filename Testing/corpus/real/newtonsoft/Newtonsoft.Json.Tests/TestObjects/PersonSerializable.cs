@@ -1,4 +1,5 @@
 ﻿#region License
+
 // Copyright (c) 2007 James Newton-King
 //
 // Permission is hereby granted, free of charge, to any person
@@ -21,24 +22,20 @@
 // WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 // OTHER DEALINGS IN THE SOFTWARE.
+
 #endregion
 
 using System;
 
-namespace Newtonsoft.Json.Tests.TestObjects
-{
+namespace Newtonsoft.Json.Tests.TestObjects {
 #if !(PORTABLE || DNXCORE50) || NETSTANDARD2_0 || NET6_0_OR_GREATER
     [Serializable]
-    public class PersonSerializable
-    {
-        public PersonSerializable()
-        {
-        }
+    public class PersonSerializable {
+        public PersonSerializable() { }
 
         private string _name = "";
 
-        public string Name
-        {
+        public string Name {
             get { return _name; }
             set { _name = value; }
         }
@@ -46,8 +43,7 @@ namespace Newtonsoft.Json.Tests.TestObjects
         [NonSerialized]
         private int _age = 0;
 
-        public int Age
-        {
+        public int Age {
             get { return _age; }
             set { _age = value; }
         }

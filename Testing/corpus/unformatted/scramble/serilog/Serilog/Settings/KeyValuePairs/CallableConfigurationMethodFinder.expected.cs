@@ -20,8 +20,8 @@ static class CallableConfigurationMethodFinder {
     internal static IList<
         MethodInfo> FindConfigurationMethods(IEnumerable<Assembly> configurationAssemblies, Type configType) {
         var methods = configurationAssemblies
-            .SelectMany([RequiresUnreferencedCode("Configuration methods are not trimming safe")](a) => a.ExportedTypes
-                .Where(t => t.IsSealed && t.IsAbstract && !t.IsNested)
+            .SelectMany([RequiresUnreferencedCode("Configuration methods are not trimming safe")] (a) => a.ExportedTypes
+                    .Where(t => t.IsSealed && t.IsAbstract && !t.IsNested)
             )
             .SelectMany(t => t.GetMethods(BindingFlags.Static | BindingFlags.Public))
             .Where(m => m.IsDefined(typeof(ExtensionAttribute), false)
@@ -45,7 +45,7 @@ static class CallableConfigurationMethodFinder {
         // FromLogContext is an instance method rather than an extension.
         if (configType
             == typeof
-                (LoggerEnrichmentConfiguration))
+            (LoggerEnrichmentConfiguration))
             methods
                 .AddRange(SurrogateConfigurationMethods.Enrich);
 

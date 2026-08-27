@@ -1,13 +1,15 @@
-         // SPDX-FileCopyrightText: Copyright (c) Rikarin
-     // SPDX-License-Identifier: Apache-2.0
-             
-using System  .Reflection; using   System .Runtime  .   InteropServices;
-using System.Text   
-       .Json;
-  using Vixen.Core.Mathematics; using Vixen. Ui;
-using Vixen.Ui.Rendering    ;  
-  using Xunit;
+// SPDX-FileCopyrightText: Copyright (c) Rikarin
+// SPDX-License-Identifier: Apache-2.0
+
+using System.Reflection; using System.Runtime.InteropServices;
+using System.Text
+.Json;
+using Vixen.Core.Mathematics; using Vixen.Ui;
+using Vixen.Ui.Rendering;
+using Xunit;
+
 namespace Tests;
+
 /// <summary>
 ///     <see cref="UiShape" /> against the reflection of the shader that reads it, field by field.
 /// </summary>
@@ -51,41 +53,47 @@ namespace Tests;
 ///         Passing this file is necessary and is not sufficient.
 ///     </para>
 /// </remarks>
-                public class UiShapeLayoutTests {
+public class UiShapeLayoutTests {
     /// <summary>The C# property, and the shader field it has to sit on top of, in order.</summary>
-            static readonly (    string Property,  string Field  )[]   Lanes = [
-    ("Size", "size"),
-        ("RadiiX",   "radiiX"),
-        (  "RadiiY",    "radiiY"), (    "Axis" , "axis")  ,
-("End", "endColour"  )    ,
-          ("Mid"    ,  "midColour"),
-            ("Stops", "stops"
-              )
-			]  ;
-    [    Fact] public void The_record_is_the_size_the_shader_was_compiled_against() {
+    static readonly (string Property, string Field)[] Lanes = [
+        ("Size", "size"),
+        ("RadiiX", "radiiX"),
+        ("RadiiY", "radiiY"), ("Axis", "axis"),
+        ("End", "endColour"),
+        ("Mid", "midColour"),
+        ("Stops", "stops"
+        )
+    ];
+
+    [Fact]
+    public void The_record_is_the_size_the_shader_was_compiled_against() {
         Assert.
-         Equal (Reflected().Size   ,   Marshal.   SizeOf  <UiShape>()    );
-                }
-     
-            [Fact]
-        public void   Every_lane_sits_at_the_offset_the_shader_reads_it_from
-        () { 
-      var  members =   
-Reflected (  )    .Members;
-               foreach ( var (property    ,   field) in Lanes) {   
- Assert .  True( members    .TryGetValue(   field  , out var member  ),
-                $"`Ui.rvn`'s UiShape has no `{field}`, which `UiShape.{property}` is supposed to be."
-           
-    );
-Assert.   Equal( member    .  Offset    , OffsetOf(property))  ;
-// Every lane is a `float4` on both sides. A scalar beside a vector is the specific
-       // mistake std430 and sequential layout disagree about, so its size is worth asserting
-// rather than assuming from the type name.
-    Assert.Equal(16   , member
-   .Size);
-     }
+            Equal(Reflected().Size, Marshal.SizeOf<UiShape>());
     }
-    
+
+    [Fact]
+    public void Every_lane_sits_at_the_offset_the_shader_reads_it_from
+        () {
+        var members =
+            Reflected().Members;
+        foreach (var (property, field) in Lanes) {
+            Assert.True(
+                members.TryGetValue(field, out var member),
+                $"`Ui.rvn`'s UiShape has no `{field}`, which `UiShape.{property}` is supposed to be."
+
+            );
+            Assert.Equal(member.Offset, OffsetOf(property));
+            // Every lane is a `float4` on both sides. A scalar beside a vector is the specific
+            // mistake std430 and sequential layout disagree about, so its size is worth asserting
+            // rather than assuming from the type name.
+            Assert.Equal(
+                16,
+                member
+                    .Size
+            );
+        }
+    }
+
     /// <summary>
     ///     A field on one side and not the other, which is the shape a half-finished change leaves.
     /// </summary>
@@ -94,16 +102,19 @@ Assert.   Equal( member    .  Offset    , OffsetOf(property))  ;
     ///     lane added to both the shader and the record but not to that table would slip past every
     ///     other assertion here.
     /// </remarks>
-             [    Fact]
-               public void Neither_side_has_a_lane_the_other_does_not
-  ()    { 
-                Assert   .Equal(
-Lanes.Select(lane => lane .   Field).    Order
-(StringComparer   .  Ordinal),
-     Reflected ()  .  Members.
-   Keys.Order (StringComparer  .Ordinal   )
-              );
-      Assert.Equal(Lanes    .Length * 16, Marshal.SizeOf<UiShape>(    )  ) ; }
+    [Fact]
+    public void Neither_side_has_a_lane_the_other_does_not
+        () {
+        Assert.Equal(
+            Lanes.Select(lane => lane.Field)
+                .Order
+                (StringComparer.Ordinal),
+            Reflected().Members.
+            Keys.Order(StringComparer.Ordinal)
+        );
+        Assert.Equal(Lanes.Length * 16, Marshal.SizeOf<UiShape>());
+    }
+
     /// <summary>
     ///     The bytes a shape actually serialises to, read back the way the shader indexes them.
     /// </summary>
@@ -115,40 +126,61 @@ Lanes.Select(lane => lane .   Field).    Order
     ///     whose every float is distinguishable and checks the bytes, which is the thing
     ///     <c>MemoryMarshal</c> will hand the GPU.
     /// </remarks>
-    [Fact  ]
-              public void The_bytes_carry_what_the_constructor_was_given(
-) {
-       var    shape   =    new  UiShape   (    new Vector2(10f,    20f    ),
-          3f,   
-   CornerRadii    .Circular(1f,    2f,
-3f, 4f) ,  
-               GradientShape.Conic  ,
+    [Fact]
+    public void The_bytes_carry_what_the_constructor_was_given(
+    ) {
+        var shape = new UiShape(
+            new Vector2(10f, 20f),
+            3f,
+            CornerRadii.Circular(
+                1f,
+                2f,
+                3f,
+                4f
+            ),
+            GradientShape.Conic,
             GradientSpace
-   .Oklab ,
-new Vector2(    0.5f, - 0.25f)  ,  new   Color4(0.11f, 0.12f,   0.13f, 0.14f   )   ,  
-   new    Color4(0.21f, 0.22f,
-               0.23f   , 0.24f   )    ,
-            hasVia: true,  new    GradientStops(0.1f , 0.4f, 0.9f )   ,
-       blur: 7f ) ;
-       
-  var floats  =   MemoryMarshal.Cast<UiShape  , float>    (MemoryMarshal.  CreateReadOnlySpan(ref shape  , 1 )); var members =    Reflected().Members;
-                
-            // The four radii are stored across two lanes rather than in the pair order they were given —
-    // clockwise from the top left, horizontal in one and vertical in the other — so a record that
-           // wrote them as pairs would round-trip through `CornerRadii` and draw the wrong corners.
-       AssertLane
-      (floats, members[  "size"    ], [ 10f, 20f    , 3f    , (float)   GradientShape.    Conic])  ;
-               AssertLane    (    floats,
-			members[  "radiiX"  ], [1f    ,  2f,   3f, 4f   ]   ) ;
-  AssertLane(  floats   , members   ["radiiY"]
-       , [1f   , 2f , 3f, 4f])   ;
-AssertLane    (floats,   members  ["axis"],  [0.5f   , -    0.25f,
-    7f, (   float) GradientSpace.Oklab]  )  ; 
-		AssertLane  (
-             floats, members  [    "endColour" ]    , [ 0.11f, 0.12f, 0.13f  , 0.14f]);
-               AssertLane    (floats, members[   "midColour"  ]  , [0.21f, 0.22f,    0.23f, 0.24f]);  AssertLane (   floats, members["stops"], [0.1f,   0.4f,    0.9f , 1f])    ; 
-}
-      
+                .Oklab,
+            new Vector2(0.5f, -0.25f),
+            new Color4(0.11f, 0.12f, 0.13f, 0.14f),
+            new Color4(
+                0.21f,
+                0.22f,
+                0.23f,
+                0.24f
+            ),
+            hasVia: true,
+            new GradientStops(0.1f, 0.4f, 0.9f),
+            blur: 7f
+        );
+
+        var floats = MemoryMarshal.Cast<UiShape, float>(MemoryMarshal.CreateReadOnlySpan(ref shape, 1));
+        var members = Reflected().Members;
+
+        // The four radii are stored across two lanes rather than in the pair order they were given —
+        // clockwise from the top left, horizontal in one and vertical in the other — so a record that
+        // wrote them as pairs would round-trip through `CornerRadii` and draw the wrong corners.
+        AssertLane
+            (floats, members["size"], [10f, 20f, 3f, (float)GradientShape.Conic]);
+        AssertLane(
+            floats,
+            members["radiiX"],
+            [1f, 2f, 3f, 4f]
+        );
+        AssertLane(floats, members["radiiY"], [1f, 2f, 3f, 4f]);
+        AssertLane(
+            floats,
+            members["axis"],
+            [
+                0.5f, -0.25f,
+                7f, (float)GradientSpace.Oklab
+            ]
+        );
+        AssertLane(floats, members["endColour"], [0.11f, 0.12f, 0.13f, 0.14f]);
+        AssertLane(floats, members["midColour"], [0.21f, 0.22f, 0.23f, 0.24f]);
+        AssertLane(floats, members["stops"], [0.1f, 0.4f, 0.9f, 1f]);
+    }
+
     /// <summary>The two lanes whose zero the growth relied on meaning what it used to mean.</summary>
     /// <remarks>
     ///     ⚠ This is the assertion that says the forty-three committed screenshots were allowed not to
@@ -156,91 +188,109 @@ AssertLane    (floats,   members  ["axis"],  [0.5f   , -    0.25f,
     ///     one has to serialise to a <c>size.w</c> of exactly one and an <c>axis.w</c> of exactly zero,
     ///     because that is the record the old shader drew from.
     /// </remarks>
-              [Fact]
-     public void    A_gradient_built_the_old_way_still_serialises_the_old_way()   {
-        var shape =    new UiShape    ( new Vector2(4f   , 4f)  ,
-               
-  0f ,
-            default, new Color4(1f, 1f, 1f, 1f),
-    new Vector2
-             (    0f, 1f)
- ) ;
-           Assert  .  Equal  (
-              1f  , shape .Size. W  )  ;
-               Assert  . Equal   (0f, shape   .  Axis.W);
-    // And with no axis at all it is a flat fill, which is the same zero the flag had.
-                var    flat = new UiShape(new Vector2(  4f,   4f),   0f   ,  default, default, Vector2. Zero
-	);
+    [Fact]
+    public void A_gradient_built_the_old_way_still_serialises_the_old_way() {
+        var shape = new UiShape(
+            new Vector2(4f, 4f),
 
-            Assert    .Equal(0f    ,    flat    .Size.W   );
-             }
-                
-    static    void  AssertLane(ReadOnlySpan   <float  > floats   , Member   member, float[] expected    )   {  var lane = floats. Slice(member.Offset / sizeof    (    float),  4)    ;
-  Assert.Equal(expected   , lane.ToArray(  ));
- }
-         static int   OffsetOf(string property  )  {
-          var field =    typeof( 
-   UiShape    )
-    .GetFields(BindingFlags  .Instance | BindingFlags.Public |    BindingFlags .    NonPublic)
- .   FirstOrDefault   (candidate    =>
-             candidate.Name  ==
-property ||   candidate.Name ==    $"<{property}>k__BackingField"
-              ) ;
-           
-        Assert.   True (  field is not  null, $"UiShape has no field behind `{property}`.")
-         ;
-        return
-(int)   Marshal  .OffsetOf < UiShape>    (    field    !.  Name);
-    }
-	
-    /// <summary>What the committed reflection says the <c>shapes</c> buffer's element looks like.</summary>
-    static  (int Size   , IReadOnlyDictionary  <string , Member> Members   )   Reflected() { using var document = JsonDocument .   Parse(File    .ReadAllText(    ReflectionPath() ))   ;
-        var shapes =  document.   RootElement
-         .    GetProperty   ("Sets"  )
-  .EnumerateArray()   .SelectMany(    set  => set  .GetProperty("Bindings"    ) .EnumerateArray())
-          .Single(binding   =>    binding    .GetProperty (  "Name"    ).GetString( ) == "shapes" 
+            0f,
+            default,
+            new Color4(1f, 1f, 1f, 1f),
+            new Vector2
+            (0f, 1f)
         );
+        Assert.Equal(1f, shape.Size.W);
+        Assert.Equal(0f, shape.Axis.W);
+        // And with no axis at all it is a flat fill, which is the same zero the flag had.
+        var flat = new UiShape(new Vector2(4f, 4f), 0f, default, default, Vector2.Zero);
+
+        Assert.Equal(0f, flat.Size.W);
+    }
+
+    static void AssertLane(ReadOnlySpan<float> floats, Member member, float[] expected) {
+        var lane = floats.Slice(member.Offset / sizeof(float), 4);
+        Assert.Equal(expected, lane.ToArray());
+    }
+
+    static int OffsetOf(string property) {
+        var field = typeof(
+            UiShape)
+                .GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
+                .FirstOrDefault(candidate =>
+                    candidate.Name == property || candidate.Name == $"<{property}>k__BackingField"
+                );
+
+        Assert.True(field is not null, $"UiShape has no field behind `{property}`.")
+            ;
+        return
+            (int)Marshal.OffsetOf<UiShape>(field!.Name);
+    }
+
+    /// <summary>What the committed reflection says the <c>shapes</c> buffer's element looks like.</summary>
+    static (int Size, IReadOnlyDictionary<string, Member> Members) Reflected() {
+        using var document = JsonDocument.Parse(File.ReadAllText(ReflectionPath()));
+        var shapes = document.RootElement
+            .GetProperty("Sets")
+            .EnumerateArray()
+            .SelectMany(set => set.GetProperty("Bindings").EnumerateArray())
+            .Single(binding => binding.GetProperty("Name").GetString() == "shapes");
         var
-			members =  new Dictionary   <string, Member>   (StringComparer  . Ordinal)    ;
-              foreach (var  member in shapes. GetProperty(   "Members"   ) .EnumerateArray   ( )) { var name    = member    .GetProperty ( "Name").GetString( )!  ;
-       
-           // The buffer's own entry is the whole struct under the binding's name; the lanes are
-               
-             // `shapes.<field>`. Skipping by shape rather than by name keeps this working if the
-  // binding is ever renamed.
-            if   (!name  .    StartsWith(  "shapes.",  StringComparison   .Ordinal)) {
-      continue ;
-           }
-      members[name    ["shapes.".Length..]] = new Member(    member.GetProperty   ("Offset" ).GetInt32()  , 
-              member
-.GetProperty  ("Size"  )  .GetInt32()
-            )    ; }
-                
-         return (shapes   .GetProperty ("Size").GetInt32    (
-           ), members);
-               }
+        members = new Dictionary<string, Member>(StringComparer.Ordinal);
+        foreach (var member in shapes.GetProperty("Members").EnumerateArray()) {
+            var name = member.GetProperty("Name").GetString()!;
+
+            // The buffer's own entry is the whole struct under the binding's name; the lanes are
+
+            // `shapes.<field>`. Skipping by shape rather than by name keeps this working if the
+            // binding is ever renamed.
+            if (!name.StartsWith("shapes.", StringComparison.Ordinal)) {
+                continue;
+            }
+
+            members[name["shapes.".Length..]] = new Member(
+                member.GetProperty("Offset").GetInt32(),
+                member
+                    .GetProperty("Size")
+                    .GetInt32()
+            );
+        }
+
+        return (shapes.GetProperty("Size")
+            .GetInt32(
+            ), members);
+    }
+
     /// <summary>The editor's shader directory, found the way the golden suite finds it.</summary>
- static  string ReflectionPath() { 
-         for (var directory = new  DirectoryInfo( AppContext
-.BaseDirectory   );
-        directory is    not null;
-             directory    = directory.Parent) { var candidate   = Path.    Combine (
-                
-                directory.FullName, "Editor" ,    "Vixen.Editor.Host"  ,   "Shaders", "UiBox.reflect.json"
-                ) ;
-     
-    if
-(   File    .Exists  (candidate))  {
-           return candidate;
-}
-      }
-                throw new FileNotFoundException(
+    static string ReflectionPath() {
+        for (var directory = new DirectoryInfo(
+                 AppContext
+                     .BaseDirectory
+             );
+             directory is not null;
+             directory = directory.Parent) {
+            var candidate = Path.Combine(
+
+                directory.FullName,
+                "Editor",
+                "Vixen.Editor.Host",
+                "Shaders",
+                "UiBox.reflect.json"
+            );
+
+            if
+                (File.Exists(candidate)) {
+                return candidate;
+            }
+        }
+
+        throw new FileNotFoundException(
             $"Editor/Vixen.Editor.Host/Shaders/UiBox.reflect.json was not found above "
             + $"'{AppContext.BaseDirectory}'."
-          );
+        );
     }
- 
-               record   struct Member (int Offset    , int
-               Size);
+
+    record struct Member(
+        int Offset,
+        int
+        Size);
 }
-             

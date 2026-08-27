@@ -1,2 +1,1 @@
-class C<T> where T : struct {
-}
+class C<T> where T : struct { }

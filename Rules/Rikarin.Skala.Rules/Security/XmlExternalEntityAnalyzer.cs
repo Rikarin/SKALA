@@ -9,35 +9,35 @@ using Rikarin.Skala.Rules.Metadata;
 namespace Rikarin.Skala.Rules.Security;
 
 /// <summary>
-/// <c>SK5009</c> — an XML reader configured to parse a DTD <em>and</em> to fetch what it references.
+///     <c>SK5009</c> — an XML reader configured to parse a DTD <em>and</em> to fetch what it references.
 /// </summary>
 /// <remarks>
-/// docs/plan/08 § "SK5000 — Security" names this rule "XML reader with DTD processing enabled", and
-/// the rule that shipped needs <b>two</b> facts rather than that one. The reason is a change in the
-/// platform, and it is worth writing down because it is the difference between a rule and a rule
-/// that is wrong.
-/// <para>
-/// ⚠ On .NET Framework, <c>DtdProcessing = DtdProcessing.Parse</c> was enough: the default
-/// <c>XmlResolver</c> was an <c>XmlUrlResolver</c>, so a DTD could name
-/// <c>file:///etc/passwd</c> or an attacker's URL and the parser would fetch it. On .NET Core and
-/// later the default resolver is <c>null</c>, so parsing a DTD resolves nothing external and is
-/// not XXE. A rule that fired on <c>DtdProcessing.Parse</c> alone would therefore report, at
-/// <c>error</c> severity, every program that legitimately parses a document with entity
-/// declarations in it — on a platform where that is not a vulnerability. So the rule fires when the
-/// resolver is put back <em>and</em> the DTD is parsed, which is the combination that reopens it.
-/// </para>
-/// <para>
-/// ⚠ Both facts must be explicit, and both must be about the same object, in the same method. A
-/// resolver assigned from a variable is silence, because whether that variable is null is a
-/// question about another method. The cost of the strictness is coverage — the shape occurs zero
-/// times in either reference tree — and the alternative is guessing at <c>error</c>.
-/// </para>
-/// <para>
-/// ⚠ <b>Known gap, stated rather than hidden:</b> <c>XmlDocument</c> and <c>XmlDataDocument</c>
-/// have an <c>XmlResolver</c> and no <c>DtdProcessing</c>, so the two-fact rule cannot see them and
-/// they are outside it. Closing that needs a different argument about what the safe default is, and
-/// it needs its own id rather than a widening of this one (ADR-012).
-/// </para>
+///     docs/plan/08 § "SK5000 — Security" names this rule "XML reader with DTD processing enabled", and
+///     the rule that shipped needs <b>two</b> facts rather than that one. The reason is a change in the
+///     platform, and it is worth writing down because it is the difference between a rule and a rule
+///     that is wrong.
+///     <para>
+///         ⚠ On .NET Framework, <c>DtdProcessing = DtdProcessing.Parse</c> was enough: the default
+///         <c>XmlResolver</c> was an <c>XmlUrlResolver</c>, so a DTD could name
+///         <c>file:///etc/passwd</c> or an attacker's URL and the parser would fetch it. On .NET Core and
+///         later the default resolver is <c>null</c>, so parsing a DTD resolves nothing external and is
+///         not XXE. A rule that fired on <c>DtdProcessing.Parse</c> alone would therefore report, at
+///         <c>error</c> severity, every program that legitimately parses a document with entity
+///         declarations in it — on a platform where that is not a vulnerability. So the rule fires when the
+///         resolver is put back <em>and</em> the DTD is parsed, which is the combination that reopens it.
+///     </para>
+///     <para>
+///         ⚠ Both facts must be explicit, and both must be about the same object, in the same method. A
+///         resolver assigned from a variable is silence, because whether that variable is null is a
+///         question about another method. The cost of the strictness is coverage — the shape occurs zero
+///         times in either reference tree — and the alternative is guessing at <c>error</c>.
+///     </para>
+///     <para>
+///         ⚠ <b>Known gap, stated rather than hidden:</b> <c>XmlDocument</c> and <c>XmlDataDocument</c>
+///         have an <c>XmlResolver</c> and no <c>DtdProcessing</c>, so the two-fact rule cannot see them and
+///         they are outside it. Closing that needs a different argument about what the safe default is, and
+///         it needs its own id rather than a widening of this one (ADR-012).
+///     </para>
 /// </remarks>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class XmlExternalEntityAnalyzer : DiagnosticAnalyzer {
@@ -61,8 +61,8 @@ public sealed class XmlExternalEntityAnalyzer : DiagnosticAnalyzer {
     }
 
     /// <summary>
-    /// ⚠ A block action rather than an operation action, because the finding is a <em>pair</em> of
-    /// assignments and neither one alone is anything.
+    ///     ⚠ A block action rather than an operation action, because the finding is a <em>pair</em> of
+    ///     assignments and neither one alone is anything.
     /// </summary>
     static void Analyze(
         OperationBlockAnalysisContext context,
@@ -125,13 +125,13 @@ public sealed class XmlExternalEntityAnalyzer : DiagnosticAnalyzer {
     }
 
     /// <summary>
-    /// What object this property assignment configures, or <c>null</c> when that is not decidable.
+    ///     What object this property assignment configures, or <c>null</c> when that is not decidable.
     /// </summary>
     /// <remarks>
-    /// ⚠ Only a local and only an object initialiser. <c>this.Settings.DtdProcessing = …</c> and
-    /// <c>Cache[key].DtdProcessing = …</c> are both silence: proving that two such expressions name
-    /// the same object is alias analysis, and getting it wrong in either direction is bad — a false
-    /// pair is a wrong <c>error</c>, and a missed pair is a miss.
+    ///     ⚠ Only a local and only an object initialiser. <c>this.Settings.DtdProcessing = …</c> and
+    ///     <c>Cache[key].DtdProcessing = …</c> are both silence: proving that two such expressions name
+    ///     the same object is alias analysis, and getting it wrong in either direction is bad — a false
+    ///     pair is a wrong <c>error</c>, and a missed pair is a miss.
     /// </remarks>
     static object? Owner(IPropertyReferenceOperation property) {
         switch (property.Instance) {
@@ -154,12 +154,12 @@ public sealed class XmlExternalEntityAnalyzer : DiagnosticAnalyzer {
     }
 
     /// <summary>
-    /// Whether the assigned resolver provably goes and gets things.
+    ///     Whether the assigned resolver provably goes and gets things.
     /// </summary>
     /// <remarks>
-    /// ⚠ Only a <c>new</c> of a resolver type. <c>null</c> is the safe value and the fix;
-    /// a variable is unknowable; <c>XmlSecureResolver</c> is a deliberate, restricted resolver and
-    /// is excluded by name, because reporting it would be reporting the mitigation.
+    ///     ⚠ Only a <c>new</c> of a resolver type. <c>null</c> is the safe value and the fix;
+    ///     a variable is unknowable; <c>XmlSecureResolver</c> is a deliberate, restricted resolver and
+    ///     is excluded by name, because reporting it would be reporting the mitigation.
     /// </remarks>
     static bool FetchesExternally(IOperation value, INamedTypeSymbol xmlResolver) =>
         // ⚠ Through the conversion. Assigning an `XmlUrlResolver` to an `XmlResolver?` property is

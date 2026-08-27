@@ -23,7 +23,7 @@ namespace Vixen.Audio.Music;
 /// <param name="sampleRate">The device's rate. Every frame count here is in its terms.</param>
 public sealed class MusicTransport(
     int
-        sampleRate) {
+    sampleRate) {
     /// <summary>The device's rate.</summary>
     public int SampleRate { get; } = sampleRate;
 
@@ -57,8 +57,7 @@ public sealed class MusicTransport(
     /// <param name="frame">The device frame.</param>
     /// <returns>The offset from the origin. Negative before the segment starts.</returns>
     public
-        long PositionAt(long frame) =>
-        frame - Origin;
+        long PositionAt(long frame) => frame - Origin;
 
     /// <summary>Which beat a device frame falls on, counting from zero at the origin.</summary>
     /// <param name="frame">The device frame.</param>
@@ -106,6 +105,7 @@ public sealed class MusicTransport(
                 if (end >= frame) {
                     return end;
                 }
+
                 // Past its first pass, so the next whole one — a looping segment has as many ends as
 
                 // it has times round.

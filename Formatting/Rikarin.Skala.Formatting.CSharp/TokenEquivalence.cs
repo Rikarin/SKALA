@@ -10,37 +10,37 @@ namespace Rikarin.Skala.Formatting.CSharp;
 public sealed record EquivalenceFailure(int Index, string Before, string After);
 
 /// <summary>
-/// The safety net.
+///     The safety net.
 /// </summary>
 /// <remarks>
-/// docs/plan/04 § "The safety net" and ADR-005. Before any write, the significant token stream of
-/// the output is compared with the input's. A failure is a Skala bug by definition: the file is
-/// abandoned, nothing is written, <c>SK9099</c> is emitted and a reproduction is dropped under
-/// <c>.skala/crash/</c>.
-/// <para>
-/// ⚠ There is no flag that turns this off — not for a hurry, not in CI, not in tests. A test that
-/// needs to see bad output calls <see cref="CSharpDocumentBuilder"/> and the writer directly.
-/// </para>
+///     docs/plan/04 § "The safety net" and ADR-005. Before any write, the significant token stream of
+///     the output is compared with the input's. A failure is a Skala bug by definition: the file is
+///     abandoned, nothing is written, <c>SK9099</c> is emitted and a reproduction is dropped under
+///     <c>.skala/crash/</c>.
+///     <para>
+///         ⚠ There is no flag that turns this off — not for a hurry, not in CI, not in tests. A test that
+///         needs to see bad output calls <see cref="CSharpDocumentBuilder" /> and the writer directly.
+///     </para>
 /// </remarks>
 public static class TokenEquivalence {
     /// <summary>
-    /// ⚠ <paramref name="xmlDocReflow"/> widens the comparison for <c>///</c> comments <b>only</b>,
-    /// and only when the sub-formatter actually ran.
+    ///     ⚠ <paramref name="xmlDocReflow" /> widens the comparison for <c>///</c> comments <b>only</b>,
+    ///     and only when the sub-formatter actually ran.
     /// </summary>
     /// <remarks>
-    /// ⚠ docs/plan/04 § "The safety net" described this allowance as already present, and it was
-    /// not: <see cref="Normalise"/> trims each line and the one space after a marker, which no
-    /// re-wrap survives, because a re-wrap moves the line breaks. Adding it was therefore adding an
-    /// allowance rather than using one, and it is drawn as narrowly as a re-wrap permits: the
-    /// comparison becomes <see cref="XmlDocSignature"/>, which is the same boundary the
-    /// sub-formatter refuses to cross. Everything a <c>///</c> comment is not, and every comment
-    /// when the flag is off, is compared exactly as before.
-    /// <para>
-    /// ⚠ It is not "ignore comments", and it is not even "the words in order" — that would have to
-    /// be widened again for <c>space_before_self_closing</c>, again for <c>spaces_inside_tags</c>,
-    /// and each widening is a class of damage the net stops seeing. The signature is <em>tighter</em>
-    /// than a word sequence where it counts: a <c>&lt;code&gt;</c> body is compared byte-for-byte.
-    /// </para>
+    ///     ⚠ docs/plan/04 § "The safety net" described this allowance as already present, and it was
+    ///     not: <see cref="Normalise" /> trims each line and the one space after a marker, which no
+    ///     re-wrap survives, because a re-wrap moves the line breaks. Adding it was therefore adding an
+    ///     allowance rather than using one, and it is drawn as narrowly as a re-wrap permits: the
+    ///     comparison becomes <see cref="XmlDocSignature" />, which is the same boundary the
+    ///     sub-formatter refuses to cross. Everything a <c>///</c> comment is not, and every comment
+    ///     when the flag is off, is compared exactly as before.
+    ///     <para>
+    ///         ⚠ It is not "ignore comments", and it is not even "the words in order" — that would have to
+    ///         be widened again for <c>space_before_self_closing</c>, again for <c>spaces_inside_tags</c>,
+    ///         and each widening is a class of damage the net stops seeing. The signature is <em>tighter</em>
+    ///         than a word sequence where it counts: a <c>&lt;code&gt;</c> body is compared byte-for-byte.
+    ///     </para>
     /// </remarks>
     public static EquivalenceFailure? Compare(
         SourceText before,
@@ -70,8 +70,8 @@ public static class TokenEquivalence {
     }
 
     /// <summary>
-    /// Every non-trivia token as <c>(RawKind, ValueText)</c>, plus the ordered comment texts, plus
-    /// every preprocessor directive in order, plus every disabled-text block verbatim.
+    ///     Every non-trivia token as <c>(RawKind, ValueText)</c>, plus the ordered comment texts, plus
+    ///     every preprocessor directive in order, plus every disabled-text block verbatim.
     /// </summary>
     public static List<string> Significant(
         SourceText text,
@@ -148,14 +148,14 @@ public static class TokenEquivalence {
     }
 
     /// <summary>
-    /// Collapses each line's leading and trailing whitespace, and the one space after a comment
-    /// marker.
+    ///     Collapses each line's leading and trailing whitespace, and the one space after a comment
+    ///     marker.
     /// </summary>
     /// <remarks>
-    /// ⚠ The marker space is normalised because inserting it is a rule Skala implements —
-    /// <c>space_after_triple_slash</c> and <c>space_before_trailing_comment_text</c> — and the
-    /// safety net must not treat a change it was asked to make as a lost token. Everything else
-    /// about the comment is compared exactly, so a swallowed word still fails.
+    ///     ⚠ The marker space is normalised because inserting it is a rule Skala implements —
+    ///     <c>space_after_triple_slash</c> and <c>space_before_trailing_comment_text</c> — and the
+    ///     safety net must not treat a change it was asked to make as a lost token. Everything else
+    ///     about the comment is compared exactly, so a swallowed word still fails.
     /// </remarks>
     static string Normalise(StringBuilder builder, string text) {
         builder.Clear();

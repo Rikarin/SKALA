@@ -1,5 +1,4 @@
 #nullable enable
 using System;
 
-class C {
-}
+class C { }

@@ -1,4 +1,5 @@
 #region License
+
 // Copyright (c) 2007 James Newton-King
 //
 // Permission is hereby granted, free of charge, to any person
@@ -21,9 +22,11 @@
 // WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 // OTHER DEALINGS IN THE SOFTWARE.
+
 #endregion
+
 #if !(NET20 || NET35)
-using System;using System.Collections;using System.Collections.Generic;using System.Dynamic;using System.IO;using System.Linq;using System.Reflection;using Newtonsoft.Json.Linq;using Newtonsoft.Json.Serialization;
+using System; using System.Collections; using System.Collections.Generic; using System.Dynamic; using System.IO; using System.Linq; using System.Reflection; using Newtonsoft.Json.Linq; using Newtonsoft.Json.Serialization;
 #if DNXCORE50
 using Xunit;
 using Test = Xunit.FactAttribute;
@@ -31,5 +34,35 @@ using Assert = Newtonsoft.Json.Tests.XUnitAssert;
 #else
 using NUnit.Framework;
 #endif
-namespace Newtonsoft.Json.Tests.Issues{[TestFixture]public class Issue1593:TestFixtureBase{[Test]public void Test(){string json=JsonConvert.SerializeObject(CreateModel());Assert.AreEqual(@"{""Specific"":2,""A"":1}" ,json);}class BaseModel{public BaseModel(){Extra=new ExpandoObject();}[JsonExtensionData]public ExpandoObject Extra{get;set;}}class SpecificModel:BaseModel{public int Specific{get;set;}}BaseModel CreateModel(){var model=new SpecificModel();var extra=model.Extra as IDictionary<string,object>;extra["A"]=1;model.Specific=2;return model;}}}
+namespace Newtonsoft.Json.Tests.Issues {
+    [TestFixture]
+    public class Issue1593 : TestFixtureBase {
+        [Test]
+        public void Test() {
+            string json = JsonConvert.SerializeObject(CreateModel());
+            Assert.AreEqual(@"{""Specific"":2,""A"":1}", json);
+        }
+
+        class BaseModel {
+            public BaseModel() {
+                Extra = new ExpandoObject();
+            }
+
+            [JsonExtensionData]
+            public ExpandoObject Extra { get; set; }
+        }
+
+        class SpecificModel : BaseModel {
+            public int Specific { get; set; }
+        }
+
+        BaseModel CreateModel() {
+            var model = new SpecificModel();
+            var extra = model.Extra as IDictionary<string, object>;
+            extra["A"] = 1;
+            model.Specific = 2;
+            return model;
+        }
+    }
+}
 #endif

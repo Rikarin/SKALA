@@ -1,4 +1,5 @@
 // skala-oracle: resharper=2025.2.6 config=sha256:98ff52570e019fac profile=SkalaFormatOnly generated=2026-08-27
+
 #region License
 
 // Copyright (c) 2007 James Newton-King
@@ -117,15 +118,15 @@ namespace Newtonsoft.Json.Tests.Serialization {
                 Formatting.Indented,
                 new JsonSerializerSettings { ContractResolver = contractResolver }
             ); //{
-//  "name": "Widget",
-//  "expiryDate": "\/Date(1292868060000)\/",
-//  "price": 9.99,
-//  "sizes": [
-//    "Small",
-//    "Medium",
-//    "Large"
-//  ]
-//}
+            //  "name": "Widget",
+            //  "expiryDate": "\/Date(1292868060000)\/",
+            //  "price": 9.99,
+            //  "sizes": [
+            //    "Small",
+            //    "Medium",
+            //    "Large"
+            //  ]
+            //}
             StringAssert.AreEqual(
                 @"{
   ""name"": ""Widget"",

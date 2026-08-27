@@ -36,26 +36,26 @@ public sealed record ArrangeRequest {
     public IReadOnlyList<string> Define { get; init; } = [];
 
     /// <summary>
-    /// The compilations covering <see cref="Paths"/>, supplied by the caller.
+    ///     The compilations covering <see cref="Paths" />, supplied by the caller.
     /// </summary>
     /// <remarks>
-    /// ⚠ A delegate rather than a project loader, because docs/plan/02's project graph forbids
-    /// <c>Formatting.CSharp</c> from referencing <c>Analysis</c>. The CLI, the daemon and MCP all
-    /// have both and each supplies its own; here the command only needs "the compilations this file
-    /// participates in", which is the whole of what the semantic half depends on.
-    /// <para>
-    /// ⚠ Null is the documented syntactic mode, not a failure:
-    /// <c>skala format --arrange=syntactic</c> and a loose file with no project both arrive here
-    /// with nothing, and get the subset of the catalogue that needs no semantics.
-    /// </para>
+    ///     ⚠ A delegate rather than a project loader, because docs/plan/02's project graph forbids
+    ///     <c>Formatting.CSharp</c> from referencing <c>Analysis</c>. The CLI, the daemon and MCP all
+    ///     have both and each supplies its own; here the command only needs "the compilations this file
+    ///     participates in", which is the whole of what the semantic half depends on.
+    ///     <para>
+    ///         ⚠ Null is the documented syntactic mode, not a failure:
+    ///         <c>skala format --arrange=syntactic</c> and a loose file with no project both arrive here
+    ///         with nothing, and get the subset of the catalogue that needs no semantics.
+    ///     </para>
     /// </remarks>
     public Func<IReadOnlyList<string>, IReadOnlyList<CSharpCompilation>>? Compilations { get; init; }
 }
 
 /// <summary>
-/// The implementation behind <c>skala arrange</c> (docs/plan/11 § "Command surface").
+///     The implementation behind <c>skala arrange</c> (docs/plan/11 § "Command surface").
 /// </summary>
-/// <remarks>⚠ The exit codes are <see cref="ExitCodes"/>'s; see the note on <see cref="FormatCommand"/>.</remarks>
+/// <remarks>⚠ The exit codes are <see cref="ExitCodes" />'s; see the note on <see cref="FormatCommand" />.</remarks>
 public static class ArrangeCommand {
     public static CommandResult Run(ArrangeRequest request, CancellationToken cancellation = default) {
         var output = new StringBuilder();
@@ -204,15 +204,15 @@ public static class ArrangeCommand {
     }
 
     /// <summary>
-    /// The usings this file may lose: unused in <b>every</b> compilation it participates in.
+    ///     The usings this file may lose: unused in <b>every</b> compilation it participates in.
     /// </summary>
     /// <remarks>
-    /// ⚠ docs/plan/06 § "Usings", and milestone 4's need #6 — the compilation-wide re-bind that
-    /// <c>skala fix</c>'s per-file syntactic check cannot do. A using that looks unused under
-    /// <c>net8.0</c> may be the only source of an extension method under <c>netstandard2.0</c>, or
-    /// may be needed by a <c>#if</c> branch that only one target compiles. The intersection is the
-    /// whole point: with one compilation it is that compilation's answer, and with three it is the
-    /// only answer that is safe under all three.
+    ///     ⚠ docs/plan/06 § "Usings", and milestone 4's need #6 — the compilation-wide re-bind that
+    ///     <c>skala fix</c>'s per-file syntactic check cannot do. A using that looks unused under
+    ///     <c>net8.0</c> may be the only source of an extension method under <c>netstandard2.0</c>, or
+    ///     may be needed by a <c>#if</c> branch that only one target compiles. The intersection is the
+    ///     whole point: with one compilation it is that compilation's answer, and with three it is the
+    ///     only answer that is safe under all three.
     /// </remarks>
     static ImmutableHashSet<string> Removable(
         List<CSharpCompilation> owning,

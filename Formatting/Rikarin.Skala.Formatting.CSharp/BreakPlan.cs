@@ -11,14 +11,14 @@ public enum GapRule {
     Point,
 
     /// <summary>
-    /// ⚠ Not a break point of the construct that encloses it, so it never holds a break — even if
-    /// the author put one there.
+    ///     ⚠ Not a break point of the construct that encloses it, so it never holds a break — even if
+    ///     the author put one there.
     /// </summary>
     /// <remarks>
-    /// This is the half of the break-position model that removes lines. With
-    /// <c>wrap_before_binary_opsign = true</c> the gap before the operator is a break point and the
-    /// gap after it is not, so <c>a +\n b</c> is re-joined and <c>a\n + b</c> is kept. Milestone 1
-    /// had nowhere to express the difference and kept both.
+    ///     This is the half of the break-position model that removes lines. With
+    ///     <c>wrap_before_binary_opsign = true</c> the gap before the operator is a break point and the
+    ///     gap after it is not, so <c>a +\n b</c> is re-joined and <c>a\n + b</c> is kept. Milestone 1
+    ///     had nowhere to express the difference and kept both.
     /// </remarks>
     Flat,
 
@@ -26,8 +26,8 @@ public enum GapRule {
     Mandatory,
 
     /// <summary>
-    /// A break point of a <em>fill</em>: it breaks when what follows would not fit on the line, and
-    /// not merely because its group broke. <c>wrap_if_long</c>.
+    ///     A break point of a <em>fill</em>: it breaks when what follows would not fit on the line, and
+    ///     not merely because its group broke. <c>wrap_if_long</c>.
     /// </summary>
     FillPoint
 }
@@ -43,27 +43,27 @@ public readonly record struct GapSpec(GapRule Rule, int Group);
 
 /// <summary>A group the builder opens around one syntax node.</summary>
 /// <param name="SpendsIndent">
-/// ⚠ The group's break points are not inside a delimiter of their own, so the group opens the
-/// continuation scope itself, around its own body. Milestone 1 opened that scope lazily at the break
-/// and closed it at the enclosing statement, which was fine while the document had nothing but
-/// indent scopes on its stack; with groups on the same stack the two interleave and the group's
-/// close pops the indent instead of the group. The symptom is the second operand of
-/// <c>a\n + b\n + c</c> landing a level short of the first.
+///     ⚠ The group's break points are not inside a delimiter of their own, so the group opens the
+///     continuation scope itself, around its own body. Milestone 1 opened that scope lazily at the break
+///     and closed it at the enclosing statement, which was fine while the document had nothing but
+///     indent scopes on its stack; with groups on the same stack the two interleave and the group's
+///     close pops the indent instead of the group. The symptom is the second operand of
+///     <c>a\n + b\n + c</c> landing a level short of the first.
 /// </param>
 /// <param name="LeadingGapInside">
-/// ⚠ The group's first break point is the gap <em>before</em> the node, so the group has to open
-/// before that gap is written or the point is emitted outside the group it belongs to and the
-/// writer, finding the group unresolved, renders it flat. The one construct that needs it is a base
-/// list under <c>wrap_before_extends_colon = true</c>, whose only break point is the colon that
-/// starts the node. Every other group's first point is at a token in its interior.
+///     ⚠ The group's first break point is the gap <em>before</em> the node, so the group has to open
+///     before that gap is written or the point is emitted outside the group it belongs to and the
+///     writer, finding the group unresolved, renders it flat. The one construct that needs it is a base
+///     list under <c>wrap_before_extends_colon = true</c>, whose only break point is the colon that
+///     starts the node. Every other group's first point is at a token in its interior.
 /// </param>
 /// <param name="OwnLevel">
-/// ⚠ A second continuation level, on top of whatever the construct around it already spends. Only a
-/// binary <em>pattern</em> chain asks for it, and docs/plan/04 § "Indentation" is where the
-/// asymmetry is recorded: a binary expression chain spends no level of its own and a binary pattern
-/// chain spends one. It looks arbitrary and it is what the oracle writes —
-/// <c>return x is A\n        or B;</c> puts the operand two levels in and
-/// <c>return a\n    + b;</c> puts it one.
+///     ⚠ A second continuation level, on top of whatever the construct around it already spends. Only a
+///     binary <em>pattern</em> chain asks for it, and docs/plan/04 § "Indentation" is where the
+///     asymmetry is recorded: a binary expression chain spends no level of its own and a binary pattern
+///     chain spends one. It looks arbitrary and it is what the oracle writes —
+///     <c>return x is A\n        or B;</c> puts the operand two levels in and
+///     <c>return a\n    + b;</c> puts it one.
 /// </param>
 public readonly record struct GroupPlan(
     int Id,
@@ -74,56 +74,56 @@ public readonly record struct GroupPlan(
     bool OwnLevel = false);
 
 /// <summary>
-/// Decides, before a token is emitted, which gaps of a construct may break and which may not.
+///     Decides, before a token is emitted, which gaps of a construct may break and which may not.
 /// </summary>
 /// <remarks>
-/// ⚠ This is the model milestone 1 did not have. M1 decided <em>whether</em> a gap holds a break by
-/// copying the source; M2 has to decide <em>which side of a token</em> a break lands on, because
-/// that is what <c>wrap_before_binary_opsign</c>, <c>wrap_after_invocation_lpar</c>,
-/// <c>wrap_before_invocation_rpar</c>, <c>wrap_after_dot_in_method_calls</c> and
-/// <c>wrap_before_comma</c> configure, and a gap model with only "break / do not break" has nowhere
-/// to put the answer.
-/// <para>
-/// It is a pre-pass over the syntax tree rather than a decision taken during the walk, for one
-/// reason: a gap can be at the structural level of two constructs at once. In
-/// <c>Foo(\n a + b, c)</c> the gap before <c>a</c> is the argument list's first break point and the
-/// binary chain's first non-point, and only a pass that sees both can let the point win. During the
-/// walk the innermost open construct is the binary chain, and it gives the wrong answer.
-/// </para>
-/// <para>
-/// The rules are established against the oracle, not read off the option names. The three that
-/// matter, and that the option documentation does not state:
-/// </para>
-/// <list type="number">
-/// <item>
-/// A break <em>between two items</em> of a list is preserved iff <c>keep_user_linebreaks</c>. A
-/// break <em>right after the opening delimiter or before the closing one</em> is preserved iff that
-/// construct's <c>keep_existing_*_arrangement</c> — which is what makes those keys observable, and
-/// it is why <c>Foo1(\n a)</c> re-joins where <c>Foo2(\n a,\n b)</c> does not.
-/// </item>
-/// <item>
-/// Once a construct is broken at all, a <c>chop_*</c> style breaks <em>every</em> one of its points,
-/// the two at the delimiters included. That is why the oracle's output over <c>corpus/real/</c> has
-/// 1 006 lines that are nothing but a closing parenthesis and milestone 1's had 573.
-/// </item>
-/// <item>
-/// <c>keep_user_wrapping</c> has no observable effect in this export. Both values produce identical
-/// output on every shape tried; <c>keep_user_linebreaks</c> is the key that governs.
-/// </item>
-/// </list>
+///     ⚠ This is the model milestone 1 did not have. M1 decided <em>whether</em> a gap holds a break by
+///     copying the source; M2 has to decide <em>which side of a token</em> a break lands on, because
+///     that is what <c>wrap_before_binary_opsign</c>, <c>wrap_after_invocation_lpar</c>,
+///     <c>wrap_before_invocation_rpar</c>, <c>wrap_after_dot_in_method_calls</c> and
+///     <c>wrap_before_comma</c> configure, and a gap model with only "break / do not break" has nowhere
+///     to put the answer.
+///     <para>
+///         It is a pre-pass over the syntax tree rather than a decision taken during the walk, for one
+///         reason: a gap can be at the structural level of two constructs at once. In
+///         <c>Foo(\n a + b, c)</c> the gap before <c>a</c> is the argument list's first break point and the
+///         binary chain's first non-point, and only a pass that sees both can let the point win. During the
+///         walk the innermost open construct is the binary chain, and it gives the wrong answer.
+///     </para>
+///     <para>
+///         The rules are established against the oracle, not read off the option names. The three that
+///         matter, and that the option documentation does not state:
+///     </para>
+///     <list type="number">
+///         <item>
+///             A break <em>between two items</em> of a list is preserved iff <c>keep_user_linebreaks</c>. A
+///             break <em>right after the opening delimiter or before the closing one</em> is preserved iff that
+///             construct's <c>keep_existing_*_arrangement</c> — which is what makes those keys observable, and
+///             it is why <c>Foo1(\n a)</c> re-joins where <c>Foo2(\n a,\n b)</c> does not.
+///         </item>
+///         <item>
+///             Once a construct is broken at all, a <c>chop_*</c> style breaks <em>every</em> one of its points,
+///             the two at the delimiters included. That is why the oracle's output over <c>corpus/real/</c> has
+///             1 006 lines that are nothing but a closing parenthesis and milestone 1's had 573.
+///         </item>
+///         <item>
+///             <c>keep_user_wrapping</c> has no observable effect in this export. Both values produce identical
+///             output on every shape tried; <c>keep_user_linebreaks</c> is the key that governs.
+///         </item>
+///     </list>
 /// </remarks>
 public sealed class BreakPlan {
     readonly Dictionary<int, GapSpec> _gaps = [];
 
     /// <summary>
-    /// The groups opened around one node, outermost first.
+    ///     The groups opened around one node, outermost first.
     /// </summary>
     /// <remarks>
-    /// ⚠ A list rather than one plan, because two constructs can start and end at the same token and
-    /// need two groups. A binary chain is the case that forces it: the operators keep their own
-    /// groups so that <c>a &amp;&amp; b\n || c</c> comes back unchanged, and the chain needs a group
-    /// of its own on the same node so that <c>chop_if_long</c> can break <em>all</em> of them at once
-    /// when the whole chain is too wide. One group cannot be both.
+    ///     ⚠ A list rather than one plan, because two constructs can start and end at the same token and
+    ///     need two groups. A binary chain is the case that forces it: the operators keep their own
+    ///     groups so that <c>a &amp;&amp; b\n || c</c> comes back unchanged, and the chain needs a group
+    ///     of its own on the same node so that <c>chop_if_long</c> can break <em>all</em> of them at once
+    ///     when the whole chain is too wide. One group cannot be both.
     /// </remarks>
     readonly Dictionary<long, List<GroupPlan>> _groups = [];
 
@@ -132,22 +132,22 @@ public sealed class BreakPlan {
 
     /// <summary>The group of a delimited list, keyed by the list node.</summary>
     /// <remarks>
-    /// ⚠ Recorded so that a construct <em>outside</em> the list can read whether the list broke.
-    /// <c>place_expr_method_on_single_line = if_owner_is_single_line</c> asks whether the
-    /// declaration occupies one line, and a chopped parameter list is the commonest way for it not
-    /// to — which no width test on the arrow itself can see.
+    ///     ⚠ Recorded so that a construct <em>outside</em> the list can read whether the list broke.
+    ///     <c>place_expr_method_on_single_line = if_owner_is_single_line</c> asks whether the
+    ///     declaration occupies one line, and a chopped parameter list is the commonest way for it not
+    ///     to — which no width test on the arrow itself can see.
     /// </remarks>
     readonly Dictionary<long, int> _delimited = [];
 
     /// <summary>
-    /// The group opened <em>inside</em> a construct's delimiters rather than around them.
+    ///     The group opened <em>inside</em> a construct's delimiters rather than around them.
     /// </summary>
     /// <remarks>
-    /// ⚠ It cannot be one of <see cref="_groups"/>, because those are opened around the node and are
-    /// therefore entered at the column the node starts at. The elements of a braced initializer are
-    /// measured against the column they land on <em>after</em> the brace has broken, which is one
-    /// continuation level in and one line down, so the group has to be opened where the elements
-    /// begin. <see cref="CSharpDocumentBuilder.VisitBraced"/> opens it.
+    ///     ⚠ It cannot be one of <see cref="_groups" />, because those are opened around the node and are
+    ///     therefore entered at the column the node starts at. The elements of a braced initializer are
+    ///     measured against the column they land on <em>after</em> the brace has broken, which is one
+    ///     continuation level in and one line down, so the group has to be opened where the elements
+    ///     begin. <see cref="CSharpDocumentBuilder.VisitBraced" /> opens it.
     /// </remarks>
     readonly Dictionary<long, GroupPlan> _inner = [];
 
@@ -171,14 +171,14 @@ public sealed class BreakPlan {
         return plan;
     }
 
-    /// <summary>The rule for the gap immediately before <paramref name="position"/>, if any.</summary>
+    /// <summary>The rule for the gap immediately before <paramref name="position" />, if any.</summary>
     public bool TryGap(int position, out GapSpec spec) => _gaps.TryGetValue(position, out spec);
 
-    /// <summary>The groups the builder opens around <paramref name="node"/>, outermost first.</summary>
+    /// <summary>The groups the builder opens around <paramref name="node" />, outermost first.</summary>
     public IReadOnlyList<GroupPlan> GroupsOf(SyntaxNode node) =>
         _groups.TryGetValue(Key(node), out var plans) ? plans : [];
 
-    /// <summary>The group the builder opens just inside <paramref name="node"/>'s delimiters, if any.</summary>
+    /// <summary>The group the builder opens just inside <paramref name="node" />'s delimiters, if any.</summary>
     public bool TryInnerGroup(SyntaxNode node, out GroupPlan plan) => _inner.TryGetValue(Key(node), out plan);
 
     /// <summary>Every group the plan created, so the builder can describe them to the document.</summary>
@@ -197,16 +197,16 @@ public sealed class BreakPlan {
     }
 
     /// <summary>
-    /// Whether anything between <paramref name="start"/> and <paramref name="end"/> is certain to
-    /// break, whatever the source did.
+    ///     Whether anything between <paramref name="start" /> and <paramref name="end" /> is certain to
+    ///     break, whatever the source did.
     /// </summary>
     /// <remarks>
-    /// ⚠ The blank-line rules need this, which is not obvious until it bites. Whether a member takes
-    /// <c>blank_lines_around_field</c> or <c>blank_lines_around_single_line_field</c> depends on
-    /// whether it is single-line — in the <em>output</em>. A one-line field the formatter is about to
-    /// chop is not single-line, and reading the input instead makes the first pass emit no blank line
-    /// and the second pass emit one. That is a non-idempotency the corpus does not contain, because
-    /// milestone 1 chopped nothing.
+    ///     ⚠ The blank-line rules need this, which is not obvious until it bites. Whether a member takes
+    ///     <c>blank_lines_around_field</c> or <c>blank_lines_around_single_line_field</c> depends on
+    ///     whether it is single-line — in the <em>output</em>. A one-line field the formatter is about to
+    ///     chop is not single-line, and reading the input instead makes the first pass emit no blank line
+    ///     and the second pass emit one. That is a non-idempotency the corpus does not contain, because
+    ///     milestone 1 chopped nothing.
     /// </remarks>
     public bool HasForcedBreakIn(int start, int end) {
         var index = Array.BinarySearch(_forced, start);
@@ -218,9 +218,9 @@ public sealed class BreakPlan {
     }
 
     /// <summary>
-    /// The positions at which a break is certain: a <see cref="GroupMode.Break"/> group's points and
-    /// every <see cref="GapRule.Mandatory"/> gap. Sorted once so the blank-line rules can ask about a
-    /// member's span without walking the whole plan per member.
+    ///     The positions at which a break is certain: a <see cref="GroupMode.Break" /> group's points and
+    ///     every <see cref="GapRule.Mandatory" /> gap. Sorted once so the blank-line rules can ask about a
+    ///     member's span without walking the whole plan per member.
     /// </summary>
     void CollectForcedBreaks() {
         var forced = new List<int>();
@@ -245,9 +245,9 @@ public sealed class BreakPlan {
     // ── The walk ─────────────────────────────────────────────────────────────────────────────
 
     /// <remarks>
-    /// ⚠ Outer nodes are planned before inner ones, and a point never overwrites a point but always
-    /// overwrites a <see cref="GapRule.Flat"/>. That ordering is the conflict rule: the enclosing
-    /// construct's break point wins over the nested construct's non-point.
+    ///     ⚠ Outer nodes are planned before inner ones, and a point never overwrites a point but always
+    ///     overwrites a <see cref="GapRule.Flat" />. That ordering is the conflict rule: the enclosing
+    ///     construct's break point wins over the nested construct's non-point.
     /// </remarks>
     void Walk(SyntaxNode node) {
         Plan(node);
@@ -476,14 +476,14 @@ public sealed class BreakPlan {
     // ── Constructs ───────────────────────────────────────────────────────────────────────────
 
     /// <summary>
-    /// <c>wrap_enum_declaration = chop_always</c> with <c>max_enum_members_on_line = 1</c>: one
-    /// member per line, always, whatever the source did.
+    ///     <c>wrap_enum_declaration = chop_always</c> with <c>max_enum_members_on_line = 1</c>: one
+    ///     member per line, always, whatever the source did.
     /// </summary>
     /// <remarks>
-    /// ⚠ docs/plan/05 names <c>resharper_new_line_before_enumerators</c> for this. That key is in
-    /// the export template and is <em>not</em> in <c>options.json</c> — the M0 importer dropped it
-    /// along with about forty other C#-relevant unprefixed keys — so the mechanism here is the two
-    /// keys that are registered and that produce the same layout. See the M2 report.
+    ///     ⚠ docs/plan/05 names <c>resharper_new_line_before_enumerators</c> for this. That key is in
+    ///     the export template and is <em>not</em> in <c>options.json</c> — the M0 importer dropped it
+    ///     along with about forty other C#-relevant unprefixed keys — so the mechanism here is the two
+    ///     keys that are registered and that produce the same layout. See the M2 report.
     /// </remarks>
     void PlanEnum(EnumDeclarationSyntax node) {
         if (node.Members.Count == 0) {
@@ -522,8 +522,8 @@ public sealed class BreakPlan {
     }
 
     /// <summary>
-    /// <c>wrap_switch_expression = chop_always</c> and
-    /// <c>place_simple_switch_expression_on_single_line = false</c>: every arm, always.
+    ///     <c>wrap_switch_expression = chop_always</c> and
+    ///     <c>place_simple_switch_expression_on_single_line = false</c>: every arm, always.
     /// </summary>
     void PlanSwitchExpression(SwitchExpressionSyntax node) {
         if (node.Arms.Count == 0) {
@@ -573,33 +573,36 @@ public sealed class BreakPlan {
     }
 
     /// <summary>
-    /// A parenthesised list: <c>wrap_after_*_lpar</c>, <c>wrap_before_*_rpar</c>,
-    /// <c>wrap_before_comma</c>, and a <c>chop_*</c> or <c>wrap_if_long</c> style.
+    ///     A parenthesised list: <c>wrap_after_*_lpar</c>, <c>wrap_before_*_rpar</c>,
+    ///     <c>wrap_before_comma</c>, and a <c>chop_*</c> or <c>wrap_if_long</c> style.
     /// </summary>
     /// <remarks>
-    /// ⚠ The two delimiter points and the inter-item points are preserved by different keys, and
-    /// conflating them makes the <c>keep_existing_*</c> family unobservable. Measured against the
-    /// oracle: with <c>keep_existing_invocation_parens_arrangement = false</c>, <c>Foo1(\n a)</c>
-    /// re-joins and <c>Foo2(\n a,\n b)</c> does not, because the first has no inter-item break to
-    /// keep and the second has one.
+    ///     ⚠ The two delimiter points and the inter-item points are preserved by different keys, and
+    ///     conflating them makes the <c>keep_existing_*</c> family unobservable. Measured against the
+    ///     oracle: with <c>keep_existing_invocation_parens_arrangement = false</c>, <c>Foo1(\n a)</c>
+    ///     re-joins and <c>Foo2(\n a,\n b)</c> does not, because the first has no inter-item break to
+    ///     keep and the second has one.
     /// </remarks>
     /// <param name="maxOnLine">
-    /// <c>max_*_on_line</c>. ⚠ A hard chop and not a fill: measured against the oracle,
-    /// <c>new List&lt;int&gt; { 1, 2, 3, 4, 5 }</c> comes back with one element per line under
-    /// <c>max_initializer_elements_on_line = 4</c> although it is 41 columns wide, while
-    /// <c>new[] { 1, 2, 3, 4, 5 }</c> — governed by <c>max_array_initializer_elements_on_line =
-    /// 10000</c> — does not move. The counter is not a width and does not consult one.
+    ///     <c>max_*_on_line</c>. ⚠ A hard chop and not a fill: measured against the oracle,
+    ///     <c>new List&lt;int&gt; { 1, 2, 3, 4, 5 }</c> comes back with one element per line under
+    ///     <c>max_initializer_elements_on_line = 4</c> although it is 41 columns wide, while
+    ///     <c>new[] { 1, 2, 3, 4, 5 }</c> — governed by
+    ///     <c>
+    ///max_array_initializer_elements_on_line =
+    /// 10000
+    ///     </c> — does not move. The counter is not a width and does not consult one.
     /// </param>
     /// <param name="placeOnSingleLine">
-    /// A <c>place_simple_*_on_single_line</c> key, or null where the construct has none.
+    ///     A <c>place_simple_*_on_single_line</c> key, or null where the construct has none.
     /// </param>
     /// <remarks>
-    /// ⚠ The key runs in both directions and the name only suggests one of them. At <c>true</c> it
-    /// joins, overriding <c>keep_user_linebreaks</c>: a four-line
-    /// <c>new Thing\n{\n A = 1,\n B = 2\n}</c> comes back as <c>new Thing { A = 1, B = 2 }</c>. At
-    /// <c>false</c> it <em>forces</em> the delimiters apart however short the construct is —
-    /// <c>xs is [1, 2, 3]</c> becomes three lines. Measured against the oracle, because "place on
-    /// single line = false" reads like permission withheld rather than a break required.
+    ///     ⚠ The key runs in both directions and the name only suggests one of them. At <c>true</c> it
+    ///     joins, overriding <c>keep_user_linebreaks</c>: a four-line
+    ///     <c>new Thing\n{\n A = 1,\n B = 2\n}</c> comes back as <c>new Thing { A = 1, B = 2 }</c>. At
+    ///     <c>false</c> it <em>forces</em> the delimiters apart however short the construct is —
+    ///     <c>xs is [1, 2, 3]</c> becomes three lines. Measured against the oracle, because "place on
+    ///     single line = false" reads like permission withheld rather than a break required.
     /// </remarks>
     void PlanList<T>(
         SyntaxNode node,
@@ -757,16 +760,16 @@ public sealed class BreakPlan {
     }
 
     /// <summary>
-    /// An initializer's braces: <c>wrap_array_initializer_style = wrap_if_long</c> plus the two
-    /// element counters and <c>place_simple_initializer_on_single_line</c>.
+    ///     An initializer's braces: <c>wrap_array_initializer_style = wrap_if_long</c> plus the two
+    ///     element counters and <c>place_simple_initializer_on_single_line</c>.
     /// </summary>
     /// <remarks>
-    /// ⚠ Two counters, and which one applies is the syntax kind rather than the option name.
-    /// Measured against the oracle: <c>new List&lt;int&gt; { 1, 2, 3, 4, 5 }</c> comes back with one
-    /// element per line and <c>new[] { 1, 2, 3, 4, 5 }</c> does not, because the first is a
-    /// collection initializer (<c>max_initializer_elements_on_line = 4</c>) and the second an array
-    /// initializer (<c>max_array_initializer_elements_on_line = 10000</c>). Reading
-    /// "array initializer" as "any initializer of a collection" gets both wrong at once.
+    ///     ⚠ Two counters, and which one applies is the syntax kind rather than the option name.
+    ///     Measured against the oracle: <c>new List&lt;int&gt; { 1, 2, 3, 4, 5 }</c> comes back with one
+    ///     element per line and <c>new[] { 1, 2, 3, 4, 5 }</c> does not, because the first is a
+    ///     collection initializer (<c>max_initializer_elements_on_line = 4</c>) and the second an array
+    ///     initializer (<c>max_array_initializer_elements_on_line = 10000</c>). Reading
+    ///     "array initializer" as "any initializer of a collection" gets both wrong at once.
     /// </remarks>
     void PlanInitializer(InitializerExpressionSyntax node) =>
         PlanBracedElements(
@@ -789,12 +792,12 @@ public sealed class BreakPlan {
         );
 
     /// <summary>
-    /// A braced initializer: two groups, because it has three layouts and one group has two.
+    ///     A braced initializer: two groups, because it has three layouts and one group has two.
     /// </summary>
     /// <remarks>
-    /// ⚠ Established against the oracle, and it is not what the option names suggest. The three
-    /// layouts an initializer can take are
-    /// <code>
+    ///     ⚠ Established against the oracle, and it is not what the option names suggest. The three
+    ///     layouts an initializer can take are
+    ///     <code>
     /// new Thing { A = 1, B = 2 }                          — everything on the owner's line
     /// new Thing {
     ///     A = 1, B = 2, C = 3                             — braces broken, elements together
@@ -802,20 +805,23 @@ public sealed class BreakPlan {
     /// new Thing {
     ///     A = "…", B = "…", C = "…", D = "…"              — braces broken, one element per line
     /// }                                                     (written one per line)
-    /// </code>
-    /// and the second and third are one group's decision while the first is another's. A single
-    /// group can only offer two of the three, which is why milestone 3's first attempt filled
-    /// <c>Title = "Episode VII", Description = "…", Categories =\n    new List&lt;string&gt; {…}</c>
-    /// where the oracle writes four lines.
-    /// <para>
-    /// ⚠ The inner group is a <em>fill</em> for an array initializer and a chop for an object or
-    /// collection one, and that distinction is real: <c>new[] { six, long, string, literals, here,
-    /// again }</c> comes back with five on one line and one on the next, while
-    /// <c>new List&lt;string&gt; { four, long, string, literals }</c> comes back with one per line
-    /// even though two of them would have shared. It matches the two counters —
-    /// <c>max_array_initializer_elements_on_line = 10000</c> against
-    /// <c>max_initializer_elements_on_line = 4</c> — being separate keys.
-    /// </para>
+    ///     </code>
+    ///     and the second and third are one group's decision while the first is another's. A single
+    ///     group can only offer two of the three, which is why milestone 3's first attempt filled
+    ///     <c>Title = "Episode VII", Description = "…", Categories =\n    new List&lt;string&gt; {…}</c>
+    ///     where the oracle writes four lines.
+    ///     <para>
+    ///         ⚠ The inner group is a <em>fill</em> for an array initializer and a chop for an object or
+    ///         collection one, and that distinction is real:
+    ///         <c>
+    ///new[] { six, long, string, literals, here,
+    /// again }
+    ///         </c> comes back with five on one line and one on the next, while
+    ///         <c>new List&lt;string&gt; { four, long, string, literals }</c> comes back with one per line
+    ///         even though two of them would have shared. It matches the two counters —
+    ///         <c>max_array_initializer_elements_on_line = 10000</c> against
+    ///         <c>max_initializer_elements_on_line = 4</c> — being separate keys.
+    ///     </para>
     /// </remarks>
     void PlanBracedElements<T>(
         SyntaxNode node,
@@ -887,18 +893,18 @@ public sealed class BreakPlan {
     }
 
     /// <summary>
-    /// <c>wrap_extends_list_style = chop_if_long</c>: a long base list puts one base type per line.
+    ///     <c>wrap_extends_list_style = chop_if_long</c>: a long base list puts one base type per line.
     /// </summary>
     /// <remarks>
-    /// ⚠ Neither delimiter is a break point. <c>wrap_before_extends_colon = false</c> keeps the
-    /// <c>:</c> and the first base type on the declaration's line, and there is no closing delimiter
-    /// to move, so the only points are the commas:
-    /// <code>
+    ///     ⚠ Neither delimiter is a break point. <c>wrap_before_extends_colon = false</c> keeps the
+    ///     <c>:</c> and the first base type on the declaration's line, and there is no closing delimiter
+    ///     to move, so the only points are the commas:
+    ///     <code>
     /// class C : Base,
     ///     IFirst,
     ///     ISecond {
-    /// </code>
-    /// The list therefore opens its own continuation scope rather than living inside a delimiter's.
+    ///     </code>
+    ///     The list therefore opens its own continuation scope rather than living inside a delimiter's.
     /// </remarks>
     void PlanBaseList(BaseListSyntax node) {
         if (node.Types.Count == 0) {
@@ -953,8 +959,8 @@ public sealed class BreakPlan {
     }
 
     /// <summary>
-    /// <c>wrap_multiple_declaration_style = chop_if_long</c>: <c>int a = 1, b = 2, c = 3;</c> puts
-    /// one declarator per line when it does not fit.
+    ///     <c>wrap_multiple_declaration_style = chop_if_long</c>: <c>int a = 1, b = 2, c = 3;</c> puts
+    ///     one declarator per line when it does not fit.
     /// </summary>
     void PlanDeclarators(VariableDeclarationSyntax node) {
         var group = NewGroup();
@@ -983,21 +989,21 @@ public sealed class BreakPlan {
     }
 
     /// <summary>
-    /// <c>wrap_chained_method_calls = chop_if_long</c>: every <c>.</c> of a chain that does not fit
-    /// starts a line, and the first call does not.
+    ///     <c>wrap_chained_method_calls = chop_if_long</c>: every <c>.</c> of a chain that does not fit
+    ///     starts a line, and the first call does not.
     /// </summary>
     /// <remarks>
-    /// ⚠ Three keys decide which dots are points, and the answer is not "all of them".
-    /// <c>wrap_before_first_method_call = false</c> keeps <c>source.Where(…)</c> together, so the
-    /// first invoked dot is not a point; <c>wrap_after_property_in_chained_method_calls = false</c>
-    /// means a dot that reaches a property rather than a method is not one either. Verified against
-    /// the oracle, which writes
-    /// <code>
+    ///     ⚠ Three keys decide which dots are points, and the answer is not "all of them".
+    ///     <c>wrap_before_first_method_call = false</c> keeps <c>source.Where(…)</c> together, so the
+    ///     first invoked dot is not a point; <c>wrap_after_property_in_chained_method_calls = false</c>
+    ///     means a dot that reaches a property rather than a method is not one either. Verified against
+    ///     the oracle, which writes
+    ///     <code>
     /// var q = source.Where(x => x.IsActive)
     ///     .OrderBy(x => x.Name)
     ///     .Select(x => x.Id);
-    /// </code>
-    /// and not a break before <c>.Where</c>.
+    ///     </code>
+    ///     and not a break before <c>.Where</c>.
     /// </remarks>
     void PlanChainedCalls(SyntaxNode root) {
         var dots = new List<SyntaxToken>();
@@ -1126,17 +1132,17 @@ public sealed class BreakPlan {
     }
 
     /// <summary>
-    /// The group that makes <c>chop_if_long</c> mean "chop <em>all</em> of them" for a chain whose
-    /// links each carry a group of their own.
+    ///     The group that makes <c>chop_if_long</c> mean "chop <em>all</em> of them" for a chain whose
+    ///     links each carry a group of their own.
     /// </summary>
     /// <remarks>
-    /// ⚠ It exists because the two behaviours the export asks for cannot live in one group.
-    /// <c>keep_user_linebreaks = true</c> means <c>a &amp;&amp; b\n || c</c> comes back with exactly
-    /// that one break, so each operator keeps its own <see cref="GroupMode.Preserve"/> group;
-    /// <c>wrap_chained_binary_expressions = chop_if_long</c> means a chain that does not fit on one
-    /// line breaks at every operator at once, which no per-operator group can decide. This group
-    /// spans the whole chain, holds no break points of its own, and the operator groups read its
-    /// resolved mode through <see cref="GroupFacts.BreaksWithOwner"/>.
+    ///     ⚠ It exists because the two behaviours the export asks for cannot live in one group.
+    ///     <c>keep_user_linebreaks = true</c> means <c>a &amp;&amp; b\n || c</c> comes back with exactly
+    ///     that one break, so each operator keeps its own <see cref="GroupMode.Preserve" /> group;
+    ///     <c>wrap_chained_binary_expressions = chop_if_long</c> means a chain that does not fit on one
+    ///     line breaks at every operator at once, which no per-operator group can decide. This group
+    ///     spans the whole chain, holds no break points of its own, and the operator groups read its
+    ///     resolved mode through <see cref="GroupFacts.BreaksWithOwner" />.
     /// </remarks>
     void PlanChainWide(SyntaxNode root, WrapStyle style) {
         if (style == WrapStyle.WrapIfLong) {
@@ -1166,15 +1172,15 @@ public sealed class BreakPlan {
     }
 
     /// <summary>
-    /// <c>wrap_before_binary_opsign = true</c>: the operator starts the new line, so the gap before
-    /// it is the break point and the gap after it is not one.
+    ///     <c>wrap_before_binary_opsign = true</c>: the operator starts the new line, so the gap before
+    ///     it is the break point and the gap after it is not one.
     /// </summary>
     /// <remarks>
-    /// ⚠ One group per operator, not one per chain. The oracle keeps the author's break points
-    /// individually: <c>a &amp;&amp; b \n || c</c> comes back unchanged rather than chopped at both
-    /// operators. A chain-wide group would break every operator as soon as one of them was broken,
-    /// which is what <c>chop_if_long</c> does <em>once the chain is being re-wrapped</em> — and
-    /// choosing to re-wrap it is milestone 3's.
+    ///     ⚠ One group per operator, not one per chain. The oracle keeps the author's break points
+    ///     individually: <c>a &amp;&amp; b \n || c</c> comes back unchanged rather than chopped at both
+    ///     operators. A chain-wide group would break every operator as soon as one of them was broken,
+    ///     which is what <c>chop_if_long</c> does <em>once the chain is being re-wrapped</em> — and
+    ///     choosing to re-wrap it is milestone 3's.
     /// </remarks>
     void PlanOperator(SyntaxNode node, SyntaxToken operatorToken, SyntaxNode right, bool wrapBefore) {
         if (operatorToken.IsKind(SyntaxKind.None)) {
@@ -1257,30 +1263,30 @@ public sealed class BreakPlan {
     }
 
     /// <summary>
-    /// The outermost link of a chain of same-precedence binary operators or patterns.
+    ///     The outermost link of a chain of same-precedence binary operators or patterns.
     /// </summary>
     /// <remarks>
-    /// ⚠ Internal because the builder needs the same answer: <c>align_multiline_binary_*</c> anchors
-    /// the whole chain to one column, and "the whole chain" is exactly this node. A second copy of
-    /// the precedence test in the builder would be one place for the two to drift apart.
+    ///     ⚠ Internal because the builder needs the same answer: <c>align_multiline_binary_*</c> anchors
+    ///     the whole chain to one column, and "the whole chain" is exactly this node. A second copy of
+    ///     the precedence test in the builder would be one place for the two to drift apart.
     /// </remarks>
     internal static bool IsChainRootOperator(SyntaxNode node) => !SameChain(node.Parent, node);
 
     /// <summary>
-    /// Whether two nested binary nodes belong to the same chain.
+    ///     Whether two nested binary nodes belong to the same chain.
     /// </summary>
     /// <remarks>
-    /// ⚠ Same <em>precedence</em>, not merely "both are binary expressions", and getting this wrong
-    /// is visible immediately. <c>a &gt; 0 &amp;&amp; b &gt; 0 &amp;&amp; c &gt; 0</c> is one chain
-    /// of <c>&amp;&amp;</c> whose operands happen to be comparisons; the oracle chops it at the
-    /// <c>&amp;&amp;</c>s and nowhere else. Treating every nested binary as part of the chain makes
-    /// the comparisons break too, and produces
-    /// <code>
+    ///     ⚠ Same <em>precedence</em>, not merely "both are binary expressions", and getting this wrong
+    ///     is visible immediately. <c>a &gt; 0 &amp;&amp; b &gt; 0 &amp;&amp; c &gt; 0</c> is one chain
+    ///     of <c>&amp;&amp;</c> whose operands happen to be comparisons; the oracle chops it at the
+    ///     <c>&amp;&amp;</c>s and nowhere else. Treating every nested binary as part of the chain makes
+    ///     the comparisons break too, and produces
+    ///     <code>
     /// if (a
     ///     &gt; 0
     ///     &amp;&amp; b
-    /// </code>
-    /// which is not a shape any formatter writes.
+    ///     </code>
+    ///     which is not a shape any formatter writes.
     /// </remarks>
     static bool SameChain(SyntaxNode? parent, SyntaxNode child) =>
         (parent, child) switch {
@@ -1314,7 +1320,7 @@ public sealed class BreakPlan {
         };
 
     /// <summary>
-    /// <c>wrap_before_ternary_opsigns = true</c>: <c>?</c> and <c>:</c> start their lines.
+    ///     <c>wrap_before_ternary_opsigns = true</c>: <c>?</c> and <c>:</c> start their lines.
     /// </summary>
     void PlanTernary(ConditionalExpressionSyntax node) {
         var group = NewGroup();
@@ -1365,16 +1371,16 @@ public sealed class BreakPlan {
     }
 
     /// <summary>
-    /// <c>wrap_before_eq = false</c>: a break around an assignment lands after the <c>=</c>, never
-    /// before it.
+    ///     <c>wrap_before_eq = false</c>: a break around an assignment lands after the <c>=</c>, never
+    ///     before it.
     /// </summary>
     /// <summary>
-    /// A construct whose only break point is the gap in front of it.
+    ///     A construct whose only break point is the gap in front of it.
     /// </summary>
     /// <remarks>
-    /// ⚠ <c>leadingGapInside</c>, always: the point is at the node's own first token, so the group
-    /// has to be open before that gap is written or the writer finds the group unresolved and
-    /// renders it flat. See GroupPlan.LeadingGapInside.
+    ///     ⚠ <c>leadingGapInside</c>, always: the point is at the node's own first token, so the group
+    ///     has to be open before that gap is written or the writer finds the group unresolved and
+    ///     renders it flat. See GroupPlan.LeadingGapInside.
     /// </remarks>
     void PlanBreakBefore(SyntaxNode node, SyntaxToken token) {
         if (token.IsKind(SyntaxKind.None)) {
@@ -1457,15 +1463,15 @@ public sealed class BreakPlan {
         _options.WrapBeforeLinqExpression && value is QueryExpressionSyntax;
 
     /// <summary>
-    /// <c>place_expr_{method,property,accessor}_on_single_line = if_owner_is_single_line</c>: the
-    /// body shares the declaration's line exactly when the declaration fits on one.
+    ///     <c>place_expr_{method,property,accessor}_on_single_line = if_owner_is_single_line</c>: the
+    ///     body shares the declaration's line exactly when the declaration fits on one.
     /// </summary>
     /// <remarks>
-    /// ⚠ <c>keep_existing_expr_member_arrangement = false</c> means a break the author put after the
-    /// <c>=&gt;</c> is <em>not</em> preserved: a short expression-bodied member the author had split
-    /// over two lines is re-joined. It is one of the few places in this export where the formatter
-    /// removes a line break the author chose, and it is measured, not assumed —
-    /// <c>int P =&gt;\n 1;</c> comes back as <c>int P =&gt; 1;</c>.
+    ///     ⚠ <c>keep_existing_expr_member_arrangement = false</c> means a break the author put after the
+    ///     <c>=&gt;</c> is <em>not</em> preserved: a short expression-bodied member the author had split
+    ///     over two lines is re-joined. It is one of the few places in this export where the formatter
+    ///     removes a line break the author chose, and it is measured, not assumed —
+    ///     <c>int P =&gt;\n 1;</c> comes back as <c>int P =&gt; 1;</c>.
     /// </remarks>
     void PlanExpressionBody(ArrowExpressionClauseSyntax node) {
         var placement = node.Parent switch {
@@ -1551,14 +1557,14 @@ public sealed class BreakPlan {
     }
 
     /// <summary>
-    /// <c>place_simple_embedded_statement_on_same_line = if_owner_is_single_line</c>: the statement
-    /// shares its owner's line exactly when the owner fits on one.
+    ///     <c>place_simple_embedded_statement_on_same_line = if_owner_is_single_line</c>: the statement
+    ///     shares its owner's line exactly when the owner fits on one.
     /// </summary>
     /// <remarks>
-    /// ⚠ <c>keep_existing_embedded_arrangement = true</c> in this export, which means the author's
-    /// choice wins over the placement rule in both directions and this plan is a no-op for the
-    /// repository's own configuration. It is still the mechanism, and flipping either key moves the
-    /// output — which is what makes both of them Tier A rather than wiring.
+    ///     ⚠ <c>keep_existing_embedded_arrangement = true</c> in this export, which means the author's
+    ///     choice wins over the placement rule in both directions and this plan is a no-op for the
+    ///     repository's own configuration. It is still the mechanism, and flipping either key moves the
+    ///     output — which is what makes both of them Tier A rather than wiring.
     /// </remarks>
     void PlanEmbeddedStatement(SyntaxNode owner, StatementSyntax? embedded) {
         if (embedded is null or BlockSyntax) {
@@ -1604,8 +1610,11 @@ public sealed class BreakPlan {
     }
 
     /// <summary>
-    /// <c>place_simple_case_statement_on_same_line = if_owner_is_single_line</c>: <c>case 1: F();
-    /// break;</c> stays on the label's line exactly when the whole section fits on one.
+    ///     <c>place_simple_case_statement_on_same_line = if_owner_is_single_line</c>:
+    ///     <c>
+    ///case 1: F();
+    /// break;
+    ///     </c> stays on the label's line exactly when the whole section fits on one.
     /// </summary>
     void PlanCaseStatements(SwitchSectionSyntax node) {
         if (node.Statements.Count == 0 || node.Statements is [BlockSyntax]) {
@@ -1644,27 +1653,27 @@ public sealed class BreakPlan {
     }
 
     /// <summary>
-    /// Every member and every statement gets a line of its own.
+    ///     Every member and every statement gets a line of its own.
     /// </summary>
     /// <remarks>
-    /// ⚠ Unconditional, which is not what the option names suggest and is what the oracle does.
-    /// <c>csharp_preserve_single_line_blocks = true</c> is in the export and reads like permission
-    /// to leave <c>void M() { Call(); Call(); }</c> alone; ReSharper ignores it, and
-    /// <c>class B { public int P => 1; public int Q => 2; }</c> comes back as five lines. There is
-    /// no width test and no <c>keep_user_linebreaks</c> in it: a body with anything in it is broken.
-    /// <para>
-    /// ⚠ Three exclusions, each measured rather than assumed. An <em>empty</em> body stays together
-    /// (<c>empty_block_style = together</c>). An accessor's body does not break —
-    /// <c>get { return _street; }</c> comes back from the oracle exactly as written, and
-    /// <c>public int X { get; set; }</c> is one line and has its own spacing keys. And a lambda's or
-    /// anonymous method's block does not, because the call it is an argument to keeps it on its line:
-    /// <c>Register(() => { Body(); });</c> comes back whole.
-    /// </para>
-    /// <para>
-    /// It is also what makes "single line" a stable property of the output. A member sharing a line
-    /// with the member before it has no answer to <c>blank_lines_around_single_line_field</c>, which
-    /// is why <c>constructs/blank-lines/two-members-on-one-line.cs</c> was committed failing at M2.
-    /// </para>
+    ///     ⚠ Unconditional, which is not what the option names suggest and is what the oracle does.
+    ///     <c>csharp_preserve_single_line_blocks = true</c> is in the export and reads like permission
+    ///     to leave <c>void M() { Call(); Call(); }</c> alone; ReSharper ignores it, and
+    ///     <c>class B { public int P => 1; public int Q => 2; }</c> comes back as five lines. There is
+    ///     no width test and no <c>keep_user_linebreaks</c> in it: a body with anything in it is broken.
+    ///     <para>
+    ///         ⚠ Three exclusions, each measured rather than assumed. An <em>empty</em> body stays together
+    ///         (<c>empty_block_style = together</c>). An accessor's body does not break —
+    ///         <c>get { return _street; }</c> comes back from the oracle exactly as written, and
+    ///         <c>public int X { get; set; }</c> is one line and has its own spacing keys. And a lambda's or
+    ///         anonymous method's block does not, because the call it is an argument to keeps it on its line:
+    ///         <c>Register(() => { Body(); });</c> comes back whole.
+    ///     </para>
+    ///     <para>
+    ///         It is also what makes "single line" a stable property of the output. A member sharing a line
+    ///         with the member before it has no answer to <c>blank_lines_around_single_line_field</c>, which
+    ///         is why <c>constructs/blank-lines/two-members-on-one-line.cs</c> was committed failing at M2.
+    ///     </para>
     /// </remarks>
     void PlanOnePerLine(SyntaxNode node) {
         switch (node) {
@@ -1694,16 +1703,16 @@ public sealed class BreakPlan {
     }
 
     /// <summary>
-    /// Whether the author's arrangement of this block wins over the one-per-line rule.
+    ///     Whether the author's arrangement of this block wins over the one-per-line rule.
     /// </summary>
     /// <remarks>
-    /// ⚠ Two keys, and which applies is what the block is the body of.
-    /// <c>keep_existing_declaration_block_arrangement</c> governs a method's or a local function's;
-    /// <c>keep_existing_embedded_block_arrangement</c> governs an <c>if</c>'s or a <c>while</c>'s.
-    /// Both are <c>false</c> in the export, which is why the rule looks unconditional there; set
-    /// either to <c>true</c> and the oracle keeps <c>void M() { Body(); }</c> and
-    /// <c>if (flag) { First(); }</c> exactly as written. The four-way preservation table is what
-    /// found this — the two <c>keep_existing_* = true</c> corners were the only ones that moved.
+    ///     ⚠ Two keys, and which applies is what the block is the body of.
+    ///     <c>keep_existing_declaration_block_arrangement</c> governs a method's or a local function's;
+    ///     <c>keep_existing_embedded_block_arrangement</c> governs an <c>if</c>'s or a <c>while</c>'s.
+    ///     Both are <c>false</c> in the export, which is why the rule looks unconditional there; set
+    ///     either to <c>true</c> and the oracle keeps <c>void M() { Body(); }</c> and
+    ///     <c>if (flag) { First(); }</c> exactly as written. The four-way preservation table is what
+    ///     found this — the two <c>keep_existing_* = true</c> corners were the only ones that moved.
     /// </remarks>
     bool Keeps(BlockSyntax block) =>
         block.Parent is StatementSyntax
@@ -1719,8 +1728,8 @@ public sealed class BreakPlan {
     }
 
     /// <summary>
-    /// <c>place_*_attribute_on_same_line = never</c>: an attribute section never shares a line with
-    /// what follows it.
+    ///     <c>place_*_attribute_on_same_line = never</c>: an attribute section never shares a line with
+    ///     what follows it.
     /// </summary>
     void PlanAttributes(SyntaxNode node) {
         var lists = node switch {
@@ -1803,12 +1812,12 @@ public sealed class BreakPlan {
         item is ArgumentSyntax { Expression: AnonymousFunctionExpressionSyntax };
 
     /// <summary>
-    /// The outermost link of an <c>a.B().C()</c> chain — the node the whole chain's group hangs from.
+    ///     The outermost link of an <c>a.B().C()</c> chain — the node the whole chain's group hangs from.
     /// </summary>
     /// <remarks>
-    /// ⚠ The same predicate <see cref="CSharpDocumentBuilder"/> uses to decide which node spends the
-    /// chain's continuation level; the two must agree, or the group and the indent scope are opened
-    /// around different nodes.
+    ///     ⚠ The same predicate <see cref="CSharpDocumentBuilder" /> uses to decide which node spends the
+    ///     chain's continuation level; the two must agree, or the group and the indent scope are opened
+    ///     around different nodes.
     /// </remarks>
     static bool IsChainRoot(SyntaxNode node) =>
         node is InvocationExpressionSyntax { Expression: MemberAccessExpressionSyntax or MemberBindingExpressionSyntax }

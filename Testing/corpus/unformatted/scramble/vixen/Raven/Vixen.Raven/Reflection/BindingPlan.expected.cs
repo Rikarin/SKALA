@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 using System.Collections
-    .Immutable;
+.Immutable;
 using Vixen.Raven.IR;
 using Vixen.Raven.Symbols;
 
@@ -35,8 +35,7 @@ public
         IrBinding? Resource) {
     /// <summary>True when this is a set's uniform block rather than an opaque resource.</summary>
     public bool
-        IsBlock =>
-        Resource is null;
+        IsBlock => Resource is null;
 
     /// <summary>
     ///     The other declarations of this same resource, for a <c>[Shared]</c> binding.
@@ -126,10 +125,10 @@ public static class BindingPlan {
         ArgumentNullException.ThrowIfNull(shader);
 
         var
-            plan = ImmutableArray.CreateBuilder<PlannedBinding>();
+        plan = ImmutableArray.CreateBuilder<PlannedBinding>();
 
         // Push constants are deliberately absent: they have no descriptor, so numbering them into
-// a set would give a host a (set, binding) pair to bind against that means nothing.
+        // a set would give a host a (set, binding) pair to bind against that means nothing.
         var descriptors = shader.Bindings.Where(b => b.Kind != IrBindingKind.PushConstant).ToArray();
         foreach (var set in descriptors.Select(b => b.Set).Distinct().Order()) {
             var inSet = descriptors.Where(b => b.Set == set).ToArray();
@@ -151,7 +150,7 @@ public static class BindingPlan {
             // Storage buffers last, after textures and samplers, for the same reason the uniform
             // block goes first: adding one must not renumber anything that already exists.
             foreach (var kind in (IrBindingKind[]
-                     ) [
+                     )[
                          IrBindingKind.Texture,
 
                          IrBindingKind.Sampler,
@@ -159,12 +158,12 @@ public static class BindingPlan {
                              .StorageBuffer,
                          IrBindingKind.StorageImage, IrBindingKind.AccelerationStructure
                      ]) {
-// A shared binding declared by several features is one binding, recognised by the
+                // A shared binding declared by several features is one binding, recognised by the
 
                 // name they all wrote. Grouped rather than deduplicated in place so that the first
                 // declaration keeps the slot and the rest become its aliases — every one of them has
 
-// a variable some feature's body refers to, and all of them have to resolve.
+                // a variable some feature's body refers to, and all of them have to resolve.
                 foreach
                     (var group in inSet.Where(b => b.Kind == kind).GroupBy(SharedKey)) {
                     var resource = group.First();
@@ -205,7 +204,7 @@ public static class BindingPlan {
     /// </remarks>
     public static IrBinding? MaterialIndex(
         IrShader
-            shader
+        shader
     ) {
         ArgumentNullException.ThrowIfNull(shader);
         return shader.Bindings.FirstOrDefault(binding => binding.IsMaterialIndex);

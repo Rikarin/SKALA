@@ -17,20 +17,16 @@ namespace Serilog.Policies;
 // Byte arrays, when logged, need to be copied so that they are
 // safe from concurrent modification when written to asynchronous
 // sinks. Byte arrays larger than 1k are written as descriptive strings.
-class ByteArrayScalarConversionPolicy : IScalarConversionPolicy
-{
+class ByteArrayScalarConversionPolicy : IScalarConversionPolicy {
     const int MaximumByteArrayLength = 1024;
 
-    public bool TryConvertToScalar(object value, [NotNullWhen(true)] out ScalarValue? result)
-    {
-        if (value is not byte[] bytes)
-        {
+    public bool TryConvertToScalar(object value, [NotNullWhen(true)] out ScalarValue? result) {
+        if (value is not byte[] bytes) {
             result = null;
             return false;
         }
 
-        if (bytes.Length > MaximumByteArrayLength)
-        {
+        if (bytes.Length > MaximumByteArrayLength) {
 #if FEATURE_TOHEXSTRING
             var start = Convert.ToHexString(bytes, 0, 16);
 #else
@@ -38,9 +34,7 @@ class ByteArrayScalarConversionPolicy : IScalarConversionPolicy
 #endif
             var description = start + "... (" + bytes.Length + " bytes)";
             result = new ScalarValue(description);
-        }
-        else
-        {
+        } else {
 #if FEATURE_TOHEXSTRING
             result = new ScalarValue(Convert.ToHexString(bytes));
 #else

@@ -8,26 +8,26 @@ namespace Rikarin.Skala.Conformance.Sweep;
 public sealed record Demotion(string Key, SweepOutcome Outcome, string Fixture, string Reason);
 
 /// <summary>
-/// Renders the sweep's result as a file that is reviewed in a diff, the way the oracle fixtures are.
+///     Renders the sweep's result as a file that is reviewed in a diff, the way the oracle fixtures are.
 /// </summary>
 /// <remarks>
-/// ⚠ The table is committed on purpose. The sweep needs JetBrains installed and takes minutes, so it
-/// is a nightly job and never a commit gate (ADR-011: the oracle is a developer-machine and nightly
-/// dependency, never a runtime one). What the fast path gets is this file, and what makes a
-/// regression visible is its diff — an option that was <c>Conformant</c> yesterday and is
-/// <c>Unexercised</c> today is one line in a pull request rather than a number nobody re-derived.
+///     ⚠ The table is committed on purpose. The sweep needs JetBrains installed and takes minutes, so it
+///     is a nightly job and never a commit gate (ADR-011: the oracle is a developer-machine and nightly
+///     dependency, never a runtime one). What the fast path gets is this file, and what makes a
+///     regression visible is its diff — an option that was <c>Conformant</c> yesterday and is
+///     <c>Unexercised</c> today is one line in a pull request rather than a number nobody re-derived.
 /// </remarks>
 public static class SweepReport {
     /// <summary>
-    /// Every Tier A option the sweep could not substantiate.
+    ///     Every Tier A option the sweep could not substantiate.
     /// </summary>
     /// <remarks>
-    /// ⚠ Tier A means "Skala reproduces Rider's behaviour, pinned by at least one oracle fixture"
-    /// (docs/plan/03 § "Four tiers"). An option whose fixture cannot tell its values apart is pinned
-    /// by nothing: the fixture would be byte-identical whatever the option said, so it is evidence
-    /// that the option was not read rather than evidence that it was honoured. M3.1 found options
-    /// marked Tier A that could not be observed at all, and every one of them is a dilution of the
-    /// tier system. They are demoted with the reason recorded, not explained away.
+    ///     ⚠ Tier A means "Skala reproduces Rider's behaviour, pinned by at least one oracle fixture"
+    ///     (docs/plan/03 § "Four tiers"). An option whose fixture cannot tell its values apart is pinned
+    ///     by nothing: the fixture would be byte-identical whatever the option said, so it is evidence
+    ///     that the option was not read rather than evidence that it was honoured. M3.1 found options
+    ///     marked Tier A that could not be observed at all, and every one of them is a dilution of the
+    ///     tier system. They are demoted with the reason recorded, not explained away.
     /// </remarks>
     public static IReadOnlyList<Demotion> TierAudit(SweepRun run) => [
         .. run.Options

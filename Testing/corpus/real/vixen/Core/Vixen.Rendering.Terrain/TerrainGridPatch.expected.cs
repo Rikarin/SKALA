@@ -16,8 +16,10 @@ namespace Vixen.Rendering.Terrain;
 /// <param name="Morph">How far the patch has morphed towards its parent's grid, 0…1.</param>
 /// <remarks>
 ///     <para>
-///         <b>The C# half of <c>TerrainNode</c> in <c>Terrain.rvn</c>, and the two agree by
-///         construction or not at all.</b> The host packs these bytes and the shader reads them as a
+///         <b>
+///             The C# half of <c>TerrainNode</c> in <c>Terrain.rvn</c>, and the two agree by
+///             construction or not at all.
+///         </b> The host packs these bytes and the shader reads them as a
 ///         struct — the same bargain <see cref="GpuCulling" /> describes, and the same reason the
 ///         duplication is not a smell to be refactored away.
 ///     </para>
@@ -55,9 +57,11 @@ public readonly record struct TerrainNodeRecord(
     ///     patch that spans four samples per grid step reads level two, which is the level whose
     ///     texels <em>are</em> its vertices — reading level 0 instead gives it a height nothing
     ///     between its own vertices ever had, and the surface swims as the camera moves.
-    ///
-    ///     ⚠ <b>Clamped to the atlas's chain, which is a <em>tile's</em> rather than the whole
-    ///     texture's.</b> An atlas of thirty-two 128-texel tiles is 4096 wide and would allow thirteen
+    ///     ⚠
+    ///     <b>
+    ///         Clamped to the atlas's chain, which is a <em>tile's</em> rather than the whole
+    ///         texture's.
+    ///     </b> An atlas of thirty-two 128-texel tiles is 4096 wide and would allow thirteen
     ///     levels; only eight of them keep a block at one texel or more, and past that a level mixes
     ///     tiles — which is the seam the layout exists to prevent.
     /// </remarks>

@@ -193,7 +193,14 @@ public sealed class LocalAvoidance {
     }
 
     /// <summary>When two circles moving at a constant relative velocity would touch, and stop touching.</summary>
-    static bool Sweep(Vector3 position, float radius, Vector3 relative, in AvoidanceNeighbour neighbour, out float enter, out float exit) {
+    static bool Sweep(
+        Vector3 position,
+        float radius,
+        Vector3 relative,
+        in AvoidanceNeighbour neighbour,
+        out float enter,
+        out float exit
+    ) {
         enter = 0f;
         exit = 0f;
 

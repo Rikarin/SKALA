@@ -7,11 +7,11 @@ namespace Rikarin.Skala.Formatting.CSharp.Tests;
 
 /// <summary>Formats a string with the repository's own configuration, which is the Rider export.</summary>
 /// <remarks>
-/// ⚠ The repository's <c>.editorconfig</c>, resolved for real, and not
-/// <c>FormattingOptions.Defaults</c>. The two were interchangeable while every registry default was
-/// the export's own value; milestone 3 derived ReSharper's actual defaults from the oracle, and they
-/// are Allman-braced with <c>wrap_if_long</c> chains — a different formatter, correctly. These tests
-/// are about the export's behaviour, so they have to say so.
+///     ⚠ The repository's <c>.editorconfig</c>, resolved for real, and not
+///     <c>FormattingOptions.Defaults</c>. The two were interchangeable while every registry default was
+///     the export's own value; milestone 3 derived ReSharper's actual defaults from the oracle, and they
+///     are Allman-braced with <c>wrap_if_long</c> chains — a different formatter, correctly. These tests
+///     are about the export's behaviour, so they have to say so.
 /// </remarks>
 public static class Format {
     public static PhaseOneOptions Options { get; } = new(
@@ -26,12 +26,12 @@ public static class Format {
     public static string Text(string source) => Run(source).Formatted;
 
     /// <summary>
-    /// How many owner-dependent groups the document put outside their owner.
+    ///     How many owner-dependent groups the document put outside their owner.
     /// </summary>
     /// <remarks>
-    /// ⚠ Must be zero. It is the invariant that makes docs/plan/04's "second pass" a walk order
-    /// rather than an iteration to a fixed point, and the fitter counts violations rather than
-    /// hiding them behind a guess.
+    ///     ⚠ Must be zero. It is the invariant that makes docs/plan/04's "second pass" a walk order
+    ///     rather than an iteration to a fixed point, and the fitter counts violations rather than
+    ///     hiding them behind a guess.
     /// </remarks>
     public static int OwnerUnresolved(string source) {
         var text = SourceText.From(source);
@@ -377,6 +377,11 @@ public sealed class TriviaTests {
 
     [Fact]
     public void ADocComment_IsReindentedLineByLine() {
+        // ⚠ Two things happen and both are wanted. The comment is re-indented with the member it
+        // documents, which is what this test has always measured; and the sub-formatter keeps the
+        // author's line break — `keep_user_linebreaks` is true in the export, so a break the author
+        // wrote is a break — while indenting the text inside the element, which is
+        // `indent_text = one_indent`.
         const string source = """
                               class C {
                                       /// <summary>
@@ -388,7 +393,7 @@ public sealed class TriviaTests {
                               """;
 
         Assert.Equal(
-            "class C {\n    /// <summary>\n    /// Docs.\n    /// </summary>\n    void M() { }\n}\n",
+            "class C {\n    /// <summary>\n    ///     Docs.\n    /// </summary>\n    void M() { }\n}\n",
             Format.Text(source)
         );
     }
@@ -549,12 +554,12 @@ public sealed class EditTests {
 }
 
 /// <summary>
-/// Phase 2: which gaps may hold a break, and which side of a token it lands on.
+///     Phase 2: which gaps may hold a break, and which side of a token it lands on.
 /// </summary>
 /// <remarks>
-/// ⚠ Every expectation here was read off <c>jb cleanupcode</c>, not off an option name. Where the
-/// name and the behaviour disagree the behaviour wins, and the two disagree more often than the
-/// documentation admits.
+///     ⚠ Every expectation here was read off <c>jb cleanupcode</c>, not off an option name. Where the
+///     name and the behaviour disagree the behaviour wins, and the two disagree more often than the
+///     documentation admits.
 /// </remarks>
 public sealed class BreakPositionTests {
     [Fact]
@@ -777,15 +782,21 @@ public sealed class XmlDocTests {
     }
 
     [Fact]
-    public void AWellFormedDocComment_IsNotRewrappedEither() {
-        // ⚠ SK-DIV-0006. `jb cleanupcode` does not format documentation comments at all — not the
-        // missing space after `///`, not a 128-column summary, not two tags on one line — so Skala
-        // does not either. A formatter that re-wrapped them would diverge from the oracle on every
-        // doc comment in the corpus, with no oracle to check itself against while doing it.
+    public void AWellFormedDocComment_IsRewrapped() {
+        // ⚠ SK-DIV-0006, and this assertion is the inverse of what it used to be. The missing space
+        // after `///` and the 128-column summary are both fixed, because Rider fixes them: the
+        // pinned oracle profile does not run `CSharpFormatDocComments` and Rider's own Full Cleanup
+        // does. Matching the profile here would mean diverging from the editor on every doc comment
+        // in every repository, which is the larger of the two divergences.
         const string source =
             "class C {\n    ///<summary>A summary line that runs a long way past one hundred and twenty columns in total, easily.</summary>\n    void M() { }\n}\n";
+        var formatted = Format.Text(source);
 
-        Assert.Contains("///<summary>", Format.Text(source), StringComparison.Ordinal);
+        Assert.DoesNotContain("///<summary>", formatted, StringComparison.Ordinal);
+        Assert.All(
+            formatted.Split('\n'),
+            line => Assert.True(TextWidth.Measure(line) <= 120, $"'{line}' is {TextWidth.Measure(line)} columns.")
+        );
     }
 
     [Fact]

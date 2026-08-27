@@ -5,7 +5,7 @@
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text
-    .Json;
+.Json;
 using Vixen.Core.Mathematics;
 using Vixen.Ui;
 using Vixen.Ui.Rendering;
@@ -58,7 +58,7 @@ namespace Tests;
 /// </remarks>
 public class UiShapeLayoutTests {
     /// <summary>The C# property, and the shader field it has to sit on top of, in order.</summary>
-    static readonly ( string Property, string Field )[] Lanes = [
+    static readonly (string Property, string Field)[] Lanes = [
         ("Size", "size"),
         ("RadiiX", "radiiX"),
         ("RadiiY", "radiiY"), ("Axis", "axis"),
@@ -84,9 +84,9 @@ public class UiShapeLayoutTests {
                 $"`Ui.rvn`'s UiShape has no `{field}`, which `UiShape.{property}` is supposed to be."
             );
             Assert.Equal(member.Offset, OffsetOf(property));
-// Every lane is a `float4` on both sides. A scalar beside a vector is the specific
+            // Every lane is a `float4` on both sides. A scalar beside a vector is the specific
             // mistake std430 and sequential layout disagree about, so its size is worth asserting
-// rather than assuming from the type name.
+            // rather than assuming from the type name.
             Assert.Equal(
                 16,
                 member
@@ -209,20 +209,20 @@ public class UiShapeLayoutTests {
 
     static int OffsetOf(string property) {
         var field = typeof(
-                UiShape)
-            .GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
-            .FirstOrDefault(candidate =>
-                candidate.Name == property || candidate.Name == $"<{property}>k__BackingField"
-            );
+            UiShape)
+                .GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
+                .FirstOrDefault(candidate =>
+                    candidate.Name == property || candidate.Name == $"<{property}>k__BackingField"
+                );
 
         Assert.True(field is not null, $"UiShape has no field behind `{property}`.")
             ;
         return
-            (int)Marshal.OffsetOf<UiShape>(field !.Name);
+            (int)Marshal.OffsetOf<UiShape>(field!.Name);
     }
 
     /// <summary>What the committed reflection says the <c>shapes</c> buffer's element looks like.</summary>
-    static (int Size, IReadOnlyDictionary<string, Member> Members ) Reflected() {
+    static (int Size, IReadOnlyDictionary<string, Member> Members) Reflected() {
         using var document = JsonDocument.Parse(File.ReadAllText(ReflectionPath()));
         var shapes = document.RootElement
             .GetProperty("Sets")
@@ -230,7 +230,7 @@ public class UiShapeLayoutTests {
             .SelectMany(set => set.GetProperty("Bindings").EnumerateArray())
             .Single(binding => binding.GetProperty("Name").GetString() == "shapes");
         var
-            members = new Dictionary<string, Member>(StringComparer.Ordinal);
+        members = new Dictionary<string, Member>(StringComparer.Ordinal);
         foreach (var member in shapes.GetProperty("Members").EnumerateArray()) {
             var name = member.GetProperty("Name").GetString()!;
 
@@ -284,5 +284,5 @@ public class UiShapeLayoutTests {
     record struct Member(
         int Offset,
         int
-            Size);
+        Size);
 }

@@ -12,8 +12,11 @@ namespace Vixen.Ui.Tests;
 /// <summary>The frame pass restyling incrementally, judged against a document built cold.</summary>
 /// <remarks>
 ///     <para>
-///         ⚠ <b>Deliberately driven through <see cref="UiDocument" /> rather than through
-///         <see cref="StyleUpdater" />.</b> <c>Vixen.Ui.Styling.Tests.IncrementalRestyleOracleTests</c>
+///         ⚠
+///         <b>
+///             Deliberately driven through <see cref="UiDocument" /> rather than through
+///             <see cref="StyleUpdater" />.
+///         </b> <c>Vixen.Ui.Styling.Tests.IncrementalRestyleOracleTests</c>
 ///         already runs this property against the updater and has been green since Phase 4b — while
 ///         <see cref="UiDocument.Update" /> called <c>StyleEngine.ResolveAll</c> and never touched the
 ///         updater at all. Every claim about incremental restyling was true of an object nothing in
@@ -39,12 +42,12 @@ public class IncrementalDocumentTests {
         var stateMutations
             = 0;
         Gen.Select(
-                Gen.Int[0,
-                    100_000],
-                Gen.Int[2, 4],
-                Gen.Int[2, 3],
-                Gen.Int[4, 12]
-            )
+            Gen.Int[0,
+                100_000],
+            Gen.Int[2, 4],
+            Gen.Int[2, 3],
+            Gen.Int[4, 12]
+        )
             .Sample(
                 shape => {
                     var (seed, depth, breadth, mutations)
@@ -72,13 +75,13 @@ public class IncrementalDocumentTests {
                     // The oracle is a second document built *directly* in the state the mutations left
                     // the first one in — not the same document with the same mutations replayed. Both
                     // sides would then reach their final state through the same mutation code, so
-// anything that code gets wrong is wrong identically on both and the comparison sees
+                    // anything that code gets wrong is wrong identically on both and the comparison sees
                     // nothing. `IncrementalRestyleOracleTests` learned that the hard way in 4b.
                     using var
-                        cold = new UiDocument(400f, 300f);
+                    cold = new UiDocument(400f, 300f);
                     cold.Load(css);
                     var
-                        reference = Build(cold, seed, depth, breadth);
+                    reference = Build(cold, seed, depth, breadth);
                     Copy(elements, reference);
                     cold
                         .Update();
@@ -104,7 +107,7 @@ public class IncrementalDocumentTests {
                 iter: 300
             );
         // ⚠ **Three coverage assertions, and the first version of this test had only one.** A
-// property that compares two documents is perfectly happy comparing two documents where
+        // property that compares two documents is perfectly happy comparing two documents where
         // nothing matched anything — and that is what the first draft did, because `Build` gave its
         // elements no classes and every generated rule needed one. Every rule was dead, both sides
         // resolved to nothing, and dropping state changes from the replay entirely **passed 300 of
@@ -117,7 +120,7 @@ public class IncrementalDocumentTests {
         Assert.True(stateMutations > 200, $"only {stateMutations} mutations were state changes.");
     }
 
-// Verified by sabotage, against the whole of Vixen.Ui.Tests:
+    // Verified by sabotage, against the whole of Vixen.Ui.Tests:
     //
     //   dropping state changes from the replay          fails 2  (1 before the coverage assertions)
     //   a structural change staying narrow              fails 74
@@ -205,7 +208,7 @@ public class IncrementalDocumentTests {
         // between them to notice. Every declaration written on an element vanished the moment the
         // pass became incremental — a splitter losing its ratio on the first hover.
         using var
-            document = new UiDocument(400f, 300f);
+        document = new UiDocument(400f, 300f);
         document.Load(
             """
                 root { width: 400px; height: 300px; }
@@ -408,7 +411,7 @@ public class IncrementalDocumentTests {
         }
 
         var
-            name = Names[random.Next(Names.Length)];
+        name = Names[random.Next(Names.Length)];
 
         if
             (!element.RemoveClass(name)) {

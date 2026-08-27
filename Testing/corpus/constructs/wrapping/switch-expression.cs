@@ -7,7 +7,17 @@ class SwitchExpressions {
         };
     }
 
-    int OneLineInSource(int value) => value switch { 1 => 1, _ => 0 };
+    int OneLineInSource(int value) =>
+        value switch {
+            1 => 1,
+            _ => 0
+        };
 
-    int TooWide(int value) => value switch { 1 => 1111111111, 2 => 2222222222, 3 => 3333333333, _ => 4444444444 };
+    int TooWide(int value) =>
+        value switch {
+            1 => 1111111111,
+            2 => 2222222222,
+            3 => 3333333333,
+            _ => 4444444444
+        };
 }

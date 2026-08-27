@@ -1,4 +1,5 @@
 // skala-oracle: resharper=2025.2.6 config=sha256:98ff52570e019fac profile=SkalaFormatOnly generated=2026-08-27
+
 #region License
 
 // Copyright (c) 2007 James Newton-King
@@ -30,16 +31,16 @@
 
 namespace Newtonsoft.Json.Linq {
     /// <summary>
-    /// Specifies how line information is handled when loading JSON.
+    ///     Specifies how line information is handled when loading JSON.
     /// </summary>
     public enum LineInfoHandling {
         /// <summary>
-        /// Ignore line information.
+        ///     Ignore line information.
         /// </summary>
         Ignore = 0,
 
         /// <summary>
-        /// Load line information.
+        ///     Load line information.
         /// </summary>
         Load = 1
     }

@@ -16,11 +16,13 @@
 namespace Serilog.Formatting.Json;
 
 /// <summary>
-/// Formats log events in a simple JSON structure. Instances of this class
-/// are safe for concurrent access by multiple threads.
+///     Formats log events in a simple JSON structure. Instances of this class
+///     are safe for concurrent access by multiple threads.
 /// </summary>
-/// <remarks>New code should prefer formatters from <c>Serilog.Formatting.Compact</c>, or <c>ExpressionTemplate</c> from
-/// <c>Serilog.Expressions</c>.</remarks>
+/// <remarks>
+///     New code should prefer formatters from <c>Serilog.Formatting.Compact</c>, or <c>ExpressionTemplate</c> from
+///     <c>Serilog.Expressions</c>.
+/// </remarks>
 public sealed class JsonFormatter : ITextFormatter {
     readonly string _closingDelimiter;
     readonly bool _renderMessage;
@@ -28,12 +30,16 @@ public sealed class JsonFormatter : ITextFormatter {
     readonly JsonValueFormatter _jsonValueFormatter = new();
 
     /// <summary>
-    /// Construct a <see cref="JsonFormatter"/>.
+    ///     Construct a <see cref="JsonFormatter" />.
     /// </summary>
-    /// <param name="closingDelimiter">A string that will be written after each log event is formatted.
-    /// If null, <see cref="Environment.NewLine"/> will be used.</param>
-    /// <param name="renderMessage">If <see langword="true"/>, the message will be rendered and written to the output as a
-    /// property named RenderedMessage.</param>
+    /// <param name="closingDelimiter">
+    ///     A string that will be written after each log event is formatted.
+    ///     If null, <see cref="Environment.NewLine" /> will be used.
+    /// </param>
+    /// <param name="renderMessage">
+    ///     If <see langword="true" />, the message will be rendered and written to the output as a
+    ///     property named RenderedMessage.
+    /// </param>
     /// <param name="formatProvider">Supplies culture-specific formatting information, or null.</param>
     public JsonFormatter(
         string? closingDelimiter = null,
@@ -46,12 +52,12 @@ public sealed class JsonFormatter : ITextFormatter {
     }
 
     /// <summary>
-    /// Format the log event into the output.
+    ///     Format the log event into the output.
     /// </summary>
     /// <param name="logEvent">The event to format.</param>
     /// <param name="output">The output.</param>
-    /// <exception cref="ArgumentNullException">When <paramref name="logEvent"/> is <code>null</code></exception>
-    /// <exception cref="ArgumentNullException">When <paramref name="output"/> is <code>null</code></exception>
+    /// <exception cref="ArgumentNullException">When <paramref name="logEvent" /> is <code>null</code></exception>
+    /// <exception cref="ArgumentNullException">When <paramref name="output" /> is <code>null</code></exception>
     public void Format(LogEvent logEvent, TextWriter output) {
         Guard.AgainstNull(logEvent);
         Guard.AgainstNull(output);

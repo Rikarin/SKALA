@@ -6,26 +6,26 @@ using System.Text;
 namespace Rikarin.Skala.Reporting;
 
 /// <summary>
-/// The identity of a finding across edits to the file it sits in.
+///     The identity of a finding across edits to the file it sits in.
 /// </summary>
 /// <remarks>
-/// docs/plan/09 § "The fingerprint". The property the whole baseline mechanism rests on is that a
-/// finding survives the file being edited above it, reindented, or moved:
-/// <code>
+///     docs/plan/09 § "The fingerprint". The property the whole baseline mechanism rests on is that a
+///     finding survives the file being edited above it, reindented, or moved:
+///     <code>
 /// skala/v2 = xxHash128( ruleId ⊕ normalizedSnippet ⊕ enclosingSymbolDisplayString ⊕ ordinalWithinSymbol )
-/// </code>
-/// ⚠ <b>No line numbers, and no file path.</b> A fingerprint that moves when a line moves is a
-/// baseline that expires every commit, and one that moves when a file is renamed is a baseline that
-/// expires every refactor. The enclosing symbol carries the location information that is stable and
-/// none of the information that is not.
-/// <para>
-/// ⚠ <see cref="Version1"/> is still emitted beside <see cref="Version2"/>, and reading a baseline
-/// falls back to it. M5 shipped v1 with the rule id, the normalised <em>message</em> and the file
-/// name; adding the last two terms changes what the hash means, so it is a new version rather than
-/// a silent redefinition — which is exactly what the version tag was put there for. A baseline
-/// written by M5 keeps working, and the first <c>baseline update</c> after this change rewrites it
-/// in v2.
-/// </para>
+///     </code>
+///     ⚠ <b>No line numbers, and no file path.</b> A fingerprint that moves when a line moves is a
+///     baseline that expires every commit, and one that moves when a file is renamed is a baseline that
+///     expires every refactor. The enclosing symbol carries the location information that is stable and
+///     none of the information that is not.
+///     <para>
+///         ⚠ <see cref="Version1" /> is still emitted beside <see cref="Version2" />, and reading a baseline
+///         falls back to it. M5 shipped v1 with the rule id, the normalised <em>message</em> and the file
+///         name; adding the last two terms changes what the hash means, so it is a new version rather than
+///         a silent redefinition — which is exactly what the version tag was put there for. A baseline
+///         written by M5 keeps working, and the first <c>baseline update</c> after this change rewrites it
+///         in v2.
+///     </para>
 /// </remarks>
 public static class Fingerprints {
     /// <summary>M5's fingerprint: rule id, normalised message, file name.</summary>
@@ -35,17 +35,17 @@ public static class Fingerprints {
     public const string Version2 = "skala/v2";
 
     /// <summary>
-    /// Assigns <see cref="Finding.OrdinalWithinSymbol"/> across a whole run.
+    ///     Assigns <see cref="Finding.OrdinalWithinSymbol" /> across a whole run.
     /// </summary>
     /// <remarks>
-    /// ⚠ Deterministic by construction: the group key is everything the fingerprint uses <em>except</em>
-    /// the ordinal, and within a group the order is by path and then by offset. Two runs over the
-    /// same tree therefore number the same findings the same way, which is the only reason a
-    /// baseline written by one run is readable by the next.
-    /// <para>
-    /// ⚠ Called once, after merging and supersession, over the final set. Numbering before the
-    /// merge would number findings that are about to become one.
-    /// </para>
+    ///     ⚠ Deterministic by construction: the group key is everything the fingerprint uses <em>except</em>
+    ///     the ordinal, and within a group the order is by path and then by offset. Two runs over the
+    ///     same tree therefore number the same findings the same way, which is the only reason a
+    ///     baseline written by one run is readable by the next.
+    ///     <para>
+    ///         ⚠ Called once, after merging and supersession, over the final set. Numbering before the
+    ///         merge would number findings that are about to become one.
+    ///     </para>
     /// </remarks>
     public static ImmutableArray<Finding> Assign(ImmutableArray<Finding> findings) {
         if (findings.IsEmpty) {
@@ -77,7 +77,7 @@ public static class Fingerprints {
         new(StringComparer.Ordinal) { [Version1] = V1(finding), [Version2] = V2(finding) };
 
     /// <summary>
-    /// ⚠ M5's fingerprint, unchanged, so that a baseline written before this milestone still reads.
+    ///     ⚠ M5's fingerprint, unchanged, so that a baseline written before this milestone still reads.
     /// </summary>
     public static string V1(Finding finding) {
         var builder = new StringBuilder();
@@ -98,13 +98,13 @@ public static class Fingerprints {
     }
 
     /// <summary>
-    /// Whitespace collapsed, identifiers preserved (docs/plan/09).
+    ///     Whitespace collapsed, identifiers preserved (docs/plan/09).
     /// </summary>
     /// <remarks>
-    /// ⚠ Identifiers are kept deliberately, which is the difference between this and the
-    /// normalisation the duplication detector does. A fingerprint that ignored identifiers would
-    /// give the same identity to two different findings in two different methods, and a baseline
-    /// accepting one would accept the other.
+    ///     ⚠ Identifiers are kept deliberately, which is the difference between this and the
+    ///     normalisation the duplication detector does. A fingerprint that ignored identifiers would
+    ///     give the same identity to two different findings in two different methods, and a baseline
+    ///     accepting one would accept the other.
     /// </remarks>
     public static string Normalize(string text) {
         var builder = new StringBuilder(text.Length);

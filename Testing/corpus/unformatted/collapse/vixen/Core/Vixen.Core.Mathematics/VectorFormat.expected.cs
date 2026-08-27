@@ -15,9 +15,11 @@ namespace Vixen.Core.Mathematics;
 ///     is worth one shared helper rather than the same loop written eight times slightly differently.
 /// </remarks>
 static class VectorFormat {
-    /// <summary>Culture used when the caller does not supply one. Never the current culture: a
+    /// <summary>
+    ///     Culture used when the caller does not supply one. Never the current culture: a
     ///     vector in a log file that reads <c>(1,5, 2,0)</c> in one region and <c>(1.5, 2.0)</c> in
-    ///     another is a diffing and parsing problem nobody needs.</summary>
+    ///     another is a diffing and parsing problem nobody needs.
+    /// </summary>
     public static IFormatProvider DefaultProvider => CultureInfo.InvariantCulture;
 
     public static bool TryFormat(
@@ -28,7 +30,7 @@ static class VectorFormat {
         ReadOnlySpan<float> components
     ) {
         // Counted separately and published only on success: ISpanFormattable requires charsWritten
-// to be 0 when the destination was too small, not however far we got before running out.
+        // to be 0 when the destination was too small, not however far we got before running out.
         charsWritten = 0;
         provider ??= DefaultProvider;
         var count = 0;
@@ -58,7 +60,7 @@ static class VectorFormat {
 
     public static string ToString(string? format, IFormatProvider? provider, ReadOnlySpan<float> components) {
         // Enough for sixteen "G"-formatted floats and the delimiters, so every type here fits. A
-// custom format wide enough to overflow it falls back rather than truncating.
+        // custom format wide enough to overflow it falls back rather than truncating.
         Span<char> buffer = stackalloc char[640];
         return TryFormat(buffer, out var written, format, provider, components)
             ? new(buffer[.. written])

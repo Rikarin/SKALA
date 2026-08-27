@@ -107,8 +107,7 @@ public static class TextShaper {
     ///         that passes in one timezone and fails in another is worse than no golden test.
     ///     </para>
     /// </remarks>
-    internal static ShapedRun ShapeRun(FontFace font, string text, TextItem item) =>
-        ShapeRun(font, text, item, []);
+    internal static ShapedRun ShapeRun(FontFace font, string text, TextItem item) => ShapeRun(font, text, item, []);
 
     internal static ShapedRun ShapeRun(FontFace font, string text, TextItem item, Feature[] features) {
         using var buffer = new HbBuffer();
@@ -171,7 +170,7 @@ public static class TextShaper {
 
             // The whole buffer, which is the only range CSS can express. See `FontFeature`.
             applied[i] = new Feature(
-                new Tag((char) (tag >> 24), (char) ((tag >> 16) & 0xFF), (char) ((tag >> 8) & 0xFF), (char) (tag & 0xFF)),
+                new Tag((char)(tag >> 24), (char)((tag >> 16) & 0xFF), (char)((tag >> 8) & 0xFF), (char)(tag & 0xFF)),
                 feature.Value,
                 0,
                 uint.MaxValue
@@ -181,17 +180,20 @@ public static class TextShaper {
         return applied;
     }
 
-    static HbScript TagFor(Script script) => Tags.GetOrAdd(
-        script,
-        static value => HbScript.Parse(string.Create(
-            4,
-            (uint)value,
-            static (span, tag) => {
-                span[0] = (char)(byte)(tag >> 24);
-                span[1] = (char)(byte)(tag >> 16);
-                span[2] = (char)(byte)(tag >> 8);
-                span[3] = (char)(byte)tag;
-            }
-        ))
-    );
+    static HbScript TagFor(Script script) =>
+        Tags.GetOrAdd(
+            script,
+            static value => HbScript.Parse(
+                string.Create(
+                    4,
+                    (uint)value,
+                    static (span, tag) => {
+                        span[0] = (char)(byte)(tag >> 24);
+                        span[1] = (char)(byte)(tag >> 16);
+                        span[2] = (char)(byte)(tag >> 8);
+                        span[3] = (char)(byte)tag;
+                    }
+                )
+            )
+        );
 }

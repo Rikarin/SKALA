@@ -1,4 +1,5 @@
 ﻿#region License
+
 // Copyright (c) 2007 James Newton-King
 //
 // Permission is hereby granted, free of charge, to any person
@@ -21,6 +22,7 @@
 // WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 // OTHER DEALINGS IN THE SOFTWARE.
+
 #endregion
 
 using System;
@@ -40,35 +42,29 @@ using NUnit.Framework;
 
 #endif
 
-namespace Newtonsoft.Json.Tests.Documentation.Samples.Serializer
-{
+namespace Newtonsoft.Json.Tests.Documentation.Samples.Serializer {
     [TestFixture]
-    public class PopulateObject : TestFixtureBase
-    {
+    public class PopulateObject : TestFixtureBase {
         #region Types
-        public class Account
-        {
+
+        public class Account {
             public string Email { get; set; }
             public bool Active { get; set; }
             public DateTime CreatedDate { get; set; }
             public List<string> Roles { get; set; }
         }
+
         #endregion
 
         [Test]
-        public void Example()
-        {
+        public void Example() {
             #region Usage
-            Account account = new Account
-            {
+
+            Account account = new Account {
                 Email = "james@example.com",
                 Active = true,
                 CreatedDate = new DateTime(2013, 1, 20, 0, 0, 0, DateTimeKind.Utc),
-                Roles = new List<string>
-                {
-                    "User",
-                    "Admin"
-                }
+                Roles = new List<string> { "User", "Admin" }
             };
 
             string json = @"{
@@ -88,6 +84,7 @@ namespace Newtonsoft.Json.Tests.Documentation.Samples.Serializer
 
             Console.WriteLine(string.Join(", ", account.Roles.ToArray()));
             // User, Admin, Expired
+
             #endregion
 
             Assert.AreEqual("User, Admin, Expired", string.Join(", ", account.Roles.ToArray()));

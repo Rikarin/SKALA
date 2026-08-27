@@ -179,8 +179,9 @@ namespace Newtonsoft.Json.Linq.JsonPath {
             } else {
                 switch (Operator) {
                     case QueryOperator.Exists: // you can only specify primitive types in a comparison
-// notequals will always be true
-                    case QueryOperator.NotEquals: return true;
+                    // notequals will always be true
+                    case QueryOperator.NotEquals:
+                        return true;
                 }
             }
 
@@ -209,7 +210,7 @@ namespace Newtonsoft.Json.Linq.JsonPath {
                 return true;
             } // Handle comparing an integer with a float
 
-// e.g. Comparing 1 and 1.0
+            // e.g. Comparing 1 and 1.0
             if ((value.Type == JTokenType.Integer && queryValue.Type == JTokenType.Float)
                 || (value.Type == JTokenType.Float && queryValue.Type == JTokenType.Integer)) {
                 return JValue.Compare(value.Type, value.Value, queryValue.Value) == 0;
@@ -240,13 +241,16 @@ namespace Newtonsoft.Json.Linq.JsonPath {
                                 CultureInfo.InvariantCulture
                             );
                         }
+
                         currentValueString = writer.ToString();
                     }
 
                     break;
                 case JTokenType.Bytes: currentValueString = Convert.ToBase64String((byte[])value.Value!); break;
                 case JTokenType.Guid:
-                case JTokenType.TimeSpan: currentValueString = value.Value!.ToString()!; break;
+                case JTokenType.TimeSpan:
+                    currentValueString = value.Value!.ToString()!;
+                    break;
                 case JTokenType.Uri: currentValueString = ((Uri)value.Value!).OriginalString; break;
                 default: return false;
             }
@@ -257,7 +261,7 @@ namespace Newtonsoft.Json.Linq.JsonPath {
         internal static bool EqualsWithStrictMatch(JValue value, JValue queryValue) {
             MiscellaneousUtils.Assert(value != null);
             MiscellaneousUtils.Assert(queryValue != null); // Handle comparing an integer with a float
-// e.g. Comparing 1 and 1.0
+            // e.g. Comparing 1 and 1.0
             if ((value.Type == JTokenType.Integer && queryValue.Type == JTokenType.Float)
                 || (value.Type == JTokenType.Float && queryValue.Type == JTokenType.Integer)) {
                 return JValue.Compare(value.Type, value.Value, queryValue.Value) == 0;

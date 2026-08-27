@@ -25,8 +25,11 @@ public readonly record struct GlyphKey(int Font, ushort Glyph, int Size, FontVar
     /// <summary>Which vector path, for an entry that is not a glyph at all.</summary>
     /// <remarks>
     ///     <para>
-    ///         ⚠ <b>An icon is a glyph that is not in a font, and it belongs in this atlas for exactly
-    ///         that reason.</b> Both are small vector art drawn at whatever size a layout gives them;
+    ///         ⚠
+    ///         <b>
+    ///             An icon is a glyph that is not in a font, and it belongs in this atlas for exactly
+    ///             that reason.
+    ///         </b> Both are small vector art drawn at whatever size a layout gives them;
     ///         the only difference is where the outline came from. Sharing the texture is not a
     ///         convenience — it is what lets an icon draw through the pipeline that is already bound,
     ///         because the renderer binds <i>one</i> atlas and a second texture would be a second
@@ -38,8 +41,11 @@ public readonly record struct GlyphKey(int Font, ushort Glyph, int Size, FontVar
     ///         things a glyph is named by — the same argument <c>DrawCommand</c>'s extras make.
     ///     </para>
     ///     <para>
-    ///         ⚠ <b><see cref="Font" /> is negative for these, and that is what keeps the two
-    ///         namespaces apart rather than this field alone.</b> Glyph zero is <c>.notdef</c>, a real
+    ///         ⚠
+    ///         <b>
+    ///             <see cref="Font" /> is negative for these, and that is what keeps the two
+    ///             namespaces apart rather than this field alone.
+    ///         </b> Glyph zero is <c>.notdef</c>, a real
     ///         glyph a real font really draws, so an icon whose hash happened to be zero would
     ///         otherwise collide with it — and what that draws is the missing-glyph box where the icon
     ///         should be. See <c>IconAtlas</c>, which owns the negative half.
@@ -137,8 +143,11 @@ public sealed class GlyphAtlas {
     /// <summary>Moves whenever the pixels change: a glyph added, or the whole thing repacked.</summary>
     /// <remarks>
     ///     <para>
-    ///         ⚠ <b>Not <see cref="Version" />, and confusing the two is a texture that is never
-    ///         re-uploaded.</b> A version moves when the <i>layout</i> changes, so a caller holding
+    ///         ⚠
+    ///         <b>
+    ///             Not <see cref="Version" />, and confusing the two is a texture that is never
+    ///             re-uploaded.
+    ///         </b> A version moves when the <i>layout</i> changes, so a caller holding
     ///         texture coordinates knows to ask again; adding a glyph does not move it, because every
     ///         region it was holding is still where it was. But the pixels did change — an atlas whose
     ///         reader uploads on the version alone uploads on the first frame and never again, and
@@ -197,10 +206,10 @@ public sealed class GlyphAtlas {
             return false;
         } // ⚠ <b>Evict first, compact only when the space is there and the shape is wrong.</b>
 
-// Compacting first would be tidier and would bump the version on every addition to a full
-// atlas, which throws away every texture coordinate anyone is holding — for a steady-state
-// interface that is every frame. So entries go one at a time until either one fits or
-// enough area has been freed that fragmentation must be the reason it does not.
+        // Compacting first would be tidier and would bump the version on every addition to a full
+        // atlas, which throws away every texture coordinate anyone is holding — for a steady-state
+        // interface that is every frame. So entries go one at a time until either one fits or
+        // enough area has been freed that fragmentation must be the reason it does not.
         var needed = (field.Width + padding) * (field.Height + padding);
         var freed = 0;
         var compacted = false;
@@ -250,8 +259,11 @@ public sealed class GlyphAtlas {
     ///     </para>
     ///     <para>
     ///         Entries are replaced warmest first, so that if some did not fit the ones dropped
-    ///         would be the coldest — the same rule eviction follows. ⚠ <b>Whether any can fail to
-    ///         fit is unproven, and the order is insurance rather than a covered claim.</b>
+    ///         would be the coldest — the same rule eviction follows. ⚠
+    ///         <b>
+    ///             Whether any can fail to
+    ///             fit is unproven, and the order is insurance rather than a covered claim.
+    ///         </b>
     ///         Compaction only ever runs on a set that already fitted, minus whatever eviction has
     ///         just taken out, so it is not obvious that repacking can lose one; shelf packing is
     ///         not monotone in the insertion order, which is why the guard is there at all, but

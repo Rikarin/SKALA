@@ -1,4 +1,5 @@
 ﻿#region License
+
 // Copyright (c) 2007 James Newton-King
 //
 // Permission is hereby granted, free of charge, to any person
@@ -21,6 +22,7 @@
 // WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 // OTHER DEALINGS IN THE SOFTWARE.
+
 #endregion
 
 using System;
@@ -36,15 +38,13 @@ using NUnit.Framework;
 
 #endif
 
-namespace Newtonsoft.Json.Tests.Documentation.Samples.Linq
-{
+namespace Newtonsoft.Json.Tests.Documentation.Samples.Linq {
     [TestFixture]
-    public class ToObjectType : TestFixtureBase
-    {
+    public class ToObjectType : TestFixtureBase {
         [Test]
-        public void Example()
-        {
+        public void Example() {
             #region Usage
+
             JValue v1 = new JValue(true);
 
             bool b = (bool)v1.ToObject(typeof(bool));
@@ -61,6 +61,7 @@ namespace Newtonsoft.Json.Tests.Documentation.Samples.Linq
 
             Console.WriteLine(s);
             // "True"
+
             #endregion
 
             Assert.AreEqual("True", s);

@@ -1,4 +1,5 @@
 // skala-oracle: resharper=2025.2.6 config=sha256:98ff52570e019fac profile=SkalaFormatOnly generated=2026-08-27
+
 #region License
 
 // Copyright (c) 2007 James Newton-King
@@ -41,7 +42,8 @@ namespace Newtonsoft.Json.Tests.Documentation.Samples.Schema {
             JsonSchema schema = new JsonSchema();
             schema.Type = JsonSchemaType.Object;
             schema.Properties = new Dictionary<string, JsonSchema> {
-                { "name", new JsonSchema { Type = JsonSchemaType.String } }, {
+                { "name", new JsonSchema { Type = JsonSchemaType.String } },
+                {
                     "hobbies",
                     new JsonSchema {
                         Type = JsonSchemaType.Array,
@@ -51,19 +53,19 @@ namespace Newtonsoft.Json.Tests.Documentation.Samples.Schema {
             };
             string schemaJson = schema.ToString();
             Console.WriteLine(schemaJson); // {
-//   "type": "object",
-//   "properties": {
-//     "name": {
-//       "type": "string"
-//     },
-//     "hobbies": {
-//       "type": "array",
-//       "items": {
-//         "type": "string"
-//       }
-//     }
-//   }
-// }
+            //   "type": "object",
+            //   "properties": {
+            //     "name": {
+            //       "type": "string"
+            //     },
+            //     "hobbies": {
+            //       "type": "array",
+            //       "items": {
+            //         "type": "string"
+            //       }
+            //     }
+            //   }
+            // }
             JObject person = JObject.Parse(
                 @"{
               'name': 'James',

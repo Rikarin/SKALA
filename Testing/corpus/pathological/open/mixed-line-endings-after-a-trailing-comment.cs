@@ -1,2 +1,3 @@
-class C { // fuzz
-} 
+class C {
+    // fuzz
+}

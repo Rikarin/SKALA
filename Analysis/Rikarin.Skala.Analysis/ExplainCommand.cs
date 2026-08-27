@@ -9,35 +9,35 @@ using Rikarin.Skala.Rules.Metadata;
 namespace Rikarin.Skala.Analysis;
 
 /// <summary>
-/// <c>skala explain SK1010</c>, and the generator behind <c>docs/rules/</c>.
+///     <c>skala explain SK1010</c>, and the generator behind <c>docs/rules/</c>.
 /// </summary>
 /// <remarks>
-/// ⚠ One source, three surfaces (docs/plan/08 § "Documentation"): the docs page, the
-/// <c>explain</c> output and the SARIF <c>rules[]</c> block are all the same
-/// <see cref="RuleInfo"/> rendered differently. A second copy of a rule's rationale is a second
-/// copy to keep true.
-/// <para>
-/// ⚠ <c>explain</c> is what stops an agent from arguing with a rule or suppressing it. A model that
-/// can read <em>why</em> a rule exists will restructure the code; one that only sees the message
-/// will add a pragma.
-/// </para>
+///     ⚠ One source, three surfaces (docs/plan/08 § "Documentation"): the docs page, the
+///     <c>explain</c> output and the SARIF <c>rules[]</c> block are all the same
+///     <see cref="RuleInfo" /> rendered differently. A second copy of a rule's rationale is a second
+///     copy to keep true.
+///     <para>
+///         ⚠ <c>explain</c> is what stops an agent from arguing with a rule or suppressing it. A model that
+///         can read <em>why</em> a rule exists will restructure the code; one that only sees the message
+///         will add a pragma.
+///     </para>
 /// </remarks>
 public static class ExplainCommand {
     /// <summary>
-    /// <c>skala explain &lt;ruleId | optionKey&gt;</c> — both halves of the configuration, one command.
+    ///     <c>skala explain &lt;ruleId | optionKey&gt;</c> — both halves of the configuration, one command.
     /// </summary>
     /// <remarks>
-    /// ⚠ <b>The option half was documented and missing.</b> docs/plan/11 has always spelled the
-    /// argument <c>&lt;ruleId | optionKey&gt;</c>, and until M9 every option key was answered with
-    /// "is not a Skala rule" — <c>insert_final_newline</c>, <c>csharp_indent_case_contents</c>,
-    /// <c>dotnet_sort_system_directives_first</c>, all of them. The two halves of what Skala reads
-    /// are rules and options; a person looking at an `.editorconfig` line and asking what it does
-    /// was sent to <c>config explain</c>, which takes a <em>file path</em> and dumps all
-    /// <see cref="OptionRegistry.Count"/> effective options rather than answering the question.
-    /// <para>
-    /// Order matters: rules first, because <c>SK</c> ids are unambiguous and the option registry
-    /// holds no key that looks like one.
-    /// </para>
+    ///     ⚠ <b>The option half was documented and missing.</b> docs/plan/11 has always spelled the
+    ///     argument <c>&lt;ruleId | optionKey&gt;</c>, and until M9 every option key was answered with
+    ///     "is not a Skala rule" — <c>insert_final_newline</c>, <c>csharp_indent_case_contents</c>,
+    ///     <c>dotnet_sort_system_directives_first</c>, all of them. The two halves of what Skala reads
+    ///     are rules and options; a person looking at an `.editorconfig` line and asking what it does
+    ///     was sent to <c>config explain</c>, which takes a <em>file path</em> and dumps all
+    ///     <see cref="OptionRegistry.Count" /> effective options rather than answering the question.
+    ///     <para>
+    ///         Order matters: rules first, because <c>SK</c> ids are unambiguous and the option registry
+    ///         holds no key that looks like one.
+    ///     </para>
     /// </remarks>
     public static CommandResult Run(string ruleId) {
         if (RuleCatalog.Find(ruleId) is { } rule) {
@@ -52,10 +52,10 @@ public static class ExplainCommand {
     }
 
     /// <summary>
-    /// ⚠ Two namespaces, so two ways to be nearly right. A token shaped like a rule id gets rule
-    /// suggestions by prefix; anything else is a candidate option key and gets the same
-    /// edit-distance suggestion <c>config check</c> gives an unknown `.editorconfig` key, so the
-    /// two surfaces answer a typo the same way.
+    ///     ⚠ Two namespaces, so two ways to be nearly right. A token shaped like a rule id gets rule
+    ///     suggestions by prefix; anything else is a candidate option key and gets the same
+    ///     edit-distance suggestion <c>config check</c> gives an unknown `.editorconfig` key, so the
+    ///     two surfaces answer a typo the same way.
     /// </summary>
     static string NotFound(string token) {
         var near = RuleCatalog.All
@@ -96,8 +96,8 @@ public static class ExplainCommand {
         && token.AsSpan(2).ContainsAnyExceptInRange('0', '9') is false;
 
     /// <summary>
-    /// An option's page: what it governs, what Skala does with it, and — the part that matters when
-    /// somebody is reading a diff — where its default came from.
+    ///     An option's page: what it governs, what Skala does with it, and — the part that matters when
+    ///     somebody is reading a diff — where its default came from.
     /// </summary>
     public static string Render(OptionInfo option) {
         var builder = new StringBuilder();
@@ -212,12 +212,12 @@ public static class ExplainCommand {
     }
 
     /// <summary>
-    /// The markdown form, one page per rule, written to <c>docs/rules/</c>.
+    ///     The markdown form, one page per rule, written to <c>docs/rules/</c>.
     /// </summary>
     /// <remarks>
-    /// ⚠ Generated, never hand-edited: <c>RuleCatalogTests.DocsPages_AreUpToDate</c> regenerates and
-    /// compares, so a rules.json change with no docs regeneration is a failing test rather than a
-    /// documentation page that quietly describes the previous behaviour.
+    ///     ⚠ Generated, never hand-edited: <c>RuleCatalogTests.DocsPages_AreUpToDate</c> regenerates and
+    ///     compares, so a rules.json change with no docs regeneration is a failing test rather than a
+    ///     documentation page that quietly describes the previous behaviour.
     /// </remarks>
     public static string RenderMarkdown(RuleInfo rule) {
         var builder = new StringBuilder();

@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: Copyright (c) Rikarin
 // SPDX-License-Identifier: Apache-2.0
 namespace Vixen.Editor.Ui;
+
 /// <summary>The utility half of the editor's stylesheet, compiled at build time.</summary>
 /// <remarks>
 ///     <para>
@@ -20,8 +21,11 @@ namespace Vixen.Editor.Ui;
 ///         nothing in the tree does it by hand any more.
 ///     </para>
 ///     <para>
-///         ⚠ <b>The tokens are not a second palette, and the <c>@theme</c> block goes to some trouble
-///         to stay that way.</b> Every colour in it is a <c>var(--…)</c> reference to a custom property
+///         ⚠
+///         <b>
+///             The tokens are not a second palette, and the <c>@theme</c> block goes to some trouble
+///             to stay that way.
+///         </b> Every colour in it is a <c>var(--…)</c> reference to a custom property
 ///         <see cref="EditorTheme" /> already declares on the root — so <c>bg-surface</c> and a
 ///         hand-written <c>background: var(--surface)</c> are the same declaration, the light/dark
 ///         toggle moves both, and a user theme loaded through <see cref="ThemeService" /> moves both
@@ -29,8 +33,11 @@ namespace Vixen.Editor.Ui;
 ///         one of them was edited.
 ///     </para>
 ///     <para>
-///         ⚠ <b>The utility layer wins every argument it has with <see cref="EditorTheme" />, and it
-///         is worth knowing that it used to lose every one of them.</b> Everything generated lands in
+///         ⚠
+///         <b>
+///             The utility layer wins every argument it has with <see cref="EditorTheme" />, and it
+///             is worth knowing that it used to lose every one of them.
+///         </b> Everything generated lands in
 ///         <c>@layer utilities</c>; the hand-written sheet was unlayered, an unlayered rule beats
 ///         every layer whatever the specificity, and so <c>task-row { padding: 6px }</c> beat
 ///         <c>p-3</c> without either of them saying <c>!important</c>. A utility could only take
@@ -53,13 +60,15 @@ namespace Vixen.Editor.Ui;
 ///         says is then this assembly's to choose rather than the build step's.
 ///     </para>
 /// </remarks>
-public static class EditorStyles{
-/// <summary>The utilities the editor's markup and code use, in <c>@layer utilities</c>.</summary>
-public static string Utilities=>EditorUtilityStyles.Utilities;
-/// <summary>How many utility rules the build emitted.</summary>
+public static class EditorStyles {
+    /// <summary>The utilities the editor's markup and code use, in <c>@layer utilities</c>.</summary>
+    public static string Utilities => EditorUtilityStyles.Utilities;
+
+    /// <summary>How many utility rules the build emitted.</summary>
     /// <remarks>
     ///     Exposed because it is the cheapest possible check that the build step ran at all: a
     ///     project whose <c>.targets</c> import went missing compiles perfectly and produces a sheet
     ///     with nothing in it, and every style in every panel then quietly does nothing.
     /// </remarks>
-public static int RuleCount=>EditorUtilityStyles.RuleCount;}
+    public static int RuleCount => EditorUtilityStyles.RuleCount;
+}

@@ -17,26 +17,29 @@ public sealed record ConstructShare(string Kind, int Occurrences, int Lines, int
 }
 
 /// <summary>
-/// The rule docs/plan/16 § R1 states as a hard one: <b>any construct appearing in the corpus more
-/// than 50 times must be at 100 %; the tail is only allowed in genuinely rare constructs</b>.
+///     The rule docs/plan/16 § R1 states as a hard one:
+///     <b>
+///         any construct appearing in the corpus more
+///         than 50 times must be at 100 %; the tail is only allowed in genuinely rare constructs
+///     </b>.
 /// </summary>
 /// <remarks>
-/// ⚠ A single fidelity number cannot answer that question, and the divergence classes cannot
-/// either: "wrapping: one side continues where the other broke" says what the difference looked
-/// like, not what construct it happened in. This attributes every divergent line to the innermost
-/// syntax node that owns it, and puts that beside how often the construct occurs — so that a rule
-/// about frequency can be checked against frequency.
-/// <para>
-/// ⚠ The attribution is done against the <em>oracle's</em> output rather than the input, because a
-/// divergent line is a line of output and the oracle's is the one that is correct by definition. It
-/// parses: the oracle emits compilable C# or the fixture would not have been committed.
-/// </para>
-/// <para>
-/// ⚠ Measured with the oracle's own preprocessor symbols supplied. Without them a file wrapped in a
-/// <c>#if</c> is disabled text for Skala and reproduced unchanged, and every line of it counts
-/// against whatever construct happens to own it — which attributes SK-DIV-0004 to
-/// <c>ClassDeclaration</c> and <c>Block</c> and says nothing about either.
-/// </para>
+///     ⚠ A single fidelity number cannot answer that question, and the divergence classes cannot
+///     either: "wrapping: one side continues where the other broke" says what the difference looked
+///     like, not what construct it happened in. This attributes every divergent line to the innermost
+///     syntax node that owns it, and puts that beside how often the construct occurs — so that a rule
+///     about frequency can be checked against frequency.
+///     <para>
+///         ⚠ The attribution is done against the <em>oracle's</em> output rather than the input, because a
+///         divergent line is a line of output and the oracle's is the one that is correct by definition. It
+///         parses: the oracle emits compilable C# or the fixture would not have been committed.
+///     </para>
+///     <para>
+///         ⚠ Measured with the oracle's own preprocessor symbols supplied. Without them a file wrapped in a
+///         <c>#if</c> is disabled text for Skala and reproduced unchanged, and every line of it counts
+///         against whatever construct happens to own it — which attributes SK-DIV-0004 to
+///         <c>ClassDeclaration</c> and <c>Block</c> and says nothing about either.
+///     </para>
 /// </remarks>
 public static class ConstructReport {
     public static IReadOnlyList<ConstructShare> Build(string set, IReadOnlyList<string>? symbols = null) {
@@ -92,12 +95,12 @@ public static class ConstructReport {
     }
 
     /// <summary>
-    /// Where the divergent lines attributed to one construct actually are.
+    ///     Where the divergent lines attributed to one construct actually are.
     /// </summary>
     /// <remarks>
-    /// ⚠ The report ranks by line count and R1 counts <em>constructs</em>, so the work queue the two
-    /// imply is not the same one: a construct with two divergent lines is as far from the rule as
-    /// one with ninety. This is how the two-line ones get found.
+    ///     ⚠ The report ranks by line count and R1 counts <em>constructs</em>, so the work queue the two
+    ///     imply is not the same one: a construct with two divergent lines is as far from the rule as
+    ///     one with ninety. This is how the two-line ones get found.
     /// </remarks>
     public static string Locate(string set, string kind, IReadOnlyList<string>? symbols = null) {
         var builder = new StringBuilder();
@@ -179,10 +182,10 @@ public static class ConstructReport {
     static void Bump(Dictionary<string, int> counter, string key) => counter[key] = counter.GetValueOrDefault(key) + 1;
 
     /// <summary>
-    /// The report, and the R1 verdict.
+    ///     The report, and the R1 verdict.
     /// </summary>
     /// <param name="threshold">
-    /// docs/plan/16 § R1's "more than 50 times". A construct at or below it is allowed a tail.
+    ///     docs/plan/16 § R1's "more than 50 times". A construct at or below it is allowed a tail.
     /// </param>
     public static string Render(IReadOnlyList<ConstructShare> shares, int threshold = 50) {
         var builder = new StringBuilder();

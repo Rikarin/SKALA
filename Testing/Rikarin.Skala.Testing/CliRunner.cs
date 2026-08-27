@@ -9,17 +9,17 @@ public sealed record CliRun(int ExitCode, string StandardOutput, string Standard
 }
 
 /// <summary>
-/// Drives the built <c>skala</c> binary as a process.
+///     Drives the built <c>skala</c> binary as a process.
 /// </summary>
 /// <remarks>
-/// ⚠ Nothing references <c>Rikarin.Skala.Cli</c> (docs/plan/02 § "The project graph"), the tests
-/// included. They exercise the real command surface — argument parsing, exit codes and the text a
-/// user actually sees — which is the only part of the tool that is a contract (ADR-010).
-/// <para>
-/// It lives in <c>Rikarin.Skala.Testing</c> rather than in the CLI's own test project because
-/// docs/plan/02 puts the harness there and because two command test projects would otherwise each
-/// grow their own copy.
-/// </para>
+///     ⚠ Nothing references <c>Rikarin.Skala.Cli</c> (docs/plan/02 § "The project graph"), the tests
+///     included. They exercise the real command surface — argument parsing, exit codes and the text a
+///     user actually sees — which is the only part of the tool that is a contract (ADR-010).
+///     <para>
+///         It lives in <c>Rikarin.Skala.Testing</c> rather than in the CLI's own test project because
+///         docs/plan/02 puts the harness there and because two command test projects would otherwise each
+///         grow their own copy.
+///     </para>
 /// </remarks>
 public static class CliRunner {
     public static string RepositoryRoot { get; } = Metadata("SkalaRepositoryRoot");

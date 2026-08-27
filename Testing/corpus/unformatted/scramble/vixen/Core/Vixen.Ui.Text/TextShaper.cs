@@ -1,13 +1,13 @@
+// SPDX-FileCopyrightText: Copyright (c) Rikarin
+// SPDX-License-Identifier: Apache-2.0
 
-      // SPDX-FileCopyrightText: Copyright (c) Rikarin
-        // SPDX-License-Identifier: Apache-2.0
-    
-   using
-System.  Collections.Concurrent;
-    using HarfBuzzSharp; using HbBuffer  = HarfBuzzSharp  .Buffer ;
-			using   HbScript  =   HarfBuzzSharp   .    Script  ;
-     namespace Vixen.Ui.    Text; 
-     
+using
+System.Collections.Concurrent;
+using HarfBuzzSharp; using HbBuffer = HarfBuzzSharp.Buffer;
+using HbScript = HarfBuzzSharp.Script;
+
+namespace Vixen.Ui.Text;
+
 /// <summary>Turns text into positioned glyphs.</summary>
 /// <remarks>
 ///     <para>
@@ -25,16 +25,16 @@ System.  Collections.Concurrent;
 ///         Kannada string as Latin fails them.
 ///     </para>
 /// </remarks>
-	public static    class TextShaper { 
+public static class TextShaper {
     /// <summary>The tag each script is handed to the shaper as, worked out once per script.</summary>
     /// <remarks>
     ///     <see cref="Script" />'s values <i>are</i> the packed ISO 15924 tags, so this is a
     ///     formality — but HarfBuzzSharp's <c>Script</c> parses from a string, and doing that per
     ///     run would allocate four characters for every run of every paragraph of every frame.
     /// </remarks>
-       static readonly ConcurrentDictionary
-<   Script, HbScript> Tags = new   ();
-      
+    static readonly ConcurrentDictionary
+        <Script, HbScript> Tags = new();
+
     /// <summary>Shapes a paragraph.</summary>
     /// <param name="font">The font to shape with.</param>
     /// <param name="text">The paragraph.</param>
@@ -44,52 +44,62 @@ System.  Collections.Concurrent;
     ///     The OpenType features to switch on or off, or null for whatever the face does by default.
     /// </param>
     /// <returns>The glyphs, in the order they are drawn.</returns>
-                public static ShapedText   Shape( FontFace font   ,
-                string text ,
-                ParagraphDirection direction = ParagraphDirection.Auto,
-     FontVariation?
-variation = null    ,
-        FontFeatureSet? features  = null
-           )   { ArgumentNullException.ThrowIfNull(font);
-           ArgumentNullException.
-            ThrowIfNull   (   text    );
-     
-      // ⚠ Set on every call, including when nobody asked for an instance. The face's shaper is
-// stateful, so a null here has to mean "back to the default" rather than "leave it as
-            // whoever shaped last left it" — otherwise a paragraph's advances depend on what was drawn
+    public static ShapedText Shape(
+        FontFace font,
+        string text,
+        ParagraphDirection direction = ParagraphDirection.Auto,
+        FontVariation?
+        variation = null,
+        FontFeatureSet? features = null
+    ) {
+        ArgumentNullException.ThrowIfNull(font);
+        ArgumentNullException.
+            ThrowIfNull(text);
+
+        // ⚠ Set on every call, including when nobody asked for an instance. The face's shaper is
+        // stateful, so a null here has to mean "back to the default" rather than "leave it as
+        // whoever shaped last left it" — otherwise a paragraph's advances depend on what was drawn
         // before it, which is a bug that only appears once something animates an axis.
-        font .SetInstance  (   variation )
-         ; 
-      var items  = TextItemizer  .Itemize  (text
-    , direction);   
-			if  (  items.Count  == 0) {  return    new ShapedText    (text,   [],   0    );
-               }
-       // ⚠ Built once for the paragraph rather than once per run. HarfBuzz copies the array on
+        font.SetInstance(variation)
+            ;
+        var items = TextItemizer.Itemize(text, direction);
+        if (items.Count == 0) {
+            return new ShapedText(text, [], 0);
+        }
+
+        // ⚠ Built once for the paragraph rather than once per run. HarfBuzz copies the array on
         // every `Shape`, and a paragraph of mixed scripts is one item per script change — so a
- 
-    // per-run conversion would allocate the same four bytes per feature per run of every string
-       // that names one.
-        var    applied = Convert  (
-    features)  ;
-    var shaped = new   ShapedRun   [
-           items.  Count];
-          for (    var i = 0; i < items .Count;   i++)
-     {
-            shaped[i  ]  = ShapeRun(font  , text,  items  [i
-            ] , applied);
-              }
-           var    order = TextItemizer.VisualOrder(items);
-             var runs = new    ShapedRun[order.   Length]; var advance = 0f;
+
+        // per-run conversion would allocate the same four bytes per feature per run of every string
+        // that names one.
+        var applied = Convert(features);
+        var shaped = new ShapedRun[
+            items.Count];
+        for (var i = 0; i < items.Count; i++) {
+            shaped[i] = ShapeRun(
+                font,
+                text,
+                items[i
+                ],
+                applied
+            );
+        }
+
+        var order = TextItemizer.VisualOrder(items);
+        var runs = new ShapedRun[order.Length];
+        var advance = 0f;
         for (var i
-              = 0;   i   < order. Length  ; i++) {
-                runs   [
- i] = shaped [order [ i    ]];
-            advance   
-+= runs[ i   ]    .Advance;
-		}
-return new ShapedText
-         (  text  , runs    ,  advance  );
-               }
+             = 0; i < order.Length; i++) {
+            runs[
+                i] = shaped[order[i]];
+            advance
+                += runs[i].Advance;
+        }
+
+        return new ShapedText
+            (text, runs, advance);
+    }
+
     /// <summary>Shapes one run.</summary>
     /// <remarks>
     ///     <para>
@@ -110,96 +120,121 @@ return new ShapedText
     ///         that passes in one timezone and fails in another is worse than no golden test.
     ///     </para>
     /// </remarks>
-           internal static    ShapedRun ShapeRun (FontFace font, string
-           text, TextItem item   )    =>
-     ShapeRun(font, text, item, [])  ;
-               internal static ShapedRun ShapeRun(   FontFace font,   string text    , TextItem   item ,  Feature[] features) {    using var buffer =   new HbBuffer();
-             
-     buffer.
-                AddUtf16(    text,  item    .   Start, item.Length  ) ;
-   buffer.Direction = item  .IsRightToLeft ?    Direction.  RightToLeft   :   Direction.
-LeftToRight    ;
-               buffer.Script = TagFor(item.Script   );
-             
-          // ⚠ Default-ignorables are deleted rather than hidden. Left alone, HarfBuzz keeps a zero
-// width invisible glyph for every zero-width joiner, variation selector and bidi control —
-          // which is correct and is not what a renderer wants: each one is still a quad to batch and
-    // still an entry in the glyph run that maps back to no visible mark. Deleting them is the
-           // same choice Raqm makes by default, and the Consortium's expectations are written against
-              // it. The cost is that a cluster can end up with no glyphs at all, which hit testing has to
+    internal static ShapedRun ShapeRun(
+        FontFace font,
+        string
+        text,
+        TextItem item
+    ) =>
+        ShapeRun(font, text, item, []);
+
+    internal static ShapedRun ShapeRun(FontFace font, string text, TextItem item, Feature[] features) {
+        using var buffer = new HbBuffer();
+
+        buffer.
+            AddUtf16(text, item.Start, item.Length);
+        buffer.Direction = item.IsRightToLeft
+            ? Direction.RightToLeft
+            : Direction.
+            LeftToRight;
+        buffer.Script = TagFor(item.Script);
+
+        // ⚠ Default-ignorables are deleted rather than hidden. Left alone, HarfBuzz keeps a zero
+        // width invisible glyph for every zero-width joiner, variation selector and bidi control —
+        // which is correct and is not what a renderer wants: each one is still a quad to batch and
+        // still an entry in the glyph run that maps back to no visible mark. Deleting them is the
+        // same choice Raqm makes by default, and the Consortium's expectations are written against
+        // it. The cost is that a cluster can end up with no glyphs at all, which hit testing has to
         // be able to say something sensible about.
-        buffer    .   Flags
-= BufferFlags.RemoveDefaultIgnorables    ;
-             font.Shaper    .   Shape(   buffer,    features);
-       
-     var infos  =  buffer.GetGlyphInfoSpan    (   )    ;
-        var positions =    buffer.GetGlyphPositionSpan
-     ()   ;
-  var glyphs
-= new  ShapedGlyph[infos.Length];
-               var    advance = 0f;
+        buffer.Flags
+            = BufferFlags.RemoveDefaultIgnorables;
+        font.Shaper.Shape(buffer, features);
 
-              for (var i    =  0; i < infos    .Length   ; i   ++) { glyphs[i] = new    ShapedGlyph(
-             (ushort)
-   infos   [    i].Codepoint,
-         ( int)infos[i]
-           .Cluster   ,
-      positions
-[i].XAdvance,
-           positions[ i].YAdvance, positions    [i]    .  XOffset,
-           positions[i  ] .   YOffset );
-         
- advance +=
-positions[i].    XAdvance;
-                }
+        var infos = buffer.GetGlyphInfoSpan();
+        var positions = buffer.GetGlyphPositionSpan
+            ();
+        var glyphs
+            = new ShapedGlyph[infos.Length];
+        var advance = 0f;
 
-            return new ShapedRun(   item, font, glyphs , advance); }
-           
+        for (var i = 0; i < infos.Length; i++) {
+            glyphs[i] = new ShapedGlyph(
+                (ushort)
+                infos[i].Codepoint,
+                (int)infos[i]
+                    .Cluster,
+                positions
+                [i].XAdvance,
+                positions[i].YAdvance,
+                positions[i].XOffset,
+                positions[i].YOffset
+            );
+
+            advance +=
+                positions[i].XAdvance;
+        }
+
+        return new ShapedRun(item, font, glyphs, advance);
+    }
+
     /// <summary>Turns the engine's feature set into the array HarfBuzz wants.</summary>
     /// <remarks>
     ///     An empty array for "nothing asked", which is what the shaper was always given and is the
     ///     path every label in an interface takes.
     /// </remarks>
-    static Feature    [] Convert (FontFeatureSet   ? features  )    {
-    if (features  is null || features. IsEmpty) {
-  return [ ]; }
-   var applied = new
-                Feature   [features.Features    .Length];
-        for    (var i = 0; i < applied .    Length; i++  )  { var feature = features.Features[  i] ;
+    static Feature[] Convert(FontFeatureSet? features) {
+        if (features is null || features.IsEmpty) {
+            return [];
+        }
 
-           // ⚠ The four characters rather than the packed integer, because HarfBuzzSharp's `Tag`
-                // has no integer constructor and its one-argument overloads are all chars — an
-   // implicit conversion picks the wrong one and the tag becomes a single byte.
+        var applied = new
+            Feature[features.Features.Length];
+        for (var i = 0; i < applied.Length; i++) {
+            var feature = features.Features[i];
+
+            // ⚠ The four characters rather than the packed integer, because HarfBuzzSharp's `Tag`
+            // has no integer constructor and its one-argument overloads are all chars — an
+            // implicit conversion picks the wrong one and the tag becomes a single byte.
             var tag = feature.
-       Tag  ;
-               
-                // The whole buffer, which is the only range CSS can express. See `FontFeature`.
-        applied[   i
-                ] = new Feature(
-new   Tag    ((  char    ) (   
-   tag >> 24)  ,    (char) ((tag >>   16) & 0xFF),   (char) ((tag >> 8) & 0xFF), (char) (  tag & 0xFF   )) ,
-                feature.    Value, 0   ,
-    uint.MaxValue
-            )  ; }
-   
-      return applied;
+                Tag;
+
+            // The whole buffer, which is the only range CSS can express. See `FontFeature`.
+            applied[i
+            ] = new Feature(
+                    new Tag(
+                        (char)(
+                            tag >> 24),
+                        (char)((tag >> 16) & 0xFF),
+                        (char)((tag >> 8) & 0xFF),
+                        (char)(tag & 0xFF)
+                    ),
+                    feature.Value,
+                    0,
+                    uint.MaxValue
+                );
+        }
+
+        return applied;
     }
-   
-     static
-             HbScript TagFor(Script    script) => Tags  .GetOrAdd   (
-                script,
-   static value => HbScript    .Parse(string   .    Create(
-4,    (  uint)    value,
-       static (   span , tag) 
-   => {
-      span[0  ]    = (    char)
-        (  byte    )(    tag  >> 24);
-         span [1]   = (char)(byte)(tag >>
-	16)   ;
-           span[2]  =  (
-char    )(byte)(tag >> 8);  
-                span    [   3] = ( char)(  byte    )tag;
-         }    ))
-    );
-            }
-	
+
+    static
+        HbScript TagFor(Script script) =>
+        Tags.GetOrAdd(
+            script,
+            static value => HbScript.Parse(
+                string.Create(
+                    4,
+                    (uint)value,
+                    static (span, tag)
+                        => {
+                        span[0] = (char)
+                            (byte)(tag >> 24);
+                        span[1] = (char)(byte)(tag >> 16);
+                        span[2] = (
+                            char)(byte)(tag >> 8);
+                        span[3] = (char)(byte)tag;
+                    }
+                )
+            )
+        );
+}

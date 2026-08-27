@@ -1,4 +1,5 @@
 #region License
+
 // Copyright (c) 2007 James Newton-King
 //
 // Permission is hereby granted, free of charge, to any person
@@ -21,8 +22,10 @@
 // WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 // OTHER DEALINGS IN THE SOFTWARE.
+
 #endregion
-using System;using System.Collections.Generic;using System.Globalization;using System.IO;using System.Linq;using System.Text;using Newtonsoft.Json;using Newtonsoft.Json.Linq;using System.Xml;
+
+using System; using System.Collections.Generic; using System.Globalization; using System.IO; using System.Linq; using System.Text; using Newtonsoft.Json; using Newtonsoft.Json.Linq; using System.Xml;
 #if !NET20
 using System.Xml.Linq;
 #endif
@@ -33,4 +36,17 @@ using Assert = Newtonsoft.Json.Tests.XUnitAssert;
 #else
 using NUnit.Framework;
 #endif
-namespace Newtonsoft.Json.Tests.Issues{[TestFixture]public class Issue1396:TestFixtureBase{[Test]public void Test(){using(var stringReader=new StringReader(","))using(var jsonReader=new JsonTextReader(stringReader)){jsonReader.SupportMultipleContent=true;Assert.IsTrue(jsonReader.Read());Assert.AreEqual(JsonToken.Undefined,jsonReader.TokenType);Assert.IsFalse(jsonReader.Read());}}}}
+namespace Newtonsoft.Json.Tests.Issues {
+    [TestFixture]
+    public class Issue1396 : TestFixtureBase {
+        [Test]
+        public void Test() {
+            using (var stringReader = new StringReader(",")) using (var jsonReader = new JsonTextReader(stringReader)) {
+                jsonReader.SupportMultipleContent = true;
+                Assert.IsTrue(jsonReader.Read());
+                Assert.AreEqual(JsonToken.Undefined, jsonReader.TokenType);
+                Assert.IsFalse(jsonReader.Read());
+            }
+        }
+    }
+}

@@ -29,44 +29,44 @@ public enum DefaultVerdict {
 }
 
 /// <summary>
-/// Derives ReSharper's built-in defaults by asking the oracle, because nobody publishes them.
+///     Derives ReSharper's built-in defaults by asking the oracle, because nobody publishes them.
 /// </summary>
 /// <remarks>
-/// ⚠ The problem this solves is not cosmetic. <c>options.json</c>'s <c>default</c> is the
-/// <em>export's</em> value, which is Rider's default for most keys and the author's choice for the
-/// rest with nothing distinguishing the two (docs/plan/03). So on a configuration that does not
-/// carry the export, Skala and Rider fall back differently — measured on Vixen at 45 % of Skala's
-/// diff — and <c>skala config distill</c> cannot drop a single key, because dropping one on a
-/// guessed default silently changes formatting.
-/// <para>
-/// The method, and its limits:
-/// </para>
-/// <list type="number">
-/// <item>
-/// Run <c>jb cleanupcode</c> over the fixture corpus under a configuration carrying nothing but
-/// <c>root = true</c>. That output <em>is</em> ReSharper-with-defaults, by construction.
-/// </item>
-/// <item>
-/// Then run it again, a handful of times, with every option set to its 1st legal value, then its
-/// 2nd, and so on — batched by value index, because <c>cleanupcode</c>'s startup dominates and one
-/// run per option per value is thousands of runs.
-/// </item>
-/// <item>
-/// For each option, compare only <em>its own</em> fixture, the one <c>options.json</c>'s
-/// <c>oracle</c> field names. The value whose run reproduces the defaults run on that fixture is
-/// the default.
-/// </item>
-/// </list>
-/// <para>
-/// ⚠ Options interact, so this is a strong signal and not proof, and the verdicts say which is
-/// which. A fixture that matches under every value cannot see its option
-/// (<see cref="DefaultVerdict.Insensitive"/>); one that matches under several is
-/// <see cref="DefaultVerdict.Ambiguous"/>; one that matches under none had something else in the
-/// batch move it (<see cref="DefaultVerdict.Contradicted"/>). Only
-/// <see cref="DefaultVerdict.Derived"/> may be written to the registry, and it is written as
-/// <c>defaultSource: "oracle-probe"</c> rather than as <c>"resharper-docs"</c>, because it is
-/// derived and JetBrains still documents nothing.
-/// </para>
+///     ⚠ The problem this solves is not cosmetic. <c>options.json</c>'s <c>default</c> is the
+///     <em>export's</em> value, which is Rider's default for most keys and the author's choice for the
+///     rest with nothing distinguishing the two (docs/plan/03). So on a configuration that does not
+///     carry the export, Skala and Rider fall back differently — measured on Vixen at 45 % of Skala's
+///     diff — and <c>skala config distill</c> cannot drop a single key, because dropping one on a
+///     guessed default silently changes formatting.
+///     <para>
+///         The method, and its limits:
+///     </para>
+///     <list type="number">
+///         <item>
+///             Run <c>jb cleanupcode</c> over the fixture corpus under a configuration carrying nothing but
+///             <c>root = true</c>. That output <em>is</em> ReSharper-with-defaults, by construction.
+///         </item>
+///         <item>
+///             Then run it again, a handful of times, with every option set to its 1st legal value, then its
+///             2nd, and so on — batched by value index, because <c>cleanupcode</c>'s startup dominates and one
+///             run per option per value is thousands of runs.
+///         </item>
+///         <item>
+///             For each option, compare only <em>its own</em> fixture, the one <c>options.json</c>'s
+///             <c>oracle</c> field names. The value whose run reproduces the defaults run on that fixture is
+///             the default.
+///         </item>
+///     </list>
+///     <para>
+///         ⚠ Options interact, so this is a strong signal and not proof, and the verdicts say which is
+///         which. A fixture that matches under every value cannot see its option
+///         (<see cref="DefaultVerdict.Insensitive" />); one that matches under several is
+///         <see cref="DefaultVerdict.Ambiguous" />; one that matches under none had something else in the
+///         batch move it (<see cref="DefaultVerdict.Contradicted" />). Only
+///         <see cref="DefaultVerdict.Derived" /> may be written to the registry, and it is written as
+///         <c>defaultSource: "oracle-probe"</c> rather than as <c>"resharper-docs"</c>, because it is
+///         derived and JetBrains still documents nothing.
+///     </para>
 /// </remarks>
 public static class DefaultsProbe {
     /// <summary>The configuration that produces ReSharper-with-defaults: nothing but the terminator.</summary>
@@ -171,8 +171,8 @@ public static class DefaultsProbe {
     }
 
     /// <summary>
-    /// One <c>cleanupcode</c> run per batch of sixty, because it holds the whole project in memory
-    /// and a corpus-sized one is slow. Same batching as `./build.sh Oracle`.
+    ///     One <c>cleanupcode</c> run per batch of sixty, because it holds the whole project in memory
+    ///     and a corpus-sized one is slow. Same batching as `./build.sh Oracle`.
     /// </summary>
     static Dictionary<string, string> FormatAll(OracleRunner runner, List<(CorpusFile File, string Config)> work) {
         var all = new Dictionary<string, string>(StringComparer.Ordinal);
@@ -217,13 +217,13 @@ public static class DefaultsProbe {
     ];
 
     /// <summary>
-    /// The values a probe round may assign.
+    ///     The values a probe round may assign.
     /// </summary>
     /// <remarks>
-    /// ⚠ An int has no finite domain, so the probe offers the export's value and the two numbers a
-    /// ReSharper counter is ever likely to hold — <c>0</c> and <c>1</c>. A default outside that set
-    /// comes back <see cref="DefaultVerdict.Contradicted"/> rather than wrong, which is the failure
-    /// mode to prefer.
+    ///     ⚠ An int has no finite domain, so the probe offers the export's value and the two numbers a
+    ///     ReSharper counter is ever likely to hold — <c>0</c> and <c>1</c>. A default outside that set
+    ///     comes back <see cref="DefaultVerdict.Contradicted" /> rather than wrong, which is the failure
+    ///     mode to prefer.
     /// </remarks>
     static IEnumerable<string> LegalValues(OptionInfo info) {
         switch (info.Kind) {

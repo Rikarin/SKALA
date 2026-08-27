@@ -1,6 +1,7 @@
 class C {
     #region One
-    void M() {
-    }
+
+    void M() { }
+
     #endregion
 }

@@ -17,28 +17,28 @@
 namespace Serilog
     .Core.Enrichers;
 
-class SafeAggregateEnricher : ILogEventEnricher {
-    readonly ILogEventEnricher[] _enrichers;
+    class SafeAggregateEnricher : ILogEventEnricher {
+        readonly ILogEventEnricher[] _enrichers;
 
-    public SafeAggregateEnricher(IEnumerable<ILogEventEnricher> enrichers) {
-        Guard.AgainstNull(enrichers);
+        public SafeAggregateEnricher(IEnumerable<ILogEventEnricher> enrichers) {
+            Guard.AgainstNull(enrichers);
 
-        _enrichers = enrichers
-            .ToArray();
-    }
+            _enrichers = enrichers
+                .ToArray();
+        }
 
-    public void Enrich(LogEvent logEvent, ILogEventPropertyFactory propertyFactory) {
-        foreach (var enricher in _enrichers) {
-            try {
-                enricher.Enrich(logEvent, propertyFactory);
-            } catch (Exception ex) {
-                SelfLog.WriteLine(
-                    "Exception {0} caught while enriching {1} with {2}.",
-                    ex,
-                    logEvent,
-                    enricher
-                );
+        public void Enrich(LogEvent logEvent, ILogEventPropertyFactory propertyFactory) {
+            foreach (var enricher in _enrichers) {
+                try {
+                    enricher.Enrich(logEvent, propertyFactory);
+                } catch (Exception ex) {
+                    SelfLog.WriteLine(
+                        "Exception {0} caught while enriching {1} with {2}.",
+                        ex,
+                        logEvent,
+                        enricher
+                    );
+                }
             }
         }
     }
-}

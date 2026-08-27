@@ -1,4 +1,5 @@
 ﻿#region License
+
 // Copyright (c) 2007 James Newton-King
 //
 // Permission is hereby granted, free of charge, to any person
@@ -21,78 +22,70 @@
 // WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 // OTHER DEALINGS IN THE SOFTWARE.
+
 #endregion
 
 using System;
 using Newtonsoft.Json.Utilities;
 
-namespace Newtonsoft.Json.Linq
-{
+namespace Newtonsoft.Json.Linq {
     /// <summary>
-    /// Represents a reader that provides fast, non-cached, forward-only access to serialized JSON data.
+    ///     Represents a reader that provides fast, non-cached, forward-only access to serialized JSON data.
     /// </summary>
-    public class JTokenReader : JsonReader, IJsonLineInfo
-    {
+    public class JTokenReader : JsonReader, IJsonLineInfo {
         private readonly JToken _root;
         private string? _initialPath;
         private JToken? _parent;
         private JToken? _current;
 
         /// <summary>
-        /// Gets the <see cref="JToken"/> at the reader's current position.
+        ///     Gets the <see cref="JToken" /> at the reader's current position.
         /// </summary>
         public JToken? CurrentToken => _current;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="JTokenReader"/> class.
+        ///     Initializes a new instance of the <see cref="JTokenReader" /> class.
         /// </summary>
         /// <param name="token">The token to read from.</param>
-        public JTokenReader(JToken token)
-        {
+        public JTokenReader(JToken token) {
             ValidationUtils.ArgumentNotNull(token, nameof(token));
 
             _root = token;
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="JTokenReader"/> class.
+        ///     Initializes a new instance of the <see cref="JTokenReader" /> class.
         /// </summary>
         /// <param name="token">The token to read from.</param>
-        /// <param name="initialPath">The initial path of the token. It is prepended to the returned <see cref="Path"/>.</param>
+        /// <param name="initialPath">
+        ///     The initial path of the token. It is prepended to the returned <see cref="Path" />.
+        /// </param>
         public JTokenReader(JToken token, string initialPath)
-            : this(token)
-        {
+            : this(token) {
             _initialPath = initialPath;
         }
 
         /// <summary>
-        /// Reads the next JSON token from the underlying <see cref="JToken"/>.
+        ///     Reads the next JSON token from the underlying <see cref="JToken" />.
         /// </summary>
         /// <returns>
-        /// <c>true</c> if the next token was read successfully; <c>false</c> if there are no more tokens to read.
+        ///     <c>true</c> if the next token was read successfully; <c>false</c> if there are no more tokens to read.
         /// </returns>
-        public override bool Read()
-        {
-            if (CurrentState != State.Start)
-            {
-                if (_current == null)
-                {
+        public override bool Read() {
+            if (CurrentState != State.Start) {
+                if (_current == null) {
                     return false;
                 }
 
-                if (_current is JContainer container && _parent != container)
-                {
+                if (_current is JContainer container && _parent != container) {
                     return ReadInto(container);
-                }
-                else
-                {
+                } else {
                     return ReadOver(_current);
                 }
             }
 
             // The current value could already be the root value if it is a comment
-            if (_current == _root)
-            {
+            if (_current == _root) {
                 return false;
             }
 
@@ -101,42 +94,33 @@ namespace Newtonsoft.Json.Linq
             return true;
         }
 
-        private bool ReadOver(JToken t)
-        {
-            if (t == _root)
-            {
+        private bool ReadOver(JToken t) {
+            if (t == _root) {
                 return ReadToEnd();
             }
 
             JToken? next = t.Next;
-            if ((next == null || next == t) || t == t.Parent!.Last)
-            {
-                if (t.Parent == null)
-                {
+            if ((next == null || next == t) || t == t.Parent!.Last) {
+                if (t.Parent == null) {
                     return ReadToEnd();
                 }
 
                 return SetEnd(t.Parent);
-            }
-            else
-            {
+            } else {
                 _current = next;
                 SetToken(_current);
                 return true;
             }
         }
 
-        private bool ReadToEnd()
-        {
+        private bool ReadToEnd() {
             _current = null;
             SetToken(JsonToken.None);
             return false;
         }
 
-        private JsonToken? GetEndToken(JContainer c)
-        {
-            switch (c.Type)
-            {
+        private JsonToken? GetEndToken(JContainer c) {
+            switch (c.Type) {
                 case JTokenType.Object:
                     return JsonToken.EndObject;
                 case JTokenType.Array:
@@ -146,19 +130,19 @@ namespace Newtonsoft.Json.Linq
                 case JTokenType.Property:
                     return null;
                 default:
-                    throw MiscellaneousUtils.CreateArgumentOutOfRangeException(nameof(c.Type), c.Type, "Unexpected JContainer type.");
+                    throw MiscellaneousUtils.CreateArgumentOutOfRangeException(
+                        nameof(c.Type),
+                        c.Type,
+                        "Unexpected JContainer type."
+                    );
             }
         }
 
-        private bool ReadInto(JContainer c)
-        {
+        private bool ReadInto(JContainer c) {
             JToken? firstChild = c.First;
-            if (firstChild == null)
-            {
+            if (firstChild == null) {
                 return SetEnd(c);
-            }
-            else
-            {
+            } else {
                 SetToken(firstChild);
                 _current = firstChild;
                 _parent = c;
@@ -166,26 +150,20 @@ namespace Newtonsoft.Json.Linq
             }
         }
 
-        private bool SetEnd(JContainer c)
-        {
+        private bool SetEnd(JContainer c) {
             JsonToken? endToken = GetEndToken(c);
-            if (endToken != null)
-            {
+            if (endToken != null) {
                 SetToken(endToken.GetValueOrDefault());
                 _current = c;
                 _parent = c;
                 return true;
-            }
-            else
-            {
+            } else {
                 return ReadOver(c);
             }
         }
 
-        private void SetToken(JToken token)
-        {
-            switch (token.Type)
-            {
+        private void SetToken(JToken token) {
+            switch (token.Type) {
                 case JTokenType.Object:
                     SetToken(JsonToken.StartObject);
                     break;
@@ -219,17 +197,15 @@ namespace Newtonsoft.Json.Linq
                 case JTokenType.Undefined:
                     SetToken(JsonToken.Undefined, ((JValue)token).Value);
                     break;
-                case JTokenType.Date:
-                    {
-                        object? v = ((JValue)token).Value;
-                        if (v is DateTime dt)
-                        {
-                            v = DateTimeUtils.EnsureDateTime(dt, DateTimeZoneHandling);
-                        }
-
-                        SetToken(JsonToken.Date, v);
-                        break;
+                case JTokenType.Date: {
+                    object? v = ((JValue)token).Value;
+                    if (v is DateTime dt) {
+                        v = DateTimeUtils.EnsureDateTime(dt, DateTimeZoneHandling);
                     }
+
+                    SetToken(JsonToken.Date, v);
+                    break;
+                }
                 case JTokenType.Raw:
                     SetToken(JsonToken.Raw, ((JValue)token).Value);
                     break;
@@ -239,29 +215,29 @@ namespace Newtonsoft.Json.Linq
                 case JTokenType.Guid:
                     SetToken(JsonToken.String, SafeToString(((JValue)token).Value));
                     break;
-                case JTokenType.Uri:
-                    {
-                        object? v = ((JValue)token).Value;
-                        SetToken(JsonToken.String, v is Uri uri ? uri.OriginalString : SafeToString(v));
-                        break;
-                    }
+                case JTokenType.Uri: {
+                    object? v = ((JValue)token).Value;
+                    SetToken(JsonToken.String, v is Uri uri ? uri.OriginalString : SafeToString(v));
+                    break;
+                }
                 case JTokenType.TimeSpan:
                     SetToken(JsonToken.String, SafeToString(((JValue)token).Value));
                     break;
                 default:
-                    throw MiscellaneousUtils.CreateArgumentOutOfRangeException(nameof(token.Type), token.Type, "Unexpected JTokenType.");
+                    throw MiscellaneousUtils.CreateArgumentOutOfRangeException(
+                        nameof(token.Type),
+                        token.Type,
+                        "Unexpected JTokenType."
+                    );
             }
         }
 
-        private string? SafeToString(object? value)
-        {
+        private string? SafeToString(object? value) {
             return value?.ToString();
         }
 
-        bool IJsonLineInfo.HasLineInfo()
-        {
-            if (CurrentState == State.Start)
-            {
+        bool IJsonLineInfo.HasLineInfo() {
+            if (CurrentState == State.Start) {
                 return false;
             }
 
@@ -269,18 +245,14 @@ namespace Newtonsoft.Json.Linq
             return (info != null && info.HasLineInfo());
         }
 
-        int IJsonLineInfo.LineNumber
-        {
-            get
-            {
-                if (CurrentState == State.Start)
-                {
+        int IJsonLineInfo.LineNumber {
+            get {
+                if (CurrentState == State.Start) {
                     return 0;
                 }
 
                 IJsonLineInfo? info = _current;
-                if (info != null)
-                {
+                if (info != null) {
                     return info.LineNumber;
                 }
 
@@ -288,18 +260,14 @@ namespace Newtonsoft.Json.Linq
             }
         }
 
-        int IJsonLineInfo.LinePosition
-        {
-            get
-            {
-                if (CurrentState == State.Start)
-                {
+        int IJsonLineInfo.LinePosition {
+            get {
+                if (CurrentState == State.Start) {
                     return 0;
                 }
 
                 IJsonLineInfo? info = _current;
-                if (info != null)
-                {
+                if (info != null) {
                     return info.LinePosition;
                 }
 
@@ -308,32 +276,24 @@ namespace Newtonsoft.Json.Linq
         }
 
         /// <summary>
-        /// Gets the path of the current JSON token. 
+        ///     Gets the path of the current JSON token.
         /// </summary>
-        public override string Path
-        {
-            get
-            {
+        public override string Path {
+            get {
                 string path = base.Path;
 
-                if (_initialPath == null)
-                {
+                if (_initialPath == null) {
                     _initialPath = _root.Path;
                 }
 
-                if (!StringUtils.IsNullOrEmpty(_initialPath))
-                {
-                    if (StringUtils.IsNullOrEmpty(path))
-                    {
+                if (!StringUtils.IsNullOrEmpty(_initialPath)) {
+                    if (StringUtils.IsNullOrEmpty(path)) {
                         return _initialPath;
                     }
 
-                    if (path.StartsWith('['))
-                    {
+                    if (path.StartsWith('[')) {
                         path = _initialPath + path;
-                    }
-                    else
-                    {
+                    } else {
                         path = _initialPath + "." + path;
                     }
                 }

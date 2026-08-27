@@ -215,7 +215,7 @@ public sealed class ConsoleTests {
             new Vector2(1280f, 720f),
             GameTime.Zero
         ); // Whole and unclipped in the buffer, whatever the panel shows — the overlay cuts the drawing
-// and not the line, so submitting still runs what was typed.
+        // and not the line, so submitting still runs what was typed.
         Assert.Equal(212, console.Input.Length);
         Assert.EndsWith("END", console.Input, StringComparison.Ordinal);
     }

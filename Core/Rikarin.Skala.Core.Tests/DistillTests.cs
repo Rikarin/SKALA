@@ -53,7 +53,13 @@ public sealed class DistillTests {
         var result = Distiller.Distill(EditorConfigDocument.Load(RepositoryPaths.Template));
 
         Assert.True(result.Dropped > 0, "nothing was dropped; the derived default table is not reaching distill");
-        Assert.True(result.RetainedUnverifiedDefault > 300);
+        // ⚠ Relative to what the template contains rather than an absolute floor: the count was
+        // sized against a 4 238-line template and the author has since stripped it to 2 178.
+        // What matters is that most keys are still retained for want of a verified default.
+        Assert.True(
+            result.RetainedUnverifiedDefault > result.Dropped,
+            $"retained {result.RetainedUnverifiedDefault} against {result.Dropped} dropped"
+        );
 
         // Still nothing claims the documentation as its source, because there is still no
         // documentation to claim.
@@ -111,25 +117,30 @@ public sealed class DistillTests {
         var after = distilled.Assignments.Count(static a => a.Key.EndsWith("_highlighting", StringComparison.Ordinal));
 
         Assert.Equal(before, after);
-        Assert.Equal(3021, after);
+        // ⚠ Measured, not pinned — see EditorConfigIngestionTests. The severity keys the registry does
+        // not own must survive distillation whatever the template happens to contain.
+        var expected = File.ReadAllLines(RepositoryPaths.Template)
+            .Count(static line => line.Contains("_highlighting", StringComparison.Ordinal));
+
+        Assert.Equal(expected, after);
     }
 
     /// <summary>
-    /// ⚠ A comment stuck to a dropped key goes with it; every other comment stays.
+    ///     ⚠ A comment stuck to a dropped key goes with it; every other comment stays.
     /// </summary>
     /// <remarks>
-    /// <para>
-    /// <c>distill</c> dropped the assignment and left the comment above it, so the output described
-    /// a key that was no longer in the file. Invisible against the real export, where every comment
-    /// is a section banner and an orphan still reads as a heading — and actively misleading in a
-    /// configuration somebody annotated, which is the only kind of file the command exists to
-    /// produce.
-    /// </para>
-    /// <para>
-    /// The semantics are <c>resharper_stick_comment</c>'s, already settled in this project for
-    /// code: a contiguous comment run belongs to the line directly beneath it, so a run followed by
-    /// a blank line, a section header or nothing is attached to no key and survives.
-    /// </para>
+    ///     <para>
+    ///         <c>distill</c> dropped the assignment and left the comment above it, so the output described
+    ///         a key that was no longer in the file. Invisible against the real export, where every comment
+    ///         is a section banner and an orphan still reads as a heading — and actively misleading in a
+    ///         configuration somebody annotated, which is the only kind of file the command exists to
+    ///         produce.
+    ///     </para>
+    ///     <para>
+    ///         The semantics are <c>resharper_stick_comment</c>'s, already settled in this project for
+    ///         code: a contiguous comment run belongs to the line directly beneath it, so a run followed by
+    ///         a blank line, a section header or nothing is attached to no key and survives.
+    ///     </para>
     /// </remarks>
     [Fact]
     public void Distilling_TakesAStuckCommentWithTheKeyItDrops_AndKeepsEveryOther() {
@@ -160,12 +171,12 @@ public sealed class DistillTests {
     }
 
     /// <summary>
-    /// ⚠ The comment rule must not change what the file means.
+    ///     ⚠ The comment rule must not change what the file means.
     /// </summary>
     /// <remarks>
-    /// Moving comment lines around a distiller that decides which assignments to keep is exactly
-    /// the sort of edit that quietly drops one, and a distilled file that resolves differently is
-    /// the failure the whole command is written to avoid.
+    ///     Moving comment lines around a distiller that decides which assignments to keep is exactly
+    ///     the sort of edit that quietly drops one, and a distilled file that resolves differently is
+    ///     the failure the whole command is written to avoid.
     /// </remarks>
     [Fact]
     public void Distilling_TheAnnotatedFixture_ResolvesIdentically() {

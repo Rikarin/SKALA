@@ -24,7 +24,9 @@ public enum UtilityInputKind : byte {
     Registered
 }
 
-/// <summary>One consideration, as a file holds it: where the number comes from and what shape it goes through.</summary>
+/// <summary>
+///     One consideration, as a file holds it: where the number comes from and what shape it goes through.
+/// </summary>
 /// <remarks>
 ///     ⚠ <b>Every member is settable, and that is not laziness.</b> The YAML binder takes part only in
 ///     members it can write on both sides, so a get-only collection is written out and then silently

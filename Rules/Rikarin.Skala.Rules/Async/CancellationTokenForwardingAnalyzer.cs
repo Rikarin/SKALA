@@ -10,21 +10,21 @@ using Rikarin.Skala.Rules.Metadata;
 namespace Rikarin.Skala.Rules.Async;
 
 /// <summary>
-/// <c>SK3004</c> — the method took a <c>CancellationToken</c> and did not pass it on.
+///     <c>SK3004</c> — the method took a <c>CancellationToken</c> and did not pass it on.
 /// </summary>
 /// <remarks>
-/// docs/plan/08-rule-catalogue.md § "SK3000 — Async, concurrency, lifetime". A token that stops at
-/// the first frame is a cancellation that does not happen: the caller sees the parameter accepted,
-/// assumes the operation is cancellable, and gets work that runs to completion after whoever asked
-/// for it has gone.
-/// <para>
-/// ⚠ Two shapes, and no third. Either the callee declares an <em>optional</em>
-/// <c>CancellationToken</c> this call omitted — repaired with a named argument, which is right
-/// whether or not the parameters in between were supplied — or an overload exists whose parameter
-/// list is this one with a <c>CancellationToken</c> appended, and every argument here is positional
-/// — repaired by appending. Anywhere the rule would have to choose between overloads it says
-/// nothing, because a fix that changes which method is called is not a fix.
-/// </para>
+///     docs/plan/08-rule-catalogue.md § "SK3000 — Async, concurrency, lifetime". A token that stops at
+///     the first frame is a cancellation that does not happen: the caller sees the parameter accepted,
+///     assumes the operation is cancellable, and gets work that runs to completion after whoever asked
+///     for it has gone.
+///     <para>
+///         ⚠ Two shapes, and no third. Either the callee declares an <em>optional</em>
+///         <c>CancellationToken</c> this call omitted — repaired with a named argument, which is right
+///         whether or not the parameters in between were supplied — or an overload exists whose parameter
+///         list is this one with a <c>CancellationToken</c> appended, and every argument here is positional
+///         — repaired by appending. Anywhere the rule would have to choose between overloads it says
+///         nothing, because a fix that changes which method is called is not a fix.
+///     </para>
 /// </remarks>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class CancellationTokenForwardingAnalyzer : DiagnosticAnalyzer {
@@ -104,12 +104,12 @@ public sealed class CancellationTokenForwardingAnalyzer : DiagnosticAnalyzer {
     }
 
     /// <summary>
-    /// The one <c>CancellationToken</c> parameter in scope, or null when there is none or several.
+    ///     The one <c>CancellationToken</c> parameter in scope, or null when there is none or several.
     /// </summary>
     /// <remarks>
-    /// ⚠ Several is not a harder case; it is a different one. Which token an inner call should get
-    /// when two are in scope is a decision about intent, and a rule that picks is a rule that is
-    /// sometimes silently wrong rather than sometimes silent.
+    ///     ⚠ Several is not a harder case; it is a different one. Which token an inner call should get
+    ///     when two are in scope is a decision about intent, and a rule that picks is a rule that is
+    ///     sometimes silently wrong rather than sometimes silent.
     /// </remarks>
     static string? TokenInScope(SyntaxNodeAnalysisContext context, SyntaxNode node, INamedTypeSymbol tokenType) {
         string? found = null;
@@ -178,12 +178,12 @@ public sealed class CancellationTokenForwardingAnalyzer : DiagnosticAnalyzer {
     }
 
     /// <summary>
-    /// Whether a sibling overload is this method's parameter list with a token appended.
+    ///     Whether a sibling overload is this method's parameter list with a token appended.
     /// </summary>
     /// <remarks>
-    /// ⚠ Appended, and nothing else changed. That is what makes appending an argument select it:
-    /// any other difference and the rule would be guessing at overload resolution, which is how a
-    /// fix comes to call a different method than the one it was reported against.
+    ///     ⚠ Appended, and nothing else changed. That is what makes appending an argument select it:
+    ///     any other difference and the rule would be guessing at overload resolution, which is how a
+    ///     fix comes to call a different method than the one it was reported against.
     /// </remarks>
     static bool HasAppendedOverload(IMethodSymbol target, INamedTypeSymbol tokenType) {
         foreach (var member in target.ContainingType.GetMembers(target.Name)) {
@@ -220,12 +220,12 @@ public sealed class CancellationTokenForwardingAnalyzer : DiagnosticAnalyzer {
     }
 
     /// <summary>
-    /// Whether the call already hands the callee a token, positionally or by name.
+    ///     Whether the call already hands the callee a token, positionally or by name.
     /// </summary>
     /// <remarks>
-    /// ⚠ Includes <c>CancellationToken.None</c> and <c>default</c>. Writing the token out is how an
-    /// author says a call is deliberately not cancellable; a rule that overrides that is arguing
-    /// with a decision rather than finding an omission.
+    ///     ⚠ Includes <c>CancellationToken.None</c> and <c>default</c>. Writing the token out is how an
+    ///     author says a call is deliberately not cancellable; a rule that overrides that is arguing
+    ///     with a decision rather than finding an omission.
     /// </remarks>
     static bool Supplies(
         SeparatedSyntaxList<ArgumentSyntax> arguments,
@@ -255,7 +255,7 @@ public sealed class CancellationTokenForwardingAnalyzer : DiagnosticAnalyzer {
     }
 
     /// <summary>
-    /// Whether every parameter is filled positionally, so appending one more selects the overload.
+    ///     Whether every parameter is filled positionally, so appending one more selects the overload.
     /// </summary>
     static bool AllPositional(SeparatedSyntaxList<ArgumentSyntax> arguments, IMethodSymbol target) {
         if (arguments.Count != target.Parameters.Length) {

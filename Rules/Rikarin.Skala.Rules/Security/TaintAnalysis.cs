@@ -12,50 +12,50 @@ namespace Rikarin.Skala.Rules.Security;
 public sealed record TaintFinding(Location Location, TaintSink Sink, string SourceDescription);
 
 /// <summary>
-/// Intra-procedural taint propagation over Roslyn's <see cref="ControlFlowGraph"/>.
+///     Intra-procedural taint propagation over Roslyn's <see cref="ControlFlowGraph" />.
 /// </summary>
 /// <remarks>
-/// docs/plan/08 § "SK5000 — Security": <c>SK5001</c>–<c>SK5004</c> are "built on Roslyn's
-/// <c>ControlFlowGraph</c> + <c>DataFlowAnalysis</c> with intra-procedural propagation and a
-/// declared source/sink/sanitizer table in <c>taint.json</c>".
-/// <para>
-/// The shape is a classic forward may-analysis. The lattice is the powerset of the method's locals,
-/// parameters and flow captures; the merge is union, because a value tainted on <em>either</em> arm
-/// of an <c>if</c> is tainted after it; the fixpoint iterates the blocks in ordinal order until
-/// nothing moves, which handles loops without a special case.
-/// </para>
-/// <para>
-/// ⚠ <b>Every unknown resolves to "not tainted".</b> A call the table does not name, a symbol that
-/// did not bind, a body the CFG could not be built for, a value that arrived from another method —
-/// all of them are silence. That is not a limitation being apologised for, it is the specification:
-/// doc 08 puts inter-procedural taint out of scope for v1 because "it is where the false positives
-/// live", and doc 00's false-positive bar applies hardest to a range that defaults to
-/// <c>error</c> and therefore fails builds.
-/// </para>
-/// <para>
-/// ⚠ <b>A parameter is never a source.</b> This is the single most consequential line in the file,
-/// and it is a correctness decision rather than a tuning one. A parameter's incoming value is
-/// whatever the callers pass, which is by definition not visible from inside the method; treating
-/// "unknown" as "suspicious" would make the engine assert a vulnerability in code that has none.
-/// The shape is completely ordinary — a private helper ending in
-/// <c>command.CommandText = sql;</c>, whose callers all pass a constant with <c>@name</c>
-/// placeholders and bind the values properly — and every report on it would be simply wrong. A
-/// rule that fires a lot is work for the repository it fires on; a rule that is wrong is a rule
-/// nobody keeps switched on.
-/// </para>
-/// <para>
-/// ⚠ <b>Bodies of lambdas and local functions are not visited.</b> Roslyn puts them in a nested
-/// <see cref="ControlFlowGraph"/> that is not in <see cref="ControlFlowGraph.Blocks"/>, and
-/// following one would need the captured state, which is an inter-procedural question wearing a
-/// different hat. A sink inside a lambda is therefore a miss, and a miss is the safe direction.
-/// </para>
+///     docs/plan/08 § "SK5000 — Security": <c>SK5001</c>–<c>SK5004</c> are "built on Roslyn's
+///     <c>ControlFlowGraph</c> + <c>DataFlowAnalysis</c> with intra-procedural propagation and a
+///     declared source/sink/sanitizer table in <c>taint.json</c>".
+///     <para>
+///         The shape is a classic forward may-analysis. The lattice is the powerset of the method's locals,
+///         parameters and flow captures; the merge is union, because a value tainted on <em>either</em> arm
+///         of an <c>if</c> is tainted after it; the fixpoint iterates the blocks in ordinal order until
+///         nothing moves, which handles loops without a special case.
+///     </para>
+///     <para>
+///         ⚠ <b>Every unknown resolves to "not tainted".</b> A call the table does not name, a symbol that
+///         did not bind, a body the CFG could not be built for, a value that arrived from another method —
+///         all of them are silence. That is not a limitation being apologised for, it is the specification:
+///         doc 08 puts inter-procedural taint out of scope for v1 because "it is where the false positives
+///         live", and doc 00's false-positive bar applies hardest to a range that defaults to
+///         <c>error</c> and therefore fails builds.
+///     </para>
+///     <para>
+///         ⚠ <b>A parameter is never a source.</b> This is the single most consequential line in the file,
+///         and it is a correctness decision rather than a tuning one. A parameter's incoming value is
+///         whatever the callers pass, which is by definition not visible from inside the method; treating
+///         "unknown" as "suspicious" would make the engine assert a vulnerability in code that has none.
+///         The shape is completely ordinary — a private helper ending in
+///         <c>command.CommandText = sql;</c>, whose callers all pass a constant with <c>@name</c>
+///         placeholders and bind the values properly — and every report on it would be simply wrong. A
+///         rule that fires a lot is work for the repository it fires on; a rule that is wrong is a rule
+///         nobody keeps switched on.
+///     </para>
+///     <para>
+///         ⚠ <b>Bodies of lambdas and local functions are not visited.</b> Roslyn puts them in a nested
+///         <see cref="ControlFlowGraph" /> that is not in <see cref="ControlFlowGraph.Blocks" />, and
+///         following one would need the captured state, which is an inter-procedural question wearing a
+///         different hat. A sink inside a lambda is therefore a miss, and a miss is the safe direction.
+///     </para>
 /// </remarks>
 public static class TaintAnalysis {
     /// <summary>
-    /// ⚠ The fixpoint terminates on its own — the lattice is finite and the transfer is monotone —
-    /// so this bound can only ever be reached by a bug in the transfer. It is here because an
-    /// analyzer that hangs takes the compiler with it, and "no findings from a pathological method"
-    /// is a far better failure than "the IDE stopped responding".
+    ///     ⚠ The fixpoint terminates on its own — the lattice is finite and the transfer is monotone —
+    ///     so this bound can only ever be reached by a bug in the transfer. It is here because an
+    ///     analyzer that hangs takes the compiler with it, and "no findings from a pathological method"
+    ///     is a far better failure than "the IDE stopped responding".
     /// </summary>
     const int MaximumPasses = 64;
 
@@ -143,13 +143,13 @@ public static class TaintAnalysis {
     static HashSet<ISymbol> CopyOf(HashSet<ISymbol> source) => new(source, SymbolEqualityComparer.Default);
 
     /// <summary>
-    /// The transfer function: one block's operations, in order, against a mutable taint state.
+    ///     The transfer function: one block's operations, in order, against a mutable taint state.
     /// </summary>
     /// <remarks>
-    /// ⚠ It is used twice with different intent. With <c>findings == null</c> it is the fixpoint's
-    /// transfer and reports nothing; with a list it is the reporting pass. The state arithmetic is
-    /// identical in both, which is what makes the reported set exactly the set the fixpoint settled
-    /// on rather than an approximation of it.
+    ///     ⚠ It is used twice with different intent. With <c>findings == null</c> it is the fixpoint's
+    ///     transfer and reports nothing; with a list it is the reporting pass. The state arithmetic is
+    ///     identical in both, which is what makes the reported set exactly the set the fixpoint settled
+    ///     on rather than an approximation of it.
     /// </remarks>
     sealed class Walker {
         readonly TaintSymbols _symbols;
@@ -242,12 +242,12 @@ public static class TaintAnalysis {
         }
 
         /// <summary>
-        /// ⚠ <c>builder.Append(tainted)</c> taints <c>builder</c>, not the call's result.
+        ///     ⚠ <c>builder.Append(tainted)</c> taints <c>builder</c>, not the call's result.
         /// </summary>
         /// <remarks>
-        /// This is the shape most SQL concatenation actually has, and without it the whole
-        /// <c>StringBuilder</c> path would be invisible: the flow is into the receiver across
-        /// several statements and out again through <c>ToString()</c>.
+        ///     This is the shape most SQL concatenation actually has, and without it the whole
+        ///     <c>StringBuilder</c> path would be invisible: the flow is into the receiver across
+        ///     several statements and out again through <c>ToString()</c>.
         /// </remarks>
         void PropagateToReceiver(IInvocationOperation invocation) {
             if (invocation.Instance is null || !_symbols.IsPropagator(invocation.TargetMethod)) {
@@ -263,14 +263,14 @@ public static class TaintAnalysis {
         }
 
         /// <summary>
-        /// The variable a fluent chain is really about.
+        ///     The variable a fluent chain is really about.
         /// </summary>
         /// <remarks>
-        /// ⚠ <c>builder.Append(a).Append(b)</c> — the receiver of the second <c>Append</c> is the
-        /// <em>result</em> of the first, not <c>builder</c>, so taint arriving through <c>b</c> had
-        /// nowhere to land and the whole chain came out clean. Chaining is how most
-        /// <c>StringBuilder</c> code is actually written, so this was not an edge case; it was the
-        /// common path, and only the corpus found it.
+        ///     ⚠ <c>builder.Append(a).Append(b)</c> — the receiver of the second <c>Append</c> is the
+        ///     <em>result</em> of the first, not <c>builder</c>, so taint arriving through <c>b</c> had
+        ///     nowhere to land and the whole chain came out clean. Chaining is how most
+        ///     <c>StringBuilder</c> code is actually written, so this was not an edge case; it was the
+        ///     common path, and only the corpus found it.
         /// </remarks>
         IOperation RootReceiver(IOperation instance) {
             while (instance is IInvocationOperation { Instance: { } inner } chained
@@ -370,10 +370,10 @@ public static class TaintAnalysis {
         }
 
         /// <summary>
-        /// Whether a value carries data that crossed a trust boundary, under the current state.
+        ///     Whether a value carries data that crossed a trust boundary, under the current state.
         /// </summary>
         /// <remarks>
-        /// ⚠ The <c>default</c> arm returns false, and every arm that cannot answer falls into it.
+        ///     ⚠ The <c>default</c> arm returns false, and every arm that cannot answer falls into it.
         /// </remarks>
         bool IsTainted(IOperation? operation) {
             if (operation is null || operation.ConstantValue.HasValue) {
@@ -471,12 +471,12 @@ public static class TaintAnalysis {
         }
 
         /// <summary>
-        /// Whether a type can carry attacker-chosen text out of a value that already does.
+        ///     Whether a type can carry attacker-chosen text out of a value that already does.
         /// </summary>
         /// <remarks>
-        /// ⚠ This is the guard that keeps instance propagation from becoming "anything reachable
-        /// from a request is tainted". <c>request.Query.Count</c> is an <c>int</c> and stops here;
-        /// <c>request.Query["id"]</c> is a <c>StringValues</c> and does not.
+        ///     ⚠ This is the guard that keeps instance propagation from becoming "anything reachable
+        ///     from a request is tainted". <c>request.Query.Count</c> is an <c>int</c> and stops here;
+        ///     <c>request.Query["id"]</c> is a <c>StringValues</c> and does not.
         /// </remarks>
         static bool CarriesText(ITypeSymbol? type) => CarriesText(type, depth: 0);
 

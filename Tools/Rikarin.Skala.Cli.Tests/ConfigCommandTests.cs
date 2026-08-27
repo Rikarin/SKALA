@@ -5,8 +5,8 @@ using Rikarin.Skala.Testing;
 namespace Rikarin.Skala.Cli.Tests;
 
 /// <summary>
-/// docs/plan/15 § M0, "Done when": these four are the milestone's acceptance criteria, run against
-/// the real 4 238-line export through the real command line.
+///     docs/plan/15 § M0, "Done when": these four are the milestone's acceptance criteria, run against
+///     the real 4 238-line export through the real command line.
 /// </summary>
 public sealed class ConfigCommandTests {
     [Fact]
@@ -133,22 +133,22 @@ public sealed class ConfigCommandTests {
     }
 
     /// <summary>
-    /// ⚠ The number a user needs is about <em>their</em> configuration, not about the registry.
+    ///     ⚠ The number a user needs is about <em>their</em> configuration, not about the registry.
     /// </summary>
     /// <remarks>
-    /// <para>
-    /// This block reported only the registry-wide split until M9. On the real export that reads
-    /// "A: 221, D: 293" — true, and not an answer to the question being asked, which is "of the
-    /// keys I set, which ones does the tool ignore?" On the export the answer is in the hundreds,
-    /// and nothing looked wrong because fidelity is 99.7 %: an unimplemented key whose configured
-    /// value happens to match what Skala does anyway costs no fidelity. The exposure is
-    /// forward-looking — change one of those settings in Rider and Skala keeps formatting the old
-    /// way, reporting nothing.
-    /// </para>
-    /// <para>
-    /// ⚠ And the per-configuration split has to add up, or it is worse than the registry-wide one:
-    /// a number that does not reconcile invites the reader to assume the remainder is fine.
-    /// </para>
+    ///     <para>
+    ///         This block reported only the registry-wide split until M9. On the real export that reads
+    ///         "A: 221, D: 293" — true, and not an answer to the question being asked, which is "of the
+    ///         keys I set, which ones does the tool ignore?" On the export the answer is in the hundreds,
+    ///         and nothing looked wrong because fidelity is 99.7 %: an unimplemented key whose configured
+    ///         value happens to match what Skala does anyway costs no fidelity. The exposure is
+    ///         forward-looking — change one of those settings in Rider and Skala keeps formatting the old
+    ///         way, reporting nothing.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ And the per-configuration split has to add up, or it is worse than the registry-wide one:
+    ///         a number that does not reconcile invites the reader to assume the remainder is fine.
+    ///     </para>
     /// </remarks>
     [Fact]
     public void Check_ReportsTheTierSplitOfTheKeysTheConfigurationActuallySets() {
@@ -191,14 +191,14 @@ public sealed class ConfigCommandTests {
     }
 
     /// <summary>
-    /// ⚠ Inert is reported apart from unimplemented, and the xmldoc family says why it is neither.
+    ///     ⚠ Inert is reported apart from unimplemented, and the xmldoc family says why it is neither.
     /// </summary>
     /// <remarks>
-    /// An inert key is honoured vacuously — no input distinguishes its values — so counting it as
-    /// a gap makes the gap number noise and people stop reading it. The xmldoc family is the
-    /// opposite trap: 27 unimplemented keys with no explanation read as neglect, when the cause is
-    /// documented and permanent (SK-DIV-0006 — the oracle does not format documentation comments,
-    /// so there is nothing to verify them against).
+    ///     An inert key is honoured vacuously — no input distinguishes its values — so counting it as
+    ///     a gap makes the gap number noise and people stop reading it. The xmldoc family is the
+    ///     opposite trap: 27 unimplemented keys with no explanation read as neglect, when the cause is
+    ///     documented and permanent (SK-DIV-0006 — the oracle does not format documentation comments,
+    ///     so there is nothing to verify them against).
     /// </remarks>
     [Fact]
     public void Check_SeparatesInertFromUnimplemented_AndExplainsTheXmldocFamily() {

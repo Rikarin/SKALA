@@ -21,7 +21,7 @@ public sealed class GrassCostsNothingTests {
     static FoliageVolume Mixed(out int trees, out int carpet) {
         var volume = new FoliageVolume(new(32f));
         trees = volume.AddType(Types.Tree);
-        carpet = volume.AddType(FoliageType.Of("Carpet")with { Storage = FoliageStorage.Derived, Radius = 0.25f });
+        carpet = volume.AddType(FoliageType.Of("Carpet") with { Storage = FoliageStorage.Derived, Radius = 0.25f });
         for (var i = 0; i < 40; i++) {
             volume.Add(trees, new(new(i * 4f, 0f, 8f), Quaternion.Identity, 1f));
             volume.Add(carpet, new(new(i * 0.5f, 0f, 3f), Quaternion.Identity, 1f));
@@ -38,7 +38,7 @@ public sealed class GrassCostsNothingTests {
         Assert.Equal(bytes.Length, written);
         var read = new FoliageVolume(new(32f));
         read.AddType(Types.Tree);
-        read.AddType(FoliageType.Of("Carpet")with { Storage = FoliageStorage.Derived });
+        read.AddType(FoliageType.Of("Carpet") with { Storage = FoliageStorage.Derived });
         var count = FoliageStore.Read(read, bytes.AsSpan(0, written));
         Assert.Equal(40, count);
         Assert.Equal(40, read.CountOf(trees));
@@ -59,7 +59,7 @@ public sealed class GrassCostsNothingTests {
     [Fact]
     public void AFieldOfGrassIsAnEmptyFile() {
         var volume = new FoliageVolume(new(32f));
-        var carpet = volume.AddType(FoliageType.Of("Carpet")with { Storage = FoliageStorage.Derived });
+        var carpet = volume.AddType(FoliageType.Of("Carpet") with { Storage = FoliageStorage.Derived });
         for (var i = 0; i < 5000; i++) {
             volume.Add(carpet, new(new(i * 0.1f, 0f, 0f), Quaternion.Identity, 1f));
         }

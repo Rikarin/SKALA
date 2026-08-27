@@ -109,8 +109,11 @@ public class PathTessellationCacheTests {
     }
 
     /// <summary>
-    ///     ⚠ <b>Every input the tessellator reads is in the key, and a stroke's width is the one most
-    ///     easily forgotten.</b> Leaving it out is a line that keeps the weight it had.
+    ///     ⚠
+    ///     <b>
+    ///         Every input the tessellator reads is in the key, and a stroke's width is the one most
+    ///         easily forgotten.
+    ///     </b> Leaving it out is a line that keeps the weight it had.
     /// </summary>
     [Fact]
     public void A_stroke_that_changed_width_is_tessellated_again() {
@@ -178,9 +181,7 @@ public class PathTessellationCacheTests {
         list.BeginFrame();
         list.Add(
             new DrawCommand(DrawCommandKind.Path, 0, 0, 0, 0, color, 0, 0) {
-                Offset = list.AddPath(path),
-                Length = path.Count,
-                FillRule = PathFillRule.NonZero
+                Offset = list.AddPath(path), Length = path.Count, FillRule = PathFillRule.NonZero
             }
         );
 
@@ -194,10 +195,7 @@ public class PathTessellationCacheTests {
         list.BeginFrame();
         list.Add(
             new DrawCommand(DrawCommandKind.PathStroke, 0, 0, 0, 0, Color4.White, 0, thickness) {
-                Offset = list.AddPath(path),
-                Length = path.Count,
-                Join = LineJoin.Miter,
-                Cap = LineCap.Butt
+                Offset = list.AddPath(path), Length = path.Count, Join = LineJoin.Miter, Cap = LineCap.Butt
             }
         );
 

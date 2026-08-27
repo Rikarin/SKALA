@@ -1,4 +1,5 @@
 ﻿#region License
+
 // Copyright (c) 2007 James Newton-King
 //
 // Permission is hereby granted, free of charge, to any person
@@ -21,6 +22,7 @@
 // WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 // OTHER DEALINGS IN THE SOFTWARE.
+
 #endregion
 
 using System;
@@ -38,18 +40,12 @@ using Assert = Newtonsoft.Json.Tests.XUnitAssert;
 using NUnit.Framework;
 #endif
 
-namespace Newtonsoft.Json.Tests.Issues
-{
+namespace Newtonsoft.Json.Tests.Issues {
     [TestFixture]
-    public class Issue1576 : TestFixtureBase
-    {
+    public class Issue1576 : TestFixtureBase {
         [Test]
-        public void Test()
-        {
-            var settings = new JsonSerializerSettings()
-            {
-                ContractResolver = new CustomContractResolver()
-            };
+        public void Test() {
+            var settings = new JsonSerializerSettings() { ContractResolver = new CustomContractResolver() };
 
             var result = JsonConvert.DeserializeObject<TestClass>("{ 'Items': '11' }", settings);
 
@@ -59,8 +55,7 @@ namespace Newtonsoft.Json.Tests.Issues
         }
 
         [Test]
-        public void Test_WithJsonConverterAttribute()
-        {
+        public void Test_WithJsonConverterAttribute() {
             var result = JsonConvert.DeserializeObject<TestClassWithJsonConverter>("{ 'Items': '11' }");
 
             Assert.IsNotNull(result);
@@ -68,25 +63,20 @@ namespace Newtonsoft.Json.Tests.Issues
             Assert.AreEqual(result.Items[0], 11);
         }
 
-        public class TestClass
-        {
+        public class TestClass {
             public List<int> Items { get; } = new List<int>();
         }
 
-        public class TestClassWithJsonConverter
-        {
+        public class TestClassWithJsonConverter {
             [JsonConverter(typeof(OneItemListJsonConverter))]
             public List<int> Items { get; } = new List<int>();
         }
 
-        public class CustomContractResolver : DefaultContractResolver
-        {
-            protected override JsonProperty CreateProperty(MemberInfo member, MemberSerialization memberSerialization)
-            {
+        public class CustomContractResolver : DefaultContractResolver {
+            protected override JsonProperty CreateProperty(MemberInfo member, MemberSerialization memberSerialization) {
                 var property = base.CreateProperty(member, memberSerialization);
 
-                if (member.Name == "Items")
-                {
+                if (member.Name == "Items") {
                     property.Converter = new OneItemListJsonConverter();
                 }
 
@@ -94,20 +84,21 @@ namespace Newtonsoft.Json.Tests.Issues
             }
         }
 
-        public class OneItemListJsonConverter : JsonConverter
-        {
+        public class OneItemListJsonConverter : JsonConverter {
             public override bool CanWrite => false;
 
-            public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
-            {
+            public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer) {
                 throw new NotSupportedException();
             }
 
-            public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
-            {
+            public override object ReadJson(
+                JsonReader reader,
+                Type objectType,
+                object existingValue,
+                JsonSerializer serializer
+            ) {
                 var token = JToken.Load(reader);
-                if (token.Type == JTokenType.Array)
-                {
+                if (token.Type == JTokenType.Array) {
                     return token.ToObject(objectType, serializer);
                 }
 
@@ -117,10 +108,8 @@ namespace Newtonsoft.Json.Tests.Issues
                 var list = array.ToObject(objectType, serializer) as IEnumerable;
                 var existing = existingValue as IList;
 
-                if (list != null && existing != null)
-                {
-                    foreach (var item in list)
-                    {
+                if (list != null && existing != null) {
+                    foreach (var item in list) {
                         existing.Add(item);
                     }
                 }
@@ -128,11 +117,9 @@ namespace Newtonsoft.Json.Tests.Issues
                 return list;
             }
 
-            public override bool CanConvert(Type objectType)
-            {
+            public override bool CanConvert(Type objectType) {
                 return typeof(ICollection).IsAssignableFrom(objectType);
             }
         }
-
     }
 }

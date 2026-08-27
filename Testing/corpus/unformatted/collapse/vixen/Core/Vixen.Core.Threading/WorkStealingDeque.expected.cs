@@ -46,7 +46,7 @@ sealed class WorkStealingDeque {
 
     readonly int mask; // Only the owner writes `bottom`; anyone may CAS `top`. Padded apart so the owner's ordinary
 
-// writes to one do not invalidate the other's cache line for every thief in the system.
+    // writes to one do not invalidate the other's cache line for every thief in the system.
     PaddedLong bottom;
     PaddedLong top;
 
@@ -100,7 +100,7 @@ sealed class WorkStealingDeque {
             ref bottom.Value,
             b
         ); // The claim above and the read below must not be reordered, or the owner and a thief can
-// both conclude they have the last item.
+        // both conclude they have the last item.
         Interlocked.MemoryBarrier();
         var t = Volatile.Read(ref top.Value);
         if (t > b) {
@@ -114,7 +114,7 @@ sealed class WorkStealingDeque {
             return true;
         } // Exactly one item was left, so a thief may be taking the same one. Whoever wins the CAS on
 
-// `top` has it; either way the deque is now empty.
+        // `top` has it; either way the deque is now empty.
         var won = Interlocked.CompareExchange(ref top.Value, t + 1, t) == t;
         Volatile.Write(ref bottom.Value, b + 1);
         if (won) {
@@ -140,7 +140,7 @@ sealed class WorkStealingDeque {
             return false;
         } // Read before the CAS. The read can only be stale if the owner has already overwritten the
 
-// slot, which needs a full lap of the buffer — and TryPush refuses to lap a live item.
+        // slot, which needs a full lap of the buffer — and TryPush refuses to lap a live item.
         var candidate = items[t & mask];
         if (Interlocked.CompareExchange(ref top.Value, t + 1, t) != t) {
             item = 0;

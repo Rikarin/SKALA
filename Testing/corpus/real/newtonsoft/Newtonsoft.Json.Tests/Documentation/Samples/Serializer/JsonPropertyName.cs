@@ -1,4 +1,5 @@
 ﻿#region License
+
 // Copyright (c) 2007 James Newton-King
 //
 // Permission is hereby granted, free of charge, to any person
@@ -21,6 +22,7 @@
 // WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 // OTHER DEALINGS IN THE SOFTWARE.
+
 #endregion
 
 using System;
@@ -35,31 +37,26 @@ using NUnit.Framework;
 
 #endif
 
-namespace Newtonsoft.Json.Tests.Documentation.Samples.Serializer
-{
+namespace Newtonsoft.Json.Tests.Documentation.Samples.Serializer {
     [TestFixture]
-    public class JsonPropertyName : TestFixtureBase
-    {
+    public class JsonPropertyName : TestFixtureBase {
         #region Types
-        public class Videogame
-        {
+
+        public class Videogame {
             [JsonProperty("name")]
             public string Name { get; set; }
 
             [JsonProperty("release_date")]
             public DateTime ReleaseDate { get; set; }
         }
+
         #endregion
 
         [Test]
-        public void Example()
-        {
+        public void Example() {
             #region Usage
-            Videogame starcraft = new Videogame
-            {
-                Name = "Starcraft",
-                ReleaseDate = new DateTime(1998, 1, 1)
-            };
+
+            Videogame starcraft = new Videogame { Name = "Starcraft", ReleaseDate = new DateTime(1998, 1, 1) };
 
             string json = JsonConvert.SerializeObject(starcraft, Formatting.Indented);
 
@@ -68,12 +65,16 @@ namespace Newtonsoft.Json.Tests.Documentation.Samples.Serializer
             //   "name": "Starcraft",
             //   "release_date": "1998-01-01T00:00:00"
             // }
+
             #endregion
 
-            StringAssert.AreEqual(@"{
+            StringAssert.AreEqual(
+                @"{
   ""name"": ""Starcraft"",
   ""release_date"": ""1998-01-01T00:00:00""
-}", json);
+}",
+                json
+            );
         }
     }
 }

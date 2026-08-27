@@ -108,7 +108,10 @@ public class SightTests {
             }
         );
 
-        var listener = fleet.World.Create(AiPerception.Sensing(fleet.Config), default(Engine.Transforms.LocalTransform));
+        var listener = fleet.World.Create(
+            AiPerception.Sensing(fleet.Config),
+            default(Engine.Transforms.LocalTransform)
+        );
 
         fleet.Source(new(0f, 0f, -5f));
         fleet.Step();
@@ -203,8 +206,11 @@ public class FilterTests {
         var asked = 0;
         var fleet = new Fleet(
             Fleet.Everything() with {
-                Filter = PerceptionFilters.Where(
-                    (in PerceptionParticipant listener, in PerceptionParticipant source, AiSense sense) => {
+                Filter = PerceptionFilters.Where((
+                        in PerceptionParticipant listener,
+                        in PerceptionParticipant source,
+                        AiSense sense
+                    ) => {
                         asked++;
 
                         return false;
@@ -355,7 +361,8 @@ public class BindingTests {
 
     [Fact]
     public void TheCountBindingWritesAFlagAndANumberAndNamesNoTarget() {
-        var (fleet, agents, listener, _) = Build(new PerceivedCountBinding(SenseMask.Sight, Key("alert"), Key("count")));
+        var (fleet, agents, listener, _) =
+            Build(new PerceivedCountBinding(SenseMask.Sight, Key("alert"), Key("count")));
 
         fleet.Source(new(0f, 0f, -6f));
         Step(fleet, agents);

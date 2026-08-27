@@ -184,10 +184,7 @@ public sealed class FoliageCullParityTests {
 
     static FoliageType Tree =>
         FoliageType.Of("Tree") with {
-            Mesh = "Meshes/pine",
-            Radius = 2f,
-            StartCullDistance = 160f,
-            EndCullDistance = 200f
+            Mesh = "Meshes/pine", Radius = 2f, StartCullDistance = 160f, EndCullDistance = 200f
         };
 
     static BoundingFrustum Looking(float far = 1000f) =>
@@ -291,7 +288,8 @@ public sealed class FoliageCullParityTests {
 
         for (var level = 0; level < culler.LevelCount; level++) {
             var run = culler.Runs[level];
-            var host = culler.Survivors.Slice(run.First, run.Count).ToArray()
+            var host = culler.Survivors.Slice(run.First, run.Count)
+                .ToArray()
                 .Select(index => (int)index)
                 .Order()
                 .ToArray();

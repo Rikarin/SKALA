@@ -9,10 +9,10 @@ namespace Rikarin.Skala.Reporting;
 
 /// <summary>One line of <c>.skala/history.jsonl</c>.</summary>
 /// <remarks>
-/// docs/plan/09 § "History". ⚠ Deliberately not a database. One append-only line of JSON per run
-/// means the answer to "is this getting better" is a <c>git log</c> away with no infrastructure at
-/// all, and the file is diffable, greppable and reviewable — which is the SonarQube dashboard's
-/// actual job, minus the server.
+///     docs/plan/09 § "History". ⚠ Deliberately not a database. One append-only line of JSON per run
+///     means the answer to "is this getting better" is a <c>git log</c> away with no infrastructure at
+///     all, and the file is diffable, greppable and reviewable — which is the SonarQube dashboard's
+///     actual job, minus the server.
 /// </remarks>
 public sealed record HistoryEntry {
     [JsonPropertyName("timestamp")]
@@ -64,12 +64,12 @@ public sealed record HistoryEntry {
     public double DurationSeconds { get; init; }
 
     /// <summary>
-    /// ⚠ The configuration fingerprint travels with every entry.
+    ///     ⚠ The configuration fingerprint travels with every entry.
     /// </summary>
     /// <remarks>
-    /// Two runs with different fingerprints are not comparable (doc 09 § "SARIF is the report"), and
-    /// a trend line that silently splices them together is a trend line that shows an improvement
-    /// somebody made by turning a rule off.
+    ///     Two runs with different fingerprints are not comparable (doc 09 § "SARIF is the report"), and
+    ///     a trend line that silently splices them together is a trend line that shows an improvement
+    ///     somebody made by turning a rule off.
     /// </remarks>
     [JsonPropertyName("configurationFingerprint")]
     public string ConfigurationFingerprint { get; init; } = string.Empty;
@@ -78,8 +78,8 @@ public sealed record HistoryEntry {
 }
 
 /// <summary>
-/// <c>.skala/history.jsonl</c> — appended by <c>skala check --record</c>, rendered by
-/// <c>skala trend</c>.
+///     <c>.skala/history.jsonl</c> — appended by <c>skala check --record</c>, rendered by
+///     <c>skala trend</c>.
 /// </summary>
 public static class History {
     public const string RelativePath = ".skala/history.jsonl";
@@ -112,12 +112,12 @@ public static class History {
         };
 
     /// <summary>
-    /// Appends one line.
+    ///     Appends one line.
     /// </summary>
     /// <remarks>
-    /// ⚠ Append, never rewrite. The file's whole value is that it is an unedited record; a writer
-    /// that rewrote it could not be trusted to have kept what was there, and a partial run must not
-    /// be able to truncate the history it failed to extend.
+    ///     ⚠ Append, never rewrite. The file's whole value is that it is an unedited record; a writer
+    ///     that rewrote it could not be trusted to have kept what was there, and a partial run must not
+    ///     be able to truncate the history it failed to extend.
     /// </remarks>
     public static void Append(string repositoryRoot, HistoryEntry entry) {
         var path = PathFor(repositoryRoot);
@@ -126,12 +126,12 @@ public static class History {
     }
 
     /// <summary>
-    /// Reads the history, skipping lines that do not parse.
+    ///     Reads the history, skipping lines that do not parse.
     /// </summary>
     /// <remarks>
-    /// ⚠ A malformed line is skipped rather than fatal. The file is appended to by concurrent CI
-    /// jobs and hand-edited by people; one torn line must not make <c>skala trend</c> refuse to
-    /// render six months of history.
+    ///     ⚠ A malformed line is skipped rather than fatal. The file is appended to by concurrent CI
+    ///     jobs and hand-edited by people; one torn line must not make <c>skala trend</c> refuse to
+    ///     render six months of history.
     /// </remarks>
     public static ImmutableArray<HistoryEntry> Read(string repositoryRoot) {
         var path = PathFor(repositoryRoot);
@@ -158,13 +158,13 @@ public static class History {
     }
 
     /// <summary>
-    /// <c>skala trend</c> — the history as a table with a sparkline per column.
+    ///     <c>skala trend</c> — the history as a table with a sparkline per column.
     /// </summary>
     /// <remarks>
-    /// ⚠ A run whose configuration fingerprint differs from the newest one is marked. Doc 09 says
-    /// two reports with different fingerprints are not comparable, and a trend is nothing but a
-    /// comparison — so the rows that are not comparable have to say so rather than being quietly
-    /// plotted beside the ones that are.
+    ///     ⚠ A run whose configuration fingerprint differs from the newest one is marked. Doc 09 says
+    ///     two reports with different fingerprints are not comparable, and a trend is nothing but a
+    ///     comparison — so the rows that are not comparable have to say so rather than being quietly
+    ///     plotted beside the ones that are.
     /// </remarks>
     public static string Render(ImmutableArray<HistoryEntry> entries, int limit) {
         if (entries.IsEmpty) {

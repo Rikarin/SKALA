@@ -17,6 +17,6 @@ public class ANodeStraddlingATagIsSkippedWhole {
         new();
 
     // @formatter:on
-    // Nothing here is protected.
+        // Nothing here is protected.
     public List<int> Outside() => new();
 }

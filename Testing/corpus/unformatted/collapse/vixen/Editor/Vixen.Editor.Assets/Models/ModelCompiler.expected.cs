@@ -17,8 +17,10 @@ namespace Vixen.Editor.Assets.Models;
 ///         what is built here — what the cluster DAG is.
 ///     </para>
 ///     <para>
-///         <b>Meshlet generation is phase 1 of
-///         <c>docs/plan/22-virtualized-geometry.md</c></b>, and the whole of the algorithm lives in
+///         <b>
+///             Meshlet generation is phase 1 of
+///             <c>docs/plan/22-virtualized-geometry.md</c>
+///         </b>, and the whole of the algorithm lives in
 ///         <c>Vixen.Rendering.VirtualGeometry</c> rather than here, for the reason the distance-field
 ///         bake lives in <c>Vixen.Rendering.DistanceFields</c>: a <see cref="MeshletMesh" /> is what
 ///         this writes and what a player deserialises, so both halves have to be talking about one
@@ -58,7 +60,7 @@ public static class ModelCompiler {
             return built;
         } // Every problem, and then it fails once — the habit `SceneImporter` set, for the same reason:
 
-// a build that stopped at the first one would make fixing a mesh a sequence of builds.
+        // a build that stopped at the first one would make fixing a mesh a sequence of builds.
         report(
             ImportSeverity.Error,
             $"'{mesh.Name}' produced a cluster hierarchy that is not crack-free, so it has none. "
@@ -142,8 +144,8 @@ public static class ModelCompiler {
             );
         } catch (ArgumentException failure) {
             // A cluster that does not fit a page, or positions the grid was not built over. Both are
-// build errors about this mesh rather than bugs in the packer, and both leave the mesh
-// with a DAG and no pages — which draws through the classic path and says why.
+            // build errors about this mesh rather than bugs in the packer, and both leave the mesh
+            // with a DAG and no pages — which draws through the classic path and says why.
             report(
                 ImportSeverity.Error,
                 $"'{mesh.Name}' has a cluster hierarchy that could not be paged, so it has no pages. " + failure.Message

@@ -104,13 +104,13 @@ public abstract class Component : IComposable {
         Root = root;
         Content = root;
         Slots = null; // ⚠ Before `Build`, so that a component reachable from its host is reachable for the whole
-// of the build rather than only afterwards — and so that a component whose own markup asks
-// the document about an ancestor gets an answer.
+        // of the build rather than only afterwards — and so that a component whose own markup asks
+        // the document about an ancestor gets an answer.
         ctx.Document.Mounted(
             root,
             this
         ); // ⚠ Before `Build`, because `BuildContext.Element` reads it for every element the component
-// makes — and after it the component's own elements would already exist unscoped.
+        // makes — and after it the component's own elements would already exist unscoped.
         if (Scope is { } scope) {
             root.AddClass(scope);
         }
@@ -122,9 +122,9 @@ public abstract class Component : IComposable {
 
         if (Style is { } css) {
             // ⚠ **Once per type, not once per instance.** The loader interns and the cascade dedupes,
-// so loading it per instance was correct and wasteful — but "wasteful" here meant a rule
-// set per row of a list, which is a linear cost on the thing virtualisation exists to
-// make constant.
+            // so loading it per instance was correct and wasteful — but "wasteful" here meant a rule
+            // set per row of a list, which is a linear cost on the thing virtualisation exists to
+            // make constant.
             root.Document.LoadOnce(GetType(), Scope is { } named ? ScopedStyles.Scope(css, named) : css);
         }
     }
