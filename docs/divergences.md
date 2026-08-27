@@ -320,15 +320,22 @@ the rest of the class. The 38 files are the class's; the 14 are what can be name
 - ⚠ status: **open**, measured. The sweep is [sk-div-0005-margin-sweep.md](sk-div-0005-margin-sweep.md)
   and it says no value of the constant closes this; it is not tail work
 
-## SK-DIV-0006 — `jb cleanupcode` does not format documentation comments, so neither does Skala
+## SK-DIV-0006 — the pinned oracle profile does not format documentation comments; Rider does, and so does Skala
+
+⚠ **This entry's title used to be "`jb cleanupcode` does not format documentation comments, so
+neither does Skala", and both halves have now been measured false.** The measurement behind it was
+real and is reproduced below; the conclusion drawn from it was not. Read this entry as the record of
+a wrong inference being corrected, because the way it was wrong is more useful than the fact.
 
 [05](plan/05-csharp-formatting-rules.md) § "Phase 4" describes an xmldoc sub-formatter: parse the
 comment as XML, re-wrap text to `xmldoc_max_line_length = 120`, break before
-`summary,remarks,example,returns,param,typeparam,value,para`. It is not implemented, and the reason
-is a measurement.
+`summary,remarks,example,returns,param,typeparam,value,para`. It is implemented, and it runs by
+default.
 
-Asked directly, with the export's whole `resharper_xmldoc_*` family in force, the oracle returns
-every one of these exactly as written:
+### What was measured, and what was concluded
+
+Asked directly at M3, with the export's whole `resharper_xmldoc_*` family in force, the oracle
+returned every one of these exactly as written:
 
 ```csharp
 ///<summary>No space after the marker.</summary>
@@ -337,11 +344,45 @@ every one of these exactly as written:
 /// <summary>Text</summary><remarks>…</remarks>
 ```
 
-A Skala that re-wrapped them would diverge from the oracle on every doc comment in the corpus, and
-would have no oracle to check itself against while doing it, which is how a formatter acquires
-behaviour nobody asked for. The twelve `resharper_xmldoc_*` keys stay Tier D with this as the
-reason, and `resharper_space_after_triple_slash` was **demoted** from Tier A: milestone 1 inserted
-the space, the oracle does not, and it was worth 79 lines across 15 files of `corpus/real/`.
+That is still true, at 2025.2.6, from a committed fixture rather than a remembered probe:
+`constructs/trivia/a-malformed-doc-comment-is-left-alone.cs` goes through the oracle and comes back
+byte-identical.
+
+The conclusion drawn was "the oracle declines to format documentation comments", and from it, "a
+Skala that formatted them would diverge from Rider on every doc comment in every repository". The
+twelve `resharper_xmldoc_*` keys were left Tier D on that basis and
+`resharper_space_after_triple_slash` was **demoted** from Tier A — milestone 1 inserted the space,
+the oracle did not, and it was worth 79 lines across 15 files of `corpus/real/`.
+
+### ⚠ What the measurement actually showed
+
+**`CSharpFormatDocComments` is a `jb cleanupcode` cleanup task, and `OracleProfile.FormatOnly` does
+not enable it.** ReSharper's built-in `Reformat Code` profile sets it false and `Full Cleanup` sets
+it true; `OracleProfile.FormatOnly` is `<CSReformatCode>True</CSReformatCode>` and nothing else,
+which is `Built-in: Reformat Code` exactly. JetBrains documents the same thing in prose twice — "the
+Built-in: Reformat Code profile does not reformat XML doc comments", and "to reformat XML doc
+comments, use code cleanup".
+
+So M3 measured a profile and reported it as a property of the tool. Add one element to the profile
+and the oracle reformats the comment, honouring `space_after_triple_slash`, `max_line_length`,
+`linebreak_before_elements` and `max_blank_lines_between_tags` from this repository's own
+`.editorconfig`. The negative control — the same element under a name the tool does not know —
+changes nothing, which is what makes the positive result mean something. The full probe, its
+commands and two incidental ways to get a false "no change" out of `jb cleanupcode` are in
+[oracle-cleanup-profile.md](oracle-cleanup-profile.md).
+
+**Skala formats documentation comments by default.** Not formatting them was the divergence.
+`skala format --no-xmldoc` is the escape hatch, and it is a flag rather than
+`resharper_xmldoc_wrap_lines = false` for two reasons: that key means "do not wrap long lines" and
+would still leave the comment re-indented and its marker respaced, and it is not a documented
+ReSharper key at all — `wrap_lines` appears nowhere in JetBrains' `.editorconfig` index, for any
+language, though the export writes it.
+
+⚠ **`resharper_space_after_triple_slash` stays demoted, and its reason is gone.** The 79 lines it
+cost were `jb cleanupcode` under a profile that declines to insert the space, charged to Skala. The
+space is inserted again. The key cannot return to Tier A, but not for the old reason: Tier A means
+"pinned by an oracle fixture" and the fixtures were all generated under the profile that does not
+move. That is a fact about the fixtures, and it expires when they are regenerated.
 
 What is implemented is the half [05](plan/05-csharp-formatting-rules.md) calls the hazard and that
 needs no oracle: a doc comment that is not well-formed XML is left exactly as it is and reported at
@@ -362,32 +403,32 @@ space anyway**. Skala follows the oracle rather than the key, so the key is iner
 directions and stays Tier D — implementing it would create a divergence in exchange for nothing
 anyone asked for.
 
-⚠ **Current, at `8cbd66d`: still true, and now verifiable from the registry rather than from a
-memory of a probe.** `resharper_space_after_triple_slash` is **Tier D**,
+⚠ **Registry state.** `resharper_space_after_triple_slash` is **Tier D**,
 `resharper_xmldoc_wrap_lines` is **Tier D**, `trim_trailing_whitespace` is **Tier D** with
 `defaultSource: oracle-probe` — the probe that established it is recorded in the registry entry
 itself — and `resharper_remove_spaces_on_blank_lines` is **Tier D**, inert as this entry says.
 
-⚠ **Re-verified at 2025.2.6 with a committed fixture rather than a remembered probe.**
-`constructs/trivia/a-malformed-doc-comment-is-left-alone.cs` goes through `jb cleanupcode` and comes
-back byte-identical: the unclosed tag, the mismatched end tag, the bare `&`, the `///<summary>` with
-no marker space, and a 128-column summary line. The oracle still does not format documentation
-comments.
+### The sub-formatter is the default
 
-### The sub-formatter now exists, and it is off unless asked for
-
-`XmlDocFormatter` re-wraps documentation comments, and `skala format --xmldoc` is the only thing
-that turns it on. The default path is unchanged and still agrees with the oracle, which is why this
-entry stays open rather than becoming resolved: **Skala's default and Rider still agree that doc
-comments are not formatted.** The flag has the same shape and the same justification as `arrange
---aggressive` in SK-DIV-0014 — a rewrite the export configures, the oracle declines to perform, and
-the user may ask for anyway.
+`XmlDocFormatter` re-wraps documentation comments on every run of `skala format`, `skala arrange`,
+the daemon and the MCP server. `--no-xmldoc` is the only thing that turns it off, and the only thing
+that still reproduces the pinned oracle profile's answer.
 
 ⚠ **These keys are pinned differently from every other formatter option in the project, and the
 difference is stated rather than hidden.** Tier A means "Skala reproduces Rider's behaviour, pinned
-by at least one oracle fixture", and no fixture can ever show Rider doing any of this. So every id
-the sub-formatter reads is registered through `Ids.OfInert`: read, never entering
-`PhaseOneOptions.Implemented`, never claiming Tier A. What pins them instead is three things:
+by at least one oracle fixture", and no committed fixture shows Rider doing any of this — because
+every one of them was generated under a profile that switches it off. So every id the sub-formatter
+reads is registered through `Ids.OfUnoracled`: read, honoured, never entering
+`PhaseOneOptions.Implemented`, never claiming Tier A.
+
+⚠ **`OfUnoracled` is a third mark and it had to be added.** These ids were `OfInert` — "read, and
+unable to change anything" — which was true only while nothing ran them, and
+`AnInertKey_StillCannotBeObserved` would have failed on seven of them the moment the default
+flipped, correctly. Inert and unoracled are opposite claims about the same kind of key: the inert
+theory asserts a key changes nothing, the unoracled theory asserts it changes something. Both fail
+loudly, which is the point of having two.
+
+What pins them instead is three things:
 
 1. **Hand-written fixtures** (`Formatting.CSharp.Tests/XmlDocFormatterTests.cs`) asserting the
    semantics JetBrains' own settings pages state, one per key.
@@ -401,22 +442,40 @@ the sub-formatter reads is registered through `Ids.OfInert`: read, never enterin
    *the code around the comments is untouched*, asserted by comparing the non-`///` lines of the
    output with and without the flag.
 
-⚠ **What the flag costs against the oracle, measured rather than asserted.** This entry used to say
-a re-wrap "would diverge from the oracle on every doc comment in the corpus" and nobody had put a
-number on it. `harness xmldoc` does, over `corpus/real/`'s 380 files and 3 032 doc comments:
+⚠ **What the sub-formatter costs against the pinned profile, measured rather than asserted.** This
+entry used to say a re-wrap "would diverge from the oracle on every doc comment in the corpus" and
+nobody had put a number on it. `harness xmldoc` does, over `corpus/real/`'s 380 files and 3 032 doc
+comments:
 
 | | line | file |
 |---|---|---|
-| default (`--xmldoc` off) | **99.63 %** | 85.26 % |
-| `--xmldoc`, every line counted | **96.04 %** | 47.89 % |
-| default, `///` lines excluded from both sides | 99.53 % | 85.26 % |
-| `--xmldoc`, `///` lines excluded from both sides | 99.53 % | 85.26 % |
+| `--no-xmldoc`, every line | **99.63 %** | 85.26 % |
+| default, every line | **96.04 %** | 47.89 % |
+| `--no-xmldoc`, outside doc comments | 99.53 % | 85.26 % |
+| default, outside doc comments | 99.53 % | 85.26 % |
 
-So the sub-formatter is worth **3.59 points** of line fidelity, and the last two rows being
-identical is the claim that matters: with every `///` line removed from *both* sides, nothing the
-flag is not allowed to touch has moved. ⚠ The exclusion is drawn that way on purpose. Excluding
-"the lines Skala changed" would be marking one's own homework, and excluding "the files with doc
-comments" would hide a real regression in the code around them.
+The 3.59 points between the first two rows are **not** a fidelity cost. They are the fixtures
+answering a question the formatter no longer asks: the profile that produced them does not run
+`CSharpFormatDocComments`, so on those lines the two sides are not disagreeing about how to format
+a doc comment, they are disagreeing about whether to. The last two rows being identical is the
+claim that matters — with every `///` line removed from *both* sides, nothing the sub-formatter is
+not allowed to touch has moved, over all 716 corpus files.
+
+⚠ **That is why `outside doc comments` is the differential's default basis and is named in
+`FidelityBasis`, in every message the ratchet prints, and in `fidelity.json`'s own `Basis` field,
+which `FidelityBaseline.Read()` refuses to compare across.** A fidelity figure that silently
+excludes a category is how a measurement stops meaning anything; the every-line number is asserted
+alongside it by `TheEveryLineNumber_IsStillReported` so that the excluded category cannot grow
+unwatched. The exclusion is drawn from both sides on purpose: excluding "the lines Skala changed"
+would be marking one's own homework, and excluding "the files with doc comments" would hide a real
+regression in the code around them.
+
+⚠ **The exclusion is temporary and its expiry is known.** Adding
+`<CSharpFormatDocComments>True</CSharpFormatDocComments>` to `OracleProfile.FormatOnly` and running
+`./build.sh Oracle` regenerates the 716 fixtures under a profile that formats doc comments, at which
+point `///` lines become comparable, the basis returns to every line, and these keys become
+promotable to Tier A. It was not done in the same commit as the default flip: a corpus-wide fixture
+rewrite and a default change in one diff is not a reviewable diff.
 
 Of the 3 032 comments, **3 030 are re-wrapped and round-trip clean and 2 are left exactly as
 written**, both because they are not well-formed XML. The first run of that measurement refused 16,
@@ -434,22 +493,37 @@ latter would have to be widened again for `space_before_self_closing` and again 
 `spaces_inside_tags`. The signature is *tighter* than a word sequence where it counts: a `<code>`
 body is compared byte-for-byte, which it was not before.
 
-**Seventeen of the twenty-seven `resharper_xmldoc_*` keys are honoured under the flag** and ten are
-refused. The refusals are reasons, not a backlog, and each one is in `XmlDocIds.Refused`:
+**Seventeen of the twenty-seven `resharper_xmldoc_*` keys are honoured** and ten are refused. Each
+of the seventeen is asserted observable by `AnUnoracledKey_IsObservable`, against a hand-written
+probe rather than against `constructs/` — nine of them cannot be seen there, because the constructs
+fixtures carry short, already-tidy doc comments written when nothing read them. The refusals are
+reasons, not a backlog, and each one is in `XmlDocIds.Refused`:
 
 - `attribute_indent`, `attribute_style`, `space_after_last_attribute`, `spaces_around_eq_in_attribute`,
   `alignment_tab_fill_style`, `allow_far_alignment` — **Skala emits a tag header byte-for-byte and
   never breaks inside one.** One rule settles all six. A `cref=` or `name=` is read by the compiler
   and by the doc build, and Skala will not edit inside one for a whitespace preference; nothing is
-  ever wrapped inside a header, so nothing is ever aligned or indented there either.
+  ever wrapped inside a header, so nothing is ever aligned or indented there either. ⚠ These six
+  are unaffected by the profile finding: they were never refused for want of an oracle.
 - `linebreaks_inside_tags_for_elements_longer_than` — the export sets `int.MaxValue`, "never", and
-  what ReSharper measures against it is not stated anywhere. A threshold never crossed cannot be
-  pinned by a fixture and cannot be inferred from behaviour.
-- `wrap_around_elements` — indistinguishable from `wrap_tags_and_pi` without an oracle. Honouring
-  both would mean inventing a difference and then pinning the invention.
+  **JetBrains' own reference page does not say what is measured against it.** The UI label is "when
+  element is longer than" and the value is documented only as "an integer"; nothing states whether
+  the threshold counts characters, columns or lines, or whether the element's tags are included.
+  ⚠ The reason has *changed*: it used to be "a threshold never crossed cannot be pinned by a
+  fixture", which is no longer a reason for anything here. What refuses it now is that the semantics
+  are undocumented, which no amount of oracle access fixes.
+- `wrap_around_elements` — ⚠ **the old reason was wrong and is withdrawn.** It said the key is
+  "indistinguishable from `wrap_tags_and_pi` without an oracle". JetBrains documents them
+  distinctly and in different sections: `wrap_tags_and_pi` is "Wrap tags and processing
+  instructions" under *Line wrapping*, `wrap_around_elements` is "Wrap before and after elements"
+  under *Tag content*. The refusal now rests on something narrower and true — the docs describe each
+  separately and never describe how the two interact, so Skala honours the one whose scope it can
+  state and refuses the one whose scope only exists relative to it. **This is the one refusal that
+  is now a backlog item rather than a reason.**
 - `tab_width` — it only changes how wide a tab is when measuring, and the only tab a re-wrap can
   meet is inside a `<code>` block, which is verbatim and never measured.
-- `insert_final_newline` — a `///` comment has no file end to put a newline at.
+- `insert_final_newline` — a `///` comment has no file end to put a newline at, and JetBrains' key
+  index does not list XMLDOC among the languages that accept the key at all.
 
 ⚠ Two readings the sub-formatter had to choose and no oracle settles, recorded because they are
 choices: `linebreak_before_elements` is read as "this element owns its own line", a break before it
@@ -464,9 +538,12 @@ existing and makes lifting it out the exercise that proves the `ISkalaLanguage` 
 `ISkalaLanguage` still does not, and doc 14 still has no correction note.
 
 - options: `resharper_space_after_triple_slash`, `resharper_xmldoc_wrap_lines`, `resharper_xmldoc_max_line_length`, `resharper_xmldoc_linebreak_before_elements`, `trim_trailing_whitespace`
-- ⚠ status: **open and deliberate.** The sub-formatter exists and is opt-in; the default still
-  agrees with the oracle. Seventeen keys honoured under `--xmldoc`, ten refused with a reason, none
-  Tier A and none able to become Tier A
+- ⚠ status: **open, and no longer deliberate.** The sub-formatter is the default and Skala follows
+  Rider. Seventeen keys honoured and asserted observable, ten refused with a reason, none Tier A —
+  and, unlike before, all of them *able* to become Tier A. What is left is one element in
+  `OracleProfile.FormatOnly` and a fixture regeneration; the `outside doc comments` fidelity basis
+  is scaffolding that stands until then. ⚠ This entry is also the second instance behind
+  [16](plan/16-risks-and-open-questions.md) § Q1, which had been recorded as narrowed
 
 ## SK-DIV-0007 — an argument list around a chain the author broke does not chop
 
