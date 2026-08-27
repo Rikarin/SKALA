@@ -31,7 +31,85 @@ public sealed class SkalaDirectoryTests : IDisposable {
 
         var marker = Path.Combine(_root, ".skala", ".gitignore");
         Assert.True(File.Exists(marker), "`.skala/` was created without the marker that hides it.");
-        Assert.Equal("*", File.ReadAllText(marker).Trim());
+        Assert.StartsWith("*", File.ReadAllText(marker), StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// ⚠ <b>The baseline is not scratch, and the marker used to swallow it.</b> docs/plan/09 calls
+    /// <c>.skala/baseline.sarif</c> "a reviewed, committed artefact — its diff in a PR is 'we
+    /// suppressed these'", and doc 09's own <c>ci</c> gate names that path. With a marker of bare
+    /// <c>*</c>, Skala wrote the file and then hid it: the first repository to adopt Skala had to
+    /// <c>git add -f</c> the one artefact the design requires be committed, and a baseline nobody
+    /// commits is a baseline the gate cannot read on the next machine.
+    /// </summary>
+    [Fact]
+    public void TheBaseline_IsNotIgnored() {
+        if (!Git(_root, "init", "-q")) {
+            return;
+        }
+
+        SkalaDirectory.Ensure(_root);
+        File.WriteAllText(Path.Combine(_root, ".skala", "baseline.sarif"), "{}");
+
+        Assert.Contains(
+            "baseline.sarif",
+            GitStatus(_root),
+            StringComparison.Ordinal
+        );
+    }
+
+    /// <summary>
+    /// ⚠ And nothing else moved. The exception is one filename, not a hole: the cache, the report,
+    /// the history and the crash reproductions are still Skala's own and still invisible.
+    /// </summary>
+    [Theory]
+    [InlineData("report.sarif")]
+    [InlineData("history.jsonl")]
+    [InlineData("cache/x.json")]
+    [InlineData("crash/abc123/input.cs")]
+    public void EverythingElse_IsStillIgnored(string relative) {
+        if (!Git(_root, "init", "-q")) {
+            return;
+        }
+
+        var file = Path.Combine(_root, ".skala", relative.Replace('/', Path.DirectorySeparatorChar));
+        Directory.CreateDirectory(Path.GetDirectoryName(file)!);
+        SkalaDirectory.Ensure(_root);
+        File.WriteAllText(file, "x");
+
+        Assert.Equal(string.Empty, GitStatus(_root).Trim());
+    }
+
+    /// <summary>
+    /// ⚠ The marker keeps hiding itself. Un-ignoring it alongside the baseline would put
+    /// <c>?? .skala/.gitignore</c> in the <c>git status</c> of every repository Skala is ever run
+    /// in, which is the exact discourtesy this whole type exists to prevent.
+    /// </summary>
+    [Fact]
+    public void TheMarker_StillHidesItself() {
+        if (!Git(_root, "init", "-q")) {
+            return;
+        }
+
+        SkalaDirectory.Ensure(_root);
+
+        Assert.Equal(string.Empty, GitStatus(_root).Trim());
+    }
+
+    /// <summary>
+    /// A repository that adopted Skala before M9 has a marker of bare <c>*</c> on disk, and
+    /// <see cref="SkalaDirectory.Mark"/> never overwrites. Without an upgrade those repositories
+    /// keep needing <c>git add -f</c> for ever.
+    /// </summary>
+    [Fact]
+    public void Mark_UpgradesTheLegacyMarkerInPlace() {
+        var skala = SkalaDirectory.Ensure(_root);
+        var marker = Path.Combine(skala, ".gitignore");
+        File.WriteAllText(marker, "*\n");
+
+        SkalaDirectory.Mark(skala);
+
+        Assert.Equal(SkalaDirectory.IgnoreContents, File.ReadAllText(marker).ReplaceLineEndings("\n"));
     }
 
     [Fact]
@@ -139,6 +217,10 @@ public sealed class SkalaDirectoryTests : IDisposable {
         };
         info.ArgumentList.Add("status");
         info.ArgumentList.Add("--porcelain");
+
+        // ⚠ `-uall`, because plain `--porcelain` collapses an untracked directory to `?? .skala/`
+        // and every assertion here is about *which* file inside it is visible.
+        info.ArgumentList.Add("-uall");
         using var process = System.Diagnostics.Process.Start(info)!;
         var output = process.StandardOutput.ReadToEnd();
         process.WaitForExit();

@@ -142,7 +142,16 @@ public static class CheckCommand {
         var diagnostics = ImmutableArray.CreateBuilder<SkalaDiagnostic>();
         diagnostics.AddRange(loaded.Diagnostics);
 
-        if (loaded.IsEmpty) {
+        // ⚠ <b>`--require-fresh-binlog` raised the severity of a printed line and nothing else.</b>
+        // Nothing downstream reads a load diagnostic's severity — the gate reads findings — so the
+        // flag CI sets in order to refuse a bad load produced an error-coloured warning and exit 0.
+        // Combined with an incremental binlog covering a third of the tree, that is a green gate
+        // over an unanalysed repository. A load the caller told us to refuse is a load failure.
+        var refused = request.RequireFreshBinlog
+            ? loaded.Diagnostics.Where(static d => d.Severity >= SkalaSeverity.Error).ToArray()
+            : [];
+
+        if (loaded.IsEmpty || refused.Length > 0) {
             var empty = new RunReport {
                 RepositoryRoot = root,
                 Mode = loaded.Mode,
@@ -154,7 +163,9 @@ public static class CheckCommand {
             return (
                 new CommandResult(
                     ExitCodes.LoadFailure,
-                    "skala check: no compilation could be built.\n"
+                    (loaded.IsEmpty
+                        ? "skala check: no compilation could be built.\n"
+                        : "skala check: --require-fresh-binlog refused this load.\n")
                     + string.Join("\n", diagnostics.Select(static d => "  " + d))
                     + "\n"
                 ),
