@@ -94,6 +94,62 @@ property still runs over this file.
 - ⚠ ⚠ This is the *only* entry here whose defect is in the test harness rather than the tool. When it
   is fixed the exclusion goes, not the fixture.
 
+## SK-FUZZ-0009 — a `#endif` after a lone `\r` stops being a directive
+
+- file: `preprocessor-directive-after-a-lone-cr.cs`
+- property: `token-equivalence`
+- seed: `16325283595831279955`
+- found: mutating `pathological/mixed-line-endings-after-a-trailing-comment.cs` with `trailing-space`,
+  `if-true`, `blank-lines`, `widen-identifier`; minimised from 71 characters to 42.
+
+```
+#if true
+class C_ww { // fuzz<CR><LF>
+}   <CR>#endif
+```
+
+`skala format` reports **SK9099** and refuses to write:
+
+```
+error SK9099: not written, the formatted output has a different token stream
+(at token 6: 'P:#endif' became 'S:#endif')
+```
+
+⚠ A **P**reprocessor directive became a **S**kipped token. C# ends a line at a lone `\r` as well as
+at `\n`, so `}   <CR>#endif` puts the `#endif` at the start of its own line and it is a directive;
+the formatter joins it onto the line above, where a `#` is no longer the first thing on the line and
+Roslyn stops treating it as one. The safety net does its job and nothing is written, but the file
+cannot be formatted at all.
+
+⚠ Suspect `CountNewLines` and `FirstNewLine` in `CSharpDocumentBuilder`: a gap whose only line
+terminator is a lone `\r` looks like a gap with no newline in it, and the brace and directive rules
+then reason about it as though the two tokens shared a line. That is a guess and is written here as
+one — the cause is not established.
+
+⚠ **Found on the file SK-FUZZ-0003 had just retired into the measured corpus**, which is the
+"corpus only grows" argument paying for itself inside one session: retiring a reproduction hands the
+mutator a seed file with a shape nothing else in the corpus has, and it found a second defect in it
+within twelve minutes.
+
+## SK-FUZZ-0010 — a wrapped signature and a trailing comment need two passes for one blank line
+
+- file: `blank-line-after-a-trailing-comment.cs`
+- property: `idempotency`
+- seed: `15479240576151154023`
+- found: a generated unit mutated with `widen-gap`, `trailing-comment`, `trailing-comment`; minimised
+  from 4 779 characters to 330.
+
+`format(format(x)) ≠ format(x)`: the second pass inserts one blank line and the third is stable.
+Reproduced through the CLI byte for byte — pass 1 and pass 2 differ by a single added line, pass 2
+and pass 3 are identical.
+
+⚠ **Hand-narrowing failed, and that is the useful part of this entry.** The obvious reduction —
+a method whose body ends in `}`, a trailing comment on it, a field below with another — converges in
+one pass, and so does either half of it alone. The trigger needs the *wide* method signature that
+the fitter chops, which points at the same place SK-FUZZ-0007 did: a blank-line decision that reads
+a width, taken before the pass that changes it. The 330-character delta-debugged case is therefore
+the entry rather than a prettier four-line one, because the prettier one does not reproduce.
+
 ---
 
 ## Retired
