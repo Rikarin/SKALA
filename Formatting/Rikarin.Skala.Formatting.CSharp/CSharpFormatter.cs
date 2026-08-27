@@ -106,7 +106,10 @@ public static class CSharpFormatter {
             );
         }
 
-        var built = CSharpDocumentBuilder.Build(path, text, tree.GetRoot(), options);
+        var root = tree.GetRoot();
+        XmlDocComments.Report(path, text, root, diagnostics);
+
+        var built = CSharpDocumentBuilder.Build(path, text, root, options);
         diagnostics.AddRange(built.Diagnostics);
 
         var indentUnit = options.UseTabs ? "\t" : new string(' ', options.IndentSize);
@@ -119,6 +122,7 @@ public static class CSharpFormatter {
             options.ContinuousIndentMultiplier
         );
         var output = ApplyFileLevelRules(layout.Text, options, newLine);
+        ReportLongLines(path, output, options, diagnostics);
         var edits = EditEmitter.Emit(text.ToString(), layout with { Text = output });
         var formatted = EditEmitter.Apply(text.ToString(), edits);
 
@@ -147,6 +151,47 @@ public static class CSharpFormatter {
         }
 
         return new FormatResult(path, text, [.. edits], formatted, diagnostics.ToImmutable(), FormatOutcome.Formatted);
+    }
+
+    /// <summary>
+    /// Reports every line the formatter could not fit, at <c>hint</c>.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ docs/plan/04 § "The fitting algorithm": "Unfittable lines are left long. […] It never
+    /// breaks a token, never breaks inside a string, and never emits a diagnostic for it by default
+    /// (SK0002 at hint for the audit)." A 200-character string literal and a deeply-qualified
+    /// generic type are not the formatter's to shorten, and a formatter that tried would be breaking
+    /// tokens.
+    /// </remarks>
+    static void ReportLongLines(
+        string path,
+        string output,
+        in PhaseOneOptions options,
+        ImmutableArray<SkalaDiagnostic>.Builder diagnostics
+    ) {
+        var line = 1;
+        var start = 0;
+        for (var i = 0; i <= output.Length; i++) {
+            if (i != output.Length && output[i] != '\n') {
+                continue;
+            }
+
+            var end = i > start && output[i - 1] == '\r' ? i - 1 : i;
+            if (TextWidth.Measure(output[start..end]) > options.MaxLineLength) {
+                diagnostics.Add(
+                    new SkalaDiagnostic(
+                        FormatDiagnosticIds.LineTooLong,
+                        SkalaSeverity.Hidden,
+                        $"the line is {TextWidth.Measure(output[start..end]).ToString(System.Globalization.CultureInfo.InvariantCulture)} columns and nothing in it could break",
+                        path,
+                        line
+                    )
+                );
+            }
+
+            start = i + 1;
+            line++;
+        }
     }
 
     /// <summary>Reads a file, resolves its options from the .editorconfig chain, and formats it.</summary>

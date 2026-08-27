@@ -734,3 +734,59 @@ public sealed class BreakPositionTests {
         }
     }
 }
+
+/// <summary>Phase 4, and the shape of it that is evidence-led rather than schedule-led.</summary>
+public sealed class XmlDocTests {
+    [Fact]
+    public void AMalformedDocComment_IsReportedAtHint_AndLeftExactlyAsWritten() {
+        // ⚠ docs/plan/05 § "Phase 4": "A doc comment that is not well-formed XML — extremely common
+        // in real code — must be left exactly as it is and reported at hint (SK0003), not 'fixed'."
+        const string source = "class C {\n    /// <summary>Not closed <b>at all.</summary>\n    void M() { }\n}\n";
+        var result = Format.Run(source);
+
+        Assert.Contains(
+            result.Diagnostics,
+            d => d.Id == FormatDiagnosticIds.MalformedXmlDoc && d.Severity == SkalaSeverity.Hidden
+        );
+
+        Assert.Contains("/// <summary>Not closed <b>at all.</summary>", result.Formatted, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void TwoSiblingParamTags_AreWellFormed() {
+        // ⚠ A doc comment is a fragment, not a document. Two <param> siblings are ordinary, and
+        // judging them by document rules would report most of the corpus.
+        const string source = "class C {\n    /// <param name=\"a\">A.</param>\n    /// <param name=\"b\">B.</param>\n    void M(int a, int b) { }\n}\n";
+
+        Assert.DoesNotContain(
+            Format.Run(source).Diagnostics,
+            static d => d.Id == FormatDiagnosticIds.MalformedXmlDoc
+        );
+    }
+
+    [Fact]
+    public void AWellFormedDocComment_IsNotRewrappedEither() {
+        // ⚠ SK-DIV-0006. `jb cleanupcode` does not format documentation comments at all — not the
+        // missing space after `///`, not a 128-column summary, not two tags on one line — so Skala
+        // does not either. A formatter that re-wrapped them would diverge from the oracle on every
+        // doc comment in the corpus, with no oracle to check itself against while doing it.
+        const string source = "class C {\n    ///<summary>A summary line that runs a long way past one hundred and twenty columns in total, easily.</summary>\n    void M() { }\n}\n";
+
+        Assert.Contains("///<summary>", Format.Text(source), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void ALineNothingCouldBreak_IsLeftLongAndReportedAtHint() {
+        // docs/plan/04 § "The fitting algorithm": "Unfittable lines are left long. […] never emits a
+        // diagnostic for it by default (SK0002 at hint for the audit)."
+        var source = "class C {\n    const string S = \"" + new string('x', 200) + "\";\n}\n";
+        var result = Format.Run(source);
+
+        Assert.Contains(
+            result.Diagnostics,
+            static d => d.Id == FormatDiagnosticIds.LineTooLong && d.Severity == SkalaSeverity.Hidden
+        );
+
+        Assert.Contains(new string('x', 200), result.Formatted, StringComparison.Ordinal);
+    }
+}
