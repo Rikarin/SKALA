@@ -28,7 +28,7 @@ public static class CacheKey {
         string editorConfigFingerprint
     ) {
         var hash = new XxHash128();
-        hash.Append(Encoding.UTF8.GetBytes(filePath));
+        hash.Append(Encoding.UTF8.GetBytes(NormalisePath(filePath)));
         hash.Append(content);
         hash.Append(Encoding.UTF8.GetBytes(compilationFingerprint));
         hash.Append(Encoding.UTF8.GetBytes(ruleSetFingerprint));
@@ -39,8 +39,54 @@ public static class CacheKey {
         // enclosing-symbol and snippet terms in M6, and an entry written before that deserialises
         // happily with both empty — a stale hit that is wrong rather than absent, which is the
         // failure mode a cache must never have. Bumping this discards them instead.
-        hash.Append(Encoding.UTF8.GetBytes("cache/v2"));
+        //
+        // ⚠ v3: the path term is now normalised (see `NormalisePath`). Every key on a Windows or
+        // macOS machine moves, which is a cold run once and then correct.
+        hash.Append(Encoding.UTF8.GetBytes("cache/v3"));
         return Convert.ToHexStringLower(hash.GetCurrentHash());
+    }
+
+    /// <summary>
+    /// The path, as the file system would compare it — which is what the key has to hash.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ doc 12 § "Cross-platform" lists "case-insensitive path comparison in the cache key" as a
+    /// Windows hazard, and until this method existed the cache key had the hazard: it hashed the
+    /// raw UTF-8 of the path, so <c>C:\Src\A.cs</c> and <c>c:\src\a.cs</c> — the same file on every
+    /// Windows volume and on a default macOS volume — produced two different keys and therefore two
+    /// entries for one file. The cost is a silent miss rather than a wrong answer, which is the
+    /// benign direction, but the miss is *permanent*: the case a path arrives in is a property of
+    /// the API that produced it, so a run whose paths come from MSBuild and a run whose paths come
+    /// from a directory walk never share a single entry, and the warm run doc 13 budgets at under
+    /// 5 s is a cold one every time.
+    /// <para>
+    /// ⚠ The two normalisations are separate decisions and both are platform-conditional:
+    /// </para>
+    /// <list type="bullet">
+    /// <item>
+    /// <b>Case</b> folds where <see cref="SarifWriter.PathComparison"/> says the file system folds
+    /// it — the same single decision the reporting layer relativises paths under, so a path that
+    /// renders repo-relative in the report is a path that hits the cache here. On Linux it must
+    /// <i>not</i> fold: <c>a.cs</c> and <c>A.cs</c> are two files and one entry for both would be a
+    /// stale hit, which is the one failure a cache may never have.
+    /// </item>
+    /// <item>
+    /// <b>Separators</b> fold only on Windows, where both <c>/</c> and <c>\</c> separate. On Unix a
+    /// backslash is an ordinary character in a file name and folding it would merge two real files
+    /// — the same stale hit by the other route.
+    /// </item>
+    /// </list>
+    /// <para>
+    /// <c>ToUpperInvariant</c> rather than <c>ToLowerInvariant</c>: it is the normalisation
+    /// <see cref="StringComparison.OrdinalIgnoreCase"/> is defined in terms of, so two paths that
+    /// compare equal under the comparison the rest of the tool uses hash equal here.
+    /// </para>
+    /// </remarks>
+    public static string NormalisePath(string path) {
+        var separated = OperatingSystem.IsWindows() ? path.Replace('/', '\\') : path;
+        return SarifWriter.PathComparison == StringComparison.OrdinalIgnoreCase
+            ? separated.ToUpperInvariant()
+            : separated;
     }
 
     /// <summary>Reference MVIDs, parse options and preprocessor symbols — the compilation's identity.</summary>
