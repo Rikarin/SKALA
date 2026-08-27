@@ -187,7 +187,7 @@ public sealed class UndisposedLocalAnalyzer : DiagnosticAnalyzer {
             switch (reference.Parent) {
                 // `x.Member` — reading the object without handing it anywhere.
                 case MemberAccessExpressionSyntax access when ReferenceEquals(access.Expression, reference):
-                    if (IsDisposal(access.Name.Identifier.ValueText)) {
+                    if (IsDisposal(access.Name.Identifier.ValueText) || HandsOutADisposable(context, access)) {
                         return false;
                     }
 
@@ -196,6 +196,10 @@ public sealed class UndisposedLocalAnalyzer : DiagnosticAnalyzer {
 
                 // `x[i]` — the same shape through an indexer.
                 case ElementAccessExpressionSyntax element when ReferenceEquals(element.Expression, reference):
+                    if (HandsOutADisposable(context, element)) {
+                        return false;
+                    }
+
                     read = true;
                     continue;
 
@@ -221,6 +225,40 @@ public sealed class UndisposedLocalAnalyzer : DiagnosticAnalyzer {
     }
 
     static bool IsDisposal(string name) => name is "Dispose" or "DisposeAsync" or "Close";
+
+    /// <summary>
+    /// Whether reading through the local produces another disposable.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ This is the outward half of the ownership question and it took a reference tree to find.
+    /// <c>var backend = new NullAudioBackend(); device = backend.OpenDevice(options);</c> never
+    /// passes the backend anywhere — and the device it handed out is stored in a field and used long
+    /// after the method returns. Disposing the backend at the end of the scope closes the device
+    /// with it. An object that produces a disposable is an owner whose lifetime that product depends
+    /// on, and the rule cannot follow the product.
+    /// </remarks>
+    static bool HandsOutADisposable(SyntaxNodeAnalysisContext context, ExpressionSyntax read) {
+        var produced = read.Parent is InvocationExpressionSyntax invocation
+            && ReferenceEquals(invocation.Expression, read)
+            ? invocation
+            : read;
+
+        var type = context.SemanticModel.GetTypeInfo(produced, context.CancellationToken).Type;
+        if (type is null || type.SpecialType != SpecialType.None || type.TypeKind == TypeKind.Error) {
+            return false;
+        }
+
+        foreach (var candidate in type.AllInterfaces) {
+            var name = candidate.ToDisplayString();
+            if (string.Equals(name, "System.IDisposable", StringComparison.Ordinal)
+                || string.Equals(name, "System.IAsyncDisposable", StringComparison.Ordinal)) {
+                return true;
+            }
+        }
+
+        return string.Equals(type.ToDisplayString(), "System.IDisposable", StringComparison.Ordinal)
+            || string.Equals(type.ToDisplayString(), "System.IAsyncDisposable", StringComparison.Ordinal);
+    }
 
     static SyntaxNode? EnclosingBody(SyntaxNode node) {
         for (var current = node.Parent; current is not null; current = current.Parent) {

@@ -139,6 +139,97 @@ public sealed class RuleFixtureTests {
     }
 
     /// <summary>
+    /// ⚠ The other half of "the fix works": apply every edit, re-bind, and the rule is quiet.
+    /// </summary>
+    /// <remarks>
+    /// <see cref="EveryFix_ProducesTextThatStillParses"/> asks only whether the result parses, and a
+    /// fix can parse, bind and still leave the finding standing — an edit in the wrong place, or one
+    /// that repairs the symptom the message names and not the shape the rule matches. That failure
+    /// looks exactly like a working fix in a report and turns <c>skala fix</c> into a loop.
+    /// <para>
+    /// ⚠ It re-binds rather than re-parsing, so it also catches the fix that compiles as text and
+    /// not as a program: a <c>.ToList()</c> where <c>System.Linq</c> is not imported, an
+    /// <c>async</c> added to a method holding a byref-like local. The comparison is against the
+    /// fixture's own diagnostics before the edit, because a fixture is allowed to carry warnings.
+    /// </para>
+    /// </remarks>
+    [Theory]
+    [MemberData(nameof(Fixtures))]
+    public void EveryFix_SilencesTheRuleAndIntroducesNoDiagnostic(RuleFixture fixture) {
+        if (!fixture.ShouldFire || RuleCatalog.Find(fixture.RuleId) is not { HasFix: true }) {
+            return;
+        }
+
+        var source = File.ReadAllText(fixture.Path);
+        var before = RuleFixtures.Compile(source, fixture.Path);
+        var findings = RuleFixtures
+            .Analyze(before, Analyzers, TestContext.Current.CancellationToken)
+            .Where(diagnostic => diagnostic.Id == fixture.RuleId)
+            .ToArray();
+
+        var edits = findings.SelectMany(ReadEdits).OrderByDescending(static edit => edit.Start).ToArray();
+        if (edits.Length == 0) {
+            return;
+        }
+
+        var text = source;
+        foreach (var (start, length, replacement) in edits) {
+            text = text[..start] + replacement + text[(start + length)..];
+        }
+
+        var after = RuleFixtures.Compile(text, fixture.Path);
+
+        // ⚠ Errors for every fix; warnings only for a *safe* one. `fixIsSafe` is the promise that
+        // `--fix` may apply the edit without review, so a safe fix that leaves a warning behind
+        // fails a `TreatWarningsAsErrors` build on the tool's advice. An unsafe fix is reviewed by
+        // definition, and its new warning is often the point: SK3001 turns `async void` into
+        // `async Task`, and the CS4014 that appears at every caller is the rule finishing its
+        // sentence.
+        var severities = RuleCatalog.Get(fixture.RuleId).FixIsSafe
+            ? new[] { DiagnosticSeverity.Error, DiagnosticSeverity.Warning }
+            : [DiagnosticSeverity.Error];
+
+        var introduced = Signatures(after.GetDiagnostics(TestContext.Current.CancellationToken), severities)
+            .Except(
+                Signatures(before.GetDiagnostics(TestContext.Current.CancellationToken), severities),
+                StringComparer.Ordinal
+            )
+            .ToArray();
+
+        Assert.True(
+            introduced.Length == 0,
+            $"{fixture}: applying {fixture.RuleId}'s fix introduced {introduced.Length} diagnostic(s) the "
+            + $"fixture did not have:\n  {string.Join("\n  ", introduced.Take(5))}\n---\n{text}"
+        );
+
+        var remaining = RuleFixtures
+            .Analyze(after, Analyzers, TestContext.Current.CancellationToken)
+            .Where(diagnostic => diagnostic.Id == fixture.RuleId)
+            .ToArray();
+
+        Assert.True(
+            remaining.Length == 0,
+            $"{fixture}: {fixture.RuleId} still fires {remaining.Length} time(s) after its own fix was "
+            + $"applied, so `skala fix` would loop:\n  "
+            + string.Join("\n  ", remaining.Select(static d => d.Location.GetLineSpan() + ": " + d.GetMessage()))
+            + $"\n---\n{text}"
+        );
+    }
+
+    /// <summary>
+    /// ⚠ Id and message, never the location. A fix that deletes a line moves every diagnostic below
+    /// it, and keyed on position an unchanged warning reads as a new one — the same shrug
+    /// <c>RuleAudit</c> keys per <c>(file, id)</c> to avoid.
+    /// </summary>
+    static IEnumerable<string> Signatures(
+        IEnumerable<Diagnostic> diagnostics,
+        IReadOnlyList<DiagnosticSeverity> severities
+    ) =>
+        diagnostics
+            .Where(diagnostic => severities.Contains(diagnostic.Severity))
+            .Select(static diagnostic => diagnostic.Id + ": " + diagnostic.GetMessage());
+
+    /// <summary>
     /// ⚠ docs/plan/08: every modernization rule declares its floor and is silent below it, checked
     /// against the compilation's effective LangVersion and not the SDK's. A rule that suggests C# 12
     /// syntax to a project pinned at C# 10 produces uncompilable fixes.
