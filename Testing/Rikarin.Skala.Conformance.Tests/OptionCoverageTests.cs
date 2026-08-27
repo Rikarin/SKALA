@@ -104,7 +104,8 @@ public sealed class OptionCoverageTests {
         var unexplained = OptionRegistry.All
             .Where(info => info.Tier == OptionTier.D
                 && info.Oracle is { Length: > 0 }
-                && !unsubstantiated.Contains(info.Id))
+                && !unsubstantiated.Contains(info.Id)
+            )
             .Select(static info => info.Key)
             .Order(StringComparer.Ordinal)
             .ToArray();
