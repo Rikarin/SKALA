@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:98ff52570e019fac profile=SkalaCleanup generated=2026-08-27
+// skala-oracle: resharper=2025.2.6 config=sha256:bd9791d3a6e6a087 profile=SkalaCleanup generated=2026-08-27
 #region License
 
 // Copyright (c) 2007 James Newton-King
@@ -37,14 +37,15 @@ using Assert = Newtonsoft.Json.Tests.XUnitAssert;
 
 #endif
 
-namespace Newtonsoft.Json.Tests.Documentation.Samples.Xml {
-    [TestFixture]
-    public class ConvertJsonToXml : TestFixtureBase {
-        [Test]
-        public void Example() {
-            #region Usage
+namespace Newtonsoft.Json.Tests.Documentation.Samples.Xml;
 
-            var json = @"{
+[TestFixture]
+public class ConvertJsonToXml : TestFixtureBase {
+    [Test]
+    public void Example() {
+        #region Usage
+
+        var json = @"{
               '@Id': 1,
               'Email': 'james@example.com',
               'Active': true,
@@ -60,25 +61,25 @@ namespace Newtonsoft.Json.Tests.Documentation.Samples.Xml {
               }
             }";
 
-            XNode node = JsonConvert.DeserializeXNode(json, "Root");
+        XNode node = JsonConvert.DeserializeXNode(json, "Root");
 
-            Console.WriteLine(node.ToString());
-            // <Root Id="1">
-            //   <Email>james@example.com</Email>
-            //   <Active>true</Active>
-            //   <CreatedDate>2013-01-20T00:00:00Z</CreatedDate>
-            //   <Roles>User</Roles>
-            //   <Roles>Admin</Roles>
-            //   <Team Id="2">
-            //     <Name>Software Developers</Name>
-            //     <Description>Creators of fine software products and services.</Description>
-            //   </Team>
-            // </Root>
+        Console.WriteLine(node.ToString());
+        // <Root Id="1">
+        //   <Email>james@example.com</Email>
+        //   <Active>true</Active>
+        //   <CreatedDate>2013-01-20T00:00:00Z</CreatedDate>
+        //   <Roles>User</Roles>
+        //   <Roles>Admin</Roles>
+        //   <Team Id="2">
+        //     <Name>Software Developers</Name>
+        //     <Description>Creators of fine software products and services.</Description>
+        //   </Team>
+        // </Root>
 
-            #endregion
+        #endregion
 
-            StringAssert.AreEqual(
-                @"<Root Id=""1"">
+        StringAssert.AreEqual(
+            @"<Root Id=""1"">
   <Email>james@example.com</Email>
   <Active>true</Active>
   <CreatedDate>2013-01-20T00:00:00Z</CreatedDate>
@@ -89,9 +90,8 @@ namespace Newtonsoft.Json.Tests.Documentation.Samples.Xml {
     <Description>Creators of fine software products and services.</Description>
   </Team>
 </Root>",
-                node.ToString()
-            );
-        }
+            node.ToString()
+        );
     }
 }
 

@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:98ff52570e019fac profile=SkalaCleanup generated=2026-08-27
+// skala-oracle: resharper=2025.2.6 config=sha256:bd9791d3a6e6a087 profile=SkalaCleanup generated=2026-08-27
 #region License
 
 // Copyright (c) 2007 James Newton-King
@@ -26,16 +26,16 @@
 
 #endregion
 
-namespace Newtonsoft.Json.Tests.TestObjects {
-    public class TestObject {
-        public TestObject() { }
+namespace Newtonsoft.Json.Tests.TestObjects;
 
-        public TestObject(string name, byte[] data) {
-            Name = name;
-            Data = data;
-        }
+public class TestObject {
+    public TestObject() { }
 
-        public string Name { get; set; }
-        public byte[] Data { get; set; }
+    public TestObject(string name, byte[] data) {
+        Name = name;
+        Data = data;
     }
+
+    public string Name { get; set; }
+    public byte[] Data { get; set; }
 }

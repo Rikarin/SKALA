@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:98ff52570e019fac profile=SkalaCleanup generated=2026-08-27
+// skala-oracle: resharper=2025.2.6 config=sha256:bd9791d3a6e6a087 profile=SkalaCleanup generated=2026-08-27
 // SPDX-FileCopyrightText: Copyright (c) Rikarin
 // SPDX-License-Identifier: Apache-2.0
 
@@ -164,11 +164,11 @@ public class FilterTests {
     [Fact]
     public void TheTeamFilterStopsAnAllyBeingNoticed() {
         var fleet = new Fleet(Fleet.Everything() with { Filter = PerceptionFilters.Hostiles });
-        var listener = fleet.Listener(Vector3.Zero, team: 1);
+        var listener = fleet.Listener(Vector3.Zero, 1);
 
-        fleet.Source(new(0f, 0f, -5f), team: 1);
+        fleet.Source(new(0f, 0f, -5f), 1);
 
-        var enemy = fleet.Source(new(0f, 0f, -6f), team: 2);
+        var enemy = fleet.Source(new(0f, 0f, -6f), 2);
 
         fleet.Step();
 
@@ -185,8 +185,8 @@ public class FilterTests {
     [Fact]
     public void DamageReachesItsVictimEvenFromItsOwnSide() {
         var fleet = new Fleet(Fleet.Everything() with { Filter = PerceptionFilters.Hostiles });
-        var listener = fleet.Listener(Vector3.Zero, team: 1);
-        var ally = fleet.Source(new(0f, 0f, -5f), team: 1);
+        var listener = fleet.Listener(Vector3.Zero, 1);
+        var ally = fleet.Source(new(0f, 0f, -5f), 1);
 
         fleet.System.ReportDamage(ally, listener, new(0f, 0f, -5f), 10f);
         fleet.Step();
@@ -301,10 +301,10 @@ public class TeamRelayTests {
     [Fact]
     public void AnAllyRelaysWhatItSeesAndTheRelayIsNotRelayedOnwards() {
         var fleet = new Fleet();
-        var scout = fleet.Both(Vector3.Zero, team: 0);
-        var rear = fleet.Both(new(0f, 0f, 22f), team: 0);
-        var deep = fleet.Both(new(0f, 0f, 44f), team: 0);
-        var enemy = fleet.Source(new(0f, 0f, -5f), team: 1);
+        var scout = fleet.Both(Vector3.Zero, 0);
+        var rear = fleet.Both(new(0f, 0f, 22f), 0);
+        var deep = fleet.Both(new(0f, 0f, 44f), 0);
+        var enemy = fleet.Source(new(0f, 0f, -5f), 1);
 
         fleet.Step(3);
 

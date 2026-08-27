@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:98ff52570e019fac profile=SkalaCleanup generated=2026-08-27
+// skala-oracle: resharper=2025.2.6 config=sha256:bd9791d3a6e6a087 profile=SkalaCleanup generated=2026-08-27
 #region License
 
 // Copyright (c) 2007 James Newton-King
@@ -34,32 +34,32 @@ using Assert = Newtonsoft.Json.Tests.XUnitAssert;
 #else
 #endif
 
-namespace Newtonsoft.Json.Tests.Utilities {
-    [TestFixture]
-    public class ReflectionUtilsTests : TestFixtureBase {
-        [Test]
-        public void GetTypeNameSimpleForGenericTypes() {
-            string typeName;
+namespace Newtonsoft.Json.Tests.Utilities;
 
-            typeName = ReflectionUtils.GetTypeName(typeof(IList<Type>), TypeNameAssemblyFormatHandling.Simple, null);
-            Assert.AreEqual("System.Collections.Generic.IList`1[[System.Type, mscorlib]], mscorlib", typeName);
+[TestFixture]
+public class ReflectionUtilsTests : TestFixtureBase {
+    [Test]
+    public void GetTypeNameSimpleForGenericTypes() {
+        string typeName;
 
-            typeName = ReflectionUtils.GetTypeName(
-                typeof(IDictionary<IList<Type>, IList<Type>>),
-                TypeNameAssemblyFormatHandling.Simple,
-                null
-            );
-            Assert.AreEqual(
-                "System.Collections.Generic.IDictionary`2[[System.Collections.Generic.IList`1[[System.Type, mscorlib]], mscorlib],[System.Collections.Generic.IList`1[[System.Type, mscorlib]], mscorlib]], mscorlib",
-                typeName
-            );
+        typeName = ReflectionUtils.GetTypeName(typeof(IList<Type>), TypeNameAssemblyFormatHandling.Simple, null);
+        Assert.AreEqual("System.Collections.Generic.IList`1[[System.Type, mscorlib]], mscorlib", typeName);
 
-            typeName = ReflectionUtils.GetTypeName(typeof(IList<>), TypeNameAssemblyFormatHandling.Simple, null);
-            Assert.AreEqual("System.Collections.Generic.IList`1, mscorlib", typeName);
+        typeName = ReflectionUtils.GetTypeName(
+            typeof(IDictionary<IList<Type>, IList<Type>>),
+            TypeNameAssemblyFormatHandling.Simple,
+            null
+        );
+        Assert.AreEqual(
+            "System.Collections.Generic.IDictionary`2[[System.Collections.Generic.IList`1[[System.Type, mscorlib]], mscorlib],[System.Collections.Generic.IList`1[[System.Type, mscorlib]], mscorlib]], mscorlib",
+            typeName
+        );
 
-            typeName = ReflectionUtils.GetTypeName(typeof(IDictionary<,>), TypeNameAssemblyFormatHandling.Simple, null);
-            Assert.AreEqual("System.Collections.Generic.IDictionary`2, mscorlib", typeName);
-        }
+        typeName = ReflectionUtils.GetTypeName(typeof(IList<>), TypeNameAssemblyFormatHandling.Simple, null);
+        Assert.AreEqual("System.Collections.Generic.IList`1, mscorlib", typeName);
+
+        typeName = ReflectionUtils.GetTypeName(typeof(IDictionary<,>), TypeNameAssemblyFormatHandling.Simple, null);
+        Assert.AreEqual("System.Collections.Generic.IDictionary`2, mscorlib", typeName);
     }
 }
 

@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:98ff52570e019fac profile=SkalaCleanup generated=2026-08-27
+// skala-oracle: resharper=2025.2.6 config=sha256:bd9791d3a6e6a087 profile=SkalaCleanup generated=2026-08-27
 // SPDX-FileCopyrightText: Copyright (c) Rikarin
 // SPDX-License-Identifier: Apache-2.0
 
@@ -140,7 +140,7 @@ public sealed class WaterZoneSystemTests : IDisposable {
         Zone(WaterZoneComponent.Default);
 
         Body(new(0f, 2f, 0f));
-        Body(new(0f, 2f, 0f), spline: string.Empty);
+        Body(new(0f, 2f, 0f), string.Empty);
 
         var system = System();
 
@@ -209,7 +209,7 @@ public sealed class WaterZoneSystemTests : IDisposable {
 
         // A lake four kilometres to a side against a 512-metre window: every boundary point is
         // thousands of metres outside it.
-        var system = System(half: 4_000f);
+        var system = System(4_000f);
 
         system.Fold(world);
 
@@ -325,7 +325,7 @@ public sealed class WaterZoneSystemTests : IDisposable {
 
         Body(new(0f, 2f, 0f));
 
-        var system = System(half: 4_000f);
+        var system = System(4_000f);
 
         system.Fold(world);
 

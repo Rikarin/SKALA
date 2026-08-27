@@ -130,10 +130,15 @@ CSHARP
     <ImplicitUsings>disable</ImplicitUsings>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Rikarin.Skala.Sdk" Version="SKALA_VERSION" PrivateAssets="all" />
+    <PackageReference Include="Rikarin.Skala.Sdk" Version="[SKALA_VERSION]" PrivateAssets="all" />
   </ItemGroup>
 </Project>
 XML
+  # ⚠ The bracket is exact-version, and it is the form docs/plan/18 § "What a consumer pins" tells
+  # people to use — so it is the form this test proves works. A floating reference resolved from a
+  # feed holding exactly one version proves nothing about the reference and everything about the
+  # feed. It also exercises the pre-release case: an exact reference is how `2.0.0-alpha.N` is
+  # reachable at all without a `--prerelease` somewhere.
   sed -i.bak "s/SKALA_VERSION/$VERSION/" "$repository/src/Smoke.csproj" && rm -f "$repository/src/Smoke.csproj.bak"
   cat > "$repository/nuget.config" <<XML
 <?xml version="1.0" encoding="utf-8"?>

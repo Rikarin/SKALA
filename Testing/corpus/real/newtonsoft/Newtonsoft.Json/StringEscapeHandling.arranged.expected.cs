@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:98ff52570e019fac profile=SkalaCleanup generated=2026-08-27
+// skala-oracle: resharper=2025.2.6 config=sha256:bd9791d3a6e6a087 profile=SkalaCleanup generated=2026-08-27
 #region License
 
 // Copyright (c) 2007 James Newton-King
@@ -26,24 +26,24 @@
 
 #endregion
 
-namespace Newtonsoft.Json {
+namespace Newtonsoft.Json;
+
+/// <summary>
+/// Specifies how strings are escaped when writing JSON text.
+/// </summary>
+public enum StringEscapeHandling {
     /// <summary>
-    /// Specifies how strings are escaped when writing JSON text.
+    /// Only control characters (e.g. newline) are escaped.
     /// </summary>
-    public enum StringEscapeHandling {
-        /// <summary>
-        /// Only control characters (e.g. newline) are escaped.
-        /// </summary>
-        Default = 0,
+    Default = 0,
 
-        /// <summary>
-        /// All non-ASCII and control characters (e.g. newline) are escaped.
-        /// </summary>
-        EscapeNonAscii = 1,
+    /// <summary>
+    /// All non-ASCII and control characters (e.g. newline) are escaped.
+    /// </summary>
+    EscapeNonAscii = 1,
 
-        /// <summary>
-        /// HTML (&lt;, &gt;, &amp;, &apos;, &quot;) and control characters (e.g. newline) are escaped.
-        /// </summary>
-        EscapeHtml = 2
-    }
+    /// <summary>
+    /// HTML (&lt;, &gt;, &amp;, &apos;, &quot;) and control characters (e.g. newline) are escaped.
+    /// </summary>
+    EscapeHtml = 2
 }

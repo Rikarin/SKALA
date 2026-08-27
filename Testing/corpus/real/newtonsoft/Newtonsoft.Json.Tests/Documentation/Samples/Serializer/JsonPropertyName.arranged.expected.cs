@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:98ff52570e019fac profile=SkalaCleanup generated=2026-08-27
+// skala-oracle: resharper=2025.2.6 config=sha256:bd9791d3a6e6a087 profile=SkalaCleanup generated=2026-08-27
 #region License
 
 // Copyright (c) 2007 James Newton-King
@@ -34,44 +34,44 @@ using Assert = Newtonsoft.Json.Tests.XUnitAssert;
 
 #endif
 
-namespace Newtonsoft.Json.Tests.Documentation.Samples.Serializer {
-    [TestFixture]
-    public class JsonPropertyName : TestFixtureBase {
-        #region Types
+namespace Newtonsoft.Json.Tests.Documentation.Samples.Serializer;
 
-        public class Videogame {
-            [JsonProperty("name")]
-            public string Name { get; set; }
+[TestFixture]
+public class JsonPropertyName : TestFixtureBase {
+    #region Types
 
-            [JsonProperty("release_date")]
-            public DateTime ReleaseDate { get; set; }
-        }
+    public class Videogame {
+        [JsonProperty("name")]
+        public string Name { get; set; }
+
+        [JsonProperty("release_date")]
+        public DateTime ReleaseDate { get; set; }
+    }
+
+    #endregion
+
+    [Test]
+    public void Example() {
+        #region Usage
+
+        var starcraft = new Videogame { Name = "Starcraft", ReleaseDate = new(1998, 1, 1) };
+
+        string json = JsonConvert.SerializeObject(starcraft, Formatting.Indented);
+
+        Console.WriteLine(json);
+        // {
+        //   "name": "Starcraft",
+        //   "release_date": "1998-01-01T00:00:00"
+        // }
 
         #endregion
 
-        [Test]
-        public void Example() {
-            #region Usage
-
-            var starcraft = new Videogame { Name = "Starcraft", ReleaseDate = new(1998, 1, 1) };
-
-            string json = JsonConvert.SerializeObject(starcraft, Formatting.Indented);
-
-            Console.WriteLine(json);
-            // {
-            //   "name": "Starcraft",
-            //   "release_date": "1998-01-01T00:00:00"
-            // }
-
-            #endregion
-
-            StringAssert.AreEqual(
-                @"{
+        StringAssert.AreEqual(
+            @"{
   ""name"": ""Starcraft"",
   ""release_date"": ""1998-01-01T00:00:00""
 }",
-                json
-            );
-        }
+            json
+        );
     }
 }

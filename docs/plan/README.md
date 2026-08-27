@@ -64,6 +64,7 @@ AI agent agree with Rider about what the code should look like.
 | 15 | [Roadmap](15-roadmap.md) | Milestones, order of work, what "done" means at each stage |
 | 16 | [Risks and Open Questions](16-risks-and-open-questions.md) | What could sink this, and what is still undecided |
 | 17 | [Inspection Parity](17-inspection-parity.md) | What ReSharper and SonarQube catch that Skala does not, measured |
+| 18 | [Versioning and Release](18-versioning-and-release.md) | The version, measured from five compatibility surfaces; the release pipeline, and the switch it stops before |
 
 ## What the input actually is
 

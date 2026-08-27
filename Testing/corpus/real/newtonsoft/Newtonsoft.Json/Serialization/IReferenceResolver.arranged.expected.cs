@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:98ff52570e019fac profile=SkalaCleanup generated=2026-08-27
+// skala-oracle: resharper=2025.2.6 config=sha256:bd9791d3a6e6a087 profile=SkalaCleanup generated=2026-08-27
 #region License
 
 // Copyright (c) 2007 James Newton-King
@@ -26,43 +26,43 @@
 
 #endregion
 
-namespace Newtonsoft.Json.Serialization {
+namespace Newtonsoft.Json.Serialization;
+
+/// <summary>
+/// Used to resolve references when serializing and deserializing JSON by the <see cref="JsonSerializer"/>.
+/// </summary>
+public interface IReferenceResolver {
     /// <summary>
-    /// Used to resolve references when serializing and deserializing JSON by the <see cref="JsonSerializer"/>.
+    /// Resolves a reference to its object.
     /// </summary>
-    public interface IReferenceResolver {
-        /// <summary>
-        /// Resolves a reference to its object.
-        /// </summary>
-        /// <param name="context">The serialization context.</param>
-        /// <param name="reference">The reference to resolve.</param>
-        /// <returns>The object that was resolved from the reference.</returns>
-        object ResolveReference(object context, string reference);
+    /// <param name="context">The serialization context.</param>
+    /// <param name="reference">The reference to resolve.</param>
+    /// <returns>The object that was resolved from the reference.</returns>
+    object ResolveReference(object context, string reference);
 
-        /// <summary>
-        /// Gets the reference for the specified object.
-        /// </summary>
-        /// <param name="context">The serialization context.</param>
-        /// <param name="value">The object to get a reference for.</param>
-        /// <returns>The reference to the object.</returns>
-        string GetReference(object context, object value);
+    /// <summary>
+    /// Gets the reference for the specified object.
+    /// </summary>
+    /// <param name="context">The serialization context.</param>
+    /// <param name="value">The object to get a reference for.</param>
+    /// <returns>The reference to the object.</returns>
+    string GetReference(object context, object value);
 
-        /// <summary>
-        /// Determines whether the specified object is referenced.
-        /// </summary>
-        /// <param name="context">The serialization context.</param>
-        /// <param name="value">The object to test for a reference.</param>
-        /// <returns>
-        /// 	<c>true</c> if the specified object is referenced; otherwise, <c>false</c>.
-        /// </returns>
-        bool IsReferenced(object context, object value);
+    /// <summary>
+    /// Determines whether the specified object is referenced.
+    /// </summary>
+    /// <param name="context">The serialization context.</param>
+    /// <param name="value">The object to test for a reference.</param>
+    /// <returns>
+    /// 	<c>true</c> if the specified object is referenced; otherwise, <c>false</c>.
+    /// </returns>
+    bool IsReferenced(object context, object value);
 
-        /// <summary>
-        /// Adds a reference to the specified object.
-        /// </summary>
-        /// <param name="context">The serialization context.</param>
-        /// <param name="reference">The reference.</param>
-        /// <param name="value">The object to reference.</param>
-        void AddReference(object context, string reference, object value);
-    }
+    /// <summary>
+    /// Adds a reference to the specified object.
+    /// </summary>
+    /// <param name="context">The serialization context.</param>
+    /// <param name="reference">The reference.</param>
+    /// <param name="value">The object to reference.</param>
+    void AddReference(object context, string reference, object value);
 }

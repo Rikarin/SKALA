@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:98ff52570e019fac profile=SkalaCleanup generated=2026-08-27
+// skala-oracle: resharper=2025.2.6 config=sha256:bd9791d3a6e6a087 profile=SkalaCleanup generated=2026-08-27
 #region License
 
 // Copyright (c) 2007 James Newton-King
@@ -35,28 +35,28 @@ using Assert = Newtonsoft.Json.Tests.XUnitAssert;
 #else
 #endif
 
-namespace Newtonsoft.Json.Tests.Issues {
-    [TestFixture]
-    public class Issue0573 {
-        [Test]
-        public void Test() {
-            var json = "{'Value':'hi'}";
-            var traceWriter = new MemoryTraceWriter { LevelFilter = TraceLevel.Info };
-            PrivateSetterTestClass o = JsonConvert.DeserializeObject<PrivateSetterTestClass>(
-                json,
-                new JsonSerializerSettings { TraceWriter = traceWriter }
-            );
-            var messages = traceWriter.GetTraceMessages().ToList();
+namespace Newtonsoft.Json.Tests.Issues;
 
-            var hasMessage = messages.Any(message => message.Contains(
-                    "Info Unable to deserialize value to non-writable property 'Value' on Newtonsoft.Json.Tests.Issues.Issue0573+PrivateSetterTestClass. Path 'Value', line 1, position 13."
-                )
-            );
-            Assert.IsTrue(hasMessage);
-        }
+[TestFixture]
+public class Issue0573 {
+    [Test]
+    public void Test() {
+        var json = "{'Value':'hi'}";
+        var traceWriter = new MemoryTraceWriter { LevelFilter = TraceLevel.Info };
+        PrivateSetterTestClass o = JsonConvert.DeserializeObject<PrivateSetterTestClass>(
+            json,
+            new JsonSerializerSettings { TraceWriter = traceWriter }
+        );
+        var messages = traceWriter.GetTraceMessages().ToList();
 
-        public class PrivateSetterTestClass {
-            public string Value { get; private set; }
-        }
+        var hasMessage = messages.Any(message => message.Contains(
+                "Info Unable to deserialize value to non-writable property 'Value' on Newtonsoft.Json.Tests.Issues.Issue0573+PrivateSetterTestClass. Path 'Value', line 1, position 13."
+            )
+        );
+        Assert.IsTrue(hasMessage);
+    }
+
+    public class PrivateSetterTestClass {
+        public string Value { get; private set; }
     }
 }

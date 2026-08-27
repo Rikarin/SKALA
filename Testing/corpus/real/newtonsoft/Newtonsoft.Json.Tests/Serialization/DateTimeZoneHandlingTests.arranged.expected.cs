@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:98ff52570e019fac profile=SkalaCleanup generated=2026-08-27
+// skala-oracle: resharper=2025.2.6 config=sha256:bd9791d3a6e6a087 profile=SkalaCleanup generated=2026-08-27
 #region License
 
 // Copyright (c) 2007 James Newton-King
@@ -35,68 +35,68 @@ using Assert = Newtonsoft.Json.Tests.XUnitAssert;
 
 #endif
 
-namespace Newtonsoft.Json.Tests.Serialization {
-    [TestFixture]
-    public class DateTimeZoneHandlingTests : TestFixtureBase {
-        [Test]
-        public void DeserializeObject() {
-            var json = @"
+namespace Newtonsoft.Json.Tests.Serialization;
+
+[TestFixture]
+public class DateTimeZoneHandlingTests : TestFixtureBase {
+    [Test]
+    public void DeserializeObject() {
+        var json = @"
   {
     ""Value"": ""2017-12-05T21:59:00""
   }";
 
-            DateTimeWrapper c1 = JsonConvert.DeserializeObject<DateTimeWrapper>(
-                json,
-                new JsonSerializerSettings { DateTimeZoneHandling = DateTimeZoneHandling.Utc }
-            );
+        DateTimeWrapper c1 = JsonConvert.DeserializeObject<DateTimeWrapper>(
+            json,
+            new JsonSerializerSettings { DateTimeZoneHandling = DateTimeZoneHandling.Utc }
+        );
 
-            DateTimeWrapper c2 = JsonConvert.DeserializeObject<DateTimeWrapper>(
-                json,
-                new JsonSerializerSettings { DateTimeZoneHandling = DateTimeZoneHandling.Local }
-            );
+        DateTimeWrapper c2 = JsonConvert.DeserializeObject<DateTimeWrapper>(
+            json,
+            new JsonSerializerSettings { DateTimeZoneHandling = DateTimeZoneHandling.Local }
+        );
 
-            DateTimeWrapper c3 = JsonConvert.DeserializeObject<DateTimeWrapper>(
-                json,
+        DateTimeWrapper c3 = JsonConvert.DeserializeObject<DateTimeWrapper>(
+            json,
+            new JsonSerializerSettings { DateTimeZoneHandling = DateTimeZoneHandling.Unspecified }
+        );
+
+        DateTimeWrapper c4 = JsonConvert.DeserializeObject<DateTimeWrapper>(json);
+
+        Assert.AreEqual(DateTimeKind.Utc, c1.Value.Kind);
+        Assert.AreEqual(DateTimeKind.Local, c2.Value.Kind);
+        Assert.AreEqual(DateTimeKind.Unspecified, c3.Value.Kind);
+        Assert.AreEqual(DateTimeKind.Unspecified, c4.Value.Kind);
+    }
+
+    [Test]
+    public void DeserializeFromJObject() {
+        var json = @"
+  {
+    ""Value"": ""2017-12-05T21:59:00""
+  }";
+
+        var jo = JObject.Parse(json);
+
+        DateTimeWrapper c1 = jo.ToObject<DateTimeWrapper>(
+            JsonSerializer.Create(new JsonSerializerSettings { DateTimeZoneHandling = DateTimeZoneHandling.Utc })
+        );
+
+        DateTimeWrapper c2 = jo.ToObject<DateTimeWrapper>(
+            JsonSerializer.Create(new JsonSerializerSettings { DateTimeZoneHandling = DateTimeZoneHandling.Local })
+        );
+
+        DateTimeWrapper c3 = jo.ToObject<DateTimeWrapper>(
+            JsonSerializer.Create(
                 new JsonSerializerSettings { DateTimeZoneHandling = DateTimeZoneHandling.Unspecified }
-            );
+            )
+        );
 
-            DateTimeWrapper c4 = JsonConvert.DeserializeObject<DateTimeWrapper>(json);
+        DateTimeWrapper c4 = jo.ToObject<DateTimeWrapper>();
 
-            Assert.AreEqual(DateTimeKind.Utc, c1.Value.Kind);
-            Assert.AreEqual(DateTimeKind.Local, c2.Value.Kind);
-            Assert.AreEqual(DateTimeKind.Unspecified, c3.Value.Kind);
-            Assert.AreEqual(DateTimeKind.Unspecified, c4.Value.Kind);
-        }
-
-        [Test]
-        public void DeserializeFromJObject() {
-            var json = @"
-  {
-    ""Value"": ""2017-12-05T21:59:00""
-  }";
-
-            var jo = JObject.Parse(json);
-
-            DateTimeWrapper c1 = jo.ToObject<DateTimeWrapper>(
-                JsonSerializer.Create(new JsonSerializerSettings { DateTimeZoneHandling = DateTimeZoneHandling.Utc })
-            );
-
-            DateTimeWrapper c2 = jo.ToObject<DateTimeWrapper>(
-                JsonSerializer.Create(new JsonSerializerSettings { DateTimeZoneHandling = DateTimeZoneHandling.Local })
-            );
-
-            DateTimeWrapper c3 = jo.ToObject<DateTimeWrapper>(
-                JsonSerializer.Create(
-                    new JsonSerializerSettings { DateTimeZoneHandling = DateTimeZoneHandling.Unspecified }
-                )
-            );
-
-            DateTimeWrapper c4 = jo.ToObject<DateTimeWrapper>();
-
-            Assert.AreEqual(DateTimeKind.Utc, c1.Value.Kind);
-            Assert.AreEqual(DateTimeKind.Local, c2.Value.Kind);
-            Assert.AreEqual(DateTimeKind.Unspecified, c3.Value.Kind);
-            Assert.AreEqual(DateTimeKind.Unspecified, c4.Value.Kind);
-        }
+        Assert.AreEqual(DateTimeKind.Utc, c1.Value.Kind);
+        Assert.AreEqual(DateTimeKind.Local, c2.Value.Kind);
+        Assert.AreEqual(DateTimeKind.Unspecified, c3.Value.Kind);
+        Assert.AreEqual(DateTimeKind.Unspecified, c4.Value.Kind);
     }
 }

@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:98ff52570e019fac profile=SkalaCleanup generated=2026-08-27
+// skala-oracle: resharper=2025.2.6 config=sha256:bd9791d3a6e6a087 profile=SkalaCleanup generated=2026-08-27
 #region License
 
 // Copyright (c) 2007 James Newton-King
@@ -34,49 +34,49 @@ using Assert = Newtonsoft.Json.Tests.XUnitAssert;
 
 #endif
 
-namespace Newtonsoft.Json.Tests.Documentation.Samples.Serializer {
-    [TestFixture]
-    public class JsonConverterAttributeProperty : TestFixtureBase {
-        #region Types
+namespace Newtonsoft.Json.Tests.Documentation.Samples.Serializer;
 
-        public enum UserStatus {
-            NotConfirmed,
-            Active,
-            Deleted
-        }
+[TestFixture]
+public class JsonConverterAttributeProperty : TestFixtureBase {
+    #region Types
 
-        public class User {
-            public string UserName { get; set; }
+    public enum UserStatus {
+        NotConfirmed,
+        Active,
+        Deleted
+    }
 
-            [JsonConverter(typeof(StringEnumConverter))]
-            public UserStatus Status { get; set; }
-        }
+    public class User {
+        public string UserName { get; set; }
+
+        [JsonConverter(typeof(StringEnumConverter))]
+        public UserStatus Status { get; set; }
+    }
+
+    #endregion
+
+    [Test]
+    public void Example() {
+        #region Usage
+
+        var user = new User { UserName = @"domain\username", Status = UserStatus.Deleted };
+
+        string json = JsonConvert.SerializeObject(user, Formatting.Indented);
+
+        Console.WriteLine(json);
+        // {
+        //   "UserName": "domain\\username",
+        //   "Status": "Deleted"
+        // }
 
         #endregion
 
-        [Test]
-        public void Example() {
-            #region Usage
-
-            var user = new User { UserName = @"domain\username", Status = UserStatus.Deleted };
-
-            string json = JsonConvert.SerializeObject(user, Formatting.Indented);
-
-            Console.WriteLine(json);
-            // {
-            //   "UserName": "domain\\username",
-            //   "Status": "Deleted"
-            // }
-
-            #endregion
-
-            StringAssert.AreEqual(
-                @"{
+        StringAssert.AreEqual(
+            @"{
   ""UserName"": ""domain\\username"",
   ""Status"": ""Deleted""
 }",
-                json
-            );
-        }
+            json
+        );
     }
 }

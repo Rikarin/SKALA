@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:98ff52570e019fac profile=SkalaCleanup generated=2026-08-27
+// skala-oracle: resharper=2025.2.6 config=sha256:bd9791d3a6e6a087 profile=SkalaCleanup generated=2026-08-27
 #region License
 
 // Copyright (c) 2007 James Newton-King
@@ -26,32 +26,32 @@
 
 #endregion
 
-namespace Newtonsoft.Json.Tests.TestObjects {
-    public class PrivateImplementationBClass : PrivateImplementationAClass,
-        IPrivateImplementationB,
-        IPrivateOverriddenImplementation {
-        [JsonIgnore]
-        public string PropertyB { get; set; }
+namespace Newtonsoft.Json.Tests.TestObjects;
 
-        [JsonProperty("PropertyB")]
-        string IPrivateImplementationB.PropertyB {
-            get => PropertyB;
-            set => PropertyB = value;
-        }
+public class PrivateImplementationBClass : PrivateImplementationAClass,
+    IPrivateImplementationB,
+    IPrivateOverriddenImplementation {
+    [JsonIgnore]
+    public string PropertyB { get; set; }
 
-        [JsonProperty("OverriddenProperty")]
-        string OverriddenPropertyString {
-            get => OverriddenProperty.ToString();
-            set => OverriddenProperty = value;
-        }
+    [JsonProperty("PropertyB")]
+    string IPrivateImplementationB.PropertyB {
+        get => PropertyB;
+        set => PropertyB = value;
+    }
 
-        [JsonIgnore]
-        public object OverriddenProperty { get; set; }
+    [JsonProperty("OverriddenProperty")]
+    string OverriddenPropertyString {
+        get => OverriddenProperty.ToString();
+        set => OverriddenProperty = value;
+    }
 
-        [JsonIgnore]
-        object IPrivateOverriddenImplementation.OverriddenProperty {
-            get => OverriddenProperty;
-            set => OverriddenProperty = value;
-        }
+    [JsonIgnore]
+    public object OverriddenProperty { get; set; }
+
+    [JsonIgnore]
+    object IPrivateOverriddenImplementation.OverriddenProperty {
+        get => OverriddenProperty;
+        set => OverriddenProperty = value;
     }
 }

@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:98ff52570e019fac profile=SkalaCleanup generated=2026-08-27
+// skala-oracle: resharper=2025.2.6 config=sha256:bd9791d3a6e6a087 profile=SkalaCleanup generated=2026-08-27
 #region License
 
 // Copyright (c) 2007 James Newton-King
@@ -34,48 +34,49 @@ using Assert = Newtonsoft.Json.Tests.XUnitAssert;
 
 #endif
 
-namespace Newtonsoft.Json.Tests.Documentation.Samples.Serializer {
-    [TestFixture]
-    public class SerializeObject : TestFixtureBase {
-        #region Types
+namespace Newtonsoft.Json.Tests.Documentation.Samples.Serializer;
 
-        public class Account {
-            public string Email { get; set; }
-            public bool Active { get; set; }
-            public DateTime CreatedDate { get; set; }
-            public IList<string> Roles { get; set; }
-        }
+[TestFixture]
+public class SerializeObject : TestFixtureBase {
+    #region Types
+
+    public class Account {
+        public string Email { get; set; }
+        public bool Active { get; set; }
+        public DateTime CreatedDate { get; set; }
+        public IList<string> Roles { get; set; }
+    }
+
+    #endregion
+
+    [Test]
+    public void Example() {
+        #region Usage
+
+        var account = new Account {
+            Email = "james@example.com",
+            Active = true,
+            CreatedDate = new(2013, 1, 20, 0, 0, 0, DateTimeKind.Utc),
+            Roles = new List<string> { "User", "Admin" }
+        };
+
+        string json = JsonConvert.SerializeObject(account, Formatting.Indented);
+        // {
+        //   "Email": "james@example.com",
+        //   "Active": true,
+        //   "CreatedDate": "2013-01-20T00:00:00Z",
+        //   "Roles": [
+        //     "User",
+        //     "Admin"
+        //   ]
+        // }
+
+        Console.WriteLine(json);
 
         #endregion
 
-        [Test]
-        public void Example() {
-            #region Usage
-
-            var account = new Account {
-                Email = "james@example.com",
-                Active = true,
-                CreatedDate = new(2013, 1, 20, 0, 0, 0, DateTimeKind.Utc),
-                Roles = new List<string> { "User", "Admin" }
-            };
-
-            string json = JsonConvert.SerializeObject(account, Formatting.Indented);
-            // {
-            //   "Email": "james@example.com",
-            //   "Active": true,
-            //   "CreatedDate": "2013-01-20T00:00:00Z",
-            //   "Roles": [
-            //     "User",
-            //     "Admin"
-            //   ]
-            // }
-
-            Console.WriteLine(json);
-
-            #endregion
-
-            StringAssert.AreEqual(
-                @"{
+        StringAssert.AreEqual(
+            @"{
   ""Email"": ""james@example.com"",
   ""Active"": true,
   ""CreatedDate"": ""2013-01-20T00:00:00Z"",
@@ -84,8 +85,7 @@ namespace Newtonsoft.Json.Tests.Documentation.Samples.Serializer {
     ""Admin""
   ]
 }",
-                json
-            );
-        }
+            json
+        );
     }
 }

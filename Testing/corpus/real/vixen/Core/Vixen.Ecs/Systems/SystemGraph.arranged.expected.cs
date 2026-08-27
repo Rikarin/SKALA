@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:98ff52570e019fac profile=SkalaCleanup generated=2026-08-27
+// skala-oracle: resharper=2025.2.6 config=sha256:bd9791d3a6e6a087 profile=SkalaCleanup generated=2026-08-27
 // SPDX-FileCopyrightText: Copyright (c) Rikarin
 // SPDX-License-Identifier: Apache-2.0
 
@@ -139,7 +139,7 @@ public sealed class SystemGraph {
 
             var ordered = new List<SystemNode>(members.Count);
 
-            foreach (var position in Sort(phase, types, everywhere: null, unsatisfied: null)) {
+            foreach (var position in Sort(phase, types, null, null)) {
                 var system = members[position];
 
                 var access = system is IDeclaredAccess declared

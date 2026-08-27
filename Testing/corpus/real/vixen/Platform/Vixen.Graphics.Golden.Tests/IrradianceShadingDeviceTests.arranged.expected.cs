@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:98ff52570e019fac profile=SkalaCleanup generated=2026-08-27
+// skala-oracle: resharper=2025.2.6 config=sha256:bd9791d3a6e6a087 profile=SkalaCleanup generated=2026-08-27
 // SPDX-FileCopyrightText: Copyright (c) Rikarin
 // SPDX-License-Identifier: Apache-2.0
 
@@ -168,7 +168,7 @@ public class IrradianceShadingDeviceTests {
         }
 
         using var owned = fixture!;
-        var image = Render(owned, lit: true, fills);
+        var image = Render(owned, true, fills);
 
         // The corner the quad does not cover is the clear, so the pass ran at all.
         var corner = Pixel(image, 2, 2);
@@ -201,7 +201,7 @@ public class IrradianceShadingDeviceTests {
         }
 
         using var owned = fixture!;
-        var image = Render(owned, lit: false);
+        var image = Render(owned, false);
         var centre = Pixel(image, image.Width / 2, image.Height / 2);
 
         Assert.True(centre.X < 0.02f, $"something other than the field lit the quad: {centre}");

@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:98ff52570e019fac profile=SkalaCleanup generated=2026-08-27
+// skala-oracle: resharper=2025.2.6 config=sha256:bd9791d3a6e6a087 profile=SkalaCleanup generated=2026-08-27
 // SPDX-FileCopyrightText: Copyright (c) Rikarin
 // SPDX-License-Identifier: Apache-2.0
 
@@ -53,7 +53,7 @@ public sealed class ScreenshotTests : IDisposable {
 
     [Fact]
     public void Accepting_writes_a_reference_that_then_verifies() {
-        using (var recording = Opened(updating: true)) {
+        using (var recording = Opened(true)) {
             recording.Create("div", recording.Document.Root, null, "box");
             recording.Frame();
             recording.Screenshot("box");
@@ -72,7 +72,7 @@ public sealed class ScreenshotTests : IDisposable {
 
     [Fact]
     public void A_changed_interface_fails_and_writes_the_three_files_a_reviewer_opens() {
-        using (var recording = Opened(updating: true)) {
+        using (var recording = Opened(true)) {
             recording.Create("div", recording.Document.Root, null, "box");
             recording.Frame();
             recording.Screenshot("moved");
@@ -95,7 +95,7 @@ public sealed class ScreenshotTests : IDisposable {
 
     [Fact]
     public void A_size_change_is_reported_as_one_rather_than_compared_around() {
-        using (var recording = Opened(updating: true)) {
+        using (var recording = Opened(true)) {
             recording.Screenshot("resized");
         }
 
@@ -115,7 +115,7 @@ public sealed class ScreenshotTests : IDisposable {
 
     [Fact]
     public void A_screenshot_appears_in_the_command_log_either_way() {
-        using (var recording = Opened(updating: true)) {
+        using (var recording = Opened(true)) {
             recording.Screenshot("logged");
         }
 
@@ -129,7 +129,7 @@ public sealed class ScreenshotTests : IDisposable {
     /// <inheritdoc />
     public void Dispose() {
         if (Directory.Exists(root)) {
-            Directory.Delete(root, recursive: true);
+            Directory.Delete(root, true);
         }
     }
 }

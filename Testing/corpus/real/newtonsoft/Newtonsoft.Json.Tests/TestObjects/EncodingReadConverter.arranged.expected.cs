@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:98ff52570e019fac profile=SkalaCleanup generated=2026-08-27
+// skala-oracle: resharper=2025.2.6 config=sha256:bd9791d3a6e6a087 profile=SkalaCleanup generated=2026-08-27
 #region License
 
 // Copyright (c) 2007 James Newton-King
@@ -28,28 +28,27 @@
 
 using System.Text;
 
-namespace Newtonsoft.Json.Tests.TestObjects {
+namespace Newtonsoft.Json.Tests.TestObjects;
 #if !(DNXCORE50) || NETSTANDARD2_0 || NET6_0_OR_GREATER
-    public class EncodingReadConverter : JsonConverter {
-        public override bool CanConvert(Type objectType) => typeof(Encoding).IsAssignableFrom(objectType);
+public class EncodingReadConverter : JsonConverter {
+    public override bool CanConvert(Type objectType) => typeof(Encoding).IsAssignableFrom(objectType);
 
-        public override object ReadJson(
-            JsonReader reader,
-            Type objectType,
-            object existingValue,
-            JsonSerializer serializer
-        ) {
-            var encodingName = serializer.Deserialize<string>(reader);
-            if (encodingName == null) {
-                return null;
-            }
-
-            return Encoding.GetEncoding(encodingName);
+    public override object ReadJson(
+        JsonReader reader,
+        Type objectType,
+        object existingValue,
+        JsonSerializer serializer
+    ) {
+        var encodingName = serializer.Deserialize<string>(reader);
+        if (encodingName == null) {
+            return null;
         }
 
-        public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer) {
-            throw new NotImplementedException();
-        }
+        return Encoding.GetEncoding(encodingName);
     }
-#endif
+
+    public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer) {
+        throw new NotImplementedException();
+    }
 }
+#endif

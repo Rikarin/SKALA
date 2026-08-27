@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:98ff52570e019fac profile=SkalaCleanup generated=2026-08-27
+// skala-oracle: resharper=2025.2.6 config=sha256:bd9791d3a6e6a087 profile=SkalaCleanup generated=2026-08-27
 // SPDX-FileCopyrightText: Copyright (c) Rikarin
 // SPDX-License-Identifier: Apache-2.0
 
@@ -68,7 +68,7 @@ public class DataGridTests {
     [Fact]
     public void A_wide_table_realises_only_the_columns_that_fit() {
         using var fixture = new AdvancedFixture();
-        var grid = Grid(fixture, Sample(), columns: 200);
+        var grid = Grid(fixture, Sample(), 200);
 
         Assert.Equal(200, grid.Columns.Count);
 
@@ -83,7 +83,7 @@ public class DataGridTests {
     [Fact]
     public void Scrolling_sideways_rebinds_the_cells_of_the_rows_that_are_already_there() {
         using var fixture = new AdvancedFixture();
-        var grid = Grid(fixture, Sample(), columns: 60);
+        var grid = Grid(fixture, Sample(), 60);
 
         var element = grid.Rows[0];
         var before = element.Cells[0].Column;
@@ -98,7 +98,7 @@ public class DataGridTests {
     [Fact]
     public void A_frozen_column_stays_put_while_the_rest_scrolls() {
         using var fixture = new AdvancedFixture();
-        var grid = Grid(fixture, Sample(), columns: 60);
+        var grid = Grid(fixture, Sample(), 60);
 
         grid.FrozenColumns = 1;
         fixture.Update();

@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:98ff52570e019fac profile=SkalaCleanup generated=2026-08-27
+// skala-oracle: resharper=2025.2.6 config=sha256:bd9791d3a6e6a087 profile=SkalaCleanup generated=2026-08-27
 #region License
 
 // Copyright (c) 2007 James Newton-King
@@ -37,15 +37,16 @@ using Newtonsoft.Json.Utilities.LinqBridge;
 #else
 #endif
 
-namespace Newtonsoft.Json.Tests.Documentation.Samples.JsonPath {
-    [TestFixture]
-    public class RegexQuery : TestFixtureBase {
-        [Test]
-        public void Example() {
-            #region Usage
+namespace Newtonsoft.Json.Tests.Documentation.Samples.JsonPath;
 
-            JArray packages = JArray.Parse(
-                @"[
+[TestFixture]
+public class RegexQuery : TestFixtureBase {
+    [Test]
+    public void Example() {
+        #region Usage
+
+        JArray packages = JArray.Parse(
+            @"[
               {
                 'PackageId': 'Newtonsoft.Json',
                 'Version': '11.0.1',
@@ -57,22 +58,20 @@ namespace Newtonsoft.Json.Tests.Documentation.Samples.JsonPath {
                 'ReleaseDate': '2017-11-10T00:00:00'
               }
             ]"
-            );
+        );
 
-            // Find Newtonsoft packages
-            List<JToken> newtonsoftPackages =
-                packages.SelectTokens(@"$.[?(@.PackageId =~ /^Newtonsoft\.(.*)$/)]").ToList();
+        // Find Newtonsoft packages
+        List<JToken> newtonsoftPackages = packages.SelectTokens(@"$.[?(@.PackageId =~ /^Newtonsoft\.(.*)$/)]").ToList();
 
-            foreach (JToken item in newtonsoftPackages) {
-                Console.WriteLine((string)item["PackageId"]);
-            }
-
-            // Newtonsoft.Json
-
-            #endregion
-
-            Assert.AreEqual(1, newtonsoftPackages.Count);
-            Assert.AreEqual("Newtonsoft.Json", (string)newtonsoftPackages[0]["PackageId"]);
+        foreach (JToken item in newtonsoftPackages) {
+            Console.WriteLine((string)item["PackageId"]);
         }
+
+        // Newtonsoft.Json
+
+        #endregion
+
+        Assert.AreEqual(1, newtonsoftPackages.Count);
+        Assert.AreEqual("Newtonsoft.Json", (string)newtonsoftPackages[0]["PackageId"]);
     }
 }

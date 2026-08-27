@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:98ff52570e019fac profile=SkalaCleanup generated=2026-08-27
+// skala-oracle: resharper=2025.2.6 config=sha256:bd9791d3a6e6a087 profile=SkalaCleanup generated=2026-08-27
 // SPDX-FileCopyrightText: Copyright (c) Rikarin
 // SPDX-License-Identifier: Apache-2.0
 
@@ -251,7 +251,7 @@ public sealed class AssetDatabase {
             writer.WriteLine(string.Create(CultureInfo.InvariantCulture, $"{TerminatorPrefix}{byPath.Count}"));
         }
 
-        File.Move(temporary, Paths.GuidIndexFile, overwrite: true);
+        File.Move(temporary, Paths.GuidIndexFile, true);
     }
 
     /// <summary>Reads the index back, if it is there and it is whole.</summary>
@@ -618,7 +618,7 @@ public sealed class AssetDatabase {
             // and is not if the editor helpfully tidied it away.
             var destination = Path.Combine(Paths.OrphanMeta, Paths.Relative(meta));
             Directory.CreateDirectory(Path.GetDirectoryName(destination)!);
-            File.Move(meta, destination, overwrite: true);
+            File.Move(meta, destination, true);
             survey.Sidecars.Remove(owner);
             issues.Add(
                 new(

@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:98ff52570e019fac profile=SkalaCleanup generated=2026-08-27
+// skala-oracle: resharper=2025.2.6 config=sha256:bd9791d3a6e6a087 profile=SkalaCleanup generated=2026-08-27
 #region License
 
 // Copyright (c) 2007 James Newton-King
@@ -28,22 +28,22 @@
 
 using System.ComponentModel;
 
-namespace Newtonsoft.Json.Tests.TestObjects {
-    public class Invoice {
-        public string Company { get; set; }
-        public decimal Amount { get; set; }
+namespace Newtonsoft.Json.Tests.TestObjects;
 
-        // false is default value of bool
-        public bool Paid { get; set; }
+public class Invoice {
+    public string Company { get; set; }
+    public decimal Amount { get; set; }
 
-        // null is default value of nullable
-        public DateTime? PaidDate { get; set; }
+    // false is default value of bool
+    public bool Paid { get; set; }
 
-        // customize default values
-        [DefaultValue(30)]
-        public int FollowUpDays { get; set; }
+    // null is default value of nullable
+    public DateTime? PaidDate { get; set; }
 
-        [DefaultValue("")]
-        public string FollowUpEmailAddress { get; set; }
-    }
+    // customize default values
+    [DefaultValue(30)]
+    public int FollowUpDays { get; set; }
+
+    [DefaultValue("")]
+    public string FollowUpEmailAddress { get; set; }
 }

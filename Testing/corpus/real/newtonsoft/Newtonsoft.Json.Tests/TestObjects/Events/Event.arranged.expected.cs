@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:98ff52570e019fac profile=SkalaCleanup generated=2026-08-27
+// skala-oracle: resharper=2025.2.6 config=sha256:bd9791d3a6e6a087 profile=SkalaCleanup generated=2026-08-27
 #region License
 
 // Copyright (c) 2007 James Newton-King
@@ -26,123 +26,123 @@
 
 #endregion
 
-namespace Newtonsoft.Json.Tests.TestObjects.Events {
-    public sealed class Event {
-        /// <summary>
-        /// If no current user is specified, returns Nothing (0 from VB)
-        /// </summary>
-        /// <returns></returns>
-        /// <remarks></remarks>
-        static int GetCurrentUserId() => 0;
+namespace Newtonsoft.Json.Tests.TestObjects.Events;
 
-        /// <summary>
-        /// Gets either the application path or the current stack trace.
-        /// NOTE: You MUST call this from the top level entry point. Otherwise,
-        /// the stack trace will be buried in Logger itself.
-        /// </summary>
-        /// <returns></returns>
-        /// <remarks></remarks>
-        static string GetCurrentSubLocation() => "";
+public sealed class Event {
+    /// <summary>
+    /// If no current user is specified, returns Nothing (0 from VB)
+    /// </summary>
+    /// <returns></returns>
+    /// <remarks></remarks>
+    static int GetCurrentUserId() => 0;
 
-        string _sublocation;
-        int _userId;
-        EventType _type;
-        string _summary;
-        string _details;
-        string _stackTrace;
-        string _tag;
-        DateTime _time;
+    /// <summary>
+    /// Gets either the application path or the current stack trace.
+    /// NOTE: You MUST call this from the top level entry point. Otherwise,
+    /// the stack trace will be buried in Logger itself.
+    /// </summary>
+    /// <returns></returns>
+    /// <remarks></remarks>
+    static string GetCurrentSubLocation() => "";
 
-        public Event(string summary) {
-            _summary = summary;
-            _time = DateTime.Now;
+    string _sublocation;
+    int _userId;
+    EventType _type;
+    string _summary;
+    string _details;
+    string _stackTrace;
+    string _tag;
+    DateTime _time;
 
-            if (_userId == 0) {
-                _userId = GetCurrentUserId();
-            }
+    public Event(string summary) {
+        _summary = summary;
+        _time = DateTime.Now;
 
-            //This call only works at top level for now.
-            //If _stackTrace = Nothing Then _stackTrace = Environment.StackTrace
-            if (_sublocation == null) {
-                _sublocation = GetCurrentSubLocation();
-            }
+        if (_userId == 0) {
+            _userId = GetCurrentUserId();
         }
 
-        public Event(
-            string sublocation,
-            int userId,
-            EventType type,
-            string summary,
-            string details,
-            string stackTrace,
-            string tag
-        ) {
-            _sublocation = sublocation;
-            _userId = userId;
-            _type = type;
-            _summary = summary;
-            _details = details;
-            _stackTrace = stackTrace;
-            _tag = tag;
-            _time = DateTime.Now;
-
-            if (_userId == 0) {
-                _userId = GetCurrentUserId();
-            }
-
-            //If _stackTrace = Nothing Then _stackTrace = Environment.StackTrace
-            if (_sublocation == null) {
-                _sublocation = GetCurrentSubLocation();
-            }
+        //This call only works at top level for now.
+        //If _stackTrace = Nothing Then _stackTrace = Environment.StackTrace
+        if (_sublocation == null) {
+            _sublocation = GetCurrentSubLocation();
         }
-
-        public override string ToString() =>
-            string.Format(
-                "{{ sublocation = {0}, userId = {1}, type = {2}, summary = {3}, details = {4}, stackTrace = {5}, tag = {6} }}",
-                _sublocation,
-                _userId,
-                _type,
-                _summary,
-                _details,
-                _stackTrace,
-                _tag
-            );
-
-        public string sublocation {
-            get => _sublocation;
-            set => _sublocation = value;
-        }
-
-        public int userId {
-            get => _userId;
-            set => _userId = value;
-        }
-
-        public EventType type {
-            get => _type;
-            set => _type = value;
-        }
-
-        public string summary {
-            get => _summary;
-            set => _summary = value;
-        }
-
-        public string details {
-            get => _details;
-            set => _details = value;
-        }
-
-        public string stackTrace {
-            get => _stackTrace;
-            set => _stackTrace = value;
-        }
-
-        public string tag {
-            get => _tag;
-            set => _tag = value;
-        }
-
-        public DateTime time => _time;
     }
+
+    public Event(
+        string sublocation,
+        int userId,
+        EventType type,
+        string summary,
+        string details,
+        string stackTrace,
+        string tag
+    ) {
+        _sublocation = sublocation;
+        _userId = userId;
+        _type = type;
+        _summary = summary;
+        _details = details;
+        _stackTrace = stackTrace;
+        _tag = tag;
+        _time = DateTime.Now;
+
+        if (_userId == 0) {
+            _userId = GetCurrentUserId();
+        }
+
+        //If _stackTrace = Nothing Then _stackTrace = Environment.StackTrace
+        if (_sublocation == null) {
+            _sublocation = GetCurrentSubLocation();
+        }
+    }
+
+    public override string ToString() =>
+        string.Format(
+            "{{ sublocation = {0}, userId = {1}, type = {2}, summary = {3}, details = {4}, stackTrace = {5}, tag = {6} }}",
+            _sublocation,
+            _userId,
+            _type,
+            _summary,
+            _details,
+            _stackTrace,
+            _tag
+        );
+
+    public string sublocation {
+        get => _sublocation;
+        set => _sublocation = value;
+    }
+
+    public int userId {
+        get => _userId;
+        set => _userId = value;
+    }
+
+    public EventType type {
+        get => _type;
+        set => _type = value;
+    }
+
+    public string summary {
+        get => _summary;
+        set => _summary = value;
+    }
+
+    public string details {
+        get => _details;
+        set => _details = value;
+    }
+
+    public string stackTrace {
+        get => _stackTrace;
+        set => _stackTrace = value;
+    }
+
+    public string tag {
+        get => _tag;
+        set => _tag = value;
+    }
+
+    public DateTime time => _time;
 }

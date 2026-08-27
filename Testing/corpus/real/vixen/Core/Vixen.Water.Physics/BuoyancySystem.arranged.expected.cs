@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:98ff52570e019fac profile=SkalaCleanup generated=2026-08-27
+// skala-oracle: resharper=2025.2.6 config=sha256:bd9791d3a6e6a087 profile=SkalaCleanup generated=2026-08-27
 // SPDX-FileCopyrightText: Copyright (c) Rikarin
 // SPDX-License-Identifier: Apache-2.0
 
@@ -256,7 +256,7 @@ public sealed class BuoyancySystem(PhysicsScene scene, IWaterSurface surface) : 
             }
 
             lift += force.Force.Y;
-            Disturb(in force, velocity, entered: was == 0);
+            Disturb(in force, velocity, was == 0);
 
             // At the pontoon's own world position, which is what makes the hull pitch. A force at
             // the centre of mass would be a boat that bobs and never rolls.

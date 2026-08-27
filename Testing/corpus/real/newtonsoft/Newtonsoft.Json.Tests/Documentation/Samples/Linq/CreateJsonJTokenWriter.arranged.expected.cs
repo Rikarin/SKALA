@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:98ff52570e019fac profile=SkalaCleanup generated=2026-08-27
+// skala-oracle: resharper=2025.2.6 config=sha256:bd9791d3a6e6a087 profile=SkalaCleanup generated=2026-08-27
 #region License
 
 // Copyright (c) 2007 James Newton-King
@@ -35,47 +35,47 @@ using Assert = Newtonsoft.Json.Tests.XUnitAssert;
 
 #endif
 
-namespace Newtonsoft.Json.Tests.Documentation.Samples.Linq {
-    [TestFixture]
-    public class CreateJsonJTokenWriter : TestFixtureBase {
-        [Test]
-        public void Example() {
-            #region Usage
+namespace Newtonsoft.Json.Tests.Documentation.Samples.Linq;
 
-            JTokenWriter writer = new JTokenWriter();
-            writer.WriteStartObject();
-            writer.WritePropertyName("name1");
-            writer.WriteValue("value1");
-            writer.WritePropertyName("name2");
-            writer.WriteStartArray();
-            writer.WriteValue(1);
-            writer.WriteValue(2);
-            writer.WriteEndArray();
-            writer.WriteEndObject();
+[TestFixture]
+public class CreateJsonJTokenWriter : TestFixtureBase {
+    [Test]
+    public void Example() {
+        #region Usage
 
-            var o = (JObject)writer.Token;
+        JTokenWriter writer = new JTokenWriter();
+        writer.WriteStartObject();
+        writer.WritePropertyName("name1");
+        writer.WriteValue("value1");
+        writer.WritePropertyName("name2");
+        writer.WriteStartArray();
+        writer.WriteValue(1);
+        writer.WriteValue(2);
+        writer.WriteEndArray();
+        writer.WriteEndObject();
 
-            Console.WriteLine(o.ToString());
-            // {
-            //   "name1": "value1",
-            //   "name2": [
-            //     1,
-            //     2
-            //   ]
-            // }
+        var o = (JObject)writer.Token;
 
-            #endregion
+        Console.WriteLine(o.ToString());
+        // {
+        //   "name1": "value1",
+        //   "name2": [
+        //     1,
+        //     2
+        //   ]
+        // }
 
-            StringAssert.AreEqual(
-                @"{
+        #endregion
+
+        StringAssert.AreEqual(
+            @"{
   ""name1"": ""value1"",
   ""name2"": [
     1,
     2
   ]
 }",
-                o.ToString()
-            );
-        }
+            o.ToString()
+        );
     }
 }

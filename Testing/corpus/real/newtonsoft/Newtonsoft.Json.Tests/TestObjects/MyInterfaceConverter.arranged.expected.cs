@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:98ff52570e019fac profile=SkalaCleanup generated=2026-08-27
+// skala-oracle: resharper=2025.2.6 config=sha256:bd9791d3a6e6a087 profile=SkalaCleanup generated=2026-08-27
 #region License
 
 // Copyright (c) 2007 James Newton-King
@@ -33,37 +33,36 @@ using Newtonsoft.Json.Utilities.LinqBridge;
 #else
 #endif
 
-namespace Newtonsoft.Json.Tests.TestObjects {
+namespace Newtonsoft.Json.Tests.TestObjects;
 #if !(NET35 || NET20 || PORTABLE || PORTABLE40) || NETSTANDARD2_0 || NET6_0_OR_GREATER
-    class MyInterfaceConverter : TypeConverter {
-        readonly List<IMyInterface> _writers = new() { new ConsoleWriter(), new TraceWriter() };
+class MyInterfaceConverter : TypeConverter {
+    readonly List<IMyInterface> _writers = new() { new ConsoleWriter(), new TraceWriter() };
 
-        public override bool CanConvertTo(ITypeDescriptorContext context, Type destinationType) =>
-            destinationType == typeof(string);
+    public override bool CanConvertTo(ITypeDescriptorContext context, Type destinationType) =>
+        destinationType == typeof(string);
 
-        public override bool CanConvertFrom(ITypeDescriptorContext context, Type sourceType) =>
-            sourceType == typeof(string);
+    public override bool CanConvertFrom(ITypeDescriptorContext context, Type sourceType) =>
+        sourceType == typeof(string);
 
-        public override object ConvertFrom(ITypeDescriptorContext context, CultureInfo culture, object value) {
-            if (value == null) {
-                return null;
-            }
-
-            return (from w in _writers where w.Name == value.ToString() select w).FirstOrDefault();
+    public override object ConvertFrom(ITypeDescriptorContext context, CultureInfo culture, object value) {
+        if (value == null) {
+            return null;
         }
 
-        public override object ConvertTo(
-            ITypeDescriptorContext context,
-            CultureInfo culture,
-            object value,
-            Type destinationType
-        ) {
-            if (value == null) {
-                return null;
-            }
-
-            return ((IMyInterface)value).Name;
-        }
+        return (from w in _writers where w.Name == value.ToString() select w).FirstOrDefault();
     }
-#endif
+
+    public override object ConvertTo(
+        ITypeDescriptorContext context,
+        CultureInfo culture,
+        object value,
+        Type destinationType
+    ) {
+        if (value == null) {
+            return null;
+        }
+
+        return ((IMyInterface)value).Name;
+    }
 }
+#endif

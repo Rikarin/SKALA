@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:98ff52570e019fac profile=SkalaCleanup generated=2026-08-27
+// skala-oracle: resharper=2025.2.6 config=sha256:bd9791d3a6e6a087 profile=SkalaCleanup generated=2026-08-27
 #region License
 
 // Copyright (c) 2007 James Newton-King
@@ -26,16 +26,16 @@
 
 #endregion
 
-namespace Newtonsoft.Json.Tests.TestObjects {
-    public abstract class SimpleResponse {
-        public string Result { get; set; }
-        public string Message { get; set; }
-        public object Data { get; set; }
+namespace Newtonsoft.Json.Tests.TestObjects;
 
-        protected SimpleResponse() { }
+public abstract class SimpleResponse {
+    public string Result { get; set; }
+    public string Message { get; set; }
+    public object Data { get; set; }
 
-        protected SimpleResponse(string message) {
-            Message = message;
-        }
+    protected SimpleResponse() { }
+
+    protected SimpleResponse(string message) {
+        Message = message;
     }
 }

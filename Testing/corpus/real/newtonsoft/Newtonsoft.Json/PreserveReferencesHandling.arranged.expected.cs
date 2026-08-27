@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:98ff52570e019fac profile=SkalaCleanup generated=2026-08-27
+// skala-oracle: resharper=2025.2.6 config=sha256:bd9791d3a6e6a087 profile=SkalaCleanup generated=2026-08-27
 #region License
 
 // Copyright (c) 2007 James Newton-King
@@ -26,34 +26,34 @@
 
 #endregion
 
-namespace Newtonsoft.Json {
+namespace Newtonsoft.Json;
+
+/// <summary>
+/// Specifies reference handling options for the <see cref="JsonSerializer"/>.
+/// Note that references cannot be preserved when a value is set via a non-default constructor such as types that implement <see cref="T:System.Runtime.Serialization.ISerializable"/>.
+/// </summary>
+/// <example>
+///   <code lang="cs" source="..\Src\Newtonsoft.Json.Tests\Documentation\SerializationTests.cs" region="PreservingObjectReferencesOn" title="Preserve Object References" />       
+/// </example>
+[Flags]
+public enum PreserveReferencesHandling {
     /// <summary>
-    /// Specifies reference handling options for the <see cref="JsonSerializer"/>.
-    /// Note that references cannot be preserved when a value is set via a non-default constructor such as types that implement <see cref="T:System.Runtime.Serialization.ISerializable"/>.
+    /// Do not preserve references when serializing types.
     /// </summary>
-    /// <example>
-    ///   <code lang="cs" source="..\Src\Newtonsoft.Json.Tests\Documentation\SerializationTests.cs" region="PreservingObjectReferencesOn" title="Preserve Object References" />       
-    /// </example>
-    [Flags]
-    public enum PreserveReferencesHandling {
-        /// <summary>
-        /// Do not preserve references when serializing types.
-        /// </summary>
-        None = 0,
+    None = 0,
 
-        /// <summary>
-        /// Preserve references when serializing into a JSON object structure.
-        /// </summary>
-        Objects = 1,
+    /// <summary>
+    /// Preserve references when serializing into a JSON object structure.
+    /// </summary>
+    Objects = 1,
 
-        /// <summary>
-        /// Preserve references when serializing into a JSON array structure.
-        /// </summary>
-        Arrays = 2,
+    /// <summary>
+    /// Preserve references when serializing into a JSON array structure.
+    /// </summary>
+    Arrays = 2,
 
-        /// <summary>
-        /// Preserve references when serializing.
-        /// </summary>
-        All = Objects | Arrays
-    }
+    /// <summary>
+    /// Preserve references when serializing.
+    /// </summary>
+    All = Objects | Arrays
 }

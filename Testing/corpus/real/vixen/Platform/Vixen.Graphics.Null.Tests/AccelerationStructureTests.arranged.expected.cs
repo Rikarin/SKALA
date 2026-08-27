@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:98ff52570e019fac profile=SkalaCleanup generated=2026-08-27
+// skala-oracle: resharper=2025.2.6 config=sha256:bd9791d3a6e6a087 profile=SkalaCleanup generated=2026-08-27
 // SPDX-FileCopyrightText: Copyright (c) Rikarin
 // SPDX-License-Identifier: Apache-2.0
 
@@ -14,7 +14,7 @@ public sealed class AccelerationStructureTests : IDisposable {
     [Fact]
     public void ADeviceWithoutRayTracingRefusesEveryEntryPoint() {
         using var limited = new NullDevice(new() { Features = GraphicsDeviceFeatures.Minimum });
-        var input = BottomLevelInput(limited, indexCount: 36);
+        var input = BottomLevelInput(limited, 36);
 
         Assert.Throws<NotSupportedException>(() => limited.GetAccelerationStructureSizes(input));
 
@@ -30,7 +30,7 @@ public sealed class AccelerationStructureTests : IDisposable {
     [Fact]
     public void ACommandListWithoutRayTracingRefusesABuild() {
         using var limited = new NullDevice(new() { Features = GraphicsDeviceFeatures.Minimum });
-        var input = BottomLevelInput(limited, indexCount: 36);
+        var input = BottomLevelInput(limited, 36);
         var scratch = limited.CreateBuffer(new(1024, BufferUsage.Storage, Name: "Scratch"));
 
         using var list = limited.BeginCommandList();
@@ -45,9 +45,9 @@ public sealed class AccelerationStructureTests : IDisposable {
     /// </summary>
     [Fact]
     public void SizesAreDeterministicAndGrowWithTheInput() {
-        var small = device.GetAccelerationStructureSizes(BottomLevelInput(device, indexCount: 36));
-        var again = device.GetAccelerationStructureSizes(BottomLevelInput(device, indexCount: 36));
-        var large = device.GetAccelerationStructureSizes(BottomLevelInput(device, indexCount: 360));
+        var small = device.GetAccelerationStructureSizes(BottomLevelInput(device, 36));
+        var again = device.GetAccelerationStructureSizes(BottomLevelInput(device, 36));
+        var large = device.GetAccelerationStructureSizes(BottomLevelInput(device, 360));
 
         Assert.Equal(small, again);
         Assert.True(small.Structure > 0);
@@ -129,7 +129,7 @@ public sealed class AccelerationStructureTests : IDisposable {
     ///     much geometry.</summary>
     [Fact]
     public void ABuildRecordsItsTargetKindAndPrimitives() {
-        var input = BottomLevelInput(device, indexCount: 36);
+        var input = BottomLevelInput(device, 36);
         var sizes = device.GetAccelerationStructureSizes(input);
 
         var structure = device.CreateAccelerationStructure(
@@ -158,7 +158,7 @@ public sealed class AccelerationStructureTests : IDisposable {
     ///     strictest backend says so first.</summary>
     [Fact]
     public void ABuildInsideARenderPassIsRefused() {
-        var input = BottomLevelInput(device, indexCount: 3);
+        var input = BottomLevelInput(device, 3);
         var sizes = device.GetAccelerationStructureSizes(input);
 
         var structure = device.CreateAccelerationStructure(

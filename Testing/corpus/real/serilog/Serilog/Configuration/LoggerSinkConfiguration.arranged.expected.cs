@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:98ff52570e019fac profile=SkalaCleanup generated=2026-08-27
+// skala-oracle: resharper=2025.2.6 config=sha256:bd9791d3a6e6a087 profile=SkalaCleanup generated=2026-08-27
 // Copyright 2013-2020 Serilog Contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -203,7 +203,7 @@ public class LoggerSinkConfiguration {
         ILogger logger,
         LogEventLevel restrictedToMinimumLevel
     ) =>
-        Logger(logger, attemptDispose: false, restrictedToMinimumLevel);
+        Logger(logger, false, restrictedToMinimumLevel);
 
     /// <summary>
     /// Write log events to a sub-logger, where further processing may occur. Events through

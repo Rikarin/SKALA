@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:98ff52570e019fac profile=SkalaCleanup generated=2026-08-27
+// skala-oracle: resharper=2025.2.6 config=sha256:bd9791d3a6e6a087 profile=SkalaCleanup generated=2026-08-27
 // SPDX-FileCopyrightText: Copyright (c) Rikarin
 // SPDX-License-Identifier: Apache-2.0
 
@@ -86,7 +86,7 @@ public sealed class TerrainBrushTests {
 
     [Fact]
     public void TheCentreIsFullStrengthAndOutsideTheRadiusIsNothing() {
-        var brush = Brush(radius: 4f, strength: 0.75f);
+        var brush = Brush(4f, 0.75f);
         var stamp = new BrushStamp(new(10f, 20f));
 
         Assert.Equal(0.75f, brush.WeightAt(new(10f, 20f), stamp), 5);
@@ -99,7 +99,7 @@ public sealed class TerrainBrushTests {
         // Falloff 0.25 means the outer quarter of the radius falls off, so everything inside three
         // quarters of it is full strength. Reading the setting the other way round would make this
         // the softest part of the brush.
-        var brush = Brush(radius: 4f, falloff: 0.25f);
+        var brush = Brush(4f, falloff: 0.25f);
         var stamp = new BrushStamp(Vector2.Zero);
 
         Assert.Equal(1f, brush.WeightAt(new(0f, 0f), stamp), 5);
@@ -160,7 +160,7 @@ public sealed class TerrainBrushTests {
 
     [Fact]
     public void ANonPositiveRadiusPaintsNothingRatherThanEverything() {
-        var brush = Brush(radius: 0f);
+        var brush = Brush(0f);
         Assert.Equal(0f, brush.WeightAt(Vector2.Zero, new(Vector2.Zero)), 5);
     }
 
@@ -262,19 +262,19 @@ public sealed class TerrainBrushTests {
     public void ACirclesFootprintIsItsRadiusAndAMasksIsItsDiagonal() {
         var stamp = new BrushStamp(new(10f, 20f));
 
-        var circle = Brush(radius: 4f).FootprintOf(stamp);
+        var circle = Brush(4f).FootprintOf(stamp);
         Assert.Equal(new(6f, 16f), circle.Minimum);
         Assert.Equal(new(14f, 24f), circle.Maximum);
 
         // A square stamp turned 45° reaches √2 radii into its corners, and the bound is the same
         // whichever way it is turned rather than tight for one angle and wrong for the next.
-        var alpha = (Brush(radius: 4f) with { Shape = BrushShape.Alpha }).FootprintOf(stamp);
+        var alpha = (Brush(4f) with { Shape = BrushShape.Alpha }).FootprintOf(stamp);
         Assert.Equal(4f * MathF.Sqrt(2f), alpha.Maximum.X - 10f, 4);
     }
 
     [Fact]
     public void AFootprintContainsEverythingTheStampCanTouch() {
-        var brush = Brush(radius: 3f);
+        var brush = Brush(3f);
         var stamp = new BrushStamp(new(2f, -5f));
         var footprint = brush.FootprintOf(stamp);
 

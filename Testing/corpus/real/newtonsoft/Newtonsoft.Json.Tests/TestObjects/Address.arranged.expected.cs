@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:98ff52570e019fac profile=SkalaCleanup generated=2026-08-27
+// skala-oracle: resharper=2025.2.6 config=sha256:bd9791d3a6e6a087 profile=SkalaCleanup generated=2026-08-27
 #region License
 
 // Copyright (c) 2007 James Newton-King
@@ -29,34 +29,33 @@
 using System.Globalization;
 using System.Runtime.Serialization;
 
-namespace Newtonsoft.Json.Tests.TestObjects {
+namespace Newtonsoft.Json.Tests.TestObjects;
 #if !(NET20)
-    [Serializable]
-    [DataContract]
-    public class Address {
-        [DataMember]
-        public string Street {
-            get => _street;
-            set => _street = value;
-        }
-
-        string _street = "32 Kaiea";
-
-        [DataMember]
-        public string Phone {
-            get => _Phone;
-            set => _Phone = value;
-        }
-
-        string _Phone = "(503) 814-6335";
-
-        [DataMember]
-        public DateTime Entered {
-            get => _Entered;
-            set => _Entered = value;
-        }
-
-        DateTime _Entered = DateTime.Parse("01/01/2007", CultureInfo.CurrentCulture.DateTimeFormat);
+[Serializable]
+[DataContract]
+public class Address {
+    [DataMember]
+    public string Street {
+        get => _street;
+        set => _street = value;
     }
-#endif
+
+    string _street = "32 Kaiea";
+
+    [DataMember]
+    public string Phone {
+        get => _Phone;
+        set => _Phone = value;
+    }
+
+    string _Phone = "(503) 814-6335";
+
+    [DataMember]
+    public DateTime Entered {
+        get => _Entered;
+        set => _Entered = value;
+    }
+
+    DateTime _Entered = DateTime.Parse("01/01/2007", CultureInfo.CurrentCulture.DateTimeFormat);
 }
+#endif

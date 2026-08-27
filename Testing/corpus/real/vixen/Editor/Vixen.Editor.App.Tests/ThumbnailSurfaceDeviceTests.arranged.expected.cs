@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:98ff52570e019fac profile=SkalaCleanup generated=2026-08-27
+// skala-oracle: resharper=2025.2.6 config=sha256:bd9791d3a6e6a087 profile=SkalaCleanup generated=2026-08-27
 // SPDX-FileCopyrightText: Copyright (c) Rikarin
 // SPDX-License-Identifier: Apache-2.0
 
@@ -251,7 +251,7 @@ public sealed class ThumbnailSurfaceDeviceTests {
             using var surface = new ThumbnailSurface(device, renderer);
 
             var upright = Round(device, surface, Gradient());
-            var flipped = Round(device, surface, Gradient(flip: true));
+            var flipped = Round(device, surface, Gradient(true));
 
             Assert.Equal(Distinct(upright), Distinct(flipped));
             Assert.Equal(Mean(upright), Mean(flipped), 6);

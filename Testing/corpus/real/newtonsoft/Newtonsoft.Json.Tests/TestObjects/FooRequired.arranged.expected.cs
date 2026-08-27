@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:98ff52570e019fac profile=SkalaCleanup generated=2026-08-27
+// skala-oracle: resharper=2025.2.6 config=sha256:bd9791d3a6e6a087 profile=SkalaCleanup generated=2026-08-27
 #region License
 
 // Copyright (c) 2007 James Newton-King
@@ -26,16 +26,16 @@
 
 #endregion
 
-namespace Newtonsoft.Json.Tests.TestObjects {
-    public class FooRequired {
-        [JsonProperty(Required = Required.Always)]
-        public List<string> Bars { get; private set; }
+namespace Newtonsoft.Json.Tests.TestObjects;
 
-        public FooRequired(IEnumerable<string> bars) {
-            Bars = new();
-            if (bars != null) {
-                Bars.AddRange(bars);
-            }
+public class FooRequired {
+    [JsonProperty(Required = Required.Always)]
+    public List<string> Bars { get; private set; }
+
+    public FooRequired(IEnumerable<string> bars) {
+        Bars = new();
+        if (bars != null) {
+            Bars.AddRange(bars);
         }
     }
 }

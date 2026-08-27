@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:98ff52570e019fac profile=SkalaCleanup generated=2026-08-27
+// skala-oracle: resharper=2025.2.6 config=sha256:bd9791d3a6e6a087 profile=SkalaCleanup generated=2026-08-27
 #region License
 
 // Copyright (c) 2007 James Newton-King
@@ -26,23 +26,23 @@
 
 #endregion
 
-namespace Newtonsoft.Json.Tests.TestObjects {
-    public class Product {
-        public string Name;
-        public DateTime ExpiryDate = new(2000, 1, 1, 0, 0, 0, DateTimeKind.Utc);
-        public decimal Price;
-        public string[] Sizes;
+namespace Newtonsoft.Json.Tests.TestObjects;
 
-        public override bool Equals(object obj) {
-            if (obj is Product) {
-                var p = (Product)obj;
+public class Product {
+    public string Name;
+    public DateTime ExpiryDate = new(2000, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+    public decimal Price;
+    public string[] Sizes;
 
-                return p.Name == Name && p.ExpiryDate == ExpiryDate && p.Price == Price;
-            }
+    public override bool Equals(object obj) {
+        if (obj is Product) {
+            var p = (Product)obj;
 
-            return base.Equals(obj);
+            return p.Name == Name && p.ExpiryDate == ExpiryDate && p.Price == Price;
         }
 
-        public override int GetHashCode() => (Name ?? string.Empty).GetHashCode();
+        return base.Equals(obj);
     }
+
+    public override int GetHashCode() => (Name ?? string.Empty).GetHashCode();
 }

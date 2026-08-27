@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:98ff52570e019fac profile=SkalaCleanup generated=2026-08-27
+// skala-oracle: resharper=2025.2.6 config=sha256:bd9791d3a6e6a087 profile=SkalaCleanup generated=2026-08-27
 #region License
 
 // Copyright (c) 2007 James Newton-King
@@ -31,40 +31,41 @@ using System.Globalization;
 using System.Reflection;
 using System.Runtime.Serialization;
 
-namespace Newtonsoft.Json.Serialization {
-    /// <summary>
-    /// The default serialization binder used when resolving and loading classes from type names.
-    /// </summary>
-    [RequiresUnreferencedCode(MiscellaneousUtils.TrimWarning)]
-    [RequiresDynamicCode(MiscellaneousUtils.AotWarning)]
-    public class DefaultSerializationBinder :
+namespace Newtonsoft.Json.Serialization;
+
+/// <summary>
+/// The default serialization binder used when resolving and loading classes from type names.
+/// </summary>
+[RequiresUnreferencedCode(MiscellaneousUtils.TrimWarning)]
+[RequiresDynamicCode(MiscellaneousUtils.AotWarning)]
+public class DefaultSerializationBinder :
 #pragma warning disable 618
-        SerializationBinder,
+    SerializationBinder,
 #pragma warning restore 618
-        ISerializationBinder {
-        internal static readonly DefaultSerializationBinder Instance = new();
+    ISerializationBinder {
+    internal static readonly DefaultSerializationBinder Instance = new();
 
-        readonly ThreadSafeStore<StructMultiKey<string?, string>, Type> _typeCache;
+    readonly ThreadSafeStore<StructMultiKey<string?, string>, Type> _typeCache;
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="DefaultSerializationBinder"/> class.
-        /// </summary>
-        public DefaultSerializationBinder() {
-            _typeCache = new ThreadSafeStore<StructMultiKey<string?, string>, Type>(GetTypeFromTypeNameKey);
-        }
+    /// <summary>
+    /// Initializes a new instance of the <see cref="DefaultSerializationBinder"/> class.
+    /// </summary>
+    public DefaultSerializationBinder() {
+        _typeCache = new ThreadSafeStore<StructMultiKey<string?, string>, Type>(GetTypeFromTypeNameKey);
+    }
 
-        Type GetTypeFromTypeNameKey(StructMultiKey<string?, string> typeNameKey) {
-            string? assemblyName = typeNameKey.Value1;
-            string typeName = typeNameKey.Value2;
+    Type GetTypeFromTypeNameKey(StructMultiKey<string?, string> typeNameKey) {
+        string? assemblyName = typeNameKey.Value1;
+        string typeName = typeNameKey.Value2;
 
-            if (assemblyName != null) {
-                Assembly? assembly;
+        if (assemblyName != null) {
+            Assembly? assembly;
 
 #if !(DOTNET || PORTABLE40 || PORTABLE)
-                // look, I don't like using obsolete methods as much as you do but this is the only way
-                // Assembly.Load won't check the GAC for a partial name
+            // look, I don't like using obsolete methods as much as you do but this is the only way
+            // Assembly.Load won't check the GAC for a partial name
 #pragma warning disable 618,612
-                assembly = Assembly.LoadWithPartialName(assemblyName);
+            assembly = Assembly.LoadWithPartialName(assemblyName);
 #pragma warning restore 618,612
 #elif DOTNET || PORTABLE
                 assembly = Assembly.Load(new AssemblyName(assemblyName));
@@ -89,124 +90,123 @@ namespace Newtonsoft.Json.Serialization {
                 }
 #endif
 
-                if (assembly == null) {
-                    throw new JsonSerializationException(
-                        "Could not load assembly '{0}'.".FormatWith(CultureInfo.InvariantCulture, assemblyName)
-                    );
-                }
+            if (assembly == null) {
+                throw new JsonSerializationException(
+                    "Could not load assembly '{0}'.".FormatWith(CultureInfo.InvariantCulture, assemblyName)
+                );
+            }
 
-                var type = assembly.GetType(typeName);
-                if (type == null) {
-                    // if generic type, try manually parsing the type arguments for the case of dynamically loaded assemblies
-                    // example generic typeName format: System.Collections.Generic.Dictionary`2[[System.String, mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089],[System.String, mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089]]
-                    if (StringUtils.IndexOf(typeName, '`') >= 0) {
-                        try {
-                            type = GetGenericTypeFromTypeName(typeName, assembly);
-                        } catch (Exception ex) {
-                            throw new JsonSerializationException(
-                                "Could not find type '{0}' in assembly '{1}'.".FormatWith(
-                                    CultureInfo.InvariantCulture,
-                                    typeName,
-                                    assembly.FullName
-                                ),
-                                ex
-                            );
-                        }
-                    }
-
-                    if (type == null) {
+            var type = assembly.GetType(typeName);
+            if (type == null) {
+                // if generic type, try manually parsing the type arguments for the case of dynamically loaded assemblies
+                // example generic typeName format: System.Collections.Generic.Dictionary`2[[System.String, mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089],[System.String, mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089]]
+                if (StringUtils.IndexOf(typeName, '`') >= 0) {
+                    try {
+                        type = GetGenericTypeFromTypeName(typeName, assembly);
+                    } catch (Exception ex) {
                         throw new JsonSerializationException(
                             "Could not find type '{0}' in assembly '{1}'.".FormatWith(
                                 CultureInfo.InvariantCulture,
                                 typeName,
                                 assembly.FullName
-                            )
+                            ),
+                            ex
                         );
                     }
                 }
 
-                return type;
-            } else {
-                return Type.GetType(typeName)!;
-            }
-        }
-
-        Type? GetGenericTypeFromTypeName(string typeName, Assembly assembly) {
-            Type? type = null;
-            int openBracketIndex = StringUtils.IndexOf(typeName, '[');
-            if (openBracketIndex >= 0) {
-                var genericTypeDefName = typeName.Substring(0, openBracketIndex);
-                var genericTypeDef = assembly.GetType(genericTypeDefName);
-                if (genericTypeDef != null) {
-                    var genericTypeArguments = new List<Type>();
-                    var scope = 0;
-                    var typeArgStartIndex = 0;
-                    var endIndex = typeName.Length - 1;
-                    for (var i = openBracketIndex + 1; i < endIndex; ++i) {
-                        var current = typeName[i];
-                        switch (current) {
-                            case '[':
-                                if (scope == 0) {
-                                    typeArgStartIndex = i + 1;
-                                }
-
-                                ++scope;
-                                break;
-                            case ']':
-                                --scope;
-                                if (scope == 0) {
-                                    var typeArgAssemblyQualifiedName = typeName.Substring(
-                                        typeArgStartIndex,
-                                        i - typeArgStartIndex
-                                    );
-
-                                    StructMultiKey<string?, string> typeNameKey =
-                                        ReflectionUtils.SplitFullyQualifiedTypeName(typeArgAssemblyQualifiedName);
-                                    genericTypeArguments.Add(GetTypeByName(typeNameKey));
-                                }
-
-                                break;
-                        }
-                    }
-
-                    type = genericTypeDef.MakeGenericType(genericTypeArguments.ToArray());
+                if (type == null) {
+                    throw new JsonSerializationException(
+                        "Could not find type '{0}' in assembly '{1}'.".FormatWith(
+                            CultureInfo.InvariantCulture,
+                            typeName,
+                            assembly.FullName
+                        )
+                    );
                 }
             }
 
             return type;
+        } else {
+            return Type.GetType(typeName)!;
+        }
+    }
+
+    Type? GetGenericTypeFromTypeName(string typeName, Assembly assembly) {
+        Type? type = null;
+        int openBracketIndex = StringUtils.IndexOf(typeName, '[');
+        if (openBracketIndex >= 0) {
+            var genericTypeDefName = typeName.Substring(0, openBracketIndex);
+            var genericTypeDef = assembly.GetType(genericTypeDefName);
+            if (genericTypeDef != null) {
+                var genericTypeArguments = new List<Type>();
+                var scope = 0;
+                var typeArgStartIndex = 0;
+                var endIndex = typeName.Length - 1;
+                for (var i = openBracketIndex + 1; i < endIndex; ++i) {
+                    var current = typeName[i];
+                    switch (current) {
+                        case '[':
+                            if (scope == 0) {
+                                typeArgStartIndex = i + 1;
+                            }
+
+                            ++scope;
+                            break;
+                        case ']':
+                            --scope;
+                            if (scope == 0) {
+                                var typeArgAssemblyQualifiedName = typeName.Substring(
+                                    typeArgStartIndex,
+                                    i - typeArgStartIndex
+                                );
+
+                                StructMultiKey<string?, string> typeNameKey =
+                                    ReflectionUtils.SplitFullyQualifiedTypeName(typeArgAssemblyQualifiedName);
+                                genericTypeArguments.Add(GetTypeByName(typeNameKey));
+                            }
+
+                            break;
+                    }
+                }
+
+                type = genericTypeDef.MakeGenericType(genericTypeArguments.ToArray());
+            }
         }
 
-        Type GetTypeByName(StructMultiKey<string?, string> typeNameKey) => _typeCache.Get(typeNameKey);
+        return type;
+    }
 
-        /// <summary>
-        /// When overridden in a derived class, controls the binding of a serialized object to a type.
-        /// </summary>
-        /// <param name="assemblyName">Specifies the <see cref="Assembly"/> name of the serialized object.</param>
-        /// <param name="typeName">Specifies the <see cref="System.Type"/> name of the serialized object.</param>
-        /// <returns>
-        /// The type of the object the formatter creates a new instance of.
-        /// </returns>
-        public override Type BindToType(string? assemblyName, string typeName) =>
-            GetTypeByName(new StructMultiKey<string?, string>(assemblyName, typeName));
+    Type GetTypeByName(StructMultiKey<string?, string> typeNameKey) => _typeCache.Get(typeNameKey);
 
-        /// <summary>
-        /// When overridden in a derived class, controls the binding of a serialized object to a type.
-        /// </summary>
-        /// <param name="serializedType">The type of the object the formatter creates a new instance of.</param>
-        /// <param name="assemblyName">Specifies the <see cref="Assembly"/> name of the serialized object.</param>
-        /// <param name="typeName">Specifies the <see cref="System.Type"/> name of the serialized object.</param>
-        public
+    /// <summary>
+    /// When overridden in a derived class, controls the binding of a serialized object to a type.
+    /// </summary>
+    /// <param name="assemblyName">Specifies the <see cref="Assembly"/> name of the serialized object.</param>
+    /// <param name="typeName">Specifies the <see cref="System.Type"/> name of the serialized object.</param>
+    /// <returns>
+    /// The type of the object the formatter creates a new instance of.
+    /// </returns>
+    public override Type BindToType(string? assemblyName, string typeName) =>
+        GetTypeByName(new StructMultiKey<string?, string>(assemblyName, typeName));
+
+    /// <summary>
+    /// When overridden in a derived class, controls the binding of a serialized object to a type.
+    /// </summary>
+    /// <param name="serializedType">The type of the object the formatter creates a new instance of.</param>
+    /// <param name="assemblyName">Specifies the <see cref="Assembly"/> name of the serialized object.</param>
+    /// <param name="typeName">Specifies the <see cref="System.Type"/> name of the serialized object.</param>
+    public
 #if HAVE_SERIALIZATION_BINDER_BIND_TO_NAME
         override
 #endif
-            void BindToName(Type serializedType, out string? assemblyName, out string? typeName) {
+        void BindToName(Type serializedType, out string? assemblyName, out string? typeName) {
 #if !HAVE_FULL_REFLECTION
-            assemblyName = serializedType.GetTypeInfo().Assembly.FullName;
-            typeName = serializedType.FullName;
+        assemblyName = serializedType.GetTypeInfo().Assembly.FullName;
+        typeName = serializedType.FullName;
 #else
             assemblyName = serializedType.Assembly.FullName;
             typeName = serializedType.FullName;
 #endif
-        }
     }
 }

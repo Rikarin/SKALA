@@ -1,49 +1,46 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:98ff52570e019fac profile=SkalaCleanup generated=2026-08-27
+// skala-oracle: resharper=2025.2.6 config=sha256:bd9791d3a6e6a087 profile=SkalaCleanup generated=2026-08-27
 using System.Globalization;
 
-namespace Newtonsoft.Json.Linq.JsonPath {
-    class FieldFilter : PathFilter {
-        internal string? Name;
+namespace Newtonsoft.Json.Linq.JsonPath;
 
-        public FieldFilter(string? name) {
-            Name = name;
-        }
+class FieldFilter : PathFilter {
+    internal string? Name;
 
-        public override IEnumerable<JToken> ExecuteFilter(
-            JToken root,
-            IEnumerable<JToken> current,
-            JsonSelectSettings? settings
-        ) {
-            foreach (JToken t in current) {
-                if (t is JObject o) {
-                    if (Name != null) {
-                        JToken? v = o[Name];
+    public FieldFilter(string? name) {
+        Name = name;
+    }
 
-                        if (v != null) {
-                            yield return v;
-                        } else if (settings?.ErrorWhenNoMatch ?? false) {
-                            throw new JsonException(
-                                "Property '{0}' does not exist on JObject.".FormatWith(
-                                    CultureInfo.InvariantCulture,
-                                    Name
-                                )
-                            );
-                        }
-                    } else {
-                        foreach (KeyValuePair<string, JToken?> p in o) {
-                            yield return p.Value!;
-                        }
-                    }
-                } else {
-                    if (settings?.ErrorWhenNoMatch ?? false) {
+    public override IEnumerable<JToken> ExecuteFilter(
+        JToken root,
+        IEnumerable<JToken> current,
+        JsonSelectSettings? settings
+    ) {
+        foreach (JToken t in current) {
+            if (t is JObject o) {
+                if (Name != null) {
+                    JToken? v = o[Name];
+
+                    if (v != null) {
+                        yield return v;
+                    } else if (settings?.ErrorWhenNoMatch ?? false) {
                         throw new JsonException(
-                            "Property '{0}' not valid on {1}.".FormatWith(
-                                CultureInfo.InvariantCulture,
-                                Name ?? "*",
-                                t.GetType().Name
-                            )
+                            "Property '{0}' does not exist on JObject.".FormatWith(CultureInfo.InvariantCulture, Name)
                         );
                     }
+                } else {
+                    foreach (KeyValuePair<string, JToken?> p in o) {
+                        yield return p.Value!;
+                    }
+                }
+            } else {
+                if (settings?.ErrorWhenNoMatch ?? false) {
+                    throw new JsonException(
+                        "Property '{0}' not valid on {1}.".FormatWith(
+                            CultureInfo.InvariantCulture,
+                            Name ?? "*",
+                            t.GetType().Name
+                        )
+                    );
                 }
             }
         }

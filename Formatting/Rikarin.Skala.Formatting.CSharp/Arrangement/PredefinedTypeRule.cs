@@ -19,12 +19,18 @@ public sealed class PredefinedTypeRule : ArrangementRule {
 
     public override bool NeedsSemantics => true;
 
-    public override bool IsEnabled(in ArrangementOptions options) => options.PredefinedTypeForLocals;
+    /// <summary>
+    ///     ⚠ Enabled when *either* key asks for it, because the two govern different positions and the
+    ///     rewriter checks them one node at a time.
+    /// </summary>
+    public override bool IsEnabled(in ArrangementOptions options) =>
+        options.PredefinedTypeForLocals || options.PredefinedTypeForMemberAccess;
 
     public override SyntaxNode Apply(ArrangementContext context) =>
-        new Rewriter(context.Guard, context.Semantics).Visit(context.Root);
+        new Rewriter(context.Guard, context.Semantics, context.Options).Visit(context.Root);
 
-    sealed class Rewriter(FormatterTagGuard guard, SemanticModel model) : GuardedRewriter(guard) {
+    sealed class Rewriter(FormatterTagGuard guard, SemanticModel model, ArrangementOptions options)
+        : GuardedRewriter(guard) {
         public override SyntaxNode? VisitIdentifierName(IdentifierNameSyntax node) {
             var visited = (IdentifierNameSyntax)base.VisitIdentifierName(node)!;
             return Replace(node, visited);
@@ -61,6 +67,20 @@ public sealed class PredefinedTypeRule : ArrangementRule {
             if (original.Parent is QualifiedNameSyntax { Right: var right } && right == original) {
                 // The whole qualified name is handled by VisitQualifiedName; its right-hand
                 // identifier on its own is not a type reference.
+                return visited;
+            }
+
+            // ⚠ Two keys, two positions. `Int32.MaxValue` is a member access and is governed by
+            // `dotnet_style_predefined_type_for_member_access`; `Int32 x` is a declaration and is
+            // governed by `dotnet_style_predefined_type_for_locals_parameters_members`. Reading only
+            // the second and applying it to both is what this rule did before, and it is why
+            // docs/plan/17 found the member-access key at Tier D while the behaviour it names was
+            // already shipping — implemented, but credited to the wrong option and unobservable
+            // through its own.
+            var isReceiverOfMemberAccess =
+                original.Parent is MemberAccessExpressionSyntax access && access.Expression == original;
+
+            if (!(isReceiverOfMemberAccess ? options.PredefinedTypeForMemberAccess : options.PredefinedTypeForLocals)) {
                 return visited;
             }
 

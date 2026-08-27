@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:98ff52570e019fac profile=SkalaCleanup generated=2026-08-27
+// skala-oracle: resharper=2025.2.6 config=sha256:bd9791d3a6e6a087 profile=SkalaCleanup generated=2026-08-27
 #region License
 
 // Copyright (c) 2007 James Newton-King
@@ -26,14 +26,14 @@
 
 #endregion
 
-namespace Newtonsoft.Json.Tests.TestObjects {
-    public class PublicParameterizedConstructorWithPropertyNameConflict {
-        readonly int _value;
+namespace Newtonsoft.Json.Tests.TestObjects;
 
-        public PublicParameterizedConstructorWithPropertyNameConflict(string name) {
-            _value = Convert.ToInt32(name);
-        }
+public class PublicParameterizedConstructorWithPropertyNameConflict {
+    readonly int _value;
 
-        public int Name => _value;
+    public PublicParameterizedConstructorWithPropertyNameConflict(string name) {
+        _value = Convert.ToInt32(name);
     }
+
+    public int Name => _value;
 }

@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:98ff52570e019fac profile=SkalaCleanup generated=2026-08-27
+// skala-oracle: resharper=2025.2.6 config=sha256:bd9791d3a6e6a087 profile=SkalaCleanup generated=2026-08-27
 #region License
 
 // Copyright (c) 2007 James Newton-King
@@ -34,86 +34,86 @@ using System.Reflection;
 #if !HAVE_LINQ
 #endif
 
-namespace Newtonsoft.Json.Serialization {
+namespace Newtonsoft.Json.Serialization;
+
+/// <summary>
+/// Get and set values for a <see cref="MemberInfo"/> using dynamic methods.
+/// </summary>
+[RequiresDynamicCode(MiscellaneousUtils.AotWarning)]
+public class ExpressionValueProvider : IValueProvider {
+    readonly MemberInfo _memberInfo;
+    Func<object, object?>? _getter;
+    Action<object, object?>? _setter;
+
     /// <summary>
-    /// Get and set values for a <see cref="MemberInfo"/> using dynamic methods.
+    /// Initializes a new instance of the <see cref="ExpressionValueProvider"/> class.
     /// </summary>
-    [RequiresDynamicCode(MiscellaneousUtils.AotWarning)]
-    public class ExpressionValueProvider : IValueProvider {
-        readonly MemberInfo _memberInfo;
-        Func<object, object?>? _getter;
-        Action<object, object?>? _setter;
+    /// <param name="memberInfo">The member info.</param>
+    public ExpressionValueProvider(MemberInfo memberInfo) {
+        ValidationUtils.ArgumentNotNull(memberInfo, nameof(memberInfo));
+        _memberInfo = memberInfo;
+    }
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="ExpressionValueProvider"/> class.
-        /// </summary>
-        /// <param name="memberInfo">The member info.</param>
-        public ExpressionValueProvider(MemberInfo memberInfo) {
-            ValidationUtils.ArgumentNotNull(memberInfo, nameof(memberInfo));
-            _memberInfo = memberInfo;
-        }
-
-        /// <summary>
-        /// Sets the value.
-        /// </summary>
-        /// <param name="target">The target to set the value on.</param>
-        /// <param name="value">The value to set on the target.</param>
-        public void SetValue(object target, object? value) {
-            try {
-                if (_setter == null) {
-                    _setter = ExpressionReflectionDelegateFactory.Instance.CreateSet<object>(_memberInfo);
-                }
+    /// <summary>
+    /// Sets the value.
+    /// </summary>
+    /// <param name="target">The target to set the value on.</param>
+    /// <param name="value">The value to set on the target.</param>
+    public void SetValue(object target, object? value) {
+        try {
+            if (_setter == null) {
+                _setter = ExpressionReflectionDelegateFactory.Instance.CreateSet<object>(_memberInfo);
+            }
 
 #if DEBUG
-                // dynamic method doesn't check whether the type is 'legal' to set
-                // add this check for unit tests
-                if (value != null
-                    && !ReflectionUtils.GetMemberUnderlyingType(_memberInfo).IsAssignableFrom(value.GetType())) {
-                    throw new JsonSerializationException(
-                        "Incompatible value. Cannot set {0} to type {1}.".FormatWith(
-                            CultureInfo.InvariantCulture,
-                            _memberInfo,
-                            value.GetType()
-                        )
-                    );
-                }
+            // dynamic method doesn't check whether the type is 'legal' to set
+            // add this check for unit tests
+            if (value != null
+                && !ReflectionUtils.GetMemberUnderlyingType(_memberInfo).IsAssignableFrom(value.GetType())) {
+                throw new JsonSerializationException(
+                    "Incompatible value. Cannot set {0} to type {1}.".FormatWith(
+                        CultureInfo.InvariantCulture,
+                        _memberInfo,
+                        value.GetType()
+                    )
+                );
+            }
 #endif
 
-                _setter(target, value);
-            } catch (Exception ex) {
-                throw new JsonSerializationException(
-                    "Error setting value to '{0}' on '{1}'.".FormatWith(
-                        CultureInfo.InvariantCulture,
-                        _memberInfo.Name,
-                        target.GetType()
-                    ),
-                    ex
-                );
-            }
+            _setter(target, value);
+        } catch (Exception ex) {
+            throw new JsonSerializationException(
+                "Error setting value to '{0}' on '{1}'.".FormatWith(
+                    CultureInfo.InvariantCulture,
+                    _memberInfo.Name,
+                    target.GetType()
+                ),
+                ex
+            );
         }
+    }
 
-        /// <summary>
-        /// Gets the value.
-        /// </summary>
-        /// <param name="target">The target to get the value from.</param>
-        /// <returns>The value.</returns>
-        public object? GetValue(object target) {
-            try {
-                if (_getter == null) {
-                    _getter = ExpressionReflectionDelegateFactory.Instance.CreateGet<object>(_memberInfo);
-                }
-
-                return _getter(target);
-            } catch (Exception ex) {
-                throw new JsonSerializationException(
-                    "Error getting value from '{0}' on '{1}'.".FormatWith(
-                        CultureInfo.InvariantCulture,
-                        _memberInfo.Name,
-                        target.GetType()
-                    ),
-                    ex
-                );
+    /// <summary>
+    /// Gets the value.
+    /// </summary>
+    /// <param name="target">The target to get the value from.</param>
+    /// <returns>The value.</returns>
+    public object? GetValue(object target) {
+        try {
+            if (_getter == null) {
+                _getter = ExpressionReflectionDelegateFactory.Instance.CreateGet<object>(_memberInfo);
             }
+
+            return _getter(target);
+        } catch (Exception ex) {
+            throw new JsonSerializationException(
+                "Error getting value from '{0}' on '{1}'.".FormatWith(
+                    CultureInfo.InvariantCulture,
+                    _memberInfo.Name,
+                    target.GetType()
+                ),
+                ex
+            );
         }
     }
 }

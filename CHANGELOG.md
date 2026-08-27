@@ -209,6 +209,66 @@ doc comment in every repository.
 - `format --xmldoc` does not use the daemon. The daemon protocol carries no such flag, and serving
   the request would silently format without the sub-formatter.
 
+### Added — the version is measured, and the release line becomes `2.0.0-alpha`
+
+[18](docs/plan/18-versioning-and-release.md). `./build.sh ReleasePlan` builds the previous release's
+tool beside this one's and runs five detectors over the pair — the corpus formatted by both binaries,
+the rule catalogue, the exit-code table *and* the codes both binaries produce, the SARIF each writes,
+and the option registry. The number is the highest verdict. **Nothing reads a commit message**, for
+the reason everything else here is measured: four times in this project a summary and a measurement
+disagreed and the measurement was right.
+
+⚠ **Run against the tree that declared 1.0 (`d8e9d34`, 125 commits back), the verdict is `major`,
+and two of the four surfaces ADR-012 froze at 1.0 are what made it one.**
+
+| Surface | Verdict | Measured |
+|---|---|---|
+| formatted output | minor | 1 of 705 comparable corpus files, 3 lines — `indentation (-4 columns)`. 60 files added to the corpus and not comparable |
+| rule catalogue | minor | 15 rules added, **10 at `warning` or `error`** |
+| exit codes | **major** | `format --check` on an unformatted file exited **1** at 1.0.0 and exits **2** now; `--diff` the same; a path that does not exist went from **0** to **3** |
+| SARIF shape | — | unchanged, 53 paths |
+| option registry | **major** | 84 changes — 77 keys `D → A`, and **6 defaults changed on keys that were already Tier A**: three `keep_existing_*` going `false → true`, `wrap_after_declaration_lpar` and `wrap_before_declaration_rpar` going `true → false`, and `wrap_extends_list_style` `chop_if_long → wrap_if_long` |
+
+The exit-code moves are the fixes `ExitCodeContractTests` was written for and they are correct. They
+are also breaking, and no plausible commit prefix would have said so: both are `fix:`. The six option
+defaults are the arrangement work landing — a `feat:` — and a default is what applies to every
+repository that never wrote the key down.
+
+⚠ **The option detector was wrong on its first pass and was corrected before the number was taken.**
+It called `dotnet_style_require_accessibility_modifiers` changing type major; that key was **Tier D
+at the baseline**, doing nothing, and its type changed as part of implementing it. A default or a
+type only breaks a promise on a key that was honoured, so the detector requires that now and reports
+the rest as "changed while inert". The verdict is still `major`, for the six that are real.
+
+⚠ **1.0.0 was never published** — zero tags, zero packages on any feed — so the jump costs nobody
+anything. The first *published* artefact is `2.0.0-alpha.N` rather than `2.0.0`: a pre-release is
+opt-in on NuGet, which is the right default for a tool with six open formatter defects, 236 Tier D
+options and no adopting repository outside this one. Doc 18 records the promotion gate, and why
+retreating to `0.x` was rejected — at `0.x` the "your repository will show a diff" and "your
+baselines will break" verdicts collapse into one, and that distinction is the whole point.
+
+⚠ **The output detector was proved to fire before it was trusted.** A scratch copy with
+`o.SpaceAfterComma` inverted — one boolean — measured **393 of 765 corpus files and 7 326 lines**,
+97 % of them classified `inter-token spacing`, with the other four surfaces reporting unchanged. The
+detector also refuses two tools with the same SHA-256, because a differential against itself reports
+"no change" forever and looks green doing it.
+
+`.github/workflows/release.yml` now measures, packs, writes the notes from the measurements, creates
+the tag **in the job**, and prints exactly what a publish would push. The `publish` job is written
+out in full and gated on a repository variable nobody has set.
+
+### Fixed — two holes the release work fell into
+
+- **`build/` was never format-checked by the `Lint` target it defines.** The area list named seven
+  directories and not the one it lives in; `Build.cs` had drifted out of formatting. Same class as
+  the `Distribution` hole M8 closed (`7c56c8f`), one directory later.
+- **`rules.json` claimed `since: 1.1` and `since: 1.2`** against a declared `1.0.0` and zero tags —
+  two releases that never existed. `since` reaches a consumer through `rules[].properties.since` in
+  the SARIF and through `docs/rules/`. `VersionSourcesTests` refuses it now.
+- ⚠ **Not fixed, found in passing and filed:** `skala check --output report.sarif` with a bare
+  filename crashes with an unhandled `ArgumentException` and exit 5 (`SkalaDirectory.EnsureForFile`
+  calls `Directory.CreateDirectory("")`). An absolute or directory-qualified path works.
+
 ---
 
 ## 1.0.0 — 2026-08-27

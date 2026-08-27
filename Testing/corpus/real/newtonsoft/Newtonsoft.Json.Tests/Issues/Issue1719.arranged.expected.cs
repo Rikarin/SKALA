@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:98ff52570e019fac profile=SkalaCleanup generated=2026-08-27
+// skala-oracle: resharper=2025.2.6 config=sha256:bd9791d3a6e6a087 profile=SkalaCleanup generated=2026-08-27
 #region License
 
 // Copyright (c) 2007 James Newton-King
@@ -36,69 +36,69 @@ using Assert = Newtonsoft.Json.Tests.XUnitAssert;
 #else
 #endif
 
-namespace Newtonsoft.Json.Tests.Issues {
-    [TestFixture]
-    public class Issue1719 : TestFixtureBase {
-        [Test]
-        public void Test() {
-            ExtensionDataTestClass a = JsonConvert.DeserializeObject<ExtensionDataTestClass>(
-                "{\"E\":null}",
-                new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore }
+namespace Newtonsoft.Json.Tests.Issues;
+
+[TestFixture]
+public class Issue1719 : TestFixtureBase {
+    [Test]
+    public void Test() {
+        ExtensionDataTestClass a = JsonConvert.DeserializeObject<ExtensionDataTestClass>(
+            "{\"E\":null}",
+            new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore }
+        );
+
+        Assert.IsNull(a.PropertyBag);
+    }
+
+    [Test]
+    public void Test_PreviousWorkaround() {
+        ExtensionDataTestClassWorkaround a = JsonConvert.DeserializeObject<ExtensionDataTestClassWorkaround>(
+            "{\"E\":null}",
+            new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore }
+        );
+
+        Assert.IsNull(a.PropertyBag);
+    }
+
+    [Test]
+    public void Test_DefaultValue() {
+        ExtensionDataWithDefaultValueTestClass a =
+            JsonConvert.DeserializeObject<ExtensionDataWithDefaultValueTestClass>(
+                "{\"E\":2}",
+                new JsonSerializerSettings { DefaultValueHandling = DefaultValueHandling.Ignore }
             );
 
-            Assert.IsNull(a.PropertyBag);
-        }
+        Assert.IsNull(a.PropertyBag);
+    }
 
-        [Test]
-        public void Test_PreviousWorkaround() {
-            ExtensionDataTestClassWorkaround a = JsonConvert.DeserializeObject<ExtensionDataTestClassWorkaround>(
-                "{\"E\":null}",
-                new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore }
-            );
+    class ExtensionDataTestClass {
+        public B? E { get; set; }
 
-            Assert.IsNull(a.PropertyBag);
-        }
+        [JsonExtensionData]
+        public IDictionary<string, object> PropertyBag { get; set; }
+    }
 
-        [Test]
-        public void Test_DefaultValue() {
-            ExtensionDataWithDefaultValueTestClass a =
-                JsonConvert.DeserializeObject<ExtensionDataWithDefaultValueTestClass>(
-                    "{\"E\":2}",
-                    new JsonSerializerSettings { DefaultValueHandling = DefaultValueHandling.Ignore }
-                );
+    class ExtensionDataWithDefaultValueTestClass {
+        [DefaultValue(2)]
+        public int? E { get; set; }
 
-            Assert.IsNull(a.PropertyBag);
-        }
+        [JsonExtensionData]
+        public IDictionary<string, object> PropertyBag { get; set; }
+    }
 
-        class ExtensionDataTestClass {
-            public B? E { get; set; }
+    enum B {
+        One,
+        Two
+    }
 
-            [JsonExtensionData]
-            public IDictionary<string, object> PropertyBag { get; set; }
-        }
+    class ExtensionDataTestClassWorkaround {
+        [JsonProperty(
+            DefaultValueHandling = DefaultValueHandling.IgnoreAndPopulate,
+            NullValueHandling = NullValueHandling.Include
+        )]
+        public B? E { get; set; }
 
-        class ExtensionDataWithDefaultValueTestClass {
-            [DefaultValue(2)]
-            public int? E { get; set; }
-
-            [JsonExtensionData]
-            public IDictionary<string, object> PropertyBag { get; set; }
-        }
-
-        enum B {
-            One,
-            Two
-        }
-
-        class ExtensionDataTestClassWorkaround {
-            [JsonProperty(
-                DefaultValueHandling = DefaultValueHandling.IgnoreAndPopulate,
-                NullValueHandling = NullValueHandling.Include
-            )]
-            public B? E { get; set; }
-
-            [JsonExtensionData]
-            public IDictionary<string, object> PropertyBag { get; set; }
-        }
+        [JsonExtensionData]
+        public IDictionary<string, object> PropertyBag { get; set; }
     }
 }

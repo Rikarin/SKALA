@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:98ff52570e019fac profile=SkalaCleanup generated=2026-08-27
+// skala-oracle: resharper=2025.2.6 config=sha256:bd9791d3a6e6a087 profile=SkalaCleanup generated=2026-08-27
 // SPDX-FileCopyrightText: Copyright (c) Rikarin
 // SPDX-License-Identifier: Apache-2.0
 
@@ -60,7 +60,7 @@ public sealed class InstanceCullingTests {
             new(new(0f, 0f, 120f), 1f)
         ];
 
-        Assert.Equal(2, culler.Cull(instances, [], Settings(end: 100f), []));
+        Assert.Equal(2, culler.Cull(instances, [], Settings(100f), []));
         Assert.Equal([0u, 1u], culler.Survivors.ToArray());
     }
 
@@ -106,7 +106,7 @@ public sealed class InstanceCullingTests {
         // by index instead of reading back which levels happened to survive.
         var culler = new InstanceCuller();
 
-        culler.Cull(Line(3, first: 1f), [], Settings(), [100f, 200f]);
+        culler.Cull(Line(3, 1f), [], Settings(), [100f, 200f]);
 
         Assert.Equal(3, culler.LevelCount);
         Assert.Equal(3, culler.Runs[0].Count);
@@ -191,7 +191,7 @@ public sealed class InstanceCullingTests {
             new(new(0f, 0f, 90f), 0f)
         ];
 
-        var settings = Settings(end: 100f, start: 80f) with { Fade = true };
+        var settings = Settings(100f, 80f) with { Fade = true };
 
         culler.Cull(instances, [], settings, []);
 
@@ -206,7 +206,7 @@ public sealed class InstanceCullingTests {
     public void WithoutFadingEverySurvivorIsFullyPresent() {
         var culler = new InstanceCuller();
 
-        culler.Cull(Line(5, first: 90f), [], Settings(end: 100f, start: 80f), []);
+        culler.Cull(Line(5, 90f), [], Settings(100f, 80f), []);
 
         Assert.All(culler.Parameters.ToArray(), parameter => Assert.Equal(1f, parameter.Fade));
     }
@@ -359,7 +359,7 @@ public sealed class InstanceCullingTests {
         var culler = new InstanceCuller();
 
         foreach (var count in new[] { 0, 1, 7, 64, 513 }) {
-            culler.Cull(Line(count), [], Settings(end: 300f), [5f, 12f, 40f]);
+            culler.Cull(Line(count), [], Settings(300f), [5f, 12f, 40f]);
 
             var total = 0;
             var expected = 0;

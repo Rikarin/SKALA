@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:98ff52570e019fac profile=SkalaCleanup generated=2026-08-27
+// skala-oracle: resharper=2025.2.6 config=sha256:bd9791d3a6e6a087 profile=SkalaCleanup generated=2026-08-27
 #region License
 
 // Copyright (c) 2007 James Newton-King
@@ -34,33 +34,33 @@ using Assert = Newtonsoft.Json.Tests.XUnitAssert;
 
 #endif
 
-namespace Newtonsoft.Json.Tests.Documentation.Samples.Linq {
-    [TestFixture]
-    public class ToObjectType : TestFixtureBase {
-        [Test]
-        public void Example() {
-            #region Usage
+namespace Newtonsoft.Json.Tests.Documentation.Samples.Linq;
 
-            JValue v1 = new JValue(true);
+[TestFixture]
+public class ToObjectType : TestFixtureBase {
+    [Test]
+    public void Example() {
+        #region Usage
 
-            var b = (bool)v1.ToObject(typeof(bool));
+        JValue v1 = new JValue(true);
 
-            Console.WriteLine(b);
-            // true
+        var b = (bool)v1.ToObject(typeof(bool));
 
-            var i = (int)v1.ToObject(typeof(int));
+        Console.WriteLine(b);
+        // true
 
-            Console.WriteLine(i);
-            // 1
+        var i = (int)v1.ToObject(typeof(int));
 
-            var s = (string)v1.ToObject(typeof(string));
+        Console.WriteLine(i);
+        // 1
 
-            Console.WriteLine(s);
-            // "True"
+        var s = (string)v1.ToObject(typeof(string));
 
-            #endregion
+        Console.WriteLine(s);
+        // "True"
 
-            Assert.AreEqual("True", s);
-        }
+        #endregion
+
+        Assert.AreEqual("True", s);
     }
 }

@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:98ff52570e019fac profile=SkalaCleanup generated=2026-08-27
+// skala-oracle: resharper=2025.2.6 config=sha256:bd9791d3a6e6a087 profile=SkalaCleanup generated=2026-08-27
 #region License
 
 // Copyright (c) 2007 James Newton-King
@@ -26,41 +26,41 @@
 
 #endregion
 
-namespace Newtonsoft.Json.Tests.TestObjects.JsonTextReaderTests {
-    public class UnmanagedResourceFakingJsonReader : JsonReader {
-        public static int DisposalCalls;
+namespace Newtonsoft.Json.Tests.TestObjects.JsonTextReaderTests;
 
-        public static void CreateAndDispose() {
-            ((IDisposable)new UnmanagedResourceFakingJsonReader()).Dispose();
-        }
+public class UnmanagedResourceFakingJsonReader : JsonReader {
+    public static int DisposalCalls;
 
-        public UnmanagedResourceFakingJsonReader() {
-            DisposalCalls = 0;
-        }
+    public static void CreateAndDispose() {
+        ((IDisposable)new UnmanagedResourceFakingJsonReader()).Dispose();
+    }
 
-        protected override void Dispose(bool disposing) {
-            base.Dispose(disposing);
-            ++DisposalCalls;
-        }
+    public UnmanagedResourceFakingJsonReader() {
+        DisposalCalls = 0;
+    }
 
-        ~UnmanagedResourceFakingJsonReader() {
-            Dispose(false);
-        }
+    protected override void Dispose(bool disposing) {
+        base.Dispose(disposing);
+        ++DisposalCalls;
+    }
 
-        public override bool Read() => throw new NotImplementedException();
+    ~UnmanagedResourceFakingJsonReader() {
+        Dispose(false);
+    }
 
-        public override byte[] ReadAsBytes() => throw new NotImplementedException();
+    public override bool Read() => throw new NotImplementedException();
 
-        public override DateTime? ReadAsDateTime() => throw new NotImplementedException();
+    public override byte[] ReadAsBytes() => throw new NotImplementedException();
+
+    public override DateTime? ReadAsDateTime() => throw new NotImplementedException();
 
 #if !NET20
-        public override DateTimeOffset? ReadAsDateTimeOffset() => throw new NotImplementedException();
+    public override DateTimeOffset? ReadAsDateTimeOffset() => throw new NotImplementedException();
 #endif
 
-        public override decimal? ReadAsDecimal() => throw new NotImplementedException();
+    public override decimal? ReadAsDecimal() => throw new NotImplementedException();
 
-        public override int? ReadAsInt32() => throw new NotImplementedException();
+    public override int? ReadAsInt32() => throw new NotImplementedException();
 
-        public override string ReadAsString() => throw new NotImplementedException();
-    }
+    public override string ReadAsString() => throw new NotImplementedException();
 }

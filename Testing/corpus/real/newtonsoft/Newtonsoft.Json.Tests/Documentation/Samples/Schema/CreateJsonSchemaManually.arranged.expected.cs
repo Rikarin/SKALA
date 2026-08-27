@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:98ff52570e019fac profile=SkalaCleanup generated=2026-08-27
+// skala-oracle: resharper=2025.2.6 config=sha256:bd9791d3a6e6a087 profile=SkalaCleanup generated=2026-08-27
 #region License
 
 // Copyright (c) 2007 James Newton-King
@@ -29,55 +29,55 @@
 #pragma warning disable 618
 using Newtonsoft.Json.Linq;
 
-namespace Newtonsoft.Json.Tests.Documentation.Samples.Schema {
-    public class CreateJsonSchemaManually {
-        public void Example() {
-            #region Usage
+namespace Newtonsoft.Json.Tests.Documentation.Samples.Schema;
 
-            JsonSchema schema = new JsonSchema();
-            schema.Type = JsonSchemaType.Object;
-            schema.Properties = new Dictionary<string, JsonSchema> {
-                { "name", new JsonSchema { Type = JsonSchemaType.String } }, {
-                    "hobbies",
-                    new JsonSchema {
-                        Type = JsonSchemaType.Array,
-                        Items = new List<JsonSchema> { new JsonSchema { Type = JsonSchemaType.String } }
-                    }
+public class CreateJsonSchemaManually {
+    public void Example() {
+        #region Usage
+
+        JsonSchema schema = new JsonSchema();
+        schema.Type = JsonSchemaType.Object;
+        schema.Properties = new Dictionary<string, JsonSchema> {
+            { "name", new JsonSchema { Type = JsonSchemaType.String } }, {
+                "hobbies",
+                new JsonSchema {
+                    Type = JsonSchemaType.Array,
+                    Items = new List<JsonSchema> { new JsonSchema { Type = JsonSchemaType.String } }
                 }
-            };
+            }
+        };
 
-            string schemaJson = schema.ToString();
+        string schemaJson = schema.ToString();
 
-            Console.WriteLine(schemaJson);
-            // {
-            //   "type": "object",
-            //   "properties": {
-            //     "name": {
-            //       "type": "string"
-            //     },
-            //     "hobbies": {
-            //       "type": "array",
-            //       "items": {
-            //         "type": "string"
-            //       }
-            //     }
-            //   }
-            // }
+        Console.WriteLine(schemaJson);
+        // {
+        //   "type": "object",
+        //   "properties": {
+        //     "name": {
+        //       "type": "string"
+        //     },
+        //     "hobbies": {
+        //       "type": "array",
+        //       "items": {
+        //         "type": "string"
+        //       }
+        //     }
+        //   }
+        // }
 
-            var person = JObject.Parse(
-                @"{
+        var person = JObject.Parse(
+            @"{
               'name': 'James',
               'hobbies': ['.NET', 'Blogging', 'Reading', 'Xbox', 'LOLCATS']
             }"
-            );
+        );
 
-            bool valid = person.IsValid(schema);
+        bool valid = person.IsValid(schema);
 
-            Console.WriteLine(valid);
-            // true
+        Console.WriteLine(valid);
+        // true
 
-            #endregion
-        }
+        #endregion
     }
 }
 

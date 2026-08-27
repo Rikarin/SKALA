@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:98ff52570e019fac profile=SkalaCleanup generated=2026-08-27
+// skala-oracle: resharper=2025.2.6 config=sha256:bd9791d3a6e6a087 profile=SkalaCleanup generated=2026-08-27
 #region License
 
 // Copyright (c) 2007 James Newton-King
@@ -35,18 +35,18 @@ using Assert = Newtonsoft.Json.Tests.XUnitAssert;
 #else
 #endif
 
-namespace Newtonsoft.Json.Tests.Issues {
-    [TestFixture]
-    public class Issue1396 : TestFixtureBase {
-        [Test]
-        public void Test() {
-            using (var stringReader = new StringReader(","))
-            using (var jsonReader = new JsonTextReader(stringReader)) {
-                jsonReader.SupportMultipleContent = true;
-                Assert.IsTrue(jsonReader.Read());
-                Assert.AreEqual(JsonToken.Undefined, jsonReader.TokenType);
-                Assert.IsFalse(jsonReader.Read());
-            }
+namespace Newtonsoft.Json.Tests.Issues;
+
+[TestFixture]
+public class Issue1396 : TestFixtureBase {
+    [Test]
+    public void Test() {
+        using (var stringReader = new StringReader(","))
+        using (var jsonReader = new JsonTextReader(stringReader)) {
+            jsonReader.SupportMultipleContent = true;
+            Assert.IsTrue(jsonReader.Read());
+            Assert.AreEqual(JsonToken.Undefined, jsonReader.TokenType);
+            Assert.IsFalse(jsonReader.Read());
         }
     }
 }

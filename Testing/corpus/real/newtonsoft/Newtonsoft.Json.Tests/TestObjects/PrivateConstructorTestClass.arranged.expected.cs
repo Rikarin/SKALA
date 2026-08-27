@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:98ff52570e019fac profile=SkalaCleanup generated=2026-08-27
+// skala-oracle: resharper=2025.2.6 config=sha256:bd9791d3a6e6a087 profile=SkalaCleanup generated=2026-08-27
 #region License
 
 // Copyright (c) 2007 James Newton-King
@@ -26,17 +26,17 @@
 
 #endregion
 
-namespace Newtonsoft.Json.Tests.TestObjects {
-    public class PrivateConstructorTestClass {
-        public string Name { get; set; }
-        public int Age { get; set; }
+namespace Newtonsoft.Json.Tests.TestObjects;
 
-        PrivateConstructorTestClass() { }
+public class PrivateConstructorTestClass {
+    public string Name { get; set; }
+    public int Age { get; set; }
 
-        // multiple constructors with arguments so the serializer doesn't know what to fall back to
-        PrivateConstructorTestClass(object a) { }
+    PrivateConstructorTestClass() { }
 
-        // multiple constructors with arguments so the serializer doesn't know what to fall back to
-        PrivateConstructorTestClass(object a, object b) { }
-    }
+    // multiple constructors with arguments so the serializer doesn't know what to fall back to
+    PrivateConstructorTestClass(object a) { }
+
+    // multiple constructors with arguments so the serializer doesn't know what to fall back to
+    PrivateConstructorTestClass(object a, object b) { }
 }

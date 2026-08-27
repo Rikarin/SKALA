@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:98ff52570e019fac profile=SkalaCleanup generated=2026-08-27
+// skala-oracle: resharper=2025.2.6 config=sha256:bd9791d3a6e6a087 profile=SkalaCleanup generated=2026-08-27
 #region License
 
 // Copyright (c) 2007 James Newton-King
@@ -37,15 +37,16 @@ using Newtonsoft.Json.Utilities.LinqBridge;
 #else
 #endif
 
-namespace Newtonsoft.Json.Tests.Documentation.Samples.JsonPath {
-    [TestFixture]
-    public class StrictEqualsQuery : TestFixtureBase {
-        [Test]
-        public void Example() {
-            #region Usage
+namespace Newtonsoft.Json.Tests.Documentation.Samples.JsonPath;
 
-            JArray items = JArray.Parse(
-                @"[
+[TestFixture]
+public class StrictEqualsQuery : TestFixtureBase {
+    [Test]
+    public void Example() {
+        #region Usage
+
+        JArray items = JArray.Parse(
+            @"[
               {
                 'Name': 'Valid JSON',
                 'Valid': true
@@ -55,20 +56,19 @@ namespace Newtonsoft.Json.Tests.Documentation.Samples.JsonPath {
                 'Valid': 'true'
               }
             ]"
-            );
+        );
 
-            // Use === operator. Compared types must be the same to be valid
-            List<JToken> strictResults = items.SelectTokens(@"$.[?(@.Valid === true)]").ToList();
+        // Use === operator. Compared types must be the same to be valid
+        List<JToken> strictResults = items.SelectTokens(@"$.[?(@.Valid === true)]").ToList();
 
-            foreach (JToken item in strictResults) {
-                Console.WriteLine((string)item["Name"]);
-            }
-
-            // Valid JSON
-
-            #endregion
-
-            Assert.AreEqual(1, strictResults.Count);
+        foreach (JToken item in strictResults) {
+            Console.WriteLine((string)item["Name"]);
         }
+
+        // Valid JSON
+
+        #endregion
+
+        Assert.AreEqual(1, strictResults.Count);
     }
 }

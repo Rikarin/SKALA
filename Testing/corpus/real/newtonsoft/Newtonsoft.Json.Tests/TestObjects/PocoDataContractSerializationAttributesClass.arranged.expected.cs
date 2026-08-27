@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:98ff52570e019fac profile=SkalaCleanup generated=2026-08-27
+// skala-oracle: resharper=2025.2.6 config=sha256:bd9791d3a6e6a087 profile=SkalaCleanup generated=2026-08-27
 #region License
 
 // Copyright (c) 2007 James Newton-King
@@ -28,20 +28,19 @@
 
 using System.Runtime.Serialization;
 
-namespace Newtonsoft.Json.Tests.TestObjects {
+namespace Newtonsoft.Json.Tests.TestObjects;
 #if !(NET20 || NET35)
-    public class PocoDataContractSerializationAttributesClass {
-        public string NoAttribute { get; set; }
+public class PocoDataContractSerializationAttributesClass {
+    public string NoAttribute { get; set; }
 
-        [IgnoreDataMember]
-        public string IgnoreDataMemberAttribute { get; set; }
+    [IgnoreDataMember]
+    public string IgnoreDataMemberAttribute { get; set; }
 
-        [DataMember]
-        public string DataMemberAttribute { get; set; }
+    [DataMember]
+    public string DataMemberAttribute { get; set; }
 
-        [IgnoreDataMember]
-        [DataMember]
-        public string IgnoreDataMemberAndDataMemberAttribute { get; set; }
-    }
-#endif
+    [IgnoreDataMember]
+    [DataMember]
+    public string IgnoreDataMemberAndDataMemberAttribute { get; set; }
 }
+#endif

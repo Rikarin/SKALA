@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:98ff52570e019fac profile=SkalaCleanup generated=2026-08-27
+// skala-oracle: resharper=2025.2.6 config=sha256:bd9791d3a6e6a087 profile=SkalaCleanup generated=2026-08-27
 #region License
 
 // Copyright (c) 2007 James Newton-King
@@ -28,23 +28,22 @@
 
 using System.Runtime.Serialization;
 
-namespace Newtonsoft.Json.Tests.TestObjects {
+namespace Newtonsoft.Json.Tests.TestObjects;
 #if !NET20
-    [DataContract]
-    public class SubWithContractNewProperties : BaseWithContract {
+[DataContract]
+public class SubWithContractNewProperties : BaseWithContract {
 #pragma warning disable 108, 114
-        [DataMember(Name = "VirtualWithDataMemberSub")]
-        public string VirtualWithDataMember { get; set; }
+    [DataMember(Name = "VirtualWithDataMemberSub")]
+    public string VirtualWithDataMember { get; set; }
 
-        [DataMember(Name = "Virtual2")]
-        public string Virtual { get; set; }
+    [DataMember(Name = "Virtual2")]
+    public string Virtual { get; set; }
 
-        [DataMember(Name = "WithDataMemberSub")]
-        public string WithDataMember { get; set; }
+    [DataMember(Name = "WithDataMemberSub")]
+    public string WithDataMember { get; set; }
 
-        [DataMember(Name = "JustAProperty2")]
-        public string JustAProperty { get; set; }
+    [DataMember(Name = "JustAProperty2")]
+    public string JustAProperty { get; set; }
 #pragma warning restore 108, 114
-    }
-#endif
 }
+#endif

@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:98ff52570e019fac profile=SkalaCleanup generated=2026-08-27
+// skala-oracle: resharper=2025.2.6 config=sha256:bd9791d3a6e6a087 profile=SkalaCleanup generated=2026-08-27
 #region License
 
 // Copyright (c) 2007 James Newton-King
@@ -35,45 +35,45 @@ using Assert = Newtonsoft.Json.Tests.XUnitAssert;
 
 #endif
 
-namespace Newtonsoft.Json.Tests.Documentation.Samples.Linq {
-    [TestFixture]
-    public class Clone : TestFixtureBase {
-        [Test]
-        public void Example() {
-            #region Usage
+namespace Newtonsoft.Json.Tests.Documentation.Samples.Linq;
 
-            var o1 = new JObject { { "String", "A string!" }, { "Items", new JArray(1, 2) } };
+[TestFixture]
+public class Clone : TestFixtureBase {
+    [Test]
+    public void Example() {
+        #region Usage
 
-            Console.WriteLine(o1.ToString());
-            // {
-            //   "String": "A string!",
-            //   "Items": [
-            //     1,
-            //     2
-            //   ]
-            // }
+        var o1 = new JObject { { "String", "A string!" }, { "Items", new JArray(1, 2) } };
 
-            var o2 = (JObject)o1.DeepClone();
+        Console.WriteLine(o1.ToString());
+        // {
+        //   "String": "A string!",
+        //   "Items": [
+        //     1,
+        //     2
+        //   ]
+        // }
 
-            Console.WriteLine(o2.ToString());
-            // {
-            //   "String": "A string!",
-            //   "Items": [
-            //     1,
-            //     2
-            //   ]
-            // }
+        var o2 = (JObject)o1.DeepClone();
 
-            Console.WriteLine(JToken.DeepEquals(o1, o2));
-            // true
+        Console.WriteLine(o2.ToString());
+        // {
+        //   "String": "A string!",
+        //   "Items": [
+        //     1,
+        //     2
+        //   ]
+        // }
 
-            Console.WriteLine(ReferenceEquals(o1, o2));
-            // false
+        Console.WriteLine(JToken.DeepEquals(o1, o2));
+        // true
 
-            #endregion
+        Console.WriteLine(ReferenceEquals(o1, o2));
+        // false
 
-            Assert.IsTrue(JToken.DeepEquals(o1, o2));
-            Assert.IsFalse(ReferenceEquals(o1, o2));
-        }
+        #endregion
+
+        Assert.IsTrue(JToken.DeepEquals(o1, o2));
+        Assert.IsFalse(ReferenceEquals(o1, o2));
     }
 }

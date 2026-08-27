@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:98ff52570e019fac profile=SkalaCleanup generated=2026-08-27
+// skala-oracle: resharper=2025.2.6 config=sha256:bd9791d3a6e6a087 profile=SkalaCleanup generated=2026-08-27
 #region License
 
 // Copyright (c) 2007 James Newton-King
@@ -26,44 +26,44 @@
 
 #endregion
 
-namespace Newtonsoft.Json.Utilities {
-    static class JsonTokenUtils {
-        internal static bool IsEndToken(JsonToken token) {
-            switch (token) {
-                case JsonToken.EndObject:
-                case JsonToken.EndArray:
-                case JsonToken.EndConstructor:
-                    return true;
-                default:
-                    return false;
-            }
-        }
+namespace Newtonsoft.Json.Utilities;
 
-        internal static bool IsStartToken(JsonToken token) {
-            switch (token) {
-                case JsonToken.StartObject:
-                case JsonToken.StartArray:
-                case JsonToken.StartConstructor:
-                    return true;
-                default:
-                    return false;
-            }
+static class JsonTokenUtils {
+    internal static bool IsEndToken(JsonToken token) {
+        switch (token) {
+            case JsonToken.EndObject:
+            case JsonToken.EndArray:
+            case JsonToken.EndConstructor:
+                return true;
+            default:
+                return false;
         }
+    }
 
-        internal static bool IsPrimitiveToken(JsonToken token) {
-            switch (token) {
-                case JsonToken.Integer:
-                case JsonToken.Float:
-                case JsonToken.String:
-                case JsonToken.Boolean:
-                case JsonToken.Undefined:
-                case JsonToken.Null:
-                case JsonToken.Date:
-                case JsonToken.Bytes:
-                    return true;
-                default:
-                    return false;
-            }
+    internal static bool IsStartToken(JsonToken token) {
+        switch (token) {
+            case JsonToken.StartObject:
+            case JsonToken.StartArray:
+            case JsonToken.StartConstructor:
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    internal static bool IsPrimitiveToken(JsonToken token) {
+        switch (token) {
+            case JsonToken.Integer:
+            case JsonToken.Float:
+            case JsonToken.String:
+            case JsonToken.Boolean:
+            case JsonToken.Undefined:
+            case JsonToken.Null:
+            case JsonToken.Date:
+            case JsonToken.Bytes:
+                return true;
+            default:
+                return false;
         }
     }
 }

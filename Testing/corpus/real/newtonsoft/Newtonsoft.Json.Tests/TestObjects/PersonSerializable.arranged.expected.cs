@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:98ff52570e019fac profile=SkalaCleanup generated=2026-08-27
+// skala-oracle: resharper=2025.2.6 config=sha256:bd9791d3a6e6a087 profile=SkalaCleanup generated=2026-08-27
 #region License
 
 // Copyright (c) 2007 James Newton-King
@@ -26,26 +26,25 @@
 
 #endregion
 
-namespace Newtonsoft.Json.Tests.TestObjects {
+namespace Newtonsoft.Json.Tests.TestObjects;
 #if !(PORTABLE || DNXCORE50) || NETSTANDARD2_0 || NET6_0_OR_GREATER
-    [Serializable]
-    public class PersonSerializable {
-        public PersonSerializable() { }
+[Serializable]
+public class PersonSerializable {
+    public PersonSerializable() { }
 
-        string _name = "";
+    string _name = "";
 
-        public string Name {
-            get => _name;
-            set => _name = value;
-        }
-
-        [NonSerialized]
-        int _age = 0;
-
-        public int Age {
-            get => _age;
-            set => _age = value;
-        }
+    public string Name {
+        get => _name;
+        set => _name = value;
     }
-#endif
+
+    [NonSerialized]
+    int _age = 0;
+
+    public int Age {
+        get => _age;
+        set => _age = value;
+    }
 }
+#endif

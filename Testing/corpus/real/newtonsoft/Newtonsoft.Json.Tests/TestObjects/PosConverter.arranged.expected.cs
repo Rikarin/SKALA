@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:98ff52570e019fac profile=SkalaCleanup generated=2026-08-27
+// skala-oracle: resharper=2025.2.6 config=sha256:bd9791d3a6e6a087 profile=SkalaCleanup generated=2026-08-27
 #region License
 
 // Copyright (c) 2007 James Newton-King
@@ -26,26 +26,26 @@
 
 #endregion
 
-namespace Newtonsoft.Json.Tests.TestObjects {
-    public class PosConverter : JsonConverter {
-        public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer) {
-            Pos p = (Pos)value;
+namespace Newtonsoft.Json.Tests.TestObjects;
 
-            if (p != null) {
-                writer.WriteRawValue(string.Format("new Pos({0},{1})", p.X, p.Y));
-            } else {
-                writer.WriteNull();
-            }
+public class PosConverter : JsonConverter {
+    public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer) {
+        Pos p = (Pos)value;
+
+        if (p != null) {
+            writer.WriteRawValue(string.Format("new Pos({0},{1})", p.X, p.Y));
+        } else {
+            writer.WriteNull();
         }
-
-        public override object ReadJson(
-            JsonReader reader,
-            Type objectType,
-            object existingValue,
-            JsonSerializer serializer
-        ) =>
-            throw new NotImplementedException();
-
-        public override bool CanConvert(Type objectType) => objectType == typeof(Pos);
     }
+
+    public override object ReadJson(
+        JsonReader reader,
+        Type objectType,
+        object existingValue,
+        JsonSerializer serializer
+    ) =>
+        throw new NotImplementedException();
+
+    public override bool CanConvert(Type objectType) => objectType == typeof(Pos);
 }

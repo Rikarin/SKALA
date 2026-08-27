@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:98ff52570e019fac profile=SkalaCleanup generated=2026-08-27
+// skala-oracle: resharper=2025.2.6 config=sha256:bd9791d3a6e6a087 profile=SkalaCleanup generated=2026-08-27
 #region License
 
 // Copyright (c) 2007 James Newton-King
@@ -26,22 +26,22 @@
 
 #endregion
 
-namespace Newtonsoft.Json.Tests.TestObjects.JsonTextReaderTests {
-    public class ToggleReaderError : TextReader {
-        readonly TextReader _inner;
+namespace Newtonsoft.Json.Tests.TestObjects.JsonTextReaderTests;
 
-        public bool Error { get; set; }
+public class ToggleReaderError : TextReader {
+    readonly TextReader _inner;
 
-        public ToggleReaderError(TextReader inner) {
-            _inner = inner;
+    public bool Error { get; set; }
+
+    public ToggleReaderError(TextReader inner) {
+        _inner = inner;
+    }
+
+    public override int Read(char[] buffer, int index, int count) {
+        if (Error) {
+            throw new("Read error");
         }
 
-        public override int Read(char[] buffer, int index, int count) {
-            if (Error) {
-                throw new("Read error");
-            }
-
-            return _inner.Read(buffer, index, 1);
-        }
+        return _inner.Read(buffer, index, 1);
     }
 }

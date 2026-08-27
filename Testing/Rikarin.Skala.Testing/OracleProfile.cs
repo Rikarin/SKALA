@@ -49,10 +49,17 @@ public sealed record OracleProfile(string Name, string Suffix, string Tasks) {
     ///             <c>arrangement --reorder</c> reports it.
     ///         </item>
     ///         <item>
-    ///             ⚠ <c>RemoveRedundantParentheses</c> *is* present, and Skala's own parenthesis removal is
-    ///             gated behind <c>--aggressive</c> (docs/plan/06 § "Qualification and redundancy"). That is a
-    ///             deliberate, measured divergence rather than an oversight: the profile mirrors the export, and
-    ///             the gate's cost is a number in the M4 report instead of a hidden agreement.
+    ///             ⚠ <c>ArrangeNamespaces</c> and <c>ArrangeArgumentsStyle</c> were absent until they were
+    ///             probed, and their absence was invisible in exactly the way the sweep warns about: the oracle
+    ///             simply declined five of the export's own settings, and docs/plan/17 recorded all five as
+    ///             arrangement Skala "declares and does not perform". They were missed because the probe list
+    ///             was built from doc 06's catalogue rather than from the tool's own
+    ///             <c>CodeCleanupTask_</c> resource names.
+    ///         </item>
+    ///         <item>
+    ///             ⚠ <c>RemoveRedundantParentheses</c> is present and Skala now performs it by default too —
+    ///             SK-DIV-0014's <c>--aggressive</c> gate is retired, priced at 4.25 points of changed-span
+    ///             agreement before it was lifted.
     ///         </item>
     ///     </list>
     /// </remarks>
@@ -75,6 +82,8 @@ public sealed record OracleProfile(string Name, string Suffix, string Tasks) {
         + " ArrangeTrailingCommas=\"True\""
         + " ArrangeAttributes=\"True\""
         + " RemoveRedundantParentheses=\"True\""
+        + " ArrangeArgumentsStyle=\"True\""
+        + " ArrangeNamespaces=\"True\""
         + " />"
     );
 

@@ -173,8 +173,50 @@ have the same doubt.
 Parenthesis removal is the highest-risk rewrite in the whole tool: `never_if_unnecessary` for
 arithmetic means `a + (b * c)` → `a + b * c`, which is correct and which people find alarming. Both
 parenthesis keys carry severity `none` in the export, so the *inspection* is silent; the cleanup
-still applies. Skala gates parenthesis removal behind `arrange --aggressive` for the first release
-regardless, and revisits when the corpus differential shows zero divergences.
+still applies.
+
+⚠ **The `--aggressive` gate is lifted.** It was set for the first release with the condition for
+revisiting written down — "when the corpus differential shows zero divergences" — and that condition
+was the wrong test, because a gated rule contributes divergences by being gated. What settled it is
+the price, measured both ways over 401 corpus files against the cleanup profile: **59.43 % agreed
+with the gate on, 63.68 % with it off**, so the gate cost 4.25 points against an oracle whose own
+profile removes these by default. [17](17-inspection-parity.md) then made it the largest single item
+in the whole parity measurement. SK-DIV-0014 is retired.
+
+⚠ **What actually justified lifting it is not the number — it is that the rule no longer guesses.**
+The gated version carried a precedence table and was arithmetic-only, because a table is exactly as
+trustworthy as whoever wrote it. The rule now removes the parentheses, prints the enclosing
+expression, parses it back, and keeps the edit only if the re-parsed tree is structurally equivalent
+to the one it built. "Redundant" *means* "deleting them re-parses to the same tree", so checking that
+directly is both safer than a table and much broader: it covers casts, unary operators, invocations
+and nesting that the table version declined, and it refuses `a - (b - c)` and `a / (b / c)` without
+anyone having to remember that subtraction and division are not associative.
+
+Which parentheses Skala is *willing* to drop stays a separate question, settled by the export and
+measured against `jb cleanupcode` rather than read off the key names:
+
+| | |
+|---|---|
+| Removed | arithmetic and relational operands, casts, unary operators, invocations, nested parentheses, and a parenthesized initializer |
+| Kept | an operand that is itself a shift, bitwise, `&&`, `\|\|` or `??` expression |
+| Kept | **any** operand of a shift or bitwise expression, whatever the operand is |
+| Declined | assignments and conditionals inside parentheses, the operand of a cast, and anything the re-parse does not prove |
+
+⚠ **The proof refuses one class the oracle removes, and that refusal is the better answer.** Equal
+precedence is not associativity: `a * (x * y)` re-parses as `(a * x) * y`, a different tree, so the
+parentheses stay. On `float` they are load-bearing — Vixen's `SphericalHarmonics` writes
+`coefficients.L2m2 * (x * y)` and the grouping is the author's arithmetic, not decoration. This is
+the whole residue of `ArrangeRedundantParentheses` after the rewrite: **6 findings, down from
+1 231**, and every one of them is this shape.
+
+⚠ **The second "kept" row is the one that was got wrong first.**
+`resharper_parentheses_non_obvious_operations = shift, bitwise_*` reads like a statement about which
+parenthesized expressions to keep, and it is a statement about which *enclosing* operations need
+their operands clarified. `a & (b + 1)` and `a << (b + 1)` keep their parentheses even though the
+inner expression is plain arithmetic. The first implementation keyed on the inner expression alone,
+agreed with the oracle on every case in the fixture that had been written for it, and stripped those
+two anyway — found by reading what it did to Vixen's `BitReader`, not by a test. A fixture containing
+only the cases you thought of is a fixture that agrees with you.
 
 ### Usings
 
@@ -219,6 +261,99 @@ Skala against that would reward deleting usings whose packages are missing. The 
 
 `attribute_style = do_not_touch` means attribute *merging* (`[A][B]` ↔ `[A, B]`) is off. Good:
 that rewrite interacts with attribute targets and is rarely worth it.
+
+## ⚠ The fifteen Tier D arrangement options, settled
+
+[17](17-inspection-parity.md) measured fifteen arrangement options as **Tier D — declared, not
+implemented** — and concluded that they, rather than the 586-inspection rule gap, are what mostly
+stands between Skala and retiring ReSharper. Each was probed against `jb cleanupcode` 2025.2.6 before
+anything was written. **Eleven moved to Tier A; three did not, and one of the fifteen turned out not
+to be a rewrite at all.**
+
+| Inspection | Key | Verdict |
+|---|---|---|
+| `ArrangeRedundantParentheses` | `parentheses_redundancy_style` | ✅ Tier A. Rewritten against a re-parse proof; the `--aggressive` gate lifted |
+| `ArrangeNamespaceBody` | `csharp_style_namespace_declarations` | ✅ Tier A. `namespace N { … }` ⇒ `namespace N;` |
+| `BuiltInTypeReferenceStyleForMemberAccess` | `dotnet_style_predefined_type_for_member_access` | ✅ Tier A — see below, it was implemented already |
+| `ArrangeStaticMemberQualifier` | `static_members_qualify_members` | ✅ Tier A, both directions |
+| `ArrangeTrailingCommaInMultilineLists` | `trailing_comma_in_multiline_lists` | ✅ Tier A |
+| `ArrangeTrailingCommaInSinglelineLists` | `trailing_comma_in_singleline_lists` | ✅ Tier A |
+| `ArgumentsStyleLiteral` | `arguments_literal` | ✅ Tier A |
+| `ArgumentsStyleStringLiteral` | `arguments_string_literal` | ✅ Tier A |
+| `ArgumentsStyleAnonymousFunction` | `arguments_anonymous_function` | ✅ Tier A |
+| `ArgumentsStyleOther` | `arguments_other` | ✅ Tier A |
+| `SuggestVarOrType_DeconstructionDeclarations` | `prefer_explicit_discard_declaration` | ✅ the **key** is Tier A; ⚠ the **inspection** is not — see below |
+| `ArrangeAttributes` | `place_attribute_on_same_line` | ✅ Tier A **without a rewrite** — see below |
+| `ArrangeThisQualifier` | `instance_members_qualify_declared_in` | ⚠ stays **D**, honoured vacuously |
+| `SeparateControlTransferStatement` | `blank_lines_before_control_transfer_statements` | ⚠ stays **D**, wrong component |
+| `UnnecessaryWhitespace` | `trim_trailing_whitespace` | ⚠ stays **D**, the oracle ignores the key |
+
+### ⚠ Two of the fifteen were measurement artefacts, not missing work
+
+`dotnet_style_predefined_type_for_member_access` was **already implemented** and credited to the key
+beside it: `PredefinedTypeRule` read
+`dotnet_style_predefined_type_for_locals_parameters_members` and applied it to both a declaration
+(`Int32 x`) and a member-access receiver (`Int32.MaxValue`). The behaviour shipped; the key could not
+be observed through its own value, so it read as Tier D. The fix is to read the right key in the
+right position, not to write a rewrite.
+
+`resharper_place_attribute_on_same_line` is a **generalized** key: the resolver expands it into the
+six `place_*_attribute_on_same_line` keys, every one of which the formatter implements and pins.
+`PhaseOneOptions` had it as `OfInert` when `OfGeneralized` — a mechanism that already existed for
+exactly this shape, and which checks that at least one expansion target is really implemented — is
+what it is. Also no rewrite.
+
+⚠ **And five more were unmeasurable rather than unimplemented.** `ArrangeNamespaces` and
+`ArrangeArgumentsStyle` are real cleanup tasks that the M4 profile sweep never probed, so the oracle
+was running without them and declining five of the export's own settings. See
+[`../oracle-cleanup-profile.md`](../oracle-cleanup-profile.md) § "Two tasks the first sweep missed".
+**Seven of the fifteen were therefore artefacts of how the gap was measured**, which is worth more
+than the seven: it is the reason to re-run a measurement rather than re-read it.
+
+### ⚠ Twelve keys moved, and eleven inspections — the difference is one mismapping
+
+`SuggestVarOrType_DeconstructionDeclarations` is the one place where promoting the option does *not*
+retire the inspection, and saying so is the point of this paragraph.
+
+The option `resharper_prefer_explicit_discard_declaration` is genuinely Tier A: it is implemented,
+it is observable (at `true` the oracle turns `out _` into `out var _`, measured), and a cleanup
+fixture pins it. But the inspection doc 17 attached to it reports something else — `var (a, b)`
+against explicit types in a deconstruction — and *that* is governed by
+`resharper_for_deconstruction_declarations`, which the author's export **does not set at all**. It
+is therefore not in the option registry, so `gov.json` — which names it first, correctly — had no
+registry entry to match and fell through to the second key in its list.
+
+⚠ **Counting the inspection as retired because its fallback key moved would be exactly the
+double-count [17](17-inspection-parity.md) warned about**, in the direction it warned about: crediting
+Skala with arrangement it does not perform. Measured on Vixen, `SuggestVarOrType_DeconstructionDeclarations`
+fires on `foreach (var (identity, instance) in instances)` and Skala leaves those alone, correctly,
+because nothing in the configuration asks otherwise.
+
+**So: twelve option keys moved D → A, and eleven of the fifteen inspections are retired.**
+
+### ⚠ The three that stay Tier D, with the reason beside each
+
+Doc 03's Tier A is a claim about *behaviour*, not about wiring, and "the option is read" is not
+evidence. These three are read and cannot change a byte of output on this repository's
+configuration, so promoting them would be adding to the 69-of-201 unsubstantiated Tier A claims the
+conformance sweep already found.
+
+1. **`resharper_instance_members_qualify_declared_in`** — the key scopes *which declaring types* get
+   a `this.` added, and adding one is governed by `resharper_instance_members_qualify_members`, which
+   **is not in the author's export and therefore not in the option registry at all**. A scope for an
+   action that never happens cannot be observed. ⚠ The *inspection* `ArrangeThisQualifier` is
+   nonetheless covered: removing `this.` is `ThisQualifierRule` under `resharper_remove_this_qualifier`,
+   which is Tier A and pinned. Doc 17's `gov.json` maps the inspection to the scoping key, and that
+   mapping is what put it on the list.
+2. **`resharper_blank_lines_before_control_transfer_statements`** — measured observable: at `1` the
+   oracle inserts a blank line before `return`, `continue`, `break` and `throw`. The export writes
+   `0`, so it does nothing here, but that is not why it stays D. ⚠ **It is a blank-line option and
+   blank lines belong to the formatter**, which is the component that owns that family; the arranger
+   "never emits whitespace decisions of its own" is the first line of `Arranger`'s own contract.
+   Implementing it here to move a count would put a whitespace rule in the tree-rewriting pass.
+3. **`trim_trailing_whitespace`** — already recorded in the registry from an earlier probe, and
+   re-confirmed: `jb cleanupcode` ignores the key outright. Skala matches the oracle rather than the
+   key, so it is inert in both directions.
 
 ## The modernization set
 
@@ -273,6 +408,35 @@ apply. Three layers instead:
 Layer 2 costs a re-bind per changed document, which is why `arrange` is minutes-scale on a large tree
 and `format` is seconds-scale. That is the correct trade: whitespace is cheap and constant, tree
 rewrites are rare and must be right.
+
+### The bar, re-measured with the new rewrites in
+
+M4's bar was "arrangement over Vixen introduces zero compiler diagnostics, measured *independently*
+of the safety layer that makes it true", and the seven rewrites added since then do not move it.
+Over the ten projects [17](17-inspection-parity.md) measured, from a `git archive` scratch copy:
+
+| | |
+|---|---|
+| files considered | 2 071 |
+| files arranged | 1 236 |
+| ⚠ **new compiler diagnostics** | **0** |
+| reverted by the re-bind | 2 (0.10 %) |
+| reverted by the symbol check | 0 |
+| did not converge | 0 |
+
+The two reverts are both `CS8754` — "there is no target type for `new(…)`" — from the
+target-typed-`new` rule that predates this work, in one file. The new rewrites fired 472 times
+(parentheses), 216 (argument style) and 5 (`this.` qualifier) without producing a diagnostic between
+them.
+
+⚠ **The first attempt at this measurement measured nothing, and the way it failed is worth keeping.**
+The scratch tree came from `git archive`, which does not include `.git` — so
+`FormatCommand.FindRepositoryRoot` walked to the filesystem root, found nothing, and the binlog was
+never located. `arrange` fell back to the syntactic subset and reported "N files were in no loaded
+compilation", which is a correct and quiet line, and every semantic rule silently did nothing. The
+run looked successful: files changed, no errors. It was only visible because the *fire counts* for
+the semantic rules came back identical before and after. A scratch tree needs a repository root
+before it is a subject.
 
 ## Interaction with the formatter
 

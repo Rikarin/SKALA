@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:98ff52570e019fac profile=SkalaCleanup generated=2026-08-27
+// skala-oracle: resharper=2025.2.6 config=sha256:bd9791d3a6e6a087 profile=SkalaCleanup generated=2026-08-27
 // SPDX-FileCopyrightText: Copyright (c) Rikarin
 // SPDX-License-Identifier: Apache-2.0
 
@@ -43,7 +43,7 @@ public sealed class ReverbZoneTests {
     /// <summary>A boundary without a blend is a switch, and nobody walks like that.</summary>
     [Fact]
     public void TheEdgeFadesRatherThanSwitching() {
-        var zone = Sphere("hall", Vector3.Zero, 10f, blend: 4f);
+        var zone = Sphere("hall", Vector3.Zero, 10f, 4f);
 
         Assert.Equal(0f, zone.Evaluate(new Vector3(10f, 0f, 0f)));
         Assert.Equal(0.25f, zone.Evaluate(new Vector3(9f, 0f, 0f)), 1e-4f);

@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:98ff52570e019fac profile=SkalaCleanup generated=2026-08-27
+// skala-oracle: resharper=2025.2.6 config=sha256:bd9791d3a6e6a087 profile=SkalaCleanup generated=2026-08-27
 #region License
 
 // Copyright (c) 2007 James Newton-King
@@ -34,43 +34,43 @@ using Assert = Newtonsoft.Json.Tests.XUnitAssert;
 
 #endif
 
-namespace Newtonsoft.Json.Tests.Documentation.Samples.Serializer {
-    [TestFixture]
-    public class SerializeRawJson : TestFixtureBase {
-        #region Types
+namespace Newtonsoft.Json.Tests.Documentation.Samples.Serializer;
 
-        public class JavaScriptSettings {
-            public JRaw OnLoadFunction { get; set; }
-            public JRaw OnUnloadFunction { get; set; }
-        }
+[TestFixture]
+public class SerializeRawJson : TestFixtureBase {
+    #region Types
+
+    public class JavaScriptSettings {
+        public JRaw OnLoadFunction { get; set; }
+        public JRaw OnUnloadFunction { get; set; }
+    }
+
+    #endregion
+
+    [Test]
+    public void Example() {
+        #region Usage
+
+        var settings = new JavaScriptSettings {
+            OnLoadFunction = new JRaw("OnLoad"), OnUnloadFunction = new JRaw("function(e) { alert(e); }")
+        };
+
+        string json = JsonConvert.SerializeObject(settings, Formatting.Indented);
+
+        Console.WriteLine(json);
+        // {
+        //   "OnLoadFunction": OnLoad,
+        //   "OnUnloadFunction": function(e) { alert(e); }
+        // }
 
         #endregion
 
-        [Test]
-        public void Example() {
-            #region Usage
-
-            var settings = new JavaScriptSettings {
-                OnLoadFunction = new JRaw("OnLoad"), OnUnloadFunction = new JRaw("function(e) { alert(e); }")
-            };
-
-            string json = JsonConvert.SerializeObject(settings, Formatting.Indented);
-
-            Console.WriteLine(json);
-            // {
-            //   "OnLoadFunction": OnLoad,
-            //   "OnUnloadFunction": function(e) { alert(e); }
-            // }
-
-            #endregion
-
-            StringAssert.AreEqual(
-                @"{
+        StringAssert.AreEqual(
+            @"{
   ""OnLoadFunction"": OnLoad,
   ""OnUnloadFunction"": function(e) { alert(e); }
 }",
-                json
-            );
-        }
+            json
+        );
     }
 }
