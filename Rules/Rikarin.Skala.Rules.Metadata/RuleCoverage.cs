@@ -41,7 +41,13 @@ public static class RuleCoverage {
     /// ⚠ The two boundaries that are not band edges. Doc 08 § "The ranges" splits the async band at
     /// <c>SK3499</c>/<c>SK3500</c>, so neither is a rule even though neither ends in 000 or 999.
     /// </summary>
-    static readonly string[] RangeBoundaries = ["SK3499", "SK3500"];
+    /// <summary>Where doc 08 § "The ranges" ends the async band.</summary>
+    const string AsyncBandEnd = "SK3499";
+
+    /// <summary>Where doc 08 § "The ranges" begins the disposal-and-lifetime band.</summary>
+    const string LifetimeBandStart = "SK3500";
+
+    static readonly string[] RangeBoundaries = [AsyncBandEnd, LifetimeBandStart];
 
     /// <summary>
     /// ⚠ A band edge — <c>SK1000</c>–<c>SK1999</c> and the eight like it — names a range, not a

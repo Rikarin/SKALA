@@ -1,0 +1,30 @@
+# The fixture for `distill`'s comment handling.
+#
+# ⚠ This header is attached to nothing — a blank line follows it — so it survives distilling.
+# `distill` produces a file a human reads, and a file that loses its own preamble is worse
+# than the one it replaced.
+
+root = true
+
+[*.cs]
+
+# STICKS TO A DROPPED KEY: this comment must go with the assignment below it, which sits at
+# the probed default and is therefore dropped. Leaving it behind would leave a paragraph
+# describing a setting that is no longer in the file.
+resharper_csharp_blank_lines_around_field = 1
+
+# STICKS TO A KEPT KEY: the assignment below differs from the probed default, so it stays,
+# and so must this.
+resharper_csharp_blank_lines_around_invocable = 3
+
+# DETACHED BY A BLANK LINE: `resharper_stick_comment` semantics say a comment run belongs to
+# the line directly beneath it. There is none, so this stays whatever happens below.
+
+resharper_csharp_blank_lines_after_case = 0
+
+# STICKS TO A SECTION HEADER, not to a key. Section banners are the commonest comment in a
+# real export and must never be dropped.
+[*.md]
+indent_size = 2
+
+# TRAILING: attached to nothing, at the end of the file. It stays.

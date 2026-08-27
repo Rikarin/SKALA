@@ -113,4 +113,79 @@ public sealed class DistillTests {
         Assert.Equal(before, after);
         Assert.Equal(3021, after);
     }
+
+    /// <summary>
+    /// ⚠ A comment stuck to a dropped key goes with it; every other comment stays.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <c>distill</c> dropped the assignment and left the comment above it, so the output described
+    /// a key that was no longer in the file. Invisible against the real export, where every comment
+    /// is a section banner and an orphan still reads as a heading — and actively misleading in a
+    /// configuration somebody annotated, which is the only kind of file the command exists to
+    /// produce.
+    /// </para>
+    /// <para>
+    /// The semantics are <c>resharper_stick_comment</c>'s, already settled in this project for
+    /// code: a contiguous comment run belongs to the line directly beneath it, so a run followed by
+    /// a blank line, a section header or nothing is attached to no key and survives.
+    /// </para>
+    /// </remarks>
+    [Fact]
+    public void Distilling_TakesAStuckCommentWithTheKeyItDrops_AndKeepsEveryOther() {
+        var original = EditorConfigDocument.Load(RepositoryPaths.AnnotatedEditorConfig);
+        var result = Distiller.Distill(original);
+
+        // The fixture only means anything if the key it is built around is actually dropped.
+        Assert.Contains("resharper_csharp_blank_lines_around_field", result.DroppedKeys);
+        Assert.DoesNotContain(
+            "resharper_csharp_blank_lines_around_field",
+            result.Text,
+            StringComparison.Ordinal
+        );
+
+        Assert.DoesNotContain("STICKS TO A DROPPED KEY", result.Text, StringComparison.Ordinal);
+
+        // ⚠ And nothing else went with it. Over-eager removal is the worse failure: an orphaned
+        // comment is confusing, a deleted one is unrecoverable.
+        Assert.Contains("STICKS TO A KEPT KEY", result.Text, StringComparison.Ordinal);
+        Assert.Contains("DETACHED BY A BLANK LINE", result.Text, StringComparison.Ordinal);
+        Assert.Contains("STICKS TO A SECTION HEADER", result.Text, StringComparison.Ordinal);
+        Assert.Contains("TRAILING", result.Text, StringComparison.Ordinal);
+        Assert.Contains("attached to nothing — a blank line follows it", result.Text, StringComparison.Ordinal);
+
+        // The keys that were not at a verified default are all still there.
+        Assert.Contains("resharper_csharp_blank_lines_around_invocable = 3", result.Text, StringComparison.Ordinal);
+        Assert.Contains("indent_size = 2", result.Text, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// ⚠ The comment rule must not change what the file means.
+    /// </summary>
+    /// <remarks>
+    /// Moving comment lines around a distiller that decides which assignments to keep is exactly
+    /// the sort of edit that quietly drops one, and a distilled file that resolves differently is
+    /// the failure the whole command is written to avoid.
+    /// </remarks>
+    [Fact]
+    public void Distilling_TheAnnotatedFixture_ResolvesIdentically() {
+        // ⚠ Both documents have to sit in the same directory as the probe, or the chain simply
+        // does not reach one of them and the test compares a configuration against no
+        // configuration — which passes or fails for a reason that has nothing to do with distilling.
+        var directory = Path.GetDirectoryName(RepositoryPaths.AnnotatedEditorConfig)!;
+        var probe = Path.Combine(directory, "Probe.cs");
+        var original = EditorConfigDocument.Load(RepositoryPaths.AnnotatedEditorConfig);
+        var before = OptionResolver.Resolve(EditorConfigChain.Of(probe, original));
+
+        var distilled = EditorConfigDocument.FromText(
+            Path.Combine(directory, "distilled.editorconfig"),
+            Distiller.Distill(original).Text
+        );
+
+        var after = OptionResolver.Resolve(EditorConfigChain.Of(probe, distilled));
+
+        foreach (var option in OptionRegistry.All) {
+            Assert.Equal(before[option.Id].Value, after[option.Id].Value);
+        }
+    }
 }

@@ -47,4 +47,18 @@ public static class RepositoryPaths {
     /// </remarks>
     public static string VixenEditorConfig { get; } =
         Path.Combine(Root, "Core", "Rikarin.Skala.Core.Tests", "Fixtures", "vixen.editorconfig");
+
+    /// <summary>
+    /// A hand-annotated configuration: the case the real export cannot exercise.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ Every comment in <c>editor_config_template</c> is a section banner, so <c>distill</c>
+    /// leaving a comment behind after dropping the key beneath it was invisible there — the
+    /// orphaned text still read as a heading. In a configuration somebody annotated, the same bug
+    /// leaves a paragraph describing a setting that is no longer in the file, which is the one
+    /// thing a command whose purpose is "produce a file a human can read" must not do. Each comment
+    /// in this fixture says which case it is.
+    /// </remarks>
+    public static string AnnotatedEditorConfig { get; } =
+        Path.Combine(Root, "Core", "Rikarin.Skala.Core.Tests", "Fixtures", "annotated.editorconfig");
 }
