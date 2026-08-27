@@ -32,6 +32,7 @@ public static class Arranger {
     /// </para>
     /// </remarks>
     public static ImmutableArray<ArrangementRule> Rules(ImmutableHashSet<string>? removableUsings = null) => [
+        new AccessibilityRule(),
         new PredefinedTypeRule(),
         new VarRule(),
         new ObjectCreationRule(),
@@ -99,9 +100,18 @@ public static class Arranger {
         }
 
         var root = tree.GetRoot(cancellation);
-        var model = compilation?.GetSemanticModel(tree);
+        var originalModel = compilation?.GetSemanticModel(tree);
         var applied = ImmutableArray.CreateBuilder<string>();
         var current = root;
+
+        // ⚠ The model, the tree it is valid for, and the compilation it came from move together.
+        // Roslyn refuses — with "Syntax node is not within syntax tree" — to answer about a node that
+        // is not in the model's own tree, and every rule after the first sees a tree some earlier
+        // rule rebuilt. So a semantic rule that is about to run on a *changed* tree gets a fresh
+        // model first.
+        var boundTree = tree;
+        var boundCompilation = compilation;
+        var model = originalModel;
 
         foreach (var rule in Rules(removableUsings)) {
             cancellation.ThrowIfCancellationRequested();
@@ -112,13 +122,30 @@ public static class Arranger {
             // ⚠ Layer 1, at the coarsest grain: a semantic rule does not run without semantics. The
             // per-rewrite preconditions live in the rules; this is the one that keeps the syntactic
             // subset honest about what it did not do.
-            if (rule.NeedsSemantics && (scope != ArrangementScope.Full || model is null)) {
+            if (rule.NeedsSemantics && (scope != ArrangementScope.Full || boundCompilation is null)) {
                 continue;
             }
 
-            // Each rule sees the ORIGINAL tree's model and the CURRENT root. A rule that has to ask
-            // the model about a node therefore reads the original node — every rule in the catalogue
-            // is written that way, and the alternative is a re-bind per rule rather than per file.
+            if (rule.NeedsSemantics
+                && boundCompilation is not null
+                && !ReferenceEquals(current, boundTree.GetRoot(cancellation))) {
+                // ⚠ Costed deliberately: a re-bind per *firing* rule, not per rule. Most rules do
+                // not fire on most files, so the common case is one or two — and the alternative,
+                // collecting every rule's decisions against the original tree and applying them
+                // together, means each rule has to reason about rewrites it cannot see.
+                var reparsed = CSharpSyntaxTree.ParseText(
+                    SourceText.From(current.ToFullString()),
+                    (CSharpParseOptions)boundTree.Options,
+                    path,
+                    cancellation
+                );
+
+                boundCompilation = boundCompilation.ReplaceSyntaxTree(boundTree, reparsed);
+                boundTree = reparsed;
+                current = reparsed.GetRoot(cancellation);
+                model = boundCompilation.GetSemanticModel(reparsed);
+            }
+
             var rewritten = rule.Apply(new ArrangementContext(current, model, options));
             if (!ReferenceEquals(rewritten, current)) {
                 applied.Add(rule.Id);
@@ -137,14 +164,20 @@ public static class Arranger {
         }
 
         var arranged = current.ToFullString();
-        if (compilation is not null && model is not null) {
+
+        // ⚠ Safety runs against the ORIGINAL compilation, tree and model, never the intermediate
+        // ones the loop rebound. The question the layers ask is "did this document's meaning change
+        // between what was on disk and what is about to be written" — comparing against an
+        // intermediate state would let a rewrite that broke something and a later one that changed
+        // the symptom cancel each other out.
+        if (compilation is not null && originalModel is not null) {
             var failure = ArrangementSafety.Check(
                 path,
                 compilation,
                 tree,
                 root,
                 arranged,
-                model,
+                originalModel,
                 crashRoot,
                 options,
                 text.ToString(),

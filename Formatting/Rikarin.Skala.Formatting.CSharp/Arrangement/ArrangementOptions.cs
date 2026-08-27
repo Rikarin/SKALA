@@ -55,6 +55,12 @@ public readonly struct ArrangementOptions {
             StringComparison.OrdinalIgnoreCase
         );
 
+        // ⚠ A string option, not a bool: the export writes `omit_if_default:suggestion`, one value
+        // and one severity in one key. Only the value half governs the rewrite; the severity half is
+        // `skala check`'s (doc 06 § "Body styles": don't nag, but do fix it when running cleanup).
+        OmitDefaultAccessibility = (options.GetString(Ids.RequireAccessibilityModifiers) ?? string.Empty)
+            .StartsWith("omit_if_default", StringComparison.OrdinalIgnoreCase);
+
         RemoveThisQualifier = options.GetBool(Ids.RemoveThisQualifier);
         BracesRedundant = options.GetBool(Ids.BracesRedundant);
         PredefinedTypeForLocals = options.GetBool(Ids.PredefinedTypeForLocals);
@@ -93,6 +99,7 @@ public readonly struct ArrangementOptions {
     public NullCheckingPatternStyle NullCheckingPattern { get; }
     public bool EmptyStringIsLiteral { get; }
 
+    public bool OmitDefaultAccessibility { get; }
     public bool RemoveThisQualifier { get; }
     public bool BracesRedundant { get; }
     public bool PredefinedTypeForLocals { get; }
@@ -148,14 +155,17 @@ public readonly struct ArrangementOptions {
             Of("resharper_csharp_default_value_when_type_not_evident");
 
         public static readonly OptionId NullCheckingPattern = Of("resharper_csharp_null_checking_pattern_style");
-        public static readonly OptionId EmptyString = Of("resharper_csharp_empty_string");
-        public static readonly OptionId RemoveThisQualifier = Of("resharper_csharp_remove_this_qualifier");
+        public static readonly OptionId EmptyString = Of("resharper_empty_string");
+        public static readonly OptionId RequireAccessibilityModifiers =
+            Of("dotnet_style_require_accessibility_modifiers");
+
+        public static readonly OptionId RemoveThisQualifier = Of("resharper_remove_this_qualifier");
         public static readonly OptionId BracesRedundant = Of("resharper_csharp_braces_redundant");
 
         public static readonly OptionId PredefinedTypeForLocals =
             Of("dotnet_style_predefined_type_for_locals_parameters_members");
 
-        public static readonly OptionId SortUsings = Of("resharper_csharp_sort_usings");
+        public static readonly OptionId SortUsings = Of("resharper_sort_usings");
         public static readonly OptionId SystemDirectivesFirst = Of("dotnet_sort_system_directives_first");
 
         public static readonly OptionId MaxLineLength = OfInert("max_line_length");

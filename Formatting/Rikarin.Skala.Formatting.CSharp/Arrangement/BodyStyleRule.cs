@@ -191,13 +191,36 @@ public sealed class BodyStyleRule : ArrangementRule {
                 return visited;
             }
 
-            if (visited.Body is not { } block || Extract(block) is not { } expression) {
+            if (visited.Body is not { } block
+                || Extract(block, allowExpressionStatement: true) is not { } expression) {
                 return visited;
             }
 
             return visited.WithBody(null)
                 .WithExpressionBody(Arrow(expression))
                 .WithSemicolonToken(Semicolon(block.CloseBraceToken));
+        }
+
+        /// <summary>⚠ An indexer is an accessor owner too, and reads the same key.</summary>
+        public override SyntaxNode? VisitIndexerDeclaration(IndexerDeclarationSyntax node) {
+            var visited = (IndexerDeclarationSyntax)base.VisitIndexerDeclaration(node)!;
+            if (options.AccessorOwnerBody != AccessorOwnerBodyStyle.ExpressionBody
+                || visited.AccessorList is not { } accessors) {
+                return visited;
+            }
+
+            if (accessors.Accessors is [{ } only]
+                && only.IsKind(SyntaxKind.GetAccessorDeclaration)
+                && only.AttributeLists.Count == 0
+                && only.Modifiers.Count == 0
+                && ExtractAccessor(only) is { } expression
+                && !HasTriviaThatBlocksConversion(accessors)) {
+                return visited.WithAccessorList(null)
+                    .WithExpressionBody(Arrow(expression))
+                    .WithSemicolonToken(Semicolon(accessors.CloseBraceToken));
+            }
+
+            return visited;
         }
 
         /// <summary>The expression an already-converted accessor carries, for the owner collapse.</summary>
@@ -234,13 +257,19 @@ public sealed class BodyStyleRule : ArrangementRule {
         /// ⚠ Every "return null" here is docs/plan/06 § "Safety" layer 1 in miniature: a body this
         /// method does not understand stays a block. There is no "probably fine".
         /// </remarks>
-        static ExpressionSyntax? Extract(BlockSyntax? body) {
+        static ExpressionSyntax? Extract(BlockSyntax? body, bool allowExpressionStatement = false) {
             if (body is null || body.Statements.Count != 1 || HasTriviaThatBlocksConversion(body)) {
                 return null;
             }
 
             return body.Statements[0] switch {
-                ExpressionStatementSyntax statement => statement.Expression,
+                // ⚠ Only in an accessor. Measured: the oracle converts `set { _n = value; }` to
+                // `set => _n = value;` and leaves `void Helper() { _shared = 1; }` a block — a
+                // *method* body converts only when its statement is a `return` with a value, so a
+                // void method is never a candidate however short it is. Doc 06 said "one statement
+                // that is an expression, `return`, or `throw`", which is wrong in both directions:
+                // `throw` never converts, and a bare expression converts only for an accessor.
+                ExpressionStatementSyntax statement when allowExpressionStatement => statement.Expression,
 
                 // ⚠ `return;` with no value has no expression to become one. `=> ;` is not a thing.
                 ReturnStatementSyntax { Expression: { } value } => value,

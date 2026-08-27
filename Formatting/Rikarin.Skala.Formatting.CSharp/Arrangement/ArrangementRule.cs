@@ -21,6 +21,7 @@ public static class ArrangeIds {
     public const string RedundantParentheses = "SK2009";
     public const string Usings = "SK2010";
     public const string PredefinedType = "SK2011";
+    public const string Accessibility = "SK2012";
 
     /// <summary>⚠ A rewrite was reverted because re-binding produced a diagnostic it had not.</summary>
     public const string Reverted = "SK9098";
@@ -41,6 +42,7 @@ public static class ArrangeIds {
             RedundantParentheses => "redundant parentheses",
             Usings => "usings",
             PredefinedType => "predefined type",
+            Accessibility => "redundant accessibility",
             _ => id
         };
 }

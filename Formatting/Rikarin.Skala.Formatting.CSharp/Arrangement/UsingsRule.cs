@@ -136,9 +136,10 @@ public sealed class UsingsRule : ArrangementRule {
     }
 
     static int Rank(UsingDirectiveSyntax directive, bool systemFirst) {
-        // `using static` and aliases sort after plain usings, which is what every C# tool does and
-        // what the oracle's output shows.
-        var group = directive.Alias is not null ? 2 : directive.StaticKeyword != default ? 1 : 0;
+        // ⚠ Plain, then alias, then `using static` — measured, not assumed. Roslyn's own organiser
+        // puts `using static` before aliases and the oracle puts it after, so the "obvious" order is
+        // the wrong one here by exactly one swap.
+        var group = directive.StaticKeyword != default ? 2 : directive.Alias is not null ? 1 : 0;
         if (!systemFirst || group != 0) {
             return group * 2;
         }

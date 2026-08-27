@@ -35,12 +35,12 @@ public sealed class PredefinedTypeRule : ArrangementRule {
         }
 
         SyntaxNode Replace(SyntaxNode original, SyntaxNode visited) {
-            // ⚠ Only a type *reference* is rewritten. `using System;` names a namespace, a
-            // `nameof(Int32)` reads the identifier, and neither is a place `int` may be written.
+            // ⚠ Only a type *reference* is rewritten. `using System;` names a namespace and
+            // `nameof(Int32)` reads an identifier whose spelling is the value — neither is a place
+            // `int` may be written.
             if (original.Parent is UsingDirectiveSyntax or NamespaceDeclarationSyntax
                 or FileScopedNamespaceDeclarationSyntax
-                || original.Parent is MemberAccessExpressionSyntax { Parent: InvocationExpressionSyntax invocation }
-                && invocation.Expression.ToString().StartsWith("nameof", StringComparison.Ordinal)) {
+                || IsInsideNameOf(original)) {
                 return visited;
             }
 
@@ -57,6 +57,32 @@ public sealed class PredefinedTypeRule : ArrangementRule {
             return SyntaxFactory.PredefinedType(SyntaxFactory.Token(keyword))
                 .WithLeadingTrivia(visited.GetLeadingTrivia())
                 .WithTrailingTrivia(visited.GetTrailingTrivia());
+        }
+
+        /// <summary>
+        /// Whether the node is an argument of a <c>nameof</c>.
+        /// </summary>
+        /// <remarks>
+        /// ⚠ Found by safety layer 2 rather than by review, which is the point of having one. The
+        /// first version of this guard looked for a <c>MemberAccessExpressionSyntax</c> parent and
+        /// so never matched <c>nameof(Int32)</c> at all — the identifier there is an
+        /// <c>ArgumentSyntax</c>, two nodes below the invocation. The rewrite produced
+        /// <c>nameof(int)</c>, the re-bind reported <c>CS1525: Invalid expression term 'int'</c>,
+        /// and the file was reverted instead of corrupted.
+        /// </remarks>
+        static bool IsInsideNameOf(SyntaxNode node) {
+            for (var current = node; current is not null; current = current.Parent) {
+                if (current.Parent is ArgumentSyntax { Parent.Parent: InvocationExpressionSyntax invocation }
+                    && invocation.Expression is IdentifierNameSyntax { Identifier.ValueText: "nameof" }) {
+                    return true;
+                }
+
+                if (current is StatementSyntax or MemberDeclarationSyntax) {
+                    return false;
+                }
+            }
+
+            return false;
         }
 
         /// <summary>
