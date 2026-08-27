@@ -247,7 +247,14 @@ public static class FuzzProperties {
         } else if (Rikarin.Skala.Formatting.CSharp.TokenEquivalence.Compare(
                        first.Original,
                        SourceText.From(first.Formatted),
-                       CSharpFormatter.ParseOptionsFor(symbols)
+                       CSharpFormatter.ParseOptionsFor(symbols),
+                       // ⚠ The same allowance the formatter grants itself, and no wider. A
+                       // re-wrapped `///` comment changes documentation trivia by design, so
+                       // comparing without this reports every reflowed file as a violation — which
+                       // is what happened the day the sub-formatter became the default, on a
+                       // mutation that had merely re-indented a doc comment. Read off the result
+                       // rather than assumed: a file with no doc comment gets the strict comparison.
+                       first.ReflowedComments > 0
                    ) is { } failure) {
             violations.Add(
                 new PropertyViolation(

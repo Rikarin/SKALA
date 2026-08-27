@@ -10,13 +10,22 @@ using Rikarin.Skala.Options;
 namespace Rikarin.Skala.Formatting.CSharp;
 
 /// <summary>What formatting one file produced.</summary>
+/// <param name="ReflowedComments">
+///     ⚠ How many documentation comments the sub-formatter rewrote, and it is on the result rather
+///     than inside the pipeline because the property cannot be checked from outside without it.
+///     A re-wrapped <c>///</c> comment changes documentation trivia, which
+///     <see cref="TokenEquivalence" /> only forgives when told a reflow happened; a caller that
+///     compares the two texts itself and cannot ask will report every reflowed file as a violation.
+///     The fuzzer did exactly that the day the sub-formatter became the default.
+/// </param>
 public sealed record FormatResult(
     string Path,
     SourceText Original,
     ImmutableArray<TextEdit> Edits,
     string Formatted,
     ImmutableArray<SkalaDiagnostic> Diagnostics,
-    FormatOutcome Outcome) {
+    FormatOutcome Outcome,
+    int ReflowedComments = 0) {
     public bool Changed => !Edits.IsEmpty;
 
     public int ChangedLines {
@@ -108,11 +117,9 @@ public static class CSharpFormatter {
     ///     ⚠ On by default, and the default changed. It was off from milestone 9 because
     ///     <c>jb cleanupcode</c> does not format documentation comments (SK-DIV-0006) and the oracle is
     ///     the definition of correct under ADR-011 — so re-wrapping them by default read as a 3.59-point
-    ///     fidelity regression. The premise was wrong in one specific way:
-    ///     <b>
-    ///         Rider's editor formats
-    ///         them and <c>jb cleanupcode</c> does not
-    ///     </b>, so the two disagree, and matching the oracle here
+    ///     fidelity regression. The premise was wrong in one specific way —
+    ///     Rider formats them and
+    ///     the pinned profile does not — so the two disagree, and matching the oracle here
     ///     means diverging from Rider on every documentation comment in every repository. Skala follows
     ///     Rider. The consequence is that this is the one area of the formatter with no differential
     ///     safety net at all, which is why <see cref="XmlDocFormatter" /> carries a round-trip check on
@@ -238,7 +245,15 @@ public static class CSharpFormatter {
             );
         }
 
-        return new FormatResult(path, text, [.. edits], formatted, diagnostics.ToImmutable(), FormatOutcome.Formatted);
+        return new FormatResult(
+            path,
+            text,
+            [.. edits],
+            formatted,
+            diagnostics.ToImmutable(),
+            FormatOutcome.Formatted,
+            reflowed
+        );
     }
 
     /// <summary>

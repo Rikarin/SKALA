@@ -8,20 +8,18 @@ namespace Rikarin.Skala.Formatting.CSharp;
 /// </summary>
 /// <remarks>
 ///     ⚠ These keys are pinned differently from every other formatter option in Skala, and the
-///     difference is not a shortcut — it is the only thing available. Every other option is Tier A
-///     because a committed <c>.expected.cs</c> produced by <c>jb cleanupcode</c> shows the oracle doing
-///     the thing the option names. <c>jb cleanupcode</c> 2025.2.6 does not format documentation
-///     comments at all (SK-DIV-0006, measured), so no fixture can ever show it, and an oracle that
-///     never moves would score a correct re-wrap as a divergence.
+///     difference is the fixtures rather than the oracle. Every other option is Tier A because a
+///     committed <c>.expected.cs</c> produced by <c>jb cleanupcode</c> shows the oracle doing the thing
+///     the option names. Every committed fixture was generated under
+///     <see cref="OracleProfile.FormatOnly" />, which does not enable ReSharper's own
+///     <c>CSharpFormatDocComments</c> task, so every one of them returns its documentation comments
+///     exactly as written and none of them can show any of this (SK-DIV-0006).
 ///     <para>
-///         ⚠ That used to be the argument for keeping the sub-formatter behind a flag, and it was the
-///         wrong conclusion from a correct measurement.
-///         <b>
-///             Rider's editor formats documentation comments;
-///             <c>jb cleanupcode</c> does not.
-///         </b> Both are true, and where they disagree ADR-011's oracle is
-///         not the specification — Rider is. So the sub-formatter runs by default, these keys govern real
-///         output, and the only way to switch them off wholesale is <c>skala format --no-xmldoc</c>.
+///         ⚠ That was read for six milestones as "the oracle declines to format documentation comments",
+///         and it was the wrong conclusion from a correct measurement: Rider formats them and the pinned
+///         profile does not. Where the two disagree, ADR-011's oracle is not the specification — Rider is.
+///         So the sub-formatter runs by default, these keys govern real output, and the only way to
+///         switch them off wholesale is <c>skala format --no-xmldoc</c>.
 ///     </para>
 ///     <para>
 ///         The ids are registered <c>OfUnoracled</c> rather than <c>OfInert</c>: read, honoured, and never
