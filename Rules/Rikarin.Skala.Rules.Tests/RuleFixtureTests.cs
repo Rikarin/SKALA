@@ -3,6 +3,9 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Rikarin.Skala.Rules.Metadata;
+using Rikarin.Skala.Rules.Async;
+using Rikarin.Skala.Rules.Correctness;
+using Rikarin.Skala.Rules.Maintainability;
 using Rikarin.Skala.Rules.Modernization;
 
 namespace Rikarin.Skala.Rules.Tests;
@@ -20,7 +23,9 @@ public sealed class RuleFixtureTests {
     static readonly ImmutableArray<DiagnosticAnalyzer> Analyzers = [
         new FileScopedNamespaceAnalyzer(), new NullPatternAnalyzer(), new ThrowIfNullAnalyzer(),
         new NullCoalescingAssignmentAnalyzer(),
-        new CountPropertyAnalyzer(), new EnumGetValuesAnalyzer()
+        new CountPropertyAnalyzer(), new EnumGetValuesAnalyzer(), new DiscardedExceptionAnalyzer(),
+        new RethrowAnalyzer(),
+        new AsyncVoidAnalyzer(), new BlockingOnAsyncAnalyzer(), new MetricsAnalyzer()
     ];
 
     public static TheoryData<RuleFixture> Fixtures {
@@ -77,7 +82,11 @@ public sealed class RuleFixtureTests {
     [Theory]
     [MemberData(nameof(Fixtures))]
     public void EveryFix_ProducesTextThatStillParses(RuleFixture fixture) {
-        if (!fixture.ShouldFire) {
+        // ⚠ Only rules the catalogue says have a fix. docs/plan/08 § SK7000: the metric rules carry
+        // `hasFix: false`, because there is no edit that makes a 300-statement method shorter — the
+        // finding is a measurement and the fix is a design decision a person makes. Asserting a fix
+        // on those would be asserting the catalogue is wrong.
+        if (!fixture.ShouldFire || RuleCatalog.Find(fixture.RuleId) is not { HasFix: true }) {
             return;
         }
 

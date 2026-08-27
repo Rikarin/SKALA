@@ -81,7 +81,13 @@ public static class VerifyCommand {
                 // ⚠ No SARIF file. `verify` runs after every agent turn; writing
                 // `.skala/report.sarif` each time would put a churning artefact in the working tree
                 // that the agent then has to be told to ignore. `skala check` writes it.
-                Output = string.Empty
+                Output = string.Empty,
+
+                // ⚠ No metrics and no duplication either, for the same reason and a harder budget:
+                // docs/plan/15 § M5 holds `verify` to well under a second on a five-file change, and
+                // both are whole-repository passes whose answer nobody reads between agent turns.
+                IncludeMetrics = false,
+                IncludeDuplication = false
             },
             cancellation
         );

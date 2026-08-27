@@ -44,7 +44,8 @@ public static partial class SkalaCommandLine {
         };
 
         var format = new Option<string>("--format") {
-            Description = "terminal | plain | json | github | agent.", DefaultValueFactory = static _ => "terminal"
+            Description = "terminal | plain | json | github | agent | markdown | junit.",
+            DefaultValueFactory = static _ => "terminal"
         };
 
         var output = new Option<string?>("--output", "-o") {
@@ -78,11 +79,44 @@ public static partial class SkalaCommandLine {
                 "Let a resharper_*_highlighting key set a Skala rule's severity. dotnet_diagnostic.SK… still wins."
         };
 
+        // ⚠ docs/plan/09 § "New-code definition": the three scopings are composable, so they are
+        // three options rather than one mode. `--since` alone answers "did this branch make things
+        // worse", `--baseline` alone answers "did anything new appear", and together they answer
+        // "did this branch add a finding on a line it touched" — which is the PR gate.
+        var since = new Option<string?>("--since") {
+            Description = "A git ref. Findings on lines it changed count as new. Composes with --baseline."
+        };
+
+        var baseline = new Option<string?>("--baseline") {
+            Description = "Compare against this baseline. Empty uses .skala/baseline.sarif when it exists.",
+            Arity = ArgumentArity.ZeroOrOne
+        };
+
+        // ⚠ All four mechanisms, not #pragma. docs/plan/09: an .editorconfig severity turned down
+        // suppresses far more than a pragma and looks like configuration in the diff.
+        var noNewSuppressions = new Option<bool>("--no-new-suppressions") {
+            Description =
+                "Fail on a suppression added since the ref: #pragma, [SuppressMessage], an .editorconfig severity, or a baseline entry."
+        };
+
+        var record = new Option<bool>("--record") {
+            Description = "Append one line to .skala/history.jsonl. `skala trend` renders it."
+        };
+
+        var summary = new Option<bool>("--summary") {
+            Description = "Print only the totals, the metrics and the gate."
+        };
+
+        var duplication = new Option<bool>("--duplication") {
+            Description = "Also run token-level clone detection (SK7020). Off by default: it is a whole-repository pass."
+        };
+
         var command = new Command("check", "Run the analyzers and report, with a gate.");
         command.Arguments.Add(paths);
         foreach (var option in new Option[] {
                      load, binlog, project, requireFresh, gate, format, output, includeHints, noCache, noColor,
-                     showSuppressions, rules, define, noFormatting, resharperSeverities
+                     showSuppressions, rules, define, noFormatting, resharperSeverities, since, baseline,
+                     noNewSuppressions, record, summary, duplication
                  }) {
             command.Options.Add(option);
         }
@@ -108,7 +142,18 @@ public static partial class SkalaCommandLine {
                     Define = ParseDefines(parse.GetValue(define)),
                     IncludeFormatting = !parse.GetValue(noFormatting),
                     ReadReSharperSeverities = parse.GetValue(resharperSeverities),
-                    Output = parse.GetValue(output)
+                    Output = parse.GetValue(output),
+                    Since = parse.GetValue(since),
+
+                    // ⚠ Null and empty mean different things here. `--baseline` with no value is
+                    // "use the conventional path if it exists"; the option absent entirely is "no
+                    // baseline", which is what keeps a `newIssues` gate from failing on a tree
+                    // nobody has baselined yet.
+                    BaselinePath = parse.GetResult(baseline) is null ? null : parse.GetValue(baseline) ?? string.Empty,
+                    NoNewSuppressions = parse.GetValue(noNewSuppressions),
+                    Record = parse.GetValue(record),
+                    Summary = parse.GetValue(summary),
+                    IncludeDuplication = parse.GetValue(duplication)
                 };
 
                 return RunCancellable(token => CheckCommand.Run(request, token).Result);
@@ -338,6 +383,8 @@ public static partial class SkalaCommandLine {
             "json" => ReportFormat.Json,
             "github" => ReportFormat.Github,
             "agent" => ReportFormat.Agent,
+            "markdown" => ReportFormat.Markdown,
+            "junit" => ReportFormat.JUnit,
             _ => noColor || Console.IsOutputRedirected ? ReportFormat.Plain : ReportFormat.Terminal
         };
 

@@ -19,7 +19,14 @@ namespace Rikarin.Skala.Reporting;
 /// name, and from 1.0 the shape is a compatibility surface (docs/plan/15 § M7).
 /// </remarks>
 public static class SarifWriter {
-    public const string FingerprintVersion = "skala/v1";
+    /// <summary>
+    /// ⚠ M5's fingerprint key, kept as a constant because callers name it.
+    /// </summary>
+    /// <remarks>
+    /// M6 emits <see cref="Fingerprints.Version2"/> beside it; see <see cref="Fingerprints"/> for
+    /// why adding terms is a new version rather than a redefinition.
+    /// </remarks>
+    public const string FingerprintVersion = Fingerprints.Version1;
 
     public static SarifLog Build(RunReport report) {
         var driver = new ToolComponent {
@@ -147,11 +154,29 @@ public static class SarifWriter {
                     }
                 }
             ],
-            PartialFingerprints = new Dictionary<string, string> { [FingerprintVersion] = Fingerprint(finding) }
+            PartialFingerprints = Fingerprints.For(finding)
         };
 
         if (!finding.TargetFrameworks.IsEmpty) {
             result.SetProperty("tfms", finding.TargetFrameworks.ToArray());
+        }
+
+        // ⚠ The fingerprint's own inputs travel beside the hash. A baseline diff that shows only
+        // opaque hashes is unreviewable, and doc 09 makes reviewing it the point of the file.
+        if (finding.EnclosingSymbol.Length > 0) {
+            result.SetProperty("enclosingSymbol", finding.EnclosingSymbol);
+        }
+
+        if (finding.OrdinalWithinSymbol > 0) {
+            result.SetProperty("ordinalWithinSymbol", finding.OrdinalWithinSymbol);
+        }
+
+        if (finding.Bucket != BaselineBucket.Unknown) {
+            result.SetProperty("baseline", finding.Bucket.ToString().ToLowerInvariant());
+        }
+
+        if (report.ChangedCodeReference is not null) {
+            result.SetProperty("inChangedCode", finding.IsInChangedCode);
         }
 
         if (finding.HasFix) {
@@ -238,36 +263,17 @@ public static class SarifWriter {
     }
 
     /// <summary>
-    /// docs/plan/09 § "The fingerprint" — a finding must survive a file being edited above it.
+    /// docs/plan/09 § "The fingerprint", delegated to <see cref="Fingerprints"/>.
     /// </summary>
     /// <remarks>
-    /// ⚠ No line numbers. A fingerprint that moves when a line moves is a baseline that expires
-    /// every commit. M5 supplies the rule id, the normalised message and the file name; the
-    /// enclosing symbol's display string and the ordinal within it are M6's, together with the
-    /// baseline machinery that consumes them. The version tag exists so that adding them is a new
-    /// fingerprint version rather than a silent change of meaning under existing baselines.
+    /// ⚠ Kept as a member of this type because <c>ReportingTests</c> and every caller outside the
+    /// assembly already name it, and because the SARIF writer is where a reader looks for the
+    /// meaning of <c>partialFingerprints</c>. The computation itself moved: M6 emits
+    /// <see cref="Fingerprints.Version1"/> <em>and</em> <see cref="Fingerprints.Version2"/>, and a
+    /// version pair is the whole reason a baseline written before the fingerprint gained the
+    /// enclosing symbol and the ordinal still reads.
     /// </remarks>
-    public static string Fingerprint(Finding finding) {
-        var normalised = new StringBuilder();
-        normalised.Append(finding.RuleId).Append(' ');
-
-        var previousWasSpace = false;
-        foreach (var c in finding.Message) {
-            if (c is ' ' or '\t' or '\r' or '\n') {
-                if (!previousWasSpace) {
-                    normalised.Append(' ');
-                }
-
-                previousWasSpace = true;
-            } else {
-                normalised.Append(c);
-                previousWasSpace = false;
-            }
-        }
-
-        normalised.Append(' ').Append(Path.GetFileName(finding.Path));
-        return Convert.ToHexStringLower(XxHash128.Hash(Encoding.UTF8.GetBytes(normalised.ToString())));
-    }
+    public static string Fingerprint(Finding finding) => Fingerprints.V1(finding);
 
     static FailureLevel Level(SkalaSeverity severity) =>
         severity switch {
@@ -301,7 +307,14 @@ public static class SarifWriter {
         return builder.ToString();
     }
 
-    internal static string Relative(string root, string path) =>
+    /// <summary>
+    /// A repository-relative, forward-slashed path — how every surface displays a file.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ Public because the commands outside this assembly display paths too, and a second
+    /// implementation would eventually disagree about the separator on Windows.
+    /// </remarks>
+    public static string Relative(string root, string path) =>
         Path.IsPathRooted(path) && path.StartsWith(root, StringComparison.Ordinal)
             ? Path.GetRelativePath(root, path).Replace('\\', '/')
             : path.Replace('\\', '/');

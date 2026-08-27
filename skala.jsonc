@@ -1,0 +1,41 @@
+{
+  // docs/plan/03 § "skala.jsonc": the non-style settings. Everything about how code *looks* lives
+  // in .editorconfig; this file is what the tool does, and the gates it does it against.
+  //
+  // docs/plan/09 § "Gates". ⚠ A gate is a set of conditions and failing any of them fails the run.
+  // A condition this build does not understand fails the gate loudly rather than being ignored — a
+  // gate that silently drops the condition someone relies on passes for the wrong reason.
+  "gates": {
+    // What a developer runs, and what the pre-commit hook runs. Errors stop you; nothing else does.
+    "local": {
+      "maxSeverity": "error"
+    },
+
+    // ⚠ The adoptable gate. `since` scopes every condition to the lines this branch touched, so a
+    // repository with existing findings can turn this on today rather than after a cleanup that
+    // never happens (doc 09 § "New-code definition").
+    "pr": {
+      "since": "origin/main",
+      "newIssues": 0,
+      "maxSeverity": "warning",
+      "formatting": "clean"
+    },
+
+    // ⚠ Main's gate, against the committed baseline. `maxSeverity` here means "no *new* finding at
+    // or above warning": with a baseline in play the severity bar applies to what the baseline has
+    // not accepted, because a baseline whose entries keep failing the gate has accepted nothing.
+    "ci": {
+      "baseline": ".skala/baseline.sarif",
+      "newIssues": 0,
+      "maxSeverity": "warning",
+      "formatting": "clean",
+      "metrics": {
+        // ⚠ Measured before it was set, not chosen from a textbook. Skala's own tree is at 3.8 %
+        // production duplication; Vixen's is at 4.8 %. A threshold below where the codebase already
+        // sits is a gate that is red on the day it is added, which is a gate somebody deletes.
+        "duplication": 5.0,
+        "cognitiveComplexity": 15
+      }
+    }
+  }
+}

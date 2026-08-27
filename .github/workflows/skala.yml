@@ -1,0 +1,104 @@
+# docs/plan/09 § "Quality Gates and Reporting", as a workflow.
+#
+# ⚠ The shape is the point, not the YAML. Three facts drive every line below:
+#
+#   1. The gate decides, once. Nothing here re-reads severities and reaches its own conclusion —
+#      `skala check --gate=ci` exits 1 and that is the build's verdict. A workflow that greps the
+#      log for "warning" is a second implementation of the gate (doc 09 § "Gates").
+#   2. The job that comments is not the job that analysed. `skala check` writes one SARIF; the
+#      comment job re-renders it with `skala report`, which runs no analysis. Re-analysing in the
+#      comment step analyses a different tree — the merge commit, or main having moved — and
+#      reports findings the gate never saw.
+#   3. `--since` is what makes this adoptable. A repository with a thousand existing findings
+#      cannot fix them all before turning CI on; the `pr` gate cares only about the lines the
+#      branch touched, and the `ci` gate cares only about what is not in the committed baseline.
+
+name: Skala
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+  # For the SARIF upload. ⚠ Nothing else: the workflow reads the tree and writes one report.
+  security-events: write
+
+jobs:
+  skala:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # ⚠ Full history, not the default shallow clone. `--since` resolves a merge base, and a
+          # shallow clone often has none with `origin/main` — Skala falls back to comparing against
+          # the ref directly, which marks more lines as changed than the branch touched and fails
+          # the gate for someone else's commits.
+          fetch-depth: 0
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      # ⚠ A real build, with a binary log. ADR-007: the binlog is what the build actually compiled —
+      # generated sources included, conditional symbols correct, analyzer references as configured.
+      # `--require-fresh-binlog` makes a stale one an error rather than a quietly wrong analysis.
+      - name: Build
+        run: dotnet build Skala.slnx -c Release -bl:artifacts/skala.binlog
+
+      # The `pr` gate on a pull request: only what this branch touched has to be clean.
+      - name: Check (pull request)
+        if: github.event_name == 'pull_request'
+        run: >
+          dotnet run --project Tools/Rikarin.Skala.Cli -c Release --no-build --
+          check
+          --load=binlog --binlog artifacts/skala.binlog --require-fresh-binlog
+          --gate=pr
+          --since origin/${{ github.base_ref }}
+          --no-new-suppressions
+          --duplication
+          --format=github
+          --output .skala/report.sarif
+
+      # The `ci` gate on main: everything outside the committed baseline has to be clean.
+      - name: Check (main)
+        if: github.event_name == 'push'
+        run: >
+          dotnet run --project Tools/Rikarin.Skala.Cli -c Release --no-build --
+          check
+          --load=binlog --binlog artifacts/skala.binlog --require-fresh-binlog
+          --gate=ci
+          --duplication
+          --record
+          --format=github
+          --output .skala/report.sarif
+
+      # ⚠ `if: always()` on everything below. A failing gate is exactly when the report matters, and
+      # a workflow that only publishes its findings when there are none is a workflow nobody reads.
+      - name: Upload SARIF to code scanning
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: .skala/report.sarif
+          category: skala
+
+      - name: Keep the report as an artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: skala-report
+          path: .skala/report.sarif
+
+      # The PR comment, rendered from the stored SARIF. Runs no analysis — see fact 2 above.
+      - name: Render the report
+        if: always()
+        run: >
+          dotnet run --project Tools/Rikarin.Skala.Cli -c Release --no-build --
+          report .skala/report.sarif --format=markdown > skala-report.md
+
+      # ⚠ The step summary is written by `--format=github` itself, into $GITHUB_STEP_SUMMARY. It is
+      # not a step here, because a renderer that needed its own step could be forgotten and the run
+      # would look clean.

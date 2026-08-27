@@ -11,3 +11,14 @@ SK1020  | Skala.Modernization | Info | Use `ArgumentNullException.ThrowIfNull`.
 SK1030  | Skala.Modernization | Info | Use `??=`.
 SK1034  | Skala.Modernization | Info | Use the `Count` property, not `Count()` or `Any()`.
 SK1035  | Skala.Modernization | Info | Use `Enum.GetValues<T>()`.
+SK2013  | Skala.Correctness | Warning | An exception is constructed and then discarded.
+SK2015  | Skala.Correctness | Warning | `throw ex;` resets the stack trace.
+SK3001  | Skala.Async | Info | `async void` outside an event handler. Ships disabled; see rules.json.
+SK3002  | Skala.Async | Warning | Blocking on an async call.
+SK7001  | Skala.Maintainability | Hidden | Cyclomatic complexity over the threshold.
+SK7002  | Skala.Maintainability | Info | Cognitive complexity over the threshold.
+SK7003  | Skala.Maintainability | Hidden | Statement count over the threshold.
+SK7004  | Skala.Maintainability | Hidden | Member count over the threshold.
+SK7005  | Skala.Maintainability | Hidden | Parameter count over the threshold.
+SK7006  | Skala.Maintainability | Hidden | Nesting depth over the threshold.
+SK7010  | Skala.Maintainability | Disabled | Public API with no documentation comment.

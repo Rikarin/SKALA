@@ -90,9 +90,19 @@ public static class IncrementalAnalysis {
 
         // ⚠ The guard. A compilation-scoped rule cannot be served from a per-file cache, so any
         // change at all sends the whole compilation down the cold path.
+        //
+        // ⚠ <b>Enabled</b> compilation-scoped rules, not merely supported ones. M6 added SK3001,
+        // whose event-handler check has to see the whole compilation and which therefore ships
+        // `defaultSeverity: none`. Testing `SupportedDiagnostics` alone would let a rule nobody
+        // turned on disable the warm path for every run in every repository — the whole incremental
+        // cache traded away for a rule that is not running. Roslyn's own driver filters on the same
+        // property before it ever invokes the analyzer, so this asks the question the driver
+        // already answered.
         var hasCompilationScopedRule = analyzers
             .SelectMany(static analyzer => analyzer.SupportedDiagnostics)
-            .Any(static descriptor => DiagnosticCache.Uncacheable.Contains(descriptor.Id));
+            .Any(static descriptor =>
+                    descriptor.IsEnabledByDefault && DiagnosticCache.Uncacheable.Contains(descriptor.Id)
+            );
 
         if (misses.Count == 0 && !hasCompilationScopedRule) {
             cache.Save();
