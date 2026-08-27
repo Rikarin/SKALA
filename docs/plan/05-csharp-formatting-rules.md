@@ -78,6 +78,36 @@ back `.. var r`, a space the oracle inserts, because `space_within_slice_pattern
 govern its own construct. `space_within_spread_pattern` is inert at both values and is demoted to
 Tier D — SK-DIV-0009.
 
+⚠ **One key per construct, and "the family answers with one key" was thirty keys ignored.** Until
+M9 a control-flow `(` was answered by `space_after_keywords_in_control_flow_statements` and the
+inside of every parenthesis by `space_within_parentheses`, which was right for the export's values
+and wrong about which key produced them. The oracle answers each construct separately —
+`space_before_if_parentheses = false` gives `if(n > 0)` and leaves `while (…)` alone,
+`space_within_if_parentheses = true` gives `if ( n > 0 )` and touches nothing else — so a rule
+written against the family key silently ignores the other eight or fourteen. The same applies to
+`space_between_method_{call,declaration}_[empty_]parameter_list_parentheses`,
+`space_within_array_rank_brackets` and its empty twin, and `space_around_dot`. Fidelity cannot see
+this: an ignored key whose configured value happens to agree costs nothing until someone changes it.
+
+⚠ **A generalized key is honoured by the resolver expanding it, not by a rule reading it.** A key
+whose registry entry carries `expands` — `space_around_ternary_operator`,
+`space_before_open_square_brackets`, `indent_size` — is ReSharper's way of writing a group of
+options on one line, and `OptionResolver.Expand` writes its value into each key it names. Later in
+the file wins, which is what the oracle answers: `space_around_ternary_operator = false` appended
+after the four ternary keys overrides them, and written before them does not. This is not
+docs/plan/03 § "Precedence" step 3 — that orders *spellings of one option*, and a generalized key
+and a key it names are two different options.
+
+⚠ **Two of them expand to nothing on purpose.** `space_between_parentheses_of_control_flow_statements`
+names the nine `space_within_<keyword>_parentheses` keys and the oracle ignores it at both values
+while each of the nine answers, so its `expands` is empty: honouring it would add spaces Rider does
+not. `csharp_space_between_parentheses` is the same measurement.
+
+⚠ **An accessor body's braces are `space_in_singleline_accessorholder`'s, not
+`space_in_singleline_method`'s.** `get { return _n; }` is the one single-line body any input
+produces — `BreakPlan.PlanOnePerLine` gives every statement in a method a line of its own — and
+Skala read its spacing out of the method key, which the oracle ignores. Measured both ways.
+
 ⚠ **Five more gaps the ninety keys do not describe, all found by ranking the divergence classes:**
 an unbound generic's type argument list is commas and zero-width omitted arguments, so "a space
 follows a comma" writes `ValueTuple<, >`; there is no key for the gap *after* a pointer's asterisk,
@@ -136,6 +166,31 @@ column 0) but `indent_preprocessor_region = usual_indent` (regions indent with c
 `resharper_indent_wrapped_function_names = false`, `resharper_outdent_binary_ops = false`,
 `resharper_outdent_commas = false`, `resharper_outdent_dots` — the outdent family is all off, which
 again simplifies the layout engine.
+
+⚠ **All off is not the same as implemented, and the outdent family was the second.** M9 asked the
+oracle for each of the six at its other value and recorded what came back, because "the export sets
+it to the value that costs nothing" is a fact about this export and not about the tool:
+
+- `outdent_statement_labels` is implemented: it is one `Indent(Outdent)` scope around a label's two
+  tokens. Finding that also fixed a divergence — `LabeledStatementSyntax` sits on the embedded-
+  statement list beside `if` and `while`, where the body genuinely is a level down, and Skala put a
+  labelled statement one level in where the oracle keeps the two flush.
+- `outdent_binary_ops`, `outdent_dots` and `outdent_ternary_ops` are observable and **not**
+  implemented. Each moves the wrapped operator left by its own width plus one — 12 → 10 for `+`,
+  12 → 9 for `&&`, 12 → 11 for `.` — which is a column offset, and `Indent(Outdent)` is one level.
+  They need a scope kind the IR does not have.
+- `outdent_commas` is inert under this export and observable with `wrap_before_comma = true`, which
+  the export sets false; with a trailing comma there is nothing at the head of a line to outdent.
+- `outdent_binary_pattern_ops` is unverified: no input has yet been found that both wraps a binary
+  pattern chain under this export and shows the outdent.
+
+The seven `indent_*_pars` and `indent_*_angles` keys divide the same way: `indent_invocation_pars`
+and `indent_method_decl_pars` are observable and place a closing delimiter, which is the wrapping
+pass's; `indent_primary_constructor_decl_pars` needs
+`wrap_before_primary_constructor_declaration_rpar = true` to have a delimiter on its own line at
+all; and `indent_pars`, `indent_statement_pars`, `indent_typearg_angles` and `indent_typeparam_angles`
+have no observed shape under this export. Every one of those sentences is in the key's registry
+summary, so the next reader measures something else instead of re-measuring these.
 
 ## Phase 2 — line breaks, placement, `keep_existing`, attributes
 

@@ -59,16 +59,34 @@ difference is a bug, and the harness cannot tell them apart without this file.
 
 ### 1. Option units — the floor
 
-Every entry in `options.json` requires at least one corpus file in `constructs/` that changes
-behaviour when the option changes. The option generator emits a test per option that:
+Every **implemented** entry in `options.json` requires at least one corpus file in `constructs/`
+that changes behaviour when the option changes. `OptionCoverageTests` generates a case per option
+from the registry — one theory row per key, not a hand-written assertion — that:
 
-- formats the fixture with the option at each of its legal values,
+- formats the option's `oracle` fixture with the option at each of its legal values, flipped from
+  the repository's own configuration rather than from the registry defaults,
 - asserts the outputs differ (an option with no observable effect is either unimplemented or
   wrongly wired — both are bugs),
-- asserts each output matches its committed snapshot.
+- asserts a committed `.expected.cs` from the oracle exists beside the fixture.
 
-For enums this is the whole cross-product; for booleans, two. ~380 options × ~2.5 values ≈ 950
-snapshots, which is exactly why `Verify` is a dependency and hand-written assertions are not.
+For enums this is the whole domain; for booleans, two; for ints, three. The arranger's keys are
+measured the same way against the arranger and a `cleanup` fixture, because a format-only run is
+byte-identical whatever `arrange_*` says.
+
+⚠ There is one snapshot per option, not one per value: the committed fixture is the oracle's output
+at the repository's configuration, and the per-value outputs are compared with each other rather
+than with a stored file. An earlier draft of this section promised ~950 per-value snapshots through
+`Verify`; they were never written and `Verify` is not a dependency. What the per-value comparison
+buys is the property that matters — that the option is observable at all — without a thousand files
+whose diff nobody could review when the oracle version moves.
+
+⚠ The inverse has to be asserted too, and until M9 it was not.
+`OptionObservabilityTests.AnInertKey_StillCannotBeObserved` takes every key the formatter reads and
+records as **inert** — honoured vacuously, because another rule decides first or because the oracle
+ignores it as well — and fails if it *does* change anything. "Inert" is the sentence a key gets both
+when it genuinely cannot be observed and when nobody looked, and only a test tells the two apart. It
+found one on its first run: `space_in_singleline_method` carried a true reason and wiring that
+contradicted it.
 
 ### 2. Differential — the number that matters
 
