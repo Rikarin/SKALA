@@ -492,9 +492,16 @@ receiver.
 not built — `SK1003` (the `field` keyword), `SK1014` (relational patterns) and `SK1023`
 (`System.Threading.Lock`). Not building a rule is not a decision about it, so all three stay
 **outstanding**, which is the position § "Declared cut with no recorded reason" takes about M7's
-twelve. What was learned about them is worth keeping and is not a disposal: `SK1023` has **zero**
-candidates in Vixen, which already uses `System.Threading.Lock` throughout — and by doc 00's
-non-negotiable 9 that is a fact about Vixen and not a reason to cut anything.
+twelve.
+
+What was learned about two of them is worth keeping and is **not** a disposal. Vixen has **zero**
+`lock`-object fields — it already uses `System.Threading.Lock` throughout its 455 `lock` statements —
+and a grep for `SK1014`'s shape, the same operand compared against a constant on both sides of an
+`&&`, matches **zero** times there as well. Both were measured before being written, which is why
+neither was written: a rule whose evidence would be its own fixtures and nothing else is a weaker
+ship than one measured against 43 real findings, and M9 had the time for one of those or for two of
+the other. ⚠ **Neither number is a reason to cut either rule.** By doc 00's non-negotiable 9 they are
+facts about Vixen; `SK1030` and `SK1035` shipped on fixture evidence alone and remain right.
 
 ⚠ **The reference-tree measurement was wrong in two ways before it was right, and both are fixed in
 the harness rather than in a note.**
