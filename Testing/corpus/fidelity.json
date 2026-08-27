@@ -1,47 +1,56 @@
 {
   "real": {
-    "LineFidelity": 0.9963,
+    "LineFidelity": 0.9953,
     "FileFidelity": 0.8526,
-    "Milestone": "M3.1, no symbols. With the oracle's own 18 symbols supplied it is 0.9970/0.8579; ./build.sh Fidelity reports both. The ratchet is the without-symbols number because that is what `skala format` does with no project."
+    "Milestone": "M3.1, no symbols. With the oracle's own 18 symbols supplied it is 0.9970/0.8579; ./build.sh Fidelity reports both. The ratchet is the without-symbols number because that is what `skala format` does with no project. ⚠ RE-MEASURED at the merge of the fuzzer-defect branch. That branch was based before doc-comment formatting became the default, so every number it recorded is on the 'every line' basis and Read() correctly refuses to compare across bases. These are the merged tree's own figures on 'outside doc comments'; the branch's prose is kept because its findings are about defects, not about the basis.",
+    "Basis": "outside doc comments"
   },
   "constructs": {
-    "LineFidelity": 0.9751,
-    "FileFidelity": 0.9235,
-    "Milestone": "M10, formatter tags: constructs/arrangement/formatter-tags/ adds three files to the set, taking it from 324 to 327. All three are byte-identical to CSReformatCode's answer, so the number rises rather than falls — which is the point of committing them: the oracle honours the tags under the format-only profile and ignores them under the cleanup profile (SK-DIV-0016), and the .arranged.expected.cs beside each of these is where that is pinned. M9 was 324 files at 0.9745/0.9228."
+    "LineFidelity": 0.9786,
+    "FileFidelity": 0.926,
+    "Milestone": "M10, formatter tags: constructs/arrangement/formatter-tags/ adds three files to the set, taking it from 324 to 327. All three are byte-identical to CSReformatCode's answer, so the number rises rather than falls — which is the point of committing them: the oracle honours the tags under the format-only profile and ignores them under the cleanup profile (SK-DIV-0016), and the .arranged.expected.cs beside each of these is where that is pinned. M9 was 324 files at 0.9745/0.9228. ⚠ RE-MEASURED at the merge of the fuzzer-defect branch. That branch was based before doc-comment formatting became the default, so every number it recorded is on the 'every line' basis and Read() correctly refuses to compare across bases. These are the merged tree's own figures on 'outside doc comments'; the branch's prose is kept because its findings are about defects, not about the basis.",
+    "Basis": "outside doc comments"
   },
   "pathological": {
-    "LineFidelity": 0.9599,
+    "LineFidelity": 0.9598,
     "FileFidelity": 0.8833,
-    "Milestone": "⚠ The one baseline in this file that has been LOWERED, and the argument is SK-DIV-0018. Six files were added, 54 to 60: SK-FUZZ-0002's, -0003's and -0004's reproductions, SK-FUZZ-0007's pair, and wrapped-file-scoped-namespace-name.cs — the six-line reproduction of the defect that dominated unformatted/scramble, kept here as a named fixture because 204 scrambled files pin it by weight and none of them says what it is. All but one match the oracle byte for byte; mixed-line-endings-after-a-trailing-comment.cs is the exception and takes the number down on its own. That file's three lines are SK-DIV-0018 entire — on a file whose endings are ALREADY mixed the oracle normalises the whole file to one ending and Skala keeps each gap's own, which is what `enforce_line_ending_style = false` says. It is not reachable on any internally consistent file, and crlf-throughout.cs and mixed-crlf-and-lf.cs are both still exact. ⚠ The alternative was to leave the reproduction out of the corpus, and that is the wrong instinct: docs/plan/12 says the corpus only grows, the pathological set exists to hold the files that are hard, and a minimised reproduction dropped because it embarrasses a number is a measurement managing its own result. M10 was 54 files at 0.9636/0.8889."
+    "Milestone": "⚠ The one baseline in this file that has been LOWERED, and the argument is SK-DIV-0018. Six files were added, 54 to 60: SK-FUZZ-0002's, -0003's and -0004's reproductions, SK-FUZZ-0007's pair, and wrapped-file-scoped-namespace-name.cs — the six-line reproduction of the defect that dominated unformatted/scramble, kept here as a named fixture because 204 scrambled files pin it by weight and none of them says what it is. All but one match the oracle byte for byte; mixed-line-endings-after-a-trailing-comment.cs is the exception and takes the number down on its own. That file's three lines are SK-DIV-0018 entire — on a file whose endings are ALREADY mixed the oracle normalises the whole file to one ending and Skala keeps each gap's own, which is what `enforce_line_ending_style = false` says. It is not reachable on any internally consistent file, and crlf-throughout.cs and mixed-crlf-and-lf.cs are both still exact. ⚠ The alternative was to leave the reproduction out of the corpus, and that is the wrong instinct: docs/plan/12 says the corpus only grows, the pathological set exists to hold the files that are hard, and a minimised reproduction dropped because it embarrasses a number is a measurement managing its own result. M10 was 54 files at 0.9636/0.8889.",
+    "Basis": "outside doc comments"
   },
   "preservation/keep-keep": {
     "LineFidelity": 0.9598,
     "FileFidelity": 0.8462,
-    "Milestone": "M3.1 - `keep_existing_expr_member_arrangement` now outranks the placement key in both directions, the same way a delimited list's does. M3 was 0.9086/0.7692."
+    "Milestone": "M3.1 - `keep_existing_expr_member_arrangement` now outranks the placement key in both directions, the same way a delimited list's does. M3 was 0.9086/0.7692.",
+    "Basis": "outside doc comments"
   },
   "preservation/keep-rearrange": {
     "LineFidelity": 1.0,
     "FileFidelity": 1.0,
-    "Milestone": "M3 - keep_user_linebreaks=true, keep_existing_*=false; the corner that costs a first-run diff, and now exact. M2 was 0.8765."
+    "Milestone": "M3 - keep_user_linebreaks=true, keep_existing_*=false; the corner that costs a first-run diff, and now exact. M2 was 0.8765.",
+    "Basis": "outside doc comments"
   },
   "preservation/reflow-keep": {
     "LineFidelity": 0.9265,
     "FileFidelity": 0.8462,
-    "Milestone": "M3. M2 was 0.8582."
+    "Milestone": "M3. M2 was 0.8582.",
+    "Basis": "outside doc comments"
   },
   "preservation/reflow-rearrange": {
     "LineFidelity": 1.0,
     "FileFidelity": 1.0,
-    "Milestone": "M3 - keep_user_linebreaks=false, keep_existing_*=false (--reflow), and now exact. M2 was 0.8844."
+    "Milestone": "M3 - keep_user_linebreaks=false, keep_existing_*=false (--reflow), and now exact. M2 was 0.8844.",
+    "Basis": "outside doc comments"
   },
   "unformatted/scramble": {
-    "LineFidelity": 0.8900,
+    "LineFidelity": 0.8657,
     "FileFidelity": 0.0237,
-    "Milestone": "⚠ 0.6418 -> 0.8900 in one commit (0.8906/0.0263 with symbols supplied; the ratchet reads the bare number): the wrapped file-scoped namespace is fixed. A file-scoped namespace is a MemberDeclarationSyntax, so it owns a continuation frame, and the whole rest of the file is its CHILDREN rather than its siblings - so a wrapped namespace name spent a continuation level that nothing closed until end of file, and every line after it came out +4. VisitFileScopedNamespace now closes it at the `;`, which is VisitChild's existing 'a body indents from its declaration's level' rule applied to the one declaration whose body has no braces. The first measurement predicted 'roughly 0.89' from the 204-file split (0.3800 against the other 176's 0.8893) and that is what it came to: 0.8906, with 84.1 % of the available line gap now closed against 48.3 %. ⚠ Nothing moved on pre-formatted input - constructs 0.9765, real 0.9963/0.9970 - because no file in corpus/real/ has a wrapped namespace name; that is exactly why this survived nine milestones and why the degraded differential was worth building. Pinned by name in pathological/wrapped-file-scoped-namespace-name.cs. First measurement was 380 files at 0.6418/0.0211, null hypothesis 0.3073/0.0000 (corpus/real/'s own, for scale, is 0.9095/0.2684). ⚠ Its own population, beside the corpus/real/ number rather than replacing it."
+    "Milestone": "⚠ 0.6418 -> 0.8900 in one commit (0.8906/0.0263 with symbols supplied; the ratchet reads the bare number): the wrapped file-scoped namespace is fixed. A file-scoped namespace is a MemberDeclarationSyntax, so it owns a continuation frame, and the whole rest of the file is its CHILDREN rather than its siblings - so a wrapped namespace name spent a continuation level that nothing closed until end of file, and every line after it came out +4. VisitFileScopedNamespace now closes it at the `;`, which is VisitChild's existing 'a body indents from its declaration's level' rule applied to the one declaration whose body has no braces. The first measurement predicted 'roughly 0.89' from the 204-file split (0.3800 against the other 176's 0.8893) and that is what it came to: 0.8906, with 84.1 % of the available line gap now closed against 48.3 %. ⚠ Nothing moved on pre-formatted input - constructs 0.9765, real 0.9963/0.9970 - because no file in corpus/real/ has a wrapped namespace name; that is exactly why this survived nine milestones and why the degraded differential was worth building. Pinned by name in pathological/wrapped-file-scoped-namespace-name.cs. First measurement was 380 files at 0.6418/0.0211, null hypothesis 0.3073/0.0000 (corpus/real/'s own, for scale, is 0.9095/0.2684). ⚠ Its own population, beside the corpus/real/ number rather than replacing it. ⚠ RE-MEASURED at the merge of the fuzzer-defect branch. That branch was based before doc-comment formatting became the default, so every number it recorded is on the 'every line' basis and Read() correctly refuses to compare across bases. These are the merged tree's own figures on 'outside doc comments'; the branch's prose is kept because its findings are about defects, not about the basis.",
+    "Basis": "outside doc comments"
   },
   "unformatted/collapse": {
-    "LineFidelity": 0.9175,
+    "LineFidelity": 0.8923,
     "FileFidelity": 0.0184,
-    "Milestone": "0.9174 -> 0.9175 bare (0.9183 -> 0.9184 with symbols) from the wrapped file-scoped namespace fix; collapse barely felt it, because collapsing a file removes the very line break that wrapped the namespace name and the defect needs that break to fire. The same fix is worth 24.8 points on scramble and 0.01 here, which is a fair summary of why two degradation modes were built rather than one. The same 380 files with every line break the language does not force removed, so both tools build the layout from nothing. Null hypothesis 0.3238/0.0000 (⚠ corpus/real/'s own, for scale, is 0.9095/0.2684); 87.9 % of the available line gap closed. ⚠ First measurement 0.9174 was HIGHER than scramble's 0.6418 and that was the finding rather than a surprise - reflowing from nothing is the easier problem, and agreeing about which of the author's breaks to keep is the one that runs in production. With the namespace defect gone the two now sit at 0.9184 and 0.8906, which is the ordering the intuition expected all along and which the first measurement could not have told you."
+    "Milestone": "0.9174 -> 0.9175 bare (0.9183 -> 0.9184 with symbols) from the wrapped file-scoped namespace fix; collapse barely felt it, because collapsing a file removes the very line break that wrapped the namespace name and the defect needs that break to fire. The same fix is worth 24.8 points on scramble and 0.01 here, which is a fair summary of why two degradation modes were built rather than one. The same 380 files with every line break the language does not force removed, so both tools build the layout from nothing. Null hypothesis 0.3238/0.0000 (⚠ corpus/real/'s own, for scale, is 0.9095/0.2684); 87.9 % of the available line gap closed. ⚠ First measurement 0.9174 was HIGHER than scramble's 0.6418 and that was the finding rather than a surprise - reflowing from nothing is the easier problem, and agreeing about which of the author's breaks to keep is the one that runs in production. With the namespace defect gone the two now sit at 0.9184 and 0.8906, which is the ordering the intuition expected all along and which the first measurement could not have told you. ⚠ RE-MEASURED at the merge of the fuzzer-defect branch. That branch was based before doc-comment formatting became the default, so every number it recorded is on the 'every line' basis and Read() correctly refuses to compare across bases. These are the merged tree's own figures on 'outside doc comments'; the branch's prose is kept because its findings are about defects, not about the basis.",
+    "Basis": "outside doc comments"
   }
 }

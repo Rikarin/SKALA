@@ -65,11 +65,11 @@ public sealed partial class CSharpDocumentBuilder {
     }
 
     /// <summary>
-    /// Whether the gap runs between two lines of documentation comment.
+    ///     Whether the gap runs between two lines of documentation comment.
     /// </summary>
     /// <remarks>
-    /// ⚠ A blank line here is not spacing, it is the delimiter that ends a <c>///</c> run. See
-    /// <see cref="ResolveBlankLines"/> for what putting one in the wrong place costs.
+    ///     ⚠ A blank line here is not spacing, it is the delimiter that ends a <c>///</c> run. See
+    ///     <see cref="ResolveBlankLines" /> for what putting one in the wrong place costs.
     /// </remarks>
     bool BetweenDocumentationLines(Piece previous, int nextPieceIndex) =>
         previous.Kind == PieceKind.DocCommentLine
@@ -330,25 +330,28 @@ public sealed partial class CSharpDocumentBuilder {
     }
 
     /// <summary>
-    /// The columns the member's own text will occupy once the formatter has respaced it.
+    ///     The columns the member's own text will occupy once the formatter has respaced it.
     /// </summary>
     /// <remarks>
-    /// ⚠ A function of the token stream, never of the gaps between the tokens in the source. That
-    /// is the whole point: the caller is deciding a blank line, and a decision that reads whitespace
-    /// the formatter is about to rewrite is not absorbed by <c>format(mutate_whitespace(x)) ≡
-    /// format(x)</c>.
-    /// <para>
-    /// The one place the source is still consulted is <see cref="SpaceKind.Preserve"/>, and there it
-    /// is correct rather than tolerated: an ungoverned gap is one <c>extra_spaces = remove_all</c>
-    /// collapses to whatever the author had — one space or none — so the output really does carry
-    /// that bit, and reading it is reading the output. Widening such a gap does not change the
-    /// answer, because a run and a single space collapse alike.
-    /// </para>
-    /// <para>
-    /// ⚠ Only ever called for a member <see cref="IsSingleLine"/> has already found on one source
-    /// line, so no token here spans lines and <see cref="TextWidth.Measure"/>'s newline reset cannot
-    /// be reached.
-    /// </para>
+    ///     ⚠ A function of the token stream, never of the gaps between the tokens in the source. That
+    ///     is the whole point: the caller is deciding a blank line, and a decision that reads whitespace
+    ///     the formatter is about to rewrite is not absorbed by
+    ///     <c>
+    ///format(mutate_whitespace(x)) ≡
+    /// format(x)
+    ///     </c>.
+    ///     <para>
+    ///         The one place the source is still consulted is <see cref="SpaceKind.Preserve" />, and there it
+    ///         is correct rather than tolerated: an ungoverned gap is one <c>extra_spaces = remove_all</c>
+    ///         collapses to whatever the author had — one space or none — so the output really does carry
+    ///         that bit, and reading it is reading the output. Widening such a gap does not change the
+    ///         answer, because a run and a single space collapse alike.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ Only ever called for a member <see cref="IsSingleLine" /> has already found on one source
+    ///         line, so no token here spans lines and <see cref="TextWidth.Measure" />'s newline reset cannot
+    ///         be reached.
+    ///     </para>
     /// </remarks>
     int OutputWidth(SyntaxNode member) {
         var width = 0;

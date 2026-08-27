@@ -32,12 +32,12 @@ public static class CliRunner {
     public static CliRun Run(params string[] arguments) => RunWith(null, arguments);
 
     /// <summary>
-    /// The same run with extra environment variables, for the contracts that have no other trigger.
+    ///     The same run with extra environment variables, for the contracts that have no other trigger.
     /// </summary>
     /// <remarks>
-    /// ⚠ One caller: the exit-code-5 row. No input trips the formatter's safety net any more — the
-    /// three that ever did are fixed and retired — so <c>SKALA_FORCE_SK9099</c> is how that row
-    /// keeps a behavioural test. See <c>CSharpFormatter.ForcedVerificationFailure</c>.
+    ///     ⚠ One caller: the exit-code-5 row. No input trips the formatter's safety net any more — the
+    ///     three that ever did are fixed and retired — so <c>SKALA_FORCE_SK9099</c> is how that row
+    ///     keeps a behavioural test. See <c>CSharpFormatter.ForcedVerificationFailure</c>.
     /// </remarks>
     public static CliRun RunWith(IReadOnlyDictionary<string, string>? environment, params string[] arguments) {
         if (!File.Exists(Assembly)) {

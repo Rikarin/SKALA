@@ -579,26 +579,26 @@ public sealed partial class CSharpDocumentBuilder {
     }
 
     /// <summary>
-    /// A file-scoped namespace: the continuation its own name may have spent ends at the <c>;</c>.
+    ///     A file-scoped namespace: the continuation its own name may have spent ends at the <c>;</c>.
     /// </summary>
     /// <remarks>
-    /// ⚠ This is <see cref="VisitChild"/>'s rule — "a body indents from its declaration's level" —
-    /// for the one declaration whose body has no braces. A file-scoped namespace is a
-    /// <see cref="MemberDeclarationSyntax"/>, so it owns a continuation frame, and the whole rest of
-    /// the file is its children rather than its siblings. So a wrapped namespace name spent a
-    /// continuation level that nothing closed until the end of the file:
-    /// <code>
+    ///     ⚠ This is <see cref="VisitChild" />'s rule — "a body indents from its declaration's level" —
+    ///     for the one declaration whose body has no braces. A file-scoped namespace is a
+    ///     <see cref="MemberDeclarationSyntax" />, so it owns a continuation frame, and the whole rest of
+    ///     the file is its children rather than its siblings. So a wrapped namespace name spent a
+    ///     continuation level that nothing closed until the end of the file:
+    ///     <code>
     /// namespace Serilog
     ///     .Configuration;      ← the break before `.` spends the level
     ///
     ///     public class Foo {   ← and every line after it is +4, to the end of the file
     ///         public int Bar { get; set; }
     ///     }
-    /// </code>
-    /// A braced namespace never showed it because <see cref="VisitBraced"/> closes the frame at the
-    /// <c>{</c>, and no file in <c>corpus/real/</c> showed it either, because nobody writes a
-    /// wrapped namespace name by hand. It took the unformat differential — 204 of the 380 scrambled
-    /// files contain one, and they scored 38.00 % against the other 176's 88.93 %.
+    ///     </code>
+    ///     A braced namespace never showed it because <see cref="VisitBraced" /> closes the frame at the
+    ///     <c>{</c>, and no file in <c>corpus/real/</c> showed it either, because nobody writes a
+    ///     wrapped namespace name by hand. It took the unformat differential — 204 of the 380 scrambled
+    ///     files contain one, and they scored 38.00 % against the other 176's 88.93 %.
     /// </remarks>
     void VisitFileScopedNamespace(FileScopedNamespaceDeclarationSyntax node) {
         var semicolon = node.SemicolonToken;
