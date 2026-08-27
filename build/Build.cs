@@ -250,6 +250,29 @@ class Build : NukeBuild {
                 "--version", CanonicalVersion);
         });
 
+    /// <summary>
+    /// Regenerate every documentation surface the two registries define.
+    /// </summary>
+    /// <remarks>
+    /// `docs/rules/*.md` and `docs/site/` are both committed and both generated, from
+    /// `Rules/Rikarin.Skala.Rules.Metadata/rules.json` and
+    /// `Core/Rikarin.Skala.Options/options.json` (docs/plan/08 § "Documentation", docs/plan/15 § M7).
+    /// One target rather than two, because the failure this exists to prevent is regenerating one of
+    /// them and forgetting the other, and `RuleCatalogTests.DocsPages_AreUpToDate` and
+    /// `DocsSiteTests.Site_IsUpToDateWithTheSources` then fail one at a time in separate assemblies.
+    /// <para>
+    /// ⚠ Deliberately not part of `Compile` or `Lint`. A build step that rewrites tracked files
+    /// turns `dotnet build` into something that dirties the worktree, and the two tests already make
+    /// a forgotten regeneration a red build — which is the mechanism. This is how you satisfy them.
+    /// </para>
+    /// </remarks>
+    Target Docs => definition => definition
+        .DependsOn(Compile)
+        .Executes(() => {
+            Skala("rules", "docs", RootDirectory / "docs" / "rules");
+            Skala("docs", "site", RootDirectory / "docs" / "site");
+        });
+
     /// <summary>The published artefacts. `Rikarin.Skala.Canonical` is the only one packable today.</summary>
     Target Pack => definition => definition
         .DependsOn(Compile)

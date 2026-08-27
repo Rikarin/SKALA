@@ -153,8 +153,10 @@ public static class DocsSite {
         builder.Append("</div>\n");
 
         builder.Append("<h2>The rules, by category</h2>\n");
-        builder.Append("<table>\n<thead><tr><th>Category</th><th>Rules</th><th>With a fix</th>"
-            + "<th>Run without a project</th></tr></thead>\n<tbody>\n");
+        builder.Append(
+            "<table>\n<thead><tr><th>Category</th><th>Rules</th><th>With a fix</th>"
+            + "<th>Run without a project</th></tr></thead>\n<tbody>\n"
+        );
         foreach (var group in rules.GroupBy(static rule => rule.Category, StringComparer.Ordinal)
                      .OrderBy(static group => group.Key, StringComparer.Ordinal)) {
             builder.Append("<tr><td>").Append(Esc(group.Key)).Append("</td><td>").Append(Num(group.Count()));
@@ -183,8 +185,10 @@ public static class DocsSite {
             .Append(Num(options.Count))
             .Append(" keys are grouped into ")
             .Append(Num(constructs))
-            .Append(" constructs; the <a href=\"options/index.html\">option reference</a> is one page per construct, "
-                + "with an alphabetical index of every key.</p>\n");
+            .Append(
+                " constructs; the <a href=\"options/index.html\">option reference</a> is one page per construct, "
+                + "with an alphabetical index of every key.</p>\n"
+            );
 
         return Close(builder, string.Empty);
     }
@@ -192,8 +196,10 @@ public static class DocsSite {
     static string RuleIndex(List<RuleInfo> rules) {
         var builder = Open("Rules — Skala", "../", "rules");
         builder.Append("<h1>Rules</h1>\n");
-        builder.Append("<p class=\"lede\"><code>SK</code> + four digits, allocated once and never re-purposed "
-            + "(ADR-012). ")
+        builder.Append(
+            "<p class=\"lede\"><code>SK</code> + four digits, allocated once and never re-purposed "
+            + "(ADR-012). "
+        )
             .Append(Num(rules.Count))
             .Append(" ids are allocated.</p>\n");
 
@@ -201,8 +207,10 @@ public static class DocsSite {
                      .OrderBy(static group => group.Key, StringComparer.Ordinal)) {
             builder.Append("<h2 id=\"").Append(Esc(Slug(group.Key))).Append("\">").Append(Esc(group.Key));
             builder.Append("</h2>\n");
-            builder.Append("<table>\n<thead><tr><th>Id</th><th>Rule</th><th>Severity</th><th>Fix</th>"
-                + "<th>Loose mode</th></tr></thead>\n<tbody>\n");
+            builder.Append(
+                "<table>\n<thead><tr><th>Id</th><th>Rule</th><th>Severity</th><th>Fix</th>"
+                + "<th>Loose mode</th></tr></thead>\n<tbody>\n"
+            );
             foreach (var rule in group) {
                 builder.Append("<tr><td><a href=\"").Append(rule.Id).Append(".html\">").Append(rule.Id);
                 builder.Append("</a></td><td>").Append(Inline(rule.Title));
@@ -302,7 +310,8 @@ public static class DocsSite {
     static string OptionIndex(
         List<OptionInfo> options,
         List<(string Construct, List<OptionInfo> Options)> constructs,
-        Dictionary<string, string> slugOf) {
+        Dictionary<string, string> slugOf
+    ) {
         var builder = Open("Options — Skala", "../", "options");
         builder.Append("<h1>Options</h1>\n");
         builder.Append("<p class=\"lede\">")
@@ -312,8 +321,10 @@ public static class DocsSite {
             .Append(" constructs the way ReSharper's own settings pages group them.</p>\n");
 
         builder.Append("<h2 id=\"constructs\">By construct</h2>\n");
-        builder.Append("<table>\n<thead><tr><th>Construct</th><th>Keys</th><th>Tier A</th>"
-            + "<th>Languages</th></tr></thead>\n<tbody>\n");
+        builder.Append(
+            "<table>\n<thead><tr><th>Construct</th><th>Keys</th><th>Tier A</th>"
+            + "<th>Languages</th></tr></thead>\n<tbody>\n"
+        );
         foreach (var (construct, members) in constructs) {
             var languages = members.Select(static option => option.Language)
                 .Distinct(StringComparer.Ordinal)
@@ -388,7 +399,7 @@ public static class DocsSite {
                 var expanded = option.Expands
                     .Select(static id => OptionRegistry.Get(id).Key)
                     .OrderBy(static key => key, StringComparer.Ordinal)
-                    .Select(key => links.KeyLink(key, string.Empty));
+                    .Select(key => links.KeyLink(key, "../"));
                 Fact(builder, "Expands to", string.Join(", ", expanded));
             }
 
@@ -692,7 +703,8 @@ public static class DocsSite {
         public SiteLinks(
             Dictionary<string, string> slugOf,
             List<OptionInfo> options,
-            List<RuleInfo> rules) {
+            List<RuleInfo> rules
+        ) {
             _slugOf = slugOf;
             foreach (var option in options) {
                 _constructOf[option.Key] = option.Construct;
@@ -720,8 +732,7 @@ public static class DocsSite {
             }
         }
 
-        public SortedSet<string> RulesReading(string key) =>
-            _readers.TryGetValue(key, out var set) ? set : Empty;
+        public SortedSet<string> RulesReading(string key) => _readers.TryGetValue(key, out var set) ? set : Empty;
 
         /// <summary>An anchor to the key's entry on its construct page.</summary>
         public string KeyLink(string key, string root) {
@@ -729,8 +740,15 @@ public static class DocsSite {
                 return "<code>" + Esc(key) + "</code>";
             }
 
-            return "<a href=\"" + root + "options/" + Esc(_slugOf[construct]) + ".html#" + Esc(key)
-                + "\"><code>" + Esc(key) + "</code></a>";
+            return "<a href=\""
+                + root
+                + "options/"
+                + Esc(_slugOf[construct])
+                + ".html#"
+                + Esc(key)
+                + "\"><code>"
+                + Esc(key)
+                + "</code></a>";
         }
 
         /// <summary>
@@ -862,8 +880,7 @@ public static class DocsSite {
     /// compiler supplies.
     /// </para>
     /// </remarks>
-    static string Stylesheet() =>
-        Css.Replace("\r\n", "\n", StringComparison.Ordinal);
+    static string Stylesheet() => Css.Replace("\r\n", "\n", StringComparison.Ordinal);
 
     const string Css =
         """
