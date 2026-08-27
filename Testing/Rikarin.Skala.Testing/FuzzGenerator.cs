@@ -67,7 +67,9 @@ public sealed class FuzzGenerator {
     // ── the unit ─────────────────────────────────────────────────────────────────────────────────
 
     void Unit() {
-        foreach (var name in new[] { "System", "System.Collections.Generic", "System.Linq", "System.Threading.Tasks" }) {
+        foreach (var name in new[] {
+                     "System", "System.Collections.Generic", "System.Linq", "System.Threading.Tasks"
+                 }) {
             if (random.Chance(0.6)) {
                 Line(0, "using " + name + ";");
             }
@@ -239,7 +241,10 @@ public sealed class FuzzGenerator {
 
     void Member(int indent, int depth) {
         var choice = random.Pick(
-            ["field", "property", "method", "expression-method", "constructor", "event", "indexer", "operator", "nested"],
+            [
+                "field", "property", "method", "expression-method", "constructor", "event", "indexer", "operator",
+                "nested"
+            ],
             [18, 20, 26, 10, 6, 4, 4, 4, depth < 1 ? 4 : 0]
         );
 
@@ -270,8 +275,15 @@ public sealed class FuzzGenerator {
             case "operator":
                 Line(
                     indent,
-                    "public static bool operator " + random.Pick(["==", "!=", "<", ">"])
-                    + "(" + Type(0) + " left, " + Type(0) + " right) => " + Expression(1, indent) + ";"
+                    "public static bool operator "
+                    + random.Pick(["==", "!=", "<", ">"])
+                    + "("
+                    + Type(0)
+                    + " left, "
+                    + Type(0)
+                    + " right) => "
+                    + Expression(1, indent)
+                    + ";"
                 );
                 return;
             default:
@@ -295,7 +307,10 @@ public sealed class FuzzGenerator {
             _ => random.Chance(0.7) ? Expression(1, indent) : null
         };
 
-        Line(indent, modifiers + " " + type + " " + name + (initialiser is null ? string.Empty : " = " + initialiser) + ";");
+        Line(
+            indent,
+            modifiers + " " + type + " " + name + (initialiser is null ? string.Empty : " = " + initialiser) + ";"
+        );
     }
 
     void Property(int indent) {
@@ -304,7 +319,10 @@ public sealed class FuzzGenerator {
         var name = "P" + Next();
         switch (random.Pick(["auto", "expression", "accessors", "initialised"], [30, 30, 22, 18])) {
             case "auto":
-                Line(indent, "public " + type + " " + name + " { get; " + random.Pick(["set;", "init;", "private set;"]) + " }");
+                Line(
+                    indent,
+                    "public " + type + " " + name + " { get; " + random.Pick(["set;", "init;", "private set;"]) + " }"
+                );
                 return;
             case "expression":
                 Line(indent, "public " + type + " " + name + " => " + Expression(1, indent) + ";");
@@ -329,8 +347,15 @@ public sealed class FuzzGenerator {
         // grammar's contract is that it never emits one.
         Line(
             indent,
-            "public static " + Type(0) + " Create" + Next() + "("
-            + ParameterList(random.Next(0, 4), allowModifiers: true) + ") => " + Expression(1, indent) + ";"
+            "public static "
+            + Type(0)
+            + " Create"
+            + Next()
+            + "("
+            + ParameterList(random.Next(0, 4), allowModifiers: true)
+            + ") => "
+            + Expression(1, indent)
+            + ";"
         );
     }
 
@@ -344,8 +369,16 @@ public sealed class FuzzGenerator {
         );
 
         var returns = async ? random.Pick(["Task", "Task<" + Type(0) + ">", "ValueTask<" + Type(0) + ">"]) : Type(0);
-        var head = modifiers + (async ? " async " : " ") + returns + " M" + Next() + parameters.List
-            + "(" + ParameterList(random.Next(0, 5), allowModifiers: true) + ")" + parameters.Constraints;
+        var head = modifiers
+            + (async ? " async " : " ")
+            + returns
+            + " M"
+            + Next()
+            + parameters.List
+            + "("
+            + ParameterList(random.Next(0, 5), allowModifiers: true)
+            + ")"
+            + parameters.Constraints;
 
         if (!block) {
             Line(indent, head + " => " + Expression(1, indent) + ";");
@@ -461,7 +494,8 @@ public sealed class FuzzGenerator {
                             "new " + Type(1) + "(" + Arguments(2, indent) + ")"
                         ],
                         [30, 30, 8, 16, 10]
-                    ) + ";"
+                    )
+                    + ";"
                 );
 
                 return;
@@ -488,7 +522,9 @@ public sealed class FuzzGenerator {
                     indent,
                     (random.Chance(0.2) ? "await foreach (" : "foreach (")
                     + (random.Chance(0.25) ? "var (k" + Next() + ", w" + Next() + ")" : "var e" + Next())
-                    + " in " + Expression(1, indent) + ") {"
+                    + " in "
+                    + Expression(1, indent)
+                    + ") {"
                 );
 
                 Statement(indent + 1, depth + 1, async);
@@ -516,7 +552,13 @@ public sealed class FuzzGenerator {
                 Line(indent, "switch (" + Expression(1, indent) + ") {");
                 var sections = random.Next(1, 4);
                 for (var i = 0; i < sections; i++) {
-                    Line(indent + 1, "case " + Pattern(1) + (random.Chance(0.3) ? " when " + Expression(2, indent) : string.Empty) + ":");
+                    Line(
+                        indent + 1,
+                        "case "
+                        + Pattern(1)
+                        + (random.Chance(0.3) ? " when " + Expression(2, indent) : string.Empty)
+                        + ":"
+                    );
                     Statement(indent + 2, depth + 1, async);
                     Line(indent + 2, "break;");
                 }
@@ -532,8 +574,11 @@ public sealed class FuzzGenerator {
                 Statement(indent + 1, depth + 1, async);
                 Line(
                     indent,
-                    "} catch (" + random.Pick(["InvalidOperationException", "IOException", "Exception"])
-                    + " exception" + Next() + ")"
+                    "} catch ("
+                    + random.Pick(["InvalidOperationException", "IOException", "Exception"])
+                    + " exception"
+                    + Next()
+                    + ")"
                     + (random.Chance(0.35) ? " when (" + Expression(2, indent) + ") {" : " {")
                 );
 
@@ -576,8 +621,15 @@ public sealed class FuzzGenerator {
             case "local-function":
                 Line(
                     indent,
-                    (random.Chance(0.3) ? "static " : string.Empty) + Type(0) + " Local" + Next()
-                    + "(" + ParameterList(random.Next(0, 3), allowModifiers: false) + ") => " + Expression(1, indent) + ";"
+                    (random.Chance(0.3) ? "static " : string.Empty)
+                    + Type(0)
+                    + " Local"
+                    + Next()
+                    + "("
+                    + ParameterList(random.Next(0, 3), allowModifiers: false)
+                    + ") => "
+                    + Expression(1, indent)
+                    + ";"
                 );
 
                 return;
@@ -669,13 +721,20 @@ public sealed class FuzzGenerator {
                 return random.Pick(["value", "state", "items", "this.Current", "Source", "_cache", "context"]);
             case "invocation":
                 return random.Pick(["Compute", "Resolve", "Handle", "Emit", "TryGet", "Select"])
-                    + "(" + Arguments(depth, indent) + ")";
+                    + "("
+                    + Arguments(depth, indent)
+                    + ")";
             case "generic-invocation":
                 // ⚠ `M<A, B>(x)` is the shape the `>`-before-`(` defect lived in for four
                 // milestones. It gets its own production for that reason.
                 return random.Pick(["Convert", "Materialise", "Cast", "Bind"])
-                    + "<" + Type(1) + (random.Chance(0.6) ? ", " + Type(1) : string.Empty) + ">"
-                    + "(" + Arguments(depth, indent) + ")";
+                    + "<"
+                    + Type(1)
+                    + (random.Chance(0.6) ? ", " + Type(1) : string.Empty)
+                    + ">"
+                    + "("
+                    + Arguments(depth, indent)
+                    + ")";
             case "member-chain": {
                 var parts = new List<string> { random.Pick(["source", "builder", "context", "this"]) };
                 var links = random.Next(1, 5);
@@ -723,9 +782,13 @@ public sealed class FuzzGenerator {
                     initialisers.Add("P" + Next() + " = " + Operand(depth + 2, indent));
                 }
 
-                return "new " + (random.Chance(0.25) ? string.Empty : type)
-                    + "(" + (random.Chance(0.5) ? Arguments(depth + 2, indent) : string.Empty) + ") { "
-                    + string.Join(", ", initialisers) + " }";
+                return "new "
+                    + (random.Chance(0.25) ? string.Empty : type)
+                    + "("
+                    + (random.Chance(0.5) ? Arguments(depth + 2, indent) : string.Empty)
+                    + ") { "
+                    + string.Join(", ", initialisers)
+                    + " }";
             }
 
             case "collection": {
@@ -755,8 +818,11 @@ public sealed class FuzzGenerator {
             }
 
             case "ternary":
-                return Operand(depth + 1, indent) + " ? " + Operand(depth + 1, indent)
-                    + " : " + Operand(depth + 1, indent);
+                return Operand(depth + 1, indent)
+                    + " ? "
+                    + Operand(depth + 1, indent)
+                    + " : "
+                    + Operand(depth + 1, indent);
             case "binary": {
                 var operands = random.Next(2, 6);
                 var parts = new List<string>();
@@ -786,7 +852,8 @@ public sealed class FuzzGenerator {
                     arms.Add(
                         Pattern(depth + 1)
                         + (random.Chance(0.3) ? " when " + Operand(depth + 2, indent) : string.Empty)
-                        + " => " + Operand(depth + 2, indent)
+                        + " => "
+                        + Operand(depth + 2, indent)
                     );
                 }
 
@@ -795,37 +862,64 @@ public sealed class FuzzGenerator {
             }
 
             case "tuple":
-                return "(" + Operand(depth + 1, indent) + ", " + Operand(depth + 1, indent)
-                    + (random.Chance(0.3) ? ", " + Operand(depth + 1, indent) : string.Empty) + ")";
+                return "("
+                    + Operand(depth + 1, indent)
+                    + ", "
+                    + Operand(depth + 1, indent)
+                    + (random.Chance(0.3) ? ", " + Operand(depth + 1, indent) : string.Empty)
+                    + ")";
             case "cast":
                 return "(" + Type(1) + ")" + Operand(depth + 1, indent);
             case "nameof":
-                return random.Pick(["nameof(value)", "typeof(" + Type(1) + ")", "sizeof(int)", "nameof(Source.Length)"]);
+                return random.Pick(
+                    ["nameof(value)", "typeof(" + Type(1) + ")", "sizeof(int)", "nameof(Source.Length)"]
+                );
             case "with":
-                return random.Pick(["value", "state"]) + " with { P" + Next() + " = " + Operand(depth + 2, indent) + " }";
+                return random.Pick(["value", "state"])
+                    + " with { P"
+                    + Next()
+                    + " = "
+                    + Operand(depth + 2, indent)
+                    + " }";
             case "range":
-                return random.Pick(["items", "buffer"]) + "[" + random.Pick(["1..", "..^1", "1..^2", "^3..", ".."]) + "]";
+                return random.Pick(["items", "buffer"])
+                    + "["
+                    + random.Pick(["1..", "..^1", "1..^2", "^3..", ".."])
+                    + "]";
             case "query":
-                return "from item in " + random.Pick(["items", "Source"])
-                    + " where " + Operand(depth + 2, indent)
+                return "from item in "
+                    + random.Pick(["items", "Source"])
+                    + " where "
+                    + Operand(depth + 2, indent)
                     + (random.Chance(0.4) ? " orderby item.Length descending" : string.Empty)
-                    + " select " + Operand(depth + 2, indent);
+                    + " select "
+                    + Operand(depth + 2, indent);
             case "interpolated":
                 // ⚠ `Hole()` rather than `Expression()`. C# 11 allows a newline inside an
                 // interpolation hole, so a recursive call could drop a multi-line raw string into
                 // one — which parses, but is also the one construct the formatter copies verbatim
                 // (NodeLayout.Verbatim), and a case whose interesting half is exempt from every
                 // layout decision is a case that measures nothing.
-                return "$\"" + random.Pick(["value ", "n=", "at "]) + "{" + Hole()
-                    + (random.Chance(0.3) ? ":F2" : string.Empty) + "}"
-                    + (random.Chance(0.4) ? " and {" + Hole() + "}" : string.Empty) + "\"";
+                return "$\""
+                    + random.Pick(["value ", "n=", "at "])
+                    + "{"
+                    + Hole()
+                    + (random.Chance(0.3) ? ":F2" : string.Empty)
+                    + "}"
+                    + (random.Chance(0.4) ? " and {" + Hole() + "}" : string.Empty)
+                    + "\"";
             case "raw-string":
                 return RawString(indent);
             case "checked":
                 return "checked(" + Expression(depth + 1, indent) + ")";
             case "anonymous":
-                return "new { " + random.Pick(["Name", "Id", "Kind"]) + " = " + Operand(depth + 2, indent)
-                    + ", Count = " + Operand(depth + 2, indent) + " }";
+                return "new { "
+                    + random.Pick(["Name", "Id", "Kind"])
+                    + " = "
+                    + Operand(depth + 2, indent)
+                    + ", Count = "
+                    + Operand(depth + 2, indent)
+                    + " }";
             default:
                 return random.Pick(["default", "default(" + Type(1) + ")", "null!", "this"]);
         }

@@ -137,14 +137,15 @@ public sealed record FuzzReport(
             $"- {ParseLost.ToString("N0", CultureInfo.InvariantCulture)} property checks lost the parse — "
             + "a fuzzer defect, not a formatter one; those cases asserted nothing"
             + (ParseLostSeeds.IsEmpty
-                ? string.Empty
-                : " (e.g. " + string.Join(", ", ParseLostSeeds.Select(FuzzRandom.Format)) + ")")
+                    ? string.Empty
+                    : " (e.g. " + string.Join(", ", ParseLostSeeds.Select(FuzzRandom.Format)) + ")")
         );
 
         report.AppendLine();
         report.AppendLine("| mutation | applied |");
         report.AppendLine("|---|---:|");
-        foreach (var entry in MutationsApplied.OrderByDescending(static e => e.Value).ThenBy(static e => e.Key, StringComparer.Ordinal)) {
+        foreach (var entry in MutationsApplied.OrderByDescending(static e => e.Value)
+                     .ThenBy(static e => e.Key, StringComparer.Ordinal)) {
             report.AppendLine($"| `{entry.Key}` | {entry.Value.ToString("N0", CultureInfo.InvariantCulture)} |");
         }
 
@@ -156,7 +157,8 @@ public sealed record FuzzReport(
         } else {
             report.AppendLine("| property | violations |");
             report.AppendLine("|---|---:|");
-            foreach (var entry in Violations.OrderByDescending(static e => e.Value).ThenBy(static e => e.Key, StringComparer.Ordinal)) {
+            foreach (var entry in Violations.OrderByDescending(static e => e.Value)
+                         .ThenBy(static e => e.Key, StringComparer.Ordinal)) {
                 report.AppendLine($"| `{entry.Key}` | {entry.Value.ToString("N0", CultureInfo.InvariantCulture)} |");
             }
         }
@@ -178,7 +180,9 @@ public sealed record FuzzReport(
                 report.AppendLine($"- as found: {finding.Violation}");
                 report.AppendLine($"- minimised: {finding.MinimisedDetail}");
 
-                report.AppendLine($"- replay: `dotnet run --project Testing/Rikarin.Skala.Testing -- fuzz --replay={FuzzRandom.Format(finding.Seed)}`");
+                report.AppendLine(
+                    $"- replay: `dotnet run --project Testing/Rikarin.Skala.Testing -- fuzz --replay={FuzzRandom.Format(finding.Seed)}`"
+                );
                 report.AppendLine();
                 report.AppendLine("```csharp");
                 report.AppendLine(Visible(finding.Minimised));
@@ -329,9 +333,15 @@ public static class Fuzzer {
         var options = OptionsFor(subject.Path);
 
         // ⚠ The absorption baseline is `format(x)` under each symbol set, computed only when the
-        // whole mutation sequence was whitespace. `@formatter:off` opts a case out, for the reason
-        // PropertyTests records: a verbatim region is not whitespace, it is data, and a mutation
-        // inside one is not something the formatter is allowed to absorb.
+        // whole mutation sequence was whitespace. A formatter-off span opts a case out, for the
+        // reason PropertyTests records: a verbatim region is not whitespace, it is data, and a
+        // mutation inside one is not something the formatter is allowed to absorb.
+        //
+        // ⚠ The tag itself is spelled out in the string literal below and deliberately **not** in
+        // this comment. `CSharpDocumentBuilder.ContainsTag` is a plain `Contains` over a comment's
+        // text, so a comment that merely *mentions* the tag turns formatting off from that point to
+        // the end of the file — and with SK-FUZZ-0005 open, that made `./build.sh Lint` refuse to
+        // format this file at all. See `corpus/pathological/open/register.md`.
         (string None, string Defined)? baseline = null;
         if (subject.AbsorbedOnly
             && !subject.Baseline.Contains("@formatter:off", StringComparison.Ordinal)) {

@@ -245,37 +245,45 @@ public static class FuzzProperties {
         if (first.Outcome is FormatOutcome.VerificationFailed) {
             violations.Add(new PropertyViolation(TokenEquivalence, defined, "the formatter refused to emit"));
         } else if (Rikarin.Skala.Formatting.CSharp.TokenEquivalence.Compare(
-                first.Original,
-                SourceText.From(first.Formatted),
-                CSharpFormatter.ParseOptionsFor(symbols)
-            ) is { } failure) {
-            violations.Add(new PropertyViolation(
-                TokenEquivalence,
-                defined,
-                $"token {failure.Index.ToString(CultureInfo.InvariantCulture)}: "
-                + $"{failure.Before} became {failure.After}"
-            ));
+                       first.Original,
+                       SourceText.From(first.Formatted),
+                       CSharpFormatter.ParseOptionsFor(symbols)
+                   ) is { } failure) {
+            violations.Add(
+                new PropertyViolation(
+                    TokenEquivalence,
+                    defined,
+                    $"token {failure.Index.ToString(CultureInfo.InvariantCulture)}: "
+                    + $"{failure.Before} became {failure.After}"
+                )
+            );
         }
 
         // 1. Idempotency.
         try {
             var second = Run(SourceText.From(first.Formatted));
             if (!second.Edits.IsEmpty) {
-                violations.Add(new PropertyViolation(
-                    Idempotency,
-                    defined,
-                    $"the second pass still wants {second.Edits.Length.ToString(CultureInfo.InvariantCulture)} edit(s): "
-                    + string.Join(", ", second.Edits.Take(3))
-                ));
+                violations.Add(
+                    new PropertyViolation(
+                        Idempotency,
+                        defined,
+                        $"the second pass still wants {second.Edits.Length.ToString(CultureInfo.InvariantCulture)} edit(s): "
+                        + string.Join(", ", second.Edits.Take(3))
+                    )
+                );
             } else if (!string.Equals(second.Formatted, first.Formatted, StringComparison.Ordinal)) {
-                violations.Add(new PropertyViolation(Idempotency, defined, FirstDifference(first.Formatted, second.Formatted)));
+                violations.Add(
+                    new PropertyViolation(Idempotency, defined, FirstDifference(first.Formatted, second.Formatted))
+                );
             }
         } catch (Exception exception) when (exception is not OperationCanceledException) {
-            violations.Add(new PropertyViolation(
-                Crash,
-                defined,
-                "on the second pass: " + exception.GetType().Name + ": " + exception.Message
-            ));
+            violations.Add(
+                new PropertyViolation(
+                    Crash,
+                    defined,
+                    "on the second pass: " + exception.GetType().Name + ": " + exception.Message
+                )
+            );
         }
 
         // 3. Parse stability.
@@ -283,22 +291,26 @@ public static class FuzzProperties {
             var before = ParseDiagnostics(first.Original, cancellation);
             var after = ParseDiagnostics(SourceText.From(first.Formatted), cancellation);
             if (!before.SequenceEqual(after, StringComparer.Ordinal)) {
-                violations.Add(new PropertyViolation(
-                    ParseStability,
-                    defined,
-                    $"[{string.Join(" ", before)}] became [{string.Join(" ", after)}]"
-                ));
+                violations.Add(
+                    new PropertyViolation(
+                        ParseStability,
+                        defined,
+                        $"[{string.Join(" ", before)}] became [{string.Join(" ", after)}]"
+                    )
+                );
             }
         }
 
         // 4. Determinism.
         for (var run = 0; run < 2; run++) {
             if (!string.Equals(Run(text).Formatted, first.Formatted, StringComparison.Ordinal)) {
-                violations.Add(new PropertyViolation(
-                    Determinism,
-                    defined,
-                    $"run {(run + 2).ToString(CultureInfo.InvariantCulture)} differed from run 1"
-                ));
+                violations.Add(
+                    new PropertyViolation(
+                        Determinism,
+                        defined,
+                        $"run {(run + 2).ToString(CultureInfo.InvariantCulture)} differed from run 1"
+                    )
+                );
 
                 break;
             }
@@ -311,23 +323,27 @@ public static class FuzzProperties {
             var restricted = EditEmitter.Restrict(first.Edits, range);
             var expected = first.Edits.Count(edit => edit.Span.IntersectsWith(range));
             if (restricted.Count != expected || restricted.Any(edit => !first.Edits.Contains(edit))) {
-                violations.Add(new PropertyViolation(
-                    RangeConsistency,
-                    defined,
-                    $"a range of [{half.ToString(CultureInfo.InvariantCulture)}, end) restricted to "
-                    + $"{restricted.Count.ToString(CultureInfo.InvariantCulture)} edit(s) where "
-                    + $"{expected.ToString(CultureInfo.InvariantCulture)} intersect"
-                ));
+                violations.Add(
+                    new PropertyViolation(
+                        RangeConsistency,
+                        defined,
+                        $"a range of [{half.ToString(CultureInfo.InvariantCulture)}, end) restricted to "
+                        + $"{restricted.Count.ToString(CultureInfo.InvariantCulture)} edit(s) where "
+                        + $"{expected.ToString(CultureInfo.InvariantCulture)} intersect"
+                    )
+                );
             }
 
             for (var i = 1; i < first.Edits.Length; i++) {
                 if (first.Edits[i - 1].Span.End > first.Edits[i].Span.Start) {
-                    violations.Add(new PropertyViolation(
-                        RangeConsistency,
-                        defined,
-                        $"edits {(i - 1).ToString(CultureInfo.InvariantCulture)} and "
-                        + $"{i.ToString(CultureInfo.InvariantCulture)} overlap or are out of order"
-                    ));
+                    violations.Add(
+                        new PropertyViolation(
+                            RangeConsistency,
+                            defined,
+                            $"edits {(i - 1).ToString(CultureInfo.InvariantCulture)} and "
+                            + $"{i.ToString(CultureInfo.InvariantCulture)} overlap or are out of order"
+                        )
+                    );
 
                     break;
                 }
@@ -347,11 +363,13 @@ public static class FuzzProperties {
             for (var i = 0; i < first.Edits.Length; i++) {
                 var edit = first.Edits[i];
                 if (edit.Span.End > original.Length) {
-                    violations.Add(new PropertyViolation(
-                        RangeConsistency,
-                        defined,
-                        $"edit {i.ToString(CultureInfo.InvariantCulture)} runs past the end of the input"
-                    ));
+                    violations.Add(
+                        new PropertyViolation(
+                            RangeConsistency,
+                            defined,
+                            $"edit {i.ToString(CultureInfo.InvariantCulture)} runs past the end of the input"
+                        )
+                    );
 
                     break;
                 }
@@ -362,13 +380,15 @@ public static class FuzzProperties {
                 }
 
                 if (replaced[0] == edit.NewText[0] || replaced[^1] == edit.NewText[^1]) {
-                    violations.Add(new PropertyViolation(
-                        RangeConsistency,
-                        defined,
-                        $"edit {i.ToString(CultureInfo.InvariantCulture)} of "
-                        + $"{first.Edits.Length.ToString(CultureInfo.InvariantCulture)} is not trimmed to what "
-                        + $"differs: it replaces {Quote(replaced)} with {Quote(edit.NewText)}"
-                    ));
+                    violations.Add(
+                        new PropertyViolation(
+                            RangeConsistency,
+                            defined,
+                            $"edit {i.ToString(CultureInfo.InvariantCulture)} of "
+                            + $"{first.Edits.Length.ToString(CultureInfo.InvariantCulture)} is not trimmed to what "
+                            + $"differs: it replaces {Quote(replaced)} with {Quote(edit.NewText)}"
+                        )
+                    );
 
                     break;
                 }
@@ -377,11 +397,13 @@ public static class FuzzProperties {
             // The list, applied, must reproduce the output. Independent of the writer that produced
             // both, which is the only form of this check worth having.
             if (!string.Equals(EditEmitter.Apply(original, first.Edits), first.Formatted, StringComparison.Ordinal)) {
-                violations.Add(new PropertyViolation(
-                    RangeConsistency,
-                    defined,
-                    "applying the edit list to the input does not reproduce the formatted output"
-                ));
+                violations.Add(
+                    new PropertyViolation(
+                        RangeConsistency,
+                        defined,
+                        "applying the edit list to the input does not reproduce the formatted output"
+                    )
+                );
             }
         }
 
@@ -409,22 +431,27 @@ public static class FuzzProperties {
         try {
             pipeline = RunPipeline(path, text, options, symbols, CompileOne(path, text, symbols));
         } catch (Exception exception) when (exception is not OperationCanceledException) {
-            violations.Add(new PropertyViolation(
-                Crash,
-                defined,
-                "in the arrangement pipeline: " + exception.GetType().Name + ": " + exception.Message
-            ));
+            violations.Add(
+                new PropertyViolation(
+                    Crash,
+                    defined,
+                    "in the arrangement pipeline: " + exception.GetType().Name + ": " + exception.Message
+                )
+            );
 
             return;
         }
 
         if (!pipeline.Converged) {
-            violations.Add(new PropertyViolation(
-                ArrangementConvergence,
-                defined,
-                "arrange-and-format did not reach a fixed point in "
-                + ArrangementPipeline.MaxPasses.ToString(CultureInfo.InvariantCulture) + " passes"
-            ));
+            violations.Add(
+                new PropertyViolation(
+                    ArrangementConvergence,
+                    defined,
+                    "arrange-and-format did not reach a fixed point in "
+                    + ArrangementPipeline.MaxPasses.ToString(CultureInfo.InvariantCulture)
+                    + " passes"
+                )
+            );
 
             return;
         }
@@ -432,12 +459,14 @@ public static class FuzzProperties {
         var rewritten = SourceText.From(pipeline.Text);
         var again = RunPipeline(path, rewritten, options, symbols, CompileOne(path, rewritten, symbols));
         if (!again.Edits.IsEmpty) {
-            violations.Add(new PropertyViolation(
-                ArrangementIdempotency,
-                defined,
-                $"the second pipeline pass still wants {again.Edits.Length.ToString(CultureInfo.InvariantCulture)} "
-                + $"edit(s); rules applied on the first: {string.Join(", ", pipeline.Applied)}"
-            ));
+            violations.Add(
+                new PropertyViolation(
+                    ArrangementIdempotency,
+                    defined,
+                    $"the second pipeline pass still wants {again.Edits.Length.ToString(CultureInfo.InvariantCulture)} "
+                    + $"edit(s); rules applied on the first: {string.Join(", ", pipeline.Applied)}"
+                )
+            );
         }
     }
 

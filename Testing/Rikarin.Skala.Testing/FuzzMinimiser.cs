@@ -99,12 +99,12 @@ public static class FuzzMinimiser {
             var removable = tree.GetRoot()
                 .DescendantNodes()
                 .Where(static node => node is MemberDeclarationSyntax
-                    or StatementSyntax
-                    or UsingDirectiveSyntax
-                    or AttributeListSyntax
-                    or SwitchSectionSyntax
-                    or CatchClauseSyntax
-                    or FinallyClauseSyntax
+                        or StatementSyntax
+                        or UsingDirectiveSyntax
+                        or AttributeListSyntax
+                        or SwitchSectionSyntax
+                        or CatchClauseSyntax
+                        or FinallyClauseSyntax
                 )
                 .Where(static node => node is not BlockSyntax)
                 .OrderByDescending(static node => node.FullSpan.Length)

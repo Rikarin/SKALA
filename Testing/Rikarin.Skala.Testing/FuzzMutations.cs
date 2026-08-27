@@ -147,8 +147,11 @@ public static class FuzzMutations {
             WidenGap => WidenGaps(map, random),
             CollapseGap => CollapseGaps(map, random),
             Tabs => Tabify(map, random),
-            CommentLine => InsertLines(map, random, static (random, indent) =>
-                indent + "// fuzz " + random.Next(1000).ToString(CultureInfo.InvariantCulture) + "\n"
+            CommentLine => InsertLines(
+                map,
+                random,
+                static (random, indent) =>
+                    indent + "// fuzz " + random.Next(1000).ToString(CultureInfo.InvariantCulture) + "\n"
             ),
             CommentInline => InsertAtGap(map, random, "/* f */"),
             TrailingComment => Trailing(map, random, " // fuzz"),
@@ -156,10 +159,13 @@ public static class FuzzMutations {
             RemoveBlankLine => RemoveBlank(map, random),
             IfTrue => Wrap(map, random, "#if true", "#endif"),
             Region => Wrap(map, random, "#region fuzz", "#endregion"),
-            IfDisabled => InsertLines(map, random, static (random, _) =>
-                "#if FUZZ_NOT_DEFINED_"
-                + random.Next(1000).ToString(CultureInfo.InvariantCulture)
-                + "\n    this is not code and never will be\n#endif\n"
+            IfDisabled => InsertLines(
+                map,
+                random,
+                static (random, _) =>
+                    "#if FUZZ_NOT_DEFINED_"
+                    + random.Next(1000).ToString(CultureInfo.InvariantCulture)
+                    + "\n    this is not code and never will be\n#endif\n"
             ),
             Pragma => InsertLines(map, random, static (_, _) => "#pragma warning disable CS0168\n"),
             LineEndings => SwapLineEndings(map, random),
@@ -381,8 +387,7 @@ public static class FuzzMutations {
         return builder.ToString();
     }
 
-    static string ToggleBom(SourceMap map) =>
-        map.Source.StartsWith('﻿') ? map.Source[1..] : "﻿" + map.Source;
+    static string ToggleBom(SourceMap map) => map.Source.StartsWith('﻿') ? map.Source[1..] : "﻿" + map.Source;
 
     /// <summary>
     /// Renames one identifier everywhere it occurs as a token, to a longer name.
@@ -644,7 +649,7 @@ public static class FuzzMutations {
                     || trivia.IsKind(SyntaxKind.MultiLineDocumentationCommentTrivia)) {
                     Protect(trivia.SpanStart, trivia.Span.End, whole: true);
                 } else if (trivia.IsKind(SyntaxKind.SingleLineCommentTrivia)
-                    || trivia.IsKind(SyntaxKind.SingleLineDocumentationCommentTrivia)) {
+                           || trivia.IsKind(SyntaxKind.SingleLineDocumentationCommentTrivia)) {
                     // ⚠ Every line the trivia spans, not just the one it ends on. A run of `///`
                     // lines is **one** SingleLineDocumentationCommentTrivia, not one per line, so
                     // marking only the last left every line above it open to a trailing-space

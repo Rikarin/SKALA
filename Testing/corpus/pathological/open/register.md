@@ -132,3 +132,43 @@ that is what makes this the shape a fixed corpus cannot see: every file in `corp
 through a formatter, so its `]` is already at four, the first pass agrees with it, and the property
 holds. It takes an input whose `]` starts at zero to make the first pass disagree with the second,
 and `split-line` produced one in a run of nine thousand cases.
+
+## SK-FUZZ-0005 — an interpolated string inside a formatter-off span breaks token equivalence
+
+- file: `interpolated-string-inside-a-formatter-off-span.cs`
+- property: `token-equivalence`
+- seed: `n/a — found by ./build.sh Lint on Testing/Rikarin.Skala.Testing/Fuzzer.cs`
+- found: `Lint` refused to format the fuzzer's own source; minimised with the fuzzer's own
+  `fuzz --minimise=<file> --property=token-equivalence`, 33 432 characters to 542 in 382
+  evaluations, and narrowed by hand to 74.
+
+```
+class C {
+  void M() {
+  // @formatter:off
+  }
+  void N() {
+  X($"a {b} c");
+  }
+}
+```
+
+```
+error SK9099: not written, the formatted output has a different token stream
+(at token 24: 'T8201:)' became 'T8201:')
+```
+
+Everything after the tag is a verbatim region copied byte-for-byte, so token equivalence ought to
+hold there trivially. It does not when the region contains an interpolated string: remove the `$` and
+the file formats; remove the tag and the file formats.
+
+⚠ This is the same corner as SK-FUZZ-0001, from the other side — a formatter-off span that runs to
+the end of the file — and the two together say the region's end handling is what wants looking at.
+
+⚠ **It has a second edge that is worth knowing separately from the defect.**
+`CSharpDocumentBuilder.ContainsTag` is a plain `Contains` over a comment's text, so a comment that
+merely *mentions* the tag turns formatting off from that point to the end of the file. That is how
+this was found: a paragraph in `Fuzzer.cs` explaining that a formatter-off span opts a case out of
+the absorption property switched formatting off for the rest of the file, and the interpolated
+strings below it then tripped SK9099. The comment is now written without the literal tag, and says
+why. A file that documents a directive should not be governed by it.

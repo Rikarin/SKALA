@@ -399,6 +399,42 @@ static int Fuzz(string[] args) {
         return found.IsEmpty ? 0 : 1;
     }
 
+    // ⚠ `--minimise=<path>` delta-debugs a file that already fails, without a fuzz case around it.
+    // The findings that arrive from outside the fuzzer — a crash a user reports, a file `./build.sh
+    // Lint` refuses — deserve the same reduction as the ones it finds itself, and reducing C# by
+    // hand is a morning.
+    if (Flag("minimise") is { } failing) {
+        var full = Path.GetFullPath(failing);
+        var resolved = Fuzzer.OptionsFor(full);
+
+        bool Fails(string candidate) =>
+            FuzzProperties.Check(full, candidate, resolved, Corpus.PropertySymbols)
+                .Any(violation => Flag("property") is not { } wanted
+                    || string.Equals(violation.Property, wanted, StringComparison.Ordinal)
+                );
+
+        var original = File.ReadAllText(full);
+        if (!Fails(original)) {
+            Console.Error.WriteLine($"{full} does not violate anything; there is nothing to minimise.");
+            return 2;
+        }
+
+        var budget = new MinimiseBudget(20000);
+        var reduced = FuzzMinimiser.Minimise(original, Fails, budget);
+        Console.Error.WriteLine(
+            $"{original.Length.ToString(CultureInfo.InvariantCulture)} → "
+            + $"{reduced.Length.ToString(CultureInfo.InvariantCulture)} characters in "
+            + $"{budget.Used.ToString(CultureInfo.InvariantCulture)} evaluations"
+        );
+
+        foreach (var violation in FuzzProperties.Check(full, reduced, resolved, Corpus.PropertySymbols)) {
+            Console.Error.WriteLine("  ✗ " + violation);
+        }
+
+        Console.Write(reduced);
+        return 0;
+    }
+
     if (args.Any(argument => argument.StartsWith("--grammar-check", StringComparison.Ordinal))) {
         Console.WriteLine(
             Fuzzer.GrammarCheck(
@@ -420,8 +456,8 @@ static int Fuzz(string[] args) {
     Console.Error.WriteLine(
         $"fuzzing from seed {FuzzRandom.Format(options.Seed)}, "
         + (options.Cases is { } total
-            ? total.ToString(CultureInfo.InvariantCulture) + " cases"
-            : options.Budget.TotalMinutes.ToString("F1", CultureInfo.InvariantCulture) + " minutes")
+                ? total.ToString(CultureInfo.InvariantCulture) + " cases"
+                : options.Budget.TotalMinutes.ToString("F1", CultureInfo.InvariantCulture) + " minutes")
         + $", mode {options.Mode.ToString().ToLowerInvariant()}…"
     );
 

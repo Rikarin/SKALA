@@ -89,7 +89,10 @@ public sealed class FuzzerTests {
             if (errors.Length > 0) {
                 broken.Add(
                     FuzzRandom.Format(FuzzRandom.Derive(7, index))
-                    + ": " + errors[0].Id + " " + errors[0].GetMessage(CultureInfo.InvariantCulture)
+                    + ": "
+                    + errors[0].Id
+                    + " "
+                    + errors[0].GetMessage(CultureInfo.InvariantCulture)
                 );
             }
         }
@@ -97,7 +100,8 @@ public sealed class FuzzerTests {
         Assert.True(
             broken.Count == 0,
             $"{broken.Count.ToString(CultureInfo.InvariantCulture)} of 250 generated units do not parse. "
-            + "`fuzz --grammar-check=N` prints the histogram:\n" + string.Join("\n", broken.Take(5))
+            + "`fuzz --grammar-check=N` prints the histogram:\n"
+            + string.Join("\n", broken.Take(5))
         );
     }
 
@@ -241,8 +245,11 @@ public sealed class FuzzerTests {
                 Assert.True(
                     failure is null,
                     $"{file}: `{mutation.Name}` is declared whitespace-only and changed a token"
-                    + (symbols.Count == 0 ? " with no symbols" : " with symbols") + ": "
-                    + failure?.Before + " became " + failure?.After
+                    + (symbols.Count == 0 ? " with no symbols" : " with symbols")
+                    + ": "
+                    + failure?.Before
+                    + " became "
+                    + failure?.After
                 );
             }
         }

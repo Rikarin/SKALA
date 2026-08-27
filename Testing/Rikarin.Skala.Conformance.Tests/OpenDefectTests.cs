@@ -88,8 +88,8 @@ public sealed class OpenDefectTests {
             + $"and delete the {id} entry from Testing/corpus/pathological/open/register.md.\n\n"
             + $"What the file does produce now: "
             + (violations.IsEmpty
-                ? "every property holds."
-                : string.Join("; ", violations.Select(static violation => violation.ToString())))
+                    ? "every property holds."
+                    : string.Join("; ", violations.Select(static violation => violation.ToString())))
         );
     }
 
