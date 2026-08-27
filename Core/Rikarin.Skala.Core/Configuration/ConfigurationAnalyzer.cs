@@ -39,12 +39,14 @@ public static class ConfigurationAnalyzer {
             "resharper_remove_spaces_on_blank_lines",
             static (generic, specific) => IsFalse(generic) && IsTrue(specific),
             "trim_trailing_whitespace says leave trailing whitespace alone; resharper_remove_spaces_on_blank_lines says strip it from blank lines."
-        ), new(
+        ),
+        new(
             "end_of_line",
             "resharper_enforce_line_ending_style",
             static (generic, specific) => generic.Length > 0 && IsFalse(specific),
             "end_of_line names a line ending; resharper_enforce_line_ending_style says do not enforce one."
-        ), new(
+        ),
+        new(
             "max_line_length",
             "resharper_csharp_max_line_length",
             static (generic, specific) => generic.Length > 0

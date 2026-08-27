@@ -90,9 +90,17 @@ public sealed partial class CSharpDocumentBuilder {
             var previousToken = _tokens[previous.TokenIndex];
 
             // ⚠ blank_lines_after_block_statements: a statement that ended with a brace is
-            // separated from the next one.
+            // separated from the next one — and "ended with a brace" is not "is a block". Measured:
+            // an `if … else { }`, a `switch { }` and a `try … catch { }` all get the blank line and
+            // none of their closing braces belongs to a `BlockSyntax` whose parent is a statement.
+            // The else's brace hangs from an `ElseClauseSyntax`, the switch's from the switch
+            // itself, the catch's from a `CatchClauseSyntax`.
+            // ⚠ And not before a `case`, which is a label rather than a statement: the gap between
+            // a switch section's last block and the next label belongs to `blank_lines_before_case`,
+            // which is 0 here, and the oracle leaves it empty.
             if (previousToken.IsKind(SyntaxKind.CloseBraceToken)
-                && previousToken.Parent is BlockSyntax { Parent: StatementSyntax }) {
+                && EndsAStatementInAList(previousToken)
+                && nextToken.Parent is not SwitchLabelSyntax) {
                 required = Math.Max(required, _options.BlankLinesAfterBlockStatements);
             }
 
@@ -434,5 +442,35 @@ public sealed partial class CSharpDocumentBuilder {
         }
 
         return true;
+    }
+
+    /// <summary>
+    /// Whether this token is the last one of a statement that is itself an element of a statement
+    /// list.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ The "in a list" half is not decoration. <see cref="BlockSyntax"/> <em>is</em> a
+    /// <see cref="StatementSyntax"/>, so a method body's own closing brace ends a statement by the
+    /// first half of the test alone, and the rule would put a blank line between every method's
+    /// last brace and whatever follows it.
+    /// <para>
+    /// ⚠ And the walk does not stop at the first statement it meets, which is the other half.
+    /// An <c>else</c>'s block is a statement whose parent is an <see cref="ElseClauseSyntax"/>, and
+    /// a <c>foreach</c>'s block is one whose parent is the loop — neither is in a list, and the
+    /// statement that is lies one or two nodes further up.
+    /// </para>
+    /// </remarks>
+    static bool EndsAStatementInAList(SyntaxToken token) {
+        for (var node = token.Parent; node is not null; node = node.Parent) {
+            if (node.Span.End != token.Span.End) {
+                return false;
+            }
+
+            if (node is StatementSyntax && node.Parent is BlockSyntax or SwitchSectionSyntax or GlobalStatementSyntax) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

@@ -40,7 +40,13 @@ public sealed class DocumentBuilder {
     /// <summary>Width from a group's own first break point to the next. <see cref="Document.AfterPointOf"/>.</summary>
     int[] _afterPoint = new int[512];
 
-    /// <summary>The groups that own at least one break point, for <see cref="MeasureNested"/>.</summary>
+    /// <summary>
+    /// The groups that own at least one break point.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ It gates <see cref="MeasureSegments"/>'s descent, so that the root group — which owns no
+    /// points and contains the file — is never walked and the measure stays linear in practice.
+    /// </remarks>
     readonly HashSet<int> _ownPoints = [];
 
     /// <summary>Flat width from one fill point to the next. <see cref="Document.SegmentOf"/>.</summary>
@@ -340,96 +346,82 @@ public sealed class DocumentBuilder {
     /// visited by exactly one of them.
     /// </remarks>
     int MeasureSegments(int childStart, int count, int group) {
+        if (!_ownPoints.Contains(group)) {
+            return 0;
+        }
+
         var first = -1;
-        for (var i = 0; i < count; i++) {
-            var child = _children[childStart + i];
-            if (!IsOwnBreakPoint(child, group)) {
-                continue;
-            }
+        var current = -1;
+        var flat = 0;
+        var point = 0;
+        var pointStopped = false;
 
-            var flat = 0;
-            var point = 0;
-            var pointStopped = false;
-            for (var j = i + 1; j < count; j++) {
-                var following = _children[childStart + j];
-                if (IsOwnBreakPoint(following, group)) {
-                    break;
-                }
+        Walk(childStart, count);
+        Flush();
+        return first < 0 ? 0 : _afterPoint[first];
 
-                flat = flat >= Document.Unbounded || _flatWidth[following] >= Document.Unbounded
-                    ? Document.Unbounded
-                    : flat + _flatWidth[following];
-
-                if (!pointStopped) {
-                    point += _pointWidth[following];
-                    pointStopped = _breaks[following];
-                }
-            }
-
-            _segment[child] = flat;
-            _afterPoint[child] = point;
-            if (first < 0) {
-                first = child;
+        void Flush() {
+            if (current >= 0) {
+                _segment[current] = flat;
+                _afterPoint[current] = point;
             }
         }
 
-        // ⚠ A group whose own break points are not its direct children still has them, and the
-        // ordering rule is inert without this. Every group that spends a continuation level opens
-        // the indent *inside* itself, so the `=` family's only break point is a grandchild and the
-        // scan above finds nothing — which made `AfterPoint` zero, which made "does the line end
-        // here anyway" answer yes for every declaration in the corpus. The symptom is a 146-column
-        // `const string X = "…";` that the oracle breaks after the `=` and Skala left whole.
-        // ⚠ The descent runs only when the group is known to own points, so the root group — which
-        // owns none and contains the file — is never walked.
-        return first >= 0
-            ? _afterPoint[first]
-            : _ownPoints.Contains(group) ? MeasureNested(childStart, count, group) : 0;
-    }
-
-    /// <summary>
-    /// <see cref="MeasureSegments"/>, for a group whose own break points are nested inside its
-    /// children rather than being them.
-    /// </summary>
-    int MeasureNested(int childStart, int count, int group) {
-        var seen = false;
-        var stopped = false;
-        var point = 0;
-        Walk(childStart, count);
-        return point;
-
-        // True once the segment is closed by the group's *next* own break point.
-        bool Walk(int start, int n) {
+        void Walk(int start, int n) {
             for (var i = 0; i < n; i++) {
                 var child = _children[start + i];
                 if (IsOwnBreakPoint(child, group)) {
-                    if (seen) {
-                        return true;
-                    }
-
-                    seen = true;
-                    continue;
-                }
-
-                if (!seen) {
-                    ref var node = ref _nodes[child];
-                    if (node.Count > 0 && Walk(node.Payload, node.Count)) {
-                        return true;
+                    Flush();
+                    current = child;
+                    flat = 0;
+                    point = 0;
+                    pointStopped = false;
+                    if (first < 0) {
+                        first = child;
                     }
 
                     continue;
                 }
 
-                if (stopped) {
+                // ⚠ A container is spliced rather than measured, because a group's own break points
+                // are not always its direct children: a group that spends a continuation level opens
+                // the indent scope *inside* itself, so every one of its points is a grandchild.
+                // Measuring the container as one child leaves both numbers below at zero for the
+                // whole `=` family and for every delimited list that spends a level — which makes a
+                // fill never break and the ordering rule's second question answer "yes"
+                // unconditionally.
+                // ⚠ `IfBroken` is not spliced: its flat width is one branch's rather than the sum,
+                // so splicing it would count both.
+                ref var node = ref _nodes[child];
+                if (node.Count > 0 && node.Kind is DocKind.Concat or DocKind.Group or DocKind.Indent or DocKind.Fill) {
+                    Walk(node.Payload, node.Count);
                     continue;
                 }
 
-                point = point >= Document.Unbounded || _pointWidth[child] >= Document.Unbounded
+                // ⚠ A break the rules require ends the segment rather than making it infinite. A
+                // list pattern whose items the author pinned one per line has hard lines between
+                // the fill's own points, and measuring one of those as "infinitely wide" makes the
+                // fill point in front of it break — so a byte array written eight per line came back
+                // seven and one.
+                if (node.Kind == DocKind.Line && _flatWidth[child] >= Document.Unbounded) {
+                    Flush();
+                    current = -1;
+                    continue;
+                }
+
+                if (current < 0) {
+                    continue;
+                }
+
+                flat = flat >= Document.Unbounded || _flatWidth[child] >= Document.Unbounded
                     ? Document.Unbounded
-                    : point + _pointWidth[child];
-                stopped = _breaks[child];
-            }
+                    : flat + _flatWidth[child];
 
-            return false;
+                if (!pointStopped) {
+                    point += _pointWidth[child];
+                    pointStopped = _breaks[child];
+                }
+            }
         }
     }
 

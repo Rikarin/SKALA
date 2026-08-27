@@ -58,20 +58,19 @@ public static class MarginSweep {
             prefix.Length + suffix.Length + 1
         );
 
-    static List<Shape> Shapes() =>
-        [
-            Padded("object-initializer", "new Employee { Name = \"", "\" }"),
-            Padded("base64-literal", "Convert.FromBase64String(\"", "\")"),
-            Padded("call-identifier", "TestFixtureBase.HexToBytes(", ")"),
-            Padded("cast-call", "(JsonObjectContract)resolver.ResolveContract(typeof(", "))"),
-            Padded("generic-call", "JsonConvert.DeserializeObject<Thing>(", ")"),
-            Padded("collection-expression", "[1, 2, 3, ", "]"),
-            Padded("array-initializer", "new[] { 1, 2, 3, ", " }"),
-            Padded("binary-chain", "alpha + beta + ", ""),
-            Padded("ternary", "flag ? alpha : ", ""),
-            Padded("lambda-argument", "Assert.Throws<ParseException>(() => Read(", "))"),
-            Padded("member-chain", "source.Where(Keep).Select(Project).OrderBy(", ").ToArray()")
-        ];
+    static List<Shape> Shapes() => [
+        Padded("object-initializer", "new Employee { Name = \"", "\" }"),
+        Padded("base64-literal", "Convert.FromBase64String(\"", "\")"),
+        Padded("call-identifier", "TestFixtureBase.HexToBytes(", ")"),
+        Padded("cast-call", "(JsonObjectContract)resolver.ResolveContract(typeof(", "))"),
+        Padded("generic-call", "JsonConvert.DeserializeObject<Thing>(", ")"),
+        Padded("collection-expression", "[1, 2, 3, ", "]"),
+        Padded("array-initializer", "new[] { 1, 2, 3, ", " }"),
+        Padded("binary-chain", "alpha + beta + ", ""),
+        Padded("ternary", "flag ? alpha : ", ""),
+        Padded("lambda-argument", "Assert.Throws<ParseException>(() => Read(", "))"),
+        Padded("member-chain", "source.Where(Keep).Select(Project).OrderBy(", ").ToArray()")
+    ];
 
     public static string Run(OracleRunner runner, string editorConfig, TextWriter log) {
         var builder = new StringBuilder();

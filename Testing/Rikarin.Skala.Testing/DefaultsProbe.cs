@@ -212,8 +212,9 @@ public static class DefaultsProbe {
         return candidates;
     }
 
-    static List<CorpusFile> FixturesOf(List<Candidate> candidates) =>
-        [.. candidates.Select(static c => c.Fixture).DistinctBy(static f => f.Path, StringComparer.Ordinal)];
+    static List<CorpusFile> FixturesOf(List<Candidate> candidates) => [
+        .. candidates.Select(static c => c.Fixture).DistinctBy(static f => f.Path, StringComparer.Ordinal)
+    ];
 
     /// <summary>
     /// The values a probe round may assign.

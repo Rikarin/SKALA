@@ -156,7 +156,8 @@ public sealed class OptionRegistryTests {
         Assert.DoesNotContain(OptionRegistry.All, static i => i.Tier is OptionTier.D && i.Oracle is { Length: > 0 });
 
         string[] permanentlyIgnored = [
-            "resharper_old_engine", "resharper_use_old_engine", "resharper_autodetect_indent_settings", "resharper_apply_auto_detected_rules",
+            "resharper_old_engine", "resharper_use_old_engine", "resharper_autodetect_indent_settings",
+            "resharper_apply_auto_detected_rules",
             "resharper_use_indent_from_vs", "resharper_show_autodetect_configure_formatting_tip"
         ];
 

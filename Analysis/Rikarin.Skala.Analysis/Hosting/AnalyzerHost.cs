@@ -41,7 +41,8 @@ public sealed record AnalysisOutcome(
 public static class AnalyzerHost {
     /// <summary>Skala's own analyzers. One instance set, reused across compilations (ADR-006).</summary>
     public static ImmutableArray<DiagnosticAnalyzer> Own { get; } = [
-        new FileScopedNamespaceAnalyzer(), new NullPatternAnalyzer(), new ThrowIfNullAnalyzer(), new NullCoalescingAssignmentAnalyzer(),
+        new FileScopedNamespaceAnalyzer(), new NullPatternAnalyzer(), new ThrowIfNullAnalyzer(),
+        new NullCoalescingAssignmentAnalyzer(),
         new CountPropertyAnalyzer(), new EnumGetValuesAnalyzer()
     ];
 

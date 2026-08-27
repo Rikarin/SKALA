@@ -1411,7 +1411,14 @@ public sealed class BreakPlan {
             group,
             GroupMode.Preserve,
             new GroupFacts(
-                SourceBroken: BreaksBefore(target),
+                // ⚠ Same exception as the `=`'s, and measured the same way: a collection expression
+                // opens with a delimiter of its own, so the arrow's break and the bracket's are
+                // alternatives rather than a pair. `TheoryData<string> Corpus =>\n[…]` comes back
+                // from the oracle as `Corpus => [` when the bracket has to chop, and
+                // `Vector4[] Planes(…) =>\n    [a, b, c];` keeps the arrow's break when it does not.
+                // Leaving both to the ordering rule is what produces the pair.
+                SourceBroken: BreaksBefore(target) && node.Expression is not CollectionExpressionSyntax,
+                PrefersOuterBreak: node.Expression is CollectionExpressionSyntax,
                 BreaksWithOwner: ownerGroup >= 0,
                 Owner: ownerGroup,
                 // keep_existing_expr_member_arrangement = false: a break the author wrote after the

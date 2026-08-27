@@ -43,12 +43,18 @@ public static class CorpusVariants {
     /// measuring anything. Its own effect is pinned by its own fixture instead.
     /// </remarks>
     public static readonly string[] KeepExistingKeys = [
-        "resharper_csharp_keep_existing_attribute_arrangement", "resharper_csharp_keep_existing_declaration_block_arrangement",
-        "resharper_csharp_keep_existing_declaration_parens_arrangement", "resharper_csharp_keep_existing_embedded_arrangement",
-        "resharper_csharp_keep_existing_embedded_block_arrangement", "resharper_csharp_keep_existing_enum_arrangement", "resharper_csharp_keep_existing_expr_member_arrangement",
-        "resharper_csharp_keep_existing_invocation_parens_arrangement", "resharper_csharp_keep_existing_list_patterns_arrangement",
-        "resharper_csharp_keep_existing_primary_constructor_declaration_parens_arrangement", "resharper_csharp_keep_existing_property_patterns_arrangement",
-        "resharper_csharp_keep_existing_switch_expression_arrangement", "resharper_keep_existing_lambda_and_anonymous_function_parens_arrangement",
+        "resharper_csharp_keep_existing_attribute_arrangement",
+        "resharper_csharp_keep_existing_declaration_block_arrangement",
+        "resharper_csharp_keep_existing_declaration_parens_arrangement",
+        "resharper_csharp_keep_existing_embedded_arrangement",
+        "resharper_csharp_keep_existing_embedded_block_arrangement", "resharper_csharp_keep_existing_enum_arrangement",
+        "resharper_csharp_keep_existing_expr_member_arrangement",
+        "resharper_csharp_keep_existing_invocation_parens_arrangement",
+        "resharper_csharp_keep_existing_list_patterns_arrangement",
+        "resharper_csharp_keep_existing_primary_constructor_declaration_parens_arrangement",
+        "resharper_csharp_keep_existing_property_patterns_arrangement",
+        "resharper_csharp_keep_existing_switch_expression_arrangement",
+        "resharper_keep_existing_lambda_and_anonymous_function_parens_arrangement",
         "resharper_keep_existing_line_break_before_declaration_body"
     ];
 
@@ -57,11 +63,13 @@ public static class CorpusVariants {
 
     /// <summary>docs/plan/05 § "keep_existing_*": all four combinations, named as they read.</summary>
     public static IReadOnlyList<CorpusVariant> Preservation { get; } = [
-        Variant("keep-keep", keepUserLinebreaks: true, keepExisting: true), Variant(
+        Variant("keep-keep", keepUserLinebreaks: true, keepExisting: true),
+        Variant(
             "keep-rearrange",
             keepUserLinebreaks: true,
             keepExisting: false
-        ), Variant("reflow-keep", keepUserLinebreaks: false, keepExisting: true), Variant(
+        ), Variant("reflow-keep", keepUserLinebreaks: false, keepExisting: true),
+        Variant(
             "reflow-rearrange",
             keepUserLinebreaks: false,
             keepExisting: false

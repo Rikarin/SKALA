@@ -11,8 +11,11 @@ using Rikarin.Skala.Testing;
 //                     disagrees is a tautology (docs/plan/12 § "The oracle").
 //   fidelity [set…]   print the differential report without failing anything, which is the work
 //                     queue the divergence classes rank.
-//   dump <set> <dir>  write Skala's output and the oracle's side by side, so a class named in the
-//                     report can be read as a diff rather than as two sample lines.
+//   dump <set> <dir> [defined]
+//                     write Skala's output and the oracle's side by side, so a class named in the
+//                     report can be read as a diff rather than as two sample lines. `defined`
+//                     supplies the oracle's own preprocessor symbols, which is the run the
+//                     conformance bar is read against.
 //   variants [set…]   the differential number for each alternative configuration a set is run
 //                     under — docs/plan/05's four-way keep_existing_* table.
 //   constructs [set]  every divergent line attributed to the construct that owns it, beside how
@@ -53,7 +56,7 @@ switch (args[0]) {
     case "fidelity":
         return Report(sets);
     case "dump":
-        return Dump(args[1], args[2]);
+        return Dump(args[1], args[2], args.Length > 3 && args[3] == "defined");
     case "variants":
         return Variants(sets);
     case "probe":
@@ -373,12 +376,13 @@ static void Sample(string label, IReadOnlyList<Divergence> entries) {
 // `dump <set> <dir>`: write Skala's output and the oracle's side by side, so that a divergence
 // class named in the report can be read as a diff rather than as two sample lines. A developer
 // action like `fidelity`, never part of a test run.
-static int Dump(string set, string directory) {
+static int Dump(string set, string directory, bool defined) {
     Directory.CreateDirectory(directory);
+    var symbols = defined ? Symbols() : [];
     foreach (var file in Corpus.Files(set).Where(static file => file.HasFixture)) {
         var name = file.RelativePath.Replace('/', '_');
         var text = CSharpFormatter.Read(file.Path);
-        var result = CSharpFormatter.Format(file.Path, text, Resolve(file.Path));
+        var result = CSharpFormatter.Format(file.Path, text, Resolve(file.Path), null, symbols);
         File.WriteAllText(Path.Combine(directory, name + ".skala"), TextNormalisation.Normalise(result.Formatted));
         File.WriteAllText(
             Path.Combine(directory, name + ".oracle"),

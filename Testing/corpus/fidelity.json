@@ -1,8 +1,8 @@
 {
   "real": {
-    "LineFidelity": 0.9945,
-    "FileFidelity": 0.8132,
-    "Milestone": "M3.1, no symbols. With the oracle's own 18 symbols supplied it is 0.9952/0.8184; ./build.sh Fidelity reports both. The ratchet is the without-symbols number because that is what `skala format` does with no project."
+    "LineFidelity": 0.9952,
+    "FileFidelity": 0.8237,
+    "Milestone": "M3.1, no symbols. With the oracle's own 18 symbols supplied it is 0.9959/0.8289; ./build.sh Fidelity reports both. The ratchet is the without-symbols number because that is what `skala format` does with no project."
   },
   "constructs": {
     "LineFidelity": 0.9659,

@@ -31,7 +31,8 @@ namespace Rikarin.Skala.Analysis.Loading;
 public static class BinlogLoader {
     /// <summary>Where a binlog is looked for when none is named.</summary>
     public static readonly string[] Conventions = [
-        Path.Combine("artifacts", "skala.binlog"), Path.Combine("artifacts", "build.binlog"), Path.Combine(
+        Path.Combine("artifacts", "skala.binlog"), Path.Combine("artifacts", "build.binlog"),
+        Path.Combine(
             "artifacts",
             "msbuild.binlog"
         ), "msbuild.binlog", "build.binlog"
