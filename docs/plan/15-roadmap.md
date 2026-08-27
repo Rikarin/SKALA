@@ -458,7 +458,7 @@ was removed and every subsequent run used `--no-cache --output ""`.
 
 **Release 0.8.**
 
-## M7 — Hardening · M
+## M7 — Hardening · M — ✅
 
 - `SK4xxx` performance, `SK6xxx` design, `SK8xxx` tests.
 - NativeAOT client, ReadyToRun daemon, the startup budget met end to end.
@@ -468,8 +468,54 @@ was removed and every subsequent run used `--no-cache --output ""`.
 **Done when:** every budget in [13](13-performance.md) is met and asserted, and the tool has been
 adopted by three of the author's repositories beyond Vixen.
 
+| | |
+|---|---|
+| The warm single-file budget | ✅ **8.65 ms against 40 ms.** The NativeAOT client starts in 4.85 ms; the full tool starts in 79.5 ms, which was the entire old warm number. [13](13-performance.md) § "M7: the warm single-file row, met" has the table |
+| Budgets asserted in CI | ✅ Three rows, doc 12's 20 % band, own job, own runner: cold 170 ms/250, warm 48 ms less a 10 ms harness floor/40, daemon RSS 160 MB/1.5 GB |
+| Rules shipped | ⚠ **three** — `SK4010`, `SK6003`, `SK8005` — of the twenty-three `SK4xxx`/`SK6xxx`/`SK8xxx` name. 10 positive / 27 negative fixtures. [08](08-rule-catalogue.md) § "What M7 added" says which were cut and why |
+| False positives | ✅ **zero**. 26 findings across both trees, every one read: `SK6003` 1 on `corpus/real`, `SK8005` 25 on Vixen, `SK4010` 0 on both |
+| Cross-platform matrix | ✅ macOS, Linux, Windows, `fail-fast: false`, whole suite on each. Plus `lint` and `performance` jobs that CI was running nowhere |
+| Windows hazards | ✅ five of five have tests. Two were real bugs: the cache key hashed the path's raw bytes, and the named-pipe transport did not exist |
+| Memory policy | ✅ byte-capped LRU, ≤ 4 compilations, drop-then-exit. All three were absent |
+| Vulnerabilities | ✅ 8 → 0. `NuGetAudit` at level `low`, NU1901–NU1904 as errors, `_build` included |
+| Tests | ✅ **9 787 green**, 0 failing, up from 5 402. Build clean under `TreatWarningsAsErrors` |
+
+⚠ **Five things measurement contradicted, and one of them invalidates an M6 number.**
+
+1. ⚠ **`verify` is not slower on a clean tree than on a dirty one.** The report of 0.89–1.34 s clean
+   against 0.55–0.62 s with findings does not reproduce in four beds. Clean and dirty are within
+   noise of each other; the variable is the cache, and the two ranges are a cold run and a warm one
+   compared to each other. [13](13-performance.md) has the table. There is no backwards fast path.
+2. ⚠ **M6's Vixen rule counts are floors, not counts.** Vixen builds with `ImplicitUsings`, and a
+   loose compilation has no generated `GlobalUsings.g.cs`, so `Thread`, `Task` and `List<T>` are
+   unresolved in every file that never writes the `using` — 195 724 errors, and every semantic rule
+   answering "no finding" for the wrong reason. With a stand-in global-usings file the tree falls to
+   128 833 errors and **`SK3002` goes from 7 to 44.** M6 called its 7 "every one read, all seven
+   true"; that remains so, and it was 16 % of the population.
+3. ⚠ **The daemon could not start in a deeply nested repository at all**, and failed with an
+   unhandled exception and exit code 0 — a Unix socket path is capped at 104 bytes.
+4. ⚠ **Three path filters in three test classes were written against absolute paths** and therefore
+   tested the wrong tree, no tree, or another branch's tree when run from an agent worktree. One of
+   them was `ToolDiagnosticIdTests`, which is the guard ADR-012 rests on: it was passing without
+   reading the files under test. Verified fixed by mutation rather than by going green.
+5. ⚠ **`end_of_line = lf` is inert on its own.** The option that converts line endings is
+   `resharper_enforce_line_ending_style`, which is false by default. A test written from doc 12's
+   headline alone asserts the wrong thing.
+
+⚠ **What is *not* done, against the stated bar.** "Adopted by three of the author's repositories
+beyond Vixen" has not happened and could not be: this milestone was again read-only against Vixen,
+and installing anything in three other repositories is a change to those repositories.
+`git status` in `/Users/jiu/Projects/Vixen` is byte-for-byte what it was before the milestone
+started. The fuzzing job runs the property suite — 8 981 cases over the corpus under both symbol
+sets — but there is **no fuzzer**: no seeded mutation driver, no weighted grammar, no
+delta-debugging minimiser into `corpus/pathological/`. The workflow says so in its own header rather
+than implying otherwise by existing.
+
 **Release 1.0** — at which point rule IDs, option behaviour, exit codes and the SARIF shape are
-compatibility surfaces (ADR-012).
+compatibility surfaces (ADR-012). The two tests that hold that line are `RuleCatalogTests`
+(`RuleIds_AreAppendOnly`, `EveryCatalogueRule_IsRecordedAsAllocated`) and `ToolDiagnosticIdTests`
+(`ToolDiagnosticIds_AreDeclaredOnce`, `…_AreInTheRegister`). Both now read the tree they are run
+against, which the second did not before.
 
 ## M8 — Security · M
 
