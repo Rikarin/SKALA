@@ -51,6 +51,22 @@ a full run that found little to do.
 performs it and Skala's default does not; the gate costs a measured 4.02 points of changed-span
 agreement (SK-DIV-0014), which is the price of the caution rather than a hidden disagreement.
 
+⚠ **`--verbose` is not implemented on `check`, and the way it fails is worse than not being there.**
+`check` takes `<paths>` as a variadic argument, so an unrecognised flag is bound as a *path*:
+`skala check --load loose --verbose` in a clean repository reports
+`SK9023: no C# files were found under the requested paths` and exits 4, and
+`skala check --load loose --verbose src` quietly analyses `src` while ignoring the flag. The same
+holds for any typo'd option and for `skala check no-such-directory`, which is exit 4 rather than a
+message naming the path that does not exist. Found by running the installed tool, not by reading the
+parser. Two separate fixes are wanted — a global `--verbose` that exists, and an argument binder that
+rejects a token beginning with `-` — and neither is in this milestone.
+
+⚠ **What exists after M5**, because a command surface that lists intent as if it were behaviour is a
+surface nobody can trust: `format`, `check`, `verify`, `fix`, `explain`, `rules`, `config`, `cache`,
+`mcp`, `lsp`, `daemon` and `hooks`. Still intent: `arrange` (M4), `baseline`, `report`, `trend` and
+every `--since`/`--baseline` flag (M6). `--jobs` and `--no-daemon` remain `format`-only; `--no-cache`
+is now on `check`, `verify` and `format`.
+
 ⚠ **`--define` is on `format`, not only on `check`.** SK-DIV-0004 is a *formatting* limitation —
 without symbols Roslyn hands back every `#if DEBUG` body as disabled text and the formatter correctly
 refuses to touch it — so the symbols have to reach the formatter, and `--load` on `format` is the
@@ -141,7 +157,7 @@ mechanism the IDE already has (ADR-006).
 
 ## MSBuild
 
-`Rikarin.Skala.MSBuild` adds a target that runs after `Build`:
+✅ **Built.** `Rikarin.Skala.MSBuild` adds one target that runs after `Build`:
 
 ```xml
 <PropertyGroup>
@@ -158,6 +174,63 @@ formatting verification only, which is seconds.
 
 The analyzer package (`Rikarin.Skala.Rules`) is the *other* half and it does run in every build,
 because that is what analyzers are for and the compiler already pays for the tree walk.
+
+### The knobs, and what each is for
+
+| Property | Default | What it does |
+|---|---|---|
+| `SkalaEnabled` | `true` | The master switch. `false` and the target never runs. |
+| `SkalaMode` | `off` | `off` runs `format --check`; `check` runs `skala check --gate`; `format` rewrites files. |
+| `SkalaGate` | `ci` under CI, else `local` | Which gate `check` evaluates. |
+| `SkalaTreatFindingsAsErrors` | `false` | Whether a finding fails the build. |
+| `SkalaPaths` | `$(MSBuildProjectDirectory)` | What to run over. |
+| `SkalaArguments` | — | Appended verbatim, so a new CLI flag needs no new property. |
+| `SkalaToolPath` | — | An explicit path to `skala`, which is what a self-contained CI image sets. |
+| `SkalaRequireTool` | `false` | Whether an absent tool is an error rather than a warning. |
+| `SkalaSarifOutput` | — | `--output` for `check`. |
+
+⚠ **Per project, not per repository, and it removes a problem rather than accepting one.** The target
+runs over `$(MSBuildProjectDirectory)`. One repository-wide run coordinated to happen once per build
+was considered: MSBuild has no per-build hook, so "once" has to be faked with a marker file or with a
+task holding `RegisteredTaskObjectLifetime.Build` state, and both are wrong under a non-incremental
+build, under multi-targeting, and under two solutions built in one process. Per-project needs no
+coordination and puts the diagnostic on the project that owns the file. ⚠ Do not point `SkalaPaths`
+at the `.csproj`: `FormatCommand.Collect` treats an existing file as a file to format and would hand
+the formatter an XML document.
+
+⚠ **There is no MSBuild task.** [02](02-repository-layout.md) § "Package boundaries" has the
+reasoning; the short form is that everything a task would do is start `skala` and read an exit code,
+which `Exec` already does, and the first line of this document says the CLI is the contract.
+
+⚠ **No `SK` id is emitted from MSBuild.** The `SK9000` register is in [08](08-rule-catalogue.md) and
+ADR-012 makes every entry permanent. The tool that finds the problem prints its own ids; a
+second, MSBuild-side numbering of "the tool said no" would be an id with no rule behind it.
+
+### Four things that had to be measured
+
+The target reads exit codes, and three of the four ways of getting that wrong are silent.
+
+1. ⚠ **`ContinueOnError` alone is not enough — `IgnoreExitCode` is what hands over the code.** With
+   `ContinueOnError` the build continues, but the task has *failed*, and MSBuild does not gather the
+   output parameters of a failed task. `_SkalaExit` came back empty, every comparison was an empty
+   string against an empty string, and a tree that merely needed formatting was reported as
+   "could not complete (exit )".
+2. ⚠ **`CallTarget` cannot see properties the calling target set.** It builds the project again
+   rather than continuing the current execution. Sharing one exit-code ladder between three modes
+   that way printed "Skala: ." The modes are mutually exclusive, so it is one target now.
+3. ⚠ **"The tool is missing" cannot be read from the exit code alone.** A missing executable is 127
+   under `sh` and 9009 under `cmd`, but an *unrestored tool manifest* makes `dotnet tool run skala`
+   exit **1** — the same code `format --check` uses for "this file needs formatting". Detection also
+   reads the console output.
+4. ⚠ **The tool manifest is not always in `.config/`.** Measured on SDK 10.0.400,
+   `dotnet new tool-manifest` wrote `dotnet-tools.json` into the repository root and created no
+   `.config/` at all. Resolution looks in both places, `.config/` first.
+
+And one that is not about exit codes: an **absent tool is a warning, never an error**, unless
+`SkalaRequireTool=true`. This package is imported by a `Directory.Build.props` that every project
+inherits, including on a machine that has just cloned the repository and not run
+`dotnet tool restore`. Failing there means the first thing Skala does to a new contributor is break
+`dotnet build`, and the second is get removed.
 
 ## Git hooks
 
@@ -235,11 +308,81 @@ Steps 4 and 6 are the two that make adoption survivable on a 1.35 M-line tree, a
 |---|---|
 | `dotnet tool install -g Rikarin.Skala.Cli` | the tool |
 | `dotnet tool install` in a local manifest | pinned per repository — ⚠ the recommended form, because a formatter whose version drifts between developers reformats the tree back and forth |
+| `PackageReference Rikarin.Skala.Sdk` | ⚠ **the one-line adoption**: the three below, together |
 | `PackageReference Rikarin.Skala.Rules` | analyzers in build and IDE |
 | `PackageReference Rikarin.Skala.MSBuild` | the build target |
 | `PackageReference Rikarin.Skala.Canonical` | the canonical `.editorconfig`, and a 5 ms build-time check that the repository is on it |
-| GitHub Releases | standalone NativeAOT binaries per RID, for CI images and hooks |
-| GitHub Action | a thin wrapper that installs the pinned version and runs it |
+| GitHub Releases | standalone NativeAOT binaries per RID, for CI images and hooks — `./build.sh Native` |
+| GitHub Action | a thin wrapper that installs the pinned version and runs it — ⚠ not built |
 
 Version pinning is a correctness feature here, not a preference. Two Skala versions with different
 formatting behaviour on one repository is a merge conflict generator.
+
+### The tool package ships both binaries
+
+⚠ **A `dotnet tool` package carries the NativeAOT client as its command and the full tool beside
+it**, and the adjacency is not a convenience — it is how `Fallback.Locate` finds the tool
+([13](13-performance.md) § "Startup"). A package with only the client is a package where every
+command that is not a warm single-file format exits 5, and a package with only the tool throws away
+M7's whole startup result for everyone who installs from NuGet, which is most people.
+
+```
+tools/any/osx-arm64/
+├── DotnetToolSettings.xml     <Command Name="skala" EntryPoint="skala" Runner="executable" />
+├── skala                      2.9 MB, NativeAOT — the command
+├── skala-tool                 the apphost
+├── skala-tool.dll             …and the framework-dependent tool behind it
+└── (73 more files)            Roslyn, MSBuild, SARIF, the build hosts
+```
+
+Three measurements this arrangement rests on, all on SDK 10.0.400, macOS, `osx-arm64`:
+
+1. ⚠ **`Runner="executable"` exists.** `dotnet pack` on a project with `PublishAot` and a
+   `RuntimeIdentifier` emits `tools/any/<rid>/` and a settings file naming the native binary
+   directly. Before .NET 10 a tool command could only be a managed assembly run through the muxer,
+   and the CLI's `.csproj` said so.
+2. ⚠ **`Environment.ProcessPath` resolves the install symlink.** `dotnet tool install` puts a symlink
+   in `~/.dotnet/tools/`; the process reports
+   `~/.dotnet/tools/.store/rikarin.skala.cli/1.0.0/…/tools/any/osx-arm64/skala`. Had it reported the
+   symlink, "beside my own executable" would have been `~/.dotnet/tools/`, where `skala-tool` is not,
+   and the fallback would have failed for every installed user while working perfectly in the
+   repository. Verified on a probe package before anything was built on it.
+3. ⚠ **The daemon it starts is the packaged one.** In a repository with no Skala checkout anywhere
+   near it, `ps` shows
+   `~/.dotnet/tools/.store/rikarin.skala.cli/1.0.0/…/tools/any/osx-arm64/skala-tool daemon run`.
+   That is the difference between a package that works and a package that works on the author's
+   machine because the repository is beside it.
+
+Consequences worth stating. The package is **RID-specific**, so `./build.sh Pack` defaults to the
+host's RID and takes `--rids` for a matrix; packing more than one also emits a RID-agnostic wrapper
+package listing per-RID package ids, and publishing that wrapper without every package it names is an
+install that fails on whichever platform is missing. And the package is **33 MB**, because Roslyn is
+22 MB of it. Two things that were in it and are not: the client's 13 MB `.dSYM` bundle, which
+`PackTool`'s publish glob collects and which nothing in a tool install can read, and 6.6 MB of
+localised Roslyn resources, which `InvariantGlobalization` does not suppress on its own —
+`SatelliteResourceLanguages` does.
+
+### Verified by installing it
+
+The measurements above come from a run that installed the packages from a local feed into a fresh
+`git init` and used them. Reproducing it is `./build.sh Pack`, then, against
+`artifacts/packages` as a source: `dotnet tool install`, `skala config sync --apply`,
+`skala format`, `skala check --load loose`, `skala verify`, `skala explain SK1010`,
+`PackageReference Rikarin.Skala.Sdk` and `dotnet build`, and `dotnet tool uninstall`.
+
+Numbers from it, reference machine, 50 runs in a shell loop divided by N, spawn floor 4.9 ms
+measured the same way:
+
+| | measured |
+|---|---:|
+| warm single-file `format --check`, installed tool, shallow repository | **8.04 ms** |
+| the same, in a repository nested 127 characters deep | **13.05 ms** |
+| the tool package, installed on disk | 153 MB |
+| left behind after `dotnet tool uninstall` | nothing |
+
+⚠ The deep-path row is the interesting one, and it is [13](13-performance.md) § "Startup"'s defect
+asserted through the shipped artefact rather than the build tree: a Unix socket path caps at 104
+bytes, `<repo>/.skala/daemon.sock` exceeds it past about eighty-five characters, and the daemon used
+to die of an unhandled exception *with exit code 0* while every later format silently took the cold
+path. In the packaged tool the socket moves to `$TMPDIR/skala-<hash>.sock`, `skala daemon run` in the
+127-character repository stays up, and its hit counter accounts for all 50 warm runs.

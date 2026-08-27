@@ -16,16 +16,22 @@
       silently overwrote this project's in the published layout, and the tool's apphost then failed
       to start.
 
-      ⚠ `ToolCommandName` stays `skala`. The `dotnet tool install` distribution ships this project
-      alone under the name people already type; NativeAOT cannot be packed as a dotnet tool, so the
-      client is a standalone-binary concern (doc 11 § "Distribution": "GitHub Releases | standalone
-      NativeAOT binaries per RID"). A global-tool install therefore has the old startup cost and the
-      old behaviour, which is correct — it has no client beside it to find.
+      ⚠ **This project is no longer the tool package; it is the payload inside it.** Until this
+      milestone the comment here read "NativeAOT cannot be packed as a dotnet tool, so the client is
+      a standalone-binary concern … a global-tool install therefore has the old startup cost and the
+      old behaviour, which is correct — it has no client beside it to find." The first clause stopped
+      being true in .NET 10, which supports `Runner="executable"` for a RID-specific tool package
+      (measured on SDK 10.0.400), and the second was only ever correct *because* of the first: a
+      global install with the old 79.5 ms startup is not "correct", it is the budget doc 13 spent a
+      milestone meeting being thrown away by the distribution channel most people use.
+
+      `Rikarin.Skala.Cli` is now produced by Tools/Rikarin.Skala.Client — the tool command has to be
+      the AOT binary, and only the project that builds a binary can declare it as an entry point.
+      This project is published into that package as `skala-tool`, beside the client, which is the
+      adjacency `Fallback.Locate` looks for. See the Client .csproj for the whole arrangement.
     -->
     <AssemblyName>skala-tool</AssemblyName>
-    <PackAsTool>true</PackAsTool>
-    <ToolCommandName>skala</ToolCommandName>
-    <PackageId>Rikarin.Skala.Cli</PackageId>
+    <IsPackable>false</IsPackable>
 
     <!--
       Measured, not assumed. `format check` over Vixen (4 708 files) with the workstation GC and
@@ -47,6 +53,14 @@
     -->
     <PublishReadyToRun Condition="'$(RuntimeIdentifier)' != ''">true</PublishReadyToRun>
     <PublishReadyToRunComposite Condition="'$(RuntimeIdentifier)' != ''">false</PublishReadyToRunComposite>
+
+    <!--
+      ⚠ English only, which is not a decision about users: `InvariantGlobalization` is already true
+      above, so the localised Roslyn and System.CommandLine resources are 6.6 MB of assemblies this
+      process will never load. Measured on the tool package: 148 files and 38 256 614 bytes before,
+      79 files and 32 929 798 bytes after — this and dropping the client's `.dSYM` together.
+    -->
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
   </PropertyGroup>
 
   <ItemGroup>

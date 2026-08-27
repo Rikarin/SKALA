@@ -18,6 +18,17 @@
   -->
 
   <PropertyGroup>
+    <!--
+      ⚠ netstandard2.0, and it is a compatibility declaration rather than a build target: the
+      assembly is not in the package. The dependency group's framework is what a consumer's restore
+      matches against, so a `net10.0` group would refuse this package to a net8.0 or netstandard2.0
+      project — and every project in a repository has one .editorconfig, including the old ones.
+      It is also what lets `Rikarin.Skala.Sdk` reference it without pinning the meta package to
+      net10.0 as well.
+    -->
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <ImplicitUsings>disable</ImplicitUsings>
+
     <IsPackable>true</IsPackable>
     <PackageId>Rikarin.Skala.Canonical</PackageId>
     <Description>The canonical .editorconfig shared across Rikarin repositories. Installed by `skala config sync`; verified by `skala config diff --canonical`.</Description>
@@ -41,5 +52,23 @@
     <None Include="build/Rikarin.Skala.Canonical.targets" Pack="true" PackagePath="build/" />
     <None Include="buildTransitive/Rikarin.Skala.Canonical.targets" Pack="true" PackagePath="buildTransitive/" />
   </ItemGroup>
+
+  <!--
+    ⚠ The two .targets are copied into the package verbatim and are never parsed by this build, so
+    nothing in them can be wrong until it is wrong on somebody else's machine — which happened to
+    the MSBuild package's .props, as MSB4024 on the first build of the first repository that
+    referenced it. This file's own header already notes that an XML comment cannot contain a double
+    hyphen; the note is what a person remembers and this is what the build checks. XmlPeek fails on
+    malformed XML, so asking it for the root element is a parse.
+  -->
+  <ItemGroup>
+    <SkalaPackagedMSBuildFile Include="build/Rikarin.Skala.Canonical.targets" />
+    <SkalaPackagedMSBuildFile Include="buildTransitive/Rikarin.Skala.Canonical.targets" />
+  </ItemGroup>
+
+  <Target Name="SkalaValidatePackagedMSBuildFiles" BeforeTargets="Build" Inputs="@(SkalaPackagedMSBuildFile)" Outputs="$(IntermediateOutputPath)msbuild-files-parse.stamp">
+    <XmlPeek XmlInputPath="%(SkalaPackagedMSBuildFile.Identity)" Query="/Project" />
+    <Touch Files="$(IntermediateOutputPath)msbuild-files-parse.stamp" AlwaysCreate="true" />
+  </Target>
 
 </Project>

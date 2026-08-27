@@ -1,0 +1,74 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    The build integration, packaged. docs/plan/11-cli-and-integrations.md § "MSBuild".
+
+    ⚠ Logic only: `build/` for a direct reference, `buildTransitive/` so that a project which only
+    references a project that references this package is covered too. There is no task assembly and
+    no build output — see the targets file's header for why, and docs/plan/02 § "Package boundaries".
+
+    ⚠ It does **not** depend on Rikarin.Skala.Cli. A `PackageReference` cannot install a .NET tool,
+    and a package that silently arranged for one to be downloaded would defeat the version pinning
+    doc 11 § "Distribution" calls a correctness feature. The targets resolve the tool from
+    `SkalaToolPath`, then a local manifest, then PATH, and say so when they find none.
+  -->
+
+  <PropertyGroup>
+    <!--
+      ⚠ netstandard2.0, and it is a compatibility declaration rather than a build target: there is
+      no build output in this package. `build/` assets apply to any framework, but a `net10.0`
+      dependency group would still make the package look framework-specific to a restore in a
+      net8.0 or netstandard2.0 project, which real repositories still contain.
+    -->
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <ImplicitUsings>disable</ImplicitUsings>
+
+    <IsPackable>true</IsPackable>
+    <PackageId>Rikarin.Skala.MSBuild</PackageId>
+    <Description>Runs `skala format --check` after Build, and `skala check` when SkalaMode=check. Off in the inner loop for analysis by default: a build tool that triples build time gets disabled permanently.</Description>
+    <PackageTags>msbuild;formatting;analyzers;skala</PackageTags>
+
+    <!--
+      ⚠ A build-only package, and the flags that make it one. DevelopmentDependency keeps it out of
+      a consumer's own .nuspec — this is a tool in the build, not part of anyone's shipped surface.
+    -->
+    <IncludeBuildOutput>false</IncludeBuildOutput>
+    <SuppressDependenciesWhenPacking>true</SuppressDependenciesWhenPacking>
+    <DevelopmentDependency>true</DevelopmentDependency>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <NoWarn>$(NoWarn);NU5128</NoWarn>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="PackageMarker.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <SkalaPackagedMSBuildFile Include="build/Rikarin.Skala.MSBuild.props" PackagePath="build/" />
+    <SkalaPackagedMSBuildFile Include="build/Rikarin.Skala.MSBuild.targets" PackagePath="build/" />
+    <SkalaPackagedMSBuildFile Include="buildTransitive/Rikarin.Skala.MSBuild.props" PackagePath="buildTransitive/" />
+    <SkalaPackagedMSBuildFile Include="buildTransitive/Rikarin.Skala.MSBuild.targets" PackagePath="buildTransitive/" />
+
+    <None Include="@(SkalaPackagedMSBuildFile)" Pack="true" PackagePath="%(PackagePath)" />
+  </ItemGroup>
+
+  <!--
+    ⚠ These four files are copied into the package verbatim and are never parsed by this build, so
+    nothing here can be wrong until it is wrong on somebody else's machine. It happened: a double
+    hyphen inside an XML comment in the .props — legal in prose, illegal in XML — packed fine,
+    restored fine, and produced
+
+      error MSB4024: The imported project file … could not be loaded.
+      An XML comment cannot contain '- -', and '-' cannot be the last character.
+
+    on the first `dotnet build` of the first repository that referenced the package. XmlPeek fails
+    on malformed XML, so asking it for the root element is a parse; it costs milliseconds and it
+    fails here rather than there.
+  -->
+  <Target Name="SkalaValidatePackagedMSBuildFiles" BeforeTargets="Build" Inputs="@(SkalaPackagedMSBuildFile)" Outputs="$(IntermediateOutputPath)msbuild-files-parse.stamp">
+    <XmlPeek XmlInputPath="%(SkalaPackagedMSBuildFile.Identity)" Query="/Project" />
+    <Touch Files="$(IntermediateOutputPath)msbuild-files-parse.stamp" AlwaysCreate="true" />
+  </Target>
+
+</Project>

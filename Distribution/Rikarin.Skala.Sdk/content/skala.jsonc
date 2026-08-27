@@ -1,0 +1,44 @@
+{
+  // The starter `skala.jsonc`. Copy it to the repository root beside `.editorconfig`.
+  //
+  // docs/plan/03 § "skala.jsonc": everything about how code *looks* lives in `.editorconfig`; this
+  // file is what the tool does, and the gates it does it against. A style key here is SK9003.
+  //
+  // ⚠ Only `local` is on. `pr` and `ci` are commented out on purpose: a gate that is red on the day
+  // it is added is a gate somebody deletes, and a repository that has never run `skala check` does
+  // not yet know what its own numbers are. docs/plan/11 § "Adoption path" is the order that works —
+  // sync the config, format in one commit, take a baseline, and only then gate.
+  "gates": {
+    // What a developer runs, and what the pre-commit hook runs. Errors stop you; nothing else does.
+    "local": {
+      "maxSeverity": "error"
+    }
+
+    // Uncomment after `skala check` has been run once and its output read.
+    //
+    // ⚠ `since` scopes every condition to the lines this branch touched, so a repository with
+    // existing findings can turn this on today rather than after a cleanup that never happens
+    // (doc 09 § "New-code definition").
+    //
+    // "pr": {
+    //   "since": "origin/main",
+    //   "newIssues": 0,
+    //   "maxSeverity": "warning",
+    //   "formatting": "clean"
+    // },
+    //
+    // ⚠ Take the baseline first — `skala baseline create` — or this is red immediately.
+    // The metric thresholds below are Skala's own; measure yours before adopting them.
+    //
+    // "ci": {
+    //   "baseline": ".skala/baseline.sarif",
+    //   "newIssues": 0,
+    //   "maxSeverity": "warning",
+    //   "formatting": "clean",
+    //   "metrics": {
+    //     "duplication": 5.0,
+    //     "cognitiveComplexity": 15
+    //   }
+    // }
+  }
+}

@@ -1,0 +1,91 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    The meta package. docs/plan/02 § "Package boundaries": one `PackageReference` is the whole
+    adoption of Skala in a new repository.
+
+        PackageReference Include="Rikarin.Skala.Sdk" Version="1.0.0" PrivateAssets="all"
+
+    brings the analyzers (SK diagnostics in the build and in Rider), the build integration
+    (`format` with the check switch after Build; `check` when CI sets SkalaMode=check) and the canonical
+    `.editorconfig` carrier with its 5 ms drift check.
+
+    ⚠ It does not bring the *tool*. A `PackageReference` cannot install a .NET tool, and arranging
+    for one to be downloaded behind a repository's back would defeat the version pinning doc 11
+    § "Distribution" calls a correctness feature. `dotnet tool install` with the local switch is
+    the second line of the adoption, and it is a line a person types on purpose.
+  -->
+
+  <PropertyGroup>
+    <!--
+      ⚠ netstandard2.0, and it is a compatibility declaration rather than a build target: there is
+      no build output in this package. The dependency group's framework is what a consumer's restore
+      matches against, and a `net10.0` group would make this package unreferenceable from the
+      net8.0 and netstandard2.0 projects that a real repository still contains.
+    -->
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <ImplicitUsings>disable</ImplicitUsings>
+
+    <IsPackable>true</IsPackable>
+    <PackageId>Rikarin.Skala.Sdk</PackageId>
+    <Description>One PackageReference that adopts Skala: the SK analyzers, the MSBuild integration, and the canonical .editorconfig carrier, with starter files for a repository that has neither.</Description>
+    <PackageTags>formatting;analyzers;editorconfig;msbuild;skala</PackageTags>
+
+    <IncludeBuildOutput>false</IncludeBuildOutput>
+    <DevelopmentDependency>true</DevelopmentDependency>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <NoWarn>$(NoWarn);NU5128</NoWarn>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="PackageMarker.cs" />
+  </ItemGroup>
+
+  <!--
+    ⚠ `PrivateAssets="none"` on all three, and it is load-bearing rather than tidiness. NuGet's
+    default private set is `contentfiles;analyzers;build` — precisely the three asset kinds these
+    packages consist of. With the default, a consumer of this meta package would restore three
+    dependencies and receive nothing from any of them: no SK diagnostics, no build target, no
+    canonical check. `PrivateAssets="none"` is what removes the `exclude="Build,Analyzers"` attribute
+    from this package's own .nuspec dependencies. What it produces instead is `include="All"`, which
+    is the attribute to look for when checking that this package still works.
+
+    ⚠ `ReferenceOutputAssembly="false"` looks right here — this project compiles against none of the
+    three — and it is wrong: measured, it drops the reference from the .nuspec entirely, and the
+    dependency group comes out empty. A meta package with no dependencies installs cleanly, says
+    nothing, and does nothing, which is the failure mode hardest to notice.
+  -->
+  <ItemGroup>
+    <ProjectReference Include="../../Rules/Rikarin.Skala.Rules/Rikarin.Skala.Rules.csproj"
+                      PrivateAssets="none" />
+    <ProjectReference Include="../../Tools/Rikarin.Skala.MSBuild/Rikarin.Skala.MSBuild.csproj"
+                      PrivateAssets="none" />
+    <ProjectReference Include="../Rikarin.Skala.Canonical/Rikarin.Skala.Canonical.csproj"
+                      PrivateAssets="none" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="content/skala.editorconfig" Pack="true" PackagePath="content/" />
+    <None Include="content/skala.jsonc" Pack="true" PackagePath="content/" />
+    <None Include="build/Rikarin.Skala.Sdk.targets" Pack="true" PackagePath="build/" />
+    <None Include="buildTransitive/Rikarin.Skala.Sdk.targets" Pack="true" PackagePath="buildTransitive/" />
+  </ItemGroup>
+
+  <!--
+    ⚠ The two .targets are copied into the package verbatim and are never parsed by this build, so
+    nothing in them can be wrong until it is wrong on somebody else's machine — which happened to the
+    MSBuild package's .props, as MSB4024 on the first build of the first repository that referenced
+    it. XmlPeek fails on malformed XML, so asking it for the root element is a parse.
+  -->
+  <ItemGroup>
+    <SkalaPackagedMSBuildFile Include="build/Rikarin.Skala.Sdk.targets" />
+    <SkalaPackagedMSBuildFile Include="buildTransitive/Rikarin.Skala.Sdk.targets" />
+  </ItemGroup>
+
+  <Target Name="SkalaValidatePackagedMSBuildFiles" BeforeTargets="Build" Inputs="@(SkalaPackagedMSBuildFile)" Outputs="$(IntermediateOutputPath)msbuild-files-parse.stamp">
+    <XmlPeek XmlInputPath="%(SkalaPackagedMSBuildFile.Identity)" Query="/Project" />
+    <Touch Files="$(IntermediateOutputPath)msbuild-files-parse.stamp" AlwaysCreate="true" />
+  </Target>
+
+</Project>

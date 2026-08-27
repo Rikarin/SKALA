@@ -1,0 +1,185 @@
+<Project>
+
+  <!--
+    The build integration. docs/plan/11-cli-and-integrations.md § "MSBuild".
+
+    ⚠ There is no MSBuild *task assembly* here, and that is a decision rather than an omission.
+    A task would have to load into MSBuild's own process on three hosts (`dotnet build`, MSBuild.exe
+    under Visual Studio, and Rider's build host), which means netstandard2.0, a pinned
+    Microsoft.Build.Utilities.Core, and a load failure that breaks every project in the repository at
+    once. Everything it would do is start `skala` and read an exit code, which `Exec` already does —
+    and doc 11's first line says the CLI is the contract and nothing may have behaviour it does not.
+    A task that shells out is a second place for the argument list to be wrong.
+    docs/plan/02 § "Package boundaries" records the same decision.
+
+    ⚠ No SK id is emitted from here. The SK9000 register lives in docs/plan/08 and ADR-012 makes
+    every entry permanent; the tool that actually finds the problem prints its own ids, and a
+    second, MSBuild-side numbering of "the tool said no" would be an id with no rule behind it.
+
+    ⚠ An XML comment cannot contain a double hyphen, so no switch is spelled out in a comment in
+    this file. It is not a style choice: a packaged .props with one in a comment fails MSB4024 on
+    its consumer's very first build, which is how it was found. Both packages that carry MSBuild
+    logic now XmlPeek their own payload at build time so it cannot recur.
+
+    ⚠ **One target, not three.** The first version of this file ran the ladder that turns an exit
+    code into a diagnostic from a shared target reached by `CallTarget`, so that the three modes
+    could share it. It printed "Skala: ." and "exit " with nothing in them: `CallTarget` builds the
+    project again rather than continuing the current target's execution, and a property set inside a
+    target is not visible to it. The modes are mutually exclusive, so one target with three
+    conditioned argument lists needs no sharing mechanism at all.
+  -->
+
+  <Target Name="Skala"
+          AfterTargets="Build"
+          Condition="'$(SkalaEnabled)' == 'true' and '$(DesignTimeBuild)' != 'true'">
+
+    <!--
+      ⚠ Resolution is in the target rather than in the .props because a tool manifest can be
+      restored between evaluation and execution — `dotnet tool restore` as a CI step, or the first
+      build after a clone. A property inside a target is evaluated when the target runs.
+    -->
+    <PropertyGroup>
+      <!--
+        ⚠ The manifest is used only if it actually lists `skala`. A repository with a manifest for
+        something else entirely would otherwise get `dotnet tool run skala`, which fails with exit
+        code 1 — the same code a formatting check uses for "this file needs formatting".
+      -->
+      <_SkalaManifestFile Condition="'$(SkalaToolManifestDirectory)' != ''">$(SkalaToolManifestDirectory)/$(SkalaToolManifestFileName)</_SkalaManifestFile>
+      <_SkalaManifestHasTool Condition="'$(_SkalaManifestFile)' != '' and Exists('$(_SkalaManifestFile)')">$([System.Text.RegularExpressions.Regex]::IsMatch($([System.IO.File]::ReadAllText('$(_SkalaManifestFile)')), '&quot;skala&quot;'))</_SkalaManifestHasTool>
+
+      <_SkalaExecutable Condition="'$(SkalaToolPath)' != ''">$(SkalaToolPath)</_SkalaExecutable>
+      <_SkalaPrefix Condition="'$(SkalaToolPath)' != ''"></_SkalaPrefix>
+      <_SkalaSource Condition="'$(SkalaToolPath)' != ''">SkalaToolPath</_SkalaSource>
+
+      <!--
+        ⚠ The pinned form, and the one doc 11 § "Distribution" recommends: a formatter whose version
+        drifts between developers reformats the tree back and forth, and only a manifest stops it.
+        `dotnet tool run` resolves against the manifest above the working directory, so the working
+        directory becomes the manifest's own — a project built from elsewhere would otherwise miss it.
+      -->
+      <!--
+        ⚠ Every condition in this block keys on `_SkalaSource`, which is the one property that is
+        never legitimately empty once a branch has been taken. Keying the prefix on its own
+        emptiness is what the first version did, and `SkalaToolPath` sets the prefix to *empty on
+        purpose* — so the manifest branch then reclaimed it and the diagnostic named an explicit
+        tool path with `dotnet tool run skala` appended to it: two resolution strategies at once,
+        for a repository that had asked for one.
+      -->
+      <_SkalaExecutable Condition="'$(_SkalaSource)' == '' and '$(_SkalaManifestHasTool)' == 'true'">dotnet</_SkalaExecutable>
+      <_SkalaPrefix Condition="'$(_SkalaSource)' == '' and '$(_SkalaManifestHasTool)' == 'true'">tool run skala --</_SkalaPrefix>
+      <_SkalaSource Condition="'$(_SkalaSource)' == '' and '$(_SkalaManifestHasTool)' == 'true'">$(_SkalaManifestFile)</_SkalaSource>
+
+      <!-- A global install. Works, unpinned, and the exit code is the only way to find out it is absent. -->
+      <_SkalaExecutable Condition="'$(_SkalaSource)' == ''">skala</_SkalaExecutable>
+      <_SkalaSource Condition="'$(_SkalaSource)' == ''">PATH</_SkalaSource>
+
+      <_SkalaWorkingDirectory Condition="'$(SkalaToolPath)' == '' and '$(_SkalaManifestHasTool)' == 'true'">$(SkalaToolManifestDirectory)</_SkalaWorkingDirectory>
+      <_SkalaWorkingDirectory Condition="'$(_SkalaWorkingDirectory)' == ''">$(MSBuildProjectDirectory)</_SkalaWorkingDirectory>
+
+      <_SkalaCommon>--no-color</_SkalaCommon>
+      <_SkalaCommon Condition="'$(SkalaArguments)' != ''">$(_SkalaCommon) $(SkalaArguments)</_SkalaCommon>
+    </PropertyGroup>
+
+    <!--
+      The three modes, and the asymmetry between them is doc 11's whole point.
+
+      ⚠ `off` is the default and it is not "nothing": it is `format` with the check switch, which is
+      seconds — single-digit milliseconds per file with a warm daemon. `check` is minutes, so it is
+      what CI sets and never what a developer's inner loop pays for. A build tool that triples build
+      time gets disabled by whoever is in a hurry, permanently, in a Directory.Build.props nobody
+      revisits, and then it is protecting nothing.
+
+      The analyzer package (Rikarin.Skala.Rules) is the other half and it *does* run in every build,
+      because that is what analyzers are for and the compiler has already paid for the tree walk.
+
+      ⚠ `format`, which rewrites files, is opt-in and can never run beside the others. A build that
+      edits the tree it is building dirties the worktree, invalidates its own incremental state,
+      changes a file the IDE has open, and races when two projects share a directory.
+    -->
+    <PropertyGroup>
+      <_SkalaVerb Condition="'$(SkalaMode)' == 'off' or '$(SkalaMode)' == ''">format --check --quiet</_SkalaVerb>
+      <_SkalaWhat Condition="'$(SkalaMode)' == 'off' or '$(SkalaMode)' == ''">the formatting check</_SkalaWhat>
+      <_SkalaFinding Condition="'$(SkalaMode)' == 'off' or '$(SkalaMode)' == ''">files under $(SkalaPaths) are not formatted. Run `skala format` to fix them</_SkalaFinding>
+
+      <_SkalaVerb Condition="'$(SkalaMode)' == 'check'">check --gate $(SkalaGate)</_SkalaVerb>
+      <_SkalaVerb Condition="'$(SkalaMode)' == 'check' and '$(SkalaSarifOutput)' != ''">$(_SkalaVerb) --format sarif --output &quot;$(SkalaSarifOutput)&quot;</_SkalaVerb>
+      <_SkalaWhat Condition="'$(SkalaMode)' == 'check'">`skala check`</_SkalaWhat>
+      <_SkalaFinding Condition="'$(SkalaMode)' == 'check'">the `$(SkalaGate)` gate failed. Run `skala check --gate $(SkalaGate)` for the findings</_SkalaFinding>
+
+      <_SkalaVerb Condition="'$(SkalaMode)' == 'format'">format</_SkalaVerb>
+      <_SkalaWhat Condition="'$(SkalaMode)' == 'format'">`skala format`</_SkalaWhat>
+      <!-- Writing, so 1 means "files were rewritten", which is the point and not a finding. -->
+      <_SkalaFinding Condition="'$(SkalaMode)' == 'format'"></_SkalaFinding>
+    </PropertyGroup>
+
+    <Error Condition="'$(_SkalaVerb)' == ''"
+           File="$(MSBuildProjectFullPath)"
+           Text="Skala: SkalaMode is '$(SkalaMode)'. It must be one of off, check or format. SkalaEnabled=false turns the whole target off." />
+
+    <Message Importance="low"
+             Text="Skala: $(_SkalaExecutable) $(_SkalaPrefix) $(_SkalaVerb) (tool from $(_SkalaSource)), gate $(SkalaGate), over $(SkalaPaths)." />
+
+    <!--
+      ⚠ `IgnoreExitCode` and not only `ContinueOnError`, and the difference is invisible until it
+      bites. With `ContinueOnError` alone the build continues, but the task has *failed*, and MSBuild
+      does not gather the output parameters of a failed task: `_SkalaExit` and `_SkalaConsole` come
+      back empty and every comparison below is an empty string against an empty string. That is how
+      the first version reported "could not complete (exit )" for a tree that merely needed
+      formatting. `IgnoreExitCode` makes Exec succeed and hand over the code, which is the thing
+      this target exists to read.
+    -->
+    <Exec Command="&quot;$(_SkalaExecutable)&quot; $(_SkalaPrefix) $(_SkalaVerb) $(_SkalaCommon) &quot;$(SkalaPaths)&quot;"
+          WorkingDirectory="$(_SkalaWorkingDirectory)"
+          StandardOutputImportance="$(SkalaOutputImportance)"
+          ConsoleToMSBuild="true"
+          IgnoreExitCode="true"
+          ContinueOnError="true"
+          IgnoreStandardErrorWarningFormat="true">
+      <Output TaskParameter="ExitCode" PropertyName="_SkalaExit" />
+      <Output TaskParameter="ConsoleOutput" PropertyName="_SkalaConsole" />
+    </Exec>
+
+    <!--
+      ⚠ "The tool is missing" is detected from the *output* and not only from the exit code, and it
+      has to be. A missing executable is 127 under `sh` and 9009 under `cmd`, but an unrestored tool
+      manifest makes `dotnet tool run skala` exit **1** — the same code a formatting check uses for
+      "this file needs formatting". Reporting that as a formatting failure sends someone to look at a
+      file that is fine.
+    -->
+    <PropertyGroup>
+      <_SkalaMissing>false</_SkalaMissing>
+      <_SkalaMissing Condition="'$(_SkalaExit)' == '127' or '$(_SkalaExit)' == '9009'">true</_SkalaMissing>
+      <_SkalaMissing Condition="'$(_SkalaExit)' != '0' and $(_SkalaConsole.Contains('dotnet tool restore'))">true</_SkalaMissing>
+      <_SkalaMissing Condition="'$(_SkalaExit)' != '0' and $(_SkalaConsole.Contains('command not found'))">true</_SkalaMissing>
+      <_SkalaMissing Condition="'$(_SkalaExit)' != '0' and $(_SkalaConsole.Contains('is not recognized'))">true</_SkalaMissing>
+
+      <_SkalaMissingText>Skala: cannot run `$(_SkalaExecutable) $(_SkalaPrefix)` (resolved from $(_SkalaSource)). Install it into a tool manifest and run `dotnet tool restore`, set SkalaToolPath, or set SkalaEnabled=false.</_SkalaMissingText>
+    </PropertyGroup>
+
+    <!--
+      ⚠ A warning, not an error, unless the repository asks otherwise. This package is imported by a
+      Directory.Build.props that every project inherits, including on a machine that has just cloned
+      the repository and not run `dotnet tool restore`. Failing there means the first thing Skala
+      does to a new contributor is break `dotnet build`, and the second is get removed.
+    -->
+    <Warning Condition="'$(_SkalaMissing)' == 'true' and '$(SkalaRequireTool)' != 'true'"
+             File="$(MSBuildProjectFullPath)" Text="$(_SkalaMissingText)" />
+    <Error Condition="'$(_SkalaMissing)' == 'true' and '$(SkalaRequireTool)' == 'true'"
+           File="$(MSBuildProjectFullPath)" Text="$(_SkalaMissingText)" />
+
+    <Warning Condition="'$(_SkalaMissing)' != 'true' and '$(_SkalaExit)' == '1' and '$(_SkalaFinding)' != '' and '$(SkalaTreatFindingsAsErrors)' != 'true'"
+             File="$(MSBuildProjectFullPath)" Text="Skala: $(_SkalaFinding)." />
+    <Error Condition="'$(_SkalaMissing)' != 'true' and '$(_SkalaExit)' == '1' and '$(_SkalaFinding)' != '' and '$(SkalaTreatFindingsAsErrors)' == 'true'"
+           File="$(MSBuildProjectFullPath)" Text="Skala: $(_SkalaFinding)." />
+
+    <!--
+      2 is the command's own hard failure, 3 configuration, 4 load, 5 internal. None of them is a
+      finding and none of them gates the build: a tool that could not run is not evidence about the
+      code. Say so loudly enough to be fixed.
+    -->
+    <Warning Condition="'$(_SkalaMissing)' != 'true' and ('$(_SkalaExit)' == '2' or '$(_SkalaExit)' == '3' or '$(_SkalaExit)' == '4' or '$(_SkalaExit)' == '5')"
+             File="$(MSBuildProjectFullPath)"
+             Text="Skala: $(_SkalaWhat) could not complete (exit $(_SkalaExit) — 2 failed, 3 configuration, 4 load, 5 internal). The build is not gated on it." />
+  </Target>
+
+</Project>
