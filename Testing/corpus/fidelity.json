@@ -5,8 +5,8 @@
     "Milestone": "M3 - wrapping, the ordering rule, the trailing-context measure, and blank lines that no longer fire across a preprocessor directive. M2 was 0.9747/0.4947."
   },
   "constructs": {
-    "LineFidelity": 0.9593,
-    "FileFidelity": 0.8963,
+    "LineFidelity": 0.9597,
+    "FileFidelity": 0.8967,
     "Milestone": "M3 - the set grew by 9 files (wrapping/), so this is a different population from M2's 0.9305."
   },
   "pathological": {
