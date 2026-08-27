@@ -143,7 +143,7 @@ should be trusted before somebody has read it.**
 The uncovered set is by category: `CodeSmell` 200, `BestPractice` 144, `CodeRedundancy` 103,
 `LanguageUsage` 57, `DeclarationRedundancy` 38, and a long tail.
 
-### ⚠ The `Option` bucket is the one this document most expects to be argued with, and it is smaller than it looks
+### ⚠ The `Option` bucket covers less than its size suggests, and this is the finding most likely to be argued with
 
 The instruction that produced this work warned that `arrange_this_qualifier` and
 `redundant_parentheses` belong in `Option`, and that counting them as missing rules double-counts
@@ -295,8 +295,6 @@ against 6 563 for the entire uncovered rule set.
 **The thing standing between Skala and retiring ReSharper is not mostly a rule catalogue.** It is
 fifteen unimplemented arrangement options, and they outweigh most of the rule gap by volume on real
 code. That is the practical conclusion of this document and it was not the expected one.
-
-
 
 ## SonarQube
 
