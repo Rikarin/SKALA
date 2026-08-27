@@ -32,11 +32,24 @@ skala daemon   status|stop
 Global: `--format`, `--output`, `--no-color`, `--verbose`, `--config <file>`, `--option k=v`,
 `--jobs n`, `--no-cache`, `--no-daemon`.
 
-⚠ **What exists after M5**, because a command surface that lists intent as if it were behaviour is a
-surface nobody can trust: `format`, `check`, `verify`, `fix`, `explain`, `rules`, `config`, `cache`,
-`mcp`, `lsp`, `daemon` and `hooks`. Still intent: `arrange` (M4), `baseline`, `report`, `trend` and
-every `--since`/`--baseline` flag (M6). `--jobs` and `--no-daemon` remain `format`-only; `--no-cache`
-is now on `check`, `verify` and `format`.
+⚠ **What exists after M5 and M4**, because a command surface that lists intent as if it were
+behaviour is a surface nobody can trust: `format`, `arrange`, `check`, `verify`, `fix`, `explain`,
+`rules`, `config`, `cache`, `mcp`, `lsp`, `daemon` and `hooks`. Still intent: `baseline`, `report`,
+`trend` and every `--since`/`--baseline` flag (M6). `--jobs` and `--no-daemon` remain `format`-only;
+`--no-cache` is now on `check`, `verify` and `format`.
+
+⚠ **`arrange` is a separate verb from `format`, and is sequential where `format` is parallel.**
+`format` changes whitespace, needs no project, and is reversible by reformatting; `arrange` changes
+the tree, wants a `Compilation`, costs a re-bind per changed file, and is reversible by
+`git revert` ([06](06-arrangement-and-syntax-styles.md) § "The line between `format` and `arrange`").
+`skala format --arrange[=syntactic|full]` runs both; bare `--arrange` means `syntactic`, which is the
+subset that works on a loose file an agent just wrote. `arrange` says out loud how many files it saw
+no compilation for, because a syntactic run quietly doing a third of the catalogue looks exactly like
+a full run that found little to do.
+
+⚠ **`arrange --aggressive`** is parenthesis removal and nothing else. The oracle's own cleanup profile
+performs it and Skala's default does not; the gate costs a measured 4.02 points of changed-span
+agreement (SK-DIV-0014), which is the price of the caution rather than a hidden disagreement.
 
 ⚠ **`--define` is on `format`, not only on `check`.** SK-DIV-0004 is a *formatting* limitation —
 without symbols Roslyn hands back every `#if DEBUG` body as disabled text and the formatter correctly

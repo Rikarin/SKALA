@@ -14,9 +14,21 @@ do to this file with this `.editorconfig`".
 ```
 
 For every file in `Testing/corpus/`, the harness runs `cleanupcode` with the repository's
-`.editorconfig` and a cleanup profile that enables **formatting only** (the arrangement half is
-compared separately, with a profile that enables the `arrange_*` settings), and writes
-`<file>.expected.cs` with a header:
+`.editorconfig` and a cleanup profile that enables **formatting only**, and writes
+`<file>.expected.cs` with a header.
+
+⚠ **M4 added the second profile** the parenthetical above promised. `OracleProfile.Cleanup` enables
+the arrangement half and writes `<file>.arranged.expected.cs`, for `corpus/real/` and
+`constructs/arrangement/` only. Two things about it are worth knowing before touching it:
+
+- **The cleanup profile runs as ONE project**, with every file at its own relative path — not the
+  60-file batches of flattened `F0.cs … F59.cs` the format-only profile uses. Batching is free for
+  whitespace and wrong for arrangement, because `var`, target-typed `new` and using removal are all
+  questions about a *compilation*: `JObject o = JObject.Parse(json)` does not convert when
+  `JObject`'s own declaration landed in another batch.
+- **An unknown cleanup task is silently ignored**, so a profile that looks like it enables ten
+  rewrites can be enabling three and nothing says so. The name list is not documented and was
+  recovered from the tool's resource strings; the sweep is `docs/oracle-cleanup-profile.md`.
 
 ```
 // skala-oracle: resharper=2025.2.6 config=sha256:1f3c… profile=format-only generated=2026-08-26
@@ -178,6 +190,8 @@ Run over every corpus file, every commit, and over generated input nightly:
 | **Width monotonicity** | at width ∞ nothing wraps; at width 1 everything that can break, breaks |
 | **Preservation** | with `keep_user_linebreaks = true` and a file already formatted at width ∞, no break is removed |
 | **Arrangement safety** | `arrange(x)` has no new compiler diagnostics ([06](06-arrangement-and-syntax-styles.md)) |
+| **Pair idempotency** | ⚠ M4: `pipeline(pipeline(x)) ≡ pipeline(x)`, where `pipeline` is arrange-then-format. Neither half being idempotent implies the pair is |
+| **Convergence** | the pair reaches a fixed point within `ArrangementPipeline.MaxPasses`; not reaching it is `SK9097` and a reported failure, never a silent truncation |
 
 Idempotency and token equivalence are the two that catch nearly everything. Both are cheap; both run
 on every file in every test run.

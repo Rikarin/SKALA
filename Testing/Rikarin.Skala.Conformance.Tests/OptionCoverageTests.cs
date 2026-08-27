@@ -31,13 +31,29 @@ public sealed class OptionCoverageTests {
         }
     }
 
+    /// <summary>
+    /// Every option Skala implements: the formatter's and the arranger's.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ Two sets, one claim. Milestone 4 added a second component that reads options, and folding
+    /// its keys into <see cref="PhaseOneOptions.Implemented"/> would have made
+    /// <see cref="EveryImplementedOption_ChangesTheOutputOfItsCorpusFile"/> unprovable for a dozen
+    /// of them — that test formats a file, and an arrangement key changes nothing about formatting.
+    /// The honest shape is to keep the sets apart and measure each against the component that
+    /// implements it, while Tier A stays one claim about the whole tool.
+    /// </remarks>
+    static HashSet<OptionId> Implemented() => [
+        .. PhaseOneOptions.Implemented,
+        .. Rikarin.Skala.Formatting.CSharp.Arrangement.ArrangementOptions.Implemented
+    ];
+
     [Fact]
-    public void TierA_IsExactlyWhatTheFormatterReads() {
+    public void TierA_IsExactlyWhatSkalaReads() {
         // ⚠ Tier A means "Skala reproduces Rider's behaviour, pinned by at least one oracle
         // fixture" (docs/plan/03 § "Four tiers"). It may not rest on a default being known:
         // defaultSource is `template` or `unknown` for every entry in the registry, so the only
         // available evidence is a fixture (docs/plan/03 § "distill", corrected in d081293).
-        var implemented = PhaseOneOptions.Implemented.ToHashSet();
+        var implemented = Implemented();
         var claimed = OptionRegistry.All.Where(static info => info.Tier == OptionTier.A)
             .Select(static info => info.Id)
             .ToHashSet();
@@ -63,6 +79,84 @@ public sealed class OptionCoverageTests {
                 $"{info.Key} is Tier B, which means 'implemented with a documented divergence'. docs/divergences.md does not mention it."
             );
         }
+    }
+
+    public static TheoryData<string> ArrangementKeys {
+        get {
+            var data = new TheoryData<string>();
+            foreach (var id in Rikarin.Skala.Formatting.CSharp.Arrangement.ArrangementOptions.Implemented) {
+                data.Add(OptionRegistry.Get(id).Key);
+            }
+
+            return data;
+        }
+    }
+
+    /// <summary>
+    /// ⚠ An arrangement option is pinned by a <b>cleanup</b> fixture, not a format-only one.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ The distinction is the whole of why milestone 4 needed a second oracle profile. A
+    /// format-only fixture is <c>CSReformatCode</c> and nothing else, so it is byte-identical
+    /// whatever the <c>arrange_*</c> keys say; accepting one as evidence for a Tier A arrangement
+    /// claim would be accepting a measurement that cannot come out differently.
+    /// </remarks>
+    [Theory]
+    [MemberData(nameof(ArrangementKeys))]
+    public void EveryArrangementOption_IsPinnedByACleanupFixture(string key) {
+        Assert.True(OptionRegistry.TryResolve(key, out var id));
+        var info = OptionRegistry.Get(id);
+
+        Assert.True(info.Oracle is not null, $"{key} is implemented by the arranger but has no `oracle` glob.");
+        var files = Resolve(info.Oracle!);
+        Assert.True(files.Count > 0, $"{key}: `oracle` is '{info.Oracle}' and no corpus file matches it.");
+        Assert.True(
+            files.Any(static file => file.HasFixtureFor(OracleProfile.Cleanup)),
+            $"{key}: no committed {OracleProfile.Cleanup.Suffix} beside its corpus file. Run ./build.sh Oracle."
+        );
+    }
+
+    /// <summary>
+    /// Setting an arrangement option to each of its values must change what the <b>arranger</b>
+    /// produces.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ The formatter's own version of this test formats the file, which is exactly the wrong
+    /// question for these keys: <c>csharp_style_var_elsewhere</c> changes no whitespace at all and
+    /// would look unimplemented. Same assertion, different subject.
+    /// </remarks>
+    [Theory]
+    [MemberData(nameof(ArrangementKeys))]
+    public void EveryArrangementOption_ChangesTheOutputOfItsCorpusFile(string key) {
+        Assert.True(OptionRegistry.TryResolve(key, out var id));
+        var info = OptionRegistry.Get(id);
+        var files = Resolve(info.Oracle!);
+        var values = LegalValues(info).ToArray();
+        Assert.True(values.Length >= 2, $"{key}: fewer than two values to compare.");
+
+        foreach (var file in files) {
+            var outputs = new HashSet<string>(StringComparer.Ordinal);
+            foreach (var value in values) {
+                var resolved = Rikarin.Skala.Core.Configuration.OptionResolver
+                    .Resolve(file.Path, [new KeyValuePair<string, string>(key, value)]);
+
+                Assert.True(
+                    resolved.ValueErrors.IsEmpty,
+                    $"{key} = {value}: {string.Join("; ", resolved.ValueErrors)}"
+                );
+                outputs.Add(CorpusArranger.RunWith(file, resolved.Options));
+            }
+
+            if (outputs.Count > 1) {
+                return;
+            }
+        }
+
+        Assert.Fail(
+            $"{key}: setting it to any of [{string.Join(", ", values)}] produces byte-identical arrangement on "
+            + $"[{string.Join(", ", files.Select(static f => f.ToString()))}]. An option with no observable effect is "
+            + "either unimplemented or wrongly wired; both are bugs."
+        );
     }
 
     [Theory]

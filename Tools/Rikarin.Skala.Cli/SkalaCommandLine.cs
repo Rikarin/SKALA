@@ -4,6 +4,7 @@ using Rikarin.Skala.Analysis.Caching;
 using Rikarin.Skala.Analysis.Loading;
 using Rikarin.Skala.Core.Configuration;
 using Rikarin.Skala.Formatting.CSharp;
+using Rikarin.Skala.Formatting.CSharp.Arrangement;
 using Rikarin.Skala.Mcp;
 using Rikarin.Skala.Reporting;
 using Rikarin.Skala.Server;
@@ -22,6 +23,7 @@ public static partial class SkalaCommandLine {
     public static RootCommand Create() {
         var root = new RootCommand("Skala — one configuration, the same formatting and analysis everywhere.");
         root.Subcommands.Add(CreateFormatCommand());
+        root.Subcommands.Add(CreateArrangeCommand());
         root.Subcommands.Add(CreateCheckCommand());
         root.Subcommands.Add(CreateVerifyCommand());
         root.Subcommands.Add(CreateFixCommand());
@@ -94,11 +96,21 @@ public static partial class SkalaCommandLine {
                 "Take preprocessor symbols from a loaded project: binlog | workspace | loose | none (default none)."
         };
 
+        // ⚠ docs/plan/06: "The default for `skala format` is **whitespace only**, because it must
+        // work with no project, in under a second, on a file an agent just wrote." `--arrange` opts
+        // in; `--arrange=syntactic` is the subset that needs no compilation and is what an agent
+        // gets for free on a loose file.
+        var arrange = new Option<string?>("--arrange") {
+            Description = "Also rewrite the tree: syntactic (no project needed) | full. Default off.",
+            Arity = ArgumentArity.ZeroOrOne
+        };
+
         var command = new Command(
             "format",
             "Format C# files: spaces, blank lines, braces, indentation, breaks and wrapping."
         );
         command.Arguments.Add(paths);
+        command.Options.Add(arrange);
         command.Options.Add(check);
         command.Options.Add(diff);
         command.Options.Add(range);
@@ -128,6 +140,23 @@ public static partial class SkalaCommandLine {
                     symbols = [.. symbols, .. SymbolsFromProject(parse.GetValue(paths) ?? [], loadMode)];
                 }
 
+                // `--arrange` with no value means syntactic, which is the mode that always works.
+                if (parse.GetResult(arrange) is not null) {
+                    var full = string.Equals(parse.GetValue(arrange), "full", StringComparison.OrdinalIgnoreCase);
+                    var arrangeRequest = new ArrangeRequest {
+                        Paths = parse.GetValue(paths) ?? [],
+                        Check = parse.GetValue(check),
+                        Diff = parse.GetValue(diff),
+                        Quiet = parse.GetValue(quiet),
+                        Range = parse.GetValue(range),
+                        Overrides = ParseOverrides(parse.GetValue(option)),
+                        Define = symbols,
+                        Compilations = full ? files => CompilationsFor(files, parse.GetValue(load) ?? "loose") : null
+                    };
+
+                    return Run(() => ArrangeCommand.Run(arrangeRequest));
+                }
+
                 var request = new FormatRequest {
                     Paths = parse.GetValue(paths) ?? [],
                     Define = symbols,
@@ -153,6 +182,121 @@ public static partial class SkalaCommandLine {
         );
 
         return command;
+    }
+
+    /// <summary>
+    /// <c>skala arrange</c> — docs/plan/06, docs/plan/11 § "Command surface".
+    /// </summary>
+    /// <remarks>
+    /// ⚠ A separate verb from <c>format</c>, and deliberately. <c>format</c> changes whitespace,
+    /// needs no project, runs in under a second on a file an agent just wrote, and is reversible by
+    /// reformatting. <c>arrange</c> changes the tree, wants a <c>Compilation</c>, is minutes-scale on
+    /// a large tree, and is reversible by <c>git revert</c>. Making the second the default for the
+    /// first would put a tree rewrite inside every save.
+    /// </remarks>
+    static Command CreateArrangeCommand() {
+        var paths = new Argument<string[]>("paths") {
+            Description = "Files, directories or globs. Empty means the repository root.",
+            Arity = ArgumentArity.ZeroOrMore
+        };
+
+        var check = new Option<bool>("--check") {
+            Description = "Report what would change and write nothing. Exit 1 when there is anything."
+        };
+        var diff = new Option<bool>("--diff") { Description = "Print a unified diff over the edits." };
+        var quiet = new Option<bool>("--quiet") { Description = "Print nothing but diagnostics." };
+        var range = new Option<string?>("--range") { Description = "a:b — character offsets." };
+
+        // ⚠ docs/plan/06 § "Qualification and redundancy": parenthesis removal is the highest-risk
+        // rewrite in the tool, the oracle's own cleanup profile performs it, and Skala gates it for
+        // the first release regardless. The cost of the gate is measured, not assumed — see the M4
+        // numbers in docs/plan/15.
+        var aggressive = new Option<bool>("--aggressive") {
+            Description = "Also remove redundant parentheses. Off by default; the export asks for it and Skala does not."
+        };
+
+        var include = new Option<string[]>("--include") {
+            Description = "Only these rule ids (SK2001…). Repeatable.", Arity = ArgumentArity.ZeroOrMore
+        };
+        var exclude = new Option<string[]>("--exclude") {
+            Description = "Every rule but these. Repeatable.", Arity = ArgumentArity.ZeroOrMore
+        };
+
+        var option = new Option<string[]>("--option") {
+            Description = "key=value, repeatable.", Arity = ArgumentArity.ZeroOrMore
+        };
+
+        var define = new Option<string[]>("--define", "-d") {
+            Description = "Preprocessor symbols to parse with, repeatable and comma-separated.",
+            Arity = ArgumentArity.ZeroOrMore
+        };
+
+        var load = new Option<string?>("--load") {
+            Description = "How to find the compilation: binlog | workspace | loose | none (default loose)."
+        };
+
+        var command = new Command(
+            "arrange",
+            "Rewrite the tree: body styles, var, target-typed new, qualifiers, usings. Needs a project for the semantic half."
+        );
+
+        command.Arguments.Add(paths);
+        command.Options.Add(check);
+        command.Options.Add(diff);
+        command.Options.Add(quiet);
+        command.Options.Add(range);
+        command.Options.Add(aggressive);
+        command.Options.Add(include);
+        command.Options.Add(exclude);
+        command.Options.Add(option);
+        command.Options.Add(define);
+        command.Options.Add(load);
+
+        command.SetAction(parse => {
+                var mode = parse.GetValue(load) ?? "loose";
+                var request = new ArrangeRequest {
+                    Paths = parse.GetValue(paths) ?? [],
+                    Check = parse.GetValue(check),
+                    Diff = parse.GetValue(diff),
+                    Quiet = parse.GetValue(quiet),
+                    Range = parse.GetValue(range),
+                    Aggressive = parse.GetValue(aggressive),
+                    Include = parse.GetValue(include) ?? [],
+                    Exclude = parse.GetValue(exclude) ?? [],
+                    Overrides = ParseOverrides(parse.GetValue(option)),
+                    Define = ParseDefines(parse.GetValue(define)),
+                    Compilations = string.Equals(mode, "none", StringComparison.OrdinalIgnoreCase)
+                        ? null
+                        : files => CompilationsFor(files, mode)
+                };
+
+                return Run(() => ArrangeCommand.Run(request));
+            }
+        );
+
+        return command;
+    }
+
+    /// <summary>
+    /// Every loaded compilation, so that <c>arrange</c> can intersect its using removal across them.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ All of them, not the one that covers the first path. docs/plan/06: "Skala removes a using
+    /// only when it is unused in *every* compilation the file participates in — multi-targeting is
+    /// not an edge case in this ecosystem." Handing back one compilation would make a multi-targeted
+    /// repository lose the usings only one of its targets needs.
+    /// </remarks>
+    static IReadOnlyList<Microsoft.CodeAnalysis.CSharp.CSharpCompilation> CompilationsFor(
+        IReadOnlyList<string> files,
+        string mode
+    ) {
+        try {
+            var root = FindRepositoryRoot(files.Count > 0 ? files[0] : ".") ?? Directory.GetCurrentDirectory();
+            var loaded = ProjectLoader.Load(new LoadRequest { RepositoryRoot = root, Mode = LoadModes.Parse(mode) });
+            return [.. loaded.Units.Select(static unit => unit.Compilation)];
+        } catch (IOException) {
+            return [];
+        }
     }
 
     /// <summary>

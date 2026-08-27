@@ -56,11 +56,23 @@ if (args.Length == 0) {
     return 2;
 }
 
-var sets = args.Length > 1 ? args[1..] : [Corpus.Constructs, Corpus.Real, Corpus.Pathological];
+var sets = args.Length > 1
+    ? args[1..].Where(static argument => !argument.StartsWith("--", StringComparison.Ordinal)).ToArray()
+    : [Corpus.Constructs, Corpus.Real, Corpus.Pathological];
+
+if (sets.Length == 0) {
+    sets = [Corpus.Constructs, Corpus.Real, Corpus.Pathological];
+}
+
+// ⚠ `oracle <set> --only=<prefix>` regenerates the fixtures of the files whose relative path starts
+// with a prefix, rather than the whole set. A fixture regeneration is a reviewed commit, and a
+// commit that rewrites 273 files because four were added is not reviewable — the diff is the review.
+var only = args.FirstOrDefault(static argument => argument.StartsWith("--only=", StringComparison.Ordinal))
+    ?["--only=".Length..];
 
 switch (args[0]) {
     case "oracle":
-        return Regenerate(sets);
+        return Regenerate(sets, only);
     case "fidelity":
         return Report(sets);
     case "dump":
@@ -142,6 +154,50 @@ switch (args[0]) {
             Path.GetFullPath(args[1]),
             args.Length > 2 ? int.Parse(args[2], CultureInfo.InvariantCulture) : int.MaxValue
         );
+    case "arrangement":
+        // ⚠ M4's bar: the oracle's cleanup profile against Skala's arrange-and-format pipeline, per
+        // changed span rather than per line. `--aggressive` turns on parenthesis removal, which the
+        // oracle's profile does and Skala's default deliberately does not, so running both ways
+        // prices the gate rather than hiding it.
+        return Arrangement(args[1..]);
+    case "arrange-tree":
+        // ⚠ M4's second bar: arrangement over a whole tree introduces zero compiler diagnostics.
+        // `arrange-tree <dir> [--load=binlog|workspace|loose] [--aggressive] [--limit=N]`.
+        // Read-only — the caller supplies a `git archive` scratch copy and this never writes.
+        if (args.Length < 2) {
+            Console.Error.WriteLine("usage: arrange-tree <directory> [--load=mode] [--aggressive] [--limit=N]");
+            return 2;
+        }
+
+        var treeMode = args.FirstOrDefault(static a => a.StartsWith("--load=", StringComparison.Ordinal))
+            ?["--load=".Length..]
+            ?? "binlog";
+
+        // `--explain=<path fragment>`: which rule, run alone, makes the re-bind reject this file.
+        if (args.FirstOrDefault(static a => a.StartsWith("--explain=", StringComparison.Ordinal)) is { } explain) {
+            Console.WriteLine(
+                ArrangeTree.Explain(Path.GetFullPath(args[1]), treeMode, explain["--explain=".Length..], Console.Error)
+            );
+
+            return 0;
+        }
+
+        var treeLimit = args.FirstOrDefault(static a => a.StartsWith("--limit=", StringComparison.Ordinal)) is { } l
+            ? int.Parse(l["--limit=".Length..], CultureInfo.InvariantCulture)
+            : int.MaxValue;
+
+        Console.WriteLine(
+            ArrangeTree.Run(
+                Path.GetFullPath(args[1]),
+                treeMode,
+                args.Contains("--aggressive"),
+                treeLimit,
+                Console.Error
+            )
+                .Render()
+        );
+
+        return 0;
     case "locate":
         // Where the divergent lines attributed to one construct are. `locate <set> <kind>`.
         if (args.Length < 3) {
@@ -237,7 +293,76 @@ static int Defaults(string? outputPath) {
     return 0;
 }
 
-static int Regenerate(string[] sets) {
+// `arrangement [--aggressive] [--all-rules] [set…]`: the M4 differential.
+static int Arrangement(string[] args) {
+    var aggressive = args.Contains("--aggressive");
+
+    // ⚠ The default excludes the three rewrites the oracle will not perform at all
+    // (docs/oracle-cleanup-profile.md). `--all-rules` includes them, which is how the cost of that
+    // exclusion is a number rather than an assertion.
+    var filter = args.Contains("--all-rules")
+        ? Rikarin.Skala.Formatting.CSharp.Arrangement.ArrangementFilter.All
+        : Rikarin.Skala.Formatting.CSharp.Arrangement.ArrangementFilter.OracleComparable;
+
+    var names = args.Where(static argument => !argument.StartsWith("--", StringComparison.Ordinal)).ToArray();
+    var files = names.Length > 0
+        ? names.SelectMany(Corpus.Files).ToArray()
+        : Corpus.Arrangeable();
+
+    var withFixtures = files.Where(static file => file.HasFixtureFor(OracleProfile.Cleanup)).ToArray();
+    if (withFixtures.Length == 0) {
+        Console.Error.WriteLine("no cleanup fixtures. Run `./build.sh Oracle` (it now regenerates both profiles).");
+        return 2;
+    }
+
+    Console.WriteLine(
+        $"{withFixtures.Length.ToString(CultureInfo.InvariantCulture)} files with a cleanup fixture"
+        + (aggressive ? ", --aggressive" : "")
+        + (args.Contains("--all-rules") ? ", all rules" : ", oracle-comparable rules only")
+    );
+
+    // `--dump=<dir>` writes Skala's arrangement and the oracle's side by side, so a class named in
+    // the report can be read as a diff rather than as two sample lines — the same affordance `dump`
+    // gives the formatter's differential.
+    if (args.FirstOrDefault(static a => a.StartsWith("--dump=", StringComparison.Ordinal)) is { } dumpArg) {
+        var directory = Path.GetFullPath(dumpArg["--dump=".Length..]);
+        Directory.CreateDirectory(directory);
+        var compilation = ArrangementDifferential.Compile(withFixtures);
+        foreach (var file in withFixtures) {
+            var name = (file.Set + "_" + file.RelativePath).Replace('/', '_');
+            File.WriteAllText(
+                Path.Combine(directory, name + ".skala"),
+                TextNormalisation.Normalise(ArrangementDifferential.Run(file, compilation, aggressive, filter).Text)
+            );
+
+            File.WriteAllText(
+                Path.Combine(directory, name + ".oracle"),
+                TextNormalisation.Normalise(OracleFixture.Read(file, OracleProfile.Cleanup))
+            );
+        }
+
+        Console.WriteLine($"written to {directory}");
+        return 0;
+    }
+
+    var report = ArrangementDifferential.Measure(withFixtures, aggressive, filter, Console.Error);
+    Console.WriteLine(report.Render(10));
+
+    foreach (var origin in withFixtures.GroupBy(
+                 static file => file.Set + "/" + file.RelativePath.Split('/')[0],
+                 StringComparer.Ordinal
+             )
+                 .OrderBy(static group => group.Key, StringComparer.Ordinal)) {
+        var slice = ArrangementDifferential.Measure(origin.ToArray(), aggressive, filter);
+        Console.WriteLine(
+            $"  {origin.Key,-28} {slice.Agreement * 100:F2} %  ({slice.Agreed.ToString(CultureInfo.InvariantCulture)}/{slice.Spans.ToString(CultureInfo.InvariantCulture)} spans, {slice.Files.ToString(CultureInfo.InvariantCulture)} files)"
+        );
+    }
+
+    return 0;
+}
+
+static int Regenerate(string[] sets, string? only) {
     if (OracleRunner.FindExecutableOrNull() is null) {
         Console.Error.WriteLine(
             "jb is not installed. `dotnet tool install -g JetBrains.ReSharper.GlobalTools --version 2025.2.6`."
@@ -254,7 +379,7 @@ static int Regenerate(string[] sets) {
 
     var written = 0;
     foreach (var set in sets) {
-        var files = Corpus.Files(set);
+        var files = Only(Corpus.Files(set), only);
         if (files.Count == 0) {
             continue;
         }
@@ -278,9 +403,92 @@ static int Regenerate(string[] sets) {
     }
 
     written += RegenerateVariants(runner, editorConfig, header, sets);
+    written += RegenerateCleanup(runner, editorConfig, version, hash, sets, only);
     Console.WriteLine($"{written.ToString(CultureInfo.InvariantCulture)} fixtures written.");
     return 0;
 }
+
+// ⚠ The second profile's fixtures, and only for the files that have something to say under it
+// (Corpus.Arrangeable): all of corpus/real/, plus constructs/arrangement/. A cleanup fixture beside
+// every whitespace construct would cost 250 oracle runs to commit 250 files whose content is
+// predictable from the format-only fixture beside them, which is coverage-shaped and measures
+// nothing.
+static int RegenerateCleanup(
+    OracleRunner runner,
+    string editorConfig,
+    string version,
+    string hash,
+    string[] sets,
+    string? only
+) {
+    var profile = OracleProfile.Cleanup;
+    var header = new OracleHeader(version, hash, profile.Name, OracleFixture.Today);
+    var wanted = new HashSet<string>(sets, StringComparer.Ordinal);
+    var files = Only([.. Corpus.Arrangeable().Where(file => wanted.Contains(file.Set))], only).ToArray();
+    if (files.Length == 0) {
+        return 0;
+    }
+
+    Console.WriteLine(
+        $"oracle: profile={profile.Name} over {files.Length.ToString(CultureInfo.InvariantCulture)} files"
+    );
+
+    // ⚠ ONE project holding every file, laid out at its own relative path — not the 60-file batches
+    // of flattened `F0.cs … F59.cs` the format-only profile uses.
+    //
+    // Formatting is per-file and batching is free. Arrangement is not: `var`, target-typed `new` and
+    // using removal are all questions about a compilation, and a batch is a different compilation
+    // from the corpus. Measured, before this was fixed: `JObject o = JObject.Parse(json)` in
+    // Newtonsoft's tests did not convert to `var`, because `JObject`'s own declaration sits in a file
+    // that landed in a different batch and so did not resolve — while `string json` in the statement
+    // above it converted, because `string` needs no resolution. The result was 130 spans of
+    // "skala only" that were not disagreements at all; they were the harness measuring its own
+    // batching. Flattening the names would have the same effect for a different reason: two corpus
+    // files with the same type name in the same directory collide.
+    var scratch = Directory.CreateTempSubdirectory("skala-cleanup-");
+    try {
+        File.Copy(editorConfig, Path.Combine(scratch.FullName, ".editorconfig"));
+        File.WriteAllText(Path.Combine(scratch.FullName, "Oracle.csproj"), OracleRunner.ProjectFile);
+        File.WriteAllText(Path.Combine(scratch.FullName, "Oracle.sln"), OracleRunner.SolutionFile);
+
+        var produced = new Dictionary<string, CorpusFile>(StringComparer.Ordinal);
+        foreach (var file in files) {
+            var target = Path.Combine(
+                scratch.FullName,
+                file.Set,
+                file.RelativePath.Replace('/', Path.DirectorySeparatorChar)
+            );
+
+            Directory.CreateDirectory(Path.GetDirectoryName(target)!);
+            File.Copy(file.Path, target, overwrite: true);
+            produced[target] = file;
+        }
+
+        var results = runner.FormatInPlace(scratch.FullName, [.. produced.Keys], profile);
+        var written = 0;
+        foreach (var (target, file) in produced) {
+            if (results.TryGetValue(target, out var body)) {
+                OracleFixture.Write(file, profile, body, header);
+                written++;
+            }
+        }
+
+        Console.WriteLine($"  cleanup: {written.ToString(CultureInfo.InvariantCulture)} written");
+        return written;
+    } finally {
+        try {
+            scratch.Delete(recursive: true);
+        } catch (IOException) {
+            // A scratch directory the tool still holds open is not worth failing a build over.
+        }
+    }
+}
+
+// The files of a set whose relative path starts with `--only=`, or all of them when it was absent.
+static IReadOnlyList<CorpusFile> Only(IReadOnlyList<CorpusFile> files, string? prefix) =>
+    prefix is null
+        ? files
+        : [.. files.Where(file => file.RelativePath.StartsWith(prefix, StringComparison.Ordinal))];
 
 // ⚠ The fixture sets that are measured under configurations other than the repository's, which is
 // docs/plan/05's four-way keep_existing_* table. Each variant is a separate cleanupcode run with the

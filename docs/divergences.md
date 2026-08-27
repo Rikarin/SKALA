@@ -429,3 +429,54 @@ smaller than the risk.
    Worth 4 lines across 2 files, both of them the same generated `DataSet`.
 
 - options: `resharper_csharp_keep_existing_embedded_block_arrangement`, `resharper_csharp_align_multiline_for_stmt`
+
+## SK-DIV-0013 — three rewrites the export configures and the oracle will not perform
+
+`resharper_null_checking_pattern_style = not_null_pattern`, `resharper_empty_string = empty_literal`
+and `resharper_braces_redundant = true` are all set in the export, all listed in
+[06](plan/06-arrangement-and-syntax-styles.md), and `jb cleanupcode` 2025.2.6 performs **none** of
+them. Swept as elements and as `CSCodeStyleAttributes` attributes, with the corresponding
+`resharper_arrange_*_highlighting` keys left at their exported severities and raised to `warning`:
+`if (p != null)` stays, `string.Empty` becomes `string.Empty` and stops, and `{ { x; } }` keeps both
+pairs. The sweep is `docs/oracle-cleanup-profile.md`.
+
+The reading that fits is that `null_checking_pattern_style` and `empty_string` govern the pattern
+ReSharper **generates** — in a quick-fix, a generated `Equals`, a "check parameter for null" action —
+rather than a cleanup of code that already exists. They are code-*generation* settings that happen to
+live in the same file as the cleanup settings.
+
+Skala performs all three, because the export asks for them and doc 06 lists them. They are pinned by
+hand-written fixtures in `ArrangementRuleTests` rather than by the oracle, and they are **excluded
+from the M4 changed-span agreement number**: measuring a correct rewrite against an oracle that never
+moves would score it as a divergence and make the number say the opposite of what it means.
+
+⚠ The `is not null` rewrite carries a *second*, deliberate divergence on top of this one, and it is
+the one doc 06 § "Null and pattern style" asks for: Skala skips it when the operand's type — or any
+of its base classes — declares a user-defined `operator ==`. The operator form calls the user's
+operator and the pattern form is a reference comparison the language performs itself, so the rewrite
+changes which code runs while leaving code that still compiles. Layer 2 cannot see it (no diagnostic)
+and layer 3 cannot either (no identifier changed meaning); only the precondition stops it.
+
+- options: `resharper_csharp_null_checking_pattern_style`, `resharper_empty_string`, `resharper_csharp_braces_redundant`
+
+## SK-DIV-0014 — parenthesis removal is gated behind `--aggressive`, and the gate costs 4.02 points
+
+The oracle's cleanup profile removes redundant arithmetic parentheses
+(`dotnet_style_parentheses_in_arithmetic_binary_operators = never_if_unnecessary`), and Skala's
+default does not. [06](plan/06-arrangement-and-syntax-styles.md) § "Qualification and redundancy"
+asks for exactly this: "Parenthesis removal is the highest-risk rewrite in the whole tool […] Skala
+gates parenthesis removal behind `arrange --aggressive` for the first release regardless, and
+revisits when the corpus differential shows zero divergences."
+
+Measured rather than assumed, over `corpus/real/` plus `constructs/arrangement/`, 391 files:
+
+| | changed spans agreed |
+|---|---|
+| default (gated) | **77.61 %** (2 506 / 3 229) |
+| `--aggressive` | **81.63 %** (2 635 / 3 228) |
+
+So the gate is worth 4.02 points of agreement, and that is the price of the caution rather than a
+hidden disagreement. The condition for revisiting is in the doc and is not yet met: `--aggressive`
+is not at zero divergences either.
+
+- options: `dotnet_style_parentheses_in_arithmetic_binary_operators`, `dotnet_style_parentheses_in_other_binary_operators`
