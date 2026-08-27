@@ -209,6 +209,28 @@ class Build : NukeBuild {
                 )
             );
 
+    /// <summary>
+    /// ⚠ The key-flip conformance sweep: every option, at every legal value, against the oracle.
+    /// </summary>
+    /// <remarks>
+    /// A nightly job and never a commit gate. It needs JetBrains installed and takes minutes, so
+    /// like <see cref="Oracle"/> it is a developer-machine and nightly dependency (ADR-011) and what
+    /// the fast path reads is the committed result table. ⚠ Its verdict is three-way and only one
+    /// third of it is green: an option whose fixture cannot tell its values apart is reported
+    /// <c>UNEXERCISED</c>, which is not a pass — see docs/plan/12 § "The key-flip sweep".
+    /// </remarks>
+    Target Sweep =>
+        definition => definition
+            .DependsOn(Compile)
+            .Executes(() => DotNetRun(settings => settings
+                        .SetProjectFile(RootDirectory / "Testing" / "Rikarin.Skala.Conformance.Sweep")
+                        .SetConfiguration(Configuration)
+                        .EnableNoBuild()
+                        .EnableNoRestore()
+                        .SetApplicationArguments("sweep")
+                )
+            );
+
     /// <summary>The differential report without a pass/fail: the ranked work queue.</summary>
     /// <remarks>
     /// ⚠ Two reports, because they answer different questions and only the second is the bar.
