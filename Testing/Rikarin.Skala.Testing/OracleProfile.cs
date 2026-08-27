@@ -91,8 +91,8 @@ public sealed record OracleProfile(string Name, string Suffix, string Tasks) {
         	<s:String x:Key="/Default/CodeStyle/CodeCleanup/Profiles/=PROFILE/@EntryIndexedValue">&lt;?xml version="1.0" encoding="utf-16"?&gt;&lt;Profile name="PROFILE"&gt;TASKS&lt;/Profile&gt;</s:String>
         </wpf:ResourceDictionary>
         """
-            .Replace("PROFILE", Name, StringComparison.Ordinal)
-            .Replace("TASKS", Escape(Tasks), StringComparison.Ordinal);
+                .Replace("PROFILE", Name, StringComparison.Ordinal)
+                .Replace("TASKS", Escape(Tasks), StringComparison.Ordinal);
 
     /// <summary>
     /// The profile document is XML whose one string value is *itself* XML, so the inner document is

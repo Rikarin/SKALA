@@ -30,10 +30,16 @@ public sealed record ChangedSpan(string File, int Line, string Original, string 
     /// <summary>Which tool moved this span, for the ranked report.</summary>
     public string Class =>
         Agrees ? "agreed"
-        : string.Equals(TextNormalisation.Normalise(Oracle), TextNormalisation.Normalise(Original),
-            StringComparison.Ordinal) ? "skala only"
-        : string.Equals(TextNormalisation.Normalise(Skala), TextNormalisation.Normalise(Original),
-            StringComparison.Ordinal) ? "oracle only"
+        : string.Equals(
+            TextNormalisation.Normalise(Oracle),
+            TextNormalisation.Normalise(Original),
+            StringComparison.Ordinal
+        ) ? "skala only"
+        : string.Equals(
+            TextNormalisation.Normalise(Skala),
+            TextNormalisation.Normalise(Original),
+            StringComparison.Ordinal
+        ) ? "oracle only"
         : "both, differently";
 }
 
@@ -71,7 +77,8 @@ public sealed record ArrangementReport(
                         Passes.OrderBy(static pair => pair.Key)
                             .Select(static pair =>
                                 pair.Key.ToString(CultureInfo.InvariantCulture)
-                                + "×" + pair.Value.ToString(CultureInfo.InvariantCulture)
+                                + "×"
+                                + pair.Value.ToString(CultureInfo.InvariantCulture)
                             )
                     )
                 );
@@ -94,7 +101,9 @@ public sealed record ArrangementReport(
                 .AppendLine(group.Key);
 
             foreach (var sample in group.Take(3)) {
-                builder.Append("         ").Append(sample.File).Append(':')
+                builder.Append("         ")
+                    .Append(sample.File)
+                    .Append(':')
                     .Append(sample.Line.ToString(CultureInfo.InvariantCulture))
                     .AppendLine();
                 builder.Append("           oracle │ ").AppendEscaped(FirstLine(sample.Oracle)).AppendLine();
@@ -256,8 +265,9 @@ public static class ArrangementDifferential {
             }
 
             foreach (var diagnostic in result.Diagnostics) {
-                if (diagnostic.Id is not (ArrangeIds.Reverted or ArrangeIds.SymbolChanged
-                    or ArrangementPipeline.DidNotConverge)) {
+                if (diagnostic.Id is not (ArrangeIds.Reverted
+                        or ArrangeIds.SymbolChanged
+                        or ArrangementPipeline.DidNotConverge)) {
                     continue;
                 }
 
@@ -280,8 +290,15 @@ public static class ArrangementDifferential {
             }
         }
 
-        return new ArrangementReport(measured.Length, spans, agreed, divergences.ToImmutable(), notConverged, reverted,
-            passes);
+        return new ArrangementReport(
+            measured.Length,
+            spans,
+            agreed,
+            divergences.ToImmutable(),
+            notConverged,
+            reverted,
+            passes
+        );
     }
 
     /// <summary>

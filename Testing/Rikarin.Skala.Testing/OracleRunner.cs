@@ -223,34 +223,34 @@ public sealed class OracleRunner {
     }
 
     public const string ProjectFile = """
-                               <Project Sdk="Microsoft.NET.Sdk">
-                                 <PropertyGroup>
-                                   <TargetFramework>net10.0</TargetFramework>
-                                   <Nullable>enable</Nullable>
-                                   <ImplicitUsings>enable</ImplicitUsings>
-                                   <LangVersion>preview</LangVersion>
-                                   <NoWarn>$(NoWarn);CS1591;CS0168;CS0219;CS8321;CS0067;CS0169</NoWarn>
-                                   <EnableDefaultCompileItems>true</EnableDefaultCompileItems>
-                                   <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
-                                   <OutputType>Library</OutputType>
-                                 </PropertyGroup>
-                               </Project>
-                               """;
+                                      <Project Sdk="Microsoft.NET.Sdk">
+                                        <PropertyGroup>
+                                          <TargetFramework>net10.0</TargetFramework>
+                                          <Nullable>enable</Nullable>
+                                          <ImplicitUsings>enable</ImplicitUsings>
+                                          <LangVersion>preview</LangVersion>
+                                          <NoWarn>$(NoWarn);CS1591;CS0168;CS0219;CS8321;CS0067;CS0169</NoWarn>
+                                          <EnableDefaultCompileItems>true</EnableDefaultCompileItems>
+                                          <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+                                          <OutputType>Library</OutputType>
+                                        </PropertyGroup>
+                                      </Project>
+                                      """;
 
     public const string SolutionFile = """
-                                Microsoft Visual Studio Solution File, Format Version 12.00
-                                Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Oracle", "Oracle.csproj", "{11111111-1111-1111-1111-111111111111}"
-                                EndProject
-                                Global
-                                	GlobalSection(SolutionConfigurationPlatforms) = preSolution
-                                		Debug|Any CPU = Debug|Any CPU
-                                	EndGlobalSection
-                                	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-                                		{11111111-1111-1111-1111-111111111111}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-                                		{11111111-1111-1111-1111-111111111111}.Debug|Any CPU.Build.0 = Debug|Any CPU
-                                	EndGlobalSection
-                                EndGlobal
-                                """;
+                                       Microsoft Visual Studio Solution File, Format Version 12.00
+                                       Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Oracle", "Oracle.csproj", "{11111111-1111-1111-1111-111111111111}"
+                                       EndProject
+                                       Global
+                                       	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+                                       		Debug|Any CPU = Debug|Any CPU
+                                       	EndGlobalSection
+                                       	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+                                       		{11111111-1111-1111-1111-111111111111}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+                                       		{11111111-1111-1111-1111-111111111111}.Debug|Any CPU.Build.0 = Debug|Any CPU
+                                       	EndGlobalSection
+                                       EndGlobal
+                                       """;
 
     /// <summary>
     /// Runs one batch of files under a directory the caller owns, in place, and reports what moved.

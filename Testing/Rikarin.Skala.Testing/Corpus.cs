@@ -16,8 +16,7 @@ public sealed record CorpusFile(string Set, string RelativePath, string Path) {
 
     public bool HasFixture => File.Exists(ExpectedPath);
 
-    public string ExpectedPathFor(OracleProfile profile) =>
-        System.IO.Path.ChangeExtension(Path, null) + profile.Suffix;
+    public string ExpectedPathFor(OracleProfile profile) => System.IO.Path.ChangeExtension(Path, null) + profile.Suffix;
 
     public bool HasFixtureFor(OracleProfile profile) => File.Exists(ExpectedPathFor(profile));
 

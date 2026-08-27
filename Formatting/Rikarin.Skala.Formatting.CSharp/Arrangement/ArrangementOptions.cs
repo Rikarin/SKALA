@@ -28,8 +28,11 @@ public enum ArrangementScope {
 /// thing that implements it — is two structs and two coverage lists.
 /// </remarks>
 public readonly struct ArrangementOptions {
-    public ArrangementOptions(in FormattingOptions options, ArrangementScope scope = ArrangementScope.Full,
-        bool aggressive = false) {
+    public ArrangementOptions(
+        in FormattingOptions options,
+        ArrangementScope scope = ArrangementScope.Full,
+        bool aggressive = false
+    ) {
         Scope = scope;
         Aggressive = aggressive;
 
@@ -158,6 +161,7 @@ public readonly struct ArrangementOptions {
 
         public static readonly OptionId NullCheckingPattern = Of("resharper_csharp_null_checking_pattern_style");
         public static readonly OptionId EmptyString = Of("resharper_empty_string");
+
         public static readonly OptionId RequireAccessibilityModifiers =
             Of("dotnet_style_require_accessibility_modifiers");
 

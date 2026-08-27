@@ -38,8 +38,7 @@ public sealed class BodyStyleRule : ArrangementRule {
 
     public override bool IsEnabled(in ArrangementOptions options) => true;
 
-    public override SyntaxNode Apply(ArrangementContext context) =>
-        new Rewriter(context.Options).Visit(context.Root);
+    public override SyntaxNode Apply(ArrangementContext context) => new Rewriter(context.Options).Visit(context.Root);
 
     sealed class Rewriter(ArrangementOptions options) : CSharpSyntaxRewriter {
         public override SyntaxNode? VisitMethodDeclaration(MethodDeclarationSyntax node) {
@@ -244,7 +243,8 @@ public sealed class BodyStyleRule : ArrangementRule {
                 || !options.UseHeuristicsForBodyStyle;
 
             if (style == BodyStyle.ExpressionBody) {
-                if (body is null || Extract(body, loose, allowThrow: !options.UseHeuristicsForBodyStyle)
+                if (body is null
+                    || Extract(body, loose, allowThrow: !options.UseHeuristicsForBodyStyle)
                     is not { } expression) {
                     return member;
                 }

@@ -170,7 +170,8 @@ switch (args[0]) {
         }
 
         var treeMode = args.FirstOrDefault(static a => a.StartsWith("--load=", StringComparison.Ordinal))
-            ?["--load=".Length..] ?? "binlog";
+            ?["--load=".Length..]
+            ?? "binlog";
 
         // `--explain=<path fragment>`: which rule, run alone, makes the re-bind reject this file.
         if (args.FirstOrDefault(static a => a.StartsWith("--explain=", StringComparison.Ordinal)) is { } explain) {
@@ -192,7 +193,8 @@ switch (args[0]) {
                 args.Contains("--aggressive"),
                 treeLimit,
                 Console.Error
-            ).Render()
+            )
+                .Render()
         );
 
         return 0;
@@ -309,9 +311,7 @@ static int Arrangement(string[] args) {
 
     var withFixtures = files.Where(static file => file.HasFixtureFor(OracleProfile.Cleanup)).ToArray();
     if (withFixtures.Length == 0) {
-        Console.Error.WriteLine(
-            "no cleanup fixtures. Run `./build.sh Oracle` (it now regenerates both profiles)."
-        );
+        Console.Error.WriteLine("no cleanup fixtures. Run `./build.sh Oracle` (it now regenerates both profiles).");
         return 2;
     }
 
@@ -348,8 +348,10 @@ static int Arrangement(string[] args) {
     var report = ArrangementDifferential.Measure(withFixtures, aggressive, filter, Console.Error);
     Console.WriteLine(report.Render(10));
 
-    foreach (var origin in withFixtures.GroupBy(static file => file.Set + "/" + file.RelativePath.Split('/')[0],
-                 StringComparer.Ordinal)
+    foreach (var origin in withFixtures.GroupBy(
+                 static file => file.Set + "/" + file.RelativePath.Split('/')[0],
+                 StringComparer.Ordinal
+             )
                  .OrderBy(static group => group.Key, StringComparer.Ordinal)) {
         var slice = ArrangementDifferential.Measure(origin.ToArray(), aggressive, filter);
         Console.WriteLine(
@@ -427,7 +429,9 @@ static int RegenerateCleanup(
         return 0;
     }
 
-    Console.WriteLine($"oracle: profile={profile.Name} over {files.Length.ToString(CultureInfo.InvariantCulture)} files");
+    Console.WriteLine(
+        $"oracle: profile={profile.Name} over {files.Length.ToString(CultureInfo.InvariantCulture)} files"
+    );
 
     // ⚠ ONE project holding every file, laid out at its own relative path — not the 60-file batches
     // of flattened `F0.cs … F59.cs` the format-only profile uses.

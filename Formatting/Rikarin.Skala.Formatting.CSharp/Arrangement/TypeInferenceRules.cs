@@ -196,10 +196,10 @@ public sealed class ObjectCreationRule : ArrangementRule {
             }
 
             return SyntaxFactory.ImplicitObjectCreationExpression(
-                    SyntaxFactory.Token(SyntaxKind.NewKeyword),
-                    visited.ArgumentList ?? SyntaxFactory.ArgumentList(),
-                    visited.Initializer
-                )
+                SyntaxFactory.Token(SyntaxKind.NewKeyword),
+                visited.ArgumentList ?? SyntaxFactory.ArgumentList(),
+                visited.Initializer
+            )
                 .WithLeadingTrivia(visited.GetLeadingTrivia())
                 .WithTrailingTrivia(visited.GetTrailingTrivia());
         }
@@ -309,7 +309,7 @@ public sealed class ObjectCreationRule : ArrangementRule {
                 // reasoning about the case.
                 case InitializerExpressionSyntax {
                     RawKind: (int)SyntaxKind.CollectionInitializerExpression
-                    or (int)SyntaxKind.ArrayInitializerExpression,
+                        or (int)SyntaxKind.ArrayInitializerExpression,
                     Parent: ObjectCreationExpressionSyntax or ArrayCreationExpressionSyntax
                 }:
                     return model.GetTypeInfo(node).ConvertedType;
@@ -322,7 +322,9 @@ public sealed class ObjectCreationRule : ArrangementRule {
         static SyntaxNode? EnclosingMember(SyntaxNode node) {
             for (var current = node.Parent; current is not null; current = current.Parent) {
                 switch (current) {
-                    case MethodDeclarationSyntax or PropertyDeclarationSyntax or LocalFunctionStatementSyntax
+                    case MethodDeclarationSyntax
+                        or PropertyDeclarationSyntax
+                        or LocalFunctionStatementSyntax
                         or AccessorDeclarationSyntax:
                         return current;
 

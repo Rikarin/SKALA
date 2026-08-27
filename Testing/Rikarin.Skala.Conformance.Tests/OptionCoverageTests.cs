@@ -140,7 +140,10 @@ public sealed class OptionCoverageTests {
                 var resolved = Rikarin.Skala.Core.Configuration.OptionResolver
                     .Resolve(file.Path, [new KeyValuePair<string, string>(key, value)]);
 
-                Assert.True(resolved.ValueErrors.IsEmpty, $"{key} = {value}: {string.Join("; ", resolved.ValueErrors)}");
+                Assert.True(
+                    resolved.ValueErrors.IsEmpty,
+                    $"{key} = {value}: {string.Join("; ", resolved.ValueErrors)}"
+                );
                 outputs.Add(CorpusArranger.RunWith(file, resolved.Options));
             }
 

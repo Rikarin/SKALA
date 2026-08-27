@@ -192,8 +192,12 @@ public sealed class ArrangementPropertyTests {
         }
 
         var cancellation = TestContext.Current.CancellationToken;
-        var before = CSharpSyntaxTree.ParseText(result.Original, CSharpFormatter.ParseOptions, string.Empty,
-                cancellation)
+        var before = CSharpSyntaxTree.ParseText(
+            result.Original,
+            CSharpFormatter.ParseOptions,
+            string.Empty,
+            cancellation
+        )
             .GetDiagnostics(cancellation)
             .Select(static d => d.Id)
             .Order(StringComparer.Ordinal);
@@ -295,10 +299,8 @@ public sealed class ArrangementPropertyTests {
         var set = ImmutableHashSet.CreateBuilder(StringComparer.Ordinal);
         foreach (var diagnostic in diagnostics) {
             if (diagnostic.Severity is DiagnosticSeverity.Error or DiagnosticSeverity.Warning) {
-                set.Add(
-                    diagnostic.Id + "|"
-                    + diagnostic.GetMessage(System.Globalization.CultureInfo.InvariantCulture)
-                );
+                set.Add(diagnostic.Id + "|"
+                    + diagnostic.GetMessage(System.Globalization.CultureInfo.InvariantCulture));
             }
         }
 

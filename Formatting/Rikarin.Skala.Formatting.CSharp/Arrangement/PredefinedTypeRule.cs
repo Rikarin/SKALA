@@ -50,7 +50,8 @@ public sealed class PredefinedTypeRule : ArrangementRule {
             // ⚠ Only a type *reference* is rewritten. `using System;` names a namespace and
             // `nameof(Int32)` reads an identifier whose spelling is the value — neither is a place
             // `int` may be written.
-            if (original.Parent is UsingDirectiveSyntax or NamespaceDeclarationSyntax
+            if (original.Parent is UsingDirectiveSyntax
+                or NamespaceDeclarationSyntax
                 or FileScopedNamespaceDeclarationSyntax
                 || IsInsideNameOf(original)) {
                 return visited;

@@ -37,7 +37,18 @@ public sealed class CanonicalCommandTests {
     [Fact]
     public void Sync_ThenDiff_IsAClosedLoop() {
         using var repository = new TemporaryRepository();
-        repository.Write(".editorconfig", File.ReadAllText(Path.Combine(CliRunner.RepositoryRoot, "Core", "Rikarin.Skala.Core.Tests", "Fixtures", "vixen.editorconfig")));
+        repository.Write(
+            ".editorconfig",
+            File.ReadAllText(
+                Path.Combine(
+                    CliRunner.RepositoryRoot,
+                    "Core",
+                    "Rikarin.Skala.Core.Tests",
+                    "Fixtures",
+                    "vixen.editorconfig"
+                )
+            )
+        );
 
         var sync = CliRunner.Run("config", "sync", repository.Root, "--apply");
         Assert.Equal(0, sync.ExitCode);
@@ -81,15 +92,34 @@ public sealed class CanonicalCommandTests {
         // checked-in payload byte for byte, or a re-export has silently diverged from what is
         // published.
         using var scratch = new TemporaryRepository();
-        var run = CliRunner.Run("config", "canonical", "editor_config_template", "--out", scratch.Root, "--version", "0.1.0");
+        var run = CliRunner.Run(
+            "config",
+            "canonical",
+            "editor_config_template",
+            "--out",
+            scratch.Root,
+            "--version",
+            "0.1.0"
+        );
 
         Assert.Equal(0, run.ExitCode);
         Assert.Equal(
-            File.ReadAllText(Path.Combine(CliRunner.RepositoryRoot, "Distribution", "Rikarin.Skala.Canonical", "canonical.editorconfig")),
-            File.ReadAllText(scratch.At("canonical.editorconfig")));
+            File.ReadAllText(
+                Path.Combine(
+                    CliRunner.RepositoryRoot,
+                    "Distribution",
+                    "Rikarin.Skala.Canonical",
+                    "canonical.editorconfig"
+                )
+            ),
+            File.ReadAllText(scratch.At("canonical.editorconfig"))
+        );
         Assert.Equal(
-            File.ReadAllText(Path.Combine(CliRunner.RepositoryRoot, "Distribution", "Rikarin.Skala.Canonical", "canonical.json")),
-            File.ReadAllText(scratch.At("canonical.json")));
+            File.ReadAllText(
+                Path.Combine(CliRunner.RepositoryRoot, "Distribution", "Rikarin.Skala.Canonical", "canonical.json")
+            ),
+            File.ReadAllText(scratch.At("canonical.json"))
+        );
     }
 
     sealed class TemporaryRepository : IDisposable {

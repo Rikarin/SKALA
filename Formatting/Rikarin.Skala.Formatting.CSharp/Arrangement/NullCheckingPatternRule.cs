@@ -103,12 +103,12 @@ public sealed class NullCheckingPatternRule : ArrangementRule {
             }
 
             return SyntaxFactory.IsPatternExpression(
-                    visitedOperand.WithoutTrailingTrivia(),
-                    SyntaxFactory.Token(SyntaxKind.IsKeyword)
-                        .WithLeadingTrivia(SyntaxFactory.Space)
-                        .WithTrailingTrivia(SyntaxFactory.Space),
-                    pattern
-                )
+                visitedOperand.WithoutTrailingTrivia(),
+                SyntaxFactory.Token(SyntaxKind.IsKeyword)
+                    .WithLeadingTrivia(SyntaxFactory.Space)
+                    .WithTrailingTrivia(SyntaxFactory.Space),
+                pattern
+            )
                 .WithLeadingTrivia(visited.GetLeadingTrivia())
                 .WithTrailingTrivia(visited.GetTrailingTrivia());
         }

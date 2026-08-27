@@ -34,8 +34,7 @@ public sealed class UsingsRule : ArrangementRule {
     /// </remarks>
     readonly ImmutableHashSet<string> _removable;
 
-    public UsingsRule(ImmutableHashSet<string>? removable = null) =>
-        _removable = removable ?? [];
+    public UsingsRule(ImmutableHashSet<string>? removable = null) => _removable = removable ?? [];
 
     public override string Id => ArrangeIds.Usings;
 
@@ -105,8 +104,11 @@ public sealed class UsingsRule : ArrangementRule {
     /// of it. A using needed only by a disabled <c>#if</c> branch is *not* reported, which is
     /// correct for that compilation and is exactly why the caller intersects across all of them.
     /// </remarks>
-    public static ImmutableHashSet<string> Unused(SemanticModel model, SyntaxTree tree,
-        CancellationToken cancellation = default) {
+    public static ImmutableHashSet<string> Unused(
+        SemanticModel model,
+        SyntaxTree tree,
+        CancellationToken cancellation = default
+    ) {
         var names = ImmutableHashSet.CreateBuilder(StringComparer.Ordinal);
         foreach (var diagnostic in model.GetDiagnostics(null, cancellation)) {
             if (!string.Equals(diagnostic.Id, "CS8019", StringComparison.Ordinal)) {
@@ -223,7 +225,8 @@ public sealed class EmptyStringRule : ArrangementRule {
             }
 
             if (model.GetSymbolInfo(node).Symbol is not IFieldSymbol {
-                    IsStatic: true, ContainingType.SpecialType: SpecialType.System_String
+                    IsStatic: true,
+                    ContainingType.SpecialType: SpecialType.System_String
                 }) {
                 return visited;
             }
@@ -232,9 +235,9 @@ public sealed class EmptyStringRule : ArrangementRule {
             // `""` is a constant too, so both are safe; there is no position where one is legal and
             // the other is not. The rewrite is total once the symbol is confirmed.
             return SyntaxFactory.LiteralExpression(
-                    SyntaxKind.StringLiteralExpression,
-                    SyntaxFactory.Literal(string.Empty)
-                )
+                SyntaxKind.StringLiteralExpression,
+                SyntaxFactory.Literal(string.Empty)
+            )
                 .WithLeadingTrivia(visited.GetLeadingTrivia())
                 .WithTrailingTrivia(visited.GetTrailingTrivia());
         }

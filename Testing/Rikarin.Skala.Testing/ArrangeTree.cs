@@ -126,10 +126,11 @@ public static class ArrangeTree {
                     );
 
                     var verdict = result.Outcome switch {
-                        ArrangementOutcome.Reverted => "⚠ REVERTED — " + string.Join(
-                            "; ",
-                            result.Diagnostics.Select(static d => d.Message)
-                        ),
+                        ArrangementOutcome.Reverted => "⚠ REVERTED — "
+                            + string.Join(
+                                "; ",
+                                result.Diagnostics.Select(static d => d.Message)
+                            ),
                         ArrangementOutcome.Arranged => "changed",
                         _ => "no change"
                     };
@@ -215,7 +216,9 @@ public static class ArrangeTree {
                             reverts[id] = reverts.GetValueOrDefault(id) + 1;
                             if (!revertSamples.ContainsKey(id)) {
                                 revertSamples[id] = Path.GetRelativePath(root, file)
-                                    + "  [" + string.Join(",", result.Applied) + "]  "
+                                    + "  ["
+                                    + string.Join(",", result.Applied)
+                                    + "]  "
                                     + diagnostic.Message;
                             }
                         }
@@ -250,8 +253,19 @@ public static class ArrangeTree {
             }
         }
 
-        return new TreeReport(files.Length, arranged, newDiagnostics, revertedRebind, revertedSymbol, notConverged,
-            notParseable, samples.ToImmutable(), applied, reverts, revertSamples);
+        return new TreeReport(
+            files.Length,
+            arranged,
+            newDiagnostics,
+            revertedRebind,
+            revertedSymbol,
+            notConverged,
+            notParseable,
+            samples.ToImmutable(),
+            applied,
+            reverts,
+            revertSamples
+        );
     }
 
     /// <summary>The compiler diagnostic ids named in a revert message.</summary>

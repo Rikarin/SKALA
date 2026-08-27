@@ -43,19 +43,20 @@ public static class ArrangementEdits {
         // Trim the identical head and tail first. On a real file this is nearly all of it, and it
         // takes the O(n·m) table below from "every line" to "the changed region".
         var head = 0;
-        while (head < left.Count && head < right.Count
-            && string.Equals(Text(before, left[head]), Text(after, right[head]), StringComparison.Ordinal)) {
+        while (head < left.Count
+               && head < right.Count
+               && string.Equals(Text(before, left[head]), Text(after, right[head]), StringComparison.Ordinal)) {
             head++;
         }
 
         var tail = 0;
         while (tail < left.Count - head
-            && tail < right.Count - head
-            && string.Equals(
-                Text(before, left[^(tail + 1)]),
-                Text(after, right[^(tail + 1)]),
-                StringComparison.Ordinal
-            )) {
+               && tail < right.Count - head
+               && string.Equals(
+                   Text(before, left[^(tail + 1)]),
+                   Text(after, right[^(tail + 1)]),
+                   StringComparison.Ordinal
+               )) {
             tail++;
         }
 
@@ -143,8 +144,12 @@ public static class ArrangementEdits {
 
             if (matched) {
                 if (pendingLeft >= 0) {
-                    yield return new Hunk(left[pendingLeft].Start, left[x].Start, right[pendingRight].Start,
-                        right[y].Start);
+                    yield return new Hunk(
+                        left[pendingLeft].Start,
+                        left[x].Start,
+                        right[pendingRight].Start,
+                        right[y].Start
+                    );
                     pendingLeft = -1;
                     pendingRight = -1;
                 }

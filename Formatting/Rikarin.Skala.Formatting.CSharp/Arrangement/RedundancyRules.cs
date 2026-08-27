@@ -85,9 +85,7 @@ public sealed class RedundantBracesRule : ArrangementRule {
                     // The inner block's own leading trivia belongs to its first statement now.
                     var first = true;
                     foreach (var lifted in inner.Statements) {
-                        statements.Add(
-                            first ? lifted.WithLeadingTrivia(inner.GetLeadingTrivia()) : lifted
-                        );
+                        statements.Add(first ? lifted.WithLeadingTrivia(inner.GetLeadingTrivia()) : lifted);
                         first = false;
                     }
 
@@ -104,7 +102,8 @@ public sealed class RedundantBracesRule : ArrangementRule {
         static bool IsRedundant(BlockSyntax block) {
             foreach (var statement in block.Statements) {
                 // A declaration's scope is the block. Lifting it widens that scope.
-                if (statement is LocalDeclarationStatementSyntax or LocalFunctionStatementSyntax
+                if (statement is LocalDeclarationStatementSyntax
+                    or LocalFunctionStatementSyntax
                     or LabeledStatementSyntax) {
                     return false;
                 }

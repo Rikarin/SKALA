@@ -47,9 +47,8 @@ public static class OracleFixture {
     public static string Read(CorpusFile file) => Read(file, OracleProfile.FormatOnly);
 
     /// <summary>One profile's fixture body, with the header line removed.</summary>
-    public static string Read(CorpusFile file, OracleProfile profile) => StripHeader(
-        File.ReadAllText(file.ExpectedPathFor(profile))
-    );
+    public static string Read(CorpusFile file, OracleProfile profile) =>
+        StripHeader(File.ReadAllText(file.ExpectedPathFor(profile)));
 
     static string StripHeader(string text) {
         var newLine = text.IndexOf('\n');

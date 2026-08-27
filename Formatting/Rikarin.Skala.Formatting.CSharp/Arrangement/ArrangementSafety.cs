@@ -73,8 +73,17 @@ public static class ArrangementSafety {
             );
         }
 
-        return SymbolIdentity(path, originalRoot, rewritten, beforeModel, afterModel, crashRoot, originalText,
-            arranged, cancellation);
+        return SymbolIdentity(
+            path,
+            originalRoot,
+            rewritten,
+            beforeModel,
+            afterModel,
+            crashRoot,
+            originalText,
+            arranged,
+            cancellation
+        );
     }
 
     /// <summary>
@@ -223,7 +232,7 @@ public static class ArrangementSafety {
             if (current is Microsoft.CodeAnalysis.CSharp.Syntax.MemberDeclarationSyntax
                 or Microsoft.CodeAnalysis.CSharp.Syntax.LocalFunctionStatementSyntax) {
                 return model.GetDeclaredSymbol(current, cancellation)
-                        ?.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)
+                    ?.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)
                     ?? current.Kind().ToString();
             }
         }

@@ -91,8 +91,16 @@ public static class ArrangementPipeline {
             }
 
             if (arranged.Outcome is ArrangementOutcome.NotParseable or ArrangementOutcome.Generated) {
-                return new PipelineResult(path, text, text.ToString(), [], [], diagnostics.ToImmutable(), passes + 1,
-                    true);
+                return new PipelineResult(
+                    path,
+                    text,
+                    text.ToString(),
+                    [],
+                    [],
+                    diagnostics.ToImmutable(),
+                    passes + 1,
+                    true
+                );
             }
 
             var afterArrange = arranged.Outcome == ArrangementOutcome.Arranged
