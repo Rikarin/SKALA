@@ -1,6 +1,7 @@
 using System.Text;
 using System.Text.Json.Nodes;
 using Rikarin.Skala.Formatting.CSharp;
+using Rikarin.Skala.Protocol;
 using Rikarin.Skala.Server;
 
 namespace Rikarin.Skala.Server.Tests;

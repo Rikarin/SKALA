@@ -1,5 +1,7 @@
+using System.Net.Sockets;
 using System.Text;
 using Rikarin.Skala.Core.Configuration;
+using Rikarin.Skala.Protocol;
 
 namespace Rikarin.Skala.Server;
 
@@ -36,6 +38,20 @@ public static class DaemonCommands {
             daemon.Listen();
         } catch (IOException exception) {
             await Console.Error.WriteLineAsync($"skala daemon: {exception.Message}").ConfigureAwait(false);
+            return 2;
+        } catch (Exception exception) when (exception is ArgumentException or SocketException
+                                                or UnauthorizedAccessException
+                                           ) {
+            // ⚠ Was uncaught, and the daemon died with an unhandled exception and exit code 0. The
+            // one that actually happened is ArgumentOutOfRangeException from a socket path over the
+            // kernel's 104-byte cap (see DaemonProtocol.SocketPath); the path itself is fixed, but
+            // the handler stays, because every reason a transport will not bind has the same right
+            // answer — say so once, exit non-zero, and let the caller do the work itself. The daemon
+            // is an optimisation, and an optimisation that dies noisily is still better than one
+            // that dies silently and is blamed on the editor.
+            await Console.Error.WriteLineAsync($"skala daemon: cannot listen: {exception.Message}")
+                .ConfigureAwait(false);
+
             return 2;
         }
 

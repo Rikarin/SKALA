@@ -1,0 +1,54 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    The thin client. docs/plan/13 § "Startup", mitigation 2.
+
+    ⚠ It references Rikarin.Skala.Protocol and NOTHING ELSE, and that is the entire design. The
+    measurement that forced it: `skala daemon status` — a command that does no work at all — costs
+    95 ms median on the reference machine, because the single `skala` executable references
+    Rikarin.Skala.Analysis and therefore loads Roslyn before Main runs. The warm single-file budget
+    for the whole operation is 40 ms. No amount of daemon-side work can pay that back; the client
+    itself had to stop being expensive.
+
+    ⚠ Roslyn is not AOT-friendly and this project must never reference it, directly or transitively.
+    `IlcTreatWarningsAsErrors` and the trim analyzers are on so that a reference that would break
+    AOT fails the build here rather than at publish time on somebody's CI.
+  -->
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>Rikarin.Skala.Client</RootNamespace>
+
+    <!--
+      ⚠ The published binary is `skala`: the client is what a hook, an editor and a person invoke,
+      and the full tool becomes `skala-tool` beside it. In a plain `dotnet build` this produces a
+      second `skala` under this project's own bin/, which is why SkalaClientPath (Directory.Build.targets
+      of the publish layout) and the tests locate it by project rather than by name.
+    -->
+    <AssemblyName>skala</AssemblyName>
+
+    <PublishAot>true</PublishAot>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <UseSystemResourceKeys>true</UseSystemResourceKeys>
+
+    <!-- ⚠ The client's whole job is to start fast and exit. Nothing it does is parallel. -->
+    <ServerGarbageCollection>false</ServerGarbageCollection>
+    <ConcurrentGarbageCollection>false</ConcurrentGarbageCollection>
+
+    <!-- Size, which is start time: every page faulted in before Main is part of the budget. -->
+    <StackTraceSupport>false</StackTraceSupport>
+    <EventSourceSupport>false</EventSourceSupport>
+    <MetadataUpdaterSupport>false</MetadataUpdaterSupport>
+    <NativeDebugSymbols>false</NativeDebugSymbols>
+    <IlcOptimizationPreference>Speed</IlcOptimizationPreference>
+
+    <IsAotCompatible>true</IsAotCompatible>
+    <EnableTrimAnalyzer>true</EnableTrimAnalyzer>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../Rikarin.Skala.Protocol/Rikarin.Skala.Protocol.csproj" />
+  </ItemGroup>
+
+</Project>

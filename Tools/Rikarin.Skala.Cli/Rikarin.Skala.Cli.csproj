@@ -8,7 +8,21 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <RootNamespace>Rikarin.Skala.Cli</RootNamespace>
-    <AssemblyName>skala</AssemblyName>
+    <!--
+      ⚠ `skala-tool`, not `skala`, since M7. The NativeAOT thin client
+      (Tools/Rikarin.Skala.Client) is what a hook, an editor and a person invoke, and it publishes
+      as `skala`; this is what it falls back to and what the daemon runs as. The two must be able to
+      sit in one directory, so they need two names — before the rename the client's `skala.dll`
+      silently overwrote this project's in the published layout, and the tool's apphost then failed
+      to start.
+
+      ⚠ `ToolCommandName` stays `skala`. The `dotnet tool install` distribution ships this project
+      alone under the name people already type; NativeAOT cannot be packed as a dotnet tool, so the
+      client is a standalone-binary concern (doc 11 § "Distribution": "GitHub Releases | standalone
+      NativeAOT binaries per RID"). A global-tool install therefore has the old startup cost and the
+      old behaviour, which is correct — it has no client beside it to find.
+    -->
+    <AssemblyName>skala-tool</AssemblyName>
     <PackAsTool>true</PackAsTool>
     <ToolCommandName>skala</ToolCommandName>
     <PackageId>Rikarin.Skala.Cli</PackageId>
@@ -22,6 +36,17 @@
     -->
     <ServerGarbageCollection>true</ServerGarbageCollection>
     <ConcurrentGarbageCollection>true</ConcurrentGarbageCollection>
+
+    <!--
+      ⚠ ReadyToRun — docs/plan/13 § "Startup", mitigation 3. Precompiled native code for the
+      framework-dependent tool, which is what the daemon runs as and what the thin client falls
+      back to. It cuts the JIT cost on the first analysis; it does not make the tool small, and it
+      is not a substitute for mitigation 2 (the AOT client), which is what actually meets the 40 ms
+      budget. Only meaningful with a RuntimeIdentifier, so it is conditioned on one rather than set
+      unconditionally — `dotnet build` with no RID would otherwise warn on every build.
+    -->
+    <PublishReadyToRun Condition="'$(RuntimeIdentifier)' != ''">true</PublishReadyToRun>
+    <PublishReadyToRunComposite Condition="'$(RuntimeIdentifier)' != ''">false</PublishReadyToRunComposite>
   </PropertyGroup>
 
   <ItemGroup>

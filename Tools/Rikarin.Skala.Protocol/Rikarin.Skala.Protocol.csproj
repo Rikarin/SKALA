@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    The daemon's wire format, and nothing else.
+
+    ⚠ This project has NO PackageReference and NO ProjectReference, and that is its entire reason
+    for existing. docs/plan/13 § "Startup" puts the 40 ms warm budget on a thin client that "cannot
+    reference Roslyn (Roslyn is not AOT-friendly) and does not need to — it is a socket and a JSON
+    writer". Before M7 the protocol types lived in Rikarin.Skala.Server, which references
+    Rikarin.Skala.Formatting.CSharp, which is Roslyn; so anything that wanted to speak to the daemon
+    dragged in 40 MB of compiler. Splitting the types out is what makes the AOT client possible.
+
+    Anything added here is paid for on every hook invocation. Keep it a socket and a JSON writer.
+  -->
+
+  <PropertyGroup>
+    <RootNamespace>Rikarin.Skala.Protocol</RootNamespace>
+
+    <!--
+      Both consumers are AOT or AOT-adjacent, so the analyzers that catch reflection-based
+      serialisation have to be on here rather than only in the client.
+    -->
+    <IsAotCompatible>true</IsAotCompatible>
+    <EnableTrimAnalyzer>true</EnableTrimAnalyzer>
+    <IsTrimmable>true</IsTrimmable>
+  </PropertyGroup>
+
+</Project>

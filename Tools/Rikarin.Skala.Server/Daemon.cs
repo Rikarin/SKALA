@@ -1,8 +1,10 @@
 using System.Diagnostics;
 using System.Globalization;
+using System.IO.Pipes;
 using System.Net.Sockets;
 using Rikarin.Skala.Core;
 using Rikarin.Skala.Formatting.CSharp;
+using Rikarin.Skala.Protocol;
 
 namespace Rikarin.Skala.Server;
 
@@ -36,6 +38,7 @@ public sealed class Daemon : IAsyncDisposable {
     readonly Stopwatch _uptime = Stopwatch.StartNew();
     readonly CancellationTokenSource _stopping = new();
     Socket? _listener;
+    NamedPipeServerStream? _pipe;
     DateTime _lastRequest = DateTime.UtcNow;
 
     public Daemon(string repositoryRoot) {
@@ -45,12 +48,27 @@ public sealed class Daemon : IAsyncDisposable {
 
     public string SocketPath => _socketPath;
 
-    /// <summary>Binds the socket. ⚠ Throws if one is already bound, which is how two daemons are prevented.</summary>
+    /// <summary>
+    /// Binds the transport. ⚠ Throws if one is already bound, which is how two daemons are prevented.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ Two transports, chosen by platform: a named pipe on Windows and a Unix domain socket
+    /// everywhere else. See <see cref="DaemonTransport"/> for why the Windows half exists now and
+    /// did not before.
+    /// </remarks>
     public void Listen() {
         // ⚠ Creates `.skala/` *and* leaves the self-ignore marker in it. The daemon is the most
         // common way `.skala/` first appears in somebody's tree, because it is started lazily by
         // the first single-file format — so it is the most important one to keep out of git status.
         SkalaDirectory.EnsureForFile(_socketPath);
+
+        if (DaemonTransport.UsesNamedPipe) {
+            // ⚠ A pipe name is machine-global, so "already bound" is reported by the OS when the
+            // first instance exists. There is no stale-file case to recover from — which is the one
+            // genuine advantage the pipe has over the socket.
+            _pipe = CreatePipe();
+            return;
+        }
 
         // ⚠ A socket file left by a crashed daemon is not a running daemon. Probing it before
         // unlinking is the difference between recovering and stealing a live daemon's socket.
@@ -70,14 +88,34 @@ public sealed class Daemon : IAsyncDisposable {
         Restrict(_socketPath);
     }
 
+    NamedPipeServerStream CreatePipe() =>
+        new(
+            DaemonProtocol.PipeName(_repositoryRoot),
+            PipeDirection.InOut,
+            NamedPipeServerStream.MaxAllowedServerInstances,
+            PipeTransmissionMode.Byte,
+            PipeOptions.Asynchronous | PipeOptions.CurrentUserOnly
+        );
+
     public async Task RunAsync(CancellationToken cancellation) {
         using var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellation, _stopping.Token);
         var idle = IdleWatchdog(linked.Token);
 
         try {
             while (!linked.IsCancellationRequested) {
+                if (DaemonTransport.UsesNamedPipe) {
+                    // ⚠ One instance per connection: a NamedPipeServerStream that has been connected
+                    // cannot be reused, so the accepted one is handed to the handler and the next is
+                    // created here. Getting this wrong serialises every client behind the first.
+                    var accepted = _pipe!;
+                    await accepted.WaitForConnectionAsync(linked.Token).ConfigureAwait(false);
+                    _pipe = CreatePipe();
+                    _ = ServeAsync(accepted, linked.Token);
+                    continue;
+                }
+
                 var connection = await _listener!.AcceptAsync(linked.Token).ConfigureAwait(false);
-                _ = ServeAsync(connection, linked.Token);
+                _ = ServeAsync(new NetworkStream(connection, ownsSocket: true), linked.Token);
             }
         } catch (OperationCanceledException) {
             // The idle timer or the caller asked; both are ordinary shutdowns.
@@ -100,11 +138,11 @@ public sealed class Daemon : IAsyncDisposable {
         }
     }
 
-    async Task ServeAsync(Socket connection, CancellationToken cancellation) {
-        using var stream = new NetworkStream(connection, ownsSocket: true);
+    async Task ServeAsync(Stream connection, CancellationToken cancellation) {
+        using var stream = connection;
         try {
             while (!cancellation.IsCancellationRequested) {
-                var request = await DaemonProtocol.ReadAsync<DaemonRequest>(stream, cancellation).ConfigureAwait(false);
+                var request = await DaemonProtocol.ReadRequestAsync(stream, cancellation).ConfigureAwait(false);
                 if (request is null) {
                     return;
                 }
@@ -177,9 +215,9 @@ public sealed class Daemon : IAsyncDisposable {
     }
 
     static void Restrict(string path) {
-        // ⚠ Windows has no mode to set; a named pipe carries its own ACL and the socket file there
-        // is not the security boundary. Everywhere else, 0600: the socket is a command channel into
-        // the developer's own tree.
+        // ⚠ Windows never reaches here: it binds a named pipe with PipeOptions.CurrentUserOnly,
+        // which is the ACL, and there is no socket file to chmod. Everywhere else, 0600 — the
+        // socket is a command channel into the developer's own tree.
         if (OperatingSystem.IsWindows()) {
             return;
         }
@@ -196,7 +234,17 @@ public sealed class Daemon : IAsyncDisposable {
     public async ValueTask DisposeAsync() {
         await _stopping.CancelAsync().ConfigureAwait(false);
         _listener?.Dispose();
+        if (_pipe is not null) {
+            await _pipe.DisposeAsync().ConfigureAwait(false);
+        }
+
         _stopping.Dispose();
+
+        // ⚠ A pipe leaves nothing on disk to unlink; the OS reclaims the name when the last handle
+        // closes. Only the socket transport has a file to clean up.
+        if (DaemonTransport.UsesNamedPipe) {
+            return;
+        }
 
         try {
             if (File.Exists(_socketPath)) {

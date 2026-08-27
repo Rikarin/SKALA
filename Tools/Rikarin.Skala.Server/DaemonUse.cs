@@ -1,6 +1,7 @@
 using System.Text;
 using Rikarin.Skala.Core.Configuration;
 using Rikarin.Skala.Formatting.CSharp;
+using Rikarin.Skala.Protocol;
 
 namespace Rikarin.Skala.Server;
 

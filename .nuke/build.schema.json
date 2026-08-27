@@ -27,7 +27,11 @@
         "Canonical",
         "Clean",
         "Compile",
+        "Conformance",
+        "Fidelity",
         "Lint",
+        "Native",
+        "Oracle",
         "Pack",
         "Restore",
         "Test"
@@ -115,6 +119,10 @@
             "Debug",
             "Release"
           ]
+        },
+        "Runtime": {
+          "type": "string",
+          "description": "Runtime identifier for `Native` — defaults to the host's"
         },
         "Solution": {
           "type": "string",
