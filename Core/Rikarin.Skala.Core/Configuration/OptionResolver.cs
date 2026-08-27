@@ -220,7 +220,12 @@ public static class OptionResolver {
 
             foreach (var target in OptionRegistry.Get((OptionId)i).Expands) {
                 if (Outranks(origin, winnerDocument[i], winners[(int)target], winnerDocument[(int)target])
-                    && Outranks(origin, winnerDocument[i], chosen[(int)target]?.Origin, chosen[(int)target]?.Document ?? -1)) {
+                    && Outranks(
+                        origin,
+                        winnerDocument[i],
+                        chosen[(int)target]?.Origin,
+                        chosen[(int)target]?.Document ?? -1
+                    )) {
                     chosen[(int)target] = (origin, winnerDocument[i]);
                 }
             }

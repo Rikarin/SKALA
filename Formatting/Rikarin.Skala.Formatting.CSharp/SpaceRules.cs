@@ -581,8 +581,7 @@ public static class SpaceRules {
             _ => false
         };
 
-    static bool IsEmptyRank(ArrayRankSpecifierSyntax rank) =>
-        rank.Sizes is [OmittedArraySizeExpressionSyntax];
+    static bool IsEmptyRank(ArrayRankSpecifierSyntax rank) => rank.Sizes is [OmittedArraySizeExpressionSyntax];
 
     static bool WithinAngles(SyntaxNode? owner, in PhaseOneOptions o) =>
         owner is TypeParameterListSyntax ? o.SpaceWithinTypeParameterAngles : o.SpaceWithinTypeArgumentAngles;

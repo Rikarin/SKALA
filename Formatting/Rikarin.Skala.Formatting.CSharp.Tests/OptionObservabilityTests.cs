@@ -31,8 +31,7 @@ namespace Rikarin.Skala.Formatting.CSharp.Tests;
 /// </remarks>
 public sealed class OptionObservabilityTests {
     /// <summary>The families this milestone owns.</summary>
-    static bool InFamily(string key) =>
-        key.Split('_').Any(static part => part is "space" or "indent" or "outdent");
+    static bool InFamily(string key) => key.Split('_').Any(static part => part is "space" or "indent" or "outdent");
 
     public static TheoryData<string> Honoured {
         get {
@@ -117,7 +116,10 @@ public sealed class OptionObservabilityTests {
             var perFile = new HashSet<string>(StringComparer.Ordinal);
             foreach (var value in values) {
                 var resolved = OptionResolver.Resolve(file.Path, [new KeyValuePair<string, string>(key, value)]);
-                Assert.True(resolved.ValueErrors.IsEmpty, $"{key} = {value}: {string.Join("; ", resolved.ValueErrors)}");
+                Assert.True(
+                    resolved.ValueErrors.IsEmpty,
+                    $"{key} = {value}: {string.Join("; ", resolved.ValueErrors)}"
+                );
                 perFile.Add(CSharpFormatter.Format(file.Path, text, resolved.Options).Formatted);
             }
 

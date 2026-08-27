@@ -5,14 +5,14 @@
     "Milestone": "M3.1, no symbols. With the oracle's own 18 symbols supplied it is 0.9970/0.8579; ./build.sh Fidelity reports both. The ratchet is the without-symbols number because that is what `skala format` does with no project."
   },
   "constructs": {
-    "LineFidelity": 0.9664,
-    "FileFidelity": 0.9121,
-    "Milestone": "M3.1, and a file larger than M5's 272: `align_multiline_statement_conditions` earned a fixture when it stopped being Tier D."
+    "LineFidelity": 0.9747,
+    "FileFidelity": 0.9257,
+    "Milestone": "M9, re-based: the set grew from 284 files to 323 because thirty-nine spacing and indentation keys stopped being Tier D and each earned a fixture. ⚠ The old population is measured too, and it improved on its own: 284 files scored 0.9664/0.9121 at M3.1 and score 0.9724/0.9155 now, from the labelled-statement and single-line-accessor corrections. All thirty-nine new fixtures are byte-identical to the oracle, so the growth raises the aggregate rather than diluting it — which is the case doc 12 § \"a ratchet compares numbers over the same population\" says to state rather than assume."
   },
   "pathological": {
-    "LineFidelity": 0.956,
-    "FileFidelity": 0.8654,
-    "Milestone": "M3.1. M3 was 0.9473/0.8077."
+    "LineFidelity": 0.9626,
+    "FileFidelity": 0.8846,
+    "Milestone": "M9, same population as M3.1's 52 files. M3.1 was 0.9560/0.8654; a labelled statement is no longer indented one level in, and an accessor body's braces are read out of `space_in_singleline_accessorholder`."
   },
   "preservation/keep-keep": {
     "LineFidelity": 0.9598,

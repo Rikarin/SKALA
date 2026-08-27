@@ -1301,7 +1301,8 @@ public static class Ids {
     public static readonly OptionId SpaceAroundMemberAccessOperator =
         OfGeneralized("resharper_space_around_member_access_operator");
 
-    public static readonly OptionId SpaceAroundTernaryOperator = OfGeneralized("resharper_space_around_ternary_operator");
+    public static readonly OptionId SpaceAroundTernaryOperator =
+        OfGeneralized("resharper_space_around_ternary_operator");
 
     public static readonly OptionId SpaceBeforeOpenSquareBrackets =
         OfGeneralized("resharper_space_before_open_square_brackets");
