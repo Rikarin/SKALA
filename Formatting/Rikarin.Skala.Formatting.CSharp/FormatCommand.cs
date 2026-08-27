@@ -63,6 +63,13 @@ public sealed record FormatRequest {
     /// disagree with Rider on every doc comment in every repository. Off is the setting that agrees
     /// with the oracle; this is the setting for a tree that wants the layout its .editorconfig
     /// describes and accepts that Rider will not reproduce it.
+    /// <para>
+    /// ⚠ It makes <c>--diff</c> and <c>--range</c> coarser around a re-wrapped comment, and only
+    /// there. The anchor points that make an edit minimal are offsets into the text the
+    /// sub-formatter rewrites, and an anchor inside a re-wrapped comment is dropped rather than
+    /// guessed at — an anchor that lies about where a piece went produces an edit that overwrites
+    /// the wrong bytes.
+    /// </para>
     /// </remarks>
     public bool XmlDoc { get; init; }
 }
