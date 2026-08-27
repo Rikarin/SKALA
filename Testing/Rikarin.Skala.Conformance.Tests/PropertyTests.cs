@@ -1,5 +1,6 @@
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
 using Rikarin.Skala.Core.Configuration;
 using Rikarin.Skala.Formatting;
@@ -170,6 +171,24 @@ public sealed class PropertyTests {
             var start = text.Lines.GetLineFromPosition(token.SpanStart).LineNumber;
             var end = text.Lines.GetLineFromPosition(token.Span.End).LineNumber;
             for (var line = start + 1; line <= end; line++) {
+                multiline.Add(line);
+            }
+        }
+
+        // ⚠ An interpolated string spanning lines is data too, and it is not one token — it is a run
+        // of them with expressions between, so the per-token test above lets the mutation into it.
+        // Skala emits the whole expression byte-for-byte (`NodeLayout.Verbatim`, docs/plan/04 §
+        // "where a moved space changes the value") and so does the oracle, so a space added inside
+        // one is a space neither tool is allowed to absorb. C# 11 put newlines inside interpolation
+        // holes, which is what made this reachable from real code at all.
+        foreach (var node in tree.GetRoot().DescendantNodes()) {
+            if (node is not InterpolatedStringExpressionSyntax) {
+                continue;
+            }
+
+            var first = text.Lines.GetLineFromPosition(node.SpanStart).LineNumber;
+            var last = text.Lines.GetLineFromPosition(node.Span.End).LineNumber;
+            for (var line = first + 1; line <= last; line++) {
                 multiline.Add(line);
             }
         }

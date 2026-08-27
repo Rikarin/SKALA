@@ -22,6 +22,10 @@ using Rikarin.Skala.Testing;
 //                     happens to a 121-column array initializer, and asking does.
 //   audit [dir…]      every rule's findings over a tree, grouped by rule, for the
 //                     false-positive review docs/plan/16 § R3 makes the shipping bar.
+//   sample <tree> <n> <dest>
+//                     redraw a corpus sample from a tree, reproducibly: the file is chosen by a
+//                     hash of its path rather than by a seeded sequence, so the same commit and
+//                     the same filters give the same files on any machine.
 //   margin [out]      SK-DIV-0005's constant, swept: eleven right-hand-side shapes at five block
 //                     depths under both values of `wrap_before_eq`, one character at a time.
 //   preprocessor      SK-DIV-0004's number: `corpus/real/` fidelity with the oracle's own
@@ -69,6 +73,25 @@ switch (args[0]) {
         Console.WriteLine(
             PreprocessorFidelity.Measure(
                 args.Length > 1 && args[1] != "-" ? args[1..] : PreprocessorFidelity.OracleSymbols(Console.Out)
+            )
+        );
+
+        return 0;
+    case "sample":
+        // ⚠ Redraws a corpus sample from a tree, reproducibly. `sample <tree> <count> <dest>`.
+        // A deliberate action whose output is reviewed in its own commit, like `oracle`: it
+        // replaces the corpus, and a corpus that changes without a commit is not a measurement.
+        if (args.Length < 4) {
+            Console.Error.WriteLine("usage: sample <tree> <count> <destination>");
+            return 2;
+        }
+
+        Console.WriteLine(
+            CorpusSample.Draw(
+                Path.GetFullPath(args[1]),
+                int.Parse(args[2], CultureInfo.InvariantCulture),
+                Path.GetFullPath(args[3]),
+                Console.Error
             )
         );
 

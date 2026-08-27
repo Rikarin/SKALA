@@ -1,12 +1,12 @@
 {
   "real": {
-    "LineFidelity": 0.9922,
-    "FileFidelity": 0.7763,
-    "Milestone": "M3.1 - the tail, before the Vixen re-base. From M5's 0.9886/0.7132. Seven formatter corrections: an unbound generic's `<,>`, a pointer and function-pointer declarator, an implicit element access after a comma, two ungoverned `..` gaps, a lambda body's continuation level, a list pattern's preserved item breaks, and SK-DIV-0005's constant re-fitted from 8 to 12."
+    "LineFidelity": 0.993,
+    "FileFidelity": 0.7842,
+    "Milestone": "M3.1, on the re-based Vixen sample. The same build measured 0.9922/0.7842 on the old sample and 0.9886/0.7132 at M5, so the tail work is worth 0.36 points and the re-base 0.08 - see Testing/corpus/real/NOTICE.md."
   },
   "constructs": {
-    "LineFidelity": 0.9654,
-    "FileFidelity": 0.9081,
+    "LineFidelity": 0.9659,
+    "FileFidelity": 0.9118,
     "Milestone": "M3.1. M5 was 0.9599/0.8971."
   },
   "pathological": {
