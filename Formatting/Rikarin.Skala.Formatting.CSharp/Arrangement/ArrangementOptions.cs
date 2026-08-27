@@ -55,11 +55,13 @@ public readonly struct ArrangementOptions {
             StringComparison.OrdinalIgnoreCase
         );
 
-        // ⚠ A string option, not a bool: the export writes `omit_if_default:suggestion`, one value
-        // and one severity in one key. Only the value half governs the rewrite; the severity half is
-        // `skala check`'s (doc 06 § "Body styles": don't nag, but do fix it when running cleanup).
-        OmitDefaultAccessibility = (options.GetString(Ids.RequireAccessibilityModifiers) ?? string.Empty)
-            .StartsWith("omit_if_default", StringComparison.OrdinalIgnoreCase);
+        // ⚠ The export writes `omit_if_default:suggestion`: one value and one severity in one key.
+        // Only the value half governs the rewrite; the severity half is `skala check`'s (doc 06 §
+        // "Body styles": don't nag, but do fix it when running cleanup). The registry strips the
+        // suffix, which is why this reads as a plain enum.
+        OmitDefaultAccessibility =
+            (AccessibilityModifierStyle)options.GetRaw(Ids.RequireAccessibilityModifiers)
+            == AccessibilityModifierStyle.OmitIfDefault;
 
         RemoveThisQualifier = options.GetBool(Ids.RemoveThisQualifier);
         BracesRedundant = options.GetBool(Ids.BracesRedundant);

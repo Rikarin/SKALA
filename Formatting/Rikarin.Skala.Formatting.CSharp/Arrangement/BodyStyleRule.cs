@@ -227,7 +227,7 @@ public sealed class BodyStyleRule : ArrangementRule {
         static ExpressionSyntax? ExtractAccessor(AccessorDeclarationSyntax accessor) =>
             accessor.ExpressionBody?.Expression ?? Extract(accessor.Body);
 
-        static TMember Convert<TMember>(
+        TMember Convert<TMember>(
             TMember member,
             BodyStyle style,
             BlockSyntax? body,
@@ -235,8 +235,17 @@ public sealed class BodyStyleRule : ArrangementRule {
             Func<TMember, ArrowExpressionClauseSyntax, SyntaxToken, TMember> toExpression,
             Func<TMember, BlockSyntax, TMember> toBlock
         ) where TMember : SyntaxNode {
+            // ⚠ A constructor has no return value, so its single statement is always an expression
+            // statement; requiring a `return` would make `constructor_or_destructor_body =
+            // expression_body` a setting that can never fire. And with the heuristic OFF, doc 06's
+            // description applies literally — "*every* single-statement method becomes an expression
+            // body" — so the `throw` and void-expression exclusions lift with it.
+            var loose = member is ConstructorDeclarationSyntax or DestructorDeclarationSyntax
+                || !options.UseHeuristicsForBodyStyle;
+
             if (style == BodyStyle.ExpressionBody) {
-                if (body is null || Extract(body) is not { } expression) {
+                if (body is null || Extract(body, loose, allowThrow: !options.UseHeuristicsForBodyStyle)
+                    is not { } expression) {
                     return member;
                 }
 
@@ -257,9 +266,20 @@ public sealed class BodyStyleRule : ArrangementRule {
         /// ⚠ Every "return null" here is docs/plan/06 § "Safety" layer 1 in miniature: a body this
         /// method does not understand stays a block. There is no "probably fine".
         /// </remarks>
-        static ExpressionSyntax? Extract(BlockSyntax? body, bool allowExpressionStatement = false) {
+        static ExpressionSyntax? Extract(
+            BlockSyntax? body,
+            bool allowExpressionStatement = false,
+            bool allowThrow = false
+        ) {
             if (body is null || body.Statements.Count != 1 || HasTriviaThatBlocksConversion(body)) {
                 return null;
+            }
+
+            if (allowThrow && body.Statements[0] is ThrowStatementSyntax { Expression: { } thrown }) {
+                return SyntaxFactory.ThrowExpression(
+                    SyntaxFactory.Token(SyntaxKind.ThrowKeyword).WithTrailingTrivia(SyntaxFactory.Space),
+                    thrown.WithoutLeadingTrivia().WithTrailingTrivia()
+                );
             }
 
             return body.Statements[0] switch {

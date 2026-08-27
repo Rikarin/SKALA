@@ -66,6 +66,27 @@ public static class CorpusArranger {
         );
     }
 
+    /// <summary>
+    /// One file arranged under an explicit option set — the coverage test's subject.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ <see cref="Arranger"/> rather than <see cref="ArrangementPipeline"/>, deliberately. The
+    /// question is "does this key change what the arranger does", and running the formatter
+    /// afterwards can absorb a difference — a body style that converts and is then wrapped back
+    /// across two lines is a different tree that lays out the same. Asking the arranger directly
+    /// keeps the test measuring the option rather than the fitter.
+    /// </remarks>
+    public static string RunWith(CorpusFile file, Rikarin.Skala.Options.FormattingOptions options) {
+        var compilation = CompilationFor(false);
+        return Arranger.Arrange(
+            file.Path,
+            CSharpFormatter.Read(file.Path),
+            new ArrangementOptions(options),
+            compilation,
+            ArrangementDifferential.Removable(compilation, file.Path)
+        ).Text;
+    }
+
     static CSharpCompilation Replace(CSharpCompilation compilation, string path, SourceText text) {
         foreach (var tree in compilation.SyntaxTrees) {
             if (string.Equals(tree.FilePath, path, StringComparison.Ordinal)) {

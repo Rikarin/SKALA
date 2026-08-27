@@ -10,6 +10,27 @@
     "Tier A is claimed only where the formatter reads the option AND a committed oracle fixture pins it."
   ],
   "enums": {
+    "AccessibilityModifierStyle": {
+      "values": [
+        {
+          "name": "always",
+          "summary": "Always write the accessibility modifier"
+        },
+        {
+          "name": "for_non_interface_members",
+          "summary": "Always, except on interface members"
+        },
+        {
+          "name": "never",
+          "summary": "Never write the accessibility modifier"
+        },
+        {
+          "name": "omit_if_default",
+          "summary": "Omit it where it is the default for the declaration site"
+        }
+      ],
+      "valueAliases": {}
+    },
     "AccessorOwnerBodyStyle": {
       "values": [
         {
@@ -129,6 +150,19 @@
         "ZeroIndent": "zero_indent",
         "RemoveIndent": "remove_indent"
       }
+    },
+    "ContinuousIndentStyle": {
+      "values": [
+        {
+          "name": "single",
+          "summary": "One indent unit"
+        },
+        {
+          "name": "double",
+          "summary": "Two indent units"
+        }
+      ],
+      "valueAliases": {}
     },
     "DefaultValueStyle": {
       "values": [
@@ -478,19 +512,6 @@
         {
           "name": "chop_always",
           "summary": "Chop always"
-        }
-      ],
-      "valueAliases": {}
-    },
-    "ContinuousIndentStyle": {
-      "values": [
-        {
-          "name": "single",
-          "summary": "One indent unit"
-        },
-        {
-          "name": "double",
-          "summary": "Two indent units"
         }
       ],
       "valueAliases": {}
@@ -845,11 +866,11 @@
       "type": "bool",
       "default": "true:suggestion",
       "defaultSource": "unknown",
-      "tier": "D",
+      "tier": "A",
       "construct": "LocalDeclaration",
       "summary": "Use 'var' where the type is not apparent.",
       "since": "0.1",
-      "oracle": null,
+      "oracle": "constructs/arrangement/type-inference/var-wins-when-rhs-names-the-type.cs",
       "docs": "https://learn.microsoft.com/dotnet/fundamentals/code-analysis/code-style-rule-options",
       "templateLine": 45,
       "severitySuffix": true,
@@ -862,11 +883,11 @@
       "type": "bool",
       "default": "true:suggestion",
       "defaultSource": "unknown",
-      "tier": "D",
+      "tier": "A",
       "construct": "LocalDeclaration",
       "summary": "Use 'var' for built-in types.",
       "since": "0.1",
-      "oracle": null,
+      "oracle": "constructs/arrangement/type-inference/var-wins-when-rhs-names-the-type.cs",
       "docs": "https://learn.microsoft.com/dotnet/fundamentals/code-analysis/code-style-rule-options",
       "templateLine": 46,
       "severitySuffix": true,
@@ -879,11 +900,11 @@
       "type": "bool",
       "default": "true:suggestion",
       "defaultSource": "unknown",
-      "tier": "D",
+      "tier": "A",
       "construct": "LocalDeclaration",
       "summary": "Use 'var' where the type is apparent.",
       "since": "0.1",
-      "oracle": null,
+      "oracle": "constructs/arrangement/type-inference/var-wins-when-rhs-names-the-type.cs",
       "docs": "https://learn.microsoft.com/dotnet/fundamentals/code-analysis/code-style-rule-options",
       "templateLine": 47,
       "severitySuffix": true,
@@ -981,11 +1002,11 @@
       "type": "bool",
       "default": "true:suggestion",
       "defaultSource": "unknown",
-      "tier": "D",
+      "tier": "A",
       "construct": "TypeReference",
       "summary": "Use the language keyword for a predefined type in declarations.",
       "since": "0.1",
-      "oracle": null,
+      "oracle": "constructs/arrangement/redundancy/qualifiers-and-parentheses.cs",
       "docs": "https://learn.microsoft.com/dotnet/fundamentals/code-analysis/code-style-rule-options",
       "templateLine": 522,
       "severitySuffix": true,
@@ -1097,14 +1118,14 @@
       "key": "dotnet_style_require_accessibility_modifiers",
       "aliases": [],
       "language": "csharp",
-      "type": "string",
+      "type": "enum:AccessibilityModifierStyle",
       "default": "omit_if_default:suggestion",
       "defaultSource": "unknown",
-      "tier": "D",
+      "tier": "A",
       "construct": "ModifierList",
       "summary": "When an explicit accessibility modifier is required.",
       "since": "0.1",
-      "oracle": null,
+      "oracle": "constructs/arrangement/redundancy/qualifiers-and-parentheses.cs",
       "docs": "https://learn.microsoft.com/dotnet/fundamentals/code-analysis/code-style-rule-options",
       "templateLine": 529,
       "severitySuffix": true,
@@ -1466,11 +1487,11 @@
       "type": "enum:AccessorOwnerBodyStyle",
       "default": "expression_body",
       "defaultSource": "template",
-      "tier": "D",
+      "tier": "A",
       "construct": "CodeBody",
       "summary": "Code body — Properties, indexers, and events",
       "since": "0.1",
-      "oracle": null,
+      "oracle": "constructs/arrangement/body-style/accessor-owner.cs",
       "docs": "https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpCodeStylePageImplSchema.html#resharper_csharp_accessor_owner_body",
       "templateLine": 559,
       "expands": []
@@ -2702,11 +2723,11 @@
       "type": "bool",
       "default": "true",
       "defaultSource": "template",
-      "tier": "D",
+      "tier": "A",
       "construct": "Braces",
       "summary": "Braces — Remove redundant braces",
       "since": "0.1",
-      "oracle": null,
+      "oracle": "constructs/arrangement/redundancy/qualifiers-and-parentheses.cs",
       "docs": "https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpCodeStylePageImplSchema.html#resharper_csharp_braces_redundant",
       "templateLine": 648,
       "expands": []
@@ -2762,11 +2783,11 @@
       "type": "enum:BodyStyle",
       "default": "block_body",
       "defaultSource": "template",
-      "tier": "D",
+      "tier": "A",
       "construct": "CodeBody",
       "summary": "Code body — Constructors and destructors",
       "since": "0.1",
-      "oracle": null,
+      "oracle": "constructs/arrangement/body-style/heuristics.cs",
       "docs": "https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpCodeStylePageImplSchema.html#resharper_csharp_constructor_or_destructor_body",
       "templateLine": 653,
       "expands": []
@@ -2802,11 +2823,11 @@
       "type": "enum:DefaultValueStyle",
       "default": "default_literal",
       "defaultSource": "template",
-      "tier": "D",
+      "tier": "A",
       "construct": "DefaultValue",
       "summary": "Default value — When type is evident from usage",
       "since": "0.1",
-      "oracle": null,
+      "oracle": "constructs/arrangement/type-inference/default-literal.cs",
       "docs": "https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpCodeStylePageImplSchema.html#resharper_csharp_default_value_when_type_evident",
       "templateLine": 718,
       "expands": []
@@ -2822,11 +2843,11 @@
       "type": "enum:DefaultValueStyle",
       "default": "default_literal",
       "defaultSource": "template",
-      "tier": "D",
+      "tier": "A",
       "construct": "DefaultValue",
       "summary": "Default value — When type is not evident from usage",
       "since": "0.1",
-      "oracle": null,
+      "oracle": "constructs/arrangement/type-inference/default-literal.cs",
       "docs": "https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpCodeStylePageImplSchema.html#resharper_csharp_default_value_when_type_not_evident",
       "templateLine": 719,
       "expands": []
@@ -4055,11 +4076,11 @@
       "type": "enum:BodyStyle",
       "default": "expression_body",
       "defaultSource": "template",
-      "tier": "D",
+      "tier": "A",
       "construct": "CodeBody",
       "summary": "Code body — Local functions",
       "since": "0.1",
-      "oracle": null,
+      "oracle": "constructs/arrangement/body-style/accessor-owner.cs",
       "docs": "https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpCodeStylePageImplSchema.html#resharper_csharp_local_function_body",
       "templateLine": 852,
       "expands": []
@@ -4233,11 +4254,11 @@
       "type": "enum:BodyStyle",
       "default": "expression_body",
       "defaultSource": "template",
-      "tier": "D",
+      "tier": "A",
       "construct": "CodeBody",
       "summary": "Code body — Methods and operators",
       "since": "0.1",
-      "oracle": null,
+      "oracle": "constructs/arrangement/body-style/heuristics.cs",
       "docs": "https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpCodeStylePageImplSchema.html#resharper_csharp_method_or_operator_body",
       "templateLine": 863,
       "expands": []
@@ -4293,11 +4314,11 @@
       "type": "enum:NullCheckingPatternStyle",
       "default": "not_null_pattern",
       "defaultSource": "template",
-      "tier": "D",
+      "tier": "A",
       "construct": "Patterns",
       "summary": "Patterns — Null checking pattern style",
       "since": "0.1",
-      "oracle": null,
+      "oracle": "constructs/arrangement/redundancy/null-checking-pattern.cs",
       "docs": "https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpCodeStylePageImplSchema.html#resharper_csharp_null_checking_pattern_style",
       "templateLine": 873,
       "expands": []
@@ -4313,11 +4334,11 @@
       "type": "enum:ObjectCreationStyle",
       "default": "target_typed",
       "defaultSource": "template",
-      "tier": "D",
+      "tier": "A",
       "construct": "ObjectCreation",
       "summary": "Object creation — When created type is evident from usage",
       "since": "0.1",
-      "oracle": null,
+      "oracle": "constructs/arrangement/type-inference/new-wins-when-lhs-names-the-type.cs",
       "docs": "https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpCodeStylePageImplSchema.html#resharper_csharp_object_creation_when_type_evident",
       "templateLine": 874,
       "expands": []
@@ -4333,11 +4354,11 @@
       "type": "enum:ObjectCreationStyle",
       "default": "target_typed",
       "defaultSource": "template",
-      "tier": "D",
+      "tier": "A",
       "construct": "ObjectCreation",
       "summary": "Object creation — When created type is not evident from usage",
       "since": "0.1",
-      "oracle": null,
+      "oracle": "constructs/arrangement/type-inference/new-wins-when-lhs-names-the-type.cs",
       "docs": "https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpCodeStylePageImplSchema.html#resharper_csharp_object_creation_when_type_not_evident",
       "templateLine": 875,
       "expands": []
@@ -4994,11 +5015,11 @@
       "type": "bool",
       "default": "false",
       "defaultSource": "template",
-      "tier": "D",
+      "tier": "A",
       "construct": "ReferenceQualificationAndusingDirectives",
       "summary": "Reference qualification and 'using' directives — Place 'System.*' and 'Windows.*' namespaces first when sorting 'using' directives",
       "since": "0.1",
-      "oracle": null,
+      "oracle": "constructs/arrangement/usings/sort-and-remove.cs",
       "docs": "https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpCodeStylePageImplSchema.html#resharper_csharp_sort_usings_with_system_first",
       "templateLine": 518,
       "expands": []
@@ -6985,11 +7006,11 @@
       "type": "bool",
       "default": "true",
       "defaultSource": "template",
-      "tier": "D",
+      "tier": "A",
       "construct": "CodeBody",
       "summary": "Code body — Apply style heuristics",
       "since": "0.1",
-      "oracle": null,
+      "oracle": "constructs/arrangement/body-style/heuristics.cs",
       "docs": "https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpCodeStylePageImplSchema.html#resharper_csharp_use_heuristics_for_body_style",
       "templateLine": 1111,
       "expands": []
@@ -8013,11 +8034,11 @@
       "type": "string",
       "default": "empty_literal",
       "defaultSource": "unknown",
-      "tier": "D",
+      "tier": "A",
       "construct": "Literal",
       "summary": "Undocumented ReSharper property; classified as C#-relevant by vocabulary.",
       "since": "0.1",
-      "oracle": null,
+      "oracle": "constructs/arrangement/redundancy/empty-string.cs",
       "docs": null,
       "templateLine": 730,
       "expands": []
@@ -8801,11 +8822,11 @@
       "type": "bool",
       "default": "true",
       "defaultSource": "unknown",
-      "tier": "D",
+      "tier": "A",
       "construct": "MemberAccess",
       "summary": "Undocumented ReSharper property; classified as C#-relevant by vocabulary.",
       "since": "0.1",
-      "oracle": null,
+      "oracle": "constructs/arrangement/redundancy/qualifiers-and-parentheses.cs",
       "docs": null,
       "templateLine": 922,
       "expands": []
@@ -8897,11 +8918,11 @@
       "type": "bool",
       "default": "true",
       "defaultSource": "unknown",
-      "tier": "D",
+      "tier": "A",
       "construct": "UsingDirective",
       "summary": "Undocumented ReSharper property; classified as C#-relevant by vocabulary.",
       "since": "0.1",
-      "oracle": null,
+      "oracle": "constructs/arrangement/usings/sort-and-remove.cs",
       "docs": null,
       "templateLine": 953,
       "expands": []
