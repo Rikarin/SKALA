@@ -111,7 +111,7 @@ progress.
 ### New-code definition
 
 Sonar's "clean as you code" is the right idea and needs no server: `--since=<git-ref>` computes the
-changed line ranges from `git diff` and marks findings inside them. `skala check --since=origin/main
+changed line ranges from `git diff` and marks findings inside them. `skala check --since=origin/master
 --gate=pr` is then a gate that only cares about what this PR touched — which is the only gate that is
 adoptable on a tree with existing findings.
 
@@ -144,7 +144,7 @@ Defined in `skala.jsonc`, named, and selected with `--gate`:
 ```jsonc
 "gates": {
   "local": { "maxSeverity": "error" },
-  "pr":    { "since": "origin/main", "newIssues": 0, "maxSeverity": "warning",
+  "pr":    { "since": "origin/master", "newIssues": 0, "maxSeverity": "warning",
              "formatting": "clean", "coverage": null },
   "ci":    { "baseline": ".skala/baseline.sarif", "newIssues": 0,
              "maxSeverity": "warning", "formatting": "clean",
@@ -274,7 +274,7 @@ Vixen  ·  4691 files  ·  1 348 236 lines  ·  binlog artifacts/build.binlog (f
   Editor/Vixen.Editor.Profiler/GpuTimelineView.cs
     ⟳ 33:5    suggestion  SK1002  Use a primary constructor
 
-  212 findings  ·  198 fixable (`skala fix`)  ·  4 new since origin/main
+  212 findings  ·  198 fixable (`skala fix`)  ·  4 new since origin/master
   duplication 1.8 % (gate 3.0 %)  ·  cognitive complexity p95 9 (gate 15)
   gate `ci`: PASS in 3 m 41 s
 ```

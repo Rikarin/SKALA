@@ -15,7 +15,7 @@
     // repository with existing findings can turn this on today rather than after a cleanup that
     // never happens (doc 09 § "New-code definition").
     "pr": {
-      "since": "origin/main",
+      "since": "origin/master",
       "newIssues": 0,
       "maxSeverity": "warning",
       "formatting": "clean"

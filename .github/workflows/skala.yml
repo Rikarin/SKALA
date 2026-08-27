@@ -7,7 +7,7 @@
 #      log for "warning" is a second implementation of the gate (doc 09 § "Gates").
 #   2. The job that comments is not the job that analysed. `skala check` writes one SARIF; the
 #      comment job re-renders it with `skala report`, which runs no analysis. Re-analysing in the
-#      comment step analyses a different tree — the merge commit, or main having moved — and
+#      comment step analyses a different tree — the merge commit, or master having moved — and
 #      reports findings the gate never saw.
 #   3. `--since` is what makes this adoptable. A repository with a thousand existing findings
 #      cannot fix them all before turning CI on; the `pr` gate cares only about the lines the
@@ -18,7 +18,7 @@ name: Skala
 on:
   pull_request:
   push:
-    branches: [main]
+    branches: [master]
 
 permissions:
   contents: read
@@ -34,7 +34,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           # ⚠ Full history, not the default shallow clone. `--since` resolves a merge base, and a
-          # shallow clone often has none with `origin/main` — Skala falls back to comparing against
+          # shallow clone often has none with `origin/master` — Skala falls back to comparing against
           # the ref directly, which marks more lines as changed than the branch touched and fails
           # the gate for someone else's commits.
           fetch-depth: 0
@@ -63,8 +63,8 @@ jobs:
           --format=github
           --output .skala/report.sarif
 
-      # The `ci` gate on main: everything outside the committed baseline has to be clean.
-      - name: Check (main)
+      # The `ci` gate on master: everything outside the committed baseline has to be clean.
+      - name: Check (master)
         if: github.event_name == 'push'
         run: >
           dotnet run --project Tools/Rikarin.Skala.Cli -c Release --no-build --

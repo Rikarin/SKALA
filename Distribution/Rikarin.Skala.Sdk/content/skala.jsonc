@@ -21,7 +21,7 @@
     // (doc 09 § "New-code definition").
     //
     // "pr": {
-    //   "since": "origin/main",
+    //   "since": "origin/master",
     //   "newIssues": 0,
     //   "maxSeverity": "warning",
     //   "formatting": "clean"

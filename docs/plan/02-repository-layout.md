@@ -226,7 +226,7 @@ force: a static-analysis tool that ships with warnings has an argument to lose.
 
 ## Repository policy
 
-- **Trunk-based.** `main` is releasable. Feature work is short-lived branches.
+- **Trunk-based.** `master` is releasable. Feature work is short-lived branches.
 - **Every change to formatting behaviour updates the conformance fixtures in the same commit**, and
   the review reads the fixture diff. A formatter PR whose fixture diff is unexamined is a formatter
   PR that has not been reviewed.
