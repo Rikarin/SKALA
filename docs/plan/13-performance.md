@@ -203,6 +203,28 @@ third-party package. Levers:
 - **`--profile`** surfaces `logAnalyzerExecutionTime` output ranked by cost. This is how a rule that
   is accidentally O(n²) in a method's statement count gets found, and every Skala rule's cost is
   reviewed against it before release.
+
+  ⚠ **It did not exist until M8, and this bullet had been describing it since M5.**
+  `logAnalyzerExecutionTime: true` was set on every run and nothing ever read it. Two things it got
+  wrong before it was right, both worth keeping written down because both produced *believable*
+  output: `GetAnalyzerTelemetryInfoAsync` called after the run reports **0.0 ms for every analyzer**,
+  because Roslyn returns the analyzer driver to a pool and the execution times go with it — the
+  first profile ever printed was nineteen analyzers at 0.0 ms, which reads as a fast tool. And the
+  profiled path initially ignored the changed-tree list, so `--profile` on a *warm* run measured a
+  **cold** one, which is the single number the warm budget is about. Both fixed; the telemetry now
+  comes off `AnalysisResult`, and `ForTrees` measures its syntax and semantic halves separately.
+
+  Measured at M8, Skala checking itself through its own binlog:
+
+  | | analyzer time | wall | top analyzer | the five `SK5xxx` rules |
+  |---|---:|---:|---|---:|
+  | cold, `--no-cache` | 2 249 ms | 9 783 ms | `MetricsAnalyzer` 77.0 % | 297 ms (13.2 %) |
+  | warm, one file changed | 312 ms | 7 684 ms | `MetricsAnalyzer` 77.5 % | 26.7 ms (8.6 %) |
+
+  ⚠ Taint analysis is the most expensive thing in the rule set and the warm path does not notice it,
+  because the per-file cache means `SK5001`/`SK5002` see only the files that changed. The
+  compilation-start gate is what makes even the cold number small: a tree that references no HTTP
+  server or no sink type registers *no actions at all* rather than a cheap one.
 - **Metadata reference cache** keyed on `(path, mtime, size)`, process-wide. 300 references × 60
   projects re-read is minutes.
 - **Bounded compilation parallelism** — memory-bound, not CPU-bound; see the RSS budget.

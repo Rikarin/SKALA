@@ -344,6 +344,52 @@ calls in Vixen, 90 of them in the shape the rule would fire on, and **all 90** a
 rewrite either does not compile or asserts something else. Doc 08 § "What M7 added" has the
 breakdown. A rule that would have been the loudest in the milestone is the one that never existed.
 
+⚠ **M8 shipped five of the nine `SK5xxx` ids, and it is the milestone where this section's
+instrument stopped working.** Every rule in the range defaults to `error`, so a false positive is a
+build somebody cannot fix by fixing their code — and the reference corpus cannot detect one,
+because it contains no vulnerable code to be right or wrong about.
+
+| | |
+|---|---|
+| Fixtures | 17 positive, **40 negative** |
+| `Rules/…/corpus/vulnerable` (7 files) | 23 findings, every rule represented, pinned per rule |
+| `Rules/…/corpus/safe` (7 files) | **0**, required, and held after three sensitivity fixes |
+| `corpus/real/` (380 files) | **0**, verified symbol-independently as well |
+| Vixen (4 717 files, `44b88648`) | **0**, same |
+| Cost (`skala check --profile`) | cold 297 ms of 2 249 ms analysis; **warm 26.7 ms of 312 ms** |
+
+⚠ **A zero on the reference trees is not evidence here, and saying so is the point.** M7 found one
+way for a measurement to lie — the loose compilation's unresolved-symbol floor. M8 found the
+next one along: for a category the trees have *none of the shape* of, a correct rule and a rule that
+never runs produce identical output. Both zeros above were therefore re-derived without the
+compiler. The taint rules are intra-procedural, so a source and a sink must share a method and
+therefore a file; a file-level containment count is a sound upper bound, and it is zero on both
+trees. The syntactic rules' trigger tokens (`DES`, `CipherMode`, any certificate callback,
+`XmlUrlResolver`) appear in **no file** of either tree. Two Vixen files survived the first grep and
+both were artefacts of it — `HttpRequestException` in a `catch` filter matching `HttpRequest`, in
+files that never call `Process.Start`.
+
+⚠ **The safe corpus is the mitigation this range actually has, and it earned its cost immediately.**
+Each safe file is the same shape as its vulnerable twin with the vulnerability removed the way a
+reviewer would remove it, so a rule that were a keyword search would pass the positives and fail
+there. It also caught three *misses* in the taint engine that reading the code twice did not: a
+property matched only as a field, a fluent `Append` chain whose receiver is the previous call's
+result, and the control-flow graph's `foreach` lowering, which dropped taint at the top of every
+loop. None of the three is an edge case; all three are the common path.
+
+⚠ **Four rules were cut and none of the reasons is a finding count** — a rule that fires a lot is
+work for the repository it fires on, and only a rule that is wrong is a defect. `SK5003`'s sanitizer
+is inter-procedural, which fails in the direction that *fires*; `SK5004` duplicates `SYSLIB0011` and
+`CA2326`; `SK5006`'s entropy threshold does not exist; `SK5008` needs to judge identifier names.
+Doc 08 § "What M8 added" carries the argument for each.
+
+**Residual risk: medium**, and the composition has changed rather than the level. Eighteen analyzers
+is more evidence than thirteen, and the "measured at zero on real code" pile grew by five at once —
+every rule M8 shipped is in it. What offsets that is that these five are the first rules in the
+project whose *negative* case is measured against code written to be safe rather than against code
+that merely happens not to be affected, which is a stronger claim than any previous milestone made,
+on a smaller population.
+
 ⚠ **Two of this section's own conclusions do not survive § "The reference trees are a test subject",
 and they are marked rather than deleted.** Both are the same move — a true finding on Vixen read as
 evidence about the rule:

@@ -112,12 +112,19 @@ public static partial class SkalaCommandLine {
             Description = "Also run token-level clone detection (SK7020). Off by default: it is a whole-repository pass."
         };
 
+        // ⚠ docs/plan/13 § "Analysis" promised this and nothing implemented it, so the sentence
+        // "every Skala rule's cost is reviewed against it before release" had no instrument behind
+        // it until M8. README lists its output under "explicitly not a contract".
+        var profile = new Option<bool>("--profile") {
+            Description = "Rank the analyzers by what they cost. An instrument, not a contract."
+        };
+
         var command = new Command("check", "Run the analyzers and report, with a gate.");
         command.Arguments.Add(paths);
         foreach (var option in new Option[] {
                      load, binlog, project, requireFresh, gate, format, output, includeHints, noCache, noColor,
                      showSuppressions, rules, define, noFormatting, resharperSeverities, since, baseline,
-                     noNewSuppressions, record, summary, duplication
+                     noNewSuppressions, record, summary, duplication, profile
                  }) {
             command.Options.Add(option);
         }
@@ -154,7 +161,8 @@ public static partial class SkalaCommandLine {
                     NoNewSuppressions = parse.GetValue(noNewSuppressions),
                     Record = parse.GetValue(record),
                     Summary = parse.GetValue(summary),
-                    IncludeDuplication = parse.GetValue(duplication)
+                    IncludeDuplication = parse.GetValue(duplication),
+                    Profile = parse.GetValue(profile)
                 };
 
                 return RunCancellable(token => CheckCommand.Run(request, token).Result);

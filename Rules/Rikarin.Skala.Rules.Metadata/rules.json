@@ -380,6 +380,131 @@
       ]
     },
     {
+      "id": "SK5001",
+      "concept": "sql-from-request-concatenation",
+      "title": "Request data is concatenated into SQL",
+      "category": "Security",
+      "defaultSeverity": "error",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "resharperId": null,
+      "supersedes": [],
+      "since": "1.1",
+      "languageVersion": null,
+      "summary": "A value that arrived from the request is built into SQL text that a command executes.",
+      "rationale": "The injected text is not data to the database, it is source code. A single quote in a value ends the literal the query put it in, and everything after it is parsed as more SQL running with the application's own credentials — which is how one search box becomes `DROP TABLE` or a dump of every row the connection can see. The fix is not to escape the quote; escaping is a blocklist and blocklists are wrong at the edges, on every dialect, forever. The fix is to stop concatenating: a parameter is transmitted beside the statement rather than inside it, so the database never parses it as SQL and there is no edge case left to get wrong. Every client has the shape — `command.Parameters.Add`, Dapper's anonymous `param` object, EF Core's `FromSql($\"…\")` interpolated overload — and all of them are shorter than the concatenation they replace. ⚠ There is no fix on the diagnostic because the edit is not local: introducing a parameter means changing the text, adding a binding, and choosing the parameter's type, which is three decisions rather than a substitution.",
+      "examples": {
+        "bad": "var id = context.Request.Query[\"id\"];\ncommand.CommandText = $\"select * from orders where id = {id}\";",
+        "good": "var id = context.Request.Query[\"id\"];\ncommand.CommandText = \"select * from orders where id = @id\";\ncommand.Parameters.AddWithValue(\"@id\", id);"
+      },
+      "falsePositives": "The rule reports only a flow it can prove inside one method, from a source declared in `taint.json` to a sink declared there, with no sanitizer between them. Everything else is silence, and the exclusions are large on purpose — every one of them is a case where a report would be *wrong*, not merely unwelcome. ⚠ A method parameter is never a source. A parameter's incoming value is whatever the callers pass, which is by definition invisible from inside the method, so treating \"unknown\" as \"suspicious\" would assert a vulnerability in code that has none: a private helper ending in `command.CommandText = sql` whose callers all pass a constant with `@name` placeholders and bind properly is completely ordinary, and every report on it would be a false positive. Interpolating a *constant* is not a finding either, so `$\"select … from {Schema.VersionTable}\"` is silent. ⚠ `Main(string[] args)`, `Console.ReadLine`, `Environment.GetEnvironmentVariable` and `File.ReadAllText` are deliberately not sources, because the principal supplying them is the principal the process runs as — there is no boundary being crossed, so there is nothing to inject. Passing a tainted value through `int.Parse` or `Guid.Parse` sanitises it, because the result is not a string. ⚠ Inter-procedural flow is out of scope (docs/plan/08), so a value that reaches the sink through a helper method is a miss rather than a report; so is a sink inside a lambda. Both are the safe direction for a rule that defaults to `error`.",
+      "configuration": [
+        "dotnet_diagnostic.SK5001.severity"
+      ]
+    },
+    {
+      "id": "SK5002",
+      "concept": "process-start-from-request",
+      "title": "Request data reaches a process start",
+      "category": "Security",
+      "defaultSeverity": "error",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "resharperId": null,
+      "supersedes": [],
+      "since": "1.1",
+      "languageVersion": null,
+      "summary": "A value that arrived from the request decides which program runs, or what it is told to do.",
+      "rationale": "`ProcessStartInfo.Arguments` is a single string that the child process re-splits on its own rules, so a quote or an ampersand in the value is not data — it is punctuation in somebody else's grammar, and the result is a second command running as this process's user. `FileName` is worse: it chooses the program. The replacement for `Arguments` is `ArgumentList`, which passes each element to the child verbatim — exec takes an array on Unix, and on Windows .NET does the quoting itself — so there is no syntax left to escape and no shell involved. The replacement for a tainted `FileName` is a `switch` over the programs this code is allowed to run, returning the constant path for each; an allow-list is the only thing that works, because deciding whether an arbitrary path is safe to execute is not a question with an answer. ⚠ There is no fix on the diagnostic: moving one `Arguments` string into `ArgumentList` means splitting a command line, which is exactly the parsing this rule exists to avoid guessing at.",
+      "examples": {
+        "bad": "var file = context.Request.Query[\"file\"];\nProcess.Start(\"convert\", \"-resize 100x100 \" + file);",
+        "good": "var file = context.Request.Query[\"file\"];\nvar start = new ProcessStartInfo(\"convert\");\nstart.ArgumentList.Add(\"-resize\");\nstart.ArgumentList.Add(\"100x100\");\nstart.ArgumentList.Add(file);\nProcess.Start(start);"
+      },
+      "falsePositives": "The rule shares its engine and therefore its whole exclusion story with `SK5001`: a proven intra-procedural flow from a declared source only, a parameter is never a source, and unknown is never a guess. ⚠ The exclusion that matters most here is that argv is not a source, and it is a statement about where the trust boundary is rather than about finding counts. A tool that starts a program at the path its user typed is doing its job; the party supplying argv is the party the process runs as, so there is no boundary to cross and a report would be asserting a vulnerability that does not exist. ⚠ `ProcessStartInfo.ArgumentList` is deliberately not a sink even when what is added to it is tainted: it is the fix this rule recommends, and reporting it would mean telling a reader that the remedy is also the disease. Argument content that the *child program* interprets — a leading `@` or `-` that some tools read as a file reference — is outside the rule, because it depends on a program Skala cannot see.",
+      "configuration": [
+        "dotnet_diagnostic.SK5002.severity"
+      ]
+    },
+    {
+      "id": "SK5005",
+      "concept": "weak-cipher-algorithm",
+      "title": "A broken cipher, or a mode that leaks structure",
+      "category": "Security",
+      "defaultSeverity": "error",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "resharperId": null,
+      "supersedes": [],
+      "since": "1.1",
+      "languageVersion": null,
+      "summary": "`DES`, `TripleDES`, `RC2` or ECB mode — none of them hides a plaintext any more.",
+      "rationale": "`DES` has a 56-bit key, which was already marginal when it was standardised and is exhaustively searched in hours on hardware anyone can rent. `TripleDES` fixed the key length and not the 64-bit block, so a collision becomes likely after about 32 GB under one key and the plaintext starts coming back out — that is CVE-2016-2183, \"Sweet32\", and it is a practical attack on a long TLS connection rather than a theoretical one. `RC2` has practical key-recovery attacks. ECB is a different failure and a more visible one: it encrypts equal blocks to equal ciphertext, so the shape of the input survives encryption — the standard demonstration is a bitmap of a penguin that is still obviously a penguin afterwards. Use `Aes`, and prefer `AesGcm`, which authenticates the ciphertext as well as hiding it, so an attacker cannot flip bits in a message you will decrypt and act on. ⚠ There is no fix, and that is deliberate: swapping the algorithm compiles and changes the key length, the block size and the ciphertext format, so everything already encrypted becomes unreadable. That is a data migration, not an edit.",
+      "examples": {
+        "bad": "using var cipher = TripleDES.Create();\ncipher.Mode = CipherMode.ECB;\ncipher.Key = key;",
+        "good": "using var cipher = Aes.Create();\ncipher.Mode = CipherMode.CBC;\ncipher.Key = key;\ncipher.GenerateIV();"
+      },
+      "falsePositives": "⚠ The id was allocated narrower than docs/plan/08's sentence for it, and the reason is that the other half cannot be decided correctly. The catalogue wrote \"weak hash/cipher (`MD5`, `SHA1`, `DES`, ECB)\" and the hash half was cut — not for firing too often, which would be work for the repository rather than a defect in the rule, but because the finding would frequently be *wrong*. `MD5` and `SHA-1` have a large legitimate population in which they are not security controls at all: cache keys, ETags, content addressing, bucket selection, and every wire protocol that froze its digest choice a decade ago and specifies it normatively — an RFC 6455 WebSocket handshake is *defined* as a SHA-1 of the client key and a fixed GUID, and reporting it would assert a vulnerability in code that cannot have one. Separating that population from a password digest needs to know what the hash is compared against and what happens when it matches, which is a question about the value's use that this rule does not ask and that an intra-procedural engine could not answer if it did. ADR-012 forbids widening an id later, so the hash half needs its own number — and an argument about how it will decide the question — before it is built. What ships fires only on a type deriving from `DES`, `TripleDES` or `RC2`, and on `CipherMode.ECB` as the value assigned to a cipher's `Mode`, so `if (algorithm.Mode == CipherMode.ECB) throw` is silent: that is the guard, not the bug. A `DES` implementation kept only to decrypt an old archive is a true finding and an unwelcome one; that is what a baseline entry is for, and it is not a reason to soften the rule.",
+      "configuration": [
+        "dotnet_diagnostic.SK5005.severity"
+      ]
+    },
+    {
+      "id": "SK5007",
+      "concept": "certificate-validation-disabled",
+      "title": "A certificate callback that accepts everything",
+      "category": "Security",
+      "defaultSeverity": "error",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "resharperId": null,
+      "supersedes": [],
+      "since": "1.1",
+      "languageVersion": null,
+      "summary": "A TLS validation callback that returns `true` without looking makes the connection encrypted but unauthenticated.",
+      "rationale": "TLS gives you two things and they are separable: the traffic is encrypted, and the party at the other end is who the certificate says. A callback that returns `true` for every input keeps the first and throws away the second — so the connection is perfectly encrypted, to whoever answered. That is the whole content of a man-in-the-middle attack: an attacker on the path presents any certificate at all, this code accepts it, and reads and rewrites everything in both directions while both ends see a padlock. Deleting the callback restores the platform's validation, which is chain building, revocation, hostname matching and the trust store, and is years of work nobody should reimplement. If one specific self-signed certificate genuinely has to be trusted — a device on a factory network, a local development server — then pin it: compare `certificate.GetCertHashString()` against the one thumbprint you mean and return `false` for every other input. That is four lines, it is auditable, and it fails closed when the wrong certificate shows up.",
+      "examples": {
+        "bad": "handler.ServerCertificateCustomValidationCallback = (_, _, _, _) => true;",
+        "good": "handler.ServerCertificateCustomValidationCallback = (_, certificate, _, errors) =>\n    errors == SslPolicyErrors.None\n    || certificate?.GetCertHashString(HashAlgorithmName.SHA256) == PinnedThumbprint;"
+      },
+      "falsePositives": "Two conditions must both hold, and both are decided without following anything. The target has to be a delegate that returns `bool` and takes a `System.Net.Security.SslPolicyErrors` — which is how the rule covers `ServicePointManager.ServerCertificateValidationCallback`, `HttpClientHandler.ServerCertificateCustomValidationCallback`, `SslClientAuthenticationOptions.RemoteCertificateValidationCallback` and the `SslStream` constructor argument without naming any of them, and how a fifth spelling arrives covered. And the value has to be provably constant-`true`: an expression body that is the literal `true`, a block whose one statement is `return true;`, or `HttpClientHandler.DangerousAcceptAnyServerCertificateValidator`. ⚠ A callback with any condition in it is silence — a thumbprint comparison, an `errors == SslPolicyErrors.None` test, a method group, a field holding a delegate. Following those is the inter-procedural analysis docs/plan/08 puts out of scope, and a wrong `error` here would fail a build over a pinning implementation. ⚠ The most common true finding is a test or a local development environment talking to a self-signed certificate, and the rule ships at `error` anyway. That is not the same situation as `SK8005`'s polling `Thread.Sleep`, which is correct code the rule cannot recognise; this is never correct code, it is an accepted risk — and an accepted risk has a way of reaching production inside a `#if` that stopped being conditional. Accept it deliberately and visibly: a baseline entry, or a `#pragma` whose justification `SK7050` already requires. Not a lower severity.",
+      "configuration": [
+        "dotnet_diagnostic.SK5007.severity"
+      ]
+    },
+    {
+      "id": "SK5009",
+      "concept": "xml-external-entity-resolution",
+      "title": "An XML reader that parses a DTD and fetches what it names",
+      "category": "Security",
+      "defaultSeverity": "error",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "resharperId": null,
+      "supersedes": [],
+      "since": "1.1",
+      "languageVersion": null,
+      "summary": "DTD processing plus a resolver that goes to the network or the disk is XXE.",
+      "rationale": "A DTD can declare an entity whose value is a URI, and a reader with a resolver will go and get it — so a document the process was merely asked to parse can read any file that process can read and reach any host it can reach, and hand the contents back inside the parsed result or out through an error message. That is XXE, and it turns an XML endpoint into a file-read and a request-forgery primitive at once. Two settings control it and either one closes the hole: `XmlResolver = null` keeps DTD parsing working for internal entities while resolving nothing external, and `DtdProcessing = DtdProcessing.Prohibit` refuses the DTD outright, which is right when the documents are not supposed to have one. ⚠ There is no fix, because which of those two is correct depends on whether the documents legitimately carry a DTD — a question about the data, not about the code.",
+      "examples": {
+        "bad": "var settings = new XmlReaderSettings {\n    DtdProcessing = DtdProcessing.Parse,\n    XmlResolver = new XmlUrlResolver()\n};",
+        "good": "var settings = new XmlReaderSettings {\n    DtdProcessing = DtdProcessing.Prohibit,\n    XmlResolver = null\n};"
+      },
+      "falsePositives": "⚠ The rule needs two facts where docs/plan/08's sentence named one, and the platform is why. On .NET Framework `DtdProcessing = DtdProcessing.Parse` was enough, because the default `XmlResolver` was an `XmlUrlResolver`. On .NET Core and later the default resolver is `null`, so parsing a DTD resolves nothing external and is not XXE — a rule that fired on `DtdProcessing.Parse` alone would report, at `error` severity, every program that legitimately parses a document with entity declarations, on a platform where that is not a vulnerability. So the rule fires only where the resolver is put back *and* the DTD is parsed. Both assignments must be explicit, both must be about the same object, and both must be in the same method: a resolver assigned from a variable is silence, because whether that variable is null is a question about another method, and `XmlSecureResolver` is excluded by name because it is the mitigation. The cost of the strictness is coverage — the shape occurs zero times in either reference tree. ⚠ Known gap, stated rather than hidden: `XmlDocument` and `XmlDataDocument` have an `XmlResolver` and no `DtdProcessing`, so the two-fact rule cannot see them and they are outside it; closing that needs its own id rather than a widening of this one.",
+      "configuration": [
+        "dotnet_diagnostic.SK5009.severity"
+      ]
+    },
+    {
       "id": "SK6003",
       "concept": "abstract-type-public-constructor",
       "title": "An abstract type has a public constructor",

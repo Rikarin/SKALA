@@ -11,7 +11,7 @@
 <nav><a class="brand" href="../index.html">Skala</a><a class="tab active" href="../rules/index.html">Rules</a><a class="tab" href="../options/index.html">Options</a></nav>
 <main>
 <h1>Rules</h1>
-<p class="lede"><code>SK</code> + four digits, allocated once and never re-purposed (ADR-012). 32 ids are allocated.</p>
+<p class="lede"><code>SK</code> + four digits, allocated once and never re-purposed (ADR-012). 37 ids are allocated.</p>
 <h2 id="async">Async</h2>
 <div class="scroll">
 <table>
@@ -88,6 +88,19 @@
 <thead><tr><th>Id</th><th>Rule</th><th>Severity</th><th>Fix</th><th>Loose mode</th></tr></thead>
 <tbody>
 <tr><td><a href="SK4010.html">SK4010</a></td><td>A <code>Where</code> the next operator could have taken as its predicate</td><td><span class="tag sev-suggestion">suggestion</span></td><td>safe</td><td>no</td></tr>
+</tbody>
+</table>
+</div>
+<h2 id="security">Security</h2>
+<div class="scroll">
+<table>
+<thead><tr><th>Id</th><th>Rule</th><th>Severity</th><th>Fix</th><th>Loose mode</th></tr></thead>
+<tbody>
+<tr><td><a href="SK5001.html">SK5001</a></td><td>Request data is concatenated into SQL</td><td><span class="tag sev-error">error</span></td><td>—</td><td>no</td></tr>
+<tr><td><a href="SK5002.html">SK5002</a></td><td>Request data reaches a process start</td><td><span class="tag sev-error">error</span></td><td>—</td><td>no</td></tr>
+<tr><td><a href="SK5005.html">SK5005</a></td><td>A broken cipher, or a mode that leaks structure</td><td><span class="tag sev-error">error</span></td><td>—</td><td>no</td></tr>
+<tr><td><a href="SK5007.html">SK5007</a></td><td>A certificate callback that accepts everything</td><td><span class="tag sev-error">error</span></td><td>—</td><td>no</td></tr>
+<tr><td><a href="SK5009.html">SK5009</a></td><td>An XML reader that parses a DTD and fetches what it names</td><td><span class="tag sev-error">error</span></td><td>—</td><td>no</td></tr>
 </tbody>
 </table>
 </div>

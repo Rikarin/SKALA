@@ -25,3 +25,8 @@ SK7005  | Skala.Maintainability | Hidden | Parameter count over the threshold.
 SK7006  | Skala.Maintainability | Hidden | Nesting depth over the threshold.
 SK7010  | Skala.Maintainability | Disabled | Public API with no documentation comment.
 SK8005  | Skala.Tests | Info | `Thread.Sleep` in a test.
+SK5001  | Skala.Security | Error | Request data is concatenated into SQL.
+SK5002  | Skala.Security | Error | Request data reaches a process start.
+SK5005  | Skala.Security | Error | A broken cipher (`DES`, `TripleDES`, `RC2`) or ECB mode.
+SK5007  | Skala.Security | Error | A certificate callback that accepts everything.
+SK5009  | Skala.Security | Error | An XML reader that parses a DTD and resolves what it names.

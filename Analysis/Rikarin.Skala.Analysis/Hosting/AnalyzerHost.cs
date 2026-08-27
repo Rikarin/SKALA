@@ -14,15 +14,28 @@ using Rikarin.Skala.Rules.Design;
 using Rikarin.Skala.Rules.Maintainability;
 using Rikarin.Skala.Rules.Modernization;
 using Rikarin.Skala.Rules.Performance;
+using Rikarin.Skala.Rules.Security;
 using Rikarin.Skala.Rules.TestQuality;
 
 namespace Rikarin.Skala.Analysis.Hosting;
+
+/// <summary>What one analyzer cost, for <c>--profile</c>.</summary>
+/// <remarks>
+/// docs/plan/13 § "Analysis": "<c>--profile</c> surfaces <c>logAnalyzerExecutionTime</c> output
+/// ranked by cost. This is how a rule that is accidentally O(n²) in a method's statement count gets
+/// found, and every Skala rule's cost is reviewed against it before release."
+/// </remarks>
+public sealed record AnalyzerCost(string Analyzer, ImmutableArray<string> Rules, TimeSpan Elapsed);
 
 /// <summary>What one compilation's analysis produced.</summary>
 public sealed record AnalysisOutcome(
     ImmutableArray<Finding> Findings,
     ImmutableArray<SkalaDiagnostic> Diagnostics,
-    bool Partial);
+    bool Partial,
+    ImmutableArray<AnalyzerCost> Costs = default) {
+    /// <summary>⚠ A <c>default</c> ImmutableArray throws on enumeration; profiling is opt-in.</summary>
+    public ImmutableArray<AnalyzerCost> Costs { get; init; } = Costs.IsDefault ? [] : Costs;
+}
 
 /// <summary>
 /// <c>CompilationWithAnalyzers</c>, configured the way docs/plan/07 § "Running analyzers" says.
@@ -53,7 +66,9 @@ public static class AnalyzerHost {
         new RethrowAnalyzer(),
         new AsyncVoidAnalyzer(), new BlockingOnAsyncAnalyzer(), new MetricsAnalyzer(),
         new WhereBeforeOperatorAnalyzer(), new AbstractTypeConstructorAnalyzer(),
-        new ThreadSleepInTestAnalyzer()
+        new ThreadSleepInTestAnalyzer(),
+        new SqlInjectionAnalyzer(), new ProcessArgumentInjectionAnalyzer(), new WeakCipherAnalyzer(),
+        new CertificateValidationAnalyzer(), new XmlExternalEntityAnalyzer()
     ];
 
     /// <summary>
@@ -89,9 +104,10 @@ public static class AnalyzerHost {
         AnalyzerOptions options,
         ImmutableArray<DiagnosticAnalyzer> hosted,
         LoadMode mode,
-        CancellationToken cancellation
+        CancellationToken cancellation,
+        bool profile = false
     ) =>
-        Execute(unit, options, hosted, mode, trees: null, cancellation);
+        Execute(unit, options, hosted, mode, trees: null, profile, cancellation);
 
     /// <summary>
     /// The warm path: run the analyzers over only the trees whose cache key moved.
@@ -108,9 +124,10 @@ public static class AnalyzerHost {
         ImmutableArray<DiagnosticAnalyzer> hosted,
         LoadMode mode,
         IReadOnlyList<SyntaxTree> trees,
-        CancellationToken cancellation
+        CancellationToken cancellation,
+        bool profile = false
     ) =>
-        Execute(unit, options, hosted, mode, trees, cancellation);
+        Execute(unit, options, hosted, mode, trees, profile, cancellation);
 
     /// <summary>The rule set a load mode allows, as instantiated analyzers.</summary>
     public static ImmutableArray<DiagnosticAnalyzer> EnabledFor(
@@ -125,6 +142,7 @@ public static class AnalyzerHost {
         ImmutableArray<DiagnosticAnalyzer> hosted,
         LoadMode mode,
         IReadOnlyList<SyntaxTree>? trees,
+        bool profile,
         CancellationToken cancellation
     ) {
         var diagnostics = ImmutableArray.CreateBuilder<SkalaDiagnostic>();
@@ -166,10 +184,31 @@ public static class AnalyzerHost {
 
         ImmutableArray<Diagnostic> produced;
         var partial = false;
+        var costs = ImmutableArray<AnalyzerCost>.Empty;
         try {
-            produced = trees is null
-                ? withAnalyzers.GetAllDiagnosticsAsync(cancellation).GetAwaiter().GetResult()
-                : ForTrees(unit, withAnalyzers, trees, cancellation);
+            if (trees is not null) {
+                // ⚠ The warm path is measured on the warm path. `ForTrees` already goes through
+                // `GetAnalysisResultAsync`, so profiling it costs nothing and changes nothing --
+                // which matters, because an instrument that quietly measured the *cold* path when
+                // asked about a warm run would report the one number the budget is not about.
+                produced = ForTrees(unit, withAnalyzers, trees, analyzers, profile, ref costs, cancellation);
+            } else if (profile) {
+                // ⚠ `GetAnalysisResultAsync` rather than `GetAllDiagnosticsAsync`, and the reason
+                // is not style. Roslyn returns its analyzer driver to a pool when the run finishes,
+                // and the execution times go back with it, so `GetAnalyzerTelemetryInfoAsync` called
+                // afterwards reports 0.0 ms for every analyzer -- which looks exactly like a fast
+                // run. `AnalysisResult` captures the telemetry before the driver is released. The
+                // first `--profile` output ever produced was nineteen analyzers at 0.0 ms, and it
+                // was entirely believable.
+                var result = withAnalyzers.GetAnalysisResultAsync(cancellation).GetAwaiter().GetResult();
+                costs = Measure(result, analyzers);
+
+                // ⚠ `AnalysisResult` carries only analyzer diagnostics; `GetAllDiagnosticsAsync`
+                // also folds in the compiler's, which the loop below expects to see.
+                produced = [.. result.GetAllDiagnostics(), .. unit.Compilation.GetDiagnostics(cancellation)];
+            } else {
+                produced = withAnalyzers.GetAllDiagnosticsAsync(cancellation).GetAwaiter().GetResult();
+            }
         } catch (OperationCanceledException) {
             // ⚠ Ctrl-C prints what was found so far, marked partial (docs/plan/07 § "Cancellation").
             return new AnalysisOutcome([], diagnostics.ToImmutable(), true);
@@ -206,16 +245,55 @@ public static class AnalyzerHost {
         }
 
         partial |= diagnostics.Count > 0;
-        return new AnalysisOutcome(findings.ToImmutable(), diagnostics.ToImmutable(), partial);
+        return new AnalysisOutcome(
+            findings.ToImmutable(),
+            diagnostics.ToImmutable(),
+            partial,
+            costs
+        );
+    }
+
+    /// <summary>
+    /// What each analyzer cost, taken off the result rather than asked for afterwards.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ <c>logAnalyzerExecutionTime: true</c> had been set on every run since M5 and nothing
+    /// ever read it, so doc 13's promise that "every Skala rule's cost is reviewed against it
+    /// before release" had no instrument behind it. This is that instrument.
+    /// </remarks>
+    static ImmutableArray<AnalyzerCost> Measure(
+        AnalysisResult result,
+        ImmutableArray<DiagnosticAnalyzer> analyzers
+    ) {
+        var builder = ImmutableArray.CreateBuilder<AnalyzerCost>();
+        foreach (var analyzer in analyzers) {
+            if (!result.AnalyzerTelemetryInfo.TryGetValue(analyzer, out var telemetry)) {
+                continue;
+            }
+
+            builder.Add(
+                new AnalyzerCost(
+                    analyzer.GetType().Name,
+                    [.. analyzer.SupportedDiagnostics.Select(static descriptor => descriptor.Id)],
+                    telemetry.ExecutionTime
+                )
+            );
+        }
+
+        return builder.ToImmutable();
     }
 
     static ImmutableArray<Diagnostic> ForTrees(
         CompilationUnit unit,
         CompilationWithAnalyzers withAnalyzers,
         IReadOnlyList<SyntaxTree> trees,
+        ImmutableArray<DiagnosticAnalyzer> analyzers,
+        bool profile,
+        ref ImmutableArray<AnalyzerCost> costs,
         CancellationToken cancellation
     ) {
         var builder = ImmutableArray.CreateBuilder<Diagnostic>();
+        var measured = new List<AnalyzerCost>();
         foreach (var tree in trees) {
             var syntax = withAnalyzers.GetAnalysisResultAsync(tree, cancellation).GetAwaiter().GetResult();
             builder.AddRange(syntax.GetAllDiagnostics());
@@ -227,11 +305,20 @@ public static class AnalyzerHost {
                 .GetResult();
             builder.AddRange(semantic.GetAllDiagnostics());
 
+            if (profile) {
+                // ⚠ Both halves. A warm run pays for the syntax actions and the semantic actions
+                // separately, and a profile showing only one of them would understate every
+                // semantic rule -- which is every rule this milestone added.
+                measured.AddRange(Measure(syntax, analyzers));
+                measured.AddRange(Measure(semantic, analyzers));
+            }
+
             // ⚠ The compiler's own diagnostics for this tree, so that a warm run answers "does this
             // build and is it clean" the same way a cold one does.
             builder.AddRange(model.GetDiagnostics(null, cancellation));
         }
 
+        costs = [.. measured];
         return builder.ToImmutable();
     }
 

@@ -191,7 +191,15 @@ without `IEquatable<T>` · `SK6008` extension method on `object`.
 
 ## SK7000 — Maintainability
 
-The metrics from [07](07-analysis-host.md) § "Metrics", plus:
+The metrics from [07](07-analysis-host.md) § "Metrics" — `SK7001` cyclomatic complexity ·
+`SK7002` cognitive complexity · `SK7003` method length in statements · `SK7004` type size in
+members · `SK7005` parameter count · `SK7006` nesting depth · `SK7010` public-API comment density —
+plus:
+
+⚠ Those seven ids used to live only in doc 07's table, and this document is the allocation
+register. `RuleCatalogTests.EveryCatalogueRule_IsNamedInTheRegister` now asserts the containment,
+because a register that the code can drift away from is a register nobody can trust to answer
+"is this number free".
 
 `SK7020` duplicated block ≥ *n* tokens ([09](09-quality-gates-and-reporting.md) § "Duplication") ·
 `SK7030` file over *n* lines · `SK7040` TODO/FIXME without an issue reference ·
@@ -398,6 +406,122 @@ about itself and are needed to develop everything else) → `SK0xxx`/`SK1xxx` (t
 findings and the modernization set, which is the differentiator) → `SK2xxx`/`SK3xxx` (the SonarQube
 replacement's core) → `SK7xxx` (metrics and duplication, needed for the gate) → `SK4xxx`/`SK6xxx` →
 `SK5xxx` last, because security rules that are wrong are worse than absent.
+
+### ⚠ What M8 added: five rules out of nine, and the corpus that is the only real evidence
+
+M8 is the `SK5xxx` milestone and the last one, because a wrong security rule is worse than an absent
+one. Nine ids, **five** ship, all at `error` — the range's default, unchanged, because a security
+rule's severity comes from what it means rather than from how much it fires.
+
+| Id | Scope | Fix | Fixtures (+/−) | corpus/vulnerable | corpus/safe | `corpus/real` (380) | Vixen (4 717) |
+|---|---|---|---:|---:|---:|---:|---:|
+| `SK5001` request data concatenated into SQL | Semantic | ⚠ none | 4 / 10 | 6 | **0** | 0 | 0 |
+| `SK5002` request data reaches a process start | Semantic | ⚠ none | 3 / 7 | 4 | **0** | 0 | 0 |
+| `SK5005` broken cipher, or ECB | Semantic | ⚠ none | 4 / 9 | 6 | **0** | 0 | 0 |
+| `SK5007` certificate callback that accepts everything | Semantic | ⚠ none | 3 / 7 | 5 | **0** | 0 | 0 |
+| `SK5009` XML reader that parses a DTD and resolves it | Semantic | ⚠ none | 3 / 7 | 2 | **0** | 0 | 0 |
+
+⚠ **The reference trees measure nothing here, and that is the whole reason doc 08 asked for a
+separate corpus.** Both zeros above are real and both are uninformative: `Testing/corpus/real` is a
+logging library, a JSON serialiser and a sample of a game engine, and Vixen is a game engine. None
+of them contains SQL reaching a request, a disabled certificate callback, a broken cipher or an XXE.
+The zeros were also verified *symbol-independently*, because the audit runs under a loose
+compilation with 195 724 errors and a zero from unresolved symbols looks exactly like a zero from a
+correct rule. Since the taint rules are intra-procedural, a source and a sink must occur in the same
+method and therefore the same file — so a file-level containment count is a sound upper bound:
+
+| | Vixen | corpus/real |
+|---|---:|---:|
+| files with a SQL sink token | 1 | 0 |
+| …of those, also naming a declared source type | **0** | 0 |
+| files with a process sink token | 16 | 2 |
+| …of those, also naming a declared source type | **0*** | 0 |
+| files naming `DES`/`TripleDES`/`RC2`/`CipherMode` | **0** | **0** |
+| files naming any certificate callback or `SslPolicyErrors` | **0** | **0** |
+| files naming `DtdProcessing` | 1 | 0 |
+| …of those, also naming `XmlResolver` | **0** | 0 |
+
+\* Two Vixen files matched the source grep and both are artefacts of it: the token was
+`HttpRequestException` inside a `catch` filter, not `HttpRequest`, and neither file calls
+`Process.Start` at all — both mentions are in doc comments. Read by hand; the upper bound is zero.
+
+⚠ **`corpus/safe` is the number that decided whether these rules ship, and it is a hard 100 %.**
+Fourteen files live in `Rules/Rikarin.Skala.Rules.Tests/corpus/`, kept away from
+`Testing/corpus` so hand-written inputs can never move the fidelity measurement. Every file in the
+safe half is the *same shape* as its twin in the vulnerable half — the same request read, the same
+`StringBuilder`, the same loop, the same callback, the same `XmlReaderSettings` — with the
+vulnerability removed the way a reviewer would remove it: a bound parameter, an `ArgumentList`, a
+parsed integer, an allow-list `switch`, a pinned thumbprint, a null resolver. A rule that were really
+a keyword search would pass the vulnerable half and fail here.
+
+⚠ **The vulnerable half found three misses that two readings of the code did not**, and all three
+were in the common path rather than at an edge:
+
+- `HttpClientHandler.DangerousAcceptAnyServerCertificateValidator` is a **property**, and `SK5007`
+  matched only `IFieldReferenceOperation` — so the single most explicit way of writing the finding
+  was invisible.
+- `builder.Append(a).Append(b)`: the second call's receiver is the *result* of the first, so taint
+  arriving through `b` had nowhere to land. Chaining is how most `StringBuilder` code is written.
+- Roslyn's control-flow graph lowers `foreach (var x in xs)` to `e = xs.GetEnumerator()` typed
+  `IEnumerator` with `Current` typed `object` — so every request read inside a loop lost its taint at
+  the top of the loop.
+
+⚠ **Four rules were cut, and none of the reasons is a finding count.** A rule that fires often is
+work for the repository it fires on; only a rule that is *wrong* is a defect.
+
+- **`SK5003`** path built from user input without containment. Its sanitizer is almost always a
+  helper (`EnsureInside(root, path)`), and recognising a sanitizer that lives in another method is
+  precisely the inter-procedural analysis this document puts out of scope. The asymmetry is fatal in
+  the wrong direction: a taint rule that cannot see the *source* stays silent, but one that cannot
+  see the *sanitizer* fires. `SK5001` and `SK5002` are safe from this because their sanitizers are
+  inline by nature — parameterisation, `int.Parse`, an allow-list `switch`.
+- **`SK5004`** deserialization with a polymorphic serializer. `BinaryFormatter` is `SYSLIB0011`, an
+  error on modern SDKs, and the type throws at runtime on .NET 9+ — the rule would be a second copy
+  of a compiler diagnostic, the cut M6 made for `SK3006`/`CS1998` and M7 for `SK8003`/xUnit1001. The
+  `TypeNameHandling` half needs taint to be a vulnerability at all and is `CA2326` otherwise.
+- **`SK5006`** hardcoded credential "by shape and entropy". Entropy does not separate a credential
+  from a GUID, a base64 asset, a test vector or a hash constant: a threshold that admits real secrets
+  admits all of those, and one that excludes them excludes short real passwords. There is no
+  threshold to choose, so the rule as specified cannot be implemented correctly.
+- **`SK5008`** `Random` used for a token or key. "Is this identifier a token" is an identifier-name
+  judgement, and `key` is also every dictionary, sort, cache and frame key ever written. ⚠ The
+  narrower question *can* be decided — `Random` output reaching a cipher key or IV is unambiguous and
+  the engine M8 built would answer it — but that is a different concept from the one this id names,
+  and ADR-012 says a narrower concept takes a new number rather than reusing an allocated one. It is
+  the obvious next allocation.
+
+⚠ **`SK5005` was allocated narrower than its own sentence in this document**, for the same kind of
+reason. The catalogue wrote "weak hash/cipher (`MD5`, `SHA1`, `DES`, ECB)" and only the cipher half
+shipped, as `weak-cipher-algorithm`. `MD5` and `SHA-1` have a large population in which they are not
+security controls at all — cache keys, ETags, content addresses, and every wire protocol that froze
+its digest a decade ago and specifies it normatively. An RFC 6455 WebSocket handshake is *defined* as
+a SHA-1 of the client key and a fixed GUID. Reporting it would assert a vulnerability in code that
+cannot have one. Separating that population from a password digest needs to know what the digest is
+compared against, which is a question about the value's use that this rule does not ask. The hash
+half needs its own id, and an argument about how it will decide the question, before it is built.
+
+⚠ **`SK5009` needs two facts where this document named one, and the platform is why.** On .NET
+Framework `DtdProcessing = DtdProcessing.Parse` was enough, because the default `XmlResolver` was an
+`XmlUrlResolver`. On .NET Core and later the default resolver is `null`, so parsing a DTD resolves
+nothing external and is not XXE — a rule firing on `DtdProcessing.Parse` alone would report, at
+`error`, every program that legitimately reads documents with entity declarations. So the rule fires
+only where the resolver is put back *and* the DTD is parsed.
+
+⚠ **All five ship with `hasFix: false`, which is this range's "rarely" column rather than a gap.**
+Parameterising a query means changing the text, adding a binding and choosing the parameter's type.
+Splitting an `Arguments` string into an `ArgumentList` means parsing a command line — the exact
+parsing the rule exists to avoid guessing at. Swapping `DES` for `Aes` compiles and makes every
+value already encrypted unreadable: that is a data migration, not an edit. Each message instead
+carries a concrete "do this instead", and for the taint rules that text lives in `taint.json` beside
+the sink it belongs to, so a new sink arrives with its own advice.
+
+⚠ **Cost, from `skala check --profile` — which doc 13 promised and nothing had implemented.**
+`logAnalyzerExecutionTime: true` had been set on every run since M5 and nothing read it. Skala
+checking itself through its own binlog: cold, 2 249 ms of analyzer time in a 9 783 ms run, of which
+the five security rules are 297 ms (13.2 % of analysis, 3.0 % of wall); warm, after one file
+changed, 312 ms of analyzer time in a 7 684 ms run, of which the five are **26.7 ms** (8.6 % of
+analysis, 0.35 % of wall). `MetricsAnalyzer` was 77 % of analysis before M8 and still is. The warm
+path is unaffected because the per-file cache means the taint rules see only the files that changed.
 
 ### ⚠ What M7 added: three rules out of twenty-three, and one of them has no fix
 

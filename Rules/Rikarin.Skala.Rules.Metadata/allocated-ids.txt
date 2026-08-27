@@ -40,3 +40,8 @@ SK9099 token-stream-changed
 SK4010 where-before-linq-operator
 SK6003 abstract-type-public-constructor
 SK8005 thread-sleep-in-test
+SK5001 sql-from-request-concatenation
+SK5002 process-start-from-request
+SK5005 weak-cipher-algorithm
+SK5007 certificate-validation-disabled
+SK5009 xml-external-entity-resolution
