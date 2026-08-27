@@ -47,63 +47,52 @@ public sealed class CollectionExpressionAnalyzer : DiagnosticAnalyzer {
                 }
 
                 var list = start.Compilation.GetTypeByMetadataName("System.Collections.Generic.List`1");
-                start.RegisterSyntaxNodeAction(context => Analyze(context, list), SyntaxKind.VariableDeclarator);
+                start.RegisterSyntaxNodeAction(
+                    context => Analyze(context, list),
+                    SyntaxKind.ArrayCreationExpression,
+                    SyntaxKind.ImplicitArrayCreationExpression,
+                    SyntaxKind.ObjectCreationExpression,
+                    SyntaxKind.ImplicitObjectCreationExpression
+                );
             }
         );
     }
 
     static void Analyze(SyntaxNodeAnalysisContext context, INamedTypeSymbol? list) {
-        var declarator = (VariableDeclaratorSyntax)context.Node;
-        if (declarator.Initializer?.Value is not ExpressionSyntax value
-            || declarator.Parent is not VariableDeclarationSyntax { Type: { } declaredSyntax } declaration) {
-            return;
-        }
-
-        // ⚠ `var x = new[] { … }` has no written target type, so `var x = […]` is CS9176. This is
-        // the single most likely way to get this rule wrong and it is one property away.
-        if (declaredSyntax.IsVar) {
-            return;
-        }
-
-        // Only a local or a field: a `const` cannot hold one, and a `using` declaration is not a
-        // collection.
-        if (declaration.Parent is not (LocalDeclarationStatementSyntax or FieldDeclarationSyntax)) {
-            return;
-        }
-
-        if (declaration.Parent is LocalDeclarationStatementSyntax local
-            && (local.IsConst || !local.UsingKeyword.IsKind(SyntaxKind.None))) {
-            return;
-        }
-
-        if (declaration.Parent is FieldDeclarationSyntax declaredField
-            && declaredField.Modifiers.IndexOf(SyntaxKind.ConstKeyword) >= 0) {
-            return;
-        }
-
+        var value = (ExpressionSyntax)context.Node;
         var elements = Elements(value);
         if (elements is null) {
             return;
         }
 
+        var target = WrittenTargetOf(value);
+        if (target is null) {
+            return;
+        }
+
         var model = context.SemanticModel;
         var cancellation = context.CancellationToken;
+        var info = model.GetTypeInfo(value, cancellation);
 
-        var declared = model.GetTypeInfo(declaredSyntax, cancellation).Type;
-        var created = model.GetTypeInfo(value, cancellation).Type;
-        if (declared is null
-            || created is null
-            || declared.TypeKind == TypeKind.Error
+        // ⚠ The whole proof, in one comparison. A collection expression produces an object of its
+        // *target* type; the `new` produced an object of its own. Where the two are the same the
+        // rewrite cannot change what the program holds, and where they differ it silently can:
+        // `object[] a = new string[] { … }` is an array of `string` that throws on an `int` write,
+        // and `object[] a = […]` is an array of `object` that does not. Asking Roslyn for the
+        // converted type catches every such widening at once, including the ones through an
+        // interface and the ones through a base class.
+        if (info.Type is not { } created
             || created.TypeKind == TypeKind.Error
-            || !SymbolEqualityComparer.Default.Equals(declared, created)) {
+            || info.ConvertedType is not { } converted
+            || !SymbolEqualityComparer.Default.Equals(created, converted)) {
             return;
         }
 
-        if (!IsSupportedTarget(declared, list)) {
+        if (!IsSupportedTarget(created, list)) {
             return;
         }
 
-        // ⚠ A collection expression is not an expression tree node (CS8640).
+        // ⚠ A collection expression is not an expression tree node.
         if (NullComparison.InsideExpressionTree(model, value, cancellation)) {
             return;
         }
@@ -122,15 +111,86 @@ public sealed class CollectionExpressionAnalyzer : DiagnosticAnalyzer {
                     (elements.OpenBraceToken.Span, "["),
                     (elements.CloseBraceToken.Span, "]")
                 ),
-                "The type is already written on the left, so this is a collection expression: `"
-                + declaredSyntax
-                + " "
-                + declarator.Identifier.ValueText
-                + " = ["
-                + (elements.Expressions.Count == 0 ? string.Empty : "…")
-                + "];`"
+                "The type is already written at " + target + ", so this is a collection expression: `"
+                + created.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat)
+                + (elements.Expressions.Count == 0 ? " x = [];`" : " x = […];`")
             )
         );
+    }
+
+    /// <summary>
+    /// Where the target type is written down, or null when it is not written anywhere.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ A collection expression has no natural type: it means whatever the position says it means,
+    /// and a position that says nothing is CS9176. So the rule needs the type to be <em>spelled by
+    /// the author</em> somewhere the reader can see, and this is the list of places where it is.
+    /// <para>
+    /// ⚠ An argument is deliberately not on the list even though the parameter's type is written.
+    /// `M(new string[] { … })` and `M([…])` do not necessarily resolve to the same overload — a
+    /// collection expression is convertible to several collection types at once — so the rewrite
+    /// can change which method runs.
+    /// </para>
+    /// </remarks>
+    static string? WrittenTargetOf(ExpressionSyntax value) {
+        switch (value.Parent) {
+            // `T[] x = new T[] { … };` — but never `var`, which has nothing to infer from.
+            case EqualsValueClauseSyntax { Parent: VariableDeclaratorSyntax { Parent: VariableDeclarationSyntax declaration } }:
+                if (declaration.Type.IsVar
+                    || declaration.Parent is not (LocalDeclarationStatementSyntax or FieldDeclarationSyntax)
+                    || declaration.Parent is LocalDeclarationStatementSyntax { IsConst: true }
+                    || declaration.Parent is FieldDeclarationSyntax declaredField
+                    && declaredField.Modifiers.IndexOf(SyntaxKind.ConstKeyword) >= 0) {
+                    return null;
+                }
+
+                return "the declaration";
+
+            // `return new T[] { … };` in a member whose return type is written out.
+            case ReturnStatementSyntax statement:
+                return HasWrittenReturnType(statement) ? "the return type" : null;
+
+            // `x = new T[] { … };` where `x` already has a type.
+            case AssignmentExpressionSyntax {
+                RawKind: (int)SyntaxKind.SimpleAssignmentExpression
+            } assignment when ReferenceEquals(assignment.Right, value)
+                && RewriteGuards.IsPlainNamePath(assignment.Left):
+                return "the assignment target";
+
+            default:
+                return null;
+        }
+    }
+
+    /// <summary>
+    /// ⚠ The enclosing member's return type has to be written, not inferred.
+    /// </summary>
+    /// <remarks>
+    /// A lambda's return type is inferred from its body, so `Func&lt;string[]&gt; f = () =&gt; […]`
+    /// has nothing to take a target type from. Walking out to the first member declaration and
+    /// stopping at any lambda in between is how that is asked.
+    /// </remarks>
+    static bool HasWrittenReturnType(SyntaxNode node) {
+        for (var current = node.Parent; current is not null; current = current.Parent) {
+            switch (current) {
+                case AnonymousFunctionExpressionSyntax:
+                    return false;
+
+                case LocalFunctionStatementSyntax function:
+                    return !function.ReturnType.IsVar;
+
+                case MethodDeclarationSyntax method:
+                    return !method.ReturnType.IsVar;
+
+                case PropertyDeclarationSyntax or IndexerDeclarationSyntax or AccessorDeclarationSyntax:
+                    return true;
+
+                case BaseMethodDeclarationSyntax:
+                    return false;
+            }
+        }
+
+        return false;
     }
 
     /// <summary>
