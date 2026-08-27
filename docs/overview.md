@@ -66,7 +66,7 @@ and this one is the parser's.** Taken from `skala <command> --help` for all sixt
 
 | Flag | `format` | `check` | `verify` | `fix` | `report` | Notes |
 |---|:-:|:-:|:-:|:-:|:-:|---|
-| `--check` | ✅ | | | | | Writes nothing, exits 1 when there is anything |
+| `--check` | ✅ | | | | | Writes nothing, exits **2** when there is anything (doc 09's table; it exited 1 until the reconciliation pass) |
 | `--diff` | ✅ | | | | | Unified diff over the edits |
 | `--range a:b` | ✅ | | | | | Character offsets, filtered after a full-file fit |
 | `--staged[=worktree]` | ✅ | | | | | Formats the index and writes back to both |
