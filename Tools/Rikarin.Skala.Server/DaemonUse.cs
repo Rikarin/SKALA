@@ -28,6 +28,10 @@ public static class DaemonUse {
             || request.Staged != StagedMode.Off
             || request.Range is not null
             || request.Overrides.Count > 0
+            // ⚠ The daemon protocol carries no `--xmldoc`, so serving this request would silently
+            // format without the sub-formatter. docs/plan/11's rule cuts both ways: a daemon that
+            // does *less* than the CLI is a daemon that makes the same command mean two things.
+            || request.XmlDoc
             || request.Paths.Count != 1
             || !File.Exists(request.Paths[0])) {
             return null;

@@ -18,7 +18,7 @@ Counts below are C#-relevant keys after excluding the C++/VB/XAML/HTML/Razor nam
 | Alignment (`align_*`, `int_align_*`) | 28 | `Align` | no | 3 (mostly off — see below) |
 | `keep_existing_*` | 18 | `Group(Preserve)` — delimiters only; the gaps between items are `keep_user_linebreaks`'s | no | 2 |
 | Attributes | ~8 | `Group`, `Line` | no | 2 |
-| Comments & xmldoc | ~16 | sub-formatter | no | 3 |
+| Comments & xmldoc | ~16 | sub-formatter, opt-in | no | 3 |
 | Arrangement (`arrange_*`, body styles, `var`, qualifiers) | ~40 | tree rewrite | **yes** | doc [06](06-arrangement-and-syntax-styles.md) |
 
 ## Phase 1 — spaces, blanks, braces, indent
@@ -455,21 +455,44 @@ as XML, re-wrap text to `xmldoc_max_line_length = 120`, break before
 `xmldoc_indent_child_elements`/`attribute_indent = single_indent`,
 `xmldoc_space_before_self_closing = true`, `space_after_triple_slash = true`.
 
-⚠ **It is not implemented, and the reason is a measurement rather than a schedule.** `jb cleanupcode`
+⚠ **It is off by default, and the reason is a measurement rather than a schedule.** `jb cleanupcode`
 does not touch documentation comments. Asked directly, with the whole family in force, it returns
 `///<summary>…`, a 128-column summary, two `<param>` tags on one line and a `<summary>` followed by a
-`<remarks>` on the same line — every one of them exactly as written. A Skala that re-wrapped them
-would diverge from the oracle on every doc comment in the corpus, and would have no oracle to check
-itself against while doing it. SK-DIV-0006 records it; the twelve keys stay Tier D with that as the
-reason, and `resharper_space_after_triple_slash` was **demoted** from Tier A because milestone 1
-inserted the space and the oracle does not — worth 79 lines across 15 files.
+`<remarks>` on the same line — every one of them exactly as written. A Skala that re-wrapped them by
+default would diverge from the oracle on every doc comment in the corpus. SK-DIV-0006 records it;
+the keys stay Tier D with that as the reason, and `resharper_space_after_triple_slash` was
+**demoted** from Tier A because milestone 1 inserted the space and the oracle does not — worth 79
+lines across 15 files.
 
 ⚠ The hazard half is implemented, because it needs no oracle. A doc comment that is not well-formed
 XML — extremely common in real code — is left exactly as it is and reported at `hint` (`SK0003`),
-never "fixed". ⚠ Judged as a *fragment* and not a document: two sibling `<param>` tags are ordinary,
-and document rules would report most of the corpus. DTD processing is prohibited and there is no
-resolver, because the text comes from a source file anybody may have written. Text inside `<code>`
-and `<c>` is moot while nothing is re-wrapped, and stays moot until something is.
+never "fixed", under every setting. ⚠ Judged as a *fragment* and not a document: two sibling
+`<param>` tags are ordinary, and document rules would report most of the corpus. DTD processing is
+prohibited and there is no resolver, because the text comes from a source file anybody may have
+written.
+
+⚠ **The sub-formatter itself exists and `skala format --xmldoc` turns it on** — the same shape and
+the same justification as `arrange --aggressive` (SK-DIV-0014): a rewrite the export configures, the
+oracle declines to perform, and a repository may ask for anyway. **Seventeen of the twenty-seven
+`resharper_xmldoc_*` keys are honoured and ten are refused with a reason each** (`XmlDocIds.Refused`;
+six of them because a tag header is emitted byte-for-byte and never broken open, which is one rule
+rather than six omissions).
+
+⚠ **These are the only options in the project not pinned against the oracle, and they cannot be.**
+Tier A means "pinned by an oracle fixture" and no fixture can show Rider doing any of this, so every
+id the sub-formatter reads is registered inert — read, never entering `PhaseOneOptions.Implemented`,
+never Tier A. What replaces the oracle: hand-written fixtures asserting the semantics JetBrains'
+settings pages state; a **round trip** checked on every comment of every run, which reduces the
+re-wrapped comment to a signature (prose whitespace-normalised, `<code>` and `<c>` byte-for-byte,
+attributes exact) and puts the comment back exactly as written if it differs by one word; and four
+corpus-wide properties over all 716 files, of which the load-bearing one is *the non-`///` lines of
+the output are identical with and without the flag*.
+
+⚠ Hazard 1 — text inside `<code>` and `<c>` — is no longer moot and is handled by never re-wrapping
+it: those elements' bodies are emitted as their source lines, with only the `///` marker removed and
+the marker space **not** re-applied. Measured over `corpus/real/`: 3 030 of 3 032 doc comments
+re-wrap and round-trip clean, the two left are the two that are not well-formed XML, and the flag
+costs 3.59 points of line fidelity against an oracle that never moves.
 
 ## Ordering summary
 
@@ -481,7 +504,7 @@ independently shippable and independently measurable against the oracle:
 | 1 | Any file, safely; produces correct spacing/blanks/indent, never moves a line | ~85 % of lines — ✅ measured 94.28 % |
 | 2 | Same, plus correct break *presence* and *position* | ~93 % — ✅ measured 97.47 % |
 | 3 | Everything the export configures | ≥ 99.9 % — ⚠ **measured 99.70 %**, see below |
-| 4 | Same, plus doc comments | ⚠ the oracle does not format doc comments; SK-DIV-0006 |
+| 4 | Same, plus doc comments under `--xmldoc` | ⚠ the oracle does not format doc comments; measured at 96.04 % with the flag on, 99.53 % on the lines it may not touch. SK-DIV-0006 |
 
 ⚠ **Every number in the two paragraphs that used to stand here was M3 data presented in the present
 tense**, and the corpus they were measured over no longer exists — it was re-based on a mainline

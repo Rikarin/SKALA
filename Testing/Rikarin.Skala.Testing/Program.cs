@@ -11,6 +11,9 @@ using Rikarin.Skala.Testing;
 //                     disagrees is a tautology (docs/plan/12 § "The oracle").
 //   fidelity [set…]   print the differential report without failing anything, which is the work
 //                     queue the divergence classes rank.
+//   xmldoc [set]      what `--xmldoc` costs against an oracle that does not format doc comments
+//                     (SK-DIV-0006): the number with it, without it, and with every `///` line
+//                     excluded from both sides.
 //   dump <set> <dir> [defined]
 //                     write Skala's output and the oracle's side by side, so a class named in the
 //                     report can be read as a diff rather than as two sample lines. `defined`
@@ -75,6 +78,12 @@ switch (args[0]) {
         return Regenerate(sets, only);
     case "fidelity":
         return Report(sets);
+    case "xmldoc":
+        // ⚠ SK-DIV-0006's assertion, measured. Three numbers: the oracle agreement without the
+        // sub-formatter, with it, and with every `///` line removed from both sides — the third is
+        // the one that says whether anything the flag is not allowed to touch has moved.
+        Console.Write(XmlDocFidelity.Measure(sets[0]));
+        return 0;
     case "dump":
         return Dump(args[1], args[2], args.Length > 3 && args[3] == "defined");
     case "variants":

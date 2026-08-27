@@ -195,6 +195,16 @@ public static partial class SkalaCommandLine {
             Description = "Do everything in this process. The daemon is only ever an optimisation."
         };
 
+        // ⚠ SK-DIV-0006, and the same shape as `arrange --aggressive`. The export configures the
+        // whole `resharper_xmldoc_*` family and `jb cleanupcode` honours none of it — measured — so
+        // a Skala that re-wrapped doc comments by default would disagree with Rider on every doc
+        // comment in every repository. This is the flag for a tree that wants the layout its
+        // .editorconfig describes and accepts that Rider will not reproduce it.
+        var xmlDoc = new Option<bool>("--xmldoc") {
+            Description =
+                "Also re-wrap documentation comments. Off by default: Rider's cleanup does not format them."
+        };
+
         // ⚠ SK-DIV-0004. Without symbols Roslyn hands back every `#if DEBUG` body as disabled text
         // and Skala correctly refuses to touch it, so the conditional half of a tree is not
         // formatted at all. `--load` takes the symbols from what the build actually compiled;
@@ -235,6 +245,7 @@ public static partial class SkalaCommandLine {
         command.Options.Add(noDaemon);
         command.Options.Add(define);
         command.Options.Add(load);
+        command.Options.Add(xmlDoc);
 
         command.SetAction(parse => {
                 var stagedValue = parse.GetResult(staged) is null
@@ -280,7 +291,8 @@ public static partial class SkalaCommandLine {
                     Quiet = parse.GetValue(quiet),
                     Verbose = parse.GetValue(Verbose),
                     Overrides = ParseOverrides(parse.GetValue(option)),
-                    Jobs = parse.GetValue(jobs)
+                    Jobs = parse.GetValue(jobs),
+                    XmlDoc = parse.GetValue(xmlDoc)
                 };
 
                 // ⚠ The daemon is tried first and its failure is never an error. docs/plan/11's

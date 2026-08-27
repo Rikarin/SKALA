@@ -94,18 +94,39 @@ public static class CSharpFormatter {
         SourceText text,
         in FormattingOptions options,
         string? crashRoot = null,
-        IReadOnlyList<string>? preprocessorSymbols = null
+        IReadOnlyList<string>? preprocessorSymbols = null,
+        bool xmlDoc = false
     ) {
         var phaseOne = new PhaseOneOptions(options);
-        return Format(path, text, phaseOne, crashRoot, preprocessorSymbols);
+        return Format(
+            path,
+            text,
+            phaseOne,
+            crashRoot,
+            preprocessorSymbols,
+            xmlDoc ? new XmlDocOptions(options) : null
+        );
     }
 
+    /// <summary>
+    /// ⚠ <paramref name="xmlDoc"/> is null unless <c>skala format --xmldoc</c> asked for the
+    /// documentation-comment sub-formatter.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ Off by default, and that is a measurement rather than caution. <c>jb cleanupcode</c> does
+    /// not format doc comments (SK-DIV-0006), so a Skala that re-wrapped them by default would
+    /// disagree with Rider on every doc comment in every repository — which is the divergence
+    /// SK-DIV-0009 spells out as "an option Skala honours and Rider ignores is a divergence wearing
+    /// a tier badge". The flag has the same shape and the same reason as <c>arrange
+    /// --aggressive</c> in SK-DIV-0014.
+    /// </remarks>
     public static FormatResult Format(
         string path,
         SourceText text,
         in PhaseOneOptions options,
         string? crashRoot = null,
-        IReadOnlyList<string>? preprocessorSymbols = null
+        IReadOnlyList<string>? preprocessorSymbols = null,
+        XmlDocOptions? xmlDoc = null
     ) {
         var diagnostics = ImmutableArray.CreateBuilder<SkalaDiagnostic>();
 
@@ -166,12 +187,25 @@ public static class CSharpFormatter {
             options.ContinuousIndentMultiplier
         );
         var output = ApplyFileLevelRules(layout.Text, options, newLine);
+
+        // ⚠ After the layout and before anything measures or diffs it, because the sub-formatter
+        // wraps against the *final* code indentation. Wrapping against the indentation the source
+        // happened to have would make format(format(x)) differ from format(x) on every file whose
+        // indentation the pipeline changed. See XmlDocFormatter.
+        var reflowed = 0;
+        if (xmlDoc is { } xml) {
+            var outcome = XmlDocFormatter.Rewrite(output, xml, parseOptions, newLine);
+            layout = XmlDocFormatter.Reanchor(layout, outcome.Text, outcome.Replacements);
+            output = ApplyFileLevelRules(outcome.Text, options, newLine);
+            reflowed = outcome.Reflowed;
+        }
+
         ReportLongLines(path, output, options, diagnostics);
         var edits = EditEmitter.Emit(text.ToString(), layout with { Text = output });
         var formatted = EditEmitter.Apply(text.ToString(), edits);
 
         var after = SourceText.From(formatted, text.Encoding ?? System.Text.Encoding.UTF8);
-        if (TokenEquivalence.Compare(text, after, parseOptions) is { } failure) {
+        if (TokenEquivalence.Compare(text, after, parseOptions, reflowed > 0) is { } failure) {
             var artefact = CrashArtifacts.Write(crashRoot, path, text.ToString(), formatted, options);
             diagnostics.Add(
                 new SkalaDiagnostic(
@@ -245,14 +279,15 @@ public static class CSharpFormatter {
         string path,
         IReadOnlyList<KeyValuePair<string, string>>? overrides = null,
         string? crashRoot = null,
-        IReadOnlyList<string>? preprocessorSymbols = null
+        IReadOnlyList<string>? preprocessorSymbols = null,
+        bool xmlDoc = false
     ) {
         var text = Read(path);
         // ⚠ Through ConfigurationCache: resolving 483 options from a re-parsed chain per file is
         // most of what `format --check` over a large tree spends its time on, and the answer is the
         // same for every file the same sections match (docs/plan/13 § "The fitting pass").
         var options = ConfigurationCache.Options(EditorConfigChain.For(path), overrides);
-        return Format(path, text, options, crashRoot, preprocessorSymbols);
+        return Format(path, text, options, crashRoot, preprocessorSymbols, xmlDoc);
     }
 
     public static SourceText Read(string path) {
