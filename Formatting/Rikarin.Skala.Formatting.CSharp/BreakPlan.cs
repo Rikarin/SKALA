@@ -281,7 +281,8 @@ public sealed class BreakPlan {
                     _options.WrapArgumentsStyle,
                     _options.WrapAfterInvocationLpar,
                     _options.WrapBeforeInvocationRpar,
-                    _options.MaxInvocationArgumentsOnLine
+                    _options.MaxInvocationArgumentsOnLine,
+                    wrapBeforeOpen: _options.WrapBeforeInvocationLpar
                 );
                 return;
 
@@ -296,7 +297,8 @@ public sealed class BreakPlan {
                     _options.WrapArgumentsStyle,
                     _options.WrapAfterInvocationLpar,
                     _options.WrapBeforeInvocationRpar,
-                    _options.MaxInvocationArgumentsOnLine
+                    _options.MaxInvocationArgumentsOnLine,
+                    wrapBeforeOpen: _options.WrapBeforeInvocationLpar
                 );
                 return;
 
@@ -315,7 +317,8 @@ public sealed class BreakPlan {
                     _options.WrapPrimaryConstructorParametersStyle,
                     _options.WrapAfterPrimaryConstructorLpar,
                     _options.WrapBeforePrimaryConstructorRpar,
-                    _options.MaxPrimaryConstructorParametersOnLine
+                    _options.MaxPrimaryConstructorParametersOnLine,
+                    wrapBeforeOpen: _options.WrapBeforePrimaryConstructorLpar
                 );
                 return;
 
@@ -330,7 +333,8 @@ public sealed class BreakPlan {
                     _options.WrapParametersStyle,
                     _options.WrapAfterDeclarationLpar,
                     _options.WrapBeforeDeclarationRpar,
-                    _options.MaxFormalParametersOnLine
+                    _options.MaxFormalParametersOnLine,
+                    wrapBeforeOpen: _options.WrapBeforeDeclarationLpar
                 );
                 return;
 
@@ -601,7 +605,8 @@ public sealed class BreakPlan {
         bool wrapAfterOpen,
         bool wrapBeforeClose,
         int maxOnLine = int.MaxValue,
-        bool? placeOnSingleLine = null
+        bool? placeOnSingleLine = null,
+        bool wrapBeforeOpen = false
     )
         where T : SyntaxNode {
         if (open.IsKind(SyntaxKind.None) || close.IsKind(SyntaxKind.None) || items.Count == 0) {
@@ -633,6 +638,17 @@ public sealed class BreakPlan {
         // `record R(\n a,\n b\n)`, where the oracle keeps the closing parenthesis where the author
         // left it and Flat would pull it back up. The sole-lambda case below is the one place the
         // oracle really does re-join, and it says so with its own key.
+        // ⚠ `wrap_before_X_lpar = true` gives the opening parenthesis a line of its own, and it is a
+        // point of the *list's* group rather than a break of its own: when the list chops, the
+        // parenthesis goes with it. Asked directly at a 70-column margin, `void Decl(int a, …)`
+        // comes back as `void Decl` / `(` / one parameter per line / `) { }`, so the parenthesis
+        // breaks exactly when the parameters do.
+        // ⚠ Registered before the gap after the parenthesis, because `_gaps` is keyed by position
+        // and the two are different positions — the opening token's own start, and the first item's.
+        if (wrapBeforeOpen && !soleLambda) {
+            Point(open, group);
+        }
+
         if (wrapAfterOpen && !soleLambda) {
             Point(first, group);
         } else if (soleLambda) {
@@ -724,7 +740,12 @@ public sealed class BreakPlan {
                 JoinsIfFits: joins && !overCap,
                 BreaksIfTooLong: true,
                 HidesFlatWidthWhenBroken: true
-            )
+            ),
+            // ⚠ The list's node starts *at* its opening parenthesis, so a break point registered on
+            // that parenthesis is written before the group is opened and the writer, finding the
+            // group unresolved, renders it flat. This is the same correction a base list needs
+            // under `wrap_before_extends_colon`; see GroupPlan.LeadingGapInside.
+            leadingGapInside: wrapBeforeOpen
         );
     }
 

@@ -204,6 +204,9 @@ public readonly struct PhaseOneOptions {
         WrapBeforeInvocationRpar = options.GetBool(Ids.WrapBeforeInvocationRpar);
         WrapAfterDeclarationLpar = options.GetBool(Ids.WrapAfterDeclarationLpar);
         WrapBeforeDeclarationRpar = options.GetBool(Ids.WrapBeforeDeclarationRpar);
+        WrapBeforeDeclarationLpar = options.GetBool(Ids.WrapBeforeDeclarationLpar);
+        WrapBeforeInvocationLpar = options.GetBool(Ids.WrapBeforeInvocationLpar);
+        WrapBeforePrimaryConstructorLpar = options.GetBool(Ids.WrapBeforePrimaryConstructorLpar);
         WrapBeforeArrowWithExpressions = options.GetBool(Ids.WrapBeforeArrowWithExpressions);
 
         PlaceAttributeOnSameLine = (PlacementStyle)options.GetRaw(Ids.PlaceAttributeOnSameLine);
@@ -472,6 +475,9 @@ public readonly struct PhaseOneOptions {
     public bool WrapBeforeInvocationRpar { get; }
     public bool WrapAfterDeclarationLpar { get; }
     public bool WrapBeforeDeclarationRpar { get; }
+    public bool WrapBeforeDeclarationLpar { get; }
+    public bool WrapBeforeInvocationLpar { get; }
+    public bool WrapBeforePrimaryConstructorLpar { get; }
     public bool WrapBeforeArrowWithExpressions { get; }
 
     public PlacementStyle PlaceAttributeOnSameLine { get; }
@@ -914,12 +920,32 @@ public static class Ids {
     public static readonly OptionId WrapBeforeBinaryOpsign = Of("resharper_csharp_wrap_before_binary_opsign");
     public static readonly OptionId WrapBeforeBinaryPatternOp = Of("resharper_csharp_wrap_before_binary_pattern_op");
     public static readonly OptionId WrapBeforeTernaryOpsigns = Of("resharper_csharp_wrap_before_ternary_opsigns");
-    public static readonly OptionId WrapBeforeEq = OfInert("resharper_csharp_wrap_before_eq");
+    // ⚠ No longer inert. Milestone 2 recorded that no input could tell its two values apart,
+    // because M2 never *added* a break at either side of an `=` and the key only chooses a side.
+    // M3 added one — GroupFacts.PrefersOuterBreak — and the key became observable the moment it
+    // did; the M2 note outlived the reason for it. Asked directly at a 70-column margin,
+    // `target = a + b + c;` comes back broken after the `=` at false and before it at true.
+    public static readonly OptionId WrapBeforeEq = Of("resharper_csharp_wrap_before_eq");
     public static readonly OptionId WrapBeforeComma = Of("resharper_csharp_wrap_before_comma");
     public static readonly OptionId WrapAfterInvocationLpar = Of("resharper_csharp_wrap_after_invocation_lpar");
     public static readonly OptionId WrapBeforeInvocationRpar = Of("resharper_csharp_wrap_before_invocation_rpar");
     public static readonly OptionId WrapAfterDeclarationLpar = Of("resharper_csharp_wrap_after_declaration_lpar");
     public static readonly OptionId WrapBeforeDeclarationRpar = Of("resharper_csharp_wrap_before_declaration_rpar");
+
+    // ⚠ The opening half of the three `lpar` pairs. `wrap_after_X_lpar` says whether the first item
+    // gets a line of its own; these say whether the *parenthesis itself* does, which is a break at
+    // the gap before it and therefore a point of the same group:
+    //     void Decl              SomeCall
+    //     (                      (
+    //         int a,                 argument
+    //     ) { }                  );
+    public static readonly OptionId WrapBeforeDeclarationLpar =
+        Of("resharper_csharp_wrap_before_declaration_lpar");
+
+    public static readonly OptionId WrapBeforeInvocationLpar = Of("resharper_csharp_wrap_before_invocation_lpar");
+
+    public static readonly OptionId WrapBeforePrimaryConstructorLpar =
+        Of("resharper_csharp_wrap_before_primary_constructor_declaration_lpar");
 
     public static readonly OptionId WrapBeforeArrowWithExpressions =
         Of("resharper_csharp_wrap_before_arrow_with_expressions");
