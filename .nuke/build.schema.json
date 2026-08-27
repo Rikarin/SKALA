@@ -122,6 +122,10 @@
             "Release"
           ]
         },
+        "Only": {
+          "type": "string",
+          "description": "Regenerate only the fixtures whose relative path starts with this prefix"
+        },
         "Rids": {
           "type": "string",
           "description": "Semicolon-separated RIDs for the tool package — defaults to the host's"

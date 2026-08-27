@@ -1027,8 +1027,19 @@ public sealed partial class CSharpDocumentBuilder {
         }
 
         EmitUpTo(token.SpanStart);
+
+        // ⚠ The piece has to be *this* token's, and a start position is not enough to say so.
+        // `SourcePieces.Split` makes no piece for a zero-width token — the omitted sizes of
+        // `int[,]`, a missing token in a partial tree — so such a token arrives here with the
+        // *next* token's piece under the cursor, and it shares that token's start whenever no
+        // trivia separates them. `byte[\n] f;` is exactly that: the omitted size sits at the `]`,
+        // which then gets emitted here, one caller too early, from inside the bracket's
+        // continuation scope instead of after it has been closed. The `]` came out at eight
+        // columns and at four on the second pass, because a space before it in the source moves the
+        // `]` off the omitted token's position and the collision stops happening (SK-FUZZ-0004).
         if (_cursor < _pieces.Length
             && _pieces[_cursor].Span.Start == token.SpanStart
+            && _pieces[_cursor].Span.Length == token.Span.Length
             && _pieces[_cursor].Kind == PieceKind.Token) {
             EmitPiece(_cursor++);
         }

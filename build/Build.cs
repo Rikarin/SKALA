@@ -198,6 +198,29 @@ class Build : NukeBuild {
             );
 
     /// <summary>
+    /// ⚠ Regenerates the fixtures whose relative path starts with this prefix, rather than all of them.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ <b>Spelled with a space — <c>./build.sh Oracle --only &lt;name&gt;</c> — and never with an
+    /// <c>=</c>.</b> NUKE's own argument parser binds <c>--only value</c> and silently drops
+    /// <c>--only=value</c>: no error, no warning, the parameter is simply null and the target
+    /// regenerates everything. The harness behind it wants the opposite spelling
+    /// (<c>--only=</c>), which is why this target translates rather than forwarding the string.
+    /// <para>
+    /// ⚠ Both halves of that were broken at once. The target did not pass the flag on at all, so
+    /// <c>./build.sh Oracle --only=&lt;name&gt;</c> — the command <c>OpenDefectTests</c>'s own
+    /// failure message tells you to run when a defect is fixed — rewrote all 1 212 fixtures
+    /// instead of the one. The diff was a date stamp on 52 files and nothing else, which is the
+    /// worst shape a mistake like this can take: it reviews as noise, and the next regeneration
+    /// after a ReSharper upgrade would have hidden a real change inside it. See docs/plan/12 §
+    /// "The oracle" on why a fixture regeneration is a reviewed commit — one that rewrites 1 212
+    /// files because a single fixture was added is not reviewable.
+    /// </para>
+    /// </remarks>
+    [Parameter("Regenerate only the fixtures whose relative path starts with this prefix")]
+    readonly string Only = null!;
+
+    /// <summary>
     /// ⚠ Regenerates the committed <c>.expected.cs</c> fixtures from `jb cleanupcode`.
     /// </summary>
     /// <remarks>
@@ -213,7 +236,9 @@ class Build : NukeBuild {
                         .SetConfiguration(Configuration)
                         .EnableNoBuild()
                         .EnableNoRestore()
-                        .SetApplicationArguments("oracle")
+                        .SetApplicationArguments(
+                            Only is null ? ["oracle"] : (string[])["oracle", "--only=" + Only]
+                        )
                 )
             );
 
