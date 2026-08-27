@@ -499,9 +499,28 @@ this document proposed.
 **Layering.** One file, two blocks, separated by `# skala:canonical begin` / `# skala:local begin`
 markers, the local block second — so editorconfig's own later-section-wins rule makes local
 overrides beat the canonical, and Skala never has to know what they are. Tested against Vixen's real
-file: all **56** path-scoped sections and their reasoning comments survive verbatim, the effective
-options still resolve to Vixen's values where Vixen set them and the canonical's where it did not,
-and the override report is **7 lines** against a 5 188-line file.
+file: all **56** path-scoped sections survive **verbatim**, the effective options still resolve to
+Vixen's values where Vixen set them and the canonical's where it did not, and the override report is
+**7 lines** against the 5 188-line result (the 4 272-line canonical block plus Vixen's 916-line local
+one, measured at `8cbd66d`).
+
+⚠ **The reason verbatim preservation is required is not that the local block is good, and the
+document used to say it was.** The earlier version of this paragraph cited Vixen's "reasoning
+comments" as what the mechanism protects. Vixen's `.editorconfig` was not authored: it was built by
+agents as they went, 916 lines and 56 sections, and never reviewed as a whole. Its overrides are not
+decisions. **The true reason is stronger and general:** nobody can tell a reasoned override from an
+accidental one by looking at it, so a sync that dropped, merged or normalised *either* kind would be
+unsafe in every repository rather than only in this one. A mechanism that has to be right about
+which overrides matter is a mechanism that will one day be wrong.
+
+⚠ **`SK9013` is the instrument for the other half of the problem, and the two acts are different.**
+The tool preserving an override is a safety property. A person *auditing* accumulated overrides is a
+review, and `SK9013` — one info-level finding per option the local block sets that the canonical also
+sets — is the artefact it is done from. Seven lines is a reviewable list; a repository whose report
+runs to two hundred has a question to answer that Skala is not going to answer for it. ⚠ Vixen's
+seven are **suspect by default and are not precedent**: they are the unreviewed file's, and each
+needs justifying on its merits or removing. Vixen conforms to the canonical; the canonical does not
+bend to Vixen.
 
 **Rollout.** Drift (`SK9008`, error) is `sha256(block) ≠ the marker's own sha256` — decidable from
 the file alone, offline, at any version. Behindness (`SK9009`, info) is `the marker ≠ the tool's
