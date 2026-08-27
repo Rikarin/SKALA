@@ -224,7 +224,7 @@ number that decides itself.
 
 **Release 0.7.**
 
-## M4 — Arrangement · M/L — ⚠ **deferred; M5 runs first**
+## M4 — Arrangement · M/L — ⚠ **shipped, one bar met and one missed**
 
 **Decided after M3: M4 and M5 swap places.** M3 established the dependency inversion below — M4's
 semantic half needs a compilation, and building one is M5's work — and the same compilation is what
@@ -241,6 +241,35 @@ syntactic subset that runs without a compilation.
 
 **Done when:** the oracle's cleanup profile and Skala agree on `corpus/real/` at ≥ 99 % of changed
 spans, and arrangement over Vixen introduces zero compiler diagnostics.
+
+### What M4 measured
+
+| | |
+|---|---|
+| Arrangement over Vixen introduces zero compiler diagnostics | ✅ **0**, over 4 606 files in 392 compilations, 2 714 of them arranged. Measured read-only in a `git archive` scratch copy, and *independently* of the safety layer that makes it true |
+| Changed-span agreement with the cleanup profile | ❌ **79.58 %** against a bar of 99 % (2 530 / 3 179 spans, 391 files). `--aggressive` — with parenthesis removal on, as the oracle's profile has it — is **83.67 %** |
+| Formatter fidelity | ✅ unchanged. `DifferentialTests.Fidelity_DoesNotDecrease` passes; arrangement is a separate pass and moves none of it |
+| Properties across the pair | ✅ idempotency, convergence, determinism, parse stability, range consistency and "introduces no compiler diagnostic", over 391 files × 2 symbol sets. 13 854 conformance cases green |
+| Fixed point | ✅ converges on every corpus file. 1 pass ×47, 2 ×325, 3 ×19 against a bound of 4; three only ever appears when a rewrite exposes a rewrite |
+| Reverted by a safety layer | 6 files of 4 606 on Vixen (0.13 %), 23 of 391 on the corpus |
+| Oracle profile | ✅ `OracleProfile.Cleanup`, and `OracleRunner.Profile` is a parameter. 391 committed `.arranged.expected.cs` |
+| Options | ✅ 20 promoted to Tier A, each pinned by a cleanup fixture and each shown to change the arranger's output |
+
+⚠ **The 99 % bar is not met and is not close.** The honest reading is that it was set before anyone
+had measured what the cleanup profile's changed spans look like, and it is a much harder bar than the
+formatter's line fidelity: a changed span is a *rewrite*, so one disagreement about one declaration
+costs a whole span, where a line-keyed number would have absorbed it. What the residue is made of,
+measured:
+
+| Class | Spans | What it is |
+|---|---|---|
+| both, differently | 345 | Mostly the parenthesis gate (SK-DIV-0014, worth 4.02 points on its own) and wrapping differences downstream of a different rewrite |
+| oracle only | 223 | Rewrites Skala declines. The two largest are **qualified-reference shortening** (`System.Threading.Tasks.Task` ⇒ `Task`), which is not implemented at all, and `var` on a declaration whose initializer's *flow state* is maybe-null, which Skala refuses on purpose |
+| skala only | 79 | Rewrites Skala makes and the oracle does not, dominated by types that do not resolve in the oracle's scratch project because the corpus is a *sample* — `JArray.Parse` where `JArray.cs` was not vendored |
+
+The next milestone's queue, in order of measured value: qualified-reference shortening; re-examining
+the maybe-null `var` refusal now that the `PredefinedTypeRule` bug that motivated it is fixed; and
+deciding whether the parenthesis gate stays.
 
 ⚠ **What M4 needs that M3 did not provide**, written down at the end of M3 while it is still known:
 
@@ -271,15 +300,24 @@ spans, and arrangement over Vixen introduces zero compiler diagnostics.
 
 M3's list of five and M5's two additions, re-checked at the end of M3.1.
 
-| Need | Status after M3.1 |
-|---|---|
-| 1. A second oracle profile (`CSUseVar`, `CSOptimizeUsings`, `CSReorderTypeMembers`) | ❌ untouched. `OracleRunner.Profile` is still a constant and `OracleFixture` still assumes one fixture per file. This is M4's first act and neither M5 nor M3.1 gave it anything. |
-| 2. A compilation, for the semantic half | ✅ done at M5. |
-| 3. Multi-pass output, a fixed point across format-and-arrange | ❌ not started. |
-| 4. A real edit-to-span map for `--range` | ❌ not started. `EditEmitter.Restrict` is still a filter over a whole-file fit. |
-| 5. The M3 inheritance | ✅ intact and larger — see below. |
-| 6. A compilation-wide re-bind, stronger than `skala fix`'s per-file syntactic check | ❌ not started. |
-| 7. `SK0xxx` findings with `artifactChanges` for arrangement to emit into | ✅ done at M5. |
+| Need | Status after M3.1 | What M4 did |
+|---|---|---|
+| 1. A second oracle profile (`CSUseVar`, `CSOptimizeUsings`, `CSReorderTypeMembers`) | ❌ untouched. `OracleRunner.Profile` is still a constant and `OracleFixture` still assumes one fixture per file. This is M4's first act and neither M5 nor M3.1 gave it anything. | ✅ `OracleProfile`, two profiles, `.arranged.expected.cs` beside `.expected.cs`. ⚠ None of the three tasks the need *names* turned out to be right: `CSUseVar` and `CSOptimizeUsings` are not spelled that way, and `CSReorderTypeMembers` is deliberately excluded. The sweep is `docs/oracle-cleanup-profile.md` |
+| 2. A compilation, for the semantic half | ✅ done at M5. | ✅ used, through a delegate so `Formatting.CSharp` still may not reference `Analysis` |
+| 3. Multi-pass output, a fixed point across format-and-arrange | ❌ not started. | ✅ `ArrangementPipeline`, bounded at 4, observed maximum 3, non-convergence reported rather than truncated |
+| 4. A real edit-to-span map for `--range` | ❌ not started. `EditEmitter.Restrict` is still a filter over a whole-file fit. | ✅ `ArrangementEdits.Diff` — line-keyed LCS with a character-level trim inside each hunk. The anchor-based emitter collapses to one whole-file edit once a member moves, which silently turns `--range` into whole-file formatting |
+| 5. The M3 inheritance | ✅ intact and larger — see below. | ✅ `tree` gave `arrange-tree` its shape; `IndentKind.Align` carried the moved members |
+| 6. A compilation-wide re-bind, stronger than `skala fix`'s per-file syntactic check | ❌ not started. | ✅ layer 2 re-binds through `ReplaceSyntaxTree` in the *same* compilation, and using removal intersects across every compilation a file participates in |
+| 7. `SK0xxx` findings with `artifactChanges` for arrangement to emit into | ✅ done at M5. | ⚠ not used. `skala arrange` writes edits directly; emitting arrangement as findings is follow-up work |
+
+⚠ **And the warning M3.1 left was the right one, aimed at the wrong thing.** It said to budget for
+"sweep it, fail to find the rule, fit a constant and say so" because the `arrange_*` keys are vaguer
+than the formatter's. That happened — twice, and in a shape nobody predicted. The sweep failed not on
+a *value* but on the *surface*: three of doc 06's rewrites turned out not to be cleanup settings at
+all (SK-DIV-0013), and the cleanup task names are undocumented, silently ignored when wrong, and
+recoverable only by grepping the tool's own resource strings. Two of doc 06's five body-style
+conditions were also wrong. Every one of these was found by asking the tool rather than by reading a
+name, which is the habit M3 established and the one that paid here.
 
 **What M3.1 added that M4 can rely on**, and it is more than a percentage:
 
