@@ -1,0 +1,147 @@
+# docs/plan/02 § "Package boundaries" and docs/plan/11 § "Distribution", as a workflow.
+#
+# ⚠ **This workflow publishes nothing.** It builds every artefact a release consists of, proves the
+# tool package works by installing it and using it, and uploads the result. Pushing to NuGet and
+# creating a GitHub Release are a person's decision and a person's credentials; a workflow that does
+# them on a tag has made "release" a thing that can happen by accident, and this project's own
+# `CHANGELOG.md` opens by saying a formatting change downstream is a repository-wide commit.
+#
+# Three facts drive the shape below.
+#
+#   1. **The tool package is RID-specific and there is one job per RID.** Its command is a NativeAOT
+#      binary, which can only be produced on the platform it targets — `./build.sh Pack` defaults to
+#      the host's RID for exactly that reason. The matrix is the cross-product, not a convenience.
+#   2. **A package that installs and cannot format a file is the thing this exists to catch.** Every
+#      leg installs what it just built, into a scratch directory outside the checkout, and runs the
+#      commands. A pack that succeeds proves the zip is well-formed and nothing else. The
+#      deep-path case is deliberate: doc 13 § "Startup" records a daemon that died with **exit code
+#      0** in any repository nested past about eighty-five characters, and CI workspaces, nested
+#      monorepos and git worktrees all reach that.
+#   3. **The RID-agnostic packages are built once.** `Rules`, `Canonical`, `MSBuild` and `Sdk` carry
+#      no platform-specific bytes, so building them three times would produce three artefacts that
+#      have to be identical and would eventually not be.
+
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: The version to stamp into every package
+        required: false
+        default: ""
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+jobs:
+  pack:
+    name: pack (${{ matrix.rid }})
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      # ⚠ The whole value of a matrix is knowing whether a failure is everywhere or on one platform.
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            rid: linux-x64
+          - os: macos-latest
+            rid: osx-arm64
+          - os: windows-latest
+            rid: win-x64
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      # ⚠ The version is stamped in one place. `VersionPrefix` in Directory.Build.props is the
+      # default; a tag or a dispatch input overrides it, and nothing else in the tree carries a
+      # number that would have to agree.
+      - name: Resolve the version
+        id: version
+        shell: bash
+        run: |
+          version="${{ github.event.inputs.version }}"
+          if [ -z "$version" ] && [ "${GITHUB_REF_TYPE}" = "tag" ]; then
+            version="${GITHUB_REF_NAME#v}"
+          fi
+          echo "value=$version" >> "$GITHUB_OUTPUT"
+          echo "Packing as: ${version:-the tree's VersionPrefix}"
+
+      # ⚠ The full suite before anything is packed. A green pack over a red tree is an artefact
+      # nobody should be able to reach for.
+      - name: Test
+        run: ./build.sh Test --configuration Release
+        shell: bash
+
+      - name: Pack
+        shell: bash
+        run: |
+          if [ -n "${{ steps.version.outputs.value }}" ]; then
+            ./build.sh Pack --configuration Release --rids ${{ matrix.rid }} \
+              -- -p:Version=${{ steps.version.outputs.value }}
+          else
+            ./build.sh Pack --configuration Release --rids ${{ matrix.rid }}
+          fi
+
+      # The contents, listed. ⚠ Not decoration: three packaging faults in this repository's history
+      # were invisible in the pack log and obvious in the file list — 19 files one directory too
+      # deep, a 13 MB symbol bundle, and 6.6 MB of resources for languages the tool cannot use.
+      - name: List what was packed
+        shell: bash
+        run: |
+          for package in artifacts/packages/*.nupkg; do
+            echo "=== $package ($(wc -c < "$package") bytes)"
+            unzip -l "$package"
+          done
+
+      - name: Install smoke test
+        shell: bash
+        run: .github/scripts/install-smoke-test.sh "$(pwd)/artifacts/packages"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: packages-${{ matrix.rid }}
+          path: artifacts/packages/*.nupkg
+          if-no-files-found: error
+
+  # ⚠ A separate job, and it uploads only the four RID-agnostic packages, because the three legs
+  # above each produce a `Rikarin.Skala.Cli.<version>.nupkg` with different bytes and identical
+  # names. Downloading all three artifacts into one directory would silently keep whichever landed
+  # last. The per-RID tool packages stay in their own artifacts, named by RID.
+  collect:
+    name: collect the portable packages
+    runs-on: ubuntu-latest
+    needs: pack
+
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: packages-linux-x64
+          path: packages
+
+      - name: Drop the RID-specific tool package
+        run: rm -f packages/Rikarin.Skala.Cli.*.nupkg
+
+      - name: What a release would publish
+        run: ls -la packages
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: packages-portable
+          path: packages/*.nupkg
+          if-no-files-found: error
+
+      # ⚠ The last step, and it is a message rather than an action. See this file's header.
+      - name: Publishing is a person's decision
+        run: |
+          echo "Nothing has been published." >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "Download the artifacts and push them by hand when the CHANGELOG entry is written" >> "$GITHUB_STEP_SUMMARY"
+          echo "and the version has been decided. docs/plan/02 § \"Repository policy\"." >> "$GITHUB_STEP_SUMMARY"

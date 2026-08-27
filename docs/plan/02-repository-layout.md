@@ -49,15 +49,18 @@ Skala/
 │   ├── Rikarin.Skala.Reporting/             # SARIF model, renderers, baselines, gates
 │   └── Rikarin.Skala.Reporting.Tests/
 ├── Distribution/
-│   └── Rikarin.Skala.Canonical/             # the canonical .editorconfig, packed and embedded
+│   ├── Rikarin.Skala.Canonical/             # the canonical .editorconfig, packed and embedded
+│   └── Rikarin.Skala.Sdk/                   # the meta package: three dependencies + starters
 ├── Tools/
-│   ├── Rikarin.Skala.Cli/                   # dotnet tool `skala`
+│   ├── Rikarin.Skala.Cli/                   # `skala-tool`, the full tool — payload, not the package
 │   ├── Rikarin.Skala.Cli.Tests/
+│   ├── Rikarin.Skala.Client/                # `skala`, NativeAOT — and the `Rikarin.Skala.Cli` package
+│   ├── Rikarin.Skala.Protocol/              # the daemon wire format, references nothing
 │   ├── Rikarin.Skala.Server/                # daemon + LSP        ← exists from M3
 │   ├── Rikarin.Skala.Server.Tests/
 │   ├── Rikarin.Skala.Mcp/
 │   ├── Rikarin.Skala.Mcp.Tests/
-│   └── Rikarin.Skala.MSBuild/               # targets + task, packaged
+│   └── Rikarin.Skala.MSBuild/               # build/ and buildTransitive/ targets, packaged
 ├── Testing/
 │   ├── Rikarin.Skala.Testing/               # harness: fixtures, oracles, generators
 │   ├── Rikarin.Skala.Conformance.Tests/     # the Rider differential suite
@@ -122,17 +125,61 @@ what MSBuild and MCP need.
 
 ## Package boundaries — what ships to NuGet
 
-| Package | Kind | Contents | Consumer |
-|---|---|---|---|
-| `Rikarin.Skala.Cli` | .NET tool (`skala`) | Everything, self-contained-ish | `dotnet tool install -g` |
-| `Rikarin.Skala.Rules` | Analyzer | `analyzers/dotnet/cs/*.dll`, `.editorconfig` defaults | `PackageReference` with `PrivateAssets=all` |
-| `Rikarin.Skala.MSBuild` | Build | `build/*.targets`, the task, a tool reference | `PackageReference` in `Directory.Build.props` |
-| `Rikarin.Skala.Canonical` | Content | `content/canonical.editorconfig`, its manifest, and a check-only target | `PackageReference`; installed by `skala config sync` ([03](03-configuration-model.md) § "Canonical distribution") |
-| `Rikarin.Skala.Sdk` | Meta | References the three above | One-line adoption in a new repo |
+✅ **All five exist and are built by `./build.sh Pack`.** Sizes are the measured `.nupkg`, Release,
+`osx-arm64`, at 1.0.0.
+
+| Package | Kind | Contents | Size | Consumer |
+|---|---|---|---|---|
+| `Rikarin.Skala.Cli` | .NET tool (`skala`) | `tools/any/<rid>/`: the NativeAOT client as the command, the full `skala-tool` beside it | 32.9 MB | `dotnet tool install`, global or into a manifest |
+| `Rikarin.Skala.Rules` | Analyzer | `analyzers/dotnet/cs/Rikarin.Skala.Rules.dll` + `…Rules.Metadata.dll` | 74 kB | `PackageReference` with `PrivateAssets=all` |
+| `Rikarin.Skala.MSBuild` | Build | `build/` + `buildTransitive/` props and targets | 9.8 kB | `PackageReference` in `Directory.Build.props` |
+| `Rikarin.Skala.Canonical` | Content | `content/canonical.editorconfig`, its manifest, and a check-only target | 43 kB | `PackageReference`; installed by `skala config sync` ([03](03-configuration-model.md) § "Canonical distribution") |
+| `Rikarin.Skala.Sdk` | Meta | Dependencies on the three above, plus starter `.editorconfig` and `skala.jsonc` | 5.2 kB | One line of adoption in a new repo |
 
 The API packages (`Core`, `Formatting*`, `Analysis`) are **not published** until something outside
 this repository needs them. A published assembly is a compatibility promise, and the option model
 is going to churn hard through Milestone 3.
+
+⚠ **`Rikarin.Skala.Rules.Metadata` is not a package, and the analyzer package used to say it was.**
+`Rules.csproj` has a `ProjectReference` to it, which NuGet turns into a `.nuspec` dependency on an id
+nobody publishes. Nothing in this repository could see it — the first `dotnet build` of the first
+repository that referenced the package got `NU1101: Unable to find package
+Rikarin.Skala.Rules.Metadata`, and the analyzer package had been unrestorable by anybody since the
+day it was written. `./build.sh Pack` sets `SuppressDependenciesWhenPacking` for it. The dependency
+was redundant as well as fatal: the assembly is already packed into `analyzers/dotnet/cs` beside the
+analyzer's own, which is where Roslyn looks for it.
+
+⚠ **`Rikarin.Skala.Sdk`'s three dependencies carry `PrivateAssets="none"`, and that is load-bearing.**
+NuGet's default private set is `contentfiles;analyzers;build` — exactly what these three packages
+consist of — so with the default a consumer restores three dependencies and receives nothing from any
+of them: no `SK` diagnostics, no build target, no canonical check. What to look for in the `.nuspec`
+is `include="All"` on each dependency. `ReferenceOutputAssembly="false"` looks correct on references
+that exist only to become dependencies, and is worse than the default: it drops them from the
+`.nuspec` entirely and the dependency group comes out empty.
+
+⚠ **The MSBuild package has no task assembly**, though the row above once said "the task". A task
+would have to load into MSBuild's own process on three hosts — `dotnet build`, MSBuild.exe under
+Visual Studio, and Rider's build host — which means `netstandard2.0`, a pinned
+`Microsoft.Build.Utilities.Core`, and a load failure that breaks every project in a repository at
+once. Everything it would do is start `skala` and read an exit code, which `Exec` already does, and
+[11](11-cli-and-integrations.md)'s first line says the CLI is the contract and nothing may have
+behaviour it does not.
+
+⚠ **`Rikarin.Skala.Cli` is produced by `Tools/Rikarin.Skala.Client`, not by `Tools/Rikarin.Skala.Cli`.**
+A .NET tool's command *is* its entry point, and since M7 the thing that must be on the hook path is
+the NativeAOT client. .NET 10 packs an AOT project with a `RuntimeIdentifier` as
+`tools/any/<rid>/` with `Runner="executable"`; before that, a tool command could only be a managed
+assembly run through the muxer, which is why the CLI's own `.csproj` used to state that a global
+install "correctly" has the old 79.5 ms startup. It is RID-specific for the same reason, so the
+matrix is `./build.sh Pack --rids …` and the default is the host's alone — a multi-RID pack also
+emits a RID-agnostic wrapper package naming per-RID package ids, and publishing that wrapper without
+every package it names is an install that fails on whichever platform is missing.
+
+⚠ **`Rikarin.Skala.MSBuild`, `Rikarin.Skala.Sdk` and `Rikarin.Skala.Canonical` target
+`netstandard2.0`.** None of the three has an assembly in its package; the framework is a
+compatibility declaration, and it is the dependency group's framework that a consumer's restore
+matches against. A `net10.0` group would refuse all three to a `net8.0` project, and every project in
+a repository has one `.editorconfig` including the old ones.
 
 ## Naming
 
@@ -187,3 +234,19 @@ force: a static-analysis tool that ships with warnings has an argument to lose.
 - **Version scheme:** `0.x` until Milestone 4. After that, semver where a *formatting output change*
   is a minor bump at minimum and is listed in `CHANGELOG.md` with a corpus diff summary — because
   downstream, a formatting change means a repository-wide commit.
+
+  ⚠ **1.0 was declared at M7, not at M4**, and the sentence above is what it superseded. M4 remains
+  unfinished (`arrange` is partial); what made 1.0 the right number was ADR-012 freezing four
+  surfaces — rule ids, option behaviour, exit codes and the SARIF shape — and those became fixed when
+  the baselines that depend on them did, which was M6. `CHANGELOG.md` records each milestone at the
+  number it reached rather than the one it aimed at, and M3's `99.9 %` and M3.1's `99.9 %` are the
+  two that did not.
+
+  ⚠ **Two version numbers, deliberately.** `VersionPrefix` in `Directory.Build.props` is the version
+  of all five packages. The canonical *payload* has its own, stamped into `canonical.json` by
+  `./build.sh Canonical --canonical-version` and currently `0.1.0`, because a canonical bump is a
+  repository-wide reformatting commit and a tool bump is not; a repository must be able to take a
+  bug fix without taking the reformat. The package that carries the payload rides the tool's number,
+  so `Rikarin.Skala.Canonical 1.0.0` carries canonical `0.1.0` — the marker in a repository's own
+  `.editorconfig` names the payload version and its SHA-256, which is the identity that decides
+  whether anything needs to change.
