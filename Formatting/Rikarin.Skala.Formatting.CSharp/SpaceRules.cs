@@ -441,7 +441,11 @@ public static class SpaceRules {
                 return o.SpaceBeforeCheckedParentheses;
 
             case SyntaxKind.NewKeyword:
-                return o.SpaceBeforeNewParentheses;
+                // ⚠ `new (string Name, int Value)[] { … }` — the parenthesis opens a tuple *type*,
+                // not an argument list, so `space_before_new_parentheses = false` has nothing to say
+                // about it and closing it up produces `new(string Name, int Value)[]`, which reads
+                // as an implicit object creation and is not one.
+                return next.Parent is TupleTypeSyntax || o.SpaceBeforeNewParentheses;
 
             default:
                 break;

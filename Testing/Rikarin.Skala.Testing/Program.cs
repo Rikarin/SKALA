@@ -275,28 +275,43 @@ static int RegenerateVariants(OracleRunner runner, string editorConfig, OracleHe
     return written;
 }
 
+// ⚠ The differential runs under BOTH symbol sets, and that is the default rather than a flag.
+// Milestone 5 found a defect that had survived M1 → M5 — `count > (n)` came back `count >(n)` —
+// because every corpus line that shows it sits inside a `#if` body the formatter could not see. A
+// single-symbol-set run cannot find that class at all, and there is no reason to think it was the
+// only one, so the last section of this report is the divergences that appear under one symbol set
+// and not the other. Those are the interesting kind.
 static int Report(string[] sets) {
+    var symbols = Symbols();
     foreach (var set in sets) {
         var files = Corpus.Files(set).Where(static file => file.HasFixture).ToArray();
         if (files.Length == 0) {
             continue;
         }
 
-        var results = new List<(string File, string Expected, string Actual)>(files.Length);
+        var bare = new List<(string File, string Expected, string Actual)>(files.Length);
+        var defined = new List<(string File, string Expected, string Actual)>(files.Length);
         foreach (var file in files) {
             var text = CSharpFormatter.Read(file.Path);
-            var result = CSharpFormatter.Format(file.Path, text, Resolve(file.Path));
-            results.Add((file.ToString(), OracleFixture.Read(file), result.Formatted));
+            var options = Resolve(file.Path);
+            var expected = OracleFixture.Read(file);
+            bare.Add((file.ToString(), expected, CSharpFormatter.Format(file.Path, text, options).Formatted));
+            defined.Add(
+                (file.ToString(), expected, CSharpFormatter.Format(file.Path, text, options, null, symbols).Formatted)
+            );
         }
 
-        Console.WriteLine($"── {set} ──────────────────────────────────────────────────────────");
-        Console.WriteLine(Fidelity.Compare(results).Render());
+        var without = Fidelity.Compare(bare);
+        var with = Fidelity.Compare(defined);
 
-        foreach (var origin in results.GroupBy(static r => r.File.Split('/')[1], StringComparer.Ordinal)
-            .OrderBy(
-                static g => g.Key,
-                StringComparer.Ordinal
-            )) {
+        Console.WriteLine($"── {set} ──────────────────────────────────────────────────────────");
+        Console.WriteLine("                    line      file      lines");
+        Row("no symbols", without);
+        Row("with symbols", with);
+        Console.WriteLine();
+
+        foreach (var origin in defined.GroupBy(static r => r.File.Split('/')[1], StringComparer.Ordinal)
+            .OrderBy(static g => g.Key, StringComparer.Ordinal)) {
             var report = Fidelity.Compare(origin);
             Console.WriteLine(
                 $"  {origin.Key,-14} line {report.LineFidelity * 100:F2}%  file {report.FileFidelity * 100:F2}%  ({report.Files} files)"
@@ -304,9 +319,55 @@ static int Report(string[] sets) {
         }
 
         Console.WriteLine();
+        Console.WriteLine("with symbols supplied:");
+        Console.WriteLine(with.Render());
+        OneSided(without, with);
+        Console.WriteLine();
     }
 
     return 0;
+}
+
+static void Row(string label, FidelityReport report) =>
+    Console.WriteLine(
+        $"  {label,-16} {report.LineFidelity * 100,7:F2} % {report.FileFidelity * 100,7:F2} %   "
+        + $"({report.IdenticalLines.ToString(CultureInfo.InvariantCulture)}/{report.Lines.ToString(CultureInfo.InvariantCulture)})"
+    );
+
+// The divergences one symbol set has and the other does not, keyed by what they say rather than by
+// where they are: supplying symbols changes how many lines a file has, so a line number is not a
+// stable identity across the two runs.
+static void OneSided(FidelityReport without, FidelityReport with) {
+    var bare = without.Divergences.Select(KeyOf).ToHashSet(StringComparer.Ordinal);
+    var defined = with.Divergences.Select(KeyOf).ToHashSet(StringComparer.Ordinal);
+    var onlyWith = with.Divergences.Where(divergence => !bare.Contains(KeyOf(divergence))).ToArray();
+    var onlyWithout = without.Divergences.Where(divergence => !defined.Contains(KeyOf(divergence))).ToArray();
+
+    Console.WriteLine(
+        $"⚠ divergences under one symbol set only: {onlyWith.Length.ToString(CultureInfo.InvariantCulture)} with, "
+        + $"{onlyWithout.Length.ToString(CultureInfo.InvariantCulture)} without"
+    );
+
+    Sample("  only with symbols", onlyWith);
+    Sample("  only without symbols", onlyWithout);
+}
+
+static string KeyOf(Divergence divergence) =>
+    divergence.File + "\u0000" + divergence.Expected.Trim() + "\u0000" + divergence.Actual.Trim();
+
+static void Sample(string label, IReadOnlyList<Divergence> entries) {
+    if (entries.Count == 0) {
+        return;
+    }
+
+    Console.WriteLine(label + ":");
+    foreach (var group in entries.GroupBy(static entry => entry.Class, StringComparer.Ordinal)
+        .OrderByDescending(static group => group.Count())
+        .Take(6)) {
+        Console.WriteLine(
+            $"    {group.Count().ToString(CultureInfo.InvariantCulture),5}  {group.Key}  ({group.First().File})"
+        );
+    }
 }
 
 // `dump <set> <dir>`: write Skala's output and the oracle's side by side, so that a divergence
@@ -440,5 +501,30 @@ static IEnumerable<string> LegalValues(Rikarin.Skala.Options.OptionInfo info) {
     }
 }
 
+// ⚠ Read out of a real binary log of the same scratch project OracleRunner builds, not typed: the
+// measurement and the binlog loader then test each other (PreprocessorFidelity). Memoised, because
+// it costs a `dotnet build`.
+static IReadOnlyList<string> Symbols() {
+    if (SymbolCache.Value is null) {
+        try {
+            SymbolCache.Value = PreprocessorFidelity.OracleSymbols(Console.Error);
+        } catch (Exception exception) when (exception is IOException or InvalidOperationException) {
+            Console.Error.WriteLine("the symbol probe failed; falling back to DEBUG;TRACE: " + exception.Message);
+            SymbolCache.Value = ["DEBUG", "TRACE"];
+        }
+    }
+
+    return SymbolCache.Value;
+}
+
 static Rikarin.Skala.Options.FormattingOptions Resolve(string path) =>
     Rikarin.Skala.Core.Configuration.OptionResolver.Resolve(path).Options;
+
+/// <summary>The memoised symbol set behind <c>Symbols()</c>.</summary>
+/// <remarks>
+/// ⚠ A holder type rather than a top-level local, because a top-level local is a local of the
+/// generated <c>Main</c> and a static local function may not capture one.
+/// </remarks>
+static class SymbolCache {
+    public static IReadOnlyList<string>? Value { get; set; }
+}

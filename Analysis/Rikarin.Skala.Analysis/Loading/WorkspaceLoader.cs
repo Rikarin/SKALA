@@ -147,7 +147,8 @@ public static class WorkspaceLoader {
             Mode = LoadMode.Workspace,
             Units = units.ToImmutable(),
             Diagnostics = diagnostics.ToImmutable(),
-            Summary = $"workspace {Path.GetFileName(target)} ({units.Count.ToString(CultureInfo.InvariantCulture)} project(s), {workspace.Diagnostics.Count.ToString(CultureInfo.InvariantCulture)} workspace diagnostic(s))"
+            Summary =
+                $"workspace {Path.GetFileName(target)} ({units.Count.ToString(CultureInfo.InvariantCulture)} project(s), {workspace.Diagnostics.Count.ToString(CultureInfo.InvariantCulture)} workspace diagnostic(s))"
         };
     }
 

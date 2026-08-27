@@ -88,7 +88,8 @@ public static class BinlogLoader {
             Mode = LoadMode.Binlog,
             Units = units.ToImmutable(),
             Diagnostics = diagnostics.ToImmutable(),
-            Summary = $"binlog {Relative(request.RepositoryRoot, path)} ({units.Count.ToString(CultureInfo.InvariantCulture)} compilation(s))"
+            Summary =
+                $"binlog {Relative(request.RepositoryRoot, path)} ({units.Count.ToString(CultureInfo.InvariantCulture)} compilation(s))"
         };
     }
 

@@ -40,6 +40,9 @@ public sealed class DocumentBuilder {
     /// <summary>Width from a group's own first break point to the next. <see cref="Document.AfterPointOf"/>.</summary>
     int[] _afterPoint = new int[512];
 
+    /// <summary>The groups that own at least one break point, for <see cref="MeasureNested"/>.</summary>
+    readonly HashSet<int> _ownPoints = [];
+
     /// <summary>Flat width from one fill point to the next. <see cref="Document.SegmentOf"/>.</summary>
     int[] _segment = new int[512];
 
@@ -163,6 +166,7 @@ public sealed class DocumentBuilder {
         ref var node = ref _nodes[_pending[index]];
         node.Arg2 = group;
         node.Flags = (flatSpace ? (int)LineFlags.FlatSpace : 0) | (fill ? (int)LineFlags.FillPoint : 0);
+        _ownPoints.Add(group);
 
         // ⚠ A break point stops the point measure, which is what distinguishes it from the head.
         _breaks[_pending[index]] = true;
@@ -369,7 +373,64 @@ public sealed class DocumentBuilder {
             }
         }
 
-        return first < 0 ? 0 : _afterPoint[first];
+        // ⚠ A group whose own break points are not its direct children still has them, and the
+        // ordering rule is inert without this. Every group that spends a continuation level opens
+        // the indent *inside* itself, so the `=` family's only break point is a grandchild and the
+        // scan above finds nothing — which made `AfterPoint` zero, which made "does the line end
+        // here anyway" answer yes for every declaration in the corpus. The symptom is a 146-column
+        // `const string X = "…";` that the oracle breaks after the `=` and Skala left whole.
+        // ⚠ The descent runs only when the group is known to own points, so the root group — which
+        // owns none and contains the file — is never walked.
+        return first >= 0
+            ? _afterPoint[first]
+            : _ownPoints.Contains(group) ? MeasureNested(childStart, count, group) : 0;
+    }
+
+    /// <summary>
+    /// <see cref="MeasureSegments"/>, for a group whose own break points are nested inside its
+    /// children rather than being them.
+    /// </summary>
+    int MeasureNested(int childStart, int count, int group) {
+        var seen = false;
+        var stopped = false;
+        var point = 0;
+        Walk(childStart, count);
+        return point;
+
+        // True once the segment is closed by the group's *next* own break point.
+        bool Walk(int start, int n) {
+            for (var i = 0; i < n; i++) {
+                var child = _children[start + i];
+                if (IsOwnBreakPoint(child, group)) {
+                    if (seen) {
+                        return true;
+                    }
+
+                    seen = true;
+                    continue;
+                }
+
+                if (!seen) {
+                    ref var node = ref _nodes[child];
+                    if (node.Count > 0 && Walk(node.Payload, node.Count)) {
+                        return true;
+                    }
+
+                    continue;
+                }
+
+                if (stopped) {
+                    continue;
+                }
+
+                point = point >= Document.Unbounded || _pointWidth[child] >= Document.Unbounded
+                    ? Document.Unbounded
+                    : point + _pointWidth[child];
+                stopped = _breaks[child];
+            }
+
+            return false;
+        }
     }
 
     /// <summary>Whether this child is a break point belonging to the group being closed.</summary>

@@ -84,7 +84,8 @@ public static class FormattingFindings {
                 new Finding {
                     RuleId = RuleIds.FileIsNotFormatted,
                     Severity = SkalaSeverity.Info,
-                    Message = $"the file is not formatted ({result.Edits.Length.ToString(System.Globalization.CultureInfo.InvariantCulture)} edit(s)); run `skala format`",
+                    Message =
+                        $"the file is not formatted ({result.Edits.Length.ToString(System.Globalization.CultureInfo.InvariantCulture)} edit(s)); run `skala format`",
                     Path = files[i],
                     Line = line.Line + 1,
                     Column = line.Character + 1,

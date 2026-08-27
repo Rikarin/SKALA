@@ -53,7 +53,8 @@ public static partial class SkalaCommandLine {
             Description = "a:b — character offsets. Filtered after full-file fitting."
         };
         var staged = new Option<string?>("--staged") {
-            Description = "Format the staged files and write back to both the worktree and the index. --staged=worktree formats staged files that also have unstaged changes.",
+            Description =
+                "Format the staged files and write back to both the worktree and the index. --staged=worktree formats staged files that also have unstaged changes.",
             Arity = ArgumentArity.ZeroOrOne
         };
 
@@ -85,7 +86,8 @@ public static partial class SkalaCommandLine {
         };
 
         var load = new Option<string?>("--load") {
-            Description = "Take preprocessor symbols from a loaded project: binlog | workspace | loose | none (default none)."
+            Description =
+                "Take preprocessor symbols from a loaded project: binlog | workspace | loose | none (default none)."
         };
 
         var command = new Command(
