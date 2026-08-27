@@ -27,6 +27,7 @@
 #endregion
 
 #pragma warning disable 618
+using Newtonsoft.Json.Linq;
 #if DNXCORE50
 using Xunit;
 using Test = Xunit.FactAttribute;
@@ -619,7 +620,7 @@ namespace Newtonsoft.Json.Tests.Schema {
 }"
             );
 
-            JObject json = JObject.Parse(
+            var json = JObject.Parse(
                 @"{
         ""NumberProperty"": 23
       }"

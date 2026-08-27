@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 using System.Runtime.InteropServices;
+using Vixen.Graphics;
 
 namespace Vixen.Rendering.Lighting;
 

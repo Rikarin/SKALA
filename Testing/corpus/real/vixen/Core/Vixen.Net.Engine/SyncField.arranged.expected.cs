@@ -2,6 +2,8 @@
 // SPDX-FileCopyrightText: Copyright (c) Rikarin
 // SPDX-License-Identifier: Apache-2.0
 
+using Vixen.Net.Messaging;
+
 namespace Vixen.Net.Engine;
 
 /// <summary>One piece of a module's state, as the wire sees it.</summary>

@@ -2,6 +2,8 @@
 // SPDX-FileCopyrightText: Copyright (c) Rikarin
 // SPDX-License-Identifier: Apache-2.0
 
+using Vixen.Core.Yaml;
+
 namespace Vixen.Editor.AssetEditors.Fonts;
 
 /// <summary>A font asset: a face, the faces behind it, and how it is put in an atlas.</summary>

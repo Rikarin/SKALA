@@ -26,6 +26,7 @@
 
 #endregion
 
+using Newtonsoft.Json.Linq;
 #if DNXCORE50
 using Xunit;
 using Test = Xunit.FactAttribute;
@@ -44,7 +45,7 @@ namespace Newtonsoft.Json.Tests.Documentation.Samples.JsonPath {
         public void Example() {
             #region Usage
 
-            JObject o = JObject.Parse(
+            var o = JObject.Parse(
                 @"{
               'Stores': [
                 'Lambton Quay',

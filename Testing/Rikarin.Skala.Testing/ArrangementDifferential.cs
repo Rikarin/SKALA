@@ -249,7 +249,8 @@ public static class ArrangementDifferential {
                 log?.WriteLine($"    ⚠ {file}: {diagnostic.Id} {diagnostic.Message}");
             }
 
-            foreach (var span in Compare(file.ToString(), original, oracle, result.Text)) {
+            var skipUsings = (filter ?? ArrangementFilter.All).Exclude.Contains(ArrangeIds.Usings);
+            foreach (var span in Compare(file.ToString(), original, oracle, result.Text, skipUsings)) {
                 spans++;
                 if (span.Agrees) {
                     agreed++;
@@ -277,12 +278,28 @@ public static class ArrangementDifferential {
     /// question a reviewer asks.
     /// </para>
     /// </remarks>
-    public static IEnumerable<ChangedSpan> Compare(string name, string original, string oracle, string skala) {
+    public static IEnumerable<ChangedSpan> Compare(
+        string name,
+        string original,
+        string oracle,
+        string skala,
+        bool skipUsingBlock = false
+    ) {
         var oracleEdits = ArrangementEdits.Diff(original, oracle);
         var skalaEdits = ArrangementEdits.Diff(original, skala);
         var merged = Merge(oracleEdits, skalaEdits);
+        var usingsEnd = skipUsingBlock ? UsingBlockEnd(original) : 0;
 
         foreach (var region in merged) {
+            // ⚠ Excluded rather than counted as a disagreement, when the usings rule is out of the
+            // comparison. Disabling Skala's rule does not remove the oracle's own using removal from
+            // its fixture, so every using the oracle deleted would still be scored — against a rule
+            // that was not allowed to run. See ArrangementFilter.OracleComparable for why the
+            // oracle's answer here is untrustworthy over corpus/real/.
+            if (region.End <= usingsEnd) {
+                continue;
+            }
+
             yield return new ChangedSpan(
                 name,
                 LineOf(original, region.Start),
@@ -291,6 +308,33 @@ public static class ArrangementDifferential {
                 Project(original, skalaEdits, region)
             );
         }
+    }
+
+    /// <summary>
+    /// The offset just past the file's last using directive, or 0 when it has none.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ Parsed rather than scanned for the string "using": a `using` *statement* inside a method
+    /// and a `using` inside a raw string are both text that looks like a directive, and treating
+    /// either as one would exclude a span in the middle of the file from the measurement.
+    /// </remarks>
+    static int UsingBlockEnd(string source) {
+        var root = CSharpSyntaxTree.ParseText(SourceText.From(source), CSharpFormatter.ParseOptions).GetRoot();
+        var end = 0;
+        foreach (var directive in root.DescendantNodes()
+                     .OfType<Microsoft.CodeAnalysis.CSharp.Syntax.UsingDirectiveSyntax>()) {
+            end = Math.Max(end, directive.FullSpan.End);
+        }
+
+        // ⚠ Past the blank line that follows the block, too. A using's own FullSpan ends after its
+        // newline; the *blank* line after it is leading trivia of whatever comes next. A diff hunk
+        // that deletes the block covers both lines, so a boundary drawn at the directive's end is
+        // one character short and the exclusion silently does nothing.
+        while (end < source.Length && (source[end] == '\n' || source[end] == '\r' || source[end] == ' ')) {
+            end++;
+        }
+
+        return end;
     }
 
     static List<SourceSpan> Merge(IReadOnlyList<TextEdit> left, IReadOnlyList<TextEdit> right) {

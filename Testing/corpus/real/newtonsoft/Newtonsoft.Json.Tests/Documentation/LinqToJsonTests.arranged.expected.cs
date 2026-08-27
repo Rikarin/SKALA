@@ -27,6 +27,7 @@
 #endregion
 
 #if !(NET35 || NET20 || DNXCORE50) || NETSTANDARD2_0 || NET6_0_OR_GREATER
+using Newtonsoft.Json.Linq;
 using System.Text;
 #if DNXCORE50
 using Xunit;
@@ -52,7 +53,7 @@ namespace Newtonsoft.Json.Tests.Documentation {
         public void LinqToJsonBasic() {
             #region LinqToJsonBasic
 
-            JObject o = JObject.Parse(
+            var o = JObject.Parse(
                 @"{
               'CPU': 'Intel',
               'Drives': [
@@ -110,7 +111,7 @@ namespace Newtonsoft.Json.Tests.Documentation {
 
             var posts = GetPosts();
 
-            JObject rss =
+            var rss =
                 new JObject(
                     new JProperty(
                         "channel",
@@ -180,7 +181,7 @@ namespace Newtonsoft.Json.Tests.Documentation {
 
             #region LinqToJsonCreateFromObject
 
-            JObject o = JObject.FromObject(
+            var o = JObject.FromObject(
                 new {
                     channel = new {
                         title = "James Newton-King",
@@ -211,7 +212,7 @@ namespace Newtonsoft.Json.Tests.Documentation {
               ]
             }";
 
-            JObject o = JObject.Parse(json);
+            var o = JObject.Parse(json);
 
             #endregion
         }
@@ -236,7 +237,7 @@ namespace Newtonsoft.Json.Tests.Documentation {
             #region LinqToJsonReadObject
 
             using (var reader = File.OpenText(@"c:\person.json")) {
-                JObject o = (JObject)JToken.ReadFrom(new JsonTextReader(reader));
+                var o = (JObject)JToken.ReadFrom(new JsonTextReader(reader));
                 // do stuff
             }
 
@@ -275,7 +276,7 @@ namespace Newtonsoft.Json.Tests.Documentation {
               }
             }";
 
-            JObject rss = JObject.Parse(json);
+            var rss = JObject.Parse(json);
 
             var rssTitle = (string)rss["channel"]["title"];
             // James Newton-King
@@ -295,7 +296,7 @@ namespace Newtonsoft.Json.Tests.Documentation {
 
         [Test]
         public void LinqToJsonQuerying() {
-            JObject rss = JObject.Parse(
+            var rss = JObject.Parse(
                 @"{
               'channel': {
                 'title': 'James Newton-King',
@@ -390,7 +391,7 @@ namespace Newtonsoft.Json.Tests.Documentation {
               }
             }";
 
-            JObject json = JObject.Parse(jsonText);
+            var json = JObject.Parse(jsonText);
 
             var shortie = new Shortie {
                 Original = (string)json["short"]["original"],
@@ -414,7 +415,7 @@ namespace Newtonsoft.Json.Tests.Documentation {
 
         [Test]
         public void SelectTokenSimple() {
-            JObject o = JObject.Parse(
+            var o = JObject.Parse(
                 @"{
               'Stores': [
                 'Lambton Quay',
@@ -460,7 +461,7 @@ namespace Newtonsoft.Json.Tests.Documentation {
         public void SelectTokenComplex() {
             #region SelectTokenComplex
 
-            JObject o = JObject.Parse(
+            var o = JObject.Parse(
                 @"{
               'Stores': [
                 'Lambton Quay',
@@ -511,7 +512,7 @@ namespace Newtonsoft.Json.Tests.Documentation {
 
         [Test]
         public void SelectTokenLinq() {
-            JObject o = JObject.Parse(
+            var o = JObject.Parse(
                 @"{
               'Stores': [
                 'Lambton Quay',

@@ -26,6 +26,8 @@
 
 #endregion
 
+using Newtonsoft.Json.Serialization;
+
 namespace Newtonsoft.Json.Tests.TestObjects {
     public class IdReferenceResolver : IReferenceResolver {
         readonly IDictionary<Guid, PersonReference> _people = new Dictionary<Guid, PersonReference>();

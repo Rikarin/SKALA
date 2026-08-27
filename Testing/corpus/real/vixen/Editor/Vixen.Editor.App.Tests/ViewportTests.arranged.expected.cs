@@ -205,13 +205,13 @@ public class ViewportTests {
         scene.Selection.Set([crate]);
         fixture.Frames(1);
 
-        var before = fixture.Scene.World.Read<Vixen.Engine.Transforms.LocalTransform>(crate).Position;
+        var before = fixture.Scene.World.Read<Engine.Transforms.LocalTransform>(crate).Position;
 
         Assert.True(fixture.CanRun("entity.snap-to-floor"));
         fixture.Run("entity.snap-to-floor");
         fixture.Frames(1);
 
-        var after = fixture.Scene.World.Read<Vixen.Engine.Transforms.LocalTransform>(crate).Position;
+        var after = fixture.Scene.World.Read<Engine.Transforms.LocalTransform>(crate).Position;
 
         // Nothing is under the seeded crate but the ground plane, so it lands on zero — a verb that
         // only worked once there was floor geometry would be one nobody would find out worked.
@@ -221,7 +221,7 @@ public class ViewportTests {
         fixture.Run("edit.undo");
         fixture.Frames(1);
 
-        Assert.Equal(before.Y, fixture.Scene.World.Read<Vixen.Engine.Transforms.LocalTransform>(crate).Position.Y, 4);
+        Assert.Equal(before.Y, fixture.Scene.World.Read<Engine.Transforms.LocalTransform>(crate).Position.Y, 4);
     }
 
     [Fact]
@@ -243,7 +243,7 @@ public class ViewportTests {
         fixture.Run("entity.move-to-view");
         fixture.Frames(1);
 
-        var position = fixture.Scene.World.Read<Vixen.Engine.Transforms.WorldTransform>(crate).Value.Translation;
+        var position = fixture.Scene.World.Read<Engine.Transforms.WorldTransform>(crate).Value.Translation;
 
         // ⚠ At the pivot, not at the eye. Moving something to the eye puts it inside the near plane,
         // which reads as the object having vanished.

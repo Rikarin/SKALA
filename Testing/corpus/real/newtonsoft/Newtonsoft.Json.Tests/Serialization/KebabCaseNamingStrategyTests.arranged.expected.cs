@@ -26,6 +26,9 @@
 
 #endregion
 
+using Newtonsoft.Json.Linq;
+using Newtonsoft.Json.Serialization;
+using Newtonsoft.Json.Tests.TestObjects;
 #if DNXCORE50
 using Xunit;
 using Test = Xunit.FactAttribute;
@@ -98,7 +101,7 @@ namespace Newtonsoft.Json.Tests.Serialization {
 
             serializer.Serialize(writer, ignoreAttributeOnClassTestClass);
 
-            JObject o = (JObject)writer.Token;
+            var o = (JObject)writer.Token;
             JProperty p = o.Property("the-field");
 
             Assert.IsNotNull(p);
@@ -107,8 +110,8 @@ namespace Newtonsoft.Json.Tests.Serialization {
 
         [Test]
         public void BlogPostExample() {
-            Product product = new Product {
-                ExpiryDate = new DateTime(2010, 12, 20, 18, 1, 0, DateTimeKind.Utc),
+            var product = new Product {
+                ExpiryDate = new(2010, 12, 20, 18, 1, 0, DateTimeKind.Utc),
                 Name = "Widget",
                 Price = 9.99m,
                 Sizes = new[] { "Small", "Medium", "Large" }

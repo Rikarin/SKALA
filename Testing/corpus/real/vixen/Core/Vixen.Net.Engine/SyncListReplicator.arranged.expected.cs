@@ -2,6 +2,8 @@
 // SPDX-FileCopyrightText: Copyright (c) Rikarin
 // SPDX-License-Identifier: Apache-2.0
 
+using Vixen.Net.Messaging;
+
 namespace Vixen.Net.Engine;
 
 /// <summary>A list a behaviour replicates, as the replicator sees it.</summary>

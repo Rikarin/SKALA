@@ -26,6 +26,7 @@
 
 #endregion
 
+using Newtonsoft.Json.Serialization;
 using System.Diagnostics;
 #if DNXCORE50
 using Xunit;
@@ -40,12 +41,12 @@ namespace Newtonsoft.Json.Tests.Issues {
         [Test]
         public void Test() {
             var json = "{'Value':'hi'}";
-            MemoryTraceWriter traceWriter = new MemoryTraceWriter { LevelFilter = TraceLevel.Info };
+            var traceWriter = new MemoryTraceWriter { LevelFilter = TraceLevel.Info };
             PrivateSetterTestClass o = JsonConvert.DeserializeObject<PrivateSetterTestClass>(
                 json,
                 new JsonSerializerSettings { TraceWriter = traceWriter }
             );
-            List<string> messages = traceWriter.GetTraceMessages().ToList();
+            var messages = traceWriter.GetTraceMessages().ToList();
 
             var hasMessage = messages.Any(message => message.Contains(
                     "Info Unable to deserialize value to non-writable property 'Value' on Newtonsoft.Json.Tests.Issues.Issue0573+PrivateSetterTestClass. Path 'Value', line 1, position 13."

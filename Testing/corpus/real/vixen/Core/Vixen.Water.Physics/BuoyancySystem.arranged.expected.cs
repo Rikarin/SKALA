@@ -2,6 +2,8 @@
 // SPDX-FileCopyrightText: Copyright (c) Rikarin
 // SPDX-License-Identifier: Apache-2.0
 
+using Vixen.Physics.Ecs;
+
 namespace Vixen.Water.Physics;
 
 /// <summary>Floats every <see cref="BuoyancyBody" /> on the one surface everything else reads.</summary>

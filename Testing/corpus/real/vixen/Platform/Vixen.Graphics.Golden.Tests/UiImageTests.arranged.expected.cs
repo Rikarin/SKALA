@@ -2,6 +2,8 @@
 // SPDX-FileCopyrightText: Copyright (c) Rikarin
 // SPDX-License-Identifier: Apache-2.0
 
+using Vixen.Ui.Text.Rasterizing;
+
 namespace Vixen.Graphics.Golden.Tests;
 
 /// <summary>

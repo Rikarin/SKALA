@@ -27,6 +27,8 @@
 #endregion
 
 #pragma warning disable 618
+using Newtonsoft.Json.Linq;
+
 namespace Newtonsoft.Json.Tests.Documentation.Samples.Schema {
     public class CreateJsonSchemaManually {
         public void Example() {
@@ -62,7 +64,7 @@ namespace Newtonsoft.Json.Tests.Documentation.Samples.Schema {
             //   }
             // }
 
-            JObject person = JObject.Parse(
+            var person = JObject.Parse(
                 @"{
               'name': 'James',
               'hobbies': ['.NET', 'Blogging', 'Reading', 'Xbox', 'LOLCATS']

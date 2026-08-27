@@ -2,6 +2,7 @@
 // SPDX-FileCopyrightText: Copyright (c) Rikarin
 // SPDX-License-Identifier: Apache-2.0
 
+using Vixen.Shaders;
 using RavenStage = Vixen.Raven.Symbols.ShaderStage;
 
 namespace Vixen.ShaderCompiler;
@@ -246,32 +247,32 @@ public static class EffectTranslator {
     /// </remarks>
     static string Qualified(string shaderName, string name) => $"{shaderName}.{name}";
 
-    static Vixen.Graphics.ShaderStage Stage(RavenStage stage) =>
+    static Graphics.ShaderStage Stage(RavenStage stage) =>
         stage switch {
-            RavenStage.Vertex => Vixen.Graphics.ShaderStage.Vertex,
-            RavenStage.Fragment => Vixen.Graphics.ShaderStage.Fragment,
-            RavenStage.Geometry => Vixen.Graphics.ShaderStage.Geometry,
-            RavenStage.Compute => Vixen.Graphics.ShaderStage.Compute,
-            _ => Vixen.Graphics.ShaderStage.None
+            RavenStage.Vertex => Graphics.ShaderStage.Vertex,
+            RavenStage.Fragment => Graphics.ShaderStage.Fragment,
+            RavenStage.Geometry => Graphics.ShaderStage.Geometry,
+            RavenStage.Compute => Graphics.ShaderStage.Compute,
+            _ => Graphics.ShaderStage.None
         };
 
-    static Vixen.Graphics.ShaderStage Stages(ShaderStages stages) {
-        var result = Vixen.Graphics.ShaderStage.None;
+    static Graphics.ShaderStage Stages(ShaderStages stages) {
+        var result = Graphics.ShaderStage.None;
 
         if (stages.HasFlag(ShaderStages.Vertex)) {
-            result |= Vixen.Graphics.ShaderStage.Vertex;
+            result |= Graphics.ShaderStage.Vertex;
         }
 
         if (stages.HasFlag(ShaderStages.Fragment)) {
-            result |= Vixen.Graphics.ShaderStage.Fragment;
+            result |= Graphics.ShaderStage.Fragment;
         }
 
         if (stages.HasFlag(ShaderStages.Geometry)) {
-            result |= Vixen.Graphics.ShaderStage.Geometry;
+            result |= Graphics.ShaderStage.Geometry;
         }
 
         if (stages.HasFlag(ShaderStages.Compute)) {
-            result |= Vixen.Graphics.ShaderStage.Compute;
+            result |= Graphics.ShaderStage.Compute;
         }
 
         return result;

@@ -285,6 +285,30 @@ static int Arrangement(string[] args) {
         + (args.Contains("--all-rules") ? ", all rules" : ", oracle-comparable rules only")
     );
 
+    // `--dump=<dir>` writes Skala's arrangement and the oracle's side by side, so a class named in
+    // the report can be read as a diff rather than as two sample lines — the same affordance `dump`
+    // gives the formatter's differential.
+    if (args.FirstOrDefault(static a => a.StartsWith("--dump=", StringComparison.Ordinal)) is { } dumpArg) {
+        var directory = Path.GetFullPath(dumpArg["--dump=".Length..]);
+        Directory.CreateDirectory(directory);
+        var compilation = ArrangementDifferential.Compile(withFixtures);
+        foreach (var file in withFixtures) {
+            var name = (file.Set + "_" + file.RelativePath).Replace('/', '_');
+            File.WriteAllText(
+                Path.Combine(directory, name + ".skala"),
+                TextNormalisation.Normalise(ArrangementDifferential.Run(file, compilation, aggressive, filter).Text)
+            );
+
+            File.WriteAllText(
+                Path.Combine(directory, name + ".oracle"),
+                TextNormalisation.Normalise(OracleFixture.Read(file, OracleProfile.Cleanup))
+            );
+        }
+
+        Console.WriteLine($"written to {directory}");
+        return 0;
+    }
+
     var report = ArrangementDifferential.Measure(withFixtures, aggressive, filter, Console.Error);
     Console.WriteLine(report.Render(10));
 

@@ -26,6 +26,7 @@
 
 #endregion
 
+using Newtonsoft.Json.Linq;
 #if DNXCORE50
 using Xunit;
 using Test = Xunit.FactAttribute;
@@ -49,7 +50,7 @@ namespace Newtonsoft.Json.Tests.Documentation.Samples.Linq {
               ]
             }";
 
-            JObject o = JObject.Parse(json);
+            var o = JObject.Parse(json);
 
             Console.WriteLine(o.ToString());
             // {

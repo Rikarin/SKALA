@@ -26,6 +26,7 @@
 
 #endregion
 
+using Newtonsoft.Json.Serialization;
 using Newtonsoft.Json.Tests.TestObjects;
 using System.ComponentModel;
 #if DNXCORE50

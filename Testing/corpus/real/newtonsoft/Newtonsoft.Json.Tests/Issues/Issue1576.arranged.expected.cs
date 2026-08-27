@@ -26,6 +26,7 @@
 
 #endregion
 
+using Newtonsoft.Json.Serialization;
 using System.Collections;
 using System.Reflection;
 #if DNXCORE50

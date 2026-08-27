@@ -2,6 +2,8 @@
 // SPDX-FileCopyrightText: Copyright (c) Rikarin
 // SPDX-License-Identifier: Apache-2.0
 
+using Vixen.Graphics;
+
 namespace Vixen.Editor.App.Tests;
 
 /// <summary>A thumbnail, uploaded on a real device, asserted to be the picture that went in.</summary>

@@ -2,6 +2,8 @@
 // SPDX-FileCopyrightText: Copyright (c) Rikarin
 // SPDX-License-Identifier: Apache-2.0
 
+using Vixen.Core.Yaml;
+
 namespace Vixen.Editor.Assets.Water;
 
 /// <summary>How a sea state is imported.</summary>

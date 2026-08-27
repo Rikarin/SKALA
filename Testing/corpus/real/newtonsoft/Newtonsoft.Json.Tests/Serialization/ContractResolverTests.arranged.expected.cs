@@ -26,6 +26,8 @@
 
 #endregion
 
+using Newtonsoft.Json.Linq;
+using Newtonsoft.Json.Serialization;
 using Newtonsoft.Json.Tests.TestObjects;
 using System.Collections;
 using System.ComponentModel;
@@ -128,7 +130,7 @@ namespace Newtonsoft.Json.Tests.Serialization {
 
         [Test]
         public void JsonPropertyDefaultValue() {
-            JsonProperty p = new JsonProperty();
+            var p = new JsonProperty();
 
             Assert.AreEqual(null, p.GetResolvedDefaultValue());
             Assert.AreEqual(null, p.DefaultValue);
@@ -350,61 +352,61 @@ namespace Newtonsoft.Json.Tests.Serialization {
 
         [Test]
         public void CalculatingPropertyNameEscapedSkipping() {
-            JsonProperty p = new JsonProperty { PropertyName = "abc" };
+            var p = new JsonProperty { PropertyName = "abc" };
             Assert.IsTrue(p._skipPropertyNameEscape);
 
-            p = new JsonProperty { PropertyName = "123" };
+            p = new() { PropertyName = "123" };
             Assert.IsTrue(p._skipPropertyNameEscape);
 
-            p = new JsonProperty { PropertyName = "._-" };
+            p = new() { PropertyName = "._-" };
             Assert.IsTrue(p._skipPropertyNameEscape);
 
-            p = new JsonProperty { PropertyName = "!@#" };
+            p = new() { PropertyName = "!@#" };
             Assert.IsTrue(p._skipPropertyNameEscape);
 
-            p = new JsonProperty { PropertyName = "$%^" };
+            p = new() { PropertyName = "$%^" };
             Assert.IsTrue(p._skipPropertyNameEscape);
 
-            p = new JsonProperty { PropertyName = "?*(" };
+            p = new() { PropertyName = "?*(" };
             Assert.IsTrue(p._skipPropertyNameEscape);
 
-            p = new JsonProperty { PropertyName = ")_+" };
+            p = new() { PropertyName = ")_+" };
             Assert.IsTrue(p._skipPropertyNameEscape);
 
-            p = new JsonProperty { PropertyName = "=:," };
+            p = new() { PropertyName = "=:," };
             Assert.IsTrue(p._skipPropertyNameEscape);
 
-            p = new JsonProperty { PropertyName = null };
+            p = new() { PropertyName = null };
             Assert.IsTrue(p._skipPropertyNameEscape);
 
-            p = new JsonProperty { PropertyName = "&" };
+            p = new() { PropertyName = "&" };
             Assert.IsFalse(p._skipPropertyNameEscape);
 
-            p = new JsonProperty { PropertyName = "<" };
+            p = new() { PropertyName = "<" };
             Assert.IsFalse(p._skipPropertyNameEscape);
 
-            p = new JsonProperty { PropertyName = ">" };
+            p = new() { PropertyName = ">" };
             Assert.IsFalse(p._skipPropertyNameEscape);
 
-            p = new JsonProperty { PropertyName = "'" };
+            p = new() { PropertyName = "'" };
             Assert.IsFalse(p._skipPropertyNameEscape);
 
-            p = new JsonProperty { PropertyName = @"""" };
+            p = new() { PropertyName = @"""" };
             Assert.IsFalse(p._skipPropertyNameEscape);
 
-            p = new JsonProperty { PropertyName = Environment.NewLine };
+            p = new() { PropertyName = Environment.NewLine };
             Assert.IsFalse(p._skipPropertyNameEscape);
 
-            p = new JsonProperty { PropertyName = "\0" };
+            p = new() { PropertyName = "\0" };
             Assert.IsFalse(p._skipPropertyNameEscape);
 
-            p = new JsonProperty { PropertyName = "\n" };
+            p = new() { PropertyName = "\n" };
             Assert.IsFalse(p._skipPropertyNameEscape);
 
-            p = new JsonProperty { PropertyName = "\v" };
+            p = new() { PropertyName = "\v" };
             Assert.IsFalse(p._skipPropertyNameEscape);
 
-            p = new JsonProperty { PropertyName = "\u00B9" };
+            p = new() { PropertyName = "\u00B9" };
             Assert.IsFalse(p._skipPropertyNameEscape);
         }
 
@@ -498,7 +500,7 @@ namespace Newtonsoft.Json.Tests.Serialization {
                 new JsonSerializerSettings { ContractResolver = new IPersonContractResolver() }
             );
 
-            JObject o = JObject.Parse(iPersonJson);
+            var o = JObject.Parse(iPersonJson);
 
             Assert.AreEqual("Maurice", (string)o["FirstName"]);
             Assert.AreEqual("Moss", (string)o["LastName"]);
@@ -595,7 +597,7 @@ namespace Newtonsoft.Json.Tests.Serialization {
                 new JsonSerializerSettings { ContractResolver = includeCompilerGeneratedResolver }
             );
 
-            JObject o = JObject.Parse(includeCompilerGeneratedJson);
+            var o = JObject.Parse(includeCompilerGeneratedJson);
 
             Console.WriteLine(includeCompilerGeneratedJson);
 

@@ -25,6 +25,12 @@ public class DefaultLiteral {
 
     public List<int> Held { get; set; }
 
+    // ⚠ A parameter's own default is the one position `default_value_when_type_NOT_evident` governs:
+    // the reader cannot see the type from the initialiser, only from the parameter beside it.
+    public void WithDefaults(int count = default, string label = default) {
+        Console.WriteLine(count + label);
+    }
+
     public void Overloaded(int value) { }
 
     public void Overloaded(string value) { }

@@ -242,6 +242,22 @@ public sealed class ObjectCreationRule : ArrangementRule {
                 case ReturnStatementSyntax statement:
                     return ReturnTypeOf(EnclosingMember(statement));
 
+                // ⚠ An element of a collection or array initializer. This is the one place the
+                // *converted* type is a real target rather than a restatement of the expression's
+                // own type: the element type is imposed by the collection being built, so
+                // `new List<KeyValuePair<string, int>> { new KeyValuePair<string, int>("a", 1) }`
+                // becomes `{ new("a", 1) }`. Found on Newtonsoft's tests, where the oracle does it
+                // and Skala did not — the shape is common enough in test data to be worth the case.
+                //
+                // ⚠ Still gated by `target == created` in the caller, which is what keeps it safe: a
+                // collection whose `Add` takes a base type reports that base as the converted type,
+                // the equality fails, and the creation is left explicit.
+                case InitializerExpressionSyntax {
+                    RawKind: (int)SyntaxKind.CollectionInitializerExpression
+                    or (int)SyntaxKind.ArrayInitializerExpression
+                }:
+                    return model.GetTypeInfo(node).ConvertedType;
+
                 default:
                     return null;
             }

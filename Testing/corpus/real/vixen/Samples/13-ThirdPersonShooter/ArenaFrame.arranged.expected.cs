@@ -3,6 +3,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
 using System.Runtime.InteropServices;
+using Vixen.Graphics;
+using Vixen.Rendering.Lighting;
 
 namespace Vixen.Samples.ThirdPersonShooter;
 

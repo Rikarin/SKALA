@@ -26,6 +26,7 @@
 
 #endregion
 
+using Newtonsoft.Json.Linq;
 #if DNXCORE50
 using Xunit;
 using Test = Xunit.FactAttribute;
@@ -41,7 +42,7 @@ namespace Newtonsoft.Json.Tests.Documentation.Samples.Linq {
         public void Example() {
             #region Usage
 
-            JObject o1 = new JObject { { "String", "A string!" }, { "Items", new JArray(1, 2) } };
+            var o1 = new JObject { { "String", "A string!" }, { "Items", new JArray(1, 2) } };
 
             Console.WriteLine(o1.ToString());
             // {
@@ -52,7 +53,7 @@ namespace Newtonsoft.Json.Tests.Documentation.Samples.Linq {
             //   ]
             // }
 
-            JObject o2 = (JObject)o1.DeepClone();
+            var o2 = (JObject)o1.DeepClone();
 
             Console.WriteLine(o2.ToString());
             // {
@@ -66,13 +67,13 @@ namespace Newtonsoft.Json.Tests.Documentation.Samples.Linq {
             Console.WriteLine(JToken.DeepEquals(o1, o2));
             // true
 
-            Console.WriteLine(object.ReferenceEquals(o1, o2));
+            Console.WriteLine(ReferenceEquals(o1, o2));
             // false
 
             #endregion
 
             Assert.IsTrue(JToken.DeepEquals(o1, o2));
-            Assert.IsFalse(object.ReferenceEquals(o1, o2));
+            Assert.IsFalse(ReferenceEquals(o1, o2));
         }
     }
 }

@@ -26,6 +26,7 @@
 
 #endregion
 
+using Newtonsoft.Json.Linq;
 #if DNXCORE50
 using Xunit;
 using Test = Xunit.FactAttribute;
@@ -74,7 +75,7 @@ namespace Newtonsoft.Json.Tests.Serialization {
     ""Value"": ""2017-12-05T21:59:00""
   }";
 
-            JObject jo = JObject.Parse(json);
+            var jo = JObject.Parse(json);
 
             DateTimeWrapper c1 = jo.ToObject<DateTimeWrapper>(
                 JsonSerializer.Create(new JsonSerializerSettings { DateTimeZoneHandling = DateTimeZoneHandling.Utc })

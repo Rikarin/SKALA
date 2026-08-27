@@ -1,4 +1,5 @@
 // skala-oracle: resharper=2025.2.6 config=sha256:98ff52570e019fac profile=SkalaFormatOnly generated=2026-08-27
+using System;
 using System.Collections.Generic;
 
 namespace Skala.Corpus.Arrangement;
@@ -26,6 +27,12 @@ public class DefaultLiteral {
     }
 
     public List<int> Held { get; set; }
+
+    // ⚠ A parameter's own default is the one position `default_value_when_type_NOT_evident` governs:
+    // the reader cannot see the type from the initialiser, only from the parameter beside it.
+    public void WithDefaults(int count = default(int), string label = default(string)) {
+        Console.WriteLine(count + label);
+    }
 
     public void Overloaded(int value) { }
 

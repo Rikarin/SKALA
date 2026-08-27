@@ -2,6 +2,8 @@
 // SPDX-FileCopyrightText: Copyright (c) Rikarin
 // SPDX-License-Identifier: Apache-2.0
 
+using Vixen.Net.Messaging;
+
 namespace Vixen.Net.Engine;
 
 /// <summary>A value the server sets and every client that can see the object ends up with.</summary>
