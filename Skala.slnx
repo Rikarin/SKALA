@@ -36,6 +36,9 @@
     <Project Path="Distribution/Rikarin.Skala.Canonical/Rikarin.Skala.Canonical.csproj" />
     <Project Path="Distribution/Rikarin.Skala.Sdk/Rikarin.Skala.Sdk.csproj" />
   </Folder>
+  <Folder Name="/build/">
+    <Project Path="build/Rikarin.Skala.Release/Rikarin.Skala.Release.csproj" />
+  </Folder>
   <Folder Name="/Tools/">
     <Project Path="Tools/Rikarin.Skala.Cli/Rikarin.Skala.Cli.csproj" />
     <Project Path="Tools/Rikarin.Skala.Cli.Tests/Rikarin.Skala.Cli.Tests.csproj" />
