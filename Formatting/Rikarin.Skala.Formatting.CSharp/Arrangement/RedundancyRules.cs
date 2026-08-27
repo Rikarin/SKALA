@@ -225,6 +225,18 @@ public static class ParenthesesRedundancy {
             return false;
         }
 
+        // ⚠ The *enclosing* operation matters too, and this was measured after being got wrong.
+        // `resharper_parentheses_non_obvious_operations = shift, bitwise_*` does not say "keep the
+        // parentheses that wrap a shift"; it says "clarify the precedence *of* these operations",
+        // which means keeping the parentheses around their operands. `a & (b + 1)` and
+        // `a << (b + 1)` both keep theirs even though the inner expression is plain arithmetic. The
+        // first version of this rule keyed on the inner expression alone, agreed with the oracle on
+        // every case in the fixture, and stripped these two anyway — found by reading what it did to
+        // Vixen's `BitReader`, not by a test.
+        if (node.Parent is BinaryExpressionSyntax { RawKind: var parentKind } && IsNonObvious((SyntaxKind)parentKind)) {
+            return false;
+        }
+
         return node.Expression switch {
             // The always_for_clarity families, and the non-obvious operations.
             BinaryExpressionSyntax binary => !IsKept(binary.Kind()),
@@ -294,7 +306,19 @@ public static class ParenthesesRedundancy {
     }
 
     /// <summary>
-    /// The binary families whose parentheses the export keeps.
+    /// The operations <c>resharper_parentheses_non_obvious_operations</c> names: an operand of one
+    /// of these keeps its parentheses whatever the operand is.
+    /// </summary>
+    static bool IsNonObvious(SyntaxKind kind) =>
+        kind is SyntaxKind.LeftShiftExpression
+            or SyntaxKind.RightShiftExpression
+            or SyntaxKind.UnsignedRightShiftExpression
+            or SyntaxKind.BitwiseAndExpression
+            or SyntaxKind.BitwiseOrExpression
+            or SyntaxKind.ExclusiveOrExpression;
+
+    /// <summary>
+    /// The binary families whose parentheses the export keeps wherever they appear.
     /// </summary>
     static bool IsKept(SyntaxKind kind) =>
         kind is SyntaxKind.LeftShiftExpression

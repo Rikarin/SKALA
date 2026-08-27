@@ -70,6 +70,24 @@ public class Parentheses {
     // the operand of a cast is declined whole.
     public int CastOperand(int a) => (int)(a + 1);
 
+    // ⚠ Kept: the *enclosing* operation is a non-obvious one, so its operands keep their
+    // parentheses even though the operand itself is plain arithmetic. This is the half of
+    // `parentheses_non_obvious_operations` that reads as being about the inner expression and is
+    // not — got wrong first, then measured.
+    public int ArithmeticInsideBitwise(int a, int b) => a & (b + 1);
+
+    public int ArithmeticInsideShift(int a, int b) => a << (b + 1);
+
+    public uint Mask(uint value, int offset, int take) => (value >> offset) & ((1 << take) - 1);
+
+    // Kept: the inner is a shift, so it keeps its own wherever it sits.
+    public int ShiftInsideArithmetic(int a, int b, int c) => (a << b) + c;
+
+    public int BitwiseInsideArithmetic(int a, int b, int c) => (a & b) + c;
+
+    // Removed: both sides are arithmetic.
+    public int Length(byte[] buffer, int bits) => (buffer.Length * 8) - bits;
+
     // ⚠ Not touched: subtraction and division are not associative, and the proof refuses them
     // because the re-parse is not equivalent.
     public int NotAssociative(int a, int b, int c) => a - (b - c);
