@@ -153,7 +153,21 @@ public sealed class OptionRegistryTests {
             Assert.NotEqual(OptionDefaultSource.ReSharperDocs, info.DefaultSource);
         }
 
-        Assert.DoesNotContain(OptionRegistry.All, static i => i.Tier is OptionTier.D && i.Oracle is { Length: > 0 });
+        // ⚠ A Tier D entry carrying an `oracle` glob used to be forbidden outright, on the reading
+        // that a fixture nobody claims is a promotion someone forgot. The key-flip sweep made that
+        // reading wrong: it demoted 70 options that have fixtures, that the fixtures do exercise,
+        // and whose output disagrees with ReSharper's. "Fixtured and measured not to conform" is
+        // more evidence than Tier D usually carries, not less.
+        //
+        // ⚠ The glob must stay on those entries. `SweepPlan` sweeps exactly the options that have
+        // one, so stripping it would drop all 70 out of the next sweep — the demotion could never be
+        // re-measured, and a key that was fixed would never be promoted back. That is precisely the
+        // unfalsifiable-verdict shape this harness exists to avoid.
+        //
+        // What replaces the blanket rule is the pairing: a Tier D option may carry a glob only if
+        // the committed sweep records it as non-conformant. That needs the sweep's sidecar, which
+        // this project cannot reach, so it is asserted in the conformance suite instead —
+        // OptionCoverageTests.TierD_CarriesAFixtureOnlyWhereTheSweepDemotedIt.
 
         string[] permanentlyIgnored = [
             "resharper_old_engine", "resharper_use_old_engine", "resharper_autodetect_indent_settings",

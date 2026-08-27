@@ -48,7 +48,7 @@ public sealed class OptionCoverageTests {
     ];
 
     [Fact]
-    public void TierA_IsExactlyWhatSkalaReads() {
+    public void TierA_IsWhatSkalaReads_AndTheSweepSubstantiates() {
         // ⚠ Tier A means "Skala reproduces Rider's behaviour, pinned by at least one oracle
         // fixture" (docs/plan/03 § "Four tiers"). It may not rest on a default being known:
         // defaultSource is `template` or `unknown` for every entry in the registry, so the only
@@ -64,11 +64,108 @@ public sealed class OptionCoverageTests {
             .ToArray();
         Assert.True(overclaimed.Length == 0, "Tier A without an implementation: " + string.Join(", ", overclaimed));
 
+        // ⚠ "Reads the key" is a weaker claim than Tier A, and this direction used to conflate the
+        // two. Tier A is "Skala reproduces *Rider's* behaviour"; a key the formatter reads, and acts
+        // on, and acts on differently from ReSharper satisfies the first and fails the second. Only
+        // the key-flip sweep can tell them apart — it is the one measurement that flips each option
+        // and compares both engines — and on the run committed beside it, 70 options that this test
+        // would have called Tier A produced output the oracle does not produce.
+        //
+        // So an implemented option must be Tier A *unless* the committed sweep says it is not
+        // conformant. The sweep needs JetBrains and takes minutes (ADR-011), so what is read here is
+        // its committed table, exactly as the fast path reads the oracle fixtures.
         var underclaimed = implemented.Except(claimed)
+            .Except(SweepUnsubstantiated())
             .Select(static id => OptionRegistry.Get(id).Key)
             .Order(StringComparer.Ordinal)
             .ToArray();
         Assert.True(underclaimed.Length == 0, "Implemented but not Tier A: " + string.Join(", ", underclaimed));
+    }
+
+    /// <summary>
+    /// A Tier D option may keep its <c>oracle</c> fixture only where the sweep demoted it.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ The other half of a rule <c>OptionRegistryTests.Tiers_AreHonest</c> used to state as "no
+    /// Tier D entry carries a glob at all". That was right until the sweep started demoting options
+    /// that have fixtures and fail on them, and it cannot be checked in the registry's own test
+    /// project, which cannot reach the sidecar.
+    /// <para>
+    /// ⚠ Both directions matter. A glob on an undemoted Tier D entry is the original defect — a
+    /// promotion nobody made. A demoted entry that *lost* its glob is the worse one: the sweep only
+    /// sweeps options that have one, so the option would silently leave the next run and its
+    /// demotion could never be reversed or disproved.
+    /// </para>
+    /// </remarks>
+    [Fact]
+    public void TierD_CarriesAFixtureOnlyWhereTheSweepDemotedIt() {
+        var unsubstantiated = SweepUnsubstantiated();
+
+        var unexplained = OptionRegistry.All
+            .Where(info => info.Tier == OptionTier.D
+                && info.Oracle is { Length: > 0 }
+                && !unsubstantiated.Contains(info.Id)
+            )
+            .Select(static info => info.Key)
+            .Order(StringComparer.Ordinal)
+            .ToArray();
+        Assert.True(
+            unexplained.Length == 0,
+            "Tier D with an `oracle` fixture the sweep does not account for: " + string.Join(", ", unexplained)
+        );
+
+        var stripped = unsubstantiated
+            .Select(static id => OptionRegistry.Get(id))
+            .Where(static info => info.Tier == OptionTier.D && info.Oracle is not { Length: > 0 })
+            .Select(static info => info.Key)
+            .Order(StringComparer.Ordinal)
+            .ToArray();
+        Assert.True(
+            stripped.Length == 0,
+            "Demoted by the sweep but no longer fixtured, so the next sweep cannot re-measure it: "
+            + string.Join(", ", stripped)
+        );
+    }
+
+    /// <summary>
+    /// The options the last committed sweep could not substantiate, and which are therefore
+    /// deliberately not Tier A however much of them the formatter reads.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ Read from the committed sidecar rather than measured here. Re-running the sweep needs
+    /// JetBrains installed and minutes of wall clock; the committed table is the artefact the fast
+    /// path reviews in a diff, and an option that becomes conformant again is promoted by the same
+    /// diff that records the measurement.
+    /// <para>
+    /// ⚠ Missing file means "nobody has measured", not "everything is fine": it returns empty, which
+    /// puts the strict invariant back rather than relaxing it silently.
+    /// </para>
+    /// </remarks>
+    static HashSet<OptionId> SweepUnsubstantiated() {
+        var path = Path.Combine(
+            Corpus.RepositoryRoot,
+            "Testing",
+            "Rikarin.Skala.Conformance.Sweep",
+            "conformance-sweep.json"
+        );
+
+        if (!File.Exists(path)) {
+            return [];
+        }
+
+        var unsubstantiated = new HashSet<OptionId>();
+        using var document = System.Text.Json.JsonDocument.Parse(File.ReadAllText(path));
+        foreach (var row in document.RootElement.EnumerateArray()) {
+            if (string.Equals(row.GetProperty("Outcome").GetString(), "Conformant", StringComparison.Ordinal)) {
+                continue;
+            }
+
+            if (OptionRegistry.TryResolve(row.GetProperty("Key").GetString() ?? string.Empty, out var id)) {
+                unsubstantiated.Add(id);
+            }
+        }
+
+        return unsubstantiated;
     }
 
     [Fact]
