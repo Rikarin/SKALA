@@ -26,8 +26,16 @@ fixes, and a gate that treats *new suppressions* as findings.
 skala verify [<paths>] [--fix] [--format=agent|json]
 ```
 
-It is `format --check` + `arrange --check` + `check --gate=local`, in one pass, with output shaped
-for a model rather than for a terminal. It is the command that goes in `CLAUDE.md`, and its contract
+It is `format --check` + `check --gate=local`, in one pass, with output shaped
+for a model rather than for a terminal.
+
+⚠ This said "`format --check` + `arrange --check` + `check --gate=local`" and `verify` has never run
+`arrange`. It makes exactly one call — `CheckCommand.Run` with `IncludeFormatting = true`, which is
+the `format --check` half — and `skala arrange` is a separate verb nothing else invokes. The
+command's own `--help`, its implementation comment and [11](11-cli-and-integrations.md) all state
+the two-part contract; only this line claimed three. Arrangement is a semantic rewrite that wants a
+compilation and is minutes-scale, which is why it is not in the command whose contract is "fast
+enough that an agent runs it after every edit". It is the command that goes in `CLAUDE.md`, and its contract
 is deliberately narrow so it can be memorised:
 
 - Exit 0 means "nothing to do". Nothing else means that.
@@ -212,15 +220,24 @@ sanctioned way to disagree does not need an unsanctioned one.
 
 ## Suppression pressure
 
-Because the failure mode is predictable, it is measured:
+Because the failure mode is predictable, it is measured — ⚠ **by one of these three, not three.**
 
-- `SK7050`/`SK7051` — suppressions without justification, as ordinary findings.
-- `skala check --since=<ref> --no-new-suppressions` — a gate condition that fails when a change
+- ✅ `skala check --since=<ref> --no-new-suppressions` — a gate condition that fails when a change
   adds a `#pragma`, a `SuppressMessage`, a severity downgrade in `.editorconfig`, or a baseline
   entry. ⚠ Including the `.editorconfig` and baseline cases, which is what makes it a real
-  constraint rather than a grep for `#pragma`.
-- `skala report --suppressions` lists every suppression in the tree with its justification, which is
-  the artefact for a periodic review.
+  constraint rather than a grep for `#pragma`. This one is built and is the load-bearing half.
+- ❌ `SK7050`/`SK7051` — suppressions without justification, as ordinary findings. **Neither rule
+  exists**: no analyzer, no `rules.json` entry, no allocation. [08](08-rule-catalogue.md) allocates
+  the ids and records them as not started; this list stated them as shipping.
+- ❌ `skala report --suppressions` — **the flag does not exist.** `report` takes `--format`,
+  `--no-color`, `--include-hints` and `--summary`. The periodic-review artefact it describes has no
+  producer. The nearest thing today is `skala check --show-suppressions`, which includes suppressed
+  findings in the report but does not list justifications.
+
+⚠ The gap matters more here than the arithmetic suggests. `--no-new-suppressions` catches a
+suppression being *added*; the two missing pieces are what would catch the ones already there. A
+section headed "it is measured" that lists three mechanisms and has one is the failure mode this
+document is about, in this document.
 
 The point is not that suppressions are wrong. It is that a suppression should be a decision someone
 made on purpose, and the tool's job is to make sure it looks like one.

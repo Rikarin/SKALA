@@ -480,20 +480,30 @@ independently shippable and independently measurable against the oracle:
 |---|---|---|
 | 1 | Any file, safely; produces correct spacing/blanks/indent, never moves a line | ~85 % of lines — ✅ measured 94.28 % |
 | 2 | Same, plus correct break *presence* and *position* | ~93 % — ✅ measured 97.47 % |
-| 3 | Everything the export configures | ≥ 99.9 % — ⚠ **measured 98.86 %**, see below |
+| 3 | Everything the export configures | ≥ 99.9 % — ⚠ **measured 99.70 %**, see below |
 | 4 | Same, plus doc comments | ⚠ the oracle does not format doc comments; SK-DIV-0006 |
 
-⚠ **Phase 3 does not reach the bar, and the residue is characterised rather than mysterious.** 876
-lines of 76 660 differ. Split by cause: the 274 files with neither a `#if` nor a raw literal are at
-99.02 %, the 91 with a `#if` at 98.60 % (SK-DIV-0001 and SK-DIV-0004, which is a limitation of
-parsing without a project rather than of the formatter), and the 15 with a raw literal at 97.81 %
-(SK-DIV-0003's interpolated half). What is left after those is SK-DIV-0005 — the ordering rule's
-margin — and SK-DIV-0007.
+⚠ **Every number in the two paragraphs that used to stand here was M3 data presented in the present
+tense**, and the corpus they were measured over no longer exists — it was re-based on a mainline
+snapshot at M3.1. They said 98.86 % overall, 876 divergent lines of 76 660, and a three-way split of
+274/91/15 files. Current, from M3.1 and unchanged through M7:
 
-⚠ [16](16-risks-and-open-questions.md) § R1 asks a sharper question than the aggregate, and
-`fidelity constructs` answers it: of the 54 constructs occurring more than 50 times in
-`corpus/real/`, **27 are at 100 %**. That is the number to move, and it is not the same number as
-the percentage.
+| | M3, as this document read | Current |
+|---|---|---|
+| Overall line fidelity | 98.86 % | **99.70 %** with symbols, 99.63 % without |
+| Divergent lines | 876 of 76 660 | ~230 of **76 375**, across 51 files |
+| Files with no `#if` | 274 @ 99.02 % | **289 @ 99.79 %** |
+| Files with a `#if` | 91 @ 98.60 % | 98.92 % — and ⚠ **SK-DIV-0004 is closed**, which this document still cited as open |
+| Files with a raw literal | 15 @ 97.81 % | **11 @ 99.68 %**, 12 divergent lines of 3 744 |
+| Constructs at 100 % ([16](16-risks-and-open-questions.md) § R1) | 27 of 54 | **37 of 56** |
+
+⚠ **Reproducing these is three commands, not one, and that is why they went stale.** `./build.sh
+Fidelity` gives the aggregate and the per-origin breakdown; `dotnet run --project
+Testing/Rikarin.Skala.Testing -- preprocessor` gives the `#if` split; and the raw-literal bucket has
+**no command at all** — `docs/divergences.md` records that it was computed by hand from `dump real …
+defined` output. A number nothing regenerates is a number that is wrong as soon as anything moves,
+which is what happened here. `fidelity constructs` answers § R1's sharper question and is the number
+to move; it is not the same number as the percentage.
 
 Percentages are lines-identical-to-oracle over `Testing/corpus/real/`, reported by
 `./build.sh Conformance` on every commit, and published in the README. A phase is done when its

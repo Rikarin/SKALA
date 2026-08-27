@@ -24,7 +24,7 @@ alternative is not. Central package management (`Directory.Packages.props`) is o
 |---|---|---|
 | `Microsoft.CodeAnalysis.CSharp` | 5.9.0 | The C# parser, syntax tree, semantic model, `IOperation`, `ControlFlowGraph`, and `AnalyzerConfig`. Non-negotiable and irreplaceable. |
 | `Microsoft.CodeAnalysis.CSharp.Workspaces` | 5.9.0 | `AdhocWorkspace`, `SyntaxAnnotation` plumbing, `Formatter` (used only for *validating* against Roslyn's whitespace behaviour, never for output — ADR-004), `Simplifier` for the arrangement pass. |
-| `Microsoft.CodeAnalysis.Analyzers` | 3.3.4 | Analyzer-authoring analyzers. Skala's own rules are held to the same bar. |
+| ⚠ `Microsoft.CodeAnalysis.Analyzers` | ~~3.3.4~~ | **Not referenced, and the pin is wrong.** Roslyn 5.9.0 requires a prerelease of it, which the 3.3.4 in this row predates; `Rikarin.Skala.Options.Generator`'s csproj records the decision not to reference it explicitly. The intent — "Skala's own rules are held to the same bar" — is unmet, not deferred. |
 | `System.IO.Hashing` | 10.0.10 | XxHash128 for the incremental cache keys. Vixen already uses it; same choice, same reason — it is the fastest non-cryptographic hash in the BCL and the cache is not a security boundary. |
 | `System.Collections.Immutable` | in-box | Roslyn's currency. Not a choice. |
 
@@ -34,6 +34,7 @@ alternative is not. Central package management (`Directory.Packages.props`) is o
 |---|---|---|
 | `MSBuild.StructuredLogger` | 2.3.246 | Reads a `.binlog` and hands back every `Csc` invocation with its full command line. This is the primary project-loading path (ADR-007). |
 | `Microsoft.Build.Locator` | 1.11.2 | Finds the SDK's MSBuild so the fallback design-time build can run in-process. Only used on the fallback path. |
+| ⚠ `Microsoft.CodeAnalysis.Workspaces.MSBuild` | 5.9.0 | `MSBuildWorkspace` itself — the `--load=workspace` path. **Referenced by `Rikarin.Skala.Analysis` and missing from this register until M9**, which is the more serious direction of drift: an unreferenced row is clutter, an unregistered reference is a dependency nobody decided on. |
 | `Microsoft.Build` / `.Framework` / `.Utilities.Core` / `.NET.StringTools` | 17.14.28, `ExcludeAssets=runtime` + `PrivateAssets=all` | ⚠ **Both** paths, not only the fallback: `MSBuild.StructuredLogger` deserialises a binlog into MSBuild's own event types, so `Microsoft.Build.Framework` must be loadable to *read* one. Never redistributed — MSBuildLocator requires the SDK copy to win, and `MSBL001` fails the build for shipping ours. The 17.11.x the register first pinned is a known high-severity advisory and `TreatWarningsAsErrors` refuses it. |
 
 ### CLI, output, hosting
@@ -41,10 +42,10 @@ alternative is not. Central package management (`Directory.Packages.props`) is o
 | Package | Version | Why |
 |---|---|---|
 | `System.CommandLine` | 2.0.10 | The stable v2. Vixen already uses it; one argument parser across the author's tools. |
-| `Spectre.Console` | 0.57.2 | Human rendering only — tables, diffs, progress. Behind an interface so `--no-color`/CI paths never touch it, and so it can be dropped without touching the engine. ⚠ **Not referenced as of M5.** The terminal renderer is plain text; at this size the dependency was buying colour and nothing else, and `Rikarin.Skala.Rules` may not have it in its closure anyway (doc 02). It is added when there is a table worth the byte. |
+| ⚠ `Spectre.Console` | ~~0.57.2~~ | Human rendering only — tables, diffs, progress. Behind an interface so `--no-color`/CI paths never touch it, and so it can be dropped without touching the engine. ⚠ **Not referenced as of M5.** The terminal renderer is plain text; at this size the dependency was buying colour and nothing else, and `Rikarin.Skala.Rules` may not have it in its closure anyway (doc 02). It is added when there is a table worth the byte. |
 | `Sarif.Sdk` (`Microsoft.CodeAnalysis.Sarif`) | 5.6.0 | SARIF 2.1.0 object model and validator. Writing SARIF by hand is how you produce SARIF that GitHub rejects. ⚠ 5.6.0 and not 4.x: the older line pins `Newtonsoft.Json` 9.0.1, which is a known high-severity advisory. |
 | `ModelContextProtocol.Core` | 2.2.0 | The MCP server ([10](10-ai-agent-integration.md)). ⚠ The `.Core` package, not `ModelContextProtocol`: the latter is the DI/hosting layer and drags `Microsoft.Extensions.Hosting` into a tool that has one process, one transport and six tools. |
-| `Microsoft.Extensions.Logging.Abstractions` + `ZLogger` | 10.0.10 / 2.5.10 | Same logging stack as Vixen. `ILogger` at the boundary, ZLogger as the sink, so Skala's own diagnostics are structured. |
+| ⚠ `Microsoft.Extensions.Logging.Abstractions` + `ZLogger` | ~~10.0.10 / 2.5.10~~ | **Neither is referenced.** Skala has no `ILogger` anywhere; its diagnostics are `SkalaDiagnostic` values that travel in the `RunReport` and are rendered from it (ADR-009), which is a better answer for a tool whose output *is* its report — a log line is a second channel nothing can gate on. The row stayed for four milestones describing a stack that was never wired. Registered again only if something needs a sink the report cannot be. |
 
 ### Test
 
@@ -52,9 +53,18 @@ alternative is not. Central package management (`Directory.Packages.props`) is o
 |---|---|---|
 | `xunit.v3` | 3.2.2 | The author's test framework. |
 | `xunit.runner.visualstudio` | 3.1.5 | |
-| `Verify.XunitV3` | latest | Approval testing is the correct shape for a formatter: the expected output is a file, and reviewing a formatter change means reviewing a diff of thousands of snapshots. Hand-written `Assert.Equal` on formatted strings does not scale past a hundred cases. |
-| `BenchmarkDotNet` | 0.15.8 | The performance budgets in [13](13-performance.md) are enforced, not aspirational. |
-| `FsCheck` or hand-rolled generator | TBD | Property-based tests for idempotency and token-equivalence over generated trees. See [12](12-conformance-and-testing.md) § "Fuzzing". |
+| ⚠ `Verify.XunitV3` | ~~latest~~ | **Not referenced, and the need it names is met differently.** The approval corpus is `Testing/corpus/<file>.expected.cs` — committed oracle output, regenerated by `./build.sh Oracle` as a reviewed commit, never by a test. That *is* approval testing; it simply predates the package and does not need it. The row implied a mechanism that does not exist. |
+| ⚠ `BenchmarkDotNet` | ~~0.15.8~~ | **Not referenced.** The budgets in [13](13-performance.md) are enforced by `PerformanceBudgetTests`, which drives the real binary and asserts wall-clock and resident set. That is the right instrument for a tool whose cost is process-shaped; a microbenchmark harness would measure the wrong thing. But "enforced, not aspirational" rested on a package nobody added, and the sentence should have named the test. |
+| ⚠ `FsCheck` or hand-rolled generator | TBD | Still TBD. See [12](12-conformance-and-testing.md) § "Fuzzing" — the fuzzer is being built now, and this row is a genuine open choice rather than drift. |
+
+⚠ **Four rows in this register described packages nothing referenced, and one reference was in no
+row.** A dependency register that is not checked is a list of intentions; this one was
+last reconciled by hand in M9. The cheap guard — assert every `PackageReference` in the tree has a
+row and every row has a reference — is not written, and until it is, this table will drift again.
+Note that `Directory.Build.targets` injects `xunit.v3`, `xunit.runner.visualstudio` and
+`Microsoft.NET.Test.Sdk` into every `*.Tests` project, so such a check must read the targets file
+and not only the `.csproj`s. `System.Security.Cryptography.Xml` and `NuGet.Packaging`
+(`build/_build.csproj`) are also referenced and unregistered.
 
 ### Build
 
@@ -85,10 +95,37 @@ Skala reads `.editorconfig`, understands `[section]` globbing exactly as the com
 reusing Roslyn's own `AnalyzerConfig.Parse` / `AnalyzerConfigSet`, which is public API), and treats
 the `resharper_*` namespace as a first-class part of that file rather than as foreign junk to skip.
 
-The alternative — a `skala.toml` with Skala's own names for the same 380 concepts — was rejected on
-one argument: the author configures formatting in Rider's settings UI and exports. Any format that
-is not the export is a format that has to be *kept in sync* with the export, by hand, forever, and
-the first divergence silently reintroduces the exact problem the tool exists to remove.
+The alternative — a `skala.toml` with Skala's own names for the same concepts — was rejected on one
+argument: the author configures formatting in Rider's settings UI and exports. Any format that is
+not the export is a format that has to be *kept in sync* with the export, by hand, and the first
+divergence silently reintroduces the exact problem the tool exists to remove.
+
+⚠ **That argument was written with the word "forever" in it, and the word was wrong.** This ADR was
+drafted by an AI and assumed the export is a permanent input contract, on the reasoning that the
+author will always edit settings in Rider and re-export. The author's actual intent is the
+opposite: **ReSharper is to be replaced by Skala** once Skala produces identical results. The
+export is a **bootstrap with an end date**, not a standing contract.
+
+The decision itself survives — reading the export unchanged is still right *while it exists*, and
+for exactly the sync argument above. What changes is everything downstream of "forever":
+
+- ⚠ **The oracle disappears at replacement** (ADR-011). `jb cleanupcode` is currently the
+  *definition* of correct formatting. Afterwards, Skala's committed fixtures are — so the fixtures
+  have to be sufficient to stand alone **before** the switch, not after. That turns doc 12's
+  key-flip conformance sweep from an audit into a **precondition**.
+- ⚠ **The unimplemented options get worse, not better.** Today a key Skala ignores is still honoured
+  by Rider in the editor, so the cost is invisible; `skala config check` reports 243 such keys set
+  on this repository's own export. After replacement nobody honours them and they silently do
+  nothing for ever. Option coverage is therefore a **precondition for replacement**, not polish —
+  [03](03-configuration-model.md) § "Option tiers" says the same.
+- **`skala config distill` changes role.** Today it is optional tidying. At replacement it is the
+  *migration step* that converts a ReSharper configuration into a Skala one — and stripping the
+  keys Skala will never own becomes permanent and safe, because no re-export will put them back.
+
+⚠ **Not imminent, and the documents must not imply that it is.** Replacement is conditional on
+producing identical results. Skala is at **99.70 %** line fidelity and honours **205 of the 458
+options** this repository's export sets. The end date is real; what has to be true first is written
+above, and none of it is true yet.
 
 `skala.jsonc` exists for what `.editorconfig` genuinely cannot express — scan roots, exclusions,
 gate thresholds, baseline path, which analyzer packages to host — and a style key appearing there is
@@ -272,6 +309,17 @@ are what the day-to-day test run reads.
 
 This also gives an honest fidelity number to publish, per option, rather than a claim.
 
+⚠ **The oracle has an end date, and this ADR was written as though it did not.** ReSharper is to be
+replaced by Skala (ADR-001, as corrected), and on the day it is, `jb cleanupcode` stops being
+available as the definition of correct formatting. What remains is the committed fixtures — which is
+why they are stored rather than regenerated per run, and why regenerating them is a reviewed commit.
+
+The consequence is a **precondition, not a follow-up**: the fixture set has to be sufficient to
+define the formatter on its own *before* the switch, because afterwards there is nothing to widen it
+from. A construct with no fixture is a construct whose behaviour becomes whatever the code happens
+to do. [12](12-conformance-and-testing.md)'s key-flip sweep is what establishes sufficiency, and it
+is therefore on the critical path to replacement rather than being an audit of it.
+
 ### ADR-012 — Rule IDs are permanent
 
 **Status:** decided.
@@ -298,7 +346,11 @@ it later costs the formatter's public surface.
 **Status:** decided.
 
 Agents in this ecosystem already talk to `vixen-mcp`. Skala ships `skala mcp`, exposing
-`skala_format`, `skala_check`, `skala_explain`, `skala_fix` and `skala_config_explain`. The CLI's
+`skala_verify`, `skala_format`, `skala_check`, `skala_fix`, `skala_explain` and
+`skala_config_explain` — **six**, as the dependency register above says and as
+[10](10-ai-agent-integration.md) § "The MCP surface" lists. ⚠ This paragraph named five and omitted
+`skala_verify` until M9, which is the one that matters most: it is the tool the server's own agent
+instructions tell a model to call before claiming work is finished. The CLI's
 `--format=json` remains a complete fallback for agents with no MCP, because an agent that can only
 run shell commands is still the common case. [10](10-ai-agent-integration.md).
 
@@ -307,9 +359,34 @@ run shell commands is still the common case. [10](10-ai-agent-integration.md).
 **Status:** decided.
 
 The repository's own `.editorconfig` is the Rider export, and the build fails if
-`skala format --check` finds anything. Bootstrapping is done with the previous released version
-(`dotnet tool` local manifest, pinned), never with the build's own output, so a formatting
-regression cannot hide itself.
+`skala format --check` finds anything.
+
+⚠ **The second sentence of this ADR used to claim a bootstrap that has never existed, and could
+not.** It said: "Bootstrapping is done with the previous released version (`dotnet tool` local
+manifest, pinned), never with the build's own output, so a formatting regression cannot hide
+itself." There is no `.config/dotnet-tools.json` anywhere in the tree, no `dotnet tool restore` in
+`build/Build.cs` or in any workflow, and — decisively — **no previous released version to pin to**:
+the version is 1.0.0, there are no tags, and `release.yml` deliberately publishes nothing. `Lint`
+runs the CLI this build just compiled, from its own `bin/`. The build formats itself with its own
+output, which is precisely what the sentence said it never does.
+
+**The decision, taken in M9 rather than restated:**
+
+1. **Self-formatting stays, and is honestly described as a *consistency* check.** `./build.sh Lint`
+   asserts the tree matches what this build's formatter produces. That catches an unformatted file
+   and a merge that reintroduced one. It cannot catch a formatter regression, because a regressed
+   formatter is self-consistent — it reformats the tree its new way and `--check` is satisfied.
+2. ⚠ **The regression guard is the oracle corpus, and it always was.** `Testing/corpus/<file>.expected.cs`
+   holds `jb cleanupcode`'s output, committed. A formatter regression changes the diff against those
+   fixtures and `./build.sh Conformance` fails on the ratchet in `fidelity.json`. That is a
+   *stronger* guard than bootstrapping, because the reference is external to Skala entirely rather
+   than being an older Skala. ADR-015 was solving a problem ADR-011 already solved better, and
+   nobody noticed because the mechanism it proposed was never built.
+3. **The pinned bootstrap is adopted at the first published release, if it still earns its place.**
+   It is not possible before then. ⚠ And by then ADR-011's oracle is on its way out (see above), so
+   the honest question at that point is whether a pinned previous Skala should become the reference
+   the oracle used to be — which is a decision for the release, not a sentence to leave standing in
+   the meantime.
 
 [r15406]: https://github.com/dotnet/roslyn/issues/15406
 [r18282]: https://github.com/dotnet/roslyn/issues/18282

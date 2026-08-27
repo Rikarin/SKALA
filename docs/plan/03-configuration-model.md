@@ -11,7 +11,7 @@ input is a 4 238-line machine-generated file whose contents nobody has ever read
 | Group | Count | Notes |
 |---|---|---|
 | Total assignments | 4 226 | across 3 sections |
-| `resharper_*` non-severity (formatting + arrangement) | 648 | ≈ 380 apply to C# |
+| `resharper_*` non-severity (formatting + arrangement) | 648 | ≈ 380 apply to C#. ⚠ A count of the *export*; the registry has since grown past it to 520 — see below |
 | `resharper_*_highlighting` (inspection severities) | 3 021 | 853 apply to C# |
 | `dotnet_diagnostic.*.severity` | 253 | Roslyn/compiler IDs, incl. `bc*` (VB) and `cs*` |
 | `dotnet_naming_*` | 215 | 20 rules, 6 styles, 20 symbol groups |
@@ -76,8 +76,11 @@ feature that makes ReSharper's formatter quadratic in the worst case. ✅ Verifi
 
 ## The option registry
 
-⚠ 380 formatting options cannot be maintained as hand-written C# properties, hand-written parsers,
-hand-written docs and hand-written tests. There is exactly one source of truth:
+⚠ **520 options** cannot be maintained as hand-written C# properties, hand-written parsers,
+hand-written docs and hand-written tests. (This said 380, which was the M0 estimate of the C#
+formatting keys in the export. M3 extended the registry past them — it is 462 `csharp`, 32 `xmldoc`
+and 26 language-agnostic today — and the estimate was never revised.) There is exactly one source of
+truth:
 
 `Core/Rikarin.Skala.Options/options.json` — one entry per option:
 
@@ -106,35 +109,85 @@ the build rather than being a checked-in codegen step) emits:
   matters: the fitting pass reads options millions of times over the corpus.
 - The parser: key → `OptionId`, value → typed value, including ReSharper's value aliases
   (`true`/`always`, `false`/`never`).
-- `docs/options/*.md`, one page per option, and the tier matrix.
-- The `.editorconfig` completion list used by the LSP.
-- A test stub per option asserting that the option is exercised by at least one corpus file — an
-  option with no test is a build failure, which is the mechanism that keeps Tier A honest.
+- `OptionId`, `OptionEnums` (the thirty value enums and their `TryParse`), and `OptionRegistry` —
+  the table, the alias index and `TryResolve`.
 
-Adding support for an option is therefore: add the JSON entry, add the corpus file, implement the
-switch arm the generator's `[MustHandle]` attribute now requires. Forgetting any of the three does
-not compile.
+⚠ **This list named five outputs and the generator emits four.** The three below were described as
+built and are not; they are kept here as the record of what was intended, because deleting them
+would hide a gap rather than close it.
 
-## Four tiers
+- ❌ `docs/options/*.md`, one page per option, and the tier matrix. **No such directory exists and
+  the generator emits no Markdown.** What exists is `docs/site/options/` — 108 HTML pages written at
+  *runtime* by `skala docs site`, not at build time by the generator. The tier matrix is published
+  there.
+- ❌ The `.editorconfig` completion list used by the LSP. **Nothing consumes `OptionRegistry.Spellings`**;
+  there is no completion handler anywhere in the LSP.
+- ❌ A test stub per option asserting that the option is exercised by at least one corpus file.
+  **Nothing is generated.** The role is played by two hand-written suites — `OptionCoverageTests`
+  (Tier A ⇔ what the formatter actually reads, both directions) and `OptionRegistryTests.Tiers_AreHonest`
+  (a Tier A/B claim must carry an oracle fixture glob). ⚠ They are scoped to the options the
+  formatter reads, not to all 520, so "an option with no test is a build failure" is false for the
+  293 Tier D entries — which is most of the registry.
+
+⚠ Adding support for an option is therefore: add the JSON entry, add the corpus file, implement it,
+and add it to `PhaseOneOptions.Implemented` or `ArrangementOptions.Implemented`. **Forgetting any of
+them fails a test; none of them fails to compile.** There is no `[MustHandle]` attribute anywhere in
+the tree — the sentence that used to stand here described an exhaustiveness check that was never
+written. The generator's real build-failure diagnostics are `SKG001`–`SKG003` and `SK9004`, and they
+are about the registry file rather than about implementations.
+
+## Option tiers
 
 Every option in `options.json` has a tier, and `skala config explain` prints them for the current
 file. This is non-negotiable #4 from [00](00-vision-and-principles.md) made concrete.
 
-| Tier | Meaning | Behaviour |
-|---|---|---|
-| **A — implemented** | Skala reproduces Rider's behaviour, pinned by at least one oracle fixture | Applied |
-| **B — approximated** | Implemented, with a documented divergence in stated edge cases | Applied; `skala config explain` shows the divergence text |
-| **C — accepted, ignored** | Parsed, validated, and deliberately not implemented (C++ keys, VB keys, XAML keys, `resharper_old_engine`, autodetect toggles) | Ignored silently unless `--strict-config` |
-| **D — unknown** | Not in `options.json` at all | `SK9001` info once per key per run, with a "did you mean" over the registry |
+| Tier | Meaning | Members | Behaviour |
+|---|---|---:|---|
+| **A — implemented** | Skala reproduces Rider's behaviour, pinned by at least one oracle fixture | 221 | Applied |
+| **B — approximated** | Implemented, with a documented divergence in stated edge cases | ⚠ **0** | Applied; `skala config explain` shows the divergence text |
+| **C — accepted, ignored** | Parsed, validated, and deliberately not implemented | 6 | Ignored |
+| **D — not implemented** | ⚠ **Known to the registry and not implemented yet** | 293 | Ignored; reported by `skala config check` |
 
-⚠ Tier D must be *info*, not warning, by default. The export contains ~2 000 keys Skala will never
-implement (`resharper_cpp_*` alone is 1 896), and a tool that emits two thousand warnings on first
-run gets uninstalled on first run. `--strict-config` promotes C and D to warnings for people who
-want the audit.
+⚠ **Tier D was defined backwards here for four milestones.** It said "not in `options.json` at all",
+which is the exact opposite of what the code means by it: a Tier D option *is* in the registry — 293
+of the 520 entries — and is simply unimplemented. A key genuinely absent from the registry has **no
+tier**; it is `SK9001`, with a "did you mean" over the registry, and that diagnostic is what the old
+row's behaviour column was describing. The two are not the same thing and conflating them made the
+tier the document's own progress bar was counted against meaningless.
 
-**The tier matrix is published**, generated into `docs/options/`, and the README carries the
-headline number: "Tier A: n of 380 C# options". That number going up is the project's progress bar
-through Milestones 1–3.
+⚠ `SK9001` must be *info*, not warning, by default. A real export carries thousands of keys Skala
+will never own, and a tool that emits thousands of warnings on first run gets uninstalled on first
+run. (`skala config check` reports 263 such keys against this repository's own export, alongside
+3 021 inspection severities, 253 diagnostic severities and 215 naming rules, which belong to other
+engines entirely.)
+
+⚠ **Tier B is live machinery with no members, and that is the outcome rather than a gap.** Every
+option that would have been B is Tier D plus an `SK-DIV` entry in `docs/divergences.md`: recording a
+divergence in a document beats recording it in a tier, because the document can say what the
+divergence *is*. Two tests hold the tier empty and honest. The four-tier model is a three-tier model
+in practice and the row stays so that the reasoning is not lost.
+
+⚠ **Tier C is six keys, and none of the families this document used to name is among them.** It
+listed "C++ keys, VB keys, XAML keys" — there is not one `resharper_cpp_*`, `*_vb_*` or `xaml` entry
+in the registry, so those are not "parsed, validated and deliberately not implemented"; they are
+`SK9001` unknown keys, which is Tier-none. The six are `resharper_csharp_old_engine` and
+`resharper_use_old_engine`, the two autodetect toggles, plus `resharper_use_indent_from_vs` and
+`resharper_show_autodetect_configure_formatting_tip` — the last two never named here, and a third of
+the tier.
+
+**The tier matrix is published** — into `docs/site/options/` by `skala docs site`, not into
+`docs/options/` by the generator. The headline number is **Tier A: 221 of 520**.
+
+⚠ **The number that matters is not that one.** 221 of 520 is a fact about the registry; what a user
+needs is *of the keys I set, how many are honoured*, and on this repository's own export that is
+**205 applied of 458 set**, with 243 not implemented and 10 inert. `skala config check` reports the
+per-configuration split first and the registry-wide totals after, for that reason.
+
+⚠ **And option coverage is a precondition for replacing ReSharper, not polish.** Today an ignored
+key is still honoured by Rider in the editor, so its cost is invisible — which is why a 99.7 %
+fidelity number and 243 ignored keys coexist without contradiction. After replacement
+([01](01-technology-decisions.md) § ADR-001) nobody honours it, and changing that setting in Rider
+does nothing, silently, for ever.
 
 ## Precedence
 
@@ -149,9 +202,11 @@ Resolution order for a given file, first match wins within a key:
    Microsoft equivalent (`csharp_x`) beats the generic editorconfig key. This is ReSharper's own
    order and the reason for hazard 3 above.
 4. `options.json` default — which is **ReSharper's default**, not a Skala opinion. A key absent from
-   the config must produce what Rider produces with that key absent. ⚠ M3 makes that true for 126
+   the config must produce what Rider produces with that key absent. ⚠ M3 makes that true for **123**
    keys by deriving the value from the oracle rather than taking the export's; see "Deriving
-   ReSharper's defaults" below for what the other 397 still record and why.
+   ReSharper's defaults" below for what the other 397 still record and why. (123 + 397 = 520. This
+   line said 126 and § "Deriving ReSharper's defaults" implied 127; both were wrong, and neither
+   reconciled with the other or with the registry.)
 
 `skala.jsonc` never participates. It cannot set a style option; attempting to is `SK9003` (error).
 
@@ -308,7 +363,11 @@ configuration and answered nothing at all: 197 options and *zero* fixtures uncha
 because every fixture was moved by something else in the batch. One subdirectory per fixture, each
 with its own `root = true` plus one key, gives the batching for free and the isolation with it — 144,
 110, 17 and 2 fixtures unchanged over four rounds, and the whole probe runs in three minutes.
-`fidelity defaults` is the command.
+⚠ The command is `dotnet run --project Testing/Rikarin.Skala.Testing -- defaults`. This line said
+"`fidelity defaults`", which is wrong twice over: `fidelity` and `defaults` are *sibling* verbs of
+the internal harness, not a verb and its subcommand, and neither is on the `skala` CLI at all. There
+is deliberately no build target for it — it takes tens of minutes and requires `jb` on the PATH, so
+it is a reviewed developer action rather than anything CI runs.
 
 | Verdict | Count | Meaning |
 |---|---:|---|
@@ -318,7 +377,11 @@ with its own `root = true` plus one key, gives the batching for free and the iso
 | `Contradicted` | 2 | none did; something else moved the fixture |
 
 ⚠ Only `Derived` is written, and it is written as `defaultSource: "oracle-probe"` and never
-`"resharper-docs"`, because it is derived and JetBrains still documents nothing. 110 of the 131
+`"resharper-docs"`, because it is derived and JetBrains still documents nothing. ⚠ **The registry
+holds 123 `oracle-probe` entries, not 131 and not the 127 the paragraph below implies.** The probe's
+`Derived` verdict count and the number actually adopted into the registry are two different figures
+and this section conflated them; 123 is what `options.json` says, and it is the one the arithmetic
+in § "Precedence" has to agree with. 110 of the 131
 agree with the export, which is itself a result: those keys are Rider's defaults and the export is
 redundant in them. Fourteen genuinely differ, and they are recognisably ReSharper out of the box —
 Allman braces, `new_line_before_else = true`, `empty_block_style = multiline`,

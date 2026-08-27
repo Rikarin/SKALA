@@ -153,9 +153,19 @@ Resolution of a `Preserve` group:
    `keep_user_linebreaks = true` changes nothing on any shape tried. It is Tier D with that reason.
 
 The corollary that surprises people: Skala will leave a 40-column call broken across four lines if
-that is how it was written. That is correct. `chop_always` and `--reflow` are how you ask for the
-other thing, and `--reflow` is a deliberate, occasional, reviewed operation, never the default and
-never in a hook.
+that is how it was written. That is correct. `chop_always` is how you ask for the other thing.
+
+⚠ **`--reflow` does not exist**, and this paragraph described it twice as though it did — "a
+deliberate, occasional, reviewed operation, never the default and never in a hook". Nothing in the
+CLI has ever accepted the flag; until M9 it was silently swallowed as a path glob, so
+`skala format --reflow` reported "0 files would be reformatted" and exited 0, which reads as
+success. It is now a configuration error that names the token.
+
+The gap it names is real: `keep_user_linebreaks = true` means a badly wrapped file stays badly
+wrapped, and there is no way to ask Skala to re-wrap it. `--reflow` would be `format` with
+`keep_user_linebreaks` and `keep_user_wrapping` forced off for one run — `skala format --option
+resharper_csharp_keep_user_linebreaks=false` is the spelling that works today. Whether that deserves
+a flag of its own is undecided; what is decided is that this document stops claiming it has one.
 
 ### Mapping the ReSharper enums
 
@@ -462,7 +472,8 @@ For each maximal region where output bytes equal input bytes, emit nothing. Else
 `TextChange` spanning the smallest range that differs, snapped outward to token boundaries so that
 edits never land inside a token.
 
-Consequences worth stating: `--check` is "did we produce any edits", exit code 1, no writes;
+Consequences worth stating: `--check` is "did we produce any edits", **exit code 2**
+([09](09-quality-gates-and-reporting.md) § "Exit codes"), no writes;
 `--diff` is a unified diff over the edits; LSP `textDocument/formatting` is the edit list converted;
 `--range a:b` filters to edits intersecting the range *after* full-file fitting, which is the only
 way range formatting can be consistent with whole-file formatting.
