@@ -41,9 +41,9 @@ public sealed record FidelityReport(
         builder.AppendLine("divergence classes, by line count:");
 
         foreach (var group in Divergences
-                .GroupBy(static d => d.Class, StringComparer.Ordinal)
-                .OrderByDescending(static g => g.Count())
-                .Take(topClasses)) {
+                     .GroupBy(static d => d.Class, StringComparer.Ordinal)
+                     .OrderByDescending(static g => g.Count())
+                     .Take(topClasses)) {
             var files = group.Select(static d => d.File).Distinct(StringComparer.Ordinal).Count();
             builder.Append("  ")
                 .Append(group.Count().ToString(CultureInfo.InvariantCulture).PadLeft(6))
@@ -228,19 +228,19 @@ public static class LineDiff {
         // the quadratic table is only paid for the middle.
         var head = 0;
         while (head < left.Length
-            && head < right.Length
-            && string.Equals(
-                left[head],
-                right[head],
-                StringComparison.Ordinal
-            )) {
+               && head < right.Length
+               && string.Equals(
+                   left[head],
+                   right[head],
+                   StringComparison.Ordinal
+               )) {
             head++;
         }
 
         var tail = 0;
         while (tail < left.Length - head
-            && tail < right.Length - head
-            && string.Equals(left[^(tail + 1)], right[^(tail + 1)], StringComparison.Ordinal)) {
+               && tail < right.Length - head
+               && string.Equals(left[^(tail + 1)], right[^(tail + 1)], StringComparison.Ordinal)) {
             tail++;
         }
 

@@ -29,6 +29,11 @@ using Rikarin.Skala.Testing;
 //                     redraw a corpus sample from a tree, reproducibly: the file is chosen by a
 //                     hash of its path rather than by a seeded sequence, so the same commit and
 //                     the same filters give the same files on any machine.
+//   locate <set> <kind>
+//                     the divergent lines attributed to one construct, with file and line. R1
+//                     counts constructs rather than lines, so a construct with two divergent lines
+//                     is as far from the rule as one with ninety and the ranked report never shows
+//                     it.
 //   margin [out]      SK-DIV-0005's constant, swept: eleven right-hand-side shapes at five block
 //                     depths under both values of `wrap_before_eq`, one character at a time.
 //   preprocessor      SK-DIV-0004's number: `corpus/real/` fidelity with the oracle's own
@@ -120,11 +125,22 @@ switch (args[0]) {
         }
 
         return 0;
+    case "locate":
+        // Where the divergent lines attributed to one construct are. `locate <set> <kind>`.
+        if (args.Length < 3) {
+            Console.Error.WriteLine("usage: locate <set> <SyntaxKind>");
+            return 2;
+        }
+
+        Console.WriteLine(ConstructReport.Locate(args[1], args[2], Symbols()));
+        return 0;
     case "constructs":
         // docs/plan/16 § R1: any construct occurring more than 50 times must be at 100 %. A single
         // fidelity number cannot answer that; this attributes every divergent line to the construct
         // that owns it and puts it beside how often the construct occurs.
-        Console.WriteLine(ConstructReport.Render(ConstructReport.Build(args.Length > 1 ? args[1] : Corpus.Real)));
+        Console.WriteLine(
+            ConstructReport.Render(ConstructReport.Build(args.Length > 1 ? args[1] : Corpus.Real, Symbols()))
+        );
         return 0;
     default:
         Console.Error.WriteLine($"unknown command '{args[0]}'");
@@ -314,7 +330,7 @@ static int Report(string[] sets) {
         Console.WriteLine();
 
         foreach (var origin in defined.GroupBy(static r => r.File.Split('/')[1], StringComparer.Ordinal)
-                .OrderBy(static g => g.Key, StringComparer.Ordinal)) {
+                     .OrderBy(static g => g.Key, StringComparer.Ordinal)) {
             var report = Fidelity.Compare(origin);
             Console.WriteLine(
                 $"  {origin.Key,-14} line {report.LineFidelity * 100:F2}%  file {report.FileFidelity * 100:F2}%  ({report.Files} files)"
@@ -365,8 +381,8 @@ static void Sample(string label, IReadOnlyList<Divergence> entries) {
 
     Console.WriteLine(label + ":");
     foreach (var group in entries.GroupBy(static entry => entry.Class, StringComparer.Ordinal)
-            .OrderByDescending(static group => group.Count())
-            .Take(6)) {
+                 .OrderByDescending(static group => group.Count())
+                 .Take(6)) {
         Console.WriteLine(
             $"    {group.Count().ToString(CultureInfo.InvariantCulture),5}  {group.Key}  ({group.First().File})"
         );
@@ -398,7 +414,7 @@ static int Dump(string set, string directory, bool defined) {
 static int Variants(string[] sets) {
     foreach (var set in sets) {
         foreach (var group in CorpusVariants.Pairs(set)
-                .GroupBy(static pair => pair.Variant, static pair => pair.File)) {
+                     .GroupBy(static pair => pair.Variant, static pair => pair.File)) {
             var results = new List<(string File, string Expected, string Actual)>();
             foreach (var file in group) {
                 if (!group.Key.HasFixture(file)) {

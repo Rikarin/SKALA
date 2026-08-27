@@ -303,10 +303,10 @@ public static class FormatCommand {
             }
 
             foreach (var file in Directory.EnumerateFiles(full, "*.cs", SearchOption.AllDirectories)
-                    .OrderBy(
-                        static f => f,
-                        StringComparer.Ordinal
-                    )) {
+                         .OrderBy(
+                             static f => f,
+                             StringComparer.Ordinal
+                         )) {
                 // A formatter that reformats artifacts/ is a formatter that is quietly very slow.
                 if (IsExcluded(file) || !seen.Add(file)) {
                     continue;

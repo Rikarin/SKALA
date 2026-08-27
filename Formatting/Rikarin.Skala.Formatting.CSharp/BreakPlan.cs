@@ -431,6 +431,7 @@ public sealed class BreakPlan {
                 PlanExpressionBody(arrow);
                 return;
 
+
             case SwitchSectionSyntax section:
                 PlanCaseStatements(section);
                 return;
@@ -1039,7 +1040,7 @@ public sealed class BreakPlan {
                         var dot = access.OperatorToken;
                         var receiver = access.Expression;
                         while (!_options.WrapAfterPropertyInChainedMethodCalls
-                            && receiver is MemberAccessExpressionSyntax property) {
+                               && receiver is MemberAccessExpressionSyntax property) {
                             dot = property.OperatorToken;
                             receiver = property.Expression;
                         }

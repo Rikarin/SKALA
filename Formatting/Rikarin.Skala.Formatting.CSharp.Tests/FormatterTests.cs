@@ -737,10 +737,10 @@ public sealed class BreakPositionTests {
         // walk order rather than an iteration. If a front end ever breaks it, the only monotone
         // answer is Broken and the layout is a guess; this counts the guesses and there are none.
         foreach (var source in new[] {
-                "class C { int P => 1; }", "class C { void M(bool f) { if (f) G(); } }",
-                "class C { void M(int v) { switch (v) { case 1: G(); break; } } }",
-                "class C { int P { get => 1; set => _f = value; } }"
-            }) {
+                     "class C { int P => 1; }", "class C { void M(bool f) { if (f) G(); } }",
+                     "class C { void M(int v) { switch (v) { case 1: G(); break; } } }",
+                     "class C { int P { get => 1; set => _f = value; } }"
+                 }) {
             Assert.Equal(0, Format.OwnerUnresolved(source));
         }
     }

@@ -118,7 +118,7 @@ public sealed class OptionRegistryTests {
         // The distill safety rule: only a resharper-docs default may be dropped, and a
         // resharper-docs default has to point at the page it was read from.
         foreach (var info in OptionRegistry.All.Where(static i => i.DefaultSource == OptionDefaultSource.ReSharperDocs
-            )) {
+                 )) {
             Assert.NotNull(info.Docs);
         }
     }

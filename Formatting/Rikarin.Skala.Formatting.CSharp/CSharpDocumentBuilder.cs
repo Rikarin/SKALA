@@ -408,6 +408,27 @@ public sealed partial class CSharpDocumentBuilder {
                 VisitSwitch((SwitchStatementSyntax)node);
                 return;
 
+            // ⚠ A `catch … when (…)` filter is a statement condition too, and the only one that is
+            // not reached through VisitEmbedded — a catch clause has no embedded statement, so it
+            // was `Transparent` and its parentheses opened no scope at all. The oracle aligns it
+            // like every other condition:
+            //     } catch (Exception exception) when (exception is YamlBindingException
+            //                                             or YamlParseException) {
+            case NodeLayout.Transparent when node is CatchFilterClauseSyntax filter:
+                EmitToken(filter.WhenKeyword);
+                if (filter.OpenParenToken.IsKind(SyntaxKind.None)) {
+                    VisitChildren(node);
+                    return;
+                }
+
+                EmitToken(filter.OpenParenToken);
+                OpenIndent(ConditionIndent, unconditional: true);
+                Visit(filter.FilterExpression);
+                EmitUpTo(filter.CloseParenToken.SpanStart);
+                CloseIndent(ConditionIndent, alignsCloser: true);
+                EmitToken(filter.CloseParenToken);
+                return;
+
             case NodeLayout.SwitchSection:
                 VisitSwitchSection((SwitchSectionSyntax)node);
                 return;
@@ -677,14 +698,14 @@ public sealed partial class CSharpDocumentBuilder {
                 var token = child.AsToken();
                 if (parenOpen && token.SpanStart == close.SpanStart) {
                     EmitUpTo(close.SpanStart);
-                    CloseIndent(IndentKind.Continuous, alignsCloser: true);
+                    CloseIndent(ConditionIndent, alignsCloser: true);
                     parenOpen = false;
                 }
 
                 EmitToken(token);
 
                 if (!parenOpen && !open.IsKind(SyntaxKind.None) && token.SpanStart == open.SpanStart) {
-                    OpenIndent(IndentKind.Continuous, unconditional: true);
+                    OpenIndent(ConditionIndent, unconditional: true);
                     parenOpen = true;
                 }
 
@@ -707,18 +728,38 @@ public sealed partial class CSharpDocumentBuilder {
 
         if (parenOpen) {
             EmitUpTo(close.SpanStart);
-            CloseIndent(IndentKind.Continuous);
+            CloseIndent(ConditionIndent);
         }
     }
+
+    /// <summary>
+    /// What a statement's condition parentheses open.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ <c>align_multiline_statement_conditions = true</c> — the export's value — lays the
+    /// condition out from the column just after the <c>(</c> rather than from an indent level:
+    /// <code>
+    /// else if (ReflectionUtils.ImplementsGenericDefinition(
+    ///              NonNullableUnderlyingType,      ← the `(`'s column plus one level
+    ///              typeof(IEnumerable&lt;&gt;),
+    ///              out tempCollectionType
+    ///          )) {                                ← the `(`'s column
+    /// </code>
+    /// It is the one thing <see cref="IndentKind.Align"/> exists for, and SK-DIV-0008 recorded it
+    /// as unimplemented from milestone 1 until 3.1.
+    /// </remarks>
+    IndentKind ConditionIndent => _options.AlignMultilineStatementConditions
+        ? IndentKind.Align
+        : IndentKind.Continuous;
 
     void VisitSwitch(SwitchStatementSyntax node) {
         EmitToken(node.SwitchKeyword);
         if (!node.OpenParenToken.IsKind(SyntaxKind.None)) {
             EmitToken(node.OpenParenToken);
-            OpenIndent(IndentKind.Continuous, unconditional: true);
+            OpenIndent(ConditionIndent, unconditional: true);
             Visit(node.Expression);
             EmitUpTo(node.CloseParenToken.SpanStart);
-            CloseIndent(IndentKind.Continuous, alignsCloser: true);
+            CloseIndent(ConditionIndent, alignsCloser: true);
             EmitToken(node.CloseParenToken);
         } else {
             Visit(node.Expression);
@@ -794,7 +835,7 @@ public sealed partial class CSharpDocumentBuilder {
             return;
         }
 
-        if (kind == IndentKind.Continuous) {
+        if (kind is IndentKind.Continuous or IndentKind.Align) {
             _continuousDepth++;
             return;
         }
@@ -817,7 +858,7 @@ public sealed partial class CSharpDocumentBuilder {
             return;
         }
 
-        if (kind == IndentKind.Continuous) {
+        if (kind is IndentKind.Continuous or IndentKind.Align) {
             _continuousDepth--;
         } else {
             if (_frames[^1].Activated) {

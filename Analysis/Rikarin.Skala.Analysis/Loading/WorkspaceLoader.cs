@@ -78,8 +78,8 @@ public static class WorkspaceLoader {
                 workspace.OpenSolutionAsync(target, cancellationToken: cancellation).GetAwaiter().GetResult();
             }
         } catch (Exception exception) when (exception is IOException
-            or InvalidOperationException
-            or NotSupportedException) {
+                                                or InvalidOperationException
+                                                or NotSupportedException) {
             diagnostics.Add(
                 new SkalaDiagnostic(
                     "SK9024",

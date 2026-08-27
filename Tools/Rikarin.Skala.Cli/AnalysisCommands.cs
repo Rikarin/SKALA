@@ -81,9 +81,9 @@ public static partial class SkalaCommandLine {
         var command = new Command("check", "Run the analyzers and report, with a gate.");
         command.Arguments.Add(paths);
         foreach (var option in new Option[] {
-                load, binlog, project, requireFresh, gate, format, output, includeHints, noCache, noColor,
-                showSuppressions, rules, define, noFormatting, resharperSeverities
-            }) {
+                     load, binlog, project, requireFresh, gate, format, output, includeHints, noCache, noColor,
+                     showSuppressions, rules, define, noFormatting, resharperSeverities
+                 }) {
             command.Options.Add(option);
         }
 

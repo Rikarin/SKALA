@@ -8,6 +8,11 @@ artifacts/
 .DS_Store
 .nuke/temp/
 
+# ⚠ An agent worktree is a second checkout of this repository inside it. Committing one would
+# duplicate every project and every corpus file; `Testing/corpus/real/NOTICE.md` records what
+# sampling from one cost.
+.claude/worktrees/
+
 # Skala's own working directory: conformance reports, crash reproductions, the daemon socket.
 # ⚠ A crash artefact under .skala/crash/ is a bug report, not a build output — copy it into
 # Testing/corpus/pathological/ deliberately rather than committing the whole directory.

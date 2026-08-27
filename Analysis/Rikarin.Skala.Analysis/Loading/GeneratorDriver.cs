@@ -59,12 +59,12 @@ public static class GeneratorDriver {
                 var reference = new AnalyzerFileReference(path, Loader);
                 generators.AddRange(reference.GetGeneratorsForAllLanguages());
             } catch (Exception exception) when (exception is IOException
-                or BadImageFormatException
-                or FileLoadException
-                or ReflectionTypeLoadException
-                or TypeLoadException
-                or InvalidOperationException
-                or ArgumentException) {
+                                                    or BadImageFormatException
+                                                    or FileLoadException
+                                                    or ReflectionTypeLoadException
+                                                    or TypeLoadException
+                                                    or InvalidOperationException
+                                                    or ArgumentException) {
                 // ⚠ SK9031, never fatal. A generator that will not load costs its own output; it
                 // must not cost the report.
                 diagnostics.Add(
@@ -121,9 +121,9 @@ public static class GeneratorDriver {
 
             return (CSharpCompilation)updated;
         } catch (Exception exception) when (exception is InvalidOperationException
-            or TypeLoadException
-            or MissingMethodException
-            or TargetInvocationException) {
+                                                or TypeLoadException
+                                                or MissingMethodException
+                                                or TargetInvocationException) {
             diagnostics.Add(
                 new SkalaDiagnostic(
                     RuleIds.AnalyzerThrew,

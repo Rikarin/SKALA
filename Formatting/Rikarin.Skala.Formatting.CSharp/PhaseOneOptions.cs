@@ -120,6 +120,7 @@ public readonly struct PhaseOneOptions {
 
         // ── Indentation ──────────────────────────────────────────────────────────────────────
         IndentBraces = options.GetBool(Ids.IndentBraces);
+        AlignMultilineStatementConditions = options.GetBool(Ids.AlignMultilineStatementConditions);
         IndentSwitchLabels = options.GetBool(Ids.IndentSwitchLabels);
         IndentBreakFromCase = options.GetBool(Ids.IndentBreakFromCase);
         IndentInsideNamespace = options.GetBool(Ids.IndentInsideNamespace);
@@ -371,6 +372,13 @@ public readonly struct PhaseOneOptions {
     public bool AllowCommentAfterLbrace { get; }
 
     public bool IndentBraces { get; }
+
+    /// <summary>
+    /// <c>align_multiline_statement_conditions</c>: a condition broken across lines is laid out from
+    /// the column just after the statement's <c>(</c> rather than from an indent level.
+    /// </summary>
+    public bool AlignMultilineStatementConditions { get; }
+
     public bool IndentSwitchLabels { get; }
     public bool IndentBreakFromCase { get; }
     public bool IndentInsideNamespace { get; }
@@ -750,6 +758,10 @@ public static class Ids {
     public static readonly OptionId AllowCommentAfterLbrace = Of("resharper_csharp_allow_comment_after_lbrace");
 
     public static readonly OptionId IndentBraces = Of("csharp_indent_braces");
+
+    public static readonly OptionId AlignMultilineStatementConditions =
+        Of("resharper_csharp_align_multiline_statement_conditions");
+
     public static readonly OptionId IndentSwitchLabels = Of("resharper_indent_switch_labels");
     public static readonly OptionId IndentBreakFromCase = Of("resharper_indent_break_from_case");
     public static readonly OptionId IndentInsideNamespace = Of("resharper_csharp_indent_inside_namespace");

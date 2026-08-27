@@ -86,15 +86,15 @@ public static class RuleAudit {
         }
 
         foreach (var group in skala.GroupBy(static finding => finding.RuleId, StringComparer.Ordinal)
-                .OrderBy(static group => group.Key, StringComparer.Ordinal)) {
+                     .OrderBy(static group => group.Key, StringComparer.Ordinal)) {
             builder.Append(group.Key)
                 .Append("  ")
                 .Append(group.Count().ToString(CultureInfo.InvariantCulture))
                 .AppendLine(group.Count() == 1 ? " finding" : " findings");
 
             foreach (var finding in group
-                    .OrderBy(static finding => finding.Path, StringComparer.Ordinal)
-                    .ThenBy(static finding => finding.Line)) {
+                         .OrderBy(static finding => finding.Path, StringComparer.Ordinal)
+                         .ThenBy(static finding => finding.Line)) {
                 builder.Append("    ")
                     .Append(Short(finding.Path))
                     .Append(':')

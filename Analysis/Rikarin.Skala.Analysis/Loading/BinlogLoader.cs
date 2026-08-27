@@ -108,12 +108,12 @@ public static class BinlogLoader {
             Walk(BinaryLog.ReadBuild(path), invocations);
             return true;
         } catch (Exception exception) when (exception is IOException
-            or InvalidDataException
-            or NotSupportedException
-            or ArgumentException
-            or FileNotFoundException
-            or FileLoadException
-            or BadImageFormatException) {
+                                                or InvalidDataException
+                                                or NotSupportedException
+                                                or ArgumentException
+                                                or FileNotFoundException
+                                                or FileLoadException
+                                                or BadImageFormatException) {
             diagnostics.Add(
                 new SkalaDiagnostic(
                     "SK9022",

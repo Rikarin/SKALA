@@ -316,7 +316,7 @@ public static class ConfigCommands {
 
         output.AppendLine();
         foreach (var group in diagnostics.GroupBy(static d => d.Id)
-                .OrderBy(static g => g.Key, StringComparer.Ordinal)) {
+                     .OrderBy(static g => g.Key, StringComparer.Ordinal)) {
             output.Append("  ")
                 .Append(group.Key)
                 .Append(": ")

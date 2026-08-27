@@ -210,9 +210,19 @@ public sealed class LayoutWriter {
         var outer = LevelForNested();
         _scopes.Add(
             kind switch {
-                IndentKind.Block => new Scope(true, outer + 1, _line, outer, unconditional),
-                IndentKind.Continuous => new Scope(false, _continuousMultiplier, _line, outer, unconditional),
-                IndentKind.Outdent => new Scope(true, Math.Max(0, outer - 1), _line, outer, unconditional),
+                IndentKind.Block => new Scope(true, outer + _indentWidth, _line, outer, unconditional),
+                IndentKind.Continuous =>
+                    new Scope(false, _continuousMultiplier * _indentWidth, _line, outer, unconditional),
+                IndentKind.Outdent =>
+                    new Scope(true, Math.Max(0, outer - _indentWidth), _line, outer, unconditional),
+
+                // ⚠ `align_multiline_statement_conditions = true`: an absolute column rather than a
+                // level, captured where the scope opens — which is immediately after the condition's
+                // `(`, so it is the column the writer is at. It is a Block scope in every other
+                // respect, because "absolute, and nothing below it applies" is exactly what a block
+                // already means; the only thing alignment adds is that the number is not a multiple
+                // of the indent width.
+                IndentKind.Align => new Scope(true, CurrentColumn(), _line, outer, unconditional),
                 _ => new Scope(false, 0, int.MaxValue, outer, unconditional)
             }
         );
@@ -341,7 +351,32 @@ public sealed class LayoutWriter {
     /// its level. docs/plan/05 § "place_* and if_owner_is_single_line" records the closing half of
     /// the same rule.
     /// </param>
+    /// <param name="Level">
+    /// ⚠ A <em>column</em>, not a level count, and it has been one since milestone 3.1. Alignment
+    /// puts a line at a column that is not a multiple of the indent width — the column just after a
+    /// statement's condition `(` — so a stack of levels cannot express it and a stack of columns
+    /// can express both.
+    /// </param>
     readonly record struct Scope(bool IsBlock, int Level, int OpenLine, int CloserLevel, bool Unconditional = false);
+
+    /// <summary>Writes the indentation that reaches <paramref name="column"/>.</summary>
+    /// <remarks>
+    /// ⚠ Whole indent units first and spaces for the remainder, which is what
+    /// `alignment_tab_fill_style = use_spaces` asks for and is also the only thing that can be right
+    /// when the unit is a tab: a column of 25 is six tabs and a space, never twenty-five tabs.
+    /// </remarks>
+    void WriteIndentTo(int column) {
+        var units = column / _indentWidth;
+        for (var i = 0; i < units; i++) {
+            _output.Append(_indentUnit);
+        }
+
+        _column = units * _indentWidth;
+        for (var i = _column; i < column; i++) {
+            _output.Append(' ');
+            _column++;
+        }
+    }
 
     /// <summary>
     /// The column the next character will land on, which is what a group is measured against.
@@ -354,7 +389,7 @@ public sealed class LayoutWriter {
     /// </remarks>
     int CurrentColumn() {
         if (_atLineStart) {
-            return (_pendingCloserLevel ?? Effective()) * _indentWidth;
+            return _pendingCloserLevel ?? Effective();
         }
 
         return _column + (_pendingSpace ? 1 : 0);
@@ -502,10 +537,10 @@ public sealed class LayoutWriter {
         }
 
         if (_document.FactsOf(group).SpendsIndent) {
-            level += _continuousMultiplier;
+            level += _continuousMultiplier * _indentWidth;
         }
 
-        return level * _indentWidth;
+        return level;
     }
 
     void WriteLine(ref DocNode slot, int node) {
@@ -523,7 +558,7 @@ public sealed class LayoutWriter {
             if (!flat && (flags & LineFlags.FillPoint) != 0) {
                 var space = _pendingSpace || (flags & LineFlags.FlatSpace) != 0;
                 var column = _atLineStart
-                    ? (_pendingCloserLevel ?? Effective()) * _indentWidth
+                    ? _pendingCloserLevel ?? Effective()
                     : _column + (space ? 1 : 0);
                 var segment = _document.SegmentOf(node);
                 flat = segment < Document.Unbounded && column + segment <= _width;
@@ -557,19 +592,13 @@ public sealed class LayoutWriter {
         if ((flags & VerbatimFlags.Realign) != 0) {
             text = Realign(
                 text,
-                _atLineStart
-                    ? (_pendingCloserLevel ?? Effective()) * _indentWidth
-                    : _column + (_pendingSpace ? 1 : 0)
+                _atLineStart ? _pendingCloserLevel ?? Effective() : _column + (_pendingSpace ? 1 : 0)
             );
         }
 
         if (_atLineStart) {
             if ((flags & VerbatimFlags.AtColumnZero) == 0 && (flags & VerbatimFlags.SelfIndented) == 0) {
-                var level = _pendingCloserLevel ?? Effective();
-                for (var i = 0; i < level; i++) {
-                    _output.Append(_indentUnit);
-                    _column += _indentUnit.Length;
-                }
+                WriteIndentTo(_pendingCloserLevel ?? Effective());
             }
 
             _atLineStart = false;

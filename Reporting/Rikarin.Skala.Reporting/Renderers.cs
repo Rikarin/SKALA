@@ -88,9 +88,9 @@ public static class Renderer {
 
         var findings = Ordered(report, includeHints).ToList();
         foreach (var group in findings.GroupBy(
-                finding => SarifWriter.Relative(report.RepositoryRoot, finding.Path),
-                StringComparer.Ordinal
-            )) {
+                     finding => SarifWriter.Relative(report.RepositoryRoot, finding.Path),
+                     StringComparer.Ordinal
+                 )) {
             builder.Append("  ").AppendLine(group.Key);
             foreach (var finding in group) {
                 builder.Append("    ")

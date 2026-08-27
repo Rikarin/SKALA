@@ -175,6 +175,14 @@ public sealed class DocumentBuilder {
         _ownPoints.Add(group);
 
         // ⚠ A break point stops the point measure, which is what distinguishes it from the head.
+        // ⚠ And it contributes nothing to it. "The rest of this line if every break point is taken"
+        // ends *before* the space the point would have rendered as, and LayoutWriter.TrailingWidth
+        // already says so for a point that is a direct sibling — but a point nested inside a group
+        // reached that code through the group's own point width, which was counting it. The two
+        // disagreeing is worth a column, and a column is a wrap: an expression-bodied member whose
+        // declaration is exactly 120 wide came back with its parameter list chopped, while the same
+        // declaration with a block body did not.
+        _pointWidth[_pending[index]] = 0;
         _breaks[_pending[index]] = true;
     }
 

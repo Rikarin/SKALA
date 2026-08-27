@@ -531,6 +531,10 @@ public static class SpaceRules {
                 BracketedArgumentListSyntax => o.SpaceBeforeArrayAccessBrackets,
                 ImplicitElementAccessSyntax => !ClingsRight(prev.Kind()),
                 BracketedParameterListSyntax => o.SpaceBeforeMethodParentheses,
+                // ⚠ A cast's closing parenthesis is not a call site, and this is the one place the
+                // difference shows: `(IrBindingKind[]) [a, b]` comes back from the oracle with the
+                // space, because the bracket is the cast's operand rather than an indexer on its
+                // result. `a[i]` and `M()[i]` still close up.
                 CollectionExpressionSyntax or ListPatternSyntax => !ClingsRight(prev.Kind()) && !IsCallSite(prev),
                 _ => o.SpaceBeforeOpenSquareBrackets
             };

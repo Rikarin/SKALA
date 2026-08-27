@@ -264,12 +264,13 @@ public sealed class Fitter {
     /// margin                  line       file
     /// never take it          99.11 %    76.05 %
     /// 0                      99.02 %    72.37 %
-    /// 4                      99.07 %    73.42 %
-    /// 8  (constant)          99.14 %    76.05 %
-    /// 8 + column/indent      99.20 %    76.58 %      ← milestone 3's
-    /// 12 + column/indent     99.22 %    77.63 %      ← ships
-    /// 16 + column/indent     99.20 %    77.11 %
-    /// 24 + column/indent     99.16 %    76.58 %
+    /// 4  (constant)          99.37 %    78.95 %
+    /// 8  (constant)          99.42 %    80.00 %
+    /// 8 + column/indent      99.51 %    82.11 %      ← milestone 3's
+    /// 11 + column/indent     99.53 %    82.63 %      ← ships
+    /// 12 + column/indent     99.52 %    81.84 %
+    /// 16 + column/indent     99.51 %    81.84 %
+    /// 24 + column/indent     99.48 %    80.79 %
     /// </code>
     /// <para>
     /// ⚠ And the two measurements disagree, which is the finding worth carrying forward. The
@@ -280,7 +281,7 @@ public sealed class Fitter {
     /// value of it will close the last of this class. SK-DIV-0005 records that as the argument.
     /// </para>
     /// </remarks>
-    int OuterBreakMargin(in Measures m) => 12 + m.ContinuationColumn / _indentWidth;
+    int OuterBreakMargin(in Measures m) => 11 + m.ContinuationColumn / _indentWidth;
 
     bool Fits(int column, int flatWidth, int trailing = 0) =>
         flatWidth < Unbounded && trailing < Unbounded && column + flatWidth + trailing <= _width;
