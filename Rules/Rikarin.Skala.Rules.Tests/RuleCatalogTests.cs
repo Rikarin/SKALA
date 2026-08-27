@@ -231,9 +231,9 @@ public sealed class RuleCatalogTests {
 
             var page = Normalise(File.ReadAllText(path));
             foreach (var (name, text) in new[] {
-                    ("title", rule.Title), ("summary", rule.Summary), ("rationale", rule.Rationale),
-                    ("falsePositives", rule.FalsePositives)
-                }) {
+                         ("title", rule.Title), ("summary", rule.Summary), ("rationale", rule.Rationale),
+                         ("falsePositives", rule.FalsePositives)
+                     }) {
                 Assert.True(
                     page.Contains(Normalise(text), StringComparison.Ordinal),
                     $"docs/rules/{rule.Id}.md does not carry the rule's {name} from rules.json. Run `skala rules docs`."

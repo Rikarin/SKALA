@@ -18,7 +18,8 @@ namespace Rikarin.Skala.Rules.Tests;
 /// </remarks>
 public sealed class RuleFixtureTests {
     static readonly ImmutableArray<DiagnosticAnalyzer> Analyzers = [
-        new FileScopedNamespaceAnalyzer(), new NullPatternAnalyzer(), new ThrowIfNullAnalyzer(), new NullCoalescingAssignmentAnalyzer(),
+        new FileScopedNamespaceAnalyzer(), new NullPatternAnalyzer(), new ThrowIfNullAnalyzer(),
+        new NullCoalescingAssignmentAnalyzer(),
         new CountPropertyAnalyzer(), new EnumGetValuesAnalyzer()
     ];
 
