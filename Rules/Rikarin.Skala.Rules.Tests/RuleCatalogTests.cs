@@ -82,6 +82,57 @@ public sealed class RuleCatalogTests {
         }
     }
 
+    /// <summary>
+    /// ⚠ The catalogue in <c>docs/plan/08</c> is the allocation register, and the code drifted away
+    /// from it without anything noticing.
+    /// </summary>
+    /// <remarks>
+    /// <see cref="RuleIds_AreAppendOnly"/> and <see cref="EveryCatalogueRule_IsRecordedAsAllocated"/>
+    /// tie <c>rules.json</c> and <c>allocated-ids.txt</c> to each other, and neither of them looks at
+    /// the document that decides which numbers exist. When this test was written, <c>SK7003</c>,
+    /// <c>SK7004</c> and <c>SK7005</c> were shipping, documented and reported — and named nowhere in
+    /// doc 08, because doc 07's metrics table had grown them instead. ADR-012's whole promise is that
+    /// a number is allocated once, and the only way to keep that promise is to be able to read the
+    /// register and see every number that is taken.
+    /// <para>
+    /// ⚠ <b>One direction only, deliberately.</b> This asserts rules.json ⊆ doc 08. The reverse
+    /// would be wrong: the catalogue names many rules that were considered and <em>cut</em> — with
+    /// reasons, in this document — and demanding doc 08 ⊆ rules.json would turn every recorded
+    /// decision not to build something into a failing build.
+    /// </para>
+    /// </remarks>
+    [Fact]
+    public void EveryCatalogueRule_IsNamedInTheRegister() {
+        var path = Path.Combine(RepositoryRoot, "docs", "plan", "08-rule-catalogue.md");
+        Assert.True(File.Exists(path), $"{path} does not exist; the register is what this test reads.");
+
+        var register = File.ReadAllText(path);
+
+        // ⚠ Anti-vacuity. Every assertion below is "this id is present", and all of them pass
+        // happily against an empty string — which is exactly how ToolDiagnosticIdTests spent a
+        // milestone guarding nothing. If the file being read is not the register, say so here
+        // rather than reporting a clean run.
+        Assert.True(
+            register.Length > 4000 && register.Contains("## SK5000 — Security", StringComparison.Ordinal),
+            $"{path} was read but does not look like the rule catalogue ({register.Length} bytes). "
+            + "This test proves nothing unless it is reading the register."
+        );
+
+        var missing = RuleCatalog.All
+            .Where(rule => !register.Contains(rule.Id, StringComparison.Ordinal))
+            .Select(static rule => rule.Id + " (" + rule.Concept + ")")
+            .ToList();
+
+        Assert.True(
+            missing.Count == 0,
+            "These rules ship and are not named in docs/plan/08-rule-catalogue.md:\n  "
+            + string.Join("\n  ", missing)
+            + "\n\nAdd them to the catalogue — do not delete the rule. Doc 08 is the allocation "
+            + "register ADR-012 depends on, and a number that is taken but not written down is a "
+            + "number the next milestone will allocate again."
+        );
+    }
+
     [Fact]
     public void EveryRuleId_IsInTheShapeTheRangesDefine() {
         foreach (var rule in RuleCatalog.All) {

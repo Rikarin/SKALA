@@ -184,7 +184,15 @@ without `IEquatable<T>` · `SK6008` extension method on `object`.
 
 ## SK7000 — Maintainability
 
-The metrics from [07](07-analysis-host.md) § "Metrics", plus:
+The metrics from [07](07-analysis-host.md) § "Metrics" — `SK7001` cyclomatic complexity ·
+`SK7002` cognitive complexity · `SK7003` method length in statements · `SK7004` type size in
+members · `SK7005` parameter count · `SK7006` nesting depth · `SK7010` public-API comment density —
+plus:
+
+⚠ Those seven ids used to live only in doc 07's table, and this document is the allocation
+register. `RuleCatalogTests.EveryCatalogueRule_IsNamedInTheRegister` now asserts the containment,
+because a register that the code can drift away from is a register nobody can trust to answer
+"is this number free".
 
 `SK7020` duplicated block ≥ *n* tokens ([09](09-quality-gates-and-reporting.md) § "Duplication") ·
 `SK7030` file over *n* lines · `SK7040` TODO/FIXME without an issue reference ·
