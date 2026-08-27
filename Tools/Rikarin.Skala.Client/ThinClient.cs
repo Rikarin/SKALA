@@ -79,6 +79,7 @@ public static class ThinClient {
 
         string? file = null;
         var check = false;
+        var quiet = false;
         for (var i = 1; i < args.Length; i++) {
             var argument = args[i];
             if (argument.Length == 0) {
@@ -94,6 +95,7 @@ public static class ThinClient {
                 }
 
                 if (string.Equals(argument, "--quiet", StringComparison.Ordinal)) {
+                    quiet = true;
                     continue;
                 }
 
@@ -131,26 +133,46 @@ public static class ThinClient {
             return false;
         }
 
-        if (check) {
-            exitCode = response.Changed ? 2 : 0; // ExitCodes.FormattingNeeded
-            if (response.Changed) {
-                Console.Out.Write(RepositoryRoot.Relative(root, full));
-                Console.Out.Write('\n');
-            }
-
-            return true;
-        }
-
-        if (response.Changed) {
+        if (!check && response.Changed) {
             // ⚠ UTF-8, no BOM, and the daemon's exact bytes. Writing through a StreamWriter with a
             // platform default here would be a formatter that changes line endings on Windows.
             File.WriteAllBytes(full, new UTF8Encoding(false).GetBytes(response.Formatted));
+        }
+
+        if (response.Changed) {
             Console.Out.Write(RepositoryRoot.Relative(root, full));
             Console.Out.Write('\n');
         }
 
+        if (!quiet) {
+            Console.Out.Write(Summary(response.Changed, check));
+        }
+
+        // ⚠ 1, not 2. `FormatCommand.ChangesFound` is 1 and `FormatCommand.Failed` is 2 — the
+        // formatter's own pair, which is NOT `ExitCodes.FormattingNeeded`, also 2, used by `check`.
+        // Getting this wrong makes the client disagree with the tool about whether a hook passed,
+        // which is the one thing this class must never do: `--check` exiting 1 is the contract the
+        // README states and the pre-commit hook reads.
+        exitCode = check && response.Changed ? 1 : 0;
         return true;
     }
+
+    /// <summary>
+    /// `FormatCommand`'s closing line, reproduced exactly for the one-file case.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ A second implementation of the tool's rendering, which is a thing to be uncomfortable
+    /// about — but the alternative is a client whose output differs from the tool's, and a hook or a
+    /// human reading two different answers to one question is worse than a duplicated format string.
+    /// It is only ever the one-file case, so `changed` is 0 or 1 and `left alone` is its complement.
+    /// `ClientAgreesWithToolTests` compares the two byte for byte; this is why that test exists.
+    /// </remarks>
+    static string Summary(bool changed, bool check) =>
+        (changed ? "1 file " : "0 files ")
+        + (check ? "would be reformatted" : "reformatted")
+        + ", "
+        + (changed ? "0" : "1")
+        + " left alone\n";
 
     static DaemonResponse? Send(string root, DaemonRequest request) {
         using var stream = DaemonTransport.Connect(root, Budget);
