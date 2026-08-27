@@ -62,6 +62,9 @@ using Rikarin.Skala.Testing;
 //                       --replay=SEED     re-execute one case and print it.
 //                       --mutation-test   break the formatter deliberately, per property, and
 //                                         report which property caught it and after how many cases.
+//   unformat […]      the differential over *degraded* input, with the null hypothesis beside every
+//                     number. `report` reads committed fixtures; `regenerate` re-degrades the
+//                     sample and re-runs the oracle over it, and is a reviewed action.
 //   preprocessor      SK-DIV-0004's number: `corpus/real/` fidelity with the oracle's own
 //                     preprocessor symbols supplied, split by whether the file contains a `#if`.
 //                     The symbols are read out of a real binary log rather than typed.
@@ -248,6 +251,17 @@ switch (args[0]) {
         );
 
         return 0;
+    case "unformat":
+        // ⚠ The differential over *degraded* input — the measurement the 99.63 % headline was
+        // missing. `corpus/real/`'s inputs are already 92.08 % line-identical to their fixtures, so
+        // that number sits on a 92 % floor and the whole discriminating power of it lives in the
+        // other 8 %. This degrades a file's formatting, runs both tools over the degraded copy and
+        // compares them, with the null hypothesis reported beside every number.
+        //   unformat report                the measurement, from committed fixtures. No jb needed.
+        //   unformat generate [--count=N]  redraw and re-degrade the corpus. Reviewed, like `sample`.
+        //   unformat oracle                the fixtures for whatever is committed. Needs jb.
+        //   unformat regenerate [--count=N]  both, in order.
+        return UnformatCommand(args[1..]);
     case "locate":
         // Where the divergent lines attributed to one construct are. `locate <set> <kind>`.
         if (args.Length < 3) {
@@ -598,6 +612,56 @@ static int Arrangement(string[] args) {
     }
 
     return 0;
+}
+
+// `unformat …`: docs/plan/12 § "The unformat differential".
+//
+// ⚠ `generate` and `oracle` are deliberate developer actions whose diffs are reviewed in their own
+// commit, exactly like `sample` and `oracle`. `report` reads the committed fixtures and needs
+// nothing installed, because that is what makes the number reproducible on a machine that has never
+// had ReSharper on it (ADR-011).
+static int UnformatCommand(string[] arguments) {
+    var command = arguments.FirstOrDefault(static a => !a.StartsWith("--", StringComparison.Ordinal)) ?? "report";
+    var count = arguments.FirstOrDefault(static a => a.StartsWith("--count=", StringComparison.Ordinal)) is { } given
+        ? int.Parse(given["--count=".Length..], CultureInfo.InvariantCulture)
+        : UnformatCorpus.SampleSize;
+
+    switch (command) {
+        case "report":
+            Console.Write(UnformatDifferential.Render(Symbols()));
+            return 0;
+
+        case "generate":
+            Console.Write(UnformatCorpus.Generate(count, Console.Error));
+            return 0;
+
+        case "oracle":
+        case "regenerate":
+            if (OracleRunner.FindExecutableOrNull() is null) {
+                Console.Error.WriteLine(
+                    "jb is not installed. `dotnet tool install -g JetBrains.ReSharper.GlobalTools --version 2025.2.6`."
+                );
+
+                return 2;
+            }
+
+            if (command == "regenerate") {
+                Console.Write(UnformatCorpus.Generate(count, Console.Error));
+            }
+
+            var total = UnformatDifferential.Regenerate(
+                new OracleRunner(),
+                Path.Combine(Corpus.RepositoryRoot, ".editorconfig"),
+                Console.Out
+            );
+
+            Console.WriteLine($"{total.ToString(CultureInfo.InvariantCulture)} fixtures written.");
+            return 0;
+
+        default:
+            Console.Error.WriteLine("usage: unformat [report|generate|oracle|regenerate] [--count=N]");
+            return 2;
+    }
 }
 
 static int Regenerate(string[] sets, string? only) {
