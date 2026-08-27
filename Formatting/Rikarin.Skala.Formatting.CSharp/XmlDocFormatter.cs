@@ -23,7 +23,34 @@ public readonly record struct XmlDocOutcome(
     string Text,
     int Reflowed,
     int Refused,
-    ImmutableArray<XmlDocReplacement> Replacements);
+    ImmutableArray<XmlDocReplacement> Replacements,
+    ImmutableArray<XmlDocRefusal> Refusals);
+
+/// <summary>Why one comment was left exactly as written.</summary>
+/// <remarks>
+/// ⚠ Every refusal is safe, and none of them is silent. A sub-formatter with no oracle has to be
+/// able to say <em>why</em> it declined, or "it left sixteen comments alone" is indistinguishable
+/// from "it has a bug in sixteen places".
+/// </remarks>
+public enum XmlDocRefusalReason {
+    /// <summary>Not well-formed XML. Reported at hint as <c>SK0003</c>; hazard 2 of docs/plan/05.</summary>
+    Malformed,
+
+    /// <summary>A shape the model declines to represent: a tag header spanning lines, a mismatched end tag.</summary>
+    Unmodelled,
+
+    /// <summary>The trivia's line range holds something that is not a <c>///</c> line.</summary>
+    NotDocLines,
+
+    /// <summary>A re-wrap would have separated a tag from the word welded to it.</summary>
+    Glue,
+
+    /// <summary>⚠ The round trip did not come back identical. The only reason here that is a defect.</summary>
+    RoundTrip
+}
+
+/// <summary>One comment the sub-formatter declined, and why.</summary>
+public readonly record struct XmlDocRefusal(int Line, XmlDocRefusalReason Reason);
 
 /// <summary>One replaced region: where it was in the input, and how long it is in the output.</summary>
 public readonly record struct XmlDocReplacement(TextSpan Span, int Length);
@@ -65,8 +92,8 @@ public static class XmlDocFormatter {
         var tree = CSharpSyntaxTree.ParseText(SourceText.From(text), parseOptions);
         var source = tree.GetText();
         var replacements = new List<(TextSpan Span, string Text)>();
+        var refusals = ImmutableArray.CreateBuilder<XmlDocRefusal>();
         var reflowed = 0;
-        var refused = 0;
 
         foreach (var trivia in tree.GetRoot().DescendantTrivia(descendIntoTrivia: false)) {
             if (!trivia.IsKind(SyntaxKind.SingleLineDocumentationCommentTrivia)) {
@@ -80,16 +107,17 @@ public static class XmlDocFormatter {
                 continue;
             }
 
-            if (Replacement(source, trivia, structure, options, newLine) is { } replacement) {
-                replacements.Add(replacement);
-                reflowed++;
+            var attempt = Replacement(source, trivia, structure, options, newLine);
+            if (attempt.Reason is { } reason) {
+                refusals.Add(new XmlDocRefusal(source.Lines.GetLinePosition(trivia.SpanStart).Line + 1, reason));
             } else {
-                refused++;
+                replacements.Add((attempt.Span, attempt.Text!));
+                reflowed++;
             }
         }
 
         if (replacements.Count == 0) {
-            return new XmlDocOutcome(text, 0, refused, []);
+            return new XmlDocOutcome(text, 0, refusals.Count, [], refusals.ToImmutable());
         }
 
         var builder = new StringBuilder(text);
@@ -103,7 +131,13 @@ public static class XmlDocFormatter {
             applied.Add(new XmlDocReplacement(span, replacement.Length));
         }
 
-        return new XmlDocOutcome(builder.ToString(), reflowed, refused, applied.ToImmutable());
+        return new XmlDocOutcome(
+            builder.ToString(),
+            reflowed,
+            refusals.Count,
+            applied.ToImmutable(),
+            refusals.ToImmutable()
+        );
     }
 
     /// <summary>
@@ -145,7 +179,7 @@ public static class XmlDocFormatter {
         return layout with { Text = text, Anchors = anchors };
     }
 
-    static (TextSpan Span, string Text)? Replacement(
+    static Attempt Replacement(
         SourceText source,
         SyntaxTrivia trivia,
         DocumentationCommentTriviaSyntax structure,
@@ -157,11 +191,11 @@ public static class XmlDocFormatter {
         // (SK0003). Malformed doc comments are extremely common in real code and "fixing" one is
         // worse than ignoring it.
         if (!XmlDocComments.WellFormed(structure)) {
-            return null;
+            return new Attempt(default, null, XmlDocRefusalReason.Malformed);
         }
 
         if (XmlDocModel.Build(structure) is not { } nodes) {
-            return null;
+            return new Attempt(default, null, XmlDocRefusalReason.Unmodelled);
         }
 
         var first = source.Lines.GetLineFromPosition(trivia.SpanStart);
@@ -170,20 +204,20 @@ public static class XmlDocFormatter {
 
         var indent = Indent(first.ToString());
         if (indent is null) {
-            return null;
+            return new Attempt(default, null, XmlDocRefusalReason.NotDocLines);
         }
 
         for (var i = first.LineNumber; i <= last.LineNumber; i++) {
             // Every line of the region must be a `///` line, or the region is not the sub-formatter's.
             if (Indent(source.Lines[i].ToString()) is null) {
-                return null;
+                return new Attempt(default, null, XmlDocRefusalReason.NotDocLines);
             }
         }
 
         var marker = options.SpaceAfterTripleSlash ? " " : string.Empty;
         var budget = options.MaxLineLength - TextWidth.Measure(indent) - 3 - marker.Length;
         if (XmlDocRenderer.Render(nodes, options, budget) is not { } lines || lines.Length == 0) {
-            return null;
+            return new Attempt(default, null, XmlDocRefusalReason.Glue);
         }
 
         var rendered = new StringBuilder();
@@ -207,9 +241,12 @@ public static class XmlDocFormatter {
         // checks itself against its own reading of a settings page is a formatter that will one day
         // eat a sentence.
         return XmlDocSignature.RoundTrips(structure, text)
-            ? (span, text)
-            : null;
+            ? new Attempt(span, text, null)
+            : new Attempt(default, null, XmlDocRefusalReason.RoundTrip);
     }
+
+    /// <summary>One comment's outcome: a replacement, or the reason there is not one.</summary>
+    readonly record struct Attempt(TextSpan Span, string? Text, XmlDocRefusalReason? Reason);
 
     /// <summary>
     /// The line's indentation, when the line is a <c>///</c> line and nothing else.

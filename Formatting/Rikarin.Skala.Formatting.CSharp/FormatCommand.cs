@@ -52,6 +52,19 @@ public sealed record FormatRequest {
     /// build says them itself.
     /// </remarks>
     public IReadOnlyList<string> Define { get; init; } = [];
+
+    /// <summary>
+    /// <c>--xmldoc</c>: also re-wrap documentation comments.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ SK-DIV-0006, and the reason it is a flag rather than a key. The whole
+    /// <c>resharper_xmldoc_*</c> family is set in the export and <c>jb cleanupcode</c> honours none
+    /// of it — measured, not assumed — so a Skala that re-wrapped doc comments by default would
+    /// disagree with Rider on every doc comment in every repository. Off is the setting that agrees
+    /// with the oracle; this is the setting for a tree that wants the layout its .editorconfig
+    /// describes and accepts that Rider will not reproduce it.
+    /// </remarks>
+    public bool XmlDoc { get; init; }
 }
 
 /// <summary>How <c>--staged</c> behaves in the presence of unstaged edits.</summary>
@@ -231,7 +244,13 @@ public static class FormatCommand {
     ) {
         FormatResult result;
         try {
-            result = CSharpFormatter.FormatFile(file, request.Overrides, crashRoot, request.Define);
+            result = CSharpFormatter.FormatFile(
+                file,
+                request.Overrides,
+                crashRoot,
+                request.Define,
+                request.XmlDoc
+            );
         } catch (IOException exception) {
             return new FileOutcome(
                 true,

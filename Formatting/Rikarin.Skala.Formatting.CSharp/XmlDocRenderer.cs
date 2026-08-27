@@ -129,7 +129,14 @@ public sealed class XmlDocRenderer {
         }
 
         Open(element);
-        Break();
+
+        // ⚠ No unconditional break after the end tag, and the reason is glue again. Vixen has
+        // `<i>…</i>.` where the sentence's full stop is welded to the closing tag and the italic
+        // text is three lines long; breaking here would move the full stop to a line of its own.
+        // The end tag is left as the current token so that whatever is welded to it lands beside it.
+        if (owns) {
+            Break();
+        }
     }
 
     /// <summary>
@@ -142,8 +149,14 @@ public sealed class XmlDocRenderer {
     /// and still goes on three lines when the key is true.
     /// </remarks>
     bool IsMultiline(XmlDocElement element, string? flat) {
+        // ⚠ A self-closing element has no inside to break open, and treating one as multi-line
+        // rewrites `<code … />` into `<code …>` with a closing tag that was never there.
+        // Newtonsoft's `<code source="…" title="…" />` is 130 columns wide and found this.
+        if (element.SelfClosing) {
+            return false;
+        }
+
         if (element.Verbatim is null
-            && !element.SelfClosing
             && _options.LinebreaksInsideTagsForElementsWithChildElements
             && element.HasChildElements
             && !element.HasText) {
