@@ -388,6 +388,35 @@ Layer 2 costs a re-bind per changed document, which is why `arrange` is minutes-
 and `format` is seconds-scale. That is the correct trade: whitespace is cheap and constant, tree
 rewrites are rare and must be right.
 
+### The bar, re-measured with the new rewrites in
+
+M4's bar was "arrangement over Vixen introduces zero compiler diagnostics, measured *independently*
+of the safety layer that makes it true", and the seven rewrites added since then do not move it.
+Over the ten projects [17](17-inspection-parity.md) measured, from a `git archive` scratch copy:
+
+| | |
+|---|---|
+| files considered | 2 071 |
+| files arranged | 1 236 |
+| ⚠ **new compiler diagnostics** | **0** |
+| reverted by the re-bind | 2 (0.10 %) |
+| reverted by the symbol check | 0 |
+| did not converge | 0 |
+
+The two reverts are both `CS8754` — "there is no target type for `new(…)`" — from the
+target-typed-`new` rule that predates this work, in one file. The new rewrites fired 472 times
+(parentheses), 216 (argument style) and 5 (`this.` qualifier) without producing a diagnostic between
+them.
+
+⚠ **The first attempt at this measurement measured nothing, and the way it failed is worth keeping.**
+The scratch tree came from `git archive`, which does not include `.git` — so
+`FormatCommand.FindRepositoryRoot` walked to the filesystem root, found nothing, and the binlog was
+never located. `arrange` fell back to the syntactic subset and reported "N files were in no loaded
+compilation", which is a correct and quiet line, and every semantic rule silently did nothing. The
+run looked successful: files changed, no errors. It was only visible because the *fire counts* for
+the semantic rules came back identical before and after. A scratch tree needs a repository root
+before it is a subject.
+
 ## Interaction with the formatter
 
 Arrangement runs **before** the document is built (step 2 of the pipeline), and the rewritten tree is
