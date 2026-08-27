@@ -4,6 +4,7 @@ using Microsoft.Build.Logging.StructuredLogger;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Text;
+using Rikarin.Skala.Core;
 using Rikarin.Skala.Core.Diagnostics;
 using Rikarin.Skala.Reporting;
 using Rikarin.Skala.Rules.Metadata;
@@ -386,10 +387,14 @@ public static class BinlogLoader {
                 continue;
             }
 
+            // ⚠ `.skala/` holds crash reproductions — `crash/<hash>/input.cs` and `output.cs` —
+            // which are Skala's own evidence, not the user's code. Analysing them reports findings
+            // against files nobody wrote. See SkalaDirectory.Contains.
             if (file.Contains($"{separator}obj{separator}", StringComparison.Ordinal)
                 || file.Contains($"{separator}bin{separator}", StringComparison.Ordinal)
                 || file.Contains($"{separator}.git{separator}", StringComparison.Ordinal)
-                || file.Contains($"{separator}artifacts{separator}", StringComparison.Ordinal)) {
+                || file.Contains($"{separator}artifacts{separator}", StringComparison.Ordinal)
+                || SkalaDirectory.Contains(file)) {
                 continue;
             }
 

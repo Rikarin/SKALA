@@ -215,10 +215,26 @@ public static class CheckCommand {
             }
         }
 
-        var formattingClean = true;
+        // ⚠ <b>`formatting: clean` counts SK0001 and only SK0001.</b> docs/plan/09 defines the
+        // condition as "`format --check` must produce no edits", and SK0001 is the finding that
+        // carries those edits. `Collect` also returns SK0002 (an over-long line with no break
+        // point in it) and SK0003 (a malformed doc comment) — two findings the formatter
+        // deliberately reports *without* fixing, because there is nothing it could safely change.
+        //
+        // Counting the whole array made the condition unsatisfiable. Measured on Vixen's
+        // `Core/Vixen.Water`: `format --check` reports "0 files would be reformatted", and the
+        // `ci` gate still failed with "formatting is not clean; run `skala format`" on 23 SK0002
+        // hints — hidden-severity findings that do not even appear in the default report. `skala
+        // format` cannot clear them, and the bit was computed before `Scope`, so accepting them
+        // into a baseline could not either. One unbreakable long line blocked the entire gate.
+        //
+        // SK0002 and SK0003 are still findings and still flow into `maxSeverity`, `newIssues` and
+        // the baseline like any other. They are simply not what "would the formatter edit this"
+        // asks. `null` when the run was told not to look — see `Gate.Evaluate`.
+        bool? formattingClean = null;
         if (request.IncludeFormatting) {
             var formatting = FormattingFindings.Collect(root, Paths(loaded, request), request, diagnostics);
-            formattingClean = formatting.Length == 0;
+            formattingClean = !formatting.Any(static finding => finding.RuleId == RuleIds.FileIsNotFormatted);
             findings.AddRange(formatting);
         }
 

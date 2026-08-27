@@ -175,9 +175,32 @@ instead of contradicting each other.
 |---|---|
 | `maxSeverity` | any finding at or above this level fails — scoped to *new* findings when a baseline or `--since` is in play, see above |
 | `newIssues` | maximum count of *new* findings. ⚠ The **intersection** of the scopings in play, never the union: with a baseline and `--since` both active a finding is new only if it is absent from the baseline *and* on a line the branch touched, because a gate firing on either would fail a PR for a pre-existing finding that happens to sit near an edit. ⚠ Naming `newIssues` with neither scoping is a configuration error and is reported as one, rather than counting every finding in the repository as new |
-| `formatting` | `clean` ⇒ `skala format --check` must produce no edits |
+| `formatting` | `clean` ⇒ `skala format --check` must produce no edits — **`SK0001` and only `SK0001`**, see below |
 | `metrics.*` | thresholds on the aggregate metrics |
 | `ruleOverrides` | per-rule tightening, e.g. `SK5*: 0` regardless of the rest. ⚠ A prefix glob or an exact id, not a regular expression — the only shapes the section asks for are a range and an id, and a regular expression in a configuration file is a thing people get wrong silently |
+
+⚠ **`formatting: clean` is `SK0001`, and M9 had to decide this too.** The formatting half of a run
+returns three ids, and only one of them is an edit. `SK0001` carries the formatter's own `TextChange`
+list — that *is* "`format --check` would edit this file". `SK0002` (a line over the limit with no
+break point anywhere in it) and `SK0003` (a doc comment that is not well-formed XML) are reported
+precisely *because* the formatter refuses to touch them: there is no safe change to make, so both
+are emitted at hidden severity and left alone.
+
+The first implementation counted all three, and the condition was then unsatisfiable. Measured on
+Vixen's `Core/Vixen.Water` after a full `skala format`: `format --check` reports **0 files would be
+reformatted**, and the `ci` gate still failed with *"formatting is not clean; run `skala format`"* —
+on **23 `SK0002` hints** that `skala format` cannot clear, that do not appear in the default report,
+and that a baseline could not absorb because the bit was computed before scoping. Any repository
+containing one unbreakable long line — a long URL in a comment, a wide string literal — was blocked
+out of the gate entirely, and `--no-formatting` was the only way through.
+
+`SK0002` and `SK0003` remain findings and remain subject to `maxSeverity`, `newIssues` and the
+baseline like everything else. They are simply not an answer to "would the formatter edit this".
+
+⚠ **And a gate that names `formatting` fails under `--no-formatting`.** The condition used to default
+to satisfied when the run never collected formatting, so the flag that suppressed the measurement
+also suppressed the check — the one shape of "passing for the wrong reason" this section's opening
+paragraph already forbids for an unrecognized condition. It now fails the same way, naming the flag.
 
 ### `--no-new-suppressions`
 

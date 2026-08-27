@@ -285,10 +285,18 @@ public static partial class SkalaCommandLine {
         return command;
     }
 
-    /// <summary><c>skala explain SK1010</c> — docs/plan/08 § "Documentation".</summary>
+    /// <summary>
+    /// <c>skala explain SK1010</c> and <c>skala explain csharp_indent_case_contents</c> —
+    /// docs/plan/08 § "Documentation" and docs/plan/11's <c>&lt;ruleId | optionKey&gt;</c>.
+    /// </summary>
     static Command CreateExplainCommand() {
-        var ruleId = new Argument<string>("rule") { Description = "The rule id, e.g. SK1010." };
-        var command = new Command("explain", "Print a rule's rationale, examples and known false positives.");
+        var ruleId = new Argument<string>("rule|option") {
+            Description = "A rule id, e.g. SK1010, or an .editorconfig option key, e.g. csharp_indent_case_contents."
+        };
+        var command = new Command(
+            "explain",
+            "Print a rule's rationale and examples, or what an .editorconfig option governs."
+        );
         command.Arguments.Add(ruleId);
         command.SetAction(parse => Run(() => ExplainCommand.Run(parse.GetValue(ruleId)!)));
         return command;
