@@ -111,7 +111,9 @@ public sealed class CollectionExpressionAnalyzer : DiagnosticAnalyzer {
                     (elements.OpenBraceToken.Span, "["),
                     (elements.CloseBraceToken.Span, "]")
                 ),
-                "The type is already written at " + target + ", so this is a collection expression: `"
+                "The type is already written at "
+                + target
+                + ", so this is a collection expression: `"
                 + created.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat)
                 + (elements.Expressions.Count == 0 ? " x = [];`" : " x = […];`")
             )
@@ -135,7 +137,9 @@ public sealed class CollectionExpressionAnalyzer : DiagnosticAnalyzer {
     static string? WrittenTargetOf(ExpressionSyntax value) {
         switch (value.Parent) {
             // `T[] x = new T[] { … };` — but never `var`, which has nothing to infer from.
-            case EqualsValueClauseSyntax { Parent: VariableDeclaratorSyntax { Parent: VariableDeclarationSyntax declaration } }:
+            case EqualsValueClauseSyntax {
+                Parent: VariableDeclaratorSyntax { Parent: VariableDeclarationSyntax declaration }
+            }:
                 if (declaration.Type.IsVar
                     || declaration.Parent is not (LocalDeclarationStatementSyntax or FieldDeclarationSyntax)
                     || declaration.Parent is LocalDeclarationStatementSyntax { IsConst: true }
@@ -214,7 +218,8 @@ public sealed class CollectionExpressionAnalyzer : DiagnosticAnalyzer {
             _ => null
         };
 
-        if (initializer is null || !initializer.IsKind(SyntaxKind.CollectionInitializerExpression)
+        if (initializer is null
+            || !initializer.IsKind(SyntaxKind.CollectionInitializerExpression)
             && !initializer.IsKind(SyntaxKind.ArrayInitializerExpression)) {
             return null;
         }

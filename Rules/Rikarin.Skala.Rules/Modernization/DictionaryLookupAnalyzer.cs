@@ -161,7 +161,8 @@ public sealed class DictionaryLookupAnalyzer : DiagnosticAnalyzer {
         }
 
         if (RewriteGuards.ContainsCommentOrDirective(first)
-            || first.HasLeadingTrivia && RewriteGuards.ContainsCommentOrDirective(
+            || first.HasLeadingTrivia
+            && RewriteGuards.ContainsCommentOrDirective(
                 first.SyntaxTree,
                 first.FullSpan
             )) {

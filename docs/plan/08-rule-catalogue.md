@@ -290,10 +290,10 @@ decided; a rule counted as cut when nobody recorded a reason is a decision nobod
 twelve M7 declared cut without recording why are **outstanding**, and § "Declared cut with no
 recorded reason" is where they are named.
 
-⚠ **26 % is the shipping bar working, not the project falling behind.** Four milestones each shipped
-far fewer rules than they planned — 4 of 20, 6 of 36, 3 of ~15, 5 of 9 — because a rule ships only
-with a fix, zero false positives across two reference trees, and a negative fixture set at least as
-large as the positive one. Twenty-nine rules that are always right is the goal.
+⚠ **31 % is the shipping bar working, not the project falling behind.** Five milestones each shipped
+far fewer rules than they planned — 4 of 20, 6 of 36, 3 of ~15, 5 of 9, 5 of 8 — because a rule ships
+only with a fix, zero false positives across two reference trees, and a negative fixture set at least
+as large as the positive one. Thirty-four rules that are always right is the goal.
 [16](16-risks-and-open-questions.md) § R3 describes the alternative — a hundred that are usually
 right — as the failure mode, not the target.
 
@@ -387,15 +387,16 @@ Saying "no reason was recorded" is the point. Two of them look cheap and obvious
 
 ### Outstanding, with what each is waiting on
 
-The sixty-three that were never declared cut. Where a milestone recorded why it did not ship, the
+The sixty-four that were never declared cut. Where a milestone recorded why it did not ship, the
 reason is kept; it is a description of remaining work, not a disposal.
 
 | Group | IDs | Waiting on |
 |---|---|---|
-| Declaration-shape rewrites | `SK1001`, `SK1002`, `SK1008` | The unsafe-fix path and an `--include` story. Each is a good rule and none is a *safe* fix (M5) |
-| Evaluation-changing rewrites | `SK1006`, `SK1012`, `SK1015` | The guard that makes each provably behaviour-preserving is most of the rule (M5) |
+| Declaration-shape rewrites | `SK1002`, `SK1008` | The unsafe-fix path and an `--include` story. Each is a good rule and none is a *safe* fix (M5). ⚠ `SK1001` shipped in M9 without that path, by narrowing to the positions where the target type is written by the author and the created type is it exactly — which is a *safe* fix and leaves M5's point about the general rule standing |
+| Evaluation-changing rewrites | `SK1012` | The guard that makes it provably behaviour-preserving is most of the rule (M5). ⚠ `SK1006` and `SK1015` shipped in M9, and M5's sentence was right rather than superseded: in both, the guard *is* most of the rule — see § "What M9 added" |
 | ⚠ Hot-path rules | `SK1022`, `SK1025`, `SK1027`, `SK1032` | Path-scoped configuration. **The `hint` default is suspect — see below** |
-| The rest of the modernization set | `SK1003`, `SK1004`, `SK1007`, `SK1009`, `SK1011`, `SK1013`, `SK1014`, `SK1021`, `SK1023`, `SK1024`, `SK1026`, `SK1028`, `SK1029`, `SK1031`, `SK1033`, `SK1036` | Nothing recorded. Not started |
+| The rest of the modernization set | `SK1004`, `SK1007`, `SK1009`, `SK1011`, `SK1013`, `SK1021`, `SK1024`, `SK1026`, `SK1028`, `SK1029`, `SK1036` | Nothing recorded. Not started |
+| ⚠ Planned by M9 and not built | `SK1003`, `SK1014`, `SK1023` | Nothing but time. **They are outstanding, not cut** — not building a rule is not a decision about it. `SK1023` has zero candidates in Vixen, which already uses `System.Threading.Lock`; by doc 00's non-negotiable 9 that is a fact about Vixen and not a reason to dispose of a rule |
 | Correctness | `SK2001`–`SK2012`, `SK2014`, `SK2016` | Nothing recorded beyond the shipping bar. Not started |
 | Async and lifetime | `SK3003`, `SK3005`, `SK3007`, `SK3009`, `SK3502`, `SK3503` | Nothing recorded. Not started |
 | Async and lifetime, with a recorded obstacle | `SK3004`, `SK3008`, `SK3501` | `SK3004`'s fix threads a `CancellationToken` through call sites, which is a refactor; `SK3501`'s disposal paths and `SK3008`'s `SemaphoreSlim` dataflow are each most of the rule (M6). ⚠ A fixless form of any of the three is not disposed of |
@@ -428,6 +429,96 @@ about itself and are needed to develop everything else) → `SK0xxx`/`SK1xxx` (t
 findings and the modernization set, which is the differentiator) → `SK2xxx`/`SK3xxx` (the SonarQube
 replacement's core) → `SK7xxx` (metrics and duplication, needed for the gate) → `SK4xxx`/`SK6xxx` →
 `SK5xxx` last, because security rules that are wrong are worse than absent.
+
+### ⚠ What M9 added: five modernization rules, and the one that nearly shipped wrong
+
+M9 is the `SK1xxx` milestone — the range doc 08 § "SK1000" calls "the reason the tool exists in an
+AI-heavy workflow", and the one that was a quarter built. Eight rules were attempted and **five**
+ship: `SK1001` (collection expressions), `SK1006` (`using` declarations), `SK1015` (`is T t` over a
+cast), `SK1031` (null-conditional assignment) and `SK1033` (`TryGetValue`/`TryAdd`). All five are
+`suggestion`, the range's default, unchanged.
+
+| Id | Scope | Loose mode | Floor | Fixtures (+/−) | corpus/real | Vixen |
+|---|---|---|---:|---:|---:|---:|
+| `SK1001` collection expression | Semantic | — | 12 | 7 / 10 | 12 | 1 |
+| `SK1006` `using` declaration | Syntax | ✅ | 8 | 3 / 10 | 5 | 9 |
+| `SK1015` `is T t` over a cast | Semantic | — | 7 | 3 / 9 | 1 | 0 |
+| `SK1031` null-conditional assignment | Semantic | — | 14 | 3 / 9 | 0 | 13 |
+| `SK1033` `TryGetValue` / `TryAdd` | Semantic | — | 7 | 5 / 13 | 0 | 2 |
+
+**Every one of the 43 findings was read.** None is a false positive; the fix round-trip over both
+trees introduces **0 `(file, id)` pairs worse than before**, and the pre-existing rules reproduce
+their recorded counts unchanged.
+
+⚠ **`SK1033` was measured wrong before it shipped, and the measurement is the reason it is not
+wrong now.** `if (!d.ContainsKey(k)) d[k] = Build();` calls `Build()` only when the key is absent.
+`d.TryAdd(k, Build())` calls it **every time** — C# evaluates arguments before the call — and
+discards the result when the key was present. Three of the five Vixen findings were that shape, and
+two of them mattered: `copies[corner] = mesh.AddPosition(mesh.Positions[corner])` *mutates the mesh*,
+so the fix would have added positions the program never asked for, and
+`edits[shape] = edited.ToMeshData(…)` *builds* a mesh, so the fix would have put a build on the path
+that already had the key. The written value must now itself be a name or a literal. **A fixture set
+cannot find this; only a tree can**, which is what doc 16 § R3's second clause is for.
+
+⚠ **Three guards turned out to be one guard, and it is not the one a `LookupSymbols` call answers.**
+C# scopes an `out var` or a pattern variable declared in an `if` condition to the *enclosing block*,
+so `SK1015` and `SK1033` move a declaration one scope outwards and `SK1006` moves a whole block's
+declaration space. A name in a merely *neighbouring* scope is invisible at the destination and is
+still `CS0136`:
+
+```csharp
+foreach (var item in xs) { }          // legal today: two cousins
+using (…) { var item = 2; }           // CS0136 the moment the braces go
+```
+
+`RewriteGuards.DeclaredElsewhereInMember` scans the whole member for this. It over-bails — two
+sibling lambdas cannot conflict — and over-bailing costs a finding where the alternative costs a
+build.
+
+⚠ **`SK1006`'s whole content is "the `using` statement is the last statement of its enclosing
+block".** M5 deferred it because the rewrite moves a `Dispose`. It does not move one *there*: at that
+position the block's closing brace and the `using` block's closing brace are the same program point,
+so the object is disposed at the same instant on every path out — `return`, `throw`, `break` and
+falling off the end alike. Anywhere else it is a behaviour change and the rule is silent.
+
+⚠ **`SK1031` rests on a fact about C# 14 that was verified rather than assumed.** A null-conditional
+assignment does not evaluate its right-hand side when the receiver is null. That was checked against
+the 10.0.400 SDK before the rule shipped, because if it were false the rule would be wrong in exactly
+the cases that matter — and one of the thirteen Vixen findings is
+`Model?.Levels = on ? Model.Levels | level : Model.Levels & ~level`, whose right-hand side reads the
+receiver.
+
+⚠ **M9 cut nothing, and that is a statement rather than an omission.** Three rules were planned and
+not built — `SK1003` (the `field` keyword), `SK1014` (relational patterns) and `SK1023`
+(`System.Threading.Lock`). Not building a rule is not a decision about it, so all three stay
+**outstanding**, which is the position § "Declared cut with no recorded reason" takes about M7's
+twelve. What was learned about them is worth keeping and is not a disposal: `SK1023` has **zero**
+candidates in Vixen, which already uses `System.Threading.Lock` throughout — and by doc 00's
+non-negotiable 9 that is a fact about Vixen and not a reason to cut anything.
+
+⚠ **The reference-tree measurement was wrong in two ways before it was right, and both are fixed in
+the harness rather than in a note.**
+
+1. `EnumerateSources` skips `obj/`, `bin/`, `.git/` and `artifacts/` but not `.claude/worktrees/`.
+   Vixen has agent worktrees nested inside it, so an audit of the tree enumerated **13 743** files
+   where the tree has **4 681**, reported **1 585 971** errors instead of 128 833 because three
+   copies of every type collide, and duplicated findings N times at what read as one location.
+2. The loose loader has no global usings, and Vixen sets `ImplicitUsings`. Every `Dictionary<,>` in
+   the tree therefore bound to an error type and every semantic rule answered "no finding" for the
+   wrong reason — `SK1033` **0 → 5**, and doc 15 § M7's `SK3002` **7 → 44** and `SK8005` **0 → 25**
+   reproduce exactly. `fidelity audit --implicit-usings` now supplies that file from a constant in
+   the harness. Doc 15 records M7 using this stand-in and never committing it, which is why M7's
+   figures were not reproducible; a constant cannot go missing.
+
+⚠ **The fix round-trip goes through the binder now, not only the parser.**
+`EveryFix_ProducesTextThatStillParses` is a real check and is not the one that matters: a fix that
+turns `x != null` into a pattern inside an expression tree parses perfectly and is `CS8122`, and one
+that lifts a declaration into a taken scope parses perfectly and is `CS0136`. `FixRoundTripTests`
+re-compiles the edited text, compares error counts per diagnostic id — per id rather than per line,
+because a fix that deletes a brace moves every error below it — and asserts the rule no longer fires
+on its own output, which is what catches a fix that is correct but is not a fix. It covers every rule
+in the catalogue that declares one, and it finds its analyzers by reflection, because a hand-kept
+list omits the rule someone forgot and the omission looks like a passing test.
 
 ### ⚠ What M8 added: five rules out of nine, and the corpus that is the only real evidence
 

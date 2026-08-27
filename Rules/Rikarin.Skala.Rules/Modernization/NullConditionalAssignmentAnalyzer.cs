@@ -138,9 +138,7 @@ public sealed class NullConditionalAssignmentAnalyzer : DiagnosticAnalyzer {
             case IsPatternExpressionSyntax {
                 Pattern: UnaryPatternSyntax {
                     RawKind: (int)SyntaxKind.NotPattern,
-                    Pattern: ConstantPatternSyntax {
-                        Expression.RawKind: (int)SyntaxKind.NullLiteralExpression
-                    }
+                    Pattern: ConstantPatternSyntax { Expression.RawKind: (int)SyntaxKind.NullLiteralExpression }
                 }
             } pattern:
                 return pattern.Expression;

@@ -13,6 +13,55 @@ missed it says so and by how much; three of them were, and one of those is still
 
 ## Unreleased
 
+### Added — five `SK1xxx` modernization rules
+
+The range doc 08 calls "the reason the tool exists in an AI-heavy workflow", which was a quarter
+built. Eight were attempted and **five** ship, all at `suggestion` — the range's default, unchanged.
+
+| Id | Rule | Floor | corpus/real | Vixen |
+|---|---|---:|---:|---:|
+| `SK1001` | Collection expression where the target type is written | 12 | 12 | 1 |
+| `SK1006` | `using` declaration where the block runs to the end of the scope | 8 | 5 | 9 |
+| `SK1015` | `is T t` instead of `is T` and a cast | 7 | 1 | 0 |
+| `SK1031` | Null-conditional assignment | 14 | 0 | 13 |
+| `SK1033` | `TryGetValue` / `TryAdd` instead of `ContainsKey` and a second lookup | 7 | 0 | 2 |
+
+Every one of the 43 findings was read; none is a false positive, and applying every fix over both
+trees introduces **0 `(file, id)` pairs worse than before**.
+
+⚠ **`SK1033` was measured wrong before it shipped.** `if (!d.ContainsKey(k)) d[k] = Build();` calls
+`Build()` only when the key is absent; `d.TryAdd(k, Build())` calls it every time, because C#
+evaluates arguments before the call. Two of the Vixen findings mattered — one mutated a mesh, one
+built one — so the written value must now be a name or a literal. A fixture set cannot find that;
+only a tree can.
+
+⚠ **Three of the five move a declaration one scope outwards**, because C# scopes an `out var` or a
+pattern variable declared in an `if` condition to the *enclosing block*. A name in a neighbouring
+scope is invisible to a lookup at the destination and is still `CS0136`, so the guard scans the whole
+member. It over-bails, which costs a finding where the alternative costs a build.
+
+### Changed — the fix round-trip goes through the binder
+
+`EveryFix_ProducesTextThatStillParses` checks that edited text parses, which misses every fix that is
+wrong at *binding*: a pattern inside an expression tree is `CS8122` and a declaration lifted into a
+taken scope is `CS0136`, and both parse. `FixRoundTripTests` re-compiles the edited text, compares
+error counts per diagnostic id, and asserts the rule no longer fires on its own output — which
+catches a fix that is correct but is not a fix. It covers every rule in the catalogue that declares
+one and finds its analyzers by reflection.
+
+### Fixed — two defects in how the reference trees were measured
+
+- `fidelity audit --implicit-usings` supplies the global-usings file the SDK writes into `obj/`,
+  which the loader skips. Without it a tree that sets `ImplicitUsings` binds `Dictionary<,>` to an
+  error type and most of the semantic rule set goes quiet for the wrong reason: over Vixen, 195 724
+  errors against 128 833, and `SK1033` 0 findings against 5. Doc 15 § M7 records this stand-in being
+  used and never committed, which is why M7's figures were not reproducible from the repository; it
+  is a constant in the harness now.
+- Auditing a repository that has agent worktrees nested inside it counted every file once per
+  worktree — 13 743 files for Vixen's 4 681, and 1 585 971 errors for its 128 833. The measurements
+  above name the source directories explicitly. ⚠ `EnumerateSources` itself still has no
+  `.claude/worktrees` exclusion beside its `obj/`, `bin/`, `.git/` and `artifacts/` ones.
+
 ### Added — the documentation-comment sub-formatter, behind `skala format --xmldoc`
 
 ⚠ **Off by default, and off is the setting that agrees with Rider.** `jb cleanupcode` 2025.2.6 does

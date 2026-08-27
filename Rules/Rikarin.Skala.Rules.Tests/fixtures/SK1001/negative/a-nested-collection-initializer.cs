@@ -8,8 +8,5 @@ public sealed class Product {
 }
 
 public sealed class Catalogue {
-    public Product One() =>
-        new Product {
-            Tags = { "a", "b" }
-        };
+    public Product One() => new Product { Tags = { "a", "b" } };
 }

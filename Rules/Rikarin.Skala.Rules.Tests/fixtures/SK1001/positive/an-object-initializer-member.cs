@@ -8,9 +8,5 @@ public sealed class Product {
 }
 
 public sealed class Catalogue {
-    public Product One() =>
-        new Product {
-            Name = "Widget",
-            Sizes = new[] { "Small", "Medium", "Large" }
-        };
+    public Product One() => new Product { Name = "Widget", Sizes = new[] { "Small", "Medium", "Large" } };
 }

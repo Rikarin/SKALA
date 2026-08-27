@@ -107,11 +107,10 @@ public sealed class FixRoundTripTests {
         var now = ErrorsById(after, cancellation);
         var regressions = now
             .Where(entry => entry.Value > (was.TryGetValue(entry.Key, out var count) ? count : 0))
-            .Select(
-                entry => entry.Key
-                    + " ×"
-                    + (entry.Value - (was.TryGetValue(entry.Key, out var count) ? count : 0))
-                        .ToString(CultureInfo.InvariantCulture)
+            .Select(entry => entry.Key
+                + " ×"
+                + (entry.Value - (was.TryGetValue(entry.Key, out var count) ? count : 0))
+                    .ToString(CultureInfo.InvariantCulture)
             )
             .ToArray();
 

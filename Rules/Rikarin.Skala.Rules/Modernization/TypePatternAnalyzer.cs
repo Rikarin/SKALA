@@ -54,9 +54,7 @@ public sealed class TypePatternAnalyzer : DiagnosticAnalyzer {
             return;
         }
 
-        if (Unwrap(statement.Condition) is not BinaryExpressionSyntax {
-                RawKind: (int)SyntaxKind.IsExpression
-            } test
+        if (Unwrap(statement.Condition) is not BinaryExpressionSyntax { RawKind: (int)SyntaxKind.IsExpression } test
             || test.Right is not TypeSyntax tested) {
             return;
         }

@@ -11,7 +11,7 @@
 <nav><a class="brand" href="../index.html">Skala</a><a class="tab active" href="../rules/index.html">Rules</a><a class="tab" href="../options/index.html">Options</a></nav>
 <main>
 <h1>Rules</h1>
-<p class="lede"><code>SK</code> + four digits, allocated once and never re-purposed (ADR-012). 37 ids are allocated.</p>
+<p class="lede"><code>SK</code> + four digits, allocated once and never re-purposed (ADR-012). 42 ids are allocated.</p>
 <h2 id="async">Async</h2>
 <div class="scroll">
 <table>
@@ -73,10 +73,15 @@
 <table>
 <thead><tr><th>Id</th><th>Rule</th><th>Severity</th><th>Fix</th><th>Loose mode</th></tr></thead>
 <tbody>
+<tr><td><a href="SK1001.html">SK1001</a></td><td>Use a collection expression</td><td><span class="tag sev-suggestion">suggestion</span></td><td>safe</td><td>no</td></tr>
 <tr><td><a href="SK1005.html">SK1005</a></td><td>Use a file-scoped namespace</td><td><span class="tag sev-suggestion">suggestion</span></td><td>safe</td><td>yes</td></tr>
+<tr><td><a href="SK1006.html">SK1006</a></td><td>Use a <code>using</code> declaration</td><td><span class="tag sev-suggestion">suggestion</span></td><td>safe</td><td>yes</td></tr>
 <tr><td><a href="SK1010.html">SK1010</a></td><td>Use <code>is null</code> / <code>is not null</code> instead of <code>==</code> / <code>!=</code></td><td><span class="tag sev-suggestion">suggestion</span></td><td>safe</td><td>no</td></tr>
+<tr><td><a href="SK1015.html">SK1015</a></td><td>Use <code>is T t</code> instead of <code>is T</code> and a cast</td><td><span class="tag sev-suggestion">suggestion</span></td><td>safe</td><td>no</td></tr>
 <tr><td><a href="SK1020.html">SK1020</a></td><td>Use <code>ArgumentNullException.ThrowIfNull</code></td><td><span class="tag sev-suggestion">suggestion</span></td><td>safe</td><td>no</td></tr>
 <tr><td><a href="SK1030.html">SK1030</a></td><td>Use <code>??=</code></td><td><span class="tag sev-suggestion">suggestion</span></td><td>safe</td><td>yes</td></tr>
+<tr><td><a href="SK1031.html">SK1031</a></td><td>Use a null-conditional assignment</td><td><span class="tag sev-suggestion">suggestion</span></td><td>safe</td><td>no</td></tr>
+<tr><td><a href="SK1033.html">SK1033</a></td><td>Use <code>TryGetValue</code> or <code>TryAdd</code> instead of <code>ContainsKey</code> and a second lookup</td><td><span class="tag sev-suggestion">suggestion</span></td><td>safe</td><td>no</td></tr>
 <tr><td><a href="SK1034.html">SK1034</a></td><td>Use the <code>Count</code> property, not <code>Count()</code> or <code>Any()</code></td><td><span class="tag sev-suggestion">suggestion</span></td><td>safe</td><td>no</td></tr>
 <tr><td><a href="SK1035.html">SK1035</a></td><td>Use <code>Enum.GetValues&lt;T&gt;()</code></td><td><span class="tag sev-suggestion">suggestion</span></td><td>safe</td><td>no</td></tr>
 </tbody>
