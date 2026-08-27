@@ -476,7 +476,7 @@ fact about Vixen. Where Vixen does not follow a rule, Vixen changes.
 
 ## Reproducing this
 
-Every number above comes from a script in the analysis harness rather than from reading. The inputs
+Every number above comes from a script in `Testing/parity-analysis/` rather than from reading. The inputs
 are the committed `editor_config_template`, `options.json`, `rules.json` and this repository's own
 `docs/plan/08`; the two external inputs are `jb inspectcode`'s issue-type dump and Sonar's published
 rule metadata, both fetched by script.
