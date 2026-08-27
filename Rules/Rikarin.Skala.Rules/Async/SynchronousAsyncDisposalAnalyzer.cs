@@ -28,6 +28,7 @@ namespace Rikarin.Skala.Rules.Async;
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class SynchronousAsyncDisposalAnalyzer : DiagnosticAnalyzer {
     static readonly RuleInfo Rule = RuleCatalog.Get(RuleIds.AsyncDisposableDisposedSynchronously);
+
     static readonly DiagnosticDescriptor Descriptor =
         SkalaRule.Descriptor(RuleIds.AsyncDisposableDisposedSynchronously);
 
@@ -82,8 +83,8 @@ public sealed class SynchronousAsyncDisposalAnalyzer : DiagnosticAnalyzer {
         var type = statement.Declaration is { Variables.Count: > 0 } declaration
             ? TypeOfFirst(context, declaration)
             : statement.Expression is { } expression
-                ? context.SemanticModel.GetTypeInfo(expression, context.CancellationToken).Type
-                : null;
+            ? context.SemanticModel.GetTypeInfo(expression, context.CancellationToken).Type
+            : null;
 
         if (!Implements(type, asyncDisposable)) {
             return;
@@ -192,8 +193,8 @@ public sealed class SynchronousAsyncDisposalAnalyzer : DiagnosticAnalyzer {
         // `var` and the interface list lives on what `Open()` returned.
         return context.SemanticModel.GetDeclaredSymbol(declaration.Variables[0], context.CancellationToken)
             is ILocalSymbol local
-            ? local.Type
-            : null;
+                ? local.Type
+                : null;
     }
 
     static bool Implements(ITypeSymbol? type, INamedTypeSymbol asyncDisposable) {

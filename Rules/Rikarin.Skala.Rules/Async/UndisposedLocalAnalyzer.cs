@@ -240,8 +240,8 @@ public sealed class UndisposedLocalAnalyzer : DiagnosticAnalyzer {
     static bool HandsOutADisposable(SyntaxNodeAnalysisContext context, ExpressionSyntax read) {
         var produced = read.Parent is InvocationExpressionSyntax invocation
             && ReferenceEquals(invocation.Expression, read)
-            ? invocation
-            : read;
+                ? invocation
+                : read;
 
         var type = context.SemanticModel.GetTypeInfo(produced, context.CancellationToken).Type;
         if (type is null || type.SpecialType != SpecialType.None || type.TypeKind == TypeKind.Error) {
@@ -279,7 +279,8 @@ public sealed class UndisposedLocalAnalyzer : DiagnosticAnalyzer {
     /// </summary>
     static bool IsIterator(SyntaxNode body) =>
         body.DescendantNodes(static child => child is not AnonymousFunctionExpressionSyntax
-                                 and not LocalFunctionStatementSyntax)
+                and not LocalFunctionStatementSyntax
+        )
             .Any(static node => node is YieldStatementSyntax);
 
     static bool Implements(ITypeSymbol type, INamedTypeSymbol disposable) {

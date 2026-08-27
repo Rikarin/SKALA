@@ -210,7 +210,8 @@ public sealed class TaskReturnedFromUsingAnalyzer : DiagnosticAnalyzer {
 
         // An iterator cannot return a task, and a `yield` in the body means it is one.
         foreach (var node in block.DescendantNodes(static child => child is not AnonymousFunctionExpressionSyntax
-                                                       and not LocalFunctionStatementSyntax)) {
+                         and not LocalFunctionStatementSyntax
+                 )) {
             if (node is YieldStatementSyntax) {
                 return false;
             }
@@ -220,17 +221,20 @@ public sealed class TaskReturnedFromUsingAnalyzer : DiagnosticAnalyzer {
         // Adding `async` to either shape produces a fix that parses and does not compile, which is
         // the one failure a fixing tool may not have.
         foreach (var parameter in parameters.Parameters) {
-            if (context.SemanticModel.GetDeclaredSymbol(parameter, context.CancellationToken) is
-                    { Type.IsRefLikeType: true }) {
+            if (context.SemanticModel.GetDeclaredSymbol(parameter, context.CancellationToken) is {
+                    Type.IsRefLikeType: true
+                }) {
                 return false;
             }
         }
 
         foreach (var declarator in block.DescendantNodes(static child => child is not AnonymousFunctionExpressionSyntax
-                                                             and not LocalFunctionStatementSyntax)
+                         and not LocalFunctionStatementSyntax
+                 )
                      .OfType<VariableDeclaratorSyntax>()) {
-            if (context.SemanticModel.GetDeclaredSymbol(declarator, context.CancellationToken) is ILocalSymbol
-                    { Type.IsRefLikeType: true }) {
+            if (context.SemanticModel.GetDeclaredSymbol(declarator, context.CancellationToken) is ILocalSymbol {
+                    Type.IsRefLikeType: true
+                }) {
                 return false;
             }
         }
@@ -249,7 +253,8 @@ public sealed class TaskReturnedFromUsingAnalyzer : DiagnosticAnalyzer {
     /// <summary>Every <c>return</c> belonging to this body, skipping nested functions.</summary>
     static IEnumerable<ReturnStatementSyntax> Returns(BlockSyntax body) =>
         body.DescendantNodes(static child => child is not AnonymousFunctionExpressionSyntax
-                                 and not LocalFunctionStatementSyntax)
+                and not LocalFunctionStatementSyntax
+        )
             .OfType<ReturnStatementSyntax>();
 
     /// <summary>

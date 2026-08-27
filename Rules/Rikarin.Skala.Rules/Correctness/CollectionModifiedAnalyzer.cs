@@ -42,8 +42,20 @@ public sealed class CollectionModifiedAnalyzer : DiagnosticAnalyzer {
 
     /// <summary>The members that move the version counter.</summary>
     static readonly HashSet<string> Mutators = new(StringComparer.Ordinal) {
-        "Add", "AddRange", "Remove", "RemoveAt", "RemoveAll", "RemoveRange", "Insert", "InsertRange", "Clear",
-        "Enqueue", "Dequeue", "Push", "Pop", "TryAdd"
+        "Add",
+        "AddRange",
+        "Remove",
+        "RemoveAt",
+        "RemoveAll",
+        "RemoveRange",
+        "Insert",
+        "InsertRange",
+        "Clear",
+        "Enqueue",
+        "Dequeue",
+        "Push",
+        "Pop",
+        "TryAdd"
     };
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Descriptor);
@@ -123,7 +135,8 @@ public sealed class CollectionModifiedAnalyzer : DiagnosticAnalyzer {
     ) {
         var text = enumerated.ToString();
         foreach (var node in body.DescendantNodes(static child => child is not AnonymousFunctionExpressionSyntax
-                                                      and not LocalFunctionStatementSyntax)) {
+                         and not LocalFunctionStatementSyntax
+                 )) {
             if (node is not InvocationExpressionSyntax { Expression: MemberAccessExpressionSyntax access } invocation
                 || !Mutators.Contains(access.Name.Identifier.ValueText)) {
                 continue;
@@ -152,7 +165,8 @@ public sealed class CollectionModifiedAnalyzer : DiagnosticAnalyzer {
     /// </remarks>
     static bool HasAnExit(SyntaxNode body) {
         foreach (var node in body.DescendantNodes(static child => child is not AnonymousFunctionExpressionSyntax
-                                                      and not LocalFunctionStatementSyntax)) {
+                         and not LocalFunctionStatementSyntax
+                 )) {
             switch (node) {
                 case BreakStatementSyntax:
                 case ReturnStatementSyntax:

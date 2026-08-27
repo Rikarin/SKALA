@@ -73,8 +73,8 @@ public sealed class CancellationTokenForwardingAnalyzer : DiagnosticAnalyzer {
         var edit = Omitted(target, tokenType) is { } optional
             ? Append(invocation, arguments, optional.Name + ": " + available)
             : HasAppendedOverload(target, tokenType) && AllPositional(arguments, target)
-                ? Append(invocation, arguments, available)
-                : (Edit?)null;
+            ? Append(invocation, arguments, available)
+            : (Edit?)null;
 
         if (edit is null) {
             return;
@@ -92,7 +92,11 @@ public sealed class CancellationTokenForwardingAnalyzer : DiagnosticAnalyzer {
 
     readonly record struct Edit(TextSpan Span, string Text);
 
-    static Edit? Append(InvocationExpressionSyntax invocation, SeparatedSyntaxList<ArgumentSyntax> arguments, string text) {
+    static Edit? Append(
+        InvocationExpressionSyntax invocation,
+        SeparatedSyntaxList<ArgumentSyntax> arguments,
+        string text
+    ) {
         var list = invocation.ArgumentList;
         return arguments.Count == 0
             ? new Edit(new TextSpan(list.CloseParenToken.SpanStart, 0), text)
