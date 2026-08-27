@@ -11,32 +11,77 @@ green rebuilds the exact defect this harness exists to detect.
 |---|---|
 | ReSharper | 2025.2.6 |
 | base configuration | the repository export, sha256 `98ff52570e019fac` |
-| families | space, wrap |
-| options swept | 97 |
-| configurations | 206 |
-| rounds | 3 (batched by value index, 60 fixtures per invocation) |
-| `cleanupcode` invocations | 7 |
-| oracle wall clock | 1.6 min |
-| Skala wall clock | 533 ms |
-| cost per option | 1.0 s |
+| families | all |
+| options swept | 221 |
+| configurations | 495 |
+| rounds | 4 (batched by value index, 60 fixtures per invocation) |
+| `cleanupcode` invocations | 13 |
+| oracle wall clock | 4.9 min |
+| Skala wall clock | 752 ms |
+| cost per option | 1.3 s |
 
 ## Outcomes
 
 | outcome | options | meaning |
 |---|---:|---|
-| ✅ CONFORMANT | 66 | both engines moved and every value's output agrees |
-| ❌ DIVERGENT | 22 | both engines moved and at least one value's output disagrees |
+| ✅ CONFORMANT | 130 | both engines moved and every value's output agrees |
+| ❌ DIVERGENT | 43 | both engines moved and at least one value's output disagrees |
 | ❌ INERT | 0 | the oracle moved and Skala did not — the key is ignored |
-| ❌ SPURIOUS | 9 | Skala moved and the oracle did not |
-| ⚠ UNEXERCISED | 0 | **neither moved.** The fixture does not exercise the option, or it is inert |
+| ❌ SPURIOUS | 26 | Skala moved and the oracle did not |
+| ⚠ UNEXERCISED | 22 | **neither moved.** The fixture does not exercise the option, or it is inert |
 | ⚠ NO FIXTURE | 0 | the registry names no fixture the corpus has |
 
 ## Tier audit
 
-Tier A options the sweep could not substantiate: **31** of 97 swept. Each is a dilution of the tier system and must be demoted.
+Tier A options the sweep could not substantiate: **91** of 221 swept. Each is a dilution of the tier system and must be demoted.
 
 | option | outcome | fixture | reason |
 |---|---|---|---|
+| `csharp_indent_braces` | ❌ DIVERGENT | `constructs/indentation/csharp_indent_braces.cs` | outputs disagree at 2 of 2 values |
+| `csharp_new_line_before_open_brace` | ❌ SPURIOUS | `constructs/braces/csharp_new_line_before_open_brace.cs` | Skala produced 2 distinct outputs and the oracle one: Skala reacts where ReSharper does not |
+| `csharp_style_var_elsewhere` | ⚠ UNEXERCISED | `constructs/arrangement/type-inference/var-wins-when-rhs-names-the-type.cs` | neither engine's output moved across 2 values, so the fixture pins nothing |
+| `csharp_style_var_for_built_in_types` | ⚠ UNEXERCISED | `constructs/arrangement/type-inference/var-wins-when-rhs-names-the-type.cs` | neither engine's output moved across 2 values, so the fixture pins nothing |
+| `csharp_style_var_when_type_is_apparent` | ⚠ UNEXERCISED | `constructs/arrangement/type-inference/var-wins-when-rhs-names-the-type.cs` | neither engine's output moved across 2 values, so the fixture pins nothing |
+| `dotnet_style_predefined_type_for_locals_parameters_members` | ⚠ UNEXERCISED | `constructs/arrangement/redundancy/qualifiers-and-parentheses.cs` | neither engine's output moved across 2 values, so the fixture pins nothing |
+| `dotnet_style_require_accessibility_modifiers` | ⚠ UNEXERCISED | `constructs/arrangement/redundancy/qualifiers-and-parentheses.cs` | neither engine's output moved across 4 values, so the fixture pins nothing |
+| `resharper_csharp_accessor_owner_body` | ⚠ UNEXERCISED | `constructs/arrangement/body-style/accessor-owner.cs` | neither engine's output moved across 3 values, so the fixture pins nothing |
+| `resharper_csharp_align_multiline_statement_conditions` | ❌ DIVERGENT | `constructs/indentation/resharper_csharp_align_multiline_statement_conditions.cs` | outputs disagree at 1 of 2 values |
+| `resharper_csharp_blank_lines_around_accessor` | ❌ SPURIOUS | `constructs/blank-lines/resharper_csharp_blank_lines_around_accessor.cs` | Skala produced 3 distinct outputs and the oracle one: Skala reacts where ReSharper does not |
+| `resharper_csharp_blank_lines_around_auto_property` | ❌ SPURIOUS | `constructs/blank-lines/resharper_csharp_blank_lines_around_auto_property.cs` | Skala produced 2 distinct outputs and the oracle one: Skala reacts where ReSharper does not |
+| `resharper_csharp_blank_lines_around_single_line_local_method` | ❌ DIVERGENT | `constructs/blank-lines/resharper_csharp_blank_lines_around_single_line_local_method.cs` | outputs disagree at 1 of 3 values (the fixture already diverged at the base configuration) |
+| `resharper_csharp_blank_lines_around_single_line_property` | ❌ SPURIOUS | `constructs/blank-lines/resharper_csharp_blank_lines_around_single_line_property.cs` | Skala produced 3 distinct outputs and the oracle one: Skala reacts where ReSharper does not |
+| `resharper_csharp_braces_redundant` | ⚠ UNEXERCISED | `constructs/arrangement/redundancy/qualifiers-and-parentheses.cs` | neither engine's output moved across 2 values, so the fixture pins nothing |
+| `resharper_csharp_constructor_or_destructor_body` | ⚠ UNEXERCISED | `constructs/arrangement/body-style/heuristics.cs` | neither engine's output moved across 2 values, so the fixture pins nothing |
+| `resharper_csharp_default_value_when_type_evident` | ⚠ UNEXERCISED | `constructs/arrangement/type-inference/default-literal.cs` | neither engine's output moved across 2 values, so the fixture pins nothing |
+| `resharper_csharp_default_value_when_type_not_evident` | ⚠ UNEXERCISED | `constructs/arrangement/type-inference/default-literal.cs` | neither engine's output moved across 2 values, so the fixture pins nothing |
+| `resharper_csharp_empty_block_style` | ❌ DIVERGENT | `constructs/braces/resharper_csharp_empty_block_style.cs` | outputs disagree at 1 of 3 values |
+| `resharper_csharp_indent_preprocessor_if` | ❌ DIVERGENT | `constructs/indentation/resharper_csharp_indent_preprocessor_if.cs` | outputs disagree at 1 of 4 values |
+| `resharper_csharp_indent_preprocessor_other` | ❌ DIVERGENT | `constructs/indentation/resharper_csharp_indent_preprocessor_other.cs` | outputs disagree at 1 of 4 values |
+| `resharper_csharp_indent_raw_literal_string` | ❌ DIVERGENT | `constructs/trivia/resharper_csharp_indent_raw_literal_string.cs` | outputs disagree at 1 of 3 values |
+| `resharper_csharp_indent_size` | ❌ DIVERGENT | `constructs/indentation/resharper_csharp_indent_size.cs` | outputs disagree at 1 of 3 values |
+| `resharper_csharp_insert_final_newline` | ⚠ UNEXERCISED | `constructs/file/resharper_csharp_insert_final_newline.cs` | neither engine's output moved across 2 values, so the fixture pins nothing |
+| `resharper_csharp_keep_existing_list_patterns_arrangement` | ❌ DIVERGENT | `constructs/wrapping/patterns.cs` | outputs disagree at 2 of 2 values (the fixture already diverged at the base configuration) |
+| `resharper_csharp_keep_existing_property_patterns_arrangement` | ❌ DIVERGENT | `constructs/wrapping/patterns.cs` | outputs disagree at 2 of 2 values (the fixture already diverged at the base configuration) |
+| `resharper_csharp_local_function_body` | ⚠ UNEXERCISED | `constructs/arrangement/body-style/accessor-owner.cs` | neither engine's output moved across 2 values, so the fixture pins nothing |
+| `resharper_csharp_max_array_initializer_elements_on_line` | ❌ DIVERGENT | `constructs/wrapping/initializers.cs` | outputs disagree at 2 of 3 values |
+| `resharper_csharp_max_enum_members_on_line` | ❌ SPURIOUS | `constructs/breaks/enum-members.cs` | Skala produced 2 distinct outputs and the oracle one: Skala reacts where ReSharper does not |
+| `resharper_csharp_max_line_length` | ❌ DIVERGENT | `constructs/wrapping/initializers.cs` | outputs disagree at 2 of 3 values |
+| `resharper_csharp_method_or_operator_body` | ⚠ UNEXERCISED | `constructs/arrangement/body-style/heuristics.cs` | neither engine's output moved across 2 values, so the fixture pins nothing |
+| `resharper_csharp_new_line_before_while` | ❌ DIVERGENT | `constructs/braces/resharper_csharp_new_line_before_while.cs` | outputs disagree at 1 of 2 values |
+| `resharper_csharp_null_checking_pattern_style` | ⚠ UNEXERCISED | `constructs/arrangement/redundancy/null-checking-pattern.cs` | neither engine's output moved across 2 values, so the fixture pins nothing |
+| `resharper_csharp_object_creation_when_type_evident` | ⚠ UNEXERCISED | `constructs/arrangement/type-inference/new-wins-when-lhs-names-the-type.cs` | neither engine's output moved across 2 values, so the fixture pins nothing |
+| `resharper_csharp_object_creation_when_type_not_evident` | ⚠ UNEXERCISED | `constructs/arrangement/type-inference/new-wins-when-lhs-names-the-type.cs` | neither engine's output moved across 2 values, so the fixture pins nothing |
+| `resharper_csharp_place_accessor_attribute_on_same_line` | ❌ DIVERGENT | `constructs/placement/record-and-accessor-attributes.cs` | outputs disagree at 2 of 3 values |
+| `resharper_csharp_place_accessorholder_attribute_on_same_line` | ❌ DIVERGENT | `constructs/placement/attributes-on-own-line.cs` | outputs disagree at 2 of 3 values |
+| `resharper_csharp_place_comments_at_first_column` | ❌ SPURIOUS | `constructs/trivia/resharper_csharp_place_comments_at_first_column.cs` | Skala produced 2 distinct outputs and the oracle one: Skala reacts where ReSharper does not |
+| `resharper_csharp_place_method_attribute_on_same_line` | ❌ DIVERGENT | `constructs/preservation/attributes.cs` | outputs disagree at 2 of 3 values |
+| `resharper_csharp_place_simple_case_statement_on_same_line` | ❌ SPURIOUS | `constructs/blank-lines/between-switch-sections.cs` | Skala produced 2 distinct outputs and the oracle one: Skala reacts where ReSharper does not |
+| `resharper_csharp_place_simple_embedded_statement_on_same_line` | ❌ SPURIOUS | `constructs/indentation/resharper_csharp_indent_nested_for_stmt.cs` | Skala produced 2 distinct outputs and the oracle one: Skala reacts where ReSharper does not |
+| `resharper_csharp_place_simple_initializer_on_single_line` | ❌ DIVERGENT | `constructs/wrapping/initializers.cs` | outputs disagree at 1 of 2 values |
+| `resharper_csharp_place_simple_property_pattern_on_single_line` | ❌ DIVERGENT | `constructs/wrapping/patterns.cs` | outputs disagree at 2 of 2 values (the fixture already diverged at the base configuration) |
+| `resharper_csharp_place_simple_switch_expression_on_single_line` | ❌ SPURIOUS | `constructs/wrapping/switch-expression.cs` | Skala produced 2 distinct outputs and the oracle one: Skala reacts where ReSharper does not |
+| `resharper_csharp_place_type_constraints_on_same_line` | ❌ DIVERGENT | `constructs/breaks/type-constraints.cs` | outputs disagree at 1 of 2 values |
+| `resharper_csharp_sort_usings_with_system_first` | ⚠ UNEXERCISED | `constructs/arrangement/usings/sort-and-remove.cs` | neither engine's output moved across 2 values, so the fixture pins nothing |
 | `resharper_csharp_space_after_unary_operator` | ❌ DIVERGENT | `constructs/spaces/resharper_csharp_space_after_unary_operator.cs` | outputs disagree at 1 of 2 values |
 | `resharper_csharp_space_around_relational_op` | ❌ DIVERGENT | `constructs/spaces/resharper_csharp_space_around_relational_op.cs` | outputs disagree at 1 of 2 values |
 | `resharper_csharp_space_around_shift_op` | ❌ DIVERGENT | `constructs/spaces/resharper_csharp_space_around_shift_op.cs` | outputs disagree at 1 of 2 values |
@@ -47,6 +92,11 @@ Tier A options the sweep could not substantiate: **31** of 97 swept. Each is a d
 | `resharper_csharp_space_in_singleline_accessorholder` | ❌ DIVERGENT | `constructs/spaces/resharper_csharp_space_in_singleline_accessorholder.cs` | outputs disagree at 1 of 2 values |
 | `resharper_csharp_space_in_singleline_anonymous_method` | ❌ DIVERGENT | `constructs/spaces/resharper_csharp_space_in_singleline_anonymous_method.cs` | outputs disagree at 1 of 2 values |
 | `resharper_csharp_space_within_parentheses` | ❌ DIVERGENT | `constructs/spaces/resharper_csharp_space_within_parentheses.cs` | outputs disagree at 1 of 2 values |
+| `resharper_csharp_special_else_if_treatment` | ❌ DIVERGENT | `constructs/braces/resharper_csharp_special_else_if_treatment.cs` | outputs disagree at 1 of 2 values |
+| `resharper_csharp_stick_comment` | ❌ SPURIOUS | `constructs/trivia/resharper_csharp_stick_comment.cs` | Skala produced 2 distinct outputs and the oracle one: Skala reacts where ReSharper does not |
+| `resharper_csharp_use_continuous_indent_inside_initializer_braces` | ❌ SPURIOUS | `constructs/indentation/resharper_csharp_use_continuous_indent_inside_initializer_braces.cs` | Skala produced 2 distinct outputs and the oracle one: Skala reacts where ReSharper does not |
+| `resharper_csharp_use_continuous_indent_inside_parens` | ❌ SPURIOUS | `constructs/indentation/resharper_csharp_use_continuous_indent_inside_parens.cs` | Skala produced 2 distinct outputs and the oracle one: Skala reacts where ReSharper does not |
+| `resharper_csharp_use_heuristics_for_body_style` | ⚠ UNEXERCISED | `constructs/arrangement/body-style/heuristics.cs` | neither engine's output moved across 2 values, so the fixture pins nothing |
 | `resharper_csharp_wrap_after_declaration_lpar` | ❌ DIVERGENT | `constructs/preservation/lambda-parens.cs` | outputs disagree at 2 of 2 values (the fixture already diverged at the base configuration) |
 | `resharper_csharp_wrap_after_invocation_lpar` | ❌ DIVERGENT | `constructs/breaks/invocation-lpar-rpar.cs` | outputs disagree at 1 of 2 values |
 | `resharper_csharp_wrap_array_initializer_style` | ❌ DIVERGENT | `constructs/wrapping/initializers.cs` | outputs disagree at 1 of 3 values |
@@ -63,6 +113,16 @@ Tier A options the sweep could not substantiate: **31** of 97 swept. Each is a d
 | `resharper_csharp_wrap_list_pattern` | ❌ SPURIOUS | `constructs/wrapping/patterns.cs` | Skala produced 2 distinct outputs and the oracle one: Skala reacts where ReSharper does not |
 | `resharper_csharp_wrap_property_pattern` | ❌ DIVERGENT | `constructs/wrapping/patterns.cs` | outputs disagree at 3 of 3 values (the fixture already diverged at the base configuration) |
 | `resharper_csharp_wrap_switch_expression` | ❌ DIVERGENT | `constructs/breaks/switch-expression-arms.cs` | outputs disagree at 2 of 3 values |
+| `resharper_empty_string` | ⚠ UNEXERCISED | `constructs/arrangement/redundancy/empty-string.cs` | neither engine's output moved across 2 values, so the fixture pins nothing |
+| `resharper_enforce_line_ending_style` | ⚠ UNEXERCISED | `constructs/file/resharper_enforce_line_ending_style.cs` | neither engine's output moved across 2 values, so the fixture pins nothing |
+| `resharper_formatter_off_tag` | ❌ SPURIOUS | `constructs/trivia/resharper_formatter_off_tag.cs` | Skala produced 2 distinct outputs and the oracle one: Skala reacts where ReSharper does not |
+| `resharper_formatter_on_tag` | ❌ SPURIOUS | `constructs/trivia/resharper_formatter_on_tag.cs` | Skala produced 2 distinct outputs and the oracle one: Skala reacts where ReSharper does not |
+| `resharper_formatter_tags_accept_regexp` | ❌ SPURIOUS | `constructs/trivia/resharper_formatter_tags_accept_regexp.cs` | Skala produced 2 distinct outputs and the oracle one: Skala reacts where ReSharper does not |
+| `resharper_formatter_tags_enabled` | ❌ SPURIOUS | `constructs/trivia/resharper_formatter_tags_enabled.cs` | Skala produced 2 distinct outputs and the oracle one: Skala reacts where ReSharper does not |
+| `resharper_keep_existing_lambda_and_anonymous_function_parens_arrangement` | ❌ SPURIOUS | `constructs/preservation/lambda-parens.cs` | Skala produced 2 distinct outputs and the oracle one: Skala reacts where ReSharper does not |
+| `resharper_place_primary_constructor_initializer_on_same_line` | ❌ DIVERGENT | `constructs/breaks/constructor-initializer.cs` | outputs disagree at 1 of 2 values |
+| `resharper_remove_this_qualifier` | ⚠ UNEXERCISED | `constructs/arrangement/redundancy/qualifiers-and-parentheses.cs` | neither engine's output moved across 2 values, so the fixture pins nothing |
+| `resharper_sort_usings` | ⚠ UNEXERCISED | `constructs/arrangement/usings/sort-and-remove.cs` | neither engine's output moved across 2 values, so the fixture pins nothing |
 | `resharper_space_before_colon_in_ctor_initializer` | ❌ SPURIOUS | `constructs/spaces/resharper_space_before_colon_in_ctor_initializer.cs` | Skala produced 2 distinct outputs and the oracle one: Skala reacts where ReSharper does not |
 | `resharper_space_before_trailing_comment_text` | ❌ SPURIOUS | `constructs/trivia/resharper_space_before_trailing_comment_text.cs` | Skala produced 2 distinct outputs and the oracle one: Skala reacts where ReSharper does not |
 | `resharper_wrap_after_expression_lbrace` | ❌ SPURIOUS | `constructs/wrapping/initializers.cs` | Skala produced 2 distinct outputs and the oracle one: Skala reacts where ReSharper does not |
@@ -77,103 +137,227 @@ option's values; `agree` is how many of those values the two agreed on byte for 
 
 | option | tier | outcome | values | oracle | skala | agree | base | ms | fixture |
 |---|---|---|---:|---:|---:|---:|---|---:|---|
-| `resharper_csharp_space_after_attribute_colon` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 541 | `constructs/spaces/resharper_csharp_space_after_attribute_colon.cs` |
-| `resharper_csharp_space_after_attributes` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 541 | `constructs/spaces/resharper_csharp_space_after_attributes.cs` |
-| `resharper_csharp_space_after_colon_in_case` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 541 | `constructs/spaces/resharper_csharp_space_after_colon_in_case.cs` |
-| `resharper_csharp_space_after_operator_keyword` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 541 | `constructs/spaces/resharper_csharp_space_after_operator_keyword.cs` |
-| `resharper_csharp_space_after_ternary_colon` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 541 | `constructs/spaces/resharper_csharp_space_after_ternary_colon.cs` |
-| `resharper_csharp_space_after_ternary_quest` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 541 | `constructs/spaces/resharper_csharp_space_after_ternary_quest.cs` |
-| `resharper_csharp_space_after_type_parameter_constraint_colon` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 541 | `constructs/spaces/resharper_csharp_space_after_type_parameter_constraint_colon.cs` |
-| `resharper_csharp_space_around_additive_op` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 541 | `constructs/spaces/resharper_csharp_space_around_additive_op.cs` |
-| `resharper_csharp_space_around_alias_eq` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 541 | `constructs/spaces/resharper_csharp_space_around_alias_eq.cs` |
-| `resharper_csharp_space_around_assignment_op` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 541 | `constructs/spaces/resharper_csharp_space_around_assignment_op.cs` |
-| `resharper_csharp_space_around_lambda_arrow` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 541 | `constructs/spaces/resharper_csharp_space_around_lambda_arrow.cs` |
-| `resharper_csharp_space_before_array_access_brackets` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 541 | `constructs/spaces/resharper_csharp_space_before_array_access_brackets.cs` |
-| `resharper_csharp_space_before_attribute_colon` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 541 | `constructs/spaces/resharper_csharp_space_before_attribute_colon.cs` |
-| `resharper_csharp_space_before_checked_parentheses` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 541 | `constructs/spaces/resharper_csharp_space_before_checked_parentheses.cs` |
-| `resharper_csharp_space_before_colon_in_case` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 541 | `constructs/spaces/resharper_csharp_space_before_colon_in_case.cs` |
-| `resharper_csharp_space_before_default_parentheses` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 541 | `constructs/spaces/resharper_csharp_space_before_default_parentheses.cs` |
-| `resharper_csharp_space_before_empty_method_call_parentheses` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 541 | `constructs/spaces/resharper_csharp_space_before_empty_method_call_parentheses.cs` |
-| `resharper_csharp_space_before_empty_method_parentheses` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 541 | `constructs/spaces/resharper_csharp_space_before_empty_method_parentheses.cs` |
-| `resharper_csharp_space_before_method_call_parentheses` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 541 | `constructs/spaces/resharper_csharp_space_before_method_call_parentheses.cs` |
-| `resharper_csharp_space_before_method_parentheses` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 541 | `constructs/spaces/resharper_csharp_space_before_method_parentheses.cs` |
-| `resharper_csharp_space_before_nameof_parentheses` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 541 | `constructs/spaces/resharper_csharp_space_before_nameof_parentheses.cs` |
-| `resharper_csharp_space_before_nullable_mark` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 541 | `constructs/spaces/resharper_csharp_space_before_nullable_mark.cs` |
-| `resharper_csharp_space_before_pointer_asterik_declaration` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 541 | `constructs/spaces/resharper_csharp_space_before_pointer_asterik_declaration.cs` |
-| `resharper_csharp_space_before_semicolon` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 541 | `constructs/spaces/resharper_csharp_space_before_semicolon.cs` |
-| `resharper_csharp_space_before_sizeof_parentheses` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 541 | `constructs/spaces/resharper_csharp_space_before_sizeof_parentheses.cs` |
-| `resharper_csharp_space_before_ternary_colon` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 541 | `constructs/spaces/resharper_csharp_space_before_ternary_colon.cs` |
-| `resharper_csharp_space_before_ternary_quest` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 541 | `constructs/spaces/resharper_csharp_space_before_ternary_quest.cs` |
-| `resharper_csharp_space_before_trailing_comment` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 541 | `constructs/trivia/resharper_csharp_space_before_trailing_comment.cs` |
-| `resharper_csharp_space_before_type_argument_angle` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 541 | `constructs/spaces/resharper_csharp_space_before_type_argument_angle.cs` |
-| `resharper_csharp_space_before_type_parameter_angle` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 541 | `constructs/spaces/resharper_csharp_space_before_type_parameter_angle.cs` |
-| `resharper_csharp_space_before_type_parameter_constraint_colon` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 541 | `constructs/spaces/resharper_csharp_space_before_type_parameter_constraint_colon.cs` |
-| `resharper_csharp_space_before_typeof_parentheses` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 541 | `constructs/spaces/resharper_csharp_space_before_typeof_parentheses.cs` |
-| `resharper_csharp_space_between_attribute_sections` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 541 | `constructs/spaces/resharper_csharp_space_between_attribute_sections.cs` |
-| `resharper_csharp_space_between_keyword_and_expression` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 541 | `constructs/spaces/resharper_csharp_space_between_keyword_and_expression.cs` |
-| `resharper_csharp_space_between_typecast_parentheses` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 541 | `constructs/spaces/resharper_csharp_space_between_typecast_parentheses.cs` |
-| `resharper_csharp_space_near_postfix_and_prefix_op` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 541 | `constructs/spaces/resharper_csharp_space_near_postfix_and_prefix_op.cs` |
-| `resharper_csharp_space_within_array_access_brackets` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 541 | `constructs/spaces/resharper_csharp_space_within_array_access_brackets.cs` |
-| `resharper_csharp_space_within_attribute_brackets` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 541 | `constructs/spaces/resharper_csharp_space_within_attribute_brackets.cs` |
-| `resharper_csharp_space_within_empty_braces` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 541 | `constructs/spaces/resharper_csharp_space_within_empty_braces.cs` |
-| `resharper_csharp_space_within_list_pattern_brackets` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 541 | `constructs/spaces/resharper_csharp_space_within_list_pattern_brackets.cs` |
-| `resharper_csharp_space_within_single_line_array_initializer_braces` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 541 | `constructs/spaces/resharper_csharp_space_within_single_line_array_initializer_braces.cs` |
-| `resharper_csharp_space_within_slice_pattern` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 541 | `constructs/spaces/resharper_csharp_space_within_slice_pattern.cs` |
-| `resharper_csharp_space_within_type_argument_angles` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 541 | `constructs/spaces/resharper_csharp_space_within_type_argument_angles.cs` |
-| `resharper_csharp_space_within_type_parameter_angles` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 541 | `constructs/spaces/resharper_csharp_space_within_type_parameter_angles.cs` |
-| `resharper_csharp_wrap_after_dot_in_method_calls` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 541 | `constructs/wrapping/chained-calls.cs` |
-| `resharper_csharp_wrap_after_primary_constructor_declaration_lpar` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 541 | `constructs/preservation/primary-constructor-parens.cs` |
-| `resharper_csharp_wrap_after_property_in_chained_method_calls` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 541 | `constructs/wrapping/chained-calls.cs` |
-| `resharper_csharp_wrap_arguments_style` | A | ✅ CONFORMANT | 3 | 2 | 2 | 3 | = | 1449 | `constructs/blank-lines/a-top-level-program.cs` |
-| `resharper_csharp_wrap_before_binary_opsign` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 692 | `constructs/breaks/binary-operators.cs` |
-| `resharper_csharp_wrap_before_comma` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 692 | `constructs/breaks/invocation-lpar-rpar.cs` |
-| `resharper_csharp_wrap_before_first_method_call` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 692 | `constructs/wrapping/chained-calls.cs` |
-| `resharper_csharp_wrap_before_primary_constructor_declaration_rpar` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 692 | `constructs/preservation/primary-constructor-parens.cs` |
-| `resharper_csharp_wrap_before_ternary_opsigns` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 692 | `constructs/breaks/ternary.cs` |
-| `resharper_csharp_wrap_multiple_declaration_style` | A | ✅ CONFORMANT | 3 | 2 | 2 | 3 | = | 1600 | `constructs/wrapping/declarators.cs` |
-| `resharper_csharp_wrap_parameters_style` | A | ✅ CONFORMANT | 3 | 2 | 2 | 3 | = | 1600 | `constructs/blank-lines/after-a-block-statement.cs` |
-| `resharper_csharp_wrap_primary_constructor_parameters_style` | A | ✅ CONFORMANT | 3 | 2 | 2 | 3 | = | 1600 | `constructs/breaks/constructor-initializer.cs` |
-| `resharper_csharp_wrap_ternary_expr_style` | A | ✅ CONFORMANT | 3 | 2 | 2 | 3 | = | 1600 | `constructs/wrapping/ternary.cs` |
-| `resharper_space_after_cast` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 692 | `constructs/spaces/resharper_space_after_cast.cs` |
-| `resharper_space_after_colon_in_inheritance_clause` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 692 | `constructs/spaces/resharper_space_after_colon_in_inheritance_clause.cs` |
-| `resharper_space_after_comma` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 692 | `constructs/spaces/resharper_space_after_comma.cs` |
-| `resharper_space_after_keywords_in_control_flow_statements` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 692 | `constructs/spaces/resharper_space_after_keywords_in_control_flow_statements.cs` |
-| `resharper_space_after_semicolon_in_for_statement` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 692 | `constructs/spaces/resharper_space_after_semicolon_in_for_statement.cs` |
-| `resharper_space_around_member_access_operator` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 692 | `constructs/spaces/resharper_space_around_member_access_operator.cs` |
-| `resharper_space_before_colon_in_inheritance_clause` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 692 | `constructs/spaces/resharper_space_before_colon_in_inheritance_clause.cs` |
-| `resharper_space_before_comma` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 692 | `constructs/spaces/resharper_space_before_comma.cs` |
-| `resharper_space_before_semicolon_in_for_statement` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 692 | `constructs/spaces/resharper_space_before_semicolon_in_for_statement.cs` |
-| `resharper_csharp_space_after_unary_operator` | A | ❌ DIVERGENT | 2 | 2 | 2 | 1 | = | 541 | `constructs/spaces/resharper_csharp_space_after_unary_operator.cs` |
-| `resharper_csharp_space_around_relational_op` | A | ❌ DIVERGENT | 2 | 2 | 2 | 1 | = | 541 | `constructs/spaces/resharper_csharp_space_around_relational_op.cs` |
-| `resharper_csharp_space_around_shift_op` | A | ❌ DIVERGENT | 2 | 2 | 2 | 1 | = | 541 | `constructs/spaces/resharper_csharp_space_around_shift_op.cs` |
-| `resharper_csharp_space_before_array_rank_brackets` | A | ❌ DIVERGENT | 2 | 2 | 2 | 1 | = | 541 | `constructs/spaces/resharper_csharp_space_before_array_rank_brackets.cs` |
-| `resharper_csharp_space_between_accessors_in_singleline_property` | A | ❌ DIVERGENT | 2 | 2 | 2 | 1 | = | 541 | `constructs/spaces/resharper_csharp_space_between_accessors_in_singleline_property.cs` |
-| `resharper_csharp_space_in_singleline_accessorholder` | A | ❌ DIVERGENT | 2 | 2 | 2 | 1 | = | 541 | `constructs/spaces/resharper_csharp_space_in_singleline_accessorholder.cs` |
-| `resharper_csharp_space_in_singleline_anonymous_method` | A | ❌ DIVERGENT | 2 | 2 | 2 | 1 | = | 541 | `constructs/spaces/resharper_csharp_space_in_singleline_anonymous_method.cs` |
-| `resharper_csharp_space_within_parentheses` | A | ❌ DIVERGENT | 2 | 2 | 2 | 1 | = | 541 | `constructs/spaces/resharper_csharp_space_within_parentheses.cs` |
-| `resharper_csharp_wrap_after_declaration_lpar` | A | ❌ DIVERGENT | 2 | 2 | 2 | 0 | ≠ | 541 | `constructs/preservation/lambda-parens.cs` |
-| `resharper_csharp_wrap_after_invocation_lpar` | A | ❌ DIVERGENT | 2 | 2 | 2 | 1 | = | 541 | `constructs/breaks/invocation-lpar-rpar.cs` |
-| `resharper_csharp_wrap_array_initializer_style` | A | ❌ DIVERGENT | 3 | 3 | 3 | 2 | = | 1600 | `constructs/wrapping/initializers.cs` |
-| `resharper_csharp_wrap_before_arrow_with_expressions` | A | ❌ DIVERGENT | 2 | 2 | 2 | 1 | = | 692 | `constructs/breaks/switch-expression-arms.cs` |
-| `resharper_csharp_wrap_before_binary_pattern_op` | A | ❌ DIVERGENT | 2 | 2 | 2 | 0 | ≠ | 692 | `constructs/breaks/binary-patterns.cs` |
-| `resharper_csharp_wrap_before_declaration_rpar` | A | ❌ DIVERGENT | 2 | 2 | 2 | 0 | ≠ | 692 | `constructs/preservation/lambda-parens.cs` |
-| `resharper_csharp_wrap_before_extends_colon` | A | ❌ DIVERGENT | 2 | 2 | 2 | 0 | ≠ | 692 | `constructs/wrapping/base-list.cs` |
-| `resharper_csharp_wrap_before_invocation_rpar` | A | ❌ DIVERGENT | 2 | 2 | 2 | 1 | = | 692 | `constructs/breaks/invocation-lpar-rpar.cs` |
-| `resharper_csharp_wrap_chained_binary_expressions` | A | ❌ DIVERGENT | 2 | 2 | 2 | 1 | = | 692 | `constructs/wrapping/binary-chains.cs` |
-| `resharper_csharp_wrap_chained_binary_patterns` | A | ❌ DIVERGENT | 2 | 2 | 2 | 1 | = | 692 | `constructs/wrapping/binary-chains.cs` |
-| `resharper_csharp_wrap_chained_method_calls` | A | ❌ DIVERGENT | 3 | 3 | 3 | 2 | = | 1600 | `constructs/wrapping/chained-calls.cs` |
-| `resharper_csharp_wrap_extends_list_style` | A | ❌ DIVERGENT | 3 | 2 | 2 | 0 | ≠ | 1600 | `constructs/wrapping/base-list.cs` |
-| `resharper_csharp_wrap_property_pattern` | A | ❌ DIVERGENT | 3 | 2 | 2 | 0 | ≠ | 1600 | `constructs/wrapping/patterns.cs` |
-| `resharper_csharp_wrap_switch_expression` | A | ❌ DIVERGENT | 3 | 2 | 2 | 1 | = | 1600 | `constructs/breaks/switch-expression-arms.cs` |
-| `resharper_csharp_space_before_new_parentheses` | A | ❌ SPURIOUS | 2 | 1 | 2 | 1 | = | 541 | `constructs/spaces/resharper_csharp_space_before_new_parentheses.cs` |
-| `resharper_csharp_space_before_singleline_accessorholder` | A | ❌ SPURIOUS | 2 | 1 | 2 | 1 | = | 541 | `constructs/spaces/resharper_csharp_space_before_singleline_accessorholder.cs` |
-| `resharper_csharp_wrap_enum_declaration` | A | ❌ SPURIOUS | 3 | 1 | 2 | 1 | = | 1600 | `constructs/breaks/enum-members.cs` |
-| `resharper_csharp_wrap_list_pattern` | A | ❌ SPURIOUS | 3 | 1 | 2 | 0 | ≠ | 1600 | `constructs/wrapping/patterns.cs` |
-| `resharper_space_before_colon_in_ctor_initializer` | A | ❌ SPURIOUS | 2 | 1 | 2 | 1 | = | 692 | `constructs/spaces/resharper_space_before_colon_in_ctor_initializer.cs` |
-| `resharper_space_before_trailing_comment_text` | A | ❌ SPURIOUS | 2 | 1 | 2 | 1 | = | 692 | `constructs/trivia/resharper_space_before_trailing_comment_text.cs` |
-| `resharper_wrap_after_expression_lbrace` | A | ❌ SPURIOUS | 2 | 1 | 2 | 1 | = | 692 | `constructs/wrapping/initializers.cs` |
-| `resharper_wrap_before_comma_in_base_clause` | A | ❌ SPURIOUS | 2 | 1 | 2 | 0 | ≠ | 692 | `constructs/wrapping/base-list.cs` |
-| `resharper_wrap_before_expression_rbrace` | A | ❌ SPURIOUS | 2 | 1 | 2 | 1 | = | 692 | `constructs/wrapping/initializers.cs` |
+| `resharper_csharp_allow_comment_after_lbrace` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 765 | `constructs/braces/resharper_csharp_allow_comment_after_lbrace.cs` |
+| `resharper_csharp_blank_lines_after_block_statements` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 765 | `constructs/blank-lines/resharper_csharp_blank_lines_after_block_statements.cs` |
+| `resharper_csharp_blank_lines_after_case` | A | ✅ CONFORMANT | 3 | 3 | 3 | 3 | = | 1293 | `constructs/blank-lines/resharper_csharp_blank_lines_after_case.cs` |
+| `resharper_csharp_blank_lines_after_file_scoped_namespace_directive` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 765 | `constructs/blank-lines/resharper_csharp_blank_lines_after_file_scoped_namespace_directive.cs` |
+| `resharper_csharp_blank_lines_after_using_list` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 765 | `constructs/blank-lines/resharper_csharp_blank_lines_after_using_list.cs` |
+| `resharper_csharp_blank_lines_around_field` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 765 | `constructs/blank-lines/resharper_csharp_blank_lines_around_field.cs` |
+| `resharper_csharp_blank_lines_around_invocable` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 765 | `constructs/blank-lines/resharper_csharp_blank_lines_around_invocable.cs` |
+| `resharper_csharp_blank_lines_around_local_method` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 765 | `constructs/blank-lines/resharper_csharp_blank_lines_around_local_method.cs` |
+| `resharper_csharp_blank_lines_around_namespace` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 765 | `constructs/blank-lines/resharper_csharp_blank_lines_around_namespace.cs` |
+| `resharper_csharp_blank_lines_around_property` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 765 | `constructs/blank-lines/resharper_csharp_blank_lines_around_property.cs` |
+| `resharper_csharp_blank_lines_around_region` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 765 | `constructs/blank-lines/resharper_csharp_blank_lines_around_region.cs` |
+| `resharper_csharp_blank_lines_around_single_line_accessor` | A | ✅ CONFORMANT | 3 | 3 | 3 | 3 | = | 1293 | `constructs/blank-lines/resharper_csharp_blank_lines_around_single_line_accessor.cs` |
+| `resharper_csharp_blank_lines_around_single_line_auto_property` | A | ✅ CONFORMANT | 3 | 3 | 3 | 3 | = | 1293 | `constructs/blank-lines/resharper_csharp_blank_lines_around_single_line_auto_property.cs` |
+| `resharper_csharp_blank_lines_around_single_line_field` | A | ✅ CONFORMANT | 3 | 3 | 3 | 3 | = | 1293 | `constructs/blank-lines/resharper_csharp_blank_lines_around_single_line_field.cs` |
+| `resharper_csharp_blank_lines_around_single_line_invocable` | A | ✅ CONFORMANT | 3 | 3 | 3 | 3 | = | 1293 | `constructs/blank-lines/resharper_csharp_blank_lines_around_single_line_invocable.cs` |
+| `resharper_csharp_blank_lines_around_single_line_type` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 765 | `constructs/blank-lines/resharper_csharp_blank_lines_around_single_line_type.cs` |
+| `resharper_csharp_blank_lines_around_type` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 765 | `constructs/blank-lines/resharper_csharp_blank_lines_around_type.cs` |
+| `resharper_csharp_blank_lines_before_case` | A | ✅ CONFORMANT | 3 | 3 | 3 | 3 | = | 1293 | `constructs/blank-lines/resharper_csharp_blank_lines_before_case.cs` |
+| `resharper_csharp_blank_lines_before_single_line_comment` | A | ✅ CONFORMANT | 3 | 3 | 3 | 3 | = | 1293 | `constructs/blank-lines/resharper_csharp_blank_lines_before_single_line_comment.cs` |
+| `resharper_csharp_blank_lines_inside_region` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 765 | `constructs/blank-lines/resharper_csharp_blank_lines_inside_region.cs` |
+| `resharper_csharp_continuous_indent_multiplier` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 765 | `constructs/indentation/resharper_csharp_continuous_indent_multiplier.cs` |
+| `resharper_csharp_indent_inside_namespace` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 765 | `constructs/indentation/resharper_csharp_indent_inside_namespace.cs` |
+| `resharper_csharp_indent_nested_fixed_stmt` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 765 | `constructs/indentation/resharper_csharp_indent_nested_fixed_stmt.cs` |
+| `resharper_csharp_indent_nested_for_stmt` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 765 | `constructs/indentation/resharper_csharp_indent_nested_for_stmt.cs` |
+| `resharper_csharp_indent_nested_foreach_stmt` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 765 | `constructs/indentation/resharper_csharp_indent_nested_foreach_stmt.cs` |
+| `resharper_csharp_indent_nested_lock_stmt` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 765 | `constructs/indentation/resharper_csharp_indent_nested_lock_stmt.cs` |
+| `resharper_csharp_indent_nested_usings_stmt` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 765 | `constructs/indentation/resharper_csharp_indent_nested_usings_stmt.cs` |
+| `resharper_csharp_indent_nested_while_stmt` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 765 | `constructs/indentation/resharper_csharp_indent_nested_while_stmt.cs` |
+| `resharper_csharp_indent_preprocessor_region` | A | ✅ CONFORMANT | 4 | 2 | 2 | 4 | = | 5058 | `constructs/indentation/resharper_csharp_indent_preprocessor_region.cs` |
+| `resharper_csharp_indent_style` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 765 | `constructs/indentation/resharper_csharp_indent_style.cs` |
+| `resharper_csharp_indent_type_constraints` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 765 | `constructs/indentation/resharper_csharp_indent_type_constraints.cs` |
+| `resharper_csharp_keep_blank_lines_in_code` | A | ✅ CONFORMANT | 3 | 3 | 3 | 3 | = | 1293 | `constructs/blank-lines/resharper_csharp_keep_blank_lines_in_code.cs` |
+| `resharper_csharp_keep_blank_lines_in_declarations` | A | ✅ CONFORMANT | 3 | 3 | 3 | 3 | = | 1293 | `constructs/blank-lines/resharper_csharp_keep_blank_lines_in_declarations.cs` |
+| `resharper_csharp_keep_existing_attribute_arrangement` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 765 | `constructs/preservation/attributes.cs` |
+| `resharper_csharp_keep_existing_declaration_block_arrangement` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 765 | `constructs/preservation/declaration-blocks.cs` |
+| `resharper_csharp_keep_existing_declaration_parens_arrangement` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 765 | `constructs/preservation/declaration-parens.cs` |
+| `resharper_csharp_keep_existing_embedded_arrangement` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 765 | `constructs/placement/embedded-statements.cs` |
+| `resharper_csharp_keep_existing_embedded_block_arrangement` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 801 | `constructs/preservation/embedded-blocks.cs` |
+| `resharper_csharp_keep_existing_enum_arrangement` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 801 | `constructs/breaks/enum-members.cs` |
+| `resharper_csharp_keep_existing_expr_member_arrangement` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 801 | `constructs/placement/expression-bodies.cs` |
+| `resharper_csharp_keep_existing_invocation_parens_arrangement` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 801 | `constructs/preservation/invocation-parens.cs` |
+| `resharper_csharp_keep_existing_linebreaks` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 801 | `constructs/blank-lines/after-a-multiline-statement.cs` |
+| `resharper_csharp_keep_existing_primary_constructor_declaration_parens_arrangement` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 801 | `constructs/preservation/primary-constructor-single.cs` |
+| `resharper_csharp_keep_existing_switch_expression_arrangement` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 801 | `constructs/wrapping/switch-expression.cs` |
+| `resharper_csharp_max_formal_parameters_on_line` | A | ✅ CONFORMANT | 3 | 2 | 2 | 3 | = | 1328 | `constructs/wrapping/argument-caps.cs` |
+| `resharper_csharp_max_initializer_elements_on_line` | A | ✅ CONFORMANT | 3 | 2 | 2 | 3 | = | 1328 | `constructs/wrapping/initializers.cs` |
+| `resharper_csharp_max_invocation_arguments_on_line` | A | ✅ CONFORMANT | 3 | 2 | 2 | 3 | = | 1328 | `constructs/wrapping/argument-caps.cs` |
+| `resharper_csharp_max_primary_constructor_parameters_on_line` | A | ✅ CONFORMANT | 3 | 2 | 2 | 3 | = | 1328 | `constructs/wrapping/argument-caps.cs` |
+| `resharper_csharp_place_constructor_initializer_on_same_line` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 801 | `constructs/breaks/constructor-initializer.cs` |
+| `resharper_csharp_place_expr_accessor_on_single_line` | A | ✅ CONFORMANT | 3 | 2 | 2 | 3 | = | 1328 | `constructs/placement/expression-bodies.cs` |
+| `resharper_csharp_place_expr_method_on_single_line` | A | ✅ CONFORMANT | 3 | 2 | 2 | 3 | = | 1328 | `constructs/blank-lines/around-an-operator.cs` |
+| `resharper_csharp_place_expr_property_on_single_line` | A | ✅ CONFORMANT | 3 | 2 | 2 | 3 | = | 1328 | `constructs/placement/expression-bodies.cs` |
+| `resharper_csharp_place_field_attribute_on_same_line` | A | ✅ CONFORMANT | 3 | 2 | 2 | 3 | = | 1328 | `constructs/preservation/attributes.cs` |
+| `resharper_csharp_place_record_field_attribute_on_same_line` | A | ✅ CONFORMANT | 3 | 2 | 2 | 3 | = | 1328 | `constructs/placement/record-and-accessor-attributes.cs` |
+| `resharper_csharp_place_type_attribute_on_same_line` | A | ✅ CONFORMANT | 3 | 2 | 2 | 3 | = | 1328 | `constructs/placement/attributes-on-own-line.cs` |
+| `resharper_csharp_remove_blank_lines_near_braces_in_code` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 801 | `constructs/blank-lines/resharper_csharp_remove_blank_lines_near_braces_in_code.cs` |
+| `resharper_csharp_remove_blank_lines_near_braces_in_declarations` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 801 | `constructs/blank-lines/resharper_csharp_remove_blank_lines_near_braces_in_declarations.cs` |
+| `resharper_csharp_space_after_attribute_colon` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 801 | `constructs/spaces/resharper_csharp_space_after_attribute_colon.cs` |
+| `resharper_csharp_space_after_attributes` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 801 | `constructs/spaces/resharper_csharp_space_after_attributes.cs` |
+| `resharper_csharp_space_after_colon_in_case` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 801 | `constructs/spaces/resharper_csharp_space_after_colon_in_case.cs` |
+| `resharper_csharp_space_after_operator_keyword` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 801 | `constructs/spaces/resharper_csharp_space_after_operator_keyword.cs` |
+| `resharper_csharp_space_after_ternary_colon` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 801 | `constructs/spaces/resharper_csharp_space_after_ternary_colon.cs` |
+| `resharper_csharp_space_after_ternary_quest` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 801 | `constructs/spaces/resharper_csharp_space_after_ternary_quest.cs` |
+| `resharper_csharp_space_after_type_parameter_constraint_colon` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 801 | `constructs/spaces/resharper_csharp_space_after_type_parameter_constraint_colon.cs` |
+| `resharper_csharp_space_around_additive_op` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 801 | `constructs/spaces/resharper_csharp_space_around_additive_op.cs` |
+| `resharper_csharp_space_around_alias_eq` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 801 | `constructs/spaces/resharper_csharp_space_around_alias_eq.cs` |
+| `resharper_csharp_space_around_assignment_op` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 801 | `constructs/spaces/resharper_csharp_space_around_assignment_op.cs` |
+| `resharper_csharp_space_around_lambda_arrow` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 801 | `constructs/spaces/resharper_csharp_space_around_lambda_arrow.cs` |
+| `resharper_csharp_space_before_array_access_brackets` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 801 | `constructs/spaces/resharper_csharp_space_before_array_access_brackets.cs` |
+| `resharper_csharp_space_before_attribute_colon` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 801 | `constructs/spaces/resharper_csharp_space_before_attribute_colon.cs` |
+| `resharper_csharp_space_before_checked_parentheses` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 801 | `constructs/spaces/resharper_csharp_space_before_checked_parentheses.cs` |
+| `resharper_csharp_space_before_colon_in_case` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 809 | `constructs/spaces/resharper_csharp_space_before_colon_in_case.cs` |
+| `resharper_csharp_space_before_default_parentheses` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 809 | `constructs/spaces/resharper_csharp_space_before_default_parentheses.cs` |
+| `resharper_csharp_space_before_empty_method_call_parentheses` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 809 | `constructs/spaces/resharper_csharp_space_before_empty_method_call_parentheses.cs` |
+| `resharper_csharp_space_before_empty_method_parentheses` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 809 | `constructs/spaces/resharper_csharp_space_before_empty_method_parentheses.cs` |
+| `resharper_csharp_space_before_method_call_parentheses` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 809 | `constructs/spaces/resharper_csharp_space_before_method_call_parentheses.cs` |
+| `resharper_csharp_space_before_method_parentheses` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 809 | `constructs/spaces/resharper_csharp_space_before_method_parentheses.cs` |
+| `resharper_csharp_space_before_nameof_parentheses` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 809 | `constructs/spaces/resharper_csharp_space_before_nameof_parentheses.cs` |
+| `resharper_csharp_space_before_nullable_mark` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 809 | `constructs/spaces/resharper_csharp_space_before_nullable_mark.cs` |
+| `resharper_csharp_space_before_pointer_asterik_declaration` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 809 | `constructs/spaces/resharper_csharp_space_before_pointer_asterik_declaration.cs` |
+| `resharper_csharp_space_before_semicolon` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 809 | `constructs/spaces/resharper_csharp_space_before_semicolon.cs` |
+| `resharper_csharp_space_before_sizeof_parentheses` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 809 | `constructs/spaces/resharper_csharp_space_before_sizeof_parentheses.cs` |
+| `resharper_csharp_space_before_ternary_colon` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 809 | `constructs/spaces/resharper_csharp_space_before_ternary_colon.cs` |
+| `resharper_csharp_space_before_ternary_quest` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 809 | `constructs/spaces/resharper_csharp_space_before_ternary_quest.cs` |
+| `resharper_csharp_space_before_trailing_comment` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 809 | `constructs/trivia/resharper_csharp_space_before_trailing_comment.cs` |
+| `resharper_csharp_space_before_type_argument_angle` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 809 | `constructs/spaces/resharper_csharp_space_before_type_argument_angle.cs` |
+| `resharper_csharp_space_before_type_parameter_angle` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 809 | `constructs/spaces/resharper_csharp_space_before_type_parameter_angle.cs` |
+| `resharper_csharp_space_before_type_parameter_constraint_colon` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 809 | `constructs/spaces/resharper_csharp_space_before_type_parameter_constraint_colon.cs` |
+| `resharper_csharp_space_before_typeof_parentheses` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 809 | `constructs/spaces/resharper_csharp_space_before_typeof_parentheses.cs` |
+| `resharper_csharp_space_between_attribute_sections` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 809 | `constructs/spaces/resharper_csharp_space_between_attribute_sections.cs` |
+| `resharper_csharp_space_between_keyword_and_expression` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 809 | `constructs/spaces/resharper_csharp_space_between_keyword_and_expression.cs` |
+| `resharper_csharp_space_between_typecast_parentheses` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 809 | `constructs/spaces/resharper_csharp_space_between_typecast_parentheses.cs` |
+| `resharper_csharp_space_near_postfix_and_prefix_op` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 809 | `constructs/spaces/resharper_csharp_space_near_postfix_and_prefix_op.cs` |
+| `resharper_csharp_space_within_array_access_brackets` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 809 | `constructs/spaces/resharper_csharp_space_within_array_access_brackets.cs` |
+| `resharper_csharp_space_within_attribute_brackets` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 809 | `constructs/spaces/resharper_csharp_space_within_attribute_brackets.cs` |
+| `resharper_csharp_space_within_empty_braces` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 809 | `constructs/spaces/resharper_csharp_space_within_empty_braces.cs` |
+| `resharper_csharp_space_within_list_pattern_brackets` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 809 | `constructs/spaces/resharper_csharp_space_within_list_pattern_brackets.cs` |
+| `resharper_csharp_space_within_single_line_array_initializer_braces` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 809 | `constructs/spaces/resharper_csharp_space_within_single_line_array_initializer_braces.cs` |
+| `resharper_csharp_space_within_slice_pattern` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 809 | `constructs/spaces/resharper_csharp_space_within_slice_pattern.cs` |
+| `resharper_csharp_space_within_type_argument_angles` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 809 | `constructs/spaces/resharper_csharp_space_within_type_argument_angles.cs` |
+| `resharper_csharp_space_within_type_parameter_angles` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 809 | `constructs/spaces/resharper_csharp_space_within_type_parameter_angles.cs` |
+| `resharper_csharp_wrap_after_dot_in_method_calls` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 809 | `constructs/wrapping/chained-calls.cs` |
+| `resharper_csharp_wrap_after_primary_constructor_declaration_lpar` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 809 | `constructs/preservation/primary-constructor-parens.cs` |
+| `resharper_csharp_wrap_after_property_in_chained_method_calls` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 809 | `constructs/wrapping/chained-calls.cs` |
+| `resharper_csharp_wrap_arguments_style` | A | ✅ CONFORMANT | 3 | 2 | 2 | 3 | = | 1337 | `constructs/blank-lines/a-top-level-program.cs` |
+| `resharper_csharp_wrap_before_binary_opsign` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 809 | `constructs/breaks/binary-operators.cs` |
+| `resharper_csharp_wrap_before_comma` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 809 | `constructs/breaks/invocation-lpar-rpar.cs` |
+| `resharper_csharp_wrap_before_first_method_call` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 809 | `constructs/wrapping/chained-calls.cs` |
+| `resharper_csharp_wrap_before_primary_constructor_declaration_rpar` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 809 | `constructs/preservation/primary-constructor-parens.cs` |
+| `resharper_csharp_wrap_before_ternary_opsigns` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 809 | `constructs/breaks/ternary.cs` |
+| `resharper_csharp_wrap_multiple_declaration_style` | A | ✅ CONFORMANT | 3 | 2 | 2 | 3 | = | 1502 | `constructs/wrapping/declarators.cs` |
+| `resharper_csharp_wrap_parameters_style` | A | ✅ CONFORMANT | 3 | 2 | 2 | 3 | = | 1502 | `constructs/blank-lines/after-a-block-statement.cs` |
+| `resharper_csharp_wrap_primary_constructor_parameters_style` | A | ✅ CONFORMANT | 3 | 2 | 2 | 3 | = | 1502 | `constructs/breaks/constructor-initializer.cs` |
+| `resharper_csharp_wrap_ternary_expr_style` | A | ✅ CONFORMANT | 3 | 2 | 2 | 3 | = | 1502 | `constructs/wrapping/ternary.cs` |
+| `resharper_indent_break_from_case` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 974 | `constructs/indentation/resharper_indent_break_from_case.cs` |
+| `resharper_indent_switch_labels` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 974 | `constructs/indentation/resharper_indent_switch_labels.cs` |
+| `resharper_keep_user_linebreaks` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 974 | `constructs/blank-lines/after-a-multiline-statement.cs` |
+| `resharper_new_line_before_catch` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 974 | `constructs/braces/resharper_new_line_before_catch.cs` |
+| `resharper_new_line_before_else` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 974 | `constructs/braces/resharper_new_line_before_else.cs` |
+| `resharper_new_line_before_finally` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 974 | `constructs/braces/resharper_new_line_before_finally.cs` |
+| `resharper_place_single_method_argument_lambda_on_same_line` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 974 | `constructs/placement/single-lambda-argument.cs` |
+| `resharper_space_after_cast` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 974 | `constructs/spaces/resharper_space_after_cast.cs` |
+| `resharper_space_after_colon_in_inheritance_clause` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 974 | `constructs/spaces/resharper_space_after_colon_in_inheritance_clause.cs` |
+| `resharper_space_after_comma` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 974 | `constructs/spaces/resharper_space_after_comma.cs` |
+| `resharper_space_after_keywords_in_control_flow_statements` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 974 | `constructs/spaces/resharper_space_after_keywords_in_control_flow_statements.cs` |
+| `resharper_space_after_semicolon_in_for_statement` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 974 | `constructs/spaces/resharper_space_after_semicolon_in_for_statement.cs` |
+| `resharper_space_around_member_access_operator` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 974 | `constructs/spaces/resharper_space_around_member_access_operator.cs` |
+| `resharper_space_before_colon_in_inheritance_clause` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 974 | `constructs/spaces/resharper_space_before_colon_in_inheritance_clause.cs` |
+| `resharper_space_before_comma` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 974 | `constructs/spaces/resharper_space_before_comma.cs` |
+| `resharper_space_before_semicolon_in_for_statement` | A | ✅ CONFORMANT | 2 | 2 | 2 | 2 | = | 974 | `constructs/spaces/resharper_space_before_semicolon_in_for_statement.cs` |
+| `csharp_indent_braces` | A | ❌ DIVERGENT | 2 | 2 | 2 | 0 | = | 765 | `constructs/indentation/csharp_indent_braces.cs` |
+| `resharper_csharp_align_multiline_statement_conditions` | A | ❌ DIVERGENT | 2 | 2 | 2 | 1 | = | 765 | `constructs/indentation/resharper_csharp_align_multiline_statement_conditions.cs` |
+| `resharper_csharp_blank_lines_around_single_line_local_method` | A | ❌ DIVERGENT | 3 | 3 | 2 | 2 | ≠ | 1293 | `constructs/blank-lines/resharper_csharp_blank_lines_around_single_line_local_method.cs` |
+| `resharper_csharp_empty_block_style` | A | ❌ DIVERGENT | 3 | 2 | 2 | 2 | = | 1293 | `constructs/braces/resharper_csharp_empty_block_style.cs` |
+| `resharper_csharp_indent_preprocessor_if` | A | ❌ DIVERGENT | 4 | 3 | 2 | 3 | = | 5058 | `constructs/indentation/resharper_csharp_indent_preprocessor_if.cs` |
+| `resharper_csharp_indent_preprocessor_other` | A | ❌ DIVERGENT | 4 | 3 | 2 | 3 | = | 5058 | `constructs/indentation/resharper_csharp_indent_preprocessor_other.cs` |
+| `resharper_csharp_indent_raw_literal_string` | A | ❌ DIVERGENT | 3 | 3 | 2 | 2 | = | 1293 | `constructs/trivia/resharper_csharp_indent_raw_literal_string.cs` |
+| `resharper_csharp_indent_size` | A | ❌ DIVERGENT | 3 | 2 | 2 | 2 | = | 1293 | `constructs/indentation/resharper_csharp_indent_size.cs` |
+| `resharper_csharp_keep_existing_list_patterns_arrangement` | A | ❌ DIVERGENT | 2 | 2 | 2 | 0 | ≠ | 801 | `constructs/wrapping/patterns.cs` |
+| `resharper_csharp_keep_existing_property_patterns_arrangement` | A | ❌ DIVERGENT | 2 | 2 | 2 | 0 | ≠ | 801 | `constructs/wrapping/patterns.cs` |
+| `resharper_csharp_max_array_initializer_elements_on_line` | A | ❌ DIVERGENT | 3 | 2 | 2 | 1 | = | 1328 | `constructs/wrapping/initializers.cs` |
+| `resharper_csharp_max_line_length` | A | ❌ DIVERGENT | 3 | 3 | 2 | 1 | = | 1328 | `constructs/wrapping/initializers.cs` |
+| `resharper_csharp_new_line_before_while` | A | ❌ DIVERGENT | 2 | 2 | 2 | 1 | = | 801 | `constructs/braces/resharper_csharp_new_line_before_while.cs` |
+| `resharper_csharp_place_accessor_attribute_on_same_line` | A | ❌ DIVERGENT | 3 | 2 | 2 | 1 | = | 1328 | `constructs/placement/record-and-accessor-attributes.cs` |
+| `resharper_csharp_place_accessorholder_attribute_on_same_line` | A | ❌ DIVERGENT | 3 | 2 | 2 | 1 | = | 1328 | `constructs/placement/attributes-on-own-line.cs` |
+| `resharper_csharp_place_method_attribute_on_same_line` | A | ❌ DIVERGENT | 3 | 2 | 2 | 1 | = | 1328 | `constructs/preservation/attributes.cs` |
+| `resharper_csharp_place_simple_initializer_on_single_line` | A | ❌ DIVERGENT | 2 | 2 | 2 | 1 | = | 801 | `constructs/wrapping/initializers.cs` |
+| `resharper_csharp_place_simple_property_pattern_on_single_line` | A | ❌ DIVERGENT | 2 | 2 | 2 | 0 | ≠ | 801 | `constructs/wrapping/patterns.cs` |
+| `resharper_csharp_place_type_constraints_on_same_line` | A | ❌ DIVERGENT | 2 | 2 | 2 | 1 | = | 801 | `constructs/breaks/type-constraints.cs` |
+| `resharper_csharp_space_after_unary_operator` | A | ❌ DIVERGENT | 2 | 2 | 2 | 1 | = | 801 | `constructs/spaces/resharper_csharp_space_after_unary_operator.cs` |
+| `resharper_csharp_space_around_relational_op` | A | ❌ DIVERGENT | 2 | 2 | 2 | 1 | = | 801 | `constructs/spaces/resharper_csharp_space_around_relational_op.cs` |
+| `resharper_csharp_space_around_shift_op` | A | ❌ DIVERGENT | 2 | 2 | 2 | 1 | = | 801 | `constructs/spaces/resharper_csharp_space_around_shift_op.cs` |
+| `resharper_csharp_space_before_array_rank_brackets` | A | ❌ DIVERGENT | 2 | 2 | 2 | 1 | = | 801 | `constructs/spaces/resharper_csharp_space_before_array_rank_brackets.cs` |
+| `resharper_csharp_space_between_accessors_in_singleline_property` | A | ❌ DIVERGENT | 2 | 2 | 2 | 1 | = | 809 | `constructs/spaces/resharper_csharp_space_between_accessors_in_singleline_property.cs` |
+| `resharper_csharp_space_in_singleline_accessorholder` | A | ❌ DIVERGENT | 2 | 2 | 2 | 1 | = | 809 | `constructs/spaces/resharper_csharp_space_in_singleline_accessorholder.cs` |
+| `resharper_csharp_space_in_singleline_anonymous_method` | A | ❌ DIVERGENT | 2 | 2 | 2 | 1 | = | 809 | `constructs/spaces/resharper_csharp_space_in_singleline_anonymous_method.cs` |
+| `resharper_csharp_space_within_parentheses` | A | ❌ DIVERGENT | 2 | 2 | 2 | 1 | = | 809 | `constructs/spaces/resharper_csharp_space_within_parentheses.cs` |
+| `resharper_csharp_special_else_if_treatment` | A | ❌ DIVERGENT | 2 | 2 | 2 | 1 | = | 809 | `constructs/braces/resharper_csharp_special_else_if_treatment.cs` |
+| `resharper_csharp_wrap_after_declaration_lpar` | A | ❌ DIVERGENT | 2 | 2 | 2 | 0 | ≠ | 809 | `constructs/preservation/lambda-parens.cs` |
+| `resharper_csharp_wrap_after_invocation_lpar` | A | ❌ DIVERGENT | 2 | 2 | 2 | 1 | = | 809 | `constructs/breaks/invocation-lpar-rpar.cs` |
+| `resharper_csharp_wrap_array_initializer_style` | A | ❌ DIVERGENT | 3 | 3 | 3 | 2 | = | 1337 | `constructs/wrapping/initializers.cs` |
+| `resharper_csharp_wrap_before_arrow_with_expressions` | A | ❌ DIVERGENT | 2 | 2 | 2 | 1 | = | 809 | `constructs/breaks/switch-expression-arms.cs` |
+| `resharper_csharp_wrap_before_binary_pattern_op` | A | ❌ DIVERGENT | 2 | 2 | 2 | 0 | ≠ | 809 | `constructs/breaks/binary-patterns.cs` |
+| `resharper_csharp_wrap_before_declaration_rpar` | A | ❌ DIVERGENT | 2 | 2 | 2 | 0 | ≠ | 809 | `constructs/preservation/lambda-parens.cs` |
+| `resharper_csharp_wrap_before_extends_colon` | A | ❌ DIVERGENT | 2 | 2 | 2 | 0 | ≠ | 809 | `constructs/wrapping/base-list.cs` |
+| `resharper_csharp_wrap_before_invocation_rpar` | A | ❌ DIVERGENT | 2 | 2 | 2 | 1 | = | 809 | `constructs/breaks/invocation-lpar-rpar.cs` |
+| `resharper_csharp_wrap_chained_binary_expressions` | A | ❌ DIVERGENT | 2 | 2 | 2 | 1 | = | 809 | `constructs/wrapping/binary-chains.cs` |
+| `resharper_csharp_wrap_chained_binary_patterns` | A | ❌ DIVERGENT | 2 | 2 | 2 | 1 | = | 809 | `constructs/wrapping/binary-chains.cs` |
+| `resharper_csharp_wrap_chained_method_calls` | A | ❌ DIVERGENT | 3 | 3 | 3 | 2 | = | 1502 | `constructs/wrapping/chained-calls.cs` |
+| `resharper_csharp_wrap_extends_list_style` | A | ❌ DIVERGENT | 3 | 2 | 2 | 0 | ≠ | 1502 | `constructs/wrapping/base-list.cs` |
+| `resharper_csharp_wrap_property_pattern` | A | ❌ DIVERGENT | 3 | 2 | 2 | 0 | ≠ | 1502 | `constructs/wrapping/patterns.cs` |
+| `resharper_csharp_wrap_switch_expression` | A | ❌ DIVERGENT | 3 | 2 | 2 | 1 | = | 1502 | `constructs/breaks/switch-expression-arms.cs` |
+| `resharper_place_primary_constructor_initializer_on_same_line` | A | ❌ DIVERGENT | 2 | 2 | 2 | 1 | = | 974 | `constructs/breaks/constructor-initializer.cs` |
+| `csharp_new_line_before_open_brace` | A | ❌ SPURIOUS | 2 | 1 | 2 | 1 | = | 765 | `constructs/braces/csharp_new_line_before_open_brace.cs` |
+| `resharper_csharp_blank_lines_around_accessor` | A | ❌ SPURIOUS | 3 | 1 | 3 | 0 | ≠ | 1293 | `constructs/blank-lines/resharper_csharp_blank_lines_around_accessor.cs` |
+| `resharper_csharp_blank_lines_around_auto_property` | A | ❌ SPURIOUS | 2 | 1 | 2 | 0 | ≠ | 765 | `constructs/blank-lines/resharper_csharp_blank_lines_around_auto_property.cs` |
+| `resharper_csharp_blank_lines_around_single_line_property` | A | ❌ SPURIOUS | 3 | 1 | 3 | 0 | ≠ | 1293 | `constructs/blank-lines/resharper_csharp_blank_lines_around_single_line_property.cs` |
+| `resharper_csharp_max_enum_members_on_line` | A | ❌ SPURIOUS | 2 | 1 | 2 | 1 | = | 801 | `constructs/breaks/enum-members.cs` |
+| `resharper_csharp_place_comments_at_first_column` | A | ❌ SPURIOUS | 2 | 1 | 2 | 1 | = | 801 | `constructs/trivia/resharper_csharp_place_comments_at_first_column.cs` |
+| `resharper_csharp_place_simple_case_statement_on_same_line` | A | ❌ SPURIOUS | 3 | 1 | 2 | 2 | = | 1328 | `constructs/blank-lines/between-switch-sections.cs` |
+| `resharper_csharp_place_simple_embedded_statement_on_same_line` | A | ❌ SPURIOUS | 3 | 1 | 2 | 2 | = | 1328 | `constructs/indentation/resharper_csharp_indent_nested_for_stmt.cs` |
+| `resharper_csharp_place_simple_switch_expression_on_single_line` | A | ❌ SPURIOUS | 2 | 1 | 2 | 1 | = | 801 | `constructs/wrapping/switch-expression.cs` |
+| `resharper_csharp_space_before_new_parentheses` | A | ❌ SPURIOUS | 2 | 1 | 2 | 1 | = | 809 | `constructs/spaces/resharper_csharp_space_before_new_parentheses.cs` |
+| `resharper_csharp_space_before_singleline_accessorholder` | A | ❌ SPURIOUS | 2 | 1 | 2 | 1 | = | 809 | `constructs/spaces/resharper_csharp_space_before_singleline_accessorholder.cs` |
+| `resharper_csharp_stick_comment` | A | ❌ SPURIOUS | 2 | 1 | 2 | 1 | = | 809 | `constructs/trivia/resharper_csharp_stick_comment.cs` |
+| `resharper_csharp_use_continuous_indent_inside_initializer_braces` | A | ❌ SPURIOUS | 2 | 1 | 2 | 1 | = | 809 | `constructs/indentation/resharper_csharp_use_continuous_indent_inside_initializer_braces.cs` |
+| `resharper_csharp_use_continuous_indent_inside_parens` | A | ❌ SPURIOUS | 2 | 1 | 2 | 1 | = | 809 | `constructs/indentation/resharper_csharp_use_continuous_indent_inside_parens.cs` |
+| `resharper_csharp_wrap_enum_declaration` | A | ❌ SPURIOUS | 3 | 1 | 2 | 1 | = | 1502 | `constructs/breaks/enum-members.cs` |
+| `resharper_csharp_wrap_list_pattern` | A | ❌ SPURIOUS | 3 | 1 | 2 | 0 | ≠ | 1502 | `constructs/wrapping/patterns.cs` |
+| `resharper_formatter_off_tag` | A | ❌ SPURIOUS | 2 | 1 | 2 | 1 | = | 974 | `constructs/trivia/resharper_formatter_off_tag.cs` |
+| `resharper_formatter_on_tag` | A | ❌ SPURIOUS | 2 | 1 | 2 | 1 | = | 974 | `constructs/trivia/resharper_formatter_on_tag.cs` |
+| `resharper_formatter_tags_accept_regexp` | A | ❌ SPURIOUS | 2 | 1 | 2 | 1 | = | 974 | `constructs/trivia/resharper_formatter_tags_accept_regexp.cs` |
+| `resharper_formatter_tags_enabled` | A | ❌ SPURIOUS | 2 | 1 | 2 | 1 | = | 974 | `constructs/trivia/resharper_formatter_tags_enabled.cs` |
+| `resharper_keep_existing_lambda_and_anonymous_function_parens_arrangement` | A | ❌ SPURIOUS | 2 | 1 | 2 | 0 | ≠ | 974 | `constructs/preservation/lambda-parens.cs` |
+| `resharper_space_before_colon_in_ctor_initializer` | A | ❌ SPURIOUS | 2 | 1 | 2 | 1 | = | 974 | `constructs/spaces/resharper_space_before_colon_in_ctor_initializer.cs` |
+| `resharper_space_before_trailing_comment_text` | A | ❌ SPURIOUS | 2 | 1 | 2 | 1 | = | 974 | `constructs/trivia/resharper_space_before_trailing_comment_text.cs` |
+| `resharper_wrap_after_expression_lbrace` | A | ❌ SPURIOUS | 2 | 1 | 2 | 1 | = | 974 | `constructs/wrapping/initializers.cs` |
+| `resharper_wrap_before_comma_in_base_clause` | A | ❌ SPURIOUS | 2 | 1 | 2 | 0 | ≠ | 974 | `constructs/wrapping/base-list.cs` |
+| `resharper_wrap_before_expression_rbrace` | A | ❌ SPURIOUS | 2 | 1 | 2 | 1 | = | 974 | `constructs/wrapping/initializers.cs` |
+| `csharp_style_var_elsewhere` | A | ⚠ UNEXERCISED | 2 | 1 | 1 | 2 | = | 765 | `constructs/arrangement/type-inference/var-wins-when-rhs-names-the-type.cs` |
+| `csharp_style_var_for_built_in_types` | A | ⚠ UNEXERCISED | 2 | 1 | 1 | 2 | = | 765 | `constructs/arrangement/type-inference/var-wins-when-rhs-names-the-type.cs` |
+| `csharp_style_var_when_type_is_apparent` | A | ⚠ UNEXERCISED | 2 | 1 | 1 | 2 | = | 765 | `constructs/arrangement/type-inference/var-wins-when-rhs-names-the-type.cs` |
+| `dotnet_style_predefined_type_for_locals_parameters_members` | A | ⚠ UNEXERCISED | 2 | 1 | 1 | 2 | = | 765 | `constructs/arrangement/redundancy/qualifiers-and-parentheses.cs` |
+| `dotnet_style_require_accessibility_modifiers` | A | ⚠ UNEXERCISED | 4 | 1 | 1 | 4 | = | 5058 | `constructs/arrangement/redundancy/qualifiers-and-parentheses.cs` |
+| `resharper_csharp_accessor_owner_body` | A | ⚠ UNEXERCISED | 3 | 1 | 1 | 3 | = | 1293 | `constructs/arrangement/body-style/accessor-owner.cs` |
+| `resharper_csharp_braces_redundant` | A | ⚠ UNEXERCISED | 2 | 1 | 1 | 2 | = | 765 | `constructs/arrangement/redundancy/qualifiers-and-parentheses.cs` |
+| `resharper_csharp_constructor_or_destructor_body` | A | ⚠ UNEXERCISED | 2 | 1 | 1 | 2 | = | 765 | `constructs/arrangement/body-style/heuristics.cs` |
+| `resharper_csharp_default_value_when_type_evident` | A | ⚠ UNEXERCISED | 2 | 1 | 1 | 2 | = | 765 | `constructs/arrangement/type-inference/default-literal.cs` |
+| `resharper_csharp_default_value_when_type_not_evident` | A | ⚠ UNEXERCISED | 2 | 1 | 1 | 2 | = | 765 | `constructs/arrangement/type-inference/default-literal.cs` |
+| `resharper_csharp_insert_final_newline` | A | ⚠ UNEXERCISED | 2 | 1 | 1 | 2 | = | 765 | `constructs/file/resharper_csharp_insert_final_newline.cs` |
+| `resharper_csharp_local_function_body` | A | ⚠ UNEXERCISED | 2 | 1 | 1 | 2 | = | 801 | `constructs/arrangement/body-style/accessor-owner.cs` |
+| `resharper_csharp_method_or_operator_body` | A | ⚠ UNEXERCISED | 2 | 1 | 1 | 2 | = | 801 | `constructs/arrangement/body-style/heuristics.cs` |
+| `resharper_csharp_null_checking_pattern_style` | A | ⚠ UNEXERCISED | 2 | 1 | 1 | 2 | = | 801 | `constructs/arrangement/redundancy/null-checking-pattern.cs` |
+| `resharper_csharp_object_creation_when_type_evident` | A | ⚠ UNEXERCISED | 2 | 1 | 1 | 2 | = | 801 | `constructs/arrangement/type-inference/new-wins-when-lhs-names-the-type.cs` |
+| `resharper_csharp_object_creation_when_type_not_evident` | A | ⚠ UNEXERCISED | 2 | 1 | 1 | 2 | = | 801 | `constructs/arrangement/type-inference/new-wins-when-lhs-names-the-type.cs` |
+| `resharper_csharp_sort_usings_with_system_first` | A | ⚠ UNEXERCISED | 2 | 1 | 1 | 2 | = | 801 | `constructs/arrangement/usings/sort-and-remove.cs` |
+| `resharper_csharp_use_heuristics_for_body_style` | A | ⚠ UNEXERCISED | 2 | 1 | 1 | 2 | = | 809 | `constructs/arrangement/body-style/heuristics.cs` |
+| `resharper_empty_string` | A | ⚠ UNEXERCISED | 2 | 1 | 1 | 2 | = | 974 | `constructs/arrangement/redundancy/empty-string.cs` |
+| `resharper_enforce_line_ending_style` | A | ⚠ UNEXERCISED | 2 | 1 | 1 | 2 | = | 974 | `constructs/file/resharper_enforce_line_ending_style.cs` |
+| `resharper_remove_this_qualifier` | A | ⚠ UNEXERCISED | 2 | 1 | 1 | 2 | = | 974 | `constructs/arrangement/redundancy/qualifiers-and-parentheses.cs` |
+| `resharper_sort_usings` | A | ⚠ UNEXERCISED | 2 | 1 | 1 | 2 | = | 974 | `constructs/arrangement/usings/sort-and-remove.cs` |
 
 ## Not swept
 
@@ -182,4 +366,4 @@ is the same hole `UNEXERCISED` names, reached one step earlier.
 
 | reason | options |
 |---|---:|
-| no `oracle` fixture in the registry | 87 |
+| no `oracle` fixture in the registry | 299 |

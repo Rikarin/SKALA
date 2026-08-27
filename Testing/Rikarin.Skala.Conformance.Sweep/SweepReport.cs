@@ -93,9 +93,9 @@ public static class SweepReport {
         builder.AppendLine("| oracle wall clock | " + Duration(run.OracleWallClock) + " |");
         builder.AppendLine("| Skala wall clock | " + Duration(run.SkalaWallClock) + " |");
         builder.AppendLine(
-            "| cost per option | "
+            "| oracle cost per option | "
             + Duration(run.Options.Count == 0 ? TimeSpan.Zero : run.OracleWallClock / run.Options.Count)
-            + " |"
+            + " (the whole run, baseline included, over the options swept) |"
         );
         builder.AppendLine();
 
@@ -151,10 +151,19 @@ public static class SweepReport {
         builder.AppendLine();
         builder.AppendLine("`oracle` and `skala` are the number of distinct outputs each engine produced across the");
         builder.AppendLine("option's values; `agree` is how many of those values the two agreed on byte for byte.");
-        builder.AppendLine("`base` is whether the two already agreed on the fixture before the key was touched.");
+        builder.AppendLine("`base` is whether the two already agreed on the fixture before the key was touched,");
+        builder.AppendLine("and `ms` is the option's share of the rounds it appeared in — the baseline is not");
+        builder.AppendLine("attributed to any option, so these sum to less than the wall clock above.");
         builder.AppendLine();
-        builder.AppendLine("| option | tier | outcome | values | oracle | skala | agree | base | ms | fixture |");
-        builder.AppendLine("|---|---|---|---:|---:|---:|---:|---|---:|---|");
+        builder.AppendLine("⚠ `raw` marks an option whose verdict had to be read off the raw bytes because");
+        builder.AppendLine("line-ending normalisation erased its entire effect. Only the line-terminator and");
+        builder.AppendLine("final-newline options are in that position, and a normalised comparison reports");
+        builder.AppendLine("them `UNEXERCISED` for a reason that is about the instrument, not the option.");
+        builder.AppendLine();
+        builder.AppendLine(
+            "| option | tier | outcome | values | oracle | skala | agree | base | raw | ms | fixture |"
+        );
+        builder.AppendLine("|---|---|---|---:|---:|---:|---:|---|---|---:|---|");
 
         foreach (var option in run.Options
                      .OrderBy(static option => option.Outcome)
@@ -176,6 +185,8 @@ public static class SweepReport {
                 .Append(" | ")
                 .Append(option.BaselineAgrees ? "=" : "≠")
                 .Append(" | ")
+                .Append(option.LineEndingOnly ? "raw" : "")
+                .Append(" | ")
                 .Append(option.Cost.TotalMilliseconds.ToString("F0", CultureInfo.InvariantCulture))
                 .Append(" | `")
                 .Append(option.Fixture)
@@ -191,15 +202,24 @@ public static class SweepReport {
             );
             builder.AppendLine("is the same hole `UNEXERCISED` names, reached one step earlier.");
             builder.AppendLine();
-            builder.AppendLine("| reason | options |");
-            builder.AppendLine("|---|---:|");
+            builder.AppendLine("| reason | options | by tier |");
+            builder.AppendLine("|---|---:|---|");
             foreach (var group in run.Excluded
                          .GroupBy(static exclusion => exclusion.Reason, StringComparer.Ordinal)
                          .OrderByDescending(static group => group.Count())) {
+                // ⚠ Broken down by tier rather than left as one number. `resharper_int_align` — the
+                // key whose two values produce byte-identical output and which no test noticed — is
+                // in the largest of these buckets, and a bare count is exactly the shape in which it
+                // stayed invisible.
+                var tiers = group.GroupBy(static exclusion => exclusion.Info.Tier)
+                    .OrderBy(static tier => tier.Key)
+                    .Select(static tier => tier.Key + ": " + Count(tier.Count()));
                 builder.Append("| ")
                     .Append(group.Key)
                     .Append(" | ")
                     .Append(Count(group.Count()))
+                    .Append(" | ")
+                    .Append(string.Join(", ", tiers))
                     .AppendLine(" |");
             }
 

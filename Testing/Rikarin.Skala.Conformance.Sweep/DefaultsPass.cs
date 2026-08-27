@@ -225,8 +225,16 @@ public sealed class DefaultsPass {
     /// answered nothing: 197 options, zero fixtures unchanged, because every fixture was perturbed
     /// by something else in the batch.
     /// </remarks>
-    string?[] Format(IReadOnlyList<SweepCandidate> batch, Func<SweepCandidate, string> config) =>
-        ScratchTree.Format(_runner, batch, config);
+    /// <summary>
+    /// ⚠ Normalised, unlike the conformance sweep's. The defaults question is "which value reproduces
+    /// the bare run", which is a question about content; the line-ending and final-newline options
+    /// are the sweep's problem and not this pass's, and comparing raw here would make every fixture's
+    /// terminator part of every option's answer.
+    /// </summary>
+    string?[] Format(IReadOnlyList<SweepCandidate> batch, Func<SweepCandidate, string> config) => [
+        .. ScratchTree.Format(_runner, batch, config)
+            .Select(static body => body is null ? null : TextNormalisation.Normalise(body))
+    ];
 
     public static string Render(IReadOnlyList<DerivedDefault> probed) {
         var builder = new StringBuilder();

@@ -145,6 +145,9 @@ class Build : NukeBuild {
                             DotNetRun(settings => Format(settings, cli, directory / "Rikarin.Skala.Testing"));
                             DotNetRun(settings => Format(settings, cli, directory / "Rikarin.Skala.Conformance.Tests"));
                             DotNetRun(settings => Format(settings, cli, directory / "Rikarin.Skala.Conformance.Sweep"));
+                            DotNetRun(
+                                settings => Format(settings, cli, directory / "Rikarin.Skala.Conformance.Sweep.Tests")
+                            );
                             continue;
                         }
 

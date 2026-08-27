@@ -223,6 +223,9 @@ public sealed class KeyFlipSweep {
         var values = new List<SweepValue>(candidate.Values.Count);
         var oracleOutputs = new HashSet<string>(StringComparer.Ordinal);
         var skalaOutputs = new HashSet<string>(StringComparer.Ordinal);
+        var oracleRaw = new HashSet<string>(StringComparer.Ordinal);
+        var skalaRaw = new HashSet<string>(StringComparer.Ordinal);
+        var rawAgreements = 0;
 
         for (var round = 0; round < candidate.Values.Count; round++) {
             // ⚠ A missing oracle output is a hole in the measurement and never an agreement.
@@ -231,11 +234,17 @@ public sealed class KeyFlipSweep {
             var hasOracle = oracle.TryGetValue((candidate.Key, round), out var oracleText);
             var hasSkala = skala.TryGetValue((candidate.Key, round), out var skalaText);
             if (hasOracle) {
-                oracleOutputs.Add(oracleText!);
+                oracleRaw.Add(oracleText!);
+                oracleOutputs.Add(TextNormalisation.Normalise(oracleText!));
             }
 
             if (hasSkala) {
-                skalaOutputs.Add(skalaText!);
+                skalaRaw.Add(skalaText!);
+                skalaOutputs.Add(TextNormalisation.Normalise(skalaText!));
+            }
+
+            if (hasOracle && hasSkala && string.Equals(oracleText, skalaText, StringComparison.Ordinal)) {
+                rawAgreements++;
             }
 
             values.Add(
@@ -243,22 +252,42 @@ public sealed class KeyFlipSweep {
                     candidate.Values[round],
                     hasOracle ? Digest(oracleText!) : "missing",
                     hasSkala ? Digest(skalaText!) : "missing",
-                    hasOracle && hasSkala && string.Equals(oracleText, skalaText, StringComparison.Ordinal)
+                    hasOracle
+                    && hasSkala
+                    && string.Equals(
+                        TextNormalisation.Normalise(oracleText!),
+                        TextNormalisation.Normalise(skalaText!),
+                        StringComparison.Ordinal
+                    )
                 )
             );
         }
 
         var agreements = values.Count(static value => value.Agree);
+        var outcome = OptionSweep.Classify(oracleOutputs.Count, skalaOutputs.Count, agreements, values.Count);
+
+        // ⚠ Fall back to the raw bytes when — and only when — normalisation is what hid the option.
+        // `resharper_enforce_line_ending_style` and `resharper_csharp_insert_final_newline` change
+        // nothing but the line terminators and the final newline, so the normalised comparison every
+        // other measurement in this repository uses reports them Unexercised for a reason that is
+        // about the instrument. Both outputs here come from one run on one machine, so raw bytes are
+        // trustworthy in a way they are not for a fixture committed from another OS.
+        var lineEndingOnly = outcome == SweepOutcome.Unexercised && (oracleRaw.Count > 1 || skalaRaw.Count > 1);
+        if (lineEndingOnly) {
+            outcome = OptionSweep.Classify(oracleRaw.Count, skalaRaw.Count, rawAgreements, values.Count);
+        }
+
         return new OptionSweep(
             candidate.Key,
             candidate.Info.Tier,
             candidate.Info.Kind,
             candidate.Fixture.ToString(),
-            OptionSweep.Classify(oracleOutputs.Count, skalaOutputs.Count, agreements, values.Count),
+            outcome,
             values,
-            oracleOutputs.Count,
-            skalaOutputs.Count,
+            lineEndingOnly ? oracleRaw.Count : oracleOutputs.Count,
+            lineEndingOnly ? skalaRaw.Count : skalaOutputs.Count,
             baselineAgrees,
+            lineEndingOnly,
             cost
         );
     }

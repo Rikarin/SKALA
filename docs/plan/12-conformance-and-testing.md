@@ -256,6 +256,18 @@ Pairwise sweeps of the known-interacting families — `keep_existing_*` × `keep
 `wrap_*` × `max_line_length`, `align_*` × `indent_*` — are a **named second phase**. They are not
 approximated here, and a green sweep must not be read as covering them.
 
+#### ⚠ Arrangement options are excluded, and are the other named second phase
+
+The sweep runs the **format-only** profile, which is `CSReformatCode` and nothing else — so its
+output is byte-identical whatever an `arrange_*` or `csharp_style_*` key says, and on Skala's side it
+runs the formatter rather than the arranger. Sweeping those keys here would report every one of them
+as `SPURIOUS`: the harness inventing divergences rather than finding any. They are excluded by name,
+with the reason recorded in the report's "Not swept" table.
+
+Doing them properly needs the cleanup profile on the oracle's side and `CorpusArranger` on Skala's,
+which is the same substitution `OptionCoverageTests` already makes for its arrangement theories. Same
+machinery, different subject.
+
 ### 3. Properties — where the real bugs are
 
 Run over every corpus file, every commit, and over generated input nightly:

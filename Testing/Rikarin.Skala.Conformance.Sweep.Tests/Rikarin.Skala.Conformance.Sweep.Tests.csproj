@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    The sweep's own logic, tested without JetBrains.
+
+    ⚠ The sweep itself is a nightly job that shells out to `jb cleanupcode` and is never a test.
+    What is testable, and what most needs testing, is the part that turns two engines' outputs into a
+    verdict: the three-way classification the whole harness exists to get right, the registry
+    selection that must read `language` rather than the export, and the patcher that edits a tracked
+    file. None of those needs an oracle.
+  -->
+
+  <ItemGroup>
+    <ProjectReference Include="../Rikarin.Skala.Conformance.Sweep/Rikarin.Skala.Conformance.Sweep.csproj" />
+  </ItemGroup>
+
+</Project>

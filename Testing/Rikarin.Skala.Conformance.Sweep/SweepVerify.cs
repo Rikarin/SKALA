@@ -45,13 +45,8 @@ public static class SweepVerify {
         var oracle = new List<string?>();
         var skala = new List<string>();
         for (var round = 0; round < candidate.Values.Count; round++) {
-            oracle.Add(
-                ScratchTree.Format(
-                    runner,
-                    [candidate],
-                    c => sweep.ConfigFor(c.Key, c.Values[round])
-                )[0]
-            );
+            var body = ScratchTree.Format(runner, [candidate], c => sweep.ConfigFor(c.Key, c.Values[round]))[0];
+            oracle.Add(body is null ? null : TextNormalisation.Normalise(body));
 
             var resolved = OptionResolver.Resolve(
                 candidate.Fixture.Path,
@@ -67,6 +62,10 @@ public static class SweepVerify {
                         .Formatted
                 )
             );
+
+            // ⚠ Normalised on both sides here, matching the sweep's primary comparison. An option
+            // whose whole effect is the line terminator is reported by the sweep as `LineEndingOnly`
+            // and this view cannot show it; that is stated rather than papered over.
         }
 
         for (var i = 0; i < candidate.Values.Count; i++) {

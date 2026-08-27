@@ -67,6 +67,16 @@ public sealed record SweepValue(string Value, string OracleHash, string SkalaHas
 /// on before the key is touched is a pre-existing divergence that this option inherited, and
 /// blaming the option for it sends someone to the wrong code.
 /// </param>
+/// <param name="LineEndingOnly">
+/// ⚠ Whether this verdict had to be read off the raw bytes because line-ending normalisation erased
+/// the option's entire effect. Every other measurement in this repository compares normalised text,
+/// because a committed fixture may have been generated on another OS — but
+/// <c>resharper_enforce_line_ending_style</c> and <c>resharper_csharp_insert_final_newline</c>
+/// change nothing else, so a normalised comparison reports them <see cref="SweepOutcome.Unexercised"/>
+/// for a reason that is about the instrument and not about the option. Both sides of this comparison
+/// are produced in one run on one machine, so falling back to raw bytes is safe here in a way it is
+/// not for a committed fixture.
+/// </param>
 /// <param name="Cost">Amortised oracle wall-clock attributable to this option.</param>
 public sealed record OptionSweep(
     string Key,
@@ -78,6 +88,7 @@ public sealed record OptionSweep(
     int OracleDistinct,
     int SkalaDistinct,
     bool BaselineAgrees,
+    bool LineEndingOnly,
     TimeSpan Cost) {
     public int Agreements => Values.Count(static value => value.Agree);
 

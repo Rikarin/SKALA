@@ -17,7 +17,8 @@ namespace Rikarin.Skala.Conformance.Sweep;
 /// <para>
 /// ⚠ The result is index-aligned with the batch, and a slot is <see langword="null"/> when
 /// <c>cleanupcode</c> produced nothing for it. A missing output is a hole in the measurement;
-/// callers must not score it as agreement.
+/// callers must not score it as agreement. Bodies come back exactly as the tool wrote them —
+/// normalising here would erase the whole effect of the line-ending and final-newline options.
 /// </para>
 /// </remarks>
 public static class ScratchTree {
@@ -40,12 +41,13 @@ public static class ScratchTree {
                 File.Copy(batch[i].Fixture.Path, produced[i]);
             }
 
+            // ⚠ Raw, not normalised. The caller decides — and it must, because
+            // `resharper_enforce_line_ending_style` and `resharper_csharp_insert_final_newline`
+            // change nothing that survives normalisation.
             var bodies = runner.FormatInPlace(scratch.FullName, produced, OracleProfile.FormatOnly);
             var results = new string?[batch.Count];
             for (var i = 0; i < batch.Count; i++) {
-                results[i] = bodies.TryGetValue(produced[i], out var body)
-                    ? TextNormalisation.Normalise(body)
-                    : null;
+                results[i] = bodies.GetValueOrDefault(produced[i]);
             }
 
             return results;

@@ -47,10 +47,25 @@ public static class SweepPlan {
     public static SweepPlanResult Build(IReadOnlyList<string> families) {
         var candidates = new List<SweepCandidate>();
         var excluded = new List<SweepExclusion>();
+        var arrangement = Rikarin.Skala.Formatting.CSharp.Arrangement.ArrangementOptions.Implemented.ToHashSet();
 
         foreach (var info in OptionRegistry.All) {
             if (!Languages.Contains(info.Language, StringComparer.Ordinal)) {
                 excluded.Add(new SweepExclusion(info, "language is '" + info.Language + "'"));
+                continue;
+            }
+
+            // ⚠ An arrangement option is pinned by a *cleanup* fixture and read by the *arranger*,
+            // and sweeping it here would ask neither question. The format-only profile is
+            // `CSReformatCode` and nothing else, so it is byte-identical whatever an `arrange_*` key
+            // says — every one of them would come back SPURIOUS, which would be the harness inventing
+            // 20 divergences rather than finding any. They need the cleanup profile on the oracle's
+            // side and `CorpusArranger` on Skala's; that is a second pass, named in docs/plan/12, not
+            // something to approximate with the wrong profile.
+            if (arrangement.Contains(info.Id)) {
+                excluded.Add(
+                    new SweepExclusion(info, "arrangement option: needs the cleanup profile, not CSReformatCode")
+                );
                 continue;
             }
 
