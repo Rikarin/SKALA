@@ -33,6 +33,24 @@ aspiration.
 | `check` on a 5-file change, warm | < 5 s | **not measured on Vixen** | ⚠ the cache writes `.skala/cache/` into the repository under test, and this milestone was under an instruction not to write into Vixen at all |
 | `check`, Skala's own solution (24 compilations) | — | cold 6.8 s, warm **6.0 s** | ⚠ **the cache buys 12 %, not the order of magnitude the budget assumes** |
 
+⚠ **M7 re-measured `verify`, because a report said a clean tree was slower than a dirty one — 0.89–1.34 s
+clean against 0.55–0.62 s with findings. It is not.** Clean and dirty are indistinguishable; the
+variable is the cache, and the two ranges are a cold run and a warm one that were compared to each
+other. Four beds, N = 7–9 each, reference machine, Release:
+
+| | cold cache (`--no-cache`) | warm cache |
+|---|---:|---:|
+| 5-file bed, **dirty** (5 files need formatting) | 0.929 s | 0.498 s |
+| 5-file bed, **clean** (already formatted) | 0.926 s | 0.500 s |
+| 5 files of the Skala tree, dirty | 0.968 s | 0.579 s |
+| 5 files of the Skala tree, clean | 0.940 s | 0.574 s |
+
+A cold-then-warm sequence from an empty `.skala/` is 0.918 s → 0.477 s dirty and 0.919 s → 0.475 s
+clean; both write the same 2 137-byte cache file. There is no fast path that only exists when there
+is work to do. The likely origin of the original claim is M6's own note that its Vixen measurements
+ran with `--no-cache --output ""` to avoid writing into the tree under test: an uncached "clean"
+number compared against a cached "dirty" one reproduces both ranges almost exactly.
+
 ⚠ **That last row is the interesting one and it is a warning about where the time is.** The
 incremental cache removes the *analyzer* pass over unchanged files, and on a small solution the
 analyzer pass is not the cost — reading the binlog, resolving references and re-running the
@@ -46,6 +64,42 @@ whole-corpus budget is met; the warm single-file one is missed by the client's o
 which § "Startup" predicts exactly — `skala daemon status`, doing no work at all, is the same 60 ms.
 NativeAOT for the thin client is the prescribed fix and it is not done: the client still carries the
 full fallback path, and would have to stop.
+
+### ✅ M7: the warm single-file row, met
+
+The thin client exists (`Tools/Rikarin.Skala.Client`, NativeAOT, referencing only
+`Tools/Rikarin.Skala.Protocol`, which references nothing). Reference machine, 150 runs in a shell
+loop, wall time divided by N:
+
+| | measured | budget | |
+|---|---:|---:|---|
+| `/usr/bin/true` — process-start floor | 1.9 ms | — | what any process costs here |
+| AOT client, bare | **4.85 ms** | ~5 ms | § "Startup" mitigation 2 predicted this exactly |
+| full tool, bare (`daemon status`, no work) | 79.5 ms | — | this was the whole of the old warm number |
+| `format --check` one 453-line file, **warm, AOT client** | **8.65 ms** | **< 40 ms** | ✅ the agent hook |
+| `format` one file (writing), warm, AOT client | 9.15 ms | < 40 ms | ✅ |
+| `format --check` one file, warm, **full tool** | 66.9 ms | < 40 ms | ❌ — unchanged, and the reason the split was necessary |
+| `format --check` one file, cold (`SKALA_NO_DAEMON=1`) | 134 ms | 250 ms | ✅ |
+| daemon RSS after 200 formats | 160 MB | < 1.5 GB | ✅ |
+
+⚠ **The harness is part of the measurement and nearly ruined it.** A Python `subprocess` harness
+reports **38 ms for an empty NativeAOT binary** and 2 ms for `/usr/bin/true` on the same machine —
+an artefact larger than the entire budget, which for several iterations looked like the client
+being slow. A .NET `Process.Start` harness costs 10–22 ms per spawn, and draining its two pipes
+before `WaitForExit` adds another ~20 ms. Every number above is a shell loop divided by N. The CI
+assertions (`PerformanceBudgetTests`, doc 12 § "Performance tests") measure the spawn floor on each
+run with the same spawner and subtract it, because a budget of 40 ms cannot be asserted by a
+harness that costs 20.
+
+⚠ **A defect the measurement found: the daemon could not start in a deep directory at all.** The
+kernel caps a Unix domain socket path at 104 bytes (macOS) or 108 (Linux) — `struct sockaddr_un`,
+not a policy. `<repo>/.skala/daemon.sock` exceeds that for any repository nested deeper than about
+eighty-five characters, so `Daemon.Listen` threw `ArgumentOutOfRangeException`, which
+`DaemonCommands.RunAsync` did not catch: the daemon died with an unhandled exception *and exit code
+0*, and every subsequent format silently took the cold path. CI workspaces, nested monorepos, paths
+under `~/Library` and git worktrees all reach this. The socket now moves to a hashed name under the
+temp directory when it will not fit, and both ends agree because both call
+`DaemonProtocol.SocketPath`.
 
 ⚠ The daemon is also *started* lazily rather than assumed: the first single-file format in a
 repository finds no socket, does the work itself, and leaves one behind. The cold-to-warm sequence
@@ -64,12 +118,27 @@ Three mitigations, in order of effect:
 
 1. **The daemon.** The hook path is a client that connects, sends a path, receives edits. The client
    is the only thing that starts cold, and it does nothing but talk over a socket.
-2. **NativeAOT for the client.** A ~5 ms start for the thin client, which cannot reference Roslyn
-   (Roslyn is not AOT-friendly) and does not need to — it is a socket and a JSON writer. ⚠ This
-   splits the CLI into `skala` (AOT client + full fallback) and the daemon; the fallback path when no
+2. **NativeAOT for the client.** ✅ **Done in M7, and it starts in 4.85 ms.** The thin client cannot
+   reference Roslyn (Roslyn is not AOT-friendly) and does not need to — it is a socket and a JSON
+   writer. ⚠ This splits the CLI into `skala` (the AOT client, `Tools/Rikarin.Skala.Client`) and
+   `skala-tool` (the full tool, which is also what the daemon runs as); the fallback path when no
    daemon can start must still be the full tool, which means shipping both, which means the package
-   is larger. Accepted.
-3. **ReadyToRun** for the daemon and the fallback, cutting JIT cost on the first analysis.
+   is larger. Accepted. `./build.sh Native` produces the layout.
+
+   ⚠ Two consequences worth stating. **The two binaries must be able to sit in one directory**, which
+   is why the full tool was renamed — before the rename the client's `skala.dll` overwrote the
+   tool's and the tool's apphost stopped starting. And **the client's adjacency to the tool is how it
+   finds it**: `Fallback.Locate` looks beside its own executable before it looks at `SKALA_TOOL` or
+   the path, because picking up whichever `skala-tool` is on the PATH is exactly how two Skala
+   versions come to format one repository ([11](11-cli-and-integrations.md) § "Distribution").
+
+   ⚠ **Everything that is not a warm single-file format now pays one extra process start**, ~5 ms,
+   for the client's own start before it execs the tool. That is charged against commands that already
+   take seconds, never against the 40 ms one. The `dotnet tool install` distribution is unaffected:
+   NativeAOT cannot be packed as a dotnet tool, so a global-tool install is the full tool alone under
+   the command name `skala`, with the old startup cost and no client beside it to find.
+3. **ReadyToRun** for the daemon and the fallback, cutting JIT cost on the first analysis. ✅ Done in
+   M7, conditioned on a `RuntimeIdentifier` so a plain `dotnet build` does not warn.
 
 ### Parsing
 
@@ -148,14 +217,34 @@ O(total tokens) hashing plus candidate verification. The index is the memory con
 
 ## Memory
 
-The daemon's job is to hold things; its risk is holding everything. Policy:
+The daemon's job is to hold things; its risk is holding everything. Policy, ✅ implemented in M7
+(`MemoryPolicy`, `FormatService`, `RetainedCompilations`):
 
 - Parsed trees: LRU by content hash, capped at 400 MB, dropped first.
+  ⚠ **This was neither bounded by memory nor an LRU until M7.** `FormatService` held 4 096 *entries*
+  of unbounded size — over a corpus whose tail is "a handful of 20 000-line generated files"
+  (§ "Parallelism"), that is several gigabytes, and the number that was supposed to be the memory
+  bound bore no relation to memory. On overflow it called `Clear()`, defended by a comment arguing
+  that "an LRU needs a lock on the hot path to be an LRU at all". It does not: the hit path stamps a
+  monotonic tick with one interlocked write, and only the miss path — already running a full format —
+  sorts or evicts. Clearing wholesale threw away the file the developer was editing along with the
+  cold entries, which is how a warm daemon comes to feel colder than none.
 - Compilations: at most 4 retained; the rest rebuilt on demand. A Vixen-sized compilation with
-  references is 200–400 MB.
-- `MemoryPressure` handling: on `GCNotification` / RSS above the cap, drop the tree cache, then
-  compilations, then exit rather than swap. ⚠ A daemon that pushes a laptop into swap is worse than
-  no daemon, and the failure is silent and blamed on the editor.
+  references is 200–400 MB — so four is 0.8–1.6 GB and five is over the whole RSS budget.
+  ⚠ The daemon serves `format` and nothing else today, so nothing populates this store in production
+  yet; it exists with its bound and its tests because the policy's second step has to be able to drop
+  something, and a policy whose second step is a no-op has never been run.
+- `MemoryPressure` handling: on RSS above the cap, drop the tree cache, then compilations, then exit
+  rather than swap. ⚠ A daemon that pushes a laptop into swap is worse than no daemon, and the
+  failure is silent and blamed on the editor. Exiting is always safe: every command works identically
+  with `SKALA_NO_DAEMON=1`, so a daemon that is gone costs the next invocation its cold path, and the
+  lazy start brings a fresh one back.
+  ⚠ **Polled, not `GCNotification`.** `GC.RegisterForFullGCNotification` is only raised for blocking
+  gen-2 collections, which the server-GC configuration the daemon inherits mostly does not produce —
+  the notification that was meant to be the signal never arrives. A poll every five seconds costs
+  nothing on a process that is idle by design.
+- `daemon status` reports held bytes, RSS and the drop count. A budget nobody can read without a
+  profiler is a budget nobody reads.
 - The CLI (non-daemon) path streams: files are processed in batches with results written as they
   complete, so peak RSS does not scale with corpus size.
 
