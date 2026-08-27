@@ -71,7 +71,7 @@ public sealed class ConsoleTests {
             }
         );
 
-        foreach (var word in (string[])["on", "off", "1", "0", "true", "false", "yes", "no"]) {
+        foreach (var word in (string[]) ["on", "off", "1", "0", "true", "false", "yes", "no"]) {
             commands.Execute($"set {word}");
         }
 

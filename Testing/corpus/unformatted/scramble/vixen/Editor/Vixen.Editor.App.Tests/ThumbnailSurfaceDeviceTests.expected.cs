@@ -14,11 +14,8 @@ namespace Vixen.Editor.App.Tests;
 /// <summary>A thumbnail, uploaded on a real device, asserted to be the picture that went in.</summary>
 /// <remarks>
 ///     <para>
-///         ⚠
-///         <b>
-///             A thumbnail that uploaded nothing is indistinguishable from one that has not been
-///             decoded yet.
-///         </b> The grid draws a type glyph either way, the process exits zero, and there
+///         ⚠ <b>A thumbnail that uploaded nothing is indistinguishable from one that has not been
+///         decoded yet.</b> The grid draws a type glyph either way, the process exits zero, and there
 ///         is no validation error because nothing was submitted to validate — which is how
 ///         <c>ThumbnailSurface.Upload</c> came to record a barrier, a copy and a second barrier into a
 ///         command list it then dropped on the floor. <c>VulkanCommandList.Dispose</c> returns
@@ -31,11 +28,8 @@ namespace Vixen.Editor.App.Tests;
 ///         the others exactly — which corner is which.
 ///     </para>
 ///     <para>
-///         ⚠
-///         <b>
-///             Skips when there is no Vulkan, and <c>VIXEN_REQUIRE_VULKAN=1</c> turns the skip into a
-///             failure.
-///         </b> A gate that silently skips is a gate that passes, which is what makes a device
+///         ⚠ <b>Skips when there is no Vulkan, and <c>VIXEN_REQUIRE_VULKAN=1</c> turns the skip into a
+///         failure.</b> A gate that silently skips is a gate that passes, which is what makes a device
 ///         test worth less than nothing on a machine where nobody reads the skip count.
 ///     </para>
 /// </remarks>
@@ -119,11 +113,8 @@ public sealed class ThumbnailSurfaceDeviceTests {
 
     /// <summary>Uploads a picture through the surface and reads the texture back.</summary>
     /// <remarks>
-    ///     ⚠
-    ///     <b>
-    ///         <c>Upload</c> is called outside the frame and <c>Flush</c> inside it, which is exactly
-    ///         where the editor calls each.
-    ///     </b> <c>ThumbnailCache.Pump</c> runs from the application's
+    ///     ⚠ <b><c>Upload</c> is called outside the frame and <c>Flush</c> inside it, which is exactly
+    ///     where the editor calls each.</b> <c>ThumbnailCache.Pump</c> runs from the application's
     ///     update, before <c>EditorHost.Present</c> opens the frame; a test that uploaded inside the
     ///     frame would be testing an arrangement the editor does not have.
     /// </remarks>
@@ -149,7 +140,7 @@ public sealed class ThumbnailSurfaceDeviceTests {
             );
             commands.CopyTextureToBuffer(
                 new
-                TextureRegion(texture),
+                    TextureRegion(texture),
                 new(Size, Size, 1),
                 readback,
                 0
@@ -167,7 +158,7 @@ public sealed class ThumbnailSurfaceDeviceTests {
         device.WaitIdle();
 
         var
-        pixels = new byte[Bytes];
+            pixels = new byte [Bytes];
         device.Read(readback, 0, pixels);
         device.Destroy(readback);
 
@@ -186,11 +177,11 @@ public sealed class ThumbnailSurfaceDeviceTests {
     static double Mean(byte[] pixels) {
         long sum = 0;
         for (var at
-             = 0;
+                 = 0;
              at + 3 < pixels.Length;
              at += 4) {
             sum += pixels[
-                at]
+                    at]
                 + pixels[at + 1]
                 + pixels[at + 2];
         }
@@ -203,7 +194,7 @@ public sealed class ThumbnailSurfaceDeviceTests {
         byte[] pixels,
         int x,
         int
-        y,
+            y,
         int channel
     ) =>
         pixels[(((y * Size) + x) * 4) + channel];
@@ -227,10 +218,10 @@ public sealed class ThumbnailSurfaceDeviceTests {
             Assert.Equal(0, surface.Waiting);
 
             Assert.True(
-                VulkanDiagnostics.ErrorCount == 0,
-                "the upload produced validation errors, so its picture means nothing: "
-                + string.Join(Environment.NewLine, VulkanDiagnostics.Messages)
-            )
+                    VulkanDiagnostics.ErrorCount == 0,
+                    "the upload produced validation errors, so its picture means nothing: "
+                    + string.Join(Environment.NewLine, VulkanDiagnostics.Messages)
+                )
                 ;
 
             var distinct = Distinct(pixels);
@@ -314,9 +305,9 @@ public sealed class ThumbnailSurfaceDeviceTests {
         using (var device = Open()) {
             VulkanDiagnostics.Reset();
             var
-            shaders = Shaders(device);
+                shaders = Shaders(device);
             var
-            renderer = new UiRenderer(device, shaders, new RenderOutput([PixelFormat.Bgra8UNorm]));
+                renderer = new UiRenderer(device, shaders, new RenderOutput([PixelFormat.Bgra8UNorm]));
 
             using var surface = new ThumbnailSurface(device, renderer);
             var image = surface.Upload(Size, Size, Gradient());

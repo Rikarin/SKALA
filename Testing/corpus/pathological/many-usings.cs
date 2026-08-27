@@ -79,4 +79,5 @@ using System.N77;
 using System.N78;
 using System.N79;
 
-class C { }
+class C {
+}

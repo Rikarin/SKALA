@@ -4,7 +4,7 @@
 
 using Vixen.Core.Mathematics;
 using
-Vixen.Graphics;
+    Vixen.Graphics;
 using Vixen.Graphics.RenderGraph;
 using Vixen.Shaders;
 
@@ -34,7 +34,7 @@ public sealed class ComputeDispatch {
     /// <summary>The effect resolved for this dispatch.</summary>
     public required Effect Effect {
         get
-            ;
+        ;
         init;
     }
 
@@ -125,11 +125,8 @@ public sealed
     ///         three stores a texel.
     ///     </para>
     ///     <para>
-    ///         ⚠
-    ///         <b>
-    ///             Neither <see cref="Reads" /> nor <see cref="Writes" /> says this, and both say
-    ///             something false.
-    ///         </b> <see cref="Writes" /> claims a result, so a run of passes that each
+    ///         ⚠ <b>Neither <see cref="Reads" /> nor <see cref="Writes" /> says this, and both say
+    ///         something false.</b> <see cref="Writes" /> claims a result, so a run of passes that each
     ///         bind the same image reads to the graph as a frame's work overwritten before anybody
     ///         looked — which is VX2101, correctly reported against a declaration that was wrong.
     ///         <see cref="Reads" /> claims contents <em>and</em> asks for the read-only layout, and a
@@ -169,11 +166,8 @@ public sealed
     /// <summary>What fills the compose slots the compilation declares.</summary>
     /// <remarks>
     ///     <para>
-    ///         ⚠
-    ///         <b>
-    ///             The same fix <see cref="FullScreenRenderer.Composition" /> carries, and this type
-    ///             was missed when that one was made.
-    ///         </b> A compilation is the whole library and every
+    ///         ⚠ <b>The same fix <see cref="FullScreenRenderer.Composition" /> carries, and this type
+    ///         was missed when that one was made.</b> A compilation is the whole library and every
     ///         compose slot any shader in it declares must be bound — RVN2073 — so a dispatch that has
     ///         no opinion about a material's third surface feature still has to name one.
     ///         <c>MaterialCompiler.PassComposition</c>'s own remarks predict this exact case: "a
@@ -327,22 +321,22 @@ public sealed
             hasConstants
                 ? new[] {
                     DescriptorWrite.Uniform(
-                        ConstantBinding!.Value,
-                        constants!.Buffer,
+                        ConstantBinding !.Value,
+                        constants !.Buffer,
                         constants.Offset,
                         constants.Size
                     )
                 }
                 : [];
         var bufferReads = BufferReads.Select(name => buffers[name
-            ]
-        )
+                ]
+            )
             .ToArray();
         var bufferWrites = BufferWrites.Select(name => buffers[name]).ToArray();
         var textureReads = Reads.Select(name => textures[name]).ToArray();
         var textureWrites = Writes.Select(name => textures[
                 name]
-        )
+            )
             .ToArray();
         var textureBound = Bound.Select(name => textures[name]).ToArray();
         var groups = Groups;

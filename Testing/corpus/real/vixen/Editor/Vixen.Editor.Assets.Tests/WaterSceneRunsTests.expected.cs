@@ -32,11 +32,8 @@ namespace Vixen.Editor.Assets.Tests;
 ///         it is wrong.
 ///     </para>
 ///     <para>
-///         ⚠
-///         <b>
-///             <c>WaterZoneSystem</c> is the <c>IWaterSurface</c> here, and that is the point of the
-///             fixture.
-///         </b> Every buoyancy test before this handed the solver a lake built by hand in the
+///         ⚠ <b><c>WaterZoneSystem</c> is the <c>IWaterSurface</c> here, and that is the point of the
+///         fixture.</b> Every buoyancy test before this handed the solver a lake built by hand in the
 ///         test file. This hands it the fold — a component, a spline resolved by name, a field
 ///         rasterised over ground, a query cached per zone — which is the object a running game
 ///         passes and the one where a wiring mistake lives.
@@ -181,11 +178,8 @@ public sealed class WaterSceneRunsTests {
 
     /// <summary>The zone's <c>waveAsset</c> resolves to the committed file, and the sea is not flat.</summary>
     /// <remarks>
-    ///     ⚠
-    ///     <b>
-    ///         <c>UnresolvedWaves</c> is asserted to be zero, and it is the only evidence there
-    ///         is.
-    ///     </b> A zone whose <c>.vxwaves</c> did not load falls back to its inline spectrum and
+    ///     ⚠ <b><c>UnresolvedWaves</c> is asserted to be zero, and it is the only evidence there
+    ///     is.</b> A zone whose <c>.vxwaves</c> did not load falls back to its inline spectrum and
     ///     keeps drawing perfectly convincing water — the wrong sea, which on a client is a boat that
     ///     rides differently from the one on the server.
     /// </remarks>

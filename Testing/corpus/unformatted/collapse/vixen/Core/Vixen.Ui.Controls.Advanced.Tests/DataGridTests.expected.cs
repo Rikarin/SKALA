@@ -39,9 +39,8 @@ public class DataGridTests {
         return grid;
     }
 
-    static Unit[] Sample() => [
-        new Unit("Ada", 12, "Blue"), new Unit("Bob", 3, "Red"), new Unit("Cy", 12, "Blue"), new Unit("Dee", 7, "Red")
-    ];
+    static Unit[] Sample() =>
+        [new Unit("Ada", 12, "Blue"), new Unit("Bob", 3, "Red"), new Unit("Cy", 12, "Blue"), new Unit("Dee", 7, "Red")];
 
     [Fact]
     public void A_huge_table_realises_only_the_rows_that_fit() {
@@ -66,7 +65,7 @@ public class DataGridTests {
             .Cells
             .Count(static cell => cell.Column is not null
             ); // ⚠ The half doc 09 asks for and a tree does not have. Twenty thousand cells exist as data
-        // and a dozen exist as elements.
+// and a dozen exist as elements.
         Assert.True(live < 20, $"realised {live} cells");
         Assert.True(grid.Headers.Count(static header => header.Column is not null) < 20);
     }
@@ -94,7 +93,7 @@ public class DataGridTests {
         Assert.Equal("0px", frozen.GetStyle("left"));
         grid.Scroller.ScrollLeft = 500f;
         fixture.Update(); // ⚠ Plus the scroll offset, because the row it is in has been moved left by exactly that
-        // much. One line, and it is the entire freezing mechanism — there is no second scroller.
+// much. One line, and it is the entire freezing mechanism — there is no second scroller.
         Assert.Same(grid.Columns[0], grid.Rows[0].Cells[0].Column);
         Assert.Equal(
             "500px",
@@ -115,7 +114,7 @@ public class DataGridTests {
             [0, 2, 3, 1],
             Enumerable.Range(0, 4).Select(grid.ItemAt)
         ); // ⚠ The caller's list is untouched. A grid that sorted in place would silently reorder a
-        // game's entity list because somebody clicked a heading.
+// game's entity list because somebody clicked a heading.
         Assert.Equal(["Ada", "Bob", "Cy", "Dee"], units.Select(static unit => unit.Name));
     }
 
@@ -126,7 +125,7 @@ public class DataGridTests {
             fixture,
             Sample()
         ); // Ada and Cy are both level 12, and they must stay in that order both ways round — which is
-        // what makes "sort by one column, then another" a two-key sort rather than a shuffle.
+// what makes "sort by one column, then another" a two-key sort rather than a shuffle.
         grid.SortBy(grid.Columns[1]);
         Assert.Equal([0, 2], new[] { grid.ItemAt(2), grid.ItemAt(3) });
         grid.SortBy(grid.Columns[1], descending: true);
@@ -188,7 +187,7 @@ public class DataGridTests {
         var grid = Grid(fixture, Sample());
         grid.SortBy(grid.Columns[1]);
         fixture.Update(); // Sorted, the view is Bob(1), Dee(3), Ada(0), Cy(2). Shift from the first to the third must
-        // take the three that are adjacent *on screen*, not items 1, 2 and 3.
+// take the three that are adjacent *on screen*, not items 1, 2 and 3.
         grid.Select(1);
         grid.Select(0, ModifierKeys.Shift);
         Assert.Equal([0, 1, 3], grid.Selection.Order());

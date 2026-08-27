@@ -67,7 +67,7 @@ sealed class GlBindingPlan {
     ///     caller-dependent.
     /// </remarks>
     public static GlBindingPlan Build(
-        IReadOnlyList<(DescriptorSetSlot Slot, DescriptorBinding[] Bindings, string Name)> sets,
+        IReadOnlyList<(DescriptorSetSlot Slot, DescriptorBinding[]Bindings, string Name)> sets,
         int pushConstantBytes
     ) {
         var plan = new GlBindingPlan((pushConstantBytes + 15) / 16);
@@ -75,7 +75,7 @@ sealed class GlBindingPlan {
         foreach (var set in sets.OrderBy(entry => entry.Slot)) {
             foreach (var binding in (set.Bindings ?? []).OrderBy(entry => entry.Binding)) {
                 // An array binding takes a contiguous run, because that is what GLSL's
-                // `uniform sampler2D atlas[4]` occupies: units n..n+3, consecutively.
+// `uniform sampler2D atlas[4]` occupies: units n..n+3, consecutively.
                 var count = (uint)Math.Max(1, binding.Count);
                 var index = binding.Kind switch {
                     DescriptorKind.UniformBuffer or DescriptorKind.DynamicUniformBuffer => Take(ref uniforms, count),
@@ -87,8 +87,8 @@ sealed class GlBindingPlan {
                             ref samplers,
                             count
                         ), // Named rather than left to the catch-all: a layout carrying one is a caller
-                    // that skipped the capability check, and "no binding class" would send it
-                    // hunting for a GL feature that does not exist to enable.
+// that skipped the capability check, and "no binding class" would send it
+// hunting for a GL feature that does not exist to enable.
                     DescriptorKind.AccelerationStructure => throw new NotSupportedException(
                         "A descriptor set layout declares an acceleration structure on the OpenGL "
                         + "backend, which has no ray tracing. Ask Features.HasRayTracing and take "

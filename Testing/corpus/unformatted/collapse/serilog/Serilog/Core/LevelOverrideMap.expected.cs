@@ -29,11 +29,11 @@ class LevelOverrideMap {
         public LoggingLevelSwitch LevelSwitch { get; }
     } // There are two possible strategies to apply:
 
-    //   1. Keep some bookkeeping data to consult when a new context is encountered, and a concurrent dictionary
-    //        for exact matching ~ O(1), but slow and requires fences/locks; or,
-    //   2. O(n) search over the raw configuration data every time (fast for small sets of overrides).
-    // This implementation assumes there will only be a few overrides in each application, so chooses (2). This
-    // is an assumption that's up for debate.
+//   1. Keep some bookkeeping data to consult when a new context is encountered, and a concurrent dictionary
+//        for exact matching ~ O(1), but slow and requires fences/locks; or,
+//   2. O(n) search over the raw configuration data every time (fast for small sets of overrides).
+// This implementation assumes there will only be a few overrides in each application, so chooses (2). This
+// is an assumption that's up for debate.
     readonly LevelOverride[] _overrides;
 
     public LevelOverrideMap(

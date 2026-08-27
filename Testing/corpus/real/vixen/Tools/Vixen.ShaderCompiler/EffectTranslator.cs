@@ -26,11 +26,8 @@ namespace Vixen.ShaderCompiler;
 ///     </para>
 ///     <para>
 ///         <strong>The naming has to match the generator, not merely resemble it.</strong>
-///         <c>Vixen.Shaders.Generators</c> emits
-///         <c>
-///ParameterKeys.New&lt;float&gt;
-///         ("Lighting.exposure")
-///         </c> from the same reflection at build time; this produces the key a
+///         <c>Vixen.Shaders.Generators</c> emits <c>ParameterKeys.New&lt;float&gt;
+///         ("Lighting.exposure")</c> from the same reflection at build time; this produces the key a
 ///         loaded effect writes through. They are interned by name, so agreeing means they are the
 ///         same object and disagreeing means two keys for one offset — a value set through the
 ///         generated one landing nowhere.
@@ -56,36 +53,22 @@ public static class EffectTranslator {
             SourceHash = effect.SourceHash,
             Permutations = [.. Permutations(effect)],
             Composition = [.. composition.Slots.Select(slot => new EffectComposeBinding(slot.Key, slot.Value))],
-            Stages = [
-                .. effect.Modules.Select(module => new EffectStageData(
-                        Stage(module.Stage),
-                        [.. module.Bytes],
-                        module.Name
-                    )
-                )
-            ],
+            Stages = [.. effect.Modules.Select(module => new EffectStageData(Stage(module.Stage), [.. module.Bytes], module.Name))],
             Bindings = [.. Bindings(reflection)],
             ConstantBufferSize = block?.Binding.Size ?? 0,
             Parameters = [.. Parameters(effect.Name, reflection)],
             VertexInputs = [
-                .. reflection.VertexInputs.Select(input => new EffectVertexInputData(
-                        input.Name,
-                        input.Location,
-                        Kind(input.Type)
-                    )
-                )
+                .. reflection.VertexInputs.Select(input => new EffectVertexInputData(input.Name, input.Location, Kind(input.Type)))
             ],
             PushConstants = [
-                .. reflection.PushConstants.Select(range => new EffectPushConstantData(
+                .. reflection.PushConstants.Select(
+                    range => new EffectPushConstantData(
                         Stages(range.Stages),
                         range.Offset,
                         range.Size,
                         [
-                            .. range.Members.Select(member => new EffectPushConstantMember(
-                                    member.Name,
-                                    member.Offset,
-                                    member.Size
-                                )
+                            .. range.Members.Select(
+                                member => new EffectPushConstantMember(member.Name, member.Offset, member.Size)
                             )
                         ]
                     )
@@ -174,11 +157,7 @@ public static class EffectTranslator {
         }
     }
 
-    static IEnumerable<EffectParameterData> Parameters(
-        string shaderName,
-        RavenReflection reflection,
-        UniformBlock block
-    ) {
+    static IEnumerable<EffectParameterData> Parameters(string shaderName, RavenReflection reflection, UniformBlock block) {
         var slot = (DescriptorSetSlot)block.Set;
 
         foreach (var parameter in reflection.Parameters) {
@@ -197,8 +176,7 @@ public static class EffectTranslator {
             var count = ElementCount(block.Binding, parameter.Name[..marker]);
 
             for (var index = 0; index < count; index++) {
-                var name =
-                    $"{parameter.Name[..marker]}[{index.ToString(System.Globalization.CultureInfo.InvariantCulture)}]{parameter.Name[(marker + 2)..]}";
+                var name = $"{parameter.Name[..marker]}[{index.ToString(System.Globalization.CultureInfo.InvariantCulture)}]{parameter.Name[(marker + 2)..]}";
 
                 yield return new(
                     Qualified(shaderName, name),

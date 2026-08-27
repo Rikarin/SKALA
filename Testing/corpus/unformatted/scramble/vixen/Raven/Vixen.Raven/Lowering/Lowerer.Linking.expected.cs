@@ -3,13 +3,13 @@
 // SPDX-License-Identifier: Apache-2.0
 
 using
-Vixen.Raven.Artefacts;
+    Vixen.Raven.Artefacts;
 using Vixen.Raven.
-Binding;
+    Binding;
 using Vixen.Raven.IR;
 using Vixen.Raven.Symbols;
 using Vixen.Raven.
-Symbols.Metadata;
+    Symbols.Metadata;
 
 namespace Vixen.Raven.Lowering;
 
@@ -33,7 +33,8 @@ namespace Vixen.Raven.Lowering;
 ///     </para>
 /// </remarks>
 public sealed partial class Lowerer {
-    readonly Dictionary<IrFunction, string> importedFunctionNames = [];
+    readonly Dictionary<IrFunction, string> importedFunctionNames =
+        [];
 
     readonly HashSet<IrFunction> importedFunctions = [];
     readonly Dictionary<IrStructType, string> importedStructNames = [];
@@ -100,7 +101,7 @@ public sealed partial class Lowerer {
             }
 
             foreach (var
-                     (name, _, _) in MemberBodies(type, report: false)) {
+                         (name, _, _) in MemberBodies(type, report: false)) {
                 names.Add(name);
             }
         }

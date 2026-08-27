@@ -24,7 +24,8 @@ public class HasEqualityOperator {
     }
 }
 
-public class InheritsEqualityOperator : HasEqualityOperator { }
+public class InheritsEqualityOperator : HasEqualityOperator {
+}
 
 public class Plain {
     public int Value;

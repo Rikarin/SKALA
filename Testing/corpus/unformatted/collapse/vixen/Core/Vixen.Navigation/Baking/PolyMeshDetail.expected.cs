@@ -82,9 +82,7 @@ internal sealed class PolyMeshDetail {
     /// <param name="mesh">The polygons, in voxel coordinates.</param>
     /// <param name="field">The surface they were built from.</param>
     /// <param name="sampleDistance">How far apart to sample, in voxel columns. Zero or less builds nothing.</param>
-    /// <param name="maxError">
-    ///     How far the flat polygon may be from the ground before a vertex is added, in voxels of height.
-    /// </param>
+    /// <param name="maxError">How far the flat polygon may be from the ground before a vertex is added, in voxels of height.</param>
     /// <param name="walkableHeight">
     ///     The agent's height in voxels, which is how far a sample may look for its own surface. See
     ///     <see cref="TryGroundHeight" /> — this is not a tolerance, it is a proof.
@@ -120,7 +118,7 @@ internal sealed class PolyMeshDetail {
             vertices.Clear();
             vertices.AddRange(hull);
             triangles.Clear(); // A fan. Every polygon out of the merge is convex, so every diagonal from the first
-            // corner is inside it and there is nothing to decide.
+// corner is inside it and there is nothing to decide.
             for (var slot = 2; slot < count; slot++) {
                 triangles.Add(0);
                 triangles.Add(slot - 1);
@@ -139,7 +137,7 @@ internal sealed class PolyMeshDetail {
                 maxError,
                 walkableHeight
             ); // Counted in triangles, not in indices — the reader multiplies by three, and doing it
-            // twice is a read three polygons further down the array.
+// twice is a read three polygons further down the array.
             detail.Polys.Add(
                 new(detail.Vertices.Count, vertices.Count - count, detail.Triangles.Count / 3, triangles.Count / 3)
             );
@@ -192,7 +190,7 @@ internal sealed class PolyMeshDetail {
                 continue;
             } // Both in sixteenths of a voxel: the polygon's plane arrives that way because its corners
 
-            // did, and the span reports its surface the same way.
+// did, and the span reports its surface the same way.
             var surface = field.Spans[index].Surface;
             var difference = MathF.Abs(surface - expected);
             if (difference < best) {
@@ -274,9 +272,7 @@ internal sealed class PolyMeshDetail {
         }
     }
 
-    /// <summary>
-    ///     Adds vertices inside the polygon, worst first, until nothing is out by more than the tolerance.
-    /// </summary>
+    /// <summary>Adds vertices inside the polygon, worst first, until nothing is out by more than the tolerance.</summary>
     static void RefineInterior(
         CompactHeightfield field,
         List<Vector3> vertices,
@@ -299,7 +295,7 @@ internal sealed class PolyMeshDetail {
             maximumZ = MathF.Max(maximumZ, corner.Z);
         } // Anchored to a multiple of the spacing rather than to the polygon's own corner, so that two
 
-        // polygons over the same ground sample the same places and describe it the same way.
+// polygons over the same ground sample the same places and describe it the same way.
         for (var z = MathF.Ceiling(minimumZ / sampleDistance) * sampleDistance; z <= maximumZ; z += sampleDistance) {
             for (var x = MathF.Ceiling(minimumX / sampleDistance) * sampleDistance;
                  x <= maximumX;
@@ -388,7 +384,7 @@ internal sealed class PolyMeshDetail {
                 var opposite = triangles[triangle + ((edge + 2) % 3)];
                 var added = vertices.Count;
                 vertices.Add(point); // The triangle keeps its winding: the slot that held the far end of the split edge
-                // now holds the new vertex, and the other half is appended.
+// now holds the new vertex, and the other half is appended.
                 triangles[triangle + ((edge + 1) % 3)] = added;
                 triangles.AddRange([added, to, opposite]);
                 return;
@@ -474,7 +470,7 @@ internal sealed class PolyMeshDetail {
                         continue;
                     } // The quadrilateral has to be convex, or the flip produces two triangles that
 
-                    // overlap instead of two that tile it.
+// overlap instead of two that tile it.
                     if (Side(vertices[apex], vertices[from], vertices[far]) <= 0
                         || Side(vertices[apex], vertices[far], vertices[to]) <= 0) {
                         continue;

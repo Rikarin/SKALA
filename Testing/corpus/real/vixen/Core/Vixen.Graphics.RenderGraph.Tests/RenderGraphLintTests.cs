@@ -35,23 +35,17 @@ public sealed class RenderGraphLintTests : IDisposable {
     public void ADiscardedWriteIsWarnedAboutOnce() {
         var shared = graph.CreateTexture(Target("shared"));
 
-        graph.AddPass(
-            "producer",
-            pass => {
-                pass.ColourAttachment(shared);
-                pass.SideEffect();
-                pass.Execute(_ => { });
-            }
-        );
+        graph.AddPass("producer", pass => {
+            pass.ColourAttachment(shared);
+            pass.SideEffect();
+            pass.Execute(_ => { });
+        });
 
-        graph.AddPass(
-            "overwriter",
-            pass => {
-                pass.ColourAttachment(shared, LoadAction.Clear);
-                pass.SideEffect();
-                pass.Execute(_ => { });
-            }
-        );
+        graph.AddPass("overwriter", pass => {
+            pass.ColourAttachment(shared, LoadAction.Clear);
+            pass.SideEffect();
+            pass.Execute(_ => { });
+        });
 
         graph.Compile();
 
@@ -72,23 +66,17 @@ public sealed class RenderGraphLintTests : IDisposable {
     public void ALoadedOverwriteIsNotAWarning() {
         var shared = graph.CreateTexture(Target("shared"));
 
-        graph.AddPass(
-            "producer",
-            pass => {
-                pass.ColourAttachment(shared);
-                pass.SideEffect();
-                pass.Execute(_ => { });
-            }
-        );
+        graph.AddPass("producer", pass => {
+            pass.ColourAttachment(shared);
+            pass.SideEffect();
+            pass.Execute(_ => { });
+        });
 
-        graph.AddPass(
-            "accumulator",
-            pass => {
-                pass.ColourAttachment(shared, LoadAction.Load);
-                pass.SideEffect();
-                pass.Execute(_ => { });
-            }
-        );
+        graph.AddPass("accumulator", pass => {
+            pass.ColourAttachment(shared, LoadAction.Load);
+            pass.SideEffect();
+            pass.Execute(_ => { });
+        });
 
         graph.Compile();
 
@@ -104,32 +92,23 @@ public sealed class RenderGraphLintTests : IDisposable {
         var shared = graph.CreateTexture(Target("shared"));
         var derived = graph.CreateTexture(Target("derived"));
 
-        graph.AddPass(
-            "producer",
-            pass => {
-                pass.ColourAttachment(shared);
-                pass.Execute(_ => { });
-            }
-        );
+        graph.AddPass("producer", pass => {
+            pass.ColourAttachment(shared);
+            pass.Execute(_ => { });
+        });
 
-        graph.AddPass(
-            "reader",
-            pass => {
-                pass.Reads(shared);
-                pass.ColourAttachment(derived);
-                pass.SideEffect();
-                pass.Execute(_ => { });
-            }
-        );
+        graph.AddPass("reader", pass => {
+            pass.Reads(shared);
+            pass.ColourAttachment(derived);
+            pass.SideEffect();
+            pass.Execute(_ => { });
+        });
 
-        graph.AddPass(
-            "recycler",
-            pass => {
-                pass.ColourAttachment(shared, LoadAction.Clear);
-                pass.SideEffect();
-                pass.Execute(_ => { });
-            }
-        );
+        graph.AddPass("recycler", pass => {
+            pass.ColourAttachment(shared, LoadAction.Clear);
+            pass.SideEffect();
+            pass.Execute(_ => { });
+        });
 
         graph.Compile();
 
@@ -147,23 +126,17 @@ public sealed class RenderGraphLintTests : IDisposable {
 
             var shared = graph.CreateTexture(Target("shared"));
 
-            graph.AddPass(
-                "producer",
-                pass => {
-                    pass.ColourAttachment(shared);
-                    pass.SideEffect();
-                    pass.Execute(_ => { });
-                }
-            );
+            graph.AddPass("producer", pass => {
+                pass.ColourAttachment(shared);
+                pass.SideEffect();
+                pass.Execute(_ => { });
+            });
 
-            graph.AddPass(
-                "overwriter",
-                pass => {
-                    pass.ColourAttachment(shared, LoadAction.Clear);
-                    pass.SideEffect();
-                    pass.Execute(_ => { });
-                }
-            );
+            graph.AddPass("overwriter", pass => {
+                pass.ColourAttachment(shared, LoadAction.Clear);
+                pass.SideEffect();
+                pass.Execute(_ => { });
+            });
 
             graph.Compile();
         }

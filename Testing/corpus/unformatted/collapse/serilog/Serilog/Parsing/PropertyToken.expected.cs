@@ -16,21 +16,21 @@
 namespace Serilog.Parsing;
 
 /// <summary>
-///     A message template token representing a log event property.
+/// A message template token representing a log event property.
 /// </summary>
 public sealed class PropertyToken : MessageTemplateToken {
     readonly int? _position;
 
     /// <summary>
-    ///     Construct a <see cref="PropertyToken" />.
+    /// Construct a <see cref="PropertyToken"/>.
     /// </summary>
     /// <param name="propertyName">The name of the property.</param>
     /// <param name="rawText">The token as it appears in the message template.</param>
     /// <param name="format">The format applied to the property, if any.</param>
     /// <param name="alignment">The alignment applied to the property, if any.</param>
     /// <param name="destructuring">The destructuring strategy applied to the property, if any.</param>
-    /// <exception cref="ArgumentNullException">When <paramref name="propertyName" /> is <code>null</code></exception>
-    /// <exception cref="ArgumentNullException">When <paramref name="rawText" /> is <code>null</code></exception>
+    /// <exception cref="ArgumentNullException">When <paramref name="propertyName"/> is <code>null</code></exception>
+    /// <exception cref="ArgumentNullException">When <paramref name="rawText"/> is <code>null</code></exception>
     public PropertyToken(
         string propertyName,
         string rawText,
@@ -50,18 +50,18 @@ public sealed class PropertyToken : MessageTemplateToken {
     }
 
     /// <summary>
-    ///     The token's length.
+    /// The token's length.
     /// </summary>
     public override int Length => RawText.Length;
 
     /// <summary>
-    ///     Render the token to the output.
+    /// Render the token to the output.
     /// </summary>
     /// <param name="properties">Properties that may be represented by the token.</param>
     /// <param name="output">Output for the rendered string.</param>
     /// <param name="formatProvider">Supplies culture-specific formatting information, or null.</param>
-    /// <exception cref="ArgumentNullException">When <paramref name="properties" /> is <code>null</code></exception>
-    /// <exception cref="ArgumentNullException">When <paramref name="output" /> is <code>null</code></exception>
+    /// <exception cref="ArgumentNullException">When <paramref name="properties"/> is <code>null</code></exception>
+    /// <exception cref="ArgumentNullException">When <paramref name="output"/> is <code>null</code></exception>
     public override void Render(
         IReadOnlyDictionary<string, LogEventPropertyValue> properties,
         TextWriter output,
@@ -80,34 +80,34 @@ public sealed class PropertyToken : MessageTemplateToken {
     }
 
     /// <summary>
-    ///     The property name.
+    /// The property name.
     /// </summary>
     public string PropertyName { get; }
 
     /// <summary>
-    ///     Destructuring strategy applied to the property.
+    /// Destructuring strategy applied to the property.
     /// </summary>
     public Destructuring Destructuring { get; }
 
     /// <summary>
-    ///     Format applied to the property.
+    /// Format applied to the property.
     /// </summary>
     public string? Format { get; }
 
     /// <summary>
-    ///     Alignment applied to the property.
+    /// Alignment applied to the property.
     /// </summary>
     public Alignment? Alignment { get; }
 
     /// <summary>
-    ///     <see langword="true" /> if the property name is a positional index; otherwise, <see langword="false" />.
+    /// <see langword="true"/> if the property name is a positional index; otherwise, <see langword="false"/>.
     /// </summary>
     public bool IsPositional => _position.HasValue;
 
     internal string RawText { get; }
 
     /// <summary>
-    ///     Try to get the integer value represented by the property name.
+    /// Try to get the integer value represented by the property name.
     /// </summary>
     /// <param name="position">The integer value, if present.</param>
     /// <returns>True if the property is positional, otherwise false.</returns>
@@ -122,15 +122,12 @@ public sealed class PropertyToken : MessageTemplateToken {
     }
 
     /// <summary>
-    ///     Determines whether the specified <see cref="T:System.Object" /> is equal to the current
-    ///     <see cref="T:System.Object" />.
+    /// Determines whether the specified <see cref="T:System.Object"/> is equal to the current <see cref="T:System.Object"/>.
     /// </summary>
     /// <returns>
-    ///     <see langword="true" /> if the specified object is equal to the current object; otherwise,
-    ///     <see langword="false" />.
+    /// <see langword="true"/> if the specified object  is equal to the current object; otherwise, <see langword="false"/>.
     /// </returns>
-    /// <param name="obj">The object to compare with the current object.</param>
-    /// <filterpriority>2</filterpriority>
+    /// <param name="obj">The object to compare with the current object. </param><filterpriority>2</filterpriority>
     public override bool Equals(object? obj) {
         return obj is PropertyToken pt
             && pt.Destructuring == Destructuring
@@ -140,19 +137,19 @@ public sealed class PropertyToken : MessageTemplateToken {
     }
 
     /// <summary>
-    ///     Serves as a hash function for a particular type.
+    /// Serves as a hash function for a particular type.
     /// </summary>
     /// <returns>
-    ///     A hash code for the current <see cref="T:System.Object" />.
+    /// A hash code for the current <see cref="T:System.Object"/>.
     /// </returns>
     /// <filterpriority>2</filterpriority>
     public override int GetHashCode() => PropertyName.GetHashCode();
 
     /// <summary>
-    ///     Returns a string that represents the current object.
+    /// Returns a string that represents the current object.
     /// </summary>
     /// <returns>
-    ///     A string that represents the current object.
+    /// A string that represents the current object.
     /// </returns>
     /// <filterpriority>2</filterpriority>
     public override string ToString() => RawText;

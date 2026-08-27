@@ -1,5 +1,4 @@
 // skala-oracle: resharper=2025.2.6 config=sha256:98ff52570e019fac profile=SkalaFormatOnly generated=2026-08-27
-
 #region License
 
 // Copyright (c) 2007 James Newton-King
@@ -60,9 +59,9 @@ namespace Newtonsoft.Json.Tests.Documentation.Samples.Serializer {
             Videogame starcraft = new Videogame { Name = "Starcraft", ReleaseDate = new DateTime(1998, 1, 1) };
             string json = JsonConvert.SerializeObject(starcraft, Formatting.Indented);
             Console.WriteLine(json); // {
-            //   "name": "Starcraft",
-            //   "release_date": "1998-01-01T00:00:00"
-            // }
+//   "name": "Starcraft",
+//   "release_date": "1998-01-01T00:00:00"
+// }
 
             #endregion
 

@@ -209,8 +209,8 @@ public static class DeltaCodec {
                 return false;
             } // Masked rather than checked: the sender's arithmetic was done on values of this width,
 
-            // so wrapping here reproduces it exactly. A difference that does not round-trip would be
-            // a desync nobody could see, which is why the encoder never emits one it cannot undo.
+// so wrapping here reproduces it exactly. A difference that does not round-trip would be
+// a desync nobody could see, which is why the encoder never emits one it cannot undo.
             current.Write((uint)unchecked(was + UnZigZag(zigzag)) & Mask(lane.Bits), lane.Bits);
         }
 

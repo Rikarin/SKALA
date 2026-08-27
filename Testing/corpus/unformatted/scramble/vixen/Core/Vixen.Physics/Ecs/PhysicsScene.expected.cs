@@ -10,7 +10,7 @@ using Vixen.Engine.Transforms;
 using Vixen.Physics.Bodies;
 using Vixen.Physics.Events;
 using Vixen.Physics.Shapes
-;
+    ;
 using EcsWorld = Vixen.Ecs.World;
 
 namespace Vixen.Physics.Ecs;
@@ -81,7 +81,7 @@ public sealed partial class PhysicsScene : IDisposable {
     static
         readonly QueryDescription OrphanedBody = new QueryDescription()
             .WithAll
-            <PhysicsBody>()
+                <PhysicsBody>()
             .WithNone<Collider
             >();
 
@@ -109,7 +109,8 @@ public sealed partial class PhysicsScene : IDisposable {
 
     /// <summary>The shapes bodies in this scene may use.</summary>
     public
-        PhysicsShapes Shapes => World.Shapes;
+        PhysicsShapes Shapes =>
+        World.Shapes;
 
     /// <summary>How many entities have bodies.</summary>
     public int BodyCount => entitiesByBody.Count;
@@ -119,7 +120,8 @@ public sealed partial class PhysicsScene : IDisposable {
 
     /// <summary>Contacts from the last <see cref="Step" />, in entity terms.</summary>
     public ReadOnlySpan<EntityContactEvent
-    > Contacts => CollectionsMarshal.AsSpan(contactEvents);
+    > Contacts =>
+        CollectionsMarshal.AsSpan(contactEvents);
 
     /// <summary>Trigger crossings from the last <see cref="Step" />, in entity terms.</summary>
     public ReadOnlySpan<EntityTriggerEvent> Triggers => CollectionsMarshal.AsSpan(triggerEvents);
@@ -240,7 +242,7 @@ public sealed partial class PhysicsScene : IDisposable {
 
                 if (body.BuiltMotion == BodyMotion.Static
                     || !
-                    World.IsAlive(body.Handle)) {
+                        World.IsAlive(body.Handle)) {
                     continue;
                 }
 
@@ -251,12 +253,12 @@ public sealed partial class PhysicsScene : IDisposable {
 
                 if (Entities.Has<LinearVelocity>(entity)) {
                     Entities.Get<
-                        LinearVelocity>(entity)
-                            .Value = World.GetLinearVelocity(body.Handle);
+                            LinearVelocity>(entity)
+                        .Value = World.GetLinearVelocity(body.Handle);
                 }
 
                 if (Entities.Has
-                    <AngularVelocity>(entity)) {
+                        <AngularVelocity>(entity)) {
                     Entities.Get<AngularVelocity>(entity).Value = World.GetAngularVelocity(body.Handle);
                 }
 
@@ -287,9 +289,9 @@ public sealed partial class PhysicsScene : IDisposable {
         foreach (var chunk
                  in Entities.Chunks(OrphanedBody)) {
             var
-            entities = chunk.Entities;
+                entities = chunk.Entities;
             for (var index =
-                 0;
+                     0;
                  index < chunk.Count;
                  index++) {
                 pendingDestroy.Add(entities[index]);
@@ -329,7 +331,7 @@ public sealed partial class PhysicsScene : IDisposable {
 
     void ApplyStructuralChanges() {
         foreach (
-                 var entity in pendingDestroy) {
+            var entity in pendingDestroy) {
             Remove(entity);
             Entities.Remove<PhysicsBody>(entity);
         }
@@ -354,7 +356,7 @@ public sealed partial class PhysicsScene : IDisposable {
         var description = BodyDescription.Create()
             with {
                 Shape =
-                    collider.Shape,
+                collider.Shape,
                 Position = transform.Position,
                 Rotation = transform.Rotation,
                 Motion = hasRigid ? rigid.Motion : BodyMotion.Static,
@@ -387,7 +389,7 @@ public sealed partial class PhysicsScene : IDisposable {
 
         entitiesByBody[handle.Value] = entity;
         if (Entities
-                .Has<PhysicsInterpolation>(entity)) {
+            .Has<PhysicsInterpolation>(entity)) {
             Entities.Get<PhysicsInterpolation>(entity) = new() {
                 PreviousPosition = transform.Position,
                 PreviousRotation = transform.Rotation,
@@ -418,7 +420,7 @@ public sealed partial class PhysicsScene : IDisposable {
     void PushAuthoredState(float deltaTime) {
         pendingUntag.Clear();
         foreach (
-                 var chunk in Entities.Chunks(HaveBody)) {
+            var chunk in Entities.Chunks(HaveBody)) {
             var bodies = chunk.ReadValues<PhysicsBody>();
             var transforms = chunk.ReadValues<LocalTransform>();
             var entities = chunk.Entities;

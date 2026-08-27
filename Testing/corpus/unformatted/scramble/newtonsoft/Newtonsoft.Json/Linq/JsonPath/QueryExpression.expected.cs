@@ -7,7 +7,7 @@ using System.Text.RegularExpressions;
 using System.Diagnostics;
 #if !HAVE_LINQ
 using Newtonsoft.Json.Utilities.
-LinqBridge;
+    LinqBridge;
 #else
 using System.Linq;
 #endif
@@ -63,7 +63,7 @@ namespace Newtonsoft.Json.Linq.JsonPath {
 
         public override bool IsMatch(JToken root, JToken t, JsonSelectSettings? settings) {
             switch (
-                    Operator) {
+                Operator) {
                 case QueryOperator.And:
 
                     foreach (QueryExpression e in Expressions) {
@@ -197,7 +197,7 @@ namespace Newtonsoft.Json.Linq.JsonPath {
                         break;
                     case QueryOperator.LessThan:
                         if (leftValue.CompareTo(rightValue) < 0
-                        ) {
+                           ) {
                             return true;
                         }
 
@@ -241,14 +241,14 @@ namespace Newtonsoft.Json.Linq.JsonPath {
             TimeSpan timeout = settings?.RegexMatchTimeout ?? Regex.InfiniteMatchTimeout;
             return Regex.IsMatch((string)input.Value!, patternText, MiscellaneousUtils.GetRegexOptions(optionsText), timeout);
 #else
-            return Regex.IsMatch((string)input.Value!, patternText, MiscellaneousUtils.GetRegexOptions(optionsText));
+            return Regex.IsMatch((string)input.Value !, patternText, MiscellaneousUtils.GetRegexOptions(optionsText));
 #endif
         }
 
         internal static bool EqualsWithStringCoercion(
             JValue value,
             JValue
-            queryValue
+                queryValue
         ) {
             if (value.Equals(queryValue)) {
                 return true;
@@ -268,7 +268,7 @@ namespace Newtonsoft.Json.Linq.JsonPath {
             string queryValueString
                 = (string)queryValue.Value!;
             string
-            currentValueString;
+                currentValueString;
             // potential performance issue with converting every value to string?
             switch (value.Type) {
                 case JTokenType.Date:
@@ -283,25 +283,23 @@ namespace Newtonsoft.Json.Linq.JsonPath {
                         {
                             DateTimeUtils.WriteDateTimeString(
                                 writer,
-                                (DateTime)value.Value!,
+                                (DateTime)value.Value !,
                                 DateFormatHandling.IsoDateFormat,
                                 null,
                                 CultureInfo.InvariantCulture
                             );
                         }
-
                         currentValueString = writer.ToString();
                     }
 
                     break;
                 case
                     JTokenType.Bytes:
-                    currentValueString = Convert.ToBase64String((byte[])value.Value!);
-                    break;
+                    currentValueString = Convert.ToBase64String((byte[])value.Value!); break;
                 case JTokenType.Guid
                     :
                 case JTokenType.TimeSpan:
-                    currentValueString = value.Value!.ToString()!;
+                    currentValueString = value.Value!.ToString() !;
                     break;
 
                 case JTokenType.Uri:
@@ -326,7 +324,7 @@ namespace Newtonsoft.Json.Linq.JsonPath {
                 return JValue.Compare(value.Type, value.Value, queryValue.Value) == 0;
             }
 
-            // we handle floats and integers the exact same way, so they are pseudo equivalent
+// we handle floats and integers the exact same way, so they are pseudo equivalent
             if (value.Type != queryValue.Type) {
                 return false;
             }

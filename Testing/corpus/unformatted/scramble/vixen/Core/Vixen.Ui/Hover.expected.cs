@@ -116,8 +116,7 @@ public sealed partial class UiDocument {
         Restate(hovered, chain, ElementState.Hover, PointerAction.Exited, PointerAction.Entered, args);
         switch (args.Action) {
             case PointerAction.Pressed:
-                Restate(pressed, chain, ElementState.Active, null, null, args);
-                break;
+                Restate(pressed, chain, ElementState.Active, null, null, args); break;
             case PointerAction.Released:
                 chain.Clear();
                 Restate(
@@ -201,7 +200,7 @@ public sealed partial class UiDocument {
         UiElement element,
         PointerEvent args,
         PointerAction
-        action
+            action
     ) =>
         EventRouter.Direct(
             element,
@@ -232,7 +231,7 @@ public sealed partial class UiDocument {
     static void ForgetHover(List<UiElement> tracked, UiElement removed) {
         for (var i = tracked.Count - 1; i >= 0; i--) {
             for (var walk = tracked
-                 [i];
+                     [i];
                  walk is not null;
                  walk = walk.Parent) {
                 if (!ReferenceEquals(walk, removed)) {

@@ -1,5 +1,4 @@
 #region License
-
 // Copyright (c) 2007 James Newton-King
 //
 // Permission is hereby granted, free of charge, to any person
@@ -22,31 +21,5 @@
 // WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 // OTHER DEALINGS IN THE SOFTWARE.
-
 #endregion
-
-using System; namespace Newtonsoft.Json.Tests.TestObjects {
-    public class PosConverter : JsonConverter {
-        public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer) {
-            Pos p = (Pos)value;
-            if (p != null) {
-                writer.WriteRawValue(String.Format("new Pos({0},{1})", p.X, p.Y));
-            } else {
-                writer.WriteNull();
-            }
-        }
-
-        public override object ReadJson(
-            JsonReader reader,
-            Type objectType,
-            object existingValue,
-            JsonSerializer serializer
-        ) {
-            throw new NotImplementedException();
-        }
-
-        public override bool CanConvert(Type objectType) {
-            return objectType == typeof(Pos);
-        }
-    }
-}
+using System;namespace Newtonsoft.Json.Tests.TestObjects{public class PosConverter:JsonConverter{public override void WriteJson(JsonWriter writer,object value,JsonSerializer serializer){Pos p=(Pos)value;if(p!=null){writer.WriteRawValue(String.Format("new Pos({0},{1})" ,p.X,p.Y));}else{writer.WriteNull();}}public override object ReadJson(JsonReader reader,Type objectType,object existingValue,JsonSerializer serializer){throw new NotImplementedException();}public override bool CanConvert(Type objectType){return objectType==typeof(Pos);}}}

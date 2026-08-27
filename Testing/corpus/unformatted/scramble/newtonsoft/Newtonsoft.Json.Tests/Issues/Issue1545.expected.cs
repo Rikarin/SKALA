@@ -1,5 +1,4 @@
 // skala-oracle: resharper=2025.2.6 config=sha256:98ff52570e019fac profile=SkalaFormatOnly generated=2026-08-27
-
 #region License
 
 // Copyright (c) 2007 James Newton-King
@@ -30,7 +29,7 @@
 #endregion
 
 using
-System;
+    System;
 #if DNXCORE50
 using System.Reflection;
 using Xunit;
@@ -38,7 +37,7 @@ using Test = Xunit.FactAttribute;
 using Assert = Newtonsoft.Json.Tests.XUnitAssert;
 #else
 using NUnit
-.Framework;
+    .Framework;
 #endif
 
 namespace Newtonsoft.Json.Tests.Issues {
@@ -48,7 +47,7 @@ namespace Newtonsoft.Json.Tests.Issues {
         public void
             Test_Populate() {
             string
-            json = @"{
+                json = @"{
                 ""array"": [
                     /* comment0 */
                     {
@@ -63,7 +62,7 @@ namespace Newtonsoft.Json.Tests.Issues {
             }";
 
             Simple
-            s = JsonConvert.DeserializeObject<Simple>(json);
+                s = JsonConvert.DeserializeObject<Simple>(json);
             Assert.AreEqual(2, s.Array.Length);
             Assert.AreEqual("item1", s.Array[0].Value)
                 ;
@@ -100,7 +99,7 @@ namespace Newtonsoft.Json.Tests.Issues {
             Assert.AreEqual(
                 4,
                 s
-                [1, 0]
+                    [1, 0]
             );
             Assert.AreEqual(5, s[1, 1]);
             Assert.AreEqual(6, s[1, 2]);

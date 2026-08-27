@@ -22,17 +22,17 @@ public class ViewportTests {
             4,
             panes.Count
         ); // ⚠ The classic four rather than four of the same. A layout that came up as four identical
-        // perspective views is one every user then configures by hand — and it is also the layout in
-        // which a presenter shared between panes is invisible, because all four would agree.
+// perspective views is one every user then configures by hand — and it is also the layout in
+// which a presenter shared between panes is invisible, because all four would agree.
         Assert.True(panes.Take(3).All(pane => pane.Camera.IsOrthographic));
         Assert.False(panes[3].Camera.IsOrthographic);
         Assert.Equal(
             4,
             panes.Select(pane => (pane.Camera.Yaw, pane.Camera.Pitch)).Distinct().Count()
         ); // ⚠ A view mode is a compositor tree and its stage belongs to the *mode* — two panes in
-        // wireframe share one stage and both draw wireframe. What has to be per pane is the mode
-        // itself, which is what this asserts; see this project's README for why stage-per-pane is
-        // the wrong axis.
+// wireframe share one stage and both draw wireframe. What has to be per pane is the mode
+// itself, which is what this asserts; see this project's README for why stage-per-pane is
+// the wrong axis.
         panes[0].Modes.Current = ViewMode.Wireframe;
         Assert.Equal(ViewMode.Wireframe, panes[0].Modes.Current);
         Assert.All(panes.Skip(1), pane => Assert.Equal(ViewMode.Shaded, pane.Modes.Current));
@@ -53,7 +53,7 @@ public class ViewportTests {
             ViewMode.Shaded,
             panes[1].Modes.Current
         ); // Clicking in a pane focuses it, and the next command follows the work rather than the
-        // arrangement's reading order.
+// arrangement's reading order.
         fixture.Document.Focus(panes[1].Control);
         fixture.Frames(1);
         Assert.Same(panes[1], fixture.Viewport);
@@ -66,11 +66,8 @@ public class ViewportTests {
     ///     Maximise gives the Scene panel the whole window and gives the window back, splits and all.
     /// </summary>
     /// <remarks>
-    ///     ⚠
-    ///     <b>
-    ///         The panel, not the pane count, and the difference is why this command did nothing at
-    ///         all.
-    ///     </b> It used to set the arrangement to Single and remember what it had been — so in a
+    ///     ⚠ <b>The panel, not the pane count, and the difference is why this command did nothing at
+    ///     all.</b> It used to set the arrangement to Single and remember what it had been — so in a
     ///     single-pane layout, which is the default and what nearly everyone is in, it asked the
     ///     arrangement to become what it already was and the setter returned. The button was inert in
     ///     exactly the case it is pressed.
@@ -88,7 +85,7 @@ public class ViewportTests {
         Assert.False(fixture.Shell.Workspace.IsOpen("hierarchy"));
         fixture.Run("scene.maximise");
         fixture.Frames(2); // ⚠ Back to what was there rather than to a preset. A maximise that returned by re-applying
-        // the default layout would silently throw away every splitter the user had dragged.
+// the default layout would silently throw away every splitter the user had dragged.
         Assert.True(fixture.Shell.Workspace.IsOpen("scene"));
         Assert.True(fixture.Shell.Workspace.IsOpen("hierarchy"));
     }
@@ -113,15 +110,15 @@ public class ViewportTests {
         fixture.Frames(
             1
         ); // Doc 20's first bar: a verb that is not implemented is *visibly* not implemented rather than
-        // absent. For a view mode the alternative is worse than absence — a mode with no compositor
-        // falls back to shaded, so the line would draw the picture of the line above it.
+// absent. For a view mode the alternative is worse than absence — a mode with no compositor
+// falls back to shaded, so the line would draw the picture of the line above it.
         Assert.True(fixture.CanRun("scene.view-mode-normal"));
         Assert.False(fixture.CanRun("scene.view-mode-overdraw"));
         Assert.False(
             fixture.CanRun("scene.view-mode-light-complexity")
         ); // ✅ And roughness has come off that list, which is what the enablement being derived from
-        // `ViewShading.IsSupported` rather than written out here is worth: the viewport can read a
-        // material now, so the menu line enabled itself.
+// `ViewShading.IsSupported` rather than written out here is worth: the viewport can read a
+// material now, so the menu line enabled itself.
         Assert.True(fixture.CanRun("scene.view-mode-roughness"));
         Assert.True(fixture.Shell.Commands.TryGet("scene.view-mode-overdraw", out var command));
         Assert.False(string.IsNullOrWhiteSpace(command!.Unavailable.Text));
@@ -140,7 +137,7 @@ public class ViewportTests {
             SceneShow.Grid,
             panes[1].Show & SceneShow.Grid
         ); // ⚠ One command over the grid's flag and not two. A second id registered only so the Show
-        // menu could be built in a loop is two menu lines that can disagree about what is on.
+// menu could be built in a loop is two menu lines that can disagree about what is on.
         Assert.False(fixture.Shell.Commands.TryGet("scene.show-grid", out _));
         fixture.Run("scene.show-bounds");
         Assert.Equal(SceneShow.Bounds, panes[0].Show & SceneShow.Bounds);
@@ -154,7 +151,7 @@ public class ViewportTests {
         fixture.Frames(1);
         var pane = fixture
             .Viewport!; // ⚠ Recall is disabled until something has been saved. A key that does nothing and a key that
-        // does nothing *yet* look identical while you are pressing it.
+// does nothing *yet* look identical while you are pressing it.
         Assert.False(fixture.CanRun("scene.bookmark-go-1"));
         pane.Camera.Pivot = new Vector3(7f, 1f, 2f);
         fixture.Run("scene.bookmark-set-1");
@@ -179,7 +176,7 @@ public class ViewportTests {
         fixture.Frames(1);
         var after = fixture.Scene.World.Read<Vixen.Engine.Transforms.LocalTransform>(crate)
             .Position; // Nothing is under the seeded crate but the ground plane, so it lands on zero — a verb that
-        // only worked once there was floor geometry would be one nobody would find out worked.
+// only worked once there was floor geometry would be one nobody would find out worked.
         Assert.Equal(0f, after.Y, 4);
         Assert.NotEqual(before.Y, after.Y);
         fixture.Run("edit.undo");
@@ -204,7 +201,7 @@ public class ViewportTests {
             fixture.Scene.World.Read<Vixen.Engine.Transforms.WorldTransform>(crate)
                 .Value
                 .Translation; // ⚠ At the pivot, not at the eye. Moving something to the eye puts it inside the near plane,
-        // which reads as the object having vanished.
+// which reads as the object having vanished.
         Assert.True(Vector3.NearEqual(position, new Vector3(12f, 3f, -4f), 1e-3f));
     }
 
@@ -223,7 +220,7 @@ public class ViewportTests {
             (pane.Show & SceneShow.Grid) != 0,
             "the grid should start on"
         ); // ⚠ `scene.toggle-grid` rather than `scene.show-grid`. The grid's toggle predates the
-        // generated ones and is deliberately not registered twice — see `ShowFlagCommands`.
+// generated ones and is deliberately not registered twice — see `ShowFlagCommands`.
         fixture.Run("scene.toggle-grid");
         fixture.Frames(2);
         Assert.True((fixture.Viewport!.Show & SceneShow.Grid) == 0);
@@ -234,7 +231,7 @@ public class ViewportTests {
             (fixture.Viewport!.Show & SceneShow.Grid) == 0,
             "the grid came back on after being turned off and the editor restarted"
         ); // ⚠ And the rest of the set is untouched, which is what says the whole bitset round-tripped
-        // rather than one flag being remembered by name.
+// rather than one flag being remembered by name.
         Assert.True((fixture.Viewport!.Show & SceneShow.Gizmos) != 0);
     }
 

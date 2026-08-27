@@ -18,7 +18,7 @@ namespace Vixen.Editor.Assets;
 [AttributeUsage(AttributeTargets.Class)]
 public sealed class ImporterAttribute(
     params string[]
-    extensions) : Attribute {
+        extensions) : Attribute {
     /// <summary>The extensions it claims, lowercase and with their leading dots.</summary>
     public IReadOnlyList<string> Extensions { get; } =
         [.. (extensions ?? []).Select(extension => extension.ToLowerInvariant())];
@@ -67,11 +67,8 @@ public interface
 ///         <c>ImportContext&lt;TSettings&gt;</c> and is not a simplification. Building an
 ///         <c>ImportContext&lt;T&gt;</c> for a settings type the pipeline only knows at run time
 ///         needs <c>MakeGenericType</c>, which NativeAOT does not have. The importer's own type
-///         parameter costs nothing — it is closed at the
-///         <c>
-///class TextureImporter :
-///         AssetImporter&lt;TextureImportSettings&gt;
-///         </c> declaration — so the settings arrive as a
+///         parameter costs nothing — it is closed at the <c>class TextureImporter :
+///         AssetImporter&lt;TextureImportSettings&gt;</c> declaration — so the settings arrive as a
 ///         typed parameter and everything stays statically bound.
 ///     </para>
 ///     <para>
@@ -82,8 +79,8 @@ public interface
 /// </remarks>
 public abstract class AssetImporter
     <TSettings> : IAssetImporter
-        where TSettings : class
-        , IImportSettings, new() {
+    where TSettings : class
+    , IImportSettings, new() {
     /// <inheritdoc />
     public abstract int Version { get; }
 
@@ -104,11 +101,10 @@ public abstract class AssetImporter
     public IReadOnlyList<string
     > Extensions =>
         (Attribute.GetCustomAttribute(
-                GetType(),
-                typeof(
+            GetType(),
+            typeof(
                 ImporterAttribute)
-            )
-            as ImporterAttribute)?.Extensions
+        ) as ImporterAttribute)?.Extensions
         ?? throw new InvalidOperationException(
             $"{GetType().Name} has no [Importer] attribute, so nothing knows which files it claims."
         );

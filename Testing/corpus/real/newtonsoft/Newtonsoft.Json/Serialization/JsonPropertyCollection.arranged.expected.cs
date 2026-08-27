@@ -1,5 +1,4 @@
 // skala-oracle: resharper=2025.2.6 config=sha256:98ff52570e019fac profile=SkalaCleanup generated=2026-08-27
-
 #region License
 
 // Copyright (c) 2007 James Newton-King
@@ -33,14 +32,14 @@ using System.Globalization;
 
 namespace Newtonsoft.Json.Serialization {
     /// <summary>
-    ///     A collection of <see cref="JsonProperty" /> objects.
+    /// A collection of <see cref="JsonProperty"/> objects.
     /// </summary>
     public class JsonPropertyCollection : KeyedCollection<string, JsonProperty> {
         readonly Type _type;
         readonly List<JsonProperty> _list;
 
         /// <summary>
-        ///     Initializes a new instance of the <see cref="JsonPropertyCollection" /> class.
+        /// Initializes a new instance of the <see cref="JsonPropertyCollection"/> class.
         /// </summary>
         /// <param name="type">The type.</param>
         public JsonPropertyCollection(Type type)
@@ -53,14 +52,14 @@ namespace Newtonsoft.Json.Serialization {
         }
 
         /// <summary>
-        ///     When implemented in a derived class, extracts the key from the specified element.
+        /// When implemented in a derived class, extracts the key from the specified element.
         /// </summary>
         /// <param name="item">The element from which to extract the key.</param>
         /// <returns>The key for the specified element.</returns>
         protected override string GetKeyForItem(JsonProperty item) => item.PropertyName!;
 
         /// <summary>
-        ///     Adds a <see cref="JsonProperty" /> object.
+        /// Adds a <see cref="JsonProperty"/> object.
         /// </summary>
         /// <param name="property">The property to add to the collection.</param>
         [RequiresUnreferencedCode(MiscellaneousUtils.TrimWarning)]
@@ -117,9 +116,9 @@ namespace Newtonsoft.Json.Serialization {
         }
 
         /// <summary>
-        ///     Gets the closest matching <see cref="JsonProperty" /> object.
-        ///     First attempts to get an exact case match of <paramref name="propertyName" /> and then
-        ///     a case insensitive match.
+        /// Gets the closest matching <see cref="JsonProperty"/> object.
+        /// First attempts to get an exact case match of <paramref name="propertyName"/> and then
+        /// a case insensitive match.
         /// </summary>
         /// <param name="propertyName">Name of the property.</param>
         /// <returns>A matching property if found.</returns>
@@ -142,7 +141,7 @@ namespace Newtonsoft.Json.Serialization {
         }
 
         /// <summary>
-        ///     Gets a property by property name.
+        /// Gets a property by property name.
         /// </summary>
         /// <param name="propertyName">The name of the property to get.</param>
         /// <param name="comparisonType">Type property name string comparison.</param>

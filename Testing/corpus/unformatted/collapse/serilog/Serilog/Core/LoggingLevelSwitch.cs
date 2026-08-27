@@ -12,40 +12,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 namespace Serilog.Core;
-
 /// <summary>
-///     Dynamically controls logging level.
+/// Dynamically controls logging level.
 /// </summary>
-public class LoggingLevelSwitch {
-    volatile LogEventLevel _minimumLevel;
-    readonly object _levelUpdateLock = new();
-
-    /// <summary>
-    ///     Create a <see cref="LoggingLevelSwitch" /> at the initial
-    ///     minimum level.
+public class LoggingLevelSwitch{volatile LogEventLevel _minimumLevel;readonly object _levelUpdateLock=new();
+/// <summary>
+    /// Create a <see cref="LoggingLevelSwitch"/> at the initial
+    /// minimum level.
     /// </summary>
     /// <param name="initialMinimumLevel">The initial level to which the switch is set.</param>
-    public LoggingLevelSwitch(LogEventLevel initialMinimumLevel = LogEventLevel.Information) {
-        _minimumLevel = initialMinimumLevel;
-    }
-
-    /// <summary>
-    ///     The event arises when <see cref="MinimumLevel" /> changed. Note that the event is raised
-    ///     under a lock so be careful within event handler to not fall into deadlock.
+public LoggingLevelSwitch(LogEventLevel initialMinimumLevel=LogEventLevel.Information){_minimumLevel=initialMinimumLevel;}
+/// <summary>
+    /// The event arises when <see cref="MinimumLevel"/> changed. Note that the event is raised
+    /// under a lock so be careful within event handler to not fall into deadlock.
     /// </summary>
-    public event EventHandler<LoggingLevelSwitchChangedEventArgs>? MinimumLevelChanged;
-
-    /// <summary>
-    ///     The current minimum level, below which no events
-    ///     should be generated.
+public event EventHandler<LoggingLevelSwitchChangedEventArgs>?MinimumLevelChanged;
+/// <summary>
+    /// The current minimum level, below which no events
+    /// should be generated.
     /// </summary>
-    // Reading this property generates a memory barrier,
-    // so needs to be used judiciously in the logging pipeline.
-    public LogEventLevel MinimumLevel { get { return _minimumLevel; } set { lock (_levelUpdateLock) {
-                var old = _minimumLevel;
-                if (old != value) {
-                    _minimumLevel = value;
-                    MinimumLevelChanged?.Invoke(this, new LoggingLevelSwitchChangedEventArgs(old, value));
-                }
-            } } }
-}
+// Reading this property generates a memory barrier,
+// so needs to be used judiciously in the logging pipeline.
+public LogEventLevel MinimumLevel{get{return _minimumLevel;}set{lock(_levelUpdateLock){var old=_minimumLevel;if(old!=value){_minimumLevel=value;MinimumLevelChanged?.Invoke(this,new LoggingLevelSwitchChangedEventArgs(old,value));}}}}}

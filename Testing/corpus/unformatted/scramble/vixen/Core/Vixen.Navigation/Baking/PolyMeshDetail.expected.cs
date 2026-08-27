@@ -87,9 +87,7 @@ internal sealed class PolyMeshDetail {
     /// <param name="mesh">The polygons, in voxel coordinates.</param>
     /// <param name="field">The surface they were built from.</param>
     /// <param name="sampleDistance">How far apart to sample, in voxel columns. Zero or less builds nothing.</param>
-    /// <param name="maxError">
-    ///     How far the flat polygon may be from the ground before a vertex is added, in voxels of height.
-    /// </param>
+    /// <param name="maxError">How far the flat polygon may be from the ground before a vertex is added, in voxels of height.</param>
     /// <param name="walkableHeight">
     ///     The agent's height in voxels, which is how far a sample may look for its own surface. See
     ///     <see cref="TryGroundHeight" /> — this is not a tolerance, it is a proof.
@@ -115,13 +113,13 @@ internal sealed class PolyMeshDetail {
         var vertices = new List<Vector3>()
             ;
         var
-        triangles = new List<int>();
+            triangles = new List<int>();
         var samples = new List<Vector3>();
 
         for (
-             var poly = 0;
-             poly < mesh.PolyCount;
-             poly++) {
+            var poly = 0;
+            poly < mesh.PolyCount;
+            poly++) {
             var offset = poly * mesh.MaxVerticesPerPoly;
             var count = PolyMesh.CountVertices(mesh.Polys, offset, mesh.MaxVerticesPerPoly);
 
@@ -264,18 +262,18 @@ internal sealed class PolyMeshDetail {
         int walkableHeight
     ) {
         for (var edge =
-             0;
+                 0;
              edge < hullCount;
              edge++) {
             var
-            first = vertices[edge];
+                first = vertices[edge];
             var second = vertices[(
-                edge + 1)
+                    edge + 1)
                 % hullCount];
             var (from, to
-            ) = first.X < second.X || (first.X == second.X && first.Z < second.Z)
-                    ? (first, second)
-                    : (second, first);
+                ) = first.X < second.X || (first.X == second.X && first.Z < second.Z)
+                ? (first, second)
+                : (second, first);
             var length
                 = MathF.Sqrt(((to.X - from.X) * (to.X - from.X)) + ((to.Z - from.Z) * (to.Z - from.Z)));
             var steps =
@@ -325,9 +323,7 @@ internal sealed class PolyMeshDetail {
         }
     }
 
-    /// <summary>
-    ///     Adds vertices inside the polygon, worst first, until nothing is out by more than the tolerance.
-    /// </summary>
+    /// <summary>Adds vertices inside the polygon, worst first, until nothing is out by more than the tolerance.</summary>
     static void RefineInterior(
         CompactHeightfield field,
         List<Vector3> vertices,
@@ -355,9 +351,9 @@ internal sealed class PolyMeshDetail {
         // Anchored to a multiple of the spacing rather than to the polygon's own corner, so that two
         // polygons over the same ground sample the same places and describe it the same way.
         for (
-             var z = MathF.Ceiling(minimumZ / sampleDistance) * sampleDistance;
-             z <= maximumZ;
-             z += sampleDistance) {
+            var z = MathF.Ceiling(minimumZ / sampleDistance) * sampleDistance;
+            z <= maximumZ;
+            z += sampleDistance) {
             for (var x = MathF.Ceiling(minimumX / sampleDistance) * sampleDistance;
                  x <= maximumX;
                  x += sampleDistance) {
@@ -389,7 +385,7 @@ internal sealed class PolyMeshDetail {
         var budget = MaxInteriorVertices;
         while (budget-- > 0) {
             var
-            worst = -1;
+                worst = -1;
             var worstError = maxError;
 
             for (var index = 0; index < samples.Count; index++) {
@@ -504,7 +500,7 @@ internal sealed class PolyMeshDetail {
         for (var triangle = 0; triangle < triangles.Count; triangle += 3) {
             var a = vertices[triangles[triangle]];
             var
-            b = vertices[triangles[triangle + 1]];
+                b = vertices[triangles[triangle + 1]];
             var c = vertices[
                 triangles[triangle + 2]];
             if (Side(a, b, point) < 0 || Side(b, c, point) < 0 || Side(c, a, point) < 0) {
@@ -560,7 +556,7 @@ internal sealed class PolyMeshDetail {
         List<int> triangles
     ) {
         for (var sweep
-             = 0;
+                 = 0;
              sweep < MaxFlipSweeps;
              sweep++) {
             var flipped = false;
@@ -576,7 +572,7 @@ internal sealed class PolyMeshDetail {
                     var to = triangles[
                         triangle + ((slot + 2) % 3)];
                     var
-                    other = FindEdge(triangles, to, from, out var otherSlot);
+                        other = FindEdge(triangles, to, from, out var otherSlot);
 
                     if (other < 0) {
                         continue;
@@ -594,7 +590,6 @@ internal sealed class PolyMeshDetail {
                         )) {
                         continue;
                     }
-
                     // The quadrilateral has to be convex, or the flip produces two triangles that
 
                     // overlap instead of two that tile it.
@@ -641,7 +636,7 @@ internal sealed class PolyMeshDetail {
     /// <summary>The triangle traversing an edge in the given direction, or -1.</summary>
     static int FindEdge(
         List<int>
-        triangles,
+            triangles,
         int from,
         int to,
         out int slot
@@ -683,9 +678,9 @@ internal sealed class PolyMeshDetail {
                 .Z;
 
         var determinant = (((ax * ax)
-                + (az
-                    * az))
-            * ((bx * cz) - (cx * bz)))
+                    + (az
+                        * az))
+                * ((bx * cz) - (cx * bz)))
             - (((bx * bx
                     )
                     + (bz * bz))
@@ -726,12 +721,12 @@ internal sealed class PolyMeshDetail {
         }
 
         var along = ((point.X - from.X)
-            * (to
-                    .X
-                - from.X))
+                * (to
+                        .X
+                    - from.X))
             + ((point.Z - from.Z) * (to.Z - from.Z));
         var
-        length = ((to.X - from.X) * (to.X - from.X)) + ((to.Z - from.Z) * (to.Z - from.Z));
+            length = ((to.X - from.X) * (to.X - from.X)) + ((to.Z - from.Z) * (to.Z - from.Z));
         return along
             > 1e-4f
             && along < length - 1e-4f;

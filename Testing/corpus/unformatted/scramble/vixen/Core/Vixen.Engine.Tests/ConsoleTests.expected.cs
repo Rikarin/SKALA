@@ -41,7 +41,7 @@ public sealed class ConsoleTests {
     public void AnUnknownCommandIsReportedRatherThanThrown
         () {
         var
-        commands = new ConsoleCommands();
+            commands = new ConsoleCommands();
 
         Assert.False(
             commands
@@ -197,7 +197,7 @@ public sealed class ConsoleTests {
     public void TheOverlayCommandTogglesAnOverlay() {
         var overlays = new DiagnosticOverlays();
         var
-        stats = new FrameStatsOverlay { Enabled = false };
+            stats = new FrameStatsOverlay { Enabled = false };
 
         overlays.Add(stats);
         var commands = new ConsoleCommands();
@@ -256,14 +256,14 @@ public sealed class ConsoleTests {
     [Fact]
     public void ALongTypedLineShowsItsEnd() {
         var
-        console = new ConsoleOverlay(new()) { Enabled = true, Width = 300f };
+            console = new ConsoleOverlay(new()) { Enabled = true, Width = 300f };
 
         console.Type("teleport ");
         console.Type(new string('z', 200));
         console.Type("END");
         var draw = new DebugDraw();
         var
-        overlays = new DiagnosticOverlays();
+            overlays = new DiagnosticOverlays();
         overlays.Add(console);
         overlays.Draw(draw, new Vector2(1280f, 720f), GameTime.Zero);
 

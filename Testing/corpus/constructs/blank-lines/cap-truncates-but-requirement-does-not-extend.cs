@@ -1,5 +1,6 @@
 class C {
-    void M() { }
-
-    void N() { }
+    void M() {
+    }
+    void N() {
+    }
 }

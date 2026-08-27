@@ -16,7 +16,7 @@
 namespace Serilog.Configuration;
 
 /// <summary>
-///     Controls template parameter destructuring configuration.
+/// Controls template parameter destructuring configuration.
 /// </summary>
 public class LoggerDestructuringConfiguration {
     readonly LoggerConfiguration _loggerConfiguration;
@@ -46,12 +46,12 @@ public class LoggerDestructuringConfiguration {
     }
 
     /// <summary>
-    ///     Treat objects of the specified type as scalar values, i.e., don't break
-    ///     them down into properties even when destructuring complex types.
+    /// Treat objects of the specified type as scalar values, i.e., don't break
+    /// them down into properties even when destructuring complex types.
     /// </summary>
     /// <param name="scalarType">Type to treat as scalar.</param>
     /// <returns>Configuration object allowing method chaining.</returns>
-    /// <exception cref="ArgumentNullException">When <paramref name="scalarType" /> is <code>null</code></exception>
+    /// <exception cref="ArgumentNullException">When <paramref name="scalarType"/> is <code>null</code></exception>
     public LoggerConfiguration AsScalar(Type scalarType) {
         Guard.AgainstNull(scalarType);
 
@@ -60,24 +60,20 @@ public class LoggerDestructuringConfiguration {
     }
 
     /// <summary>
-    ///     Treat objects of the specified type as scalar values, i.e., don't break
-    ///     them down into properties even when destructuring complex types.
+    /// Treat objects of the specified type as scalar values, i.e., don't break
+    /// them down into properties even when destructuring complex types.
     /// </summary>
     /// <typeparam name="TScalar">Type to treat as scalar.</typeparam>
     /// <returns>Configuration object allowing method chaining.</returns>
     public LoggerConfiguration AsScalar<TScalar>() => AsScalar(typeof(TScalar));
 
     /// <summary>
-    ///     When destructuring objects, transform instances with the provided policies.
+    /// When destructuring objects, transform instances with the provided policies.
     /// </summary>
     /// <param name="destructuringPolicies">Policies to apply when destructuring.</param>
     /// <returns>Configuration object allowing method chaining.</returns>
-    /// <exception cref="ArgumentNullException">
-    ///     When <paramref name="destructuringPolicies" /> is <code>null</code>
-    /// </exception>
-    /// <exception cref="ArgumentException">
-    ///     When any element of <paramref name="destructuringPolicies" /> is <code>null</code>
-    /// </exception>
+    /// <exception cref="ArgumentNullException">When <paramref name="destructuringPolicies"/> is <code>null</code></exception>
+    /// <exception cref="ArgumentException">When any element of <paramref name="destructuringPolicies"/> is <code>null</code></exception>
     // ReSharper disable once MemberCanBePrivate.Global
     public LoggerConfiguration With(params IDestructuringPolicy[] destructuringPolicies) {
         Guard.AgainstNull(destructuringPolicies);
@@ -92,7 +88,7 @@ public class LoggerDestructuringConfiguration {
     }
 
     /// <summary>
-    ///     When destructuring objects, transform instances with the provided policy.
+    /// When destructuring objects, transform instances with the provided policy.
     /// </summary>
     /// <typeparam name="TDestructuringPolicy">Policy to apply when destructuring.</typeparam>
     /// <returns>Configuration object allowing method chaining.</returns>
@@ -102,8 +98,8 @@ public class LoggerDestructuringConfiguration {
     }
 
     /// <summary>
-    ///     Capture instances of the specified type as dictionaries.
-    ///     By default, only concrete instantiations of are considered dictionary-like.
+    /// Capture instances of the specified type as dictionaries.
+    /// By default, only concrete instantiations of are considered dictionary-like.
     /// </summary>
     /// <typeparam name="T">Type of dictionary.</typeparam>
     /// <returns>Configuration object allowing method chaining.</returns>
@@ -114,16 +110,14 @@ public class LoggerDestructuringConfiguration {
     }
 
     /// <summary>
-    ///     When destructuring objects, transform instances of the specified type with
-    ///     the provided function.
+    /// When destructuring objects, transform instances of the specified type with
+    /// the provided function.
     /// </summary>
-    /// <param name="transformation">
-    ///     Function mapping instances of <typeparamref name="TValue" />
-    ///     to an alternative representation.
-    /// </param>
+    /// <param name="transformation">Function mapping instances of <typeparamref name="TValue"/>
+    /// to an alternative representation.</param>
     /// <typeparam name="TValue">Type of values to transform.</typeparam>
     /// <returns>Configuration object allowing method chaining.</returns>
-    /// <exception cref="ArgumentNullException">When <paramref name="transformation" /> is <code>null</code></exception>
+    /// <exception cref="ArgumentNullException">When <paramref name="transformation"/> is <code>null</code></exception>
     public LoggerConfiguration ByTransforming<TValue>(Func<TValue, object> transformation) {
         Guard.AgainstNull(transformation);
 
@@ -135,22 +129,18 @@ public class LoggerDestructuringConfiguration {
     }
 
     /// <summary>
-    ///     When destructuring objects, transform instances of the specified type with
-    ///     the provided function, if the predicate returns true. Be careful to avoid any
-    ///     intensive work in the predicate, as it can slow down the pipeline significantly.
+    /// When destructuring objects, transform instances of the specified type with
+    /// the provided function, if the predicate returns true. Be careful to avoid any
+    /// intensive work in the predicate, as it can slow down the pipeline significantly.
     /// </summary>
-    /// <param name="predicate">
-    ///     A predicate used to determine if the transform applies to
-    ///     a specific type of value
-    /// </param>
-    /// <param name="transformation">
-    ///     Function mapping instances of <typeparamref name="TValue" />
-    ///     to an alternative representation.
-    /// </param>
+    /// <param name="predicate">A predicate used to determine if the transform applies to
+    /// a specific type of value</param>
+    /// <param name="transformation">Function mapping instances of <typeparamref name="TValue"/>
+    /// to an alternative representation.</param>
     /// <typeparam name="TValue">Type of values to transform.</typeparam>
     /// <returns>Configuration object allowing method chaining.</returns>
-    /// <exception cref="ArgumentNullException">When <paramref name="predicate" /> is <code>null</code></exception>
-    /// <exception cref="ArgumentNullException">When <paramref name="transformation" /> is <code>null</code></exception>
+    /// <exception cref="ArgumentNullException">When <paramref name="predicate"/> is <code>null</code></exception>
+    /// <exception cref="ArgumentNullException">When <paramref name="transformation"/> is <code>null</code></exception>
     public LoggerConfiguration ByTransformingWhere<TValue>(
         Func<Type, bool> predicate,
         Func<TValue, object> transformation
@@ -166,15 +156,13 @@ public class LoggerDestructuringConfiguration {
     }
 
     /// <summary>
-    ///     When destructuring objects, depth will be limited to 10 property traversals deep to
-    ///     guard against ballooning space when recursive/cyclic structures are accidentally passed. To
-    ///     change this limit pass a new maximum depth.
+    /// When destructuring objects, depth will be limited to 10 property traversals deep to
+    /// guard against ballooning space when recursive/cyclic structures are accidentally passed. To
+    /// change this limit pass a new maximum depth.
     /// </summary>
     /// <param name="maximumDestructuringDepth">The maximum depth to use.</param>
     /// <returns>Configuration object allowing method chaining.</returns>
-    /// <exception cref="ArgumentOutOfRangeException">
-    ///     When <paramref name="maximumDestructuringDepth" /> is negative
-    /// </exception>
+    /// <exception cref="ArgumentOutOfRangeException">When <paramref name="maximumDestructuringDepth"/> is negative</exception>
     public LoggerConfiguration ToMaximumDepth(int maximumDestructuringDepth) {
         if (maximumDestructuringDepth < 0)
             throw new ArgumentOutOfRangeException(
@@ -187,15 +175,13 @@ public class LoggerDestructuringConfiguration {
     }
 
     /// <summary>
-    ///     When destructuring objects, string values can be restricted to specified length
-    ///     thus avoiding bloating payload. Limit is applied to each value separately,
-    ///     sum of length of strings can exceed limit.
+    /// When destructuring objects, string values can be restricted to specified length
+    /// thus avoiding bloating payload. Limit is applied to each value separately,
+    /// sum of length of strings can exceed limit.
     /// </summary>
     /// <param name="maximumStringLength">The maximum string length.</param>
     /// <returns>Configuration object allowing method chaining.</returns>
-    /// <exception cref="ArgumentOutOfRangeException">
-    ///     When <paramref name="maximumStringLength" /> is less than 2
-    /// </exception>
+    /// <exception cref="ArgumentOutOfRangeException">When <paramref name="maximumStringLength"/> is less than 2</exception>
     public LoggerConfiguration ToMaximumStringLength(int maximumStringLength) {
         if (maximumStringLength < 2)
             throw new ArgumentOutOfRangeException(
@@ -209,15 +195,13 @@ public class LoggerDestructuringConfiguration {
     }
 
     /// <summary>
-    ///     When destructuring objects, collections be restricted to specified count
-    ///     thus avoiding bloating payload. Limit is applied to each collection separately,
-    ///     sum of length of collection can exceed limit.
-    ///     Applies limit to all <see cref="IEnumerable" /> including dictionaries.
+    /// When destructuring objects, collections be restricted to specified count
+    /// thus avoiding bloating payload. Limit is applied to each collection separately,
+    /// sum of length of collection can exceed limit.
+    /// Applies limit to all <see cref="IEnumerable"/> including dictionaries.
     /// </summary>
     /// <returns>Configuration object allowing method chaining.</returns>
-    /// <exception cref="ArgumentOutOfRangeException">
-    ///     When <paramref name="maximumCollectionCount" /> is less than 1
-    /// </exception>
+    /// <exception cref="ArgumentOutOfRangeException">When <paramref name="maximumCollectionCount"/> is less than 1</exception>
     public LoggerConfiguration ToMaximumCollectionCount(int maximumCollectionCount) {
         if (maximumCollectionCount < 1)
             throw new ArgumentOutOfRangeException(

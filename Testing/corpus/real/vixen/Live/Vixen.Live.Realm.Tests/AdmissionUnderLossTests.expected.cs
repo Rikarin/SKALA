@@ -10,11 +10,8 @@ namespace Vixen.Live.Realms.Tests;
 /// <summary>Admission over a wire that loses, delays, reorders and duplicates.</summary>
 /// <remarks>
 ///     <para>
-///         <b>Doc 27 § Testing asks for this leg by name</b> —
-///         <em>
-///             "end-to-end over
-///             <c>Vixen.Net.Transport.Local</c> with <c>NetworkSimulation</c>"
-///         </em> — and until now every
+///         <b>Doc 27 § Testing asks for this leg by name</b> — <em>"end-to-end over
+///         <c>Vixen.Net.Transport.Local</c> with <c>NetworkSimulation</c>"</em> — and until now every
 ///         admission test in this project ran on a perfect transport. A perfect transport cannot fail
 ///         the interesting way: admission is a handshake with a deadline, and a deadline only means
 ///         anything when something can be late.

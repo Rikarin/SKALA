@@ -1,5 +1,4 @@
 // skala-oracle: resharper=2025.2.6 config=sha256:98ff52570e019fac profile=SkalaFormatOnly generated=2026-08-27
-
 #region License
 
 // Copyright (c) 2007 James Newton-King
@@ -77,31 +76,31 @@ namespace Newtonsoft.Json.Tests.Documentation.Samples.Linq {
                         link = "http://www.starwars.com",
                         description = "Star Wars blog.",
                         item = from p in posts
-                        orderby p.Title
-                        select new {
-                            title = p.Title, description = p.Description, link = p.Link, category = p.Categories
-                        }
+                            orderby p.Title
+                            select new {
+                                title = p.Title, description = p.Description, link = p.Link, category = p.Categories
+                            }
                     }
                 }
             );
             Console.WriteLine(o.ToString()); // {
-            //   "channel": {
-            //     "title": "Star Wars",
-            //     "link": "http://www.starwars.com",
-            //     "description": "Star Wars blog.",
-            //     "item": [
-            //       {
-            //         "title": "Episode VII",
-            //         "description": "Episode VII production",
-            //         "link": "episode-vii-production.aspx",
-            //         "category": [
-            //           "episode-vii",
-            //           "movie"
-            //         ]
-            //       }
-            //     ]
-            //   }
-            // }
+//   "channel": {
+//     "title": "Star Wars",
+//     "link": "http://www.starwars.com",
+//     "description": "Star Wars blog.",
+//     "item": [
+//       {
+//         "title": "Episode VII",
+//         "description": "Episode VII production",
+//         "link": "episode-vii-production.aspx",
+//         "category": [
+//           "episode-vii",
+//           "movie"
+//         ]
+//       }
+//     ]
+//   }
+// }
 
             #endregion
 

@@ -1,5 +1,4 @@
 #region License
-
 // Copyright (c) 2007 James Newton-King
 //
 // Permission is hereby granted, free of charge, to any person
@@ -22,9 +21,7 @@
 // WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 // OTHER DEALINGS IN THE SOFTWARE.
-
 #endregion
-
 using Newtonsoft.Json.Linq;
 #if DNXCORE50
 using Xunit;
@@ -33,21 +30,15 @@ using Assert = Newtonsoft.Json.Tests.XUnitAssert;
 #else
 using NUnit.Framework;
 #endif
-using System; using System.Collections.Generic;
+using System;using System.Collections.Generic;
 #if NET20
 using Newtonsoft.Json.Utilities.LinqBridge;
 #else
 using System.Linq;
 #endif
-using System.Text; namespace Newtonsoft.Json.Tests.Documentation.Samples.JsonPath {
-    [TestFixture]
-    public class RegexQuery : TestFixtureBase {
-        [Test]
-        public void Example() {
-            #region Usage
-
-            JArray packages = JArray.Parse(
-                @"[
+using System.Text;namespace Newtonsoft.Json.Tests.Documentation.Samples.JsonPath{[TestFixture]public class RegexQuery:TestFixtureBase{[Test]public void Example(){
+#region Usage
+JArray packages=JArray.Parse(@"[
               {
                 'PackageId': 'Newtonsoft.Json',
                 'Version': '11.0.1',
@@ -58,18 +49,7 @@ using System.Text; namespace Newtonsoft.Json.Tests.Documentation.Samples.JsonPat
                 'Version': '3.9.0',
                 'ReleaseDate': '2017-11-10T00:00:00'
               }
-            ]"
-            ); // Find Newtonsoft packages
-            List<JToken> newtonsoftPackages =
-                packages.SelectTokens(@"$.[?(@.PackageId =~ /^Newtonsoft\.(.*)$/)]").ToList();
-            foreach (JToken item in newtonsoftPackages) {
-                Console.WriteLine((string)item["PackageId"]);
-            } // Newtonsoft.Json
-
-            #endregion
-
-            Assert.AreEqual(1, newtonsoftPackages.Count);
-            Assert.AreEqual("Newtonsoft.Json", (string)newtonsoftPackages[0]["PackageId"]);
-        }
-    }
-}
+            ]" ); // Find Newtonsoft packages
+List<JToken>newtonsoftPackages=packages.SelectTokens(@"$.[?(@.PackageId =~ /^Newtonsoft\.(.*)$/)]" ).ToList();foreach(JToken item in newtonsoftPackages){Console.WriteLine((string)item["PackageId" ]);} // Newtonsoft.Json
+#endregion
+Assert.AreEqual(1,newtonsoftPackages.Count);Assert.AreEqual("Newtonsoft.Json" ,(string)newtonsoftPackages[0]["PackageId" ]);}}}

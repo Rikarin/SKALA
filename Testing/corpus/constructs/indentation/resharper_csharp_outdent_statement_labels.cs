@@ -5,7 +5,7 @@ class C {
         }
 
         a++;
-        Finish:
+    Finish:
         System.Console.Write(a);
     }
 }

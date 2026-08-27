@@ -22,7 +22,7 @@ public class DescriptorTests {
     [Fact]
     public void Referencing_the_assembly_is_enough_for_a_type_to_be_described() {
         // No scan, no AppDomain walk: the module initializer the generator emitted has already run
-        // by the time any of this assembly's code does.
+// by the time any of this assembly's code does.
         Assert.NotNull(InspectorRegistry.Find(typeof(WaterMaterial)));
         Assert.Null(InspectorRegistry.Find(typeof(string)));
     }
@@ -31,7 +31,7 @@ public class DescriptorTests {
     public void Members_are_in_declaration_order_except_where_one_asks_otherwise() {
         var names = Water.Members.Select(static member => member.Name)
             .ToArray(); // "Sea Level" declared Order = -1 and everything else left it at zero, so it comes first and
-        // the rest keep the order they were written in.
+// the rest keep the order they were written in.
         Assert.Equal("Level", names[0]);
         Assert.Equal(
             ["Roughness", "Tint", "NormalMap", "Amplitude", "FoamWidth", "DryWidth", "UseFoam"],
@@ -101,7 +101,7 @@ public class DescriptorTests {
         var flow = (InspectorMember<WaterMaterial, Vector3>)Water.Members.Single(static m => m.Name == "Flow");
         var material =
             new WaterMaterial(); // The write goes through the accessor and lands on the object, which is the whole difference
-        // from a boxed setter: nothing here re-assigns the whole Vector3 from outside.
+// from a boxed setter: nothing here re-assigns the whole Vector3 from outside.
         flow.Set(material, new Vector3(0f, 2f, 0f));
         Assert.Equal(new Vector3(0f, 2f, 0f), material.Flow);
         Assert.Equal(new Vector3(0f, 2f, 0f), flow.Get(material));
@@ -144,7 +144,7 @@ public class DescriptorTests {
         Assert.Null(
             InspectorRegistry.CommonType([new WaterMaterial(), new Emitter()])
         ); // Not "the most derived common base", which would produce a different set of editors
-        // depending on what else happened to be selected.
+// depending on what else happened to be selected.
         Assert.Null(InspectorRegistry.CommonType([new SparkEmitter(), new Emitter()]));
     }
 

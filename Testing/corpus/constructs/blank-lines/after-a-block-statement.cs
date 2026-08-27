@@ -3,7 +3,6 @@ class C {
         if (b) {
             M(b);
         }
-
         M(b);
     }
 }

@@ -123,7 +123,7 @@ public static class ControlIcons {
             path.Close();
         } // The joints, as squares. Skipped at the ends, where a butt cap is what a tick wants
 
-        // anyway — a rounded one would need a curve per end for a difference of a pixel.
+// anyway — a rounded one would need a curve per end for a difference of a pixel.
         for (var i = 1; i + 1 < points.Length; i++) {
             path.AddRectangle(new Rectangle(points[i].X - half, points[i].Y - half, width, width));
         }
@@ -157,7 +157,7 @@ public static class ControlIcons {
         path.AddRectangle(
             new Rectangle(4.5f, 10.5f, 15f, 10.5f)
         ); // An open lock lifts the shackle and swings it off to one side, which is the difference a
-        // reader has to see at a glance from across the panel.
+// reader has to see at a glance from across the panel.
         var centre = closed ? 12f : 15.5f;
         var top = closed ? 5.5f : 4f;
         var radius = 4f;
@@ -174,7 +174,7 @@ public static class ControlIcons {
             path,
             Stroke(points, 1.9f)
         ); // The near leg comes down to the body; the far one stops short on an open lock, because it
-        // is the leg that has come out.
+// is the leg that has come out.
         Append(path, Stroke([points[0], new Vector2(points[0].X, 10.5f)], 1.9f));
         Append(path, Stroke([points[^1], new Vector2(points[^1].X, closed ? 10.5f : 8.5f)], 1.9f));
         return path;

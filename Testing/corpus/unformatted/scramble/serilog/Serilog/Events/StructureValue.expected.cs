@@ -19,21 +19,19 @@
 namespace Serilog.Events;
 
 /// <summary>
-///     A value represented as a collection of name-value properties.
+/// A value represented as a collection of name-value properties.
 /// </summary>
 public class StructureValue : LogEventPropertyValue {
     readonly LogEventProperty[]
-    _properties;
+        _properties;
 
     /// <summary>
-    ///     Construct a <see cref="StructureValue" /> with the provided properties.
+    /// Construct a <see cref="StructureValue"/> with the provided properties.
     /// </summary>
-    /// <param name="typeTag">
-    ///     Optionally, a piece of metadata describing the "type" of the
-    ///     structure. Can be <code>null</code>.
-    /// </param>
+    /// <param name="typeTag">Optionally, a piece of metadata describing the "type" of the
+    /// structure. Can be <code>null</code>.</param>
     /// <param name="properties">The properties of the structure.</param>
-    /// <exception cref="ArgumentNullException">When <paramref name="properties" /> is <code>null</code></exception>
+    /// <exception cref="ArgumentNullException">When <paramref name="properties"/> is <code>null</code></exception>
     public StructureValue(IEnumerable<LogEventProperty> properties, string? typeTag = null) {
         Guard.AgainstNull(properties);
         TypeTag = typeTag
@@ -44,38 +42,37 @@ public class StructureValue : LogEventPropertyValue {
     internal StructureValue(
         LogEventProperty[] properties,
         string?
-        typeTag
+            typeTag
     ) {
         TypeTag = typeTag;
         _properties = properties;
     }
 
     /// <summary>
-    ///     A piece of metadata describing the "type" of the
-    ///     structure, or null.
+    /// A piece of metadata describing the "type" of the
+    /// structure, or null.
     /// </summary>
     public string
         ? TypeTag { get; }
 
     /// <summary>
-    ///     The properties of the structure.
+    /// The properties of the structure.
     /// </summary>
-    /// <remarks>
-    ///     Not presented as a dictionary because dictionary construction is
-    ///     relatively expensive; it is cheaper to build a dictionary over properties only
-    ///     when the structure is of interest.
-    /// </remarks>
+    /// <remarks>Not presented as a dictionary because dictionary construction is
+    /// relatively expensive; it is cheaper to build a dictionary over properties only
+    /// when the structure is of interest.</remarks>
     public IReadOnlyList<
-        LogEventProperty> Properties => _properties;
+        LogEventProperty> Properties =>
+        _properties;
 
     /// <summary>
-    ///     Render the value to the output.
+    /// Render the value to the output.
     /// </summary>
     /// <param name="output">The output.</param>
     /// <param name="format">A format string applied to the value, or null.</param>
     /// <param name="formatProvider">A format provider to apply to the value, or null to use the default.</param>
-    /// <seealso cref="LogEventPropertyValue.ToString(string, IFormatProvider)" />.
-    /// <exception cref="ArgumentNullException">When <paramref name="output" /> is <code>null</code></exception>
+    /// <seealso cref="LogEventPropertyValue.ToString(string, IFormatProvider)"/>.
+    /// <exception cref="ArgumentNullException">When <paramref name="output"/> is <code>null</code></exception>
     public override
         void Render(TextWriter output, string? format = null, IFormatProvider? formatProvider = null) {
         Guard.AgainstNull(output);
@@ -90,9 +87,9 @@ public class StructureValue : LogEventPropertyValue {
         var allButLast =
             _properties.Length - 1;
         for (
-             var i = 0;
-             i < allButLast;
-             i++) {
+            var i = 0;
+            i < allButLast;
+            i++) {
             var property = _properties[i];
             Render(output, property, formatProvider);
             output.Write(", ");

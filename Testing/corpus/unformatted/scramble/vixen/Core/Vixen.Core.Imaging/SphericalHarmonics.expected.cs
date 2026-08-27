@@ -37,7 +37,8 @@ public sealed class
 
     /// <summary>The nine coefficients, one RGB triple each.</summary>
     public ReadOnlySpan
-        <Vector3> Coefficients => coefficients;
+        <Vector3> Coefficients =>
+        coefficients;
 
     /// <summary>Starts from nine given coefficients.</summary>
     /// <param name="coefficients">The nine.</param>
@@ -52,7 +53,8 @@ public sealed class
 
     /// <summary>Starts from nothing: a black environment.</summary>
     public SphericalHarmonicsL2
-        () => coefficients = new Vector3[Count];
+        () =>
+        coefficients = new Vector3[Count];
 
     /// <summary>Projects a cube map onto the first three bands.</summary>
     /// <param name="cube">The environment, six square faces in a float format.</param>
@@ -68,13 +70,13 @@ public sealed class
     public static SphericalHarmonicsL2 Project(
         TextureData cube,
         int level =
-        0
+            0
     ) {
         CubeMap
             .Require(cube, nameof(cube));
         var size = cube.Levels[level]
             .Width;
-        var coefficients = new Vector3[Count];
+        var coefficients = new Vector3 [Count];
         Span<float> basis = stackalloc float[Count];
         for (var face = 0; face < CubeMap.Faces; face++) {
             for (var y = 0; y < size; y++) {

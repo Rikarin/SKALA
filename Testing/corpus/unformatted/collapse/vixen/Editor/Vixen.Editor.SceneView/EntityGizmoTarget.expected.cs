@@ -82,11 +82,8 @@ public sealed class EntityGizmoTarget : IGizmoTarget {
 
     /// <inheritdoc />
     /// <remarks>
-    ///     ⚠
-    ///     <b>
-    ///         The entry goes on the viewport's document, because that is what an entity belongs
-    ///         to.
-    ///     </b> This is the ordinary case and it reads as one, which it did not when it was the
+    ///     ⚠ <b>The entry goes on the viewport's document, because that is what an entity belongs
+    ///     to.</b> This is the ordinary case and it reads as one, which it did not when it was the
     ///     fall-through of two other branches.
     /// </remarks>
     public GizmoEdit? Record(in GizmoDrag drag) {

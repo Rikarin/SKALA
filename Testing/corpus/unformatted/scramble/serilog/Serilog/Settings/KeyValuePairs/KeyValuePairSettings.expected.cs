@@ -43,7 +43,7 @@ class KeyValuePairSettings : ILoggerSettings {
         = "using:";
 
     const string
-    EnrichWithPropertyDirectivePrefix = "enrich:with-property:";
+        EnrichWithPropertyDirectivePrefix = "enrich:with-property:";
 
     const string MinimumLevelOverrideDirectivePrefix = "minimum-level:override:";
 
@@ -72,7 +72,7 @@ class KeyValuePairSettings : ILoggerSettings {
         ["write-to"] = typeof(LoggerSinkConfiguration),
         ["enrich"] = typeof(LoggerEnrichmentConfiguration),
         ["filter"] = typeof(LoggerFilterConfiguration
-            ),
+        ),
         ["destructure"] = typeof(LoggerDestructuringConfiguration),
     };
 
@@ -180,7 +180,7 @@ class KeyValuePairSettings : ILoggerSettings {
                 calls,
                 methods,
                 CallableDirectiveReceivers
-                [receiverGroup.Key](loggerConfiguration),
+                    [receiverGroup.Key](loggerConfiguration),
                 declaredLevelSwitches
             );
         }
@@ -199,7 +199,7 @@ class KeyValuePairSettings : ILoggerSettings {
         var matchLevelSwitchDeclarations =
             new Regex(LevelSwitchDeclarationDirectiveRegex);
         var switchDeclarationDirectives = (from wt in
-            directives
+                directives
             where matchLevelSwitchDeclarations.IsMatch(
                 wt
                     .Key
@@ -258,7 +258,7 @@ class KeyValuePairSettings : ILoggerSettings {
             return LookUpSwitchByName(valueOrSwitchName, declaredSwitches);
         }
 
-        return SettingValueConversions.ConvertToType(valueOrSwitchName, type)!;
+        return SettingValueConversions.ConvertToType(valueOrSwitchName, type) !;
     }
 
     [RequiresUnreferencedCode("Finds accessors by name")]
@@ -271,7 +271,7 @@ class KeyValuePairSettings : ILoggerSettings {
         IReadOnlyDictionary<string, LoggingLevelSwitch> declaredSwitches
     ) {
         foreach (var
-                 directiveInfo in directives) {
+                     directiveInfo in directives) {
             var target = SelectConfigurationMethod(configurationMethods, directiveInfo.Key, directiveInfo);
 
             if (target == null) {
@@ -292,7 +292,7 @@ class KeyValuePairSettings : ILoggerSettings {
                     directive == null
                         ? p.DefaultValue
                         : ConvertOrLookupByName(directive.Value, p.ParameterType, declaredSwitches)
-                    ;
+                ;
 
                 call.Insert(0, loggerConfigMethod);
 
@@ -331,7 +331,7 @@ class KeyValuePairSettings : ILoggerSettings {
                 );
 
             var
-            assemblyName = new AssemblyName(usingDirective.Value);
+                assemblyName = new AssemblyName(usingDirective.Value);
             configurationAssemblies.Add(Assembly.Load(assemblyName));
         }
 

@@ -1,16 +1,14 @@
-// SPDX-FileCopyrightText: Copyright (c) Rikarin
-// SPDX-License-Identifier: Apache-2.0
-
-using Vixen.
-Core;
-using Vixen.Ecs;
-using Vixen.Net.Sessions;
-
-namespace Vixen.Net.Replication;
-
+       // SPDX-FileCopyrightText: Copyright (c) Rikarin
+               // SPDX-License-Identifier: Apache-2.0
+              
+          using Vixen.
+          Core;
+			using  Vixen.Ecs  ;
+using   Vixen.Net  .    Sessions;
+      namespace    Vixen .  Net.  Replication;
 /// <summary>What one rule has to say about whether a player is told about an object.</summary>
-
-public enum Interest : byte {
+          
+         public enum Interest    : byte  {
     /// <summary>Nothing to say. The next rule decides, or the chain's fallback does.</summary>
     /// <remarks>
     ///     <b>The answer most rules give most of the time, and the reason a chain works.</b> A scene
@@ -19,13 +17,12 @@ public enum Interest : byte {
     ///     than voting "observed" and forcing every later rule to be able to overrule it — is what
     ///     lets the rules be written independently and put in any order.
     /// </remarks>
-    Undecided = 0,
+    Undecided  = 0,
     /// <summary>Tell them about it, and stop asking.</summary>
-    Observed = 1,
+	Observed =   1,   
     /// <summary>Do not, and stop asking.</summary>
-    Hidden = 2
-}
-
+    Hidden    = 2
+         }
 /// <summary>One opinion about whether a player is told about an object.</summary>
 /// <remarks>
 ///     Rules are asked in order and <b>the first definite answer wins</b>, which is what
@@ -33,15 +30,13 @@ public enum Interest : byte {
 ///     ordering means: an explicit answer placed before the grid is one the grid cannot overrule, and
 ///     that is exactly what "explicit override" has to mean to be worth having.
 /// </remarks>
-public interface IInterestRule {
+public   interface IInterestRule {
     /// <summary>Decides, or declines to.</summary>
     /// <param name="world">The server's world.</param>
     /// <param name="player">Who is being told.</param>
     /// <param name="entity">The object.</param>
     /// <returns>This rule's opinion.</returns>
-    Interest Decide(World world, PlayerId player, Entity entity);
-}
-
+   Interest  Decide(World world, PlayerId player, Entity    entity); }
 /// <summary>Where the entities a chain considers come from.</summary>
 /// <remarks>
 ///     <para>
@@ -58,29 +53,26 @@ public interface IInterestRule {
 ///         and scales like the thing it was meant to replace.
 ///     </para>
 /// </remarks>
-public interface IInterestSource {
+public interface  IInterestSource {
     /// <summary>Fills <paramref name="into" /> with the entities worth asking about.</summary>
     /// <param name="world">The server's world.</param>
     /// <param name="player">Who is being told.</param>
     /// <param name="into">Where to put them. Cleared by the caller.</param>
-    void Candidates(World world, PlayerId player, List<Entity> into);
-}
-
+             void Candidates(World world, PlayerId player
+, List<Entity> into   )    ;
+             }
 /// <summary>Every networked entity, which is what a chain considers unless told otherwise.</summary>
-public sealed class AllNetworkedSource : IInterestSource {
-    static readonly QueryDescription Networked = new QueryDescription().RequireAll([ComponentType<NetworkId>.Id]);
-
+public   sealed class AllNetworkedSource  : IInterestSource {
+    static readonly QueryDescription Networked = new   QueryDescription()    .RequireAll ([  ComponentType< NetworkId   >.Id  ]  );
     /// <inheritdoc />
-    public void Candidates(World world, PlayerId player, List<Entity> into) {
-        ArgumentNullException.ThrowIfNull(world);
-        ArgumentNullException.ThrowIfNull(into);
-        foreach (var
-                 chunk in world.Chunks(Networked)) {
-            into.AddRange(chunk.Entities);
-        }
-    }
+            public void   Candidates( World world,   PlayerId  player, List<Entity> into) {  ArgumentNullException.ThrowIfNull(  world)    ;
+		ArgumentNullException .ThrowIfNull(into);
+      foreach (    var
+        chunk in world.   Chunks(Networked)   ) {
+     into   .AddRange(  chunk.Entities    ); }
+      
+         }
 }
-
 /// <summary>Resolvers composed: a source of candidates and rules that decide about them.</summary>
 /// <remarks>
 ///     <para>
@@ -106,25 +98,22 @@ public sealed class AllNetworkedSource : IInterestSource {
 ///         noticed, and one that silently is not is debugged.
 ///     </para>
 /// </remarks>
-public sealed class InterestChain : IInterestResolver {
+           public sealed class InterestChain :    IInterestResolver {
     readonly
-        List<Entity> candidates = [];
-
+	List<Entity    > candidates    = [    ];
+ 
     /// <summary>The rules, asked in order until one has an opinion.</summary>
-    public
-        IList<IInterestRule> Rules { get; } = [];
-
+                public
+         IList    <   IInterestRule> Rules {    get; } =    [];
     /// <summary>Where candidates come from. Every networked entity, unless replaced.</summary>
-    public IInterestSource Source { get; set; } = new
-        AllNetworkedSource();
-
+              public IInterestSource Source { get;  set    ;    } =  new
+    AllNetworkedSource(   )    ;
+              
     /// <summary>What to do about an object no rule had an opinion on.</summary>
-    public Interest Fallback { get;
-        set; } = Interest.Observed;
-
+ public Interest Fallback { get;
+     set; }   = Interest.Observed;
     /// <summary>How many candidates the last resolve considered.</summary>
-    public int ConsideredCount { get; private set; }
-
+               public int ConsideredCount { get; private set;   }
     /// <summary>How many of them were hidden.</summary>
     /// <remarks>
     ///     The pair to watch. Considered says what the source cost and hidden says what the rules
@@ -132,33 +121,22 @@ public sealed class InterestChain : IInterestResolver {
     ///     for the time they take, while a source whose considered count is the whole world is a grid
     ///     that has not been wired up.
     /// </remarks>
-    public int HiddenCount { get; private set
-            ; }
-
+    public int HiddenCount {  get  ; private  set 
+    ;  }
     /// <inheritdoc />
-    public void Resolve(
-        World
-        world,
-        PlayerId player,
-        List<Entity> observed
-    ) {
-        ArgumentNullException.ThrowIfNull(world)
-            ;
-        ArgumentNullException.ThrowIfNull(observed);
-
-        candidates.Clear();
-        Source.Candidates(world, player, candidates);
-        ConsideredCount = candidates.Count;
-        HiddenCount = 0;
-        foreach (var entity in candidates) {
-            if (Decide(world, player, entity) == Interest.Observed) {
-                observed.Add(entity);
-            } else {
-                HiddenCount++;
-            }
-        }
-    }
-
+       public void  Resolve( World
+     world   , PlayerId  player, List <Entity > observed    ) {
+           ArgumentNullException.   ThrowIfNull( world)
+;
+        ArgumentNullException.ThrowIfNull(   observed );
+           
+       candidates.Clear(); Source  .Candidates(world,   player,  candidates   );
+      ConsideredCount = candidates.   Count ;    HiddenCount = 0;
+ foreach (var entity  in candidates) {
+            if  (Decide(   world  , player,  entity ) ==    Interest.   Observed) { observed.Add (entity) ;
+      } else    { HiddenCount++;
+   }
+              } }
     /// <summary>What the chain says about one object, for a test or a diagnostic.</summary>
     /// <param name="world">The server's world.</param>
     /// <param name="player">Who is being told.</param>
@@ -167,17 +145,14 @@ public sealed class InterestChain : IInterestResolver {
     ///     <see cref="Interest.Observed" /> or <see cref="Interest.Hidden" />, never
     ///     <see cref="Interest.Undecided" /> — the fallback is what makes that true.
     /// </returns>
-    public Interest Decide(World world, PlayerId player, Entity entity) {
-        foreach (var rule in Rules) {
-            var verdict = rule.Decide(world, player, entity);
-            if (verdict != Interest.Undecided) {
-                return verdict;
+            public Interest Decide(World    world    ,   PlayerId player, Entity entity)  {
+         foreach (var rule in Rules) { var  verdict = rule.Decide (world, player  ,   entity    );
+            if (verdict  != Interest.Undecided )    { return verdict    ;
             }
         }
-
-        return Fallback;
-    }
-}
+      
+			return Fallback;
+    }   }
 
 /// <summary>Visibility a game has decided by hand, which nothing after it may argue with.</summary>
 /// <remarks>
@@ -194,92 +169,68 @@ public sealed class InterestChain : IInterestResolver {
 ///         is the id a game has in hand when a rule fires.
 ///     </para>
 /// </remarks>
-public sealed
-    class ExplicitInterestRule : IInterestRule {
-    readonly Dictionary<uint, Dictionary<uint, Interest>> byPlayer = [];
+public  sealed
+       class ExplicitInterestRule :   IInterestRule {
 
+       readonly    Dictionary<    uint,    Dictionary<uint    , Interest>  >    byPlayer   =   [    ];
     /// <summary>How many players have an override of any kind.</summary>
-    public int PlayerCount => byPlayer.Count;
-
+    public    int    PlayerCount => byPlayer   .Count    ;
     /// <summary>Shows an object to a player whatever anything after this would say.</summary>
     /// <param name="player">Who.</param>
     /// <param name="id">What.</param>
-    public void Show(
-        PlayerId player,
-        NetworkId
-        id
-    ) =>
-        Set(player, id, Interest.Observed);
-
+public   void  Show(    PlayerId player   , NetworkId
+                id) => Set(  player, id, Interest  .Observed);
     /// <summary>Hides one from them whatever anything after this would say.</summary>
     /// <param name="player">Who.</param>
     /// <param name="id">What.</param>
-    public void Hide(PlayerId player, NetworkId id) =>
-        Set
-        (player, id, Interest.Hidden);
-
+    public void Hide(  PlayerId player  ,    NetworkId id) => Set
+   (   player, id,   Interest.Hidden  );
+			
     /// <summary>Takes an override off, leaving the rest of the chain to decide.</summary>
     /// <param name="player">Who.</param>
     /// <param name="id">What.</param>
     /// <returns>Whether there was one.</returns>
-    public bool Clear(
-        PlayerId player,
-        NetworkId id
-    ) =>
-        byPlayer.TryGetValue(
-            player.Value,
-            out
-            var overrides
-        )
-        && overrides.Remove(id.Value);
-
+                public bool  Clear(
+PlayerId player, NetworkId id) =>
+   byPlayer.   TryGetValue   (player.Value,  out
+       var    overrides) && overrides   .   Remove   (  id    .  Value);
     /// <summary>Forgets a player who has gone.</summary>
     /// <param name="player">Who.</param>
-    public void Forget(PlayerId player) => byPlayer.Remove(player.Value);
-
+  public void  Forget(PlayerId player) => byPlayer .Remove(player.Value)  ;
     /// <summary>Forgets an object that has been destroyed, for every player.</summary>
     /// <param name="id">What.</param>
     /// <remarks>
     ///     Ids are not reused within a session, so a leaked override is memory rather than a wrong
     ///     answer — but a server that runs for a week is one where memory is the failure.
     /// </remarks>
-    public void Forget(NetworkId id) {
-        foreach (var overrides in byPlayer.Values) {
-            overrides.
-                Remove(id.Value);
-        }
-    }
-
+    public void Forget(NetworkId id) { foreach (var   overrides    in byPlayer.Values)  {
+             overrides .
+Remove(id.Value);
+   }
+               }
+   
     /// <inheritdoc />
-    public Interest Decide(
-        World world,
-        PlayerId
-        player,
-        Entity entity
-    ) {
-        ArgumentNullException.ThrowIfNull(world);
-
-        if (byPlayer.Count == 0 || !world.TryGet<NetworkId>(entity, out var id)) {
-            return Interest.Undecided;
-        }
-
-        return byPlayer.TryGetValue(player.Value, out var overrides) && overrides.TryGetValue(id.Value, out var verdict)
-            ? verdict
-            : Interest
-                .Undecided;
-    }
-
-    void Set(
-        PlayerId player,
-        NetworkId id,
-        Interest verdict
-    ) {
-        if (!byPlayer.TryGetValue(player.Value, out var overrides)) {
-            overrides = [];
-            byPlayer[player.Value] = overrides;
-        }
-
-        overrides[id
-            .Value] = verdict;
-    }
+    public Interest Decide(World world, PlayerId
+player, Entity entity)  {
+                ArgumentNullException .ThrowIfNull(world 
+             );
+                
+              if (byPlayer   .Count  == 0    || !world.TryGet<  NetworkId>(entity, out var id)) { return Interest   .   Undecided  ;
+		}
+            
+    return byPlayer   .  TryGetValue (player.Value, out   var   overrides)   && overrides.TryGetValue    (  id.Value, out var   verdict)
+  ? verdict
+     : Interest  
+               .   Undecided    ;
+           } 
+  
+    void Set(    PlayerId  player,
+ NetworkId  id,   Interest  verdict) {
+        if  (    !byPlayer   .TryGetValue(player.Value, out var overrides))  {
+            overrides  =   [];    byPlayer[player.Value] = overrides;
+  }
+overrides[    id
+     .Value]    =    verdict;
+     }
 }
+      

@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 using
-System.Diagnostics.CodeAnalysis;
+    System.Diagnostics.CodeAnalysis;
 using Vixen.Editor.Core;
 
 namespace Vixen.Editor.Inspector;
@@ -36,7 +36,7 @@ public sealed class InspectorEditProvider : IEditProvider {
     /// </remarks>
     public IReadOnlyList<IEditMember> MembersOf(
         Type
-        type
+            type
     ) {
         ArgumentNullException.ThrowIfNull(type);
 

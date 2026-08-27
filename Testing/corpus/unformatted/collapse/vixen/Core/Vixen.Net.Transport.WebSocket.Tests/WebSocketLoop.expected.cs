@@ -46,7 +46,7 @@ public sealed class WebSocketLoop : IWebSocketFactory {
         var client = new Channel(ours, theirs);
         if (!listeners.TryGetValue(Key(address), out var listener)) {
             // Nobody there. Closed rather than throwing, because being refused is an ordinary thing
-            // for a client to be and the transport has to report it as an event either way.
+// for a client to be and the transport has to report it as an event either way.
             client.Refuse();
             return client;
         }
@@ -75,7 +75,7 @@ public sealed class WebSocketLoop : IWebSocketFactory {
                 out message
             ); // Closing does not discard what is already in flight, which is what a real close does too:
 
-        // the bytes were handed to the network before the close was.
+// the bytes were handed to the network before the close was.
         public void Close() => Closed = true;
         public bool Drained => messages.Count == 0;
     }
@@ -115,8 +115,8 @@ public sealed class WebSocketLoop : IWebSocketFactory {
 
         public void Pump() {
             // The far end hung up, and everything it sent before doing so has been taken. Only then
-            // is the channel closed — a close that discarded undelivered messages would make "the
-            // server said why it was disconnecting me" a race.
+// is the channel closed — a close that discarded undelivered messages would make "the
+// server said why it was disconnecting me" a race.
             if (State == WebSocketChannelState.Open && inbound.Closed && inbound.Drained) {
                 State = WebSocketChannelState.Closed;
             }

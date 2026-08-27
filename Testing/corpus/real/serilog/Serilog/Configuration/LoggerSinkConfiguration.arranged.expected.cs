@@ -20,7 +20,7 @@ using Serilog.Core.Sinks.Batching;
 namespace Serilog.Configuration;
 
 /// <summary>
-///     Controls sink configuration.
+/// Controls sink configuration.
 /// </summary>
 public class LoggerSinkConfiguration {
     readonly LoggerConfiguration _loggerConfiguration;
@@ -32,19 +32,14 @@ public class LoggerSinkConfiguration {
     }
 
     /// <summary>
-    ///     Write log events to an <see cref="ILogEventSink" />.
+    /// Write log events to an <see cref="ILogEventSink"/>.
     /// </summary>
     /// <param name="logEventSink">The sink.</param>
-    /// <param name="restrictedToMinimumLevel">
-    ///     The minimum level for
-    ///     events passed through the sink.
-    /// </param>
-    /// <seealso cref="Sink(ILogEventSink, LogEventLevel, LoggingLevelSwitch?)" />
+    /// <param name="restrictedToMinimumLevel">The minimum level for
+    /// events passed through the sink.</param>
+    /// <seealso cref="Sink(ILogEventSink, LogEventLevel, LoggingLevelSwitch?)"/>
     /// <returns>Configuration object allowing method chaining.</returns>
-    /// <remarks>
-    ///     Sink configuration methods that specify <paramref name="restrictedToMinimumLevel" /> should also specify
-    ///     <see cref="LoggingLevelSwitch" />.
-    /// </remarks>
+    /// <remarks>Sink configuration methods that specify <paramref name="restrictedToMinimumLevel"/> should also specify <see cref="LoggingLevelSwitch"/>.</remarks>
     [EditorBrowsable(EditorBrowsableState.Never)]
     public LoggerConfiguration Sink(
         ILogEventSink logEventSink,
@@ -53,17 +48,13 @@ public class LoggerSinkConfiguration {
         Sink(logEventSink, restrictedToMinimumLevel, null);
 
     /// <summary>
-    ///     Write log events to an <see cref="ILogEventSink" />.
+    /// Write log events to an <see cref="ILogEventSink"/>.
     /// </summary>
     /// <param name="logEventSink">The sink.</param>
-    /// <param name="restrictedToMinimumLevel">
-    ///     The minimum level for
-    ///     events passed through the sink. Ignored when <paramref name="levelSwitch" /> is specified.
-    /// </param>
-    /// <param name="levelSwitch">
-    ///     A switch allowing the pass-through minimum level
-    ///     to be changed at runtime.
-    /// </param>
+    /// <param name="restrictedToMinimumLevel">The minimum level for
+    /// events passed through the sink. Ignored when <paramref name="levelSwitch"/> is specified.</param>
+    /// <param name="levelSwitch">A switch allowing the pass-through minimum level
+    /// to be changed at runtime.</param>
     /// <returns>Configuration object allowing method chaining.</returns>
     public LoggerConfiguration Sink(
         ILogEventSink logEventSink,
@@ -102,17 +93,13 @@ public class LoggerSinkConfiguration {
     }
 
     /// <summary>
-    ///     Write log events to the specified <see cref="ILogEventSink" />.
+    /// Write log events to the specified <see cref="ILogEventSink"/>.
     /// </summary>
     /// <typeparam name="TSink">The sink.</typeparam>
-    /// <param name="restrictedToMinimumLevel">
-    ///     The minimum level for
-    ///     events passed through the sink. Ignored when <paramref name="levelSwitch" /> is specified.
-    /// </param>
-    /// <param name="levelSwitch">
-    ///     A switch allowing the pass-through minimum level
-    ///     to be changed at runtime.
-    /// </param>
+    /// <param name="restrictedToMinimumLevel">The minimum level for
+    /// events passed through the sink. Ignored when <paramref name="levelSwitch"/> is specified.</param>
+    /// <param name="levelSwitch">A switch allowing the pass-through minimum level
+    /// to be changed at runtime.</param>
     /// <returns>Configuration object allowing method chaining.</returns>
     public LoggerConfiguration Sink<TSink>(
         LogEventLevel restrictedToMinimumLevel = LevelAlias.Minimum,
@@ -122,19 +109,15 @@ public class LoggerSinkConfiguration {
         Sink(new TSink(), restrictedToMinimumLevel, levelSwitch);
 
     /// <summary>
-    ///     Write log events to an <see cref="IBatchedLogEventSink" />. Events will be internally buffered, and
-    ///     written to the sink in batches.
+    /// Write log events to an <see cref="IBatchedLogEventSink"/>. Events will be internally buffered, and
+    /// written to the sink in batches.
     /// </summary>
     /// <param name="batchedLogEventSink">The batched sink to receive events.</param>
     /// <param name="batchingOptions">Options that control batch sizes and buffering time.</param>
-    /// <param name="restrictedToMinimumLevel">
-    ///     The minimum level for
-    ///     events passed through the sink. Ignored when <paramref name="levelSwitch" /> is specified.
-    /// </param>
-    /// <param name="levelSwitch">
-    ///     A switch allowing the pass-through minimum level
-    ///     to be changed at runtime.
-    /// </param>
+    /// <param name="restrictedToMinimumLevel">The minimum level for
+    /// events passed through the sink. Ignored when <paramref name="levelSwitch"/> is specified.</param>
+    /// <param name="levelSwitch">A switch allowing the pass-through minimum level
+    /// to be changed at runtime.</param>
     /// <returns>Configuration object allowing method chaining.</returns>
     public LoggerConfiguration Sink(
         IBatchedLogEventSink batchedLogEventSink,
@@ -169,24 +152,18 @@ public class LoggerSinkConfiguration {
         Sink(new TSink(), batchingOptions, restrictedToMinimumLevel, levelSwitch);
 
     /// <summary>
-    ///     Write log events to a sub-logger, where further processing may occur. Events through
-    ///     the sub-logger will be constrained by filters and enriched by enrichers that are
-    ///     active in the parent. A sub-logger cannot be used to log at a more verbose level, but
-    ///     a less verbose level is possible.
+    /// Write log events to a sub-logger, where further processing may occur. Events through
+    /// the sub-logger will be constrained by filters and enriched by enrichers that are
+    /// active in the parent. A sub-logger cannot be used to log at a more verbose level, but
+    /// a less verbose level is possible.
     /// </summary>
     /// <param name="configureLogger">An action that configures the sub-logger.</param>
-    /// <param name="restrictedToMinimumLevel">
-    ///     The minimum level for
-    ///     events passed through the sink. Ignored when <paramref name="levelSwitch" /> is specified.
-    /// </param>
-    /// <param name="levelSwitch">
-    ///     A switch allowing the pass-through minimum level
-    ///     to be changed at runtime. Can be <code>null</code>
-    /// </param>
+    /// <param name="restrictedToMinimumLevel">The minimum level for
+    /// events passed through the sink. Ignored when <paramref name="levelSwitch"/> is specified.</param>
+    /// <param name="levelSwitch">A switch allowing the pass-through minimum level
+    /// to be changed at runtime. Can be <code>null</code></param>
     /// <returns>Configuration object allowing method chaining.</returns>
-    /// <exception cref="ArgumentNullException">
-    ///     When <paramref name="configureLogger" /> is <code>null</code>
-    /// </exception>
+    /// <exception cref="ArgumentNullException">When <paramref name="configureLogger"/> is <code>null</code></exception>
     public LoggerConfiguration Logger(
         Action<LoggerConfiguration> configureLogger,
         LogEventLevel restrictedToMinimumLevel = LevelAlias.Minimum,
@@ -210,21 +187,17 @@ public class LoggerSinkConfiguration {
     }
 
     /// <summary>
-    ///     Write log events to a sub-logger, where further processing may occur. Events through
-    ///     the sub-logger will be constrained by filters and enriched by enrichers that are
-    ///     active in the parent. A sub-logger cannot be used to log at a more verbose level, but
-    ///     a less verbose level is possible.
+    /// Write log events to a sub-logger, where further processing may occur. Events through
+    /// the sub-logger will be constrained by filters and enriched by enrichers that are
+    /// active in the parent. A sub-logger cannot be used to log at a more verbose level, but
+    /// a less verbose level is possible.
     /// </summary>
-    /// <param name="logger">
-    ///     The sub-logger. This will <em>not</em> be shut down automatically when the
-    ///     parent logger is disposed.
-    /// </param>
-    /// <param name="restrictedToMinimumLevel">
-    ///     The minimum level for
-    ///     events passed through the sink.
-    /// </param>
+    /// <param name="logger">The sub-logger. This will <em>not</em> be shut down automatically when the
+    /// parent logger is disposed.</param>
+    /// <param name="restrictedToMinimumLevel">The minimum level for
+    /// events passed through the sink.</param>
     /// <returns>Configuration object allowing method chaining.</returns>
-    /// <exception cref="ArgumentNullException">When <paramref name="logger" /> is <code>null</code></exception>
+    /// <exception cref="ArgumentNullException">When <paramref name="logger"/> is <code>null</code></exception>
     [EditorBrowsable(EditorBrowsableState.Never)]
     public LoggerConfiguration Logger(
         ILogger logger,
@@ -233,26 +206,20 @@ public class LoggerSinkConfiguration {
         Logger(logger, attemptDispose: false, restrictedToMinimumLevel);
 
     /// <summary>
-    ///     Write log events to a sub-logger, where further processing may occur. Events through
-    ///     the sub-logger will be constrained by filters and enriched by enrichers that are
-    ///     active in the parent. A sub-logger cannot be used to log at a more verbose level, but
-    ///     a less verbose level is possible.
+    /// Write log events to a sub-logger, where further processing may occur. Events through
+    /// the sub-logger will be constrained by filters and enriched by enrichers that are
+    /// active in the parent. A sub-logger cannot be used to log at a more verbose level, but
+    /// a less verbose level is possible.
     /// </summary>
     /// <param name="logger">The sub-logger.</param>
-    /// <param name="attemptDispose">
-    ///     Whether to shut down automatically the sub-logger
-    ///     when the parent logger is disposed.
-    /// </param>
-    /// <param name="restrictedToMinimumLevel">
-    ///     The minimum level for
-    ///     events passed through the sink.
-    /// </param>
-    /// <param name="levelSwitch">
-    ///     A switch allowing the pass-through minimum level
-    ///     to be changed at runtime. Can be <code>null</code>
-    /// </param>
+    /// <param name="attemptDispose">Whether to shut down automatically the sub-logger
+    /// when the parent logger is disposed.</param>
+    /// <param name="restrictedToMinimumLevel">The minimum level for
+    /// events passed through the sink.</param>
+    /// <param name="levelSwitch">A switch allowing the pass-through minimum level
+    /// to be changed at runtime. Can be <code>null</code></param>
     /// <returns>Configuration object allowing method chaining.</returns>
-    /// <exception cref="ArgumentNullException">When <paramref name="logger" /> is <code>null</code></exception>
+    /// <exception cref="ArgumentNullException">When <paramref name="logger"/> is <code>null</code></exception>
     public LoggerConfiguration Logger(
         ILogger logger,
         bool attemptDispose = false,
@@ -273,16 +240,14 @@ public class LoggerSinkConfiguration {
     }
 
     /// <summary>
-    ///     Write to a sink only when <paramref name="condition" /> evaluates to <c>true</c>.
+    /// Write to a sink only when <paramref name="condition"/> evaluates to <c>true</c>.
     /// </summary>
-    /// <param name="condition">
-    ///     A predicate that evaluates to <c>true</c> when the supplied <see cref="LogEvent" />
-    ///     should be written to the configured sink.
-    /// </param>
+    /// <param name="condition">A predicate that evaluates to <c>true</c> when the supplied <see cref="LogEvent"/>
+    /// should be written to the configured sink.</param>
     /// <param name="configureSink">An action that configures the wrapped sink.</param>
     /// <returns>Configuration object allowing method chaining.</returns>
-    /// <exception cref="ArgumentNullException">When <paramref name="condition" /> is <code>null</code>.</exception>
-    /// <exception cref="ArgumentNullException">When <paramref name="configureSink" /> is <code>null</code>.</exception>
+    /// <exception cref="ArgumentNullException">When <paramref name="condition"/> is <code>null</code>.</exception>
+    /// <exception cref="ArgumentNullException">When <paramref name="configureSink"/> is <code>null</code>.</exception>
     public LoggerConfiguration Conditional(
         Func<LogEvent, bool> condition,
         Action<LoggerSinkConfiguration> configureSink
@@ -296,23 +261,18 @@ public class LoggerSinkConfiguration {
     }
 
     /// <summary>
-    ///     Write to a sink, and if the sink is unable to record the event, write to a second sink. Additional sinks can
-    ///     be added to the chain if necessary.
+    /// Write to a sink, and if the sink is unable to record the event, write to a second sink. Additional sinks can
+    /// be added to the chain if necessary.
     /// </summary>
-    /// <param name="configureSink">
-    ///     A callback to configure the first sink to try. The argument to the callback supports
-    ///     the same syntax as the <c>WriteTo</c> configuration object.
-    /// </param>
+    /// <param name="configureSink">A callback to configure the first sink to try. The argument to the callback supports
+    /// the same syntax as the <c>WriteTo</c> configuration object.</param>
     /// <param name="configureFallback">A callback to configure the second sink.</param>
-    /// <param name="configureSubsequentFallbacks">
-    ///     Additional callbacks to configure more sinks in the fallback chain.
-    /// </param>
+    /// <param name="configureSubsequentFallbacks">Additional callbacks to configure more sinks in the fallback chain.</param>
     /// <returns>Configuration object allowing method chaining.</returns>
     /// <exception cref="ArgumentNullException">When any argument is <code>null</code>.</exception>
     /// <remarks>
-    ///     Fallbacks rely on the target sink either a) synchronously throwing exceptions on failure, or b) implementing
-    ///     the
-    ///     <see cref="ISetLoggingFailureListener" /> interface.
+    /// Fallbacks rely on the target sink either a) synchronously throwing exceptions on failure, or b) implementing the
+    /// <see cref="ISetLoggingFailureListener"/> interface.
     /// </remarks>
     public LoggerConfiguration FallbackChain(
         Action<LoggerSinkConfiguration> configureSink,
@@ -362,32 +322,20 @@ public class LoggerSinkConfiguration {
     }
 
     /// <summary>
-    ///     Helper method for constructing wrapper sinks.
+    /// Helper method for constructing wrapper sinks.
     /// </summary>
     /// <param name="loggerSinkConfiguration">The parent sink configuration.</param>
-    /// <param name="wrapSink">
-    ///     A function that allows for wrapping <see cref="ILogEventSink" />s
-    ///     added in <paramref name="configureWrappedSink" />.
-    /// </param>
-    /// <param name="configureWrappedSink">
-    ///     An action that configures sinks to be wrapped in <paramref name="wrapSink" />.
-    /// </param>
-    /// <param name="restrictedToMinimumLevel">
-    ///     The minimum level for
-    ///     events passed through the sink. Ignored when <paramref name="levelSwitch" /> is specified.
-    /// </param>
-    /// <param name="levelSwitch">
-    ///     A switch allowing the pass-through minimum level
-    ///     to be changed at runtime. Can be <code>null</code>
-    /// </param>
+    /// <param name="wrapSink">A function that allows for wrapping <see cref="ILogEventSink"/>s
+    /// added in <paramref name="configureWrappedSink"/>.</param>
+    /// <param name="configureWrappedSink">An action that configures sinks to be wrapped in <paramref name="wrapSink"/>.</param>
+    /// <param name="restrictedToMinimumLevel">The minimum level for
+    /// events passed through the sink. Ignored when <paramref name="levelSwitch"/> is specified.</param>
+    /// <param name="levelSwitch">A switch allowing the pass-through minimum level
+    /// to be changed at runtime. Can be <code>null</code></param>
     /// <returns>Configuration object allowing method chaining.</returns>
-    /// <exception cref="ArgumentNullException">
-    ///     When <paramref name="loggerSinkConfiguration" /> is <code>null</code>.
-    /// </exception>
-    /// <exception cref="ArgumentNullException">When <paramref name="wrapSink" /> is <code>null</code>.</exception>
-    /// <exception cref="ArgumentNullException">
-    ///     When <paramref name="configureWrappedSink" /> is <code>null</code>.
-    /// </exception>
+    /// <exception cref="ArgumentNullException">When <paramref name="loggerSinkConfiguration"/> is <code>null</code>.</exception>
+    /// <exception cref="ArgumentNullException">When <paramref name="wrapSink"/> is <code>null</code>.</exception>
+    /// <exception cref="ArgumentNullException">When <paramref name="configureWrappedSink"/> is <code>null</code>.</exception>
     [Obsolete(
         "Use the two-argument `Wrap()` overload to construct a wrapper, then use `WriteTo.Sink()` to add it to the configuration."
     )]
@@ -403,24 +351,16 @@ public class LoggerSinkConfiguration {
     }
 
     /// <summary>
-    ///     Helper method for constructing wrapper sinks. This may be preferred over <see cref="CreateSink" /> because
-    ///     it handles
-    ///     delegation of <see cref="IDisposable.Dispose" /> through to the wrapped sink in cases where the wrapper is
-    ///     not
-    ///     disposable.
+    /// Helper method for constructing wrapper sinks. This may be preferred over <see cref="CreateSink"/> because it handles
+    /// delegation of <see cref="IDisposable.Dispose"/> through to the wrapped sink in cases where the wrapper is not
+    /// disposable.
     /// </summary>
-    /// <param name="wrapSink">
-    ///     A function that allows for wrapping <see cref="ILogEventSink" />s
-    ///     added in <paramref name="configureWrappedSink" />.
-    /// </param>
-    /// <param name="configureWrappedSink">
-    ///     An action that configures sinks to be wrapped in <paramref name="wrapSink" />.
-    /// </param>
+    /// <param name="wrapSink">A function that allows for wrapping <see cref="ILogEventSink"/>s
+    /// added in <paramref name="configureWrappedSink"/>.</param>
+    /// <param name="configureWrappedSink">An action that configures sinks to be wrapped in <paramref name="wrapSink"/>.</param>
     /// <returns>The wrapper, or a sink that will handle invoking the wrapper.</returns>
-    /// <exception cref="ArgumentNullException">When <paramref name="wrapSink" /> is <code>null</code>.</exception>
-    /// <exception cref="ArgumentNullException">
-    ///     When <paramref name="configureWrappedSink" /> is <code>null</code>.
-    /// </exception>
+    /// <exception cref="ArgumentNullException">When <paramref name="wrapSink"/> is <code>null</code>.</exception>
+    /// <exception cref="ArgumentNullException">When <paramref name="configureWrappedSink"/> is <code>null</code>.</exception>
     public static ILogEventSink Wrap(
         Func<ILogEventSink, ILogEventSink> wrapSink,
         Action<LoggerSinkConfiguration> configureWrappedSink
@@ -440,16 +380,13 @@ public class LoggerSinkConfiguration {
     }
 
     /// <summary>
-    ///     Helper method for constructing sinks outside of a logger pipeline.
+    /// Helper method for constructing sinks outside of a logger pipeline.
     /// </summary>
     /// <param name="configure">An action that configures one or more sinks.</param>
-    /// <returns>
-    ///     If only a single sink is configured,
-    ///     it will be returned from <see cref="CreateSink" />. If zero or many sinks are configured, they will be
-    ///     combined
-    ///     in an aggregating wrapper.
-    /// </returns>
-    /// <exception cref="ArgumentNullException">When <paramref name="configure" /> is <code>null</code>.</exception>
+    /// <returns>If only a single sink is configured,
+    /// it will be returned from <see cref="CreateSink"/>. If zero or many sinks are configured, they will be combined
+    /// in an aggregating wrapper.</returns>
+    /// <exception cref="ArgumentNullException">When <paramref name="configure"/> is <code>null</code>.</exception>
     public static ILogEventSink CreateSink(Action<LoggerSinkConfiguration> configure) {
         Guard.AgainstNull(configure);
 

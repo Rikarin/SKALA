@@ -12,11 +12,8 @@ namespace Vixen.Ui.Tests;
 /// <summary>The frame pass restyling incrementally, judged against a document built cold.</summary>
 /// <remarks>
 ///     <para>
-///         ⚠
-///         <b>
-///             Deliberately driven through <see cref="UiDocument" /> rather than through
-///             <see cref="StyleUpdater" />.
-///         </b> <c>Vixen.Ui.Styling.Tests.IncrementalRestyleOracleTests</c>
+///         ⚠ <b>Deliberately driven through <see cref="UiDocument" /> rather than through
+///         <see cref="StyleUpdater" />.</b> <c>Vixen.Ui.Styling.Tests.IncrementalRestyleOracleTests</c>
 ///         already runs this property against the updater and has been green since Phase 4b — while
 ///         <see cref="UiDocument.Update" /> called <c>StyleEngine.ResolveAll</c> and never touched the
 ///         updater at all. Every claim about incremental restyling was true of an object nothing in

@@ -1,32 +1,30 @@
 #region License
-
-// Copyright (c) 2007 James Newton-King
+   // Copyright (c) 2007 James Newton-King
 //
-// Permission is hereby granted, free of charge, to any person
-// obtaining a copy of this software and associated documentation
+   // Permission is hereby granted, free of charge, to any person
+                // obtaining a copy of this software and associated documentation
 // files (the "Software"), to deal in the Software without
 // restriction, including without limitation the rights to use,
 // copy, modify, merge, publish, distribute, sublicense, and/or sell
 // copies of the Software, and to permit persons to whom the
-// Software is furnished to do so, subject to the following
-// conditions:
-//
-// The above copyright notice and this permission notice shall be
-// included in all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
-// OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
-// HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+               // Software is furnished to do so, subject to the following
+         // conditions:
+   //
+         // The above copyright notice and this permission notice shall be
+     // included in all copies or substantial portions of the Software.
+            //
+			// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+              // EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+ // OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+  // NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+  // HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
 // WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
-// OTHER DEALINGS IN THE SOFTWARE.
-
+     // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+       // OTHER DEALINGS IN THE SOFTWARE.
 #endregion
-
-using System; using System.Collections.Generic;
-using System.Text;
+            
+  using System; using System  .Collections    . Generic    ;
+  using System   .Text;
 #if DNXCORE50
 using Xunit;
 using Test = Xunit.FactAttribute;
@@ -35,46 +33,42 @@ using Assert = Newtonsoft.Json.Tests.XUnitAssert;
 using NUnit.Framework;
 
 #endif
-namespace Newtonsoft.Json.Tests.Documentation
-    .Samples.Serializer {
-    [TestFixture]
-    public class JsonPropertyName : TestFixtureBase {
+              namespace Newtonsoft   .Json.Tests.  Documentation
+        .Samples.Serializer
+	{  [TestFixture ]
+     public class  JsonPropertyName : TestFixtureBase
+               {
         #region Types
-
         public
-            class Videogame {
-            [JsonProperty("name")]
-            public string Name { get; set; }
-
-            [JsonProperty("release_date")]
-            public DateTime ReleaseDate { get; set; }
-        }
-
+class Videogame
+        {
+         [ JsonProperty("name")   ]
+  public    string Name    { get;  set  ; }
+                [JsonProperty("release_date")   ]
+            public DateTime    ReleaseDate {  get   ; set; } }
         #endregion
-
-        [Test]
-        public void Example() {
+      [Test]
+        public void Example()
+  {
             #region Usage
+    Videogame starcraft =   new Videogame   {
+               Name = "Starcraft",    ReleaseDate = new DateTime(1998,  1, 1    )
+                };
 
-            Videogame starcraft = new Videogame { Name = "Starcraft", ReleaseDate = new DateTime(1998, 1, 1) };
-
-            string json = JsonConvert.SerializeObject(starcraft, Formatting.Indented);
-            Console.WriteLine(json);
-            // {
-            //   "name": "Starcraft",
-
-            //   "release_date": "1998-01-01T00:00:00"
-            // }
-
+     string  json = JsonConvert.SerializeObject(
+			starcraft, Formatting    . Indented   )  ;   
+            Console.  WriteLine(   json);
+           // {
+     //   "name": "Starcraft",
+             
+     //   "release_date": "1998-01-01T00:00:00"
+    // }
             #endregion
-
-            StringAssert.AreEqual(
-                @"{
+              
+            StringAssert .  AreEqual(@"{
   ""name"": ""Starcraft"",
   ""release_date"": ""1998-01-01T00:00:00""
-}",
-                json
-            );
-        }
-    }
-}
+}",    json)    ;
+  }
+   }
+                }

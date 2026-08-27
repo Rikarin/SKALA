@@ -58,8 +58,8 @@ public class SparseMatrixTests {
         reverse.Add(0, 0, Tiny);
         reverse.Add(0, 0, Tiny);
         reverse.Add(0, 0, 1d); // (1 + tiny) + tiny rounds each addition away and lands on one; tiny + tiny is exact and
-        // carries the pair over half an ulp, so it lands one representable step above. An unstable
-        // sort would make which of the two you get a property of the sort's pivot choices.
+// carries the pair over half an ulp, so it lands one representable step above. An unstable
+// sort would make which of the two you get a property of the sort's pivot choices.
         Assert.Equal(1d, forward.Build()[0, 0]);
         Assert.Equal(Math.BitIncrement(1d), reverse.Build()[0, 0]);
     }

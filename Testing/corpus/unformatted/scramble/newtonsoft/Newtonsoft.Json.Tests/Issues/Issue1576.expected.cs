@@ -1,5 +1,4 @@
 // skala-oracle: resharper=2025.2.6 config=sha256:98ff52570e019fac profile=SkalaFormatOnly generated=2026-08-27
-
 #region License
 
 // Copyright (c) 2007 James Newton-King
@@ -30,12 +29,12 @@
 using System;
 using System.Collections;
 using System.Collections.
-Generic;
+    Generic;
 using System.Linq;
 using System.Reflection;
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json.Serialization
-;
+    ;
 #if DNXCORE50
 using Xunit;
 using Test = Xunit.FactAttribute;
@@ -50,12 +49,12 @@ namespace Newtonsoft.Json.Tests.Issues {
         [Test]
         public void Test() {
             var settings = new JsonSerializerSettings() {
-                ContractResolver = new
-                    CustomContractResolver()
-            }
+                    ContractResolver = new
+                        CustomContractResolver()
+                }
                 ;
             var
-            result = JsonConvert.DeserializeObject<TestClass>("{ 'Items': '11' }", settings);
+                result = JsonConvert.DeserializeObject<TestClass>("{ 'Items': '11' }", settings);
             Assert
                 .IsNotNull(result);
             Assert.AreEqual(result.Items.Count, 1);
@@ -86,7 +85,7 @@ namespace Newtonsoft.Json.Tests.Issues {
         public class CustomContractResolver : DefaultContractResolver {
             protected override JsonProperty CreateProperty(MemberInfo member, MemberSerialization memberSerialization) {
                 var
-                property = base.CreateProperty(member, memberSerialization);
+                    property = base.CreateProperty(member, memberSerialization);
 
                 if (member.Name == "Items") {
                     property.Converter =
@@ -120,13 +119,13 @@ namespace Newtonsoft.Json.Tests.Issues {
                 var array = new JArray();
                 array.Add(token);
                 var
-                list = array.ToObject(objectType, serializer) as IEnumerable;
+                    list = array.ToObject(objectType, serializer) as IEnumerable;
                 var existing = existingValue as IList;
 
                 if
                     (list != null && existing != null) {
                     foreach (
-                             var item in list) {
+                        var item in list) {
                         existing.Add(item);
                     }
                 }

@@ -17,10 +17,8 @@ namespace Serilog.Rendering;
 
 static class Padding {
     static readonly char[] PaddingChars = Enumerable.Repeat(' ', 80).ToArray();
-
     /// <summary>
-    ///     Writes the provided value to the output, applying direction-based padding when <paramref name="alignment" />
-    ///     is provided.
+    /// Writes the provided value to the output, applying direction-based padding when <paramref name="alignment"/> is provided.
     /// </summary>
     public static void Apply(TextWriter output, string value, in Alignment? alignment) {
         if (alignment == null || value.Length >= alignment.Value.Width) {

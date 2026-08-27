@@ -1,5 +1,4 @@
 // skala-oracle: resharper=2025.2.6 config=sha256:98ff52570e019fac profile=SkalaFormatOnly generated=2026-08-27
-
 #region License
 
 // Copyright (c) 2007 James Newton-King
@@ -32,11 +31,11 @@
 
 using System.Collections.Generic;
 using System
-.Runtime.Serialization;
+    .Runtime.Serialization;
 
 namespace Newtonsoft.Json.Tests.TestObjects {
     public class SerializationEventTestDictionary :
-    Dictionary<decimal, string> {
+        Dictionary<decimal, string> {
         // This member is serialized and deserialized with no change.
         public
             int Member1 { get; private set; }

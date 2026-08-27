@@ -1,5 +1,4 @@
 // skala-oracle: resharper=2025.2.6 config=sha256:98ff52570e019fac profile=SkalaFormatOnly generated=2026-08-27
-
 #region License
 
 // Copyright (c) 2007 James Newton-King
@@ -33,7 +32,7 @@ using Newtonsoft.Json.Utilities;
 
 namespace Newtonsoft.Json.Converters {
     /// <summary>
-    ///     Converts a <see cref="DateTime" /> to and from the ISO 8601 date format (e.g. <c>"2008-04-12T12:53Z"</c>).
+    /// Converts a <see cref="DateTime"/> to and from the ISO 8601 date format (e.g. <c>"2008-04-12T12:53Z"</c>).
     /// </summary>
     public class IsoDateTimeConverter : DateTimeConverterBase {
         private const string DefaultDateTimeFormat = "yyyy'-'MM'-'dd'T'HH':'mm':'ss.FFFFFFFK";
@@ -43,7 +42,7 @@ namespace Newtonsoft.Json.Converters {
         private CultureInfo? _culture;
 
         /// <summary>
-        ///     Gets or sets the date time styles used when converting a date to and from JSON.
+        /// Gets or sets the date time styles used when converting a date to and from JSON.
         /// </summary>
         /// <value>The date time styles used when converting a date to and from JSON.</value>
         public DateTimeStyles DateTimeStyles {
@@ -52,7 +51,7 @@ namespace Newtonsoft.Json.Converters {
         }
 
         /// <summary>
-        ///     Gets or sets the date time format used when converting a date to and from JSON.
+        /// Gets or sets the date time format used when converting a date to and from JSON.
         /// </summary>
         /// <value>The date time format used when converting a date to and from JSON.</value>
         public string? DateTimeFormat {
@@ -61,7 +60,7 @@ namespace Newtonsoft.Json.Converters {
         }
 
         /// <summary>
-        ///     Gets or sets the culture used when converting a date to and from JSON.
+        /// Gets or sets the culture used when converting a date to and from JSON.
         /// </summary>
         /// <value>The culture used when converting a date to and from JSON.</value>
         public CultureInfo Culture {
@@ -70,9 +69,9 @@ namespace Newtonsoft.Json.Converters {
         }
 
         /// <summary>
-        ///     Writes the JSON representation of the object.
+        /// Writes the JSON representation of the object.
         /// </summary>
-        /// <param name="writer">The <see cref="JsonWriter" /> to write to.</param>
+        /// <param name="writer">The <see cref="JsonWriter"/> to write to.</param>
         /// <param name="value">The value.</param>
         /// <param name="serializer">The calling serializer.</param>
         public override void WriteJson(JsonWriter writer, object? value, JsonSerializer serializer) {
@@ -111,9 +110,9 @@ namespace Newtonsoft.Json.Converters {
         }
 
         /// <summary>
-        ///     Reads the JSON representation of the object.
+        /// Reads the JSON representation of the object.
         /// </summary>
-        /// <param name="reader">The <see cref="JsonReader" /> to read from.</param>
+        /// <param name="reader">The <see cref="JsonReader"/> to read from.</param>
         /// <param name="objectType">Type of the object.</param>
         /// <param name="existingValue">The existing value of object being read.</param>
         /// <param name="serializer">The calling serializer.</param>

@@ -1,5 +1,4 @@
 // skala-oracle: resharper=2025.2.6 config=sha256:98ff52570e019fac profile=SkalaFormatOnly generated=2026-08-27
-
 #region License
 
 // Copyright (c) 2007 James Newton-King
@@ -41,7 +40,7 @@ namespace Newtonsoft.Json.Tests.TestObjects {
 #if !(NET35 || NET20 || PORTABLE || PORTABLE40) || NETSTANDARD2_0 || NET6_0_OR_GREATER
     internal class MyInterfaceConverter : TypeConverter {
         private readonly List<IMyInterface>
-        _writers = new List<IMyInterface> { new ConsoleWriter(), new TraceWriter() };
+            _writers = new List<IMyInterface> { new ConsoleWriter(), new TraceWriter() };
 
         public override bool CanConvertTo(ITypeDescriptorContext context, Type destinationType) {
             return destinationType == typeof(string);

@@ -1,5 +1,4 @@
 ﻿#region License
-
 // Copyright (c) 2007 James Newton-King
 //
 // Permission is hereby granted, free of charge, to any person
@@ -22,7 +21,6 @@
 // WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 // OTHER DEALINGS IN THE SOFTWARE.
-
 #endregion
 
 using System;
@@ -39,29 +37,29 @@ using NUnit.Framework;
 
 #endif
 
-namespace Newtonsoft.Json.Tests.Documentation.Samples.Bson {
+namespace Newtonsoft.Json.Tests.Documentation.Samples.Bson
+{
     [TestFixture]
-    public class DeserializeFromBson : TestFixtureBase {
+    public class DeserializeFromBson : TestFixtureBase
+    {
         #region Types
-
-        public class Event {
+        public class Event
+        {
             public string Name { get; set; }
             public DateTime StartDate { get; set; }
         }
-
         #endregion
 
 #pragma warning disable 618
         [Test]
-        public void Example() {
+        public void Example()
+        {
             #region Usage
-
-            byte[] data = Convert.FromBase64String(
-                "MQAAAAJOYW1lAA8AAABNb3ZpZSBQcmVtaWVyZQAJU3RhcnREYXRlAMDgKWE8AQAAAA=="
-            );
+            byte[] data = Convert.FromBase64String("MQAAAAJOYW1lAA8AAABNb3ZpZSBQcmVtaWVyZQAJU3RhcnREYXRlAMDgKWE8AQAAAA==");
 
             MemoryStream ms = new MemoryStream(data);
-            using (BsonReader reader = new BsonReader(ms)) {
+            using (BsonReader reader = new BsonReader(ms))
+            {
                 JsonSerializer serializer = new JsonSerializer();
 
                 Event e = serializer.Deserialize<Event>(reader);
@@ -69,9 +67,7 @@ namespace Newtonsoft.Json.Tests.Documentation.Samples.Bson {
                 Console.WriteLine(e.Name);
                 // Movie Premiere
             }
-
             #endregion
-
 #pragma warning restore 618
         }
     }

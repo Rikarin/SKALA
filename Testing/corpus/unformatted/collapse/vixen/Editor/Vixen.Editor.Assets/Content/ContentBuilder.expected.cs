@@ -106,7 +106,7 @@ public sealed class ContentBuilder {
             ImmutableArray
                 .CreateBuilder<
                     ImportDiagnostic>(); // Sorted here rather than trusted from the caller: the whole determinism story rests on this
-        // one ordering, and an enumerable's order is the caller's business right up until it isn't.
+// one ordering, and an enumerable's order is the caller's business right up until it isn't.
         var ordered = assets.OrderBy(asset => asset.Address, StringComparer.Ordinal).ToArray();
         var planned = new SortedDictionary<string, List<BuildableAsset>>(StringComparer.Ordinal);
         var bundleOf = new Dictionary<string, string>(StringComparer.Ordinal);
@@ -142,7 +142,7 @@ public sealed class ContentBuilder {
 
         var built = ImmutableArray.CreateBuilder<BuiltBundle>(planned.Count);
         var described = ImmutableArray.CreateBuilder<CatalogBundle>(planned.Count);
-        foreach (var (name, contents) in planned) {
+        foreach (var (name, contents)in planned) {
             var group = policies[contents[0].Group];
             var writer = new BundleWriter();
             foreach (var asset in contents) {
@@ -167,9 +167,9 @@ public sealed class ContentBuilder {
             var hash = ContentHash.Compute(
                 bytes
             ); // Both spellings come from `BundleFile`, in the assembly that owns the catalog, because
-            // `LocalBundleSource` has to look for whichever of them this chose — it was written out
-            // here and separately there, the two disagreed, and every local bundle a real build
-            // produced was therefore unopenable at run time.
+// `LocalBundleSource` has to look for whichever of them this chose — it was written out
+// here and separately there, the two disagreed, and every local bundle a real build
+// produced was therefore unopenable at run time.
             var fileName = group.BundleNaming == BundleNaming.FilenameHash
                 ? BundleFile.Hashed(name, hash)
                 : BundleFile.Named(name);
@@ -212,7 +212,7 @@ public sealed class ContentBuilder {
         switch (group.Packing) {
             case BundlePacking.PackSeparately
                 : // Hashed rather than the address itself: an address contains slashes and may contain
-                // anything else a filesystem dislikes, and a bundle name becomes a file name.
+// anything else a filesystem dislikes, and a bundle name becomes a file name.
                 return $"{group.Name}_{ContentHash.Compute(System.Text.Encoding.UTF8.GetBytes(asset.Address))
                     .ToString()[..12]}";
             case BundlePacking.PackTogetherByLabel: {

@@ -15,13 +15,13 @@
 // limitations under the License.
 
 using
-System.Threading.Channels;
+    System.Threading.Channels;
 
 // ReSharper disable UnusedParameter.Global, ConvertIfStatementToConditionalTernaryExpression, MemberCanBePrivate.Global, UnusedMember.Global, VirtualMemberNeverOverridden.Global, ClassWithVirtualMembersNeverInherited.Global, SuspiciousTypeConversion.Global
 namespace Serilog.Core.Sinks.Batching;
 
 /// <summary>
-///     Buffers log events into batches for background flushing.
+/// Buffers log events into batches for background flushing.
 /// </summary>
 sealed
     class BatchingSink : ILogEventSink, IDisposable, ISetLoggingFailureListener
@@ -49,7 +49,7 @@ sealed
     readonly IBatchedLogEventSink _targetSink;
 
     readonly int
-    _batchSizeLimit;
+        _batchSizeLimit;
 
     readonly bool _eagerlyEmitFirstEvent;
     readonly FailureAwareBatchScheduler _batchScheduler;
@@ -59,13 +59,11 @@ sealed
     ILoggingFailureListener _failureListener = SelfLog.FailureListener;
 
     /// <summary>
-    ///     Construct a <see cref="BatchingSink" />.
+    /// Construct a <see cref="BatchingSink"/>.
     /// </summary>
-    /// <param name="batchedSink">
-    ///     A <see cref="IBatchedLogEventSink" /> to send log event batches to. Batches and empty
-    ///     batch notifications will not be sent concurrently. When the <see cref="BatchingSink" /> is disposed,
-    ///     it will dispose this object if possible.
-    /// </param>
+    /// <param name="batchedSink">A <see cref="IBatchedLogEventSink"/> to send log event batches to. Batches and empty
+    /// batch notifications will not be sent concurrently. When the <see cref="BatchingSink"/> is disposed,
+    /// it will dispose this object if possible.</param>
     /// <param name="options">Options controlling behavior of the sink.</param>
     public BatchingSink(
         IBatchedLogEventSink batchedSink,
@@ -82,7 +80,7 @@ sealed
         if (options.RetryTimeLimit < TimeSpan.Zero)
             throw new ArgumentOutOfRangeException(
                 nameof
-                (options),
+                    (options),
                 "The retry time limit must not be negative."
             );
         _targetSink = batchedSink ?? throw new ArgumentNullException(nameof(batchedSink));
@@ -91,7 +89,7 @@ sealed
         _queue = options.QueueLimit is { } limit
             ? Channel.CreateBounded<LogEvent>(
                 new
-                BoundedChannelOptions(limit) { SingleReader = true }
+                    BoundedChannelOptions(limit) { SingleReader = true }
             )
             : Channel.CreateUnbounded<LogEvent>(new UnboundedChannelOptions { SingleReader = true });
         _batchScheduler = new FailureAwareBatchScheduler(options.BufferingTimeLimit, options.RetryTimeLimit);
@@ -108,20 +106,23 @@ sealed
     }
 
     /// <summary>
-    ///     Emit the provided log event to the sink. If the sink is being disposed or
-    ///     the app domain unloaded, then the event is ignored.
+    /// Emit the provided log event to the sink. If the sink is being disposed or
+    /// the app domain unloaded, then the event is ignored.
     /// </summary>
     /// <param name="logEvent">Log event to emit.</param>
     /// <exception cref="ArgumentNullException">The event is null.</exception>
     /// <remarks>
-    ///     The sink implements the contract that any events whose Emit() method has
-    ///     completed at the time of sink disposal will be flushed (or attempted to,
-    ///     depending on app domain state).
+    /// The sink implements the contract that any events whose Emit() method has
+    /// completed at the time of sink disposal will be flushed (or attempted to,
+    /// depending on app domain state).
     /// </remarks>
     public
         void Emit(LogEvent logEvent) {
         if (logEvent == null)
-            throw new ArgumentNullException(nameof(logEvent));
+            throw new ArgumentNullException(
+                nameof(
+                    logEvent)
+            );
         if (_shutdownSignal.IsCancellationRequested)
 
             return;
@@ -147,7 +148,7 @@ sealed
                 }
             } while ((_currentBatch.Count < _batchSizeLimit
                          && !
-                         isEagerBatch
+                             isEagerBatch
                          || _currentBatch.Count == 0)
                      && !_shutdownSignal.IsCancellationRequested
                      && await TryWaitToReadAsync(_queue.Reader, fillBatch, _shutdownSignal.Token)
@@ -175,7 +176,7 @@ sealed
                 _batchScheduler.MarkFailure(out var shouldDropBatch, out var shouldDropQueue);
 
                 if (shouldDropBatch
-                ) {
+                   ) {
                     _failureListener.OnLoggingFailed(
                         this,
                         LoggingFailureKind.Permanent,
@@ -190,7 +191,7 @@ sealed
                     DrainOnFailure(LoggingFailureKind.Permanent, "dropping all queued events", ex);
                 }
 
-                // Wait out the remainder of the batch fill time so that we don't overwhelm the server. With each
+// Wait out the remainder of the batch fill time so that we don't overwhelm the server. With each
                 // successive failure the interval will increase. Needs special handling so that we don't need to
                 // make `fillBatch` cancellable (and thus fallible).
                 await Task.WhenAny(fillBatch, _waitForShutdownSignal).ConfigureAwait(false);
@@ -233,7 +234,7 @@ sealed
 
     void DrainOnFailure(
         LoggingFailureKind
-        kind,
+            kind,
         string message,
         Exception? exception,
         bool ignoreShutdownSignal = false
@@ -295,7 +296,7 @@ sealed
         _failureListener = failureListener;
     }
 
-    /// <inheritdoc />
+    /// <inheritdoc/>
     public void
         Dispose() {
         SignalShutdown();
@@ -304,17 +305,11 @@ sealed
             _runLoop.Wait();
         } catch
             (Exception ex) {
-                // E.g. the task was canceled before ever being run, or internally failed and threw
-                // an unexpected exception.
-                _failureListener
-                    .OnLoggingFailed(
-                        this,
-                        LoggingFailureKind.Final,
-                        "caught exception during disposal",
-                        events: null,
-                        ex
-                    );
-            }
+            // E.g. the task was canceled before ever being run, or internally failed and threw
+            // an unexpected exception.
+            _failureListener
+                .OnLoggingFailed(this, LoggingFailureKind.Final, "caught exception during disposal", events: null, ex);
+        }
 
         (_targetSink as IDisposable)?.Dispose();
     }

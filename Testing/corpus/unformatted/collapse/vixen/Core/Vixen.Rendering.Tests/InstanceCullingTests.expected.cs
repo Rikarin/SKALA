@@ -21,7 +21,7 @@ public sealed class InstanceCullingTests {
     }
 
     static InstanceCullSettings Settings(float end = float.MaxValue, float start = float.MaxValue) =>
-        InstanceCullSettings.Everything(Forward(), Vector3.Zero) with {
+        InstanceCullSettings.Everything(Forward(), Vector3.Zero)with {
             StartCullDistance = start, EndCullDistance = end
         };
 
@@ -50,7 +50,7 @@ public sealed class InstanceCullingTests {
     [Fact]
     public void TheEndCullDistanceIsMeasuredToTheNearEdgeNotTheCentre() {
         // An instance whose centre is just past the limit but whose canopy is not stays. Measuring
-        // to the centre makes a tree blink out while half of it is still inside the range.
+// to the centre makes a tree blink out while half of it is still inside the range.
         var culler = new InstanceCuller();
         InstanceBounds[] instances =
             [new(new(0f, 0f, 99f), 0.5f), new(new(0f, 0f, 100.4f), 1f), new(new(0f, 0f, 120f), 1f)];
@@ -87,7 +87,7 @@ public sealed class InstanceCullingTests {
     [Fact]
     public void ALevelWithNoSurvivorsIsAnEmptyRunRatherThanAMissingOne() {
         // So the run at slot N is always level N's, which is what lets a caller bind level N's mesh
-        // by index instead of reading back which levels happened to survive.
+// by index instead of reading back which levels happened to survive.
         var culler = new InstanceCuller();
         culler.Cull(Line(3, first: 1f), [], Settings(), [100f, 200f]);
         Assert.Equal(3, culler.LevelCount);
@@ -100,7 +100,7 @@ public sealed class InstanceCullingTests {
     public void ALevelBoundaryIsInclusiveOfTheFartherLevel() {
         var culler =
             new InstanceCuller(); // Exactly on the boundary belongs to the coarser level, and the rule is stated so the two
-        // sides of a seam test can agree about it.
+// sides of a seam test can agree about it.
         InstanceBounds[] instances = [new(new(0f, 0f, 10f), 0f)];
         culler.Cull(instances, [], Settings(), [10f]);
         Assert.Equal(0, culler.Runs[0].Count);
@@ -156,7 +156,7 @@ public sealed class InstanceCullingTests {
     public void FadingRampsFromOneAtTheStartDistanceToZeroAtTheEnd() {
         var culler = new InstanceCuller();
         InstanceBounds[] instances = [new(new(0f, 0f, 50f), 0f), new(new(0f, 0f, 80f), 0f), new(new(0f, 0f, 90f), 0f)];
-        var settings = Settings(end: 100f, start: 80f) with { Fade = true };
+        var settings = Settings(end: 100f, start: 80f)with { Fade = true };
         culler.Cull(instances, [], settings, []);
         var fades = culler.Parameters.ToArray().Select(p => p.Fade).ToArray();
         Assert.Equal(1f, fades[0], 4);
@@ -178,8 +178,8 @@ public sealed class InstanceCullingTests {
             .Select(i => new InstanceBounds(new(i % 40 * 0.5f, 0f, 10f + (i / 40 * 0.5f)), 0.1f))
             .ToArray();
         var full = culler.Cull(instances, [], Settings(), []);
-        var half = culler.Cull(instances, [], Settings() with { DensityScale = 0.5f }, []);
-        var none = culler.Cull(instances, [], Settings() with { DensityScale = 0f }, []);
+        var half = culler.Cull(instances, [], Settings()with { DensityScale = 0.5f }, []);
+        var none = culler.Cull(instances, [], Settings()with { DensityScale = 0f }, []);
         Assert.Equal(0, none);
         Assert.InRange(half, (int)(full * 0.45f), (int)(full * 0.55f));
     }
@@ -200,7 +200,7 @@ public sealed class InstanceCullingTests {
             .ToArray();
 
         uint[] At(float density) {
-            culler.Cull(instances, [], Settings() with { DensityScale = density }, []);
+            culler.Cull(instances, [], Settings()with { DensityScale = density }, []);
             return culler.Survivors.ToArray();
         }
 
@@ -219,7 +219,7 @@ public sealed class InstanceCullingTests {
         var instances = Enumerable.Range(0, 500)
             .Select(i => new InstanceBounds(new(i % 25 * 0.7f, 0f, 10f + (i / 25 * 0.7f)), 0.1f))
             .ToArray();
-        var settings = Settings() with { DensityScale = 0.4f };
+        var settings = Settings()with { DensityScale = 0.4f };
         culler.Cull(instances, [], settings, []);
         var forwards = culler.Survivors.ToArray().Select(index => instances[index].Centre).ToHashSet();
         var reversed = instances.Reverse().ToArray();

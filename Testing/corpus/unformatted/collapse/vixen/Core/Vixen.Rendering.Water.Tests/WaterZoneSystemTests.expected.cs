@@ -166,7 +166,7 @@ public sealed class WaterZoneSystemTests : IDisposable {
         Assert.True(
             system.States[zone].Field!.Sample(new(5_000f, 5_000f)).Coverage > 0.9f
         ); // From the origin the window reaches nothing, and the diagnostic agrees about that too
-        // rather than reporting the far body as covered.
+// rather than reporting the far body as covered.
         view.Position = new(0f, 0f, 0f);
         system.Fold(world);
         Assert.Equal(1, system.ZonelessBodies);
@@ -186,7 +186,7 @@ public sealed class WaterZoneSystemTests : IDisposable {
     public void A_body_containing_the_window_is_claimed_from_inside_it() {
         var zone = Zone(WaterZoneComponent.Default);
         Body(new(0f, 2f, 0f)); // A lake four kilometres to a side against a 512-metre window: every boundary point is
-        // thousands of metres outside it.
+// thousands of metres outside it.
         var system = System(half: 4_000f);
         system.Fold(world);
         Assert.Equal(0, system.ZonelessBodies);
@@ -199,10 +199,8 @@ public sealed class WaterZoneSystemTests : IDisposable {
     /// </summary>
     /// <remarks>
     ///     <para>
-    ///         <b>
-    ///             The claim the whole amortisation rests on, and the one that is invisible when it
-    ///             fails.
-    ///         </b> A field re-rasterised every frame looks identical to one re-rasterised every
+    ///         <b>The claim the whole amortisation rests on, and the one that is invisible when it
+    ///         fails.</b> A field re-rasterised every frame looks identical to one re-rasterised every
     ///         hundredth; the only symptom is frame time.
     ///     </para>
     ///     <para>
@@ -391,10 +389,8 @@ public sealed class WaterZoneSystemTests : IDisposable {
     /// </summary>
     /// <remarks>
     ///     <para>
-    ///         <b>
-    ///             The fold caches a body against its component and its placement, and it used to cache
-    ///             the <em>failure</em> with it.
-    ///         </b> A body whose <c>SplineFor</c> answered null was
+    ///         <b>The fold caches a body against its component and its placement, and it used to cache
+    ///         the <em>failure</em> with it.</b> A body whose <c>SplineFor</c> answered null was
     ///         recorded as unresolved, and because nothing about the component or the transform then
     ///         changed it was never asked again for the life of the world — so a lake named in a scene
     ///         could never appear in a running game, and the failure was permanent rather than
@@ -434,7 +430,7 @@ public sealed class WaterZoneSystemTests : IDisposable {
         Assert.True(
             system.States[zone].Field!.Sample(Vector2.Zero).Coverage > 0.9f
         ); // And the success is still cached: the source is not asked again, no body is rebuilt, and the
-        // field is not re-rasterised.
+// field is not re-rasterised.
         var asked = source.Calls;
         var rasterised = system.States[zone].RasterCount;
         for (var frame = 0; frame < 50; frame++) {
@@ -485,11 +481,8 @@ public sealed class WaterZoneSystemTests : IDisposable {
 
     /// <summary>A named sea state replaces the inline one, in the component every consumer reads.</summary>
     /// <remarks>
-    ///     ⚠
-    ///     <b>
-    ///         Asserted through <see cref="WaterZoneSystem.Zones" /> rather than through a resolver
-    ///         the test calls itself.
-    ///     </b> The whole design is that the name becomes a value in exactly one
+    ///     ⚠ <b>Asserted through <see cref="WaterZoneSystem.Zones" /> rather than through a resolver
+    ///     the test calls itself.</b> The whole design is that the name becomes a value in exactly one
     ///     place, so that the vertex stage and the underwater shape cannot disagree about what sea
     ///     this is — and the only way to check that is to read what those two read.
     /// </remarks>
@@ -674,7 +667,7 @@ public sealed class WaterZoneSystemTests : IDisposable {
             12.5f,
             system.WaterTime
         ); // And the phases, which is the reason the clock is a second system rather than a line in the
-        // fold: EarlyUpdate < FixedUpdate < PreRender, so the writer is before every reader.
+// fold: EarlyUpdate < FixedUpdate < PreRender, so the writer is before every reader.
         Assert.Equal(
             SystemPhase.EarlyUpdate,
             typeof(WaterClockSystem).GetCustomAttribute<UpdateInGroupAttribute>()!.Phase

@@ -51,7 +51,7 @@ static class PrincipalAxis {
 
         if (bestRow < 0) {
             // Every colour in the block is the same one. Any direction will do; both endpoints are
-            // going to land on the same texel whatever this says.
+// going to land on the same texel whatever this says.
             axis.Fill(1f);
             return;
         }

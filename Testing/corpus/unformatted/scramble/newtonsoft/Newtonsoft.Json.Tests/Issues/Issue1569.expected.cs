@@ -1,5 +1,4 @@
 // skala-oracle: resharper=2025.2.6 config=sha256:98ff52570e019fac profile=SkalaFormatOnly generated=2026-08-27
-
 #region License
 
 // Copyright (c) 2007 James Newton-King
@@ -31,11 +30,11 @@
 #if !(NET20 || NET35 || NET40 || PORTABLE || PORTABLE40) || NETSTANDARD2_0 || NET6_0_OR_GREATER
 using System;
 using
-System.IO;
+    System.IO;
 using System.Text;
 using System.Threading;
 using System
-.Threading.Tasks;
+    .Threading.Tasks;
 #if DNXCORE50
 using System.Reflection;
 using Xunit;
@@ -43,7 +42,7 @@ using Test = Xunit.FactAttribute;
 using Assert = Newtonsoft.Json.Tests.XUnitAssert;
 #else
 using NUnit
-.Framework;
+    .Framework;
 #endif
 
 namespace Newtonsoft.Json.Tests.Issues {
@@ -60,12 +59,12 @@ namespace Newtonsoft.Json.Tests.Issues {
             reader.CharBuffer = new char[2];
 #endif
             while (await reader.ReadAsync()
-            ) { }
+                  ) { }
         }
 
         public class AsyncOnlyStream : Stream {
             private readonly Stream
-            _innerStream;
+                _innerStream;
 
             public AsyncOnlyStream(Stream innerStream) {
                 _innerStream = innerStream;
@@ -86,7 +85,7 @@ namespace Newtonsoft.Json.Tests.Issues {
 
             public override void SetLength(
                 long
-                value
+                    value
             ) {
                 _innerStream.SetLength(value);
             }
@@ -112,7 +111,7 @@ namespace Newtonsoft.Json.Tests.Issues {
 
             public override Task WriteAsync(
                 byte
-                [] buffer,
+                    [] buffer,
                 int offset,
                 int count,
                 CancellationToken cancellationToken

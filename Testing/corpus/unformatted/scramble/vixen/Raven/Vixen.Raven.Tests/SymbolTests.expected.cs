@@ -17,13 +17,13 @@ public class
     [Fact]
     public void Package_directive_creates_a_namespace_chain() {
         var compilation = CompileClean(
-            """
-            package Vixen.Test.Deep
+                """
+                package Vixen.Test.Deep
 
-            shader Empty { }
+                shader Empty { }
 
-            """
-        )
+                """
+            )
             ;
 
         var vixen = compilation.GlobalNamespace.GetNamespace("Vixen");
@@ -147,17 +147,17 @@ public class
     [Fact]
     public void Fields_carry_their_type_mutability_and_constant_value() {
         var compilation = CompileClean(
-            """
-            package A
+                """
+                package A
 
-            shader S {
-                const val Multiplier = 42
-                val fixed: float3
-                var mutable: int
-            }
+                shader S {
+                    const val Multiplier = 42
+                    val fixed: float3
+                    var mutable: int
+                }
 
-            """
-        )
+                """
+            )
             ;
 
         var shader = FindType(compilation, "S");
@@ -232,9 +232,9 @@ public class
         Assert.Equal(
             "int",
             Assert.Single(
-                constructor
-                    .Parameters
-            )
+                    constructor
+                        .Parameters
+                )
                 .Type.ToDisplayString()
         );
     }
@@ -277,17 +277,17 @@ public class
     [Fact]
     public void Enum_members_are_constants_of_the_enum_type() {
         var compilation = CompileClean(
-            """
-            package A
+                """
+                package A
 
-            enum Mode {
-                Off,
-                On = 5,
-                Auto
-            }
+                enum Mode {
+                    Off,
+                    On = 5,
+                    Auto
+                }
 
-            """
-        )
+                """
+            )
             ;
         var mode = FindType(compilation, "Mode");
         Assert
@@ -295,7 +295,7 @@ public class
         Assert.Equal(
             5,
             GetMember<
-                FieldSymbol>(mode, "On")
+                    FieldSymbol>(mode, "On")
                 .ConstantValue
         );
         // An implicit value continues from the previous member, C-style — not the ordinal.
@@ -303,9 +303,9 @@ public class
         Assert.Same(
             mode,
             GetMember<FieldSymbol>(
-                mode,
-                "Off"
-            )
+                    mode,
+                    "Off"
+                )
                 .Type
         );
     }
@@ -314,18 +314,18 @@ public class
     ]
     public void Nested_types_belong_to_their_container() {
         var
-        compilation = CompileClean(
-            """
-            package A
+            compilation = CompileClean(
+                """
+                package A
 
-            shader Outer {
-                struct Inner {
-                    val x: int
+                shader Outer {
+                    struct Inner {
+                        val x: int
+                    }
                 }
-            }
 
-            """
-        );
+                """
+            );
 
         var inner = FindType(compilation, "Inner");
         Assert.Equal("Outer", inner.ContainingType?.Name);
@@ -442,7 +442,7 @@ public class
         );
 
         var
-        compilation = Compilation.Create("Test", libraryTree, shaderTree);
+            compilation = Compilation.Create("Test", libraryTree, shaderTree);
         Assert.Empty(compilation.GetDiagnostics());
         var field = GetMember<FieldSymbol>(FindType(compilation, "S"), "ray");
         Assert.Equal("Vixen.Core.Ray", field.Type.ToDisplayString());
@@ -453,7 +453,7 @@ file static class
     SymbolAssertions {
     public static T As<T>(
         this Symbol
-        symbol
+            symbol
     ) where T : Symbol =>
         Assert.IsAssignableFrom<T>(symbol);
 }

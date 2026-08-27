@@ -1,5 +1,4 @@
 ﻿#region License
-
 // Copyright (c) 2007 James Newton-King
 //
 // Permission is hereby granted, free of charge, to any person
@@ -22,20 +21,23 @@
 // WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 // OTHER DEALINGS IN THE SOFTWARE.
-
 #endregion
 
 using System;
 
-namespace Newtonsoft.Json.Tests.TestObjects {
-    public class PublicParameterizedConstructorWithPropertyNameConflict {
+namespace Newtonsoft.Json.Tests.TestObjects
+{
+    public class PublicParameterizedConstructorWithPropertyNameConflict
+    {
         private readonly int _value;
 
-        public PublicParameterizedConstructorWithPropertyNameConflict(string name) {
+        public PublicParameterizedConstructorWithPropertyNameConflict(string name)
+        {
             _value = Convert.ToInt32(name);
         }
 
-        public int Name {
+        public int Name
+        {
             get { return _value; }
         }
     }

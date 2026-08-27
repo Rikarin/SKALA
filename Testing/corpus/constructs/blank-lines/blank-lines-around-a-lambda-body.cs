@@ -1,8 +1,9 @@
 using System;
 
 class C {
-    Action M() =>
-        () => {
-            M();
-        };
+    Action M() => () => {
+
+        M();
+
+    };
 }

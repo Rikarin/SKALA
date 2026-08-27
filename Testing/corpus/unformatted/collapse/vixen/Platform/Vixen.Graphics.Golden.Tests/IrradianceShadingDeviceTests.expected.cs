@@ -121,8 +121,8 @@ public class IrradianceShadingDeviceTests {
             $"{MaterialCompiler.IrradianceFieldShader}.irradiancePointSampler",
             frame
         ); // And the names the renderer writes are the names the variant declares. This is the pair that
-        // fails silently: a prefix spelled two ways binds nothing and lights nothing, and the picture is
-        // the same one a field that found no light produces.
+// fails silently: a prefix spelled two ways binds nothing and lights nothing, and the picture is
+// the same one a field that found no light produces.
         var written = Names(owned);
         foreach (var name in frame) {
             Assert.True(
@@ -136,10 +136,8 @@ public class IrradianceShadingDeviceTests {
     /// <summary>Which half of doc 19 § L2 fills the field this frame reads.</summary>
     /// <remarks>
     ///     <para>
-    ///         <b>
-    ///             Both, separately, because until now each had only ever been checked against the
-    ///             other's absence.
-    ///         </b> <c>IrradianceFillDeviceTests</c> dispatches the fill and reads the
+    ///         <b>Both, separately, because until now each had only ever been checked against the
+    ///         other's absence.</b> <c>IrradianceFillDeviceTests</c> dispatches the fill and reads the
     ///         pool back; this file shades from a field the CPU filled. Neither had ever run the
     ///         renderer's own device path — the <c>PassKind.Compute</c> branch, the pool created as a
     ///         storage image, the upload that carries the index volume and nothing else — so the two
@@ -190,7 +188,7 @@ public class IrradianceShadingDeviceTests {
             image.Width / 2,
             image.Height / 2
         ); // C × L, per channel. Tolerant of an 8-bit target and of the filler's sixty-four rays, and
-        // nothing like tolerant enough to accept a missing or doubled π.
+// nothing like tolerant enough to accept a missing or doubled π.
         Assert.Equal(Albedo.X * Radiance, centre.X, 0.02f);
         Assert.Equal(Albedo.Y * Radiance, centre.Y, 0.02f);
         Assert.Equal(Albedo.Z * Radiance, centre.Z, 0.02f);
@@ -243,10 +241,10 @@ public class IrradianceShadingDeviceTests {
             new EffectPipelineDescriber(
                 device
             ); // ⚠ Read off the effect rather than written down. A shader's `stream` variables take locations
-        // before its vertex inputs do, so adding one to the pass renumbers all four — and a pipeline
-        // described against the old numbers is refused outright by `vkCreateGraphicsPipelines`, with an
-        // ErrorInitializationFailed that names nothing. `ClusteredShadingDeviceTests` learnt this first;
-        // these two were written with the numbers hardcoded and a later `stream` moved them.
+// before its vertex inputs do, so adding one to the pass renumbers all four — and a pipeline
+// described against the old numbers is refused outright by `vkCreateGraphicsPipelines`, with an
+// ErrorInitializationFailed that names nothing. `ClusteredShadingDeviceTests` learnt this first;
+// these two were written with the numbers hardcoded and a later `stream` moved them.
         var formats = new[] {
             VertexFormat.Float32X3, VertexFormat.Float32X3, VertexFormat.Float32X4, VertexFormat.Float32X2
         };
@@ -268,7 +266,7 @@ public class IrradianceShadingDeviceTests {
             new MaterialRenderFeature {
                 Effects = effects, Device = device, Descriptors = allocator
             }; // Its layout is the effect's, which is what makes the non-clustered path drawable at all —
-        // see ForwardLightingRenderFeature.Layout.
+// see ForwardLightingRenderFeature.Layout.
         var lighting = new ForwardLightingRenderFeature {
             Device = device, Clustered = Clustered, Layout = effect.SetLayouts[(int)DescriptorSetSlot.PerDraw]
         };
@@ -303,12 +301,12 @@ public class IrradianceShadingDeviceTests {
             quad,
             material
         ); // The field, filled once and whole: a uniform sky, so what the surface receives has a closed
-        // form and the round robin has nothing to converge toward.
+// form and the round robin has nothing to converge toward.
         var field = new IrradianceField(new BoundingBox(new(-12f), new(12f)), new(2));
         field.AllocateAll(); // ⚠ One or the other, never both — see IrradianceFieldRenderer.DeviceFiller. The device one
-        // resolves its own variant, `IrradianceFill` composed with `NoDistanceField`, out of the same
-        // effect system the material came from; `RavenEffects.Everything()` is what makes that possible
-        // without a second provider.
+// resolves its own variant, `IrradianceFill` composed with `NoDistanceField`, out of the same
+// effect system the material came from; `RavenEffects.Everything()` is what makes that possible
+// without a second provider.
         using var dispatch = fills is Fills.Device
             ? new IrradianceFieldFill(device) {
                 Effects = effects,
@@ -327,8 +325,8 @@ public class IrradianceShadingDeviceTests {
             Device = device,
             Budget =
                 field.BrickCount, // ⚠ The forward pass rather than the screen-space one, and this is the line that makes the
-            // whole fixture work: the names are qualified by the pass that reads them, so a field bound
-            // for `IndirectDiffuse` is invisible to `ForwardPlus` and vice versa.
+// whole fixture work: the names are qualified by the pass that reads them, so a field bound
+// for `IndirectDiffuse` is invisible to `ForwardPlus` and vice versa.
             Passes = { "ForwardPlus" }
         };
         probes.Passes.Remove("IndirectDiffuse");
@@ -354,8 +352,8 @@ public class IrradianceShadingDeviceTests {
             ResourceState.Undefined,
             ResourceState.CopySource
         ); // One light nothing points at, and a cluster list of zeros. Imported rather than declared,
-        // because a transient the graph provides holds whatever that memory held — and an uninitialised
-        // cluster list is a random number of lights per froxel, which is a picture nobody can read.
+// because a transient the graph provides holds whatever that memory held — and an uninitialised
+// cluster list is a random number of lights per froxel, which is a picture nobody can read.
         var lights = fixture.Buffer<PunctualLightData>([default], BufferUsage.Storage);
         var clusters = fixture.Buffer<byte>(new byte[ClusterGrid.BufferSize], BufferUsage.Storage);
         compositor.BufferImports["SceneLights"] = new(
@@ -375,8 +373,8 @@ public class IrradianceShadingDeviceTests {
         Assert.Empty(
             effects.Misses
         ); // The graph knows nothing about the textures set 0 had to be given, so nobody else can move
-        // them out of UNDEFINED — and a set holding one there is a validation error at submit whether
-        // or not the shader samples it.
+// them out of UNDEFINED — and a set holding one there is a validation error at submit whether
+// or not the shader samples it.
         var picture = fixture.Render(
             frame.Texture("harness", "Display"),
             list => list.Barrier(
@@ -398,8 +396,8 @@ public class IrradianceShadingDeviceTests {
             materials.BoundCount > 0,
             "set 2 was left incomplete, so the material bound none of it"
         ); // ⚠ Before the pixels. A dispatch that carried a reason is a field nothing filled, and the dark
-        // quad that produces is the same picture a wrong π or an unbound pool draws — this is the only
-        // assertion that tells the three apart.
+// quad that produces is the same picture a wrong π or an unbound pool draws — this is the only
+// assertion that tells the three apart.
         Assert.Null(dispatch?.Skipped);
         Assert.Equal(field.BrickCount, probes.Filled);
         return picture;

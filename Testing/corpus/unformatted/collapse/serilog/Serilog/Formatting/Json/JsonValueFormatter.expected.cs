@@ -16,44 +16,42 @@
 namespace Serilog.Formatting.Json;
 
 /// <summary>
-///     Converts Serilog's structured property value format into JSON.
+/// Converts Serilog's structured property value format into JSON.
 /// </summary>
 public class JsonValueFormatter : LogEventPropertyValueVisitor<TextWriter, bool> {
     readonly string? _typeTagName;
     const string DefaultTypeTagName = "_typeTag";
 
     /// <summary>
-    ///     Construct a <see cref="JsonFormatter" />.
+    /// Construct a <see cref="JsonFormatter"/>.
     /// </summary>
-    /// <param name="typeTagName">
-    ///     When serializing structured (object) values,
-    ///     the property name to use for the Serilog <see cref="StructureValue.TypeTag" /> field
-    ///     in the resulting JSON. If null, no type tag field will be written. The default is
-    ///     "_typeTag".
-    /// </param>
+    /// <param name="typeTagName">When serializing structured (object) values,
+    /// the property name to use for the Serilog <see cref="StructureValue.TypeTag"/> field
+    /// in the resulting JSON. If null, no type tag field will be written. The default is
+    /// "_typeTag".</param>
     public JsonValueFormatter(string? typeTagName = DefaultTypeTagName) {
         _typeTagName = typeTagName;
     }
 
     /// <summary>
-    ///     Format <paramref name="value" /> as JSON to <paramref name="output" />.
+    /// Format <paramref name="value"/> as JSON to <paramref name="output"/>.
     /// </summary>
     /// <param name="value">The value to format</param>
     /// <param name="output">The output</param>
     public void Format(LogEventPropertyValue value, TextWriter output) {
         // Parameter order of ITextFormatter is the reverse of the visitor one.
-        // In this class, public methods and methods with Format*() names use the
-        // (x, output) parameter naming convention.
+// In this class, public methods and methods with Format*() names use the
+// (x, output) parameter naming convention.
         Visit(output, value);
     }
 
     /// <summary>
-    ///     Visit a <see cref="ScalarValue" /> value.
+    /// Visit a <see cref="ScalarValue"/> value.
     /// </summary>
     /// <param name="state">Operation state.</param>
     /// <param name="scalar">The value to visit.</param>
-    /// <returns>The result of visiting <paramref name="scalar" />.</returns>
-    /// <exception cref="ArgumentNullException">When <paramref name="scalar" /> is <code>null</code></exception>
+    /// <returns>The result of visiting <paramref name="scalar"/>.</returns>
+    /// <exception cref="ArgumentNullException">When <paramref name="scalar"/> is <code>null</code></exception>
     protected override bool VisitScalarValue(TextWriter state, ScalarValue scalar) {
         Guard.AgainstNull(scalar);
         FormatLiteralValue(scalar.Value, state);
@@ -61,12 +59,12 @@ public class JsonValueFormatter : LogEventPropertyValueVisitor<TextWriter, bool>
     }
 
     /// <summary>
-    ///     Visit a <see cref="SequenceValue" /> value.
+    /// Visit a <see cref="SequenceValue"/> value.
     /// </summary>
     /// <param name="state">Operation state.</param>
     /// <param name="sequence">The value to visit.</param>
-    /// <returns>The result of visiting <paramref name="sequence" />.</returns>
-    /// <exception cref="ArgumentNullException">When <paramref name="sequence" /> is <code>null</code></exception>
+    /// <returns>The result of visiting <paramref name="sequence"/>.</returns>
+    /// <exception cref="ArgumentNullException">When <paramref name="sequence"/> is <code>null</code></exception>
     protected override bool VisitSequenceValue(TextWriter state, SequenceValue sequence) {
         Guard.AgainstNull(sequence);
         state.Write('[');
@@ -85,11 +83,11 @@ public class JsonValueFormatter : LogEventPropertyValueVisitor<TextWriter, bool>
     }
 
     /// <summary>
-    ///     Visit a <see cref="StructureValue" /> value.
+    /// Visit a <see cref="StructureValue"/> value.
     /// </summary>
     /// <param name="state">Operation state.</param>
     /// <param name="structure">The value to visit.</param>
-    /// <returns>The result of visiting <paramref name="structure" />.</returns>
+    /// <returns>The result of visiting <paramref name="structure"/>.</returns>
     protected override bool VisitStructureValue(TextWriter state, StructureValue structure) {
         state.Write('{');
         char? delim = null;
@@ -117,11 +115,11 @@ public class JsonValueFormatter : LogEventPropertyValueVisitor<TextWriter, bool>
     }
 
     /// <summary>
-    ///     Visit a <see cref="DictionaryValue" /> value.
+    /// Visit a <see cref="DictionaryValue"/> value.
     /// </summary>
     /// <param name="state">Operation state.</param>
     /// <param name="dictionary">The value to visit.</param>
-    /// <returns>The result of visiting <paramref name="dictionary" />.</returns>
+    /// <returns>The result of visiting <paramref name="dictionary"/>.</returns>
     protected override bool VisitDictionaryValue(TextWriter state, DictionaryValue dictionary) {
         state.Write('{');
         char? delim = null;
@@ -147,10 +145,10 @@ public class JsonValueFormatter : LogEventPropertyValueVisitor<TextWriter, bool>
     }
 
     /// <summary>
-    ///     Write a literal as a single JSON value, e.g. as a number or string. Override to
-    ///     support more value types. Don't write arrays/structures through this method - the
-    ///     active destructuring policies have already indicated the value should be scalar at
-    ///     this point.
+    /// Write a literal as a single JSON value, e.g. as a number or string. Override to
+    /// support more value types. Don't write arrays/structures through this method - the
+    /// active destructuring policies have already indicated the value should be scalar at
+    /// this point.
     /// </summary>
     /// <param name="value">The value to write.</param>
     /// <param name="output">The output</param>
@@ -160,10 +158,10 @@ public class JsonValueFormatter : LogEventPropertyValueVisitor<TextWriter, bool>
             return;
         } // Although the linear switch-on-type has apparently worse algorithmic performance than the O(1)
 
-        // dictionary lookup alternative, in practice, it's much to make a few equality comparisons
-        // than the hash/bucket dictionary lookup, and since most data will be string (one comparison),
-        // numeric (a handful) or an object (two comparisons) the real-world performance of the code
-        // as written is as fast or faster.
+// dictionary lookup alternative, in practice, it's much to make a few equality comparisons
+// than the hash/bucket dictionary lookup, and since most data will be string (one comparison),
+// numeric (a handful) or an object (two comparisons) the real-world performance of the code
+// as written is as fast or faster.
         if (value is string str) {
             FormatStringValue(str, output);
             return;
@@ -494,7 +492,7 @@ public class JsonValueFormatter : LogEventPropertyValueVisitor<TextWriter, bool>
     }
 
     /// <summary>
-    ///     Write a valid JSON string literal, escaping as necessary.
+    /// Write a valid JSON string literal, escaping as necessary.
     /// </summary>
     /// <param name="str">The string value to write.</param>
     /// <param name="output">The output.</param>

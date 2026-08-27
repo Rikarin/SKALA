@@ -16,10 +16,10 @@
 namespace Serilog.Formatting.Display;
 
 /// <summary>
-///     Implements the {Level} element.
-///     can now have a fixed width applied to it, as well as casing rules.
-///     Width is set through formats like "u3" (uppercase three chars),
-///     "w1" (one lowercase char), or "t4" (title case four chars).
+/// Implements the {Level} element.
+/// can now have a fixed width applied to it, as well as casing rules.
+/// Width is set through formats like "u3" (uppercase three chars),
+/// "w1" (one lowercase char), or "t4" (title case four chars).
 /// </summary>
 static class LevelOutputFormat {
     static readonly string[][] _titleCaseLevelMap = [

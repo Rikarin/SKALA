@@ -1,7 +1,1 @@
-class C {
-    void M() {
-        if (true) {
-            M();
-        }
-    }
-}
+class C { void M() { if (true) { M(); } } }

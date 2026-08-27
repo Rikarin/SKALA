@@ -120,7 +120,7 @@ public sealed class FoliageCullParityTests {
         [view.Plane0, view.Plane1, view.Plane2, view.Plane3, view.Plane4, view.Plane5];
 
     /// <summary>Both phases of the dispatch, over one batch. Level, then the run each survivor lands in.</summary>
-    static (int[] Counts, List<int>[] Runs, float[] Fades) Dispatch(
+    static (int[]Counts, List<int>[]Runs, float[]Fades) Dispatch(
         List<FoliageInstance> instances,
         in FoliageCullBatchRecord batch,
         in FoliageCullViewRecord view
@@ -145,7 +145,7 @@ public sealed class FoliageCullParityTests {
             }
         } // Phase two: placing. The same verdict recomputed rather than remembered, which is what the
 
-        // shader does and is the reason the two phases cannot disagree.
+// shader does and is the reason the two phases cannot disagree.
         for (var index = 0; index < instances.Count; index++) {
             var level = ShaderLevelOf(
                 in batch,
@@ -166,7 +166,7 @@ public sealed class FoliageCullParityTests {
     } // --- The fixture --------------------------------------------------------
 
     static FoliageType Tree =>
-        FoliageType.Of("Tree") with {
+        FoliageType.Of("Tree")with {
             Mesh = "Meshes/pine", Radius = 2f, StartCullDistance = 160f, EndCullDistance = 200f
         };
 
@@ -197,7 +197,7 @@ public sealed class FoliageCullParityTests {
         return instances;
     }
 
-    static (FoliageCullBatchRecord Batch, FoliageCullViewRecord View, InstanceCullSettings Settings, float[] Lods)
+    static (FoliageCullBatchRecord Batch, FoliageCullViewRecord View, InstanceCullSettings Settings, float[]Lods)
         Fixture(float density = 1f, params float[] lods) {
         var type = Tree;
         var frustum = Looking();

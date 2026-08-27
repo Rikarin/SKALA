@@ -26,7 +26,7 @@ public sealed class VideoColourConversionTests {
     [Fact]
     public void AFullRangeClipDecodedAsLimitedIsWashedOutRatherThanBroken() {
         // Stated because it is the failure this metadata exists to prevent, and because "a bit grey"
-        // is exactly the kind of wrong that ships.
+// is exactly the kind of wrong that ships.
         var correct = Convert(128, 128, 128, VideoColourRange.Full).R;
         var wrong = Convert(128, 128, 128, VideoColourRange.Limited).R;
         Assert.True(wrong > correct);

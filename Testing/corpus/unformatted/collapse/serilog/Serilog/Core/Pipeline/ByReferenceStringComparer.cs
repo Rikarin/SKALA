@@ -11,23 +11,4 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-namespace Serilog.Core.Pipeline; class ByReferenceStringComparer : IEqualityComparer, IEqualityComparer<string> {
-    public static readonly ByReferenceStringComparer Instance = new();
-    ByReferenceStringComparer() { }
-
-    public new bool Equals(object? x, object? y) {
-        return ReferenceEquals(x, y);
-    }
-
-    public int GetHashCode(object obj) {
-        return RuntimeHelpers.GetHashCode(obj);
-    }
-
-    public bool Equals(string? x, string? y) {
-        return ReferenceEquals(x, y);
-    }
-
-    public int GetHashCode(string obj) {
-        return RuntimeHelpers.GetHashCode(obj);
-    }
-}
+namespace Serilog.Core.Pipeline;class ByReferenceStringComparer:IEqualityComparer,IEqualityComparer<string>{public static readonly ByReferenceStringComparer Instance=new();ByReferenceStringComparer(){}public new bool Equals(object?x,object?y){return ReferenceEquals(x,y);}public int GetHashCode(object obj){return RuntimeHelpers.GetHashCode(obj);}public bool Equals(string?x,string?y){return ReferenceEquals(x,y);}public int GetHashCode(string obj){return RuntimeHelpers.GetHashCode(obj);}}

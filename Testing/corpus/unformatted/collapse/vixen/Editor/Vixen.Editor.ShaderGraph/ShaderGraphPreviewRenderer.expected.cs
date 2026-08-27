@@ -75,11 +75,8 @@ public interface IPreviewImages {
 ///         preview worth looking at.
 ///     </para>
 ///     <para>
-///         ⚠
-///         <b>
-///             The quad is in clip space and its texture coordinate follows the engine's
-///             convention.
-///         </b> Clip <c>y = +1</c> is the top — <c>Core/Vixen.Core.Mathematics/Conventions.md</c>,
+///         ⚠ <b>The quad is in clip space and its texture coordinate follows the engine's
+///         convention.</b> Clip <c>y = +1</c> is the top — <c>Core/Vixen.Core.Mathematics/Conventions.md</c>,
 ///         and the Vulkan backend's negative-height viewport is what implements it — so the corner at
 ///         <c>y = +1</c> is given <c>texcoord.y = 0</c> and the target's first row is the top of the
 ///         picture. An interface image command therefore draws it unflipped, which is why
@@ -135,9 +132,7 @@ public sealed class ShaderGraphPreviewRenderer : INodePreviewSource, IDisposable
     ///     renderer whose pictures nobody shows — which is what a test has and what a headless editor
     ///     has.
     /// </param>
-    /// <exception cref="ArgumentNullException">
-    ///     <paramref name="device" /> or <paramref name="registry" /> is null.
-    /// </exception>
+    /// <exception cref="ArgumentNullException"><paramref name="device" /> or <paramref name="registry" /> is null.</exception>
     public ShaderGraphPreviewRenderer(
         IGraphicsDevice device,
         NodeTypeRegistry registry,
@@ -215,10 +210,10 @@ public sealed class ShaderGraphPreviewRenderer : INodePreviewSource, IDisposable
         var key = (graph, node.Id);
         if (entries.TryGetValue(key, out var entry) && entry.Revision == revision) {
             // ⚠ The first of three gates, and the only one that runs sixty times a second. Nothing
-            // about this graph has changed since the source was emitted, so there is nothing to
-            // emit — every `NodeGraphCommand` calls `NodeGraphModel.Touch`, which is what moves the
-            // revision on. Without it, a canvas of fifty nodes walks fifty closures and builds fifty
-            // strings on every frame in which nobody did anything.
+// about this graph has changed since the source was emitted, so there is nothing to
+// emit — every `NodeGraphCommand` calls `NodeGraphModel.Touch`, which is what moves the
+// revision on. Without it, a canvas of fifty nodes walks fifty closures and builds fifty
+// strings on every frame in which nobody did anything.
             Touch(key);
             return Answer(entry, out preview);
         }
@@ -233,8 +228,8 @@ public sealed class ShaderGraphPreviewRenderer : INodePreviewSource, IDisposable
         if (entry is not null) {
             entry.Revision =
                 revision; // The second gate: the graph changed and this node's expression did not. Moving a node,
-            // renaming a property, editing a value on a node this one does not depend on — all of
-            // them arrive here and none of them costs a compilation.
+// renaming a property, editing a value on a node this one does not depend on — all of
+// them arrive here and none of them costs a compilation.
             if (!string.Equals(entry.Source, source.Source, StringComparison.Ordinal)) {
                 entry.Source = source.Source;
                 if (!dirty.Contains(key)) {
@@ -266,11 +261,8 @@ public sealed class ShaderGraphPreviewRenderer : INodePreviewSource, IDisposable
     /// <returns>How many were rebuilt.</returns>
     /// <exception cref="ObjectDisposedException">The renderer has been disposed.</exception>
     /// <remarks>
-    ///     ⚠
-    ///     <b>
-    ///         Called between <c>BeginFrame</c> and <c>EndFrame</c>, on the thread that owns the
-    ///         device
-    ///     </b>, like every other queue this editor drains. It records and submits a command
+    ///     ⚠ <b>Called between <c>BeginFrame</c> and <c>EndFrame</c>, on the thread that owns the
+    ///     device</b>, like every other queue this editor drains. It records and submits a command
     ///     list of its own rather than taking one, so a caller does not have to find a point in the
     ///     frame where it is safe to be outside a render pass — and the submit is ordered before the
     ///     interface's own, which is what makes the target readable in the same frame it was drawn.
@@ -325,7 +317,7 @@ public sealed class ShaderGraphPreviewRenderer : INodePreviewSource, IDisposable
             Destroy(entry);
         }
 
-        foreach (var (graph, state) in watched) {
+        foreach (var (graph, state)in watched) {
             graph.Changed -= state.Handler;
         }
 
@@ -368,16 +360,16 @@ public sealed class ShaderGraphPreviewRenderer : INodePreviewSource, IDisposable
             }
 
             effect = loader.Load(data);
-        } catch (Exception failure) when (failure is ShaderCompilationException or ArgumentException or IOException) {
+        } catch (Exception failure)when (failure is ShaderCompilationException or ArgumentException or IOException) {
             // ⚠ A refusal rather than a throw. A half-wired graph emits Raven that does not type
-            // check every few seconds while somebody is building one, and an editor that fell over
-            // when a preview did not compile would be an editor nobody could author a graph in.
+// check every few seconds while somebody is building one, and an editor that fell over
+// when a preview did not compile would be an editor nobody could author a graph in.
             entry.Refusal = failure.Message;
             Refusals++;
             return false;
         } // The one resource this binds is the uniform block holding the two transforms. Anything else
 
-        // — a texture, a sampler — is a material's and a preview has no material.
+// — a texture, a sampler — is a material's and a preview has no material.
         foreach (var binding in effect.Bindings) {
             if (binding.Kind is not (DescriptorKind.UniformBuffer or DescriptorKind.DynamicUniformBuffer)) {
                 entry.Refusal = $"'{binding.Name}' is a {binding.Kind} and a preview binds no resources, so there is "
@@ -430,7 +422,7 @@ public sealed class ShaderGraphPreviewRenderer : INodePreviewSource, IDisposable
                 layout.Length > 0
                     ? [new VertexBufferLayout(layout.Stride, layout.Elements)]
                     : [], // Two-sided: a quad whose winding disagrees with the rasterizer draws nothing at all,
-                // and that failure is indistinguishable from a preview nobody implemented.
+// and that failure is indistinguishable from a preview nobody implemented.
                 Rasterizer: RasterizerState.TwoSided,
                 DepthStencil: DepthStencilState.Disabled,
                 Name: "shader graph preview"
@@ -555,9 +547,9 @@ public sealed class ShaderGraphPreviewRenderer : INodePreviewSource, IDisposable
     ///     out for one would put the texture coordinate where the shader is looking for a position.
     ///     What each attribute holds is <see cref="Corner" />'s.
     /// </remarks>
-    static (float[] Vertices, Layout Layout) Geometry(Effect effect) {
+    static (float[]Vertices, Layout Layout) Geometry(Effect effect) {
         List<VertexElement> elements = [];
-        List<(int Lanes, Func<Corner, Vector4> Of)> readers = [];
+        List<(int Lanes, Func<Corner, Vector4>Of)> readers = [];
         var offset = 0;
         foreach (var input in effect.VertexInputs.OrderBy(input => input.Location)) {
             var lanes = LanesOf(input.Kind);
@@ -573,7 +565,7 @@ public sealed class ShaderGraphPreviewRenderer : INodePreviewSource, IDisposable
         var stride = offset;
         var floats = new List<float>(Quad.Length * Math.Max(1, stride / sizeof(float)));
         foreach (var corner in Quad) {
-            foreach (var (lanes, of) in readers) {
+            foreach (var (lanes, of)in readers) {
                 var value = of(corner);
                 for (var lane = 0; lane < lanes; lane++) {
                     floats.Add(
@@ -618,7 +610,7 @@ public sealed class ShaderGraphPreviewRenderer : INodePreviewSource, IDisposable
                     0f,
                     0f
                 ), // Facing the viewer, so a graph reading a world normal previews a flat surface rather than
-            // one whose normal is zero — which normalises to a NaN and shades as nothing.
+// one whose normal is zero — which normalises to a NaN and shades as nothing.
             "normal" => _ => new Vector4(0f, 0f, 1f, 0f),
             "colour" => _ => new Vector4(1f, 1f, 1f, 1f),
             _ => corner => new Vector4(corner.Position.X, corner.Position.Y, 0f, 1f)
@@ -704,7 +696,7 @@ public sealed class ShaderGraphPreviewRenderer : INodePreviewSource, IDisposable
             return;
         } // ⚠ The number goes before the texture does, or the interface holds a descriptor naming freed
 
-        // memory and the next frame that draws it is undefined rather than wrong.
+// memory and the next frame that draws it is undefined rather than wrong.
         if (entry.Image != 0) {
             images?.Release(entry.Image);
             entry.Image = 0;

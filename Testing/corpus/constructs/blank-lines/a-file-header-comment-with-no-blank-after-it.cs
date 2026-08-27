@@ -1,2 +1,3 @@
 // Copyright (c) Rikarin
-class C { }
+class C {
+}

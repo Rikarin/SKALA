@@ -33,7 +33,7 @@ public class CliTests : IDisposable {
 
     [Fact]
     public void The_documented_invocation_works_front_to_back() {
-        // Exactly what the README says: raven compile --target glsl <input> <output>
+// Exactly what the README says: raven compile --target glsl <input> <output>
         var exitCode = Invoke("compile", "--target", "glsl", Fixture("lambert.rvn"), At(""));
 
         Assert.Equal(0, exitCode);
@@ -151,7 +151,7 @@ public class CliTests : IDisposable {
             ;
         Assert.Equal(1, Invoke("compile", input, At("")));
         var
-        reported = error.ToString();
+            reported = error.ToString();
         Assert.Contains("RVN1001", reported);
         Assert.DoesNotContain("RVN2", reported);
     }
@@ -362,7 +362,7 @@ public class CliTests : IDisposable {
 
     ParseResult Parse(
         params string[]
-        args
+            args
     ) =>
         RavenCommand.Create(output, error).Parse(args);
 

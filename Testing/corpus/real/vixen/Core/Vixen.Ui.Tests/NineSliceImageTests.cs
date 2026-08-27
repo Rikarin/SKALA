@@ -87,9 +87,8 @@ public class NineSliceImageTests {
 
     [Fact]
     public void A_hollow_centre_leaves_out_the_middle_and_nothing_else() {
-        var geometry = Build(list => list.Add(
-                Sliced(0, 0, 200, 100, NineSlice.Uniform(16f)) with { HollowCentre = true }
-            )
+        var geometry = Build(
+            list => list.Add(Sliced(0, 0, 200, 100, NineSlice.Uniform(16f)) with { HollowCentre = true })
         );
 
         Assert.Equal(8 * 4, geometry.Vertices.Count);
@@ -128,7 +127,8 @@ public class NineSliceImageTests {
 
     [Fact]
     public void An_inset_on_one_side_only_still_draws_one_quad_per_surviving_cell() {
-        var geometry = Build(list => list.Add(
+        var geometry = Build(
+            list => list.Add(
                 Sliced(0, 0, 200, 100, new(16f, 0f, 0f, 0f)) with { SourceSlice = new(0.125f, 0f, 0f, 0f) }
             )
         );
@@ -144,9 +144,8 @@ public class NineSliceImageTests {
         // ⚠ Not eight zero-width strips smeared along the edges, which is what cutting a source with
         // no border to preserve would produce. A caller who set one inset and forgot the other gets
         // the ordinary image rather than a panel with streaks down it.
-        var geometry = Build(list => list.Add(
-                Sliced(0, 0, 200, 100, NineSlice.Uniform(16f)) with { SourceSlice = default }
-            )
+        var geometry = Build(
+            list => list.Add(Sliced(0, 0, 200, 100, NineSlice.Uniform(16f)) with { SourceSlice = default })
         );
 
         Assert.Equal(4, geometry.Vertices.Count);
@@ -157,7 +156,8 @@ public class NineSliceImageTests {
     public void A_nine_slice_batches_with_the_images_around_it() {
         // The claim in the roadmap row, checked: slicing is geometry and not state, so a panel and
         // the icon on top of it are one draw as long as they come from the same sheet.
-        var geometry = Build(list => {
+        var geometry = Build(
+            list => {
                 list.Add(Sliced(0, 0, 200, 100, NineSlice.Uniform(16f)));
                 list.Add(Image(20, 20, 32, 32));
             }
@@ -172,7 +172,8 @@ public class NineSliceImageTests {
     public void A_different_texture_still_breaks_the_batch() {
         // What slicing does not change: a texture is a descriptor set, so two sheets are two draws
         // however adjacent they are.
-        var geometry = Build(list => {
+        var geometry = Build(
+            list => {
                 list.Add(Sliced(0, 0, 200, 100, NineSlice.Uniform(16f)));
                 list.Add(Image(20, 20, 32, 32) with { Image = Other });
             }

@@ -1,7 +1,6 @@
 // SPDX-FileCopyrightText: Copyright (c) Rikarin
 // SPDX-License-Identifier: Apache-2.0
-using System.Diagnostics.CodeAnalysis; using Vixen.Editor.Core; namespace Vixen.Editor.Inspector;
-
+using System.Diagnostics.CodeAnalysis;using Vixen.Editor.Core;namespace Vixen.Editor.Inspector;
 /// <summary>The editing pipeline's view of what the generator described.</summary>
 /// <remarks>
 ///     <para>
@@ -17,31 +16,15 @@ using System.Diagnostics.CodeAnalysis; using Vixen.Editor.Core; namespace Vixen.
 ///         with two component registries.
 ///     </para>
 /// </remarks>
-public sealed class InspectorEditProvider : IEditProvider {
-    /// <summary>The one over the process-wide registry.</summary>
-    public static InspectorEditProvider Default { get; } = new();
-
-    /// <inheritdoc />
+public sealed class InspectorEditProvider:IEditProvider{
+/// <summary>The one over the process-wide registry.</summary>
+public static InspectorEditProvider Default{get;}=new();
+/// <inheritdoc />
     /// <remarks>
     ///     <see cref="IReadOnlyList{T}" /> is covariant, so the descriptor's own list is handed back
     ///     rather than copied into a second one — a panel asking for a type's members every frame
     ///     allocates nothing.
     /// </remarks>
-    public IReadOnlyList<IEditMember> MembersOf(Type type) {
-        ArgumentNullException.ThrowIfNull(type);
-        return InspectorRegistry.Find(type)?.Members ?? [];
-    }
-
-    /// <inheritdoc />
-    public bool TryResolve(Type type, string path, [NotNullWhen(true)] out IEditMember? member) {
-        ArgumentNullException.ThrowIfNull(type);
-        ArgumentException.ThrowIfNullOrEmpty(path);
-        if (InspectorRegistry.TryGet(type, out var descriptor) && descriptor.TryGetMember(path, out var found)) {
-            member = found;
-            return true;
-        }
-
-        member = null;
-        return false;
-    }
-}
+public IReadOnlyList<IEditMember>MembersOf(Type type){ArgumentNullException.ThrowIfNull(type);return InspectorRegistry.Find(type)?.Members??[];}
+/// <inheritdoc />
+public bool TryResolve(Type type,string path,[NotNullWhen(true)]out IEditMember?member){ArgumentNullException.ThrowIfNull(type);ArgumentException.ThrowIfNullOrEmpty(path);if(InspectorRegistry.TryGet(type,out var descriptor)&&descriptor.TryGetMember(path,out var found)){member=found;return true;}member=null;return false;}}

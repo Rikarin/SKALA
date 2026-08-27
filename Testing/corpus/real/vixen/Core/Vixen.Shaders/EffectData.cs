@@ -104,10 +104,7 @@ public sealed record EffectComposeBinding(string Slot = "", string Shader = "");
 /// <param name="Bytecode">The module, as the device takes it.</param>
 /// <param name="EntryPoint">Its entry point.</param>
 [DataContract("EffectStageData")]
-public sealed record EffectStageData(
-    ShaderStage Stage = ShaderStage.None,
-    byte[]? Bytecode = null,
-    string EntryPoint = "main") {
+public sealed record EffectStageData(ShaderStage Stage = ShaderStage.None, byte[]? Bytecode = null, string EntryPoint = "main") {
     /// <summary>The module, never null.</summary>
     public byte[] Bytecode { get; init; } = Bytecode ?? [];
 }
@@ -225,10 +222,8 @@ public sealed record EffectParameterData(
 /// </summary>
 /// <remarks>
 ///     <para>
-///         <strong>
-///             This is what makes "zero runtime shader compilation" a structural claim rather
-///             than a policy.
-///         </strong> Raven's own <c>.rvnfx</c> already holds bytecode and reflection —
+///         <strong>This is what makes "zero runtime shader compilation" a structural claim rather
+///         than a policy.</strong> Raven's own <c>.rvnfx</c> already holds bytecode and reflection —
 ///         but <c>CompiledEffectReader</c> lives in the compiler assembly, so a runtime that read one
 ///         would link the parser, the lowerer and both backends. Every tier below the in-memory
 ///         dictionary reads <em>this</em> instead: the disk cache, the baked bundle and the answer

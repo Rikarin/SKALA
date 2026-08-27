@@ -1,5 +1,4 @@
 ﻿#region License
-
 // Copyright (c) 2007 James Newton-King
 //
 // Permission is hereby granted, free of charge, to any person
@@ -22,7 +21,6 @@
 // WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 // OTHER DEALINGS IN THE SOFTWARE.
-
 #endregion
 
 using Newtonsoft.Json.Linq;
@@ -42,15 +40,16 @@ using System.Linq;
 #endif
 using System.Text;
 
-namespace Newtonsoft.Json.Tests.Documentation.Samples.JsonPath {
+namespace Newtonsoft.Json.Tests.Documentation.Samples.JsonPath
+{
     [TestFixture]
-    public class QueryJsonSelectTokenJsonPath : TestFixtureBase {
+    public class QueryJsonSelectTokenJsonPath : TestFixtureBase
+    {
         [Test]
-        public void Example() {
+        public void Example()
+        {
             #region Usage
-
-            JObject o = JObject.Parse(
-                @"{
+            JObject o = JObject.Parse(@"{
               'Stores': [
                 'Lambton Quay',
                 'Willis Street'
@@ -79,8 +78,7 @@ namespace Newtonsoft.Json.Tests.Documentation.Samples.JsonPath {
                   ]
                 }
               ]
-            }"
-            );
+            }");
 
             // manufacturer with the name 'Acme Co'
             JToken acme = o.SelectToken("$.Manufacturers[?(@.Name == 'Acme Co')]");
@@ -91,17 +89,15 @@ namespace Newtonsoft.Json.Tests.Documentation.Samples.JsonPath {
             // name of all products priced 50 and above
             IEnumerable<JToken> pricyProducts = o.SelectTokens("$..Products[?(@.Price >= 50)].Name");
 
-            foreach (JToken item in pricyProducts) {
+            foreach (JToken item in pricyProducts)
+            {
                 Console.WriteLine(item);
             }
-
             // Anvil
             // Elbow Grease
-
             #endregion
 
-            StringAssert.AreEqual(
-                @"{
+            StringAssert.AreEqual(@"{
   ""Name"": ""Acme Co"",
   ""Products"": [
     {
@@ -109,9 +105,7 @@ namespace Newtonsoft.Json.Tests.Documentation.Samples.JsonPath {
       ""Price"": 50
     }
   ]
-}",
-                acme.ToString()
-            );
+}", acme.ToString());
 
             Assert.AreEqual("Anvil", (string)pricyProducts.ElementAt(0));
             Assert.AreEqual("Elbow Grease", (string)pricyProducts.ElementAt(1));

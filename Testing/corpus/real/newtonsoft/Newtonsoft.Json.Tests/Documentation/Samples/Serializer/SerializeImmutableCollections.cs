@@ -1,5 +1,4 @@
 ﻿#region License
-
 // Copyright (c) 2007 James Newton-King
 //
 // Permission is hereby granted, free of charge, to any person
@@ -22,7 +21,6 @@
 // WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 // OTHER DEALINGS IN THE SOFTWARE.
-
 #endregion
 
 #if !(NET20 || NET35 || NET40)
@@ -44,14 +42,21 @@ using Newtonsoft.Json.Serialization;
 using Newtonsoft.Json.Tests.Serialization;
 using System.Collections.Immutable;
 
-namespace Newtonsoft.Json.Tests.Documentation.Samples.Serializer {
+namespace Newtonsoft.Json.Tests.Documentation.Samples.Serializer
+{
     [TestFixture]
-    public class SerializeImmutableCollections : TestFixtureBase {
+    public class SerializeImmutableCollections : TestFixtureBase
+    {
         [Test]
-        public void Example() {
+        public void Example()
+        {
             #region Usage
-
-            ImmutableList<string> l = ImmutableList.CreateRange(new List<string> { "One", "II", "3" });
+            ImmutableList<string> l = ImmutableList.CreateRange(new List<string>
+            {
+                "One",
+                "II",
+                "3"
+            });
 
             string json = JsonConvert.SerializeObject(l, Formatting.Indented);
             // [
@@ -59,17 +64,13 @@ namespace Newtonsoft.Json.Tests.Documentation.Samples.Serializer {
             //   "II",
             //   "3"
             // ]
-
             #endregion
 
-            StringAssert.AreEqual(
-                @"[
+            StringAssert.AreEqual(@"[
   ""One"",
   ""II"",
   ""3""
-]",
-                json
-            );
+]", json);
         }
     }
 }

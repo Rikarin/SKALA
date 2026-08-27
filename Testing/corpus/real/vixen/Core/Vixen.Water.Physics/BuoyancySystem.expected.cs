@@ -14,31 +14,22 @@ namespace Vixen.Water.Physics;
 /// <summary>Floats every <see cref="BuoyancyBody" /> on the one surface everything else reads.</summary>
 /// <remarks>
 ///     <para>
-///         <b>
-///             [35 §
-///             D10](../../docs/plan/35-water.md#d10-buoyancy-is-pontoons-over-jolt-evaluated-at-the-fixed-steps-water-time),
-///             and the whole of what this assembly is for.
-///         </b> Per fixed step, per pontoon: ask the
+///         <b>[35 § D10](../../docs/plan/35-water.md#d10-buoyancy-is-pontoons-over-jolt-evaluated-at-the-fixed-steps-water-time),
+///         and the whole of what this assembly is for.</b> Per fixed step, per pontoon: ask the
 ///         surface where it is, work out how much of the sphere is under it, and apply the force at
 ///         the pontoon's own world position — which is what makes a hull pitch when somebody stands at
 ///         the bow rather than bob level.
 ///     </para>
 ///     <para>
-///         ⚠
-///         <b>
-///             Before <see cref="PhysicsStepSystem" /> and after <see cref="PhysicsSyncSystem" />,
-///             and both halves of that matter.
-///         </b> Jolt accumulates forces and clears them at the step, so
+///         ⚠ <b>Before <see cref="PhysicsStepSystem" /> and after <see cref="PhysicsSyncSystem" />,
+///         and both halves of that matter.</b> Jolt accumulates forces and clears them at the step, so
 ///         a force applied after the step is a force that is thrown away — a boat that sinks with the
 ///         system visibly running. And a force applied before the sync is a force on a body the sync
 ///         is about to create, which is the first frame of every boat lost.
 ///     </para>
 ///     <para>
-///         ⚠
-///         <b>
-///             It reads the simulation's water time off <see cref="IWaterSurface" /> and never its
-///             own <c>GameTime</c>.
-///         </b> A force computed from a frame time changes when the frame rate
+///         ⚠ <b>It reads the simulation's water time off <see cref="IWaterSurface" /> and never its
+///         own <c>GameTime</c>.</b> A force computed from a frame time changes when the frame rate
 ///         does, which in a networked game is a client and a server disagreeing about where a boat is
 ///         — [16](../../docs/plan/16-networking.md)'s determinism requirement applied to a force.
 ///         <c>WaterClockSystem</c> is what advances that clock, and it does so in
@@ -75,11 +66,8 @@ public sealed class BuoyancySystem(PhysicsScene scene, IWaterSurface surface) : 
     /// <summary>Where this step's wakes and splashes go, or null to produce none.</summary>
     /// <remarks>
     ///     <para>
-    ///         <b>
-    ///             [35 §
-    ///             D12](../../docs/plan/35-water.md#d12-ripples-are-a-sliding-window-height-field-and-they-are-displacement-not-geometry)'s
-    ///             wake and splash hooks, produced where the facts are.
-    ///         </b> A hull's speed, how much of it
+    ///         <b>[35 § D12](../../docs/plan/35-water.md#d12-ripples-are-a-sliding-window-height-field-and-they-are-displacement-not-geometry)'s
+    ///         wake and splash hooks, produced where the facts are.</b> A hull's speed, how much of it
     ///         is under, and the step it first touched water are all here and nowhere else — a system
     ///         that wanted to make spray would otherwise have to re-derive them from a transform,
     ///         which is a second opinion about whether a boat is moving.
@@ -143,11 +131,8 @@ public sealed class BuoyancySystem(PhysicsScene scene, IWaterSurface surface) : 
 
     /// <summary>How many of those touched water.</summary>
     /// <remarks>
-    ///     ⚠
-    ///     <b>
-    ///         Zero while <see cref="Pontoons" /> is not is the reading that says the water is
-    ///         somewhere else.
-    ///     </b> It is the buoyancy equivalent of <c>ZonelessBodies</c>: a boat outside
+    ///     ⚠ <b>Zero while <see cref="Pontoons" /> is not is the reading that says the water is
+    ///     somewhere else.</b> It is the buoyancy equivalent of <c>ZonelessBodies</c>: a boat outside
     ///     every zone's window falls, and nothing about the falling says why.
     /// </remarks>
     public int WetPontoons { get; private set; }
@@ -302,20 +287,14 @@ public sealed class BuoyancySystem(PhysicsScene scene, IWaterSurface surface) : 
     /// <summary>Queues whatever this pontoon is doing to the surface, if anything.</summary>
     /// <remarks>
     ///     <para>
-    ///         ⚠
-    ///         <b>
-    ///             Scaled by the submerged fraction, so a pontoon skimming the surface makes less
-    ///             than one driving through it.
-    ///         </b> Without that, the loudest wake in a scene is the one
+    ///         ⚠ <b>Scaled by the submerged fraction, so a pontoon skimming the surface makes less
+    ///         than one driving through it.</b> Without that, the loudest wake in a scene is the one
     ///         from a hull that is barely touching the water — because it is the one whose pontoon is
     ///         crossing the surface, and crossing is what a wake looks like from the outside.
     ///     </para>
     ///     <para>
-    ///         ⚠
-    ///         <b>
-    ///             A splash is the frame a body <em>arrives</em>, which is why the previous state is
-    ///             read.
-    ///         </b> A rule on the vertical speed alone fires again every time a bobbing hull
+    ///         ⚠ <b>A splash is the frame a body <em>arrives</em>, which is why the previous state is
+    ///         read.</b> A rule on the vertical speed alone fires again every time a bobbing hull
     ///         crosses the surface, which is a crate dropped in a lake splashing four times before it
     ///         settles.
     ///     </para>

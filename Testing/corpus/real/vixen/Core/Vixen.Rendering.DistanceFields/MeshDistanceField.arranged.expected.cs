@@ -92,10 +92,8 @@ public sealed class MeshDistanceField : IDistanceField {
     /// <returns>The texture coordinate.</returns>
     /// <remarks>
     ///     <para>
-    ///         <b>
-    ///             The one convention the CPU and the shader have to share, so it is written down once
-    ///             here and read from both sides.
-    ///         </b> A sample lives at the <i>centre</i> of its texel and
+    ///         <b>The one convention the CPU and the shader have to share, so it is written down once
+    ///         here and read from both sides.</b> A sample lives at the <i>centre</i> of its texel and
     ///         sample <c>i</c> is grid point <c>i</c>, so grid point <c>i</c> is at
     ///         <c>(i + ½) / count</c>. Drop the half and the whole field shifts half a cell along
     ///         every axis — geometry subtly in the wrong place, invisible in a still frame, and

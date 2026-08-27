@@ -108,11 +108,8 @@ public sealed class ComputeRenderer : SceneRenderer, IDisposable {
     ///         three stores a texel.
     ///     </para>
     ///     <para>
-    ///         ⚠
-    ///         <b>
-    ///             Neither <see cref="Reads" /> nor <see cref="Writes" /> says this, and both say
-    ///             something false.
-    ///         </b> <see cref="Writes" /> claims a result, so a run of passes that each
+    ///         ⚠ <b>Neither <see cref="Reads" /> nor <see cref="Writes" /> says this, and both say
+    ///         something false.</b> <see cref="Writes" /> claims a result, so a run of passes that each
     ///         bind the same image reads to the graph as a frame's work overwritten before anybody
     ///         looked — which is VX2101, correctly reported against a declaration that was wrong.
     ///         <see cref="Reads" /> claims contents <em>and</em> asks for the read-only layout, and a
@@ -148,11 +145,8 @@ public sealed class ComputeRenderer : SceneRenderer, IDisposable {
     /// <summary>What fills the compose slots the compilation declares.</summary>
     /// <remarks>
     ///     <para>
-    ///         ⚠
-    ///         <b>
-    ///             The same fix <see cref="FullScreenRenderer.Composition" /> carries, and this type
-    ///             was missed when that one was made.
-    ///         </b> A compilation is the whole library and every
+    ///         ⚠ <b>The same fix <see cref="FullScreenRenderer.Composition" /> carries, and this type
+    ///         was missed when that one was made.</b> A compilation is the whole library and every
     ///         compose slot any shader in it declares must be bound — RVN2073 — so a dispatch that has
     ///         no opinion about a material's third surface feature still has to name one.
     ///         <c>MaterialCompiler.PassComposition</c>'s own remarks predict this exact case: "a
@@ -255,8 +249,8 @@ public sealed class ComputeRenderer : SceneRenderer, IDisposable {
         var key = EffectKey.From(ShaderName, Parameters, PermutationKeys, Composition);
         if (frame.Effects.Resolve(key) is not { } effect) {
             // Also reported by EffectSystem.Misses, which is what makes "no runtime compilation in a
-            // shipping build" a test rather than a hope. Said here as well because a miss is a list
-            // of keys and this is the node that wanted one.
+// shipping build" a test rather than a hope. Said here as well because a miss is a list
+// of keys and this is the node that wanted one.
             return $"the compute effect '{ShaderName}' did not resolve, so this dispatch was never "
                 + "declared and whatever it writes still holds the last value written to it";
         }
@@ -277,8 +271,8 @@ public sealed class ComputeRenderer : SceneRenderer, IDisposable {
             textures[name] = frame.Texture(ToString(), name);
         } // The layout the effect was compiled with, unless the host insisted on one of its own. A set
 
-        // is only bindable to a pipeline whose layout it was allocated from, so guessing here would
-        // produce something the validation layers reject and a release driver does not.
+// is only bindable to a pipeline whose layout it was allocated from, so guessing here would
+// produce something the validation layers reject and a release driver does not.
         if (!Descriptors.Layout.IsValid && (int)Descriptors.Slot < effect.SetLayouts.Length) {
             Descriptors.Layout = effect.SetLayouts[(int)Descriptors.Slot];
         }
@@ -290,13 +284,13 @@ public sealed class ComputeRenderer : SceneRenderer, IDisposable {
             effect,
             Samplers
         ); // Filled here rather than in the pass body: the values are the host's, and writing a
-        // host-visible buffer inside a command list is a map and a copy between two dispatches.
+// host-visible buffer inside a command list is a map and a copy between two dispatches.
         constants ??= frame.Device is { } device ? new(device, $"{this}.Constants") : null;
         var hasConstants =
             ConstantBinding is not null
             && constants?.Update(effect, Parameters)
             == true; // At the block's own offset, not at zero: the buffer holds one region per frame in flight, so
-        // changing a value does not overwrite what an unfinished frame is reading.
+// changing a value does not overwrite what an unfinished frame is reading.
         var extra = hasConstants
             ? new[] {
                 DescriptorWrite.Uniform(ConstantBinding!.Value, constants!.Buffer, constants.Offset, constants.Size)
@@ -328,8 +322,8 @@ public sealed class ComputeRenderer : SceneRenderer, IDisposable {
                     pass.Writes(write);
                 } // A use and not a production — see Bound. The state is the one a storage descriptor
 
-                // is written with, so the barrier that lands the image in General is placed and the
-                // graph is told nothing about contents that do not exist.
+// is written with, so the barrier that lands the image in General is placed and the
+// graph is told nothing about contents that do not exist.
                 foreach (var bound in textureBound) {
                     pass.Reads(bound, ResourceState.ShaderWrite);
                 }

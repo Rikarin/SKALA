@@ -1,5 +1,4 @@
 // skala-oracle: resharper=2025.2.6 config=sha256:98ff52570e019fac profile=SkalaFormatOnly generated=2026-08-27
-
 #region License
 
 // Copyright (c) 2007 James Newton-King
@@ -34,8 +33,8 @@ using System.Text;
 
 namespace Newtonsoft.Json.Tests.TestObjects {
     /// <summary>
-    ///     Represents a strongly typed in-memory cache of data.
-    /// </summary>
+    ///Represents a strongly typed in-memory cache of data.
+    ///</summary>
     [global::System.Serializable()]
     [global::System.ComponentModel.DesignerCategoryAttribute("code")]
     [global::System.ComponentModel.ToolboxItem(true)]
@@ -268,7 +267,7 @@ namespace Newtonsoft.Json.Tests.TestObjects {
                     global::System.Xml.Schema.XmlSchema schema = null;
                     dsSchema.Write(s1);
                     for (global::System.Collections.IEnumerator schemas =
-                         xs.Schemas(dsSchema.TargetNamespace).GetEnumerator();
+                             xs.Schemas(dsSchema.TargetNamespace).GetEnumerator();
                          schemas.MoveNext();) {
                         schema = ((global::System.Xml.Schema.XmlSchema)(schemas.Current));
                         s2.SetLength(0);
@@ -304,8 +303,8 @@ namespace Newtonsoft.Json.Tests.TestObjects {
         public delegate void CustomersRowChangeEventHandler(object sender, CustomersRowChangeEvent e);
 
         /// <summary>
-        ///     Represents the strongly named DataTable class.
-        /// </summary>
+        ///Represents the strongly named DataTable class.
+        ///</summary>
         [global::System.Serializable()]
         [global::System.Xml.Serialization.XmlSchemaProviderAttribute("GetTypedTableSchema")]
         public partial class
@@ -583,7 +582,7 @@ namespace Newtonsoft.Json.Tests.TestObjects {
                 global::System.Xml.Schema.XmlSchemaComplexType type =
                     new global::System.Xml.Schema.XmlSchemaComplexType();
                 global::System.Xml.Schema.XmlSchemaSequence
-                sequence = new global::System.Xml.Schema.XmlSchemaSequence();
+                    sequence = new global::System.Xml.Schema.XmlSchemaSequence();
                 CustomerDataSet ds = new CustomerDataSet();
                 global::System.Xml.Schema.XmlSchemaAny any1 = new global::System.Xml.Schema.XmlSchemaAny();
                 any1.Namespace = "http://www.w3.org/2001/XMLSchema";
@@ -615,7 +614,7 @@ namespace Newtonsoft.Json.Tests.TestObjects {
                         global::System.Xml.Schema.XmlSchema schema = null;
                         dsSchema.Write(s1);
                         for (global::System.Collections.IEnumerator schemas =
-                             xs.Schemas(dsSchema.TargetNamespace).GetEnumerator();
+                                 xs.Schemas(dsSchema.TargetNamespace).GetEnumerator();
                              schemas.MoveNext();) {
                             schema = ((global::System.Xml.Schema.XmlSchema)(schemas.Current));
                             s2.SetLength(0);
@@ -649,8 +648,8 @@ namespace Newtonsoft.Json.Tests.TestObjects {
         }
 
         /// <summary>
-        ///     Represents strongly named DataRow class.
-        /// </summary>
+        ///Represents strongly named DataRow class.
+        ///</summary>
         public partial class CustomersRow : global::System.Data.DataRow {
             private CustomersDataTable tableCustomers;
 
@@ -702,8 +701,8 @@ namespace Newtonsoft.Json.Tests.TestObjects {
         }
 
         /// <summary>
-        ///     Row event argument class
-        /// </summary>
+        ///Row event argument class
+        ///</summary>
         [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "4.0.0.0")]
         public class CustomersRowChangeEvent : global::System.EventArgs {
             private CustomersRow eventRow;

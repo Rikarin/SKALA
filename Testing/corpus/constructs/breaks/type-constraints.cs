@@ -4,4 +4,5 @@ class SameLine<T, U> where T : struct where U : class {
 
 class OwnLines<T, U>
     where T : struct
-    where U : class { }
+    where U : class {
+}

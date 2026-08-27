@@ -1,6 +1,6 @@
 class C {
     void M(bool b) {
-        start:
+    start:
         if (b) {
             goto start;
         }

@@ -16,15 +16,15 @@
 namespace Serilog.Core.Sinks.Batching;
 
 /// <summary>
-///     Manages reconnection period and transient fault response for <see cref="BatchingSink" />.
-///     During normal operation an object of this type will simply echo the configured batch transmission
-///     period. When availability fluctuates, the class tracks the number of failed attempts, each time
-///     increasing the interval before reconnection is attempted (up to a set maximum) and at predefined
-///     points indicating that either the current batch, or entire waiting queue, should be dropped. This
-///     Serves two purposes - first, a loaded receiver may need a temporary reduction in traffic while coming
-///     back online. Second, the sender needs to account for both bad batches (the first fault response) and
-///     also overproduction (the second, queue-dropping response). In combination these should provide a
-///     reasonable delivery effort but ultimately protect the sender from memory exhaustion.
+/// Manages reconnection period and transient fault response for <see cref="BatchingSink"/>.
+/// During normal operation an object of this type will simply echo the configured batch transmission
+/// period. When availability fluctuates, the class tracks the number of failed attempts, each time
+/// increasing the interval before reconnection is attempted (up to a set maximum) and at predefined
+/// points indicating that either the current batch, or entire waiting queue, should be dropped. This
+/// Serves two purposes - first, a loaded receiver may need a temporary reduction in traffic while coming
+/// back online. Second, the sender needs to account for both bad batches (the first fault response) and
+/// also overproduction (the second, queue-dropping response). In combination these should provide a
+/// reasonable delivery effort but ultimately protect the sender from memory exhaustion.
 /// </summary>
 class FailureAwareBatchScheduler {
     static readonly TimeSpan MinimumBackoffPeriod = TimeSpan.FromSeconds(5);
@@ -79,8 +79,8 @@ class FailureAwareBatchScheduler {
             ++_consecutiveDroppedBatches;
         } // After trying and dropping enough batches consecutively, we'll try to get out of the way and just drop
 
-        // everything after each subsequent failure. Each time a batch is tried and fails, we'll drop it and
-        // drain the whole queue.
+// everything after each subsequent failure. Each time a batch is tried and fails, we'll drop it and
+// drain the whole queue.
         shouldDropQueue = _consecutiveDroppedBatches >= DroppedBatchesBeforeDroppingQueue;
     }
 
@@ -93,7 +93,7 @@ class FailureAwareBatchScheduler {
                 2,
                 _failuresSinceSuccessfulBatch - 1
             ); // If the period is ridiculously short, give it a boost so we get some
-            // visible backoff.
+// visible backoff.
             var backoffPeriod = Math.Max(_bufferingTimeLimit.Ticks, MinimumBackoffPeriod.Ticks); // The "ideal" interval
             var backedOff = (long)(backoffPeriod * backoffFactor); // Capped to the maximum interval
             var cappedBackoff = Math.Min(

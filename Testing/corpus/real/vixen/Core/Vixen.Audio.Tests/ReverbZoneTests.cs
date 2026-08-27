@@ -33,7 +33,9 @@ public sealed class ReverbZoneTests {
     [Fact]
     public void ABoxIsABoxAndNotASphereWithCorners() {
         var zone = new AudioReverbZone {
-            Parameter = "corridor", Shape = AudioZoneShape.Box, Extent = new Vector3(10f, 2f, 3f)
+            Parameter = "corridor",
+            Shape = AudioZoneShape.Box,
+            Extent = new Vector3(10f, 2f, 3f)
         };
 
         Assert.Equal(1f, zone.Evaluate(new Vector3(9f, 1f, 2f)));
@@ -140,13 +142,10 @@ public sealed class ReverbZoneTests {
             // The listener inside the zone, the sound a long way outside it.
             engine.SetListener(new AudioListener { Position = Vector3.Zero });
 
-            engine.Play(
-                AudioTestData.Constant(48_000, 1f),
-                new PlaybackSettings {
-                    IsSpatial = true,
-                    Spatial = new SpatialSettings { Position = new Vector3(500f, 0f, 0f), MaxDistance = 10_000f }
-                }
-            );
+            engine.Play(AudioTestData.Constant(48_000, 1f), new PlaybackSettings {
+                IsSpatial = true,
+                Spatial = new SpatialSettings { Position = new Vector3(500f, 0f, 0f), MaxDistance = 10_000f }
+            });
 
             engine.Update(1f / 60f);
             Assert.Equal(1f, engine.ReverbZones.StrengthOf("cave"));

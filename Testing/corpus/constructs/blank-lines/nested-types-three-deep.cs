@@ -3,9 +3,7 @@ class A {
         class D {
             int _a;
         }
-
         int _b;
     }
-
     int _c;
 }

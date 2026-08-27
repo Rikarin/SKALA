@@ -1,19 +1,18 @@
-// SPDX-FileCopyrightText: Copyright (c) Rikarin
+    // SPDX-FileCopyrightText: Copyright (c) Rikarin
 // SPDX-License-Identifier: Apache-2.0
-
-using System.Reflection;
+     
+      using System.    Reflection;
+   using
+         Vixen.Core  ;
+               using Vixen.Core  .Mathematics ;
 using
-Vixen.Core;
-using Vixen.Core.Mathematics;
-using
-Vixen.Ecs;
-using Vixen.Ecs.Systems; using Vixen.Engine.Transforms;
-using Vixen.Rendering;
-using Vixen.Rendering.Water;
-using Vixen.Water; using Xunit;
-
-namespace Tests;
-
+            Vixen. Ecs;
+       using  Vixen  .Ecs    .    Systems  ; using  Vixen.Engine.Transforms;
+            using Vixen.  Rendering;
+                using Vixen .Rendering.Water;
+             using   Vixen .Water ;  using Xunit ;
+               namespace Tests ;
+ 
 /// <summary>
 ///     Zones and bodies, folded out of a scene — [docs/plan/35 § D3, § W3].
 /// </summary>
@@ -29,109 +28,83 @@ namespace Tests;
 ///         time, and the only place it shows is a profile nobody takes until something else is slow.
 ///     </para>
 /// </remarks>
-public sealed class WaterZoneSystemTests : IDisposable {
-    readonly World world = new();
-    readonly RenderView view = new("Camera");
-
+   public sealed    class WaterZoneSystemTests  : IDisposable    {
+   readonly   World world = new(    ); readonly RenderView view = new("Camera"    )    ;
     /// <inheritdoc />
-    public void Dispose() {
-        world.Dispose();
-        GC.SuppressFinalize(this);
+ public    void  Dispose()  { world  .Dispose();
+   GC.  SuppressFinalize(this);
     }
 
     /// <summary>A source that hands out one square lake, wherever it is asked.</summary>
-    sealed class Square(float half) : IWaterSplineSource {
-        public int Calls { get; private set; }
+    sealed class    Square(float half) : IWaterSplineSource {    public int Calls { get; private set; }
+        public Spline ?   SplineFor    ( string name   , in   Matrix4x4  placement)   { Calls    ++;
 
-        public Spline? SplineFor(string name, in Matrix4x4 placement) {
-            Calls++;
+      if (name.   Length    ==  0) {
+                return null; }
+ 
 
-            if (name.Length == 0) {
-                return null;
-            }
-
-
-            var origin = placement.Translation;
-            return new(
-                Spline.SmoothTangents(
+var origin = placement.Translation;
+return    new( Spline   .SmoothTangents(
                     [
-                        new(origin.X - half, origin.Y, origin.Z - half),
-                        new(origin.X + half, origin.Y, origin.Z - half),
-                        new(origin.X + half, origin.Y, origin.Z + half),
-                        new(origin.X - half, origin.Y, origin.Z + half)
-                    ],
-                    closed: true,
-                    tension: 1f
-                ),
-                closed: true
-            );
-        }
-    }
+        new    (   origin.X -  
+        half, origin .  Y, origin.    Z -  half),
+			new(origin   .   X +    half,  origin.Y   , origin    .    Z - half  ), new    (   origin.X + half,  origin.Y, origin  .Z + half)   ,
+           new(origin.X -  half,  origin. Y,    origin .   Z + half    )
+                    ]    , closed :   true    ,
+           tension  : 1f    ),
+                closed: true );
+      } }
+ Entity Zone   (   WaterZoneComponent component) { var    entity = world.    Create();
+           
+  world.   Add(entity, component);
+       world  .   Add(   entity, new WorldTransform    { Value
+      = Matrix4x4.Identity });
 
-    Entity Zone(WaterZoneComponent component) {
-        var entity = world.Create();
+return entity;
 
-        world.Add(entity, component);
-        world.Add(
-            entity,
-            new WorldTransform {
-                Value
-                    = Matrix4x4.Identity
-            }
-        );
-
-        return entity;
-    }
-
-    Entity Body
-        (Vector3 at, string spline = "Lake") {
-        var entity = world.Create(
-        );
-
-        world
-            .Add(entity, WaterBodyComponent.Default with { Spline = spline, SurfaceHeight = at.Y });
-        world.Add(entity, new WorldTransform { Value =
-                Matrix4x4.FromTranslation(at) });
-        return
-            entity;
-    }
-
-    WaterZoneSystem System(
-        float half = 40f
-    ) =>
-        new(view) {
-            Splines = new Square(half),
-            Ground = new FlatWaterGround
-                (-10f)
-        };
-
-    // --- The fold ------------------------------------------------------------
-
+     }
+     Entity Body
+(  Vector3  at, string spline  =  "Lake") {
+       var entity   = world.    Create(
+             );
+        
+  world 
+      .Add    (entity    , WaterBodyComponent .Default with { Spline    = spline, SurfaceHeight =    at.Y } );
+          world    .Add   ( entity, new    WorldTransform { Value =
+            Matrix4x4.FromTranslation(    at ) } );
+      return
+entity;
+           }
+ WaterZoneSystem System    (float half = 40f
+            )    =>
+     new(    view)    { Splines = new Square(half   ), Ground = new FlatWaterGround
+               (- 10f)  }  ;
+     
+             // --- The fold ------------------------------------------------------------
+       
     /// <summary>A zone claims the bodies its window reaches, and rasterises them into one field.</summary>
-    [Fact]
-    public void A_zone_claims_the_bodies_its_window_reaches() {
-        var zone = Zone(WaterZoneComponent.Default);
-
-        Body(new(0f, 2f, 0f));
-        var system = System();
-        system.Fold(world);
-        Assert.Equal(1, system.ZoneCount);
-        Assert.Equal(1, system.BodyCount);
-        Assert.Equal(0, system.ZonelessBodies);
-
-        var state =
-            system.States[zone];
-        Assert.Single
-            (state.Bodies);
-        Assert.True(
-            state
-                .Field!.Sample(Vector2.Zero).Coverage
-            > 0.9f
-        );
-        Assert.
-            Equal(2f, state.Field.Sample(Vector2.Zero).SurfaceHeight, 0.01f);
-    }
-
+               [Fact]
+              public   void A_zone_claims_the_bodies_its_window_reaches( ) {   var zone = Zone (WaterZoneComponent   .Default)   ;
+           
+         Body(new   (  0f   ,  2f, 0f)    )   ;
+           var system   = System()    ;
+	system  . Fold(world);
+               Assert    .Equal(    1    , system.ZoneCount);
+ Assert  .    Equal(
+      1, system.  BodyCount    )    ;
+     Assert.   Equal   (
+      0, system.   ZonelessBodies);
+       
+           var state =
+   system   .   States[zone];
+        Assert.    Single
+(state.   Bodies);
+Assert.True(    state
+.Field ! .    Sample(Vector2    .Zero) .  Coverage   >    0.9f);
+      Assert.   
+Equal(2f    , state.Field   .Sample(Vector2.Zero   ).  SurfaceHeight, 0.01f ) ;
+            }
+               
     /// <summary>
     ///     ⚠ A body no zone reaches is counted, not silently dropped.
     /// </summary>
@@ -141,64 +114,47 @@ public sealed class WaterZoneSystemTests : IDisposable {
     ///     a blank frame, which is why the number exists. It is the answer to "I placed a lake and
     ///     there is no water".
     /// </remarks>
-    [Fact]
-    public void A_body_outside_every_zone_is_counted() {
-        Zone(WaterZoneComponent.Default with { Extent = 256f });
-        Body(
-            new
-            (0f, 2f, 0f)
-        );
-        Body(new(4_000f, 2f, 0f));
+         [Fact]  public void A_body_outside_every_zone_is_counted() {
+     Zone    (
+      WaterZoneComponent.Default with { Extent = 256f })  ;
+        Body    (new
+       (  0f  , 2f ,    0f)    ) ;  
+             Body(
+            new(4_000f,  2f    , 0f  ));
 
-        var system = System();
-
-        system.Fold(world)
-            ;
-        Assert.Equal(
-            2,
-            system
-                .BodyCount
-        );
-        Assert.Equal(
-            1,
-            system
-                .ZonelessBodies
-        );
+             var   system =  System();
+   
+     system    .    Fold    (  world)
+;  
+	Assert.Equal(2,   system
+       .BodyCount);
+               Assert.Equal(   1  , system
+    .ZonelessBodies    )    ;
     }
-
     /// <summary>And a body whose spline has not loaded is a different number.</summary>
     /// <remarks>
     ///     ⚠ Distinct from the one above because the fix is different: one is a zone that does not
     ///     reach, the other is an asset that has not loaded or a name that is wrong. One number for
     ///     both would send an author to look at the zone's extent when the spline is what is missing.
     /// </remarks>
-    [Fact]
-    public void A_body_whose_spline_is_missing_is_a_different_number(
-    ) {
-        Zone(WaterZoneComponent.Default);
-        Body(new(0f, 2f, 0f));
-        Body(
-            new
-            (0f, 2f, 0f),
-            spline: string.Empty
-        );
+      [Fact]
+             public   void   A_body_whose_spline_is_missing_is_a_different_number  (
+) {
+        Zone(   WaterZoneComponent   .   Default);
+        Body(new(0f, 2f  , 0f)  );
+        Body   (    new
+(0f,   2f, 0f), spline: string  .Empty  ) ;
 
-        var
-        system = System();
-        system.Fold(world);
-        Assert.Equal(1, system.BodyCount);
-        Assert.Equal(
-            1,
-            system
-                .UnresolvedBodies
-        );
-        Assert.Equal(
-            0,
-            system
-                .ZonelessBodies
-        );
+          var
+        system = System   (  )    ;
+        system.Fold(world   );
+        Assert.Equal(1, system.BodyCount   );
+              Assert.  Equal( 1, system 
+.   UnresolvedBodies    );
+         Assert.Equal(  0, system
+		.    ZonelessBodies);
     }
-
+		
     /// <summary>
     ///     ⚠ The diagnostic and the claim agree, away from the origin.
     /// </summary>
@@ -215,31 +171,31 @@ public sealed class WaterZoneSystemTests : IDisposable {
     ///     </para>
     /// </remarks>
     [
-        Fact]
-    public void The_fold_agrees_with_itself_away_from_the_origin() {
-        var zone
-            = Zone(WaterZoneComponent.Default);
-        Body(new(5_000f, 2f, 5_000f))
-            ;
+  Fact    ]
+            public  void    The_fold_agrees_with_itself_away_from_the_origin (   ) {
+       var  zone
+= Zone   (WaterZoneComponent    .Default    );  
+   Body(new    (5_000f , 2f, 5_000f ))
+	;
+              
+   view.Position = new(  5_000f
+,   0f , 5_000f); 
 
-        view.Position = new(5_000f, 0f, 5_000f);
+                var system   = System();  
 
-        var system = System();
-
-        system.Fold(world);
-        // Standing on the lake: claimed, and the diagnostic says so.
-        Assert.Equal(0, system.ZonelessBodies);
-        Assert.Single(system.States[zone].Bodies);
-        Assert.True(system.States[zone].Field!.Sample(new(5_000f, 5_000f)).Coverage > 0.9f);
+    system.  Fold(world);
+             // Standing on the lake: claimed, and the diagnostic says so.
+        Assert.   Equal    (0,   system.ZonelessBodies   );
+             Assert.Single(  system.    States[  zone].Bodies); Assert.  True(system.States[zone].Field!.Sample(new(5_000f, 5_000f) )    .   Coverage   > 0.9f);
         // From the origin the window reaches nothing, and the diagnostic agrees about that too
-
-        // rather than reporting the far body as covered.
-        view.Position = new(0f, 0f, 0f);
-        system.Fold(world);
-        Assert.Equal(1, system.ZonelessBodies);
-        Assert.Empty(system.States[zone].Bodies);
+         
+  // rather than reporting the far body as covered.
+             view   .Position    = new( 0f, 0f, 0f)   ;
+		system.    Fold(
+world)    ;
+     Assert.    Equal (1   , system  .ZonelessBodies); Assert    .    Empty( system . States[zone   ] .  Bodies)    ;
     }
-
+        
     /// <summary>
     ///     ⚠ A body containing the whole window is claimed from inside it.
     /// </summary>
@@ -249,34 +205,31 @@ public sealed class WaterZoneSystemTests : IDisposable {
     ///     and a claim that only walked the boundary would leave exactly that body unclaimed: dry
     ///     ground mid-ocean, counted zoneless with a zone standing right there.
     /// </remarks>
-    [Fact]
-    public void A_body_containing_the_window_is_claimed_from_inside_it() {
-        var zone = Zone
-            (WaterZoneComponent.Default);
-        Body(new(0f, 2f, 0f));
-        // A lake four kilometres to a side against a 512-metre window: every boundary point is
-        // thousands of metres outside it.
-        var system = System
-            (half: 4_000f);
-        system
-            .Fold(world);
+   [Fact   ]
+             public void A_body_containing_the_window_is_claimed_from_inside_it    (    ) {
+        var   zone = Zone
+         (    WaterZoneComponent.Default);
+              Body(   new(   0f    , 2f  , 0f)
+			);
+   // A lake four kilometres to a side against a 512-metre window: every boundary point is
+          // thousands of metres outside it.
+		var system = System
+     (  half   : 4_000f)   ;
+  system
+. Fold(    world)  ;
 
-        Assert.Equal(0, system.ZonelessBodies)
-            ;
-        Assert.Single(system.States[zone].Bodies);
-        Assert.True(system.States[zone].Field!.Sample(Vector2.Zero).Coverage > 0.9f);
-    }
-
-    // --- What makes the threshold real ---------------------------------------
+            Assert  .   Equal(0,    system   .ZonelessBodies )
+          ;  
+        Assert.Single(system   .States[zone    ]    . Bodies); Assert.True(system.States [    zone    ] .  Field!    . Sample(Vector2.Zero    )    .Coverage    > 0.9f  )  ;
+            }
+               // --- What makes the threshold real ---------------------------------------
     /// <summary>
     ///     ⚠ A still scene rasterises once, and folding it again costs nothing.
     /// </summary>
     /// <remarks>
     ///     <para>
-    ///         <b>
-    ///             The claim the whole amortisation rests on, and the one that is invisible when it
-    ///             fails.
-    ///         </b> A field re-rasterised every frame looks identical to one re-rasterised every
+    ///         <b>The claim the whole amortisation rests on, and the one that is invisible when it
+    ///         fails.</b> A field re-rasterised every frame looks identical to one re-rasterised every
     ///         hundredth; the only symptom is frame time.
     ///     </para>
     ///     <para>
@@ -287,29 +240,30 @@ public sealed class WaterZoneSystemTests : IDisposable {
     ///         reading that says so.
     ///     </para>
     /// </remarks>
-    [Fact]
-    public void A_still_scene_rasterises_once_however_many_frames_run() {
-        var zone = Zone
-            (WaterZoneComponent.Default);
-        Body(new(0f, 2f, 0f));
-        var system = System();
-
-        system.Fold(world);
-        var state = system.States[zone];
-        Assert.Equal(1, state.RasterCount);
-        Assert.Equal(1, system.RebuiltBodies);
-
-        for (var frame =
-             0; frame < 200; frame++) {
-            system.Fold(world);
-        }
-
-        Assert.Equal(1, state.RasterCount);
-        Assert.Equal(0, system.RebuiltBodies);
-        Assert.
-            Equal(WaterZoneUpdate.None, state.LastUpdate);
-    }
-
+                [Fact]
+       public void A_still_scene_rasterises_once_however_many_frames_run    (  )
+             {
+            var zone  = Zone
+        (WaterZoneComponent. Default); 
+      Body (   new( 
+          0f  ,  2f    , 0f)   );  
+var system = System();
+              
+                system.  Fold  ( world);
+var   state =    system.States [  zone ]    ;
+        Assert.Equal(1, state .RasterCount) ; Assert.Equal    (1,  system    .RebuiltBodies)    ;
+        
+	for    (var frame =
+        0; frame    < 200   ;    frame ++) {
+      system   .   Fold(world );
+                }
+        Assert.Equal(   1  , state    .RasterCount); 
+        Assert.Equal(    0
+,    system. RebuiltBodies);
+              Assert .
+              Equal(WaterZoneUpdate.  None   , state.    LastUpdate  );
+ 
+  }
     /// <summary>
     ///     ⚠ A zone whose scroll threshold was never set still amortises.
     /// </summary>
@@ -320,147 +274,122 @@ public sealed class WaterZoneSystemTests : IDisposable {
     ///     exists to avoid, visible nowhere but frame time. The component's seam folds it to the
     ///     default; the kernel refuses it outright.
     /// </remarks>
-    [Fact]
-    public void A_zeroed_scroll_threshold_amortises_rather_than_rasterising_every_frame() {
-        var component = WaterZoneComponent.Default
-            with { ScrollThreshold = 0f };
-
-        Assert.Equal(
-            WaterZone.
-            Default.ScrollThreshold,
-            component.Zone.ScrollThreshold
-        );
-        var zone = Zone(component);
-        Body(new(0f, 2f, 0f));
-        var system =
-            System();
-        for (var frame = 0; frame < 50;
-             frame++) {
-            system.Fold(world);
-        }
-
-        Assert.Equal(1, system.States[zone].RasterCount);
-    }
-
+ [Fact]    public void A_zeroed_scroll_threshold_amortises_rather_than_rasterising_every_frame   () {
+              var    component   = WaterZoneComponent  .Default   
+      with { ScrollThreshold  =   0f   }  ;
+ 
+            Assert.Equal  (WaterZone.
+          Default.ScrollThreshold    , component.Zone.  ScrollThreshold); 
+              var zone  =    Zone(   component  );  
+        Body  (new(0f, 2f,    0f )   );
+        var system =  
+           System  () ;
+   for (  var frame = 0; frame    <  50;
+                frame++) {
+     system    .Fold    (world) ; }
+            Assert.Equal(1, system  .States[zone    ].RasterCount ) ; }
+               
     /// <summary>A body that moved rebuilds, and the field with it.</summary>
-    [Fact]
-    public void A_body_that_moved_rebuilds_and_rerasterises() {
-        var zone = Zone(WaterZoneComponent.Default);
-        var body = Body(new(0f, 2f, 0f));
-        var system = System();
-        system.Fold(world);
-        system.Fold(world);
-        var state = system.States[zone];
-        Assert.Equal(1, state.RasterCount);
+   [ Fact] public void A_body_that_moved_rebuilds_and_rerasterises (  ) {
+  var zone = Zone  (WaterZoneComponent    .Default); var body = Body(new(0f  , 2f    , 0f)  );
+  var system   = System()    ;
+system .Fold(world);
+        system.Fold(world)   ;
+        var state   = system.    States[zone];
+Assert.Equal(1
+         , state  .RasterCount);
 
-        world.Get<WorldTransform>(body)
-            .Value = Matrix4x4.FromTranslation(new(80f, 2f, 0f));
+  world  .Get<  WorldTransform> (body)
+             . Value = Matrix4x4.    FromTranslation(new(80f,   2f,    0f ))    ;
+               
+          system.    Fold (
+              world   );
 
-        system.Fold(world);
-
-        Assert.Equal(1, system.RebuiltBodies);
-        Assert.Equal(
-            2,
-            state
-                .RasterCount
-        );
-        Assert.Equal(
-            WaterZoneUpdate.Changed,
-            state.
-            LastUpdate
-        );
-        // And the water is where the body now is.
-        Assert.Equal(
-            0f,
-            state.Field!.Sample
-            (Vector2.Zero).Coverage
-        );
-        Assert.True(state.Field.Sample(new(80f, 0f)).Coverage > 0.9f);
-    }
-
+              Assert.  Equal   (1, system  .    RebuiltBodies
+    )   ;
+	Assert.Equal  (2    ,  state
+          .RasterCount  );
+        Assert.Equal (WaterZoneUpdate  .Changed, state    .
+            LastUpdate  );
+			// And the water is where the body now is.
+			Assert .Equal(0f,   state. Field  !.Sample
+(Vector2    .   Zero   ).   Coverage    );
+ Assert.True (    state.Field  .Sample(new   (    80f  , 0f)    ).Coverage    > 0.9f)    ; }
+              
     /// <summary>Walking past the threshold scrolls the window; walking inside it does not.</summary>
-    [Fact]
-    public void Walking_past_the_threshold_scrolls_the_window() {
-        var zone = Zone
-            (WaterZoneComponent.Default);
-        Body
-            (new(0f, 2f, 0f));
-        var system
-            = System(half: 4_000f);
-        system.Fold(world);
-        var state = system.States[
-            zone];
-        view.Position = new(60f, 0f, 0f)
-            ;
-        system.Fold(world);
-        Assert.Equal(1, state.RasterCount);
+          [  Fact   ]
+        public void Walking_past_the_threshold_scrolls_the_window   ()
+       {
+       var  zone =   Zone
+ (  WaterZoneComponent.Default   );
+   Body 
+			(new(  0f, 2f    ,    0f)   );
+         var system
+= System(half  : 4_000f);
+        system.Fold    (
+         world    );
+   var state =    system.    States[  
+zone];
+        view. Position =    new(   60f, 0f, 0f   )
+;
+             system.  Fold(world);
+          Assert  .   Equal   (
+   1, state   .RasterCount  );
 
-        view.Position = new(
-            70f,
-            0f,
-            0f
-        );
-        system.Fold(world);
-        Assert.Equal(
-            2,
-            state.RasterCount
-        );
-        Assert
-            .Equal(WaterZoneUpdate.Scrolled, state.LastUpdate);
-    }
-
+      view.Position = new(70f , 0f,
+    0f   );
+          system.  Fold(  world);
+   Assert. Equal   (2,
+state  .RasterCount)    ;
+  Assert
+.Equal    ( WaterZoneUpdate .Scrolled , state.LastUpdate)    ;   
+   } 
     /// <summary>A zone whose entity is gone takes its field with it.</summary>
     /// <remarks>
     ///     ⚠ A dictionary that only ever grew would hold a field per zone for as long as the world
     ///     lived, and a level streaming regions in and out would do that once per region — which is a
     ///     leak that looks like memory the level legitimately needs.
     /// </remarks>
-    [
-        Fact]
-    public void A_zone_that_is_gone_takes_its_field_with_it() {
-        var zone = Zone(WaterZoneComponent.Default);
-        Body(
-            new(
-                0f,
-                2f,
-                0f
-            )
-        );
-
+ [
+           Fact]
+    public void A_zone_that_is_gone_takes_its_field_with_it( ) { var zone =  Zone   (   WaterZoneComponent.Default);
+     Body    (new   (    0f, 2f,
+          0f)  );
+            
         var system = System
-            ();
-        system.Fold(world);
-        Assert.Single(system.States)
-            ;
-
+(  );
+        system  . Fold(world)  ;
+             Assert. Single(system.States)
+        ;
+             
         world.Destroy(zone)
-            ;
-        system.Fold(world);
-        Assert.Empty(system.States);
-        Assert.Equal(0, system.ZoneCount);
-    }
-
+          ;
+        system.Fold (world)    ;
+               Assert.Empty   (system  .States); Assert.  Equal(0, system.ZoneCount);
+           }
+              
     /// <summary>A zone that cannot be rasterised is skipped rather than thrown over.</summary>
     /// <remarks>
     ///     An author dragging a resolution through an invalid value should see the last good frame,
     ///     not an exception out of a system — and <c>WaterZone.Validate</c> is what says which values
     ///     those are.
     /// </remarks>
-    [Fact]
-    public void An_impossible_zone_is_skipped_rather_than_thrown_over() {
-        Zone(WaterZoneComponent.Default with { Resolution = 1 });
-        Body(new(0f, 2f, 0f));
+			[Fact] public   void An_impossible_zone_is_skipped_rather_than_thrown_over(    )    {
+             Zone(WaterZoneComponent.Default with { Resolution = 1 }   )    ;
+                Body  (   new (0f    , 2f  , 0f));
+            
+     var system =  System(   ) ;
+             
+        system    .Fold(   world);  
+    
+              Assert.Equal(  0
+ ,  system  . ZoneCount);
+            Assert  .    Empty   (system.States) ;
+       // And the body is then reaching nothing, which is the number that says why.
+           Assert.Equal   (    1, system.    ZonelessBodies);
 
-        var system = System();
-
-        system.Fold(world);
-
-        Assert.Equal(0, system.ZoneCount);
-        Assert.Empty(system.States);
-        // And the body is then reaching nothing, which is the number that says why.
-        Assert.Equal(1, system.ZonelessBodies);
-    }
-
+ }  
+           
     /// <summary>
     ///     ⚠ A zeroed body component is unresolved, not a crash.
     /// </summary>
@@ -471,24 +400,23 @@ public sealed class WaterZoneSystemTests : IDisposable {
     ///     <see cref="WaterZoneSystem.UnresolvedBodies" />, the same number a spline that has not
     ///     loaded counts into, because the fix is the same: state which asset the body means.
     /// </remarks>
-    [Fact
-    ]
-    public void A_zeroed_body_component_is_unresolved_rather_than_a_crash() {
-        Zone(WaterZoneComponent.Default);
-        var entity = world
-            .Create();
+    [    Fact
+			]
+           public void A_zeroed_body_component_is_unresolved_rather_than_a_crash (  ) { Zone(WaterZoneComponent.Default)    ;
+          var entity    = world
+   .Create()  ;
+         
+       world.Add(entity,  new WaterBodyComponent    (    ))    ;
+           world.Add
+           (    entity, new WorldTransform   { Value = Matrix4x4.Identity }  )  ;
+           
+      var system =   System(   );
 
-        world.Add(entity, new WaterBodyComponent());
-        world.Add
-            (entity, new WorldTransform { Value = Matrix4x4.Identity });
-
-        var system = System();
-
-        system.
-            Fold(world);
-
-        Assert.Equal(0, system.BodyCount);
-        Assert.Equal(1, system.UnresolvedBodies);
+  system.  
+Fold  (world);
+             
+    Assert   . Equal(0, system.BodyCount)  ;
+ Assert.    Equal    (   1  , system.    UnresolvedBodies   );
     }
 
     /// <summary>An unset shore falloff takes the default rather than a hard edge.</summary>
@@ -497,26 +425,25 @@ public sealed class WaterZoneSystemTests : IDisposable {
     ///     terrain from a long way off — a bug nobody typed. A deliberate near-hard edge is a small
     ///     stated value; unset takes the two-metre beach.
     /// </remarks>
-    [Fact
-    ]
-    public void An_unset_shore_falloff_takes_the_default() {
-        var zone = Zone(WaterZoneComponent.Default);
-        var entity = world.Create();
-        world.Add(entity, WaterBodyComponent.Default with { Spline = "Lake", ShoreFalloff = 0f });
-        world.Add(entity, new WorldTransform { Value = Matrix4x4.Identity })
-            ;
-        var system = System(
-        );
-        system
-            .Fold(world);
-        var
-        body = Assert.Single(system.States[zone].Bodies);
-        Assert.Equal
-            (WaterBodyComponent.Default.ShoreFalloff, body.ShoreFalloff);
+     [Fact
+  ]
+            public void  An_unset_shore_falloff_takes_the_default() { var zone = Zone(WaterZoneComponent. Default);
+        var  entity   = world .  Create()   ;
+     world    .Add(   entity , WaterBodyComponent.Default with {    Spline   = "Lake", ShoreFalloff    = 0f    });
+world.Add  (   entity   , new WorldTransform { Value =   Matrix4x4    .Identity }  )   
+ ;
+            var    system = System (
+              ); 
+     system
+.Fold(world  );
+   var
+body =   Assert  .Single(system.States[   zone].   Bodies   )  ;
+            Assert    .   Equal
+	( WaterBodyComponent.Default .ShoreFalloff   , body.ShoreFalloff)  ;
     }
-
-    // --- An asset that is not ready yet is not an asset that does not exist ---
-
+            
+               // --- An asset that is not ready yet is not an asset that does not exist ---
+           
     /// <summary>A source that answers null until the asset it is standing in for has landed.</summary>
     /// <remarks>
     ///     Which is <c>AssetWaterSource</c>'s behaviour and not an unkind test double: it starts a
@@ -525,36 +452,31 @@ public sealed class WaterZoneSystemTests : IDisposable {
     ///     answers on the first ask, which is exactly why nothing here caught the fold caching the
     ///     null.
     /// </remarks>
-    sealed class Streaming(float half) : IWaterSplineSource {
-        readonly Square square =
-            new(half);
+    sealed class Streaming   (float half) : IWaterSplineSource {
+    readonly Square square =
+new  (half);
+   
+      public bool Landed { get ;  set  
+; }
+             public int Calls
+               { get ; private set    ;   }
 
-        public bool Landed { get; set
-                ; }
-
-        public int Calls { get; private set; }
-
-        public Spline? SplineFor(
-            string name,
-            in Matrix4x4 placement
-        ) {
-            Calls++;
-            return Landed
-                ? square
-                    .SplineFor(name, placement)
-                : null;
-        }
-    }
-
+          public Spline  ? SplineFor(
+string name    , in Matrix4x4 placement) {
+             Calls ++;
+              return Landed  ? square
+.SplineFor (name   , placement) : null;
+ 
+              }
+            }
+            
     /// <summary>
     ///     ⚠ A spline that arrives late is asked for again, and the lake appears.
     /// </summary>
     /// <remarks>
     ///     <para>
-    ///         <b>
-    ///             The fold caches a body against its component and its placement, and it used to cache
-    ///             the <em>failure</em> with it.
-    ///         </b> A body whose <c>SplineFor</c> answered null was
+    ///         <b>The fold caches a body against its component and its placement, and it used to cache
+    ///         the <em>failure</em> with it.</b> A body whose <c>SplineFor</c> answered null was
     ///         recorded as unresolved, and because nothing about the component or the transform then
     ///         changed it was never asked again for the life of the world — so a lake named in a scene
     ///         could never appear in a running game, and the failure was permanent rather than
@@ -573,83 +495,65 @@ public sealed class WaterZoneSystemTests : IDisposable {
     ///         <see cref="A_still_scene_rasterises_once_however_many_frames_run" />'s whole subject.
     ///     </para>
     /// </remarks>
-    [Fact]
-    public void A_spline_that_arrives_late_is_asked_again_and_the_lake_appears() {
-        var zone
-            = Zone(WaterZoneComponent.Default);
-        Body(
-            new
-            (0f, 2f, 0f)
-        );
+              [   Fact]    public    void A_spline_that_arrives_late_is_asked_again_and_the_lake_appears()    {
+     var zone
+     = Zone(    WaterZoneComponent.   Default);
+     Body    ( new
+              (0f    , 2f, 0f    ));
+  
+   var source = new    Streaming(40f    ); var system =  new   WaterZoneSystem(view ) { Splines = source, Ground = new  FlatWaterGround(-10f  ) }   ;
+              for    (var  frame = 0
+      ; frame < 5; frame  ++) {
+      system   .Fold(world);
+            }
+Assert.Equal  (0 , system    .BodyCount    )    ;  
+   Assert .Equal(1,   system.UnresolvedBodies);
+      
+      Assert.    Equal(   5  , source .Calls)    ;
 
-        var source = new Streaming(40f);
-        var system = new WaterZoneSystem(view) { Splines = source, Ground = new FlatWaterGround(-10f) };
-        for (var frame = 0
-             ; frame < 5; frame++) {
-            system.Fold(world);
-        }
-
-        Assert.Equal(0, system.BodyCount);
-        Assert.Equal(1, system.UnresolvedBodies);
-
-        Assert.Equal(5, source.Calls);
-
-        source.Landed = true;
-        system.Fold(world);
-        Assert.Equal(1, system.BodyCount);
-        Assert.Equal(0, system.UnresolvedBodies)
-            ;
-        Assert.Single(
-            system.
-            States[zone].Bodies
-        );
-        Assert.True(
-            system.States
-            [zone].Field!.Sample(Vector2.Zero).Coverage
-            > 0.9f
-        );
+   source    .   Landed = true ;  system  .Fold(   world) ;
+       Assert. Equal (1    ,   system.   BodyCount);
+  Assert.Equal (0,   system  . UnresolvedBodies)
+;
+     Assert   .Single(system   .
+                States   [ zone   ].Bodies);
+          Assert.True(  system.States
+            [zone].Field  !   .Sample   (Vector2   .Zero).Coverage > 0.9f);
         // And the success is still cached: the source is not asked again, no body is rebuilt, and the
-        // field is not re-rasterised.
-        var asked = source.Calls;
-        var rasterised =
-            system.States[zone].RasterCount;
+ // field is not re-rasterised.
+     var  asked = source . Calls;
+			var  rasterised =
+system  .States   [zone].  RasterCount ;   
+ 
+           for (var frame =
+              0; frame < 50; frame    ++) {
+           
+            system.Fold(    world)  ; 
+}
 
-        for (var frame =
-             0; frame < 50; frame++) {
-            system.Fold(world);
-        }
-
-        Assert.Equal(asked, source.Calls);
-        Assert.Equal(
-            0,
-            system.RebuiltBodies
-        );
-        Assert.Equal(rasterised, system.States[zone].RasterCount);
-    }
-
-    // --- The components themselves -------------------------------------------
-
+ Assert.Equal(asked, source.   Calls  );
+Assert.Equal   (0,   
+      system    .   RebuiltBodies) ;   
+   Assert.Equal(rasterised, system.States[zone]    .RasterCount )  ; }
+         
+         // --- The components themselves -------------------------------------------
+ 
     /// <summary>The components carry what the kernel's own descriptions want.</summary>
-    [Fact]
-    public void The_components_translate_into_the_kernels_own_types() {
-        var zone = WaterZoneComponent.Default;
-        Assert.Null(
-            zone
-                .Zone.Validate()
-        );
-        Assert.Equal(
-            2f,
-            zone.
-            Zone.MetresPerTexel,
-            1e-5f
-        );
-        var body = WaterBodyComponent.Default with { Depth = 5f, Velocity = 1.5f, AudioIntensity =
-                0.8f };
-        Assert.Equal(5f, body.Profile.Depth);
-        Assert.Equal(1.5f, body.Profile.Velocity);
-        Assert.Equal(0.8f, body.Profile.AudioIntensity);
-    }
-
+        [   Fact] public void    The_components_translate_into_the_kernels_own_types()   {
+        var zone = WaterZoneComponent.Default   ;
+           Assert   .    Null(zone  
+.Zone   .Validate());
+  Assert .Equal(    2f    , zone.
+            Zone.MetresPerTexel,    1e-5f);
+        var body    = WaterBodyComponent   .Default with { Depth = 5f, Velocity = 1.5f, AudioIntensity =
+     0.8f  }   ;
+Assert.Equal (
+5f, body.Profile. Depth);
+        Assert.Equal(1.5f
+          , body.    Profile.Velocity    );  
+        Assert. Equal  (
+        0.8f, body  .  Profile. AudioIntensity )   ;
+            }   
     /// <summary>
     ///     ⚠ The default resolution is a power of two plus one, and that is load bearing.
     /// </summary>
@@ -658,55 +562,48 @@ public sealed class WaterZoneSystemTests : IDisposable {
     ///     in whole metres would then land the window on a fraction of a texel — which is a shoreline
     ///     that crawls while the camera moves and is invisible in any screenshot of it.
     /// </remarks>
-    [Fact]
-    public void The_default_resolution_is_a_power_of_two_plus_one() {
-        Assert.Equal(257, WaterZoneComponent.Default.Resolution);
-        var wrong
-            = WaterZoneComponent.Default with { Resolution = 256, CoarsestTexel = 4f };
+            [Fact] public void The_default_resolution_is_a_power_of_two_plus_one    (    ) {
+        Assert  .Equal(257, WaterZoneComponent    .Default    .    Resolution);
+	var   wrong
+= WaterZoneComponent    .    Default with { Resolution  = 256, CoarsestTexel  = 4f } ;
 
-        Assert.NotNull(wrong.Zone.Validate());
-    }
+ Assert.NotNull    (  wrong   .Zone.Validate(   ));
+  }
 
     // --- The sea state a zone names — docs/plan/35 § D6's one asset kind -------
 
     /// <summary>A source holding one sea state under one name.</summary>
-    sealed class Sea(string name, WaterWaveSpectrum spectrum) : IWaterWaveSource {
-        public int Calls { get; private set; }
-
-        public
-            WaterWaveSpectrum? SpectrumFor(string asked) {
-            Calls++;
-
-            return asked == name ? spectrum : null;
-        }
+    sealed class   Sea(  string    name, WaterWaveSpectrum    spectrum) : IWaterWaveSource {  public int Calls { get;   private set; }
+            public
+WaterWaveSpectrum? SpectrumFor(string asked) {
+           Calls  ++;
+         
+                return asked   ==  name    ?   spectrum   : null;
+ 
+          }
     }
-
+      
     /// <summary>A named sea state replaces the inline one, in the component every consumer reads.</summary>
     /// <remarks>
-    ///     ⚠
-    ///     <b>
-    ///         Asserted through <see cref="WaterZoneSystem.Zones" /> rather than through a resolver
-    ///         the test calls itself.
-    ///     </b> The whole design is that the name becomes a value in exactly one
+    ///     ⚠ <b>Asserted through <see cref="WaterZoneSystem.Zones" /> rather than through a resolver
+    ///     the test calls itself.</b> The whole design is that the name becomes a value in exactly one
     ///     place, so that the vertex stage and the underwater shape cannot disagree about what sea
     ///     this is — and the only way to check that is to read what those two read.
     /// </remarks>
-    [Fact]
-    public void A_zone_naming_a_sea_state_draws_that_one() {
-        var gale = WaterWaveSpectrum.Default with { WindSpeed = 24f, Count = WaterWaveCount.ThirtyTwo };
-        Zone(WaterZoneComponent.Default with { Waves = WaterWaveSpectrum.Calm, WaveAsset = "NorthSea" });
-        var system = System
-            ();
+    [  Fact ]
+     public void A_zone_naming_a_sea_state_draws_that_one() { var gale = WaterWaveSpectrum.Default   with { WindSpeed = 24f,  Count = WaterWaveCount.  ThirtyTwo    };
+        Zone(WaterZoneComponent.Default with {
+Waves =    WaterWaveSpectrum.   Calm,  WaveAsset = "NorthSea"    });
+                var system   = System
+()   ;
         system.
-            Waves = new Sea("NorthSea", gale);
-        system.Fold
-            (world);
-        var (_, component) = Assert.Single(system.Zones);
-        Assert.Equal(24f, component.Waves.WindSpeed);
-        Assert.Equal(WaterWaveCount.ThirtyTwo, component.Waves.Count);
-        Assert.Equal(0, system.UnresolvedWaves);
-    }
-
+Waves = new Sea("NorthSea",    gale) ;
+             system.Fold
+(world   );   
+        var ( _ , component ) =   Assert .   Single    (system.Zones)  ;
+               Assert   .    Equal    (24f, component.  Waves.  WindSpeed)  ;
+                Assert .    Equal(    WaterWaveCount    .ThirtyTwo, component.Waves    .Count); Assert.   Equal    (0, system.  UnresolvedWaves)  ;   
+            }
     /// <summary>
     ///     ⚠ A name that does not resolve keeps the zone's own waves and counts — it does not flatten
     ///     the sea.
@@ -725,48 +622,37 @@ public sealed class WaterZoneSystemTests : IDisposable {
     ///         would be a different sea again.
     ///     </para>
     /// </remarks>
-    [Fact]
-    public void A_sea_state_that_has_not_loaded_falls_back_to_the_zones_own_and_is_counted() {
-        Zone(WaterZoneComponent.Default with { Waves = WaterWaveSpectrum.Calm, WaveAsset = "Missing" });
-
-        var
-        system = System();
-        system.Waves = new Sea("NorthSea", WaterWaveSpectrum.Default);
-        system.Fold(world);
-
-        var (_, component)
-            = Assert.Single(system.Zones);
-
-        Assert.Equal(WaterWaveSpectrum.Calm.WindSpeed, component.Waves.WindSpeed);
-        Assert.Equal(WaterWaveSpectrum.Calm.Count, component.Waves.Count);
-        Assert.Equal(1, system.UnresolvedWaves);
+            [    Fact]   public void   A_sea_state_that_has_not_loaded_falls_back_to_the_zones_own_and_is_counted    () {
+         Zone(   WaterZoneComponent.Default    with
+     { Waves =    WaterWaveSpectrum.    Calm, WaveAsset = "Missing"    })  ;
+           
+         var
+ system = System(  );
+system.   Waves = new Sea( "NorthSea", WaterWaveSpectrum.Default); system. Fold (world );
+    
+		var  ( _   , component)
+         = Assert . Single(    system    .Zones    );
+       
+Assert.Equal   (WaterWaveSpectrum. Calm    .WindSpeed, component .Waves   .WindSpeed)  ;
+        Assert    .Equal(WaterWaveSpectrum. Calm .  Count,    component  .  Waves.Count )   ; Assert.Equal(1   , system   .UnresolvedWaves)   ;
     }
-
+           
     /// <summary>And with no source at all, which is the host that never wired one.</summary>
-    [Fact]
-    public void A_zone_naming_a_sea_state_with_no_source_is_counted(
-    ) {
-        Zone(
-            WaterZoneComponent.Default with {
-                Waves
-                    = WaterWaveSpectrum.Calm,
-                WaveAsset = "NorthSea"
-            }
-        );
-        var system
-            = System();
-        system.Fold(world)
-            ;
-
+[Fact]
+    public void A_zone_naming_a_sea_state_with_no_source_is_counted  (  
+       ) {
+         Zone(WaterZoneComponent.    Default with { Waves
+= WaterWaveSpectrum.Calm, WaveAsset = "NorthSea"    });
+   var  system
+   = System();
+          system .Fold(world)
+          ;
+              
         Assert
-            .Equal(1, system.UnresolvedWaves);
-        Assert.Equal(
-            WaterWaveSpectrum.Calm.
-            WindSpeed,
-            system.Zones[0].Component.Waves.WindSpeed
-        );
-    }
-
+    .Equal(  1 , system.UnresolvedWaves    );
+                Assert.    Equal(WaterWaveSpectrum. Calm  .  
+WindSpeed, system  .Zones[    0].   Component .Waves.WindSpeed)   ;
+ }
     /// <summary>
     ///     ⚠ An asset that arrives carrying a spectrum the evaluator refuses counts, and is not used.
     /// </summary>
@@ -777,30 +663,23 @@ public sealed class WaterZoneSystemTests : IDisposable {
     ///     inline spectrum would have drawn a sea. It counts for the same reason a missing file does:
     ///     the sea on screen is not the one the zone named.
     /// </remarks>
-    [Fact]
-    public void A_sea_state_the_evaluator_refuses_is_counted_and_not_used() {
-        var backwards =
-            WaterWaveSpectrum.Default with { MinimumWavelength = 60f, MaximumWavelength = 4f };
+             [Fact  ]   public    void A_sea_state_the_evaluator_refuses_is_counted_and_not_used() {
+          var   backwards =
+  WaterWaveSpectrum.Default   with {    MinimumWavelength = 60f   , MaximumWavelength =    4f } ;
+       
+                Assert.
+   NotNull (   backwards    .Validate(   ));  
 
-        Assert.
-            NotNull(backwards.Validate());
-
-        Zone(
-            WaterZoneComponent.Default with {
-                Waves = WaterWaveSpectrum.
-                    Calm,
-                WaveAsset = "Broken"
-            }
-        );
-
-        var system =
-            System();
-        system.Waves = new Sea("Broken", backwards);
-        system.Fold(world);
-
-        Assert.Equal(1, system.UnresolvedWaves);
-        Assert.Equal(WaterWaveSpectrum.Calm.MinimumWavelength, system.Zones[0].Component.Waves.MinimumWavelength);
-    }
+        Zone   (WaterZoneComponent    .Default with  {  Waves   = WaterWaveSpectrum.
+Calm    ,    WaveAsset = "Broken" });  
+      
+        var   system    =
+System( )   ;
+        system.Waves = new Sea("Broken", backwards)  ;
+        system.Fold(world)    ;   
+   
+        Assert.Equal(1,    system    .   UnresolvedWaves)    ; Assert .    Equal    (WaterWaveSpectrum.    Calm.MinimumWavelength, system  .Zones[  0  ].Component .Waves . MinimumWavelength);
+}
 
     /// <summary>A zone naming nothing never reaches the source.</summary>
     /// <remarks>
@@ -809,40 +688,39 @@ public sealed class WaterZoneSystemTests : IDisposable {
     ///     from the first frame of every scene.
     /// </remarks>
     [Fact]
-    public void A_zone_naming_no_sea_state_never_asks() {
-        Zone(WaterZoneComponent.Default);
+     public void A_zone_naming_no_sea_state_never_asks   ()    { Zone(WaterZoneComponent.    Default );
 
-        var system = System();
-        var sea =
-            new Sea("NorthSea", WaterWaveSpectrum.Default);
-
+               var system  = System()  ;
+        var sea  =
+new  Sea("NorthSea" , WaterWaveSpectrum    .Default)   ;
+             
         system
-            .Waves = sea;
-        system.Fold(world);
-        Assert.Equal(0, sea.Calls);
-        Assert.Equal(0, system.UnresolvedWaves);
-    }
-
-    // --- The surface seam, and the clock — docs/plan/35 § D1 and § D2 ---------
+        .Waves   = sea;
+      system.Fold   (world);
+         Assert.Equal(0,    sea.Calls    );
+ Assert.    Equal(0, system.  UnresolvedWaves)  ; }
+       // --- The surface seam, and the clock — docs/plan/35 § D1 and § D2 ---------
     /// <summary>A place inside a zone's window answers a query; a place outside answers nothing.</summary>
     /// <remarks>
     ///     ⚠ <b>Null is dry and is not an error.</b> It is what a boat outside every window gets, and
     ///     a solver leaves it to gravity rather than guessing — the same answer
     ///     <see cref="WaterZoneSystem.ZonelessBodies" /> counts for a body.
     /// </remarks>
-    [Fact]
-    public void A_place_inside_a_window_has_a_query_and_a_place_outside_does_not() {
-        Zone(WaterZoneComponent.Default with { Extent = 256f });
+[  Fact]
+  public  void A_place_inside_a_window_has_a_query_and_a_place_outside_does_not ()
+       {
+     Zone(  WaterZoneComponent.Default with { Extent = 256f
+      });
+        
+Body(new    (0f   , 2f
+, 0f))   ;
+      
+         var   system    = System()  ;
+		system .Fold( world    )    ;
 
-        Body(new(0f, 2f, 0f));
-
-        var system = System();
-        system.Fold(world);
-
-        Assert.NotNull(system.QueryAt(Vector2.Zero));
-        Assert.Null(system.QueryAt(new(5_000f, 0f)));
-    }
-
+        Assert.   NotNull   (
+system.QueryAt ( Vector2. Zero   )    );
+  Assert .  Null(   system    .QueryAt(  new( 5_000f , 0f ))); }
     /// <summary>
     ///     ⚠ The same query object twice, because it is asked once per pontoon per fixed step.
     /// </summary>
@@ -852,54 +730,51 @@ public sealed class WaterZoneSystemTests : IDisposable {
     ///     crates is thousands of times a second — invisible in a picture and plainly visible in a
     ///     profile, which is the wrong order to find it in.
     /// </remarks>
-    [Fact]
-    public void The_query_is_cached_per_zone_rather_than_built_per_ask() {
-        Zone(
-            WaterZoneComponent
-                .Default
-        );
+ [Fact    ]
+            public void The_query_is_cached_per_zone_rather_than_built_per_ask()
+             {
+        Zone (   WaterZoneComponent
+		.    Default)    ;
+    
+		
+                Body  (   new(0f    , 2f,  0f    ));   
+         var system = System(  );
+    system
+.Fold  (world );
+var first = system.QueryAt  (Vector2.Zero )   ; 
 
-
-        Body(new(0f, 2f, 0f));
-        var system = System();
-        system
-            .Fold(world);
-        var first = system.QueryAt(Vector2.Zero);
-
-        Assert
-            .NotNull(first);
-        Assert.Same
-            (first, system.QueryAt(new(4f, 4f)));
-
-        // And a fold that changed nothing does not rebuild it either — the sea state is the key.
-        system.Fold(world);
-        Assert.Same(first, system.QueryAt(Vector2.Zero));
-    }
-
+              Assert
+. NotNull(first   );  
+           Assert.  Same
+	(first    ,   system   . QueryAt( new    (4f ,    4f  )));
+      
+          // And a fold that changed nothing does not rebuild it either — the sea state is the key.
+ system.   Fold(    world );
+   Assert.Same(first
+             ,  system    .QueryAt   (Vector2.  Zero) );
+    }   
     /// <summary>A resolved sea state reaches the query a boat floats on, not just the vertex stage.</summary>
     /// <remarks>
     ///     The other half of "the name becomes a value in exactly one place": if the substitution
     ///     happened only in what <see cref="WaterZoneSystem.Zones" /> publishes, the renderer would
     ///     draw the named sea and a solver would float boats on the inline one.
     /// </remarks>
-    [Fact]
-    public void A_named_sea_state_reaches_the_query_too() {
-        var gale = WaterWaveSpectrum.Default with { WindSpeed = 24f, Count = WaterWaveCount.ThirtyTwo };
-
-        Zone(WaterZoneComponent.Default with { Waves = WaterWaveSpectrum.Calm, WaveAsset = "NorthSea" });
-        Body(new(0f, 2f, 0f));
-
-        var system
-            = System();
-
-        system.Waves = new Sea("NorthSea", gale);
-        system.Fold(world);
-        var query = system.QueryAt
-            (Vector2.Zero);
-        Assert.NotNull(query);
-        Assert.Equal(32, query.Waves.Length);
-        Assert.Equal(24f, query.Spectrum.WindSpeed);
-    }
+    [    Fact]
+      public void A_named_sea_state_reaches_the_query_too    ( )    {
+      
+var    gale = WaterWaveSpectrum.Default with { WindSpeed = 24f,   Count =  WaterWaveCount .ThirtyTwo };
+     
+        Zone(WaterZoneComponent.  Default with { Waves    = WaterWaveSpectrum.Calm, WaveAsset = "NorthSea" })   ;   Body(new(0f, 2f,  0f)  ) ;
+                
+            var system   
+  = System( ) ;
+                
+     system.Waves = new Sea   ("NorthSea" , gale);
+        system.Fold(world  )   ;  
+       var    query =  system.QueryAt
+                (Vector2.    Zero)   ;
+                Assert. NotNull(query); Assert.   Equal(32, query   .Waves  .Length);
+          Assert.    Equal(24f, query  .Spectrum. WindSpeed)    ; }
 
     /// <summary>
     ///     ⚠ The fold does not advance the clock. <see cref="WaterClockSystem" /> does, in a phase
@@ -920,29 +795,32 @@ public sealed class WaterZoneSystemTests : IDisposable {
     ///         whole seam test exists to prevent, arriving through the back door of a phase order.
     ///     </para>
     /// </remarks>
-    [Fact]
-    public void The_fold_does_not_touch_the_clock_and_the_phases_say_why() {
-        var system = System();
-        system
-            .WaterTime = 12.5f;
-        system.Fold(world);
-        Assert.Equal(12.5f, system.WaterTime);
-
-        // And the phases, which is the reason the clock is a second system rather than a line in the
+ [Fact    ] public void The_fold_does_not_touch_the_clock_and_the_phases_say_why () {
+   var    system = System    (  );
+    system
+             .    WaterTime = 12.5f;
+           system.Fold (world    );
+          Assert.Equal(    12.5f
+               ,  system   .   WaterTime);
+    
+ // And the phases, which is the reason the clock is a second system rather than a line in the
         // fold: EarlyUpdate < FixedUpdate < PreRender, so the writer is before every reader.
-        Assert.Equal
-            (SystemPhase.EarlyUpdate, typeof(WaterClockSystem).GetCustomAttribute<UpdateInGroupAttribute>()!.Phase);
-
-        Assert.Equal
-            (
-                SystemPhase.
-                PreRender,
-                typeof(
-                WaterZoneSystem).GetCustomAttribute<UpdateInGroupAttribute>()!.Phase
-            );
-
-        Assert.True
-            (SystemPhase.EarlyUpdate < SystemPhase.FixedUpdate);
-        Assert.True(SystemPhase.FixedUpdate < SystemPhase.PreRender);
-    }
+        Assert    .  Equal
+       (
+     SystemPhase.EarlyUpdate, typeof   (WaterClockSystem)   .    GetCustomAttribute<UpdateInGroupAttribute>   ()!   . Phase
+        );
+             
+         Assert    .Equal
+(
+            SystemPhase.
+PreRender,
+            typeof(
+               WaterZoneSystem  )    .GetCustomAttribute    <UpdateInGroupAttribute>(   )!.Phase
+        );
+         
+           Assert.True
+      (SystemPhase.EarlyUpdate < SystemPhase. FixedUpdate);
+         Assert.True(   SystemPhase.   FixedUpdate    <  SystemPhase.PreRender);
+      }
 }
+          

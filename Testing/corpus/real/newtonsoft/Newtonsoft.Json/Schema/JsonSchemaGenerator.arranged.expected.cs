@@ -1,5 +1,4 @@
 // skala-oracle: resharper=2025.2.6 config=sha256:98ff52570e019fac profile=SkalaCleanup generated=2026-08-27
-
 #region License
 
 // Copyright (c) 2007 James Newton-King
@@ -42,28 +41,26 @@ using System.Linq;
 
 namespace Newtonsoft.Json.Schema {
     /// <summary>
-    ///     <para>
-    ///         Generates a <see cref="JsonSchema" /> from a specified <see cref="Type" />.
-    ///     </para>
-    ///     <note type="caution">
-    ///         JSON Schema validation has been moved to its own package. See
-    ///         <see href="https://www.newtonsoft.com/jsonschema">https://www.newtonsoft.com/jsonschema</see> for more
-    ///         details.
-    ///     </note>
+    /// <para>
+    /// Generates a <see cref="JsonSchema"/> from a specified <see cref="Type"/>.
+    /// </para>
+    /// <note type="caution">
+    /// JSON Schema validation has been moved to its own package. See <see href="https://www.newtonsoft.com/jsonschema">https://www.newtonsoft.com/jsonschema</see> for more details.
+    /// </note>
     /// </summary>
     [Obsolete(
         "JSON Schema validation has been moved to its own package. See https://www.newtonsoft.com/jsonschema for more details."
     )]
     public class JsonSchemaGenerator {
         /// <summary>
-        ///     Gets or sets how undefined schemas are handled by the serializer.
+        /// Gets or sets how undefined schemas are handled by the serializer.
         /// </summary>
         public UndefinedSchemaIdHandling UndefinedSchemaIdHandling { get; set; }
 
         IContractResolver _contractResolver;
 
         /// <summary>
-        ///     Gets or sets the contract resolver.
+        /// Gets or sets the contract resolver.
         /// </summary>
         /// <value>The contract resolver.</value>
         public IContractResolver ContractResolver {
@@ -118,46 +115,42 @@ namespace Newtonsoft.Json.Schema {
         }
 
         /// <summary>
-        ///     Generate a <see cref="JsonSchema" /> from the specified type.
+        /// Generate a <see cref="JsonSchema"/> from the specified type.
         /// </summary>
-        /// <param name="type">The type to generate a <see cref="JsonSchema" /> from.</param>
-        /// <returns>A <see cref="JsonSchema" /> generated from the specified type.</returns>
+        /// <param name="type">The type to generate a <see cref="JsonSchema"/> from.</param>
+        /// <returns>A <see cref="JsonSchema"/> generated from the specified type.</returns>
         [RequiresUnreferencedCode(MiscellaneousUtils.TrimWarning)]
         [RequiresDynamicCode(MiscellaneousUtils.AotWarning)]
         public JsonSchema Generate(Type type) => Generate(type, new JsonSchemaResolver(), false);
 
         /// <summary>
-        ///     Generate a <see cref="JsonSchema" /> from the specified type.
+        /// Generate a <see cref="JsonSchema"/> from the specified type.
         /// </summary>
-        /// <param name="type">The type to generate a <see cref="JsonSchema" /> from.</param>
-        /// <param name="resolver">The <see cref="JsonSchemaResolver" /> used to resolve schema references.</param>
-        /// <returns>A <see cref="JsonSchema" /> generated from the specified type.</returns>
+        /// <param name="type">The type to generate a <see cref="JsonSchema"/> from.</param>
+        /// <param name="resolver">The <see cref="JsonSchemaResolver"/> used to resolve schema references.</param>
+        /// <returns>A <see cref="JsonSchema"/> generated from the specified type.</returns>
         [RequiresUnreferencedCode(MiscellaneousUtils.TrimWarning)]
         [RequiresDynamicCode(MiscellaneousUtils.AotWarning)]
         public JsonSchema Generate(Type type, JsonSchemaResolver resolver) => Generate(type, resolver, false);
 
         /// <summary>
-        ///     Generate a <see cref="JsonSchema" /> from the specified type.
+        /// Generate a <see cref="JsonSchema"/> from the specified type.
         /// </summary>
-        /// <param name="type">The type to generate a <see cref="JsonSchema" /> from.</param>
-        /// <param name="rootSchemaNullable">
-        ///     Specify whether the generated root <see cref="JsonSchema" /> will be nullable.
-        /// </param>
-        /// <returns>A <see cref="JsonSchema" /> generated from the specified type.</returns>
+        /// <param name="type">The type to generate a <see cref="JsonSchema"/> from.</param>
+        /// <param name="rootSchemaNullable">Specify whether the generated root <see cref="JsonSchema"/> will be nullable.</param>
+        /// <returns>A <see cref="JsonSchema"/> generated from the specified type.</returns>
         [RequiresUnreferencedCode(MiscellaneousUtils.TrimWarning)]
         [RequiresDynamicCode(MiscellaneousUtils.AotWarning)]
         public JsonSchema Generate(Type type, bool rootSchemaNullable) =>
             Generate(type, new JsonSchemaResolver(), rootSchemaNullable);
 
         /// <summary>
-        ///     Generate a <see cref="JsonSchema" /> from the specified type.
+        /// Generate a <see cref="JsonSchema"/> from the specified type.
         /// </summary>
-        /// <param name="type">The type to generate a <see cref="JsonSchema" /> from.</param>
-        /// <param name="resolver">The <see cref="JsonSchemaResolver" /> used to resolve schema references.</param>
-        /// <param name="rootSchemaNullable">
-        ///     Specify whether the generated root <see cref="JsonSchema" /> will be nullable.
-        /// </param>
-        /// <returns>A <see cref="JsonSchema" /> generated from the specified type.</returns>
+        /// <param name="type">The type to generate a <see cref="JsonSchema"/> from.</param>
+        /// <param name="resolver">The <see cref="JsonSchemaResolver"/> used to resolve schema references.</param>
+        /// <param name="rootSchemaNullable">Specify whether the generated root <see cref="JsonSchema"/> will be nullable.</param>
+        /// <returns>A <see cref="JsonSchema"/> generated from the specified type.</returns>
         [RequiresUnreferencedCode(MiscellaneousUtils.TrimWarning)]
         [RequiresDynamicCode(MiscellaneousUtils.AotWarning)]
         public JsonSchema Generate(Type type, JsonSchemaResolver resolver, bool rootSchemaNullable) {

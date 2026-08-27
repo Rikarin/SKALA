@@ -1,5 +1,4 @@
 // skala-oracle: resharper=2025.2.6 config=sha256:98ff52570e019fac profile=SkalaFormatOnly generated=2026-08-27
-
 #region License
 
 // Copyright (c) 2007 James Newton-King
@@ -51,9 +50,9 @@ using Newtonsoft.Json.Tests.TestObjects;
 using Newtonsoft.Json.Tests.TestObjects.Organization;
 using System.Reflection;
 using Newtonsoft
-.Json.Utilities;
+    .Json.Utilities;
 using
-System.Globalization;
+    System.Globalization;
 using Newtonsoft.Json.Linq;
 using System.Text.RegularExpressions;
 using Newtonsoft.Json.Converters;
@@ -117,8 +116,10 @@ namespace Newtonsoft.Json.
 
     public class AddressWithDataMember {
 #if !NET20
-        [DataMember(Name =
-            "CustomerAddress1")]
+        [DataMember(
+            Name =
+                "CustomerAddress1"
+        )]
 #endif
         public string AddressLine1 { get; set; }
     }
@@ -162,7 +163,7 @@ namespace Newtonsoft.Json.
             Assert.AreEqual(0, p.GetResolvedDefaultValue());
             Assert.AreEqual(null, p.DefaultValue);
             p.PropertyType = typeof(DateTime
-                );
+            );
             Assert.AreEqual(new DateTime(), p.GetResolvedDefaultValue());
             Assert.AreEqual(null, p.DefaultValue);
 
@@ -229,9 +230,9 @@ namespace Newtonsoft.Json.
             contract.DefaultCreator = () => new AbstractImplementationTestClass();
 
             var o = JsonConvert.DeserializeObject<AbstractTestClass>(
-                @"{Value:'Value!'}",
-                new JsonSerializerSettings { ContractResolver = resolver }
-            )
+                    @"{Value:'Value!'}",
+                    new JsonSerializerSettings { ContractResolver = resolver }
+                )
                 ;
 
             Assert.AreEqual("Value!", o.Value);
@@ -256,10 +257,10 @@ namespace Newtonsoft.Json.
                 int>();
 
             var
-            l = JsonConvert.DeserializeObject<AbstractListTestClass<int>>(
-                @"[1,2]",
-                new JsonSerializerSettings { ContractResolver = resolver }
-            )
+                l = JsonConvert.DeserializeObject<AbstractListTestClass<int>>(
+                    @"[1,2]",
+                    new JsonSerializerSettings { ContractResolver = resolver }
+                )
                 ;
             Assert
                 .AreEqual(2, l.Count);
@@ -333,8 +334,10 @@ namespace Newtonsoft.Json.
             ) => new AbstractImplementationDictionaryTestClass<string, int>();
             var d = JsonConvert.DeserializeObject<AbstractDictionaryTestClass<string, int>>(
                 @"{key1:1,key2:2}",
-                new JsonSerializerSettings { ContractResolver =
-                        resolver }
+                new JsonSerializerSettings {
+                    ContractResolver =
+                        resolver
+                }
             );
             Assert.AreEqual(2, d.Count);
             Assert.AreEqual(1, d["key1"]);
@@ -360,14 +363,14 @@ namespace Newtonsoft.Json.
         [Test]
         public void SerializeWithHtmlEscapedPropertyName() {
             string
-            json = JsonConvert.SerializeObject(
-                new AddressWithDataMember { AddressLine1 = "value!" },
-                new JsonSerializerSettings {
-                    ContractResolver =
-                        new EscapedPropertiesContractResolver { PropertyPrefix = "<b>", PropertySuffix = "</b>" },
-                    StringEscapeHandling = StringEscapeHandling.EscapeHtml
-                }
-            );
+                json = JsonConvert.SerializeObject(
+                    new AddressWithDataMember { AddressLine1 = "value!" },
+                    new JsonSerializerSettings {
+                        ContractResolver =
+                            new EscapedPropertiesContractResolver { PropertyPrefix = "<b>", PropertySuffix = "</b>" },
+                        StringEscapeHandling = StringEscapeHandling.EscapeHtml
+                    }
+                );
 
             Assert.AreEqual(@"{""\u003cb\u003eAddressLine1\u003c/b\u003e"":""value!""}", json);
             JsonTextReader reader
@@ -481,7 +484,7 @@ namespace Newtonsoft.Json.
         [Test]
         public void OverrideCreator() {
             var
-            resolver = new DefaultContractResolver();
+                resolver = new DefaultContractResolver();
             var contract =
                 (JsonObjectContract)resolver.ResolveContract(typeof(MultipleParametrizedConstructorsJsonConstructor));
             Assert.IsNull(contract.DefaultCreator);
@@ -552,7 +555,7 @@ namespace Newtonsoft.Json.
             );
             Assert.AreEqual(
                 new
-                DateTime(1977, 12, 30, 1, 1, 1, DateTimeKind.Utc),
+                    DateTime(1977, 12, 30, 1, 1, 1, DateTimeKind.Utc),
                 (DateTime)o["BirthDate"]
             );
         }
@@ -578,11 +581,11 @@ namespace Newtonsoft.Json.
             //   "AuthorCountry": "United States of America"
             // }
             string
-            startingWithB = JsonConvert.SerializeObject(
-                book,
-                Formatting.Indented,
-                new JsonSerializerSettings { ContractResolver = new DynamicContractResolver('B') }
-            );
+                startingWithB = JsonConvert.SerializeObject(
+                    book,
+                    Formatting.Indented,
+                    new JsonSerializerSettings { ContractResolver = new DynamicContractResolver('B') }
+                );
 
             // {
             //   "BookName": "The Gathering Storm",
@@ -611,21 +614,24 @@ namespace Newtonsoft.Json.
         public void SerializeCompilerGeneratedMembers() {
             StructTest structTest = new StructTest {
                 IntField =
-                    1, IntProperty = 2, StringField = "Field", StringProperty = "Property"
+                    1,
+                IntProperty = 2,
+                StringField = "Field",
+                StringProperty = "Property"
             };
 
             DefaultContractResolver
-            skipCompilerGeneratedResolver = new DefaultContractResolver {
-                DefaultMembersSearchFlags = BindingFlags.Instance
-                    | BindingFlags.NonPublic
-                    | BindingFlags
-                        .Public
-            };
+                skipCompilerGeneratedResolver = new DefaultContractResolver {
+                    DefaultMembersSearchFlags = BindingFlags.Instance
+                        | BindingFlags.NonPublic
+                        | BindingFlags
+                            .Public
+                };
             string skipCompilerGeneratedJson = JsonConvert.SerializeObject(
                 structTest,
                 Formatting.Indented,
                 new
-                JsonSerializerSettings { ContractResolver = skipCompilerGeneratedResolver }
+                    JsonSerializerSettings { ContractResolver = skipCompilerGeneratedResolver }
             );
             StringAssert.AreEqual(
                 @"{
@@ -679,12 +685,12 @@ namespace Newtonsoft.Json.
             ExtensionDataGetter getter = contract.ExtensionDataGetter;
             IEnumerable
                 <KeyValuePair<object, object>> dictionaryData =
-                getter(myClass).ToDictionary(kv => kv.Key, kv => kv.Value);
+                    getter(myClass).ToDictionary(kv => kv.Key, kv => kv.Value);
             Assert.IsTrue(dictionaryData.Any());
             Assert.IsTrue(dictionaryData.Any());
 
             IEnumerable<KeyValuePair<object, object>>
-            extensionData = getter(myClass);
+                extensionData = getter(myClass);
             Assert.IsTrue(extensionData.Any());
             Assert.IsTrue(extensionData.Any()); // second test fails if the enumerator returned isn't reset
         }
@@ -717,7 +723,7 @@ namespace Newtonsoft.Json.
         [Test]
         public void DefaultContractResolverIgnoreShouldSerializeUnset() {
             DefaultContractResolver
-            resolver = new DefaultContractResolver();
+                resolver = new DefaultContractResolver();
             JsonObjectContract contract
                 = (JsonObjectContract)resolver.ResolveContract(typeof(ClassWithShouldSerialize));
 
@@ -743,7 +749,7 @@ namespace Newtonsoft.Json.
             public string Prop4 {
                 get;
                 set
-                    ;
+                ;
             }
 
             [JsonProperty]
@@ -830,7 +836,7 @@ namespace Newtonsoft.Json.
             Assert.AreEqual(null, property4.SetIsSpecified);
 
             var
-            property5 = contract.Properties["Prop5"];
+                property5 = contract.Properties["Prop5"];
             Assert.AreEqual(null, property5.GetIsSpecified);
             Assert.AreEqual(null, property5.SetIsSpecified);
         }

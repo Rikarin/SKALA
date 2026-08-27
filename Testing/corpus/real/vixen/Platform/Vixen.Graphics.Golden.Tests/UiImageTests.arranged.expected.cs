@@ -183,11 +183,8 @@ public sealed class UiImageTests {
     ///         picture that would be one more region nobody looks at.
     ///     </para>
     ///     <para>
-    ///         ⚠
-    ///         <b>
-    ///             The box is deliberately not symmetric about the clip's edge, and the first version
-    ///             of this fixture was.
-    ///         </b> A centred box under a scissor at the halfway line looks
+    ///         ⚠ <b>The box is deliberately not symmetric about the clip's edge, and the first version
+    ///         of this fixture was.</b> A centred box under a scissor at the halfway line looks
     ///         identical whether or not y is flipped — so it passed while the whole frame was being
     ///         drawn upside down, and it was the busier fixture next door that noticed. A clip test
     ///         whose picture is its own mirror image is a clip test that cannot see the most common
@@ -706,7 +703,7 @@ public sealed class UiImageTests {
         }
 
         using var stream = typeof(UiImageTests).Assembly
-            .GetManifestResourceStream("Vixen.Graphics.Golden.Tests.TestShapeLana.ttf")
+                .GetManifestResourceStream("Vixen.Graphics.Golden.Tests.TestShapeLana.ttf")
             ?? throw new InvalidOperationException("no test font is embedded");
 
         using var memory = new MemoryStream();
@@ -722,11 +719,8 @@ public sealed class UiImageTests {
     ///     <para>
     ///         The image pipeline is the fourth to share one vertex layout and one pipeline layout,
     ///         and the failure it exists to catch is the same one <see cref="Interface" /> catches for
-    ///         the other three — except worse, because an image binds a descriptor set of
-    ///         <i>
-    ///             its
-    ///             own
-    ///         </i>. A set bound for an image that survives into the text after it draws the
+    ///         the other three — except worse, because an image binds a descriptor set of <i>its
+    ///         own</i>. A set bound for an image that survives into the text after it draws the
     ///         picture where the letters should be; one that does not get bound at all draws the font
     ///         atlas where the picture should be. Both need two kinds in one frame to show.
     ///     </para>

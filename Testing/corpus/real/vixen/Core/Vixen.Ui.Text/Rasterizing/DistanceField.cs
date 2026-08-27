@@ -158,11 +158,8 @@ public static class DistanceField {
     ///     between them rather than the distance.
     /// </summary>
     /// <remarks>
-    ///     ⚠
-    ///     <b>
-    ///         Proportional and never absolute, because the same outline is encoded at a font's
-    ///         design units and at an icon's document pixels.
-    ///     </b> The two edges meeting at a corner are
+    ///     ⚠ <b>Proportional and never absolute, because the same outline is encoded at a font's
+    ///     design units and at an icon's document pixels.</b> The two edges meeting at a corner are
     ///     exactly equidistant from every point in its exterior wedge — that is what a corner is —
     ///     but they reach that point from opposite ends of themselves, so the arithmetic differs in
     ///     the last bit or two. A fixed epsilon would be the whole shape at one scale and nothing at
@@ -180,11 +177,8 @@ public static class DistanceField {
     ///         distance, so a distant edge's line cannot win.
     ///     </para>
     ///     <para>
-    ///         ⚠
-    ///         <b>
-    ///             Which of two equidistant edges wins is the corner, and picking the first of them
-    ///             drew a phantom bar across every icon.
-    ///         </b> Every point in the exterior wedge of a convex
+    ///         ⚠ <b>Which of two equidistant edges wins is the corner, and picking the first of them
+    ///         drew a phantom bar across every icon.</b> Every point in the exterior wedge of a convex
     ///         corner is equidistant from <i>both</i> edges that meet there, because both of them
     ///         clamp to the shared vertex — so the ordinary distance cannot separate them and whichever
     ///         happened to be listed first supplied the pseudo-distance for the whole wedge. Above a
@@ -198,11 +192,8 @@ public static class DistanceField {
     ///         notice because its band has nothing to bridge.
     ///     </para>
     ///     <para>
-    ///         ⚠
-    ///         <b>
-    ///             The tie goes to the edge most perpendicular to the point, which is msdfgen's
-    ///             <c>SignedDistance</c> ordering and not an invention here.
-    ///         </b> Of the two edges at a
+    ///         ⚠ <b>The tie goes to the edge most perpendicular to the point, which is msdfgen's
+    ///         <c>SignedDistance</c> ordering and not an invention here.</b> Of the two edges at a
     ///         corner, the one the point lies most nearly <i>alongside</i> is the one whose line is
     ///         being extended past its own end; the one it lies most nearly <i>off the side of</i> is
     ///         the one still describing a real boundary. Taking that one makes the median in the wedge

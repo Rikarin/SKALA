@@ -1,5 +1,4 @@
 #region License
-
 // Copyright (c) 2007 James Newton-King
 //
 // Permission is hereby granted, free of charge, to any person
@@ -22,11 +21,9 @@
 // WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 // OTHER DEALINGS IN THE SOFTWARE.
-
 #endregion
-
 #if !(NET20 || PORTABLE40)
-using System; using System.Collections.Generic; using System.Text; using System.Xml.Linq;
+using System;using System.Collections.Generic;using System.Text;using System.Xml.Linq;
 #if DNXCORE50
 using Xunit;
 using Test = Xunit.FactAttribute;
@@ -34,14 +31,9 @@ using Assert = Newtonsoft.Json.Tests.XUnitAssert;
 #else
 using NUnit.Framework;
 #endif
-namespace Newtonsoft.Json.Tests.Documentation.Samples.Xml {
-    [TestFixture]
-    public class ConvertJsonToXml : TestFixtureBase {
-        [Test]
-        public void Example() {
-            #region Usage
-
-            string json = @"{
+namespace Newtonsoft.Json.Tests.Documentation.Samples.Xml{[TestFixture]public class ConvertJsonToXml:TestFixtureBase{[Test]public void Example(){
+#region Usage
+string json=@"{
               '@Id': 1,
               'Email': 'james@example.com',
               'Active': true,
@@ -55,24 +47,19 @@ namespace Newtonsoft.Json.Tests.Documentation.Samples.Xml {
                 'Name': 'Software Developers',
                 'Description': 'Creators of fine software products and services.'
               }
-            }";
-            XNode node = JsonConvert.DeserializeXNode(json, "Root");
-            Console.WriteLine(node.ToString()); // <Root Id="1">
-            //   <Email>james@example.com</Email>
-            //   <Active>true</Active>
-            //   <CreatedDate>2013-01-20T00:00:00Z</CreatedDate>
-            //   <Roles>User</Roles>
-            //   <Roles>Admin</Roles>
-            //   <Team Id="2">
-            //     <Name>Software Developers</Name>
-            //     <Description>Creators of fine software products and services.</Description>
-            //   </Team>
-            // </Root>
-
-            #endregion
-
-            StringAssert.AreEqual(
-                @"<Root Id=""1"">
+            }" ;XNode node=JsonConvert.DeserializeXNode(json,"Root");Console.WriteLine(node.ToString()); // <Root Id="1">
+//   <Email>james@example.com</Email>
+//   <Active>true</Active>
+//   <CreatedDate>2013-01-20T00:00:00Z</CreatedDate>
+//   <Roles>User</Roles>
+//   <Roles>Admin</Roles>
+//   <Team Id="2">
+//     <Name>Software Developers</Name>
+//     <Description>Creators of fine software products and services.</Description>
+//   </Team>
+// </Root>
+#endregion
+StringAssert.AreEqual(@"<Root Id=""1"">
   <Email>james@example.com</Email>
   <Active>true</Active>
   <CreatedDate>2013-01-20T00:00:00Z</CreatedDate>
@@ -82,10 +69,5 @@ namespace Newtonsoft.Json.Tests.Documentation.Samples.Xml {
     <Name>Software Developers</Name>
     <Description>Creators of fine software products and services.</Description>
   </Team>
-</Root>",
-                node.ToString()
-            );
-        }
-    }
-}
+</Root>" ,node.ToString());}}}
 #endif

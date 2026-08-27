@@ -7,26 +7,25 @@ using System.Text;
 
 namespace Newtonsoft.Json.Serialization {
     /// <summary>
-    ///     Represents a trace writer that writes to memory. When the trace message limit is
-    ///     reached then old trace messages will be removed as new messages are added.
+    /// Represents a trace writer that writes to memory. When the trace message limit is
+    /// reached then old trace messages will be removed as new messages are added.
     /// </summary>
     public class MemoryTraceWriter : ITraceWriter {
         private readonly Queue<string> _traceMessages;
         private readonly object _lock;
 
         /// <summary>
-        ///     Gets the <see cref="TraceLevel" /> that will be used to filter the trace messages passed to the writer.
-        ///     For example a filter level of <see cref="TraceLevel.Info" /> will exclude
-        ///     <see cref="TraceLevel.Verbose" /> messages and include <see cref="TraceLevel.Info" />,
-        ///     <see cref="TraceLevel.Warning" /> and <see cref="TraceLevel.Error" /> messages.
+        /// Gets the <see cref="TraceLevel"/> that will be used to filter the trace messages passed to the writer.
+        /// For example a filter level of <see cref="TraceLevel.Info"/> will exclude <see cref="TraceLevel.Verbose"/> messages and include <see cref="TraceLevel.Info"/>,
+        /// <see cref="TraceLevel.Warning"/> and <see cref="TraceLevel.Error"/> messages.
         /// </summary>
         /// <value>
-        ///     The <see cref="TraceLevel" /> that will be used to filter the trace messages passed to the writer.
+        /// The <see cref="TraceLevel"/> that will be used to filter the trace messages passed to the writer.
         /// </value>
         public TraceLevel LevelFilter { get; set; }
 
         /// <summary>
-        ///     Initializes a new instance of the <see cref="MemoryTraceWriter" /> class.
+        /// Initializes a new instance of the <see cref="MemoryTraceWriter"/> class.
         /// </summary>
         public MemoryTraceWriter() {
             LevelFilter = TraceLevel.Verbose;
@@ -35,9 +34,9 @@ namespace Newtonsoft.Json.Serialization {
         }
 
         /// <summary>
-        ///     Writes the specified trace level, message and optional exception.
+        /// Writes the specified trace level, message and optional exception.
         /// </summary>
-        /// <param name="level">The <see cref="TraceLevel" /> at which to write this trace.</param>
+        /// <param name="level">The <see cref="TraceLevel"/> at which to write this trace.</param>
         /// <param name="message">The trace message.</param>
         /// <param name="ex">The trace exception. This parameter is optional.</param>
         public void Trace(TraceLevel level, string message, Exception? ex) {
@@ -60,7 +59,7 @@ namespace Newtonsoft.Json.Serialization {
         }
 
         /// <summary>
-        ///     Returns an enumeration of the most recent trace messages.
+        /// Returns an enumeration of the most recent trace messages.
         /// </summary>
         /// <returns>An enumeration of the most recent trace messages.</returns>
         public IEnumerable<string> GetTraceMessages() {
@@ -68,10 +67,10 @@ namespace Newtonsoft.Json.Serialization {
         }
 
         /// <summary>
-        ///     Returns a <see cref="String" /> of the most recent trace messages.
+        /// Returns a <see cref="String"/> of the most recent trace messages.
         /// </summary>
         /// <returns>
-        ///     A <see cref="String" /> of the most recent trace messages.
+        /// A <see cref="String"/> of the most recent trace messages.
         /// </returns>
         public override string ToString() {
             lock (_lock) {

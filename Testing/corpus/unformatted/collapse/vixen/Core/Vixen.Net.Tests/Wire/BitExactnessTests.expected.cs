@@ -17,10 +17,8 @@ namespace Vixen.Net.Tests.Wire;
 /// <summary>Phase 9's last exit criterion: the same bytes on every machine.</summary>
 /// <remarks>
 ///     <para>
-///         <b>
-///             Two peers that encode the same value differently do not disagree — they desync, and
-///             they do it quietly.
-///         </b> A snapshot is a difference measured against a capture the receiver
+///         <b>Two peers that encode the same value differently do not disagree — they desync, and
+///         they do it quietly.</b> A snapshot is a difference measured against a capture the receiver
 ///         also holds, so one machine rounding a quantized level one step differently from another
 ///         corrupts every difference measured from it afterwards. Nothing throws, nothing is refused,
 ///         and the object is in the wrong place on one player's screen for the rest of the match.
@@ -66,7 +64,7 @@ public sealed class BitExactnessTests {
         ("max", float.MaxValue), ("min", float.MinValue), ("infinity", float.PositiveInfinity),
         ("negative-infinity", float.NegativeInfinity),
         ("nan", float.NaN), // A NaN whose payload is not the canonical one. It must not survive into a packet as
-        // anything other than what the encoder decided a NaN is.
+// anything other than what the encoder decided a NaN is.
         ("nan-payload", BitConverter.UInt32BitsToSingle(0x7FC0_1234)), ("pi-ish", 3.14159274f), ("third", 0.333333343f),
         ("large", 1_000_000.5f), ("tiny", 0.000000119209290f)
     ];
@@ -75,7 +73,7 @@ public sealed class BitExactnessTests {
     public void PacketPrimitivesAreTheSameBytesEverywhere() {
         var listing = WireGolden.Begin();
         var buffer = new byte[64];
-        foreach (var (name, value) in Interesting) {
+        foreach (var (name, value)in Interesting) {
             var writer = new PacketWriter(buffer);
             writer.WriteSingle(value);
             Assert.True(writer.TryFinish(out var packet));
@@ -98,8 +96,8 @@ public sealed class BitExactnessTests {
         Assert.True(
             wide.TryFinish(out var widths)
         ); // Little-endian everywhere, stated in the codec's own remarks so that this has something to
-        // assert. The two big-endian desktop platforms do not exist, and that is not the reason —
-        // the reason is that a format which is only accidentally consistent becomes inconsistent.
+// assert. The two big-endian desktop platforms do not exist, and that is not the reason —
+// the reason is that a format which is only accidentally consistent becomes inconsistent.
         listing.Case("widths", widths);
         var text = new PacketWriter(buffer);
         text.WriteString("vixen");
@@ -107,7 +105,7 @@ public sealed class BitExactnessTests {
         Assert.True(
             text.TryFinish(out var strings)
         ); // UTF-8 without a preamble and without normalisation. A string that arrives re-composed is a
-        // different string, and a player name is exactly where that would show.
+// different string, and a player name is exactly where that would show.
         listing.Case("strings", strings);
         listing.Matches("primitives");
     }
@@ -123,7 +121,7 @@ public sealed class BitExactnessTests {
             listing.Case($"field/{width}", packet);
         } // Fields that straddle byte boundaries, which is where a shift written the other way round
 
-        // produces the same length and different bytes.
+// produces the same length and different bytes.
         var straddling = new BitWriter(buffer);
         straddling.WriteBool(value: true);
         straddling.Write(0x2A, 6);
@@ -155,12 +153,12 @@ public sealed class BitExactnessTests {
             ("position16", NetworkTransformReplicator.PositionRange), ("one-bit", new(0f, 1f, 1)),
             ("full-width", new(-1f, 1f, 32)), ("asymmetric", new(-0.125f, 7.375f, 12))
         };
-        foreach (var (rangeName, range) in ranges) {
-            foreach (var (name, value) in Interesting) {
+        foreach (var (rangeName, range)in ranges) {
+            foreach (var (name, value)in Interesting) {
                 listing.Case($"encode/{rangeName}/{name}", range.Encode(value));
             } // Exactly on a level, and a hair either side of the midpoint between two. If a rounding
 
-            // rule ever differs between machines, it differs here and nowhere else.
+// rule ever differs between machines, it differs here and nowhere else.
             var span = (double)range.Max - range.Min;
             foreach (var step in (uint[])[0, 1, 2, range.Levels / 2, range.Levels - 1, range.Levels]) {
                 var onLevel = (float)(range.Min + (step / (double)range.Levels * span));
@@ -189,19 +187,20 @@ public sealed class BitExactnessTests {
         var rotations = new (string Name, Quaternion Value)[] {
             ("identity", Quaternion.Identity), ("negated-identity", new(0f, 0f, 0f, -1f)),
             ("x-largest", new(0.9f, 0.1f, 0.2f, 0.3f)), ("y-largest", new(0.1f, 0.9f, 0.2f, 0.3f)),
-            ("z-largest", new(0.1f, 0.2f, 0.9f, 0.3f)), ("w-largest", new(0.1f, 0.2f, 0.3f, 0.9f)), ("negative-largest",
+            ("z-largest", new(0.1f, 0.2f, 0.9f, 0.3f)), ("w-largest", new(0.1f, 0.2f, 0.3f, 0.9f)),
+            ("negative-largest",
                 new(
                     -0.9f,
                     0.1f,
                     0.2f,
                     0.3f
                 )), // Two components of equal magnitude. Which one is "largest" is decided by a strict
-            // comparison and the order of the loop, so this pins the tie-break rather than leaving
-            // it to be discovered.
+// comparison and the order of the loop, so this pins the tie-break rather than leaving
+// it to be discovered.
             ("tied-xy", new(0.5f, 0.5f, 0.5f, 0.5f)), ("tied-negated", new(-0.5f, 0.5f, -0.5f, 0.5f)),
             ("half-turn-x", new(1f, 0f, 0f, 0f)), ("not-normalized", new(2f, 4f, 8f, 16f)), ("degenerate", default)
         };
-        foreach (var (name, rotation) in rotations) {
+        foreach (var (name, rotation)in rotations) {
             var writer = new BitWriter(buffer);
             writer.WriteRotation(rotation);
             Assert.True(writer.TryFinish(out var packet));
@@ -209,7 +208,7 @@ public sealed class BitExactnessTests {
                 $"rotation/{name}",
                 packet
             ); // The decode too, because a receiver that reconstructs the dropped component differently
-            // is the same desync arriving from the other end.
+// is the same desync arriving from the other end.
             var reader = new BitReader(packet);
             Assert.True(reader.TryReadRotation(out var decoded));
             listing.Case($"rotation/{name}/x", decoded.X);
@@ -239,19 +238,19 @@ public sealed class BitExactnessTests {
         var buffer = new byte[2048];
         var entities =
             new List<Entity>(); // Positions and rotations stated rather than generated. A loop with a trigonometric function
-        // in it would make this a test of the platform's libm — see the remarks on the class.
+// in it would make this a test of the platform's libm — see the remarks on the class.
         var placements = new (Vector3 Position, Quaternion Rotation)[] {
             (new(0f, 0f, 0f), Quaternion.Identity), (new(1.5f, -2.25f, 3.125f), new(0.5f, 0.5f, 0.5f, 0.5f)),
             (new(-999.9f, 0.0625f, 999.9f), new(0.1f, 0.2f, 0.3f, 0.9f)),
             (new(0.03051804f, -0.03051804f, 0.015259f), new(-0.7071068f, 0f, 0f, 0.7071068f))
         };
-        foreach (var (position, rotation) in placements) {
+        foreach (var (position, rotation)in placements) {
             entities.Add(world.Create(ids.Next(), new NetworkTransform { Position = position, Rotation = rotation }));
         }
 
         for (var tick = 1u; tick <= 4; tick++) {
             world.AdvanceVersion(); // A movement that is exactly representable, so the value being captured is the value
-            // written here rather than one the addition rounded.
+// written here rather than one the addition rounded.
             foreach (var entity in entities) {
                 ref var transform = ref world.Get<NetworkTransform>(entity);
                 transform.Position += new Vector3(0.25f, 0f, -0.5f);
@@ -263,7 +262,7 @@ public sealed class BitExactnessTests {
                 $"snapshot/tick{tick}",
                 snapshot
             ); // Acknowledged a tick late, so ticks three and four go out as differences and the delta
-            // codec's selectors are in the bytes above.
+// codec's selectors are in the bytes above.
             if (tick > 1) {
                 server.Acknowledge(player, new(tick - 1));
             }
@@ -368,7 +367,7 @@ public sealed class BitExactnessTests {
             "spawn/record",
             packet
         ); // And the index the record names, which is a function of the type name rather than of when
-        // the replicator happened to be registered.
+// the replicator happened to be registered.
         var registry = new ReplicationRegistry();
         registry.Register(new NetworkTransformReplicator());
         registry.Register(replicator);

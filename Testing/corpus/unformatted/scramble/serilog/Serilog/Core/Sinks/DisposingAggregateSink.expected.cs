@@ -34,11 +34,11 @@ sealed class DisposingAggregateSink : ILogEventSink, IDisposable
             try {
                 sink.Emit(logEvent);
             } catch (Exception
-                ex) {
-                    SelfLog.WriteLine("Caught exception while emitting to sink {0}: {1}", sink, ex);
-                    exceptions ??= [];
-                    exceptions.Add(ex);
-                }
+                     ex) {
+                SelfLog.WriteLine("Caught exception while emitting to sink {0}: {1}", sink, ex);
+                exceptions ??= [];
+                exceptions.Add(ex);
+            }
         }
 
         if (exceptions != null)

@@ -14,12 +14,15 @@
 
 namespace Serilog.Core;
 
-class LevelOverrideMap {
+class LevelOverrideMap
+{
     readonly LogEventLevel _defaultMinimumLevel;
     readonly LoggingLevelSwitch? _defaultLevelSwitch;
 
-    readonly struct LevelOverride {
-        public LevelOverride(string context, LoggingLevelSwitch levelSwitch) {
+    readonly struct LevelOverride
+    {
+        public LevelOverride(string context, LoggingLevelSwitch levelSwitch)
+        {
             Context = context;
             LevelSwitch = levelSwitch;
         }
@@ -40,8 +43,8 @@ class LevelOverrideMap {
     public LevelOverrideMap(
         IDictionary<string, LoggingLevelSwitch> overrides,
         LogEventLevel defaultMinimumLevel,
-        LoggingLevelSwitch? defaultLevelSwitch
-    ) {
+        LoggingLevelSwitch? defaultLevelSwitch)
+    {
         Guard.AgainstNull(overrides);
 
         _defaultLevelSwitch = defaultLevelSwitch;
@@ -61,15 +64,17 @@ class LevelOverrideMap {
         string context,
 #endif
         out LogEventLevel minimumLevel,
-        out LoggingLevelSwitch? levelSwitch
-    ) {
-        foreach (var levelOverride in _overrides) {
+        out LoggingLevelSwitch? levelSwitch)
+    {
+        foreach (var levelOverride in _overrides)
+        {
             if (
                 (
-                    context.Length == levelOverride.Context.Length
-                    || (context.Length > levelOverride.Context.Length && context[levelOverride.Context.Length] == '.')
-                )
-                && context.StartsWith(levelOverride.Context, StringComparison.OrdinalIgnoreCase)) {
+                    context.Length == levelOverride.Context.Length ||
+                    (context.Length > levelOverride.Context.Length && context[levelOverride.Context.Length] == '.')
+                ) &&
+                context.StartsWith(levelOverride.Context, StringComparison.OrdinalIgnoreCase))
+            {
                 minimumLevel = LevelAlias.Minimum;
                 levelSwitch = levelOverride.LevelSwitch;
                 return;

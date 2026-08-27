@@ -14,25 +14,18 @@
 
 namespace Serilog.Formatting.Display;
 
-static class PropertiesOutputFormat {
+static class PropertiesOutputFormat
+{
     static readonly JsonValueFormatter JsonValueFormatter = new("$type");
 
-    public static void Render(
-        MessageTemplate template,
-        IReadOnlyDictionary<string, LogEventPropertyValue> properties,
-        MessageTemplate outputTemplate,
-        TextWriter output,
-        string? format,
-        IFormatProvider? formatProvider = null
-    ) {
-        if (format?.Contains("j") == true) {
-            var sv = new StructureValue(
-                properties
-                    .Where(kvp => !(TemplateContainsPropertyName(template, kvp.Key)
-                            || TemplateContainsPropertyName(outputTemplate, kvp.Key))
-                    )
-                    .Select(kvp => new LogEventProperty(kvp.Key, kvp.Value))
-            );
+    public static void Render(MessageTemplate template, IReadOnlyDictionary<string, LogEventPropertyValue> properties, MessageTemplate outputTemplate, TextWriter output, string? format, IFormatProvider? formatProvider = null)
+    {
+        if (format?.Contains("j") == true)
+        {
+            var sv = new StructureValue(properties
+                .Where(kvp => !(TemplateContainsPropertyName(template, kvp.Key) ||
+                                TemplateContainsPropertyName(outputTemplate, kvp.Key)))
+                .Select(kvp => new LogEventProperty(kvp.Key, kvp.Value)));
             JsonValueFormatter.Format(sv, output);
             return;
         }
@@ -40,9 +33,11 @@ static class PropertiesOutputFormat {
         output.Write("{ ");
 
         var delim = "";
-        foreach (var kvp in properties) {
-            if (TemplateContainsPropertyName(template, kvp.Key)
-                || TemplateContainsPropertyName(outputTemplate, kvp.Key)) {
+        foreach (var kvp in properties)
+        {
+            if (TemplateContainsPropertyName(template, kvp.Key) ||
+                TemplateContainsPropertyName(outputTemplate, kvp.Key))
+            {
                 continue;
             }
 
@@ -56,11 +51,15 @@ static class PropertiesOutputFormat {
         output.Write(" }");
     }
 
-    static bool TemplateContainsPropertyName(MessageTemplate template, string propertyName) {
-        if (template.PositionalProperties != null) {
-            for (var i = 0; i < template.PositionalProperties.Length; i++) {
+    static bool TemplateContainsPropertyName(MessageTemplate template, string propertyName)
+    {
+        if (template.PositionalProperties != null)
+        {
+            for (var i = 0; i < template.PositionalProperties.Length; i++)
+            {
                 var token = template.PositionalProperties[i];
-                if (token.PropertyName == propertyName) {
+                if (token.PropertyName == propertyName)
+                {
                     return true;
                 }
             }
@@ -68,10 +67,13 @@ static class PropertiesOutputFormat {
             return false;
         }
 
-        if (template.NamedProperties != null) {
-            for (var i = 0; i < template.NamedProperties.Length; i++) {
+        if (template.NamedProperties != null)
+        {
+            for (var i = 0; i < template.NamedProperties.Length; i++)
+            {
                 var namedProperty = template.NamedProperties[i];
-                if (namedProperty.PropertyName == propertyName) {
+                if (namedProperty.PropertyName == propertyName)
+                {
                     return true;
                 }
             }

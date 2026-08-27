@@ -86,11 +86,8 @@ public sealed partial class LayoutTree {
 
     /// <summary>Rebuilds every stale order-modified child list, before the pass descends.</summary>
     /// <remarks>
-    ///     ⚠
-    ///     <b>
-    ///         Here rather than lazily inside <see cref="ChildIds" />, and that is a correctness
-    ///         rule rather than a preference.
-    ///     </b> Building a block can grow the arena, and growing the
+    ///     ⚠ <b>Here rather than lazily inside <see cref="ChildIds" />, and that is a correctness
+    ///     rule rather than a preference.</b> Building a block can grow the arena, and growing the
     ///     arena moves the one array every outstanding child span points into — while the algorithm
     ///     is holding such a span across the recursive call that lays each child out. A lazy sort
     ///     would therefore leave an ancestor's loop iterating freed memory, intermittently and only
@@ -145,7 +142,7 @@ public sealed partial class LayoutTree {
             // that hides until a list has enough equal-order items to trip the quicksort path.
             // Distinct keys mean the comparison never has a tie to resolve, so stability stops
             // depending on the algorithm at all.
-            keys[i] = ((long)styles[target[i]].Order << 32) | (uint)i;
+            keys[i] = ((long) styles[target[i]].Order << 32) | (uint) i;
         }
 
         keys.Sort(target);

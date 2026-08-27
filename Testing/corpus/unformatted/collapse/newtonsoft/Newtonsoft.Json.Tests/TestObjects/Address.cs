@@ -1,5 +1,4 @@
 #region License
-
 // Copyright (c) 2007 James Newton-King
 //
 // Permission is hereby granted, free of charge, to any person
@@ -22,28 +21,9 @@
 // WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 // OTHER DEALINGS IN THE SOFTWARE.
-
 #endregion
-
-using System; using System.Globalization; using System.Runtime.Serialization; namespace Newtonsoft.Json.Tests.TestObjects {
+using System;using System.Globalization;using System.Runtime.Serialization;namespace Newtonsoft.Json.Tests.TestObjects{
 #if !(NET20)
-    [Serializable]
-    [DataContract]
-    public class Address {
-        [DataMember]
-        public string Street { get { return _street; } set { _street = value; } }
-
-        private string _street = "32 Kaiea";
-
-        [DataMember]
-        public string Phone { get { return _Phone; } set { _Phone = value; } }
-
-        private string _Phone = "(503) 814-6335";
-
-        [DataMember]
-        public DateTime Entered { get { return _Entered; } set { _Entered = value; } }
-
-        private DateTime _Entered = DateTime.Parse("01/01/2007", CultureInfo.CurrentCulture.DateTimeFormat);
-    }
+[Serializable][DataContract]public class Address{[DataMember]public string Street{get{return _street;}set{_street=value;}}private string _street="32 Kaiea" ;[DataMember]public string Phone{get{return _Phone;}set{_Phone=value;}}private string _Phone="(503) 814-6335" ;[DataMember]public DateTime Entered{get{return _Entered;}set{_Entered=value;}}private DateTime _Entered=DateTime.Parse("01/01/2007" ,CultureInfo.CurrentCulture.DateTimeFormat);}
 #endif
 }

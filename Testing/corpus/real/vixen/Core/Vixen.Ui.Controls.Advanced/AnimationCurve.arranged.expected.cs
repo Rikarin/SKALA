@@ -156,11 +156,8 @@ public sealed class AnimationCurve {
     /// <param name="time">Its new time.</param>
     /// <param name="value">Its new value.</param>
     /// <remarks>
-    ///     ⚠
-    ///     <b>
-    ///         The list is re-sorted, so a key dragged past its neighbour changes places with
-    ///         it.
-    ///     </b> The alternative — clamping a key between its neighbours — is what makes a curve
+    ///     ⚠ <b>The list is re-sorted, so a key dragged past its neighbour changes places with
+    ///     it.</b> The alternative — clamping a key between its neighbours — is what makes a curve
     ///     editor feel stuck, and the reordering is exactly what the user means by dragging one key
     ///     over another.
     /// </remarks>

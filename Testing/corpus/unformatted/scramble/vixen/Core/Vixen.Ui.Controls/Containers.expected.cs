@@ -27,7 +27,6 @@ public sealed partial class Panel : Control {
 
     /// <inheritdoc />
     protected override bool AcceptsFocus => false;
-
     // ⚠ No role, and that is the population's answer rather than a gap in it. A `Panel` is a box; a
     // tree that reported one would read a four-field form as a stack of nested groups, which is the
     // commonest way an accessibility tree comes to be technically complete and useless. An
@@ -46,16 +45,17 @@ public sealed partial class Panel : Control {
 ///     and leaving it bare is a caller's mistake rather than a state to style around.
 /// </remarks>
 public sealed partial class Card :
-Control {
+    Control {
     UiElement?
-    header;
+        header;
 
     UiElement?
-    footer;
+        footer;
 
     /// <inheritdoc />
     protected override
-        string TagName => "card";
+        string TagName =>
+        "card";
 
     /// <inheritdoc />
     protected override bool AcceptsFocus => false;
@@ -64,7 +64,7 @@ Control {
     public UiElement Body {
         get;
         private
-            set;
+        set;
     } = null!;
 
     /// <inheritdoc />
@@ -85,7 +85,8 @@ Control {
 
     /// <summary>The strip above the body, created the first time it is asked for.</summary>
     public
-        UiElement Header => header ??= Prepend("card-header");
+        UiElement Header =>
+        header ??= Prepend("card-header");
 
     /// <summary>The strip below it, created the first time it is asked for.</summary>
     public UiElement Footer => footer ??= Part("card-footer");
@@ -254,7 +255,8 @@ public sealed partial class EmptyState : Control {
 
     /// <inheritdoc />
     protected override string
-        TagName => "empty-state";
+        TagName =>
+        "empty-state";
 
     /// <inheritdoc />
     protected override bool AcceptsFocus => false;
@@ -279,7 +281,7 @@ public sealed partial class EmptyState : Control {
     /// <summary>The description's element.</summary>
     public UiElement DescriptionPart {
         get
-            ;
+        ;
         private set;
     } = null!;
 

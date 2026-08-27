@@ -1,5 +1,4 @@
 #region License
-
 // Copyright (c) 2007 James Newton-King
 //
 // Permission is hereby granted, free of charge, to any person
@@ -22,18 +21,22 @@
 // WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 // OTHER DEALINGS IN THE SOFTWARE.
-
 #endregion
 
-namespace Newtonsoft.Json.Tests.TestObjects {
-    public abstract class SimpleResponse {
+namespace Newtonsoft.Json.Tests.TestObjects
+{
+    public abstract class SimpleResponse
+    {
         public string Result { get; set; }
         public string Message { get; set; }
         public object Data { get; set; }
 
-        protected SimpleResponse() { }
+        protected SimpleResponse()
+        {
+        }
 
-        protected SimpleResponse(string message) {
+        protected SimpleResponse(string message)
+        {
             Message = message;
         }
     }

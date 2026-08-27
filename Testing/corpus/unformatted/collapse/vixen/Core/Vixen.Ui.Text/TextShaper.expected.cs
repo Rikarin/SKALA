@@ -56,18 +56,18 @@ public static class TextShaper {
             .ThrowIfNull(
                 text
             ); // ⚠ Set on every call, including when nobody asked for an instance. The face's shaper is
-        // stateful, so a null here has to mean "back to the default" rather than "leave it as
-        // whoever shaped last left it" — otherwise a paragraph's advances depend on what was drawn
-        // before it, which is a bug that only appears once something animates an axis.
+// stateful, so a null here has to mean "back to the default" rather than "leave it as
+// whoever shaped last left it" — otherwise a paragraph's advances depend on what was drawn
+// before it, which is a bug that only appears once something animates an axis.
         font.SetInstance(variation);
         var items = TextItemizer.Itemize(text, direction);
         if (items.Count == 0) {
             return new ShapedText(text, [], 0);
         } // ⚠ Built once for the paragraph rather than once per run. HarfBuzz copies the array on
 
-        // every `Shape`, and a paragraph of mixed scripts is one item per script change — so a
-        // per-run conversion would allocate the same four bytes per feature per run of every string
-        // that names one.
+// every `Shape`, and a paragraph of mixed scripts is one item per script change — so a
+// per-run conversion would allocate the same four bytes per feature per run of every string
+// that names one.
         var applied = Convert(features);
         var shaped = new ShapedRun[items.Count];
         for (var i = 0; i < items.Count; i++) {
@@ -115,12 +115,12 @@ public static class TextShaper {
             TagFor(
                 item.Script
             ); // ⚠ Default-ignorables are deleted rather than hidden. Left alone, HarfBuzz keeps a zero
-        // width invisible glyph for every zero-width joiner, variation selector and bidi control —
-        // which is correct and is not what a renderer wants: each one is still a quad to batch and
-        // still an entry in the glyph run that maps back to no visible mark. Deleting them is the
-        // same choice Raqm makes by default, and the Consortium's expectations are written against
-        // it. The cost is that a cluster can end up with no glyphs at all, which hit testing has to
-        // be able to say something sensible about.
+// width invisible glyph for every zero-width joiner, variation selector and bidi control —
+// which is correct and is not what a renderer wants: each one is still a quad to batch and
+// still an entry in the glyph run that maps back to no visible mark. Deleting them is the
+// same choice Raqm makes by default, and the Consortium's expectations are written against
+// it. The cost is that a cluster can end up with no glyphs at all, which hit testing has to
+// be able to say something sensible about.
         buffer.Flags = BufferFlags.RemoveDefaultIgnorables;
         font.Shaper.Shape(buffer, features);
         var infos = buffer.GetGlyphInfoSpan();
@@ -156,9 +156,9 @@ public static class TextShaper {
         for (var i = 0; i < applied.Length; i++) {
             var feature =
                 features.Features
-                [i]; // ⚠ The four characters rather than the packed integer, because HarfBuzzSharp's `Tag`
-            // has no integer constructor and its one-argument overloads are all chars — an
-            // implicit conversion picks the wrong one and the tag becomes a single byte.
+                    [i]; // ⚠ The four characters rather than the packed integer, because HarfBuzzSharp's `Tag`
+// has no integer constructor and its one-argument overloads are all chars — an
+// implicit conversion picks the wrong one and the tag becomes a single byte.
             var tag = feature.Tag; // The whole buffer, which is the only range CSS can express. See `FontFeature`.
             applied[i] = new Feature(
                 new Tag((char)(tag >> 24), (char)((tag >> 16) & 0xFF), (char)((tag >> 8) & 0xFF), (char)(tag & 0xFF)),

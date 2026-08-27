@@ -11,11 +11,8 @@ namespace Vixen.Ui.Tests;
 /// </summary>
 /// <remarks>
 ///     <para>
-///         ⚠
-///         <b>
-///             The <c>shown</c> branch in <see cref="DrawListBuilder" /> had no test at all, and
-///             that is the reason this file exists rather than the keyword being a one-line change.
-///         </b>
+///         ⚠ <b>The <c>shown</c> branch in <see cref="DrawListBuilder" /> had no test at all, and
+///         that is the reason this file exists rather than the keyword being a one-line change.</b>
 ///         The property was read; nothing anywhere asserted that reading it did anything, so the
 ///         difference between "honoured" and "parsed and dropped" was invisible to the suite. Two of
 ///         the four behaviours below turned out to be missing when they were finally written down.
@@ -33,7 +30,7 @@ public class VisibilityTests {
     static UiDocument Drawn(
         string css,
         Action<UiDocument>
-        build
+            build
     ) {
         var document = new UiDocument(400f, 300f);
         document.Load(css);
@@ -49,14 +46,14 @@ public class VisibilityTests {
         Fact]
     public void A_visible_box_paints_and_occupies_its_space() {
         using var
-        document = Drawn(
-            """
-            root { width: 400px; height: 300px; }
-            .box { width: 60px; height: 40px; background-color: #ff0000; }
-            """,
-            document
-                => document.Root.Add("div", classNames: "box")
-        );
+            document = Drawn(
+                """
+                root { width: 400px; height: 300px; }
+                .box { width: 60px; height: 40px; background-color: #ff0000; }
+                """,
+                document
+                    => document.Root.Add("div", classNames: "box")
+            );
 
         var command =
             Assert.Single(document.Drawing.Commands);
@@ -107,12 +104,12 @@ public class VisibilityTests {
     [Fact]
     public void Collapse_reads_as_hidden_because_there_are_no_table_rows_to_mean_anything_else() {
         using var document = Drawn(
-            """
-            root { width: 400px; height: 300px; }
-            .box { width: 60px; height: 40px; background-color: #ff0000; visibility: collapse; }
-            """,
-            document => document.Root.Add("div", classNames: "box")
-        )
+                """
+                root { width: 400px; height: 300px; }
+                .box { width: 60px; height: 40px; background-color: #ff0000; visibility: collapse; }
+                """,
+                document => document.Root.Add("div", classNames: "box")
+            )
             ;
         Assert.Empty(document.Drawing.Commands);
         Assert.Equal(40f, document.Root.Children[0].Height, Tolerance);

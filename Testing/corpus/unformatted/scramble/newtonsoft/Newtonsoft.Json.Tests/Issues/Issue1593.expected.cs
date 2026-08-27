@@ -1,5 +1,4 @@
 // skala-oracle: resharper=2025.2.6 config=sha256:98ff52570e019fac profile=SkalaFormatOnly generated=2026-08-27
-
 #region License
 
 // Copyright (c) 2007 James Newton-King
@@ -34,17 +33,17 @@
 using System;
 using System.Collections;
 using System
-.Collections.Generic;
+    .Collections.Generic;
 using System.Dynamic
-;
+    ;
 using System.IO;
 using System.Linq;
 using System.Reflection
-;
+    ;
 using Newtonsoft
-.Json.Linq;
+    .Json.Linq;
 using Newtonsoft.Json.
-Serialization;
+    Serialization;
 #if DNXCORE50
 using Xunit;
 using Test = Xunit.FactAttribute;
@@ -56,11 +55,11 @@ using NUnit.Framework;
 namespace Newtonsoft.Json.Tests.Issues {
     [TestFixture]
     public class Issue1593 :
-    TestFixtureBase {
+        TestFixtureBase {
         [Test]
         public void Test() {
             string
-            json = JsonConvert.SerializeObject(CreateModel());
+                json = JsonConvert.SerializeObject(CreateModel());
             Assert.AreEqual(@"{""Specific"":2,""A"":1}", json);
         }
 

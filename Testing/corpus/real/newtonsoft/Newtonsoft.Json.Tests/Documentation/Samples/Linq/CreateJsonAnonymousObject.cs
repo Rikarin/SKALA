@@ -1,5 +1,4 @@
 ﻿#region License
-
 // Copyright (c) 2007 James Newton-King
 //
 // Permission is hereby granted, free of charge, to any person
@@ -22,7 +21,6 @@
 // WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 // OTHER DEALINGS IN THE SOFTWARE.
-
 #endregion
 
 using System;
@@ -43,48 +41,59 @@ using NUnit.Framework;
 
 #endif
 
-namespace Newtonsoft.Json.Tests.Documentation.Samples.Linq {
+namespace Newtonsoft.Json.Tests.Documentation.Samples.Linq
+{
     [TestFixture]
-    public class CreateJsonAnonymousObject : TestFixtureBase {
+    public class CreateJsonAnonymousObject : TestFixtureBase
+    {
         #region Types
-
-        public class Post {
+        public class Post
+        {
             public string Title { get; set; }
             public string Description { get; set; }
             public string Link { get; set; }
             public IList<string> Categories { get; set; }
         }
-
         #endregion
 
         [Test]
-        public void Example() {
+        public void Example()
+        {
             #region Usage
-
-            List<Post> posts = new List<Post> {
-                new Post {
+            List<Post> posts = new List<Post>
+            {
+                new Post
+                {
                     Title = "Episode VII",
                     Description = "Episode VII production",
-                    Categories = new List<string> { "episode-vii", "movie" },
+                    Categories = new List<string>
+                    {
+                        "episode-vii",
+                        "movie"
+                    },
                     Link = "episode-vii-production.aspx"
                 }
             };
 
-            JObject o = JObject.FromObject(
-                new {
-                    channel = new {
-                        title = "Star Wars",
-                        link = "http://www.starwars.com",
-                        description = "Star Wars blog.",
-                        item =
-                            from p in posts
-                            orderby p.Title
-                            select new {
-                                title = p.Title, description = p.Description, link = p.Link, category = p.Categories
-                            }
-                    }
+            JObject o = JObject.FromObject(new
+            {
+                channel = new
+                {
+                    title = "Star Wars",
+                    link = "http://www.starwars.com",
+                    description = "Star Wars blog.",
+                    item =
+                        from p in posts
+                        orderby p.Title
+                        select new
+                        {
+                            title = p.Title,
+                            description = p.Description,
+                            link = p.Link,
+                            category = p.Categories
+                        }
                 }
-            );
+            });
 
             Console.WriteLine(o.ToString());
             // {
@@ -105,11 +114,9 @@ namespace Newtonsoft.Json.Tests.Documentation.Samples.Linq {
             //     ]
             //   }
             // }
-
             #endregion
 
-            StringAssert.AreEqual(
-                @"{
+            StringAssert.AreEqual(@"{
   ""channel"": {
     ""title"": ""Star Wars"",
     ""link"": ""http://www.starwars.com"",
@@ -126,9 +133,7 @@ namespace Newtonsoft.Json.Tests.Documentation.Samples.Linq {
       }
     ]
   }
-}",
-                o.ToString()
-            );
+}", o.ToString());
         }
     }
 }

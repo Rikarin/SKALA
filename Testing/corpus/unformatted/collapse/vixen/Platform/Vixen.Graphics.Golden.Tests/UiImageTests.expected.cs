@@ -81,16 +81,16 @@ public sealed class UiImageTests {
             colour,
             commands => renderer.Upload(commands, geometry, cache.Atlas)
         ); // Every draw reached the command list — a batch silently dropped would still produce a
-        // plausible picture, just one missing a thing nobody counted.
+// plausible picture, just one missing a thing nobody counted.
         Assert.Equal(geometry.Draws.Count, renderer.Draws); // The atlas was uploaded once, not once per glyph.
         Assert.Equal(
             1,
             renderer.AtlasUploads
         ); // ⚠ One region per frame in flight, and the upload moved on to a new one. `Write` on a
-        // host-visible buffer is a memcpy into memory the GPU may still be reading for a frame that
-        // has not finished, so a renderer with one region draws an interface that is briefly a blend
-        // of two frames — which looks like a panel flickering while whatever the pointer is over
-        // stays perfectly still, because only the geometry *after* the change moves in the buffer.
+// host-visible buffer is a memcpy into memory the GPU may still be reading for a frame that
+// has not finished, so a renderer with one region draws an interface that is briefly a blend
+// of two frames — which looks like a panel flickering while whatever the pointer is over
+// stays perfectly still, because only the geometry *after* the change moves in the buffer.
         Assert.Equal(owned.Device.FramesInFlight, renderer.Regions);
         Assert.Equal(1 % renderer.Regions, renderer.Region);
         AssertTheBoxIsRounded(image);
@@ -156,7 +156,7 @@ public sealed class UiImageTests {
             colour,
             commands => renderer.Upload(commands, geometry, cache.Atlas)
         ); // One draw: a shadow shares the box pipeline, so it batches with the card rather than
-        // splitting the frame in two.
+// splitting the frame in two.
         Assert.Single(geometry.Draws);
         AssertTheShadowFadesOutwards(image);
         AssertTheCardIsOverTheShadow(image);
@@ -173,11 +173,8 @@ public sealed class UiImageTests {
     ///         picture that would be one more region nobody looks at.
     ///     </para>
     ///     <para>
-    ///         ⚠
-    ///         <b>
-    ///             The box is deliberately not symmetric about the clip's edge, and the first version
-    ///             of this fixture was.
-    ///         </b> A centred box under a scissor at the halfway line looks
+    ///         ⚠ <b>The box is deliberately not symmetric about the clip's edge, and the first version
+    ///         of this fixture was.</b> A centred box under a scissor at the halfway line looks
     ///         identical whether or not y is flipped — so it passed while the whole frame was being
     ///         drawn upside down, and it was the busier fixture next door that noticed. A clip test
     ///         whose picture is its own mirror image is a clip test that cannot see the most common
@@ -200,9 +197,9 @@ public sealed class UiImageTests {
         list.Add(
             new(DrawCommandKind.ClipPop, 0, 0, 0, 0, default, 0, 0)
         ); // ⚠ A box under a clip that is entirely off the surface. The geometry builder still emits it —
-        // it does not cull — so this is what makes the renderer's "skip a draw whose scissor is
-        // empty" reachable at all, and the draw count below is what sees it. Without this the skip
-        // could be deleted and no picture would change, because there was never an empty scissor.
+// it does not cull — so this is what makes the renderer's "skip a draw whose scissor is
+// empty" reachable at all, and the draw count below is what sees it. Without this the skip
+// could be deleted and no picture would change, because there was never an empty scissor.
         list.Add(new(DrawCommandKind.ClipPush, Side + 40, Side + 40, 20, 20, default, 0, 0));
         list.Add(new(DrawCommandKind.Rectangle, Side + 44, Side + 44, 12, 12, Color4.White, 0, 0));
         list.Add(new(DrawCommandKind.ClipPop, 0, 0, 0, 0, default, 0, 0));
@@ -231,7 +228,7 @@ public sealed class UiImageTests {
             colour,
             commands => renderer.Upload(commands, geometry, cache.Atlas)
         ); // Two boxes were emitted and one was drawn: the second's clip does not intersect the surface,
-        // so there is nothing to scissor it to.
+// so there is nothing to scissor it to.
         Assert.Equal(2, geometry.Draws.Count);
         Assert.Equal(1, renderer.Draws); // The box runs from y = 24 to y = 96 and the clip cuts it at 64.
         Assert.True(Green(image, Side / 2, 10) < 20, "the box drew above its own top edge");
@@ -293,8 +290,8 @@ public sealed class UiImageTests {
             100,
             large.Shapes.Count
         ); // Every cell of the grid is filled, including the ninety-six the first upload had no room
-        // for. A stale descriptor reads another allocation's bytes as half-sizes, and the boxes past
-        // the fourth come out the wrong size or not at all.
+// for. A stale descriptor reads another allocation's bytes as half-sizes, and the boxes past
+// the fourth come out the wrong size or not at all.
         for (var row = 0; row < 10; row++) {
             for (var column = 0; column < 10; column++) {
                 var x = (column * 12) + 9;
@@ -336,8 +333,8 @@ public sealed class UiImageTests {
         var font = Font();
         var list = new DrawList();
         list.BeginFrame(); // ⚠ A filled box with a *different radius on every corner*, and an elliptical one at the top
-        // left — 20 across by 8 down. A shader that read one radius, or read the four in the wrong
-        // order, still draws a rounded rectangle; only a box whose corners disagree says which.
+// left — 20 across by 8 down. A shader that read one radius, or read the four in the wrong
+// order, still draws a rounded rectangle; only a box whose corners disagree says which.
         list.Add(
             new DrawCommand(DrawCommandKind.Rectangle, 8, 8, 54, 40, new Color4(0.25f, 0.55f, 0.95f, 1f), 0, 0) {
                 Offset = list.AddBox(
@@ -369,11 +366,11 @@ public sealed class UiImageTests {
             14,
             116
         ); // ⚠ A box *between* two text runs, so the frame alternates rather than ending on the text.
-        // Two earlier versions of this fixture could not see the atlas re-bind at all: with the text
-        // last, the atlas is bound once and it never matters whether a pipeline change disturbed it;
-        // with only one text run, there is no second bind to skip. Deleting the re-bind broke
-        // nothing both times, while the comment next to it claimed it would fail on "every real
-        // frame". It takes box → text → box → text to find out.
+// Two earlier versions of this fixture could not see the atlas re-bind at all: with the text
+// last, the atlas is bound once and it never matters whether a pipeline change disturbed it;
+// with only one text run, there is no second bind to skip. Deleting the re-bind broke
+// nothing both times, while the comment next to it claimed it would fail on "every real
+// frame". It takes box → text → box → text to find out.
         list.Add(new(DrawCommandKind.Rectangle, 74, 106, 14, 14, new Color4(0.9f, 0.8f, 0.3f, 1f), 4, 0));
         Text(list, font, "C", 94, 116);
         list.EndFrame();
@@ -428,8 +425,8 @@ public sealed class UiImageTests {
     [Fact]
     public void Scaled() {
         // ⚠ A fixture each. `Render` executes the graph and a graph is one frame, so the two pictures
-        // cannot come out of the same one — which is the harness saying, correctly, that these are
-        // two frames rather than two passes.
+// cannot come out of the same one — which is the harness saying, correctly, that these are
+// two frames rather than two passes.
         if (!TryOpen(out var first, out _)) {
             return;
         }
@@ -457,15 +454,15 @@ public sealed class UiImageTests {
             }
         } // ⚠ Not zero. The two are rasterised from different vertex coordinates, so the antialiased
 
-        // edges land on subtly different subpixel positions and a handful of pixels along every
-        // boundary differ. What the count catches is the failure this exists for, which is not
-        // subtle: a quarter-size picture differs over the three quarters it does not cover, and both
-        // sabotages above land at about a quarter of the surface.
+// edges land on subtly different subpixel positions and a handful of pixels along every
+// boundary differ. What the count catches is the failure this exists for, which is not
+// subtle: a quarter-size picture differs over the three quarters it does not cover, and both
+// sabotages above land at about a quarter of the surface.
         Assert.True(
             differences < Side * Side / 50,
             $"{differences} of {Side * Side} pixels differ, which is more than an edge's worth"
         ); // And the picture is actually there, so that two blank surfaces cannot agree their way to a
-        // pass.
+// pass.
         Assert.True(Green(scaled, Side / 4, Side / 4) > 100, "the scaled picture is empty");
         Assert.True(Green(scaled, (Side / 2) + 8, Side / 4) > 100, "the scaled picture stops early");
     }
@@ -533,8 +530,8 @@ public sealed class UiImageTests {
             Blue(image, 35, 4) < 60,
             "the box drew outside its own quad"
         ); // ⚠ Every corner separately, because that is the only thing that says the four radii arrived
-        // in the right order. The box runs from (8, 8) to (62, 48); its top left is cut 20 across by
-        // 8 down, its top right barely at all, its bottom right square, its bottom left by 16.
+// in the right order. The box runs from (8, 8) to (62, 48); its top left is cut 20 across by
+// 8 down, its top right barely at all, its bottom right square, its bottom left by 16.
         Assert.True(Blue(image, 10, 9) < 60, "the top-left corner was not cut");
         Assert.True(Blue(image, 60, 9) > 100, "the top-right corner was cut when it is nearly square");
         Assert.True(Blue(image, 60, 46) > 100, "the bottom-right corner was cut when it is square");
@@ -542,8 +539,8 @@ public sealed class UiImageTests {
             Blue(image, 10, 46) < 60,
             "the bottom-left corner was not cut"
         ); // ...and elliptical rather than circular. The cut is 20 across and 8 down, so it stops much
-        // sooner going down than going along: (18, 10) is inside this corner and would be outside a
-        // circular 20px one. A shader that read only `radiiX` draws exactly that circle.
+// sooner going down than going along: (18, 10) is inside this corner and would be outside a
+// circular 20px one. A shader that read only `radiiX` draws exactly that circle.
         Assert.True(Blue(image, 18, 10) > 100, "the top-left corner was cut as a circle rather than an ellipse");
     }
 
@@ -603,8 +600,8 @@ public sealed class UiImageTests {
     /// </remarks>
     static void AssertTheShadowFadesOutwards(in Bitmap image) {
         // A column below the card, running from inside the shadow out into the white surface. The
-        // card ends at y = 72 and the shadow's own edge is at 84, so this starts below the card and
-        // covers the whole falloff.
+// card ends at y = 72 and the shadow's own edge is at 84, so this starts below the card and
+// covers the whole falloff.
         const int column = 64;
         var previous = -1;
         for (var y = 74; y < 108; y++) {
@@ -616,7 +613,7 @@ public sealed class UiImageTests {
             previous = value;
         } // And it is a gradient rather than a step: solid where the shadow is, white well away from
 
-        // it, and neither of those at the same value.
+// it, and neither of those at the same value.
         Assert.True(Red(image, column, 76) < 100, "there is no shadow just below the card");
         Assert.True(Red(image, column, 107) > 240, "the shadow never reaches the background");
     }
@@ -651,11 +648,8 @@ public sealed class UiImageTests {
     ///     <para>
     ///         The image pipeline is the fourth to share one vertex layout and one pipeline layout,
     ///         and the failure it exists to catch is the same one <see cref="Interface" /> catches for
-    ///         the other three — except worse, because an image binds a descriptor set of
-    ///         <i>
-    ///             its
-    ///             own
-    ///         </i>. A set bound for an image that survives into the text after it draws the
+    ///         the other three — except worse, because an image binds a descriptor set of <i>its
+    ///         own</i>. A set bound for an image that survives into the text after it draws the
     ///         picture where the letters should be; one that does not get bound at all draws the font
     ///         atlas where the picture should be. Both need two kinds in one frame to show.
     ///     </para>
@@ -677,7 +671,7 @@ public sealed class UiImageTests {
             owned.ColourTarget(
                 "ui"
             ); // Four texels: red, green / blue, white. Asymmetric in both axes, so a flip or a transpose
-        // is visible rather than a picture that looks the same either way.
+// is visible rather than a picture that looks the same either way.
         var sampled = owned.Sampled(
             "ui image",
             2,
@@ -733,8 +727,8 @@ public sealed class UiImageTests {
                 );
             }
         ); // Three draws from four commands: box, then *both* images as one, then box. The two images
-        // are adjacent and name one texture, so they merge — which is the batching working, and the
-        // reason the texture is part of the batch key rather than something bound per command.
+// are adjacent and name one texture, so they merge — which is the batching working, and the
+// reason the texture is part of the batch key rather than something bound per command.
         Assert.Equal(geometry.Draws.Count, renderer.Draws);
         Assert.Equal(3, geometry.Draws.Count);
         AssertTheImageIsUpright(image);
@@ -765,7 +759,7 @@ public sealed class UiImageTests {
     /// <summary>The box drawn after the image is the box's colour and not a texel.</summary>
     static void AssertTheBoxAfterTheImageIsNotTheTexture(in Bitmap image) {
         // Orange: red high, green middling, blue low. A texel would be one of four saturated colours,
-        // and the atlas would be nearly black.
+// and the atlas would be nearly black.
         Assert.True(
             Red(image, 28, 88) > 150 && Green(image, 28, 88) is > 60 and < 200 && Blue(image, 28, 88) < 100,
             "the box drawn after the image is not its own colour, so a binding leaked across the draw"

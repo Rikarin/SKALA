@@ -34,13 +34,13 @@ public class SightTests {
     [Fact]
     public void TheLoseSightRadiusIsWhatStopsTheFlicker() {
         // Five changes of mind against one, over the same six positions. Every one of the five is a
-        // decorator observing the target key, and every one of them aborts a branch.
+// decorator observing the target key, and every one of them aborts a branch.
         Assert.Equal(5, Transitions(20f));
         Assert.Equal(1, Transitions(25f));
 
         static int Transitions(float loseSight) {
             var fleet = new Fleet(
-                Fleet.Everything() with {
+                Fleet.Everything()with {
                     Sight = new() { Radius = 20f, LoseSightRadius = loseSight, ConeDegrees = 360f, Occlusion = false }
                 }
             );
@@ -49,7 +49,7 @@ public class SightTests {
             fleet.Step();
             var seen = fleet.Perceived(listener).IsPerceiving(SenseMask.Sight);
             var changes = 0; // Loitering on the boundary — 21, 19, 21, 19, 21, which is a target standing still and an
-            // agent breathing — and then leaving for good.
+// agent breathing — and then leaving for good.
             foreach (var distance in new[] { 21f, 19f, 21f, 19f, 21f, 30f }) {
                 fleet.MoveTo(target, new(0f, 0f, -distance));
                 fleet.Step();
@@ -68,7 +68,7 @@ public class SightTests {
     [Fact]
     public void TheConeIsWhatTheAgentIsFacing() {
         var fleet = new Fleet(
-            Fleet.Everything() with {
+            Fleet.Everything()with {
                 Sight = new() { Radius = 20f, LoseSightRadius = 20f, ConeDegrees = 90f, Occlusion = false }
             }
         );
@@ -90,7 +90,7 @@ public class SightTests {
     [Fact]
     public void AZeroedRotationFacesForwardRatherThanNowhere() {
         var fleet = new Fleet(
-            Fleet.Everything() with {
+            Fleet.Everything()with {
                 Sight = new() { Radius = 20f, LoseSightRadius = 20f, ConeDegrees = 90f, Occlusion = false }
             }
         );
@@ -119,7 +119,7 @@ public class SightTests {
 
     [Fact]
     public void AForgottenTargetLeavesTheList() {
-        var fleet = new Fleet(Fleet.Everything() with { Memory = 0.25f });
+        var fleet = new Fleet(Fleet.Everything()with { Memory = 0.25f });
         var listener = fleet.Listener(Vector3.Zero);
         var target = fleet.Source(new(0f, 0f, -5f));
         fleet.Step();
@@ -132,7 +132,7 @@ public class SightTests {
 
     [Fact]
     public void TheListIsBoundedAndAFullListOfLiveTargetsRefusesMore() {
-        var fleet = new Fleet(Fleet.Everything() with { MaxPerceived = 2 });
+        var fleet = new Fleet(Fleet.Everything()with { MaxPerceived = 2 });
         var listener = fleet.Listener(Vector3.Zero);
         fleet.Source(new(0f, 0f, -1f));
         fleet.Source(new(0f, 0f, -2f));
@@ -145,7 +145,7 @@ public class SightTests {
 public class FilterTests {
     [Fact]
     public void TheTeamFilterStopsAnAllyBeingNoticed() {
-        var fleet = new Fleet(Fleet.Everything() with { Filter = PerceptionFilters.Hostiles });
+        var fleet = new Fleet(Fleet.Everything()with { Filter = PerceptionFilters.Hostiles });
         var listener = fleet.Listener(Vector3.Zero, team: 1);
         fleet.Source(new(0f, 0f, -5f), team: 1);
         var enemy = fleet.Source(new(0f, 0f, -6f), team: 2);
@@ -161,7 +161,7 @@ public class FilterTests {
     /// </summary>
     [Fact]
     public void DamageReachesItsVictimEvenFromItsOwnSide() {
-        var fleet = new Fleet(Fleet.Everything() with { Filter = PerceptionFilters.Hostiles });
+        var fleet = new Fleet(Fleet.Everything()with { Filter = PerceptionFilters.Hostiles });
         var listener = fleet.Listener(Vector3.Zero, team: 1);
         var ally = fleet.Source(new(0f, 0f, -5f), team: 1);
         fleet.System.ReportDamage(ally, listener, new(0f, 0f, -5f), 10f);
@@ -174,7 +174,7 @@ public class FilterTests {
     public void ADelegateFilterIsAsked() {
         var asked = 0;
         var fleet = new Fleet(
-            Fleet.Everything() with {
+            Fleet.Everything()with {
                 Filter = PerceptionFilters.Where((
                         in PerceptionParticipant listener,
                         in PerceptionParticipant source,
@@ -207,7 +207,7 @@ public class EventSenseTests {
         Assert.True(
             heard.Current
         ); // ⚠ Not heard a second time. An event consumed on every pass until it expires would read as a
-        // single gunshot still going off a second later.
+// single gunshot still going off a second later.
         fleet.Step();
         Assert.True(fleet.Perceived(listener).TryGet(shooter, out var stale));
         Assert.False(stale.Current);
@@ -272,7 +272,7 @@ public class TeamRelayTests {
             AiSense.Team,
             told.Sense
         ); // ⚠ `deep` is in range of `rear` and not of `scout`. A relay that relayed would reach it,
-        // several passes late, with nobody in the chain having seen anything.
+// several passes late, with nobody in the chain having seen anything.
         Assert.False(fleet.Perceived(deep).TryGet(enemy, out _));
     }
 }
@@ -301,7 +301,7 @@ public class BindingTests {
             agents,
             3
         ); // ⚠ Still set. "Chase him" and "search where he was" read one key and branch on the age,
-        // rather than being two branches over two keys with two copies of the position.
+// rather than being two branches over two keys with two copies of the position.
         Assert.Equal(target, blackboard.GetEntity(Key("target")));
         Assert.Equal(-5f, blackboard.GetVector3(Key("where")).Z, 3);
         Assert.True(blackboard.GetFloat(Key("age")) > 0.2f);
@@ -320,7 +320,7 @@ public class BindingTests {
     }
 
     static (Fleet Fleet, AiSystem Agents, Entity Listener, Entity Target) Build(IBlackboardBinding binding) {
-        var fleet = new Fleet(Fleet.Everything() with { Binding = binding });
+        var fleet = new Fleet(Fleet.Everything()with { Binding = binding });
         var agents = new AiSystem(Registry(), Layout);
         var listener = fleet.World.Create(
             AiPerception.Sensing(fleet.Config),
@@ -368,7 +368,7 @@ public class ScheduleTests {
     /// <summary>⚠ With no focus set every listener is at distance zero, which is full rate.</summary>
     [Fact]
     public void NoFocusMeansFullRateRatherThanTheSlowestBand() {
-        var fleet = new Fleet(Fleet.Everything() with { Interval = 0.1f });
+        var fleet = new Fleet(Fleet.Everything()with { Interval = 0.1f });
         fleet.System.Governor = new DistanceLodGovernor();
         fleet.Listener(new(0f, 0f, 500f));
         fleet.Source(new(0f, 0f, 500f));
@@ -386,7 +386,7 @@ public class ScheduleTests {
     /// </summary>
     [Fact]
     public void ListenersSpawnedTogetherDoNotSenseTogether() {
-        var fleet = new Fleet(Fleet.Everything() with { Interval = 1f, RandomDeviation = 0.1f });
+        var fleet = new Fleet(Fleet.Everything()with { Interval = 1f, RandomDeviation = 0.1f });
         for (var index = 0; index < 40; index++) {
             fleet.Listener(new(index * 3f, 0f, 0f));
         }

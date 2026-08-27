@@ -3,18 +3,15 @@
 // SPDX-License-Identifier: Apache-2.0
 
 using Vixen.Core.
-Mathematics;
+    Mathematics;
 
 namespace Vixen.Water;
 
 /// <summary>Where the ground is, for a field that has to know what its water sits on.</summary>
 /// <remarks>
 ///     <para>
-///         ⚠
-///         <b>
-///             The terrain is a first-class producer, not a component somebody remembers to
-///             attach
-///         </b> —
+///         ⚠ <b>The terrain is a first-class producer, not a component somebody remembers to
+///         attach</b> —
 ///         [35 § D3](../../docs/plan/35-water.md#d3-the-water-info-texture-is-the-interchange-and-it-is-a-zone-render).
 ///         Unreal's <c>UWaterTerrainComponent</c> is opt-in per actor, which is why "my water has no
 ///         depth" is a common question there with a non-obvious answer. Here a zone asks whatever
@@ -55,11 +52,8 @@ public readonly record struct FlatWaterGround(float Height) : IWaterGround {
 ///         first.
 ///     </para>
 ///     <para>
-///         ⚠
-///         <b>
-///             The origin is snapped, and the snap is to a texel of the <em>coarsest</em> thing that
-///             reads the field.
-///         </b> Snapping to the window's own grid is not enough once a ripple
+///         ⚠ <b>The origin is snapped, and the snap is to a texel of the <em>coarsest</em> thing that
+///         reads the field.</b> Snapping to the window's own grid is not enough once a ripple
 ///         simulation samples it at a different resolution: the two grids beat against each other and
 ///         produce a crawl along the shoreline that appears only while the camera moves. That is the
 ///         same class of bug as the terrain quadtree's morph, and it gets the same treatment — a test
@@ -93,11 +87,8 @@ public readonly record struct WaterFieldDescription {
     ///         at 257 texels is two metres a texel and not 1.992.
     ///     </para>
     ///     <para>
-    ///         ⚠
-    ///         <b>
-    ///             It shipped as <c>Extent / Resolution</c> for a day and that was a real bug, not a
-    ///             rounding preference.
-    ///         </b> The rasteriser and the sampler both used the inclusive spacing
+    ///         ⚠ <b>It shipped as <c>Extent / Resolution</c> for a day and that was a real bug, not a
+    ///         rounding preference.</b> The rasteriser and the sampler both used the inclusive spacing
     ///         while the panel and the <em>snap</em> used the other one, so a window snapped to a
     ///         four-metre grid was landing on a grid that was not a whole number of texels — and the
     ///         two beat against each other and produced exactly the shoreline crawl § D3 warns about.
@@ -110,7 +101,8 @@ public readonly record struct WaterFieldDescription {
             : 0f;
 
     /// <summary>How many bytes the four channels and the coverage occupy.</summary>
-    public long Bytes => (long)Resolution
+    public long Bytes =>
+        (long)Resolution
         * Resolution
         * 5
         * sizeof(float);
@@ -241,9 +233,9 @@ public
 
         var texels = description.Resolution * description.Resolution;
         surface = new
-            float[texels];
+            float [texels];
         flowX = new float[texels];
-        flowZ = new float[texels];
+        flowZ = new float [texels];
         ground
             = new float[texels];
         coverage = new float[texels];
@@ -259,7 +251,7 @@ public
     /// </remarks>
     public int CoveredTexels {
         get
-            ;
+        ;
         private set;
     }
 
@@ -310,11 +302,8 @@ public
     ///         has to say how high the beach is or the falloff has nothing to fall to.
     ///     </para>
     ///     <para>
-    ///         ⚠
-    ///         <b>
-    ///             The result does not depend on the order the bodies arrive in, and that is a
-    ///             stated property rather than a happy accident
-    ///         </b> ([§ Part 4]). Priority decides which
+    ///         ⚠ <b>The result does not depend on the order the bodies arrive in, and that is a
+    ///         stated property rather than a happy accident</b> ([§ Part 4]). Priority decides which
     ///         body is on top; bodies <em>at one priority</em> are averaged by their coverage, which
     ///         is commutative. A field that depended on the order a scene happened to walk its
     ///         entities in is one where moving an unrelated entity changes the shoreline by a texel —
@@ -354,9 +343,9 @@ public
         var resolution = Description.Resolution;
         var step = Description.Extent / (resolution - 1);
         for (
-             var z = 0;
-             z < resolution;
-             z++) {
+            var z = 0;
+            z < resolution;
+            z++) {
             for
                 (var x = 0; x < resolution; x++) {
                 var index = (z * resolution) + x;
@@ -385,7 +374,7 @@ public
                     // One priority group, averaged by coverage — the commutative half.
                     float weight = 0f,
                         groupHeight =
-                        0f,
+                            0f,
                         groupX = 0f,
                         groupZ = 0f,
                         groupCoverage = 0f;
@@ -397,7 +386,7 @@ public
                             body.Sample(position);
 
                         if (contribution.Coverage <= 0f
-                        ) {
+                           ) {
                             continue;
                         }
 
@@ -486,7 +475,7 @@ public
         var resolution = Description.Resolution;
         var step = Description.Extent / (resolution - 1);
         var
-        local = (position - Description.Origin) / step;
+            local = (position - Description.Origin) / step;
         if (local.X < -1f
             || local.Y < -1f
             || local.X > resolution
@@ -496,7 +485,7 @@ public
 
         var x0 = Math.Clamp(
             (
-            int)MathF.Floor(local.X),
+                int)MathF.Floor(local.X),
             0,
             resolution - 1
         );
@@ -508,7 +497,7 @@ public
         var fz = WaterMath.Saturate(local.Y - z0);
 
         var a = (z0
-            * resolution)
+                * resolution)
             + x0;
         var b = (z0 * resolution) + x1;
         var c = (z1 * resolution) + x0;
@@ -574,7 +563,7 @@ public
         float fz
     ) {
         var top = channel[a
-        ]
+            ]
             + ((channel[b] - channel[a]) * fx);
         var bottom = channel[c]
             + ((channel[

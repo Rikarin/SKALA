@@ -41,8 +41,8 @@ public class LayoutStyleBridgeTests {
         // wrong one cannot pass by coincidence.
         var style = new BridgeFixture().Build(css);
 
-        Assert.Equal(LayoutUnit.Point, style.Dimensions[(int)Dimension.Width].Unit);
-        Assert.Equal(expected, style.Dimensions[(int)Dimension.Width].Value, Tolerance);
+        Assert.Equal(LayoutUnit.Point, style.Dimensions[(int) Dimension.Width].Unit);
+        Assert.Equal(expected, style.Dimensions[(int) Dimension.Width].Value, Tolerance);
     }
 
     [Fact]
@@ -51,8 +51,8 @@ public class LayoutStyleBridgeTests {
 
         // The one place where doing less is correct: only layout knows the containing block, so
         // resolving this here would be resolving it against the wrong thing.
-        Assert.Equal(LayoutUnit.Percent, style.Dimensions[(int)Dimension.Width].Unit);
-        Assert.Equal(50f, style.Dimensions[(int)Dimension.Width].Value, Tolerance);
+        Assert.Equal(LayoutUnit.Percent, style.Dimensions[(int) Dimension.Width].Unit);
+        Assert.Equal(50f, style.Dimensions[(int) Dimension.Width].Value, Tolerance);
     }
 
     [Fact]
@@ -72,7 +72,7 @@ public class LayoutStyleBridgeTests {
             LengthContext.ForViewport(1000f, 500f).WithFontSize(20f)
         );
 
-        Assert.Equal(30f, style.Dimensions[(int)Dimension.Width].Value, Tolerance);
+        Assert.Equal(30f, style.Dimensions[(int) Dimension.Width].Value, Tolerance);
     }
 
     [Fact]
@@ -109,10 +109,10 @@ public class LayoutStyleBridgeTests {
             LengthContext.ForViewport(1000f, 500f)
         );
 
-        Assert.Equal(1000f, style.Dimensions[(int)Dimension.Width].Value, Tolerance);
-        Assert.Equal(500f, style.Dimensions[(int)Dimension.Height].Value, Tolerance);
-        Assert.Equal(500f, style.MaxDimensions[(int)Dimension.Width].Value, Tolerance);
-        Assert.Equal(100f, style.MinDimensions[(int)Dimension.Height].Value, Tolerance);
+        Assert.Equal(1000f, style.Dimensions[(int) Dimension.Width].Value, Tolerance);
+        Assert.Equal(500f, style.Dimensions[(int) Dimension.Height].Value, Tolerance);
+        Assert.Equal(500f, style.MaxDimensions[(int) Dimension.Width].Value, Tolerance);
+        Assert.Equal(100f, style.MinDimensions[(int) Dimension.Height].Value, Tolerance);
     }
 
     /// <summary>Three ten-point words: 30 across on one line, 10 across on three.</summary>
@@ -128,10 +128,7 @@ public class LayoutStyleBridgeTests {
 
         var perLine = MathF.Max(1f, MathF.Floor(width / word));
 
-        return new LayoutSize(
-            width,
-            request.HeightMode == MeasureMode.Exactly ? request.AvailableHeight : MathF.Ceiling(words / perLine) * 10f
-        );
+        return new LayoutSize(width, request.HeightMode == MeasureMode.Exactly ? request.AvailableHeight : MathF.Ceiling(words / perLine) * 10f);
     }
 
     /// <summary>Lays a styled box with three words in it out inside a 500-point block container.</summary>
@@ -195,8 +192,8 @@ public class LayoutStyleBridgeTests {
         var deep = LengthContext.ForViewport(1000f, 500f, rootFontSize: 16f).WithFontSize(40f);
         var style = new BridgeFixture().Build("width: 2rem; height: 2em", deep);
 
-        Assert.Equal(32f, style.Dimensions[(int)Dimension.Width].Value, Tolerance);
-        Assert.Equal(80f, style.Dimensions[(int)Dimension.Height].Value, Tolerance);
+        Assert.Equal(32f, style.Dimensions[(int) Dimension.Width].Value, Tolerance);
+        Assert.Equal(80f, style.Dimensions[(int) Dimension.Height].Value, Tolerance);
     }
 
     [Theory]
@@ -274,9 +271,9 @@ public class LayoutStyleBridgeTests {
 
         // Zero is a valid answer that happens to be invisible, so using it for "I did not
         // understand this" turns one typo into a missing element with nothing said about it.
-        Assert.Equal(LayoutUnit.Auto, style.Dimensions[(int)Dimension.Width].Unit);
-        Assert.False(style.MinDimensions[(int)Dimension.Width].IsDefined);
-        Assert.Equal(8f, style.Dimensions[(int)Dimension.Height].Value, Tolerance);
+        Assert.Equal(LayoutUnit.Auto, style.Dimensions[(int) Dimension.Width].Unit);
+        Assert.False(style.MinDimensions[(int) Dimension.Width].IsDefined);
+        Assert.Equal(8f, style.Dimensions[(int) Dimension.Height].Value, Tolerance);
     }
 
     [Fact]
@@ -286,11 +283,11 @@ public class LayoutStyleBridgeTests {
         // written to expand them itself and its tests said every one of those paths was dead.
         var four = new BridgeFixture().Build("margin: 1px 2px 3px 4px");
 
-        Assert.Equal(1f, four.Margin[(int)Edge.Top].Value, Tolerance);
-        Assert.Equal(2f, four.Margin[(int)Edge.Right].Value, Tolerance);
-        Assert.Equal(3f, four.Margin[(int)Edge.Bottom].Value, Tolerance);
-        Assert.Equal(4f, four.Margin[(int)Edge.Left].Value, Tolerance);
-        Assert.False(four.Margin[(int)Edge.All].IsDefined);
+        Assert.Equal(1f, four.Margin[(int) Edge.Top].Value, Tolerance);
+        Assert.Equal(2f, four.Margin[(int) Edge.Right].Value, Tolerance);
+        Assert.Equal(3f, four.Margin[(int) Edge.Bottom].Value, Tolerance);
+        Assert.Equal(4f, four.Margin[(int) Edge.Left].Value, Tolerance);
+        Assert.False(four.Margin[(int) Edge.All].IsDefined);
     }
 
     [Fact]
@@ -299,18 +296,18 @@ public class LayoutStyleBridgeTests {
         // by the time the cascade runs this is two `margin-left` declarations and the later one
         // wins, so document order does the work and the bridge needs no notion of it.
         var later = new BridgeFixture().Build("margin-left: 0px; margin: 8px");
-        Assert.Equal(8f, later.Margin[(int)Edge.Left].Value, Tolerance);
+        Assert.Equal(8f, later.Margin[(int) Edge.Left].Value, Tolerance);
 
         var earlier = new BridgeFixture().Build("margin: 8px; margin-left: 0px");
-        Assert.Equal(0f, earlier.Margin[(int)Edge.Left].Value, Tolerance);
+        Assert.Equal(0f, earlier.Margin[(int) Edge.Left].Value, Tolerance);
     }
 
     [Fact]
     public void Auto_survives_as_auto_rather_than_becoming_a_number() {
         var style = new BridgeFixture().Build("margin-left: auto; width: auto; flex-basis: auto");
 
-        Assert.Equal(LayoutUnit.Auto, style.Margin[(int)Edge.Left].Unit);
-        Assert.Equal(LayoutUnit.Auto, style.Dimensions[(int)Dimension.Width].Unit);
+        Assert.Equal(LayoutUnit.Auto, style.Margin[(int) Edge.Left].Unit);
+        Assert.Equal(LayoutUnit.Auto, style.Dimensions[(int) Dimension.Width].Unit);
         Assert.Equal(LayoutUnit.Auto, style.FlexBasis.Unit);
     }
 
@@ -318,17 +315,17 @@ public class LayoutStyleBridgeTests {
     public void Border_width_reaches_the_border_edges_and_not_the_padding_ones() {
         var style = new BridgeFixture().Build("border-width: 2px; border-left-width: 5px");
 
-        Assert.Equal(2f, style.Border[(int)Edge.Top].Value, Tolerance);
-        Assert.Equal(5f, style.Border[(int)Edge.Left].Value, Tolerance);
-        Assert.False(style.Padding[(int)Edge.Top].IsDefined);
+        Assert.Equal(2f, style.Border[(int) Edge.Top].Value, Tolerance);
+        Assert.Equal(5f, style.Border[(int) Edge.Left].Value, Tolerance);
+        Assert.False(style.Padding[(int) Edge.Top].IsDefined);
     }
 
     [Fact]
     public void Inset_and_its_longhands_reach_the_position_edges() {
         var style = new BridgeFixture().Build("inset: 3px; top: 7px");
 
-        Assert.Equal(3f, style.Position[(int)Edge.All].Value, Tolerance);
-        Assert.Equal(7f, style.Position[(int)Edge.Top].Value, Tolerance);
+        Assert.Equal(3f, style.Position[(int) Edge.All].Value, Tolerance);
+        Assert.Equal(7f, style.Position[(int) Edge.Top].Value, Tolerance);
     }
 
     [Fact]
@@ -336,12 +333,12 @@ public class LayoutStyleBridgeTests {
         // `gap: <row> <column>` — the opposite order to the enum, and exactly the sort of thing
         // that reads correct and renders transposed. ExCSS expands it and gets the order right.
         var pair = new BridgeFixture().Build("gap: 4px 12px");
-        Assert.Equal(4f, pair.Gap[(int)Gutter.Row].Value, Tolerance);
-        Assert.Equal(12f, pair.Gap[(int)Gutter.Column].Value, Tolerance);
+        Assert.Equal(4f, pair.Gap[(int) Gutter.Row].Value, Tolerance);
+        Assert.Equal(12f, pair.Gap[(int) Gutter.Column].Value, Tolerance);
 
         var longhand = new BridgeFixture().Build("row-gap: 1px; column-gap: 2px");
-        Assert.Equal(1f, longhand.Gap[(int)Gutter.Row].Value, Tolerance);
-        Assert.Equal(2f, longhand.Gap[(int)Gutter.Column].Value, Tolerance);
+        Assert.Equal(1f, longhand.Gap[(int) Gutter.Row].Value, Tolerance);
+        Assert.Equal(2f, longhand.Gap[(int) Gutter.Column].Value, Tolerance);
     }
 
     [Fact]
@@ -364,10 +361,10 @@ public class LayoutStyleBridgeTests {
     public void Min_and_max_dimensions_are_kept_apart_from_the_requested_one() {
         var style = new BridgeFixture().Build("width: 10px; min-width: 20px; max-height: 30px");
 
-        Assert.Equal(10f, style.Dimensions[(int)Dimension.Width].Value, Tolerance);
-        Assert.Equal(20f, style.MinDimensions[(int)Dimension.Width].Value, Tolerance);
-        Assert.Equal(30f, style.MaxDimensions[(int)Dimension.Height].Value, Tolerance);
-        Assert.False(style.MinDimensions[(int)Dimension.Height].IsDefined);
+        Assert.Equal(10f, style.Dimensions[(int) Dimension.Width].Value, Tolerance);
+        Assert.Equal(20f, style.MinDimensions[(int) Dimension.Width].Value, Tolerance);
+        Assert.Equal(30f, style.MaxDimensions[(int) Dimension.Height].Value, Tolerance);
+        Assert.False(style.MinDimensions[(int) Dimension.Height].IsDefined);
     }
 
     [Fact]
@@ -376,13 +373,13 @@ public class LayoutStyleBridgeTests {
         // has to be read here. The longhands it does know still land on their own slots.
         var four = new BridgeFixture().Build("inset: 1px 2px 3px 4px");
 
-        Assert.Equal(1f, four.Position[(int)Edge.Top].Value, Tolerance);
-        Assert.Equal(2f, four.Position[(int)Edge.Right].Value, Tolerance);
-        Assert.Equal(3f, four.Position[(int)Edge.Bottom].Value, Tolerance);
-        Assert.Equal(4f, four.Position[(int)Edge.Left].Value, Tolerance);
+        Assert.Equal(1f, four.Position[(int) Edge.Top].Value, Tolerance);
+        Assert.Equal(2f, four.Position[(int) Edge.Right].Value, Tolerance);
+        Assert.Equal(3f, four.Position[(int) Edge.Bottom].Value, Tolerance);
+        Assert.Equal(4f, four.Position[(int) Edge.Left].Value, Tolerance);
 
         var two = new BridgeFixture().Build("inset: 5px 6px");
-        Assert.Equal(5f, two.Position[(int)Edge.Vertical].Value, Tolerance);
-        Assert.Equal(6f, two.Position[(int)Edge.Horizontal].Value, Tolerance);
+        Assert.Equal(5f, two.Position[(int) Edge.Vertical].Value, Tolerance);
+        Assert.Equal(6f, two.Position[(int) Edge.Horizontal].Value, Tolerance);
     }
 }

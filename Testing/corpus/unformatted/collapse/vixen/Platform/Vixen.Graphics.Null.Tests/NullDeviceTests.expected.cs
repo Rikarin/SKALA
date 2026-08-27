@@ -168,7 +168,7 @@ public sealed class NullDeviceTests : IDisposable {
         swapChain.AcquireNextImage(out _);
         Assert.True(device.LiveResourceCount > before);
         swapChain.Dispose(); // The views come back; the textures behind them are the swapchain's and are freed with it in
-        // a real backend, so this asserts the views rather than the whole count.
+// a real backend, so this asserts the views rather than the whole count.
         Assert.True(device.LiveResourceCount < before + 4);
     }
 

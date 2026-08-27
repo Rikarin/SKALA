@@ -1,7 +1,6 @@
 // SPDX-FileCopyrightText: Copyright (c) Rikarin
 // SPDX-License-Identifier: Apache-2.0
-using Vixen.Core; using Vixen.Ecs; using Vixen.Engine.Behaviors; using Vixen.Net.Messaging; using Vixen.Net.Replication; namespace Vixen.Net.Engine;
-
+using Vixen.Core;using Vixen.Ecs;using Vixen.Engine.Behaviors;using Vixen.Net.Messaging;using Vixen.Net.Replication;namespace Vixen.Net.Engine;
 /// <summary>A list a behaviour replicates, as the replicator sees it.</summary>
 /// <remarks>
 ///     Non-generic, because a behaviour's lists are of different element types and the thing that
@@ -9,47 +8,37 @@ using Vixen.Core; using Vixen.Ecs; using Vixen.Engine.Behaviors; using Vixen.Net
 ///     implementation, and the interface exists so that one replicator handles a behaviour's whole
 ///     collection rather than one per element type.
 /// </remarks>
-public interface ISyncList {
-    /// <summary>What it is called, for diagnostics and for the bandwidth report.</summary>
-    string Name { get; }
-
-    /// <summary>Gives it the name its declaration chose.</summary>
+public interface ISyncList{
+/// <summary>What it is called, for diagnostics and for the bandwidth report.</summary>
+string Name{get;}
+/// <summary>Gives it the name its declaration chose.</summary>
     /// <param name="name">The name.</param>
-    void Rename(string name);
-
-    /// <summary>How many are in it.</summary>
-    int Count { get; }
-
-    /// <summary>Whether there is anything to send.</summary>
+void Rename(string name);
+/// <summary>How many are in it.</summary>
+int Count{get;}
+/// <summary>Whether there is anything to send.</summary>
     /// <remarks>
     ///     On the interface rather than on <see cref="SyncList{T}" /> alone because
     ///     <see cref="SyncStateSweepSystem" /> is the caller, and it holds a
     ///     <see cref="NetworkBehaviour" />'s lists as <c>ISyncList</c> — the element type is the one
     ///     thing about a list a sweep over every behaviour cannot know.
     /// </remarks>
-    bool HasPending { get; }
-
-    /// <summary>Writes the whole list.</summary>
+bool HasPending{get;}
+/// <summary>Writes the whole list.</summary>
     /// <param name="writer">Where the bits go.</param>
     /// <returns>Whether it fit.</returns>
-    bool WriteWhole(ref BitWriter writer);
-
-    /// <summary>Takes a list as it arrived.</summary>
+bool WriteWhole(ref BitWriter writer);
+/// <summary>Takes a list as it arrived.</summary>
     /// <param name="reader">Where the bits come from.</param>
     /// <returns>Whether it was well-formed.</returns>
-    bool Apply(ref BitReader reader);
-
-    /// <summary>Marks whatever was outstanding as dealt with.</summary>
-    void ClearPending();
-}
-
+bool Apply(ref BitReader reader);
+/// <summary>Marks whatever was outstanding as dealt with.</summary>
+void ClearPending();}
 /// <summary>Replicates one kind of <see cref="NetworkBehaviour" />'s lists.</summary>
 /// <remarks>
 ///     <para>
-///         <b>
-///             The whole list, every time it changes — and that is a correction to what this package
-///             used to claim.
-///         </b> <see cref="SyncList{T}" /> keeps a log of operations, and the design note
+///         <b>The whole list, every time it changes — and that is a correction to what this package
+///         used to claim.</b> <see cref="SyncList{T}" /> keeps a log of operations, and the design note
 ///         beside it said those ops go on the wire and that the reliable channel's ordering makes
 ///         per-connection bookkeeping unnecessary. That is true of a broadcast and false of a
 ///         snapshot, which is why it was never wired up: a snapshot goes to the connections an
@@ -80,33 +69,24 @@ public interface ISyncList {
 ///     </para>
 /// </remarks>
 /// <typeparam name="T">The behaviour.</typeparam>
-public sealed class SyncListReplicator<T> : IComponentReplicator where T : NetworkBehaviour, new() {
-    readonly BehaviorStore store;
-
-    /// <inheritdoc />
-    public ComponentTypeId ComponentType => ComponentType<SyncListVersion>.Id;
-
-    /// <inheritdoc />
-    public uint TypeId { get; }
-
-    /// <inheritdoc />
-    public string TypeName { get; }
-
-    /// <inheritdoc />
+public sealed class SyncListReplicator<T>:IComponentReplicator where T:NetworkBehaviour,new(){readonly BehaviorStore store;
+/// <inheritdoc />
+public ComponentTypeId ComponentType=>ComponentType<SyncListVersion>.Id;
+/// <inheritdoc />
+public uint TypeId{get;}
+/// <inheritdoc />
+public string TypeName{get;}
+/// <inheritdoc />
     /// <remarks>
     ///     Reliable, because a list is not a position: it does not supersede itself thirty times a
     ///     second, and a client that missed one is wrong until told again rather than briefly stale.
     /// </remarks>
-    public Channel Channel => Channel.ReliableUnordered;
-
-    /// <summary>Below <c>SyncVar</c> state, which is smaller and more urgent.</summary>
-    public int Priority => 8;
-
-    /// <inheritdoc />
-    public QueryDescription ChangedQuery { get; } =
-        new QueryDescription().RequireChanged([ComponentType<SyncListVersion>.Id]);
-
-    /// <summary>
+public Channel Channel=>Channel.ReliableUnordered;
+/// <summary>Below <c>SyncVar</c> state, which is smaller and more urgent.</summary>
+public int Priority=>8;
+/// <inheritdoc />
+public QueryDescription ChangedQuery{get;}=new QueryDescription().RequireChanged([ComponentType<SyncListVersion>.Id]);
+/// <summary>
     ///     None, which is what tells the server to send whole records rather than differences.
     /// </summary>
     /// <remarks>
@@ -115,55 +95,17 @@ public sealed class SyncListReplicator<T> : IComponentReplicator where T : Netwo
     ///     and cost more than sending it. An empty layout is the documented way to say "this record
     ///     goes whole", and the server's own lane check would refuse a mismatched one anyway.
     /// </remarks>
-    public ReadOnlySpan<WireLane> Lanes => [];
-
-    /// <summary>Creates a replicator for one behaviour type's lists.</summary>
+public ReadOnlySpan<WireLane>Lanes=>[];
+/// <summary>Creates a replicator for one behaviour type's lists.</summary>
     /// <param name="store">Where the behaviours live.</param>
     /// <exception cref="ArgumentNullException"><paramref name="store" /> is null.</exception>
-    public SyncListReplicator(BehaviorStore store) {
-        ArgumentNullException.ThrowIfNull(store);
-        this.store = store;
-        TypeName = typeof(T).FullName! + ".Lists";
-        TypeId = ReplicationRegistry.HashTypeName(TypeName);
-    }
-
-    /// <inheritdoc />
-    public bool Has(World world, Entity entity) {
-        ArgumentNullException.ThrowIfNull(world);
-        return world.Has<SyncListVersion>(entity) && store.Get<T>(entity) is { Lists.Count: > 0 };
-    }
-
-    /// <inheritdoc />
-    public void Write(World world, Entity entity, ref BitWriter writer) {
-        if (store.Get<T>(entity) is not { } behaviour) {
-            return;
-        } // Every list, in declaration order, which both ends walk. No count and no names on the wire:
-        // the behaviour type is what the record's type index already names, and its lists are a
-        // property of the type rather than of the instance.
-        foreach (var list in behaviour.Lists) {
-            list.WriteWhole(ref writer);
-            list.ClearPending();
-        }
-    }
-
-    /// <inheritdoc />
-    public bool Apply(World world, Entity entity, ref BitReader reader) {
-        ArgumentNullException.ThrowIfNull(world);
-        var behaviour = store.Get<T>(entity);
-        if (behaviour is null) {
-            if (!world.Has<SyncListVersion>(entity)) {
-                world.Add(entity, new SyncListVersion());
-            }
-
-            behaviour = store.Add<T>(entity);
-        }
-
-        foreach (var list in behaviour.Lists) {
-            if (!list.Apply(ref reader)) {
-                return false;
-            }
-        }
-
-        return true;
-    }
-}
+public SyncListReplicator(BehaviorStore store){ArgumentNullException.ThrowIfNull(store);this.store=store;TypeName=typeof(T).FullName!+".Lists" ;TypeId=ReplicationRegistry.HashTypeName(TypeName);}
+/// <inheritdoc />
+public bool Has(World world,Entity entity){ArgumentNullException.ThrowIfNull(world);return world.Has<SyncListVersion>(entity)&&store.Get<T>(entity)is{Lists.Count:>0};}
+/// <inheritdoc />
+public void Write(World world,Entity entity,ref BitWriter writer){if(store.Get<T>(entity)is not{}behaviour){return;} // Every list, in declaration order, which both ends walk. No count and no names on the wire:
+// the behaviour type is what the record's type index already names, and its lists are a
+// property of the type rather than of the instance.
+foreach(var list in behaviour.Lists){list.WriteWhole(ref writer);list.ClearPending();}}
+/// <inheritdoc />
+public bool Apply(World world,Entity entity,ref BitReader reader){ArgumentNullException.ThrowIfNull(world);var behaviour=store.Get<T>(entity);if(behaviour is null){if(!world.Has<SyncListVersion>(entity)){world.Add(entity,new SyncListVersion());}behaviour=store.Add<T>(entity);}foreach(var list in behaviour.Lists){if(!list.Apply(ref reader)){return false;}}return true;}}

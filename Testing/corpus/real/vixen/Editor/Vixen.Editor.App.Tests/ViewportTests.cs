@@ -75,11 +75,8 @@ public class ViewportTests {
     ///     Maximise gives the Scene panel the whole window and gives the window back, splits and all.
     /// </summary>
     /// <remarks>
-    ///     ⚠
-    ///     <b>
-    ///         The panel, not the pane count, and the difference is why this command did nothing at
-    ///         all.
-    ///     </b> It used to set the arrangement to Single and remember what it had been — so in a
+    ///     ⚠ <b>The panel, not the pane count, and the difference is why this command did nothing at
+    ///     all.</b> It used to set the arrangement to Single and remember what it had been — so in a
     ///     single-pane layout, which is the default and what nearly everyone is in, it asked the
     ///     arrangement to become what it already was and the setter returned. The button was inert in
     ///     exactly the case it is pressed.

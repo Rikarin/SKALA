@@ -1,5 +1,4 @@
 // skala-oracle: resharper=2025.2.6 config=sha256:98ff52570e019fac profile=SkalaFormatOnly generated=2026-08-27
-
 #region License
 
 // Copyright (c) 2007 James Newton-King
@@ -32,29 +31,29 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.
-Dynamic;
+    Dynamic;
 using System.IO;
 using System.Linq;
 using System.Runtime.Serialization;
 using System.Text;
 using Newtonsoft.Json.
-Converters;
+    Converters;
 using
-Newtonsoft.Json.Linq;
+    Newtonsoft.Json.Linq;
 #if DNXCORE50
 using Xunit;
 using Test = Xunit.FactAttribute;
 using Assert = Newtonsoft.Json.Tests.XUnitAssert;
 #else
 using NUnit.Framework
-;
+    ;
 #endif
 using Newtonsoft.Json.Serialization;
 using Newtonsoft.Json.Tests.TestObjects;
 using Newtonsoft.Json.Utilities;
 using System.Globalization;
 using ErrorEventArgs = Newtonsoft
-.Json.Serialization.ErrorEventArgs;
+    .Json.Serialization.ErrorEventArgs;
 using File = System.IO.File;
 
 namespace Newtonsoft.Json.Tests.Documentation {
@@ -131,7 +130,7 @@ namespace Newtonsoft.Json.Tests.Documentation {
             public string Title {
                 get;
                 set
-                    ;
+                ;
             }
 
             public string Description { get; set; }
@@ -324,7 +323,7 @@ namespace Newtonsoft.Json.Tests.Documentation {
             // James Newton-King
 
             string
-            itemTitle = (string)rss["channel"]["item"][0]["title"];
+                itemTitle = (string)rss["channel"]["item"][0]["title"];
             // Json.NET 1.3 + New license + Now on CodePlex
             JArray categories = (
                 JArray)rss["channel"]["item"][0]["categories"];
@@ -374,21 +373,21 @@ namespace Newtonsoft.Json.Tests.Documentation {
 
             var postTitles =
                 from p in
-                rss["channel"]["item"]
+                    rss["channel"]["item"]
                 select (string)p["title"];
 
             foreach (var
-                     item in postTitles) {
+                         item in postTitles) {
                 Console.WriteLine(item);
             }
 
             //LINQ to JSON beta
-            //Json.NET 1.3 + New license + Now on CodePlex
+//Json.NET 1.3 + New license + Now on CodePlex
             var categories =
                 from c in rss["channel"]["item"
-                ]
-                        .SelectMany(i => i["categories"])
-                        .Values<string>()
+                    ]
+                    .SelectMany(i => i["categories"])
+                    .Values<string>()
                 group c by c
                 into g
                 orderby g.Count() descending
@@ -425,7 +424,7 @@ namespace Newtonsoft.Json.Tests.Documentation {
             public int Code {
                 get;
                 set
-                    ;
+                ;
             }
 
             public string ErrorMessage { get; set; }
@@ -520,8 +519,8 @@ namespace Newtonsoft.Json.Tests.Documentation {
             #region SelectTokenComplex
 
             JObject
-            o = JObject.Parse(
-                @"{
+                o = JObject.Parse(
+                    @"{
               'Stores': [
                 'Lambton Quay',
                 'Willis Street'
@@ -551,14 +550,14 @@ namespace Newtonsoft.Json.Tests.Documentation {
                 }
               ]
             }"
-            );
+                );
 
             string name = (string)o.SelectToken("Manufacturers[0].Name"); // Acme Co
             decimal productPrice
                 = (decimal)o.SelectToken("Manufacturers[0].Products[0].Price");
             // 50
             string
-            productName = (string)o.SelectToken("Manufacturers[1].Products[0].Name");
+                productName = (string)o.SelectToken("Manufacturers[1].Products[0].Name");
 
             // Elbow Grease
 

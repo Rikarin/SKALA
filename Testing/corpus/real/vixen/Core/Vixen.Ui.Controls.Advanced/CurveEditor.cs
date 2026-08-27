@@ -62,14 +62,10 @@ public sealed partial class CurveEditor : Control {
 
     /// <inheritdoc />
     /// <remarks>
-    ///     ⚠
-    ///     <b>
-    ///         ARIA <c>application</c>, and it is a role with a cost that is worth paying
-    ///         here.
-    ///     </b> It tells assistive technology to stop intercepting the keyboard and pass every
+    ///     ⚠ <b>ARIA <c>application</c>, and it is a role with a cost that is worth paying
+    ///     here.</b> It tells assistive technology to stop intercepting the keyboard and pass every
     ///     key through, because this element has a keyboard model of its own that no generic widget
-    ///     vocabulary describes. That is exactly true of a direct-manipulation surface — a curve whose keys and
-    ///     tangents are dragged — and it
+    ///     vocabulary describes. That is exactly true of a direct-manipulation surface — a curve whose keys and tangents are dragged — and it
     ///     is exactly false of a text field, which is why <c>CodeEditor</c> is a <c>textbox</c>
     ///     instead. Unnamed by default: what this one is a view of is the application's sentence,
     ///     and it is usually the panel title above it.
@@ -145,10 +141,10 @@ public sealed partial class CurveEditor : Control {
 
         curve.Changed += OnCurveChanged;
 
-        AddHandler<PointerEvent>(static (element, args) => ((CurveEditor)element).Pointed(args));
-        AddHandler<WheelEvent>(static (element, args) => ((CurveEditor)element).Wheeled(args));
-        AddHandler<KeyEvent>(static (element, args) => ((CurveEditor)element).Keyed(args));
-        AddHandler<TapEvent>(static (element, args) => ((CurveEditor)element).Tapped(args));
+        AddHandler<PointerEvent>(static (element, args) => ((CurveEditor) element).Pointed(args));
+        AddHandler<WheelEvent>(static (element, args) => ((CurveEditor) element).Wheeled(args));
+        AddHandler<KeyEvent>(static (element, args) => ((CurveEditor) element).Keyed(args));
+        AddHandler<TapEvent>(static (element, args) => ((CurveEditor) element).Tapped(args));
     }
 
     // ── Coordinates ──────────────────────────────────────────────────────────
@@ -227,7 +223,10 @@ public sealed partial class CurveEditor : Control {
 
         foreach (var key in preset.Keys) {
             curve.Add(
-                new CurveKey(key.Time, key.Value, key.Mode) { InTangent = key.InTangent, OutTangent = key.OutTangent }
+                new CurveKey(key.Time, key.Value, key.Mode) {
+                    InTangent = key.InTangent,
+                    OutTangent = key.OutTangent
+                }
             );
         }
 
@@ -361,7 +360,7 @@ public sealed partial class CurveEditor : Control {
 
         path.Clear();
 
-        var columns = (int)MathF.Ceiling(bounds.Width);
+        var columns = (int) MathF.Ceiling(bounds.Width);
 
         for (var i = 0; i <= columns; i++) {
             var x = bounds.X + i;
@@ -391,7 +390,7 @@ public sealed partial class CurveEditor : Control {
 
         var centre = ToScreen(key.Time, key.Value);
 
-        foreach (var outgoing in (ReadOnlySpan<bool>)[false, true]) {
+        foreach (var outgoing in (ReadOnlySpan<bool>) [false, true]) {
             var end = HandlePoint(key, outgoing);
 
             path.Clear().MoveTo(centre).LineTo(end);
@@ -425,10 +424,7 @@ public sealed partial class CurveEditor : Control {
 
         return length <= 1e-6f
             ? centre
-            : new Vector2(
-                centre.X + (direction.X / length * HandleLength),
-                centre.Y + (direction.Y / length * HandleLength)
-            );
+            : new Vector2(centre.X + (direction.X / length * HandleLength), centre.Y + (direction.Y / length * HandleLength));
     }
 
     // ── Input ────────────────────────────────────────────────────────────────
@@ -480,7 +476,7 @@ public sealed partial class CurveEditor : Control {
         // The handles are tested before the keys, because a handle dragged all the way in sits on
         // top of its own key and would otherwise be unreachable.
         if (active is { } current && current.Mode is TangentMode.Free or TangentMode.Broken) {
-            foreach (var outgoing in (ReadOnlySpan<bool>)[false, true]) {
+            foreach (var outgoing in (ReadOnlySpan<bool>) [false, true]) {
                 var point = HandlePoint(current, outgoing);
 
                 if (Near(point, args.X, args.Y, 8f)) {
@@ -532,11 +528,7 @@ public sealed partial class CurveEditor : Control {
                         continue;
                     }
 
-                    curve.Move(
-                        selected,
-                        selected.Time + (snapped.X - key.Time),
-                        selected.Value + (snapped.Y - key.Value)
-                    );
+                    curve.Move(selected, selected.Time + (snapped.X - key.Time), selected.Value + (snapped.Y - key.Value));
                 }
 
                 curve.Move(key, snapped.X, snapped.Y);

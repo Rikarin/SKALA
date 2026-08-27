@@ -17,63 +17,63 @@
 namespace
     Serilog.Capturing;
 
-    partial class PropertyValueConverter {
-        class
-            DepthLimiter : ILogEventPropertyValueFactory {
-            [ThreadStatic]
-            static int _currentDepth;
+partial class PropertyValueConverter {
+    class
+        DepthLimiter : ILogEventPropertyValueFactory {
+        [ThreadStatic]
+        static int _currentDepth;
 
-            readonly int _maximumDestructuringDepth;
+        readonly int _maximumDestructuringDepth;
 
-            readonly PropertyValueConverter _propertyValueConverter;
+        readonly PropertyValueConverter _propertyValueConverter;
 
-            public DepthLimiter(int maximumDepth, PropertyValueConverter propertyValueConverter) {
-                _maximumDestructuringDepth = maximumDepth;
-                _propertyValueConverter = propertyValueConverter;
-            }
+        public DepthLimiter(int maximumDepth, PropertyValueConverter propertyValueConverter) {
+            _maximumDestructuringDepth = maximumDepth;
+            _propertyValueConverter = propertyValueConverter;
+        }
 
-            public static void SetCurrentDepth(
-                int
+        public static void SetCurrentDepth(
+            int
                 depth
-            ) {
-                _currentDepth = depth;
-            }
+        ) {
+            _currentDepth = depth;
+        }
 
-            public LogEventPropertyValue
-                CreatePropertyValue(object? value, Destructuring destructuring) {
-                var storedDepth = _currentDepth;
-                var result = DefaultIfMaximumDepth(storedDepth)
-                    ?? _propertyValueConverter.CreatePropertyValue(value, destructuring, storedDepth + 1);
+        public LogEventPropertyValue
+            CreatePropertyValue(object? value, Destructuring destructuring) {
+            var storedDepth = _currentDepth;
+            var result = DefaultIfMaximumDepth(storedDepth)
+                ?? _propertyValueConverter.CreatePropertyValue(value, destructuring, storedDepth + 1);
 
-                _currentDepth = storedDepth;
+            _currentDepth = storedDepth;
 
-                return result;
-            }
+            return result;
+        }
 
-            LogEventPropertyValue ILogEventPropertyValueFactory.CreatePropertyValue(
-                object? value,
-                bool destructureObjects
-            ) {
-                var storedDepth = _currentDepth;
-                var result = DefaultIfMaximumDepth(storedDepth)
-                    ?? _propertyValueConverter.CreatePropertyValue(value, destructureObjects, storedDepth + 1);
+        LogEventPropertyValue ILogEventPropertyValueFactory.CreatePropertyValue(
+            object? value,
+            bool destructureObjects
+        ) {
+            var storedDepth = _currentDepth;
+            var result = DefaultIfMaximumDepth(storedDepth)
+                ?? _propertyValueConverter.CreatePropertyValue(value, destructureObjects, storedDepth + 1);
 
-                _currentDepth = storedDepth;
+            _currentDepth = storedDepth;
 
-                return
-                    result;
-            }
+            return
+                result;
+        }
 
-            LogEventPropertyValue? DefaultIfMaximumDepth(
-                int
+        LogEventPropertyValue? DefaultIfMaximumDepth(
+            int
                 depth
-            ) {
-                if (depth == _maximumDestructuringDepth) {
-                    SelfLog.WriteLine("Maximum destructuring depth reached.");
-                    return ScalarValue.Null;
-                }
-
-                return null;
+        ) {
+            if (depth == _maximumDestructuringDepth) {
+                SelfLog.WriteLine("Maximum destructuring depth reached.");
+                return ScalarValue.Null;
             }
+
+            return null;
         }
     }
+}

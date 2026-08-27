@@ -1,18 +1,15 @@
 class InvocationParens {
     void M() {
-        OneArgumentBrokenAtTheParen(first);
-        TwoArgumentsBrokenBetweenThem(
-            first,
-            second
-        );
+        OneArgumentBrokenAtTheParen(
+            first);
+        TwoArgumentsBrokenBetweenThem(first,
+            second);
         TwoArgumentsBrokenAtTheParenAndBetweenThem(
             first,
-            second
-        );
+            second);
         NothingBroken(first, second);
         new Constructed(
             first,
-            second
-        );
+            second);
     }
 }

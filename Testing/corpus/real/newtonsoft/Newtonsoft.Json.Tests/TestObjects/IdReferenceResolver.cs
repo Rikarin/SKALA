@@ -1,5 +1,4 @@
 #region License
-
 // Copyright (c) 2007 James Newton-King
 //
 // Permission is hereby granted, free of charge, to any person
@@ -22,18 +21,20 @@
 // WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 // OTHER DEALINGS IN THE SOFTWARE.
-
 #endregion
 
 using System;
 using System.Collections.Generic;
 using Newtonsoft.Json.Serialization;
 
-namespace Newtonsoft.Json.Tests.TestObjects {
-    public class IdReferenceResolver : IReferenceResolver {
+namespace Newtonsoft.Json.Tests.TestObjects
+{
+    public class IdReferenceResolver : IReferenceResolver
+    {
         private readonly IDictionary<Guid, PersonReference> _people = new Dictionary<Guid, PersonReference>();
 
-        public object ResolveReference(object context, string reference) {
+        public object ResolveReference(object context, string reference)
+        {
             Guid id = new Guid(reference);
 
             PersonReference p;
@@ -42,20 +43,23 @@ namespace Newtonsoft.Json.Tests.TestObjects {
             return p;
         }
 
-        public string GetReference(object context, object value) {
+        public string GetReference(object context, object value)
+        {
             PersonReference p = (PersonReference)value;
             _people[p.Id] = p;
 
             return p.Id.ToString();
         }
 
-        public bool IsReferenced(object context, object value) {
+        public bool IsReferenced(object context, object value)
+        {
             PersonReference p = (PersonReference)value;
 
             return _people.ContainsKey(p.Id);
         }
 
-        public void AddReference(object context, string reference, object value) {
+        public void AddReference(object context, string reference, object value)
+        {
             Guid id = new Guid(reference);
 
             _people[id] = (PersonReference)value;

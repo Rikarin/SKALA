@@ -5,9 +5,9 @@
 using System.Runtime.InteropServices;
 using Vixen.Core.Imaging;
 using Vixen.
-Core.Mathematics;
+    Core.Mathematics;
 using Vixen.
-Graphics;
+    Graphics;
 using Vixen.Rendering.ScreenProbes;
 
 namespace Vixen.Rendering.Lighting;
@@ -48,12 +48,12 @@ public sealed class ScreenProbeHistoryTexture : IDisposable {
     readonly TextureHandle[] filtered = new TextureHandle[FilteredPlanes];
 
     readonly TextureViewHandle
-        [] filteredViews = new TextureViewHandle[FilteredPlanes];
+        [] filteredViews = new TextureViewHandle [FilteredPlanes];
 
     IGraphicsDevice? device;
 
     BufferHandle
-    download;
+        download;
 
     BufferHandle filteredDownload;
     int front;
@@ -78,12 +78,12 @@ public sealed class ScreenProbeHistoryTexture : IDisposable {
     /// <param name="plane">Which plane, 0 to <see cref="Planes" /> − 1.</param>
     public TextureViewHandle FrontView(int plane) =>
         views
-        [front, plane];
+            [front, plane];
 
     /// <summary>The front set's texture, for importing into a graph.</summary>
     public TextureHandle FrontTexture(int plane) =>
         textures
-        [front, plane];
+            [front, plane];
 
     /// <summary>The set the next accumulation writes.</summary>
     public TextureViewHandle BackView(int plane) => views[1 - front, plane];
@@ -133,7 +133,7 @@ public sealed class ScreenProbeHistoryTexture : IDisposable {
         ArgumentNullException.ThrowIfNull(commands);
 
         var
-        barriers = new TextureBarrier[FilteredPlanes];
+            barriers = new TextureBarrier [FilteredPlanes];
         for (var plane = 0; plane < FilteredPlanes; plane++) {
             barriers[plane] = new(filtered[plane], before, after);
         }
@@ -174,7 +174,7 @@ public sealed class ScreenProbeHistoryTexture : IDisposable {
         }
 
         for (var plane =
-             0;
+                 0;
              plane < FilteredPlanes;
              plane++) {
             filtered[plane]
@@ -201,7 +201,7 @@ public sealed class ScreenProbeHistoryTexture : IDisposable {
     /// <exception cref="ArgumentNullException">There is no command list.</exception>
     public void Prime(
         ICommandList
-        commands
+            commands
     ) {
         ArgumentNullException.ThrowIfNull(commands);
         if (primed || !IsCreated) {
@@ -239,10 +239,10 @@ public sealed class ScreenProbeHistoryTexture : IDisposable {
     ) {
         ArgumentNullException.ThrowIfNull(commands);
         var
-        barriers = new TextureBarrier[Planes];
+            barriers = new TextureBarrier[Planes];
 
         for (var plane =
-             0;
+                 0;
              plane < Planes;
              plane++) {
             barriers[plane]
@@ -265,7 +265,7 @@ public sealed class ScreenProbeHistoryTexture : IDisposable {
         var grid = Layout.GridSize;
         var planeBytes = (long)grid.X * grid.Y * 4 * sizeof(float);
         if (!download.IsValid
-        ) {
+           ) {
             download
                 = device.CreateBuffer(
                     new BufferDescription(
@@ -279,7 +279,7 @@ public sealed class ScreenProbeHistoryTexture : IDisposable {
 
         var barriers = new TextureBarrier[Planes];
         for (var plane =
-             0;
+                 0;
              plane < Planes;
              plane++) {
             barriers[plane] = new(textures[front, plane], ResourceState.ShaderRead, ResourceState.CopySource);
@@ -315,7 +315,7 @@ public sealed class ScreenProbeHistoryTexture : IDisposable {
         ArgumentNullException.ThrowIfNull(commands);
         ObjectDisposedException.ThrowIf(disposed, this);
         if (!
-            IsCreated
+                IsCreated
             || device is null) {
             return false;
         }
@@ -343,7 +343,7 @@ public sealed class ScreenProbeHistoryTexture : IDisposable {
         for (var plane = 0;
              plane < FilteredPlanes;
              plane++
-        ) {
+            ) {
             commands.CopyTextureToBuffer(
                 new TextureRegion(filtered[plane]),
                 new(grid.X, grid.Y, 1),
@@ -368,7 +368,7 @@ public sealed class ScreenProbeHistoryTexture : IDisposable {
         var count = grid.X * grid.Y;
 
         if (device is null || !filteredDownload.IsValid || filteredProbes.Length < count
-        ) {
+           ) {
             return false;
         }
 
@@ -419,16 +419,18 @@ public sealed class ScreenProbeHistoryTexture : IDisposable {
         }
 
         var floats
-            = new float[count * 4 * Planes];
+            = new float [count * 4 * Planes];
         device.Read(download, 0, MemoryMarshal.AsBytes(floats.AsSpan()));
 
         for (var index = 0; index < count; index++) {
             var l0 = floats.AsSpan(index * 4);
             var red = floats.AsSpan((count * 4) + (index * 4));
-            var green = floats.AsSpan((2
-                * count
-                * 4)
-                + (index * 4));
+            var green = floats.AsSpan(
+                (2
+                    * count
+                    * 4)
+                + (index * 4)
+            );
             var blue = floats.AsSpan((3 * count * 4) + (index * 4));
             var surface = floats.AsSpan((4 * count * 4) + (index * 4));
             accumulated[index] = new(
@@ -481,7 +483,7 @@ public sealed class ScreenProbeHistoryTexture : IDisposable {
         }
 
         foreach (var
-                 view in filteredViews) {
+                     view in filteredViews) {
             if (view.IsValid) {
                 device.Destroy(view);
             }

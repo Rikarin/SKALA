@@ -5,7 +5,7 @@
 using System.Runtime.InteropServices;
 using Vixen.Core.Mathematics;
 using Vixen.
-Graphics.Vulkan;
+    Graphics.Vulkan;
 using Vixen.Rendering;
 using Vixen.Rendering.Ecs;
 using Vixen.Rendering.Features;
@@ -20,10 +20,8 @@ namespace Vixen.Graphics.Golden.Tests;
 /// </summary>
 /// <remarks>
 ///     <para>
-///         <b>
-///             The claim is that a weight moves a vertex to a computed position, and it is checked
-///             against arithmetic rather than against a picture.
-///         </b> A morph applied in the wrong space,
+///         <b>The claim is that a weight moves a vertex to a computed position, and it is checked
+///         against arithmetic rather than against a picture.</b> A morph applied in the wrong space,
 ///         at the wrong stride, or with the weight folded in twice renders <em>plausibly</em> — the
 ///         face still has a face on it — so a golden image would pass on all three. What cannot pass
 ///         is a float that is not the float the host computed.
@@ -73,7 +71,7 @@ public
 
     static Vector3 Exact(
         int
-        x,
+            x,
         int y,
         int z
     ) =>
@@ -92,11 +90,11 @@ public
              index++) {
             mesh[index
             ] = new() {
-                    Position = Exact(index * 71, index * -37, index * 13),
-                    Normal = Exact(index * 5, 32768, index * -3),
-                    Tangent = new(1f, 0f, 0f, 1f),
-                    TexCoord = new(index * 0.01f, index * 0.02f)
-                };
+                Position = Exact(index * 71, index * -37, index * 13),
+                Normal = Exact(index * 5, 32768, index * -3),
+                Tangent = new(1f, 0f, 0f, 1f),
+                TexCoord = new(index * 0.01f, index * 0.02f)
+            };
         }
 
         return mesh;
@@ -119,7 +117,7 @@ public
                     .. jaw.Select(v => Exact(
                             v * 7,
                             -
-                            4096,
+                                4096,
                             16384
                         )
                     )
@@ -159,7 +157,7 @@ public
     ]
     public void A_weight_of_one_moves_every_vertex_to_where_the_kernel_says() {
         if (!Fixture.TryOpen(out var fixture, out var reason)
-        ) {
+           ) {
             Skip(reason);
             return;
         }
@@ -173,7 +171,7 @@ public
         MorphKernel.Apply(mesh, targets, weights, expected);
 
         var
-        actual = Scatter(owned.Device, mesh, targets, weights);
+            actual = Scatter(owned.Device, mesh, targets, weights);
         for (var index = 0; index < Vertices; index++) {
             Assert.True(
                 Identical(
@@ -255,14 +253,14 @@ public
         }
 
         using var owned
-            = fixture!;
+            = fixture !;
 
         var mesh = Mesh();
         var actual = Scatter(owned.Device, mesh, Targets(), [0f, 0f, 0f]);
         for (
-             var index = 0;
-             index < Vertices;
-             index++) {
+            var index = 0;
+            index < Vertices;
+            index++) {
             Assert.True(
                 Identical(
                     mesh[
@@ -282,10 +280,8 @@ public
     /// </summary>
     /// <remarks>
     ///     <para>
-    ///         <b>
-    ///             The legs above prove the kernel; this proves the wiring, and they are different
-    ///             claims.
-    ///         </b> Everything above uploads the mesh into a buffer of the test's own, writes
+    ///         <b>The legs above prove the kernel; this proves the wiring, and they are different
+    ///         claims.</b> Everything above uploads the mesh into a buffer of the test's own, writes
     ///         the constants by reflected offset and dispatches by hand — so it would pass unchanged
     ///         against a feature that allocated nothing, copied nothing and pointed no draw anywhere.
     ///         Here the only things the test does are attach an object, set its weights and record
@@ -411,7 +407,7 @@ public
 
         Assert.Null(morph.Degraded);
 
-        var raw = new byte[bytes];
+        var raw = new byte [bytes];
         device.Read(readback, 0, raw);
         device.Destroy(readback)
             ;
@@ -431,7 +427,7 @@ public
 
         for (var index = 0; index < Vertices; index++) {
             var
-            apart = Apart(expected[index], actual[index]);
+                apart = Apart(expected[index], actual[index]);
 
             if (apart > worst) {
                 worst = apart;
@@ -457,12 +453,12 @@ public
     /// </remarks>
     static
         MeshData Described(SurfaceVertex[] mesh, MorphTargetData[] targets) {
-        var positions = new Vector3[Vertices];
+        var positions = new Vector3 [Vertices];
         var normals = new Vector3[Vertices];
         var texCoords = new Vector2[
             Vertices];
         var indices
-            = new int[Vertices];
+            = new int [Vertices];
 
         for (var index = 0; index < Vertices; index++) {
             positions[index] = mesh[index].Position;
@@ -482,7 +478,6 @@ public
             MorphTargets = targets
         };
     }
-
     // --- The dispatch -------------------------------------------------------
 
     /// <summary>Uploads the mesh, dispatches one group per active target, reads the result back.</summary>
@@ -506,15 +501,15 @@ public
         var meshBytes = MemoryMarshal.AsBytes(mesh.AsSpan())
             .ToArray();
         var
-        vertices = device.CreateBuffer(
-            new(
-                meshBytes.Length,
-                BufferUsage.Storage | BufferUsage.CopySource,
-                MemoryAccess
-                    .HostUpload,
-                "morph vertices"
-            )
-        );
+            vertices = device.CreateBuffer(
+                new(
+                    meshBytes.Length,
+                    BufferUsage.Storage | BufferUsage.CopySource,
+                    MemoryAccess
+                        .HostUpload,
+                    "morph vertices"
+                )
+            );
 
         var readback = device.CreateBuffer(
             new(
@@ -533,12 +528,12 @@ public
             "MorphScatter"
         );
         var
-        pipeline = device.CreateComputePipeline(new(shader, effect.Layout, "MorphScatter"));
+            pipeline = device.CreateComputePipeline(new(shader, effect.Layout, "MorphScatter"));
 
         List<
             BufferHandle> owned = [];
         List<DescriptorSetHandle> sets = [];
-        List<(DescriptorSetHandle Set, int Groups)> passes = []
+        List<( DescriptorSetHandle Set, int Groups)> passes = []
             ;
         for (var index = 0;
              index < targets.Length;
@@ -614,7 +609,7 @@ public
             commands.Barrier(new([new(vertices, ResourceState.Undefined, ResourceState.ShaderWrite)], []));
             commands.BindPipeline(pipeline);
             foreach (var (set, groups
-                     ) in passes) {
+                         ) in passes) {
                 commands.BindDescriptorSet(DescriptorSetSlot.PerDraw, set);
                 commands.Dispatch(groups);
                 commands.Barrier(new([new(vertices, ResourceState.ShaderWrite, ResourceState.ShaderWrite)], []));
@@ -647,7 +642,7 @@ public
         device.Destroy(vertices);
 
         if (VulkanDiagnostics.ErrorCount > 0
-        ) {
+           ) {
             throw new InvalidOperationException(
                 "The dispatch produced validation errors, so what came back means nothing: "
                 + string.Join(Environment.NewLine, VulkanDiagnostics.Messages)
@@ -665,11 +660,11 @@ public
     /// </remarks>
     static Effect Compiled(VulkanDevice device) {
         var data = RavenEffects.Only(
-            ["Core"],
-            Path
-                .Combine("Pipeline", "MorphScatter.rvn")
-        )
-            .TryGet(EffectKey.Of("MorphScatter"))
+                    ["Core"],
+                    Path
+                        .Combine("Pipeline", "MorphScatter.rvn")
+                )
+                .TryGet(EffectKey.Of("MorphScatter"))
             ;
         Assert.NotNull(data);
 
@@ -741,7 +736,7 @@ public
     /// </remarks>
     static float Apart(
         in SurfaceVertex
-        expected,
+            expected,
         in SurfaceVertex actual
     ) {
         var widest = 0f;

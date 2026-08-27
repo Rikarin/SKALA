@@ -1,16 +1,14 @@
-// SPDX-FileCopyrightText: Copyright (c) Rikarin
-// SPDX-License-Identifier: Apache-2.0
-
-using Vixen.Core
-.Threading;
-using Vixen
-.Ecs.Systems;
-using Vixen.Engine
-.Players;
-using Vixen.Engine.Transforms; using Vixen.Physics.Characters;
-
-namespace Vixen.Physics.Ecs;
-
+         // SPDX-FileCopyrightText: Copyright (c) Rikarin
+   // SPDX-License-Identifier: Apache-2.0
+                
+using Vixen.   Core  
+     .   Threading  ;
+using  Vixen
+    .Ecs.Systems;
+     using  Vixen.Engine
+	.Players;
+         using Vixen.  Engine .Transforms; using Vixen.Physics.Characters    ;
+           namespace Vixen.Physics.Ecs  ;
 /// <summary>Moves every character by what its <see cref="MoveIntent" /> asked for.</summary>
 /// <remarks>
 ///     <para>
@@ -33,41 +31,36 @@ namespace Vixen.Physics.Ecs;
 ///         and the alternative is a declaration that lies.
 ///     </para>
 /// </remarks>
-[UpdateInGroup(SystemPhase.FixedUpdate)]
-[UpdateAfter(typeof(PhysicsStepSystem))]
-public sealed class
-    CharacterMovementSystem(PhysicsScene scene) : SystemBase, IDeclaredAccess {
-    readonly PhysicsScene scene = scene ?? throw new ArgumentNullException(nameof(scene));
-
+            [UpdateInGroup( SystemPhase. FixedUpdate    )] [UpdateAfter( typeof(PhysicsStepSystem))  ]
+   public  sealed class
+           CharacterMovementSystem(PhysicsScene scene)    :   SystemBase, IDeclaredAccess {
+             readonly PhysicsScene scene = scene  ?? throw new ArgumentNullException(nameof  (scene));
+                
     /// <inheritdoc />
     /// <remarks>
     ///     Declared at construction rather than with attributes, for the reason <c>TransformSystem</c>
     ///     gives: naming a component type in a generic call is what assigns it an id, and an attribute
     ///     can only look one up.
     /// </remarks>
-    public SystemAccess
-        Access { get; } = SystemAccess.Declare()
-        .Read<CharacterMovement>
-        ()
-        .Read<MoveIntent>()
-        .Write<CharacterState>()
-        .Write<CharacterBody>()
-        .Write<LocalTransform>()
-
-        .Write<PhysicsInterpolation>()
-
+            public SystemAccess
+            Access { get; } = SystemAccess.Declare()
+   .    Read<    CharacterMovement>
+             ()
+        .Read<  MoveIntent>(    )
+        .    Write<CharacterState>(    ) .Write<CharacterBody  >()
+            . Write  <    LocalTransform   >  ()
+      
+.Write <  PhysicsInterpolation >(   )
+      
         .Build();
-
     /// <inheritdoc />
-    public override JobHandle Update(in SystemContext context, JobHandle dependency) {
-        // The step has moved everything a character is about to sweep against, and the sweep is a
-        // native call the ECS cannot see into. Nothing scheduled may still be reading what it writes.
-        dependency.Complete
-            ();
-        scene.StepCharacters(
-            (float)context.Time
-                .Elapsed.TotalSeconds
-        );
+       public override    JobHandle Update(in  SystemContext context  , JobHandle dependency)  { // The step has moved everything a character is about to sweep against, and the sweep is a
+	// native call the ECS cannot see into. Nothing scheduled may still be reading what it writes.
+              dependency.Complete
+()    ;
+         scene.StepCharacters((float    )context.Time
+       .Elapsed .TotalSeconds  )   ;
         return default;
-    }
-}
+  }
+           }
+       

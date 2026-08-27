@@ -220,7 +220,7 @@ public class TimelineSpanTests {
             timeline,
             0
         ); // ⚠ The press has to start on empty track, or it takes hold of the bar and the gesture is a
-        // drag — which would leave the span selected too, and the test would pass saying nothing.
+// drag — which would leave the span selected too, and the test would pass saying nothing.
         fixture.Press(timeline.ToScreen(3f), y - 6f);
         fixture.Move(timeline.ToScreen(1.6f), y + 6f);
         fixture.Release(timeline.ToScreen(1.6f), y + 6f);

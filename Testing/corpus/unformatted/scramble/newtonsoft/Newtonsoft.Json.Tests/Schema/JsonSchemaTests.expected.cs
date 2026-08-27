@@ -1,5 +1,4 @@
 // skala-oracle: resharper=2025.2.6 config=sha256:98ff52570e019fac profile=SkalaFormatOnly generated=2026-08-27
-
 #region License
 
 // Copyright (c) 2007 James Newton-King
@@ -32,7 +31,7 @@
 #pragma warning disable 618
 using System;
 using
-System.Collections.Generic;
+    System.Collections.Generic;
 using System.IO;
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json.Schema;
@@ -324,7 +323,7 @@ namespace
             schema.WriteTo(jsonWriter);
 
             string
-            json = writer.ToString();
+                json = writer.ToString();
             StringAssert.AreEqual(
                 @"{
   ""description"": ""Type"",
@@ -556,17 +555,17 @@ namespace
 
             StringWriter writer = new StringWriter();
             JsonTextWriter
-            jsonWriter = new JsonTextWriter(writer);
+                jsonWriter = new JsonTextWriter(writer);
             jsonWriter.Formatting = Formatting.Indented;
             schema.WriteTo(jsonWriter);
             string json = writer
                 .ToString();
             StringAssert.AreEqual(
-                @"{
+                    @"{
   ""items"": []
 }",
-                json
-            )
+                    json
+                )
                 ;
         }
 

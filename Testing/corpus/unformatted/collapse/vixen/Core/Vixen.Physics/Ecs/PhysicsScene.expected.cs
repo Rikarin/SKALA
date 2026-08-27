@@ -244,9 +244,9 @@ public sealed partial class PhysicsScene : IDisposable {
             }
         } // A shape, motion type or sensor flag that changed cannot be edited into a live body without
 
-        // recreating it: Jolt fixes the motion type's broad-phase tree and the sensor flag's contact
-        // path at creation. Anything else — mass, damping, friction — is a setter, and is applied in
-        // PushAuthoredState without the body ever going away.
+// recreating it: Jolt fixes the motion type's broad-phase tree and the sensor flag's contact
+// path at creation. Anything else — mass, damping, friction — is a setter, and is applied in
+// PushAuthoredState without the body ever going away.
         foreach (var chunk in Entities.Chunks(HaveBody)) {
             var bodies = chunk.ReadValues<PhysicsBody>();
             var entities = chunk.Entities;
@@ -287,7 +287,7 @@ public sealed partial class PhysicsScene : IDisposable {
         var collider = Entities.Read<Collider>(entity);
         var transform = Entities.Read<LocalTransform>(entity);
         var hasRigid = Entities.TryGet<RigidBody>(entity, out var rigid);
-        var description = BodyDescription.Create() with {
+        var description = BodyDescription.Create()with {
             Shape = collider.Shape,
             Position = transform.Position,
             Rotation = transform.Rotation,
@@ -305,10 +305,10 @@ public sealed partial class PhysicsScene : IDisposable {
             AllowSleeping = !hasRigid || rigid.AllowSleeping,
             LinearVelocity = Entities.TryGet<LinearVelocity>(entity, out var linear) ? linear.Value : Vector3.Zero,
             AngularVelocity =
-                Entities.TryGet<AngularVelocity>(entity, out var angular)
-                    ? angular.Value
-                    : Vector3.Zero, // The entity handle, packed. This is what turns a contact between two Jolt bodies back
-            // into a contact between two entities without a dictionary lookup on the hot path.
+            Entities.TryGet<AngularVelocity>(entity, out var angular)
+                ? angular.Value
+                : Vector3.Zero, // The entity handle, packed. This is what turns a contact between two Jolt bodies back
+// into a contact between two entities without a dictionary lookup on the hot path.
             UserData = entity.Packed
         };
         var handle = World.CreateBody(description);
@@ -355,7 +355,7 @@ public sealed partial class PhysicsScene : IDisposable {
                 var transform = transforms[index];
                 if (body.BuiltMotion == BodyMotion.Kinematic) {
                     // Driven, not teleported: the body arrives with the velocity that got it there,
-                    // which is what carries whatever is standing on it. See PhysicsWorld.MoveKinematic.
+// which is what carries whatever is standing on it. See PhysicsWorld.MoveKinematic.
                     World.MoveKinematic(body.Handle, transform.Position, transform.Rotation, deltaTime);
                 } else if (Entities.Has<PhysicsTeleport>(entity)) {
                     World.SetTransform(body.Handle, transform.Position, transform.Rotation);
@@ -363,8 +363,8 @@ public sealed partial class PhysicsScene : IDisposable {
                         entity,
                         in transform
                     ); // Taking the tag off moves the entity to a different archetype, which invalidates
-                    // the very spans this loop is walking. Recorded and done after, which is the same
-                    // reason CommandBuffer exists.
+// the very spans this loop is walking. Recorded and done after, which is the same
+// reason CommandBuffer exists.
                     pendingUntag.Add(entity);
                 }
 
@@ -426,7 +426,7 @@ public sealed partial class PhysicsScene : IDisposable {
         interpolation.CurrentPosition = transform.Position;
         interpolation.CurrentRotation =
             transform.Rotation; // The receipt, kept honest: nothing on a rigid body reads it, but a character bridged through
-        // the same component would otherwise hold a pose the engine never wrote.
+// the same component would otherwise hold a pose the engine never wrote.
         interpolation.DrawnPosition = transform.Position;
     }
 
@@ -435,7 +435,7 @@ public sealed partial class PhysicsScene : IDisposable {
             World.UserDataOf(
                 body
             ); // Zero is the world anchor and anything created outside the bridge. Unpacking it would give
-        // entity 0, which is never allocated but is not obviously "no entity" at a call site either.
+// entity 0, which is never allocated but is not obviously "no entity" at a call site either.
         return packed == 0ul ? Entity.Null : Entity.FromPacked(packed, Entities.Id);
     }
 

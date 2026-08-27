@@ -67,10 +67,10 @@ partial class PropertyValueConverter : ILogEventPropertyFactory, ILogEventProper
 #endif
         };
         _destructuringPolicies = additionalDestructuringPolicies.Concat(
-            new IDestructuringPolicy[] {
-                new DelegateDestructuringPolicy(), new ReflectionTypesScalarDestructuringPolicy()
-            }
-        )
+                new IDestructuringPolicy[] {
+                    new DelegateDestructuringPolicy(), new ReflectionTypesScalarDestructuringPolicy()
+                }
+            )
             .ToArray();
         _dictionaryTypes = additionalDictionaryTypes.ToArray();
         _depthLimiter = new(maximumDestructuringDepth, this);
@@ -141,13 +141,13 @@ partial class PropertyValueConverter : ILogEventPropertyFactory, ILogEventProper
     ) {
         if (value is IEnumerable enumerable) {
             // Only dictionaries with 'scalar' keys are permitted, as
-            // more complex keys may not serialize to unique values for
-            // representation in sinks. This check strengthens the expectation
-            // that resulting dictionary is representable in JSON as well
-            // as richer formats (e.g. XML, .NET type-aware...).
-            // Only actual dictionaries are supported, as arbitrary types
-            // can implement multiple IDictionary interfaces and thus introduce
-            // multiple different interpretations.
+// more complex keys may not serialize to unique values for
+// representation in sinks. This check strengthens the expectation
+// that resulting dictionary is representable in JSON as well
+// as richer formats (e.g. XML, .NET type-aware...).
+// Only actual dictionaries are supported, as arbitrary types
+// can implement multiple IDictionary interfaces and thus introduce
+// multiple different interpretations.
             if (TryGetDictionary(value, type, out var dictionary)) {
                 result = new DictionaryValue(MapToDictionaryElements(dictionary, destructuring));
                 return true;
@@ -176,7 +176,7 @@ partial class PropertyValueConverter : ILogEventPropertyFactory, ILogEventProper
                 return true;
             } // Avoids allocation of two iterators - one from List and another one from MapToSequenceElements.
 
-            // Allocation free for empty sequence.
+// Allocation free for empty sequence.
             if (enumerable is IList list && list.Count <= _maximumCollectionCount) {
                 if (list.Count == 0) {
                     result = SequenceValue.Empty;
@@ -209,7 +209,7 @@ partial class PropertyValueConverter : ILogEventPropertyFactory, ILogEventProper
     }
 
     /// <summary>
-    ///     Recursively traverses a multidimensional array and constructs a nested SequenceValue representation.
+    /// Recursively traverses a multidimensional array and constructs a nested SequenceValue representation.
     /// </summary>
     /// <param name="array">The multidimensional array to traverse.</param>
     /// <param name="indices">An array of indices representing the current position in each dimension.</param>
@@ -306,14 +306,14 @@ partial class PropertyValueConverter : ILogEventPropertyFactory, ILogEventProper
         if (destructuring == Destructuring.Destructure) {
             if (TrimConfiguration.IsStructureValueSupported) {
                 var isCompilerGeneratedType = IsCompilerGeneratedType(type); // !!IMPORTANT!!
-                // This block of code is guarded by the IsStructureValueSupported check, meaning
-                // that it will be trimmed away if the switch is disabled.  This is important
-                // because CreateStructureValue is not trim-compatible, so the switch must be
-                // disabled during trimming to ensure that the code is removed.  We suppress the
-                // warning below because the analyzer doesn't understand feature switch removal (and
-                // #pragma warnings are meaningless to the IL trimmer), but this pragma cannot be
-                // expanded outside of the scope of this check, and all calls to
-                // CreateStructureValue must be guarded by this check.
+// This block of code is guarded by the IsStructureValueSupported check, meaning
+// that it will be trimmed away if the switch is disabled.  This is important
+// because CreateStructureValue is not trim-compatible, so the switch must be
+// disabled during trimming to ensure that the code is removed.  We suppress the
+// warning below because the analyzer doesn't understand feature switch removal (and
+// #pragma warnings are meaningless to the IL trimmer), but this pragma cannot be
+// expanded outside of the scope of this check, and all calls to
+// CreateStructureValue must be guarded by this check.
 #pragma warning disable IL2067
                 result = CreateStructureValue(value, type, isCompilerGeneratedType);
 #pragma warning restore IL2067
@@ -404,7 +404,7 @@ partial class PropertyValueConverter : ILogEventPropertyFactory, ILogEventProper
                 propValue = property.GetValue(value);
             } catch (TargetParameterCountException) {
                 // These properties would ideally be ignored; since they never produce values they're not
-                // of concern to auditing and exceptions can be suppressed.
+// of concern to auditing and exceptions can be suppressed.
                 SelfLog.WriteLine("The property accessor {0} is a non-default indexer", property);
                 continue;
             } catch (TargetInvocationException ex) {

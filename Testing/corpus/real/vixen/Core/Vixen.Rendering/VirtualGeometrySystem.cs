@@ -31,8 +31,7 @@ namespace Vixen.Rendering;
 ///     <para>
 ///         <b>One page pool for the scene, and that is the whole of the streaming budget.</b> Slots
 ///         times page size is the resident geometry a project has decided to pay for, and every mesh
-///         registered through <see cref="Content(int, VirtualGeometryAsset, System.IO.Stream)" /> shares it — which is
-///         what makes a hundred
+///         registered through <see cref="Content(int, VirtualGeometryAsset, System.IO.Stream)" /> shares it — which is what makes a hundred
 ///         virtualized meshes cost one budget rather than a hundred.
 ///     </para>
 /// </remarks>
@@ -64,7 +63,11 @@ public sealed class VirtualGeometrySystem : IDisposable {
         SoftwareRaster = new(device) { Visibility = Visibility, Pages = Pages };
         Tiles = new(device) { Visibility = Visibility };
 
-        Resolve = new(device) { Visibility = Visibility, Tiles = Tiles, Pages = Pages };
+        Resolve = new(device) {
+            Visibility = Visibility,
+            Tiles = Tiles,
+            Pages = Pages
+        };
 
         Feature = new() { Visibility = Visibility, Pages = Pages };
     }
@@ -74,8 +77,7 @@ public sealed class VirtualGeometrySystem : IDisposable {
     ///     Exposed because a project that unloads a level wants its blobs closed —
     ///     <see cref="StreamMeshletPageSource.Remove" /> — and because a test asking whether a mesh's
     ///     bytes are reachable is asking this. Adding to it directly is possible and is not the way in:
-    ///     <see cref="Content(int, VirtualGeometryAsset, System.IO.Stream)" /> adds the blob and registers the mesh
-    ///     under one id, so the two cannot
+    ///     <see cref="Content(int, VirtualGeometryAsset, System.IO.Stream)" /> adds the blob and registers the mesh under one id, so the two cannot
     ///     be given different ones.
     /// </remarks>
     public StreamMeshletPageSource Source { get; } = new();
@@ -206,17 +208,13 @@ public sealed class VirtualGeometrySystem : IDisposable {
     /// <summary>
     ///     Releases a mesh: its pages go back to the pool and its blob is closed.
     /// </summary>
-    /// <param name="mesh">
-    ///     The index <see cref="Content(int, VirtualGeometryAsset, System.IO.Stream)" /> returned.
-    /// </param>
+    /// <param name="mesh">The index <see cref="Content(int, VirtualGeometryAsset, System.IO.Stream)" /> returned.</param>
     /// <returns>Whether there was a live registration to release.</returns>
     /// <exception cref="ArgumentOutOfRangeException">There is no such registration.</exception>
     /// <remarks>
     ///     <para>
-    ///         <b>
-    ///             <see cref="Content(int, VirtualGeometryAsset, System.IO.Stream)" />'s counterpart, and
-    ///             it undoes both halves for the reason that one does both.
-    ///         </b> A registration pins a root
+    ///         <b><see cref="Content(int, VirtualGeometryAsset, System.IO.Stream)" />'s counterpart, and
+    ///         it undoes both halves for the reason that one does both.</b> A registration pins a root
     ///         page and opens a blob; releasing only the pin leaves a file handle, and releasing only the
     ///         blob leaves a slot of the pool pinned to content nothing draws — for ever, because nothing
     ///         re-pins and nothing unpins. A project that loads and unloads levels loses a slot per mesh

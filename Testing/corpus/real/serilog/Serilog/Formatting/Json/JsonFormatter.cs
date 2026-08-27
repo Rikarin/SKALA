@@ -15,49 +15,45 @@
 namespace Serilog.Formatting.Json;
 
 /// <summary>
-///     Formats log events in a simple JSON structure. Instances of this class
-///     are safe for concurrent access by multiple threads.
+/// Formats log events in a simple JSON structure. Instances of this class
+/// are safe for concurrent access by multiple threads.
 /// </summary>
-/// <remarks>
-///     New code should prefer formatters from <c>Serilog.Formatting.Compact</c>, or <c>ExpressionTemplate</c> from
-///     <c>Serilog.Expressions</c>.
-/// </remarks>
-public sealed class JsonFormatter : ITextFormatter {
+/// <remarks>New code should prefer formatters from <c>Serilog.Formatting.Compact</c>, or <c>ExpressionTemplate</c> from
+/// <c>Serilog.Expressions</c>.</remarks>
+public sealed class JsonFormatter : ITextFormatter
+{
     readonly string _closingDelimiter;
     readonly bool _renderMessage;
     readonly IFormatProvider? _formatProvider;
     readonly JsonValueFormatter _jsonValueFormatter = new();
 
     /// <summary>
-    ///     Construct a <see cref="JsonFormatter" />.
+    /// Construct a <see cref="JsonFormatter"/>.
     /// </summary>
-    /// <param name="closingDelimiter">
-    ///     A string that will be written after each log event is formatted.
-    ///     If null, <see cref="Environment.NewLine" /> will be used.
-    /// </param>
-    /// <param name="renderMessage">
-    ///     If <see langword="true" />, the message will be rendered and written to the output as a
-    ///     property named RenderedMessage.
-    /// </param>
+    /// <param name="closingDelimiter">A string that will be written after each log event is formatted.
+    /// If null, <see cref="Environment.NewLine"/> will be used.</param>
+    /// <param name="renderMessage">If <see langword="true"/>, the message will be rendered and written to the output as a
+    /// property named RenderedMessage.</param>
     /// <param name="formatProvider">Supplies culture-specific formatting information, or null.</param>
     public JsonFormatter(
         string? closingDelimiter = null,
         bool renderMessage = false,
-        IFormatProvider? formatProvider = null
-    ) {
+        IFormatProvider? formatProvider = null)
+    {
         _closingDelimiter = closingDelimiter ?? Environment.NewLine;
         _renderMessage = renderMessage;
         _formatProvider = formatProvider;
     }
 
     /// <summary>
-    ///     Format the log event into the output.
+    /// Format the log event into the output.
     /// </summary>
     /// <param name="logEvent">The event to format.</param>
     /// <param name="output">The output.</param>
-    /// <exception cref="ArgumentNullException">When <paramref name="logEvent" /> is <code>null</code></exception>
-    /// <exception cref="ArgumentNullException">When <paramref name="output" /> is <code>null</code></exception>
-    public void Format(LogEvent logEvent, TextWriter output) {
+    /// <exception cref="ArgumentNullException">When <paramref name="logEvent"/> is <code>null</code></exception>
+    /// <exception cref="ArgumentNullException">When <paramref name="output"/> is <code>null</code></exception>
+    public void Format(LogEvent logEvent, TextWriter output)
+    {
         Guard.AgainstNull(logEvent);
         Guard.AgainstNull(output);
 
@@ -68,36 +64,42 @@ public sealed class JsonFormatter : ITextFormatter {
         output.Write("\",\"MessageTemplate\":");
         JsonValueFormatter.WriteQuotedJsonString(logEvent.MessageTemplate.Text, output);
 
-        if (_renderMessage) {
+        if (_renderMessage)
+        {
             output.Write(",\"RenderedMessage\":");
             var message = logEvent.MessageTemplate.Render(logEvent.Properties);
             JsonValueFormatter.WriteQuotedJsonString(message, output);
         }
 
-        if (logEvent.TraceId != null) {
+        if (logEvent.TraceId != null)
+        {
             output.Write(",\"TraceId\":");
             output.Write('\"');
             output.Write(logEvent.TraceId.ToString()!);
             output.Write('\"');
         }
 
-        if (logEvent.SpanId != null) {
+        if (logEvent.SpanId != null)
+        {
             output.Write(",\"SpanId\":");
             output.Write('\"');
             output.Write(logEvent.SpanId.ToString()!);
             output.Write('\"');
         }
 
-        if (logEvent.Exception != null) {
+        if (logEvent.Exception != null)
+        {
             output.Write(",\"Exception\":");
             JsonValueFormatter.WriteQuotedJsonString(logEvent.Exception.ToString(), output);
         }
 
-        if (logEvent.Properties.Count != 0) {
+        if (logEvent.Properties.Count != 0)
+        {
             output.Write(",\"Properties\":{");
 
             char? propertyDelimiter = null;
-            foreach (var property in logEvent.Properties) {
+            foreach (var property in logEvent.Properties)
+            {
                 if (propertyDelimiter != null)
                     output.Write(propertyDelimiter.Value);
                 else
@@ -117,7 +119,8 @@ public sealed class JsonFormatter : ITextFormatter {
             .GroupBy(pt => pt.PropertyName)
             .ToArray();
 
-        if (tokensWithFormat.Length != 0) {
+        if (tokensWithFormat.Length != 0)
+        {
             output.Write(",\"Renderings\":{");
             WriteRenderingsValues(tokensWithFormat, logEvent.Properties, output);
             output.Write('}');
@@ -127,12 +130,10 @@ public sealed class JsonFormatter : ITextFormatter {
         output.Write(_closingDelimiter);
     }
 
-    void WriteRenderingsValues(
-        IEnumerable<IGrouping<string, PropertyToken>> tokensWithFormat,
-        IReadOnlyDictionary<string, LogEventPropertyValue> properties,
-        TextWriter output
-    ) {
-        static void WriteNameValuePair(string name, string value, ref char? precedingDelimiter, TextWriter output) {
+    void WriteRenderingsValues(IEnumerable<IGrouping<string, PropertyToken>> tokensWithFormat, IReadOnlyDictionary<string, LogEventPropertyValue> properties, TextWriter output)
+    {
+        static void WriteNameValuePair(string name, string value, ref char? precedingDelimiter, TextWriter output)
+        {
             if (precedingDelimiter != null)
                 output.Write(precedingDelimiter.Value);
 
@@ -143,7 +144,8 @@ public sealed class JsonFormatter : ITextFormatter {
         }
 
         char? propertyDelimiter = null;
-        foreach (var propertyFormats in tokensWithFormat) {
+        foreach (var propertyFormats in tokensWithFormat)
+        {
             if (propertyDelimiter != null)
                 output.Write(propertyDelimiter.Value);
             else
@@ -154,7 +156,8 @@ public sealed class JsonFormatter : ITextFormatter {
             output.Write("\":[");
 
             char? formatDelimiter = null;
-            foreach (var format in propertyFormats) {
+            foreach (var format in propertyFormats)
+            {
                 if (formatDelimiter != null)
                     output.Write(formatDelimiter.Value);
 
@@ -167,14 +170,7 @@ public sealed class JsonFormatter : ITextFormatter {
                 WriteNameValuePair("Format", format.Format!, ref elementDelimiter, output);
 
                 using var sw = ReusableStringWriter.GetOrCreate();
-                MessageTemplateRenderer.RenderPropertyToken(
-                    format,
-                    properties,
-                    sw,
-                    _formatProvider,
-                    isLiteral: true,
-                    isJson: false
-                );
+                MessageTemplateRenderer.RenderPropertyToken(format, properties, sw, _formatProvider, isLiteral: true, isJson: false);
                 WriteNameValuePair("Rendering", sw.ToString(), ref elementDelimiter, output);
 
                 output.Write('}');

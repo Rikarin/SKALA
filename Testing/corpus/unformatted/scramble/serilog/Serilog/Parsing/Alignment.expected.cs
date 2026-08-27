@@ -16,29 +16,29 @@
 
 namespace Serilog.Parsing
 
-    ;
+;
+
+/// <summary>
+/// A structure representing the alignment settings to apply when rendering a property.
+/// </summary>
+public readonly struct Alignment {
+    /// <summary>
+    /// Initializes a new instance of <see cref="Alignment"/>.
+    /// </summary>
+    /// <param name="direction">The text alignment direction.</param>
+    /// <param name="width">The width of the text, in characters.</param>
+    public Alignment(AlignmentDirection direction, int width) {
+        Direction = direction;
+        Width = width;
+    }
 
     /// <summary>
-    ///     A structure representing the alignment settings to apply when rendering a property.
+    /// The text alignment direction.
     /// </summary>
-    public readonly struct Alignment {
-        /// <summary>
-        ///     Initializes a new instance of <see cref="Alignment" />.
-        /// </summary>
-        /// <param name="direction">The text alignment direction.</param>
-        /// <param name="width">The width of the text, in characters.</param>
-        public Alignment(AlignmentDirection direction, int width) {
-            Direction = direction;
-            Width = width;
-        }
+    public AlignmentDirection Direction { get; }
 
-        /// <summary>
-        ///     The text alignment direction.
-        /// </summary>
-        public AlignmentDirection Direction { get; }
-
-        /// <summary>
-        ///     The width of the text.
-        /// </summary>
-        public int Width { get; }
-    }
+    /// <summary>
+    /// The width of the text.
+    /// </summary>
+    public int Width { get; }
+}

@@ -1,5 +1,4 @@
 // skala-oracle: resharper=2025.2.6 config=sha256:98ff52570e019fac profile=SkalaFormatOnly generated=2026-08-27
-
 #region License
 
 // Copyright (c) 2007 James Newton-King
@@ -65,18 +64,18 @@ namespace Newtonsoft.Json.Tests.Documentation.Samples.Json {
                 }
             } // Token: StartObject
 
-            // Token: PropertyName, Value: CPU
-            // Token: String, Value: Intel
-            // Token: PropertyName, Value: PSU
-            // Token: String, Value: 500W
-            // Token: PropertyName, Value: Drives
-            // Token: StartArray
-            // Token: String, Value: DVD read/writer
-            // Token: Comment, Value: (broken)
-            // Token: String, Value: 500 gigabyte hard drive
-            // Token: String, Value: 200 gigabyte hard drive
-            // Token: EndArray
-            // Token: EndObject
+// Token: PropertyName, Value: CPU
+// Token: String, Value: Intel
+// Token: PropertyName, Value: PSU
+// Token: String, Value: 500W
+// Token: PropertyName, Value: Drives
+// Token: StartArray
+// Token: String, Value: DVD read/writer
+// Token: Comment, Value: (broken)
+// Token: String, Value: 500 gigabyte hard drive
+// Token: String, Value: 200 gigabyte hard drive
+// Token: EndArray
+// Token: EndObject
 
             #endregion
         }

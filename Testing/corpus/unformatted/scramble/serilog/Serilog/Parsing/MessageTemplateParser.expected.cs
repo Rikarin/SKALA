@@ -16,30 +16,26 @@
 namespace Serilog.Parsing;
 
 /// <summary>
-///     Parses message template strings into sequences of text or property
-///     tokens.
+/// Parses message template strings into sequences of text or property
+/// tokens.
 /// </summary>
 public class MessageTemplateParser : IMessageTemplateParser {
     static readonly TextToken EmptyTextToken = new("");
 
     /// <summary>
-    ///     Construct a <see cref="MessageTemplateParser" />.
+    /// Construct a <see cref="MessageTemplateParser"/>.
     /// </summary>
     public MessageTemplateParser() { }
 
     /// <summary>
-    ///     Parse the supplied message template.
+    /// Parse the supplied message template.
     /// </summary>
     /// <param name="messageTemplate">The message template to parse.</param>
-    /// <returns>
-    ///     A sequence of text or property tokens. Where the template
-    ///     is not syntactically valid, text tokens will be returned. The parser
-    ///     will make a best effort to extract valid property tokens even in the
-    ///     presence of parsing issues.
-    /// </returns>
-    /// <exception cref="ArgumentNullException">
-    ///     When <paramref name="messageTemplate" /> is <code>null</code>
-    /// </exception>
+    /// <returns>A sequence of text or property tokens. Where the template
+    /// is not syntactically valid, text tokens will be returned. The parser
+    /// will make a best effort to extract valid property tokens even in the
+    /// presence of parsing issues.</returns>
+    /// <exception cref="ArgumentNullException">When <paramref name="messageTemplate"/> is <code>null</code></exception>
     public MessageTemplate Parse(string messageTemplate) {
         Guard.AgainstNull(messageTemplate);
 
@@ -57,7 +53,7 @@ public class MessageTemplateParser : IMessageTemplateParser {
             (true) {
             var beforeText = nextIndex;
             var
-            tt = ParseTextToken(nextIndex, messageTemplate, out nextIndex);
+                tt = ParseTextToken(nextIndex, messageTemplate, out nextIndex);
             if (nextIndex > beforeText)
                 yield return tt
                     ;
@@ -87,7 +83,7 @@ public class MessageTemplateParser : IMessageTemplateParser {
 
         next = startAt + 1;
         var
-        rawText = messageTemplate.Substring(first, next - first);
+            rawText = messageTemplate.Substring(first, next - first);
         var tagContent = rawText.Substring(1, next - (first + 2));
         if (tagContent
                 .Length
@@ -151,7 +147,7 @@ public class MessageTemplateParser : IMessageTemplateParser {
             if (!int.TryParse(alignment, NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out var width))
                 return new TextToken(rawText);
             var hasDash = alignment[0
-            ]
+                ]
                 == '-';
             var direction = hasDash ? AlignmentDirection.Left : AlignmentDirection.Right
                 ;
@@ -247,7 +243,7 @@ public class MessageTemplateParser : IMessageTemplateParser {
         out Destructuring destructuring
     ) {
         switch (
-                c) {
+            c) {
             case '@':
                 destructuring = Destructuring
                     .Destructure;
@@ -274,7 +270,7 @@ public class MessageTemplateParser : IMessageTemplateParser {
     static TextToken ParseTextToken(int startAt, string messageTemplate, out int next) {
         // If we encounter escape sequences like {{ or }}, the result is not a strict substring of the
         // template. But, this requires allocating a StringBuilder, so we try to parse as far as we can first, and
-        // only allocate the StringBuilder/fall through to the slow string-building path if we actually need to.
+// only allocate the StringBuilder/fall through to the slow string-building path if we actually need to.
         // Most of the time we won't hit escapes, so we can get away with just a single Substring() allocation at
         // the end.
         var i = messageTemplate.IndexOfAny(CurlyBraceChars, startAt);
@@ -286,7 +282,7 @@ public class MessageTemplateParser : IMessageTemplateParser {
 
         StringBuilder accum;
         var
-        ch = messageTemplate[i];
+            ch = messageTemplate[i];
         ++i;
         // The character must be either `{` or `}`, since we found its index.
         if (ch == '{') {
@@ -299,7 +295,7 @@ public class MessageTemplateParser : IMessageTemplateParser {
                 accum = new(messageTemplate, startAt, i - startAt, messageTemplate.Length - startAt);
                 ++i;
             } else {
-                // Hit the start of a property token. We're done, no StringBuilder was required.
+// Hit the start of a property token. We're done, no StringBuilder was required.
                 next = i - 1;
                 return next == startAt ? EmptyTextToken : new(messageTemplate.Substring(startAt, i - 1 - startAt));
             }

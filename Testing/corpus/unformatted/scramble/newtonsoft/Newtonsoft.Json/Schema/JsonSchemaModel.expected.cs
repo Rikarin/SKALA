@@ -1,5 +1,4 @@
 // skala-oracle: resharper=2025.2.6 config=sha256:98ff52570e019fac profile=SkalaFormatOnly generated=2026-08-27
-
 #region License
 
 // Copyright (c) 2007 James Newton-King
@@ -31,7 +30,7 @@ using System;
 using System.Collections.Generic;
 using Newtonsoft.Json.Linq;
 using Newtonsoft.
-Json.Utilities;
+    Json.Utilities;
 
 #nullable disable
 
@@ -64,7 +63,7 @@ namespace Newtonsoft.Json.Schema {
 
         public IDictionary<string, JsonSchemaModel> PatternProperties {
             get
-                ;
+            ;
             set;
         }
 
@@ -99,7 +98,7 @@ namespace Newtonsoft.Json.Schema {
 
         private
             static void Combine(JsonSchemaModel model, JsonSchema schema) {
-            // Version 3 of the Draft JSON Schema has the default value of Not Required
+// Version 3 of the Draft JSON Schema has the default value of Not Required
             model.Required = model.Required || (schema.Required ?? false);
             model.Type = model.Type & (schema.Type ?? JsonSchemaType.Any);
             model.MinimumLength = MathUtils.Max(model.MinimumLength, schema.MinimumLength);

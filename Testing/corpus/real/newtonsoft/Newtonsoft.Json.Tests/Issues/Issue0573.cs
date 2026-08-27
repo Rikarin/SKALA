@@ -1,5 +1,4 @@
 ﻿#region License
-
 // Copyright (c) 2007 James Newton-King
 //
 // Permission is hereby granted, free of charge, to any person
@@ -22,7 +21,6 @@
 // WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 // OTHER DEALINGS IN THE SOFTWARE.
-
 #endregion
 
 using Newtonsoft.Json.Linq;
@@ -40,27 +38,28 @@ using Assert = Newtonsoft.Json.Tests.XUnitAssert;
 using NUnit.Framework;
 #endif
 
-namespace Newtonsoft.Json.Tests.Issues {
+namespace Newtonsoft.Json.Tests.Issues
+{
     [TestFixture]
-    public class Issue0573 {
+    public class Issue0573
+    {
         [Test]
-        public void Test() {
+        public void Test()
+        {
             string json = "{'Value':'hi'}";
             MemoryTraceWriter traceWriter = new MemoryTraceWriter { LevelFilter = TraceLevel.Info };
-            PrivateSetterTestClass o = JsonConvert.DeserializeObject<PrivateSetterTestClass>(
-                json,
-                new JsonSerializerSettings { TraceWriter = traceWriter }
-            );
+            PrivateSetterTestClass o = JsonConvert.DeserializeObject<PrivateSetterTestClass>(json, new JsonSerializerSettings
+            {
+                TraceWriter = traceWriter
+            });
             List<string> messages = traceWriter.GetTraceMessages().ToList();
 
-            bool hasMessage = messages.Any(message => message.Contains(
-                    "Info Unable to deserialize value to non-writable property 'Value' on Newtonsoft.Json.Tests.Issues.Issue0573+PrivateSetterTestClass. Path 'Value', line 1, position 13."
-                )
-            );
+            bool hasMessage = messages.Any(message => message.Contains("Info Unable to deserialize value to non-writable property 'Value' on Newtonsoft.Json.Tests.Issues.Issue0573+PrivateSetterTestClass. Path 'Value', line 1, position 13."));
             Assert.IsTrue(hasMessage);
         }
 
-        public class PrivateSetterTestClass {
+        public class PrivateSetterTestClass
+        {
             public string Value { get; private set; }
         }
     }

@@ -7,34 +7,24 @@ class Initializers {
     }
 
     void BrokenInSourceButFits() {
-        var c = new Thing { Alpha = 1, Beta = 2 };
+        var c = new Thing
+        {
+            Alpha = 1,
+            Beta = 2
+        };
     }
 
     void OverTheElementCap() {
-        var d = new List<int> {
-            1,
-            2,
-            3,
-            4,
-            5
-        };
+        var d = new List<int> { 1, 2, 3, 4, 5 };
         var e = new[] { 1, 2, 3, 4, 5 };
     }
 
     void ArrayFills() {
-        var f = new[] {
-            "aaaaaaaaaaaaaaa", "bbbbbbbbbbbbbbb", "ccccccccccccccc", "ddddddddddddddd", "eeeeeeeeeeeeeee",
-            "fffffffffffffff"
-        };
+        var f = new[] { "aaaaaaaaaaaaaaa", "bbbbbbbbbbbbbbb", "ccccccccccccccc", "ddddddddddddddd", "eeeeeeeeeeeeeee", "fffffffffffffff" };
     }
 
     void ObjectChopsWhenTheElementsDoNotShareALine() {
-        var g = new Thing {
-            Alpha = "aaaaaaaaaaaaaaaaaaaaaa",
-            Beta = "bbbbbbbbbbbbbbbbbbbbbbb",
-            Gamma = "ccccccccccccccccccccccc",
-            Delta = "d"
-        };
+        var g = new Thing { Alpha = "aaaaaaaaaaaaaaaaaaaaaa", Beta = "bbbbbbbbbbbbbbbbbbbbbbb", Gamma = "ccccccccccccccccccccccc", Delta = "d" };
     }
 
     void ObjectKeepsTheElementsTogetherWhenTheyShareALine() {
@@ -42,9 +32,7 @@ class Initializers {
     }
 
     void AnonymousObject() {
-        var i = new {
-            AlphaMember = "aaaaaaaaaaaaaaaaaaaaaa", BetaMember = "bbbbbbbbbbbbbbbbbbbbbbb", GammaMember = "ccc"
-        };
+        var i = new { AlphaMember = "aaaaaaaaaaaaaaaaaaaaaa", BetaMember = "bbbbbbbbbbbbbbbbbbbbbbb", GammaMember = "ccc" };
     }
 }
 

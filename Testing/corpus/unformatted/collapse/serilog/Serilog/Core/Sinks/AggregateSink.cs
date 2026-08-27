@@ -11,26 +11,4 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-namespace Serilog.Core.Sinks; class AggregateSink : ILogEventSink {
-    readonly ILogEventSink[] _sinks;
-
-    public AggregateSink(IEnumerable<ILogEventSink> sinks) {
-        Guard.AgainstNull(sinks);
-        _sinks = sinks.ToArray();
-    }
-
-    public void Emit(LogEvent logEvent) {
-        List<Exception>? exceptions = null;
-        foreach (var sink in _sinks) {
-            try {
-                sink.Emit(logEvent);
-            } catch (Exception ex) {
-                SelfLog.WriteLine("Caught exception while emitting to sink {0}: {1}", sink, ex);
-                exceptions ??= [];
-                exceptions.Add(ex);
-            }
-        }
-
-        if (exceptions != null) throw new AggregateException("Failed to emit a log event.", exceptions);
-    }
-}
+namespace Serilog.Core.Sinks;class AggregateSink:ILogEventSink{readonly ILogEventSink[]_sinks;public AggregateSink(IEnumerable<ILogEventSink>sinks){Guard.AgainstNull(sinks);_sinks=sinks.ToArray();}public void Emit(LogEvent logEvent){List<Exception>?exceptions=null;foreach(var sink in _sinks){try{sink.Emit(logEvent);}catch(Exception ex){SelfLog.WriteLine("Caught exception while emitting to sink {0}: {1}" ,sink,ex);exceptions??=[];exceptions.Add(ex);}}if(exceptions!=null)throw new AggregateException("Failed to emit a log event." ,exceptions);}}

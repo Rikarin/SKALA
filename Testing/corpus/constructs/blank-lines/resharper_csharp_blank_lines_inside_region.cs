@@ -2,9 +2,8 @@ class C {
     int _a;
 
     #region Things
-
-    void M() { }
-
+    void M() {
+    }
     #endregion
 
     int _b;

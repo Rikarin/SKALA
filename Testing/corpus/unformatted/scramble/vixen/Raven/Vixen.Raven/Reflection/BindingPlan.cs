@@ -1,12 +1,11 @@
 // SPDX-FileCopyrightText: Copyright (c) Rikarin
 // SPDX-License-Identifier: Apache-2.0
-using System.Collections
-.Immutable;
-using Vixen.Raven.IR;
-using Vixen.Raven.Symbols;
-
+         using System.Collections 
+    .Immutable;   
+               using Vixen.   Raven.IR;   
+           using  Vixen.Raven  .   Symbols;
+                
 namespace Vixen.Raven.Reflection;
-
 /// <summary>
 ///     One descriptor binding: either a set's uniform block or one opaque resource.
 /// </summary>
@@ -23,17 +22,16 @@ namespace Vixen.Raven.Reflection;
 ///     resource.
 /// </param>
 /// <param name="Resource">The opaque resource. Null for a block.</param>
-public
-    sealed record PlannedBinding(
-        ResourceSet Set,
-        int Binding,
-        IrBindingKind Kind,
-        string Name,
-        ImmutableArray<IrBinding> Members,
-        IrBinding? Resource) {
+                public
+sealed record PlannedBinding(
+			ResourceSet    Set  , int  Binding,
+    IrBindingKind Kind,
+                string   Name,
+              ImmutableArray<IrBinding> Members,
+                IrBinding  ?    Resource   )   {
     /// <summary>True when this is a set's uniform block rather than an opaque resource.</summary>
-    public bool
-        IsBlock => Resource is null;
+                public bool
+IsBlock =>    Resource   is null;
 
     /// <summary>
     ///     The other declarations of this same resource, for a <c>[Shared]</c> binding.
@@ -52,9 +50,8 @@ public
     ///         author wrote a declaration that is plainly there.
     ///     </para>
     /// </remarks>
-    public ImmutableArray
-        <IrBinding> Aliases { get; init; } = [];
-
+           public ImmutableArray 
+   <IrBinding> Aliases { get   ; init; } = []    ;
     /// <summary>
     ///     The index of the record to read, when this block is one element of a material buffer.
     /// </summary>
@@ -71,25 +68,22 @@ public
     ///         is <c>materials[index].value</c> where it used to be <c>value</c>.
     ///     </para>
     /// </remarks>
-    public IrBinding?
-        RecordIndex { get; init; }
+              public IrBinding  ?
+              RecordIndex { get    ;    init;  }
 
     /// <summary>Whether this block is one record of a buffer rather than a set bound per material.</summary>
-    public bool IsRecord => RecordIndex is not null;
-
+        public bool IsRecord => RecordIndex  is   not    null;
+     
     /// <summary>Every declaration this covers: the resource, then its aliases.</summary>
-    public IEnumerable<IrBinding> Declarations { get {
-            if (
-                Resource is { } resource) {
-                yield return resource;
-            }
-
-            foreach (var alias in Aliases) {
-                yield return alias;
-            } }
+public  IEnumerable<IrBinding>  Declarations {   get   {
+       if    (
+         Resource is { } resource)  {
+                yield return  resource;
+       }
+foreach (  var    alias  in Aliases) { yield return alias   ;
+   }  }
     }
-}
-
+              }
 /// <summary>
 ///     Assigns every binding its <c>(set, binding)</c> pair.
 /// </summary>
@@ -106,7 +100,7 @@ public
 ///         is how two backends come to differ.
 ///     </para>
 /// </remarks>
-public static class BindingPlan {
+public  static  class BindingPlan   {
     /// <summary>
     ///     The plan for one shader: sets in ascending index order, and within each set the
     ///     uniform block first, then textures, then samplers, each in declaration order.
@@ -116,75 +110,67 @@ public static class BindingPlan {
     ///     bindings restart at 0 in each set because that is what a Vulkan descriptor set
     ///     layout is — one namespace per set.
     /// </remarks>
-    public static ImmutableArray
-        <PlannedBinding> Of(IrShader shader) {
-        ArgumentNullException.ThrowIfNull(shader);
-
-        var
-        plan = ImmutableArray.CreateBuilder<PlannedBinding>();
-
+        public static ImmutableArray
+<PlannedBinding>   Of(IrShader   shader)  {  
+ 
+               ArgumentNullException.    ThrowIfNull   (shader   );
+  
+      var
+            plan = ImmutableArray   .CreateBuilder    <  PlannedBinding>();
+      
         // Push constants are deliberately absent: they have no descriptor, so numbering them into
-        // a set would give a host a (set, binding) pair to bind against that means nothing.
-        var descriptors = shader.Bindings.Where
-            (b => b.Kind != IrBindingKind.PushConstant)
-            .ToArray();
-        foreach (var set in descriptors.Select(b => b.Set).Distinct().Order()) {
-            var inSet = descriptors.Where(b => b.Set == set).ToArray();
-            var binding = 0;
-            if (inSet.Where(b => b.Kind == IrBindingKind.Uniform).ToImmutableArray() is { IsEmpty: false } uniforms) {
-                // The per-material block becomes one record of a buffer when the shader declared a
+// a set would give a host a (set, binding) pair to bind against that means nothing.
+var    descriptors = shader.Bindings.Where   
+(b    => b.   Kind   != IrBindingKind.PushConstant  )  . ToArray  ()    ;
+             foreach  (   var  set in descriptors. Select(b =>  b.Set).Distinct(  ).Order())  {    var inSet = descriptors.Where (b => b.Set == set   ).    ToArray ();
+  var binding = 0 ;
+    if (    inSet .Where(b  => b.Kind    == IrBindingKind.   Uniform).ToImmutableArray    () is    { IsEmpty:  false } uniforms) { // The per-material block becomes one record of a buffer when the shader declared a
                 // [MaterialIndex]. Still binding 0 of the same set, so nothing else renumbers — what
-                // changes is that the set now holds every material at once and is bound for the
+ // changes is that the set now holds every material at once and is bound for the
                 // frame rather than for the draw, which is what lets two materials' draws be the
                 // same draw.
-                var record = set == ResourceSet.PerMaterial ? MaterialIndex(shader) : null;
-                plan.Add(
-                    new(set, binding++, IrBindingKind.Uniform, BlockName(shader, set), uniforms, null) {
-                        RecordIndex = record
-                    }
-                );
-            }
-
-            // Storage buffers last, after textures and samplers, for the same reason the uniform
-            // block goes first: adding one must not renumber anything that already exists.
-            foreach (var kind in (IrBindingKind[]
-                     )[
-
-                         IrBindingKind.Texture,
-
-                         IrBindingKind.Sampler,
-                         IrBindingKind
-                             .StorageBuffer,
-                         IrBindingKind.StorageImage, IrBindingKind.AccelerationStructure
-                     ]) {
-                // A shared binding declared by several features is one binding, recognised by the
+                var record = set    == ResourceSet    .   PerMaterial  ? MaterialIndex   (
+  shader) : null;
+     plan.Add( new(    set  , binding    ++   , IrBindingKind   .  Uniform  , BlockName(  shader, set    ), uniforms  , null) {
+              RecordIndex = record
+}
+             )    ;
+             }
+             
+          // Storage buffers last, after textures and samplers, for the same reason the uniform
+ // block goes first: adding one must not renumber anything that already exists.
+            foreach (var   kind    in (IrBindingKind[ ]
+)[
+               
+         IrBindingKind  .Texture   ,
+       
+   IrBindingKind. Sampler    ,
+              IrBindingKind
+			. StorageBuffer,
+              IrBindingKind.StorageImage    , IrBindingKind.AccelerationStructure
+                ]) {
+// A shared binding declared by several features is one binding, recognised by the
 
                 // name they all wrote. Grouped rather than deduplicated in place so that the first
                 // declaration keeps the slot and the rest become its aliases — every one of them has
 
-                // a variable some feature's body refers to, and all of them have to resolve.
-                foreach
-                    (var group in inSet.Where(b => b.Kind == kind).GroupBy(SharedKey)) {
-                    var resource = group.First(
-                    );
-                    plan.Add(
-                        new(
-                            set,
-                            binding++,
-                            kind,
-                            resource.Name,
-                            [],
-                            resource
-                        ) { Aliases = [.. group.Skip(1)] }
-                    );
-                }
-            }
-        }
-
-        return plan.
-            ToImmutable();
-    }
-
+// a variable some feature's body refers to, and all of them have to resolve.
+              foreach
+         (   var  group in inSet.  Where(b => b.Kind == kind  )   . GroupBy(SharedKey    )) {
+	var resource = group.First    (
+);  
+   plan.  Add(
+                        new   (set  ,
+    binding++ , kind, resource.Name  , []   , resource) {
+              Aliases = [.. group.    Skip    (1    )   ] }   
+               );
+ }
+   }
+}
+            return plan.
+ToImmutable() ;
+  
+         }
     /// <summary>What decides whether two bindings of one kind are the same resource.</summary>
     /// <param name="binding">The binding.</param>
     /// <remarks>
@@ -194,8 +180,9 @@ public static class BindingPlan {
     ///     called the same thing apart; they are already qualified by then, but relying on that would
     ///     make this correct only because of something two files away.
     /// </remarks>
-    static object SharedKey(IrBinding binding) => binding.IsShared ? binding.Name : binding;
-
+    static object SharedKey (IrBinding binding   )   =>
+  binding.IsShared ? binding  .Name :  binding  ;
+		
     /// <summary>The <c>[MaterialIndex]</c> a shader declared, or null.</summary>
     /// <param name="shader">The shader.</param>
     /// <remarks>
@@ -203,21 +190,17 @@ public static class BindingPlan {
     ///     "which record does this draw read". Taken rather than checked here because a plan is not
     ///     where a source mistake is reported: <c>IrVerifier</c> says so, with the shader named.
     /// </remarks>
-    public static IrBinding? MaterialIndex(
-        IrShader
-        shader
-    ) {
-        ArgumentNullException.ThrowIfNull(shader);
-        return shader.Bindings.FirstOrDefault(binding => binding.IsMaterialIndex);
-    }
-
+           public   static IrBinding? MaterialIndex( IrShader
+shader) {
+	ArgumentNullException.ThrowIfNull (shader  ) ;
+            return shader    .Bindings.FirstOrDefault    (binding => binding   .IsMaterialIndex); }
+            
     /// <summary>The name of a set's uniform block.</summary>
-    public static string
-        BlockName(IrShader shader, ResourceSet set) {
-        ArgumentNullException.ThrowIfNull(shader);
+public static string
+        BlockName   (   IrShader shader    , ResourceSet set) {
+            ArgumentNullException    .ThrowIfNull  (shader    );
         return $"{shader.Name}{set}Uniforms";
-    }
-
+                }
     /// <summary>
     ///     The shader's push constants, in declaration order — the members of its one
     ///     push-constant block.
@@ -235,14 +218,15 @@ public static class BindingPlan {
     ///         may offer more and a shader that knows its target may legitimately use it.
     ///     </para>
     /// </remarks>
-    public static ImmutableArray<IrBinding> PushConstants(IrShader shader) {
-        ArgumentNullException.ThrowIfNull(shader);
-        return [.. shader.Bindings.Where(b => b.Kind == IrBindingKind.PushConstant)];
-    }
-
+                public static ImmutableArray<  IrBinding > PushConstants    (IrShader  shader) {
+         ArgumentNullException  .ThrowIfNull    (    shader);
+        return   [.. shader.Bindings.Where(b =>  b.Kind == IrBindingKind.PushConstant)]  ;
+	
+			}
+  
     /// <summary>The name of a shader's push-constant block.</summary>
-    public static string PushConstantBlockName(IrShader shader) {
-        ArgumentNullException.ThrowIfNull(shader);
-        return $"{shader.Name}PushConstants";
-    }
-}
+	public   static string PushConstantBlockName(  IrShader shader    ) { ArgumentNullException.  ThrowIfNull(  shader);
+        return  $"{shader.Name}PushConstants";
+                } 
+               }   
+  

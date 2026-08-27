@@ -14,8 +14,6 @@ class C {
     /// <summary>A bare & ampersand.</summary>
     void BareAmpersand() { }
 
-    /// <summary>
-    ///     Well-formed, and 128 columns wide, which the oracle does not wrap and which Skala only wraps when asked to.
-    /// </summary>
+    ///<summary>Well-formed, and 128 columns wide, which the oracle does not wrap and which Skala only wraps when asked to.</summary>
     void Long() { }
 }

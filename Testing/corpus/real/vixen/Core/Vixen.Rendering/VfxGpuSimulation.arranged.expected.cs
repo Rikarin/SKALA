@@ -90,9 +90,7 @@ public sealed class VfxGpuSimulation : IDisposable {
     /// <param name="device">The device.</param>
     /// <param name="shader">The emitted shader, for its bindings.</param>
     /// <param name="capacity">The most particles that can be alive at once.</param>
-    /// <exception cref="ArgumentNullException">
-    ///     <paramref name="device" /> or <paramref name="shader" /> is null.
-    /// </exception>
+    /// <exception cref="ArgumentNullException"><paramref name="device" /> or <paramref name="shader" /> is null.</exception>
     /// <exception cref="ArgumentOutOfRangeException"><paramref name="capacity" /> is not positive.</exception>
     public VfxGpuSimulation(IGraphicsDevice device, VfxShader shader, int capacity) {
         ArgumentNullException.ThrowIfNull(device);
@@ -271,10 +269,8 @@ public sealed class VfxGpuSimulation : IDisposable {
     /// <summary>How many compute dispatches this has recorded since it was built.</summary>
     /// <remarks>
     ///     <para>
-    ///         <b>
-    ///             Counted because "the GPU path ran" and "the GPU path was constructed" look identical
-    ///             from everywhere else.
-    ///         </b> A host that builds one of these, never records a dispatch and
+    ///         <b>Counted because "the GPU path ran" and "the GPU path was constructed" look identical
+    ///         from everywhere else.</b> A host that builds one of these, never records a dispatch and
     ///         draws the CPU expansion produces exactly the frame a working device path produces, at
     ///         exactly the cost — and there is no validation error, no log line and no counter to tell
     ///         the two apart. This is that counter.
@@ -384,12 +380,8 @@ public sealed class VfxGpuSimulation : IDisposable {
     /// <param name="list">An open command list.</param>
     /// <param name="particles">Where the particles are.</param>
     /// <param name="count">How many, from the start of the buffer.</param>
-    /// <exception cref="ArgumentNullException">
-    ///     <paramref name="list" /> or <paramref name="particles" /> is null.
-    /// </exception>
-    /// <exception cref="ArgumentOutOfRangeException">
-    ///     <paramref name="count" /> is negative or above the capacity.
-    /// </exception>
+    /// <exception cref="ArgumentNullException"><paramref name="list" /> or <paramref name="particles" /> is null.</exception>
+    /// <exception cref="ArgumentOutOfRangeException"><paramref name="count" /> is negative or above the capacity.</exception>
     /// <remarks>
     ///     The host write happens now and the copies happen when the list runs, so the staging buffer
     ///     must not be written again until this submission has completed. That is the usual shape of
@@ -494,9 +486,7 @@ public sealed class VfxGpuSimulation : IDisposable {
     /// <param name="list">An open command list.</param>
     /// <param name="count">How many particles, from the start of the buffer.</param>
     /// <exception cref="ArgumentNullException"><paramref name="list" /> is null.</exception>
-    /// <exception cref="ArgumentOutOfRangeException">
-    ///     <paramref name="count" /> is negative or above the capacity.
-    /// </exception>
+    /// <exception cref="ArgumentOutOfRangeException"><paramref name="count" /> is negative or above the capacity.</exception>
     /// <remarks>
     ///     Pairs with <see cref="Read" />, which is the half that has to happen after the submission
     ///     has completed. Split rather than combined because only the caller knows when that is.
@@ -530,9 +520,7 @@ public sealed class VfxGpuSimulation : IDisposable {
     /// <param name="particles">Where to put them. Its count is not changed.</param>
     /// <param name="count">How many, and the same number <see cref="Download" /> was given.</param>
     /// <exception cref="ArgumentNullException"><paramref name="particles" /> is null.</exception>
-    /// <exception cref="ArgumentOutOfRangeException">
-    ///     <paramref name="count" /> is negative or above the capacity.
-    /// </exception>
+    /// <exception cref="ArgumentOutOfRangeException"><paramref name="count" /> is negative or above the capacity.</exception>
     public void Read(ParticleBuffer particles, int count) {
         ObjectDisposedException.ThrowIf(disposed, this);
         ArgumentNullException.ThrowIfNull(particles);
@@ -565,29 +553,21 @@ public sealed class VfxGpuSimulation : IDisposable {
     /// <exception cref="InvalidOperationException">The shader has no reap kernel.</exception>
     /// <remarks>
     ///     <para>
-    ///         <b>
-    ///             What was owed after the dispatch pair: the last thing the CPU still did for a device
-    ///             effect.
-    ///         </b> The kernels age a particle and stop; this is what removes the finished ones
+    ///         <b>What was owed after the dispatch pair: the last thing the CPU still did for a device
+    ///         effect.</b> The kernels age a particle and stop; this is what removes the finished ones
     ///         without the state leaving the device. The counter is zeroed by a copy first — an
     ///         <c>atomicAdd</c> onto last frame's count appends past the end of the buffer, which is
     ///         the failure <c>DrawArguments.rvn</c> warns about in the same words.
     ///     </para>
     ///     <para>
-    ///         ⚠
-    ///         <b>
-    ///             The live set flips, so <see cref="Descriptors" /> and <see cref="Storage" /> mean
-    ///             something different after this returns.
-    ///         </b> Nothing is copied back: the survivors are
+    ///         ⚠ <b>The live set flips, so <see cref="Descriptors" /> and <see cref="Storage" /> mean
+    ///         something different after this returns.</b> Nothing is copied back: the survivors are
     ///         in the set that was the spare, and it becomes the live one. A renderer that cached a
     ///         buffer handle across a reap draws the particles as they were before it.
     ///     </para>
     ///     <para>
-    ///         ⚠
-    ///         <b>
-    ///             The survivors come out in an order neither backend promises and the two do not
-    ///             share.
-    ///         </b> The CPU fills each hole from the tail; here a slot is whatever the atomic
+    ///         ⚠ <b>The survivors come out in an order neither backend promises and the two do not
+    ///         share.</b> The CPU fills each hole from the tail; here a slot is whatever the atomic
     ///         handed back, which depends on how the invocations interleaved and is not reproducible
     ///         between two runs of one frame. A particle's randomness follows its identifier rather
     ///         than its slot exactly so that this cannot matter — which is what

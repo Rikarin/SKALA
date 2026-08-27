@@ -14,7 +14,8 @@
 
 namespace Serilog.Core.Pipeline;
 
-class MessageTemplateCache : IMessageTemplateParser {
+class MessageTemplateCache : IMessageTemplateParser
+{
     readonly IMessageTemplateParser _innerParser;
     readonly object _templatesLock = new();
 
@@ -31,11 +32,13 @@ class MessageTemplateCache : IMessageTemplateParser {
     const int MaxCacheItems = 1000;
     const int MaxCachedTemplateLength = 1024;
 
-    public MessageTemplateCache(IMessageTemplateParser innerParser) {
+    public MessageTemplateCache(IMessageTemplateParser innerParser)
+    {
         _innerParser = Guard.AgainstNull(innerParser);
     }
 
-    public MessageTemplate Parse(string messageTemplate) {
+    public MessageTemplate Parse(string messageTemplate)
+    {
         Guard.AgainstNull(messageTemplate);
 
         if (messageTemplate.Length > MaxCachedTemplateLength)
@@ -49,7 +52,8 @@ class MessageTemplateCache : IMessageTemplateParser {
 
         result = _innerParser.Parse(messageTemplate);
 
-        lock (_templatesLock) {
+        lock (_templatesLock)
+        {
             // Exceeding MaxCacheItems is *not* the sunny day scenario; all we're doing here is preventing out-of-memory
             // conditions when the library is used incorrectly. Correct use (templates, rather than
             // direct message strings) should barely, if ever, overflow this cache.

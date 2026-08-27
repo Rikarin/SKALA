@@ -14,24 +14,31 @@
 
 namespace Serilog.Core.Pipeline;
 
-class ByReferenceStringComparer : IEqualityComparer, IEqualityComparer<string> {
+class ByReferenceStringComparer : IEqualityComparer, IEqualityComparer<string>
+{
     public static readonly ByReferenceStringComparer Instance = new();
 
-    ByReferenceStringComparer() { }
+    ByReferenceStringComparer()
+    {
+    }
 
-    public new bool Equals(object? x, object? y) {
+    public new bool Equals(object? x, object? y)
+    {
         return ReferenceEquals(x, y);
     }
 
-    public int GetHashCode(object obj) {
+    public int GetHashCode(object obj)
+    {
         return RuntimeHelpers.GetHashCode(obj);
     }
 
-    public bool Equals(string? x, string? y) {
+    public bool Equals(string? x, string? y)
+    {
         return ReferenceEquals(x, y);
     }
 
-    public int GetHashCode(string obj) {
+    public int GetHashCode(string obj)
+    {
         return RuntimeHelpers.GetHashCode(obj);
     }
 }

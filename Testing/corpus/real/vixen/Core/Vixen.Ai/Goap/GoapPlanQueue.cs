@@ -69,12 +69,7 @@ public sealed class GoapPlanQueue {
     ///     an open list — a handful is plenty, because the budget is what limits throughput.
     /// </param>
     /// <exception cref="ArgumentNullException"><paramref name="domain" /> is null.</exception>
-    public GoapPlanQueue(
-        GoapDomain domain,
-        GoapSettings? settings = null,
-        int capacity = 64,
-        int parallelSearches = 4
-    ) {
+    public GoapPlanQueue(GoapDomain domain, GoapSettings? settings = null, int capacity = 64, int parallelSearches = 4) {
         ArgumentNullException.ThrowIfNull(domain);
         ArgumentOutOfRangeException.ThrowIfLessThan(capacity, 1);
         ArgumentOutOfRangeException.ThrowIfLessThan(parallelSearches, 1);

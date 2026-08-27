@@ -69,7 +69,7 @@ sealed class OptionalInterfaceForwardingSink : ILogEventSink, IDisposable, ISetL
 
     public static bool SupportsAny(ILogEventSink possibleReceiver) {
         return possibleReceiver is ISetLoggingFailureListener
-            or IDisposable
+                or IDisposable
 #if FEATURE_ASYNCDISPOSABLE
                 or IAsyncDisposable
 #endif
@@ -78,7 +78,7 @@ sealed class OptionalInterfaceForwardingSink : ILogEventSink, IDisposable, ISetL
 
     public static bool SupportsAll(ILogEventSink possibleReceiver) {
         return possibleReceiver is ISetLoggingFailureListener
-            and IDisposable
+                and IDisposable
 #if FEATURE_ASYNCDISPOSABLE
                 and IAsyncDisposable
 #endif

@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 using Vixen.
-Core;
+    Core;
 using Vixen.Ecs;
 using Vixen.Net.Sessions;
 
@@ -77,7 +77,7 @@ public sealed class AllNetworkedSource : IInterestSource {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(into);
         foreach (var
-                 chunk in world.Chunks(Networked)) {
+                     chunk in world.Chunks(Networked)) {
             into.AddRange(chunk.Entities);
         }
     }
@@ -136,13 +136,13 @@ public sealed class InterestChain : IInterestResolver {
     public int HiddenCount {
         get;
         private set
-            ;
+        ;
     }
 
     /// <inheritdoc />
     public void Resolve(
         World
-        world,
+            world,
         PlayerId player,
         List<Entity> observed
     ) {
@@ -211,7 +211,7 @@ public sealed
     public void Show(
         PlayerId player,
         NetworkId
-        id
+            id
     ) =>
         Set(player, id, Interest.Observed);
 
@@ -255,7 +255,7 @@ public sealed
     public Interest Decide(
         World world,
         PlayerId
-        player,
+            player,
         Entity entity
     ) {
         ArgumentNullException.ThrowIfNull(world);

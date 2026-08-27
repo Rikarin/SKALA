@@ -1,5 +1,4 @@
 // skala-oracle: resharper=2025.2.6 config=sha256:98ff52570e019fac profile=SkalaFormatOnly generated=2026-08-27
-
 #region License
 
 // Copyright (c) 2007 James Newton-King
@@ -85,13 +84,13 @@ namespace Newtonsoft.Json.Tests.Documentation.Samples.JsonPath {
             ); // manufacturer with the name 'Acme Co'
             JToken acme = o.SelectToken("$.Manufacturers[?(@.Name == 'Acme Co')]");
             Console.WriteLine(acme); // { "Name": "Acme Co", Products: [{ "Name": "Anvil", "Price": 50 }] }
-            // name of all products priced 50 and above
+// name of all products priced 50 and above
             IEnumerable<JToken> pricyProducts = o.SelectTokens("$..Products[?(@.Price >= 50)].Name");
             foreach (JToken item in pricyProducts) {
                 Console.WriteLine(item);
             } // Anvil
 
-            // Elbow Grease
+// Elbow Grease
 
             #endregion
 

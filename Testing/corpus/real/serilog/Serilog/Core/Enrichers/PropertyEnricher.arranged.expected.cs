@@ -16,7 +16,7 @@
 namespace Serilog.Core.Enrichers;
 
 /// <summary>
-///     Adds a new property enricher to the log event.
+/// Adds a new property enricher to the log event.
 /// </summary>
 public class PropertyEnricher : ILogEventEnricher {
     readonly string _name;
@@ -24,19 +24,15 @@ public class PropertyEnricher : ILogEventEnricher {
     readonly bool _destructureObjects;
 
     /// <summary>
-    ///     Create a new property enricher.
+    /// Create a new property enricher.
     /// </summary>
     /// <param name="name">The name of the property.</param>
     /// <param name="value">The value of the property.</param>
-    /// <param name="destructureObjects">
-    ///     If <see langword="true" />, and the value is a non-primitive, non-array type,
-    ///     then the value will be converted to a structure; otherwise, unknown types will
-    ///     be converted to scalars, which are generally stored as strings.
-    /// </param>
-    /// <exception cref="ArgumentNullException">When <paramref name="name" /> is <code>null</code></exception>
-    /// <exception cref="ArgumentException">
-    ///     When <paramref name="name" /> is empty or only contains whitespace
-    /// </exception>
+    /// <param name="destructureObjects">If <see langword="true"/>, and the value is a non-primitive, non-array type,
+    /// then the value will be converted to a structure; otherwise, unknown types will
+    /// be converted to scalars, which are generally stored as strings.</param>
+    /// <exception cref="ArgumentNullException">When <paramref name="name"/> is <code>null</code></exception>
+    /// <exception cref="ArgumentException">When <paramref name="name"/> is empty or only contains whitespace</exception>
     public PropertyEnricher(string name, object? value, bool destructureObjects = false) {
         LogEventProperty.EnsureValidName(name);
 
@@ -46,14 +42,12 @@ public class PropertyEnricher : ILogEventEnricher {
     }
 
     /// <summary>
-    ///     Enrich the log event.
+    /// Enrich the log event.
     /// </summary>
     /// <param name="logEvent">The log event to enrich.</param>
     /// <param name="propertyFactory">Factory for creating new properties to add to the event.</param>
-    /// <exception cref="ArgumentNullException">When <paramref name="logEvent" /> is <code>null</code></exception>
-    /// <exception cref="ArgumentNullException">
-    ///     When <paramref name="propertyFactory" /> is <code>null</code>
-    /// </exception>
+    /// <exception cref="ArgumentNullException">When <paramref name="logEvent"/> is <code>null</code></exception>
+    /// <exception cref="ArgumentNullException">When <paramref name="propertyFactory"/> is <code>null</code></exception>
     public void Enrich(LogEvent logEvent, ILogEventPropertyFactory propertyFactory) {
         Guard.AgainstNull(logEvent);
         Guard.AgainstNull(propertyFactory);

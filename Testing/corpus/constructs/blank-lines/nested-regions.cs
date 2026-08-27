@@ -1,11 +1,8 @@
 class C {
     #region Outer
-
     #region Inner
-
-    void M() { }
-
+    void M() {
+    }
     #endregion
-
     #endregion
 }

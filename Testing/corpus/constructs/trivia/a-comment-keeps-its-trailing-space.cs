@@ -1,8 +1,8 @@
 class C {
     /// <summary>
-    ///     A doc comment line whose text ends in a space.
+    /// A doc comment line whose text ends in a space. 
     /// </summary>
-    /// <remarks>Another one.</remarks>
+    /// <remarks>Another one. 	</remarks>
     public int Kept { get; set; }
 
     // A line comment ending in a space. 

@@ -1,5 +1,4 @@
 #region License
-
 // Copyright (c) 2007 James Newton-King
 //
 // Permission is hereby granted, free of charge, to any person
@@ -22,10 +21,8 @@
 // WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 // OTHER DEALINGS IN THE SOFTWARE.
-
 #endregion
-
-using System; using System.Collections.Generic; using System.Text;
+using System;using System.Collections.Generic;using System.Text;
 #if DNXCORE50
 using Xunit;
 using Test = Xunit.FactAttribute;
@@ -33,25 +30,13 @@ using Assert = Newtonsoft.Json.Tests.XUnitAssert;
 #else
 using NUnit.Framework;
 #endif
-namespace Newtonsoft.Json.Tests.Documentation.Samples.Serializer {
-    [TestFixture]
-    public class DeserializeObject : TestFixtureBase {
-        #region Types
-
-        public class Account {
-            public string Email { get; set; }
-            public bool Active { get; set; }
-            public DateTime CreatedDate { get; set; }
-            public IList<string> Roles { get; set; }
-        }
-
-        #endregion
-
-        [Test]
-        public void Example() {
-            #region Usage
-
-            string json = @"{
+namespace Newtonsoft.Json.Tests.Documentation.Samples.Serializer{[TestFixture]public class DeserializeObject:TestFixtureBase{
+#region Types
+public class Account{public string Email{get;set;}public bool Active{get;set;}public DateTime CreatedDate{get;set;}public IList<string>Roles{get;set;}}
+#endregion
+[Test]public void Example(){
+#region Usage
+string json=@"{
               'Email': 'james@example.com',
               'Active': true,
               'CreatedDate': '2013-01-20T00:00:00Z',
@@ -59,13 +44,6 @@ namespace Newtonsoft.Json.Tests.Documentation.Samples.Serializer {
                 'User',
                 'Admin'
               ]
-            }";
-            Account account = JsonConvert.DeserializeObject<Account>(json);
-            Console.WriteLine(account.Email); // james@example.com
-
-            #endregion
-
-            Assert.AreEqual("james@example.com", account.Email);
-        }
-    }
-}
+            }" ;Account account=JsonConvert.DeserializeObject<Account>(json);Console.WriteLine(account.Email); // james@example.com
+#endregion
+Assert.AreEqual("james@example.com" ,account.Email);}}}

@@ -25,17 +25,13 @@ class PropertyBinder {
     }
 
     /// <summary>
-    ///     Create properties based on an ordered list of provided values.
+    /// Create properties based on an ordered list of provided values.
     /// </summary>
     /// <param name="messageTemplate">The template that the parameters apply to.</param>
-    /// <param name="messageTemplateParameters">
-    ///     Objects corresponding to the properties
-    ///     represented in the message template.
-    /// </param>
-    /// <returns>
-    ///     A list of properties; if the template is malformed then
-    ///     this will be empty.
-    /// </returns>
+    /// <param name="messageTemplateParameters">Objects corresponding to the properties
+    /// represented in the message template.</param>
+    /// <returns>A list of properties; if the template is malformed then
+    /// this will be empty.</returns>
 #if FEATURE_SPAN
     public EventProperty[] ConstructProperties(MessageTemplate messageTemplate, ReadOnlySpan<object?> messageTemplateParameters)
 #else

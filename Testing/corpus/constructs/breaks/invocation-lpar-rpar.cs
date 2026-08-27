@@ -5,11 +5,10 @@ class InvocationParentheses {
             secondArgument
         );
 
-        Call(
-            firstArgument,
-            secondArgument
-        );
+        Call(firstArgument,
+            secondArgument);
 
-        Call(firstArgument, secondArgument);
+        Call(firstArgument
+            , secondArgument);
     }
 }

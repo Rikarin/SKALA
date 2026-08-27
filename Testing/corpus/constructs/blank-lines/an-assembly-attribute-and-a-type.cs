@@ -1,3 +1,3 @@
 [assembly: System.CLSCompliant(false)]
-
-class C { }
+class C {
+}

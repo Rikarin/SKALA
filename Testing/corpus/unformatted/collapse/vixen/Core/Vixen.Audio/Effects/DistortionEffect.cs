@@ -1,28 +1,25 @@
 // SPDX-FileCopyrightText: Copyright (c) Rikarin
 // SPDX-License-Identifier: Apache-2.0
-using Vixen.Audio.Dsp; namespace Vixen.Audio.Effects;
-
+using Vixen.Audio.Dsp;namespace Vixen.Audio.Effects;
 /// <summary>Which curve a distortion bends the signal along.</summary>
-public enum DistortionCurve {
-    /// <summary>A hyperbolic tangent: rounds the peaks off gradually, and never quite reaches the rail.</summary>
+public enum DistortionCurve{
+/// <summary>A hyperbolic tangent: rounds the peaks off gradually, and never quite reaches the rail.</summary>
     /// <remarks>The warm one. Adds mostly odd harmonics and stays musical a long way past sensible drive.</remarks>
-    SoftClip,
-    /// <summary>Flat tops. What a clamp does, made deliberate.</summary>
+SoftClip,
+/// <summary>Flat tops. What a clamp does, made deliberate.</summary>
     /// <remarks>
     ///     Harsh, buzzy, and the right answer for a blown speaker, a broken radio, or damage feedback.
     ///     It also aliases badly, which is part of why it sounds broken.
     /// </remarks>
-    HardClip,
-    /// <summary>A cubic curve that goes flat exactly at the rail. The classic overdrive shape.</summary>
-    Overdrive,
-    /// <summary>Past the rail the waveform folds back on itself instead of flattening.</summary>
+HardClip,
+/// <summary>A cubic curve that goes flat exactly at the rail. The classic overdrive shape.</summary>
+Overdrive,
+/// <summary>Past the rail the waveform folds back on itself instead of flattening.</summary>
     /// <remarks>
     ///     Sounds nothing like clipping — it turns loud into a metallic, ring-modulated mess, which
     ///     is what a sci-fi transmission or a possessed voice wants.
     /// </remarks>
-    Foldback
-}
-
+Foldback}
 /// <summary>Bends the waveform, which is what every kind of distortion is.</summary>
 /// <remarks>
 ///     <para>
@@ -46,28 +43,23 @@ public enum DistortionCurve {
 ///         everybody does. It is owed, and this is not the effect to put a guitar through yet.
 ///     </para>
 /// </remarks>
-public sealed class DistortionEffect : IAudioEffect {
-    /// <summary>Which curve.</summary>
-    public DistortionCurve Curve { get; set; } = DistortionCurve.SoftClip;
-
-    /// <summary>How hard the signal is pushed into the curve, in decibels.</summary>
+public sealed class DistortionEffect:IAudioEffect{
+/// <summary>Which curve.</summary>
+public DistortionCurve Curve{get;set;}=DistortionCurve.SoftClip;
+/// <summary>How hard the signal is pushed into the curve, in decibels.</summary>
     /// <remarks>Zero is no distortion at all for any curve here, because none of them bends below the rail.</remarks>
-    public float DriveDb { get; set; } = 12f;
-
-    /// <summary>A gain applied after the curve, in decibels, to put the level back.</summary>
-    public float OutputDb { get; set; } = -6f;
-
-    /// <summary>How much of the bent signal to keep, against the untouched one.</summary>
+public float DriveDb{get;set;}=12f;
+/// <summary>A gain applied after the curve, in decibels, to put the level back.</summary>
+public float OutputDb{get;set;}=-6f;
+/// <summary>How much of the bent signal to keep, against the untouched one.</summary>
     /// <remarks>
     ///     Parallel distortion: a mix below one keeps the original's dynamics and adds the harmonics
     ///     on top, which is how a heavy sound stays intelligible.
     /// </remarks>
-    public float Mix { get; set; } = 1f;
-
-    /// <inheritdoc />
-    public bool Enabled { get; set; } = true;
-
-    /// <summary>How many times the sample rate the shaping runs at: 1, 2 or 4.</summary>
+public float Mix{get;set;}=1f;
+/// <inheritdoc />
+public bool Enabled{get;set;}=true;
+/// <summary>How many times the sample rate the shaping runs at: 1, 2 or 4.</summary>
     /// <remarks>
     ///     <para>
     ///         <b>One by default, because it is not always worth it.</b> Bending a waveform makes
@@ -86,83 +78,22 @@ public sealed class DistortionEffect : IAudioEffect {
     ///         effect at the next <see cref="Prepare" />.
     ///     </para>
     /// </remarks>
-    public int Oversampling { get => oversampling; set => oversampling = value is 2 or 4 ? value : 1; }
-
-    int oversampling = 1;
-    Oversampler? sampler;
-    int prepared;
-
-    /// <inheritdoc />
-    public void Prepare(in AudioFormat format, int maxFrames) {
-        prepared = format.Channels;
-        sampler = oversampling > 1 && prepared > 0 ? new Oversampler(prepared, oversampling) : null;
-    }
-
-    /// <inheritdoc />
-    public void Process(Span<float> buffer, int frameCount, int channels) {
-        if (!Enabled) {
-            return;
-        }
-
-        var drive = Decibels.ToLinear(DriveDb);
-        var output = Decibels.ToLinear(OutputDb);
-        var mix = Math.Clamp(Mix, 0f, 1f);
-        var samples = frameCount * channels;
-        var curve = Curve; // Rebuilt rather than refused when the knob moved since Prepare: an effect that silently did
-        // the wrong thing until something else happened to re-prepare it would be a bad afternoon.
-        if (oversampling > 1 && (sampler is null || sampler.Factor != oversampling || sampler.Channels != channels)) {
-            sampler = new Oversampler(channels, oversampling);
-        }
-
-        if (sampler is null || oversampling <= 1) {
-            for (var i = 0; i < samples; i++) {
-                var dry = buffer[i];
-                var shaped = Shape(dry * drive, curve) * output;
-                buffer[i] = dry + ((shaped - dry) * mix);
-            }
-
-            return;
-        }
-
-        Span<float> points = stackalloc float[sampler.Factor];
-        for (var frame = 0; frame < frameCount; frame++) {
-            for (var channel = 0; channel < channels; channel++) {
-                var index = (frame * channels) + channel;
-                var dry = buffer[index];
-                sampler.Expand(channel, dry, points);
-                for (var i = 0; i < points.Length; i++) {
-                    points[i] = Shape(points[i] * drive, curve);
-                }
-
-                var shaped = sampler.Collapse(channel, points) * output;
-                buffer[index] = dry + ((shaped - dry) * mix);
-            }
-        }
-    }
-
-    /// <inheritdoc />
-    public void Reset() => sampler?.Reset();
-
-    /// <inheritdoc />
-    public bool TrySetProperty(string name, float value) {
-        switch (name) { case "DriveDb": DriveDb = value; return true; case "OutputDb":
-                OutputDb = value;
-                return true; case "Mix": Mix = value; return true; default: return false; }
-    }
-
-    /// <inheritdoc />
-    public bool TryGetProperty(string name, out float value) {
-        switch (name) { case "DriveDb": value = DriveDb; return true; case "OutputDb":
-                value = OutputDb;
-                return true; case "Mix": value = Mix; return true; default: value = 0f; return false; }
-    }
-
-    /// <inheritdoc />
-    public IReadOnlyList<string> Properties => Knobs;
-
-    static readonly string[] Knobs = ["DriveDb", "OutputDb", "Mix"];
-
-    /// <summary>Bends one sample.</summary>
+public int Oversampling{get=>oversampling;set=>oversampling=value is 2or 4?value:1;}int oversampling=1;Oversampler?sampler;int prepared;
+/// <inheritdoc />
+public void Prepare(in AudioFormat format,int maxFrames){prepared=format.Channels;sampler=oversampling>1&&prepared>0?new Oversampler(prepared,oversampling):null;}
+/// <inheritdoc />
+public void Process(Span<float>buffer,int frameCount,int channels){if(!Enabled){return;}var drive=Decibels.ToLinear(DriveDb);var output=Decibels.ToLinear(OutputDb);var mix=Math.Clamp(Mix,0f,1f);var samples=frameCount*channels;var curve=Curve; // Rebuilt rather than refused when the knob moved since Prepare: an effect that silently did
+// the wrong thing until something else happened to re-prepare it would be a bad afternoon.
+if(oversampling>1&&(sampler is null||sampler.Factor!=oversampling||sampler.Channels!=channels)){sampler=new Oversampler(channels,oversampling);}if(sampler is null||oversampling<=1){for(var i=0;i<samples;i++){var dry=buffer[i];var shaped=Shape(dry*drive,curve)*output;buffer[i]=dry+((shaped-dry)*mix);}return;}Span<float>points=stackalloc float[sampler.Factor];for(var frame=0;frame<frameCount;frame++){for(var channel=0;channel<channels;channel++){var index=(frame*channels)+channel;var dry=buffer[index];sampler.Expand(channel,dry,points);for(var i=0;i<points.Length;i++){points[i]=Shape(points[i]*drive,curve);}var shaped=sampler.Collapse(channel,points)*output;buffer[index]=dry+((shaped-dry)*mix);}}}
+/// <inheritdoc />
+public void Reset()=>sampler?.Reset();
+/// <inheritdoc />
+public bool TrySetProperty(string name,float value){switch(name){case"DriveDb" :DriveDb=value;return true;case"OutputDb" :OutputDb=value;return true;case"Mix":Mix=value;return true;default:return false;}}
+/// <inheritdoc />
+public bool TryGetProperty(string name,out float value){switch(name){case"DriveDb" :value=DriveDb;return true;case"OutputDb" :value=OutputDb;return true;case"Mix":value=Mix;return true;default:value=0f;return false;}}
+/// <inheritdoc />
+public IReadOnlyList<string>Properties=>Knobs;static readonly string[]Knobs=["DriveDb" ,"OutputDb" ,"Mix"];
+/// <summary>Bends one sample.</summary>
     /// <param name="value">The sample, already driven.</param>
     /// <param name="curve">Which curve.</param>
     /// <returns>The bent sample.</returns>
@@ -171,22 +102,8 @@ public sealed class DistortionEffect : IAudioEffect {
     ///     of this effect worth testing directly — a curve is right or wrong at a handful of values
     ///     and no ear is needed to check.
     /// </remarks>
-    public static float Shape(float value, DistortionCurve curve) {
-        switch (curve) { case DistortionCurve.HardClip:
-                return Math.Clamp(value, -1f, 1f); case DistortionCurve.Overdrive: {
-                // 1.5x − 0.5x³: flat-topped at exactly ±1, with a slope of 1.5 through zero, which is
-                // why it is louder than it went in before it is louder than the rail.
-                var clamped = Math.Clamp(value, -1f, 1f);
-                return (1.5f * clamped) - (0.5f * clamped * clamped * clamped);
-            } case DistortionCurve.Foldback: {
-                // Reflected about the rail, repeatedly, so an input of 3 comes out as −1 rather than
-                // as 1. The loop terminates because each reflection halves the distance past it.
-                var folded = value;
-                while (MathF.Abs(folded) > 1f) {
-                    folded = folded > 0f ? 2f - folded : -2f - folded;
-                }
-
-                return folded;
-            } case DistortionCurve.SoftClip: default: return MathF.Tanh(value); }
-    }
-}
+public static float Shape(float value,DistortionCurve curve){switch(curve){case DistortionCurve.HardClip:return Math.Clamp(value,-1f,1f);case DistortionCurve.Overdrive:{ // 1.5x − 0.5x³: flat-topped at exactly ±1, with a slope of 1.5 through zero, which is
+// why it is louder than it went in before it is louder than the rail.
+var clamped=Math.Clamp(value,-1f,1f);return(1.5f*clamped)-(0.5f*clamped*clamped*clamped);}case DistortionCurve.Foldback:{ // Reflected about the rail, repeatedly, so an input of 3 comes out as −1 rather than
+// as 1. The loop terminates because each reflection halves the distance past it.
+var folded=value;while(MathF.Abs(folded)>1f){folded=folded>0f?2f-folded:-2f-folded;}return folded;}case DistortionCurve.SoftClip:default:return MathF.Tanh(value);}}}

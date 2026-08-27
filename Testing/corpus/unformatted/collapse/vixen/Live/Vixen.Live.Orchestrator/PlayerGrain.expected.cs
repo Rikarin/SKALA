@@ -76,16 +76,16 @@ public sealed class PlayerLeaseState {
         var now = options.Now();
         if (presented != epoch || holder != shard) {
             // Superseded. The realm keeps simulating — doc 27 is explicit that a lease loss
-            // mid-combat must be survivable — and buffers its durable mutations until the lease
-            // returns or the transfer hands them to the new holder.
+// mid-combat must be survivable — and buffers its durable mutations until the lease
+// returns or the transfer hands them to the new holder.
             return new(false, epoch, holder, expires);
         }
 
         if (expires <= now) {
             // It lapsed while they were away, so the epoch moves and anything written under the old
-            // one is refused. A renewal that resurrected a lapsed lease would let two realms believe
-            // they hold the same character across a partition, which is the one thing this type
-            // exists to make impossible.
+// one is refused. A renewal that resurrected a lapsed lease would let two realms believe
+// they hold the same character across a partition, which is the one thing this type
+// exists to make impossible.
             epoch++;
         }
 

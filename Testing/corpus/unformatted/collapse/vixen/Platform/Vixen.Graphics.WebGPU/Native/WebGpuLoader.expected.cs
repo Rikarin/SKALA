@@ -127,8 +127,8 @@ static class WebGpuLoader {
                 var missing = Required.Where(name => !NativeLibrary.TryGetExport(handle, name, out _)).ToArray();
                 if (missing.Length > 0) {
                     // Not `continue`: a library that loaded under the right name and exports the
-                    // wrong entry points is the version problem, not a search problem, and trying
-                    // the next candidate would report "not found" for something that was found.
+// wrong entry points is the version problem, not a search problem, and trying
+// the next candidate would report "not found" for something that was found.
                     failure = TooNew(candidate, missing);
                     api = null;
                     reason = failure;
@@ -172,8 +172,8 @@ static class WebGpuLoader {
             }
         } // Undecorated last, so the OS searches its own paths only after the application's own layout
 
-        // has been given the chance to answer. A machine-wide copy beating the one an application
-        // shipped and was tested against is the failure this ordering exists to prevent.
+// has been given the chance to answer. A machine-wide copy beating the one an application
+// shipped and was tested against is the failure this ordering exists to prevent.
         foreach (var library in Libraries) {
             foreach (var name in NativeLibraryNames.For(library)) {
                 yield return name;

@@ -41,18 +41,18 @@ public sealed class AccelerationStructureDeviceTests {
         var device = owned.Device;
         if (!device.Features.HasRayTracing) {
             // Not a failure. MoltenVK exposes neither VK_KHR_acceleration_structure nor
-            // VK_KHR_ray_query, so a Mac is a legitimate "no" — the distance-field tracer is the
-            // configuration that runs here, and the VulkanFeatures tests hold the detection.
-            //
-            // ⚠ Skipped and not returned: same verdict, but a bare return is recorded as a pass, so
-            // a ray-query test reported green on every runner that cannot run a ray query at all.
+// VK_KHR_ray_query, so a Mac is a legitimate "no" — the distance-field tracer is the
+// configuration that runs here, and the VulkanFeatures tests hold the detection.
+//
+// ⚠ Skipped and not returned: same verdict, but a bare return is recorded as a pass, so
+// a ray-query test reported green on every runner that cannot run a ray query at all.
             Assert.Skip("The device exposes no ray query (ADR-011), which this test is gated on.");
             return;
         } // Four large, well-separated triangles around a probe at the origin: broad cones of hit
 
-        // and of sky, so almost every octahedral texel is decisively one or the other. The edges
-        // are where the CPU's Möller–Trumbore and the hardware's watertight traversal may
-        // honestly disagree, which is what the mismatch allowance below is for.
+// and of sky, so almost every octahedral texel is decisively one or the other. The edges
+// are where the CPU's Möller–Trumbore and the hardware's watertight traversal may
+// honestly disagree, which is what the mismatch allowance below is for.
         Span<Vector3> vertices = [
             new(-6f, 3f, -6f), new(6f, 3f, -6f), new(0f, 3f, 8f), new(4f, -6f, -6f), new(4f, 6f, -6f), new(4f, 0f, 8f),
             new(-6f, -6f, -4f), new(6f, -6f, -4f), new(0f, 8f, -4f), new(-6f, -3f, 6f), new(6f, -3f, 6f),
@@ -146,7 +146,7 @@ public sealed class AccelerationStructureDeviceTests {
         device.BeginFrame();
         using (var commands = device.BeginCommandList(QueueKind.Graphics, "ray-query")) {
             // Bottom before top on one queue — the build's own trailing barrier is the ordering,
-            // exactly as ICommandList promises.
+// exactly as ICommandList promises.
             commands.BuildAccelerationStructure(bottom, bottomInput, scratch);
             commands.BuildAccelerationStructure(top, topInput, scratch);
             texture.Upload(device, commands);
@@ -162,9 +162,9 @@ public sealed class AccelerationStructureDeviceTests {
         Assert.Empty(effects.Misses);
         Assert.True(texture.TryRead(texels));
         AssertClean(); // The referee: a hit is the cache's black with a valid alpha, a miss is the sky. Edge
-        // grazers may differ — watertightness is the hardware's own rule — so up to two of the
-        // sixty-four texels may flip, and the fixture keeps the count honest by keeping the
-        // triangles few and large.
+// grazers may differ — watertightness is the hardware's own rule — so up to two of the
+// sixty-four texels may flip, and the fixture keeps the count honest by keeping the
+// triangles few and large.
         var layout = traced.Layout;
         var origin = new Vector3(0f, Bias, 0f);
         var mismatches = 0;

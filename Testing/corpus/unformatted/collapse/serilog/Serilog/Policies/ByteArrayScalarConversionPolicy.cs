@@ -12,34 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 namespace Serilog.Policies; // Byte arrays, when logged, need to be copied so that they are
-
 // safe from concurrent modification when written to asynchronous
 // sinks. Byte arrays larger than 1k are written as descriptive strings.
-class ByteArrayScalarConversionPolicy : IScalarConversionPolicy {
-    const int MaximumByteArrayLength = 1024;
-
-    public bool TryConvertToScalar(object value, [NotNullWhen(true)] out ScalarValue? result) {
-        if (value is not byte[] bytes) {
-            result = null;
-            return false;
-        }
-
-        if (bytes.Length > MaximumByteArrayLength) {
+class ByteArrayScalarConversionPolicy:IScalarConversionPolicy{const int MaximumByteArrayLength=1024;public bool TryConvertToScalar(object value,[NotNullWhen(true)]out ScalarValue?result){if(value is not byte[]bytes){result=null;return false;}if(bytes.Length>MaximumByteArrayLength){
 #if FEATURE_TOHEXSTRING
             var start = Convert.ToHexString(bytes, 0, 16);
 #else
-            var start = string.Concat(bytes.Take(16).Select(b => b.ToString("X2")));
+var start=string.Concat(bytes.Take(16).Select(b=>b.ToString("X2")));
 #endif
-            var description = start + "... (" + bytes.Length + " bytes)";
-            result = new ScalarValue(description);
-        } else {
+var description=start+"... (" +bytes.Length+" bytes)" ;result=new ScalarValue(description);}else{
 #if FEATURE_TOHEXSTRING
             result = new ScalarValue(Convert.ToHexString(bytes));
 #else
-            result = new ScalarValue(string.Concat(bytes.Select(b => b.ToString("X2"))));
+result=new ScalarValue(string.Concat(bytes.Select(b=>b.ToString("X2"))));
 #endif
-        }
-
-        return true;
-    }
-}
+}return true;}}

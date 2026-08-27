@@ -55,7 +55,7 @@ public class ViewportStateTests : IDisposable {
             SceneShow.Default,
             pane.Viewport.Show
         ); // A box round every object is the one flag that makes a busy scene less legible rather than
-        // more, which is why it is the one thing off by default.
+// more, which is why it is the one thing off by default.
         Assert.Equal(SceneShow.None, pane.Viewport.Show & SceneShow.Bounds);
     }
 
@@ -97,7 +97,7 @@ public class ViewportStateTests : IDisposable {
             pane.Viewport,
             Height
         ); // Twelve edges, two vertices each. A unit cube's corners are half a unit out on every axis —
-        // the shape's own bounds through the entity's matrix, not a world-aligned box round it.
+// the shape's own bounds through the entity's matrix, not a world-aligned box round it.
         Assert.Equal(24, lines.World.Count);
         Assert.All(lines.World, vertex => Assert.Equal(0.5f, MathF.Abs(vertex.Position.X), 4));
     }
@@ -119,8 +119,8 @@ public class ViewportStateTests : IDisposable {
     [Fact]
     public void Every_flag_has_a_name_and_a_slug() {
         // The Show menu and the viewport's popover are both generated from `ShowFlags.All`, so a flag
-        // added to the enum and not to the list appears in neither — which is the failure that shows
-        // up immediately rather than the one that does not.
+// added to the enum and not to the list appears in neither — which is the failure that shows
+// up immediately rather than the one that does not.
         Assert.All(ShowFlags.All, flag => Assert.False(string.IsNullOrWhiteSpace(ShowFlags.NameOf(flag))));
         Assert.All(ShowFlags.All, flag => Assert.False(string.IsNullOrWhiteSpace(ShowFlags.SlugOf(flag))));
         Assert.Equal(ShowFlags.All.Count, ShowFlags.All.Select(ShowFlags.SlugOf).Distinct().Count());
@@ -137,7 +137,7 @@ public class ViewportStateTests : IDisposable {
             0,
             meshes.Triangles
         ); // The wireframe is the same instance again with the edge index range, which is a batch of its
-        // own because a topology cannot change within a draw.
+// own because a topology cannot change within a draw.
         var batch = Assert.Single(meshes.Batches);
         Assert.True(batch.Edges);
         Assert.Equal(1, batch.Count);
@@ -157,7 +157,7 @@ public class ViewportStateTests : IDisposable {
             meshes.Batches,
             batch => !batch.Edges
         ); // One entity, drawn twice. The pass costs a second instance rather than a second copy of the
-        // cube's vertices, which is the whole difference from the path this replaced.
+// cube's vertices, which is the whole difference from the path this replaced.
         Assert.Equal(1, meshes.Count);
         Assert.Equal(2, meshes.Instances.Length);
     }
@@ -173,23 +173,23 @@ public class ViewportStateTests : IDisposable {
             scene,
             pane.Viewport
         ); // ⚠ A style lane rather than a colour per vertex, because there are no vertices here to put
-        // one on: the shader remaps the world normal from −1..1 into a colour, and remaps rather than
-        // clamps because half of every normal is negative and a colour is not — clamping would paint
-        // three of a cube's six faces black.
+// one on: the shader remaps the world normal from −1..1 into a colour, and remaps rather than
+// clamps because half of every normal is negative and a colour is not — clamping would paint
+// three of a cube's six faces black.
         var instance = Assert.Single(meshes.Instances.ToArray());
         Assert.Equal(
             1f,
             instance.Style.W
         ); // Painting the selected object orange in a view whose whole content is "this pixel's colour
-        // *is* the normal" makes the one object being looked at the one the view cannot answer for.
+// *is* the normal" makes the one object being looked at the one the view cannot answer for.
         Assert.NotEqual(meshes.SelectedColour, instance.Colour);
     }
 
     [Fact]
     public void The_two_modes_the_tool_renderer_cannot_draw_say_so() {
         // ⚠ A mode with no compositor falls back to shaded, which for a menu line means drawing the
-        // same picture as the line above it. `IsSupported` is what lets those two be registered as
-        // declared-and-disabled with the reason instead.
+// same picture as the line above it. `IsSupported` is what lets those two be registered as
+// declared-and-disabled with the reason instead.
         Assert.False(ViewShading.IsSupported(ViewMode.Overdraw));
         Assert.False(ViewShading.IsSupported(ViewMode.LightComplexity));
         Assert.True(ViewShading.IsSupported(ViewMode.Shaded));
@@ -197,8 +197,8 @@ public class ViewportStateTests : IDisposable {
         Assert.True(
             ViewShading.IsSupported(ViewMode.Wireframe)
         ); // ✅ Roughness was the third of them and is not any more. It was refused because "roughness
-        // needs a material to read one off, and there are none: the shape colour is a constant chosen
-        // by SceneMeshes" — and there are materials now. `SceneMaterialTests` asserts what it draws.
+// needs a material to read one off, and there are none: the shape colour is a constant chosen
+// by SceneMeshes" — and there are materials now. `SceneMaterialTests` asserts what it draws.
         Assert.True(ViewShading.IsSupported(ViewMode.Roughness));
     }
 
@@ -210,7 +210,7 @@ public class ViewportStateTests : IDisposable {
             1f,
             ViewShading.AmbientFor(ViewMode.Normal, 0.35f)
         ); // A roughness view is the surface's own value as the whole picture, exactly as an albedo view
-        // is — shading it would be the number multiplied by a picture of itself.
+// is — shading it would be the number multiplied by a picture of itself.
         Assert.Equal(1f, ViewShading.AmbientFor(ViewMode.Roughness, 0.35f));
         Assert.Equal(0.35f, ViewShading.AmbientFor(ViewMode.Shaded, 0.35f));
     } // ── Selection ───────────────────────────────────────────────────────────────────────────────
@@ -239,8 +239,8 @@ public class ViewportStateTests : IDisposable {
             meshes.SelectedColour,
             instance.Colour
         ); // ⚠ And no expansion width in the style lane, which is what the shader reads to push a hull
-        // outwards. The lanes are still there for the wireframe's flat lighting; nothing sets the
-        // width any more.
+// outwards. The lanes are still there for the wireframe's flat lighting; nothing sets the
+// width any more.
         Assert.Equal(0f, instance.Style.X);
     }
 
@@ -290,7 +290,7 @@ public class ViewportStateTests : IDisposable {
         stats.Sample(
             TimeSpan.FromMilliseconds(16d)
         ); // ⚠ Not eased in from zero: a frame rate climbing from infinity for the first second of every
-        // session reads as the editor warming up and is an artefact of the filter.
+// session reads as the editor warming up and is an artefact of the filter.
         Assert.Equal(16f, stats.FrameMilliseconds, 3);
         stats.Sample(TimeSpan.FromMilliseconds(32d));
         Assert.True(stats.FrameMilliseconds > 16f);
@@ -315,7 +315,7 @@ public class ViewportStateTests : IDisposable {
             0,
             stats.Triangles
         ); // The pane still took a frame; a collapsed panel reporting zero milliseconds would be the one
-        // place the readout lies about the editor being fast.
+// place the readout lies about the editor being fast.
         Assert.Equal(16f, stats.FrameMilliseconds, 3);
     } // ── Bookmarks ───────────────────────────────────────────────────────────────────────────────
 

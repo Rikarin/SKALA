@@ -82,8 +82,8 @@ public sealed class GamutMapTests {
             green.Z,
             4
         ); // sRGB blue and P3 blue share a chromaticity — (0.150, 0.060) in both — so the top two
-        // entries of this column are exactly zero, and a derivation that got the primaries from the
-        // wrong P3 would not reproduce that.
+// entries of this column are exactly zero, and a derivation that got the primaries from the
+// wrong P3 would not reproduce that.
         Assert.Equal(0f, blue.X, 5);
         Assert.Equal(0f, blue.Y, 5);
         Assert.Equal(0.910520f, blue.Z, 4);
@@ -147,7 +147,7 @@ public sealed class GamutMapTests {
             emerald.X < 0f,
             $"emerald-500's linear red should go negative, got {emerald.X}"
         ); // The point of the exercise: on the display this engine is developed on, all three are
-        // showable and the mapper must leave them alone.
+// showable and the mapper must leave them alone.
         Assert.True(GamutMap.InGamut(blue, ColorGamut.DisplayP3));
         Assert.True(GamutMap.InGamut(emerald, ColorGamut.DisplayP3));
         Assert.True(GamutMap.InGamut(red, ColorGamut.DisplayP3));
@@ -195,10 +195,10 @@ public sealed class GamutMapTests {
             worstMap = MathF.Max(worstMap, HueDifference(origin, GamutMap.Map(origin, ColorGamut.Srgb)));
         } // Measured, not assumed: at L=0.65, C=0.37 the worst per-channel clip moves the hue by about
 
-        // 42.5°, which is red arriving as orange. The mapper's worst is about 5.5°, and that residual
-        // is the local-MINDE clip at the end — the deliberate trade that buys back chroma near a
-        // concave patch of the surface. The bounds below are loose around those two numbers so that
-        // this fails on a regression rather than on the last digit of a cube root.
+// 42.5°, which is red arriving as orange. The mapper's worst is about 5.5°, and that residual
+// is the local-MINDE clip at the end — the deliberate trade that buys back chroma near a
+// concave patch of the surface. The bounds below are loose around those two numbers so that
+// this fails on a regression rather than on the last digit of a cube root.
         Assert.True(worstClip > 20f, $"clipping should shift hue badly, worst was {worstClip}");
         Assert.True(worstMap < 10f, $"mapping should hold hue, worst was {worstMap}");
         Assert.True(

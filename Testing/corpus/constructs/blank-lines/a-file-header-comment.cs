@@ -1,4 +1,5 @@
 // Copyright (c) Rikarin
 using System;
 
-class C { }
+class C {
+}

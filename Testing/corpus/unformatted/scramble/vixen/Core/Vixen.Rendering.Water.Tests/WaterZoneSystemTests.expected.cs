@@ -4,10 +4,10 @@
 
 using System.Reflection;
 using
-Vixen.Core;
+    Vixen.Core;
 using Vixen.Core.Mathematics;
 using
-Vixen.Ecs;
+    Vixen.Ecs;
 using Vixen.Ecs.Systems;
 using Vixen.Engine.Transforms;
 using Vixen.Rendering;
@@ -93,8 +93,10 @@ public sealed class WaterZoneSystemTests : IDisposable {
             .Add(entity, WaterBodyComponent.Default with { Spline = spline, SurfaceHeight = at.Y });
         world.Add(
             entity,
-            new WorldTransform { Value =
-                    Matrix4x4.FromTranslation(at) }
+            new WorldTransform {
+                Value =
+                    Matrix4x4.FromTranslation(at)
+            }
         );
         return
             entity;
@@ -124,7 +126,7 @@ public sealed class WaterZoneSystemTests : IDisposable {
         Assert.Single(state.Bodies);
         Assert.True(
             state
-                .Field!.Sample(Vector2.Zero)
+                .Field !.Sample(Vector2.Zero)
                 .Coverage
             > 0.9f
         );
@@ -176,7 +178,7 @@ public sealed class WaterZoneSystemTests : IDisposable {
         Body(new(0f, 2f, 0f), spline: string.Empty);
 
         var
-        system = System();
+            system = System();
         system.Fold(world);
         Assert.Equal(1, system.BodyCount);
         Assert.Equal(
@@ -263,10 +265,8 @@ public sealed class WaterZoneSystemTests : IDisposable {
     /// </summary>
     /// <remarks>
     ///     <para>
-    ///         <b>
-    ///             The claim the whole amortisation rests on, and the one that is invisible when it
-    ///             fails.
-    ///         </b> A field re-rasterised every frame looks identical to one re-rasterised every
+    ///         <b>The claim the whole amortisation rests on, and the one that is invisible when it
+    ///         fails.</b> A field re-rasterised every frame looks identical to one re-rasterised every
     ///         hundredth; the only symptom is frame time.
     ///     </para>
     ///     <para>
@@ -289,7 +289,7 @@ public sealed class WaterZoneSystemTests : IDisposable {
         Assert.Equal(1, system.RebuiltBodies);
 
         for (var frame =
-             0;
+                 0;
              frame < 200;
              frame++) {
             system.Fold(world);
@@ -313,7 +313,9 @@ public sealed class WaterZoneSystemTests : IDisposable {
     [Fact]
     public void A_zeroed_scroll_threshold_amortises_rather_than_rasterising_every_frame() {
         var component = WaterZoneComponent.Default
-            with { ScrollThreshold = 0f };
+            with {
+                ScrollThreshold = 0f
+            };
 
         Assert.Equal(WaterZone.Default.ScrollThreshold, component.Zone.ScrollThreshold);
         var zone = Zone(component);
@@ -353,7 +355,7 @@ public sealed class WaterZoneSystemTests : IDisposable {
         );
         Assert.Equal(WaterZoneUpdate.Changed, state.LastUpdate);
         // And the water is where the body now is.
-        Assert.Equal(0f, state.Field!.Sample(Vector2.Zero).Coverage);
+        Assert.Equal(0f, state.Field !.Sample(Vector2.Zero).Coverage);
         Assert.True(state.Field.Sample(new(80f, 0f)).Coverage > 0.9f);
     }
 
@@ -483,7 +485,7 @@ public sealed class WaterZoneSystemTests : IDisposable {
         system
             .Fold(world);
         var
-        body = Assert.Single(system.States[zone].Bodies);
+            body = Assert.Single(system.States[zone].Bodies);
         Assert.Equal(WaterBodyComponent.Default.ShoreFalloff, body.ShoreFalloff);
     }
 
@@ -504,7 +506,7 @@ public sealed class WaterZoneSystemTests : IDisposable {
         public bool Landed {
             get;
             set
-                ;
+            ;
         }
 
         public int Calls { get; private set; }
@@ -526,10 +528,8 @@ public sealed class WaterZoneSystemTests : IDisposable {
     /// </summary>
     /// <remarks>
     ///     <para>
-    ///         <b>
-    ///             The fold caches a body against its component and its placement, and it used to cache
-    ///             the <em>failure</em> with it.
-    ///         </b> A body whose <c>SplineFor</c> answered null was
+    ///         <b>The fold caches a body against its component and its placement, and it used to cache
+    ///         the <em>failure</em> with it.</b> A body whose <c>SplineFor</c> answered null was
     ///         recorded as unresolved, and because nothing about the component or the transform then
     ///         changed it was never asked again for the life of the world — so a lake named in a scene
     ///         could never appear in a running game, and the failure was permanent rather than
@@ -573,7 +573,7 @@ public sealed class WaterZoneSystemTests : IDisposable {
         Assert.Single(system.States[zone].Bodies);
         Assert.True(
             system.States
-            [zone].Field!.Sample(Vector2.Zero)
+                    [zone].Field !.Sample(Vector2.Zero)
                 .Coverage
             > 0.9f
         );
@@ -584,7 +584,7 @@ public sealed class WaterZoneSystemTests : IDisposable {
             system.States[zone].RasterCount;
 
         for (var frame =
-             0;
+                 0;
              frame < 50;
              frame++) {
             system.Fold(world);
@@ -609,8 +609,12 @@ public sealed class WaterZoneSystemTests : IDisposable {
                 .Zone.Validate()
         );
         Assert.Equal(2f, zone.Zone.MetresPerTexel, 1e-5f);
-        var body = WaterBodyComponent.Default with { Depth = 5f, Velocity = 1.5f, AudioIntensity =
-                0.8f };
+        var body = WaterBodyComponent.Default with {
+            Depth = 5f,
+            Velocity = 1.5f,
+            AudioIntensity =
+            0.8f
+        };
         Assert.Equal(5f, body.Profile.Depth);
         Assert.Equal(1.5f, body.Profile.Velocity);
         Assert.Equal(0.8f, body.Profile.AudioIntensity);
@@ -649,11 +653,8 @@ public sealed class WaterZoneSystemTests : IDisposable {
 
     /// <summary>A named sea state replaces the inline one, in the component every consumer reads.</summary>
     /// <remarks>
-    ///     ⚠
-    ///     <b>
-    ///         Asserted through <see cref="WaterZoneSystem.Zones" /> rather than through a resolver
-    ///         the test calls itself.
-    ///     </b> The whole design is that the name becomes a value in exactly one
+    ///     ⚠ <b>Asserted through <see cref="WaterZoneSystem.Zones" /> rather than through a resolver
+    ///     the test calls itself.</b> The whole design is that the name becomes a value in exactly one
     ///     place, so that the vertex stage and the underwater shape cannot disagree about what sea
     ///     this is — and the only way to check that is to read what those two read.
     /// </remarks>
@@ -693,7 +694,7 @@ public sealed class WaterZoneSystemTests : IDisposable {
         Zone(WaterZoneComponent.Default with { Waves = WaterWaveSpectrum.Calm, WaveAsset = "Missing" });
 
         var
-        system = System();
+            system = System();
         system.Waves = new Sea("NorthSea", WaterWaveSpectrum.Default);
         system.Fold(world);
 
@@ -712,7 +713,7 @@ public sealed class WaterZoneSystemTests : IDisposable {
         Zone(
             WaterZoneComponent.Default with {
                 Waves
-                    = WaterWaveSpectrum.Calm,
+                = WaterWaveSpectrum.Calm,
                 WaveAsset = "NorthSea"
             }
         );
@@ -888,7 +889,7 @@ public sealed class WaterZoneSystemTests : IDisposable {
         Assert.Equal(
             SystemPhase.PreRender,
             typeof(
-            WaterZoneSystem).GetCustomAttribute<UpdateInGroupAttribute>()!.Phase
+                WaterZoneSystem).GetCustomAttribute<UpdateInGroupAttribute>()!.Phase
         );
 
         Assert.True(SystemPhase.EarlyUpdate < SystemPhase.FixedUpdate);

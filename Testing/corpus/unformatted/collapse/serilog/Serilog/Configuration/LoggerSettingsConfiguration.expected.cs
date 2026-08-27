@@ -16,7 +16,7 @@
 namespace Serilog.Configuration;
 
 /// <summary>
-///     Allows additional setting sources to drive the logger configuration.
+/// Allows additional setting sources to drive the logger configuration.
 /// </summary>
 public class LoggerSettingsConfiguration {
     readonly LoggerConfiguration _loggerConfiguration;
@@ -26,10 +26,10 @@ public class LoggerSettingsConfiguration {
     }
 
     /// <summary>
-    ///     Apply external settings to the logger configuration.
+    /// Apply external settings to the logger configuration.
     /// </summary>
     /// <returns>Configuration object allowing method chaining.</returns>
-    /// <exception cref="ArgumentNullException">When <paramref name="settings" /> is <code>null</code></exception>
+    /// <exception cref="ArgumentNullException">When <paramref name="settings"/> is <code>null</code></exception>
     public LoggerConfiguration Settings(ILoggerSettings settings) {
         Guard.AgainstNull(settings);
         settings.Configure(_loggerConfiguration);
@@ -37,14 +37,12 @@ public class LoggerSettingsConfiguration {
     }
 
     /// <summary>
-    ///     Apply settings specified in the Serilog key-value setting format to the logger configuration.
+    /// Apply settings specified in the Serilog key-value setting format to the logger configuration.
     /// </summary>
     /// <param name="settings">A list of key-value pairs describing logger settings.</param>
     /// <returns>Configuration object allowing method chaining.</returns>
-    /// <remarks>
-    ///     In case of duplicate keys, the last value for the key is kept and the previous ones are ignored.
-    /// </remarks>
-    /// <exception cref="ArgumentNullException">When <paramref name="settings" /> is <code>null</code></exception>
+    /// <remarks>In case of duplicate keys, the last value for the key is kept and the previous ones are ignored.</remarks>
+    /// <exception cref="ArgumentNullException">When <paramref name="settings"/> is <code>null</code></exception>
     [RequiresUnreferencedCode(
         "KeyValuePair scans for configuration assemblies at run time and is not compatible with trimming."
     )]

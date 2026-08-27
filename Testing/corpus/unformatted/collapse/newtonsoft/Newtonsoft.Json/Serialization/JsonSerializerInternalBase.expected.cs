@@ -1,5 +1,4 @@
 // skala-oracle: resharper=2025.2.6 config=sha256:98ff52570e019fac profile=SkalaFormatOnly generated=2026-08-27
-
 #region License
 
 // Copyright (c) 2007 James Newton-King
@@ -61,7 +60,7 @@ namespace Newtonsoft.Json.Serialization {
         internal BidirectionalDictionary<string, object> DefaultReferenceMappings {
             get {
                 // override equality comparer for object key dictionary
-                // object will be modified as it deserializes and might have mutable hashcode
+// object will be modified as it deserializes and might have mutable hashcode
                 if (_mappings == null) {
                     _mappings = new BidirectionalDictionary<string, object>(
                         EqualityComparer<string>.Default,
@@ -80,8 +79,7 @@ namespace Newtonsoft.Json.Serialization {
             JsonProperty property
         ) {
             NullValueHandling resolvedNullValueHandling = property.NullValueHandling
-                ?? containerContract?.ItemNullValueHandling
-                ?? Serializer._nullValueHandling;
+                ?? containerContract?.ItemNullValueHandling ?? Serializer._nullValueHandling;
             return resolvedNullValueHandling;
         }
 

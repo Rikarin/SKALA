@@ -75,7 +75,7 @@ public class TransportTests {
             strip.Children.Where(child => child.Tag == "toolbar-group"),
             box => Descendants(box).Any(child => child.HasClass("transport-play"))
         ); // All four in it and nothing else: a transport with the gizmo modes boxed in beside it would
-        // be a control claiming that Rotate and Stop are the same kind of thing.
+// be a control claiming that Rotate and Stop are the same kind of thing.
         var buttons = Descendants(group).OfType<ButtonBase>().ToList();
         Assert.Equal(4, buttons.Count);
         foreach (var name in new[] { "transport-play", "transport-pause", "transport-step", "transport-stop" }) {

@@ -1,9 +1,9 @@
+            
 // SPDX-FileCopyrightText: Copyright (c) Rikarin
-// SPDX-License-Identifier: Apache-2.0
-
-using Vixen.App;
-
-namespace Vixen.Samples.HelloTriangle;
+  // SPDX-License-Identifier: Apache-2.0
+               
+using  Vixen    .App;
+           namespace Vixen.Samples. HelloTriangle;
 
 /// <summary>The first triangle, and the first time every layer runs at once — the desktop head.</summary>
 /// <remarks>
@@ -31,25 +31,23 @@ namespace Vixen.Samples.HelloTriangle;
 ///         and calls <c>RunFrame</c> instead.
 ///     </para>
 /// </remarks>
-static class
-    Program {
-    // ⚠ The platform is the host's to choose, and this used to take the choice away. It built a
+    static class
+              Program {
+   // ⚠ The platform is the host's to choose, and this used to take the choice away. It built a
     // `DesktopPlatform` and handed it to `WithPlatform`, which `AppBuilder.Build` honours ahead of
-    // the factory — so `--vixen-headless` was parsed into `AppConfig.Headless` and then never asked,
-    // and a run that said it wanted no display server opened an SDL window regardless. The reason
+ // the factory — so `--vixen-headless` was parsed into `AppConfig.Headless` and then never asked,
+      // and a run that said it wanted no display server opened an SDL window regardless. The reason
     // given was that SDL fixes a window's graphics API at creation and the Vulkan flag has to be
-    // requested up front; that is true and already handled, because
+// requested up front; that is true and already handled, because
     // `DesktopPlatformOptions.RequestGpuSurface` defaults to true and `PlatformHost.Create` leaves it
+          
+             // at the default. The hand-built platform bought nothing and cost the flag.
 
-    // at the default. The hand-built platform bought nothing and cost the flag.
-
-    //
-    // No console provider either: the host adds one for every variant except Release, which is where
-
-    // the thirty lines this sample used to carry now live.
-    static int Main(
-        string
-        [] arguments
-    ) =>
-        VixenApp.Run<TriangleGame>(arguments);
+  //
+          // No console provider either: the host adds one for every variant except Release, which is where
+        
+               // the thirty lines this sample used to carry now live.
+          static    int Main    (  string
+    [ ] arguments) =>  VixenApp .   Run< TriangleGame>( arguments);
 }
+   

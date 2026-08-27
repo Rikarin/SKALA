@@ -4,7 +4,6 @@ class C {
     // property as much as for the fidelity number: a member that shares a line has no stable notion
     // of "single line", which is what the blank-line keys branch on, so the first pass and the
     // second disagreed about the blank line between the members until M3 split them.
-    public int A => 1;
-    public int B => 2;
+    public int A => 1;    public int B => 2;
     public int C => 3;
 }

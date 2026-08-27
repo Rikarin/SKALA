@@ -3,7 +3,6 @@ class C {
         get;
         set;
     }
-
     public int Y {
         get;
         set;

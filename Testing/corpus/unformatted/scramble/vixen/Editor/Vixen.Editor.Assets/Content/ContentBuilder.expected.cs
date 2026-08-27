@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 using
-System.Collections.Immutable;
+    System.Collections.Immutable;
 using System.IO.Hashing;
 using Vixen.Assets;
 using Vixen.Core;
@@ -26,7 +26,7 @@ public readonly record struct BuildableAsset(
     ObjectId Id,
     string Group,
     ImmutableArray<string>
-    Labels,
+        Labels,
     ImmutableArray<string> Dependencies,
     AssetReference Reference = default
 );
@@ -80,7 +80,8 @@ public
     sealed class ContentBuilder {
     /// <summary>The catalog format this writes.</summary>
     public
-        static int CatalogVersion => CatalogFormat.Version;
+        static int CatalogVersion =>
+        CatalogFormat.Version;
 
     /// <summary>Which target the build is for.</summary>
     public string Target { get; }
@@ -129,12 +130,13 @@ public
             if (!policies.TryGetValue(
                     asset.Group,
                     out var
-                    group
+                        group
                 )) {
                 throw new ArgumentException(
                     $"'{asset.Address}' is in group '{asset.Group}', which no .vxgroup defines. Either the group "
                     + "file was deleted or the asset's addressable metadata points at a name nothing answers to.",
-                    nameof(assets)
+                    nameof(
+                        assets)
                 );
             }
 
@@ -195,10 +197,10 @@ public
             // here and separately there, the two disagreed, and every local bundle a real build
             // produced was therefore unopenable at run time.
             var fileName = group
-                .BundleNaming
-                == BundleNaming.FilenameHash
-                    ? BundleFile.Hashed(name, hash)
-                    : BundleFile.Named(name)
+                        .BundleNaming
+                    == BundleNaming.FilenameHash
+                        ? BundleFile.Hashed(name, hash)
+                        : BundleFile.Named(name)
                 ;
 
             built.Add(new(name, fileName, bytes, hash));
@@ -236,7 +238,7 @@ public
                 )
             );
         var
-        catalog = new ContentCatalog(CatalogVersion, BuildHash(built), Target, entries, described);
+            catalog = new ContentCatalog(CatalogVersion, BuildHash(built), Target, entries, described);
         return new(catalog, built.ToImmutable(), diagnostics.ToImmutable());
     }
 
@@ -286,13 +288,13 @@ public
     /// </summary>
     static ObjectId BuildHash(
         ImmutableArray<BuiltBundle>.
-        Builder bundles
+            Builder bundles
     ) {
         var hashing = new System.IO.Hashing.XxHash128();
         Span<byte> buffer = stackalloc byte[ObjectId.SizeInBytes];
 
         foreach (var
-                 bundle in bundles.OrderBy(bundle => bundle.Name, StringComparer.Ordinal)) {
+                     bundle in bundles.OrderBy(bundle => bundle.Name, StringComparer.Ordinal)) {
             bundle
                 .Hash.WriteTo(buffer);
             hashing.Append(buffer);

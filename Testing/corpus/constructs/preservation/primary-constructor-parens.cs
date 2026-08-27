@@ -4,6 +4,5 @@ class PrimaryConstructorParens(
     int Sum => first + second;
 }
 
-record Point(
-    int X,
+record Point(int X,
     int Y);

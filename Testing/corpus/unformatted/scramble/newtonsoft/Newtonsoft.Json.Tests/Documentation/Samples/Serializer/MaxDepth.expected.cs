@@ -1,5 +1,4 @@
 // skala-oracle: resharper=2025.2.6 config=sha256:98ff52570e019fac profile=SkalaFormatOnly generated=2026-08-27
-
 #region License
 
 // Copyright (c) 2007 James Newton-King
@@ -37,7 +36,7 @@ using Test = Xunit.FactAttribute;
 using Assert = Newtonsoft.Json.Tests.XUnitAssert;
 #else
 using NUnit.Framework
-;
+    ;
 #endif
 
 namespace Newtonsoft.
@@ -63,10 +62,10 @@ namespace Newtonsoft.
                 JsonConvert.DeserializeObject<List
                     <IList<IList<string>>>>(json, new JsonSerializerSettings { MaxDepth = 2 });
             } catch (JsonReaderException
-                ex) {
-                    Console.WriteLine(ex.Message);
-                    // The reader's MaxDepth of 2 has been exceeded. Path '[0][0]', line 3, position 12.
-                }
+                     ex) {
+                Console.WriteLine(ex.Message);
+                // The reader's MaxDepth of 2 has been exceeded. Path '[0][0]', line 3, position 12.
+            }
 
             #endregion
         }

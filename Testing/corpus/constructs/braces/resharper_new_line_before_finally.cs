@@ -2,7 +2,8 @@ class C {
     void M() {
         try {
             M();
-        } finally {
+        }
+        finally {
             M();
         }
     }

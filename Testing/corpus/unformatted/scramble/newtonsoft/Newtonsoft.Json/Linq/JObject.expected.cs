@@ -1,5 +1,4 @@
 // skala-oracle: resharper=2025.2.6 config=sha256:98ff52570e019fac profile=SkalaFormatOnly generated=2026-08-27
-
 #region License
 
 // Copyright (c) 2007 James Newton-King
@@ -48,7 +47,7 @@ using System.Runtime.CompilerServices;
 using System.Diagnostics.CodeAnalysis;
 #if !HAVE_LINQ
 using Newtonsoft.Json
-.Utilities.LinqBridge;
+    .Utilities.LinqBridge;
 
 #else
 using System.Linq;
@@ -56,10 +55,10 @@ using System.Linq;
 
 namespace Newtonsoft.Json.Linq {
     /// <summary>
-    ///     Represents a JSON object.
+    /// Represents a JSON object.
     /// </summary>
     /// <example>
-    ///     <code lang="cs" source="..\Src\Newtonsoft.Json.Tests\Documentation\LinqToJsonTests.cs" region="LinqToJsonCreateParse" title="Parsing a JSON Object from Text" />
+    ///   <code lang="cs" source="..\Src\Newtonsoft.Json.Tests\Documentation\LinqToJsonTests.cs" region="LinqToJsonCreateParse" title="Parsing a JSON Object from Text" />
     /// </example>
     public partial class JObject : JContainer, IDictionary<string, JToken?>, INotifyPropertyChanged
 #if HAVE_COMPONENT_MODEL
@@ -72,14 +71,15 @@ namespace Newtonsoft.Json.Linq {
         private readonly JPropertyKeyedCollection _properties = new JPropertyKeyedCollection();
 
         /// <summary>
-        ///     Gets the container's children tokens.
+        /// Gets the container's children tokens.
         /// </summary>
         /// <value>The container's children tokens.</value>
         protected
-            override IList<JToken> ChildrenTokens => _properties;
+            override IList<JToken> ChildrenTokens =>
+            _properties;
 
         /// <summary>
-        ///     Occurs when a property value changes.
+        /// Occurs when a property value changes.
         /// </summary>
         public event PropertyChangedEventHandler? PropertyChanged;
 #if HAVE_INOTIFY_PROPERTY_CHANGING
@@ -89,15 +89,14 @@ namespace Newtonsoft.Json.Linq {
         public event PropertyChangingEventHandler? PropertyChanging;
 #endif
         /// <summary>
-        ///     Initializes a new instance of the <see cref="JObject" /> class.
+        /// Initializes a new instance of the <see cref="JObject"/> class.
         /// </summary>
         public JObject() { }
 
         /// <summary>
-        ///     Initializes a new instance of the <see cref="JObject" /> class from another <see cref="JObject" />
-        ///     object.
+        /// Initializes a new instance of the <see cref="JObject"/> class from another <see cref="JObject"/> object.
         /// </summary>
-        /// <param name="other">A <see cref="JObject" /> object to copy from.</param>
+        /// <param name="other">A <see cref="JObject"/> object to copy from.</param>
         public JObject(JObject other)
             : base(
                 other,
@@ -109,7 +108,7 @@ namespace Newtonsoft.Json.Linq {
             : base(other, settings) { }
 
         /// <summary>
-        ///     Initializes a new instance of the <see cref="JObject" /> class with the specified content.
+        /// Initializes a new instance of the <see cref="JObject"/> class with the specified content.
         /// </summary>
         /// <param name="content">The contents of the object.</param>
         public JObject(
@@ -119,7 +118,7 @@ namespace Newtonsoft.Json.Linq {
             : this((object)content) { }
 
         /// <summary>
-        ///     Initializes a new instance of the <see cref="JObject" /> class with the specified content.
+        /// Initializes a new instance of the <see cref="JObject"/> class with the specified content.
         /// </summary>
         /// <param name="content">The contents of the object.</param>
         public JObject(object content) {
@@ -258,41 +257,39 @@ namespace Newtonsoft.Json.Linq {
         }
 
         /// <summary>
-        ///     Gets the node type for this <see cref="JToken" />.
+        /// Gets the node type for this <see cref="JToken"/>.
         /// </summary>
         /// <value>The type.</value>
         public override JTokenType Type => JTokenType.Object;
 
         /// <summary>
-        ///     Gets an <see cref="IEnumerable{T}" /> of <see cref="JProperty" /> of this object's properties.
+        /// Gets an <see cref="IEnumerable{T}"/> of <see cref="JProperty"/> of this object's properties.
         /// </summary>
-        /// <returns>An <see cref="IEnumerable{T}" /> of <see cref="JProperty" /> of this object's properties.</returns>
+        /// <returns>An <see cref="IEnumerable{T}"/> of <see cref="JProperty"/> of this object's properties.</returns>
         public IEnumerable<JProperty> Properties() {
             return _properties.Cast<JProperty>();
         }
 
         /// <summary>
-        ///     Gets a <see cref="JProperty" /> with the specified name.
+        /// Gets a <see cref="JProperty"/> with the specified name.
         /// </summary>
         /// <param name="name">The property name.</param>
-        /// <returns>A <see cref="JProperty" /> with the specified name or <c>null</c>.</returns>
+        /// <returns>A <see cref="JProperty"/> with the specified name or <c>null</c>.</returns>
         public JProperty? Property(string name) {
             return Property(name, StringComparison.Ordinal);
         }
 
         /// <summary>
-        ///     Gets the <see cref="JProperty" /> with the specified name.
-        ///     The exact name will be searched for first and if no matching property is found then
-        ///     the <see cref="StringComparison" /> will be used to match a property.
+        /// Gets the <see cref="JProperty"/> with the specified name.
+        /// The exact name will be searched for first and if no matching property is found then
+        /// the <see cref="StringComparison"/> will be used to match a property.
         /// </summary>
         /// <param name="name">The property name.</param>
-        /// <param name="comparison">
-        ///     One of the enumeration values that specifies how the strings will be compared.
-        /// </param>
-        /// <returns>A <see cref="JProperty" /> matched with the specified name or <c>null</c>.</returns>
+        /// <param name="comparison">One of the enumeration values that specifies how the strings will be compared.</param>
+        /// <returns>A <see cref="JProperty"/> matched with the specified name or <c>null</c>.</returns>
         public JProperty? Property(string name, StringComparison comparison) {
             if (name == null
-            ) {
+               ) {
                 return null;
             }
 
@@ -317,19 +314,17 @@ namespace Newtonsoft.Json.Linq {
         }
 
         /// <summary>
-        ///     Gets a <see cref="JEnumerable{T}" /> of <see cref="JToken" /> of this object's property values.
+        /// Gets a <see cref="JEnumerable{T}"/> of <see cref="JToken"/> of this object's property values.
         /// </summary>
-        /// <returns>
-        ///     A <see cref="JEnumerable{T}" /> of <see cref="JToken" /> of this object's property values.
-        /// </returns>
+        /// <returns>A <see cref="JEnumerable{T}"/> of <see cref="JToken"/> of this object's property values.</returns>
         public JEnumerable<JToken> PropertyValues() {
             return new JEnumerable<JToken>(Properties().Select(p => p.Value));
         }
 
         /// <summary>
-        ///     Gets the <see cref="JToken" /> with the specified key.
+        /// Gets the <see cref="JToken"/> with the specified key.
         /// </summary>
-        /// <value>The <see cref="JToken" /> with the specified key.</value>
+        /// <value>The <see cref="JToken"/> with the specified key.</value>
         public override JToken? this[object key] {
             get {
                 ValidationUtils.ArgumentNotNull(key, nameof(key));
@@ -364,7 +359,7 @@ namespace Newtonsoft.Json.Linq {
         }
 
         /// <summary>
-        ///     Gets or sets the <see cref="JToken" /> with the specified property name.
+        /// Gets or sets the <see cref="JToken"/> with the specified property name.
         /// </summary>
         /// <value></value>
         public JToken? this[string propertyName] {
@@ -392,38 +387,26 @@ namespace Newtonsoft.Json.Linq {
         }
 
         /// <summary>
-        ///     Loads a <see cref="JObject" /> from a <see cref="JsonReader" />.
+        /// Loads a <see cref="JObject"/> from a <see cref="JsonReader"/>.
         /// </summary>
-        /// <param name="reader">
-        ///     A <see cref="JsonReader" /> that will be read for the content of the <see cref="JObject" />.
-        /// </param>
-        /// <returns>
-        ///     A <see cref="JObject" /> that contains the JSON that was read from the specified
-        ///     <see cref="JsonReader" />.
-        /// </returns>
+        /// <param name="reader">A <see cref="JsonReader"/> that will be read for the content of the <see cref="JObject"/>.</param>
+        /// <returns>A <see cref="JObject"/> that contains the JSON that was read from the specified <see cref="JsonReader"/>.</returns>
         /// <exception cref="JsonReaderException">
-        ///     <paramref name="reader" /> is not valid JSON.
+        ///     <paramref name="reader"/> is not valid JSON.
         /// </exception>
         public new static JObject Load(JsonReader reader) {
             return Load(reader, null);
         }
 
         /// <summary>
-        ///     Loads a <see cref="JObject" /> from a <see cref="JsonReader" />.
+        /// Loads a <see cref="JObject"/> from a <see cref="JsonReader"/>.
         /// </summary>
-        /// <param name="reader">
-        ///     A <see cref="JsonReader" /> that will be read for the content of the <see cref="JObject" />.
-        /// </param>
-        /// <param name="settings">
-        ///     The <see cref="JsonLoadSettings" /> used to load the JSON.
-        ///     If this is <c>null</c>, default load settings will be used.
-        /// </param>
-        /// <returns>
-        ///     A <see cref="JObject" /> that contains the JSON that was read from the specified
-        ///     <see cref="JsonReader" />.
-        /// </returns>
+        /// <param name="reader">A <see cref="JsonReader"/> that will be read for the content of the <see cref="JObject"/>.</param>
+        /// <param name="settings">The <see cref="JsonLoadSettings"/> used to load the JSON.
+        /// If this is <c>null</c>, default load settings will be used.</param>
+        /// <returns>A <see cref="JObject"/> that contains the JSON that was read from the specified <see cref="JsonReader"/>.</returns>
         /// <exception cref="JsonReaderException">
-        ///     <paramref name="reader" /> is not valid JSON.
+        ///     <paramref name="reader"/> is not valid JSON.
         /// </exception>
         public new static JObject Load(JsonReader reader, JsonLoadSettings? settings) {
             ValidationUtils.ArgumentNotNull(reader, nameof(reader));
@@ -457,15 +440,15 @@ namespace Newtonsoft.Json.Linq {
         }
 
         /// <summary>
-        ///     Load a <see cref="JObject" /> from a string that contains JSON.
+        /// Load a <see cref="JObject"/> from a string that contains JSON.
         /// </summary>
-        /// <param name="json">A <see cref="String" /> that contains JSON.</param>
-        /// <returns>A <see cref="JObject" /> populated from the string that contains JSON.</returns>
+        /// <param name="json">A <see cref="String"/> that contains JSON.</param>
+        /// <returns>A <see cref="JObject"/> populated from the string that contains JSON.</returns>
         /// <exception cref="JsonReaderException">
-        ///     <paramref name="json" /> is not valid JSON.
+        ///     <paramref name="json"/> is not valid JSON.
         /// </exception>
         /// <example>
-        ///     <code lang="cs" source="..\Src\Newtonsoft.Json.Tests\Documentation\LinqToJsonTests.cs" region="LinqToJsonCreateParse" title="Parsing a JSON Object from Text" />
+        ///   <code lang="cs" source="..\Src\Newtonsoft.Json.Tests\Documentation\LinqToJsonTests.cs" region="LinqToJsonCreateParse" title="Parsing a JSON Object from Text" />
         /// </example>
         public new static JObject
             Parse(string json) {
@@ -473,23 +456,21 @@ namespace Newtonsoft.Json.Linq {
         }
 
         /// <summary>
-        ///     Load a <see cref="JObject" /> from a string that contains JSON.
+        /// Load a <see cref="JObject"/> from a string that contains JSON.
         /// </summary>
-        /// <param name="json">A <see cref="String" /> that contains JSON.</param>
-        /// <param name="settings">
-        ///     The <see cref="JsonLoadSettings" /> used to load the JSON.
-        ///     If this is <c>null</c>, default load settings will be used.
-        /// </param>
-        /// <returns>A <see cref="JObject" /> populated from the string that contains JSON.</returns>
+        /// <param name="json">A <see cref="String"/> that contains JSON.</param>
+        /// <param name="settings">The <see cref="JsonLoadSettings"/> used to load the JSON.
+        /// If this is <c>null</c>, default load settings will be used.</param>
+        /// <returns>A <see cref="JObject"/> populated from the string that contains JSON.</returns>
         /// <exception cref="JsonReaderException">
-        ///     <paramref name="json" /> is not valid JSON.
+        ///     <paramref name="json"/> is not valid JSON.
         /// </exception>
         /// <example>
-        ///     <code lang="cs" source="..\Src\Newtonsoft.Json.Tests\Documentation\LinqToJsonTests.cs" region="LinqToJsonCreateParse" title="Parsing a JSON Object from Text" />
+        ///   <code lang="cs" source="..\Src\Newtonsoft.Json.Tests\Documentation\LinqToJsonTests.cs" region="LinqToJsonCreateParse" title="Parsing a JSON Object from Text" />
         /// </example>
         public new static JObject Parse(
             string
-            json,
+                json,
             JsonLoadSettings? settings
         ) {
             using (JsonReader reader = new JsonTextReader(new StringReader(json))) {
@@ -504,10 +485,10 @@ namespace Newtonsoft.Json.Linq {
         }
 
         /// <summary>
-        ///     Creates a <see cref="JObject" /> from an object.
+        /// Creates a <see cref="JObject"/> from an object.
         /// </summary>
-        /// <param name="o">The object that will be used to create <see cref="JObject" />.</param>
-        /// <returns>A <see cref="JObject" /> with the values of the specified object.</returns>
+        /// <param name="o">The object that will be used to create <see cref="JObject"/>.</param>
+        /// <returns>A <see cref="JObject"/> with the values of the specified object.</returns>
         [RequiresUnreferencedCode(MiscellaneousUtils.TrimWarning)]
         [RequiresDynamicCode(MiscellaneousUtils.AotWarning)]
         public new static JObject FromObject(object o) {
@@ -515,11 +496,11 @@ namespace Newtonsoft.Json.Linq {
         }
 
         /// <summary>
-        ///     Creates a <see cref="JObject" /> from an object.
+        /// Creates a <see cref="JObject"/> from an object.
         /// </summary>
-        /// <param name="o">The object that will be used to create <see cref="JObject" />.</param>
-        /// <param name="jsonSerializer">The <see cref="JsonSerializer" /> that will be used to read the object.</param>
-        /// <returns>A <see cref="JObject" /> with the values of the specified object.</returns>
+        /// <param name="o">The object that will be used to create <see cref="JObject"/>.</param>
+        /// <param name="jsonSerializer">The <see cref="JsonSerializer"/> that will be used to read the object.</param>
+        /// <returns>A <see cref="JObject"/> with the values of the specified object.</returns>
         [RequiresUnreferencedCode(MiscellaneousUtils.TrimWarning)]
         [RequiresDynamicCode(MiscellaneousUtils.AotWarning)]
         public new static JObject FromObject(object o, JsonSerializer jsonSerializer) {
@@ -537,12 +518,10 @@ namespace Newtonsoft.Json.Linq {
         }
 
         /// <summary>
-        ///     Writes this token to a <see cref="JsonWriter" />.
+        /// Writes this token to a <see cref="JsonWriter"/>.
         /// </summary>
-        /// <param name="writer">A <see cref="JsonWriter" /> into which this method will write.</param>
-        /// <param name="converters">
-        ///     A collection of <see cref="JsonConverter" /> which will be used when writing the token.
-        /// </param>
+        /// <param name="writer">A <see cref="JsonWriter"/> into which this method will write.</param>
+        /// <param name="converters">A collection of <see cref="JsonConverter"/> which will be used when writing the token.</param>
         [RequiresUnreferencedCode(MiscellaneousUtils.TrimWarning)]
         [RequiresDynamicCode(MiscellaneousUtils.AotWarning)
         ]
@@ -552,7 +531,7 @@ namespace Newtonsoft.Json.Linq {
             for (int i = 0;
                  i < _properties.Count;
                  i
-                 ++) {
+                     ++) {
                 _properties[i].WriteTo(writer, converters);
             }
 
@@ -560,24 +539,22 @@ namespace Newtonsoft.Json.Linq {
         }
 
         /// <summary>
-        ///     Gets the <see cref="Newtonsoft.Json.Linq.JToken" /> with the specified property name.
+        /// Gets the <see cref="Newtonsoft.Json.Linq.JToken"/> with the specified property name.
         /// </summary>
         /// <param name="propertyName">Name of the property.</param>
-        /// <returns>The <see cref="Newtonsoft.Json.Linq.JToken" /> with the specified property name.</returns>
+        /// <returns>The <see cref="Newtonsoft.Json.Linq.JToken"/> with the specified property name.</returns>
         public JToken? GetValue(string? propertyName) {
             return GetValue(propertyName, StringComparison.Ordinal);
         }
 
         /// <summary>
-        ///     Gets the <see cref="Newtonsoft.Json.Linq.JToken" /> with the specified property name.
-        ///     The exact property name will be searched for first and if no matching property is found then
-        ///     the <see cref="StringComparison" /> will be used to match a property.
+        /// Gets the <see cref="Newtonsoft.Json.Linq.JToken"/> with the specified property name.
+        /// The exact property name will be searched for first and if no matching property is found then
+        /// the <see cref="StringComparison"/> will be used to match a property.
         /// </summary>
         /// <param name="propertyName">Name of the property.</param>
-        /// <param name="comparison">
-        ///     One of the enumeration values that specifies how the strings will be compared.
-        /// </param>
-        /// <returns>The <see cref="Newtonsoft.Json.Linq.JToken" /> with the specified property name.</returns>
+        /// <param name="comparison">One of the enumeration values that specifies how the strings will be compared.</param>
+        /// <returns>The <see cref="Newtonsoft.Json.Linq.JToken"/> with the specified property name.</returns>
         public JToken? GetValue(string? propertyName, StringComparison comparison) {
             if (propertyName == null) {
                 return null;
@@ -593,15 +570,13 @@ namespace Newtonsoft.Json.Linq {
         }
 
         /// <summary>
-        ///     Tries to get the <see cref="Newtonsoft.Json.Linq.JToken" /> with the specified property name.
-        ///     The exact property name will be searched for first and if no matching property is found then
-        ///     the <see cref="StringComparison" /> will be used to match a property.
+        /// Tries to get the <see cref="Newtonsoft.Json.Linq.JToken"/> with the specified property name.
+        /// The exact property name will be searched for first and if no matching property is found then
+        /// the <see cref="StringComparison"/> will be used to match a property.
         /// </summary>
         /// <param name="propertyName">Name of the property.</param>
         /// <param name="value">The value.</param>
-        /// <param name="comparison">
-        ///     One of the enumeration values that specifies how the strings will be compared.
-        /// </param>
+        /// <param name="comparison">One of the enumeration values that specifies how the strings will be compared.</param>
         /// <returns><c>true</c> if a value was successfully retrieved; otherwise, <c>false</c>.</returns>
         public bool TryGetValue(
             string propertyName,
@@ -615,7 +590,7 @@ namespace Newtonsoft.Json.Linq {
         #region IDictionary<string,JToken> Members
 
         /// <summary>
-        ///     Adds the specified property name.
+        /// Adds the specified property name.
         /// </summary>
         /// <param name="propertyName">Name of the property.</param>
         /// <param name="value">The value.</param>
@@ -624,7 +599,7 @@ namespace Newtonsoft.Json.Linq {
         }
 
         /// <summary>
-        ///     Determines whether the JSON object has the specified property name.
+        /// Determines whether the JSON object has the specified property name.
         /// </summary>
         /// <param name="propertyName">Name of the property.</param>
         /// <returns><c>true</c> if the JSON object has the specified property name; otherwise, <c>false</c>.</returns>
@@ -635,10 +610,11 @@ namespace Newtonsoft.Json.Linq {
         }
 
         ICollection<
-            string> IDictionary<string, JToken?>.Keys => _properties.Keys;
+            string> IDictionary<string, JToken?>.Keys =>
+            _properties.Keys;
 
         /// <summary>
-        ///     Removes the property with the specified name.
+        /// Removes the property with the specified name.
         /// </summary>
         /// <param name="propertyName">Name of the property.</param>
         /// <returns><c>true</c> if item was successfully removed; otherwise, <c>false</c>.</returns>
@@ -655,7 +631,7 @@ namespace Newtonsoft.Json.Linq {
         }
 
         /// <summary>
-        ///     Tries to get the <see cref="Newtonsoft.Json.Linq.JToken" /> with the specified property name.
+        /// Tries to get the <see cref="Newtonsoft.Json.Linq.JToken"/> with the specified property name.
         /// </summary>
         /// <param name="propertyName">Name of the property.</param>
         /// <param name="value">The value.</param>
@@ -729,7 +705,8 @@ namespace Newtonsoft.Json.Linq {
         }
 
         bool ICollection<KeyValuePair
-            <string, JToken?>>.IsReadOnly => false;
+            <string, JToken?>>.IsReadOnly =>
+            false;
 
         bool ICollection<KeyValuePair<string, JToken?>>.Remove(KeyValuePair<string, JToken?> item) {
             if (!
@@ -748,10 +725,10 @@ namespace Newtonsoft.Json.Linq {
         }
 
         /// <summary>
-        ///     Returns an enumerator that can be used to iterate through the collection.
+        /// Returns an enumerator that can be used to iterate through the collection.
         /// </summary>
         /// <returns>
-        ///     A <see cref="IEnumerator{T}" /> that can be used to iterate through the collection.
+        /// A <see cref="IEnumerator{T}"/> that can be used to iterate through the collection.
         /// </returns>
         public IEnumerator<KeyValuePair<string, JToken?>> GetEnumerator(
         ) {
@@ -761,7 +738,7 @@ namespace Newtonsoft.Json.Linq {
         }
 
         /// <summary>
-        ///     Raises the <see cref="PropertyChanged" /> event with the provided arguments.
+        /// Raises the <see cref="PropertyChanged"/> event with the provided arguments.
         /// </summary>
         /// <param name="propertyName">Name of the property.</param>
         protected virtual void OnPropertyChanged(string propertyName) {

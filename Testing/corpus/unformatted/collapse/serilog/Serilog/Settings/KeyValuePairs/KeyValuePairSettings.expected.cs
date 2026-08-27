@@ -63,10 +63,10 @@ class KeyValuePairSettings : ILoggerSettings {
     };
 
     readonly IReadOnlyDictionary<string, string>
-    _settings; // This is only needed on net5 because RequiresUnreferencedCode couldn't be applied to types
+        _settings; // This is only needed on net5 because RequiresUnreferencedCode couldn't be applied to types
 
-    // in .NET 5. In .NET 6+, RUC can be applied to types (as it is above) and it will warn on the
-    // constructor and hide warnings in members.
+// in .NET 5. In .NET 6+, RUC can be applied to types (as it is above) and it will warn on the
+// constructor and hide warnings in members.
     [RequiresUnreferencedCode("Finds accessors by name")]
     public KeyValuePairSettings(IReadOnlyDictionary<string, string> settings) {
         _settings = Guard.AgainstNull(settings);
@@ -228,9 +228,9 @@ class KeyValuePairSettings : ILoggerSettings {
                 );
             } else {
                 var call = (from p in target.GetParameters().Skip(1)
-                    let directive = directiveInfo.FirstOrDefault(s => s.ArgumentName == p.Name)
-                    select SuppressConvertCall(directive, p))
-                        .ToList(); // Work around inability to annotate lambdas in query expressions. The parent *must* have RUC for safety.
+                        let directive = directiveInfo.FirstOrDefault(s => s.ArgumentName == p.Name)
+                        select SuppressConvertCall(directive, p))
+                    .ToList(); // Work around inability to annotate lambdas in query expressions. The parent *must* have RUC for safety.
 
                 [UnconditionalSuppressMessage("Trimming", "IL2026")]
                 [UnconditionalSuppressMessage("AOT", "IL3050")]

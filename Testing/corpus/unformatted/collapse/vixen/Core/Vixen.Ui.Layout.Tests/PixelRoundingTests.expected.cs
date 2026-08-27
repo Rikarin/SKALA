@@ -21,8 +21,8 @@ public class PixelRoundingTests {
     [Fact]
     public void An_incrementally_rounded_tree_matches_one_rounded_from_cold() {
         // Fractional sizes at a 2× scale, which is where rounding actually does something: a
-        // 33.3-point row on a retina display lands between pixels and its neighbours have to agree
-        // about where the seam is.
+// 33.3-point row on a retina display lands between pixels and its neighbours have to agree
+// about where the seam is.
         Gen.Select(Gen.Int[2, 5], Gen.Int[1, 4], Gen.Int[0, 999].Array[1, 12])
             .Sample(shape => {
                     var (rows, cells, mutations) = shape;
@@ -46,8 +46,8 @@ public class PixelRoundingTests {
     [Fact]
     public void A_subtree_that_only_moves_is_still_rounded_against_its_new_offset() {
         // The case the shortcut is most likely to get wrong: nothing inside the subtree changed, so
-        // its algorithm did not run — but an ancestor grew by half a pixel, and every descendant's
-        // rounded edge depends on where it now sits.
+// its algorithm did not run — but an ancestor grew by half a pixel, and every descendant's
+// rounded edge depends on where it now sits.
         using var tree = new LayoutTree { PointScaleFactor = 2f };
         var root = tree.CreateNode();
         tree.SetFlexDirection(root, FlexDirection.Column);
@@ -67,13 +67,13 @@ public class PixelRoundingTests {
             400f,
             Direction.Ltr
         ); // Its *height*, not its top: positions are rounded relative to the parent, so `inner` sits
-        // at 0 either way. What moving half a pixel changes is where its far edge lands on the grid,
-        // and therefore the distance between its two rounded edges.
+// at 0 either way. What moving half a pixel changes is where its far edge lands on the grid,
+// and therefore the distance between its two rounded edges.
         var before =
             tree.GetHeight(
                 inner
             ); // Half a pixel at 2× scale: enough to move where the seam falls, and nothing inside `group`
-        // is touched by it.
+// is touched by it.
         tree.SetDimension(spacer, Dimension.Height, StyleLength.Points(10.25f));
         tree.CalculateLayout(root, 200f, 400f, Direction.Ltr);
         using var cold = new LayoutTree { PointScaleFactor = 2f };
@@ -98,7 +98,7 @@ public class PixelRoundingTests {
     [Fact]
     public void Adjacent_boxes_do_not_round_into_a_seam() {
         // What the whole pass exists for. Three stacked 33.3-point rows at 2× scale: their rounded
-        // heights differ from each other, and they still tile the space exactly.
+// heights differ from each other, and they still tile the space exactly.
         using var tree = new LayoutTree { PointScaleFactor = 2f };
         var root = tree.CreateNode();
         tree.SetFlexDirection(root, FlexDirection.Column);

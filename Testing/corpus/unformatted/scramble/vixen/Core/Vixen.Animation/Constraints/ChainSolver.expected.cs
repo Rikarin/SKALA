@@ -4,7 +4,7 @@
 
 using Vixen.Animation.Ik;
 using
-Vixen.Core.Mathematics;
+    Vixen.Core.Mathematics;
 
 namespace Vixen.Animation.Constraints;
 
@@ -61,11 +61,8 @@ public interface IChainSolver {
 ///         bones; so is almost everything an author puts a contact on.
 ///     </para>
 ///     <para>
-///         ⚠
-///         <b>
-///             A chain longer than two bones is solved over its last two, and that is a documented
-///             limitation rather than a hidden one.
-///         </b> Distributing error up a spine towards the root is
+///         ⚠ <b>A chain longer than two bones is solved over its last two, and that is a documented
+///         limitation rather than a hidden one.</b> Distributing error up a spine towards the root is
 ///         a different and much larger solver, and it is what the seam exists for. What this does
 ///         instead is produce something reasonable and report the shortfall as a residual, so an
 ///         author sees a number rather than a limb that quietly did not reach.
@@ -81,7 +78,7 @@ public sealed
         Skeleton skeleton,
         in ChainSolveRequest request,
         Span
-        <BoneTransform> local,
+            <BoneTransform> local,
         Span<BoneTransform> model
     ) {
         ArgumentNullException
@@ -91,7 +88,7 @@ public sealed
 
         if ((uint)effector
             >= (
-            uint)local.Length) {
+                uint)local.Length) {
             return false;
         }
 
@@ -168,7 +165,7 @@ public sealed
         in ChainSolveRequest request
     ) {
         if (request.EffectorOffset == Vector3.Zero
-        ) {
+           ) {
             return request.Position;
         }
 
@@ -186,11 +183,8 @@ public sealed
     /// <summary>Which way the middle joint bends when nobody said.</summary>
     /// <remarks>
     ///     <para>
-    ///         ⚠
-    ///         <b>
-    ///             A goal with no pole is the common case, and getting this wrong makes the solve do
-    ///             nothing at all.
-    ///         </b> <see cref="TwoBoneIk" /> takes the bend plane from the pole, falls
+    ///         ⚠ <b>A goal with no pole is the common case, and getting this wrong makes the solve do
+    ///         nothing at all.</b> <see cref="TwoBoneIk" /> takes the bend plane from the pole, falls
     ///         back to the chain's own current plane, and refuses the solve when both are degenerate
     ///         — which a perfectly straight chain, which is what a bind pose usually is, makes them.
     ///         A "sensible" pole extrapolated along the chain is exactly the degenerate one.
@@ -238,18 +232,17 @@ public sealed
                 + Vector3
                     .Normalize(sideways);
         }
-
         // The target is straight down the chain, so no direction is better than another. Any
 
         // perpendicular keeps the solve from refusing; picking one deterministically keeps two
         // machines agreeing about which way the elbow went.
         var
-        straight = Vector3.Normalize(axis);
+            straight = Vector3.Normalize(axis);
 
         var
-        reference = MathF.Abs(Vector3.Dot(straight, Vector3.Up)) > 0.99f
-            ? Vector3.Forward
-            : Vector3.Up;
+            reference = MathF.Abs(Vector3.Dot(straight, Vector3.Up)) > 0.99f
+                ? Vector3.Forward
+                : Vector3.Up;
         return bend + Vector3.Normalize(Vector3.Cross(straight, reference));
     }
 }

@@ -1,1 +1,2 @@
-class C<T, U> { }
+class C<T, U> {
+}

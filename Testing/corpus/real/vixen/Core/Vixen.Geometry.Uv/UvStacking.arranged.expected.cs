@@ -23,19 +23,14 @@ public readonly record struct UvStackOffer(int Representative, int Partner, bool
 /// <summary>docs/plan/42 § D10's symmetric stacking: opt-in, offered rather than applied.</summary>
 /// <remarks>
 ///     <para>
-///         <b>
-///             Symmetric islands can be deliberately overlapped so both halves share one region of
-///             texture, halving what the atlas costs.
-///         </b> ⚠ <b>It is off by default</b> — nothing in this
+///         <b>Symmetric islands can be deliberately overlapped so both halves share one region of
+///         texture, halving what the atlas costs.</b> ⚠ <b>It is off by default</b> — nothing in this
 ///         library calls it — because it forbids asymmetric detail, and the cost of finding that out is
 ///         a retexture rather than a repack.
 ///     </para>
 ///     <para>
-///         ⚠
-///         <b>
-///             Doc 41 § D11's exact symmetry is what makes detection reliable, and the honest
-///             limitation is stated rather than hidden.
-///         </b> A mesh remeshed with symmetry on has vertex
+///         ⚠ <b>Doc 41 § D11's exact symmetry is what makes detection reliable, and the honest
+///         limitation is stated rather than hidden.</b> A mesh remeshed with symmetry on has vertex
 ///         <i>k</i> and its mirror as exact negations, so the two islands come out with their corners
 ///         in the same order and the comparison below is an equality. On a mesh that was not remeshed
 ///         that way the corner orders are unrelated and no pair will match however symmetric the
@@ -43,11 +38,8 @@ public readonly record struct UvStackOffer(int Representative, int Partner, bool
 ///         correspondence itself is a shape-matching problem and § D10 does not ask for one.
 ///     </para>
 ///     <para>
-///         ⚠
-///         <b>
-///             Folding is a change to which islands are packed and never to an island's
-///             coordinates.
-///         </b> The partner keeps its own shape and is given the representative's
+///         ⚠ <b>Folding is a change to which islands are packed and never to an island's
+///         coordinates.</b> The partner keeps its own shape and is given the representative's
 ///         placement; <see cref="UvPlacement.Apply" /> normalizes by the island's own lower corner, so
 ///         a mirrored partner lands on the same rectangle with its own parameterization — which is what
 ///         "share one region" means, and it costs no resampling.
@@ -70,15 +62,10 @@ public static class UvStacking {
     /// <param name="tolerance">The worst corner disagreement an offer may carry, as a fraction of the extent.</param>
     /// <returns>One offer per matched pair, ascending by representative. Nothing is modified.</returns>
     /// <exception cref="ArgumentNullException"><paramref name="islands" /> is null.</exception>
-    /// <exception cref="ArgumentOutOfRangeException">
-    ///     <paramref name="tolerance" /> is negative or not finite.
-    /// </exception>
+    /// <exception cref="ArgumentOutOfRangeException"><paramref name="tolerance" /> is negative or not finite.</exception>
     /// <remarks>
-    ///     ⚠
-    ///     <b>
-    ///         Every island is visited in index order and paired with the lowest-index island still
-    ///         free, which is the tie-break the whole thing rests on.
-    ///     </b> A greedy pass that enumerated a
+    ///     ⚠ <b>Every island is visited in index order and paired with the lowest-index island still
+    ///     free, which is the tie-break the whole thing rests on.</b> A greedy pass that enumerated a
     ///     <see cref="HashSet{T}" /> of candidates would pair differently on a different runtime, and
     ///     the atlas would differ with it — docs/plan/42 § D12 rules that out, and an <i>offer</i> that
     ///     moved between machines would be worse than no offer at all because a human would have
@@ -215,11 +202,8 @@ public static class UvStacking {
     /// <exception cref="ArgumentNullException">An argument is null.</exception>
     /// <exception cref="ArgumentException">A folded island has no placement.</exception>
     /// <remarks>
-    ///     ⚠
-    ///     <b>
-    ///         The partner gets the representative's offset, scale, rotation and tile unchanged, and
-    ///         only <see cref="UvPlacement.Island" /> moves.
-    ///     </b> That is the whole of stacking: two islands
+    ///     ⚠ <b>The partner gets the representative's offset, scale, rotation and tile unchanged, and
+    ///     only <see cref="UvPlacement.Island" /> moves.</b> That is the whole of stacking: two islands
     ///     with one transform is two islands on one region of texture. It also means the partner's
     ///     texels are the representative's, so a bake has to write one of them and not both — which is
     ///     the cost § D10 says is paid at texturing time rather than here.
@@ -291,11 +275,8 @@ public static class UvStacking {
 
     /// <summary>The worst corner's disagreement once both islands are put in their own lower corner.</summary>
     /// <remarks>
-    ///     ⚠
-    ///     <b>
-    ///         Both islands are taken relative to their own <see cref="UvIsland.Minimum" />, which is
-    ///         the same normalization <see cref="UvPlacement.Apply" /> makes.
-    ///     </b> Comparing raw coordinates
+    ///     ⚠ <b>Both islands are taken relative to their own <see cref="UvIsland.Minimum" />, which is
+    ///     the same normalization <see cref="UvPlacement.Apply" /> makes.</b> Comparing raw coordinates
     ///     would measure where the flattener happened to leave the gauge, and a conformal map's gauge is
     ///     arbitrary — two islands could be the same shape in different corners of the plane and read as
     ///     completely different.

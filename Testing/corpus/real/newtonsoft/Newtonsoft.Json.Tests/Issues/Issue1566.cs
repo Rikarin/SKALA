@@ -1,5 +1,4 @@
 ﻿#region License
-
 // Copyright (c) 2007 James Newton-King
 //
 // Permission is hereby granted, free of charge, to any person
@@ -22,7 +21,6 @@
 // WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 // OTHER DEALINGS IN THE SOFTWARE.
-
 #endregion
 
 #if !NET20
@@ -38,11 +36,14 @@ using Assert = Newtonsoft.Json.Tests.XUnitAssert;
 using NUnit.Framework;
 #endif
 
-namespace Newtonsoft.Json.Tests.Issues {
+namespace Newtonsoft.Json.Tests.Issues
+{
     [TestFixture]
-    public class Issue1566 : TestFixtureBase {
+    public class Issue1566 : TestFixtureBase
+    {
         [Test]
-        public void Github_deserialize_pr_state_should_be_case_insensitive() {
+        public void Github_deserialize_pr_state_should_be_case_insensitive()
+        {
             // Arrange
             var jsonWithUppercase = "{\"state\": \"APPROVED\"}";
             var jsonWithLowercase = "{\"state\": \"approved\"}";
@@ -57,7 +58,8 @@ namespace Newtonsoft.Json.Tests.Issues {
         }
 
         [Test]
-        public void Github_deserialize_pr_state_changes_requested_should_be_case_insensitive() {
+        public void Github_deserialize_pr_state_changes_requested_should_be_case_insensitive()
+        {
             // Arrange
             var jsonWithUppercase = "{\"state\": \"CHANGES_REQUESTED\"}";
             var jsonWithLowercase = "{\"state\": \"changes_requested\"}";
@@ -71,7 +73,8 @@ namespace Newtonsoft.Json.Tests.Issues {
             Assert.AreEqual(GitHubPullRequestReviewState.ChangesRequested, jsonObjectWithLowercase.State);
         }
 
-        public enum GitHubPullRequestReviewState {
+        public enum GitHubPullRequestReviewState
+        {
             [EnumMember(Value = "approved")]
             Approved,
 
@@ -88,7 +91,8 @@ namespace Newtonsoft.Json.Tests.Issues {
             Pending
         }
 
-        public class GitHubPullRequestReview {
+        public class GitHubPullRequestReview
+        {
             [JsonProperty("state")]
             [JsonConverter(typeof(StringEnumConverter))]
             public GitHubPullRequestReviewState State;

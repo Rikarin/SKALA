@@ -1,5 +1,4 @@
 // skala-oracle: resharper=2025.2.6 config=sha256:98ff52570e019fac profile=SkalaFormatOnly generated=2026-08-27
-
 #region License
 
 // Copyright (c) 2007 James Newton-King
@@ -45,28 +44,26 @@ using System.Linq;
 #nullable disable
 namespace Newtonsoft.Json.Schema {
     /// <summary>
-    ///     <para>
-    ///         Generates a <see cref="JsonSchema" /> from a specified <see cref="Type" />.
-    ///     </para>
-    ///     <note type="caution">
-    ///         JSON Schema validation has been moved to its own package. See
-    ///         <see href="https://www.newtonsoft.com/jsonschema">https://www.newtonsoft.com/jsonschema</see> for more
-    ///         details.
-    ///     </note>
+    /// <para>
+    /// Generates a <see cref="JsonSchema"/> from a specified <see cref="Type"/>.
+    /// </para>
+    /// <note type="caution">
+    /// JSON Schema validation has been moved to its own package. See <see href="https://www.newtonsoft.com/jsonschema">https://www.newtonsoft.com/jsonschema</see> for more details.
+    /// </note>
     /// </summary>
     [Obsolete(
         "JSON Schema validation has been moved to its own package. See https://www.newtonsoft.com/jsonschema for more details."
     )]
     public class JsonSchemaGenerator {
         /// <summary>
-        ///     Gets or sets how undefined schemas are handled by the serializer.
+        /// Gets or sets how undefined schemas are handled by the serializer.
         /// </summary>
         public UndefinedSchemaIdHandling UndefinedSchemaIdHandling { get; set; }
 
         private IContractResolver _contractResolver;
 
         /// <summary>
-        ///     Gets or sets the contract resolver.
+        /// Gets or sets the contract resolver.
         /// </summary>
         /// <value>The contract resolver.</value>
         public IContractResolver ContractResolver {
@@ -119,10 +116,10 @@ namespace Newtonsoft.Json.Schema {
         }
 
         /// <summary>
-        ///     Generate a <see cref="JsonSchema" /> from the specified type.
+        /// Generate a <see cref="JsonSchema"/> from the specified type.
         /// </summary>
-        /// <param name="type">The type to generate a <see cref="JsonSchema" /> from.</param>
-        /// <returns>A <see cref="JsonSchema" /> generated from the specified type.</returns>
+        /// <param name="type">The type to generate a <see cref="JsonSchema"/> from.</param>
+        /// <returns>A <see cref="JsonSchema"/> generated from the specified type.</returns>
         [RequiresUnreferencedCode(MiscellaneousUtils.TrimWarning)]
         [RequiresDynamicCode(MiscellaneousUtils.AotWarning)]
         public JsonSchema Generate(Type type) {
@@ -130,11 +127,11 @@ namespace Newtonsoft.Json.Schema {
         }
 
         /// <summary>
-        ///     Generate a <see cref="JsonSchema" /> from the specified type.
+        /// Generate a <see cref="JsonSchema"/> from the specified type.
         /// </summary>
-        /// <param name="type">The type to generate a <see cref="JsonSchema" /> from.</param>
-        /// <param name="resolver">The <see cref="JsonSchemaResolver" /> used to resolve schema references.</param>
-        /// <returns>A <see cref="JsonSchema" /> generated from the specified type.</returns>
+        /// <param name="type">The type to generate a <see cref="JsonSchema"/> from.</param>
+        /// <param name="resolver">The <see cref="JsonSchemaResolver"/> used to resolve schema references.</param>
+        /// <returns>A <see cref="JsonSchema"/> generated from the specified type.</returns>
         [RequiresUnreferencedCode(MiscellaneousUtils.TrimWarning)]
         [RequiresDynamicCode(MiscellaneousUtils.AotWarning)]
         public JsonSchema Generate(Type type, JsonSchemaResolver resolver) {
@@ -142,13 +139,11 @@ namespace Newtonsoft.Json.Schema {
         }
 
         /// <summary>
-        ///     Generate a <see cref="JsonSchema" /> from the specified type.
+        /// Generate a <see cref="JsonSchema"/> from the specified type.
         /// </summary>
-        /// <param name="type">The type to generate a <see cref="JsonSchema" /> from.</param>
-        /// <param name="rootSchemaNullable">
-        ///     Specify whether the generated root <see cref="JsonSchema" /> will be nullable.
-        /// </param>
-        /// <returns>A <see cref="JsonSchema" /> generated from the specified type.</returns>
+        /// <param name="type">The type to generate a <see cref="JsonSchema"/> from.</param>
+        /// <param name="rootSchemaNullable">Specify whether the generated root <see cref="JsonSchema"/> will be nullable.</param>
+        /// <returns>A <see cref="JsonSchema"/> generated from the specified type.</returns>
         [RequiresUnreferencedCode(MiscellaneousUtils.TrimWarning)]
         [RequiresDynamicCode(MiscellaneousUtils.AotWarning)]
         public JsonSchema Generate(Type type, bool rootSchemaNullable) {
@@ -156,14 +151,12 @@ namespace Newtonsoft.Json.Schema {
         }
 
         /// <summary>
-        ///     Generate a <see cref="JsonSchema" /> from the specified type.
+        /// Generate a <see cref="JsonSchema"/> from the specified type.
         /// </summary>
-        /// <param name="type">The type to generate a <see cref="JsonSchema" /> from.</param>
-        /// <param name="resolver">The <see cref="JsonSchemaResolver" /> used to resolve schema references.</param>
-        /// <param name="rootSchemaNullable">
-        ///     Specify whether the generated root <see cref="JsonSchema" /> will be nullable.
-        /// </param>
-        /// <returns>A <see cref="JsonSchema" /> generated from the specified type.</returns>
+        /// <param name="type">The type to generate a <see cref="JsonSchema"/> from.</param>
+        /// <param name="resolver">The <see cref="JsonSchemaResolver"/> used to resolve schema references.</param>
+        /// <param name="rootSchemaNullable">Specify whether the generated root <see cref="JsonSchema"/> will be nullable.</param>
+        /// <returns>A <see cref="JsonSchema"/> generated from the specified type.</returns>
         [RequiresUnreferencedCode(MiscellaneousUtils.TrimWarning)]
         [RequiresDynamicCode(MiscellaneousUtils.AotWarning)]
         public JsonSchema Generate(Type type, JsonSchemaResolver resolver, bool rootSchemaNullable) {
@@ -235,7 +228,7 @@ namespace Newtonsoft.Json.Schema {
                 JsonSchema resolvedSchema = _resolver.GetSchema(resolvedId);
                 if (resolvedSchema != null) {
                     // resolved schema is not null but referencing member allows nulls
-                    // change resolved schema to allow nulls. hacky but what are ya gonna do?
+// change resolved schema to allow nulls. hacky but what are ya gonna do?
                     if (valueRequired != Required.Always && !HasFlag(resolvedSchema.Type, JsonSchemaType.Null)) {
                         resolvedSchema.Type |= JsonSchemaType.Null;
                     }
@@ -325,7 +318,7 @@ namespace Newtonsoft.Json.Schema {
                         ReflectionUtils.GetDictionaryKeyValueTypes(type, out keyType, out valueType);
                         if (keyType != null) {
                             JsonContract
-                            keyContract = ContractResolver.ResolveContract(keyType); // can be converted to a string
+                                keyContract = ContractResolver.ResolveContract(keyType); // can be converted to a string
                             if (keyContract.ContractType == JsonContractType.Primitive) {
                                 CurrentSchema.AdditionalProperties = GenerateInternal(
                                     valueType,
@@ -428,8 +421,7 @@ namespace Newtonsoft.Json.Schema {
             PrimitiveTypeCode typeCode = ConvertUtils.GetTypeCode(type);
             switch (typeCode) {
                 case PrimitiveTypeCode.Empty:
-                case PrimitiveTypeCode.Object:
-                    return schemaType | JsonSchemaType.String;
+                case PrimitiveTypeCode.Object: return schemaType | JsonSchemaType.String;
 #if HAVE_DB_NULL_TYPE_CODE
                 case PrimitiveTypeCode.DBNull:
                     return schemaType | JsonSchemaType.Null;
@@ -450,8 +442,7 @@ namespace Newtonsoft.Json.Schema {
                     return schemaType | JsonSchemaType.Integer;
                 case PrimitiveTypeCode.Single:
                 case PrimitiveTypeCode.Double:
-                case PrimitiveTypeCode.Decimal:
-                    return schemaType | JsonSchemaType.Float; // convert to string?
+                case PrimitiveTypeCode.Decimal: return schemaType | JsonSchemaType.Float; // convert to string?
                 case PrimitiveTypeCode.DateTime:
 #if HAVE_DATE_TIME_OFFSET
                 case PrimitiveTypeCode.DateTimeOffset:
@@ -461,8 +452,7 @@ namespace Newtonsoft.Json.Schema {
                 case PrimitiveTypeCode.Uri:
                 case PrimitiveTypeCode.Guid:
                 case PrimitiveTypeCode.TimeSpan:
-                case PrimitiveTypeCode.Bytes:
-                    return schemaType | JsonSchemaType.String;
+                case PrimitiveTypeCode.Bytes: return schemaType | JsonSchemaType.String;
                 default:
                     throw new JsonException(
                         "Unexpected type code '{0}' for type '{1}'.".FormatWith(

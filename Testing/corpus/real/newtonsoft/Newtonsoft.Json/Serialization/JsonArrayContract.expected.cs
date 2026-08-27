@@ -1,5 +1,4 @@
 // skala-oracle: resharper=2025.2.6 config=sha256:98ff52570e019fac profile=SkalaFormatOnly generated=2026-08-27
-
 #region License
 
 // Copyright (c) 2007 James Newton-King
@@ -48,17 +47,17 @@ using System.Linq;
 
 namespace Newtonsoft.Json.Serialization {
     /// <summary>
-    ///     Contract details for a <see cref="System.Type" /> used by the <see cref="JsonSerializer" />.
+    /// Contract details for a <see cref="System.Type"/> used by the <see cref="JsonSerializer"/>.
     /// </summary>
     public class JsonArrayContract : JsonContainerContract {
         /// <summary>
-        ///     Gets the <see cref="System.Type" /> of the collection items.
+        /// Gets the <see cref="System.Type"/> of the collection items.
         /// </summary>
-        /// <value>The <see cref="System.Type" /> of the collection items.</value>
+        /// <value>The <see cref="System.Type"/> of the collection items.</value>
         public Type? CollectionItemType { get; }
 
         /// <summary>
-        ///     Gets a value indicating whether the collection type is a multidimensional array.
+        /// Gets a value indicating whether the collection type is a multidimensional array.
         /// </summary>
         /// <value><c>true</c> if the collection type is a multidimensional array; otherwise, <c>false</c>.</value>
         public bool IsMultidimensionalArray { get; }
@@ -95,8 +94,7 @@ namespace Newtonsoft.Json.Serialization {
         }
 
         /// <summary>
-        ///     Gets or sets the function used to create the object. When set this function will override
-        ///     <see cref="JsonContract.DefaultCreator" />.
+        /// Gets or sets the function used to create the object. When set this function will override <see cref="JsonContract.DefaultCreator"/>.
         /// </summary>
         /// <value>The function used to create the object.</value>
         public ObjectConstructor<object>? OverrideCreator {
@@ -109,18 +107,16 @@ namespace Newtonsoft.Json.Serialization {
         }
 
         /// <summary>
-        ///     Gets a value indicating whether the creator has a parameter with the collection values.
+        /// Gets a value indicating whether the creator has a parameter with the collection values.
         /// </summary>
-        /// <value>
-        ///     <c>true</c> if the creator has a parameter with the collection values; otherwise, <c>false</c>.
-        /// </value>
+        /// <value><c>true</c> if the creator has a parameter with the collection values; otherwise, <c>false</c>.</value>
         public bool HasParameterizedCreator { get; set; }
 
         internal bool HasParameterizedCreatorInternal =>
             (HasParameterizedCreator || _parameterizedCreator != null || _parameterizedConstructor != null);
 
         /// <summary>
-        ///     Initializes a new instance of the <see cref="JsonArrayContract" /> class.
+        /// Initializes a new instance of the <see cref="JsonArrayContract"/> class.
         /// </summary>
         /// <param name="underlyingType">The underlying type for the contract.</param>
         [RequiresUnreferencedCode(MiscellaneousUtils.TrimWarning)]

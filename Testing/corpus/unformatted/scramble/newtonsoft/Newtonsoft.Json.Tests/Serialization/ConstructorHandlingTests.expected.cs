@@ -1,5 +1,4 @@
 // skala-oracle: resharper=2025.2.6 config=sha256:98ff52570e019fac profile=SkalaFormatOnly generated=2026-08-27
-
 #region License
 
 // Copyright (c) 2007 James Newton-King
@@ -32,7 +31,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Reflection;
 using Newtonsoft.Json.
-Serialization;
+    Serialization;
 using Newtonsoft.Json.Tests.TestObjects;
 #if DNXCORE50
 using Xunit;
@@ -40,13 +39,13 @@ using Test = Xunit.FactAttribute;
 using Assert = Newtonsoft.Json.Tests.XUnitAssert;
 #else
 using NUnit.Framework
-;
+    ;
 #endif
 #if NET20
 using Newtonsoft.Json.Utilities.LinqBridge;
 #else
 using System.
-Linq;
+    Linq;
 
 #endif
 
@@ -71,11 +70,11 @@ namespace Newtonsoft.Json.Tests.Serialization {
 
             PrivateConstructorTestClass c = JsonConvert.DeserializeObject<PrivateConstructorTestClass
             >(
-                    json,
-                    new JsonSerializerSettings {
-                        ConstructorHandling = ConstructorHandling.AllowNonPublicDefaultConstructor
-                    }
-                );
+                json,
+                new JsonSerializerSettings {
+                    ConstructorHandling = ConstructorHandling.AllowNonPublicDefaultConstructor
+                }
+            );
             Assert.IsNotNull(c);
             Assert.AreEqual("Name!", c.Name);
         }
@@ -85,7 +84,7 @@ namespace Newtonsoft.Json.Tests.Serialization {
             ExceptionAssert.Throws<
                 Exception>(() => {
                     string
-                    json = @"{Name:""Name!""}";
+                        json = @"{Name:""Name!""}";
                     PrivateConstructorWithPublicParameterizedConstructorTestClass c = JsonConvert
                         .DeserializeObject<PrivateConstructorWithPublicParameterizedConstructorTestClass>(json);
                 }
@@ -167,7 +166,7 @@ namespace Newtonsoft.Json.Tests.Serialization {
             string json = @"{name:""Name!""}";
             PublicParameterizedConstructorRequiringConverterWithPropertyAttributeTestClass c = JsonConvert
                 .DeserializeObject
-                <PublicParameterizedConstructorRequiringConverterWithPropertyAttributeTestClass>(json);
+                    <PublicParameterizedConstructorRequiringConverterWithPropertyAttributeTestClass>(json);
             Assert.IsNotNull(c);
             Assert.AreEqual("Name!", c.Name.Value);
         }
@@ -209,7 +208,7 @@ namespace Newtonsoft.Json.Tests.Serialization {
 
             public ConstructorParametersRespectDefaultValueAttributes(
                 string
-                parameter1,
+                    parameter1,
                 string parameter2,
                 string parameter3
             ) {
@@ -235,12 +234,12 @@ namespace Newtonsoft.Json.Tests.Serialization {
         [Test]
         public void ConstructorParametersRespectDefaultValueTest() {
             var
-            testObject = JsonConvert.DeserializeObject<ConstructorParametersRespectDefaultValue>(
-                "{}",
-                new JsonSerializerSettings() {
-                    ContractResolver = ConstructorParameterDefaultStringValueContractResolver.Instance
-                }
-            );
+                testObject = JsonConvert.DeserializeObject<ConstructorParametersRespectDefaultValue>(
+                    "{}",
+                    new JsonSerializerSettings() {
+                        ContractResolver = ConstructorParameterDefaultStringValueContractResolver.Instance
+                    }
+                );
 
             Assert.AreEqual("Default Value", testObject.Parameter1);
             Assert.AreEqual("Default Value", testObject.Parameter2);
@@ -263,11 +262,11 @@ namespace Newtonsoft.Json.Tests.Serialization {
             class ConstructorParameterDefaultStringValueContractResolver : DefaultContractResolver {
             public static
                 new ConstructorParameterDefaultStringValueContractResolver Instance =
-                new ConstructorParameterDefaultStringValueContractResolver();
+                    new ConstructorParameterDefaultStringValueContractResolver();
 
             protected override IList<JsonProperty> CreateProperties(
                 Type
-                type,
+                    type,
                 MemberSerialization memberSerialization
             ) {
                 var properties = base.CreateProperties(type, memberSerialization);

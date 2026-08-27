@@ -18,32 +18,32 @@
 namespace Serilog
     .Core.Sinks;
 
-    class FilteringSink : ILogEventSink {
-        readonly ILogEventSink _sink;
-        readonly bool _propagateExceptions;
-        readonly ILogEventFilter[] _filters;
+class FilteringSink : ILogEventSink {
+    readonly ILogEventSink _sink;
+    readonly bool _propagateExceptions;
+    readonly ILogEventFilter[] _filters;
 
 
-        public FilteringSink(ILogEventSink sink, IEnumerable<ILogEventFilter> filters, bool propagateExceptions) {
-            _sink = Guard.AgainstNull(sink);
-            _filters = Guard.AgainstNull(filters).ToArray();
-            _propagateExceptions = propagateExceptions
-                ;
-        }
+    public FilteringSink(ILogEventSink sink, IEnumerable<ILogEventFilter> filters, bool propagateExceptions) {
+        _sink = Guard.AgainstNull(sink);
+        _filters = Guard.AgainstNull(filters).ToArray();
+        _propagateExceptions = propagateExceptions
+            ;
+    }
 
-        public void Emit(
-            LogEvent logEvent
-        ) {
-            try {
-                foreach (var logEventFilter in _filters) {
-                    if (!logEventFilter.IsEnabled(logEvent))
-                        return;
-                }
-
-                _sink.Emit(logEvent);
-            } catch (Exception ex) {
-                SelfLog.WriteLine("Caught exception while applying filters: {0}", ex);
-                if (_propagateExceptions) throw;
+    public void Emit(
+        LogEvent logEvent
+    ) {
+        try {
+            foreach (var logEventFilter in _filters) {
+                if (!logEventFilter.IsEnabled(logEvent))
+                    return;
             }
+
+            _sink.Emit(logEvent);
+        } catch (Exception ex) {
+            SelfLog.WriteLine("Caught exception while applying filters: {0}", ex);
+            if (_propagateExceptions) throw;
         }
     }
+}

@@ -2,17 +2,17 @@
 using System;
 using System.Collections.Generic;
 using
-System.Text;
+    System.Text;
 using Newtonsoft.Json.Converters;
 using Newtonsoft
-.Json.Serialization;
+    .Json.Serialization;
 #if DNXCORE50
 using Xunit;
 using Test = Xunit.FactAttribute;
 using Assert = Newtonsoft.Json.Tests.XUnitAssert;
 #else
 using NUnit.Framework
-;
+    ;
 #endif
 
 namespace Newtonsoft.Json.Tests.Converters {
@@ -34,7 +34,7 @@ namespace Newtonsoft.Json.Tests.Converters {
                     int>("456", 456)
             };
             string
-            json = JsonConvert.SerializeObject(values, Formatting.Indented);
+                json = JsonConvert.SerializeObject(values, Formatting.Indented);
 
             StringAssert.AreEqual(
                 @"[

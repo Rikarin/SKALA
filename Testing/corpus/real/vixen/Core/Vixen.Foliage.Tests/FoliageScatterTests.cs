@@ -108,11 +108,7 @@ public sealed class FoliageScatterTests {
     public void A_brush_twice_as_wide_considers_four_times_as_many() {
         var settings = Types.Tree;
 
-        Assert.InRange(
-            settings.CandidatesFor(20f),
-            settings.CandidatesFor(10f) * 4 - 2,
-            settings.CandidatesFor(10f) * 4 + 2
-        );
+        Assert.InRange(settings.CandidatesFor(20f), settings.CandidatesFor(10f) * 4 - 2, settings.CandidatesFor(10f) * 4 + 2);
     }
 
     // --- The rules that refuse ----------------------------------------------
@@ -252,11 +248,8 @@ public sealed class FoliageScatterTests {
 
     /// <summary>Two draws from one hash are not correlated.</summary>
     /// <remarks>
-    ///     ⚠
-    ///     <b>
-    ///         Slicing the streams out of one hash's bits gives the yaw and the scale correlated low
-    ///         bits
-    ///     </b>, which shows up as every large tree facing the same way — a pattern an artist sees
+    ///     ⚠ <b>Slicing the streams out of one hash's bits gives the yaw and the scale correlated low
+    ///     bits</b>, which shows up as every large tree facing the same way — a pattern an artist sees
     ///     immediately and cannot describe. Re-hashing per stream is what avoids it.
     /// </remarks>
     [Fact]
@@ -299,11 +292,12 @@ public sealed class FoliageScatterTests {
         return MathF.Acos(Math.Clamp(Vector3.Dot(Vector3.Normalize(up), Vector3.UnitY), -1f, 1f));
     }
 
-    static List<Vector2> Positions(FoliageVolume volume) => [
-        .. volume.Chunks
-            .OrderBy(chunk => chunk.Cell.Z)
-            .ThenBy(chunk => chunk.Cell.X)
-            .SelectMany(chunk => chunk.Instances)
-            .Select(instance => new Vector2(instance.Position.X, instance.Position.Z))
-    ];
+    static List<Vector2> Positions(FoliageVolume volume) =>
+        [
+            .. volume.Chunks
+                .OrderBy(chunk => chunk.Cell.Z)
+                .ThenBy(chunk => chunk.Cell.X)
+                .SelectMany(chunk => chunk.Instances)
+                .Select(instance => new Vector2(instance.Position.X, instance.Position.Z))
+        ];
 }

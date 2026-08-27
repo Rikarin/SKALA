@@ -1,7 +1,6 @@
 // SPDX-FileCopyrightText: Copyright (c) Rikarin
 // SPDX-License-Identifier: Apache-2.0
-using Vixen.Core; using Vixen.Core.Mathematics; using Vixen.Ecs; using Vixen.Engine.Transforms; namespace Vixen.Editor.SceneView;
-
+using Vixen.Core;using Vixen.Core.Mathematics;using Vixen.Ecs;using Vixen.Engine.Transforms;namespace Vixen.Editor.SceneView;
 /// <summary>An entity, as something the gizmo can move.</summary>
 /// <remarks>
 ///     <para>
@@ -25,59 +24,34 @@ using Vixen.Core; using Vixen.Core.Mathematics; using Vixen.Ecs; using Vixen.Eng
 ///         behaviour too.
 ///     </para>
 /// </remarks>
-public sealed class EntityGizmoTarget : IGizmoTarget {
-    readonly World world;
-
-    /// <summary>The entity being moved.</summary>
-    public Entity Entity { get; }
-
-    /// <summary>Views an entity as a gizmo target.</summary>
+public sealed class EntityGizmoTarget:IGizmoTarget{readonly World world;
+/// <summary>The entity being moved.</summary>
+public Entity Entity{get;}
+/// <summary>Views an entity as a gizmo target.</summary>
     /// <param name="world">The world it lives in.</param>
     /// <param name="entity">The entity.</param>
-    public EntityGizmoTarget(World world, Entity entity) {
-        ArgumentNullException.ThrowIfNull(world);
-        this.world = world;
-        Entity = entity;
-    }
-
-    /// <inheritdoc />
-    public Vector3 Position { get => new Transform(world, Entity).Position; set =>
-            new Transform(world, Entity).Position = value; }
-
-    /// <inheritdoc />
-    public Quaternion Rotation { get => new Transform(world, Entity).Rotation; set =>
-            new Transform(world, Entity).Rotation = value; }
-
-    /// <inheritdoc />
-    public Vector3 Scale { get => new Transform(world, Entity).LocalScale; set =>
-            new Transform(world, Entity).LocalScale = value; }
-
-    /// <inheritdoc />
+public EntityGizmoTarget(World world,Entity entity){ArgumentNullException.ThrowIfNull(world);this.world=world;Entity=entity;}
+/// <inheritdoc />
+public Vector3 Position{get=>new Transform(world,Entity).Position;set=>new Transform(world,Entity).Position=value;}
+/// <inheritdoc />
+public Quaternion Rotation{get=>new Transform(world,Entity).Rotation;set=>new Transform(world,Entity).Rotation=value;}
+/// <inheritdoc />
+public Vector3 Scale{get=>new Transform(world,Entity).LocalScale;set=>new Transform(world,Entity).LocalScale=value;}
+/// <inheritdoc />
     /// <remarks>
     ///     The identity for a root, which is what makes <see cref="GizmoSpace.Parent" /> mean world
     ///     space for an object that has no parent — the right answer, and the same one the stored
     ///     <c>LocalTransform</c> is already in.
     /// </remarks>
-    public Matrix4x4 ParentToWorld { get { var parent = Hierarchy.ParentOf(world, Entity); return parent.IsNull
-                || !world.Has<WorldTransform>(parent)
-                    ? Matrix4x4.Identity
-                    : world.Read<WorldTransform>(parent).Value; } }
-
-    /// <inheritdoc />
+public Matrix4x4 ParentToWorld{get{var parent=Hierarchy.ParentOf(world,Entity);return parent.IsNull||!world.Has<WorldTransform>(parent)?Matrix4x4.Identity:world.Read<WorldTransform>(parent).Value;}}
+/// <inheritdoc />
     /// <remarks>
-    ///     ⚠
-    ///     <b>
-    ///         The entry goes on the viewport's document, because that is what an entity belongs
-    ///         to.
-    ///     </b> This is the ordinary case and it reads as one, which it did not when it was the
+    ///     ⚠ <b>The entry goes on the viewport's document, because that is what an entity belongs
+    ///     to.</b> This is the ordinary case and it reads as one, which it did not when it was the
     ///     fall-through of two other branches.
     /// </remarks>
-    public GizmoEdit? Record(in GizmoDrag drag) {
-        var command = new TransformTargetsCommand(drag.Verb, drag.Targets, drag.Captured, drag.Document);
-        return command.IsEmpty ? null : new(command, drag.Document?.Stack);
-    }
-
-    /// <summary>Views a selection of entities as gizmo targets.</summary>
+public GizmoEdit?Record(in GizmoDrag drag){var command=new TransformTargetsCommand(drag.Verb,drag.Targets,drag.Captured,drag.Document);return command.IsEmpty?null:new(command,drag.Document?.Stack);}
+/// <summary>Views a selection of entities as gizmo targets.</summary>
     /// <param name="world">The world.</param>
     /// <param name="entities">The entities, in selection order.</param>
     /// <returns>The targets, skipping anything that is not alive or has no transform.</returns>
@@ -86,16 +60,4 @@ public sealed class EntityGizmoTarget : IGizmoTarget {
     ///     names — undo deletes an object that is still selected, a script destroys one — and an
     ///     editor that threw while drawing its gizmo would be unusable for the rest of the session.
     /// </remarks>
-    public static IReadOnlyList<EntityGizmoTarget> For(World world, IEnumerable<Entity> entities) {
-        ArgumentNullException.ThrowIfNull(world);
-        ArgumentNullException.ThrowIfNull(entities);
-        List<EntityGizmoTarget> targets = [];
-        foreach (var entity in entities) {
-            if (world.IsAlive(entity) && world.Has<LocalTransform>(entity) && world.Has<WorldTransform>(entity)) {
-                targets.Add(new(world, entity));
-            }
-        }
-
-        return targets;
-    }
-}
+public static IReadOnlyList<EntityGizmoTarget>For(World world,IEnumerable<Entity>entities){ArgumentNullException.ThrowIfNull(world);ArgumentNullException.ThrowIfNull(entities);List<EntityGizmoTarget>targets=[];foreach(var entity in entities){if(world.IsAlive(entity)&&world.Has<LocalTransform>(entity)&&world.Has<WorldTransform>(entity)){targets.Add(new(world,entity));}}return targets;}}

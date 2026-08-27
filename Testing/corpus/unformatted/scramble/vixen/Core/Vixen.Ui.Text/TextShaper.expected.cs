@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 using
-System.Collections.Concurrent;
+    System.Collections.Concurrent;
 using HarfBuzzSharp;
 using HbBuffer = HarfBuzzSharp.Buffer;
 using HbScript = HarfBuzzSharp.Script;
@@ -51,14 +51,14 @@ public static class TextShaper {
         string text,
         ParagraphDirection direction = ParagraphDirection.Auto,
         FontVariation?
-        variation = null,
+            variation = null,
         FontFeatureSet? features = null
     ) {
         ArgumentNullException.ThrowIfNull(font);
         ArgumentNullException.ThrowIfNull(text);
 
         // ⚠ Set on every call, including when nobody asked for an instance. The face's shaper is
-        // stateful, so a null here has to mean "back to the default" rather than "leave it as
+// stateful, so a null here has to mean "back to the default" rather than "leave it as
         // whoever shaped last left it" — otherwise a paragraph's advances depend on what was drawn
         // before it, which is a bug that only appears once something animates an axis.
         font.SetInstance(variation)
@@ -67,14 +67,13 @@ public static class TextShaper {
         if (items.Count == 0) {
             return new ShapedText(text, [], 0);
         }
-
         // ⚠ Built once for the paragraph rather than once per run. HarfBuzz copies the array on
         // every `Shape`, and a paragraph of mixed scripts is one item per script change — so a
 
         // per-run conversion would allocate the same four bytes per feature per run of every string
         // that names one.
         var applied = Convert(features);
-        var shaped = new ShapedRun[
+        var shaped = new ShapedRun [
             items.Count];
         for (var i = 0; i < items.Count; i++) {
             shaped[i] = ShapeRun(
@@ -90,7 +89,7 @@ public static class TextShaper {
         var runs = new ShapedRun[order.Length];
         var advance = 0f;
         for (var i
-             = 0;
+                 = 0;
              i < order.Length;
              i++) {
             runs[
@@ -125,7 +124,7 @@ public static class TextShaper {
     internal static ShapedRun ShapeRun(
         FontFace font,
         string
-        text,
+            text,
         TextItem item
     ) =>
         ShapeRun(font, text, item, []);
@@ -138,7 +137,7 @@ public static class TextShaper {
         buffer.Script = TagFor(item.Script);
 
         // ⚠ Default-ignorables are deleted rather than hidden. Left alone, HarfBuzz keeps a zero
-        // width invisible glyph for every zero-width joiner, variation selector and bidi control —
+// width invisible glyph for every zero-width joiner, variation selector and bidi control —
         // which is correct and is not what a renderer wants: each one is still a quad to batch and
         // still an entry in the glyph run that maps back to no visible mark. Deleting them is the
         // same choice Raqm makes by default, and the Consortium's expectations are written against
@@ -161,7 +160,7 @@ public static class TextShaper {
                 (int)infos[i]
                     .Cluster,
                 positions
-                [i].XAdvance,
+                    [i].XAdvance,
                 positions[i].YAdvance,
                 positions[i].XOffset,
                 positions[i].YOffset
@@ -185,7 +184,7 @@ public static class TextShaper {
         }
 
         var applied = new
-            Feature[features.Features.Length];
+            Feature [features.Features.Length];
         for (var i = 0; i < applied.Length; i++) {
             var feature = features.Features[i];
 
@@ -197,17 +196,17 @@ public static class TextShaper {
             // The whole buffer, which is the only range CSS can express. See `FontFeature`.
             applied[i
             ] = new Feature(
-                    new Tag(
-                        (char)(
-                            tag >> 24),
-                        (char)((tag >> 16) & 0xFF),
-                        (char)((tag >> 8) & 0xFF),
-                        (char)(tag & 0xFF)
-                    ),
-                    feature.Value,
-                    0,
-                    uint.MaxValue
-                );
+                new Tag(
+                    (char)(
+                        tag >> 24),
+                    (char)((tag >> 16) & 0xFF),
+                    (char)((tag >> 8) & 0xFF),
+                    (char)(tag & 0xFF)
+                ),
+                feature.Value,
+                0,
+                uint.MaxValue
+            );
         }
 
         return applied;

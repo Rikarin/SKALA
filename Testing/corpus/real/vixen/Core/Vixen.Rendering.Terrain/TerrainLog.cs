@@ -32,10 +32,10 @@ static partial class TerrainLog {
         EventId = 4003,
         Level = LogLevel.Warning,
         Message = "'{Node}' is drawing the ground with the preview shaders because {Missing}. The "
-        + "preview fragment returns a reflectance in [0, 1] rather than a luminance in cd/m², so "
-        + "under a physically metered sky the ground is roughly one nit in a frame exposed for "
-        + "thousands — it will look black rather than look missing, and every draw counter will "
-        + "say it was drawn."
+            + "preview fragment returns a reflectance in [0, 1] rather than a luminance in cd/m², so "
+            + "under a physically metered sky the ground is roughly one nit in a frame exposed for "
+            + "thousands — it will look black rather than look missing, and every draw counter will "
+            + "say it was drawn."
     )]
     public static partial void GroundIsPreviewShaded(ILogger logger, string node, string missing);
 }

@@ -1,5 +1,4 @@
 ﻿#region License
-
 // Copyright (c) 2007 James Newton-King
 //
 // Permission is hereby granted, free of charge, to any person
@@ -22,7 +21,6 @@
 // WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 // OTHER DEALINGS IN THE SOFTWARE.
-
 #endregion
 
 #pragma warning disable 618
@@ -32,18 +30,21 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace Newtonsoft.Json.Tests.Documentation.Samples.Schema {
-    public class CreateJsonSchemaManually {
-        public void Example() {
+namespace Newtonsoft.Json.Tests.Documentation.Samples.Schema
+{
+    public class CreateJsonSchemaManually
+    {
+        public void Example()
+        {
             #region Usage
-
             JsonSchema schema = new JsonSchema();
             schema.Type = JsonSchemaType.Object;
-            schema.Properties = new Dictionary<string, JsonSchema> {
+            schema.Properties = new Dictionary<string, JsonSchema>
+            {
                 { "name", new JsonSchema { Type = JsonSchemaType.String } },
                 {
-                    "hobbies",
-                    new JsonSchema {
+                    "hobbies", new JsonSchema
+                    {
                         Type = JsonSchemaType.Array,
                         Items = new List<JsonSchema> { new JsonSchema { Type = JsonSchemaType.String } }
                     }
@@ -68,18 +69,15 @@ namespace Newtonsoft.Json.Tests.Documentation.Samples.Schema {
             //   }
             // }
 
-            JObject person = JObject.Parse(
-                @"{
+            JObject person = JObject.Parse(@"{
               'name': 'James',
               'hobbies': ['.NET', 'Blogging', 'Reading', 'Xbox', 'LOLCATS']
-            }"
-            );
+            }");
 
             bool valid = person.IsValid(schema);
 
             Console.WriteLine(valid);
             // true
-
             #endregion
         }
     }

@@ -1,5 +1,4 @@
 ﻿#region License
-
 // Copyright (c) 2007 James Newton-King
 //
 // Permission is hereby granted, free of charge, to any person
@@ -22,7 +21,6 @@
 // WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 // OTHER DEALINGS IN THE SOFTWARE.
-
 #endregion
 
 using System;
@@ -32,11 +30,11 @@ using Newtonsoft.Json.Utilities;
 
 #nullable disable
 
-namespace Newtonsoft.Json.Schema {
-    [Obsolete(
-        "JSON Schema validation has been moved to its own package. See https://www.newtonsoft.com/jsonschema for more details."
-    )]
-    internal class JsonSchemaModel {
+namespace Newtonsoft.Json.Schema
+{
+    [Obsolete("JSON Schema validation has been moved to its own package. See https://www.newtonsoft.com/jsonschema for more details.")]
+    internal class JsonSchemaModel
+    {
         public bool Required { get; set; }
         public JsonSchemaType Type { get; set; }
         public int? MinimumLength { get; set; }
@@ -61,24 +59,28 @@ namespace Newtonsoft.Json.Schema {
         public IList<JToken> Enum { get; set; }
         public JsonSchemaType Disallow { get; set; }
 
-        public JsonSchemaModel() {
+        public JsonSchemaModel()
+        {
             Type = JsonSchemaType.Any;
             AllowAdditionalProperties = true;
             AllowAdditionalItems = true;
             Required = false;
         }
 
-        public static JsonSchemaModel Create(IList<JsonSchema> schemata) {
+        public static JsonSchemaModel Create(IList<JsonSchema> schemata)
+        {
             JsonSchemaModel model = new JsonSchemaModel();
 
-            foreach (JsonSchema schema in schemata) {
+            foreach (JsonSchema schema in schemata)
+            {
                 Combine(model, schema);
             }
 
             return model;
         }
 
-        private static void Combine(JsonSchemaModel model, JsonSchema schema) {
+        private static void Combine(JsonSchemaModel model, JsonSchema schema)
+        {
             // Version 3 of the Draft JSON Schema has the default value of Not Required
             model.Required = model.Required || (schema.Required ?? false);
             model.Type = model.Type & (schema.Type ?? JsonSchemaType.Any);
@@ -100,18 +102,21 @@ namespace Newtonsoft.Json.Schema {
             model.AllowAdditionalProperties = model.AllowAdditionalProperties && schema.AllowAdditionalProperties;
             model.AllowAdditionalItems = model.AllowAdditionalItems && schema.AllowAdditionalItems;
             model.UniqueItems = model.UniqueItems || schema.UniqueItems;
-            if (schema.Enum != null) {
-                if (model.Enum == null) {
+            if (schema.Enum != null)
+            {
+                if (model.Enum == null)
+                {
                     model.Enum = new List<JToken>();
                 }
 
                 model.Enum.AddRangeDistinct(schema.Enum, JToken.EqualityComparer);
             }
-
             model.Disallow = model.Disallow | (schema.Disallow ?? JsonSchemaType.None);
 
-            if (schema.Pattern != null) {
-                if (model.Patterns == null) {
+            if (schema.Pattern != null)
+            {
+                if (model.Patterns == null)
+                {
                     model.Patterns = new List<string>();
                 }
 

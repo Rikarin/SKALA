@@ -16,52 +16,52 @@
 namespace Serilog.Formatting.Display;
 
 /// <summary>
-///     Describes the properties available in standard message template-based
-///     output format strings.
+/// Describes the properties available in standard message template-based
+/// output format strings.
 /// </summary>
 public static class OutputProperties {
     /// <summary>
-    ///     The message rendered from the log event.
+    /// The message rendered from the log event.
     /// </summary>
     public const string MessagePropertyName = "Message";
 
     /// <summary>
-    ///     The timestamp of the log event.
+    /// The timestamp of the log event.
     /// </summary>
     public const string TimestampPropertyName = "Timestamp";
 
     /// <summary>
-    ///     The timestamp of the log event in UTC.
+    /// The timestamp of the log event in UTC.
     /// </summary>
     public const string UtcTimestampPropertyName = "UtcTimestamp";
 
     /// <summary>
-    ///     The level of the log event.
+    /// The level of the log event.
     /// </summary>
     public const string LevelPropertyName = "Level";
 
     /// <summary>
-    ///     The id of the trace that was active at the log event's time of creation, if any.
+    /// The id of the trace that was active at the log event's time of creation, if any.
     /// </summary>
     public const string TraceIdPropertyName = "TraceId";
 
     /// <summary>
-    ///     The id of the span that was active at the log event's time of creation, if any.
+    /// The id of the span that was active at the log event's time of creation, if any.
     /// </summary>
     public const string SpanIdPropertyName = "SpanId";
 
     /// <summary>
-    ///     A new line.
+    /// A new line.
     /// </summary>
     public const string NewLinePropertyName = "NewLine";
 
     /// <summary>
-    ///     The exception associated with the log event.
+    /// The exception associated with the log event.
     /// </summary>
     public const string ExceptionPropertyName = "Exception";
 
     /// <summary>
-    ///     The properties of the log event.
+    /// The properties of the log event.
     /// </summary>
     public const string PropertiesPropertyName = "Properties";
 }

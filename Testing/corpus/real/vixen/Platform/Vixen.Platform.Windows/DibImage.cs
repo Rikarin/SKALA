@@ -61,10 +61,8 @@ static class DibImage {
     /// <summary>Reads a clipboard DIB into straight RGBA8, top-down.</summary>
     /// <param name="dib">The bytes behind <c>CF_DIB</c> or <c>CF_DIBV5</c>, with no file header.</param>
     /// <param name="image">The decoded image.</param>
-    /// <returns>
-    ///     <see langword="false" /> for a truncated, palettised or otherwise unreadable
-    ///     bitmap, which is not an error: the caller's contract is that a clipboard read can fail.
-    /// </returns>
+    /// <returns><see langword="false" /> for a truncated, palettised or otherwise unreadable
+    /// bitmap, which is not an error: the caller's contract is that a clipboard read can fail.</returns>
     public static bool TryDecode(ReadOnlySpan<byte> dib, out ClipboardImage image) {
         image = default;
 
@@ -190,10 +188,8 @@ static class DibImage {
 
     /// <summary>Writes straight RGBA8 as a <c>CF_DIBV5</c> bitmap.</summary>
     /// <param name="image">The image, <c>Size.X * Size.Y * 4</c> bytes from the top-left.</param>
-    /// <returns>
-    ///     The bytes to put on the clipboard, or <see langword="null" /> if the image is not
-    ///     the size it says it is.
-    /// </returns>
+    /// <returns>The bytes to put on the clipboard, or <see langword="null" /> if the image is not
+    /// the size it says it is.</returns>
     /// <remarks>
     ///     <c>BITMAPV5HEADER</c> rather than <c>BITMAPINFOHEADER</c> because only V5 can say that the
     ///     fourth channel is alpha and that the colours are sRGB, and Windows synthesises
@@ -203,10 +199,7 @@ static class DibImage {
     public static byte[]? Encode(in ClipboardImage image) {
         var (width, height) = (image.Size.X, image.Size.Y);
 
-        if (width <= 0
-            || height <= 0
-            || width > MaxDimension
-            || height > MaxDimension
+        if (width <= 0 || height <= 0 || width > MaxDimension || height > MaxDimension
             || (long)width * height > MaxPixels) {
             return null;
         }

@@ -4,9 +4,7 @@
 
 namespace Vixen.Geometry.Uv.Solving;
 
-/// <summary>
-///     Collects <c>(row, column, value)</c> triplets and compacts them into a <see cref="SparseMatrix" />.
-/// </summary>
+/// <summary>Collects <c>(row, column, value)</c> triplets and compacts them into a <see cref="SparseMatrix" />.</summary>
 /// <remarks>
 ///     <para>
 ///         Assembling a Laplacian means visiting every triangle and adding a contribution per corner
@@ -15,11 +13,8 @@ namespace Vixen.Geometry.Uv.Solving;
 ///         misuse, and <see cref="Build" /> is what turns them into one sorted row.
 ///     </para>
 ///     <para>
-///         ⚠
-///         <b>
-///             Duplicates are summed in the order they were added, and that order is part of the
-///             answer.
-///         </b> Floating-point addition is not associative, so <c>(a + b) + c</c> and
+///         ⚠ <b>Duplicates are summed in the order they were added, and that order is part of the
+///         answer.</b> Floating-point addition is not associative, so <c>(a + b) + c</c> and
 ///         <c>a + (b + c)</c> are different matrices — near enough to look identical and far enough to
 ///         move the last bit of a coordinate, which is what docs/plan/42 § D12's byte-identical gate
 ///         is measured on. The sort below is therefore <i>stable</i>: it orders by column and leaves
@@ -142,7 +137,7 @@ sealed class SparseMatrixBuilder {
             var value = values[index];
             var slot = index
                 - 1; // Strictly greater, so entries that tie keep the order they were added in. An `>=` here
-            // reverses duplicates and changes the sum in the last bits.
+// reverses duplicates and changes the sum in the last bits.
             while (slot >= first && columns[slot] > column) {
                 columns[slot + 1] = columns[slot];
                 values[slot + 1] = values[slot];

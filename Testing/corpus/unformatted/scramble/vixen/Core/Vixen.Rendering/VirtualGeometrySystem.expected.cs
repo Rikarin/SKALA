@@ -3,11 +3,11 @@
 // SPDX-License-Identifier: Apache-2.0
 
 using
-Vixen.Graphics;
+    Vixen.Graphics;
 using Vixen.Rendering.Compositor;
 using Vixen.Rendering.Features;
 using Vixen.Shaders
-;
+    ;
 
 namespace Vixen.Rendering;
 
@@ -34,8 +34,7 @@ namespace Vixen.Rendering;
 ///     <para>
 ///         <b>One page pool for the scene, and that is the whole of the streaming budget.</b> Slots
 ///         times page size is the resident geometry a project has decided to pay for, and every mesh
-///         registered through <see cref="Content(int, VirtualGeometryAsset, System.IO.Stream)" /> shares it — which is
-///         what makes a hundred
+///         registered through <see cref="Content(int, VirtualGeometryAsset, System.IO.Stream)" /> shares it — which is what makes a hundred
 ///         virtualized meshes cost one budget rather than a hundred.
 ///     </para>
 /// </remarks>
@@ -81,13 +80,12 @@ public sealed class VirtualGeometrySystem : IDisposable {
     ///     Exposed because a project that unloads a level wants its blobs closed —
     ///     <see cref="StreamMeshletPageSource.Remove" /> — and because a test asking whether a mesh's
     ///     bytes are reachable is asking this. Adding to it directly is possible and is not the way in:
-    ///     <see cref="Content(int, VirtualGeometryAsset, System.IO.Stream)" /> adds the blob and registers the mesh
-    ///     under one id, so the two cannot
+    ///     <see cref="Content(int, VirtualGeometryAsset, System.IO.Stream)" /> adds the blob and registers the mesh under one id, so the two cannot
     ///     be given different ones.
     /// </remarks>
     public StreamMeshletPageSource Source {
         get
-            ;
+        ;
     } = new();
 
     /// <summary>The pool every resident page lives in.</summary>
@@ -96,7 +94,7 @@ public sealed class VirtualGeometrySystem : IDisposable {
     /// <summary>What decides which pages are in it.</summary>
     public PageResidency Residency {
         get
-            ;
+        ;
     }
 
     /// <summary>The cluster traversal.</summary>
@@ -120,7 +118,7 @@ public sealed class VirtualGeometrySystem : IDisposable {
     /// <summary>The per-material shading that consumes those bins.</summary>
     public GpuClusterResolve Resolve {
         get
-            ;
+        ;
     }
 
     /// <summary>The feature a scene's objects draw through.</summary>
@@ -135,8 +133,9 @@ public sealed class VirtualGeometrySystem : IDisposable {
     public
         IReadOnlyList<ResolveMaterial> Materials {
         get => Resolve.Materials;
-        set => Resolve.Materials = value
-            ;
+        set =>
+            Resolve.Materials = value
+        ;
     }
 
     /// <summary>How many meshes have been loaded into it.</summary>
@@ -222,7 +221,7 @@ public sealed class VirtualGeometrySystem : IDisposable {
         int id,
         VirtualGeometryAsset asset,
         Stream
-        data
+            data
     ) {
         ObjectDisposedException.ThrowIf(disposed, this);
         return VirtualGeometryContent.Load(Feature, Source, id, asset, data);
@@ -231,17 +230,13 @@ public sealed class VirtualGeometrySystem : IDisposable {
     /// <summary>
     ///     Releases a mesh: its pages go back to the pool and its blob is closed.
     /// </summary>
-    /// <param name="mesh">
-    ///     The index <see cref="Content(int, VirtualGeometryAsset, System.IO.Stream)" /> returned.
-    /// </param>
+    /// <param name="mesh">The index <see cref="Content(int, VirtualGeometryAsset, System.IO.Stream)" /> returned.</param>
     /// <returns>Whether there was a live registration to release.</returns>
     /// <exception cref="ArgumentOutOfRangeException">There is no such registration.</exception>
     /// <remarks>
     ///     <para>
-    ///         <b>
-    ///             <see cref="Content(int, VirtualGeometryAsset, System.IO.Stream)" />'s counterpart, and
-    ///             it undoes both halves for the reason that one does both.
-    ///         </b> A registration pins a root
+    ///         <b><see cref="Content(int, VirtualGeometryAsset, System.IO.Stream)" />'s counterpart, and
+    ///         it undoes both halves for the reason that one does both.</b> A registration pins a root
     ///         page and opens a blob; releasing only the pin leaves a file handle, and releasing only the
     ///         blob leaves a slot of the pool pinned to content nothing draws — for ever, because nothing
     ///         re-pins and nothing unpins. A project that loads and unloads levels loses a slot per mesh

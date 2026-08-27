@@ -94,16 +94,17 @@ public sealed class NullDeviceTests : IDisposable {
         var shader = limited.CreateShader(ShaderStage.Compute, [1, 2, 3, 4]);
         var layout = limited.CreatePipelineLayout(new([]));
 
-        Assert.Throws<NotSupportedException>(() => limited.CreateComputePipeline(new(shader, layout, "Cull")));
+        Assert.Throws<NotSupportedException>(
+            () => limited.CreateComputePipeline(new(shader, layout, "Cull"))
+        );
     }
 
     [Fact]
     public void ATextureLargerThanTheDeviceAllowsIsRefused() {
         using var limited = new NullDevice(new() { Features = GraphicsDeviceFeatures.Minimum });
 
-        var thrown = Assert.Throws<ArgumentException>(() => limited.CreateTexture(
-                new(PixelFormat.Rgba8UNorm, 8192, 8192, TextureUsage.Sampled, Name: "Huge")
-            )
+        var thrown = Assert.Throws<ArgumentException>(
+            () => limited.CreateTexture(new(PixelFormat.Rgba8UNorm, 8192, 8192, TextureUsage.Sampled, Name: "Huge"))
         );
 
         Assert.Contains("4096", thrown.Message, StringComparison.Ordinal);
@@ -129,10 +130,8 @@ public sealed class NullDeviceTests : IDisposable {
         var set = device.CreateDescriptorSet(layout);
         var buffer = device.CreateBuffer(new(256, BufferUsage.Uniform, MemoryAccess.HostUpload, "Transforms"));
 
-        var thrown = Assert.Throws<ArgumentException>(() => device.UpdateDescriptorSet(
-                set,
-                [DescriptorWrite.Uniform(0, buffer, 0, 64)]
-            )
+        var thrown = Assert.Throws<ArgumentException>(
+            () => device.UpdateDescriptorSet(set, [DescriptorWrite.Uniform(0, buffer, 0, 64)])
         );
 
         Assert.Contains("DynamicUniformBuffer", thrown.Message, StringComparison.Ordinal);
@@ -269,15 +268,14 @@ public sealed class NullDeviceTests : IDisposable {
 
         device.UpdateDescriptorSet(boundedSet, [DescriptorWrite.Texture(0, view, 3)]);
 
-        Assert.Throws<ArgumentOutOfRangeException>(() => device.UpdateDescriptorSet(
-                boundedSet,
-                [DescriptorWrite.Texture(0, view, 4)]
-            )
+        Assert.Throws<ArgumentOutOfRangeException>(
+            () => device.UpdateDescriptorSet(boundedSet, [DescriptorWrite.Texture(0, view, 4)])
         );
 
         device.UpdateDescriptorSet(tableSet, [DescriptorWrite.Texture(0, view, 4)]);
 
-        Assert.Throws<ArgumentOutOfRangeException>(() => device.UpdateDescriptorSet(
+        Assert.Throws<ArgumentOutOfRangeException>(
+            () => device.UpdateDescriptorSet(
                 tableSet,
                 [DescriptorWrite.Texture(0, view, device.Features.MaxBindlessDescriptors)]
             )
@@ -291,7 +289,8 @@ public sealed class NullDeviceTests : IDisposable {
     public void AnUnboundedBindingNeedsTheCapability() {
         using var minimum = new NullDevice(new() { Features = GraphicsDeviceFeatures.Minimum });
 
-        var refused = Assert.Throws<ArgumentException>(() => minimum.CreateDescriptorSetLayout(
+        var refused = Assert.Throws<ArgumentException>(
+            () => minimum.CreateDescriptorSetLayout(
                 new(
                     DescriptorSetSlot.PerFrame,
                     [new(0, DescriptorKind.SampledTexture, ShaderStage.Fragment, 0)],
@@ -337,11 +336,8 @@ public sealed class NullDeviceTests : IDisposable {
         using var list = limited.BeginCommandList();
         list.BeginRenderPass(new([new(target)]));
 
-        var refused = Assert.Throws<InvalidOperationException>(() => list.DrawIndexedIndirectCount(
-                arguments,
-                counts,
-                maxDrawCount: 3
-            )
+        var refused = Assert.Throws<InvalidOperationException>(
+            () => list.DrawIndexedIndirectCount(arguments, counts, maxDrawCount: 3)
         );
 
         Assert.Contains("HasDrawIndirectCount", refused.Message, StringComparison.Ordinal);

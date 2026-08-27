@@ -1,5 +1,4 @@
 // skala-oracle: resharper=2025.2.6 config=sha256:98ff52570e019fac profile=SkalaFormatOnly generated=2026-08-27
-
 #region License
 
 // Copyright (c) 2007 James Newton-King
@@ -60,9 +59,9 @@ namespace Newtonsoft.Json.Tests.Documentation.Samples.Serializer {
             };
             string json = JsonConvert.SerializeObject(settings, Formatting.Indented);
             Console.WriteLine(json); // {
-            //   "OnLoadFunction": OnLoad,
-            //   "OnUnloadFunction": function(e) { alert(e); }
-            // }
+//   "OnLoadFunction": OnLoad,
+//   "OnUnloadFunction": function(e) { alert(e); }
+// }
 
             #endregion
 

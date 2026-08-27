@@ -15,21 +15,24 @@
 namespace Serilog.Configuration;
 
 /// <summary>
-///     Allows additional setting sources to drive the logger configuration.
+/// Allows additional setting sources to drive the logger configuration.
 /// </summary>
-public class LoggerSettingsConfiguration {
+public class LoggerSettingsConfiguration
+{
     readonly LoggerConfiguration _loggerConfiguration;
 
-    internal LoggerSettingsConfiguration(LoggerConfiguration loggerConfiguration) {
+    internal LoggerSettingsConfiguration(LoggerConfiguration loggerConfiguration)
+    {
         _loggerConfiguration = Guard.AgainstNull(loggerConfiguration);
     }
 
     /// <summary>
-    ///     Apply external settings to the logger configuration.
+    /// Apply external settings to the logger configuration.
     /// </summary>
     /// <returns>Configuration object allowing method chaining.</returns>
-    /// <exception cref="ArgumentNullException">When <paramref name="settings" /> is <code>null</code></exception>
-    public LoggerConfiguration Settings(ILoggerSettings settings) {
+    /// <exception cref="ArgumentNullException">When <paramref name="settings"/> is <code>null</code></exception>
+    public LoggerConfiguration Settings(ILoggerSettings settings)
+    {
         Guard.AgainstNull(settings);
 
         settings.Configure(_loggerConfiguration);
@@ -37,34 +40,30 @@ public class LoggerSettingsConfiguration {
     }
 
     /// <summary>
-    ///     Apply settings specified in the Serilog key-value setting format to the logger configuration.
+    /// Apply settings specified in the Serilog key-value setting format to the logger configuration.
     /// </summary>
     /// <param name="settings">A list of key-value pairs describing logger settings.</param>
     /// <returns>Configuration object allowing method chaining.</returns>
-    /// <remarks>
-    ///     In case of duplicate keys, the last value for the key is kept and the previous ones are ignored.
-    /// </remarks>
-    /// <exception cref="ArgumentNullException">When <paramref name="settings" /> is <code>null</code></exception>
-    [RequiresUnreferencedCode(
-        "KeyValuePair scans for configuration assemblies at run time and is not compatible with trimming."
-    )]
-    [RequiresDynamicCode(
-        "KeyValuePair may need to create arrays, which requires dynamic code generation and is not compatible with AOT."
-    )]
-    public LoggerConfiguration KeyValuePairs(IEnumerable<KeyValuePair<string, string>> settings) {
+    /// <remarks>In case of duplicate keys, the last value for the key is kept and the previous ones are ignored.</remarks>
+    /// <exception cref="ArgumentNullException">When <paramref name="settings"/> is <code>null</code></exception>
+    [RequiresUnreferencedCode("KeyValuePair scans for configuration assemblies at run time and is not compatible with trimming.")]
+    [RequiresDynamicCode("KeyValuePair may need to create arrays, which requires dynamic code generation and is not compatible with AOT.")]
+    public LoggerConfiguration KeyValuePairs(IEnumerable<KeyValuePair<string, string>> settings)
+    {
         Guard.AgainstNull(settings);
 
         var uniqueSettings = new Dictionary<string, string>();
-        foreach (var kvp in settings) {
+        foreach (var kvp in settings)
+        {
             uniqueSettings[kvp.Key] = kvp.Value;
         }
-
         return KeyValuePairs(uniqueSettings);
     }
 
     [RequiresUnreferencedCode("KeyValuePair scans for configuration settings at run time.")]
     [RequiresDynamicCode("Creates arrays of unknown element type")]
-    LoggerConfiguration KeyValuePairs(IReadOnlyDictionary<string, string> settings) {
+    LoggerConfiguration KeyValuePairs(IReadOnlyDictionary<string, string> settings)
+    {
         return Settings(new KeyValuePairSettings(settings));
     }
 }

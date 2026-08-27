@@ -1,3 +1,4 @@
 class C<T> {
-    void M<U>() { }
+    void M<U>() {
+    }
 }

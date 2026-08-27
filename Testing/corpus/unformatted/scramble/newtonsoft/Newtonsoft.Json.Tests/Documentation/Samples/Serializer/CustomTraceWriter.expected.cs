@@ -1,5 +1,4 @@
 // skala-oracle: resharper=2025.2.6 config=sha256:98ff52570e019fac profile=SkalaFormatOnly generated=2026-08-27
-
 #region License
 
 // Copyright (c) 2007 James Newton-King
@@ -32,7 +31,7 @@ using Newtonsoft.Json.Serialization;
 using System;
 using System.Collections.Generic;
 using
-System.Diagnostics;
+    System.Diagnostics;
 using System.Text;
 #if DNXCORE50
 using Xunit;
@@ -71,7 +70,7 @@ namespace Newtonsoft.Json.Tests.Documentation.Samples.Serializer {
 
             private LogLevel GetLogLevel(
                 TraceLevel
-                level
+                    level
             ) {
                 switch (level) {
                     case TraceLevel.Error: return LogLevel.Error;
@@ -96,13 +95,13 @@ namespace Newtonsoft.Json.Tests.Documentation.Samples.Serializer {
             IList<string> countries = new List<string> { "New Zealand", "Australia", "Denmark", "China" };
 
             string json = JsonConvert.SerializeObject(
-                countries,
-                Formatting.Indented,
-                new JsonSerializerSettings {
-                    TraceWriter = new
-                        NLogTraceWriter()
-                }
-            )
+                    countries,
+                    Formatting.Indented,
+                    new JsonSerializerSettings {
+                        TraceWriter = new
+                            NLogTraceWriter()
+                    }
+                )
                 ;
 
             Console.WriteLine(json); // [

@@ -3,9 +3,9 @@
 // SPDX-License-Identifier: Apache-2.0
 
 using Vixen.Core
-.Mathematics;
+    .Mathematics;
 using Vixen.
-Editor.Ui;
+    Editor.Ui;
 using Vixen.Input;
 using Vixen.Ui;
 using Vixen.Water;
@@ -24,11 +24,8 @@ namespace Vixen.Editor.Water.Tests;
 ///         because both are device-free and world-free on purpose.
 ///     </para>
 ///     <para>
-///         ⚠
-///         <b>
-///             The registration test is the one doc 31's "built and not yet reachable" failure asks
-///             for
-///         </b>, and it is the reason <c>Register</c> and <c>Activated</c> are separate moments: a
+///         ⚠ <b>The registration test is the one doc 31's "built and not yet reachable" failure asks
+///         for</b>, and it is the reason <c>Register</c> and <c>Activated</c> are separate moments: a
 ///         mode whose commands appear only once somebody has entered it is a mode absent from the
 ///         palette and unbindable until then.
 ///     </para>
@@ -131,7 +128,7 @@ public sealed class WaterModeTests {
     public void A_slot_selects_its_tool_and_a_fourth_does_nothing() {
         var (shell, mode) = Built();
         using var
-        _shell = shell;
+            _shell = shell;
 
         Assert.True(mode.SelectSlot(1));
         Assert.Equal(WaterTool.Profile, mode.Tool);
@@ -150,7 +147,7 @@ public sealed class WaterModeTests {
         var (shell, mode)
             = Built();
         using var
-        _shell = shell;
+            _shell = shell;
         mode.Editing.Add(new(0f, 0f, 0f));
         mode.Editing.Add(new(10f, 0f, 0f));
 
@@ -190,9 +187,9 @@ public sealed class WaterModeTests {
             spline,
             drawnKind
         ) => {
-                laid = spline;
-                kind = drawnKind;
-            };
+            laid = spline;
+            kind = drawnKind;
+        };
         mode.Editing.Kind = WaterBodyKind.Lake;
 
         mode.Editing.Add(new(0f, 4f, 0f));
@@ -206,7 +203,7 @@ public sealed class WaterModeTests {
                 .Finish()
         );
         Assert.NotNull(laid);
-        Assert.True(laid!.IsClosed, "a lake's curve has to close, or it has no inside.");
+        Assert.True(laid !.IsClosed, "a lake's curve has to close, or it has no inside.");
         Assert.Equal(4, laid.Points.Length);
         Assert.Equal(WaterBodyKind.Lake, kind);
 
@@ -239,7 +236,7 @@ public sealed class WaterModeTests {
         Assert.Equal(
             8f,
             laid.Points
-            [0].Position.Y,
+                [0].Position.Y,
             4
         );
         Assert.Equal(6f, laid.Points[1].Position.Y, 4);
@@ -278,6 +275,6 @@ public sealed class WaterModeTests {
         Assert.Empty(mode.Editing.Points);
 
         // With nothing in flight it is somebody else's key.
-        Assert.False(mode.Key(null!, new KeyEvent { Key = InputKey.Escape }));
+        Assert.False(mode.Key(null !, new KeyEvent { Key = InputKey.Escape }));
     }
 }

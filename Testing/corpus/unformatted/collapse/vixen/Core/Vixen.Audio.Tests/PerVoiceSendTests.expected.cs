@@ -63,8 +63,8 @@ public sealed class PerVoiceSendTests {
                 new PlaybackSettings { Bus = dry.Index, SendBus = aux.Index, SendLevel = 0.5f }
             );
             engine.Update(0f); // Against the dry path rather than against 1: a mono source in a stereo device is
-            // centre-panned at constant power, so every absolute here would carry a stray 1/√2 that
-            // has nothing to do with sends.
+// centre-panned at constant power, so every absolute here would carry a stray 1/√2 that
+// has nothing to do with sends.
             var direct = PeakOf(device, dry);
             var sent = PeakOf(device, aux);
             Assert.True(

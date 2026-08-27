@@ -1,1 +1,3 @@
-class C { }
+class C {
+
+}

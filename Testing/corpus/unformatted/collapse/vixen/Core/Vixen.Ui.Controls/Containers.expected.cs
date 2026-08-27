@@ -26,9 +26,9 @@ public sealed partial class Panel : Control {
     /// <inheritdoc />
     protected override bool AcceptsFocus =>
         false; // ⚠ No role, and that is the population's answer rather than a gap in it. A `Panel` is a box; a
-    // tree that reported one would read a four-field form as a stack of nested groups, which is the
-    // commonest way an accessibility tree comes to be technically complete and useless. An
-    // application that means a landmark says so: `panel.Role = AccessibleRole.Region` and a name.
+// tree that reported one would read a four-field form as a stack of nested groups, which is the
+// commonest way an accessibility tree comes to be technically complete and useless. An
+// application that means a landmark says so: `panel.Role = AccessibleRole.Region` and a name.
 }
 
 /// <summary>A surface with an optional header and footer.</summary>
@@ -211,11 +211,11 @@ public sealed partial class Alert : Control {
             Body.Add(
                 "alert-message"
             ); // ⚠ **A relation rather than a second name property, and this is the first thing in the set
-        // to use `DescribedBy` at all.** `AccessibleDescription` had a working path and no control
-        // fed it — which is this repository's commonest defect one level up: a finished consumer
-        // nothing calls. A heading and the sentence under it are exactly what the pair is for, and
-        // reading it through the relation means a message changed later is described correctly with
-        // nothing to keep in step.
+// to use `DescribedBy` at all.** `AccessibleDescription` had a working path and no control
+// fed it — which is this repository's commonest defect one level up: a finished consumer
+// nothing calls. A heading and the sentence under it are exactly what the pair is for, and
+// reading it through the relation means a message changed later is described correctly with
+// nothing to keep in step.
         AddAccessibleRelation(AccessibleRelation.DescribedBy, MessagePart);
     }
 }

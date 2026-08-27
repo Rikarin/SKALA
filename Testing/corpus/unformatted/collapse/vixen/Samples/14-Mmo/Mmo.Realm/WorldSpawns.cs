@@ -1,7 +1,6 @@
 // SPDX-FileCopyrightText: Copyright (c) Rikarin
 // SPDX-License-Identifier: Apache-2.0
-using Vixen.Gameplay.Ai; namespace Vixen.Samples.Mmo.Realms;
-
+using Vixen.Gameplay.Ai;namespace Vixen.Samples.Mmo.Realms;
 /// <summary>Every camp this shard keeps populated, ticked on the realm's clock.</summary>
 /// <remarks>
 ///     <para>
@@ -31,55 +30,31 @@ using Vixen.Gameplay.Ai; namespace Vixen.Samples.Mmo.Realms;
 ///         identically, which is what makes a soak's numbers reproducible rather than anecdotal.
 ///     </para>
 /// </remarks>
-public sealed class WorldSpawns {
-    readonly List<Spawner> spawners = [];
-    readonly List<SpawnOrder> orders = [];
-
-    /// <summary>Stands the camps up from a compiled library.</summary>
+public sealed class WorldSpawns{readonly List<Spawner>spawners=[];readonly List<SpawnOrder>orders=[];
+/// <summary>Stands the camps up from a compiled library.</summary>
     /// <param name="library">The build's spawn tables.</param>
     /// <param name="seed">What the shard's streams are seeded from.</param>
-    public WorldSpawns(SpawnLibrary library, ulong seed) {
-        ArgumentNullException.ThrowIfNull(
-            library
-        ); // Address order, which SpawnLibrary.Tables already guarantees — so two processes given the
-        // same content build stand the same camps up in the same order and the same slots.
-        foreach (var table in library.Tables) {
-            spawners.Add(new(table, seed));
-        }
-    }
-
-    /// <summary>How many camps this shard is keeping.</summary>
-    public int Camps => spawners.Count;
-
-    /// <summary>How many things are alive across all of them.</summary>
-    public int Alive => spawners.Sum(spawner => spawner.Alive);
-
-    /// <summary>How many spawn orders have been issued since the shard started.</summary>
+public WorldSpawns(SpawnLibrary library,ulong seed){ArgumentNullException.ThrowIfNull(library); // Address order, which SpawnLibrary.Tables already guarantees — so two processes given the
+// same content build stand the same camps up in the same order and the same slots.
+foreach(var table in library.Tables){spawners.Add(new(table,seed));}}
+/// <summary>How many camps this shard is keeping.</summary>
+public int Camps=>spawners.Count;
+/// <summary>How many things are alive across all of them.</summary>
+public int Alive=>spawners.Sum(spawner=>spawner.Alive);
+/// <summary>How many spawn orders have been issued since the shard started.</summary>
     /// <remarks>
     ///     <b>The counter that proves the library ran in this process.</b> It is a function of the
     ///     content and the clock and nothing else, so a shard started twice on one build reports the
     ///     same number at the same tick.
     /// </remarks>
-    public long Issued { get; private set; }
-
-    /// <summary>What the last tick asked for.</summary>
-    public IReadOnlyList<SpawnOrder> Last => orders;
-
-    /// <summary>Puts back whatever is due.</summary>
+public long Issued{get;private set;}
+/// <summary>What the last tick asked for.</summary>
+public IReadOnlyList<SpawnOrder>Last=>orders;
+/// <summary>Puts back whatever is due.</summary>
     /// <param name="now">The realm's clock, in seconds since it started.</param>
     /// <returns>How many orders this tick made.</returns>
-    public int Tick(float now) {
-        orders.Clear();
-        var made = 0;
-        foreach (var spawner in spawners) {
-            made += spawner.Tick(now, orders);
-        }
-
-        Issued += made;
-        return made;
-    }
-
-    /// <summary>Says something died, so its slot comes back on the table's timer.</summary>
+public int Tick(float now){orders.Clear();var made=0;foreach(var spawner in spawners){made+=spawner.Tick(now,orders);}Issued+=made;return made;}
+/// <summary>Says something died, so its slot comes back on the table's timer.</summary>
     /// <param name="camp">Which camp, by index into <see cref="Camps" />.</param>
     /// <param name="slot">Which slot it filled.</param>
     /// <param name="now">When, on the realm's clock.</param>
@@ -90,6 +65,4 @@ public sealed class WorldSpawns {
     ///     nobody can explain. <see cref="Spawner.Died" /> is where that is actually enforced; this
     ///     only forwards.
     /// </remarks>
-    public bool Died(int camp, int slot, float now) =>
-        (uint)camp < (uint)spawners.Count && spawners[camp].Died(slot, now);
-}
+public bool Died(int camp,int slot,float now)=>(uint)camp<(uint)spawners.Count&&spawners[camp].Died(slot,now);}

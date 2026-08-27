@@ -39,7 +39,8 @@ public sealed class RealWebSocketTests {
         var clientEvents = new EventRecorder();
 
         Assert.True(
-            Until(() => {
+            Until(
+                () => {
                     client.Poll(Step, clientEvents);
                     server.Poll(Step, serverEvents);
 
@@ -55,7 +56,8 @@ public sealed class RealWebSocketTests {
         client.SendToServer(Encoding.UTF8.GetBytes("over a real websocket"), Channel.Reliable);
 
         Assert.True(
-            Until(() => {
+            Until(
+                () => {
                     client.Poll(Step, clientEvents);
                     server.Poll(Step, serverEvents);
 

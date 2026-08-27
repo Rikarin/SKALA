@@ -36,20 +36,15 @@ public sealed partial class RadialItem : ButtonBase {
 /// <summary>A pie menu: wedges round a centre, aimed with the pointer.</summary>
 /// <remarks>
 ///     <para>
-///         <b>
-///             Blender's pie menu, which is the fastest menu anybody has shipped and is fast for one
-///             reason.
-///         </b> A drop-down costs a read — the items are in an order you have to scan — and a
+///         <b>Blender's pie menu, which is the fastest menu anybody has shipped and is fast for one
+///         reason.</b> A drop-down costs a read — the items are in an order you have to scan — and a
 ///         pie costs a direction. After a week the direction is muscle memory and the menu is a
 ///         flick; the items being in fixed positions is the whole mechanism, which is why nothing
 ///         here sorts or filters what it was given.
 ///     </para>
 ///     <para>
-///         ⚠ <b>Two gestures, and both have to work or neither is used.</b>
-///         <i>
-///             Press the key, then
-///             click a wedge
-///         </i> is what somebody does the first fifty times, while they are still
+///         ⚠ <b>Two gestures, and both have to work or neither is used.</b> <i>Press the key, then
+///         click a wedge</i> is what somebody does the first fifty times, while they are still
 ///         reading the labels. <i>Hold the key, flick, release</i> is what they do afterwards, and it
 ///         is the one that makes the menu worth having. They are the same menu in the same place —
 ///         see <see cref="Hold" />.
@@ -269,11 +264,8 @@ public sealed partial class RadialMenu : Overlay {
 
     /// <summary>Puts each wedge on the ring.</summary>
     /// <remarks>
-    ///     ⚠
-    ///     <b>
-    ///         Positioned by an inline offset rather than by a rule, because the ring's geometry is
-    ///         arithmetic no stylesheet can do.
-    ///     </b> The radius is a property, the count is whatever was
+    ///     ⚠ <b>Positioned by an inline offset rather than by a rule, because the ring's geometry is
+    ///     arithmetic no stylesheet can do.</b> The radius is a property, the count is whatever was
     ///     added, and each wedge has to be centred on its own point rather than starting at it — an
     ///     item placed by its top-left corner makes a ring that leans down and to the right by half a
     ///     button.

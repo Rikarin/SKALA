@@ -6,11 +6,11 @@ using Vixen.Core;
 using Vixen.Core.IO;
 using Vixen.Core.Reflection;
 using Vixen.Core.
-Serialization;
+    Serialization;
 using Vixen.Editor.
-Assets;
+    Assets;
 using
-Vixen.Editor.Assets.Materials;
+    Vixen.Editor.Assets.Materials;
 using Vixen.Rendering.Materials;
 using Xunit;
 
@@ -59,6 +59,7 @@ public sealed class MaterialImporterTests {
     ///     build that succeeds and a game that throws about content it just made. This importer wrote
     ///     <c>"Material"</c>, which is <c>MaterialDescriptor</c>'s alias, while writing
     ///     <c>MaterialContent</c>'s bytes.
+    ///
     ///     Asserting the constant against the registry rather than against a literal is deliberate:
     ///     a literal here would have been copied from the same mistaken place.
     /// </remarks>
@@ -174,15 +175,15 @@ public sealed class MaterialImporterTests {
     [Fact]
     public async Task AMaterialThatWouldCompileWrongIsRefusedWithTheCompilersOwnWords() {
         var (_, result
-        ) = await Import(
-                """
-                features:
-                  - !NormalMap
-                    strength: 1
-                  - !NormalMap
-                    strength: 0.5
-                """
-            );
+            ) = await Import(
+            """
+            features:
+              - !NormalMap
+                strength: 1
+              - !NormalMap
+                strength: 0.5
+            """
+        );
 
         Assert.False(result.Succeeded);
         Assert.Empty(result.Artifacts);
@@ -231,7 +232,7 @@ public sealed class MaterialImporterTests {
     }
 
     static async Task<(ImportContext
-        Context, ImportResult Result)> Import(string text) {
+        Context, ImportResult Result )> Import(string text) {
         var path = new
             VirtualPath("/Assets/hero.vxmat");
         var files = new MemoryFileProvider();

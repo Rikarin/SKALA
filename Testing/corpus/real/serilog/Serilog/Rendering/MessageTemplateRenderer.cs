@@ -14,21 +14,19 @@
 
 namespace Serilog.Rendering;
 
-static class MessageTemplateRenderer {
+static class MessageTemplateRenderer
+{
     static readonly JsonValueFormatter JsonValueFormatter = new("$type");
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static void Render(
-        MessageTemplate messageTemplate,
-        IReadOnlyDictionary<string, LogEventPropertyValue> properties,
-        TextWriter output,
-        string? format = null,
-        IFormatProvider? formatProvider = null
-    ) {
+    public static void Render(MessageTemplate messageTemplate, IReadOnlyDictionary<string, LogEventPropertyValue> properties, TextWriter output, string? format = null, IFormatProvider? formatProvider = null)
+    {
         bool isLiteral = false, isJson = false;
 
-        if (format != null) {
-            for (var i = 0; i < format.Length; ++i) {
+        if (format != null)
+        {
+            for (var i = 0; i < format.Length; ++i)
+            {
                 if (format[i] == 'l')
                     isLiteral = true;
                 else if (format[i] == 'j')
@@ -36,35 +34,36 @@ static class MessageTemplateRenderer {
             }
         }
 
-        for (var ti = 0; ti < messageTemplate.TokenArray.Length; ++ti) {
+        for (var ti = 0; ti < messageTemplate.TokenArray.Length; ++ti)
+        {
             var token = messageTemplate.TokenArray[ti];
-            if (token is TextToken tt) {
+            if (token is TextToken tt)
+            {
                 RenderTextToken(tt, output);
-            } else {
+            }
+            else
+            {
                 var pt = (PropertyToken)token;
                 RenderPropertyToken(pt, properties, output, formatProvider, isLiteral, isJson);
             }
         }
     }
 
-    public static void RenderTextToken(TextToken tt, TextWriter output) {
+    public static void RenderTextToken(TextToken tt, TextWriter output)
+    {
         output.Write(tt.Text);
     }
 
-    public static void RenderPropertyToken(
-        PropertyToken pt,
-        IReadOnlyDictionary<string, LogEventPropertyValue> properties,
-        TextWriter output,
-        IFormatProvider? formatProvider,
-        bool isLiteral,
-        bool isJson
-    ) {
-        if (!properties.TryGetValue(pt.PropertyName, out var propertyValue)) {
+    public static void RenderPropertyToken(PropertyToken pt, IReadOnlyDictionary<string, LogEventPropertyValue> properties, TextWriter output, IFormatProvider? formatProvider, bool isLiteral, bool isJson)
+    {
+        if (!properties.TryGetValue(pt.PropertyName, out var propertyValue))
+        {
             output.Write(pt.RawText);
             return;
         }
 
-        if (!pt.Alignment.HasValue) {
+        if (!pt.Alignment.HasValue)
+        {
             RenderValue(propertyValue, isLiteral, isJson, output, pt.Format, formatProvider);
             return;
         }
@@ -73,7 +72,8 @@ static class MessageTemplateRenderer {
         RenderValue(propertyValue, isLiteral, isJson, valueOutput, pt.Format, formatProvider);
         var sb = valueOutput.GetStringBuilder();
 
-        if (sb.Length >= pt.Alignment.Value.Width) {
+        if (sb.Length >= pt.Alignment.Value.Width)
+        {
 #if FEATURE_WRITE_STRINGBUILDER
             output.Write(sb);
 #else
@@ -89,19 +89,18 @@ static class MessageTemplateRenderer {
 #endif
     }
 
-    static void RenderValue(
-        LogEventPropertyValue propertyValue,
-        bool literal,
-        bool json,
-        TextWriter output,
-        string? format,
-        IFormatProvider? formatProvider
-    ) {
-        if (literal && propertyValue is ScalarValue { Value: string str }) {
+    static void RenderValue(LogEventPropertyValue propertyValue, bool literal, bool json, TextWriter output, string? format, IFormatProvider? formatProvider)
+    {
+        if (literal && propertyValue is ScalarValue { Value: string str })
+        {
             output.Write(str);
-        } else if (json && format == null) {
+        }
+        else if (json && format == null)
+        {
             JsonValueFormatter.Format(propertyValue, output);
-        } else {
+        }
+        else
+        {
             propertyValue.Render(output, format, formatProvider);
         }
     }

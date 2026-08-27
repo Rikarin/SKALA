@@ -98,7 +98,7 @@ public sealed partial class UiDocument {
     void Track(UiSurface surface, PointerEvent args) {
         if (args.Action == PointerAction.Pressed) {
             // A press is the moment the pointer takes over the interaction. Moving a mouse across
-            // the screen while somebody tabs through a form is not.
+// the screen while somebody tabs through a form is not.
             LeaveKeyboardMode();
         }
 
@@ -116,8 +116,8 @@ public sealed partial class UiDocument {
                 Restate(pressed, chain, ElementState.Active, null, null, args);
                 break;
             default: // A move neither presses nor releases. `:active` stays on whatever the press put it
-                // on even as the pointer wanders off it — which is what makes a press you can back
-                // out of by releasing elsewhere look right while you are deciding.
+// on even as the pointer wanders off it — which is what makes a press you can back
+// out of by releasing elsewhere look right while you are deciding.
                 break;
         }
     }
@@ -143,7 +143,7 @@ public sealed partial class UiDocument {
                 continue;
             } // A removed element is not restyled and not told. It has no style slot to clear and no
 
-            // business hearing that the pointer left something it is no longer part of.
+// business hearing that the pointer left something it is no longer part of.
             if (element.IsRemoved) {
                 continue;
             }

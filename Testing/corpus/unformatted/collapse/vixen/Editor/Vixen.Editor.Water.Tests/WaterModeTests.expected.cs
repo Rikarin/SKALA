@@ -22,11 +22,8 @@ namespace Vixen.Editor.Water.Tests;
 ///         because both are device-free and world-free on purpose.
 ///     </para>
 ///     <para>
-///         ⚠
-///         <b>
-///             The registration test is the one doc 31's "built and not yet reachable" failure asks
-///             for
-///         </b>, and it is the reason <c>Register</c> and <c>Activated</c> are separate moments: a
+///         ⚠ <b>The registration test is the one doc 31's "built and not yet reachable" failure asks
+///         for</b>, and it is the reason <c>Register</c> and <c>Activated</c> are separate moments: a
 ///         mode whose commands appear only once somebody has entered it is a mode absent from the
 ///         palette and unbindable until then.
 ///     </para>
@@ -38,7 +35,7 @@ public sealed class WaterModeTests {
         var mode = new WaterMode();
         shell.Modes.Add(new SelectMode());
         shell.Modes.Add(mode); // What `EditorApplication.RegisterModes` wires — see TerrainModeTests for why the mode
-        // cannot do it itself.
+// cannot do it itself.
         shell.Modes.Changed += modes => shell.Context = modes.Context ?? "scene";
         return (shell, mode);
     } // --- Registration -------------------------------------------------------
@@ -176,7 +173,7 @@ public sealed class WaterModeTests {
         Assert.False(
             laid!.IsClosed
         ); // ⚠ The heights are the ground's, which is the whole difference between a river and a bent
-        // lake: a body whose surface is one height for every point cannot run downhill.
+// lake: a body whose surface is one height for every point cannot run downhill.
         Assert.Equal(8f, laid.Points[0].Position.Y, 4);
         Assert.Equal(6f, laid.Points[1].Position.Y, 4);
     }

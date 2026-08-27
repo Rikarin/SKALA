@@ -14,21 +14,28 @@
 
 namespace Serilog.Core.Sinks;
 
-class AggregateSink : ILogEventSink {
+class AggregateSink : ILogEventSink
+{
     readonly ILogEventSink[] _sinks;
 
-    public AggregateSink(IEnumerable<ILogEventSink> sinks) {
+    public AggregateSink(IEnumerable<ILogEventSink> sinks)
+    {
         Guard.AgainstNull(sinks);
 
         _sinks = sinks.ToArray();
     }
 
-    public void Emit(LogEvent logEvent) {
+    public void Emit(LogEvent logEvent)
+    {
         List<Exception>? exceptions = null;
-        foreach (var sink in _sinks) {
-            try {
+        foreach (var sink in _sinks)
+        {
+            try
+            {
                 sink.Emit(logEvent);
-            } catch (Exception ex) {
+            }
+            catch (Exception ex)
+            {
                 SelfLog.WriteLine("Caught exception while emitting to sink {0}: {1}", sink, ex);
                 exceptions ??= [];
                 exceptions.Add(ex);

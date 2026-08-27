@@ -1,5 +1,4 @@
 // skala-oracle: resharper=2025.2.6 config=sha256:98ff52570e019fac profile=SkalaFormatOnly generated=2026-08-27
-
 #region License
 
 // Copyright (c) 2007 James Newton-King
@@ -64,16 +63,16 @@ namespace Newtonsoft.Json.Tests.Documentation.Samples.Xml {
             }";
             XNode node = JsonConvert.DeserializeXNode(json, "Root");
             Console.WriteLine(node.ToString()); // <Root Id="1">
-            //   <Email>james@example.com</Email>
-            //   <Active>true</Active>
-            //   <CreatedDate>2013-01-20T00:00:00Z</CreatedDate>
-            //   <Roles>User</Roles>
-            //   <Roles>Admin</Roles>
-            //   <Team Id="2">
-            //     <Name>Software Developers</Name>
-            //     <Description>Creators of fine software products and services.</Description>
-            //   </Team>
-            // </Root>
+//   <Email>james@example.com</Email>
+//   <Active>true</Active>
+//   <CreatedDate>2013-01-20T00:00:00Z</CreatedDate>
+//   <Roles>User</Roles>
+//   <Roles>Admin</Roles>
+//   <Team Id="2">
+//     <Name>Software Developers</Name>
+//     <Description>Creators of fine software products and services.</Description>
+//   </Team>
+// </Root>
 
             #endregion
 

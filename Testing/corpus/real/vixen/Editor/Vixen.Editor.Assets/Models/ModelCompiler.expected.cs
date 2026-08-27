@@ -17,10 +17,8 @@ namespace Vixen.Editor.Assets.Models;
 ///         what is built here — what the cluster DAG is.
 ///     </para>
 ///     <para>
-///         <b>
-///             Meshlet generation is phase 1 of
-///             <c>docs/plan/22-virtualized-geometry.md</c>
-///         </b>, and the whole of the algorithm lives in
+///         <b>Meshlet generation is phase 1 of
+///         <c>docs/plan/22-virtualized-geometry.md</c></b>, and the whole of the algorithm lives in
 ///         <c>Vixen.Rendering.VirtualGeometry</c> rather than here, for the reason the distance-field
 ///         bake lives in <c>Vixen.Rendering.DistanceFields</c>: a <see cref="MeshletMesh" /> is what
 ///         this writes and what a player deserialises, so both halves have to be talking about one

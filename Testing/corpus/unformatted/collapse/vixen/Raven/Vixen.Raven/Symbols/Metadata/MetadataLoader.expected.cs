@@ -55,19 +55,19 @@ internal sealed class MetadataLoader {
         ArgumentNullException.ThrowIfNull(library);
         ArgumentNullException.ThrowIfNull(globalNamespace);
         libraries.Add(library); // Two passes over a flat list. Nested types name their declaring type, which may appear
-        // in any order, so every symbol has to exist before any of them is attached.
+// in any order, so every symbol has to exist before any of them is attached.
         List<(LibraryType Model, MetadataNamedTypeSymbol Symbol)> loaded = [];
         foreach (var model in library.Types) {
             var symbol = new MetadataNamedTypeSymbol(this, library.Name, model);
             loaded.Add(
                 (model, symbol)
             ); // A duplicate qualified name across two libraries: the first wins, which is what the
-            // duplicate-reference warning has already told the caller about.
+// duplicate-reference warning has already told the caller about.
             byQualifiedName.TryAdd(model.QualifiedName, symbol);
         }
 
         List<MetadataNamedTypeSymbol> contributed = [];
-        foreach (var (model, symbol) in loaded) {
+        foreach (var (model, symbol)in loaded) {
             if (model.ContainingType is { Length: > 0 } outer) {
                 if (byQualifiedName.GetValueOrDefault(outer) is { } declaring) {
                     declaring.AddNestedType(symbol);
@@ -109,8 +109,8 @@ internal sealed class MetadataLoader {
         switch (reference.Kind) {
             case LibraryTypeKind.Primitive
                 : // A primitive travels as its SpecialType, which is the identity the binder keys
-                // numeric promotion, literal typing and swizzles off — so the loaded symbol is
-                // the very singleton a source declaration would have resolved to.
+// numeric promotion, literal typing and swizzles off — so the loaded symbol is
+// the very singleton a source declaration would have resolved to.
                 return reference.Special == SpecialType.None
                     ? ErrorTypeSymbol.Instance
                     : BuiltInTypes.FromSpecialType(reference.Special);
@@ -145,7 +145,7 @@ internal sealed class MetadataLoader {
 
         if (byQualifiedName.GetValueOrDefault(qualified) is not { } definition) {
             // A missing reference is a command-line mistake, and without saying so its symptom is
-            // a member that cannot be found on a type whose source nobody has.
+// a member that cannot be found on a type whose source nobody has.
             diagnostics.Add(LibraryDiagnostics.ReferenceTypeUnresolved, Location.None, libraryName, qualified);
             return ErrorTypeSymbol.Instance;
         }

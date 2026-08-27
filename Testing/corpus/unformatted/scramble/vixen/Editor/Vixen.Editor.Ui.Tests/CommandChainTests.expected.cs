@@ -27,7 +27,7 @@ namespace Vixen.Editor.Ui.Tests;
 public class CommandChainTests {
     static StringId Title(
         string
-        text
+            text
     ) =>
         new("test." + text, text);
 
@@ -47,7 +47,7 @@ public class CommandChainTests {
         var handler = CommandRoute.Resolve(shell.Document, "test.verb")
             ;
         Assert.NotNull(handler);
-        Assert.Null(handler!.Value.Element);
+        Assert.Null(handler !.Value.Element);
         Assert.Same(shell.Commands, handler.Value.Responder);
         Assert.True(CommandRoute.Execute(shell.Document, "test.verb"));
         Assert.Equal(1, ran);
@@ -79,12 +79,12 @@ public class CommandChainTests {
     public void
         The_route_goes_through_the_registry_s_own_gate_rather_than_around_it() {
         using var
-        shell = new EditorShell(1280f, 800f);
+            shell = new EditorShell(1280f, 800f);
 
         var enabled = false;
         var ran = 0;
         var
-        announced = 0;
+            announced = 0;
         shell.Commands
             .Add(new EditorCommand("test.verb", Title("Verb"), () => ran++) { Enablement = () => enabled });
         shell.Commands.Executed += _ => announced++;
@@ -186,7 +186,7 @@ public class CommandChainTests {
         shell.Dispose();
 
         // The document's direction: it has let go of the registry, so the editor's commands — and
-        // the plugin assemblies behind their closures — are not held by a window that has closed.
+// the plugin assemblies behind their closures — are not held by a window that has closed.
         Assert.Null(
             document
                 .ApplicationCommandResponder

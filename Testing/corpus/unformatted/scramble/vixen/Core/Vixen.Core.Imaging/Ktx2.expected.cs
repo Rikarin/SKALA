@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 using System.
-Buffers.Binary;
+    Buffers.Binary;
 using Vixen.Graphics;
 
 namespace Vixen.Core.Imaging;
@@ -100,7 +100,7 @@ public static class
             cursor += texture.Levels[level].Length;
         }
 
-        var file = new byte[cursor];
+        var file = new byte [cursor];
         var span = file
             .AsSpan();
 
@@ -198,11 +198,8 @@ public static class
     /// <param name="file">The file's bytes, or at least <see cref="LayoutLength" /> of the front of it.</param>
     /// <returns>The layout.</returns>
     /// <remarks>
-    ///     ⚠
-    ///     <b>
-    ///         This validates the level index against the format and the extents, and not against
-    ///         the file's length.
-    ///     </b> A caller holding only the head has no length to check against, and
+    ///     ⚠ <b>This validates the level index against the format and the extents, and not against
+    ///     the file's length.</b> A caller holding only the head has no length to check against, and
     ///     one holding the whole file gets the check from <see cref="Read" /> and
     ///     <see cref="ReadTail" /> where the copy happens. What is checked here is the part a short
     ///     read cannot excuse: a level whose declared size disagrees with what its extent and format
@@ -222,7 +219,7 @@ public static class
         var depth = Math.Max(
             1,
             (
-            int)BinaryPrimitives.ReadUInt32LittleEndian(header[16..])
+                int)BinaryPrimitives.ReadUInt32LittleEndian(header[16..])
         );
         var layerCount = Math.Max(1, (int)BinaryPrimitives.ReadUInt32LittleEndian(header[20..]));
         var faceCount = Math.Max(1, (int)BinaryPrimitives.ReadUInt32LittleEndian(header[24..]));
@@ -261,11 +258,11 @@ public static class
             var entry = file[(HeaderLength + (level * LevelIndexEntryLength))..];
             var offset = (long)BinaryPrimitives.ReadUInt64LittleEndian(entry);
             var
-            length = (long)BinaryPrimitives.ReadUInt64LittleEndian(entry[8..]);
+                length = (long)BinaryPrimitives.ReadUInt64LittleEndian(entry[8..]);
             var (levelWidth
                 , levelHeight, levelDepth) = MipChain.ExtentOf(width, height, depth, level);
             var expected = format
-                .LevelSize(levelWidth, levelHeight, levelDepth)
+                    .LevelSize(levelWidth, levelHeight, levelDepth)
                 * layerCount
                 * faceCount;
 
@@ -330,11 +327,11 @@ public static class
         async ValueTask<Ktx2Layout> ReadLayoutAsync(Stream stream, CancellationToken cancellation = default) {
         ArgumentNullException.ThrowIfNull(stream);
 
-        var head = new byte[HeaderLength];
+        var head = new byte [HeaderLength];
         await Fill(stream, head, cancellation).ConfigureAwait(false);
 
         var
-        length = LayoutLength(head);
+            length = LayoutLength(head);
 
         if (length == HeaderLength) {
             return ReadLayout(head);
@@ -389,10 +386,10 @@ public static class
             var described = layout.Levels[level];
             var at = (int)(described.Offset - layout.DataOffset);
             run.AsSpan(
-                at,
-                (int
-                )described.Length
-            )
+                    at,
+                    (int
+                    )described.Length
+                )
                 .CopyTo(texture.LevelSpan(level - firstLevel));
         }
 
@@ -428,7 +425,7 @@ public static class
         }
 
         var
-        described = layout.Levels[level];
+            described = layout.Levels[level];
         if (destination.Length
             < described
                 .Length) {

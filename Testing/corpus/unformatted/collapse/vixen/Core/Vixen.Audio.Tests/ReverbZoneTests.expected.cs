@@ -39,7 +39,7 @@ public sealed class ReverbZoneTests {
             1f,
             zone.Evaluate(new Vector3(9f, 1f, 2f))
         ); // Inside on two axes and outside on the third is outside — which is the whole reason a
-        // corridor is a box: a sphere that reached the far end would also reach through the ceiling.
+// corridor is a box: a sphere that reached the far end would also reach through the ceiling.
         Assert.Equal(0f, zone.Evaluate(new Vector3(9f, 3f, 2f)));
         Assert.Equal(0f, zone.Evaluate(new Vector3(11f, 1f, 2f)));
     }
@@ -57,7 +57,7 @@ public sealed class ReverbZoneTests {
 
     [Fact]
     public void StrengthCapsIt() {
-        var zone = Sphere("damp", Vector3.Zero, 10f) with { Strength = 0.3f };
+        var zone = Sphere("damp", Vector3.Zero, 10f)with { Strength = 0.3f };
         Assert.Equal(0.3f, zone.Evaluate(Vector3.Zero));
         Assert.Equal(0f, zone.Evaluate(new Vector3(20f, 0f, 0f)));
     } // ── The set ───────────────────────────────────────────────────────────────────────────────
@@ -69,9 +69,9 @@ public sealed class ReverbZoneTests {
     [Fact]
     public void TheMoreSpecificZoneWinsRatherThanBlending() {
         var zones = new AudioReverbZones();
-        zones.Add(Sphere("reverb", Vector3.Zero, 100f, priority: 0) with { Strength = 1f });
+        zones.Add(Sphere("reverb", Vector3.Zero, 100f, priority: 0)with { Strength = 1f });
         zones.Add(
-            Sphere("reverb", Vector3.Zero, 5f, priority: 10) with { Strength = 0.2f }
+            Sphere("reverb", Vector3.Zero, 5f, priority: 10)with { Strength = 0.2f }
         ); // Inside both: the cupboard takes it, even though it is the weaker of the two.
         zones.Apply(Vector3.Zero, null);
         Assert.Equal(0.2f, zones.StrengthOf("reverb"), 1e-4f); // Inside only the cathedral.

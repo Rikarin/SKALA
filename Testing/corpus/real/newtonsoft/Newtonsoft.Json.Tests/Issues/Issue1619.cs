@@ -1,5 +1,4 @@
 ﻿#region License
-
 // Copyright (c) 2007 James Newton-King
 //
 // Permission is hereby granted, free of charge, to any person
@@ -22,7 +21,6 @@
 // WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 // OTHER DEALINGS IN THE SOFTWARE.
-
 #endregion
 
 using System;
@@ -35,41 +33,49 @@ using Assert = Newtonsoft.Json.Tests.XUnitAssert;
 using NUnit.Framework;
 #endif
 
-namespace Newtonsoft.Json.Tests.Issues {
+namespace Newtonsoft.Json.Tests.Issues
+{
     [TestFixture]
-    public class Issue1619 : TestFixtureBase {
+    public class Issue1619 : TestFixtureBase
+    {
         [Test]
-        public void Test() {
-            Foo value = new Foo { Bar = new DirectoryInfo(@"c:\temp") };
+        public void Test()
+        {
+            Foo value = new Foo
+            {
+                Bar = new DirectoryInfo(@"c:\temp")
+            };
 
             string json = JsonConvert.SerializeObject(value, new DirectoryInfoJsonConverter());
             Assert.AreEqual(@"{""Bar"":""c:\\temp""}", json);
         }
 
-        public class Foo {
+        public class Foo
+        {
             public DirectoryInfo Bar { get; set; }
         }
 
-        public class DirectoryInfoJsonConverter : JsonConverter {
-            public override bool CanConvert(Type objectType) {
+        public class DirectoryInfoJsonConverter : JsonConverter
+        {
+            public override bool CanConvert(Type objectType)
+            {
                 return objectType == typeof(DirectoryInfo);
             }
 
-            public override object ReadJson(
-                JsonReader reader,
-                Type objectType,
-                object existingValue,
-                JsonSerializer serializer
-            ) {
-                if (reader.Value is string s) {
+            public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
+            {
+                if (reader.Value is string s)
+                {
                     return new DirectoryInfo(s);
                 }
 
                 throw new ArgumentOutOfRangeException(nameof(reader));
             }
 
-            public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer) {
-                if (!(value is DirectoryInfo directoryInfo)) {
+            public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
+            {
+                if (!(value is DirectoryInfo directoryInfo))
+                {
                     throw new ArgumentOutOfRangeException(nameof(value));
                 }
 

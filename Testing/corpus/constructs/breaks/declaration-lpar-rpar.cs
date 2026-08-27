@@ -4,8 +4,6 @@ class DeclarationParentheses {
         int secondParameter
     ) { }
 
-    void HalfBroken(
-        int firstParameter,
-        int secondParameter
-    ) { }
+    void HalfBroken(int firstParameter,
+        int secondParameter) { }
 }

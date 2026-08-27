@@ -21,7 +21,7 @@ using System.Diagnostics;
 namespace Serilog.Events;
 
 /// <summary>
-///     A log event.
+/// A log event.
 /// </summary>
 public class LogEvent {
     readonly Dictionary<string
@@ -38,7 +38,7 @@ public class LogEvent {
         Dictionary<string, LogEventPropertyValue
         > properties,
         ActivityTraceId
-        traceId,
+            traceId,
         ActivitySpanId spanId
     ) {
         Timestamp = timestamp;
@@ -52,19 +52,15 @@ public class LogEvent {
     }
 
     /// <summary>
-    ///     Construct a new <seealso cref="LogEvent" />.
+    /// Construct a new <seealso cref="LogEvent"/>.
     /// </summary>
     /// <param name="timestamp">The time at which the event occurred.</param>
     /// <param name="level">The level of the event.</param>
     /// <param name="exception">An exception associated with the event, or null.</param>
     /// <param name="messageTemplate">The message template describing the event.</param>
-    /// <param name="properties">
-    ///     Properties associated with the event, including those presented in <paramref name="messageTemplate" />.
-    /// </param>
-    /// <exception cref="ArgumentNullException">
-    ///     When <paramref name="messageTemplate" /> is <code>null</code>
-    /// </exception>
-    /// <exception cref="ArgumentNullException">When <paramref name="properties" /> is <code>null</code></exception>
+    /// <param name="properties">Properties associated with the event, including those presented in <paramref name="messageTemplate"/>.</param>
+    /// <exception cref="ArgumentNullException">When <paramref name="messageTemplate"/> is <code>null</code></exception>
+    /// <exception cref="ArgumentNullException">When <paramref name="properties"/> is <code>null</code></exception>
     public LogEvent(
         DateTimeOffset timestamp,
         LogEventLevel level,
@@ -75,21 +71,17 @@ public class LogEvent {
         : this(timestamp, level, exception, messageTemplate, properties, default, default) { }
 
     /// <summary>
-    ///     Construct a new <seealso cref="LogEvent" />.
+    /// Construct a new <seealso cref="LogEvent"/>.
     /// </summary>
     /// <param name="timestamp">The time at which the event occurred.</param>
     /// <param name="level">The level of the event.</param>
     /// <param name="exception">An exception associated with the event, or null.</param>
     /// <param name="messageTemplate">The message template describing the event.</param>
-    /// <param name="properties">
-    ///     Properties associated with the event, including those presented in <paramref name="messageTemplate" />.
-    /// </param>
+    /// <param name="properties">Properties associated with the event, including those presented in <paramref name="messageTemplate"/>.</param>
     /// <param name="traceId">The id of the trace that was active when the event was created, if any.</param>
     /// <param name="spanId">The id of the span that was active when the event was created, if any.</param>
-    /// <exception cref="ArgumentNullException">
-    ///     When <paramref name="messageTemplate" /> is <code>null</code>
-    /// </exception>
-    /// <exception cref="ArgumentNullException">When <paramref name="properties" /> is <code>null</code></exception>
+    /// <exception cref="ArgumentNullException">When <paramref name="messageTemplate"/> is <code>null</code></exception>
+    /// <exception cref="ArgumentNullException">When <paramref name="properties"/> is <code>null</code></exception>
     [CLSCompliant(false)]
     public LogEvent(
         DateTimeOffset timestamp,
@@ -136,35 +128,35 @@ public class LogEvent {
     }
 
     /// <summary>
-    ///     The time at which the event occurred.
+    /// The time at which the event occurred.
     /// </summary>
     public DateTimeOffset Timestamp { get; }
 
     /// <summary>
-    ///     The level of the event.
+    /// The level of the event.
     /// </summary>
     public LogEventLevel Level { get; }
 
     /// <summary>
-    ///     The id of the trace that was active when the event was created, if any.
+    /// The id of the trace that was active when the event was created, if any.
     /// </summary>
     [CLSCompliant(false)]
     public ActivityTraceId? TraceId => _traceId == default ? null : _traceId;
 
     /// <summary>
-    ///     The id of the span that was active when the event was created, if any.
+    /// The id of the span that was active when the event was created, if any.
     /// </summary>
     [CLSCompliant(false)]
     public ActivitySpanId? SpanId => _spanId == default ? null : _spanId;
 
     /// <summary>
-    ///     The message template describing the event.
+    /// The message template describing the event.
     /// </summary>
     public MessageTemplate MessageTemplate { get; }
 
     /// <summary>
-    ///     Render the message template to the specified output, given the properties associated
-    ///     with the event.
+    /// Render the message template to the specified output, given the properties associated
+    /// with the event.
     /// </summary>
     /// <param name="output">The output.</param>
     /// <param name="formatProvider">Supplies culture-specific formatting information, or null.</param>
@@ -176,8 +168,8 @@ public class LogEvent {
     }
 
     /// <summary>
-    ///     Render the message template given the properties associated
-    ///     with the event, and return the result.
+    /// Render the message template given the properties associated
+    /// with the event, and return the result.
     /// </summary>
     /// <param name="formatProvider">Supplies culture-specific formatting information, or null.</param>
     public string RenderMessage(
@@ -188,21 +180,21 @@ public class LogEvent {
     }
 
     /// <summary>
-    ///     Properties associated with the event, including those presented in <see cref="LogEvent.MessageTemplate" />.
+    /// Properties associated with the event, including those presented in <see cref="LogEvent.MessageTemplate"/>.
     /// </summary>
     public IReadOnlyDictionary<string, LogEventPropertyValue> Properties => _properties;
 
     /// <summary>
-    ///     An exception associated with the event, or null.
+    /// An exception associated with the event, or null.
     /// </summary>
     public
         Exception? Exception { get; }
 
     /// <summary>
-    ///     Add a property to the event if not already present, otherwise, update its value.
+    /// Add a property to the event if not already present, otherwise, update its value.
     /// </summary>
     /// <param name="property">The property to add or update.</param>
-    /// <exception cref="ArgumentNullException">When <paramref name="property" /> is <code>null</code></exception>
+    /// <exception cref="ArgumentNullException">When <paramref name="property"/> is <code>null</code></exception>
     public void AddOrUpdateProperty(LogEventProperty property) {
         Guard.AgainstNull(property);
 
@@ -210,10 +202,10 @@ public class LogEvent {
     }
 
     /// <summary>
-    ///     Add a property to the event if not already present, otherwise, update its value.
+    /// Add a property to the event if not already present, otherwise, update its value.
     /// </summary>
     /// <param name="property">The property to add or update.</param>
-    /// <exception cref="ArgumentNullException">When <paramref name="property" /> is <code>default</code></exception>
+    /// <exception cref="ArgumentNullException">When <paramref name="property"/> is <code>default</code></exception>
     internal void AddOrUpdateProperty(in EventProperty property) {
         if (property.Equals(EventProperty.None)) throw new ArgumentNullException(nameof(property));
 
@@ -222,10 +214,10 @@ public class LogEvent {
     }
 
     /// <summary>
-    ///     Add a property to the event if not already present.
+    /// Add a property to the event if not already present.
     /// </summary>
     /// <param name="property">The property to add.</param>
-    /// <exception cref="ArgumentNullException">When <paramref name="property" /> is <code>null</code></exception>
+    /// <exception cref="ArgumentNullException">When <paramref name="property"/> is <code>null</code></exception>
     public void AddPropertyIfAbsent(LogEventProperty property) {
         Guard.AgainstNull(property);
 
@@ -240,10 +232,10 @@ public class LogEvent {
     }
 
     /// <summary>
-    ///     Add a property to the event if not already present.
+    /// Add a property to the event if not already present.
     /// </summary>
     /// <param name="property">The property to add.</param>
-    /// <exception cref="ArgumentNullException">When <paramref name="property" /> is <code>default</code></exception>
+    /// <exception cref="ArgumentNullException">When <paramref name="property"/> is <code>default</code></exception>
     internal void AddPropertyIfAbsent(in EventProperty property) {
         if (property.Equals(EventProperty.None)) throw new ArgumentNullException(nameof(property));
 #if FEATURE_DICTIONARYTRYADD
@@ -256,17 +248,15 @@ public class LogEvent {
     }
 
     /// <summary>
-    ///     Add a property to the event if not already present.
+    /// Add a property to the event if not already present.
     /// </summary>
     /// <param name="factory">Factory for creating the property to add to the event.</param>
     /// <param name="name">The name of the property.</param>
     /// <param name="value">The value of the property.</param>
-    /// <param name="destructureObjects">
-    ///     If <see langword="true" />, and the value is a non-primitive, non-array type,
-    ///     then the value will be converted to a structure; otherwise, unknown types will
-    ///     be converted to scalars, which are generally stored as strings.
-    /// </param>
-    /// <exception cref="ArgumentNullException">When <paramref name="factory" /> is <code>null</code></exception>
+    /// <param name="destructureObjects">If <see langword="true"/>, and the value is a non-primitive, non-array type,
+    /// then the value will be converted to a structure; otherwise, unknown types will
+    /// be converted to scalars, which are generally stored as strings.</param>
+    /// <exception cref="ArgumentNullException">When <paramref name="factory"/> is <code>null</code></exception>
     public void
         AddPropertyIfAbsent(
             ILogEventPropertyFactory factory,
@@ -286,8 +276,8 @@ public class LogEvent {
     }
 
     /// <summary>
-    ///     Remove a property from the event, if present. Otherwise no action
-    ///     is performed.
+    /// Remove a property from the event, if present. Otherwise no action
+    /// is performed.
     /// </summary>
     /// <param name="propertyName">The name of the property to remove.</param>
     public void RemovePropertyIfPresent(string propertyName) {
@@ -295,31 +285,26 @@ public class LogEvent {
     }
 
     /// <summary>
-    ///     Construct a <see cref="LogEvent" /> using pre-allocated values for internal fields. Normally,
-    ///     the <see cref="LogEvent" /> constructor allocates a dictionary to back <see cref="Properties" />,
-    ///     so that this is not unexpectedly shared. This is unnecessary in many integration scenarios,
-    ///     leading to an additional nontrivial <see cref="Dictionary{TKey,TValue}" /> allocation. This
-    ///     method allows specialized callers to avoid that overhead.
+    /// Construct a <see cref="LogEvent"/> using pre-allocated values for internal fields. Normally,
+    /// the <see cref="LogEvent"/> constructor allocates a dictionary to back <see cref="Properties"/>,
+    /// so that this is not unexpectedly shared. This is unnecessary in many integration scenarios,
+    /// leading to an additional nontrivial <see cref="Dictionary{TKey,TValue}"/> allocation. This
+    /// method allows specialized callers to avoid that overhead.
     /// </summary>
     /// <remarks>
-    ///     Because this method exposes parameters that essentially map 1:1 with internal fields of
-    ///     <see cref="LogEvent" />,
-    ///     the parameter list may change across major Serilog versions.
+    /// Because this method exposes parameters that essentially map 1:1 with internal fields of <see cref="LogEvent"/>,
+    /// the parameter list may change across major Serilog versions.
     /// </remarks>
     /// <param name="timestamp">The time at which the event occurred.</param>
     /// <param name="level">The level of the event.</param>
     /// <param name="exception">An exception associated with the event, or null.</param>
     /// <param name="messageTemplate">The message template describing the event.</param>
-    /// <param name="properties">
-    ///     Properties associated with the event, including those presented in <paramref name="messageTemplate" />.
-    /// </param>
+    /// <param name="properties">Properties associated with the event, including those presented in <paramref name="messageTemplate"/>.</param>
     /// <param name="traceId">The id of the trace that was active when the event was created, if any.</param>
     /// <param name="spanId">The id of the span that was active when the event was created, if any.</param>
-    /// <exception cref="ArgumentNullException">
-    ///     When <paramref name="messageTemplate" /> is <code>null</code>
-    /// </exception>
-    /// <exception cref="ArgumentNullException">When <paramref name="properties" /> is <code>null</code></exception>
-    /// <returns>A constructed <see cref="LogEvent" />.</returns>
+    /// <exception cref="ArgumentNullException">When <paramref name="messageTemplate"/> is <code>null</code></exception>
+    /// <exception cref="ArgumentNullException">When <paramref name="properties"/> is <code>null</code></exception>
+    /// <returns>A constructed <see cref="LogEvent"/>.</returns>
     [CLSCompliant(false)]
     public static LogEvent UnstableAssembleFromParts(
         DateTimeOffset timestamp,

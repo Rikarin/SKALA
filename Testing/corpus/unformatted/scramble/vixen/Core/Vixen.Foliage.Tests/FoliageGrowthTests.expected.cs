@@ -21,7 +21,7 @@ public sealed class FoliageGrowthTests {
     static FoliageGrowthSettings Field => FoliageGrowthSettings.Over(new(0f, 0f), new(200f, 200f)) with { Steps = 6 };
 
     static
-        (FoliageVolume Volume, int Type) Sown(FoliageType? type = null) {
+        ( FoliageVolume Volume, int Type) Sown(FoliageType? type = null) {
         var volume = new FoliageVolume(new(32f));
         return (volume, volume.AddType(type ?? Pine));
     }
@@ -145,7 +145,9 @@ public sealed class FoliageGrowthTests {
         var (sowingOnly, _) = Sown(
             Pine with {
                 Ecology = open
-                    with { SeedsPerStep = 0 }
+                    with {
+                        SeedsPerStep = 0
+                    }
             }
         );
         var (spread, _) = Sown(Pine with { Ecology = open });
@@ -165,7 +167,7 @@ public sealed class FoliageGrowthTests {
         );
 
         var
-        sownRatio = VarianceToMean(sownPoints, Field, Pine.Ecology.SpreadDistance);
+            sownRatio = VarianceToMean(sownPoints, Field, Pine.Ecology.SpreadDistance);
         var grownRatio = VarianceToMean(grownPoints, Field, Pine.Ecology.SpreadDistance);
         Assert
             .True(
@@ -202,7 +204,7 @@ public sealed class FoliageGrowthTests {
             $"only {points.Length} trees to measure."
         );
         var
-        ratio = ClarkEvans(points, Field.Area);
+            ratio = ClarkEvans(points, Field.Area);
 
         Assert.True(
             ratio > 0.5f,
@@ -250,8 +252,9 @@ public sealed class FoliageGrowthTests {
     ]
     public void PriorityDisplacesRatherThanTies() {
         var scrub = FoliageType.Of("Scrub") with {
-            Radius = 3f, Ecology = FoliageEcology.Tree with { SeedDensity = 0.01f, Priority = 1, ShadeTolerance = 1f }
-        }
+                Radius = 3f,
+                Ecology = FoliageEcology.Tree with { SeedDensity = 0.01f, Priority = 1, ShadeTolerance = 1f }
+            }
             ;
         var oak = FoliageType.Of("Oak") with {
             Radius = 3f, Ecology = FoliageEcology.Tree with { SeedDensity = 0.004f, Priority = 20, ShadeTolerance = 1f }
@@ -326,18 +329,20 @@ public sealed class FoliageGrowthTests {
             _) = Sown();
 
 
-        // Past the maximum age, so the sowing is grown and the last step's seedlings are not. At or
+// Past the maximum age, so the sowing is grown and the last step's seedlings are not. At or
         // below it every plant is one cohort and every scale is the same, which is correct and
         // measures nothing.
         FoliageGrowth.Simulate(
             volume,
             Ground.Flat,
-            Field with { Steps =
-                    6 }
+            Field with {
+                Steps =
+                6
+            }
         );
         var scales = volume.Chunks.SelectMany(chunk =>
-            chunk.Instances
-        )
+                chunk.Instances
+            )
             .Select(i => i.Scale)
             .ToArray();
 
@@ -374,8 +379,8 @@ public sealed class FoliageGrowthTests {
         var (volume, _) = Sown();
         var thrown = Assert.Throws<ArgumentException
         >(()
-                => FoliageGrowth.Simulate(volume, Ground.Flat, Field with { Size = new(0f, 100f) })
-            );
+            => FoliageGrowth.Simulate(volume, Ground.Flat, Field with { Size = new(0f, 100f) })
+        );
         Assert.Contains("no area", thrown.Message, StringComparison.Ordinal);
     }
 
@@ -391,13 +396,12 @@ public sealed class FoliageGrowthTests {
 
     static Vector2[] Positions(
         FoliageVolume volume
-    ) =>
-        [
-            .. volume.Chunks.SelectMany(chunk => chunk.Instances)
-                .Select(instance => new Vector2(instance.Position.X, instance.Position.Z))
-                .OrderBy(at => at.X)
-                .ThenBy(at => at.Y)
-        ];
+    ) => [
+        .. volume.Chunks.SelectMany(chunk => chunk.Instances)
+            .Select(instance => new Vector2(instance.Position.X, instance.Position.Z))
+            .OrderBy(at => at.X)
+            .ThenBy(at => at.Y)
+    ];
 
     /// <summary>Clark and Evans's ratio: below 0.5 is clumped, above it is over-dispersed.</summary>
     static float ClarkEvans(Vector2[] points, float area) =>
@@ -407,7 +411,7 @@ public sealed class FoliageGrowthTests {
     static float VarianceToMean(Vector2[] points, in FoliageGrowthSettings region, float cellSize) {
         var across = Math.Max(1, (int)MathF.Floor(region.Size.X / cellSize));
         var down = Math.Max(1, (int)MathF.Floor(region.Size.Y / cellSize));
-        var counts = new int[across * down];
+        var counts = new int [across * down];
 
         foreach (var point in points) {
             var x = Math.Clamp((int)((point.X - region.Origin.X) / cellSize), 0, across - 1);
@@ -429,7 +433,7 @@ public sealed class FoliageGrowthTests {
         foreach (var point in points) {
             var nearest = float.PositiveInfinity;
             foreach (var
-                     other in points) {
+                         other in points) {
                 if (other == point) {
                     continue;
                 }

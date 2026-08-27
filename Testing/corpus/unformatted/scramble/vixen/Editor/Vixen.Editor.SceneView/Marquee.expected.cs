@@ -34,7 +34,8 @@ public
 
     /// <summary>The top edge.</summary>
     public
-        float Top => MathF.Min(Anchor.Y, Corner.Y);
+        float Top =>
+        MathF.Min(Anchor.Y, Corner.Y);
 
     /// <summary>The right edge.</summary>
     public float Right => MathF.Max(Anchor.X, Corner.X);
@@ -44,7 +45,8 @@ public
 
     /// <summary>How wide, never negative.</summary>
     public
-        float Width => Right - Left;
+        float Width =>
+        Right - Left;
 
     /// <summary>How tall, never negative.</summary>
     public float Height => Bottom - Top;
@@ -70,11 +72,8 @@ public
     /// <returns>Whether the two overlap at all.</returns>
     /// <remarks>
     ///     <para>
-    ///         ⚠
-    ///         <b>
-    ///             Touching, not containing, and that is the choice both reference editors make by
-    ///             default.
-    ///         </b> A band that only took what it fully enclosed cannot select anything larger
+    ///         ⚠ <b>Touching, not containing, and that is the choice both reference editors make by
+    ///         default.</b> A band that only took what it fully enclosed cannot select anything larger
     ///         than the pane — a floor, a wall, a building — so the gesture stops working precisely
     ///         where a scene gets big. Unreal offers the strict rule as a preference and Unity does
     ///         not offer it at all; the preference is worth having and is not what makes the gesture

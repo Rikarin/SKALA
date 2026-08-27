@@ -50,11 +50,8 @@ public class UvStackingTests {
 
     /// <summary>A mirror image is offered as a mirror, and nothing else is.</summary>
     /// <remarks>
-    ///     ⚠
-    ///     <b>
-    ///         The mirror is in <c>u</c> and the residual is taken after both islands are put in their
-    ///         own lower corner
-    ///     </b> — which is the same normalization <see cref="UvPlacement.Apply" />
+    ///     ⚠ <b>The mirror is in <c>u</c> and the residual is taken after both islands are put in their
+    ///     own lower corner</b> — which is the same normalization <see cref="UvPlacement.Apply" />
     ///     makes. Comparing raw coordinates would measure where the flattener left the gauge, and a
     ///     conformal map's gauge is arbitrary.
     /// </remarks>
@@ -70,8 +67,8 @@ public class UvStackingTests {
             offer.Residual,
             5
         ); // ⚠ And the reflection is load-bearing rather than incidental: the same island against itself
-        // is offered *without* the mirror, so the flag tracks which comparison actually won. A wedge
-        // symmetric about its own centre would match either way and prove neither.
+// is offered *without* the mirror, so the flag tracks which comparison actually won. A wedge
+// symmetric about its own centre would match either way and prove neither.
         Assert.False(Assert.Single(UvStacking.Detect([island, island])).Mirrored);
     }
 
@@ -123,9 +120,9 @@ public class UvStackingTests {
             islands.Add(Wedge(true, 0.1f + (0.02f * pair)));
         } // ⚠ A pinned density, and that is what makes the comparison mean anything. Left at zero the
 
-        // packer searches a global scale and grows whatever it is given until the sheet is full, so a
-        // pack of half the islands comes back at the same efficiency and a larger scale — which reads
-        // as "stacking bought nothing" and is really "the metric measured the search".
+// packer searches a global scale and grows whatever it is given until the sheet is full, so a
+// pack of half the islands comes back at the same efficiency and a larger scale — which reads
+// as "stacking bought nothing" and is really "the metric measured the search".
         var settings = new PackSettings { Resolution = 512, Margin = 4, TexelDensity = 2400f };
         var offers = UvStacking.Detect(islands);
         Assert.Equal(12, offers.Count);
@@ -189,11 +186,8 @@ public class UvStackingTests {
 
     /// <summary>A right-angled wedge, optionally reflected in <c>u</c> with its corners in the same order.</summary>
     /// <remarks>
-    ///     ⚠
-    ///     <b>
-    ///         The same order is what makes this docs/plan/41 § D11's case rather than a shape-matching
-    ///         problem.
-    ///     </b> A symmetry-preserving remesh emits vertex <i>k</i> and its mirror as exact
+    ///     ⚠ <b>The same order is what makes this docs/plan/41 § D11's case rather than a shape-matching
+    ///     problem.</b> A symmetry-preserving remesh emits vertex <i>k</i> and its mirror as exact
     ///     negations, so the two charts come out with corresponding corners at corresponding indices —
     ///     which is exactly the correspondence a detector cannot recover on an arbitrary mesh, and the
     ///     limitation <see cref="UvStacking" /> names rather than papers over.

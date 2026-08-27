@@ -139,7 +139,7 @@ public sealed class GoapPlanQueue {
         slot.Plan.Clear();
         if (!slot.Snapshot.Take(in context, goal, costs, sensors, capabilities, Settings.DistanceCost)) {
             // Nothing to plan for. Answered at once rather than queued, because an agent whose goals
-            // are all met should not wait a frame to be told so.
+// are all met should not wait a frame to be told so.
             slot.Plan.Failure = PlanFailure.AlreadyMet;
             slot.State = GoapRequestState.Ready;
             PendingCount++;
@@ -225,7 +225,7 @@ public sealed class GoapPlanQueue {
     /// <summary>Runs one search. ⚠ Touches only its own slot and its own planner.</summary>
     void Run(int[] taken, int index) {
         // One planner per parallel slot, round-robin over the batch: a planner is a node pool and an
-        // open list, and two searches in one would be the race this arrangement exists to avoid.
+// open list, and two searches in one would be the race this arrangement exists to avoid.
         var planner = planners[index % planners.Length];
         var slot = slots[taken[index]];
         planner.Search(slot.Snapshot, slot.Plan);

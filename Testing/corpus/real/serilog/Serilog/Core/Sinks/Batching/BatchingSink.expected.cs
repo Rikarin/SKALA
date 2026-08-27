@@ -20,7 +20,7 @@ using System.Threading.Channels;
 namespace Serilog.Core.Sinks.Batching;
 
 /// <summary>
-///     Buffers log events into batches for background flushing.
+/// Buffers log events into batches for background flushing.
 /// </summary>
 sealed class BatchingSink : ILogEventSink, IDisposable, ISetLoggingFailureListener
 #if FEATURE_ASYNCDISPOSABLE
@@ -53,13 +53,11 @@ sealed class BatchingSink : ILogEventSink, IDisposable, ISetLoggingFailureListen
     ILoggingFailureListener _failureListener = SelfLog.FailureListener;
 
     /// <summary>
-    ///     Construct a <see cref="BatchingSink" />.
+    /// Construct a <see cref="BatchingSink"/>.
     /// </summary>
-    /// <param name="batchedSink">
-    ///     A <see cref="IBatchedLogEventSink" /> to send log event batches to. Batches and empty
-    ///     batch notifications will not be sent concurrently. When the <see cref="BatchingSink" /> is disposed,
-    ///     it will dispose this object if possible.
-    /// </param>
+    /// <param name="batchedSink">A <see cref="IBatchedLogEventSink"/> to send log event batches to. Batches and empty
+    /// batch notifications will not be sent concurrently. When the <see cref="BatchingSink"/> is disposed,
+    /// it will dispose this object if possible.</param>
     /// <param name="options">Options controlling behavior of the sink.</param>
     public BatchingSink(IBatchedLogEventSink batchedSink, BatchingOptions options) {
         if (options == null) throw new ArgumentNullException(nameof(options));
@@ -90,15 +88,15 @@ sealed class BatchingSink : ILogEventSink, IDisposable, ISetLoggingFailureListen
     }
 
     /// <summary>
-    ///     Emit the provided log event to the sink. If the sink is being disposed or
-    ///     the app domain unloaded, then the event is ignored.
+    /// Emit the provided log event to the sink. If the sink is being disposed or
+    /// the app domain unloaded, then the event is ignored.
     /// </summary>
     /// <param name="logEvent">Log event to emit.</param>
     /// <exception cref="ArgumentNullException">The event is null.</exception>
     /// <remarks>
-    ///     The sink implements the contract that any events whose Emit() method has
-    ///     completed at the time of sink disposal will be flushed (or attempted to,
-    ///     depending on app domain state).
+    /// The sink implements the contract that any events whose Emit() method has
+    /// completed at the time of sink disposal will be flushed (or attempted to,
+    /// depending on app domain state).
     /// </remarks>
     public void Emit(LogEvent logEvent) {
         if (logEvent == null) throw new ArgumentNullException(nameof(logEvent));
@@ -277,7 +275,7 @@ sealed class BatchingSink : ILogEventSink, IDisposable, ISetLoggingFailureListen
         _failureListener = failureListener;
     }
 
-    /// <inheritdoc />
+    /// <inheritdoc/>
     public void Dispose() {
         SignalShutdown();
 

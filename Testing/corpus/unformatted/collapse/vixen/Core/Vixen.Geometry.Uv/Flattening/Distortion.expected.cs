@@ -17,18 +17,12 @@ namespace Vixen.Geometry.Uv.Flattening;
 ///     </para>
 ///     <para>
 ///         ⚠ <b>Every one of the four is normalized so that one is perfect and larger is worse</b>,
-///         which is what makes <c>UvSettings.DistortionThreshold</c> —
-///         <i>
-///             "one is a perfectly isometric
-///             map"
-///         </i> — a single number that any of them can be compared against.
+///         which is what makes <c>UvSettings.DistortionThreshold</c> — <i>"one is a perfectly isometric
+///         map"</i> — a single number that any of them can be compared against.
 ///     </para>
 ///     <para>
-///         ⚠
-///         <b>
-///             All four are invariant to the chart's scale, and that is a property to test rather
-///             than to assume.
-///         </b> Sander's stretch is a ratio of surface length to parameter length, so it
+///         ⚠ <b>All four are invariant to the chart's scale, and that is a property to test rather
+///         than to assume.</b> Sander's stretch is a ratio of surface length to parameter length, so it
 ///         carries units until it is divided by the map's average — and a measure that moved when a
 ///         model arrived in millimetres would make every threshold in this library a statement about
 ///         how big the model was.
@@ -75,11 +69,8 @@ static class Distortion {
     ///         wrong array is a bug that only appears on the sliver that provoked it.
     ///     </para>
     ///     <para>
-    ///         ⚠
-    ///         <b>
-    ///             <see cref="ExactPredicates.Orient2D" /> and not a <see langword="float" /> cross
-    ///             product.
-    ///         </b> Three points that are exactly collinear can give a naive cross product of
+    ///         ⚠ <b><see cref="ExactPredicates.Orient2D" /> and not a <see langword="float" /> cross
+    ///         product.</b> Three points that are exactly collinear can give a naive cross product of
     ///         <c>16</c> in one argument order and <c>−67108864</c> in another — the error is in the
     ///         coordinate <i>subtractions</i>, so no epsilon scaled to the inputs rescues it. The case
     ///         that matters here is a triangle that is exactly degenerate in the parameterization, and
@@ -101,7 +92,7 @@ static class Distortion {
         var worst = 0d;
         var measurable = 0d;
         var flipped = 0; // Two passes: the area ratio each triangle is judged against is the chart's own, which is not
-        // known until every triangle has been visited.
+// known until every triangle has been visited.
         var ratio = new double[chart.TriangleCount];
         for (var triangle = 0; triangle < chart.TriangleCount; triangle++) {
             var frame = frames[triangle];
@@ -141,14 +132,14 @@ static class Distortion {
                 coordinates,
                 triangle
             ); // ⚠ A triangle that collapsed to a segment in the parameterization has an infinite stretch
-            // and is already counted as flipped. Left out of the averages rather than allowed to make
-            // every one of them an infinity, which would report one bad triangle as a chart with no
-            // measurable quality at all.
+// and is already counted as flipped. Left out of the averages rather than allowed to make
+// every one of them an infinity, which would report one bad triangle as a chart with no
+// measurable quality at all.
             if (!(smaller > 0d)) {
                 continue;
             } // Sander's singular values are of the map from the *parameter* plane to the surface, which
 
-            // is the inverse of the one fitted above — so they are the reciprocals, and they swap.
+// is the inverse of the one fitted above — so they are the reciprocals, and they swap.
             var largest = 1d / smaller;
             var smallest = 1d / larger;
             angular += weight * (larger / smaller);
@@ -157,7 +148,7 @@ static class Distortion {
             measurable += weight;
         } // The normalization that makes stretch dimensionless: the map's own average scale. Without it
 
-        // the same chart at two model scales reports two different numbers.
+// the same chart at two model scales reports two different numbers.
         var normal = average > 0d ? Math.Sqrt(average) : 0d;
         var measured = new UvDistortion(
             (float)(measurable > 0d ? angular / measurable : 0d),
@@ -179,11 +170,8 @@ static class Distortion {
     ///         and a charter that fragments would look like a flattener that improved.
     ///     </para>
     ///     <para>
-    ///         ⚠
-    ///         <b>
-    ///             Every chart is normalized by <i>its own</i> gauge before it is weighted in, and
-    ///             doing it once globally is a defect U3 found the hard way.
-    ///         </b> A stretch is a ratio of
+    ///         ⚠ <b>Every chart is normalized by <i>its own</i> gauge before it is weighted in, and
+    ///         doing it once globally is a defect U3 found the hard way.</b> A stretch is a ratio of
     ///         surface length to parameter length, so it carries the map's scale until it is divided by
     ///         that map's average — and <b>each chart has its own</b>, because LSCM fixes a chart's
     ///         scale from the distance between two pinned vertices and two charts of one mesh are pinned

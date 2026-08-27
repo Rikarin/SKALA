@@ -21,7 +21,7 @@ public sealed class TerrainBrushTests {
     sealed class ConstantMask(float value) : IBrushMask {
         public float Sample(
             Vector2
-            uv
+                uv
         ) =>
             value;
     }
@@ -40,7 +40,7 @@ public sealed class TerrainBrushTests {
     static TerrainBrush Brush(
         float radius = 4f,
         float strength
-        = 1f,
+            = 1f,
         float falloff = 0.5f
     ) =>
         TerrainBrush.Default with { Radius = radius, Strength = strength, Falloff = falloff };
@@ -61,7 +61,7 @@ public sealed class TerrainBrushTests {
         for
             (var step = 0; step <= 200; step++) {
             var
-            value = BrushFalloff.Evaluate(kind, step / 200f);
+                value = BrushFalloff.Evaluate(kind, step / 200f);
             Assert.InRange(value, 0f, 1f)
                 ;
             Assert.True(
@@ -108,7 +108,6 @@ public sealed class TerrainBrushTests {
         Assert.True(tip < linear, "Tip pinches inwards.");
         Assert.Equal(1f, spherical + tip, 5);
     }
-
     // --- The brush ----------------------------------------------------------
 
     [Fact]
@@ -116,7 +115,7 @@ public sealed class TerrainBrushTests {
         var brush
             = Brush(radius: 4f, strength: 0.75f);
         var
-        stamp = new BrushStamp(new(10f, 20f));
+            stamp = new BrushStamp(new(10f, 20f));
         Assert.Equal(0.75f, brush.WeightAt(new(10f, 20f), stamp), 5);
         Assert.Equal(0f, brush.WeightAt(new(14f, 20f), stamp), 5);
         Assert.Equal(0f, brush.WeightAt(new(100f, 20f), stamp), 5);
@@ -193,7 +192,6 @@ public sealed class TerrainBrushTests {
         var brush = Brush(radius: 0f);
         Assert.Equal(0f, brush.WeightAt(Vector2.Zero, new(Vector2.Zero)), 5);
     }
-
     // --- Masks --------------------------------------------------------------
 
     [Fact]
@@ -240,7 +238,7 @@ public sealed class TerrainBrushTests {
     public void APatternStampReadsItsMaskInWorldSpaceSoAStrokeRevealsOneTexture() {
         var brush = TerrainBrush.Default with {
             Radius
-                = 4f,
+            = 4f,
             Strength = 1f,
             Falloff = 0f,
             Shape = BrushShape.Pattern,
@@ -299,7 +297,6 @@ public sealed class TerrainBrushTests {
             5
         );
     }
-
     // --- Footprints ---------------------------------------------------------
 
     [Fact]
@@ -318,11 +315,11 @@ public sealed class TerrainBrushTests {
             .Equal(new(14f, 24f), circle.Maximum);
 
         // A square stamp turned 45° reaches √2 radii into its corners, and the bound is the same
-        // whichever way it is turned rather than tight for one angle and wrong for the next.
+// whichever way it is turned rather than tight for one angle and wrong for the next.
         var alpha = (Brush(radius: 4f) with {
-                Shape
-                    = BrushShape.Alpha
-            }).FootprintOf(stamp);
+            Shape
+            = BrushShape.Alpha
+        }).FootprintOf(stamp);
         Assert
             .Equal(4f * MathF.Sqrt(2f), alpha.Maximum.X - 10f, 4);
     }
@@ -350,12 +347,12 @@ public sealed class TerrainBrushTests {
     [Fact]
     public void AnyBrushIsMonotonicFromItsCentreToItsEdge() {
         Gen.Select(
-            Gen.Float[0.01f, 200f],
-            Gen
-            .Float[0f, 1f],
-            Gen.Float[0f, 1f],
-            Gen.Int[0, 3]
-        )
+                Gen.Float[0.01f, 200f],
+                Gen
+                    .Float[0f, 1f],
+                Gen.Float[0f, 1f],
+                Gen.Int[0, 3]
+            )
             .Sample(
                 input => {
                     var (radius,
@@ -363,19 +360,19 @@ public sealed class TerrainBrushTests {
                     var brush = TerrainBrush.Default with {
                         Radius = radius,
                         Strength
-                            = strength,
+                        = strength,
                         Falloff = falloff,
                         Curve =
-                            (BrushFalloffKind)curve
+                        (BrushFalloffKind)curve
                     };
                     var
-                    stamp = new BrushStamp(Vector2.Zero);
+                        stamp = new BrushStamp(Vector2.Zero);
                     Assert.Equal(strength, brush.WeightAt(Vector2.Zero, stamp), 4);
                     Assert
                         .Equal(0f, brush.WeightAt(new(radius, 0f), stamp), 5);
 
                     var
-                    previous = float.PositiveInfinity;
+                        previous = float.PositiveInfinity;
 
                     for (var step = 0;
                          step

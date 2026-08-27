@@ -56,28 +56,27 @@ public sealed partial class CurveEditor : Control {
 
     /// <inheritdoc />
     protected override
-        string TagName => "curve-editor";
+        string TagName =>
+        "curve-editor";
 
     /// <inheritdoc />
     protected
-        override bool AcceptsFocus => true;
+        override bool AcceptsFocus =>
+        true;
 
     /// <inheritdoc />
     /// <remarks>
-    ///     ⚠
-    ///     <b>
-    ///         ARIA <c>application</c>, and it is a role with a cost that is worth paying
-    ///         here.
-    ///     </b> It tells assistive technology to stop intercepting the keyboard and pass every
+    ///     ⚠ <b>ARIA <c>application</c>, and it is a role with a cost that is worth paying
+    ///     here.</b> It tells assistive technology to stop intercepting the keyboard and pass every
     ///     key through, because this element has a keyboard model of its own that no generic widget
-    ///     vocabulary describes. That is exactly true of a direct-manipulation surface — a curve whose keys and
-    ///     tangents are dragged — and it
+    ///     vocabulary describes. That is exactly true of a direct-manipulation surface — a curve whose keys and tangents are dragged — and it
     ///     is exactly false of a text field, which is why <c>CodeEditor</c> is a <c>textbox</c>
     ///     instead. Unnamed by default: what this one is a view of is the application's sentence,
     ///     and it is usually the panel title above it.
     /// </remarks>
     protected override AccessibleRole
-        NativeRole => AccessibleRole.Application;
+        NativeRole =>
+        AccessibleRole.Application;
 
     /// <summary>The curve being edited.</summary>
     public AnimationCurve Curve {
@@ -112,7 +111,8 @@ public sealed partial class CurveEditor : Control {
 
     /// <summary>Which keys are selected.</summary>
     public IReadOnlyCollection
-        <CurveKey> Selection => selection;
+        <CurveKey> Selection =>
+        selection;
 
     /// <summary>The key whose handles are shown, if any.</summary>
     public CurveKey? Active => active;
@@ -169,14 +169,14 @@ public sealed partial class CurveEditor : Control {
     public Vector2 ToScreen(float time, float value) {
         var bounds = Bounds;
         return new Vector2(
-            bounds.X
-            + ((
-                    time - View.X)
-                / View.Width
-                * bounds.Width),
-            bounds.Bottom
-            - ((value - View.Y) / View.Height * bounds.Height)
-        )
+                bounds.X
+                + ((
+                        time - View.X)
+                    / View.Width
+                    * bounds.Width),
+                bounds.Bottom
+                - ((value - View.Y) / View.Height * bounds.Height)
+            )
             ;
     }
 
@@ -204,11 +204,11 @@ public sealed partial class CurveEditor : Control {
 
         var minimumTime =
             curve.Keys[0].Time;
-        var maximumTime = curve.Keys[^1].Time;
+        var maximumTime = curve.Keys[^ 1].Time;
 
         var minimumValue = float.MaxValue;
         var
-        maximumValue = float.MinValue;
+            maximumValue = float.MinValue;
 
         foreach (var key in curve.Keys) {
             minimumValue = MathF.Min(
@@ -223,7 +223,7 @@ public sealed partial class CurveEditor : Control {
         // somebody frames just before they start editing one.
         var width = MathF.Max(0.001f, maximumTime - minimumTime);
         var
-        height = MathF.Max(0.001f, maximumValue - minimumValue);
+            height = MathF.Max(0.001f, maximumValue - minimumValue);
         View
             = new Rectangle(
                 minimumTime - (width * 0.1f),
@@ -293,7 +293,7 @@ public sealed partial class CurveEditor : Control {
             var point = ToScreen(key.Time, key.Value);
             var distance = ((point.X - x) * (point.X - x)) + ((point.Y - y) * (point.Y - y));
             if (distance <= best
-            ) {
+               ) {
                 best = distance;
                 found = key;
             }
@@ -303,7 +303,7 @@ public sealed partial class CurveEditor : Control {
             ;
     }
 
-    // ── Drawing ──────────────────────────────────────────────────────────────
+// ── Drawing ──────────────────────────────────────────────────────────────
 
     /// <inheritdoc />
     protected override void OnDraw(DrawContext context) {
@@ -323,7 +323,7 @@ public sealed partial class CurveEditor : Control {
             ;
         DrawCurve(context, bounds);
         var
-        keys = Document.ColorOf(Style, keyColor) ?? Document.ForegroundOf(this);
+            keys = Document.ColorOf(Style, keyColor) ?? Document.ForegroundOf(this);
         var handles =
             Document.ColorOf(Style, handleColor) ?? new Color4(0.55f, 0.58f, 0.63f, 1f);
         if (active
@@ -392,7 +392,7 @@ public sealed partial class CurveEditor : Control {
             grid,
             Document.ColorOf(Style, gridColor)
             ?? new
-            Color4(0f, 0f, 0f, 0.08f),
+                Color4(0f, 0f, 0f, 0.08f),
             1f
         );
     }
@@ -409,7 +409,7 @@ public sealed partial class CurveEditor : Control {
             var x =
                 bounds.X + i;
             var
-            time = ToCurve(x, bounds.Y).X;
+                time = ToCurve(x, bounds.Y).X;
             var point = ToScreen(time, curve.Evaluate(time));
 
             if (i == 0) {
@@ -451,7 +451,7 @@ public sealed partial class CurveEditor : Control {
     /// <returns>The point.</returns>
     public Vector2 HandlePoint(
         CurveKey
-        key,
+            key,
         bool outgoing
     ) {
         ArgumentNullException.ThrowIfNull(key);
@@ -464,10 +464,10 @@ public sealed partial class CurveEditor : Control {
         // horizontal tangent as a diagonal.
         var bounds = Bounds;
         var
-        direction = new Vector2(
-            (outgoing ? 1f : -1f) / MathF.Max(1e-6f, View.Width) * bounds.Width,
-            -(outgoing ? slope : -slope) / MathF.Max(1e-6f, View.Height) * bounds.Height
-        );
+            direction = new Vector2(
+                (outgoing ? 1f : -1f) / MathF.Max(1e-6f, View.Width) * bounds.Width,
+                -(outgoing ? slope : -slope) / MathF.Max(1e-6f, View.Height) * bounds.Height
+            );
         var length = MathF.Sqrt((direction.X * direction.X) + (direction.Y * direction.Y));
 
         return length <= 1e-6f
@@ -478,7 +478,7 @@ public sealed partial class CurveEditor : Control {
             );
     }
 
-    // ── Input ────────────────────────────────────────────────────────────────
+// ── Input ────────────────────────────────────────────────────────────────
 
     void OnCurveChanged(AnimationCurve changed) {
         CurveChanged?.Invoke(this);
@@ -530,8 +530,8 @@ public sealed partial class CurveEditor : Control {
         // top of its own key and would otherwise be unreachable.
         if (active is { } current
             && current.Mode is TangentMode.Free
-            or TangentMode
-                .Broken) {
+                or TangentMode
+                    .Broken) {
             foreach (var outgoing in (ReadOnlySpan<bool>)[false, true]) {
                 var point = HandlePoint(current, outgoing);
 
@@ -560,9 +560,9 @@ public sealed partial class CurveEditor : Control {
         switch (drag) {
             case CurveDrag.Pan:
                 var scale = new Vector2(
-                    View.Width / MathF.Max(1f, Bounds.Width),
-                    View.Height / MathF.Max(1f, Bounds.Height)
-                )
+                        View.Width / MathF.Max(1f, Bounds.Width),
+                        View.Height / MathF.Max(1f, Bounds.Height)
+                    )
                     ;
                 View = new Rectangle(
                     panOrigin.X - ((args.X - panStart.X) * scale.X),
@@ -612,7 +612,7 @@ public sealed partial class CurveEditor : Control {
     void Aim(CurveKey key, PointerEvent args, bool outgoing) {
         var centre = ToScreen(key.Time, key.Value);
         var
-        bounds = Bounds;
+            bounds = Bounds;
 
         var dx = (args.X - centre.X)
             / MathF
@@ -709,9 +709,9 @@ public sealed partial class CurveEditor : Control {
 
     void Wheeled(WheelEvent args) {
         var
-        before = ToCurve(args.X, args.Y);
+            before = ToCurve(args.X, args.Y);
         var
-        factor = MathF.Exp(args.DeltaY * 0.0015f);
+            factor = MathF.Exp(args.DeltaY * 0.0015f);
 
         View = new Rectangle(
             View.X,

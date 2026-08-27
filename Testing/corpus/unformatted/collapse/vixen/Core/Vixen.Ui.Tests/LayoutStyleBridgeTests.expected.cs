@@ -17,8 +17,8 @@ public class LayoutStyleBridgeTests {
         var style = new BridgeFixture().Build(
             "color: red"
         ); // ⚠ All four of these differ between the two specifications, and Vixen.Ui.Layout is right to
-        // start from Yoga's — it is judged by Yoga's conformance suite. The bridge is where a VCSS
-        // author's expectations take over.
+// start from Yoga's — it is judged by Yoga's conformance suite. The bridge is where a VCSS
+// author's expectations take over.
         Assert.Equal(FlexDirection.Row, style.FlexDirection);
         Assert.Equal(Align.Stretch, style.AlignContent);
         Assert.Equal(PositionType.Static, style.PositionType);
@@ -38,7 +38,7 @@ public class LayoutStyleBridgeTests {
     [InlineData("width: 0", 0f)]
     public void A_relative_length_is_resolved_against_its_context(string css, float expected) {
         // A 1000x500 viewport and a 16px font, so every unit lands on a different number and a
-        // wrong one cannot pass by coincidence.
+// wrong one cannot pass by coincidence.
         var style = new BridgeFixture().Build(css);
         Assert.Equal(LayoutUnit.Point, style.Dimensions[(int)Dimension.Width].Unit);
         Assert.Equal(expected, style.Dimensions[(int)Dimension.Width].Value, Tolerance);
@@ -49,7 +49,7 @@ public class LayoutStyleBridgeTests {
         var style = new BridgeFixture().Build(
             "width: 50%"
         ); // The one place where doing less is correct: only layout knows the containing block, so
-        // resolving this here would be resolving it against the wrong thing.
+// resolving this here would be resolving it against the wrong thing.
         Assert.Equal(LayoutUnit.Percent, style.Dimensions[(int)Dimension.Width].Unit);
         Assert.Equal(50f, style.Dimensions[(int)Dimension.Width].Value, Tolerance);
     }
@@ -67,7 +67,7 @@ public class LayoutStyleBridgeTests {
             new BridgeFixture().FontSize("font-size: 50%", 20f),
             Tolerance
         ); // Whereas `width: 1.5em` measures against the element's own size, which the caller has
-        // already resolved and put in the context. Conflating the two compounds down the tree.
+// already resolved and put in the context. Conflating the two compounds down the tree.
         var style = new BridgeFixture().Build("width: 1.5em", LengthContext.ForViewport(1000f, 500f).WithFontSize(20f));
         Assert.Equal(30f, style.Dimensions[(int)Dimension.Width].Value, Tolerance);
     }
@@ -77,8 +77,8 @@ public class LayoutStyleBridgeTests {
         var fixture = new BridgeFixture();
         var size = LengthContext
             .InitialFontSize; // Three nested 1.2em are 1.728x, not 1.2x. Resolving `em` against the element's own size
-        // instead of its parent's gives the second answer, and the error grows with depth — which
-        // is what makes it look like a rendering quirk rather than an arithmetic one.
+// instead of its parent's gives the second answer, and the error grows with depth — which
+// is what makes it look like a rendering quirk rather than an arithmetic one.
         for (var depth = 0; depth < 3; depth++) {
             size = fixture.FontSize("font-size: 1.2em", size);
         }
@@ -89,17 +89,17 @@ public class LayoutStyleBridgeTests {
     [Fact]
     public void The_viewport_units_the_sizing_utilities_emit_reach_the_dimensions() {
         // ⚠ This is the far end of `w-dvw` and `h-svh`, and it is asserted here rather than left to
-        // the utility test because the two halves fail independently: the family table can emit a
-        // perfectly good `100vw` into a sheet whose units nothing resolves, which is a class that
-        // generates, cascades and moves nothing. `docs/plan/43` counts the six viewport keywords as
-        // closed on the strength of this path existing.
-        //
-        // ⚠ The same file used to record, one column over, that the *content* keywords on those
-        // roots had no such far end and were dropped by `LayoutStyleBuilder.ToEdgeLength`. They have
-        // one now — see the two tests below — and it is a longer one, which is why theirs is
-        // asserted on a resolved BOX rather than on a `StyleLength`. A viewport unit is a number by
-        // the time it leaves this file; `min-content` is still a keyword, and a test that stopped
-        // here would have passed over a declaration that nothing measured.
+// the utility test because the two halves fail independently: the family table can emit a
+// perfectly good `100vw` into a sheet whose units nothing resolves, which is a class that
+// generates, cascades and moves nothing. `docs/plan/43` counts the six viewport keywords as
+// closed on the strength of this path existing.
+//
+// ⚠ The same file used to record, one column over, that the *content* keywords on those
+// roots had no such far end and were dropped by `LayoutStyleBuilder.ToEdgeLength`. They have
+// one now — see the two tests below — and it is a longer one, which is why theirs is
+// asserted on a resolved BOX rather than on a `StyleLength`. A viewport unit is a number by
+// the time it leaves this file; `min-content` is still a keyword, and a test that stopped
+// here would have passed over a declaration that nothing measured.
         var style = new BridgeFixture().Build(
             "width: 100vw; height: 100vh; max-width: 50vw; min-height: 20vh",
             LengthContext.ForViewport(1000f, 500f)
@@ -152,24 +152,24 @@ public class LayoutStyleBridgeTests {
     [InlineData("min-width: max-content; width: 5px", 30f)]
     public void The_content_keywords_the_sizing_utilities_emit_move_the_box(string declarations, float expected) {
         // ⚠ THE ASSERTION IS ON A BOX AND NOT ON A `StyleLength`, and that is the whole point of the
-        // test. `width: min-content` arrived in `LayoutStyle.Dimensions` as a well-formed keyword
-        // long before it did anything: `Resolve` answers NaN for one, so `SetLength` left the
-        // dimension alone and every reader downstream took the declaration for its own absence.
-        // Thirteen Tailwind sizing roots resolved, cascaded and moved nothing, and both the utility
-        // gate and the cascade tests were green over all of them. Nothing short of laying the box
-        // out can tell the two states apart.
-        //
-        // The container is 500 wide and the box is in normal flow, so CSS 2.1 §10.3.3 would give an
-        // `auto` width the whole of it. Every number below is therefore one the old behaviour could
-        // not have produced.
+// test. `width: min-content` arrived in `LayoutStyle.Dimensions` as a well-formed keyword
+// long before it did anything: `Resolve` answers NaN for one, so `SetLength` left the
+// dimension alone and every reader downstream took the declaration for its own absence.
+// Thirteen Tailwind sizing roots resolved, cascaded and moved nothing, and both the utility
+// gate and the cascade tests were green over all of them. Nothing short of laying the box
+// out can tell the two states apart.
+//
+// The container is 500 wide and the box is in normal flow, so CSS 2.1 §10.3.3 would give an
+// `auto` width the whole of it. Every number below is therefore one the old behaviour could
+// not have produced.
         Assert.Equal(expected, BoxFor(declarations).Width, Tolerance);
     }
 
     [Fact]
     public void A_content_keyword_on_the_block_axis_is_measured_at_the_width_the_inline_axis_settled() {
         // The two halves of one declaration, in the order CSS Sizing § 4.1 resolves them: ten across
-        // puts one word on each of three lines, so the content-based height is thirty rather than
-        // the one line a height measured against the container's 500 would have found.
+// puts one word on each of three lines, so the content-based height is thirty rather than
+// the one line a height measured against the container's 500 would have found.
         var box = BoxFor("width: min-content; height: max-content");
         Assert.Equal(10f, box.Width, Tolerance);
         Assert.Equal(30f, box.Height, Tolerance);
@@ -200,7 +200,7 @@ public class LayoutStyleBridgeTests {
         "Display",
         "Block"
     )] // ⚠ Not an alias for `block`: a flow root establishes a block formatting context whatever its
-    // `overflow` says, which is the whole content of the keyword. See `Display.FlowRoot`.
+// `overflow` says, which is the whole content of the keyword. See `Display.FlowRoot`.
     [InlineData("display: flow-root", "Display", "FlowRoot")]
     [InlineData("float: left", "Float", "Left")]
     [InlineData("float: right", "Float", "Right")]
@@ -211,10 +211,10 @@ public class LayoutStyleBridgeTests {
         "Clear",
         "Both"
     )] // ⚠ The logical keywords are NOT mapped, and the case below asserts that rather than leaving it
-    // to be discovered. `float: inline-start` resolving to `Left` would be right in an LTR container
-    // and wrong in an RTL one, in the same declaration — `FloatSide` is CSS 2.1 §9.5's physical
-    // keyword set and does not flip with `direction`. An unmapped keyword leaves the initial value,
-    // which is the documented behaviour two tests down.
+// to be discovered. `float: inline-start` resolving to `Left` would be right in an LTR container
+// and wrong in an RTL one, in the same declaration — `FloatSide` is CSS 2.1 §9.5's physical
+// keyword set and does not flip with `direction`. An unmapped keyword leaves the initial value,
+// which is the documented behaviour two tests down.
     [InlineData("float: inline-start", "Float", "None")]
     [InlineData("clear: inline-end", "Clear", "None")]
     [InlineData("box-sizing: border-box", "BoxSizing", "BorderBox")]
@@ -233,8 +233,8 @@ public class LayoutStyleBridgeTests {
     [InlineData("color: red", 0f)]
     public void The_scrollbar_gutter_crosses_the_bridge_as_a_length(string css, float expected) {
         // ⚠ A length where the web has `auto | thin | none`, because nothing here owns the widget
-        // the web keyword is a preference about — see `LayoutStyleBuilder.ApplyScrollbar`. `none` is
-        // kept because a stylesheet turning a gutter off should not have to spell it `0`.
+// the web keyword is a preference about — see `LayoutStyleBuilder.ApplyScrollbar`. `none` is
+// kept because a stylesheet turning a gutter off should not have to spell it `0`.
         Assert.Equal(expected, new BridgeFixture().Build(css).ScrollbarWidth, Tolerance);
     }
 
@@ -250,19 +250,19 @@ public class LayoutStyleBridgeTests {
     [Fact]
     public void An_unparseable_length_leaves_the_initial_value_alone() {
         // ⚠ Written against inline declarations, not a stylesheet, and that is the whole point.
-        // ExCSS drops what it cannot parse, so `width: 4furlongs` in a stylesheet never reaches the
-        // cascade — a test written that way passes whatever the bridge does with a bad value,
-        // including overwriting a good one. Sabotage caught exactly that: removing the guard broke
-        // nothing until this test went through a path ExCSS does not vet.
-        // And the value has to be one that *parses* but is not a length, because TryValue already
-        // rejects anything the parser cannot read at all. A bare `5` and a duration are both
-        // perfectly good CSS values that mean nothing as a width.
+// ExCSS drops what it cannot parse, so `width: 4furlongs` in a stylesheet never reaches the
+// cascade — a test written that way passes whatever the bridge does with a bad value,
+// including overwriting a good one. Sabotage caught exactly that: removing the guard broke
+// nothing until this test went through a path ExCSS does not vet.
+// And the value has to be one that *parses* but is not a length, because TryValue already
+// rejects anything the parser cannot read at all. A bare `5` and a duration are both
+// perfectly good CSS values that mean nothing as a width.
         var style = new BridgeFixture().BuildInline(
             ("width", "5"),
             ("min-width", "200ms"),
             ("height", "8px")
         ); // Zero is a valid answer that happens to be invisible, so using it for "I did not
-        // understand this" turns one typo into a missing element with nothing said about it.
+// understand this" turns one typo into a missing element with nothing said about it.
         Assert.Equal(LayoutUnit.Auto, style.Dimensions[(int)Dimension.Width].Unit);
         Assert.False(style.MinDimensions[(int)Dimension.Width].IsDefined);
         Assert.Equal(8f, style.Dimensions[(int)Dimension.Height].Value, Tolerance);
@@ -271,8 +271,8 @@ public class LayoutStyleBridgeTests {
     [Fact]
     public void A_box_shorthand_arrives_already_expanded_into_longhands() {
         // ⚠ ExCSS expands `margin`, `padding`, `border-width`, `gap` and `flex` while parsing,
-        // exactly as a browser does, so the cascade never sees those words. The bridge was first
-        // written to expand them itself and its tests said every one of those paths was dead.
+// exactly as a browser does, so the cascade never sees those words. The bridge was first
+// written to expand them itself and its tests said every one of those paths was dead.
         var four = new BridgeFixture().Build("margin: 1px 2px 3px 4px");
         Assert.Equal(1f, four.Margin[(int)Edge.Top].Value, Tolerance);
         Assert.Equal(2f, four.Margin[(int)Edge.Right].Value, Tolerance);
@@ -284,8 +284,8 @@ public class LayoutStyleBridgeTests {
     [Fact]
     public void A_shorthand_written_after_a_longhand_wins_because_it_expanded_first() {
         // The question that decides whether expansion-on-parse is enough. A browser gives 8px here;
-        // by the time the cascade runs this is two `margin-left` declarations and the later one
-        // wins, so document order does the work and the bridge needs no notion of it.
+// by the time the cascade runs this is two `margin-left` declarations and the later one
+// wins, so document order does the work and the bridge needs no notion of it.
         var later = new BridgeFixture().Build("margin-left: 0px; margin: 8px");
         Assert.Equal(8f, later.Margin[(int)Edge.Left].Value, Tolerance);
         var earlier = new BridgeFixture().Build("margin: 8px; margin-left: 0px");
@@ -318,7 +318,7 @@ public class LayoutStyleBridgeTests {
     [Fact]
     public void Gap_puts_the_row_first_because_that_is_what_CSS_says() {
         // `gap: <row> <column>` — the opposite order to the enum, and exactly the sort of thing
-        // that reads correct and renders transposed. ExCSS expands it and gets the order right.
+// that reads correct and renders transposed. ExCSS expands it and gets the order right.
         var pair = new BridgeFixture().Build("gap: 4px 12px");
         Assert.Equal(4f, pair.Gap[(int)Gutter.Row].Value, Tolerance);
         Assert.Equal(12f, pair.Gap[(int)Gutter.Column].Value, Tolerance);
@@ -354,7 +354,7 @@ public class LayoutStyleBridgeTests {
     [Fact]
     public void Inset_is_the_one_shorthand_the_bridge_expands_itself() {
         // ExCSS does not know `inset`, so it passes the text through whole and the four-value form
-        // has to be read here. The longhands it does know still land on their own slots.
+// has to be read here. The longhands it does know still land on their own slots.
         var four = new BridgeFixture().Build("inset: 1px 2px 3px 4px");
         Assert.Equal(1f, four.Position[(int)Edge.Top].Value, Tolerance);
         Assert.Equal(2f, four.Position[(int)Edge.Right].Value, Tolerance);

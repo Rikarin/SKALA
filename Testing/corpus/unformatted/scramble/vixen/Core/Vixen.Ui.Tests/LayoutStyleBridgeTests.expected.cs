@@ -17,7 +17,7 @@ public class LayoutStyleBridgeTests {
         var style = new BridgeFixture().Build("color: red");
         // ⚠ All four of these differ between the two specifications, and Vixen.Ui.Layout is right to
         // start from Yoga's — it is judged by Yoga's conformance suite. The bridge is where a VCSS
-        // author's expectations take over.
+// author's expectations take over.
         Assert.Equal(FlexDirection.Row, style.FlexDirection);
         Assert.Equal(
             Align.Stretch,
@@ -172,7 +172,7 @@ public class LayoutStyleBridgeTests {
     }
 
     /// <summary>Lays a styled box with three words in it out inside a 500-point block container.</summary>
-    static (float Width, float Height) BoxFor(string declarations) {
+    static ( float Width, float Height) BoxFor(string declarations) {
         var style =
             new BridgeFixture().Build(declarations, LengthContext.ForViewport(1000f, 500f));
 
@@ -211,7 +211,7 @@ public class LayoutStyleBridgeTests {
     [InlineData("min-width: max-content; width: 5px", 30f)]
     public void The_content_keywords_the_sizing_utilities_emit_move_the_box(
         string
-        declarations,
+            declarations,
         float expected
     ) {
         // ⚠ THE ASSERTION IS ON A BOX AND NOT ON A `StyleLength`, and that is the whole point of the
@@ -279,7 +279,7 @@ public class LayoutStyleBridgeTests {
     [InlineData("display: block", "Display", "Block")]
 
     // ⚠ Not an alias for `block`: a flow root establishes a block formatting context whatever its
-    // `overflow` says, which is the whole content of the keyword. See `Display.FlowRoot`.
+// `overflow` says, which is the whole content of the keyword. See `Display.FlowRoot`.
     [InlineData("display: flow-root", "Display", "FlowRoot")]
     [InlineData("float: left", "Float", "Left")]
     [InlineData("float: right", "Float", "Right")]
@@ -290,8 +290,8 @@ public class LayoutStyleBridgeTests {
         InlineData("clear: both", "Clear", "Both")]
 
     // ⚠ The logical keywords are NOT mapped, and the case below asserts that rather than leaving it
-    // to be discovered. `float: inline-start` resolving to `Left` would be right in an LTR container
-    // and wrong in an RTL one, in the same declaration — `FloatSide` is CSS 2.1 §9.5's physical
+// to be discovered. `float: inline-start` resolving to `Left` would be right in an LTR container
+// and wrong in an RTL one, in the same declaration — `FloatSide` is CSS 2.1 §9.5's physical
     // keyword set and does not flip with `direction`. An unmapped keyword leaves the initial value,
     // which is the documented behaviour two tests down.
     [InlineData("float: inline-start", "Float", "None")]
@@ -348,7 +348,7 @@ public class LayoutStyleBridgeTests {
                 "8px")
         );
         // Zero is a valid answer that happens to be invisible, so using it for "I did not
-        // understand this" turns one typo into a missing element with nothing said about it.
+// understand this" turns one typo into a missing element with nothing said about it.
         Assert.Equal(LayoutUnit.Auto, style.Dimensions[(int)Dimension.Width].Unit);
         Assert.False(style.MinDimensions[(int)Dimension.Width].IsDefined);
         Assert.Equal(8f, style.Dimensions[(int)Dimension.Height].Value, Tolerance);
@@ -356,7 +356,7 @@ public class LayoutStyleBridgeTests {
 
     [Fact]
     public void A_box_shorthand_arrives_already_expanded_into_longhands() {
-        // ⚠ ExCSS expands `margin`, `padding`, `border-width`, `gap` and `flex` while parsing,
+// ⚠ ExCSS expands `margin`, `padding`, `border-width`, `gap` and `flex` while parsing,
         // exactly as a browser does, so the cascade never sees those words. The bridge was first
         // written to expand them itself and its tests said every one of those paths was dead.
         var four =
@@ -377,13 +377,13 @@ public class LayoutStyleBridgeTests {
     [Fact]
     public void A_shorthand_written_after_a_longhand_wins_because_it_expanded_first() {
         // The question that decides whether expansion-on-parse is enough. A browser gives 8px here;
-        // by the time the cascade runs this is two `margin-left` declarations and the later one
+// by the time the cascade runs this is two `margin-left` declarations and the later one
         // wins, so document order does the work and the bridge needs no notion of it.
         var later = new BridgeFixture().Build("margin-left: 0px; margin: 8px");
         Assert.Equal(8f, later.Margin[(int)Edge.Left].Value, Tolerance);
 
         var
-        earlier = new BridgeFixture().Build("margin: 8px; margin-left: 0px");
+            earlier = new BridgeFixture().Build("margin: 8px; margin-left: 0px");
         Assert.Equal(
             0f,
             earlier
@@ -418,7 +418,7 @@ public class LayoutStyleBridgeTests {
         Assert.Equal(
             3f,
             style.Position
-            [(int)Edge.All].Value,
+                [(int)Edge.All].Value,
             Tolerance
         );
         Assert.Equal(7f, style.Position[(int)Edge.Top].Value, Tolerance);

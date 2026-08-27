@@ -245,12 +245,8 @@ public class MeshletPageBuilderTests {
         var input = Shapes.Sphere(3);
         var mesh = MeshletBuilder.Build(input);
 
-        var thrown = Assert.Throws<ArgumentException>(() => MeshletPageBuilder.Build(
-                mesh,
-                input.Positions,
-                [],
-                new() { PageSize = 1024 }
-            )
+        var thrown = Assert.Throws<ArgumentException>(
+            () => MeshletPageBuilder.Build(mesh, input.Positions, [], new() { PageSize = 1024 })
         );
 
         Assert.Contains("page is 1024", thrown.Message, StringComparison.Ordinal);

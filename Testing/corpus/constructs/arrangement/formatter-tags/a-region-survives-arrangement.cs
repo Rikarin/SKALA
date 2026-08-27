@@ -13,11 +13,6 @@ public class ARegionSurvivesArrangement {
     private System.Int32 Width() { return 3; }
     // @formatter:on
 
-    public int New() {
-        return 2;
-    }
-
-    public List<int> Other() {
-        return new List<int>();
-    }
+    public int New() { return 2; }
+    public List<int> Other() { return new List<int>(); }
 }

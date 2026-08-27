@@ -13,19 +13,24 @@
 // limitations under the License.
 
 
+
 // General-purpose type; not all features are used here.
 // ReSharper disable MemberCanBePrivate.Global
 // ReSharper disable MemberCanBeProtected.Global
 
 namespace Serilog.Context;
 
-class EnricherStack : IEnumerable<ILogEventEnricher> {
+class EnricherStack : IEnumerable<ILogEventEnricher>
+{
     readonly EnricherStack? _under;
     readonly ILogEventEnricher? _top;
 
-    EnricherStack() { }
+    EnricherStack()
+    {
+    }
 
-    EnricherStack(EnricherStack under, ILogEventEnricher top) {
+    EnricherStack(EnricherStack under, ILogEventEnricher top)
+    {
         _under = Guard.AgainstNull(under);
         Count = under.Count + 1;
         _top = top;
@@ -47,18 +52,21 @@ class EnricherStack : IEnumerable<ILogEventEnricher> {
 
     public ILogEventEnricher Top => _top!;
 
-    internal struct Enumerator : IEnumerator<ILogEventEnricher> {
+    internal struct Enumerator : IEnumerator<ILogEventEnricher>
+    {
         readonly EnricherStack _stack;
         EnricherStack _top;
         ILogEventEnricher? _current;
 
-        public Enumerator(EnricherStack stack) {
+        public Enumerator(EnricherStack stack)
+        {
             _stack = stack;
             _top = stack;
             _current = null;
         }
 
-        public bool MoveNext() {
+        public bool MoveNext()
+        {
             if (_top.IsEmpty)
                 return false;
             _current = _top.Top;
@@ -66,7 +74,8 @@ class EnricherStack : IEnumerable<ILogEventEnricher> {
             return true;
         }
 
-        public void Reset() {
+        public void Reset()
+        {
             _top = _stack;
             _current = null;
         }
@@ -75,6 +84,8 @@ class EnricherStack : IEnumerable<ILogEventEnricher> {
 
         object IEnumerator.Current => _current!;
 
-        public void Dispose() { }
+        public void Dispose()
+        {
+        }
     }
 }

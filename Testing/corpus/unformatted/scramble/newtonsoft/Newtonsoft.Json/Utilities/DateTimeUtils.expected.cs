@@ -1,5 +1,4 @@
 // skala-oracle: resharper=2025.2.6 config=sha256:98ff52570e019fac profile=SkalaFormatOnly generated=2026-08-27
-
 #region License
 
 // Copyright (c) 2007 James Newton-King
@@ -31,7 +30,7 @@ using System;
 using System.IO;
 using System.Xml;
 using System
-.Globalization;
+    .Globalization;
 
 namespace Newtonsoft.Json.Utilities {
     internal static class DateTimeUtils {
@@ -46,7 +45,7 @@ namespace Newtonsoft.Json.Utilities {
         private const int DaysPerYear = 365;
 
         private const long
-        TicksPerDay = 864000000000L;
+            TicksPerDay = 864000000000L;
 
         private static readonly int[] DaysToMonth365;
         private static readonly int[] DaysToMonth366;
@@ -128,7 +127,7 @@ namespace Newtonsoft.Json.Utilities {
         private static DateTime
             SwitchToLocalTime(DateTime value) {
             switch (value.Kind
-            ) {
+                   ) {
                 case DateTimeKind.Unspecified:
                     return new DateTime(value.Ticks, DateTimeKind.Local);
                 case DateTimeKind.Utc:
@@ -167,7 +166,7 @@ namespace Newtonsoft.Json.Utilities {
 
         private static long ToUniversalTicks(DateTime dateTime, TimeSpan offset) {
             // special case min and max value
-            // they never have a timezone appended to avoid issues
+// they never have a timezone appended to avoid issues
             if
                 (dateTime.Kind == DateTimeKind.Utc || dateTime == DateTime.MaxValue || dateTime == DateTime.MinValue) {
                 return dateTime.Ticks;
@@ -326,14 +325,14 @@ namespace Newtonsoft.Json.Utilities {
             }
 
             DateTime
-            d = new DateTime(
-                dateTimeParser.Year,
-                dateTimeParser.Month,
-                dateTimeParser.Day,
-                dateTimeParser.Hour,
-                dateTimeParser.Minute,
-                dateTimeParser.Second
-            );
+                d = new DateTime(
+                    dateTimeParser.Year,
+                    dateTimeParser.Month,
+                    dateTimeParser.Day,
+                    dateTimeParser.Hour,
+                    dateTimeParser.Minute,
+                    dateTimeParser.Second
+                );
             d
                 = d.AddTicks(dateTimeParser.Fraction);
             if (is24Hour) {
@@ -346,7 +345,7 @@ namespace Newtonsoft.Json.Utilities {
 
         internal static bool TryParseDateTime(
             StringReference
-            s,
+                s,
             DateTimeZoneHandling dateTimeZoneHandling,
             string? dateFormatString,
             CultureInfo culture,
@@ -530,7 +529,7 @@ namespace Newtonsoft.Json.Utilities {
             } else {
                 offset = TimeSpan.Zero;
                 index = text
-                    .Length
+                        .Length
                     - 2;
             }
 
@@ -663,7 +662,7 @@ namespace Newtonsoft.Json.Utilities {
             CultureInfo culture
         ) {
             if (StringUtils.IsNullOrEmpty(formatString)
-            ) {
+               ) {
                 char[] chars = new char[
                     64];
                 int pos = WriteDateTimeString(
@@ -877,7 +876,7 @@ namespace Newtonsoft.Json.Utilities {
             n -= y4 * DaysPer4Years;
             // y1 = number of whole years within 4-year period
             int
-            y1 = n / DaysPerYear;
+                y1 = n / DaysPerYear;
             // Last year has an extra day, so decrement result if 4
             if
                 (y1 == 4) {
@@ -895,7 +894,7 @@ namespace Newtonsoft.Json.Utilities {
                 = y1 == 3 && (y4 != 24 || y100 == 3);
             int[] days
                 = leapYear ? DaysToMonth366 : DaysToMonth365;
-            // All months have less than 32 days, so n >> 5 is a good conservative
+// All months have less than 32 days, so n >> 5 is a good conservative
             // estimate for the month
 
             int m = n >> 5 + 1;

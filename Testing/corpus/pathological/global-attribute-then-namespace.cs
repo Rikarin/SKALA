@@ -2,4 +2,5 @@
 
 namespace N;
 
-class C { }
+class C {
+}

@@ -30,5 +30,6 @@ public class VarRefused {
         Console.WriteLine(uninitialised);
     }
 
-    public void Run() { }
+    public void Run() {
+    }
 }

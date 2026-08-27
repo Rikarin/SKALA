@@ -53,11 +53,8 @@ public sealed record SystemPlacement(Type SystemType, SystemPhase Phase, int Ord
 ///         second.
 ///     </para>
 ///     <para>
-///         ⚠
-///         <b>
-///             There are no <c>DependsOn</c> edges here and that is not an omission to be fixed
-///             later.
-///         </b> Those come from <see cref="SystemAccess.ConflictsWith" />, and an undeclared
+///         ⚠ <b>There are no <c>DependsOn</c> edges here and that is not an omission to be fixed
+///         later.</b> Those come from <see cref="SystemAccess.ConflictsWith" />, and an undeclared
 ///         access conflicts with everything — so guessing at it would not produce a cautious answer,
 ///         it would produce a confident wrong one.
 ///     </para>
@@ -99,7 +96,8 @@ public sealed class SystemGraph {
     readonly Dictionary<SystemPhase, List<SystemNode>> byPhase = [];
 
     /// <summary>The phases that have systems in them, in execution order.</summary>
-    public IEnumerable<SystemPhase> Phases => Enum.GetValues<SystemPhase>().Where(phase => byPhase.ContainsKey(phase));
+    public IEnumerable<SystemPhase> Phases =>
+        Enum.GetValues<SystemPhase>().Where(phase => byPhase.ContainsKey(phase));
 
     /// <summary>The systems in a phase, in execution order.</summary>
     /// <param name="phase">The phase.</param>
@@ -215,9 +213,7 @@ public sealed class SystemGraph {
         return new(placements, unsatisfied);
     }
 
-    /// <summary>
-    ///     Which phase a system type belongs to. Without an attribute, <see cref="SystemPhase.Update" />.
-    /// </summary>
+    /// <summary>Which phase a system type belongs to. Without an attribute, <see cref="SystemPhase.Update" />.</summary>
     static SystemPhase PhaseOf(Type systemType) =>
         systemType.GetCustomAttribute<UpdateInGroupAttribute>(inherit: true)?.Phase ?? SystemPhase.Update;
 
@@ -369,15 +365,8 @@ public sealed class SystemGraph {
             text.Append("  subgraph cluster_").Append(phase).Append(" {\n    label=\"").Append(phase).Append("\";\n");
 
             foreach (var node in InPhase(phase)) {
-                text.Append("    \"")
-                    .Append(phase)
-                    .Append('.')
-                    .Append(node.Name)
-                    .Append("\" [label=\"")
-                    .Append(node.Name)
-                    .Append("\\n")
-                    .Append(node.Access)
-                    .Append("\"];\n");
+                text.Append("    \"").Append(phase).Append('.').Append(node.Name).Append("\" [label=\"")
+                    .Append(node.Name).Append("\\n").Append(node.Access).Append("\"];\n");
             }
 
             text.Append("  }\n");
@@ -388,15 +377,8 @@ public sealed class SystemGraph {
 
             foreach (var node in nodes) {
                 foreach (var dependency in node.DependsOn) {
-                    text.Append("  \"")
-                        .Append(phase)
-                        .Append('.')
-                        .Append(nodes[dependency].Name)
-                        .Append("\" -> \"")
-                        .Append(phase)
-                        .Append('.')
-                        .Append(node.Name)
-                        .Append("\";\n");
+                    text.Append("  \"").Append(phase).Append('.').Append(nodes[dependency].Name)
+                        .Append("\" -> \"").Append(phase).Append('.').Append(node.Name).Append("\";\n");
                 }
             }
         }
@@ -415,12 +397,7 @@ public sealed class SystemGraph {
             text.Append("  subgraph ").Append(phase).Append('\n');
 
             foreach (var node in nodes) {
-                text.Append("    ")
-                    .Append(phase)
-                    .Append('_')
-                    .Append(node.Name)
-                    .Append('[')
-                    .Append(node.Name)
+                text.Append("    ").Append(phase).Append('_').Append(node.Name).Append('[').Append(node.Name)
                     .Append("]\n");
             }
 
@@ -428,15 +405,8 @@ public sealed class SystemGraph {
 
             foreach (var node in nodes) {
                 foreach (var dependency in node.DependsOn) {
-                    text.Append("  ")
-                        .Append(phase)
-                        .Append('_')
-                        .Append(nodes[dependency].Name)
-                        .Append(" --> ")
-                        .Append(phase)
-                        .Append('_')
-                        .Append(node.Name)
-                        .Append('\n');
+                    text.Append("  ").Append(phase).Append('_').Append(nodes[dependency].Name).Append(" --> ")
+                        .Append(phase).Append('_').Append(node.Name).Append('\n');
                 }
             }
         }

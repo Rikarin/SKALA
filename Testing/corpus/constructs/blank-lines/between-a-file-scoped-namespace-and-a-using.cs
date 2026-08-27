@@ -1,5 +1,5 @@
 namespace N;
-
 using System;
 
-class C { }
+class C {
+}

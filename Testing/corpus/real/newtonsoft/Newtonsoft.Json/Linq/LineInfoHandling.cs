@@ -1,5 +1,4 @@
 ﻿#region License
-
 // Copyright (c) 2007 James Newton-King
 //
 // Permission is hereby granted, free of charge, to any person
@@ -22,21 +21,22 @@
 // WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 // OTHER DEALINGS IN THE SOFTWARE.
-
 #endregion
 
-namespace Newtonsoft.Json.Linq {
+namespace Newtonsoft.Json.Linq
+{
     /// <summary>
-    ///     Specifies how line information is handled when loading JSON.
+    /// Specifies how line information is handled when loading JSON.
     /// </summary>
-    public enum LineInfoHandling {
+    public enum LineInfoHandling
+    {
         /// <summary>
-        ///     Ignore line information.
+        /// Ignore line information.
         /// </summary>
         Ignore = 0,
 
         /// <summary>
-        ///     Load line information.
+        /// Load line information.
         /// </summary>
         Load = 1
     }

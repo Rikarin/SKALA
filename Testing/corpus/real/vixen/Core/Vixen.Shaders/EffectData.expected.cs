@@ -226,10 +226,8 @@ public sealed record EffectParameterData(
 /// </summary>
 /// <remarks>
 ///     <para>
-///         <strong>
-///             This is what makes "zero runtime shader compilation" a structural claim rather
-///             than a policy.
-///         </strong> Raven's own <c>.rvnfx</c> already holds bytecode and reflection —
+///         <strong>This is what makes "zero runtime shader compilation" a structural claim rather
+///         than a policy.</strong> Raven's own <c>.rvnfx</c> already holds bytecode and reflection —
 ///         but <c>CompiledEffectReader</c> lives in the compiler assembly, so a runtime that read one
 ///         would link the parser, the lowerer and both backends. Every tier below the in-memory
 ///         dictionary reads <em>this</em> instead: the disk cache, the baked bundle and the answer

@@ -1,5 +1,4 @@
 // skala-oracle: resharper=2025.2.6 config=sha256:98ff52570e019fac profile=SkalaFormatOnly generated=2026-08-27
-
 #region License
 
 // Copyright (c) 2007 James Newton-King
@@ -32,29 +31,29 @@
 
 using System;
 using Newtonsoft
-.Json.Utilities;
+    .Json.Utilities;
 
 namespace Newtonsoft
     .Json.Linq {
     /// <summary>
-    ///     Represents a reader that provides fast, non-cached, forward-only access to serialized JSON data.
+    /// Represents a reader that provides fast, non-cached, forward-only access to serialized JSON data.
     /// </summary>
     public class JTokenReader : JsonReader, IJsonLineInfo {
         private readonly JToken _root;
 
         private string?
-        _initialPath;
+            _initialPath;
 
         private JToken? _parent;
         private JToken? _current;
 
         /// <summary>
-        ///     Gets the <see cref="JToken" /> at the reader's current position.
+        /// Gets the <see cref="JToken"/> at the reader's current position.
         /// </summary>
         public JToken? CurrentToken => _current;
 
         /// <summary>
-        ///     Initializes a new instance of the <see cref="JTokenReader" /> class.
+        /// Initializes a new instance of the <see cref="JTokenReader"/> class.
         /// </summary>
         /// <param name="token">The token to read from.</param>
         public JTokenReader(JToken token) {
@@ -63,22 +62,20 @@ namespace Newtonsoft
         }
 
         /// <summary>
-        ///     Initializes a new instance of the <see cref="JTokenReader" /> class.
+        /// Initializes a new instance of the <see cref="JTokenReader"/> class.
         /// </summary>
         /// <param name="token">The token to read from.</param>
-        /// <param name="initialPath">
-        ///     The initial path of the token. It is prepended to the returned <see cref="Path" />.
-        /// </param>
+        /// <param name="initialPath">The initial path of the token. It is prepended to the returned <see cref="Path"/>.</param>
         public JTokenReader(JToken token, string initialPath)
             : this(token) {
             _initialPath = initialPath;
         }
 
         /// <summary>
-        ///     Reads the next JSON token from the underlying <see cref="JToken" />.
+        /// Reads the next JSON token from the underlying <see cref="JToken"/>.
         /// </summary>
         /// <returns>
-        ///     <c>true</c> if the next token was read successfully; <c>false</c> if there are no more tokens to read.
+        /// <c>true</c> if the next token was read successfully; <c>false</c> if there are no more tokens to read.
         /// </returns>
         public override bool Read
             () {
@@ -88,7 +85,7 @@ namespace Newtonsoft
                 }
 
                 if (_current is
-                    JContainer container
+                        JContainer container
                     && _parent != container) {
                     return ReadInto(container);
                 } else {
@@ -114,7 +111,7 @@ namespace Newtonsoft
             }
 
             JToken? next = t.Next;
-            if ((next == null || next == t) || t == t.Parent!.Last) {
+            if ((next == null || next == t) || t == t.Parent !.Last) {
                 if (t.Parent == null) {
                     return ReadToEnd()
                         ;
@@ -188,8 +185,7 @@ namespace Newtonsoft
         private void SetToken(JToken token) {
             switch (token.Type) {
                 case JTokenType.Object:
-                    SetToken(JsonToken.StartObject);
-                    break;
+                    SetToken(JsonToken.StartObject); break;
                 case JTokenType.Array
                     :
                     SetToken(JsonToken.StartArray);
@@ -209,8 +205,7 @@ namespace Newtonsoft
                     SetToken(JsonToken.Comment, ((JValue)token).Value);
                     break;
                 case JTokenType.Integer:
-                    SetToken(JsonToken.Integer, ((JValue)token).Value);
-                    break;
+                    SetToken(JsonToken.Integer, ((JValue)token).Value); break;
                 case JTokenType.Float:
                     SetToken(JsonToken.Float, ((JValue)token).Value);
 
@@ -312,7 +307,7 @@ namespace Newtonsoft
         int IJsonLineInfo.LinePosition {
             get {
                 if (CurrentState == State.Start
-                ) {
+                   ) {
                     return 0
                         ;
                 }
@@ -327,7 +322,7 @@ namespace Newtonsoft
         }
 
         /// <summary>
-        ///     Gets the path of the current JSON token.
+        /// Gets the path of the current JSON token. 
         /// </summary>
         public override string Path {
             get {
@@ -338,7 +333,7 @@ namespace Newtonsoft
                 }
 
                 if (!StringUtils.IsNullOrEmpty(_initialPath)
-                ) {
+                   ) {
                     if (
                         StringUtils.IsNullOrEmpty(path)) {
                         return _initialPath;

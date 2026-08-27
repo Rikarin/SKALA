@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 using
-System.Text.RegularExpressions;
+    System.Text.RegularExpressions;
 using Vixen.Core.Mathematics;
 using Vixen.Foliage;
 using Xunit;
@@ -44,10 +44,10 @@ public sealed class FoliageCullParityTests {
         for (var at = new DirectoryInfo(directory);
              at is not null;
              at
-             = at.Parent) {
+                 = at.Parent) {
             var candidate = Path.Combine(at.FullName, "Raven", "Library", "Terrain", "FoliageCull.rvn");
             if (File
-                    .Exists(candidate)) {
+                .Exists(candidate)) {
                 return File.ReadAllText(candidate);
             }
         }
@@ -140,19 +140,19 @@ public sealed class FoliageCullParityTests {
     /// <summary>Both phases of the dispatch, over one batch. Level, then the run each survivor lands in.</summary>
     static (
         int[] Counts, List<int>[] Runs, float[] Fades) Dispatch(
-        List<FoliageInstance> instances,
-        in FoliageCullBatchRecord batch,
-        in FoliageCullViewRecord view
-    ) {
+            List<FoliageInstance> instances,
+            in FoliageCullBatchRecord batch,
+            in FoliageCullViewRecord view
+        ) {
         var counts = new int[MaxLevels
         ];
-        var runs = new List<int>[MaxLevels];
+        var runs = new List<int> [MaxLevels];
         var fades = new float[instances.Count];
 
         for (var level = 0;
              level < MaxLevels;
              level
-             ++) {
+                 ++) {
             runs[level] = [];
         }
 
@@ -237,7 +237,7 @@ public sealed class FoliageCullParityTests {
     }
 
     static (FoliageCullBatchRecord Batch
-        , FoliageCullViewRecord View, InstanceCullSettings Settings, float[] Lods)
+        , FoliageCullViewRecord View, InstanceCullSettings Settings, float[] Lods )
         Fixture(float density = 1f, params float[] lods) {
         var type = Tree;
         var frustum = Looking();
@@ -267,15 +267,15 @@ public sealed class FoliageCullParityTests {
             };
 
         var settings = new InstanceCullSettings {
-            Frustum =
-                frustum,
-            ViewPosition = viewPosition,
-            StartCullDistance = type.StartCullDistance,
-            EndCullDistance
-                = type.EndCullDistance,
-            DensityScale = density,
-            Fade = true
-        }
+                Frustum =
+                    frustum,
+                ViewPosition = viewPosition,
+                StartCullDistance = type.StartCullDistance,
+                EndCullDistance
+                    = type.EndCullDistance,
+                DensityScale = density,
+                Fade = true
+            }
             ;
         return (batch
             , FoliageCullViewRecord.Of(in frustum, viewPosition), settings, lods);
@@ -364,7 +364,7 @@ public sealed class FoliageCullParityTests {
 
         var at = 0;
         for (var level = 0; level < MaxLevels; level++) {
-            // The shader's own arithmetic: base is the sum of the earlier levels' counts.
+// The shader's own arithmetic: base is the sum of the earlier levels' counts.
             var expected
                 = counts.Take(level).Sum();
             Assert
@@ -470,7 +470,7 @@ public sealed class FoliageCullParityTests {
     public void TheShaderStillDividesByTheCastMaximum() {
         Assert.Matches(
             new
-            Regex(@"UnitScale\s*=\s*4294967296f"),
+                Regex(@"UnitScale\s*=\s*4294967296f"),
             Source()
         );
     }

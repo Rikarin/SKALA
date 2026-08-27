@@ -78,7 +78,7 @@ public static class DistanceField {
             return new DistanceFieldBitmap(width, height, range, channels);
         } // Flattened finely relative to a pixel, because the field's own resolution is what decides
 
-        // how much of a curve is visible — the same argument the rasteriser makes.
+// how much of a curve is visible — the same argument the rasteriser makes.
         var edges = EdgeColoring.Colour(outline, OutlineFlattener.Flatten(outline, 0.05f / scale));
         var inside = GlyphRasterizer.Rasterize(
             outline,
@@ -87,16 +87,16 @@ public static class DistanceField {
             scale,
             origin
         ); // Which way the outline is wound, so "left of the edge" and "inside the shape" agree. Fonts
-        // differ, and a hole is wound the other way on purpose — which is exactly what makes a
-        // point inside it come out negative without anything special being said about holes.
+// differ, and a hole is wound the other way on purpose — which is exactly what makes a
+// point inside it come out negative without anything special being said about holes.
         var winding =
             Winding(edges); // ⚠ <b>Split by channel and precomputed once, because the inner loop runs a few million
-        // times.</b> Every pixel asks three questions and each one used to walk the whole edge list
-        // testing a mask, so two thirds of the work was reaching edges that could not answer — and
-        // each surviving edge then recomputed its own direction, its length and the reciprocal of
-        // both. None of that depends on the pixel. An icon of a hundred and fifty edges took 35ms to
-        // encode before this and 3ms after, which is the difference between an atlas that pays for
-        // itself on first sight and one that stalls the frame an icon first appears in.
+// times.</b> Every pixel asks three questions and each one used to walk the whole edge list
+// testing a mask, so two thirds of the work was reaching edges that could not answer — and
+// each surviving edge then recomputed its own direction, its length and the reciprocal of
+// both. None of that depends on the pixel. An icon of a hundred and fifty edges took 35ms to
+// encode before this and 3ms after, which is the difference between an atlas that pays for
+// itself on first sight and one that stalls the frame an icon first appears in.
         var red = Prepare(edges, EdgeChannels.Red);
         var green = Prepare(edges, EdgeChannels.Green);
         var blue = Prepare(edges, EdgeChannels.Blue);
@@ -107,11 +107,11 @@ public static class DistanceField {
                     ((x + 0.5f) / scale) + origin.X,
                     ((height - 1 - y + 0.5f) / scale) + origin.Y
                 ); // ⚠ <b>Each channel carries its own sign, and that is the mechanism rather than a
-                // detail.</b> Taking one sign from the fill and applying it to all three makes the
-                // three values differ only in magnitude, so their median can never disagree with a
-                // single channel about which side of the shape a point is on — which is the whole of
-                // what the median was for. The first version did exactly that and reconstructed a
-                // square's corner no better than a plain field.
+// detail.</b> Taking one sign from the fill and applying it to all three makes the
+// three values differ only in magnitude, so their median can never disagree with a
+// single channel about which side of the shape a point is on — which is the whole of
+// what the median was for. The first version did exactly that and reconstructed a
+// square's corner no better than a plain field.
                 var redDistance = Nearest(red, point, winding);
                 var greenDistance = Nearest(green, point, winding);
                 var blueDistance = Nearest(
@@ -119,9 +119,9 @@ public static class DistanceField {
                     point,
                     winding
                 ); // ⚠ The fill still settles the *overall* answer. A sign taken from an edge's
-                // orientation is wrong wherever two contours overlap, and the rasteriser already had
-                // to be right about that — so where the two disagree, the three channels flip
-                // together and keep the structure that sharpens the corner.
+// orientation is wrong wherever two contours overlap, and the rasteriser already had
+// to be right about that — so where the two disagree, the three channels flip
+// together and keep the structure that sharpens the corner.
                 if (inside[x, y] >= 0.5f != Median(redDistance, greenDistance, blueDistance) >= 0) {
                     redDistance = -redDistance;
                     greenDistance = -greenDistance;
@@ -159,11 +159,8 @@ public static class DistanceField {
     ///     between them rather than the distance.
     /// </summary>
     /// <remarks>
-    ///     ⚠
-    ///     <b>
-    ///         Proportional and never absolute, because the same outline is encoded at a font's
-    ///         design units and at an icon's document pixels.
-    ///     </b> The two edges meeting at a corner are
+    ///     ⚠ <b>Proportional and never absolute, because the same outline is encoded at a font's
+    ///     design units and at an icon's document pixels.</b> The two edges meeting at a corner are
     ///     exactly equidistant from every point in its exterior wedge — that is what a corner is —
     ///     but they reach that point from opposite ends of themselves, so the arithmetic differs in
     ///     the last bit or two. A fixed epsilon would be the whole shape at one scale and nothing at
@@ -181,11 +178,8 @@ public static class DistanceField {
     ///         distance, so a distant edge's line cannot win.
     ///     </para>
     ///     <para>
-    ///         ⚠
-    ///         <b>
-    ///             Which of two equidistant edges wins is the corner, and picking the first of them
-    ///             drew a phantom bar across every icon.
-    ///         </b> Every point in the exterior wedge of a convex
+    ///         ⚠ <b>Which of two equidistant edges wins is the corner, and picking the first of them
+    ///         drew a phantom bar across every icon.</b> Every point in the exterior wedge of a convex
     ///         corner is equidistant from <i>both</i> edges that meet there, because both of them
     ///         clamp to the shared vertex — so the ordinary distance cannot separate them and whichever
     ///         happened to be listed first supplied the pseudo-distance for the whole wedge. Above a
@@ -199,11 +193,8 @@ public static class DistanceField {
     ///         notice because its band has nothing to bridge.
     ///     </para>
     ///     <para>
-    ///         ⚠
-    ///         <b>
-    ///             The tie goes to the edge most perpendicular to the point, which is msdfgen's
-    ///             <c>SignedDistance</c> ordering and not an invention here.
-    ///         </b> Of the two edges at a
+    ///         ⚠ <b>The tie goes to the edge most perpendicular to the point, which is msdfgen's
+    ///         <c>SignedDistance</c> ordering and not an invention here.</b> Of the two edges at a
     ///         corner, the one the point lies most nearly <i>alongside</i> is the one whose line is
     ///         being extended past its own end; the one it lies most nearly <i>off the side of</i> is
     ///         the one still describing a real boundary. Taking that one makes the median in the wedge
@@ -227,22 +218,22 @@ public static class DistanceField {
         var best = float.MaxValue;
         var bestSquared =
             float.MaxValue; // ⚠ Larger is worse, so <c>MaxValue</c> is "nothing has answered yet" for this as well —
-        // and a first edge that is exactly alongside its point still beats it.
+// and a first edge that is exactly alongside its point still beats it.
         var bestAlongside = float.MaxValue;
         var signed = 0f; // The tie's two bounds, kept rather than recomputed: they change only when the best does, and
-        // the comparison against them is the hottest line in the encoder.
+// the comparison against them is the hottest line in the encoder.
         var further = float.MaxValue;
         var nearer = float.MaxValue;
         foreach (var edge in edges) {
             // ⚠ <b>An exact rejection, not an approximate one.</b> Nothing on a segment can be nearer
-            // to a point than the distance to its midpoint less its half length, so an edge whose
-            // whole extent lies further away than the best so far cannot improve it and cannot reach
-            // the assignment below — which is what makes skipping it produce the identical field
-            // rather than a cheaper one. On the first edge `best` is <c>MaxValue</c> and the squared
-            // reach is infinite, so nothing is skipped before there is an answer to skip against.
-            //
-            // ⚠ Strictly further, because an edge exactly at the reach is exactly tied — and a tie is
-            // now an answer rather than a nuisance. A corner's second edge lands on this boundary.
+// to a point than the distance to its midpoint less its half length, so an edge whose
+// whole extent lies further away than the best so far cannot improve it and cannot reach
+// the assignment below — which is what makes skipping it produce the identical field
+// rather than a cheaper one. On the first edge `best` is <c>MaxValue</c> and the squared
+// reach is infinite, so nothing is skipped before there is an answer to skip against.
+//
+// ⚠ Strictly further, because an edge exactly at the reach is exactly tied — and a tie is
+// now an answer rather than a nuisance. A corner's second edge lands on this boundary.
             var toMiddle = point - edge.Middle;
             var reach = best + edge.HalfLength;
             if (toMiddle.LengthSquared() > reach * reach) {
@@ -254,26 +245,26 @@ public static class DistanceField {
                 0f,
                 1f
             ); // ⚠ The far endpoint is the stored one rather than <c>From + Direction</c>, so that two
-            // edges clamping to one shared vertex clamp to the <i>same</i> vertex. Reconstructing it
-            // by addition loses the last bit, which is enough to turn an exact tie into a near one —
-            // and the whole of the rule below is about what happens at that tie. The near end needs
-            // no such care: <c>t</c> is nought there and the addition is exact.
+// edges clamping to one shared vertex clamp to the <i>same</i> vertex. Reconstructing it
+// by addition loses the last bit, which is enough to turn an exact tie into a near one —
+// and the whole of the rule below is about what happens at that tie. The near end needs
+// no such care: <c>t</c> is nought there and the addition is exact.
             var closest = t >= 1f ? edge.To : edge.From + (t * edge.Direction);
             var offset = point - closest;
             var distanceSquared =
                 offset.LengthSquared(); // Clearly further than the best so far, which is the ordinary case and settles it before
-            // anything else is worked out.
+// anything else is worked out.
             if (distanceSquared > further) {
                 continue;
             } // How far the point lies <i>along</i> this edge past the nearest point on it: nought
 
-            // whenever the segment itself is what is nearest, and growing as the point goes round the
-            // corner. Kept un-normalised — the only moment it is compared is a tie, where the two
-            // distances are equal by definition and dividing both by the same number decides nothing.
-            // ⚠ Worth a sentence, because normalising it took a square root and a divide onto a path
-            // that runs a few million times and cost 28% of the encode where the whole rule costs 11.
-            // Reconstructing the far endpoint arithmetically to lose the branch above was measured
-            // too, and is 6% <i>slower</i> than the load it replaces — the branch predicts.
+// whenever the segment itself is what is nearest, and growing as the point goes round the
+// corner. Kept un-normalised — the only moment it is compared is a tie, where the two
+// distances are equal by definition and dividing both by the same number decides nothing.
+// ⚠ Worth a sentence, because normalising it took a square root and a divide onto a path
+// that runs a few million times and cost 28% of the encode where the whole rule costs 11.
+// Reconstructing the far endpoint arithmetically to lose the branch above was measured
+// too, and is 6% <i>slower</i> than the load it replaces — the branch predicts.
             var alongside = t > 0f && t < 1f
                 ? 0f
                 : MathF.Abs(Vector2.Dot(edge.Direction, offset))
@@ -304,7 +295,7 @@ public static class DistanceField {
             var direction = edge.To - edge.From;
             var lengthSquared =
                 direction.LengthSquared(); // A zero-length edge has no direction to measure against, and dropping it here is what
-            // the per-pixel loop used to do on every pixel.
+// the per-pixel loop used to do on every pixel.
             if (lengthSquared <= 0f) {
                 continue;
             }

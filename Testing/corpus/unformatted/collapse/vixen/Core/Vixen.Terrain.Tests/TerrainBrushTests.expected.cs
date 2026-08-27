@@ -65,7 +65,7 @@ public sealed class TerrainBrushTests {
             BrushFalloff.Evaluate(kind, 5f),
             5
         ); // NaN reads as "off the end" rather than propagating into a heightfield, where one NaN
-        // sample spreads to every neighbour the next time anything smooths.
+// sample spreads to every neighbour the next time anything smooths.
         Assert.Equal(0f, BrushFalloff.Evaluate(kind, float.NaN), 5);
     }
 
@@ -97,8 +97,8 @@ public sealed class TerrainBrushTests {
     [Fact]
     public void ThePlateauIsFlatAndFalloffMeasuresTheBandNotThePlateau() {
         // Falloff 0.25 means the outer quarter of the radius falls off, so everything inside three
-        // quarters of it is full strength. Reading the setting the other way round would make this
-        // the softest part of the brush.
+// quarters of it is full strength. Reading the setting the other way round would make this
+// the softest part of the brush.
         var brush = Brush(radius: 4f, falloff: 0.25f);
         var stamp = new BrushStamp(Vector2.Zero);
         Assert.Equal(1f, brush.WeightAt(new(0f, 0f), stamp), 5);
@@ -179,7 +179,7 @@ public sealed class TerrainBrushTests {
             new(new(10f, 20f)),
             mask
         ); // The corner of the stamp's square, which a disc would never have reached — an alpha's
-        // footprint is the square and not the inscribed circle.
+// footprint is the square and not the inscribed circle.
         Assert.Empty(mask.Samples);
         mask.Samples.Clear();
         brush.WeightAt(new(12f, 22f), new(new(10f, 20f)), mask);
@@ -196,7 +196,7 @@ public sealed class TerrainBrushTests {
             PatternScale = 4f
         };
         var
-        mask = new RecordingMask(); // The same world point read by two stamps in different places must land on the same texel.
+            mask = new RecordingMask(); // The same world point read by two stamps in different places must land on the same texel.
         brush.WeightAt(new(6f, 2f), new(new(5f, 2f)), mask);
         brush.WeightAt(new(6f, 2f), new(new(7f, 2f)), mask);
         Assert.Equal(2, mask.Samples.Count);
@@ -245,8 +245,8 @@ public sealed class TerrainBrushTests {
             new(14f, 24f),
             circle.Maximum
         ); // A square stamp turned 45° reaches √2 radii into its corners, and the bound is the same
-        // whichever way it is turned rather than tight for one angle and wrong for the next.
-        var alpha = (Brush(radius: 4f) with { Shape = BrushShape.Alpha }).FootprintOf(stamp);
+// whichever way it is turned rather than tight for one angle and wrong for the next.
+        var alpha = (Brush(radius: 4f)with { Shape = BrushShape.Alpha }).FootprintOf(stamp);
         Assert.Equal(4f * MathF.Sqrt(2f), alpha.Maximum.X - 10f, 4);
     }
 

@@ -55,7 +55,7 @@ public static class TraceExporter {
             writer.WriteEndObject();
             foreach (var sample in thread.Samples) {
                 // "X" is a complete event: one record with a duration, rather than the begin/end
-                // pair that has to be balanced. A truncated ring cannot produce an unmatched half.
+// pair that has to be balanced. A truncated ring cannot produce an unmatched half.
                 writer.WriteStartObject();
                 writer.WriteString("name", sample.Key.Name);
                 writer.WriteString("ph", "X");
@@ -106,7 +106,7 @@ public static class TraceExporter {
 
         var builder = new StringBuilder();
         builder.AppendLine(CultureInfo.InvariantCulture, $"{"Scope",-40} {"Calls",8} {"Total ms",12} {"Mean ms",12}");
-        foreach (var (key, (count, ticks)) in totals.OrderByDescending(static entry => entry.Value.Ticks)) {
+        foreach (var (key, (count, ticks))in totals.OrderByDescending(static entry => entry.Value.Ticks)) {
             var total = ticks * 1000.0 / Stopwatch.Frequency;
             builder.AppendLine(
                 CultureInfo.InvariantCulture,
@@ -117,6 +117,6 @@ public static class TraceExporter {
         return builder.ToString();
     } // Stopwatch ticks are not the same unit on every platform, and a trace viewer wants microseconds
 
-    // from an arbitrary origin.
+// from an arbitrary origin.
     static double ToMicroseconds(long ticks) => ticks * 1_000_000.0 / Stopwatch.Frequency;
 }

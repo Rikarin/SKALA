@@ -1,5 +1,4 @@
 ﻿#region License
-
 // Copyright (c) 2007 James Newton-King
 //
 // Permission is hereby granted, free of charge, to any person
@@ -22,7 +21,6 @@
 // WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 // OTHER DEALINGS IN THE SOFTWARE.
-
 #endregion
 
 #if !(PORTABLE || DNXCORE50 || PORTABLE40)
@@ -38,25 +36,21 @@ using NUnit.Framework;
 #endif
 using Newtonsoft.Json.Utilities;
 
-namespace Newtonsoft.Json.Tests.Utilities {
+namespace Newtonsoft.Json.Tests.Utilities
+{
     [TestFixture]
-    public class ReflectionUtilsTests : TestFixtureBase {
+    public class ReflectionUtilsTests : TestFixtureBase
+    {
         [Test]
-        public void GetTypeNameSimpleForGenericTypes() {
+        public void GetTypeNameSimpleForGenericTypes()
+        {
             string typeName;
 
             typeName = ReflectionUtils.GetTypeName(typeof(IList<Type>), TypeNameAssemblyFormatHandling.Simple, null);
             Assert.AreEqual("System.Collections.Generic.IList`1[[System.Type, mscorlib]], mscorlib", typeName);
 
-            typeName = ReflectionUtils.GetTypeName(
-                typeof(IDictionary<IList<Type>, IList<Type>>),
-                TypeNameAssemblyFormatHandling.Simple,
-                null
-            );
-            Assert.AreEqual(
-                "System.Collections.Generic.IDictionary`2[[System.Collections.Generic.IList`1[[System.Type, mscorlib]], mscorlib],[System.Collections.Generic.IList`1[[System.Type, mscorlib]], mscorlib]], mscorlib",
-                typeName
-            );
+            typeName = ReflectionUtils.GetTypeName(typeof(IDictionary<IList<Type>, IList<Type>>), TypeNameAssemblyFormatHandling.Simple, null);
+            Assert.AreEqual("System.Collections.Generic.IDictionary`2[[System.Collections.Generic.IList`1[[System.Type, mscorlib]], mscorlib],[System.Collections.Generic.IList`1[[System.Type, mscorlib]], mscorlib]], mscorlib", typeName);
 
             typeName = ReflectionUtils.GetTypeName(typeof(IList<>), TypeNameAssemblyFormatHandling.Simple, null);
             Assert.AreEqual("System.Collections.Generic.IList`1, mscorlib", typeName);

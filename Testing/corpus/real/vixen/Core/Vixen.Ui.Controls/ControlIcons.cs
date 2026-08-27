@@ -178,11 +178,8 @@ public static class ControlIcons {
         var points = new Vector2[7];
 
         for (var index = 0; index < points.Length; index++) {
-            var angle = MathF.PI + (index / (float)(points.Length - 1) * MathF.PI);
-            points[index] = new Vector2(
-                centre + (MathF.Cos(angle) * radius),
-                top + radius + (MathF.Sin(angle) * radius)
-            );
+            var angle = MathF.PI + (index / (float) (points.Length - 1) * MathF.PI);
+            points[index] = new Vector2(centre + (MathF.Cos(angle) * radius), top + radius + (MathF.Sin(angle) * radius));
         }
 
         Append(path, Stroke(points, 1.9f));

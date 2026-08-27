@@ -1,5 +1,4 @@
 #region License
-
 // Copyright (c) 2007 James Newton-King
 //
 // Permission is hereby granted, free of charge, to any person
@@ -22,10 +21,8 @@
 // WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 // OTHER DEALINGS IN THE SOFTWARE.
-
 #endregion
-
-using System; using System.Collections.Generic; using System.Text;
+using System;using System.Collections.Generic;using System.Text;
 #if DNXCORE50
 using Xunit;
 using Test = Xunit.FactAttribute;
@@ -33,14 +30,9 @@ using Assert = Newtonsoft.Json.Tests.XUnitAssert;
 #else
 using NUnit.Framework;
 #endif
-namespace Newtonsoft.Json.Tests.Documentation.Samples.Serializer {
-    [TestFixture]
-    public class MaxDepth : TestFixtureBase {
-        [Test]
-        public void Example() {
-            #region Usage
-
-            string json = @"[
+namespace Newtonsoft.Json.Tests.Documentation.Samples.Serializer{[TestFixture]public class MaxDepth:TestFixtureBase{[Test]public void Example(){
+#region Usage
+string json=@"[
               [
                 [
                   '1',
@@ -48,19 +40,7 @@ namespace Newtonsoft.Json.Tests.Documentation.Samples.Serializer {
                   'III'
                 ]
               ]
-            ]";
-            try {
-                JsonConvert.DeserializeObject<List<IList<IList<string>>>>(
-                    json,
-                    new JsonSerializerSettings { MaxDepth = 2 }
-                );
-            } catch (JsonReaderException ex) {
-                Console.WriteLine(
-                    ex.Message
-                ); // The reader's MaxDepth of 2 has been exceeded. Path '[0][0]', line 3, position 12.
-            }
-
-            #endregion
-        }
-    }
+            ]" ;try{JsonConvert.DeserializeObject<List<IList<IList<string>>>>(json,new JsonSerializerSettings{MaxDepth=2});}catch(JsonReaderException ex){Console.WriteLine(ex.Message); // The reader's MaxDepth of 2 has been exceeded. Path '[0][0]', line 3, position 12.
 }
+#endregion
+}}}

@@ -61,7 +61,7 @@ public static class InputActionAssetWriter {
             Line(builder, 2, "devices:");
 
             foreach (
-                     var requirement in scheme.Devices) {
+                var requirement in scheme.Devices) {
                 Item(builder, 3, "device", Name(requirement.Device));
 
                 if (requirement.Optional) {

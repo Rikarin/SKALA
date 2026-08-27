@@ -212,11 +212,8 @@ public sealed class FoliageScatterTests {
 
     /// <summary>Two draws from one hash are not correlated.</summary>
     /// <remarks>
-    ///     ⚠
-    ///     <b>
-    ///         Slicing the streams out of one hash's bits gives the yaw and the scale correlated low
-    ///         bits
-    ///     </b>, which shows up as every large tree facing the same way — a pattern an artist sees
+    ///     ⚠ <b>Slicing the streams out of one hash's bits gives the yaw and the scale correlated low
+    ///     bits</b>, which shows up as every large tree facing the same way — a pattern an artist sees
     ///     immediately and cannot describe. Re-hashing per stream is what avoids it.
     /// </remarks>
     [Fact]
@@ -232,8 +229,8 @@ public sealed class FoliageScatterTests {
             }
 
             large++; // ⚠ Which half of the circle it *faces*, from the forward vector — not from the
-            // quaternion's Y term, which for a yaw of θ is sin(θ/2) and is never negative over a
-            // full turn. That measures nothing and passes whatever the hash does.
+// quaternion's Y term, which for a yaw of θ is sin(θ/2) and is never negative over a
+// full turn. That measures nothing and passes whatever the hash does.
             if (Quaternion.Transform(Vector3.UnitZ, instance.Rotation).X >= 0f) {
                 largeAndTurned++;
             }
@@ -243,7 +240,7 @@ public sealed class FoliageScatterTests {
             large > 1_000,
             "half of four thousand should have been large."
         ); // Independent means about half of the large ones face each way. A correlated pair comes out
-        // near 0 or near 1.
+// near 0 or near 1.
         Assert.InRange(largeAndTurned / (float)large, 0.4f, 0.6f);
     }
 

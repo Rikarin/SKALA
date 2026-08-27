@@ -182,11 +182,8 @@ public sealed class ConsoleCommands {
     /// <exception cref="ArgumentNullException"><paramref name="register" /> is null.</exception>
     /// <remarks>
     ///     <para>
-    ///         ⚠
-    ///         <b>
-    ///             Because <c>[ConsoleCommand]</c> alone has never made a verb typable, and the
-    ///             count is what said so.
-    ///         </b> Water's six were the only ones in the tree — not because no
+    ///         ⚠ <b>Because <c>[ConsoleCommand]</c> alone has never made a verb typable, and the
+    ///         count is what said so.</b> Water's six were the only ones in the tree — not because no
     ///         other subsystem wanted verbs, but because reaching an attributed method needs
     ///         <see cref="RegisterFrom(Assembly)" />, which is
     ///         <see cref="RequiresUnreferencedCodeAttribute" /> and had no callers, so anybody who
@@ -353,7 +350,7 @@ public sealed class ConsoleCommands {
 
             var parameters =
                 method.GetParameters(); // Refused rather than skipped: a method somebody marked and got the shape wrong on is a
-            // command they expect to be able to type, and silence is the worst possible answer.
+// command they expect to be able to type, and silence is the worst possible answer.
             if (parameters.Length != 1 || parameters[0].ParameterType != typeof(ConsoleContext)) {
                 throw new InvalidOperationException(
                     $"[ConsoleCommand] {type.Name}.{method.Name} must be static and take one ConsoleContext."
@@ -369,7 +366,7 @@ public sealed class ConsoleCommands {
 
     void Remember(string line) {
         // A repeat of the last line is not worth a history entry — holding Up to find something is
-        // the thing history is for, and a run of identical entries defeats it.
+// the thing history is for, and a run of identical entries defeats it.
         if (history.Count > 0 && string.Equals(history[^1], line, StringComparison.Ordinal)) {
             return;
         }

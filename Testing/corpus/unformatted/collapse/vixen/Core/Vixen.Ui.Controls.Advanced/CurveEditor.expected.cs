@@ -61,14 +61,10 @@ public sealed partial class CurveEditor : Control {
 
     /// <inheritdoc />
     /// <remarks>
-    ///     ⚠
-    ///     <b>
-    ///         ARIA <c>application</c>, and it is a role with a cost that is worth paying
-    ///         here.
-    ///     </b> It tells assistive technology to stop intercepting the keyboard and pass every
+    ///     ⚠ <b>ARIA <c>application</c>, and it is a role with a cost that is worth paying
+    ///     here.</b> It tells assistive technology to stop intercepting the keyboard and pass every
     ///     key through, because this element has a keyboard model of its own that no generic widget
-    ///     vocabulary describes. That is exactly true of a direct-manipulation surface — a curve whose keys and
-    ///     tangents are dragged — and it
+    ///     vocabulary describes. That is exactly true of a direct-manipulation surface — a curve whose keys and tangents are dragged — and it
     ///     is exactly false of a text field, which is why <c>CodeEditor</c> is a <c>textbox</c>
     ///     instead. Unnamed by default: what this one is a view of is the application's sentence,
     ///     and it is usually the panel title above it.
@@ -183,7 +179,7 @@ public sealed partial class CurveEditor : Control {
             maximumValue = MathF.Max(maximumValue, key.Value);
         } // ⚠ A minimum span, because a constant curve has no height and a flat curve is exactly what
 
-        // somebody frames just before they start editing one.
+// somebody frames just before they start editing one.
         var width = MathF.Max(0.001f, maximumTime - minimumTime);
         var height = MathF.Max(0.001f, maximumValue - minimumValue);
         View = new Rectangle(minimumTime - (width * 0.1f), minimumValue - (height * 0.2f), width * 1.2f, height * 1.4f);
@@ -367,8 +363,8 @@ public sealed partial class CurveEditor : Control {
         var slope = outgoing
             ? key.OutTangent
             : key.InTangent; // The slope is in curve units; the handle is drawn in pixels, so the direction has to be
-        // converted through the view before it is normalised — otherwise a zoomed graph shows a
-        // horizontal tangent as a diagonal.
+// converted through the view before it is normalised — otherwise a zoomed graph shows a
+// horizontal tangent as a diagonal.
         var bounds = Bounds;
         var direction = new Vector2(
             (outgoing ? 1f : -1f) / MathF.Max(1e-6f, View.Width) * bounds.Width,
@@ -416,7 +412,7 @@ public sealed partial class CurveEditor : Control {
             return;
         } // The handles are tested before the keys, because a handle dragged all the way in sits on
 
-        // top of its own key and would otherwise be unreachable.
+// top of its own key and would otherwise be unreachable.
         if (active is { } current && current.Mode is TangentMode.Free or TangentMode.Broken) {
             foreach (var outgoing in (ReadOnlySpan<bool>)[false, true]) {
                 var point = HandlePoint(current, outgoing);
@@ -471,9 +467,7 @@ public sealed partial class CurveEditor : Control {
                 curve.Move(key, snapped.X, snapped.Y);
                 break;
             case CurveDrag.InHandle or CurveDrag.OutHandle
-                when active is { } handled:
-                Aim(handled, args, drag == CurveDrag.OutHandle);
-                break;
+                when active is { } handled: Aim(handled, args, drag == CurveDrag.OutHandle); break;
             default: break;
         }
     }

@@ -143,7 +143,7 @@ public static class BindingPlan {
 
             // Storage buffers last, after textures and samplers, for the same reason the uniform
             // block goes first: adding one must not renumber anything that already exists.
-            foreach (var kind in (IrBindingKind[])[
+            foreach (var kind in (IrBindingKind[]) [
                          IrBindingKind.Texture,
                          IrBindingKind.Sampler,
                          IrBindingKind.StorageBuffer,

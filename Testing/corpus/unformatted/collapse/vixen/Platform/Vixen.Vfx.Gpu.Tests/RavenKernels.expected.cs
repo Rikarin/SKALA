@@ -43,7 +43,7 @@ static class RavenKernels {
         foreach (var unit in generated) {
             if (unit is { Stage: ShaderStage.Compute, Binary: { } binary }) {
                 // The unit's name carries the declaration it came from and may carry more — a
-                // permutation suffix, for a shader that has any. The declaration is the prefix.
+// permutation suffix, for a shader that has any. The declaration is the prefix.
                 kernels[unit.Name] = binary;
             }
         }
@@ -55,7 +55,7 @@ static class RavenKernels {
     /// <param name="kernels">What <see cref="Compile" /> returned.</param>
     /// <param name="declaration">The shader declaration's name.</param>
     public static byte[] Of(Dictionary<string, byte[]> kernels, string declaration) {
-        foreach (var (name, binary) in kernels) {
+        foreach (var (name, binary)in kernels) {
             if (name.StartsWith(declaration, StringComparison.Ordinal)) {
                 return binary;
             }

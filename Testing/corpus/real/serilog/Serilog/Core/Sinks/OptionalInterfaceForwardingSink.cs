@@ -22,13 +22,16 @@ sealed class OptionalInterfaceForwardingSink : ILogEventSink, IDisposable, ISetL
     readonly ILogEventSink _sink;
     readonly ILogEventSink _receiver;
 
-    public OptionalInterfaceForwardingSink(ILogEventSink sink, ILogEventSink receiver) {
+    public OptionalInterfaceForwardingSink(ILogEventSink sink, ILogEventSink receiver)
+    {
         _sink = sink;
         _receiver = receiver;
     }
 
-    public void Dispose() {
-        if (_sink is IDisposable inner) {
+    public void Dispose()
+    {
+        if (_sink is IDisposable inner)
+        {
             inner.Dispose();
         }
 
@@ -57,27 +60,31 @@ sealed class OptionalInterfaceForwardingSink : ILogEventSink, IDisposable, ISetL
     }
 #endif
 
-    public void Emit(LogEvent logEvent) {
+    public void Emit(LogEvent logEvent)
+    {
         _sink.Emit(logEvent);
     }
 
-    public void SetFailureListener(ILoggingFailureListener listener) {
+    public void SetFailureListener(ILoggingFailureListener listener)
+    {
         (_sink as ISetLoggingFailureListener)?.SetFailureListener(listener);
         (_receiver as ISetLoggingFailureListener)?.SetFailureListener(listener);
     }
 
-    public static bool SupportsAny(ILogEventSink possibleReceiver) {
+    public static bool SupportsAny(ILogEventSink possibleReceiver)
+    {
         return possibleReceiver is ISetLoggingFailureListener
-            or IDisposable
+                or IDisposable
 #if FEATURE_ASYNCDISPOSABLE
                 or IAsyncDisposable
 #endif
             ;
     }
 
-    public static bool SupportsAll(ILogEventSink possibleReceiver) {
+    public static bool SupportsAll(ILogEventSink possibleReceiver)
+    {
         return possibleReceiver is ISetLoggingFailureListener
-            and IDisposable
+                and IDisposable
 #if FEATURE_ASYNCDISPOSABLE
                 and IAsyncDisposable
 #endif

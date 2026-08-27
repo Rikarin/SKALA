@@ -2,7 +2,7 @@
 using System;
 using System.Reflection;
 using Newtonsoft.Json.Utilities
-;
+    ;
 #if DNXCORE50
 using Xunit;
 using Test = Xunit.FactAttribute;
@@ -32,7 +32,7 @@ namespace Newtonsoft.Json.Tests.Utilities {
         public OutAndRefTestClass(
             ref string value,
             out bool
-            b1
+                b1
         )
             : this(ref value) {
             b1 = true
@@ -58,7 +58,7 @@ namespace Newtonsoft.Json.Tests.Utilities {
         public InTestClass(
             in string value,
             in
-            bool b1
+                bool b1
         )
             : this(in value) {
             B1 = b1;
@@ -68,7 +68,7 @@ namespace Newtonsoft.Json.Tests.Utilities {
     [
         TestFixture]
     public class LateboundReflectionDelegateFactoryTests :
-    TestFixtureBase {
+        TestFixtureBase {
         [Test]
         public void ConstructorWithInString() {
             ConstructorInfo constructor = TestReflectionUtils.GetConstructors(typeof(InTestClass))
@@ -89,9 +89,9 @@ namespace Newtonsoft.Json.Tests.Utilities {
                 TestReflectionUtils.GetConstructors(typeof(InTestClass)).Single(c => c.GetParameters().Count() == 2);
 
             var
-            creator = LateBoundReflectionDelegateFactory.Instance.CreateParameterizedConstructor(constructor);
+                creator = LateBoundReflectionDelegateFactory.Instance.CreateParameterizedConstructor(constructor);
             object[]
-            args = new object[] { "Value", true };
+                args = new object[] { "Value", true };
             InTestClass o = (InTestClass)creator(args);
             Assert.IsNotNull(o);
             Assert.AreEqual(
@@ -120,8 +120,8 @@ namespace Newtonsoft.Json.Tests.Utilities {
         [Test]
         public void ConstructorWithRefStringAndOutBool() {
             ConstructorInfo
-            constructor = TestReflectionUtils.GetConstructors(typeof(OutAndRefTestClass))
-                .Single(c => c.GetParameters().Count() == 2);
+                constructor = TestReflectionUtils.GetConstructors(typeof(OutAndRefTestClass))
+                    .Single(c => c.GetParameters().Count() == 2);
 
             var creator =
                 LateBoundReflectionDelegateFactory.Instance.CreateParameterizedConstructor(constructor);
@@ -141,7 +141,7 @@ namespace Newtonsoft.Json.Tests.Utilities {
                 .CreateParameterizedConstructor(constructor);
 
             object[]
-            args = new object[] { "Input", true, null };
+                args = new object[] { "Input", true, null };
             OutAndRefTestClass o = (OutAndRefTestClass)creator(args);
             Assert.IsNotNull(o);
             Assert.AreEqual("Input", o.Input);

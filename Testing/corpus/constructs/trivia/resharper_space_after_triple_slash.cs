@@ -1,4 +1,5 @@
 class C {
-    /// <summary>Docs.</summary>
-    void M() { }
+    ///<summary>Docs.</summary>
+    void M() {
+    }
 }

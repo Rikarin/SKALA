@@ -24,14 +24,17 @@ public sealed class IrModule(string name) {
 
     /// <summary>Functions not owned by a shader — free functions and struct methods.</summary>
     public IReadOnlyList<IrFunction>
-        Functions => functions;
+        Functions =>
+        functions;
 
     public IReadOnlyList
-        <IrShader> Shaders => shaders;
+        <IrShader> Shaders =>
+        shaders;
 
     /// <summary>Every function in the module, shaders' included.</summary>
     public
-        IEnumerable<IrFunction> AllFunctions => functions.Concat(shaders.SelectMany(s => s.Functions));
+        IEnumerable<IrFunction> AllFunctions =>
+        functions.Concat(shaders.SelectMany(s => s.Functions));
 
     public override string ToString() => Name;
     internal void Add(IrStructType structType) => structs.Add(structType);
@@ -39,7 +42,7 @@ public sealed class IrModule(string name) {
 
     internal void Add(
         IrShader
-        shader
+            shader
     ) =>
         shaders.Add(shader);
 

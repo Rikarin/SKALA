@@ -1,7 +1,6 @@
 class C {
     int _a;
-
-    public C() { }
-
+    public C() {
+    }
     int _b;
 }

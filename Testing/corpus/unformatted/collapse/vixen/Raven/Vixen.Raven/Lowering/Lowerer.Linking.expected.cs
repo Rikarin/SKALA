@@ -59,8 +59,8 @@ public sealed partial class Lowerer {
             return null;
         } // Names the compilation is going to use, reserved before a library gets to keep one. Source
 
-        // wins by construction rather than by luck: a library's `Saturate` gives way to the
-        // shader's, which is the same precedence a shadowed type name gets.
+// wins by construction rather than by luck: a library's `Saturate` gives way to the
+// shader's, which is the same precedence a shadowed type name gets.
         var link = new ReferenceLink(this, loader, ReserveDeclaredNames(declaredTypes));
         link.LinkStructs();
         return link;
@@ -86,7 +86,7 @@ public sealed partial class Lowerer {
                 names.Add($"{type.Name}.<init>");
             }
 
-            foreach (var (name, _, _) in MemberBodies(type, report: false)) {
+            foreach (var (name, _, _)in MemberBodies(type, report: false)) {
                 names.Add(name);
             }
         }
@@ -131,7 +131,7 @@ public sealed partial class Lowerer {
         /// </summary>
         public void LinkFunctions() {
             decoder.DecodeFunctions(); // Publish again: resolving a signature can name a struct no loaded library declares,
-            // and the placeholder that stands in for it still has to reach the module.
+// and the placeholder that stands in for it still has to reach the module.
             Publish();
             foreach (var type in Types()) {
                 foreach (var member in type.GetMembers()) {
@@ -145,7 +145,7 @@ public sealed partial class Lowerer {
         ///     artefact key each entity was reached by so a library built here can re-record it.
         /// </summary>
         void Publish() {
-            foreach (var (name, structType) in decoder.Structs) {
+            foreach (var (name, structType)in decoder.Structs) {
                 if (lowerer.importedStructs.Add(structType)) {
                     lowerer.importedStructNames[structType] = name;
                     lowerer.importedStructsByName[structType.Name] = structType;
@@ -153,7 +153,7 @@ public sealed partial class Lowerer {
                 }
             }
 
-            foreach (var (name, function) in decoder.Functions) {
+            foreach (var (name, function)in decoder.Functions) {
                 if (lowerer.importedFunctions.Add(function)) {
                     lowerer.importedFunctionNames[function] = name;
                     lowerer.module.Add(function);

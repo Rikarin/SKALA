@@ -16,30 +16,30 @@
 namespace Serilog.Parsing;
 
 /// <summary>
-///     A message template token representing literal text.
+/// A message template token representing literal text.
 /// </summary>
 public sealed class TextToken : MessageTemplateToken {
     /// <summary>
-    ///     Construct a <see cref="TextToken" />.
+    /// Construct a <see cref="TextToken"/>.
     /// </summary>
     /// <param name="text">The text of the token.</param>
-    /// <exception cref="ArgumentNullException">When <paramref name="text" /> is <code>null</code></exception>
+    /// <exception cref="ArgumentNullException">When <paramref name="text"/> is <code>null</code></exception>
     public TextToken(string text) {
         Text = Guard.AgainstNull(text);
     }
 
     /// <summary>
-    ///     The token's length.
+    /// The token's length.
     /// </summary>
     public override int Length => Text.Length;
 
     /// <summary>
-    ///     Render the token to the output.
+    /// Render the token to the output.
     /// </summary>
     /// <param name="properties">Properties that may be represented by the token.</param>
     /// <param name="output">Output for the rendered string.</param>
     /// <param name="formatProvider">Supplies culture-specific formatting information, or null.</param>
-    /// <exception cref="ArgumentNullException">When <paramref name="output" /> is <code>null</code></exception>
+    /// <exception cref="ArgumentNullException">When <paramref name="output"/> is <code>null</code></exception>
     public override void Render(
         IReadOnlyDictionary<string, LogEventPropertyValue> properties,
         TextWriter output,
@@ -51,37 +51,34 @@ public sealed class TextToken : MessageTemplateToken {
     }
 
     /// <summary>
-    ///     Determines whether the specified <see cref="T:System.Object" /> is equal to the current
-    ///     <see cref="T:System.Object" />.
+    /// Determines whether the specified <see cref="T:System.Object"/> is equal to the current <see cref="T:System.Object"/>.
     /// </summary>
     /// <returns>
-    ///     <see langword="true" /> if the specified object is equal to the current object; otherwise,
-    ///     <see langword="false" />.
+    /// <see langword="true"/> if the specified object  is equal to the current object; otherwise, <see langword="false"/>.
     /// </returns>
-    /// <param name="obj">The object to compare with the current object.</param>
-    /// <filterpriority>2</filterpriority>
+    /// <param name="obj">The object to compare with the current object. </param><filterpriority>2</filterpriority>
     public override bool Equals(object? obj) => obj is TextToken tt && tt.Text == Text;
 
     /// <summary>
-    ///     Serves as a hash function for a particular type.
+    /// Serves as a hash function for a particular type.
     /// </summary>
     /// <returns>
-    ///     A hash code for the current <see cref="T:System.Object" />.
+    /// A hash code for the current <see cref="T:System.Object"/>.
     /// </returns>
     /// <filterpriority>2</filterpriority>
     public override int GetHashCode() => Text.GetHashCode();
 
     /// <summary>
-    ///     Returns a string that represents the current object.
+    /// Returns a string that represents the current object.
     /// </summary>
     /// <returns>
-    ///     A string that represents the current object.
+    /// A string that represents the current object.
     /// </returns>
     /// <filterpriority>2</filterpriority>
     public override string ToString() => Text;
 
     /// <summary>
-    ///     The text of the token.
+    /// The text of the token.
     /// </summary>
     public string Text { get; }
 }

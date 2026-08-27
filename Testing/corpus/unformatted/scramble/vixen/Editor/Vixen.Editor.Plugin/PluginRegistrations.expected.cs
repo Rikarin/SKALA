@@ -37,9 +37,7 @@ public sealed class PluginRegistrations : IDisposable {
     /// <summary>How many things are registered.</summary>
     public int Count => undo.Count;
 
-    /// <summary>
-    ///     What this plugin asked to have called once a frame. See <see cref="PluginContext.OnUpdate" />.
-    /// </summary>
+    /// <summary>What this plugin asked to have called once a frame. See <see cref="PluginContext.OnUpdate" />.</summary>
     /// <remarks>
     ///     Held here rather than on the host so that unloading takes them out with everything else —
     ///     a per-frame callback left behind is not merely a wasted call, it is a delegate over the
@@ -74,8 +72,8 @@ public sealed class PluginRegistrations : IDisposable {
                     index]();
             } catch (
                 Exception exception) {
-                    failures.Add(exception);
-                }
+                failures.Add(exception);
+            }
         }
 
         undo.Clear()

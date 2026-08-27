@@ -1,5 +1,4 @@
 #region License
-
 // Copyright (c) 2007 James Newton-King
 //
 // Permission is hereby granted, free of charge, to any person
@@ -22,34 +21,34 @@
 // WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 // OTHER DEALINGS IN THE SOFTWARE.
-
 #endregion
 
 using System;
 using System.Text;
 
-namespace Newtonsoft.Json.Tests.TestObjects {
+namespace Newtonsoft.Json.Tests.TestObjects
+{
 #if !(DNXCORE50) || NETSTANDARD2_0 || NET6_0_OR_GREATER
-    public class EncodingReadConverter : JsonConverter {
-        public override bool CanConvert(Type objectType) {
+    public class EncodingReadConverter : JsonConverter
+    {
+        public override bool CanConvert(Type objectType)
+        {
             return typeof(Encoding).IsAssignableFrom(objectType);
         }
 
-        public override object ReadJson(
-            JsonReader reader,
-            Type objectType,
-            object existingValue,
-            JsonSerializer serializer
-        ) {
+        public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
+        {
             var encodingName = serializer.Deserialize<string>(reader);
-            if (encodingName == null) {
+            if (encodingName == null)
+            {
                 return null;
             }
 
             return Encoding.GetEncoding(encodingName);
         }
 
-        public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer) {
+        public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
+        {
             throw new NotImplementedException();
         }
     }

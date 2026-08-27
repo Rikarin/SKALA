@@ -73,14 +73,11 @@ public sealed class UiImageTests {
 
         owned.Owns(renderer.Dispose);
 
-        owned.Graph.AddPass(
-            "ui",
-            pass => {
-                pass.ColourAttachment(colour, LoadAction.Clear, new(0.08f, 0.09f, 0.11f, 1f));
-                pass.SideEffect();
-                pass.Execute(context => renderer.Record(context.CommandList, geometry, new(Side, Side)));
-            }
-        );
+        owned.Graph.AddPass("ui", pass => {
+            pass.ColourAttachment(colour, LoadAction.Clear, new(0.08f, 0.09f, 0.11f, 1f));
+            pass.SideEffect();
+            pass.Execute(context => renderer.Record(context.CommandList, geometry, new(Side, Side)));
+        });
 
         var image = owned.Render(colour, commands => renderer.Upload(commands, geometry, cache.Atlas));
 
@@ -159,14 +156,11 @@ public sealed class UiImageTests {
 
         owned.Owns(renderer.Dispose);
 
-        owned.Graph.AddPass(
-            "ui-shadowed",
-            pass => {
-                pass.ColourAttachment(colour, LoadAction.Clear, new(1f, 1f, 1f, 1f));
-                pass.SideEffect();
-                pass.Execute(context => renderer.Record(context.CommandList, geometry, new(Side, Side)));
-            }
-        );
+        owned.Graph.AddPass("ui-shadowed", pass => {
+            pass.ColourAttachment(colour, LoadAction.Clear, new(1f, 1f, 1f, 1f));
+            pass.SideEffect();
+            pass.Execute(context => renderer.Record(context.CommandList, geometry, new(Side, Side)));
+        });
 
         var image = owned.Render(colour, commands => renderer.Upload(commands, geometry, cache.Atlas));
 
@@ -190,11 +184,8 @@ public sealed class UiImageTests {
     ///         picture that would be one more region nobody looks at.
     ///     </para>
     ///     <para>
-    ///         ⚠
-    ///         <b>
-    ///             The box is deliberately not symmetric about the clip's edge, and the first version
-    ///             of this fixture was.
-    ///         </b> A centred box under a scissor at the halfway line looks
+    ///         ⚠ <b>The box is deliberately not symmetric about the clip's edge, and the first version
+    ///         of this fixture was.</b> A centred box under a scissor at the halfway line looks
     ///         identical whether or not y is flipped — so it passed while the whole frame was being
     ///         drawn upside down, and it was the busier fixture next door that noticed. A clip test
     ///         whose picture is its own mirror image is a clip test that cannot see the most common
@@ -245,14 +236,11 @@ public sealed class UiImageTests {
 
         owned.Owns(renderer.Dispose);
 
-        owned.Graph.AddPass(
-            "ui-clipped",
-            pass => {
-                pass.ColourAttachment(colour, LoadAction.Clear, new(0f, 0f, 0f, 1f));
-                pass.SideEffect();
-                pass.Execute(context => renderer.Record(context.CommandList, geometry, new(Side, Side)));
-            }
-        );
+        owned.Graph.AddPass("ui-clipped", pass => {
+            pass.ColourAttachment(colour, LoadAction.Clear, new(0f, 0f, 0f, 1f));
+            pass.SideEffect();
+            pass.Execute(context => renderer.Record(context.CommandList, geometry, new(Side, Side)));
+        });
 
         var image = owned.Render(colour, commands => renderer.Upload(commands, geometry, cache.Atlas));
 
@@ -307,14 +295,11 @@ public sealed class UiImageTests {
 
         owned.Owns(renderer.Dispose);
 
-        owned.Graph.AddPass(
-            "ui-regrown",
-            pass => {
-                pass.ColourAttachment(colour, LoadAction.Clear, new(0f, 0f, 0f, 1f));
-                pass.SideEffect();
-                pass.Execute(context => renderer.Record(context.CommandList, large, new(Side, Side)));
-            }
-        );
+        owned.Graph.AddPass("ui-regrown", pass => {
+            pass.ColourAttachment(colour, LoadAction.Clear, new(0f, 0f, 0f, 1f));
+            pass.SideEffect();
+            pass.Execute(context => renderer.Record(context.CommandList, large, new(Side, Side)));
+        });
 
         var image = owned.Render(
             colour,
@@ -404,7 +389,8 @@ public sealed class UiImageTests {
 
         list.Add(
             new DrawCommand(DrawCommandKind.PathStroke, 0, 0, 0, 0, new Color4(0.4f, 0.9f, 0.5f, 1f), 0, 4) {
-                Offset = list.AddPath(path), Length = path.Count
+                Offset = list.AddPath(path),
+                Length = path.Count
             }
         );
 
@@ -440,7 +426,10 @@ public sealed class UiImageTests {
 
         list.Add(
             new DrawCommand(DrawCommandKind.Text, x, y, pen, Size, Color4.White, 0, 0) {
-                Offset = list.AddGlyphs(glyphs), Length = glyphs.Count, Font = list.AddFont(font), FontSize = Size
+                Offset = list.AddGlyphs(glyphs),
+                Length = glyphs.Count,
+                Font = list.AddFont(font),
+                FontSize = Size
             }
         );
     }
@@ -578,7 +567,9 @@ public sealed class UiImageTests {
             pass => {
                 pass.ColourAttachment(colour, LoadAction.Clear, new(0f, 0f, 0f, 1f));
                 pass.SideEffect();
-                pass.Execute(context => renderer.Record(context.CommandList, geometry, new(extent, extent), scale));
+                pass.Execute(
+                    context => renderer.Record(context.CommandList, geometry, new(extent, extent), scale)
+                );
             }
         );
 
@@ -713,8 +704,8 @@ public sealed class UiImageTests {
         }
 
         using var stream = typeof(UiImageTests).Assembly
-            .GetManifestResourceStream("Vixen.Graphics.Golden.Tests.TestShapeLana.ttf")
-            ?? throw new InvalidOperationException("no test font is embedded");
+                               .GetManifestResourceStream("Vixen.Graphics.Golden.Tests.TestShapeLana.ttf")
+                           ?? throw new InvalidOperationException("no test font is embedded");
 
         using var memory = new MemoryStream();
         stream.CopyTo(memory);
@@ -729,11 +720,8 @@ public sealed class UiImageTests {
     ///     <para>
     ///         The image pipeline is the fourth to share one vertex layout and one pipeline layout,
     ///         and the failure it exists to catch is the same one <see cref="Interface" /> catches for
-    ///         the other three — except worse, because an image binds a descriptor set of
-    ///         <i>
-    ///             its
-    ///             own
-    ///         </i>. A set bound for an image that survives into the text after it draws the
+    ///         the other three — except worse, because an image binds a descriptor set of <i>its
+    ///         own</i>. A set bound for an image that survives into the text after it draws the
     ///         picture where the letters should be; one that does not get bound at all draws the font
     ///         atlas where the picture should be. Both need two kinds in one frame to show.
     ///     </para>
@@ -771,12 +759,15 @@ public sealed class UiImageTests {
         list.Add(new(DrawCommandKind.Rectangle, 8, 8, 40, 40, new Color4(0.2f, 0.2f, 0.25f, 1f), 6, 0));
 
         // Upright, whole texture, untinted.
-        list.Add(new DrawCommand(DrawCommandKind.Image, 56, 8, 64, 48, Color4.White, 0, 0) { Image = Texture });
+        list.Add(
+            new DrawCommand(DrawCommandKind.Image, 56, 8, 64, 48, Color4.White, 0, 0) { Image = Texture }
+        );
 
         // Flipped vertically, the way a viewport's render target is drawn, and half faded.
         list.Add(
             new DrawCommand(DrawCommandKind.Image, 56, 64, 64, 48, new Color4(1f, 1f, 1f, 0.5f), 0, 0) {
-                Image = Texture, Source = new Rectangle(0f, 1f, 1f, -1f)
+                Image = Texture,
+                Source = new Rectangle(0f, 1f, 1f, -1f)
             }
         );
 
@@ -795,21 +786,20 @@ public sealed class UiImageTests {
                 owned.Shader("ui-box.frag.spv", ShaderStage.Fragment),
                 owned.Shader("ui-text.frag.spv", ShaderStage.Fragment),
                 owned.Shader("ui-solid.frag.spv", ShaderStage.Fragment)
-            ) { Image = owned.Shader("ui-image.frag.spv", ShaderStage.Fragment) },
+            ) {
+                Image = owned.Shader("ui-image.frag.spv", ShaderStage.Fragment)
+            },
             new Rendering.RenderOutput([PixelFormat.Rgba8UNorm])
         );
 
         owned.Owns(renderer.Dispose);
         renderer.RegisterImage(Texture, sampled.View);
 
-        owned.Graph.AddPass(
-            "ui",
-            pass => {
-                pass.ColourAttachment(colour, LoadAction.Clear, new(0.08f, 0.09f, 0.11f, 1f));
-                pass.SideEffect();
-                pass.Execute(graph => renderer.Record(graph.CommandList, geometry, new(Side, Side)));
-            }
-        );
+        owned.Graph.AddPass("ui", pass => {
+            pass.ColourAttachment(colour, LoadAction.Clear, new(0.08f, 0.09f, 0.11f, 1f));
+            pass.SideEffect();
+            pass.Execute(graph => renderer.Record(graph.CommandList, geometry, new(Side, Side)));
+        });
 
         var image = owned.Render(
             colour,

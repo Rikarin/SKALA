@@ -1,9 +1,7 @@
-// SPDX-FileCopyrightText: Copyright (c) Rikarin
-// SPDX-License-Identifier: Apache-2.0
-using System.Globalization;
-
-namespace Vixen.Live;
-
+            // SPDX-FileCopyrightText: Copyright (c) Rikarin
+             // SPDX-License-Identifier: Apache-2.0
+ using System.Globalization;
+namespace Vixen.    Live;
 /// <summary>What a shard was built from: an assembly version and a content hash.</summary>
 /// <remarks>
 ///     <para>
@@ -22,20 +20,16 @@ namespace Vixen.Live;
 /// </remarks>
 /// <param name="Build">The assembly version, as the build stamped it. Free-form; compared verbatim.</param>
 /// <param name="Content">The catalog's <c>BuildHash</c>.</param>
-[System.Text.Json
-    .Serialization.JsonConverter(typeof(RealmVersionJsonConverter))]
-public readonly record struct RealmVersion(string Build, ulong Content) {
+           [ System .Text.Json
+.Serialization.    JsonConverter (typeof(  RealmVersionJsonConverter)) ]
+		public readonly record  struct RealmVersion (string Build, ulong Content) { 
     /// <summary>Nothing in particular — what a spec that named no version decodes to.</summary>
-    public static RealmVersion None => default;
-
+               public static   RealmVersion None   =>  default ;
     /// <summary>The assembly version. Null only on <c>default</c>; see <see cref="RealmInstanceId" />.</summary>
-    public string Build { get; } = Build ?? "";
-
+  public string Build {   get ; } = Build ?? ""    ;
     /// <summary>Whether this names a version at all.</summary>
-    public bool IsValid =>
-        !string.
-        IsNullOrEmpty(Build);
-
+            public bool IsValid => !string  .
+IsNullOrEmpty (   Build    );
     /// <summary>Whether a client carrying <paramref name="other" /> may be placed on this shard.</summary>
     /// <param name="other">What the client says it is.</param>
     /// <returns>Whether both halves agree.</returns>
@@ -45,39 +39,36 @@ public readonly record struct RealmVersion(string Build, ulong Content) {
     ///     failure it lets through is two peers that disagree about a replicated component's layout —
     ///     which is not a rejection, it is a corrupted world.
     /// </remarks>
-    public
-        bool Admits(RealmVersion other) => this == other;
-
+                public
+bool   Admits(   RealmVersion other) => this == other ;
+          
     /// <summary>Reads one back.</summary>
     /// <param name="text">What <see cref="ToString" /> wrote.</param>
     /// <param name="version">The version, on success.</param>
     /// <returns>Whether it parsed.</returns>
-    public static bool TryParse(string? text, out RealmVersion version) {
-        version = None;
-
-        if (text is null) {
-            return false;
-        }
-
-        var separator = text.LastIndexOf('+');
-
+         public    static bool TryParse(string  ?    text,   out RealmVersion version) {
+                version = None;
+               
+  if (   text  is null ) {  return false    ;
+}
+           
+           var separator = text .LastIndexOf( '+');   
+            
         if (separator <= 0
-            || !ulong.TryParse(
-                text
-                    .AsSpan(separator + 1),
-                NumberStyles.HexNumber,
-                CultureInfo.InvariantCulture,
-                out var content
-            )
-        ) {
-            return false;
-        }
-
-        version
-            = new(text[..separator], content);
-        return true;
-    }
-
+                ||
+       !ulong .TryParse(
+text
+.AsSpan( separator   +   1   ),
+			NumberStyles .HexNumber   ,
+CultureInfo.InvariantCulture,    out var  content
+    )
+     ) {
+      return  false;
+                }
+          version
+          = new(text[..separator    ], content);
+          return true; } 
+    
     /// <summary>Whether two versions are the same version.</summary>
     /// <param name="other">The other version.</param>
     /// <returns>Whether they are equal.</returns>
@@ -85,16 +76,14 @@ public readonly record struct RealmVersion(string Build, ulong Content) {
     ///     Hand-written so that <c>default</c> equals a constructed empty one — see
     ///     <c>RealmEndpoint.Equals</c> for what the synthesized version costs.
     /// </remarks>
-    public bool Equals(RealmVersion other) =>
-        Content == other.Content && string.Equals(Build ?? "", other.Build ?? "", StringComparison.Ordinal);
-
+    public  bool Equals(   RealmVersion other   ) => Content == other  .Content && string.Equals(   Build  ?? "", other.    Build ?? "", StringComparison.Ordinal)    ;
     /// <inheritdoc />
-    public override int GetHashCode() => HashCode.Combine(Build ?? "", Content);
-
+       public override int GetHashCode(  )   
+            => HashCode  . Combine   (Build ?? "", Content    );
     /// <inheritdoc />
-    public override string ToString() =>
-        IsValid
-            ? string.Create
-            (CultureInfo.InvariantCulture, $"{Build}+{Content:x16}")
-            : "no version";
-}
+   public override string ToString    () =>
+        IsValid ? string .Create
+(CultureInfo.InvariantCulture, $"{Build}+{Content:x16}" )   : "no version"  ;
+
+   }
+         

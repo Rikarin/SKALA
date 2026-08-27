@@ -22,17 +22,20 @@ sealed class ConditionalSink : ILogEventSink, IDisposable
     readonly ILogEventSink _wrapped;
     readonly Func<LogEvent, bool> _condition;
 
-    public ConditionalSink(ILogEventSink wrapped, Func<LogEvent, bool> condition) {
+    public ConditionalSink(ILogEventSink wrapped, Func<LogEvent, bool> condition)
+    {
         _wrapped = Guard.AgainstNull(wrapped);
         _condition = Guard.AgainstNull(condition);
     }
 
-    public void Emit(LogEvent logEvent) {
+    public void Emit(LogEvent logEvent)
+    {
         if (_condition(logEvent))
             _wrapped.Emit(logEvent);
     }
 
-    public void Dispose() {
+    public void Dispose()
+    {
         (_wrapped as IDisposable)?.Dispose();
     }
 

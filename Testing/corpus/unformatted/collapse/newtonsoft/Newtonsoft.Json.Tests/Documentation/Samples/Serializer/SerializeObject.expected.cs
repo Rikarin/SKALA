@@ -1,5 +1,4 @@
 // skala-oracle: resharper=2025.2.6 config=sha256:98ff52570e019fac profile=SkalaFormatOnly generated=2026-08-27
-
 #region License
 
 // Copyright (c) 2007 James Newton-King
@@ -63,14 +62,14 @@ namespace Newtonsoft.Json.Tests.Documentation.Samples.Serializer {
                 Roles = new List<string> { "User", "Admin" }
             };
             string json = JsonConvert.SerializeObject(account, Formatting.Indented); // {
-            //   "Email": "james@example.com",
-            //   "Active": true,
-            //   "CreatedDate": "2013-01-20T00:00:00Z",
-            //   "Roles": [
-            //     "User",
-            //     "Admin"
-            //   ]
-            // }
+//   "Email": "james@example.com",
+//   "Active": true,
+//   "CreatedDate": "2013-01-20T00:00:00Z",
+//   "Roles": [
+//     "User",
+//     "Admin"
+//   ]
+// }
             Console.WriteLine(json);
 
             #endregion

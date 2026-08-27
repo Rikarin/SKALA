@@ -10,10 +10,8 @@ namespace Vixen.Ui.Styling.Tests;
 /// <summary><c>oklab()</c>, <c>oklch()</c> and <c>color-mix()</c>, against oracles that are not this code.</summary>
 /// <remarks>
 ///     <para>
-///         <b>
-///             Two external oracles do nearly all the work here, and neither is a number this parser
-///             produced.
-///         </b> The first is Björn Ottosson's published conversion table, which
+///         <b>Two external oracles do nearly all the work here, and neither is a number this parser
+///         produced.</b> The first is Björn Ottosson's published conversion table, which
 ///         <c>Vixen.Core.Mathematics.Tests.OklabTests</c> already holds the engine to — so
 ///         <c>oklab(0.627955 0.224863 0.125846)</c> has to come out sRGB red, and the polar form of
 ///         the same three numbers has to come out the same red. The second is arithmetic that can be

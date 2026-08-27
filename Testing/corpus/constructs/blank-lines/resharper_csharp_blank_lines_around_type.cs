@@ -1,7 +1,8 @@
 class A {
-    void M() { }
+    void M() {
+    }
 }
-
 class B {
-    void M() { }
+    void M() {
+    }
 }

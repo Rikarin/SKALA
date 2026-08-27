@@ -1,10 +1,9 @@
-// SPDX-FileCopyrightText: Copyright (c) Rikarin
-// SPDX-License-Identifier: Apache-2.0
-using Xunit;
-using static Tests.LoweringTestBase;
-
+               // SPDX-FileCopyrightText: Copyright (c) Rikarin
+     // SPDX-License-Identifier: Apache-2.0
+                using Xunit;
+              using static Tests.LoweringTestBase; 
+           
 namespace Tests;
-
 /// <summary>
 ///     <c>RVN3013</c> — a derivative-implied <c>Sample</c> reached from a stage with no derivatives.
 /// </summary>
@@ -24,16 +23,13 @@ namespace Tests;
 ///     </para>
 /// </remarks>
 public class ImplicitLodTests {
-    [Theory
-    ]
-    [InlineData(
-        "[ComputeShader(64)]\n    func Main(id: uint3)",
-        "compute"
-    )]
-    [InlineData
-        ("[VertexShader]\n    func Vertex(uv: float2)", "vertex")]
-    public void A_stage_without_derivatives_is_warned_about(string entry, string stage) {
-        var diagnostics = LoweringDiagnosticsOf(
+             [   Theory
+         ]
+           [InlineData   ("[ComputeShader(64)]\n    func Main(id: uint3)",
+ "compute")   ]
+          [InlineData
+       ("[VertexShader]\n    func Vertex(uv: float2)" , "vertex")]
+    public void A_stage_without_derivatives_is_warned_about  (   string entry, string stage    ) {    var diagnostics = LoweringDiagnosticsOf(
             $$"""
               package A
 
@@ -48,25 +44,20 @@ public class ImplicitLodTests {
               }
 
               """
-        );
-        var warning = Assert.Single(
-            diagnostics,
-            d => d.
-                Id
-                == "RVN3013"
-        );
-        Assert.False(
-            warning
-                .IsError
-        );
-        Assert
-            .Contains($"{stage} entry point", warning.GetMessage(), StringComparison.Ordinal);
-    }
-
+		);
+        var  warning   = Assert  . Single(diagnostics,  d => d.
+                Id == "RVN3013");
+        Assert.False(warning
+           .IsError)  ;
+       Assert
+.Contains  ( $"{stage} entry point",  warning  .GetMessage(   ),    StringComparison.  Ordinal);
+               } 
+      
     /// <summary>A fragment stage is the one that has them, so it is the one that is not warned.</summary>
-    [Fact]
-    public void A_fragment_stage_is_left_alone() {
-        var diagnostics = LoweringDiagnosticsOf(
+    [Fact ]
+    public  void    A_fragment_stage_is_left_alone( ) {
+   
+             var   diagnostics = LoweringDiagnosticsOf  (
             """
             package A
 
@@ -82,16 +73,14 @@ public class ImplicitLodTests {
             }
 
             """
-        );
-        Assert.DoesNotContain(diagnostics, d => d.Id == "RVN3013");
-    }
-
+     );
+             Assert    .DoesNotContain(diagnostics,    d =>  d   .Id == "RVN3013")  ; }
     /// <summary>Stating the level is the fix, and it is one word.</summary>
-    [Fact]
-    public void
-        An_explicit_level_says_what_the_author_meant() {
-        var
-        diagnostics = LoweringDiagnosticsOf(
+  [ Fact]
+         public void
+            An_explicit_level_says_what_the_author_meant( ) {
+  var
+diagnostics = LoweringDiagnosticsOf (
             """
             package A
 
@@ -107,20 +96,20 @@ public class ImplicitLodTests {
             }
 
             """
-        );
-
-        Assert
-            .DoesNotContain(diagnostics, d => d.Id == "RVN3013");
-    }
-
+  ) ;
+ 
+  Assert
+             . DoesNotContain( diagnostics, d => d.Id == "RVN3013");
+                }
+              
     /// <summary>
     ///     Reachability, not where the call is written — <c>RVN3008</c>'s rule, and the reason the
     ///     library case was invisible: the sample is in <c>Lighting.rvn</c> and the stage is three
     ///     files away.
     /// </summary>
-    [Fact]
-    public void The_stage_rule_follows_the_call_graph() {
-        var diagnostics = LoweringDiagnosticsOf(
+        [  Fact ]
+         public   void   The_stage_rule_follows_the_call_graph() { 
+var diagnostics = LoweringDiagnosticsOf( 
             """
             package A
 
@@ -140,12 +129,11 @@ public class ImplicitLodTests {
             }
 
             """
-        )
-            ;
-        Assert.Contains(
-            diagnostics,
-            d =>
-                d.Id == "RVN3013"
-        );
+              )
+   ;
+               Assert.Contains(diagnostics , d  =>
+ d   .Id   == "RVN3013");   
+                
     }
-}
+                }
+         

@@ -1,5 +1,4 @@
 #region License
-
 // Copyright (c) 2007 James Newton-King
 //
 // Permission is hereby granted, free of charge, to any person
@@ -22,11 +21,9 @@
 // WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 // OTHER DEALINGS IN THE SOFTWARE.
-
 #endregion
-
 #if !(NET20 || NET35 || NET40 || PORTABLE || PORTABLE40) || NETSTANDARD2_0 || NET6_0_OR_GREATER
-using System; using System.IO; using System.Text; using System.Threading; using System.Threading.Tasks;
+using System;using System.IO;using System.Text;using System.Threading;using System.Threading.Tasks;
 #if DNXCORE50
 using System.Reflection;
 using Xunit;
@@ -35,72 +32,9 @@ using Assert = Newtonsoft.Json.Tests.XUnitAssert;
 #else
 using NUnit.Framework;
 #endif
-namespace Newtonsoft.Json.Tests.Issues {
-    [TestFixture]
-    public class Issue1569 : TestFixtureBase {
-        [Test]
-        public async Task Test() {
-            string json =
-                "[1,2,3,456789999999999999999999999999999999999999999999999999999999999999456789999999999999999999999999999999999999999999999999999999999999456789999999999999999999999999999999999999999999999999999999999999]";
-            Stream s = new AsyncOnlyStream(new MemoryStream(Encoding.UTF8.GetBytes(json)));
-            StreamReader sr = new StreamReader(s, Encoding.UTF8, true, 2);
-            JsonTextReader reader = new JsonTextReader(sr);
+namespace Newtonsoft.Json.Tests.Issues{[TestFixture]public class Issue1569:TestFixtureBase{[Test]public async Task Test(){string json="[1,2,3,456789999999999999999999999999999999999999999999999999999999999999456789999999999999999999999999999999999999999999999999999999999999456789999999999999999999999999999999999999999999999999999999999999]" ;Stream s=new AsyncOnlyStream(new MemoryStream(Encoding.UTF8.GetBytes(json)));StreamReader sr=new StreamReader(s,Encoding.UTF8,true,2);JsonTextReader reader=new JsonTextReader(sr);
 #if DEBUG
             reader.CharBuffer = new char[2];
 #endif
-            while (await reader.ReadAsync()) { }
-        }
-
-        public class AsyncOnlyStream : Stream {
-            private readonly Stream _innerStream;
-
-            public AsyncOnlyStream(Stream innerStream) {
-                _innerStream = innerStream;
-            }
-
-            public override void Flush() {
-                throw new NotSupportedException();
-            }
-
-            public override Task FlushAsync(CancellationToken cancellationToken) {
-                return _innerStream.FlushAsync(cancellationToken);
-            }
-
-            public override long Seek(long offset, SeekOrigin origin) {
-                return _innerStream.Seek(offset, origin);
-            }
-
-            public override void SetLength(long value) {
-                _innerStream.SetLength(value);
-            }
-
-            public override int Read(byte[] buffer, int offset, int count) {
-                throw new NotSupportedException();
-            }
-
-            public override Task<int> ReadAsync(
-                byte[] buffer,
-                int offset,
-                int count,
-                CancellationToken cancellationToken
-            ) {
-                return _innerStream.ReadAsync(buffer, offset, count, cancellationToken);
-            }
-
-            public override void Write(byte[] buffer, int offset, int count) {
-                throw new NotSupportedException();
-            }
-
-            public override Task WriteAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken) {
-                return _innerStream.WriteAsync(buffer, offset, count, cancellationToken);
-            }
-
-            public override bool CanRead => _innerStream.CanRead;
-            public override bool CanSeek => _innerStream.CanSeek;
-            public override bool CanWrite => _innerStream.CanWrite;
-            public override long Length => _innerStream.Length;
-            public override long Position { get => _innerStream.Position; set => _innerStream.Position = value; }
-        }
-    }
-}
+while(await reader.ReadAsync()){}}public class AsyncOnlyStream:Stream{private readonly Stream _innerStream;public AsyncOnlyStream(Stream innerStream){_innerStream=innerStream;}public override void Flush(){throw new NotSupportedException();}public override Task FlushAsync(CancellationToken cancellationToken){return _innerStream.FlushAsync(cancellationToken);}public override long Seek(long offset,SeekOrigin origin){return _innerStream.Seek(offset,origin);}public override void SetLength(long value){_innerStream.SetLength(value);}public override int Read(byte[]buffer,int offset,int count){throw new NotSupportedException();}public override Task<int>ReadAsync(byte[]buffer,int offset,int count,CancellationToken cancellationToken){return _innerStream.ReadAsync(buffer,offset,count,cancellationToken);}public override void Write(byte[]buffer,int offset,int count){throw new NotSupportedException();}public override Task WriteAsync(byte[]buffer,int offset,int count,CancellationToken cancellationToken){return _innerStream.WriteAsync(buffer,offset,count,cancellationToken);}public override bool CanRead=>_innerStream.CanRead;public override bool CanSeek=>_innerStream.CanSeek;public override bool CanWrite=>_innerStream.CanWrite;public override long Length=>_innerStream.Length;public override long Position{get=>_innerStream.Position;set=>_innerStream.Position=value;}}}}
 #endif

@@ -114,11 +114,8 @@ public struct LayoutStyle {
 
     /// <summary>What happens to content that does not fit across the node.</summary>
     /// <remarks>
-    ///     ⚠
-    ///     <b>
-    ///         Two fields rather than one, because the two flexbox rules that read them are each
-    ///         about a single axis.
-    ///     </b> The §4.5 automatic minimum size applies to the <i>main</i> axis and
+    ///     ⚠ <b>Two fields rather than one, because the two flexbox rules that read them are each
+    ///     about a single axis.</b> The §4.5 automatic minimum size applies to the <i>main</i> axis and
     ///     an item opts out of it by not being <c>visible</c> <i>there</i>; a scroll container takes
     ///     the space it was offered rather than the space its content wants on the axis it scrolls.
     ///     Collapsing the pair — reading "either axis clips" — makes a column with
@@ -143,11 +140,8 @@ public struct LayoutStyle {
     ///         CSS has one <c>scrollbar-width</c> and a scrollbar is as thick either way round.
     ///     </para>
     ///     <para>
-    ///         ⚠
-    ///         <b>
-    ///             It shrinks the content box but does not raise the node's minimum size, and those
-    ///             are two different rules that <see cref="Overflow.Scroll" /> makes look like one.
-    ///         </b>
+    ///         ⚠ <b>It shrinks the content box but does not raise the node's minimum size, and those
+    ///         are two different rules that <see cref="Overflow.Scroll" /> makes look like one.</b>
     ///         A box cannot be laid out narrower than its own padding and border; it CAN be laid out
     ///         narrower than its scrollbar, and then the bar simply covers everything.
     ///         <c>leaf_overflow_scrollbars_overridden_by_size</c> is that fixture exactly — a 2pt box
@@ -178,11 +172,8 @@ public struct LayoutStyle {
 
     /// <summary>How this box sits against the line box it is on, if it is on one.</summary>
     /// <remarks>
-    ///     ⚠
-    ///     <b>
-    ///         Read only by an inline formatting context, and inert everywhere else — which is CSS's
-    ///         own rule and not a limitation.
-    ///     </b> §10.8.1 applies <c>vertical-align</c> to inline-level and
+    ///     ⚠ <b>Read only by an inline formatting context, and inert everywhere else — which is CSS's
+    ///     own rule and not a limitation.</b> §10.8.1 applies <c>vertical-align</c> to inline-level and
     ///     table-cell boxes; on a flex item, a grid item or a block-level box in normal flow it
     ///     computes to a value nothing consults. That is why the property sat in the editor's inert
     ///     inventory with a task number against it rather than a bug: there was no line box in the
@@ -197,6 +188,7 @@ public struct LayoutStyle {
     ///     broken by document position — and paints them in that same order. It changes neither
     ///     selector matching nor sequential focus navigation, both of which stay on document order;
     ///     those are the three places this reaches and the two it must not.
+    ///
     ///     An <see cref="int" /> rather than a byte because CSS allows negatives, and
     ///     <c>order: -1</c> in front of a row of defaulted items is the idiom the property exists
     ///     for. Zero is the initial value, which is also <c>default</c> — the one field here where
@@ -222,9 +214,7 @@ public struct LayoutStyle {
     /// <summary>Outside the border box.</summary>
     public EdgeLengths Margin;
 
-    /// <summary>
-    ///     The offset applied by <see cref="PositionType.Relative" /> and <see cref="PositionType.Absolute" />.
-    /// </summary>
+    /// <summary>The offset applied by <see cref="PositionType.Relative" /> and <see cref="PositionType.Absolute" />.</summary>
     public EdgeLengths Position;
 
     /// <summary>Inside the border, outside the content.</summary>
@@ -250,11 +240,8 @@ public struct LayoutStyle {
 
     /// <summary>The inline-axis placement of every child of a grid container.</summary>
     /// <remarks>
-    ///     ⚠
-    ///     <b>
-    ///         Grid reuses <see cref="Align" /> for the inline axis, and the member names lie
-    ///         slightly.
-    ///     </b> <c>justify-items</c> is CSS Box Alignment's inline-axis property and its
+    ///     ⚠ <b>Grid reuses <see cref="Align" /> for the inline axis, and the member names lie
+    ///     slightly.</b> <c>justify-items</c> is CSS Box Alignment's inline-axis property and its
     ///     keywords are <c>start</c>/<c>end</c>, not <c>flex-start</c>/<c>flex-end</c>; the two
     ///     differ only under <c>flex-wrap: wrap-reverse</c>, which a grid container does not have. So
     ///     <see cref="Align.FlexStart" /> read here means the inline start and nothing about flex.
@@ -316,7 +303,7 @@ public struct LayoutStyle {
         style.AlignItems = Align.Stretch;
         style.AlignSelf =
             Align.Auto; // An unprefixed alignment keyword is the `unsafe` one, so all six start there. Stated rather
-        // than left to the zero, like every other initial value in this method.
+// than left to the zero, like every other initial value in this method.
         style.JustifyContentOverflow = OverflowAlignment.Unsafe;
         style.AlignContentOverflow = OverflowAlignment.Unsafe;
         style.AlignItemsOverflow = OverflowAlignment.Unsafe;
@@ -340,9 +327,9 @@ public struct LayoutStyle {
         style.GridAutoFlow =
             GridAutoFlow
                 .Row; // ⚠ `normal` behaves as `stretch` for a grid item, per CSS Box Alignment §6.2 — a grid area
-        // is a definite rectangle and an item with no size of its own fills it. Yoga's `AlignItems`
-        // default is already Stretch for the same reason; these two follow it so that the inline and
-        // block axes of a grid agree, which is the whole content of `place-items: normal`.
+// is a definite rectangle and an item with no size of its own fills it. Yoga's `AlignItems`
+// default is already Stretch for the same reason; these two follow it so that the inline and
+// block axes of a grid agree, which is the whole content of `place-items: normal`.
         style.JustifyItems = Align.Stretch;
         style.JustifySelf = Align.Auto;
         style.GridTemplateColumns = GridTemplate.Empty;

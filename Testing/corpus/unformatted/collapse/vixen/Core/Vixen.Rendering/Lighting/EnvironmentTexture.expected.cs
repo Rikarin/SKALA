@@ -30,10 +30,8 @@ namespace Vixen.Rendering.Lighting;
 ///         one baked environment closes four of the set's thirteen bindings.
 ///     </para>
 ///     <para>
-///         <b>
-///             The same shape as <see cref="GlobalDistanceFieldTexture" /> and
-///             <see cref="IrradianceFieldTexture" />, deliberately.
-///         </b> Allocate on the first upload,
+///         <b>The same shape as <see cref="GlobalDistanceFieldTexture" /> and
+///         <see cref="IrradianceFieldTexture" />, deliberately.</b> Allocate on the first upload,
 ///         copy through one staging buffer, transition into <see cref="ResourceState.ShaderRead" />
 ///         and stay there. These are not graph resources — they are named into a descriptor set — so
 ///         nothing else in the frame transitions them and this has to.
@@ -66,11 +64,8 @@ public sealed class EnvironmentTexture : IDisposable {
     ///     The chain is empty, or a level is not half the one above it.
     /// </exception>
     /// <remarks>
-    ///     ⚠
-    ///     <b>
-    ///         The cube, its view and its sampler are created here rather than on the first upload,
-    ///         and the difference is not tidiness.
-    ///     </b> <see cref="EnvironmentLight" /> holds a
+    ///     ⚠ <b>The cube, its view and its sampler are created here rather than on the first upload,
+    ///     and the difference is not tidiness.</b> <see cref="EnvironmentLight" /> holds a
     ///     <see cref="TextureViewHandle" /> rather than a reference to this, so whatever
     ///     <see cref="Apply" /> hands it is what the frame's set is filled with for ever. Creating the
     ///     view lazily meant a light configured at load time held an invalid handle, the writer found
@@ -96,8 +91,8 @@ public sealed class EnvironmentTexture : IDisposable {
         chain = [
             .. prefiltered
         ]; // ⚠ Checked rather than assumed, because the failure is silent: a mip chain whose levels are
-        // not successive halves is one the hardware indexes with its own arithmetic, so a rough
-        // material reads texels from the wrong place and the picture is merely wrong.
+// not successive halves is one the hardware indexes with its own arithmetic, so a rough
+// material reads texels from the wrong place and the picture is merely wrong.
         for (var level = 1; level < chain.Length; level++) {
             var expected = Math.Max(1, chain[0].Size >> level);
             if (chain[level].Size != expected) {
@@ -196,7 +191,7 @@ public sealed class EnvironmentTexture : IDisposable {
             return false;
         } // ⚠ Undefined only on the first upload. A cube that was copied into and left in ShaderRead is
 
-        // in ShaderRead, and telling the barrier otherwise discards its contents on a tiler.
+// in ShaderRead, and telling the barrier otherwise discards its contents on a tiler.
         Transition(
             commands,
             Uploads == 0 ? ResourceState.Undefined : ResourceState.ShaderRead,
@@ -332,7 +327,7 @@ public sealed class EnvironmentTexture : IDisposable {
                 Size,
                 TextureUsage.Sampled | TextureUsage.CopyDestination,
                 MipLevels: MipCount, // Six, and the dimension says what they mean. A cube bound as an array is a shader
-                // sampling by layer index where it meant to sample by direction.
+// sampling by layer index where it meant to sample by direction.
                 ArrayLayers: 6,
                 Dimension: TextureDimension.TextureCube,
                 Name: "Environment"
@@ -342,7 +337,7 @@ public sealed class EnvironmentTexture : IDisposable {
         staging = device.CreateBuffer(
             new BufferDescription(StagingSize, BufferUsage.CopySource, MemoryAccess.HostUpload, "Environment.Staging")
         ); // MaxLod is the chain's last level rather than the default thousand: a roughness that selects
-        // past the levels that exist is clamped by the sampler, not by the shader's arithmetic.
+// past the levels that exist is clamped by the sampler, not by the shader's arithmetic.
         sampler = device.CreateSampler(
             SamplerDescription.LinearClamp with { MaxLod = MipCount - 1, Name = "Environment" }
         );

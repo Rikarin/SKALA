@@ -250,11 +250,8 @@ public sealed class FoliageScatterTests {
 
     /// <summary>Two draws from one hash are not correlated.</summary>
     /// <remarks>
-    ///     ⚠
-    ///     <b>
-    ///         Slicing the streams out of one hash's bits gives the yaw and the scale correlated low
-    ///         bits
-    ///     </b>, which shows up as every large tree facing the same way — a pattern an artist sees
+    ///     ⚠ <b>Slicing the streams out of one hash's bits gives the yaw and the scale correlated low
+    ///     bits</b>, which shows up as every large tree facing the same way — a pattern an artist sees
     ///     immediately and cannot describe. Re-hashing per stream is what avoids it.
     /// </remarks>
     [Fact]

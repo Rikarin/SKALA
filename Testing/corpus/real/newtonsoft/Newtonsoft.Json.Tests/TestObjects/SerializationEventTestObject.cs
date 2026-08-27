@@ -1,5 +1,4 @@
 ﻿#region License
-
 // Copyright (c) 2007 James Newton-King
 //
 // Permission is hereby granted, free of charge, to any person
@@ -22,15 +21,16 @@
 // WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 // OTHER DEALINGS IN THE SOFTWARE.
-
 #endregion
 
 using System;
 using System.Runtime.Serialization;
 using Newtonsoft.Json.Serialization;
 
-namespace Newtonsoft.Json.Tests.TestObjects {
-    public class SerializationEventTestObject {
+namespace Newtonsoft.Json.Tests.TestObjects
+{
+    public class SerializationEventTestObject
+    {
         // This member is serialized and deserialized with no change.
         public int Member1 { get; set; }
 
@@ -51,12 +51,14 @@ namespace Newtonsoft.Json.Tests.TestObjects {
         public string Member5 { get; set; }
 
         // Getting or setting this field will throw an error.
-        public string Member6 {
+        public string Member6
+        {
             get { throw new Exception("Member5 get error!"); }
             set { throw new Exception("Member5 set error!"); }
         }
 
-        public SerializationEventTestObject() {
+        public SerializationEventTestObject()
+        {
             Member1 = 11;
             Member2 = "Hello World!";
             Member3 = "This is a nonserialized value";
@@ -64,27 +66,32 @@ namespace Newtonsoft.Json.Tests.TestObjects {
         }
 
         [OnSerializing]
-        internal void OnSerializingMethod(StreamingContext context) {
+        internal void OnSerializingMethod(StreamingContext context)
+        {
             Member2 = "This value went into the data file during serialization.";
         }
 
         [OnSerialized]
-        internal void OnSerializedMethod(StreamingContext context) {
+        internal void OnSerializedMethod(StreamingContext context)
+        {
             Member2 = "This value was reset after serialization.";
         }
 
         [OnDeserializing]
-        internal void OnDeserializingMethod(StreamingContext context) {
+        internal void OnDeserializingMethod(StreamingContext context)
+        {
             Member3 = "This value was set during deserialization";
         }
 
         [OnDeserialized]
-        internal void OnDeserializedMethod(StreamingContext context) {
+        internal void OnDeserializedMethod(StreamingContext context)
+        {
             Member4 = "This value was set after deserialization.";
         }
 
         [OnError]
-        internal void OnErrorMethod(StreamingContext context, ErrorContext errorContext) {
+        internal void OnErrorMethod(StreamingContext context, ErrorContext errorContext)
+        {
             Member5 = "Error message for member " + errorContext.Member + " = " + errorContext.Error.Message;
             errorContext.Handled = true;
         }

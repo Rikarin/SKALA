@@ -4,7 +4,9 @@ class BinaryOperators {
             + second
             + third;
 
-        var afterTheSign = first + second + third;
+        var afterTheSign = first +
+            second +
+            third;
 
         var mixed = first && second
             || third;

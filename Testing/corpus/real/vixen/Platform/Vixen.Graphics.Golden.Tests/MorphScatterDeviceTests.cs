@@ -18,10 +18,8 @@ namespace Vixen.Graphics.Golden.Tests;
 /// </summary>
 /// <remarks>
 ///     <para>
-///         <b>
-///             The claim is that a weight moves a vertex to a computed position, and it is checked
-///             against arithmetic rather than against a picture.
-///         </b> A morph applied in the wrong space,
+///         <b>The claim is that a weight moves a vertex to a computed position, and it is checked
+///         against arithmetic rather than against a picture.</b> A morph applied in the wrong space,
 ///         at the wrong stride, or with the weight folded in twice renders <em>plausibly</em> — the
 ///         face still has a face on it — so a golden image would pass on all three. What cannot pass
 ///         is a float that is not the float the host computed.
@@ -44,7 +42,6 @@ namespace Vixen.Graphics.Golden.Tests;
 public class MorphScatterDeviceTests {
     /// <summary>How many floats one <see cref="SurfaceVertex" /> is, and where its two vectors are.</summary>
     const int Stride = 12;
-
     const int PositionOffset = 0;
     const int NormalOffset = 3;
 
@@ -237,10 +234,8 @@ public class MorphScatterDeviceTests {
     /// </summary>
     /// <remarks>
     ///     <para>
-    ///         <b>
-    ///             The legs above prove the kernel; this proves the wiring, and they are different
-    ///             claims.
-    ///         </b> Everything above uploads the mesh into a buffer of the test's own, writes
+    ///         <b>The legs above prove the kernel; this proves the wiring, and they are different
+    ///         claims.</b> Everything above uploads the mesh into a buffer of the test's own, writes
     ///         the constants by reflected offset and dispatches by hand — so it would pass unchanged
     ///         against a feature that allocated nothing, copied nothing and pointed no draw anywhere.
     ///         Here the only things the test does are attach an object, set its weights and record
@@ -304,7 +299,10 @@ public class MorphScatterDeviceTests {
 
         using var descriptors = new DescriptorAllocator(device, "Morph");
         using var morph = new MorphRenderFeature(device, vertexCapacity: 512, entryCapacity: 512) {
-            Effects = effects, Pipelines = new(device), Descriptors = descriptors, Source = scene
+            Effects = effects,
+            Pipelines = new(device),
+            Descriptors = descriptors,
+            Source = scene
         };
 
         using var system = new RenderSystem();
@@ -350,7 +348,9 @@ public class MorphScatterDeviceTests {
             // ⚠ Declared from VertexInput because that is what Record leaves the buffer in — the
             // barrier between the dispatch and the draw is the pass's to record, so a test that
             // declared any other state here would be saying the pass had left it somewhere else.
-            commands.Barrier(new([new(morph.Buffer, ResourceState.VertexInput, ResourceState.CopySource)], []));
+            commands.Barrier(
+                new([new(morph.Buffer, ResourceState.VertexInput, ResourceState.CopySource)], [])
+            );
 
             commands.CopyBuffer(
                 morph.Buffer,
@@ -455,23 +455,19 @@ public class MorphScatterDeviceTests {
 
         var meshBytes = MemoryMarshal.AsBytes(mesh.AsSpan()).ToArray();
 
-        var vertices = device.CreateBuffer(
-            new(
-                meshBytes.Length,
-                BufferUsage.Storage | BufferUsage.CopySource,
-                MemoryAccess.HostUpload,
-                "morph vertices"
-            )
-        );
+        var vertices = device.CreateBuffer(new(
+            meshBytes.Length,
+            BufferUsage.Storage | BufferUsage.CopySource,
+            MemoryAccess.HostUpload,
+            "morph vertices"
+        ));
 
-        var readback = device.CreateBuffer(
-            new(
-                meshBytes.Length,
-                BufferUsage.CopyDestination,
-                MemoryAccess.HostReadback,
-                "morph readback"
-            )
-        );
+        var readback = device.CreateBuffer(new(
+            meshBytes.Length,
+            BufferUsage.CopyDestination,
+            MemoryAccess.HostReadback,
+            "morph readback"
+        ));
 
         device.Write(vertices, 0, meshBytes);
 
@@ -496,14 +492,12 @@ public class MorphScatterDeviceTests {
             var words = MorphKernel.Pack(target);
             var entryBytes = MemoryMarshal.AsBytes(words.AsSpan()).ToArray();
 
-            var entries = device.CreateBuffer(
-                new(
-                    entryBytes.Length,
-                    BufferUsage.Storage,
-                    MemoryAccess.HostUpload,
-                    $"morph entries {target.Name}"
-                )
-            );
+            var entries = device.CreateBuffer(new(
+                entryBytes.Length,
+                BufferUsage.Storage,
+                MemoryAccess.HostUpload,
+                $"morph entries {target.Name}"
+            ));
 
             device.Write(entries, 0, entryBytes);
             owned.Add(entries);
@@ -519,14 +513,12 @@ public class MorphScatterDeviceTests {
             Write(block, constants, "positionStep", MorphKernel.Step(target.PositionScale));
             Write(block, constants, "normalStep", MorphKernel.Step(target.NormalScale));
 
-            var uniforms = device.CreateBuffer(
-                new(
-                    constants.Length,
-                    BufferUsage.Uniform,
-                    MemoryAccess.HostUpload,
-                    $"morph constants {target.Name}"
-                )
-            );
+            var uniforms = device.CreateBuffer(new(
+                constants.Length,
+                BufferUsage.Uniform,
+                MemoryAccess.HostUpload,
+                $"morph constants {target.Name}"
+            ));
 
             device.Write(uniforms, 0, constants);
             owned.Add(uniforms);

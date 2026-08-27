@@ -42,7 +42,7 @@ public sealed class ScreenshotTests : IDisposable {
         var failure =
             Assert.Throws<UiTestException>(() => ui.Screenshot("first")
             ); // ⚠ The obvious behaviour — write it and pass — makes the first run of every screenshot
-        // green, which means nobody ever looks at the picture everything later is measured against.
+// green, which means nobody ever looks at the picture everything later is measured against.
         Assert.Contains("no reference", failure.Message, StringComparison.Ordinal);
         Assert.Contains(
             "VIXEN_UPDATE_SCREENSHOTS",
@@ -65,7 +65,7 @@ public sealed class ScreenshotTests : IDisposable {
         using var ui = Opened();
         ui.Create("div", ui.Document.Root, null, "box");
         ui.Frame(); // Exact, which is the whole claim: the same interface renders to the same bytes, so nothing
-        // has to be tolerated.
+// has to be tolerated.
         ui.Screenshot("box", ImageTolerance.Exact);
     }
 

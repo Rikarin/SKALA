@@ -47,7 +47,7 @@ public sealed class WorldSpawns {
             .ThrowIfNull(
                 library
             ); // Address order, which SpawnLibrary.Tables already guarantees — so two processes given the
-        // same content build stand the same camps up in the same order and the same slots.
+// same content build stand the same camps up in the same order and the same slots.
         foreach (var table in library.Tables) {
             spawners.Add(new(table, seed));
         }

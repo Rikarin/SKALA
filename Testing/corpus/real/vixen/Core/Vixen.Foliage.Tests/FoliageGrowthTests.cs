@@ -17,7 +17,8 @@ public sealed class FoliageGrowthTests {
             Ecology = FoliageEcology.Tree with { SeedDensity = 0.004f, SpreadDistance = 10f }
         };
 
-    static FoliageGrowthSettings Field => FoliageGrowthSettings.Over(new(0f, 0f), new(200f, 200f)) with { Steps = 6 };
+    static FoliageGrowthSettings Field =>
+        FoliageGrowthSettings.Over(new(0f, 0f), new(200f, 200f)) with { Steps = 6 };
 
     static (FoliageVolume Volume, int Type) Sown(FoliageType? type = null) {
         var volume = new FoliageVolume(new(32f));
@@ -210,11 +211,13 @@ public sealed class FoliageGrowthTests {
     [Fact]
     public void PriorityDisplacesRatherThanTies() {
         var scrub = FoliageType.Of("Scrub") with {
-            Radius = 3f, Ecology = FoliageEcology.Tree with { SeedDensity = 0.01f, Priority = 1, ShadeTolerance = 1f }
+            Radius = 3f,
+            Ecology = FoliageEcology.Tree with { SeedDensity = 0.01f, Priority = 1, ShadeTolerance = 1f }
         };
 
         var oak = FoliageType.Of("Oak") with {
-            Radius = 3f, Ecology = FoliageEcology.Tree with { SeedDensity = 0.004f, Priority = 20, ShadeTolerance = 1f }
+            Radius = 3f,
+            Ecology = FoliageEcology.Tree with { SeedDensity = 0.004f, Priority = 20, ShadeTolerance = 1f }
         };
 
         var volume = new FoliageVolume(new(32f));
@@ -318,11 +321,8 @@ public sealed class FoliageGrowthTests {
     public void ARegionWithNoAreaIsRefused() {
         var (volume, _) = Sown();
 
-        var thrown = Assert.Throws<ArgumentException>(() => FoliageGrowth.Simulate(
-                volume,
-                Ground.Flat,
-                Field with { Size = new(0f, 100f) }
-            )
+        var thrown = Assert.Throws<ArgumentException>(
+            () => FoliageGrowth.Simulate(volume, Ground.Flat, Field with { Size = new(0f, 100f) })
         );
 
         Assert.Contains("no area", thrown.Message, StringComparison.Ordinal);
@@ -338,13 +338,12 @@ public sealed class FoliageGrowthTests {
         Assert.Equal(0, volume.CountOf(type));
     }
 
-    static Vector2[] Positions(FoliageVolume volume) => [
-        .. volume.Chunks
+    static Vector2[] Positions(FoliageVolume volume) =>
+        [.. volume.Chunks
             .SelectMany(chunk => chunk.Instances)
             .Select(instance => new Vector2(instance.Position.X, instance.Position.Z))
             .OrderBy(at => at.X)
-            .ThenBy(at => at.Y)
-    ];
+            .ThenBy(at => at.Y)];
 
     /// <summary>Clark and Evans's ratio: below 0.5 is clumped, above it is over-dispersed.</summary>
     static float ClarkEvans(Vector2[] points, float area) =>

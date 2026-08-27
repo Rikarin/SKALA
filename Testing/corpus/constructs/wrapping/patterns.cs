@@ -3,10 +3,10 @@ class Patterns {
 
     bool ListPatternBrokenInSource(int[] xs) {
         return xs is
-            [
-                1,
-                2
-            ];
+        [
+            1,
+            2
+        ];
     }
 
     bool LongListPattern(int[] xs) {
@@ -16,7 +16,11 @@ class Patterns {
     bool PropertyPattern(object o) => o is Thing { Alpha: 1, Beta: 2 };
 
     bool PropertyPatternBrokenInSource(object o) {
-        return o is Thing { Alpha: 1, Beta: 2 };
+        return o is Thing
+        {
+            Alpha: 1,
+            Beta: 2
+        };
     }
 
     bool LongPropertyPattern(object o) {

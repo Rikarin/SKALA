@@ -16,11 +16,11 @@
 namespace Serilog.Core;
 
 /// <summary>
-///     Event arguments for <see cref="LoggingLevelSwitch.MinimumLevelChanged" /> event.
+/// Event arguments for <see cref="LoggingLevelSwitch.MinimumLevelChanged"/> event.
 /// </summary>
 public class LoggingLevelSwitchChangedEventArgs : EventArgs {
     /// <summary>
-    ///     Creates an instance of <see cref="LoggingLevelSwitchChangedEventArgs" /> specifying old and new levels.
+    /// Creates an instance of <see cref="LoggingLevelSwitchChangedEventArgs"/> specifying old and new levels.
     /// </summary>
     /// <param name="oldLevel">Old level.</param>
     /// <param name="newLevel">New level.</param>
@@ -30,12 +30,12 @@ public class LoggingLevelSwitchChangedEventArgs : EventArgs {
     }
 
     /// <summary>
-    ///     Old level.
+    /// Old level.
     /// </summary>
     public LogEventLevel OldLevel { get; }
 
     /// <summary>
-    ///     New level.
+    /// New level.
     /// </summary>
     public LogEventLevel NewLevel { get; }
 }

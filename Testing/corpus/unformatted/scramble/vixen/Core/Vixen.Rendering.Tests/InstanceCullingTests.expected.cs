@@ -16,15 +16,16 @@ public sealed class InstanceCullingTests {
     /// <summary>A wide frustum looking down +Z from the origin.</summary>
     static BoundingFrustum Forward() {
         var
-        view = Matrix4x4.LookAt(Vector3.Zero, new(0f, 0f, 1f), new(0f, 1f, 0f));
+            view = Matrix4x4.LookAt(Vector3.Zero, new(0f, 0f, 1f), new(0f, 1f, 0f));
         var projection = Matrix4x4.PerspectiveFieldOfView(MathF.PI / 2f, 1f, 0.1f, 10_000f);
         return new(view * projection);
     }
 
     static InstanceCullSettings Settings(float end = float.MaxValue, float start = float.MaxValue) =>
         InstanceCullSettings.Everything(Forward(), Vector3.Zero) with {
-            StartCullDistance = start, EndCullDistance =
-                end
+            StartCullDistance = start,
+            EndCullDistance =
+            end
         };
 
     /// <summary>Instances marching away down +Z, one per metre from `first`.</summary>
@@ -49,10 +50,10 @@ public sealed class InstanceCullingTests {
         InstancesBehindTheViewAreDropped() {
         var culler = new InstanceCuller();
         InstanceBounds[] instances = [
-            new(new(0f, 0f, 10f), 0.5f),
-            new(new(0f, 0f, -10f), 0.5f),
-            new(new(0f, 0f, 20f), 0.5f)
-        ]
+                new(new(0f, 0f, 10f), 0.5f),
+                new(new(0f, 0f, -10f), 0.5f),
+                new(new(0f, 0f, 20f), 0.5f)
+            ]
             ;
         Assert.Equal(2, culler.Cull(instances, [], Settings(), []));
         Assert.Equal([0u, 2u], culler.Survivors.ToArray());
@@ -114,7 +115,7 @@ public sealed class InstanceCullingTests {
         Assert.Equal(20, survivors.Length);
         Assert.Equal(survivors.Length, survivors.Distinct().Count());
         foreach (var
-                 run in runs) {
+                     run in runs) {
             var slice = survivors[run.First..(run.First + run.Count)];
             Assert.Equal(slice.OrderBy(index => index), slice);
         }
@@ -148,7 +149,7 @@ public sealed class InstanceCullingTests {
     public void ALevelBoundaryIsInclusiveOfTheFartherLevel() {
         var culler
             = new InstanceCuller();
-        // Exactly on the boundary belongs to the coarser level, and the rule is stated so the two
+// Exactly on the boundary belongs to the coarser level, and the rule is stated so the two
         // sides of a seam test can agree about it.
         InstanceBounds[] instances = [new(new(0f, 0f, 10f), 0f)];
         culler.Cull(instances, [], Settings(), [10f]);
@@ -179,13 +180,13 @@ public sealed class InstanceCullingTests {
             new(new(0f, 0f, 10f), 0.5f), new(new(0f, 0f, -10f), 0.5f),
             new(new(0f, 0f, 20f), 0.5f)
         ];
-        var authored = new InstanceParameters[3
+        var authored = new InstanceParameters [3
         ];
 
         for (var index = 0;
              index < 3;
              index
-             ++) {
+                 ++) {
             authored[index] = InstanceParameters.Neutral with { Tint = index, WindPhase = index * 10f };
         }
 
@@ -227,7 +228,7 @@ public sealed class InstanceCullingTests {
             []
         );
         var
-        fades = culler.Parameters.ToArray().Select(p => p.Fade).ToArray();
+            fades = culler.Parameters.ToArray().Select(p => p.Fade).ToArray();
 
 
         Assert.Equal(1f, fades[0], 4);
@@ -239,7 +240,7 @@ public sealed class InstanceCullingTests {
         Assert.Equal(
             0.5f,
             fades
-            [2],
+                [2],
             4
         );
     }
@@ -261,7 +262,7 @@ public sealed class InstanceCullingTests {
         Assert.All(culler.Parameters.ToArray(), parameter => Assert.Equal(1f, parameter.Fade));
     }
 
-    // --- Density ------------------------------------------------------------
+// --- Density ------------------------------------------------------------
     [Fact]
     public void DensityThinsTheFieldRoughlyInProportion(
     ) {
@@ -291,9 +292,9 @@ public sealed class InstanceCullingTests {
         var culler = new
             InstanceCuller();
         var
-        instances = Enumerable.Range(0, 2000)
-            .Select(i => new InstanceBounds(new(i % 50 * 0.4f, 0f, 10f + (i / 50 * 0.4f)), 0.1f))
-            .ToArray();
+            instances = Enumerable.Range(0, 2000)
+                .Select(i => new InstanceBounds(new(i % 50 * 0.4f, 0f, 10f + (i / 50 * 0.4f)), 0.1f))
+                .ToArray();
 
         uint[] At(float density) {
             culler.Cull(instances, [], Settings() with { DensityScale = density }, []);
@@ -381,11 +382,10 @@ public sealed class InstanceCullingTests {
     public void TooFewTemplatesOrTooLittleRoomIsRefused() {
         var culler = new InstanceCuller();
         culler.Cull(Line(3), [], Settings(), [10f]);
-        Assert.Throws<ArgumentException>(() => culler.FillCommands([default], 0u, new DrawCommand[2]));
+        Assert.Throws<ArgumentException>(() => culler.FillCommands([default], 0u, new DrawCommand [2]));
         Assert.Throws<ArgumentException>(() => culler.FillCommands([default, default], 0u, new DrawCommand[1]));
     }
-
-    // --- Reuse --------------------------------------------------------------
+// --- Reuse --------------------------------------------------------------
 
     [Fact]
     public void ACullerIsReusableAndDoesNotLeakTheLastFramesAnswer() {

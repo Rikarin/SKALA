@@ -82,9 +82,7 @@ internal sealed class PolyMeshDetail {
     /// <param name="mesh">The polygons, in voxel coordinates.</param>
     /// <param name="field">The surface they were built from.</param>
     /// <param name="sampleDistance">How far apart to sample, in voxel columns. Zero or less builds nothing.</param>
-    /// <param name="maxError">
-    ///     How far the flat polygon may be from the ground before a vertex is added, in voxels of height.
-    /// </param>
+    /// <param name="maxError">How far the flat polygon may be from the ground before a vertex is added, in voxels of height.</param>
     /// <param name="walkableHeight">
     ///     The agent's height in voxels, which is how far a sample may look for its own surface. See
     ///     <see cref="TryGroundHeight" /> — this is not a tolerance, it is a proof.
@@ -286,9 +284,7 @@ internal sealed class PolyMeshDetail {
         }
     }
 
-    /// <summary>
-    ///     Adds vertices inside the polygon, worst first, until nothing is out by more than the tolerance.
-    /// </summary>
+    /// <summary>Adds vertices inside the polygon, worst first, until nothing is out by more than the tolerance.</summary>
     static void RefineInterior(
         CompactHeightfield field,
         List<Vector3> vertices,

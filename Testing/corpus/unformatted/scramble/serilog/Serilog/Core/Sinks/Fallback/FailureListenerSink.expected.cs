@@ -16,33 +16,33 @@
 namespace Serilog.Core
     .Sinks;
 
-    sealed class FailureListenerSink : ILogEventSink {
-        readonly
-            ILogEventSink _inner;
+sealed class FailureListenerSink : ILogEventSink {
+    readonly
+        ILogEventSink _inner;
 
-        readonly ILoggingFailureListener _listener;
+    readonly ILoggingFailureListener _listener;
 
-        public FailureListenerSink(ILogEventSink inner, ILoggingFailureListener listener) {
-            if (inner is ISetLoggingFailureListener sfl) {
-                sfl.SetFailureListener(listener);
-            }
-
-            _inner = inner;
-            _listener = listener;
+    public FailureListenerSink(ILogEventSink inner, ILoggingFailureListener listener) {
+        if (inner is ISetLoggingFailureListener sfl) {
+            sfl.SetFailureListener(listener);
         }
 
-        public void Emit(LogEvent logEvent) {
-            try {
-                _inner
-                    .Emit(logEvent);
-            } catch (Exception ex) {
-                _listener.OnLoggingFailed(
-                    this,
-                    LoggingFailureKind.Permanent,
-                    "failed emitting an event",
-                    [logEvent],
-                    ex
-                );
-            }
+        _inner = inner;
+        _listener = listener;
+    }
+
+    public void Emit(LogEvent logEvent) {
+        try {
+            _inner
+                .Emit(logEvent);
+        } catch (Exception ex) {
+            _listener.OnLoggingFailed(
+                this,
+                LoggingFailureKind.Permanent,
+                "failed emitting an event",
+                [logEvent],
+                ex
+            );
         }
     }
+}

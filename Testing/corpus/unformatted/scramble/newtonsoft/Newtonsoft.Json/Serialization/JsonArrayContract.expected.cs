@@ -1,5 +1,4 @@
 // skala-oracle: resharper=2025.2.6 config=sha256:98ff52570e019fac profile=SkalaFormatOnly generated=2026-08-27
-
 #region License
 
 // Copyright (c) 2007 James Newton-King
@@ -33,15 +32,15 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Globalization;
 using
-System.Reflection;
+    System.Reflection;
 using Newtonsoft.Json.Utilities;
 using System.
-Collections;
+    Collections;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 #if !HAVE_LINQ
 using
-Newtonsoft.Json.Utilities.LinqBridge;
+    Newtonsoft.Json.Utilities.LinqBridge;
 
 #else
 using System.Linq;
@@ -50,24 +49,24 @@ using System.Linq;
 
 namespace Newtonsoft.Json.Serialization {
     /// <summary>
-    ///     Contract details for a <see cref="System.Type" /> used by the <see cref="JsonSerializer" />.
+    /// Contract details for a <see cref="System.Type"/> used by the <see cref="JsonSerializer"/>.
     /// </summary>
     public class JsonArrayContract : JsonContainerContract {
         /// <summary>
-        ///     Gets the <see cref="System.Type" /> of the collection items.
+        /// Gets the <see cref="System.Type"/> of the collection items.
         /// </summary>
-        /// <value>The <see cref="System.Type" /> of the collection items.</value>
+        /// <value>The <see cref="System.Type"/> of the collection items.</value>
         public Type?
             CollectionItemType { get; }
 
         /// <summary>
-        ///     Gets a value indicating whether the collection type is a multidimensional array.
+        /// Gets a value indicating whether the collection type is a multidimensional array.
         /// </summary>
         /// <value><c>true</c> if the collection type is a multidimensional array; otherwise, <c>false</c>.</value>
         public bool IsMultidimensionalArray { get; }
 
         private readonly Type?
-        _genericCollectionDefinitionType;
+            _genericCollectionDefinitionType;
 
         [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)]
         private Type? _genericWrapperType;
@@ -104,8 +103,7 @@ namespace Newtonsoft.Json.Serialization {
         }
 
         /// <summary>
-        ///     Gets or sets the function used to create the object. When set this function will override
-        ///     <see cref="JsonContract.DefaultCreator" />.
+        /// Gets or sets the function used to create the object. When set this function will override <see cref="JsonContract.DefaultCreator"/>.
         /// </summary>
         /// <value>The function used to create the object.</value>
         public ObjectConstructor<
@@ -119,18 +117,16 @@ namespace Newtonsoft.Json.Serialization {
         }
 
         /// <summary>
-        ///     Gets a value indicating whether the creator has a parameter with the collection values.
+        /// Gets a value indicating whether the creator has a parameter with the collection values.
         /// </summary>
-        /// <value>
-        ///     <c>true</c> if the creator has a parameter with the collection values; otherwise, <c>false</c>.
-        /// </value>
+        /// <value><c>true</c> if the creator has a parameter with the collection values; otherwise, <c>false</c>.</value>
         public bool HasParameterizedCreator { get; set; }
 
         internal bool HasParameterizedCreatorInternal =>
             (HasParameterizedCreator || _parameterizedCreator != null || _parameterizedConstructor != null);
 
         /// <summary>
-        ///     Initializes a new instance of the <see cref="JsonArrayContract" /> class.
+        /// Initializes a new instance of the <see cref="JsonArrayContract"/> class.
         /// </summary>
         /// <param name="underlyingType">The underlying type for the contract.</param>
         [
@@ -179,9 +175,9 @@ namespace Newtonsoft.Json.Serialization {
                 }
 
                 IsReadOnlyOrFixedSize = ReflectionUtils.InheritsGenericDefinition(
-                    NonNullableUnderlyingType,
-                    typeof(ReadOnlyCollection<>)
-                )
+                        NonNullableUnderlyingType,
+                        typeof(ReadOnlyCollection<>)
+                    )
                     ;
                 canDeserialize = true;
             } else if (ReflectionUtils.ImplementsGenericDefinition(
@@ -195,7 +191,7 @@ namespace Newtonsoft.Json.Serialization {
                     || ReflectionUtils.IsGenericDefinition(
                         NonNullableUnderlyingType,
                         typeof
-                        (IList<>)
+                            (IList<>)
                     )) {
                     CreatedType = typeof(List<>).MakeGenericType(CollectionItemType);
                 }
@@ -314,7 +310,7 @@ namespace Newtonsoft.Json.Serialization {
             RequiresDynamicCode(MiscellaneousUtils.AotWarning)]
         internal IWrappedCollection CreateWrapper(
             object
-            list
+                list
         ) {
             if (_genericWrapperCreator == null) {
                 MiscellaneousUtils.Assert(_genericCollectionDefinitionType != null);
@@ -333,7 +329,7 @@ namespace Newtonsoft.Json.Serialization {
                 }
 
                 ConstructorInfo genericWrapperConstructor =
-                    _genericWrapperType.GetConstructor(new[] { constructorArgument })!;
+                    _genericWrapperType.GetConstructor(new[] { constructorArgument }) !;
                 _genericWrapperCreator =
                     JsonTypeReflector.ReflectionDelegateFactory.CreateParameterizedConstructor(
                         genericWrapperConstructor
@@ -348,9 +344,9 @@ namespace Newtonsoft.Json.Serialization {
             if (_genericTemporaryCollectionCreator == null) {
                 // multidimensional array will also have array instances in it
                 Type
-                collectionItemType = (IsMultidimensionalArray || CollectionItemType == null)
-                    ? typeof(object)
-                    : CollectionItemType;
+                    collectionItemType = (IsMultidimensionalArray || CollectionItemType == null)
+                        ? typeof(object)
+                        : CollectionItemType;
 
                 Type temporaryListType = typeof(List<>).MakeGenericType(collectionItemType);
                 _genericTemporaryCollectionCreator =

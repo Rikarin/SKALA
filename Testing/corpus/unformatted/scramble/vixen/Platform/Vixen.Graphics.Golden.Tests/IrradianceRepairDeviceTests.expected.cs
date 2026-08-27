@@ -4,11 +4,11 @@
 
 using Vixen.Core.Mathematics;
 using
-Vixen.Graphics.Vulkan;
+    Vixen.Graphics.Vulkan;
 using Vixen.Rendering;
 using Vixen.Rendering.DistanceFields;
 using Vixen
-.Rendering.IrradianceFields;
+    .Rendering.IrradianceFields;
 using Vixen.Rendering.Lighting;
 using Vixen.Shaders;
 using Xunit;
@@ -50,7 +50,7 @@ public sealed class IrradianceRepairDeviceTests {
 
     /// <summary>What a border texel holds before the repair — a value no correct sync can produce.</summary>
     const float
-    Poison = 4096f;
+        Poison = 4096f;
 
     /// <summary>
     ///     Every texel the repair wrote is the texel the reference repair would have written.
@@ -129,7 +129,7 @@ public sealed class IrradianceRepairDeviceTests {
             out int dispatches
         ) {
         var
-        device = fixture.Device;
+            device = fixture.Device;
 
         using var allocator =
             new DescriptorAllocator(device);
@@ -148,7 +148,7 @@ public sealed class IrradianceRepairDeviceTests {
             Effects = effects, Pipelines = new ComputePipelineCache(device), Descriptors = allocator
         };
         var
-        probes = new IrradianceProbe[field.Pool.Texels.Length];
+            probes = new IrradianceProbe[field.Pool.Texels.Length];
 
         allocator.BeginFrame();
         VulkanDiagnostics.Reset()
@@ -187,7 +187,7 @@ public sealed class IrradianceRepairDeviceTests {
 
         Assert.True(texture.TryRead(probes));
         if (VulkanDiagnostics.ErrorCount > 0
-        ) {
+           ) {
             Assert.Fail(
                 "The repair produced validation errors, so what it wrote is meaningless: "
                 + string.Join(Environment.NewLine, VulkanDiagnostics.Messages)
@@ -306,7 +306,7 @@ public sealed class IrradianceRepairDeviceTests {
     ///     same C# object, so the seeded pool is bit-identical before either repair touches it.
     /// </remarks>
     sealed class Ball :
-    IDistanceField {
+        IDistanceField {
         const
             float Radius = 1.1f;
 
@@ -322,7 +322,7 @@ public sealed class IrradianceRepairDeviceTests {
 
         public Vector3 Surface(
             Vector3
-            position,
+                position,
             Vector3 normal,
             Vector3 direction
         ) =>

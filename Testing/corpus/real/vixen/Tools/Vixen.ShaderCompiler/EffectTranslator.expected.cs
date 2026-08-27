@@ -27,11 +27,8 @@ namespace Vixen.ShaderCompiler;
 ///     </para>
 ///     <para>
 ///         <strong>The naming has to match the generator, not merely resemble it.</strong>
-///         <c>Vixen.Shaders.Generators</c> emits
-///         <c>
-///ParameterKeys.New&lt;float&gt;
-///         ("Lighting.exposure")
-///         </c> from the same reflection at build time; this produces the key a
+///         <c>Vixen.Shaders.Generators</c> emits <c>ParameterKeys.New&lt;float&gt;
+///         ("Lighting.exposure")</c> from the same reflection at build time; this produces the key a
 ///         loaded effect writes through. They are interned by name, so agreeing means they are the
 ///         same object and disagreeing means two keys for one offset — a value set through the
 ///         generated one landing nowhere.

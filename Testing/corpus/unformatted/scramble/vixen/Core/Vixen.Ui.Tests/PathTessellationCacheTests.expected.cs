@@ -7,7 +7,7 @@ using Vixen.Ui;
 using Vixen.Ui.Rendering;
 using Vixen.Ui.Text.Rasterizing;
 using Xunit
-;
+    ;
 
 namespace Vixen.Ui.Tests;
 
@@ -31,7 +31,7 @@ namespace Vixen.Ui.Tests;
 public class
     PathTessellationCacheTests {
     static readonly Rectangle
-    Viewport = new(0, 0, 800, 600);
+        Viewport = new(0, 0, 800, 600);
 
     static PathBuilder Blob() =>
         new PathBuilder()
@@ -39,7 +39,7 @@ public class
             .LineTo(new Vector2(120, 30))
             .CubicTo(
                 new
-                Vector2(140, 80),
+                    Vector2(140, 80),
                 new Vector2(60, 120),
                 new Vector2(20, 90)
             )
@@ -124,11 +124,8 @@ public class
     }
 
     /// <summary>
-    ///     ⚠
-    ///     <b>
-    ///         Every input the tessellator reads is in the key, and a stroke's width is the one most
-    ///         easily forgotten.
-    ///     </b> Leaving it out is a line that keeps the weight it had.
+    ///     ⚠ <b>Every input the tessellator reads is in the key, and a stroke's width is the one most
+    ///     easily forgotten.</b> Leaving it out is a line that keeps the weight it had.
     /// </summary>
     [Fact]
     public void A_stroke_that_changed_width_is_tessellated_again() {
@@ -176,9 +173,9 @@ public class
              i < 8;
              i++) {
             var moved = new PathBuilder().MoveTo(new Vector2(20 + i, 20))
-                .LineTo(new Vector2(120, 30))
-                .LineTo(new Vector2(20, 90))
-                .Close()
+                    .LineTo(new Vector2(120, 30))
+                    .LineTo(new Vector2(20, 90))
+                    .Close()
                 ;
             builder.Build(Drawn(moved, Color4.White), glyphs, Viewport);
         }
@@ -220,7 +217,10 @@ public class
         list.Add(
             new DrawCommand(DrawCommandKind.PathStroke, 0, 0, 0, 0, Color4.White, 0, thickness) {
                 Offset =
-                    list.AddPath(path), Length = path.Count, Join = LineJoin.Miter, Cap = LineCap.Butt
+                    list.AddPath(path),
+                Length = path.Count,
+                Join = LineJoin.Miter,
+                Cap = LineCap.Butt
             }
         );
 
@@ -229,11 +229,11 @@ public class
     }
 
     static
-        List<(Vector2 Position, Vector4 Shape)> Snapshot(UiGeometry geometry) => [
-            .. geometry.Vertices.Select(vertex => (vertex.Position,
-                    vertex.Shape)
-            )
-        ];
+        List<(Vector2 Position, Vector4 Shape )> Snapshot(UiGeometry geometry) => [
+        .. geometry.Vertices.Select(vertex => (vertex.Position,
+            vertex.Shape)
+        )
+    ];
 
     static GlyphFieldCache Cache() => new(new GlyphAtlas(512, 512));
 }

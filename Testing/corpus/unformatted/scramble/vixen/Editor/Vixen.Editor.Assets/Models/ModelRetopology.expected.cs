@@ -6,19 +6,17 @@ using Vixen.Core.Mathematics;
 using Vixen.Geometry;
 using Vixen.Geometry.Remeshing;
 using
-Vixen.Geometry.Uv;
+    Vixen.Geometry.Uv;
 using Vixen.
-Rendering;
+    Rendering;
 
 namespace Vixen.Editor.Assets.Models;
 
 /// <summary>Retopology and unwrapping over a model file's meshes, for the importer and the CLI alike.</summary>
 /// <remarks>
 ///     <para>
-///         <b>
-///             docs/plan/41 § D16 and docs/plan/42 § D13 name four surfaces between them and three of
-///             them run exactly this.
-///         </b> The importer, <c>vixen remesh</c> and <c>vixen unwrap</c> differ
+///         <b>docs/plan/41 § D16 and docs/plan/42 § D13 name four surfaces between them and three of
+///         them run exactly this.</b> The importer, <c>vixen remesh</c> and <c>vixen unwrap</c> differ
 ///         in where the mesh came from and where it goes, and in nothing else — so the decision of what
 ///         to do to a mesh lives here once rather than being made the same way three times and then
 ///         drifting.
@@ -56,7 +54,7 @@ public static class ModelRetopology {
             MeshData mesh,
             ModelImportSettings settings,
             IReadOnlyList<RemeshGuide>? guides =
-            null
+                null
         ) {
         ArgumentNullException.ThrowIfNull(mesh);
         ArgumentNullException.ThrowIfNull(settings);
@@ -131,7 +129,7 @@ public static class ModelRetopology {
     ///     because "this mesh has no atlas" is a message beside an asset and not a failed import: the
     ///     geometry is still perfectly good.
     /// </remarks>
-    static (Vector2[] Coordinates, bool Unwrapped) Unwrap(
+    static ( Vector2[] Coordinates, bool Unwrapped) Unwrap(
         EditMesh mesh,
         ModelImportSettings settings,
         string name,
@@ -140,7 +138,7 @@ public static class ModelRetopology {
         try {
             var charts = UvUnwrap.Charts(mesh, settings.ToUvSettings());
             var
-            islands = UvUnwrap.Flatten(mesh, charts, settings.ToUvSettings());
+                islands = UvUnwrap.Flatten(mesh, charts, settings.ToUvSettings());
             var placements = UvUnwrap.Pack(islands, settings.ToPackSettings(), out var report);
 
             messages.AddRange(report.Warnings);
@@ -151,7 +149,7 @@ public static class ModelRetopology {
             return (
                 ModelGeometry.Atlas(mesh, islands, placements), true);
         } catch (Exception failure) when (
-                                          failure is InvalidOperationException or ArgumentException) {
+            failure is InvalidOperationException or ArgumentException) {
             messages.Add($"'{name}' was not unwrapped: {failure.Message}");
 
             return ([], false);
@@ -165,10 +163,8 @@ public static class ModelRetopology {
     /// <returns>The guide.</returns>
     /// <remarks>
     ///     <para>
-    ///         <b>
-    ///             This is what makes docs/plan/41 § D10's "an asset, not a paint session" true rather
-    ///             than aspirational.
-    ///         </b> A <c>.vxspline</c> is already an asset with an importer, an
+    ///         <b>This is what makes docs/plan/41 § D10's "an asset, not a paint session" true rather
+    ///         than aspirational.</b> A <c>.vxspline</c> is already an asset with an importer, an
     ///         editor and a serializer — doc 31 built all three — so a guide is a curve saved beside
     ///         the mesh, and re-generating the source does not throw the direction away.
     ///     </para>

@@ -142,10 +142,8 @@ public class IrradianceShadingDeviceTests {
     /// <summary>Which half of doc 19 § L2 fills the field this frame reads.</summary>
     /// <remarks>
     ///     <para>
-    ///         <b>
-    ///             Both, separately, because until now each had only ever been checked against the
-    ///             other's absence.
-    ///         </b> <c>IrradianceFillDeviceTests</c> dispatches the fill and reads the
+    ///         <b>Both, separately, because until now each had only ever been checked against the
+    ///         other's absence.</b> <c>IrradianceFillDeviceTests</c> dispatches the fill and reads the
     ///         pool back; this file shades from a field the CPU filled. Neither had ever run the
     ///         renderer's own device path — the <c>PassKind.Compute</c> branch, the pool created as a
     ///         storage image, the upload that carries the index volume and nothing else — so the two

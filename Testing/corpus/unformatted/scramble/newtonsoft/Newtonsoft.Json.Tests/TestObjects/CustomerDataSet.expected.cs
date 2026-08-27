@@ -1,5 +1,4 @@
 // skala-oracle: resharper=2025.2.6 config=sha256:98ff52570e019fac profile=SkalaFormatOnly generated=2026-08-27
-
 #region License
 
 // Copyright (c) 2007 James Newton-King
@@ -31,15 +30,15 @@
 
 #if !(PORTABLE40 || PORTABLE || DNXCORE50) || NETSTANDARD2_0 || NET6_0_OR_GREATER
 using
-System;
+    System;
 using System.Collections.Generic;
 using System.Text;
 
 namespace Newtonsoft.Json.Tests
     .TestObjects {
     /// <summary>
-    ///     Represents a strongly typed in-memory cache of data.
-    /// </summary>
+    ///Represents a strongly typed in-memory cache of data.
+    ///</summary>
     [global::System.Serializable()]
     [global::System.ComponentModel.DesignerCategoryAttribute("code")]
     [global::System.ComponentModel.ToolboxItem(true)]
@@ -63,7 +62,7 @@ namespace Newtonsoft.Json.Tests
             InitClass();
             global::System.
                 ComponentModel.CollectionChangeEventHandler schemaChangedHandler =
-                new global::System.ComponentModel.CollectionChangeEventHandler(SchemaChanged);
+                    new global::System.ComponentModel.CollectionChangeEventHandler(SchemaChanged);
             base.Tables.CollectionChanged += schemaChangedHandler
                 ;
             base
@@ -87,7 +86,7 @@ namespace Newtonsoft.Json.Tests
             }
 
             string
-            strSchema = ((string)(info.GetValue("XmlSchema", typeof(string))));
+                strSchema = ((string)(info.GetValue("XmlSchema", typeof(string))));
             if ((DetermineSchemaSerializationMode(info, context)
                     == global::System.Data.SchemaSerializationMode.IncludeSchema)) {
                 global::System.Data.DataSet ds = new global::System.Data.DataSet();
@@ -173,7 +172,7 @@ namespace Newtonsoft.Json.Tests
             .CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "4.0.0.0")]
         public override global::System.Data.DataSet Clone() {
             CustomerDataSet
-            cln = ((CustomerDataSet)(base.Clone()));
+                cln = ((CustomerDataSet)(base.Clone()));
             cln.InitVars();
             cln.SchemaSerializationMode = SchemaSerializationMode;
             return cln;
@@ -288,7 +287,7 @@ namespace Newtonsoft.Json.Tests
         [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "4.0.0.0")]
         public static global::System.Xml.Schema.XmlSchemaComplexType GetTypedDataSetSchema(
             global::
-            System.Xml.Schema.XmlSchemaSet xs
+                System.Xml.Schema.XmlSchemaSet xs
         ) {
             CustomerDataSet ds = new CustomerDataSet();
             global::System.
@@ -311,7 +310,7 @@ namespace Newtonsoft.Json.Tests
                     global::System.Xml.Schema.XmlSchema schema = null;
                     dsSchema.Write(s1);
                     for (global::System.Collections.IEnumerator schemas =
-                         xs.Schemas(dsSchema.TargetNamespace).GetEnumerator();
+                             xs.Schemas(dsSchema.TargetNamespace).GetEnumerator();
                          schemas.MoveNext();) {
                         schema = ((global::System.
                             Xml.Schema.XmlSchema)(schemas.Current));
@@ -321,9 +320,9 @@ namespace Newtonsoft.Json.Tests
                             s1.Position = 0;
                             s2.Position = 0;
                             for (
-                                 ;
-                                 ((s1.Position != s1.Length)
-                                     && (s1.ReadByte() == s2.ReadByte()));) {
+                                ;
+                                ((s1.Position != s1.Length)
+                                    && (s1.ReadByte() == s2.ReadByte()));) {
                                 ;
                             }
 
@@ -351,8 +350,8 @@ namespace Newtonsoft.Json.Tests
         public delegate void CustomersRowChangeEventHandler(object sender, CustomersRowChangeEvent e);
 
         /// <summary>
-        ///     Represents the strongly named DataTable class.
-        /// </summary>
+        ///Represents the strongly named DataTable class.
+        ///</summary>
         [global::System.Serializable()]
         [global::System.Xml.Serialization
             .XmlSchemaProviderAttribute("GetTypedTableSchema")]
@@ -464,7 +463,7 @@ namespace Newtonsoft.Json.Tests
                 "4.0.0.0"
             )]
             public event CustomersRowChangeEventHandler
-            CustomersRowDeleting;
+                CustomersRowDeleting;
 
             [global::System.CodeDom.Compiler.GeneratedCodeAttribute(
                 "System.Data.Design.TypedDataSetGenerator",
@@ -484,9 +483,9 @@ namespace Newtonsoft.Json.Tests
             [global::System.Diagnostics
                 .DebuggerNonUserCodeAttribute()]
             [global::System.CodeDom.Compiler.GeneratedCodeAttribute(
-                "System.Data.Design.TypedDataSetGenerator",
-                "4.0.0.0"
-            )
+                    "System.Data.Design.TypedDataSetGenerator",
+                    "4.0.0.0"
+                )
             ]
             public
                 CustomersRow AddCustomersRow(string CustomerID) {
@@ -562,7 +561,7 @@ namespace Newtonsoft.Json.Tests
             public CustomersRow
                 NewCustomersRow() {
                 return ((CustomersRow)(NewRow())
-                );
+                    );
             }
 
             [global::System.Diagnostics
@@ -597,7 +596,7 @@ namespace Newtonsoft.Json.Tests
                 )]
             protected override void OnRowChanged(
                 global::System.Data.DataRowChangeEventArgs
-                e
+                    e
             ) {
                 base.OnRowChanged(e);
                 if ((CustomersRowChanged
@@ -613,7 +612,7 @@ namespace Newtonsoft.Json.Tests
             )]
             protected override void OnRowChanging(
                 global::System.Data
-                .DataRowChangeEventArgs e
+                    .DataRowChangeEventArgs e
             ) {
                 base.OnRowChanging(e);
                 if
@@ -622,7 +621,7 @@ namespace Newtonsoft.Json.Tests
                         this,
                         new CustomersRowChangeEvent(
                             ((CustomersRow)(
-                                    e.Row)),
+                                e.Row)),
                             e.Action
                         )
                     );
@@ -639,7 +638,7 @@ namespace Newtonsoft.Json.Tests
                     CustomersRowDeleted(
                         this,
                         new
-                        CustomersRowChangeEvent(((CustomersRow)(e.Row)), e.Action)
+                            CustomersRowChangeEvent(((CustomersRow)(e.Row)), e.Action)
                     );
                 }
             }
@@ -718,7 +717,7 @@ namespace Newtonsoft.Json.Tests
                 if (xs.Contains(dsSchema.TargetNamespace)) {
                     global::System.IO.MemoryStream s1 = new global::System.IO.MemoryStream();
                     global::System.IO.MemoryStream
-                    s2 = new global::System.IO.MemoryStream();
+                        s2 = new global::System.IO.MemoryStream();
                     try {
                         global
                             ::System.Xml.Schema.XmlSchema schema = null;
@@ -764,8 +763,8 @@ namespace Newtonsoft.Json.Tests
         }
 
         /// <summary>
-        ///     Represents strongly named DataRow class.
-        /// </summary>
+        ///Represents strongly named DataRow class.
+        ///</summary>
         public partial class CustomersRow : global::System.Data.DataRow {
             private CustomersDataTable tableCustomers;
 
@@ -817,8 +816,8 @@ namespace Newtonsoft.Json.Tests
         }
 
         /// <summary>
-        ///     Row event argument class
-        /// </summary>
+        ///Row event argument class
+        ///</summary>
         [global::
             System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "4.0.0.0")]
         public class CustomersRowChangeEvent : global::System.EventArgs {

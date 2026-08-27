@@ -69,10 +69,10 @@ public sealed class IrradianceRepairDeviceTests {
         var reference = Seeded(refined);
         var device =
             Seeded(refined); // The reference answer, in the order the field itself insists on: a border is a copy, so
-        // copying before the original is repaired copies the hole.
+// copying before the original is repaired copies the hole.
         var dilated = reference.Dilate();
         reference.SyncBorders(); // ⚠ Asserted, because a repair with nothing to repair is a test that passes for the wrong
-        // reason — and every assertion below would then be comparing two untouched pools.
+// reason — and every assertion below would then be comparing two untouched pools.
         Assert.True(dilated > 0, "the seeded field has no invalid probes, so dilation proves nothing");
         var probes = Repair(owned, device, out var repaired, out var skipped, out var dispatches);
         Assert.Null(skipped);
@@ -87,7 +87,7 @@ public sealed class IrradianceRepairDeviceTests {
                 device.Pool.OriginOf(
                     brick.Slot
                 ); // The whole padded footprint, borders included — which is the half a fill cannot be checked
-            // on, because a fill does not write it.
+// on, because a fill does not write it.
             for (var z = 0; z <= IrradianceBrickPool.BrickResolution; z++) {
                 for (var y = 0; y <= IrradianceBrickPool.BrickResolution; y++) {
                     for (var x = 0; x <= IrradianceBrickPool.BrickResolution; x++) {
@@ -116,10 +116,10 @@ public sealed class IrradianceRepairDeviceTests {
     ) {
         var device = fixture.Device;
         using var
-        allocator = new DescriptorAllocator(
-            device
-        ); // PoolIsWritten is deliberately *off*: the upload is what seeds the pool, and this is exactly the
-        // hand-over that makes the two fillers one field.
+            allocator = new DescriptorAllocator(
+                device
+            ); // PoolIsWritten is deliberately *off*: the upload is what seeds the pool, and this is exactly the
+// hand-over that makes the two fillers one field.
         using var texture = new IrradianceFieldTexture(field);
         var loader = new EffectLoader(device);
         var effects = new EffectSystem();
@@ -138,7 +138,7 @@ public sealed class IrradianceRepairDeviceTests {
                 device,
                 commands
             ); // The upload leaves the pool readable; the repair writes it. Bracketing is the caller's,
-            // because in a real frame the fill dispatch is inside the same pair.
+// because in a real frame the fill dispatch is inside the same pair.
             texture.TransitionPool(commands, ResourceState.ShaderRead, IrradianceFieldTexture.PoolIsBeingWritten);
             repaired = repair.Record(commands, field, texture);
             texture.TransitionPool(commands, IrradianceFieldTexture.PoolIsBeingWritten, ResourceState.ShaderRead);
@@ -180,10 +180,10 @@ public sealed class IrradianceRepairDeviceTests {
 
         new TracedIrradianceFiller(new Ball(), new UniformSky(Radiance))
             .Fill(field); // Every border texel poisoned, because a border texel can be the source of another border
-        // texel's copy — an edge texel of a brick at the grid's outer face reads its neighbour's
-        // border plane — and the copy has to be of what this repair wrote, not of what the pool held
-        // before. A dispatch that reads a border texel its own pass has not finished writing copies
-        // either the poison or a value from the wrong moment, and the comparison sees both.
+// texel's copy — an edge texel of a brick at the grid's outer face reads its neighbour's
+// border plane — and the copy has to be of what this repair wrote, not of what the pool held
+// before. A dispatch that reads a border texel its own pass has not finished writing copies
+// either the poison or a value from the wrong moment, and the comparison sees both.
         var poison = new IrradianceProbe(new(new Vector3(Poison), Vector3.Zero, Vector3.Zero, Vector3.Zero), 1f, 0f);
         foreach (var brick in field.Bricks) {
             for (var z = 0; z <= IrradianceBrickPool.BrickResolution; z++) {

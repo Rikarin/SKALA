@@ -145,12 +145,12 @@ public static class BindingPlan {
             // Storage buffers last, after textures and samplers, for the same reason the uniform
             // block goes first: adding one must not renumber anything that already exists.
             foreach (var kind in (IrBindingKind[])[
-                         IrBindingKind.Texture,
-                         IrBindingKind.Sampler,
-                         IrBindingKind.StorageBuffer,
-                         IrBindingKind.StorageImage,
-                         IrBindingKind.AccelerationStructure
-                     ]) {
+                IrBindingKind.Texture,
+                IrBindingKind.Sampler,
+                IrBindingKind.StorageBuffer,
+                IrBindingKind.StorageImage,
+                IrBindingKind.AccelerationStructure
+            ]) {
                 // A shared binding declared by several features is one binding, recognised by the
                 // name they all wrote. Grouped rather than deduplicated in place so that the first
                 // declaration keeps the slot and the rest become its aliases — every one of them has
@@ -158,7 +158,11 @@ public static class BindingPlan {
                 foreach (var group in inSet.Where(b => b.Kind == kind).GroupBy(SharedKey)) {
                     var resource = group.First();
 
-                    plan.Add(new(set, binding++, kind, resource.Name, [], resource) { Aliases = [.. group.Skip(1)] });
+                    plan.Add(
+                        new(set, binding++, kind, resource.Name, [], resource) {
+                            Aliases = [.. group.Skip(1)]
+                        }
+                    );
                 }
             }
         }

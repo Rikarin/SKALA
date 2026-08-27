@@ -1,5 +1,4 @@
 ﻿#region License
-
 // Copyright (c) 2007 James Newton-King
 //
 // Permission is hereby granted, free of charge, to any person
@@ -22,38 +21,43 @@
 // WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 // OTHER DEALINGS IN THE SOFTWARE.
-
 #endregion
 
 using System;
 
-namespace Newtonsoft.Json.Linq {
+namespace Newtonsoft.Json.Linq
+{
     /// <summary>
-    ///     Specifies the settings used when loading JSON.
+    /// Specifies the settings used when loading JSON.
     /// </summary>
-    public class JsonLoadSettings {
+    public class JsonLoadSettings
+    {
         private CommentHandling _commentHandling;
         private LineInfoHandling _lineInfoHandling;
         private DuplicatePropertyNameHandling _duplicatePropertyNameHandling;
 
         /// <summary>
-        ///     Initializes a new instance of the <see cref="JsonLoadSettings" /> class.
+        /// Initializes a new instance of the <see cref="JsonLoadSettings"/> class.
         /// </summary>
-        public JsonLoadSettings() {
+        public JsonLoadSettings()
+        {
             _lineInfoHandling = LineInfoHandling.Load;
             _commentHandling = CommentHandling.Ignore;
             _duplicatePropertyNameHandling = DuplicatePropertyNameHandling.Replace;
         }
 
         /// <summary>
-        ///     Gets or sets how JSON comments are handled when loading JSON.
-        ///     The default value is <see cref="CommentHandling.Ignore" />.
+        /// Gets or sets how JSON comments are handled when loading JSON.
+        /// The default value is <see cref="CommentHandling.Ignore" />.
         /// </summary>
         /// <value>The JSON comment handling.</value>
-        public CommentHandling CommentHandling {
+        public CommentHandling CommentHandling
+        {
             get => _commentHandling;
-            set {
-                if (value < CommentHandling.Ignore || value > CommentHandling.Load) {
+            set
+            {
+                if (value < CommentHandling.Ignore || value > CommentHandling.Load)
+                {
                     throw new ArgumentOutOfRangeException(nameof(value));
                 }
 
@@ -62,14 +66,17 @@ namespace Newtonsoft.Json.Linq {
         }
 
         /// <summary>
-        ///     Gets or sets how JSON line info is handled when loading JSON.
-        ///     The default value is <see cref="LineInfoHandling.Load" />.
+        /// Gets or sets how JSON line info is handled when loading JSON.
+        /// The default value is <see cref="LineInfoHandling.Load" />.
         /// </summary>
         /// <value>The JSON line info handling.</value>
-        public LineInfoHandling LineInfoHandling {
+        public LineInfoHandling LineInfoHandling
+        {
             get => _lineInfoHandling;
-            set {
-                if (value < LineInfoHandling.Ignore || value > LineInfoHandling.Load) {
+            set
+            {
+                if (value < LineInfoHandling.Ignore || value > LineInfoHandling.Load)
+                {
                     throw new ArgumentOutOfRangeException(nameof(value));
                 }
 
@@ -78,14 +85,17 @@ namespace Newtonsoft.Json.Linq {
         }
 
         /// <summary>
-        ///     Gets or sets how duplicate property names in JSON objects are handled when loading JSON.
-        ///     The default value is <see cref="DuplicatePropertyNameHandling.Replace" />.
+        /// Gets or sets how duplicate property names in JSON objects are handled when loading JSON.
+        /// The default value is <see cref="DuplicatePropertyNameHandling.Replace" />.
         /// </summary>
         /// <value>The JSON duplicate property name handling.</value>
-        public DuplicatePropertyNameHandling DuplicatePropertyNameHandling {
+        public DuplicatePropertyNameHandling DuplicatePropertyNameHandling
+        {
             get => _duplicatePropertyNameHandling;
-            set {
-                if (value < DuplicatePropertyNameHandling.Replace || value > DuplicatePropertyNameHandling.Error) {
+            set
+            {
+                if (value < DuplicatePropertyNameHandling.Replace || value > DuplicatePropertyNameHandling.Error)
+                {
                     throw new ArgumentOutOfRangeException(nameof(value));
                 }
 

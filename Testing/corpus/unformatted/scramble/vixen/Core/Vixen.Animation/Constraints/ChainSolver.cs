@@ -1,11 +1,10 @@
 // SPDX-FileCopyrightText: Copyright (c) Rikarin
-// SPDX-License-Identifier: Apache-2.0
-
-using Vixen.Animation.Ik;
+         // SPDX-License-Identifier: Apache-2.0
+        
+	using Vixen.Animation.   Ik;   
 using
 Vixen.Core.Mathematics;
-
-namespace Vixen.Animation.Constraints;
+namespace Vixen  .Animation.Constraints  ;
 
 /// <summary>One chain, and what the arbiter decided it should do.</summary>
 /// <param name="Chain">Which joints may move.</param>
@@ -17,15 +16,12 @@ namespace Vixen.Animation.Constraints;
 /// <param name="EffectorOffset">
 ///     Where on the effector joint the point being placed is, in the joint's own space.
 /// </param>
-public readonly record struct ChainSolveRequest(
-    ChainSpec Chain,
-    Vector3 Position,
-    float PositionWeight,
-    Quaternion Rotation,
-    float RotationWeight,
-    Vector3 Pole,
-    Vector3 EffectorOffset);
-
+    public readonly record struct ChainSolveRequest( 
+         ChainSpec Chain,  Vector3 Position  ,
+              float PositionWeight , Quaternion Rotation,  
+               float RotationWeight ,
+    Vector3 Pole ,
+       Vector3    EffectorOffset )    ;
 /// <summary>How one chain is actually moved. The seam under the arbiter.</summary>
 /// <remarks>
 ///     <para>
@@ -36,22 +32,21 @@ public readonly record struct ChainSolveRequest(
 ///         data-driven one for a tail.
 ///     </para>
 /// </remarks>
-public interface IChainSolver {
+public interface IChainSolver   {
     /// <summary>Moves a chain.</summary>
     /// <param name="skeleton">The skeleton the pose belongs to.</param>
     /// <param name="request">What the chain should do.</param>
     /// <param name="local">The pose, in local space, written in place.</param>
     /// <param name="model">A model-space buffer of at least the skeleton's joint count.</param>
     /// <returns>Whether the chain could be solved at all.</returns>
-    bool Solve(
-        Skeleton skeleton,
-        in ChainSolveRequest request,
+             bool Solve(
+              Skeleton skeleton    ,
+         in    ChainSolveRequest request,
         Span<
-            BoneTransform> local,
-        Span<BoneTransform> model
-    );
-}
-
+             BoneTransform  >  local,
+        Span <BoneTransform> model );   
+   }
+ 
 /// <summary>The shipped solver: analytic for two bones, a swing for one, the last two for longer.</summary>
 /// <remarks>
 ///     <para>
@@ -60,100 +55,83 @@ public interface IChainSolver {
 ///         bones; so is almost everything an author puts a contact on.
 ///     </para>
 ///     <para>
-///         ⚠
-///         <b>
-///             A chain longer than two bones is solved over its last two, and that is a documented
-///             limitation rather than a hidden one.
-///         </b> Distributing error up a spine towards the root is
+///         ⚠ <b>A chain longer than two bones is solved over its last two, and that is a documented
+///         limitation rather than a hidden one.</b> Distributing error up a spine towards the root is
 ///         a different and much larger solver, and it is what the seam exists for. What this does
 ///         instead is produce something reasonable and report the shortfall as a residual, so an
 ///         author sees a number rather than a limb that quietly did not reach.
 ///     </para>
 /// </remarks>
 public sealed
-    class DefaultChainSolver : IChainSolver {
+ class DefaultChainSolver : IChainSolver {
     /// <summary>The one every stack uses unless it is given another.</summary>
-    public static DefaultChainSolver Shared {
-        get; } = new();
-
+         public  static    DefaultChainSolver Shared {
+    get; } = new();
     /// <inheritdoc />
-
-    public bool Solve(
-        Skeleton skeleton,
-        in ChainSolveRequest request,
-        Span
-        <BoneTransform> local,
-        Span<BoneTransform> model
+               
+		public   bool Solve   (
+        Skeleton skeleton , in ChainSolveRequest request    ,
+               Span
+       <   BoneTransform> local,
+Span  <  BoneTransform    > model
     ) {
-        ArgumentNullException
-            .ThrowIfNull(skeleton);
-
-        var effector = request.Chain.Effector;
-
-        if ((uint)effector
-            >= (
-            uint)local.Length) {
-            return false;
+   ArgumentNullException
+           .   ThrowIfNull  (skeleton    );
+  
+         var effector =   request.  Chain.Effector;
+     
+      if (    (uint)effector >= (
+uint  ) local.Length ) {
+            return   false   ;  
         }
-
-        // The last two bones, which for a two-bone chain is the whole of it and for a longer one is
+               // The last two bones, which for a two-bone chain is the whole of it and for a longer one is
         // the documented fallback. A chain that names its own effector as its first joint is asking
-        // for nothing above to move, so it takes the rotation-only path below.
-        var single = request.Chain.First == effector;
-        var mid = single
-            ? -1
-            : skeleton
-                .ParentOf(effector);
-        var root = mid < 0
-            ? -1
-            : skeleton.ParentOf
-            (mid);
-        if (
-            root >= 0 && request.PositionWeight > 0f) {
-            return TwoBoneIk.Solve(
-                skeleton,
-                local,
-                model,
-                new(
-                    root,
-                    mid,
-                    effector,
-                    Target(
-                        skeleton,
-                        local,
-                        model,
-                        request
-                    ),
-                    request.Pole == Vector3.Zero
-                        ? Pole(skeleton, local, model, root, mid, effector, request.Position) : request.Pole,
-                    request.Rotation,
-                    request.PositionWeight,
-                    request
-                        .RotationWeight
-                )
-            );
-        }
-
-        if (request.RotationWeight <= 0f) {
-            return false;
-        }
-
-        // Nothing above the effector to bend, or nothing asked of its position: all that is left is
-        // its own rotation, which is still worth applying — an orientation goal on a root joint is
-        // the ordinary way to stop a head rolling with the body.
-        SkeletonPose.ComputeModelSpace(skeleton, local, model);
-
-        var parent = skeleton.ParentOf(effector)
-            ;
-        var parentRotation = parent < 0
-            ? Quaternion.Identity : model[parent].Rotation;
-
-        var desired = Quaternion.Concatenate(request.Rotation, Quaternion.Conjugate(parentRotation));
-        local[effector].Rotation = Quaternion
-            .Nlerp(local[effector].Rotation, desired, request.RotationWeight);
-        return true;
+              // for nothing above to move, so it takes the rotation-only path below.
+        var single =  request   .Chain.  First  ==   effector;
+             var mid  =  single ? -1 : skeleton
+. ParentOf  (effector)   ;
+   var  root = mid   < 0 ? -  1    :  skeleton  .ParentOf
+   (mid);
+        if    (
+root >= 0 &&    request.   PositionWeight    >    0f )  {
+     
+             return TwoBoneIk  .Solve(
+                skeleton, local    ,
+             model,
+                new  (
+ root,
+    mid, effector,
+                Target(skeleton   ,
+		local , model, request)    ,
+                    request .Pole ==  Vector3.   Zero
+              ? Pole(skeleton, local, model , root, mid ,    effector ,  request  .Position) : request.Pole,   
+	request   .Rotation    , request    .PositionWeight,
+request
+.RotationWeight
+   )
+    )  ;
     }
-
+             if (request .  RotationWeight <=  0f)
+{
+             return   false  ;
+        }
+             
+  // Nothing above the effector to bend, or nothing asked of its position: all that is left is
+    // its own rotation, which is still worth applying — an orientation goal on a root joint is
+          // the ordinary way to stop a head rolling with the body.
+    SkeletonPose    .ComputeModelSpace(
+              skeleton , local  , model)   ;
+   
+          var parent = skeleton.ParentOf( effector)
+;
+               var parentRotation =   parent <  0
+           ?   Quaternion  .Identity : model    [parent]   .Rotation;
+              
+        var  desired  = Quaternion. Concatenate( request.Rotation, Quaternion.Conjugate(    parentRotation    ))  ;
+	local[effector]   .Rotation    = Quaternion
+			.Nlerp(    local[effector ].   Rotation,   desired,   request.RotationWeight);   
+            return true;
+    }
     /// <summary>
     ///     Where the <em>joint</em> has to go for the point on it to land where it was asked to.
     /// </summary>
@@ -164,35 +142,30 @@ public sealed
     ///     leaving it out puts every gripped prop through the hand it is held in.
     /// </remarks>
     static Vector3 Target(
-        Skeleton skeleton,
-        Span<BoneTransform> local,
-        Span<BoneTransform> model,
-        in ChainSolveRequest request
-    ) {
-        if (request.EffectorOffset == Vector3.Zero
-        ) {
-            return request.Position;
-        }
+     Skeleton    skeleton   , Span   <   BoneTransform    > local ,
+              Span   <   BoneTransform> model   , in   ChainSolveRequest request
+  ) {
+               if  ( request .EffectorOffset == Vector3 .Zero
+              ) {
+return request.Position  ;
+          }
 
-        SkeletonPose.ComputeModelSpace(skeleton, local, model);
-        var rotation =
-            request.RotationWeight > 0f
-                ? request
-                    .Rotation
-                : model[request.Chain.Effector].Rotation;
+     SkeletonPose.    ComputeModelSpace(skeleton,  local
+    , model) ;
+ var rotation =
+         request.RotationWeight > 0f
+   ?  request
+         .Rotation
+            : model[    request  . Chain.Effector].Rotation;
 
-        return
-            request.Position - Quaternion.Transform(request.EffectorOffset, rotation);
+	return
+ request .Position -   Quaternion.   Transform(request.EffectorOffset , rotation) ;
     }
-
     /// <summary>Which way the middle joint bends when nobody said.</summary>
     /// <remarks>
     ///     <para>
-    ///         ⚠
-    ///         <b>
-    ///             A goal with no pole is the common case, and getting this wrong makes the solve do
-    ///             nothing at all.
-    ///         </b> <see cref="TwoBoneIk" /> takes the bend plane from the pole, falls
+    ///         ⚠ <b>A goal with no pole is the common case, and getting this wrong makes the solve do
+    ///         nothing at all.</b> <see cref="TwoBoneIk" /> takes the bend plane from the pole, falls
     ///         back to the chain's own current plane, and refuses the solve when both are degenerate
     ///         — which a perfectly straight chain, which is what a bind pose usually is, makes them.
     ///         A "sensible" pole extrapolated along the chain is exactly the degenerate one.
@@ -205,53 +178,49 @@ public sealed
     ///         reaching sideways does with their elbow.
     ///     </para>
     /// </remarks>
-    static Vector3 Pole(
-        Skeleton skeleton,
-        Span<BoneTransform> local,
-        Span<BoneTransform> model,
-        int root,
-        int mid,
-        int tip,
-        Vector3 target
-    ) {
-        SkeletonPose.ComputeModelSpace(skeleton, local, model);
-
-        var from = model[root].Translation;
-        var bend = model[
-            mid].Translation;
+  static Vector3 Pole(
+     Skeleton skeleton
+               ,
+      Span<  BoneTransform  >    local, Span<BoneTransform  > model,
+        int  root,
+      int mid,
+       int tip,
+          Vector3 target
+	)    {
+        SkeletonPose.ComputeModelSpace(skeleton, local, model );
+    
+        var from = model[root  ].    Translation  ;
+   var  bend = model [
+ mid].Translation  ;
         var axis
-            = model[tip].Translation - from;
-        if (Vector3.Cross(axis, bend - from).LengthSquared() > 1e-8f) {
-            return bend;
-        }
+= model[   tip    ]  . Translation - from;
+            if  (   Vector3.Cross(axis,  bend -   from).   LengthSquared   ()    > 1e-8f   ) { return    bend ;
+            }
+           
+               
+        var   length = axis  .    LengthSquared() ;
+       if (length <= 1e-8f)  {
+               return  bend    + Vector3   .Up;   }
+        
+    var toTarget =    target - from; var sideways = toTarget - (axis * (  Vector3. Dot(toTarget  ,   axis)  / length)  );
 
-
-        var length = axis.LengthSquared();
-        if (length <= 1e-8f) {
-            return bend + Vector3.Up;
-        }
-
-        var toTarget = target - from;
-        var sideways = toTarget - (axis * (Vector3.Dot(toTarget, axis) / length));
-
-        if
-            (sideways.LengthSquared() > 1e-8f) {
-            return bend
-                + Vector3
-                    .Normalize(sideways);
-        }
-
-        // The target is straight down the chain, so no direction is better than another. Any
-
-        // perpendicular keeps the solve from refusing; picking one deterministically keeps two
+              if
+(sideways  .LengthSquared   (   ) > 1e-8f   ) {
+           return bend + Vector3
+       .Normalize  (    sideways);
+  
+                }
+              // The target is straight down the chain, so no direction is better than another. Any
+         
+                // perpendicular keeps the solve from refusing; picking one deterministically keeps two
         // machines agreeing about which way the elbow went.
+      var
+straight = Vector3.Normalize( axis  );
+     
         var
-        straight = Vector3.Normalize(axis);
-
-        var
-        reference = MathF.Abs(Vector3.Dot(straight, Vector3.Up)) > 0.99f
-            ? Vector3.Forward
-            : Vector3.Up;
-        return bend + Vector3.Normalize(Vector3.Cross(straight, reference));
-    }
-}
+reference = MathF   .    Abs(Vector3.Dot( straight, Vector3   .    Up)) > 0.99f
+?   Vector3  .  Forward
+          : Vector3   .Up;
+          return bend + Vector3.Normalize(   Vector3.Cross    (straight, reference   )); }
+          }
+         

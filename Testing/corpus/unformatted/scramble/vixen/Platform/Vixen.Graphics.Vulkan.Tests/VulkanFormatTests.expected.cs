@@ -5,7 +5,7 @@
 using Silk.NET.Vulkan;
 using Xunit;
 using VkFormat = Silk.NET.Vulkan.Format
-;
+    ;
 
 namespace Vixen.Graphics.Vulkan.Tests;
 
@@ -77,10 +77,8 @@ public class VulkanFormatTests {
             .Equal(VkFormat.B10G11R11UfloatPack32, VulkanFormats.ToVulkan(PixelFormat.Rg11B10Float));
     }
 
-    /// <summary>
-    ///     An sRGB format must map to an sRGB Vulkan format and never to its linear twin —
-    ///     the conversion is the hardware's, and losing it is invisible until the image is wrong.
-    /// </summary>
+    /// <summary>An sRGB format must map to an sRGB Vulkan format and never to its linear twin —
+    /// the conversion is the hardware's, and losing it is invisible until the image is wrong.</summary>
     [Fact]
     public void
         SrgbStaysSrgbAcrossTheBoundary() {

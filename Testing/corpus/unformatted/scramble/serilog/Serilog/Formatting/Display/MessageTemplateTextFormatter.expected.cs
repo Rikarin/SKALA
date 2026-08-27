@@ -16,14 +16,14 @@
 namespace Serilog.Formatting.Display;
 
 /// <summary>
-///     A <see cref="ITextFormatter" /> that supports the Serilog
-///     message template format. Formatting log events for display
-///     has a different set of requirements and expectations from
-///     rendering the data within them. To meet this, the formatter
-///     overrides some behavior: First, strings are always output
-///     as literals (not quoted) unless some other format is applied
-///     to them. Second, tokens without matching properties are skipped
-///     rather than being written as raw text.
+/// A <see cref="ITextFormatter"/> that supports the Serilog
+/// message template format. Formatting log events for display
+/// has a different set of requirements and expectations from
+/// rendering the data within them. To meet this, the formatter
+/// overrides some behavior: First, strings are always output
+/// as literals (not quoted) unless some other format is applied
+/// to them. Second, tokens without matching properties are skipped
+/// rather than being written as raw text.
 /// </summary>
 /// <remarks>New code should prefer <c>ExpressionTemplate</c> from <c>Serilog.Expressions</c>.</remarks>
 public class MessageTemplateTextFormatter : ITextFormatter {
@@ -31,14 +31,12 @@ public class MessageTemplateTextFormatter : ITextFormatter {
     readonly MessageTemplate _outputTemplate;
 
     /// <summary>
-    ///     Construct a <see cref="MessageTemplateTextFormatter" />.
+    /// Construct a <see cref="MessageTemplateTextFormatter"/>.
     /// </summary>
-    /// <param name="outputTemplate">
-    ///     A message template describing the
-    ///     output messages.
-    /// </param>
+    /// <param name="outputTemplate">A message template describing the
+    /// output messages.</param>
     /// <param name="formatProvider">Supplies culture-specific formatting information, or null.</param>
-    /// <exception cref="ArgumentNullException">When <paramref name="outputTemplate" /> is <code>null</code></exception>
+    /// <exception cref="ArgumentNullException">When <paramref name="outputTemplate"/> is <code>null</code></exception>
     public
         MessageTemplateTextFormatter(string outputTemplate, IFormatProvider? formatProvider = null) {
         Guard.AgainstNull(outputTemplate);
@@ -49,12 +47,12 @@ public class MessageTemplateTextFormatter : ITextFormatter {
     }
 
     /// <summary>
-    ///     Format the log event into the output.
+    /// Format the log event into the output.
     /// </summary>
     /// <param name="logEvent">The event to format.</param>
     /// <param name="output">The output.</param>
-    /// <exception cref="ArgumentNullException">When <paramref name="logEvent" /> is <code>null</code></exception>
-    /// <exception cref="ArgumentNullException">When <paramref name="output" /> is <code>null</code></exception>
+    /// <exception cref="ArgumentNullException">When <paramref name="logEvent"/> is <code>null</code></exception>
+    /// <exception cref="ArgumentNullException">When <paramref name="output"/> is <code>null</code></exception>
     public void Format(LogEvent logEvent, TextWriter output) {
         Guard.AgainstNull(logEvent);
         Guard.AgainstNull(output);
@@ -102,7 +100,7 @@ public class MessageTemplateTextFormatter : ITextFormatter {
                 // In this block, `writer` may be used to buffer output so that
                 // padding can be applied.
                 var
-                writer = pt.Alignment.HasValue ? ReusableStringWriter.GetOrCreate() : output;
+                    writer = pt.Alignment.HasValue ? ReusableStringWriter.GetOrCreate() : output;
 
                 if (pt.PropertyName == OutputProperties.MessagePropertyName) {
                     MessageTemplateRenderer.Render(
@@ -113,10 +111,10 @@ public class MessageTemplateTextFormatter : ITextFormatter {
                         _formatProvider
                     );
                 } else if (
-                           pt.PropertyName == OutputProperties.TimestampPropertyName) {
+                    pt.PropertyName == OutputProperties.TimestampPropertyName) {
                     ScalarValue.Render(logEvent.Timestamp, writer, pt.Format, _formatProvider);
                 } else if (
-                           pt.PropertyName == OutputProperties.UtcTimestampPropertyName) {
+                    pt.PropertyName == OutputProperties.UtcTimestampPropertyName) {
                     ScalarValue.Render(logEvent.Timestamp.UtcDateTime, writer, pt.Format, _formatProvider)
                         ;
                 } else if (pt.PropertyName == OutputProperties.PropertiesPropertyName) {
@@ -137,7 +135,8 @@ public class MessageTemplateTextFormatter : ITextFormatter {
 
                     // If the value is a scalar string, support some additional formats: 'u' for uppercase
                     // and 'w' for lowercase.
-                    var sv = propertyValue as ScalarValue;
+                    var sv = propertyValue as
+                        ScalarValue;
                     if (sv?.Value is string literalString) {
                         var cased = Casing.Format(literalString, pt.Format);
                         writer.Write(cased);

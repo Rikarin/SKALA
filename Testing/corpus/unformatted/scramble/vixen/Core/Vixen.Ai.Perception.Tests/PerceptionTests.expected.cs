@@ -3,14 +3,14 @@
 // SPDX-License-Identifier: Apache-2.0
 
 using Vixen.Ai.Ecs
-;
+    ;
 using Vixen
-.Ai.Perception.Ecs;
+    .Ai.Perception.Ecs;
 using Vixen.Core;
 using Vixen.Core.Mathematics;
 using Vixen.Ecs;
 using
-Xunit;
+    Xunit;
 
 namespace Vixen.Ai.Perception.Tests;
 
@@ -50,10 +50,12 @@ public class SightTests {
 
         static int Transitions(float loseSight) {
             var fleet = new Fleet(
-                Fleet.Everything() with {
-                    Sight = new() { Radius = 20f, LoseSightRadius = loseSight, ConeDegrees = 360f, Occlusion = false }
-                }
-            )
+                    Fleet.Everything() with {
+                        Sight = new() {
+                            Radius = 20f, LoseSightRadius = loseSight, ConeDegrees = 360f, Occlusion = false
+                        }
+                    }
+                )
                 ;
             var listener
                 = fleet.Listener(Vector3.Zero);
@@ -165,7 +167,7 @@ public class SightTests {
     [Fact]
     public void TheListIsBoundedAndAFullListOfLiveTargetsRefusesMore() {
         var
-        fleet = new Fleet(Fleet.Everything() with { MaxPerceived = 2 });
+            fleet = new Fleet(Fleet.Everything() with { MaxPerceived = 2 });
         var listener = fleet.Listener(Vector3.Zero);
 
         fleet.Source(new(0f, 0f, -1f));
@@ -237,18 +239,18 @@ public class FilterTests {
     public void ADelegateFilterIsAsked() {
         var asked = 0;
         var fleet = new Fleet(
-            Fleet.Everything() with {
-                Filter = PerceptionFilters.Where((
-                        in PerceptionParticipant listener,
-                        in PerceptionParticipant source,
-                        AiSense sense
-                    ) => {
-                        asked++;
-                        return false;
-                    }
-                )
-            }
-        )
+                Fleet.Everything() with {
+                    Filter = PerceptionFilters.Where((
+                            in PerceptionParticipant listener,
+                            in PerceptionParticipant source,
+                            AiSense sense
+                        ) => {
+                            asked++;
+                            return false;
+                        }
+                    )
+                }
+            )
             ;
         var listener = fleet.Listener(Vector3.Zero);
 
@@ -280,7 +282,7 @@ public class EventSenseTests {
         );
 
         // ⚠ Not heard a second time. An event consumed on every pass until it expires would read as a
-        // single gunshot still going off a second later.
+// single gunshot still going off a second later.
         fleet.Step();
         Assert.True(
             fleet.Perceived(listener)
@@ -365,7 +367,7 @@ public
         var fleet
             = new Fleet();
         var
-        scout = fleet.Both(Vector3.Zero, team: 0);
+            scout = fleet.Both(Vector3.Zero, team: 0);
         var rear = fleet.Both(new(0f, 0f, 22f), team: 0);
         var deep = fleet.Both(new(0f, 0f, 44f), team: 0);
         var enemy = fleet.Source(new(0f, 0f, -5f), team: 1);
@@ -416,7 +418,7 @@ public
         Step(fleet, agents);
         var blackboard = agents.BlackboardOf(
             fleet.World.Get
-            <AiAgent>(listener)
+                <AiAgent>(listener)
         )!;
 
         Assert.Equal(target, blackboard.GetEntity(Key("target")));
@@ -450,7 +452,7 @@ public
         Assert.False(blackboard.IsSet(Key("target")));
     }
 
-    static (Fleet Fleet, AiSystem Agents, Entity Listener, Entity Target) Build(IBlackboardBinding binding) {
+    static ( Fleet Fleet, AiSystem Agents, Entity Listener, Entity Target ) Build(IBlackboardBinding binding) {
         var fleet
             = new Fleet(Fleet.Everything() with { Binding = binding });
         var agents = new AiSystem(
@@ -476,7 +478,7 @@ public
         registry.Register(
             "idle",
             new
-            FinishWithTask(ActionStatus.Running)
+                FinishWithTask(ActionStatus.Running)
         );
 
         return registry;
@@ -541,7 +543,7 @@ public class
     [Fact]
     public void ListenersSpawnedTogetherDoNotSenseTogether() {
         var
-        fleet = new Fleet(Fleet.Everything() with { Interval = 1f, RandomDeviation = 0.1f });
+            fleet = new Fleet(Fleet.Everything() with { Interval = 1f, RandomDeviation = 0.1f });
         for (var index = 0; index < 40; index++) {
             fleet.Listener(new(index * 3f, 0f, 0f));
         }

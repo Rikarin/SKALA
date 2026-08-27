@@ -155,7 +155,7 @@ public class IrVerifierTests {
     [Fact]
     public void Everything_the_lowerer_produces_verifies() {
         // The lowering suite runs the verifier on every module it builds; this
-        // pins the contract explicitly for a realistic shader.
+// pins the contract explicitly for a realistic shader.
         var module = LoweringTestBase.Lower(
             """
             package A
