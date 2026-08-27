@@ -145,7 +145,11 @@ public sealed class KeyFlipSweep {
 
             foreach (var candidate in work) {
                 if (oracle.TryGetValue((candidate.Key, round), out var body)
-                    && !string.Equals(body, Baseline(candidate), StringComparison.Ordinal)) {
+                    && !string.Equals(
+                        TextNormalisation.Normalise(body),
+                        Baseline(candidate),
+                        StringComparison.Ordinal
+                    )) {
                     moved++;
                 }
             }
@@ -205,8 +209,12 @@ public sealed class KeyFlipSweep {
                         .Formatted
                 );
 
+                // ⚠ Both sides normalised. `FormatWithOracle` hands back exactly what the tool
+                // wrote, because the line-ending and final-newline options need it to; normalising
+                // one side and not the other made every one of 164 fixtures disagree at the
+                // baseline, which is the shape a comparison bug takes when it looks like a finding.
                 agreement[path] = produced[i] is { } oracle
-                    && string.Equals(oracle, skala, StringComparison.Ordinal);
+                    && string.Equals(TextNormalisation.Normalise(oracle), skala, StringComparison.Ordinal);
             }
         }
 
