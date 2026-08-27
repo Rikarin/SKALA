@@ -1249,7 +1249,15 @@ public sealed class BreakPlan {
         return _chainOwner.TryGetValue(Key(root), out var group) ? group : -1;
     }
 
-    static bool IsChainRootOperator(SyntaxNode node) => !SameChain(node.Parent, node);
+    /// <summary>
+    /// The outermost link of a chain of same-precedence binary operators or patterns.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ Internal because the builder needs the same answer: <c>align_multiline_binary_*</c> anchors
+    /// the whole chain to one column, and "the whole chain" is exactly this node. A second copy of
+    /// the precedence test in the builder would be one place for the two to drift apart.
+    /// </remarks>
+    internal static bool IsChainRootOperator(SyntaxNode node) => !SameChain(node.Parent, node);
 
     /// <summary>
     /// Whether two nested binary nodes belong to the same chain.

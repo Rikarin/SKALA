@@ -121,6 +121,13 @@ public readonly struct PhaseOneOptions {
         // ── Indentation ──────────────────────────────────────────────────────────────────────
         IndentBraces = options.GetBool(Ids.IndentBraces);
         AlignMultilineStatementConditions = options.GetBool(Ids.AlignMultilineStatementConditions);
+        AlignMultilineArrayAndObjectInitializer = options.GetBool(Ids.AlignMultilineArrayAndObjectInitializer);
+        AlignMultilineListPattern = options.GetBool(Ids.AlignMultilineListPattern);
+        AlignMultilinePropertyPattern = options.GetBool(Ids.AlignMultilinePropertyPattern);
+        AlignMultilineSwitchExpression = options.GetBool(Ids.AlignMultilineSwitchExpression);
+        AlignMultilineBinaryExpressionsChain = options.GetBool(Ids.AlignMultilineBinaryExpressionsChain);
+        AlignMultilineBinaryPatterns = options.GetBool(Ids.AlignMultilineBinaryPatterns);
+        AlignLinqQuery = options.GetBool(Ids.AlignLinqQuery);
         IndentSwitchLabels = options.GetBool(Ids.IndentSwitchLabels);
         IndentBreakFromCase = options.GetBool(Ids.IndentBreakFromCase);
         IndentInsideNamespace = options.GetBool(Ids.IndentInsideNamespace);
@@ -381,6 +388,13 @@ public readonly struct PhaseOneOptions {
     /// the column just after the statement's <c>(</c> rather than from an indent level.
     /// </summary>
     public bool AlignMultilineStatementConditions { get; }
+    public bool AlignMultilineArrayAndObjectInitializer { get; }
+    public bool AlignMultilineListPattern { get; }
+    public bool AlignMultilinePropertyPattern { get; }
+    public bool AlignMultilineSwitchExpression { get; }
+    public bool AlignMultilineBinaryExpressionsChain { get; }
+    public bool AlignMultilineBinaryPatterns { get; }
+    public bool AlignLinqQuery { get; }
 
     public bool IndentSwitchLabels { get; }
     public bool IndentBreakFromCase { get; }
@@ -767,6 +781,38 @@ public static class Ids {
 
     public static readonly OptionId AlignMultilineStatementConditions =
         Of("resharper_csharp_align_multiline_statement_conditions");
+
+    // ⚠ The seven `align_multiline_*` keys whose column the writer's scope stack can express, all
+    // of them `false` in the export. The column is the construct's own first token, and the level
+    // its contents take from that column is whatever the construct already spends — one indent for
+    // a braced or bracketed body, none at all for a chain. See
+    // CSharpDocumentBuilder.AlignsFromOwnColumn.
+    public static readonly OptionId AlignMultilineArrayAndObjectInitializer =
+        Of("resharper_csharp_align_multiline_array_and_object_initializer");
+
+    public static readonly OptionId AlignMultilineListPattern =
+        Of("resharper_csharp_align_multiline_list_pattern");
+
+    public static readonly OptionId AlignMultilinePropertyPattern =
+        Of("resharper_csharp_align_multiline_property_pattern");
+
+    public static readonly OptionId AlignMultilineSwitchExpression =
+        Of("resharper_csharp_align_multiline_switch_expression");
+
+    public static readonly OptionId AlignMultilineBinaryExpressionsChain =
+        Of("resharper_csharp_align_multiline_binary_expressions_chain");
+
+    public static readonly OptionId AlignMultilineBinaryPatterns =
+        Of("resharper_csharp_align_multiline_binary_patterns");
+
+    // ⚠ Read, implemented, and Tier D — on the evidence and not on the wiring. The oracle aligns a
+    // wrapped query's clauses to the column of its `from`, and this reads the key and opens that
+    // scope. What is missing is the wrap: Skala does not break a query expression at its clauses at
+    // all (a milestone-3 gap that has nothing to do with alignment), so the only continuation a
+    // query has in Skala's output is one inside a single clause, and a fixture pinning that column
+    // would be pinning a line the oracle does not write. Tier A when the query wraps at its
+    // clauses, and not before.
+    public static readonly OptionId AlignLinqQuery = OfInert("resharper_csharp_align_linq_query");
 
     public static readonly OptionId IndentSwitchLabels = Of("resharper_indent_switch_labels");
     public static readonly OptionId IndentBreakFromCase = Of("resharper_indent_break_from_case");
