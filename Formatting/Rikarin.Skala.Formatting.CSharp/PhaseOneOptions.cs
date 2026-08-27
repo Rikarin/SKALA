@@ -1067,6 +1067,48 @@ public static class Ids {
     public static readonly OptionId FormatterOnTag = Of("resharper_formatter_on_tag");
     public static readonly OptionId FormatterTagsAcceptRegexp = Of("resharper_formatter_tags_accept_regexp");
 
+    // ── The xmldoc sub-formatter's subset ────────────────────────────────────────────────────
+    // ⚠ Every one of these is inert on the default path and stays Tier D, and the reason is not
+    // that the wiring is missing. `jb cleanupcode` does not format documentation comments at all
+    // (SK-DIV-0006), so there is no fixture that can show the oracle honouring any of them, and
+    // Tier A rests on fixture evidence and nothing else. They come alive only under
+    // `skala format --xmldoc`, where what pins them is hand-written fixtures plus the round-trip
+    // property in XmlDocFormatter. See XmlDocOptions for the full argument.
+    public static readonly OptionId XmlDocWrapLines = OfInert("resharper_xmldoc_wrap_lines");
+    public static readonly OptionId XmlDocMaxLineLength = OfInert("resharper_xmldoc_max_line_length");
+    public static readonly OptionId XmlDocWrapText = OfInert("resharper_xmldoc_wrap_text");
+    public static readonly OptionId XmlDocWrapTagsAndPi = OfInert("resharper_xmldoc_wrap_tags_and_pi");
+    public static readonly OptionId XmlDocKeepUserLinebreaks = OfInert("resharper_xmldoc_keep_user_linebreaks");
+
+    public static readonly OptionId XmlDocMaxBlankLinesBetweenTags =
+        OfInert("resharper_xmldoc_max_blank_lines_between_tags");
+
+    public static readonly OptionId XmlDocIndentChildElements = OfInert("resharper_xmldoc_indent_child_elements");
+    public static readonly OptionId XmlDocIndentText = OfInert("resharper_xmldoc_indent_text");
+
+    public static readonly OptionId XmlDocLinebreaksInsideTagsForElementsWithChildElements =
+        OfInert("resharper_xmldoc_linebreaks_inside_tags_for_elements_with_child_elements");
+
+    public static readonly OptionId XmlDocLinebreaksInsideTagsForMultilineElements =
+        OfInert("resharper_xmldoc_linebreaks_inside_tags_for_multiline_elements");
+
+    public static readonly OptionId XmlDocLinebreakBeforeMultilineElements =
+        OfInert("resharper_xmldoc_linebreak_before_multiline_elements");
+
+    public static readonly OptionId XmlDocLinebreakBeforeSinglelineElements =
+        OfInert("resharper_xmldoc_linebreak_before_singleline_elements");
+
+    public static readonly OptionId XmlDocSpacesInsideTags = OfInert("resharper_xmldoc_spaces_inside_tags");
+
+    public static readonly OptionId XmlDocSpaceBeforeSelfClosing =
+        OfInert("resharper_xmldoc_space_before_self_closing");
+
+    public static readonly OptionId XmlDocIndentSize = OfInert("resharper_xmldoc_indent_size");
+    public static readonly OptionId XmlDocIndentStyle = OfInert("resharper_xmldoc_indent_style");
+
+    public static readonly OptionId XmlDocLinebreakBeforeElements =
+        OfInert("resharper_xmldoc_linebreak_before_elements");
+
     /// <summary>Every id above that phase 1 can actually be observed to honour.</summary>
     public static ImmutableArray<OptionId> All { get; } = [.. Collected.Distinct().Except(Inert).Order()];
 

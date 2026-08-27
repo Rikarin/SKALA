@@ -1,6 +1,7 @@
 using System.Text;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
 
 namespace Rikarin.Skala.Formatting.CSharp;
@@ -22,9 +23,33 @@ public sealed record EquivalenceFailure(int Index, string Before, string After);
 /// </para>
 /// </remarks>
 public static class TokenEquivalence {
-    public static EquivalenceFailure? Compare(SourceText before, SourceText after, CSharpParseOptions parseOptions) {
-        var left = Significant(before, parseOptions);
-        var right = Significant(after, parseOptions);
+    /// <summary>
+    /// ⚠ <paramref name="xmlDocReflow"/> widens the comparison for <c>///</c> comments <b>only</b>,
+    /// and only when the sub-formatter actually ran.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ docs/plan/04 § "The safety net" described this allowance as already present, and it was
+    /// not: <see cref="Normalise"/> trims each line and the one space after a marker, which no
+    /// re-wrap survives, because a re-wrap moves the line breaks. Adding it was therefore adding an
+    /// allowance rather than using one, and it is drawn as narrowly as a re-wrap permits: the
+    /// comparison becomes <see cref="XmlDocSignature"/>, which is the same boundary the
+    /// sub-formatter refuses to cross. Everything a <c>///</c> comment is not, and every comment
+    /// when the flag is off, is compared exactly as before.
+    /// <para>
+    /// ⚠ It is not "ignore comments", and it is not even "the words in order" — that would have to
+    /// be widened again for <c>space_before_self_closing</c>, again for <c>spaces_inside_tags</c>,
+    /// and each widening is a class of damage the net stops seeing. The signature is <em>tighter</em>
+    /// than a word sequence where it counts: a <c>&lt;code&gt;</c> body is compared byte-for-byte.
+    /// </para>
+    /// </remarks>
+    public static EquivalenceFailure? Compare(
+        SourceText before,
+        SourceText after,
+        CSharpParseOptions parseOptions,
+        bool xmlDocReflow = false
+    ) {
+        var left = Significant(before, parseOptions, xmlDocReflow);
+        var right = Significant(after, parseOptions, xmlDocReflow);
 
         var count = Math.Min(left.Count, right.Count);
         for (var i = 0; i < count; i++) {
@@ -48,14 +73,18 @@ public static class TokenEquivalence {
     /// Every non-trivia token as <c>(RawKind, ValueText)</c>, plus the ordered comment texts, plus
     /// every preprocessor directive in order, plus every disabled-text block verbatim.
     /// </summary>
-    public static List<string> Significant(SourceText text, CSharpParseOptions parseOptions) {
+    public static List<string> Significant(
+        SourceText text,
+        CSharpParseOptions parseOptions,
+        bool xmlDocReflow = false
+    ) {
         var tree = CSharpSyntaxTree.ParseText(text, parseOptions);
         var items = new List<string>(1024);
         var builder = new StringBuilder();
 
         foreach (var token in tree.GetRoot().DescendantTokens(descendIntoTrivia: false)) {
             foreach (var trivia in token.LeadingTrivia) {
-                AddTrivia(items, builder, trivia);
+                AddTrivia(items, builder, trivia, xmlDocReflow);
             }
 
             if (!token.IsKind(SyntaxKind.EndOfFileToken)) {
@@ -65,14 +94,14 @@ public static class TokenEquivalence {
             }
 
             foreach (var trivia in token.TrailingTrivia) {
-                AddTrivia(items, builder, trivia);
+                AddTrivia(items, builder, trivia, xmlDocReflow);
             }
         }
 
         return items;
     }
 
-    static void AddTrivia(List<string> items, StringBuilder builder, SyntaxTrivia trivia) {
+    static void AddTrivia(List<string> items, StringBuilder builder, SyntaxTrivia trivia, bool xmlDocReflow) {
         switch (trivia.Kind()) {
             case SyntaxKind.WhitespaceTrivia:
             case SyntaxKind.EndOfLineTrivia:
@@ -82,6 +111,17 @@ public static class TokenEquivalence {
                 // ⚠ Verbatim. The inactive branch is unstructured text and Skala never touches it,
                 // so any difference at all is a defect.
                 items.Add("D:" + trivia.ToFullString());
+                return;
+
+            case SyntaxKind.SingleLineDocumentationCommentTrivia
+                when xmlDocReflow && trivia.GetStructure() is DocumentationCommentTriviaSyntax structure:
+                // ⚠ The allowance is the sub-formatter's own signature, not "comments are exempt"
+                // and not "words in order". Words in order would have to be widened again for
+                // `space_before_self_closing` and again for `spaces_inside_tags`, and each widening
+                // is a class of damage the net stops seeing. The signature is narrower in the place
+                // that matters most: a `<code>` body is compared byte-for-byte, which a
+                // word-sequence comparison could never do.
+                items.Add("C:" + XmlDocSignature.Of(structure));
                 return;
 
             case SyntaxKind.SingleLineCommentTrivia:
