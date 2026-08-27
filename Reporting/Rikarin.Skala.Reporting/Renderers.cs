@@ -270,7 +270,17 @@ public static class AgentRenderer {
 
     public static string Render(RunReport report) {
         var builder = new StringBuilder();
-        var ordered = Renderer.Ordered(report, includeHints: false).ToList();
+
+        // ⚠ <b>Scoped, because this report is a queue and a queue nobody can drain is noise.</b>
+        // Every one of the three buckets below is phrased as work to do — "needs a decision", "run
+        // skala fix", "run skala format" — so a finding the repository has already accepted, or one
+        // on a line this branch never touched, does not belong in any of them. On the first
+        // repository to adopt Skala this was the difference between 778 findings needing a decision
+        // on every run for ever and 3.
+        //
+        // ⚠ With neither `--baseline` nor `--since` in play `IsNew` is true for everything, so the
+        // unscoped output is byte-for-byte what it was.
+        var ordered = Renderer.Ordered(report, includeHints: false).Where(report.IsNew).ToList();
 
         var formatting = ordered.Where(static f => f.RuleId == RuleIds.FileIsNotFormatted).ToList();
         var fixable = ordered

@@ -24,6 +24,23 @@ public sealed record VerifyRequest {
     public bool NoCache { get; init; }
 
     public IReadOnlyList<string> Define { get; init; } = [];
+
+    /// <summary>
+    /// A git reference; only findings on lines this branch touched are "to do".
+    /// </summary>
+    /// <remarks>
+    /// ⚠ Same shape as <see cref="CheckRequest.Since"/>, and it exists here for the reason doc 10
+    /// gives for <c>verify</c> existing at all: an agent has to be able to tell what it is
+    /// responsible for. Without it, an agent that changed five lines is handed the repository's
+    /// whole history of findings and has no way to tell which five are its own.
+    /// </remarks>
+    public string? Since { get; init; }
+
+    /// <summary>
+    /// <c>null</c> for no baseline, <c>""</c> for <c>.skala/baseline.sarif</c> if it exists, or a
+    /// path. Same tri-state as <see cref="CheckRequest.BaselinePath"/>.
+    /// </summary>
+    public string? BaselinePath { get; init; }
 }
 
 /// <summary>
@@ -79,6 +96,14 @@ public static class VerifyCommand {
                 NoCache = request.NoCache,
                 Define = request.Define,
 
+                // ⚠ <b>The one command an agent runs was the one command that could not be told
+                // what had already been accepted.</b> On the first repository to adopt Skala,
+                // `verify` reported 778 findings needing a decision — every run, for ever, because
+                // it had neither of the two scopings `check` has had since M6. Doc 10's
+                // three-bucket report is the right shape and it was reading an unscoped world.
+                Since = request.Since,
+                BaselinePath = request.BaselinePath,
+
                 // ⚠ No SARIF file. `verify` runs after every agent turn; writing
                 // `.skala/report.sarif` each time would put a churning artefact in the working tree
                 // that the agent then has to be told to ignore. `skala check` writes it.
@@ -99,7 +124,12 @@ public static class VerifyCommand {
 
         // ⚠ Exit 0 means nothing to do, which is stricter than the gate passing: a tree with
         // formatting to do and a hundred suggestions passes `local` and is not finished.
-        var clean = report.Reportable.All(static finding => finding.Severity == Core.Diagnostics.SkalaSeverity.Hidden);
+        //
+        // ⚠ `New`, not `Reportable`, and the distinction is the whole point of `--baseline` and
+        // `--since`. With neither in play `New` *is* `Reportable`, so the unscoped contract is
+        // unchanged; with either, "nothing to do" means nothing the agent is responsible for.
+        // Reading `Reportable` here would have accepted the options and then ignored them.
+        var clean = report.New.All(static finding => finding.Severity == Core.Diagnostics.SkalaSeverity.Hidden);
 
         return new CommandResult(clean ? ExitCodes.Ok : ExitCodes.GateFailed, result.Output);
     }

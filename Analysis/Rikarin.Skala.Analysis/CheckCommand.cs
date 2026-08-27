@@ -142,7 +142,16 @@ public static class CheckCommand {
         var diagnostics = ImmutableArray.CreateBuilder<SkalaDiagnostic>();
         diagnostics.AddRange(loaded.Diagnostics);
 
-        if (loaded.IsEmpty) {
+        // ⚠ <b>`--require-fresh-binlog` raised the severity of a printed line and nothing else.</b>
+        // Nothing downstream reads a load diagnostic's severity — the gate reads findings — so the
+        // flag CI sets in order to refuse a bad load produced an error-coloured warning and exit 0.
+        // Combined with an incremental binlog covering a third of the tree, that is a green gate
+        // over an unanalysed repository. A load the caller told us to refuse is a load failure.
+        var refused = request.RequireFreshBinlog
+            ? loaded.Diagnostics.Where(static d => d.Severity >= SkalaSeverity.Error).ToArray()
+            : [];
+
+        if (loaded.IsEmpty || refused.Length > 0) {
             var empty = new RunReport {
                 RepositoryRoot = root,
                 Mode = loaded.Mode,
@@ -154,7 +163,9 @@ public static class CheckCommand {
             return (
                 new CommandResult(
                     ExitCodes.LoadFailure,
-                    "skala check: no compilation could be built.\n"
+                    (loaded.IsEmpty
+                            ? "skala check: no compilation could be built.\n"
+                            : "skala check: --require-fresh-binlog refused this load.\n")
                     + string.Join("\n", diagnostics.Select(static d => "  " + d))
                     + "\n"
                 ),
@@ -215,10 +226,26 @@ public static class CheckCommand {
             }
         }
 
-        var formattingClean = true;
+        // ⚠ <b>`formatting: clean` counts SK0001 and only SK0001.</b> docs/plan/09 defines the
+        // condition as "`format --check` must produce no edits", and SK0001 is the finding that
+        // carries those edits. `Collect` also returns SK0002 (an over-long line with no break
+        // point in it) and SK0003 (a malformed doc comment) — two findings the formatter
+        // deliberately reports *without* fixing, because there is nothing it could safely change.
+        //
+        // Counting the whole array made the condition unsatisfiable. Measured on Vixen's
+        // `Core/Vixen.Water`: `format --check` reports "0 files would be reformatted", and the
+        // `ci` gate still failed with "formatting is not clean; run `skala format`" on 23 SK0002
+        // hints — hidden-severity findings that do not even appear in the default report. `skala
+        // format` cannot clear them, and the bit was computed before `Scope`, so accepting them
+        // into a baseline could not either. One unbreakable long line blocked the entire gate.
+        //
+        // SK0002 and SK0003 are still findings and still flow into `maxSeverity`, `newIssues` and
+        // the baseline like any other. They are simply not what "would the formatter edit this"
+        // asks. `null` when the run was told not to look — see `Gate.Evaluate`.
+        bool? formattingClean = null;
         if (request.IncludeFormatting) {
             var formatting = FormattingFindings.Collect(root, Paths(loaded, request), request, diagnostics);
-            formattingClean = formatting.Length == 0;
+            formattingClean = !formatting.Any(static finding => finding.RuleId == RuleIds.FileIsNotFormatted);
             findings.AddRange(formatting);
         }
 

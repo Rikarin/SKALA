@@ -718,6 +718,44 @@ canonical's `true` is the safer of the two.
 Each was found by running the documented step on a real repository, and none is visible from the
 documents.
 
+⚠ **All six are fixed in M9, and each has a test that would have caught it.** The absence of the test
+was the actual defect: every one of these survived four milestones of a green suite, because each was
+reachable only by running a documented step on a repository that already had history, and nothing in
+the suite did that. Where the fix reads differently from the sentence below, the reason is recorded
+in the linked section — the descriptions here are left as they were written, because the measurement
+is what makes them worth keeping.
+
+| | Fixed by | Where |
+|---|---|---|
+| 1 | `SK9016`, on `sync` and `diff --canonical`, before the canonical is applied | [03](03-configuration-model.md) § "`SK9016`" |
+| 2 | `formatting: clean` counts `SK0001` and only `SK0001`; `--no-formatting` fails a gate that names the condition | [09](09-quality-gates-and-reporting.md) § "Gates" |
+| 3 | `SkalaRulesAsErrors` (default **false**) and `SkalaRulesEnabled`, honoured by the Sdk's own targets rather than by NuGet | [11](11-cli-and-integrations.md) § "Adopting the analyzers without a flag day" |
+| 4 | coverage as a ratio; `--require-fresh-binlog` refuses below 90 % **and now actually fails**, exit 4 | [07](07-analysis-host.md) § binlog |
+| 5 | `.skala/.gitignore` is `*` plus `!baseline.sarif`, and the pre-M9 marker is upgraded in place | `SkalaDirectory` |
+| 6 | `verify --since` and `verify --baseline`, in the exit code *and* in the report body | [11](11-cli-and-integrations.md) § "Adoption sequence" |
+| + | `explain` answers an option key; the file walkers exclude `.skala/` | — |
+
+⚠ **Three things the fixes themselves got wrong first, and the measurements caught.** They are worth
+recording because each is a plausible reading of the defect report that is wrong on real data:
+
+1. The severity report first compared **block against block**, which reports a key the local block
+   already pins as changing — the one case where nothing changes at all. It compares effective value
+   against effective value: the local block is preserved *below* the canonical one and later sections
+   win, so a repository's stricter `error` survives a canonical that says `warning`.
+2. `--require-fresh-binlog` first refused on **any** coverage gap. A complete build of Vixen covers
+   4 642 of 4 717 files, because 75 live in a project the solution does not build — so that reading
+   makes the flag unsatisfiable on the repository it was written for, which is defect 2 again in a
+   different place. It refuses on the ratio.
+3. The `.skala/` marker first un-ignored **itself** as well as the baseline, which puts
+   `?? .skala/.gitignore` in the `git status` of every repository Skala is ever run in — the exact
+   discourtesy `SkalaDirectory` exists to prevent. Only the baseline is excepted; a *tracked* file
+   stays tracked whatever an ignore file says, so nothing is lost.
+
+⚠ **And one thing this list did not name.** `--require-fresh-binlog` never failed anything. It raised
+a load diagnostic's severity, and nothing downstream reads that — the gate reads *findings* — so the
+flag CI sets in order to refuse a bad load produced an error-coloured line and **exit 0**. Fixing
+defect 4's detection without this would have been a better-worded green run.
+
 1. ⚠ **`skala config sync` silently retunes 213 compiler diagnostics, and nothing says so.** The
    canonical is the Rider export and the export carries 213 `dotnet_diagnostic.cs*.severity` lines.
    Vixen's own `.editorconfig` carried none. One of them raises `CS9209` above the compiler's

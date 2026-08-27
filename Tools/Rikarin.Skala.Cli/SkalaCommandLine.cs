@@ -267,6 +267,7 @@ public static partial class SkalaCommandLine {
                 // `--arrange` with no value means syntactic, which is the mode that always works.
                 if (parse.GetResult(arrange) is not null) {
                     var full = string.Equals(parse.GetValue(arrange), "full", StringComparison.OrdinalIgnoreCase);
+                    var loadDiagnostics = new List<SkalaDiagnostic>();
                     var arrangeRequest = new ArrangeRequest {
                         Paths = parse.GetValue(paths) ?? [],
                         Check = parse.GetValue(check),
@@ -275,10 +276,27 @@ public static partial class SkalaCommandLine {
                         Range = parse.GetValue(range),
                         Overrides = ParseOverrides(parse.GetValue(option)),
                         Define = symbols,
-                        Compilations = full ? files => CompilationsFor(files, parse.GetValue(load) ?? "loose") : null
+                        Compilations = full
+                            ? files => CompilationsFor(files, parse.GetValue(load) ?? "loose", loadDiagnostics)
+                            : null
                     };
 
-                    return Run(() => ArrangeCommand.Run(arrangeRequest));
+                    // Same reason as `skala arrange`: a partial load is context for everything the
+                    // command then says, and it was being dropped on the floor.
+                    return Run(() => {
+                            var result = ArrangeCommand.Run(arrangeRequest);
+                            return loadDiagnostics.Count == 0
+                                ? result
+                                : new CommandResult(
+                                    loadDiagnostics.Any(static d => d.Severity >= SkalaSeverity.Error)
+                                        ? ExitCodes.LoadFailure
+                                        : result.ExitCode,
+                                    string.Join("\n", loadDiagnostics.Select(static d => "  " + d))
+                                    + "\n"
+                                    + result.Output
+                                );
+                        }
+                    );
                 }
 
                 var request = new FormatRequest {
@@ -380,6 +398,16 @@ public static partial class SkalaCommandLine {
 
         command.SetAction(parse => {
                 var mode = parse.GetValue(load) ?? "loose";
+
+                // ⚠ <b>`arrange` was throwing the loader's diagnostics away.</b> `CompilationsFor`
+                // kept `loaded.Units` and dropped `loaded.Diagnostics`, so `SK9020` (the binlog is
+                // older than the sources) and `SK9021` (this file is in no compilation) never
+                // reached the one command that most needs them. Measured: `arrange --check` against
+                // an incremental build's binlog reported 824 files to change and 2 147 in no
+                // compilation; against a `--no-incremental` binlog, 1 188 and 79 — and the only
+                // signal either way was the "N files were in no loaded compilation" line, which is
+                // correct, easy to read past, and does not say "a third of your tree".
+                var loadDiagnostics = new List<SkalaDiagnostic>();
                 var request = new ArrangeRequest {
                     Paths = parse.GetValue(paths) ?? [],
                     Check = parse.GetValue(check),
@@ -393,10 +421,29 @@ public static partial class SkalaCommandLine {
                     Define = ParseDefines(parse.GetValue(define)),
                     Compilations = string.Equals(mode, "none", StringComparison.OrdinalIgnoreCase)
                         ? null
-                        : files => CompilationsFor(files, mode)
+                        : files => CompilationsFor(files, mode, loadDiagnostics)
                 };
 
-                return Run(() => ArrangeCommand.Run(request));
+                return Run(() => {
+                        var result = ArrangeCommand.Run(request);
+                        if (loadDiagnostics.Count == 0) {
+                            return result;
+                        }
+
+                        // Above the arrangement output, because "this ran against two thirds of
+                        // your repository" is context for everything below it, not a footnote.
+                        var text = string.Join("\n", loadDiagnostics.Select(static d => "  " + d))
+                            + "\n"
+                            + result.Output;
+
+                        return new CommandResult(
+                            loadDiagnostics.Any(static d => d.Severity >= SkalaSeverity.Error)
+                                ? ExitCodes.LoadFailure
+                                : result.ExitCode,
+                            text
+                        );
+                    }
+                );
             }
         );
 
@@ -414,11 +461,24 @@ public static partial class SkalaCommandLine {
     /// </remarks>
     static IReadOnlyList<Microsoft.CodeAnalysis.CSharp.CSharpCompilation> CompilationsFor(
         IReadOnlyList<string> files,
-        string mode
+        string mode,
+        List<SkalaDiagnostic> diagnostics
     ) {
         try {
             var root = FindRepositoryRoot(files.Count > 0 ? files[0] : ".") ?? Directory.GetCurrentDirectory();
-            var loaded = ProjectLoader.Load(new LoadRequest { RepositoryRoot = root, Mode = LoadModes.Parse(mode) });
+            var loaded = ProjectLoader.Load(
+                new LoadRequest {
+                    RepositoryRoot = root,
+                    Mode = LoadModes.Parse(mode),
+
+                    // ⚠ The files `arrange` actually collected, so the coverage check compares the
+                    // binlog against what this run is about rather than against the whole tree.
+                    // `arrange Core/` against a binlog covering `Core/` is complete.
+                    Paths = files
+                }
+            );
+
+            diagnostics.AddRange(loaded.Diagnostics);
             return [.. loaded.Units.Select(static unit => unit.Compilation)];
         } catch (IOException) {
             return [];

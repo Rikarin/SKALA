@@ -11,6 +11,85 @@
     afterwards. Two packages shouting the same sentence is how a package gets removed.
   -->
 
+  <!--
+    ⚠ THE ADOPTION SWITCHES. docs/plan/02 § "Package boundaries" calls this package "the one-line
+    adoption", and on the first repository to try it, it was the one line that could not be taken.
+
+    `Rikarin.Skala.Sdk` brings `Rikarin.Skala.Rules`. On Vixen that is 16 SK3002 errors and 58
+    further CS0246/CS0234 from the projects downstream of the ones that failed — not because SK3002
+    ships at `error`, but because it ships at `warning` and real repositories set
+    `TreatWarningsAsErrors`. Doc 09's whole mechanism for this is "accept the present, gate the
+    future", and `.skala/baseline.sarif` is read by `skala check` and by nothing else, so that
+    mechanism stops at the compiler's door: an analyzer package has no idea a baseline exists.
+
+    ⚠ And the obvious escape hatch did not work. `ExcludeAssets="analyzers"` on a reference to this
+    package is *silently* ineffective: NuGet's ExcludeAssets governs the assets of the package it is
+    written on, and this package has none — the analyzer arrives from a transitive dependency whose
+    .nuspec entry says include="All" (see the ProjectReference comment in the .csproj, where that
+    attribute is load-bearing for the package working at all). So the consumer excludes nothing,
+    reads no error, and is still handed /analyzer:Rikarin.Skala.Rules.dll.
+
+    The two properties below are the actual switches, and they are honoured here rather than by
+    NuGet, so they work regardless of how the dependency is declared.
+  -->
+  <PropertyGroup>
+    <!--
+      ⚠ Default true, and the opt-out is total: the analyzer is removed from the compiler's
+      command line, not turned down. `false` is for a repository that wants the formatter and the
+      canonical .editorconfig without the SK rules.
+    -->
+    <SkalaRulesEnabled Condition="'$(SkalaRulesEnabled)' == ''">true</SkalaRulesEnabled>
+
+    <!--
+      ⚠ Default FALSE, and this is the answer to the flag day.
+
+      A repository that adopts Skala on Monday has a backlog it did not know about on Sunday, and
+      `TreatWarningsAsErrors` turns that backlog into a tree that does not build. The three ways out
+      of that are all bad: turn the rules off (then nothing is measured), turn the severities down
+      in .editorconfig (docs/plan/09 § "no-new-suppressions" calls a severity turned down the
+      widest suppression there is, and it is invisible in review), or spend a flag day fixing 16
+      findings before anything else can happen.
+
+      This is the fourth: the diagnostics fire, at their real severities, in the build log and in
+      Rider — nothing is silenced and nothing is measured differently — they simply do not turn a
+      warning into a build error until the repository says so. `skala check` on the `ci` gate against the
+      committed baseline is what gates the future in the meantime, which is the mechanism doc 09
+      actually designed. When the backlog is burned down, `<SkalaRulesAsErrors>true` is one line and
+      one commit, and it is a decision somebody makes on purpose.
+
+      ⚠ Scoped to Skala's own ids. It does not touch TreatWarningsAsErrors for anything else — a
+      package that quietly made a repository's *other* warnings non-fatal would be doing the exact
+      invisible thing this comment objects to.
+    -->
+    <SkalaRulesAsErrors Condition="'$(SkalaRulesAsErrors)' == ''">false</SkalaRulesAsErrors>
+
+    <!--
+      ⚠ Every id `Rikarin.Skala.Rules` can emit, excluding SK0xxx (the formatter, which is not an
+      analyzer) and SK9xxx (the tool talking about itself). Hand-written because csc's
+      /warnaserror-: takes ids and has no prefix form, and held true by
+      SkalaSdkTargetsTests.RuleIds_MatchRulesJson — ADR-012 makes ids append-only, so a new rule
+      that is missing here is a failing test rather than a rule that quietly fails somebody's build.
+    -->
+    <SkalaRuleIds>SK1005;SK1010;SK1020;SK1030;SK1034;SK1035;SK2013;SK2015;SK3001;SK3002;SK4010;SK5001;SK5002;SK5005;SK5007;SK5009;SK6003;SK7001;SK7002;SK7003;SK7004;SK7005;SK7006;SK7010;SK7020;SK8005</SkalaRuleIds>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(SkalaRulesAsErrors)' != 'true' and '$(TreatWarningsAsErrors)' == 'true'">
+    <WarningsNotAsErrors>$(WarningsNotAsErrors);$(SkalaRuleIds)</WarningsNotAsErrors>
+  </PropertyGroup>
+
+  <!--
+    ⚠ Removing the item is the only opt-out that works. The analyzer reaches csc as an @(Analyzer)
+    item resolved from the assets file, and nothing a consumer can write on the PackageReference
+    takes it back out again (see above). Matched on the assembly name so that a repository
+    referencing `Rikarin.Skala.Rules` directly, for its own reasons, is unaffected by this package's
+    switch — this removes what this package brought.
+  -->
+  <Target Name="SkalaRemoveRules" BeforeTargets="CoreCompile" Condition="'$(SkalaRulesEnabled)' == 'false'">
+    <ItemGroup>
+      <Analyzer Remove="@(Analyzer)" Condition="'%(Filename)' == 'Rikarin.Skala.Rules'" />
+    </ItemGroup>
+  </Target>
+
   <PropertyGroup>
     <SkalaSdkAdoptionNotice Condition="'$(SkalaSdkAdoptionNotice)' == ''">true</SkalaSdkAdoptionNotice>
     <SkalaSdkStarterDirectory Condition="'$(SkalaSdkStarterDirectory)' == ''">$(MSBuildThisFileDirectory)../content</SkalaSdkStarterDirectory>

@@ -101,6 +101,19 @@ public static class ConfigDiagnosticIds {
     public const string CanonicalUnmanaged = "SK9014";
 
     /// <summary>
+    /// Applying the canonical changes a <c>dotnet_diagnostic</c> severity. Warning when it moves a
+    /// <em>compiler</em> diagnostic up, because under <c>TreatWarningsAsErrors</c> that is a build
+    /// failure from a commit that touches no code; info otherwise.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ <c>SK9013</c> reports the same thing for keys the option registry owns, and
+    /// <c>dotnet_diagnostic</c> keys deliberately are not in it — so until M9 the loudest thing the
+    /// canonical does to a repository was the one thing it did silently. See
+    /// <c>DiagnosticSeverityChange</c>.
+    /// </remarks>
+    public const string CanonicalSeverityChange = "SK9016";
+
+    /// <summary>
     /// <c>skala.jsonc</c> tried to pin a canonical version. The pin lives in the
     /// <c>.editorconfig</c> marker, beside the bytes it describes, because a version recorded away
     /// from the thing it versions is a version that drifts.

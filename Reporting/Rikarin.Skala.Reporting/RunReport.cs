@@ -123,20 +123,19 @@ public sealed record RunReport {
     /// and <c>--since</c> both active, a finding is new only if it is absent from the baseline
     /// <em>and</em> on a line the branch touched.
     /// </remarks>
-    public IEnumerable<Finding> New {
-        get {
-            var findings = Reportable;
-            if (HasBaseline) {
-                findings = findings.Where(static finding => finding.Bucket == BaselineBucket.New);
-            }
+    public IEnumerable<Finding> New => Reportable.Where(IsNew);
 
-            if (ChangedCodeReference is not null) {
-                findings = findings.Where(static finding => finding.IsInChangedCode);
-            }
-
-            return findings;
-        }
-    }
+    /// <summary>
+    /// The same test <see cref="New"/> applies, for one finding — so a renderer can scope without
+    /// re-deriving the rule.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ True for everything when no scoping is in play, which is what keeps the unscoped report
+    /// identical to what it has always been.
+    /// </remarks>
+    public bool IsNew(Finding finding) =>
+        (!HasBaseline || finding.Bucket == BaselineBucket.New)
+        && (ChangedCodeReference is null || finding.IsInChangedCode);
 
     public int Count(SkalaSeverity severity) =>
         Findings.Count(finding => finding.Severity == severity && finding.Suppression == SuppressionKind.None);

@@ -4,6 +4,7 @@ using Microsoft.Build.Logging.StructuredLogger;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Text;
+using Rikarin.Skala.Core;
 using Rikarin.Skala.Core.Diagnostics;
 using Rikarin.Skala.Reporting;
 using Rikarin.Skala.Rules.Metadata;
@@ -304,15 +305,66 @@ public static class BinlogLoader {
     }
 
     /// <summary>
-    /// ⚠ The two staleness failures, and the second is the dangerous one.
+    /// ⚠ The three ways a binlog lies about the tree, and the second is the dangerous one.
     /// </summary>
     /// <remarks>
     /// A file whose content moved since the build is <c>SK9020</c> — the current text is what is
     /// analysed, so the report is about the working tree. A file that exists and is in no
-    /// compilation is <c>SK9021</c> and a warning, because it is <em>silently unanalysed</em>: the
-    /// run comes back clean and says nothing about it, which is the worst failure this tool can
-    /// have.
+    /// compilation is <c>SK9021</c>, because it is <em>silently unanalysed</em>: the run comes back
+    /// clean and says nothing about it, which is the worst failure this tool can have.
+    /// <para>
+    /// ⚠ <b>The third is incompleteness, and it is why <c>--require-fresh-binlog</c> was not
+    /// enough.</b> A binlog from an *incremental* build contains only the projects MSBuild actually
+    /// rebuilt, and it is not stale — its mtime is seconds old. Measured: <c>arrange --check</c>
+    /// against an incremental binlog saw <b>824</b> files to change and left <b>2 147</b> in no
+    /// compilation; against a <c>--no-incremental</c> build's binlog, <b>1 188</b> and <b>79</b>.
+    /// Every command reported success. A gate that analyses a third of the tree and comes back
+    /// green is worse than no gate, because it is believed.
+    /// </para>
+    /// <para>
+    /// Age is a timestamp comparison and cannot see this: the binlog was not stale, it was partial.
+    /// So <c>--require-fresh-binlog</c> now checks <em>coverage</em> as well — the binlog's
+    /// compilation set against the files the path filter selects — and an incomplete binlog under
+    /// that flag is an error rather than a warning somebody reads past. The headline is a ratio,
+    /// because twenty file names and an "and 2 127 more" do not read as "two thirds of your
+    /// repository was not analysed", and that is the sentence.
+    /// </para>
     /// </remarks>
+    /// <summary>
+    /// The percentage of selected source files a binlog must cover before
+    /// <c>--require-fresh-binlog</c> will accept it.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ Measured, not chosen. On Vixen a complete build's binlog covers <b>98 %</b> of the tree —
+    /// the missing 2 % is one project the solution does not build — and an incremental build's
+    /// covers <b>1 %</b>. Anything in that gap separates the two; 90 leaves room for a repository
+    /// with several projects outside its solution without letting a partial build through.
+    /// </remarks>
+    internal const int CoverageFloor = 90;
+
+    /// <summary>What share of the selected files the binlog actually covered.</summary>
+    internal static int CoveragePercent(int selected, int missing) =>
+        selected == 0 ? 100 : (int)Math.Round(100.0 * (selected - missing) / selected, MidpointRounding.AwayFromZero);
+
+    /// <summary>
+    /// The verdict on an incomplete binlog: an error the caller must refuse, or a warning.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ <b>A ratio, and only under the flag.</b> The two cases have to be told apart and the
+    /// numbers do it cleanly: a *complete* build of Vixen covers 4 642 of 4 717 files — 98 %,
+    /// the missing 75 living in a project the solution does not build, which no binlog will ever
+    /// cover. An *incremental* build's binlog covers 52 of 4 717. That is 1 %.
+    /// <para>
+    /// Refusing on any gap at all would make <c>--require-fresh-binlog</c> unsatisfiable on a
+    /// repository holding one project outside its solution — the same "gate nobody can turn green"
+    /// mistake that made docs/plan/09's <c>formatting: clean</c> unusable.
+    /// </para>
+    /// </remarks>
+    internal static SkalaSeverity CoverageSeverity(int selected, int missing, bool requireFresh) =>
+        requireFresh && CoveragePercent(selected, missing) < CoverageFloor
+            ? SkalaSeverity.Error
+            : SkalaSeverity.Warning;
+
     static void ReportStaleness(
         string binlogPath,
         ImmutableArray<CompilationUnit>.Builder units,
@@ -329,8 +381,13 @@ public static class BinlogLoader {
         var binlogTime = File.GetLastWriteTimeUtc(binlogPath);
         var newest = DateTime.MinValue;
         var missing = new List<string>();
+        var selected = 0;
 
-        foreach (var file in EnumerateSources(request.RepositoryRoot)) {
+        // ⚠ Scoped to what was asked for. `skala check Core/` against a binlog that covers `Core/`
+        // is complete, whatever else the repository holds, and reporting the rest as missing would
+        // make the check unusable on any path-scoped run — which is most of them.
+        foreach (var file in Selected(request)) {
+            selected++;
             var written = File.GetLastWriteTimeUtc(file);
             if (written > newest) {
                 newest = written;
@@ -341,6 +398,30 @@ public static class BinlogLoader {
             }
         }
 
+        if (missing.Count > 0) {
+            var covered = selected - missing.Count;
+            var percent = CoveragePercent(selected, missing.Count);
+
+            diagnostics.Add(
+                new SkalaDiagnostic(
+                    RuleIds.BinlogMissingFile,
+                    CoverageSeverity(selected, missing.Count, request.RequireFreshBinlog),
+                    $"the binary log covers {covered.ToString(CultureInfo.InvariantCulture)} of "
+                    + $"{selected.ToString(CultureInfo.InvariantCulture)} selected source file(s) "
+                    + $"({percent.ToString(CultureInfo.InvariantCulture)} %); "
+                    + $"{missing.Count.ToString(CultureInfo.InvariantCulture)} were in no compilation "
+                    + "and were not analysed",
+                    binlogPath,
+                    1,
+                    "⚠ An incremental build's binlog holds only the projects MSBuild rebuilt, and it is "
+                    + "not stale — a timestamp comparison cannot see this. Rebuild with "
+                    + "`--no-incremental`, or re-run without `--load=binlog`."
+                )
+            );
+        }
+
+        // ⚠ The per-file lines stay warnings even under the flag. The summary above is the verdict;
+        // twenty error-coloured file names underneath it are noise on a tree that is at 98 %.
         foreach (var file in missing.Take(20)) {
             diagnostics.Add(
                 new SkalaDiagnostic(
@@ -375,6 +456,47 @@ public static class BinlogLoader {
         }
     }
 
+    /// <summary>
+    /// The source files the run is about: the requested paths, or the whole repository.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ A path that names a file is itself; a path that names a directory is everything under it.
+    /// A path that is neither contributes nothing rather than throwing — the caller has already
+    /// reported an unresolvable path, and the coverage check is not the place to fail a second time.
+    /// </remarks>
+    static IEnumerable<string> Selected(LoadRequest request) {
+        if (request.Paths.Count == 0) {
+            return EnumerateSources(request.RepositoryRoot);
+        }
+
+        var files = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var path in request.Paths) {
+            var full = Path.GetFullPath(path);
+
+            // ⚠ `.skala/` is filtered here as well as in `EnumerateSources`, because a caller can
+            // hand us explicit file paths and one of them does: `arrange` passes the list its own
+            // walker collected, and that walker does not exclude `.skala/`. Measured on Vixen —
+            // 4 717 source files, and 4 727 "selected" once ten crash reproductions had been
+            // written under `.skala/crash/`. A coverage ratio whose denominator counts Skala's own
+            // crash evidence is a coverage ratio that drifts every time the formatter trips.
+            if (SkalaDirectory.Contains(full)) {
+                continue;
+            }
+
+            if (File.Exists(full)) {
+                if (full.EndsWith(".cs", StringComparison.OrdinalIgnoreCase)) {
+                    files.Add(full);
+                }
+            } else if (Directory.Exists(full)) {
+                foreach (var file in EnumerateSources(full)) {
+                    files.Add(file);
+                }
+            }
+        }
+
+        return files;
+    }
+
     internal static IEnumerable<string> EnumerateSources(string root) {
         foreach (var file in Directory.EnumerateFiles(root, "*.cs", SearchOption.AllDirectories)) {
             var separator = Path.DirectorySeparatorChar;
@@ -386,10 +508,14 @@ public static class BinlogLoader {
                 continue;
             }
 
+            // ⚠ `.skala/` holds crash reproductions — `crash/<hash>/input.cs` and `output.cs` —
+            // which are Skala's own evidence, not the user's code. Analysing them reports findings
+            // against files nobody wrote. See SkalaDirectory.Contains.
             if (file.Contains($"{separator}obj{separator}", StringComparison.Ordinal)
                 || file.Contains($"{separator}bin{separator}", StringComparison.Ordinal)
                 || file.Contains($"{separator}.git{separator}", StringComparison.Ordinal)
-                || file.Contains($"{separator}artifacts{separator}", StringComparison.Ordinal)) {
+                || file.Contains($"{separator}artifacts{separator}", StringComparison.Ordinal)
+                || SkalaDirectory.Contains(file)) {
                 continue;
             }
 

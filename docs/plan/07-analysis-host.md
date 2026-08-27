@@ -72,6 +72,37 @@ Details that matter:
   and silently unanalyzed, which is the worst possible failure.
 - **Age.** A binlog older than the newest source file, by mtime, is reported. `--require-fresh-binlog`
   makes it an error; CI sets it.
+- ⚠ **Completeness, which is the one age cannot see.** A binlog from an *incremental* build contains
+  only the projects MSBuild actually rebuilt. It is not stale — its mtime is seconds old — and every
+  command reported success against it. Measured on Vixen, 4 717 source files:
+
+  | binlog | files the binlog covers | `arrange --check` says |
+  |---|---|---|
+  | `dotnet build` after touching one file | **52 (1 %)** | 1 067 files would be arranged |
+  | `dotnet build --no-incremental` | **4 717 (100 %)** | the whole tree, 3 389 findings |
+  | `dotnet build`, cold | 4 642 (98 %) | the 2 % is one project the solution does not build |
+
+  A gate that analyses a fiftieth of the tree and comes back green is worse than no gate, because it
+  is believed. So the load now reports **coverage as a ratio** — "the binary log covers 52 of 4 717
+  selected source file(s) (1 %)" — scoped to the paths the run selected, so `skala check Core/`
+  against a binlog covering `Core/` is complete whatever else the repository holds.
+
+  ⚠ **`--require-fresh-binlog` refuses below 90 % coverage**, and the floor is measured rather than
+  chosen: a complete build sits at 98–100 % and an incremental one at 1 %, so anything in that gap
+  separates them, and 90 leaves room for a repository with several projects outside its solution.
+  Refusing on *any* gap would make the flag unsatisfiable on Vixen — the same "gate nobody can turn
+  green" mistake that made doc 09's `formatting: clean` unusable. The per-file `SK9021` lines stay
+  warnings; the ratio is the verdict.
+
+⚠ **`--require-fresh-binlog` did not fail anything until M9.** It raised a diagnostic's severity, and
+nothing downstream reads a load diagnostic's severity — the gate reads *findings*. So the flag CI
+sets in order to refuse a bad load produced an error-coloured line and **exit 0**. A load the caller
+told us to refuse is a load failure: **exit 4**, before a single analyzer runs.
+
+⚠ **And `arrange` was throwing these diagnostics away entirely.** The CLI built the compilations and
+kept `loaded.Units`, dropping `loaded.Diagnostics`, so neither `SK9020` nor `SK9021` ever reached the
+command that exposed the defect. Its only signal was the "N files were in no loaded compilation"
+line — correct, easy to read past, and not a sentence that says *a fiftieth of your tree*.
 
 ### `workspace` — the fallback
 

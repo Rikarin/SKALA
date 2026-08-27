@@ -17,6 +17,7 @@ skala check    [paths…]  [--gate <name>] [--since <ref>] [--baseline <file>]
                          [--resharper-severities] [--profile]
 skala fix      [paths…]  [--safe] [--include <ids>] [--dry-run] [--load …] [--binlog <file>]
 skala verify   [paths…]  [--fix] [--format agent|json|plain] [--load …] [--define A,B]
+                         [--since <ref>] [--baseline [<file>]]
 skala explain  <ruleId | optionKey>
 skala rules    list|docs                                                          ← M5
 skala config   explain|diff|distill|fix|check
@@ -305,12 +306,24 @@ The order matters, because the wrong order produces a 40 000-line first diff and
    several. ⚠ Not the arrangement ones: `verify` is `format --check` plus `check --gate=local` and
    does not run `arrange`. Arrangement is its own verb and its own step, deliberately, because it
    rewrites the tree and wants a compilation.
-6. `skala baseline create` — accept the current analysis findings.
+6. `skala baseline create --apply` — accept the current analysis findings. ⚠ Commit
+   `.skala/baseline.sarif`. It is the one thing under `.skala/` that is not scratch, and the marker
+   Skala writes there un-ignores it by name for exactly that reason; everything else in the
+   directory — `cache/`, `crash/`, `report.sarif`, `history.jsonl` — stays ignored. Until M9 the
+   marker was a bare `*` and this step needed `git add -f`.
 7. Turn on the `pr` gate with `--since`. New code is clean; old code is a backlog, not a blocker.
-8. Burn the baseline down, rule by rule, with `skala fix --safe --include <id>`.
+8. ⚠ **Point the agents at the baseline too**: `skala verify --baseline --since=origin/master`.
+   `verify` is the one command doc 10 tells an agent to run, and until M9 it had neither flag — so
+   on the first repository to adopt Skala it reported **778 findings needing a decision**, every
+   run, for ever, with no way to be told what step 6 had just accepted. Both scopings compose the
+   same way they do on `check`: a finding is to do only if it is absent from the baseline *and* on
+   a line the branch touched.
+9. Burn the baseline down, rule by rule, with `skala fix --safe --include <id>`.
 
 Steps 4 and 6 are the two that make adoption survivable on a 1.35 M-line tree, and both of them are
-"accept the present, gate the future".
+"accept the present, gate the future". ⚠ Step 8 is what extends that promise to the agent-facing
+surface: a baseline the one command an agent runs cannot read has accepted nothing as far as the
+agent is concerned.
 
 ## Distribution
 
@@ -327,6 +340,43 @@ Steps 4 and 6 are the two that make adoption survivable on a 1.35 M-line tree, a
 
 Version pinning is a correctness feature here, not a preference. Two Skala versions with different
 formatting behaviour on one repository is a merge conflict generator.
+
+### ⚠ Adopting the analyzers without a flag day
+
+**"The one-line adoption" was, on the first repository to try it, the one line that could not be
+taken.** The Sdk brings `Rikarin.Skala.Rules`; on Vixen that was **16 `SK3002`** and **58 further
+`CS0246`/`CS0234`** from the projects downstream of the ones that failed. Not because `SK3002` ships
+at `error` — it ships at `warning` — but because real repositories set `TreatWarningsAsErrors`.
+
+Doc 09's mechanism for exactly this is "accept the present, gate the future", and it does not reach:
+`.skala/baseline.sarif` is read by `skala check` and by nothing else, so an analyzer package has no
+idea a baseline exists. The escape hatch did not work either. ⚠ **`ExcludeAssets="analyzers"` on the
+metapackage is silently ineffective**: `ExcludeAssets` governs the assets of the package it is
+written on, the Sdk has none, and the analyzer arrives from a transitive dependency whose nuspec
+entry says `include="All"` — which is load-bearing, since `PrivateAssets="none"` is the only reason
+any of the three dependencies delivers anything at all. Reproduced against the packed package:
+`project.assets.json` records `Rikarin.Skala.Rules` with an **empty asset list** and `SK3002` still
+fires three times.
+
+So the Sdk honours two properties itself, rather than leaving it to NuGet:
+
+| Property | Default | What it does |
+|---|---|---|
+| `SkalaRulesAsErrors` | **`false`** | ⚠ **The answer to the flag day.** Skala's own ids are added to `WarningsNotAsErrors`, so the diagnostics fire at their real severities, in the build log and in Rider, and do not turn a warning into a build error. Nothing is silenced and nothing is measured differently. Scoped to `SK` ids — it never touches `TreatWarningsAsErrors` itself, because a package that quietly made a repository's *other* warnings non-fatal would be doing the invisible thing this whole design objects to |
+| `SkalaRulesEnabled` | `true` | The total opt-out: the `Analyzer` item is removed before `CoreCompile`, so the analyzer never reaches `csc`. This works where `ExcludeAssets` does not, and it works matched on the assembly name, so a repository that references `Rikarin.Skala.Rules` directly for its own reasons is unaffected |
+
+The adoption path is then the one doc 09 designed, with no day on which the tree does not build:
+
+1. reference the Sdk — the diagnostics appear, the build stays green
+2. `skala baseline create --apply`, and commit `.skala/baseline.sarif`
+3. `skala check --gate=ci` gates the future against that baseline
+4. burn the backlog down with `skala fix --safe --include <id>`
+5. `<SkalaRulesAsErrors>true</SkalaRulesAsErrors>` — one line, one commit, a decision somebody makes
+   on purpose
+
+Verified by packing the real packages into a local feed and building a real consumer with
+`TreatWarningsAsErrors`: default → 3 `SK3002` **warnings**, exit 0; `SkalaRulesAsErrors=true` → the
+same 3 as **errors**, exit 1; `SkalaRulesEnabled=false` → no `SK` diagnostic at all, exit 0.
 
 ### The tool package ships both binaries
 

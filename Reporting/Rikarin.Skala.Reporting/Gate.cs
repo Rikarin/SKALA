@@ -61,7 +61,14 @@ public sealed record GateDefinition {
 /// <see cref="Evaluate"/> may look at severities again and reach its own conclusion.
 /// </remarks>
 public static class Gate {
-    public static GateResult Evaluate(GateDefinition definition, RunReport report, bool formattingClean) {
+    /// <param name="formattingClean">
+    /// ⚠ Three states, not two. <c>true</c> and <c>false</c> are the answers to "would
+    /// <c>format --check</c> edit anything"; <c>null</c> means the run never asked — <c>--no-formatting</c>
+    /// — and a gate that names <c>formatting</c> must fail rather than pass on an unasked question.
+    /// Before M9 this was a <c>bool</c> defaulting to <c>true</c>, so <c>--no-formatting</c> turned a
+    /// red gate green without saying it had dropped the condition.
+    /// </param>
+    public static GateResult Evaluate(GateDefinition definition, RunReport report, bool? formattingClean) {
         var failures = ImmutableArray.CreateBuilder<string>();
 
         foreach (var condition in definition.Unsupported) {
@@ -100,8 +107,16 @@ public static class Gate {
             }
         }
 
-        if (definition.RequireCleanFormatting && !formattingClean) {
-            failures.Add("formatting is not clean; run `skala format`");
+        if (definition.RequireCleanFormatting) {
+            if (formattingClean is null) {
+                failures.Add(
+                    "the gate requires `formatting: clean` but this run was given `--no-formatting`, "
+                    + "so the condition could not be evaluated; the gate fails rather than "
+                    + "passing without it"
+                );
+            } else if (formattingClean is false) {
+                failures.Add("formatting is not clean; run `skala format`");
+            }
         }
 
         EvaluateNewIssues(definition, report, failures);

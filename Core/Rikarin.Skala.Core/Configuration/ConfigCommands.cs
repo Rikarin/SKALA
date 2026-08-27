@@ -310,6 +310,7 @@ public static class ConfigCommands {
             .AppendLine(status.Layout.IsManaged ? Short(status.ActualSha) : string.Empty);
         output.Append("  local sections  ").AppendLine(CanonicalLayout.Number(status.LocalSections.Length));
         output.Append("  local overrides ").AppendLine(CanonicalLayout.Number(status.Overrides.Length));
+        output.Append("  severity moves  ").AppendLine(CanonicalLayout.Number(status.SeverityChanges.Length));
         output.AppendLine();
 
         output.AppendLine(
@@ -341,6 +342,8 @@ public static class ConfigCommands {
             }
         }
 
+        AppendSeverityChanges(output, status, detailed: true);
+
         if (showOptions && status.Layout.IsManaged) {
             output.AppendLine();
             output.AppendLine("What bumping to the tool's canonical would change, semantically:");
@@ -360,6 +363,75 @@ public static class ConfigCommands {
 
         var failed = status.Drifted && driftSeverity >= SkalaSeverity.Error;
         return new CommandResult(failed ? ConfigurationFailure : 0, output.ToString());
+    }
+
+    /// <summary>
+    /// What applying the canonical does to the severities the compiler and the analyzers run at.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ <b>Shared by <c>sync</c> and <c>diff --canonical</c> on purpose.</b> The whole defect this
+    /// answers is that adopting the canonical moved 213 compiler severities and neither command
+    /// said a word; two renderings of the same fact would be two chances to only fix one of them.
+    /// <para>
+    /// ⚠ The compiler diagnostics are listed and the analyzer ones are counted. On a repository
+    /// that sets none of them the full list is 253 lines, and a preview nobody reads to the end is
+    /// a preview that has not warned anybody. The build-breaking ones are the headline because they
+    /// are the ones that fail before a single rule has run.
+    /// </para>
+    /// </remarks>
+    static void AppendSeverityChanges(StringBuilder output, CanonicalStatus status, bool detailed) {
+        if (status.SeverityChanges.IsEmpty) {
+            return;
+        }
+
+        var breaking = status.BuildBreaking.ToArray();
+        var compiler = status.SeverityChanges.Where(static change => change.IsCompilerDiagnostic).ToArray();
+        var analyzers = status.SeverityChanges.Length - compiler.Length;
+
+        output.AppendLine();
+        output.AppendLine("Diagnostic severities the canonical moves, relative to the file it replaces:");
+        output.Append("  compiler diagnostics  ").AppendLine(CanonicalLayout.Number(compiler.Length));
+        output.Append("  analyzer diagnostics  ").AppendLine(CanonicalLayout.Number(analyzers));
+
+        if (breaking.Length > 0) {
+            output.AppendLine();
+            output.Append("  ⚠ ")
+                .Append(CanonicalLayout.Number(breaking.Length))
+                .AppendLine(" compiler diagnostic(s) move up to warning or error.");
+            output.AppendLine(
+                "    With `TreatWarningsAsErrors` these become build errors from a commit that touches no"
+            );
+            output.AppendLine("    code. Measured on one repository: 0 errors before, 17 in 15 files after, from the");
+            output.AppendLine("    .editorconfig alone.");
+        }
+
+        if (!detailed) {
+            output.AppendLine();
+            output.AppendLine("  `skala config diff --canonical` lists every one.");
+            return;
+        }
+
+        // ⚠ Uncapped, and that is deliberate. `SK9016` points here with "lists every one", and this
+        // is the command whose job is pricing a change before it is made — a truncated list is the
+        // same silence the whole defect was about, just shorter. `sync`'s preview is the summary;
+        // this is the detail, and somebody who ran it asked for 253 lines.
+        //
+        // C# before Visual Basic: the canonical is a Rider export and carries both.
+        var listed = compiler.OrderByDescending(static change => change.CanBreakABuild)
+            .ThenByDescending(static change => change.IsCSharp)
+            .ThenBy(static change => change.Diagnostic, StringComparer.OrdinalIgnoreCase);
+
+        output.AppendLine();
+        foreach (var change in listed) {
+            output.Append(change.CanBreakABuild ? "  ⚠ [" : "    [")
+                .Append(change.Section)
+                .Append("] ")
+                .Append(change.Diagnostic)
+                .Append(": ")
+                .Append(change.Before ?? "(not set)")
+                .Append(" -> ")
+                .AppendLine(change.After ?? "(not set)");
+        }
     }
 
     /// <summary>
@@ -390,6 +462,11 @@ public static class ConfigCommands {
                 output.Append("  [").Append(section).AppendLine("]");
             }
         }
+
+        // ⚠ Before the write, and before the "re-run with --apply" line, because the whole point is
+        // that a person decides with this in front of them rather than discovering it from a red
+        // build afterwards.
+        AppendSeverityChanges(output, result.Before, detailed: false);
 
         if (apply) {
             File.WriteAllText(result.Path, result.Text);
