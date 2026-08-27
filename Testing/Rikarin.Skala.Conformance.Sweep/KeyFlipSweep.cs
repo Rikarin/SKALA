@@ -81,7 +81,10 @@ public sealed class KeyFlipSweep {
         _runner = runner;
         _baseConfig = File.ReadAllText(baseConfigPath);
         _log = log;
-        ConfigDigest = Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(_baseConfig)))[..16];
+        // ⚠ Through OracleFixture rather than hashed here. The digest this run stamps into
+        // conformance-sweep.md is compared against the one the fixture headers carry, and a second
+        // implementation of "the digest" is how two files come to disagree about one configuration.
+        ConfigDigest = OracleFixture.HashConfig(baseConfigPath);
     }
 
     public string ConfigDigest { get; }

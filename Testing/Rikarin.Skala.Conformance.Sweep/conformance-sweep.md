@@ -10,7 +10,7 @@ green rebuilds the exact defect this harness exists to detect.
 | | |
 |---|---|
 | ReSharper | 2025.2.6 |
-| base configuration | the repository export, sha256 `98ff52570e019fac` |
+| base configuration | the repository export, sha256 `bd9791d3a6e6a087` |
 | families | all |
 | options swept | 258 |
 | configurations | 567 |
