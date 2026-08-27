@@ -29,10 +29,22 @@ public static class RepositoryPaths {
     public static string CanonicalManifest { get; } = Path.Combine(CanonicalDirectory, "canonical.json");
 
     /// <summary>
-    /// Vixen's real <c>.editorconfig</c>, vendored. The multi-repository story is only worth
-    /// anything if it survives the repository that actually has 56 path-scoped sections in it, so
-    /// the layering tests run against that file rather than against a toy one.
+    /// Vixen's real <c>.editorconfig</c>, vendored — as a **stress case, not a specification**.
     /// </summary>
+    /// <remarks>
+    /// ⚠ That file was not designed. It accumulated: written by AI agents on the fly, 56
+    /// path-scoped sections deep, never reviewed as a whole. Its overrides are not decisions and
+    /// must not be read as precedent — Skala's rules are judged on their merits and Vixen conforms
+    /// to them, rather than the reverse.
+    /// <para>
+    /// It earns its place here anyway, and for a better reason than the one first written down.
+    /// The sync must preserve a local block **verbatim** precisely because nobody can tell a
+    /// reasoned override from an accidental one by looking, so a mechanism that quietly dropped
+    /// either would be unsafe on every repository rather than only this one. Preservation is what
+    /// makes `sync` runnable on a config nobody has audited; the audit is `SK9013`'s override
+    /// report, which is a separate act by a person.
+    /// </para>
+    /// </remarks>
     public static string VixenEditorConfig { get; } =
         Path.Combine(Root, "Core", "Rikarin.Skala.Core.Tests", "Fixtures", "vixen.editorconfig");
 }

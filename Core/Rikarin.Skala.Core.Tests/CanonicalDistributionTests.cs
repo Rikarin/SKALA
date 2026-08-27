@@ -286,7 +286,7 @@ public sealed class CanonicalDistributionTests {
         Assert.Equal(SkalaSeverity.Error, diagnostic.Severity);
     }
 
-    // ── Vixen: the repository that actually has local sections ────────────────────────────────
+    // ── Vixen: an unreviewed config, as a stress case. See RepositoryPaths.VixenEditorConfig ──
 
     [Fact]
     public void Sync_OnVixen_PreservesEverySectionVerbatim() {
@@ -314,8 +314,10 @@ public sealed class CanonicalDistributionTests {
 
     [Fact]
     public void Sync_OnVixen_KeepsTheCommentsThatExplainTheOverrides() {
-        // Vixen's local sections carry the reasoning for every suppression. A sync that dropped the
-        // comments would leave 56 sections nobody can review.
+        // ⚠ Some of Vixen's sections carry reasoning and some do not — it was accumulated by
+        // agents rather than authored, and that is exactly why the comments must survive. A sync
+        // that dropped them would leave 56 sections nobody *could* review, which is the difference
+        // between an override that is auditable and one that is lost.
         var vixen = File.ReadAllText(RepositoryPaths.VixenEditorConfig);
         var result = CanonicalSync.SyncText(Path.Combine(TempRoot, ".editorconfig"), true, vixen, Tool, Payload);
         var local = CanonicalLayout.Split(result.Text).LocalText;
@@ -335,9 +337,12 @@ public sealed class CanonicalDistributionTests {
     [InlineData("Core/Vixen.Core/Thing.cs", "resharper_csharp_max_line_length", "120")]
     public void Sync_OnVixen_LeavesTheLocalOverridesWinning(string relativePath, string key, string expected) {
         // ⚠ The whole layering argument in one assertion. The canonical block is first, the local
-        // block is second, and editorconfig resolves later sections over earlier ones — so a
-        // legitimate local override survives a canonical bump without Skala having to know it
-        // exists.
+        // block is second, and editorconfig resolves later sections over earlier ones — so a local
+        // override survives a canonical bump without Skala having to know it exists.
+        //
+        // ⚠ "Survives" is deliberately not "is endorsed". Whether these particular overrides should
+        // exist is a question for the repository's owner, answered with `SK9013`'s report; Vixen's
+        // own answer is that they were never decided and its adoption replaces them.
         var vixen = File.ReadAllText(RepositoryPaths.VixenEditorConfig);
         var root = TempRoot;
         Directory.CreateDirectory(Path.Combine(root, Path.GetDirectoryName(relativePath) ?? "."));
