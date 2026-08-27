@@ -400,3 +400,70 @@ public sealed class XmlDocPropertyTests {
                 .SelectMany(static line => line[3..].Where(static c => !char.IsWhiteSpace(c)))
         );
 }
+
+/// <summary>The count in the milestone notes, checked against the registry rather than remembered.</summary>
+/// <remarks>
+/// ⚠ "Seventeen of twenty-seven honoured, ten refused" is a claim about this repository's option
+/// registry, and a claim like that rots the moment somebody adds a key. It is asserted here so that
+/// adding a <c>resharper_xmldoc_*</c> key to <c>options.json</c> fails the build until somebody has
+/// decided whether the sub-formatter honours it or refuses it, and has written down which.
+/// </remarks>
+public sealed class XmlDocKeyCoverageTests {
+    /// <summary>
+    /// The family the milestone counted: every <c>resharper_xmldoc_*</c> key that is not about
+    /// processing instructions.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ The <c>_pi_</c> keys are out of the count rather than refused. A processing instruction in
+    /// a C# documentation comment is not a thing that occurs, and counting five keys as "refused"
+    /// that govern a construct the language does not put there would inflate both halves.
+    /// </remarks>
+    static IEnumerable<string> Family =>
+        OptionRegistry.All
+            .Select(static info => info.Key)
+            .Where(static key => key.StartsWith("resharper_xmldoc_", StringComparison.Ordinal))
+            .Where(static key => !key.Contains("_pi_", StringComparison.Ordinal))
+            .Where(static key => !key.EndsWith("_after_pi", StringComparison.Ordinal));
+
+    [Fact]
+    public void HonouredAndRefused_PartitionTheFamilyExactly() {
+        var honoured = XmlDocIds.Honoured
+            .Select(static id => OptionRegistry.Get(id).Key)
+            .Where(static key => key.StartsWith("resharper_xmldoc_", StringComparison.Ordinal))
+            .ToHashSet(StringComparer.Ordinal);
+        var refused = XmlDocIds.Refused.Select(static pair => pair.Key).ToHashSet(StringComparer.Ordinal);
+        var family = Family.ToHashSet(StringComparer.Ordinal);
+        var covered = honoured.Union(refused, StringComparer.Ordinal).ToHashSet(StringComparer.Ordinal);
+
+        Assert.Empty(honoured.Intersect(refused, StringComparer.Ordinal));
+        Assert.Empty(family.Except(covered, StringComparer.Ordinal));
+        Assert.Empty(covered.Except(family, StringComparer.Ordinal));
+
+        Assert.Equal(27, family.Count);
+        Assert.Equal(17, honoured.Count);
+        Assert.Equal(10, refused.Count);
+    }
+
+    [Fact]
+    public void EveryRefusal_CarriesAReason() {
+        Assert.All(
+            XmlDocIds.Refused,
+            static pair => Assert.True(
+                pair.Value.Length > 40,
+                pair.Key + " is refused with a reason too short to be one."
+            )
+        );
+    }
+
+    [Fact]
+    public void NothingTheSubFormatterReads_ClaimsTierA() {
+        // The whole argument of SK-DIV-0006 in one assertion. Tier A means "pinned by an oracle
+        // fixture", the oracle has nothing to say about any of these, and so any of them appearing
+        // in PhaseOneOptions.Implemented would be a claim the corpus cannot support.
+        var implemented = PhaseOneOptions.Implemented.ToHashSet();
+        foreach (var id in XmlDocIds.Honoured) {
+            Assert.DoesNotContain(id, implemented);
+            Assert.Equal(OptionTier.D, OptionRegistry.Get(id).Tier);
+        }
+    }
+}
