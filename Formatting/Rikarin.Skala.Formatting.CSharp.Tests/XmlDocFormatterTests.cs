@@ -461,7 +461,11 @@ public sealed class XmlDocKeyCoverageTests {
         // fixture", the oracle has nothing to say about any of these, and so any of them appearing
         // in PhaseOneOptions.Implemented would be a claim the corpus cannot support.
         var implemented = PhaseOneOptions.Implemented.ToHashSet();
-        foreach (var id in XmlDocIds.Honoured) {
+
+        // ⚠ `space_after_triple_slash` is checked alongside the seventeen even though it is not one
+        // of them. It is the key milestone 3 *demoted* from Tier A after measuring what inserting
+        // the space cost, and a milestone that gives it a use is exactly when it would creep back.
+        foreach (var id in XmlDocIds.Honoured.Add(XmlDocIds.SpaceAfterTripleSlash)) {
             Assert.DoesNotContain(id, implemented);
             Assert.Equal(OptionTier.D, OptionRegistry.Get(id).Tier);
         }
