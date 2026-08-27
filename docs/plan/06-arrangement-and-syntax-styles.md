@@ -282,7 +282,7 @@ to be a rewrite at all.**
 | `ArgumentsStyleStringLiteral` | `arguments_string_literal` | ✅ Tier A |
 | `ArgumentsStyleAnonymousFunction` | `arguments_anonymous_function` | ✅ Tier A |
 | `ArgumentsStyleOther` | `arguments_other` | ✅ Tier A |
-| `SuggestVarOrType_DeconstructionDeclarations` | `prefer_explicit_discard_declaration` | ✅ Tier A |
+| `SuggestVarOrType_DeconstructionDeclarations` | `prefer_explicit_discard_declaration` | ✅ the **key** is Tier A; ⚠ the **inspection** is not — see below |
 | `ArrangeAttributes` | `place_attribute_on_same_line` | ✅ Tier A **without a rewrite** — see below |
 | `ArrangeThisQualifier` | `instance_members_qualify_declared_in` | ⚠ stays **D**, honoured vacuously |
 | `SeparateControlTransferStatement` | `blank_lines_before_control_transfer_statements` | ⚠ stays **D**, wrong component |
@@ -309,6 +309,27 @@ was running without them and declining five of the export's own settings. See
 [`../oracle-cleanup-profile.md`](../oracle-cleanup-profile.md) § "Two tasks the first sweep missed".
 **Seven of the fifteen were therefore artefacts of how the gap was measured**, which is worth more
 than the seven: it is the reason to re-run a measurement rather than re-read it.
+
+### ⚠ Twelve keys moved, and eleven inspections — the difference is one mismapping
+
+`SuggestVarOrType_DeconstructionDeclarations` is the one place where promoting the option does *not*
+retire the inspection, and saying so is the point of this paragraph.
+
+The option `resharper_prefer_explicit_discard_declaration` is genuinely Tier A: it is implemented,
+it is observable (at `true` the oracle turns `out _` into `out var _`, measured), and a cleanup
+fixture pins it. But the inspection doc 17 attached to it reports something else — `var (a, b)`
+against explicit types in a deconstruction — and *that* is governed by
+`resharper_for_deconstruction_declarations`, which the author's export **does not set at all**. It
+is therefore not in the option registry, so `gov.json` — which names it first, correctly — had no
+registry entry to match and fell through to the second key in its list.
+
+⚠ **Counting the inspection as retired because its fallback key moved would be exactly the
+double-count [17](17-inspection-parity.md) warned about**, in the direction it warned about: crediting
+Skala with arrangement it does not perform. Measured on Vixen, `SuggestVarOrType_DeconstructionDeclarations`
+fires on `foreach (var (identity, instance) in instances)` and Skala leaves those alone, correctly,
+because nothing in the configuration asks otherwise.
+
+**So: twelve option keys moved D → A, and eleven of the fifteen inspections are retired.**
 
 ### ⚠ The three that stay Tier D, with the reason beside each
 
