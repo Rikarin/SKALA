@@ -220,6 +220,28 @@ public static class CSharpFormatter {
         var formatted = EditEmitter.Apply(text.ToString(), edits);
 
         var after = SourceText.From(formatted, text.Encoding ?? System.Text.Encoding.UTF8);
+        if (ForcedVerificationFailure(path) is { } forced) {
+            diagnostics.Add(
+                new SkalaDiagnostic(
+                    FormatDiagnosticIds.TokenStreamChanged,
+                    SkalaSeverity.Error,
+                    "not written, the formatted output has a different token stream " + forced,
+                    path,
+                    0,
+                    "Forced by SKALA_FORCE_SK9099. This is the harness, not a Skala bug."
+                )
+            );
+
+            return new FormatResult(
+                path,
+                text,
+                [],
+                text.ToString(),
+                diagnostics.ToImmutable(),
+                FormatOutcome.VerificationFailed
+            );
+        }
+
         if (TokenEquivalence.Compare(text, after, parseOptions, reflowed > 0) is { } failure) {
             var artefact = CrashArtifacts.Write(crashRoot, path, text.ToString(), formatted, options);
             diagnostics.Add(
@@ -336,7 +358,53 @@ public static class CSharpFormatter {
             return options.InsertFinalNewline && output.Length > 0 ? newLine : output;
         }
 
-        return options.InsertFinalNewline ? trimmed + newLine : trimmed;
+        return options.InsertFinalNewline ? trimmed + FinalNewLine(trimmed, options, newLine) : trimmed;
+    }
+
+    /// <summary>
+    /// The ending for the newline <c>insert_final_newline</c> adds: the one the line above it ends
+    /// with, read from the <b>output</b>.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ Read from the output and not from the input, and that is the whole of SK-FUZZ-0003.
+    /// <see cref="DefaultNewLine"/> answers with the first newline in the *input*, and the first
+    /// pass can move, rewrite or delete the text above that newline — so the second pass asks a
+    /// different question and gets a different answer:
+    /// <code>
+    /// input   ␠␠&lt;LF&gt;using System;&lt;CRLF&gt;using System.Linq;&lt;LF&gt;
+    /// pass 1  using System;&lt;CRLF&gt;using System.Linq;&lt;LF&gt;    ← the leading blank line is gone,
+    /// pass 2  using System;&lt;CRLF&gt;using System.Linq;&lt;CRLF&gt;    so "the first newline" is now the CRLF
+    /// pass 3  unchanged
+    /// </code>
+    /// `class C { // fuzz&lt;CRLF&gt;} &lt;CR&gt;` is the same story from the other side: the brace rule puts an
+    /// LF above the CRLF, and the final newline follows whichever ends up first.
+    /// <para>
+    /// The ending of the last break in the finished text is stable by construction — it is a
+    /// function of the output, so a second pass computes it from the text the first pass produced
+    /// and agrees. It also keeps what the input-reading version was *for*: a CRLF file still ends
+    /// CRLF and an LF file still ends LF, because the last break is the file's own.
+    /// </para>
+    /// <para>
+    /// ⚠ <c>enforce_line_ending_style = true</c> normalises every break to <c>end_of_line</c>, so
+    /// there is nothing to read and the configured ending is the answer.
+    /// </para>
+    /// </remarks>
+    static string FinalNewLine(string trimmed, in PhaseOneOptions options, string newLine) {
+        if (options.EnforceLineEndingStyle) {
+            return newLine;
+        }
+
+        var index = trimmed.LastIndexOfAny(['\n', '\r']);
+        if (index < 0) {
+            // A file with no line break at all: nothing has an opinion but the configuration.
+            return newLine;
+        }
+
+        if (trimmed[index] == '\r') {
+            return "\r";
+        }
+
+        return index > 0 && trimmed[index - 1] == '\r' ? "\r\n" : "\n";
     }
 
     /// <summary>
@@ -344,6 +412,37 @@ public static class CSharpFormatter {
     ///     existing endings are preserved rather than normalised, so this is only consulted where the
     ///     source had no break to copy.
     /// </summary>
+    /// <summary>
+    /// ⚠ A seam that makes the safety net refuse a named file, so that exit code 5 has a trigger.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ This exists because <b>no input trips SK9099 any more</b>, and that is the good news it
+    /// looks like. All three that ever did are fixed and retired — SK-FUZZ-0001, SK-FUZZ-0005 and
+    /// SK-FUZZ-0002 — and a scan of all 1 520 files of <c>corpus/unformatted/</c>, the most
+    /// deliberately mangled input the project has, produces not one.
+    /// <para>
+    /// The row still has to be tested. docs/plan/09 gives 5 to "internal error", and
+    /// <c>ExitCodeContractTests.Five_WhenTheSafetyNetRefusesAFile</c> used SK-FUZZ-0002's
+    /// reproduction as its trigger — with a note saying that fixing the defect should give the test
+    /// a new trigger rather than delete it. This is that trigger. Forcing the refusal here rather
+    /// than faking an exit code keeps the whole downstream path real: the diagnostic's text,
+    /// <c>FormatCommand</c>'s failure counting, "a failed file outranks a changed one", and the code
+    /// the process returns.
+    /// </para>
+    /// <para>
+    /// ⚠ Matched on the file name rather than on merely being set, so that a run over a tree refuses
+    /// exactly one file and the "some failed, others changed" precedence is what gets exercised. Set
+    /// by the harness and by nobody else.
+    /// </para>
+    /// </remarks>
+    static string? ForcedVerificationFailure(string path) {
+        var forced = Environment.GetEnvironmentVariable("SKALA_FORCE_SK9099");
+        return !string.IsNullOrEmpty(forced)
+            && string.Equals(System.IO.Path.GetFileName(path), forced, StringComparison.Ordinal)
+                ? "(forced at token 0: 'A' became 'B')"
+                : null;
+    }
+
     static string DefaultNewLine(SourceText text, in PhaseOneOptions options) {
         if (options.EnforceLineEndingStyle) {
             return options.LineEnding switch {

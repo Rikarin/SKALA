@@ -568,9 +568,59 @@ public sealed partial class CSharpDocumentBuilder {
                 CloseIndent(IndentKind.Continuous);
                 return;
 
+            case NodeLayout.Transparent when node is FileScopedNamespaceDeclarationSyntax fileScoped:
+                VisitFileScopedNamespace(fileScoped);
+                return;
+
             default:
                 VisitChildren(node);
                 return;
+        }
+    }
+
+    /// <summary>
+    /// A file-scoped namespace: the continuation its own name may have spent ends at the <c>;</c>.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ This is <see cref="VisitChild"/>'s rule — "a body indents from its declaration's level" —
+    /// for the one declaration whose body has no braces. A file-scoped namespace is a
+    /// <see cref="MemberDeclarationSyntax"/>, so it owns a continuation frame, and the whole rest of
+    /// the file is its children rather than its siblings. So a wrapped namespace name spent a
+    /// continuation level that nothing closed until the end of the file:
+    /// <code>
+    /// namespace Serilog
+    ///     .Configuration;      ← the break before `.` spends the level
+    ///
+    ///     public class Foo {   ← and every line after it is +4, to the end of the file
+    ///         public int Bar { get; set; }
+    ///     }
+    /// </code>
+    /// A braced namespace never showed it because <see cref="VisitBraced"/> closes the frame at the
+    /// <c>{</c>, and no file in <c>corpus/real/</c> showed it either, because nobody writes a
+    /// wrapped namespace name by hand. It took the unformat differential — 204 of the 380 scrambled
+    /// files contain one, and they scored 38.00 % against the other 176's 88.93 %.
+    /// </remarks>
+    void VisitFileScopedNamespace(FileScopedNamespaceDeclarationSyntax node) {
+        var semicolon = node.SemicolonToken;
+        foreach (var child in node.ChildNodesAndTokens()) {
+            if (child.AsNode() is { } inner) {
+                VisitChild(node, inner);
+                continue;
+            }
+
+            var token = child.AsToken();
+            EmitToken(token);
+
+            // ⚠ After the token and before the gap that follows it, which is the order VisitBraced
+            // uses at the `{` and for the same reason: the break belongs to the level the closing
+            // leaves behind, not to the one it is closing.
+            if (!semicolon.IsKind(SyntaxKind.None)
+                && token.SpanStart == semicolon.SpanStart
+                && _frames.Count > 0
+                && _frames[^1].Activated) {
+                CloseIndent(IndentKind.Continuous);
+                _frames[^1] = _frames[^1] with { Activated = false };
+            }
         }
     }
 
@@ -1030,8 +1080,19 @@ public sealed partial class CSharpDocumentBuilder {
         }
 
         EmitUpTo(token.SpanStart);
+
+        // ⚠ The piece has to be *this* token's, and a start position is not enough to say so.
+        // `SourcePieces.Split` makes no piece for a zero-width token — the omitted sizes of
+        // `int[,]`, a missing token in a partial tree — so such a token arrives here with the
+        // *next* token's piece under the cursor, and it shares that token's start whenever no
+        // trivia separates them. `byte[\n] f;` is exactly that: the omitted size sits at the `]`,
+        // which then gets emitted here, one caller too early, from inside the bracket's
+        // continuation scope instead of after it has been closed. The `]` came out at eight
+        // columns and at four on the second pass, because a space before it in the source moves the
+        // `]` off the omitted token's position and the collision stops happening (SK-FUZZ-0004).
         if (_cursor < _pieces.Length
             && _pieces[_cursor].Span.Start == token.SpanStart
+            && _pieces[_cursor].Span.Length == token.Span.Length
             && _pieces[_cursor].Kind == PieceKind.Token) {
             EmitPiece(_cursor++);
         }

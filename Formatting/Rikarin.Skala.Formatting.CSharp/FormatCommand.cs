@@ -402,7 +402,13 @@ public static class FormatCommand {
                              StringComparer.Ordinal
                          )) {
                 // A formatter that reformats artifacts/ is a formatter that is quietly very slow.
-                if (IsExcluded(file) || !seen.Add(file)) {
+                //
+                // ⚠ Tested against the path *below the root the caller named*, never against the
+                // absolute path. An agent worktree lives at `<repo>/.claude/worktrees/<id>/`, so
+                // every absolute path inside one contains `.claude` — an absolute test would refuse
+                // to format anything at all while working in a worktree, and refuse it *silently*,
+                // which is a worse failure than the one the exclusion is for.
+                if (IsExcluded(Path.GetRelativePath(full, file)) || !seen.Add(file)) {
                     continue;
                 }
 
@@ -411,11 +417,39 @@ public static class FormatCommand {
         }
     }
 
-    static bool IsExcluded(string path) {
+    /// <summary>
+    /// The directories a recursive walk must not descend into.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ <c>.claude/</c> is here because <b>an agent worktree is a second checkout of this
+    /// repository inside it</b> — the repository's own <c>.gitignore</c> says exactly that, above
+    /// the <c>.claude/worktrees/</c> line. Git honours that; a walker over
+    /// <see cref="SearchOption.AllDirectories"/> does not, so <c>skala format &lt;repo root&gt;</c>
+    /// descended into every worktree under it and rewrote whatever was checked out there.
+    /// <para>
+    /// ⚠ Measured, not theorised: one such run — <c>--xmldoc</c>, from the main checkout — rewrote
+    /// <b>2 796 files</b> inside another agent's worktree while that agent was working in it,
+    /// re-indenting every documentation comment in files it had never opened. Nothing was lost only
+    /// because the work was committed; uncommitted edits would have been mixed into a whole-tree
+    /// reformat with no way to tell them apart. The blast radius is every concurrent worktree, and
+    /// the same walk is behind <c>format</c>, <c>arrange</c>, <c>check</c> and <c>fix</c>.
+    /// </para>
+    /// <para>
+    /// A path *inside* a worktree still formats normally, because the exclusion is on the walk and
+    /// not on the file: naming the worktree, or being inside it, is a deliberate act and reaches
+    /// its own files. What is refused is sweeping into it from above.
+    /// </para>
+    /// </remarks>
+    /// <param name="relative">
+    /// ⚠ The path <b>below the root the caller named</b>, not the absolute one. See the call site.
+    /// </param>
+    static bool IsExcluded(string relative) {
         var separator = Path.DirectorySeparatorChar;
+        var path = separator + relative;
         return path.Contains($"{separator}obj{separator}", StringComparison.Ordinal)
             || path.Contains($"{separator}bin{separator}", StringComparison.Ordinal)
             || path.Contains($"{separator}.git{separator}", StringComparison.Ordinal)
+            || path.Contains($"{separator}.claude{separator}", StringComparison.Ordinal)
             || path.Contains($"{separator}artifacts{separator}", StringComparison.Ordinal);
     }
 

@@ -145,6 +145,10 @@
           "type": "string",
           "description": "Commits since the baseline tag; the pre-release counter"
         },
+        "Only": {
+          "type": "string",
+          "description": "Regenerate only the fixtures whose relative path starts with this prefix"
+        },
         "Release": {
           "type": "boolean",
           "description": "Cut a release rather than measure a master build"

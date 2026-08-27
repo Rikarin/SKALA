@@ -274,17 +274,24 @@ what made that number look better than it was. `./build.sh Unformat` prints it a
 every table, and `UnformatTests.TheNullHypothesis_IsFarBelowSkala` asserts it stays low — a ratchet
 on its own cannot tell a formatter that improved from a corpus that got easier.
 
-380 files of `corpus/real/`, both modes, at the commit that added them:
+380 files of `corpus/real/`, both modes. ⚠ Two columns per mode: the first measurement, at the commit
+that added the corpus, and the current one — the wrapped file-scoped namespace was fixed one commit
+later and `scramble` moved 24.8 points.
 
-| | scramble | collapse |
-|---|---|---|
-| null hypothesis, line | 30.73 % | 32.38 % |
-| **Skala, line (no symbols)** | **64.18 %** | **91.74 %** |
-| Skala, line (symbols supplied) | 64.24 % | 91.83 % |
-| null hypothesis, file | 0.00 % | 0.00 % |
-| **Skala, file** | **2.11 %** | **1.84 %** |
-| share of the available line gap closed | 48.3 % | 87.8 % |
-| oracle(degraded) vs oracle(original), line | 76.81 % | 87.51 % |
+| | scramble (first) | **scramble (now)** | collapse (first) | **collapse (now)** |
+|---|---|---|---|---|
+| null hypothesis, line | 30.73 % | 30.73 % | 32.38 % | 32.38 % |
+| **Skala, line (no symbols)** | 64.18 % | **89.00 %** | 91.74 % | **91.75 %** |
+| Skala, line (symbols supplied) | 64.24 % | 89.06 % | 91.83 % | 91.84 % |
+| null hypothesis, file | 0.00 % | 0.00 % | 0.00 % | 0.00 % |
+| **Skala, file** | 2.11 % | **2.37 %** | 1.84 % | **1.84 %** |
+| share of the available line gap closed | 48.3 % | **84.1 %** | 87.8 % | 87.9 % |
+| oracle(degraded) vs oracle(original), line | 76.81 % | 76.81 % | 87.51 % | 87.51 % |
+
+⚠ **One fix moved `scramble` 24.8 points and `collapse` 0.01.** That is not a rounding difference, it
+is the two modes measuring different things: collapsing a file removes the very line break that
+wrapped the namespace name, so the defect cannot fire there at all. A single-mode test would have
+found it or missed it entirely depending on which mode was built.
 
 The last row is a **ceiling, not a floor**: it is the oracle measured against its own answer for the
 undegraded file. At 76.81 % on `scramble` the oracle does not recover the canonical form either,
@@ -300,24 +307,41 @@ built on "destroy everything" would have reported 91.74 % and missed it.
 
 #### The ranked divergence classes — the work queue
 
-⚠ One defect dominates `scramble`, and the aggregate is unreadable without the split:
+⚠ One defect dominated `scramble`, and the aggregate was unreadable without the split:
 
 | scramble subset | files | line fidelity |
 |---|---|---|
 | input has a **wrapped file-scoped namespace** | 204 | **38.00 %** |
 | input does not | 176 | **88.93 %** |
 
-**A file-scoped namespace whose qualified name is wrapped makes Skala indent the entire rest of the
+**A file-scoped namespace whose qualified name is wrapped made Skala indent the entire rest of the
 file by one level.** Six lines reproduce it, and the oracle was asked directly rather than assumed:
 
 ```csharp
 namespace Serilog
     .Configuration;
 
-public class Foo {       // ← Skala emits this, and everything after it, at +4
+public class Foo {       // ← Skala emitted this, and everything after it, at +4
     public int Bar { get; set; }
 }
 ```
+
+✅ **Fixed.** A file-scoped namespace is a `MemberDeclarationSyntax`, so it owns a continuation
+frame — and unlike every other member, the whole rest of the file is its *children* rather than its
+siblings. The level the wrapped name spent was therefore closed at the end of the namespace node,
+which is the end of the file. `VisitFileScopedNamespace` now closes it at the `;`, which is
+`VisitChild`'s existing rule — *a body indents from its declaration's level* — applied to the one
+declaration whose body has no braces. A braced namespace never showed it because `VisitBraced`
+closes the frame at the `{`.
+
+⚠ The prediction from this table was "roughly 0.89"; the measurement came to **0.8900** bare, and
+the split is what made that prediction possible. The reproduction is pinned by name in
+`pathological/wrapped-file-scoped-namespace-name.cs`, because 204 scrambled files pin it by weight
+and not one of them says what it is.
+
+⚠ **Nothing moved on pre-formatted input** — `constructs` 97.65 %, `real` 99.63 %/99.70 %, before
+and after. No file in `corpus/real/` has a wrapped namespace name, which is both why the defect
+survived nine milestones and why this differential was worth building.
 
 Underneath it, over the 176 uncontaminated files (88.94 % line, null hypothesis 31.28 %), the ranked
 classes are:

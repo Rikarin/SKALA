@@ -1,3 +1,5 @@
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Text;
 using Rikarin.Skala.Formatting.CSharp;
 using Rikarin.Skala.Testing;
@@ -109,9 +111,33 @@ public sealed class XmlDocPropertyTests {
         );
 
     /// <summary>Every non-whitespace character of every <c>///</c> line, in order.</summary>
+    /// <remarks>
+    /// ⚠ The doc comments are found through the parser, not by testing whether a line starts with
+    /// <c>///</c>, and the difference is a false failure this suite reported for real. A `///` run
+    /// may begin on the same line as code —
+    /// <code>
+    /// interface I { /// &lt;summary&gt;x&lt;/summary&gt;
+    ///   /// &lt;remarks&gt;y&lt;/remarks&gt;
+    /// </code>
+    /// — and a line-prefix test cannot see that first line at all. Reading the input that way and
+    /// the output the same way is not symmetric, because the formatter moves the run onto its own
+    /// line (as the oracle does): the `&lt;summary&gt;` was missing from the "before" side and
+    /// present in the "after", and the property reported a comment that had changed when nothing
+    /// about it had. Nothing in `corpus/real/` puts a `///` after code, so the blind spot survived
+    /// until SK-FUZZ-0002's reproduction was retired into the corpus.
+    /// <para>
+    /// ⚠ Still <see cref="SyntaxKind.SingleLineDocumentationCommentTrivia"/> only, which is what the
+    /// line test matched: a <c>/** */</c> block never starts a line with <c>///</c> and was never in
+    /// this measure. Widening it here would be a different assertion smuggled in as a bug fix.
+    /// </para>
+    /// </remarks>
     static string DocText(string text) =>
         string.Concat(
-            TextNormalisation.Lines(text)
+            CSharpSyntaxTree.ParseText(SourceText.From(text), CSharpFormatter.ParseOptions)
+                .GetRoot()
+                .DescendantTrivia(descendIntoTrivia: false)
+                .Where(static trivia => trivia.IsKind(SyntaxKind.SingleLineDocumentationCommentTrivia))
+                .SelectMany(static trivia => TextNormalisation.Lines(trivia.ToFullString()))
                 .Select(static line => line.TrimStart())
                 .Where(static line => line.StartsWith("///", StringComparison.Ordinal))
                 .SelectMany(static line => line[3..].Where(static c => !char.IsWhiteSpace(c)))

@@ -4,26 +4,26 @@ using Rikarin.Skala.Testing;
 namespace Rikarin.Skala.Cli.Tests;
 
 /// <summary>
-///     The exit codes docs/plan/09 § "Exit codes" publishes, asserted against the real binary.
+/// The exit codes docs/plan/09 § "Exit codes" publishes, asserted against the real binary.
 /// </summary>
 /// <remarks>
-///     <para>
-///         ⚠ <b>The contract was wrong from M1 to M9 and every test in the tree agreed with it.</b>
-///         <c>ReportingTests.ExitCodes_AreTheOnesHooksAndCiDependOn</c> asserted
-///         <c>ExitCodes.FormattingNeeded == 2</c> — true, and useless, because <c>format</c> did not use
-///         <c>ExitCodes</c>. It used <c>FormatCommand.ChangesFound</c>, which was 1, and
-///         <c>FormatCommand.Failed</c>, which was 2: the published table inverted. A hook told to
-///         auto-format on 2 and stop on 1 did the opposite of both.
-///     </para>
-///     <para>
-///         So this class asserts <em>behaviour</em>, through the process boundary, for each row of the
-///         table that a command can actually produce. A constant compared against another constant cannot
-///         fail when both are wrong together; a command that exits 2 can only be made to do so by exiting
-///         2. The one thing it does not do is trust the document from memory —
-///         <see cref="TheDocumentStillSaysWhatThisClassAsserts" /> reads the table out of
-///         <c>docs/plan/09</c>, so a future edit that changes the document has to change these tests too,
-///         which is the conversation that should happen.
-///     </para>
+/// <para>
+/// ⚠ <b>The contract was wrong from M1 to M9 and every test in the tree agreed with it.</b>
+/// <c>ReportingTests.ExitCodes_AreTheOnesHooksAndCiDependOn</c> asserted
+/// <c>ExitCodes.FormattingNeeded == 2</c> — true, and useless, because <c>format</c> did not use
+/// <c>ExitCodes</c>. It used <c>FormatCommand.ChangesFound</c>, which was 1, and
+/// <c>FormatCommand.Failed</c>, which was 2: the published table inverted. A hook told to
+/// auto-format on 2 and stop on 1 did the opposite of both.
+/// </para>
+/// <para>
+/// So this class asserts <em>behaviour</em>, through the process boundary, for each row of the
+/// table that a command can actually produce. A constant compared against another constant cannot
+/// fail when both are wrong together; a command that exits 2 can only be made to do so by exiting
+/// 2. The one thing it does not do is trust the document from memory —
+/// <see cref="TheDocumentStillSaysWhatThisClassAsserts"/> reads the table out of
+/// <c>docs/plan/09</c>, so a future edit that changes the document has to change these tests too,
+/// which is the conversation that should happen.
+/// </para>
 /// </remarks>
 public sealed class ExitCodeContractTests : IDisposable {
     readonly string _directory = Directory.CreateTempSubdirectory("skala-exit-").FullName;
@@ -53,7 +53,7 @@ public sealed class ExitCodeContractTests : IDisposable {
     }
 
     /// <summary>
-    ///     ⚠ <c>--diff</c> reports exactly what <c>--check</c> reports, so it exits the same way.
+    /// ⚠ <c>--diff</c> reports exactly what <c>--check</c> reports, so it exits the same way.
     /// </summary>
     [Fact]
     public void Two_WhenDiffFindsEdits() {
@@ -62,8 +62,8 @@ public sealed class ExitCodeContractTests : IDisposable {
     }
 
     /// <summary>
-    ///     ⚠ <c>arrange --check</c> is a formatting check and shares the row, which was the second
-    ///     copy of the same inverted pair.
+    /// ⚠ <c>arrange --check</c> is a formatting check and shares the row, which was the second
+    /// copy of the same inverted pair.
     /// </summary>
     [Fact]
     public void Two_WhenArrangeFindsChanges() {
@@ -88,13 +88,13 @@ public sealed class ExitCodeContractTests : IDisposable {
     }
 
     /// <summary>
-    ///     ⚠ And it names the path rather than analysing an empty set.
+    /// ⚠ And it names the path rather than analysing an empty set.
     /// </summary>
     /// <remarks>
-    ///     <c>format --check no-such-dir</c> exited <b>0</b> — "0 files would be reformatted, 0 left
-    ///     alone" — because a directory that is not there contributes no files, and no files is
-    ///     indistinguishable from no findings. A gate that passes on a typo is quiet in exactly the
-    ///     case it exists for.
+    /// <c>format --check no-such-dir</c> exited <b>0</b> — "0 files would be reformatted, 0 left
+    /// alone" — because a directory that is not there contributes no files, and no files is
+    /// indistinguishable from no findings. A gate that passes on a typo is quiet in exactly the
+    /// case it exists for.
     /// </remarks>
     [Fact]
     public void Three_WhenAPathDoesNotExist() {
@@ -105,8 +105,8 @@ public sealed class ExitCodeContractTests : IDisposable {
     }
 
     /// <summary>
-    ///     ⚠ A refusal to run is 3, not 2. A hook that auto-formats on 2 would read this refusal as an
-    ///     instruction to do the thing it just refused.
+    /// ⚠ A refusal to run is 3, not 2. A hook that auto-formats on 2 would read this refusal as an
+    /// instruction to do the thing it just refused.
     /// </summary>
     [Fact]
     public void Three_WhenAnInvocationIsRefused() {
@@ -117,9 +117,9 @@ public sealed class ExitCodeContractTests : IDisposable {
     }
 
     /// <summary>
-    ///     The flag that was not a flag: <c>--verbose</c> bound to the variadic <c>&lt;paths&gt;</c>,
-    ///     so <c>check --verbose</c> looked for C# files in a directory called "--verbose", found none,
-    ///     and exited 4 from a repository full of them.
+    /// The flag that was not a flag: <c>--verbose</c> bound to the variadic <c>&lt;paths&gt;</c>,
+    /// so <c>check --verbose</c> looked for C# files in a directory called "--verbose", found none,
+    /// and exited 4 from a repository full of them.
     /// </summary>
     [Fact]
     public void Verbose_IsAnOptionAndNotAPath() {
@@ -132,8 +132,8 @@ public sealed class ExitCodeContractTests : IDisposable {
     }
 
     /// <summary>
-    ///     ⚠ And it is recursive, so it means the same thing on every verb. A flag a script puts in a
-    ///     variable has to be accepted wherever the variable is used.
+    /// ⚠ And it is recursive, so it means the same thing on every verb. A flag a script puts in a
+    /// variable has to be accepted wherever the variable is used.
     /// </summary>
     [Theory]
     [InlineData("format")]
@@ -149,8 +149,8 @@ public sealed class ExitCodeContractTests : IDisposable {
     }
 
     /// <summary>
-    ///     ⚠ A path that genuinely begins with <c>-</c> is still reachable, spelled the way every other
-    ///     POSIX tool requires. The guard rejects mistyped options, not filenames.
+    /// ⚠ A path that genuinely begins with <c>-</c> is still reachable, spelled the way every other
+    /// POSIX tool requires. The guard rejects mistyped options, not filenames.
     /// </summary>
     [Fact]
     public void ADashedFilename_IsStillReachable() {
@@ -159,47 +159,61 @@ public sealed class ExitCodeContractTests : IDisposable {
     }
 
     /// <summary>
-    ///     ⚠ 5 is "internal error", and the row had no behavioural test until SK-FUZZ-0001.
+    /// ⚠ 5 is "internal error", and the row had no behavioural test until SK-FUZZ-0001.
     /// </summary>
     /// <remarks>
-    ///     ⚠ The defect that wanted this: an <c>IndexOutOfRangeException</c> out of <c>EditEmitter</c>
-    ///     escaped every per-command handler, System.CommandLine returned the action's default, and a
-    ///     crash on a 32-byte file reported <b>0</b> from this binary and <b>1</b> from the coordinator's.
-    ///     Both are a wrong <em>success-shaped</em> answer — 0 says "clean", 1 says "your code failed the
-    ///     gate" — and in CI a crash was then indistinguishable from a finding. It is the same class as
-    ///     M7's daemon exiting 0 while dying.
-    ///     <para>
-    ///         The input below is the reachable half of the row: <c>SK9099</c>, the formatter's safety net
-    ///         tripping on a file it cannot format. The unreachable half is now a top-level handler in
-    ///         <c>Program.cs</c> mapping any unhandled exception to 5, and it is verified the only way a
-    ///         handler for the impossible can be: by making it happen on purpose and watching it.
-    ///     </para>
-    ///     <para>
-    ///         ⚠ The file is a live open defect (a <c>///</c> run beginning on the brace line loses its
-    ///         continuation lines), so if a later change fixes that, this test starts failing and wants a
-    ///         different trigger rather than deleting.
-    ///     </para>
+    /// ⚠ The defect that wanted this: an <c>IndexOutOfRangeException</c> out of <c>EditEmitter</c>
+    /// escaped every per-command handler, System.CommandLine returned the action's default, and a
+    /// crash on a 32-byte file reported <b>0</b> from this binary and <b>1</b> from the coordinator's.
+    /// Both are a wrong <em>success-shaped</em> answer — 0 says "clean", 1 says "your code failed the
+    /// gate" — and in CI a crash was then indistinguishable from a finding. It is the same class as
+    /// M7's daemon exiting 0 while dying.
+    /// <para>
+    /// The input below is the reachable half of the row: <c>SK9099</c>, the formatter's safety net
+    /// tripping on a file it cannot format. The unreachable half is now a top-level handler in
+    /// <c>Program.cs</c> mapping any unhandled exception to 5, and it is verified the only way a
+    /// handler for the impossible can be: by making it happen on purpose and watching it.
+    /// </para>
+    /// <para>
+    /// ⚠ The trigger used to be a live open defect — SK-FUZZ-0002, a <c>///</c> run beginning on the
+    /// brace line — with a note here saying that fixing it should give this test a different trigger
+    /// rather than delete it. It was fixed, and this is that trigger.
+    /// </para>
+    /// <para>
+    /// ⚠ It is forced, because <b>no input trips SK9099 any more</b> and that is the good news it
+    /// looks like: all three that ever did are fixed and retired (SK-FUZZ-0001, -0005, -0002), and a
+    /// scan of all 1 520 files of <c>corpus/unformatted/</c> — the most deliberately mangled input
+    /// the project has — produces not one. <c>SKALA_FORCE_SK9099</c> makes the safety net refuse the
+    /// file it names, inside the formatter, so everything downstream of the refusal is still real:
+    /// the diagnostic's text, <c>FormatCommand</c>'s failure counting, and the code the process
+    /// returns. Faking the exit code instead would test nothing.
+    /// </para>
+    /// <para>
+    /// ⚠ If a real SK9099 case is ever found again it belongs here in place of the seam — and in
+    /// <c>pathological/open/register.md</c> first.
+    /// </para>
     /// </remarks>
     [Fact]
     public void Five_WhenTheSafetyNetRefusesAFile() {
-        var path = Write(
-            "Refused.cs",
-            "interface I { /// <summary>x</summary>\n  /// <remarks>y</remarks>\n  int M();\n}\n"
+        var path = Write("Refused.cs", "class C {\n    void M() { }\n}\n");
+        var run = CliRunner.RunWith(
+            new Dictionary<string, string>(StringComparer.Ordinal) { ["SKALA_FORCE_SK9099"] = "Refused.cs" },
+            "format",
+            path
         );
-        var run = CliRunner.Run("format", path);
 
         Assert.Equal(5, run.ExitCode);
         Assert.Contains("SK9099", run.StandardOutput, StringComparison.Ordinal);
     }
 
     /// <summary>
-    ///     ⚠ The table in the document, read rather than remembered.
+    /// ⚠ The table in the document, read rather than remembered.
     /// </summary>
     /// <remarks>
-    ///     The rows this class exercises are pinned here against docs/plan/09's own table, so that
-    ///     changing the document without changing the tool fails the build. This is the half that was
-    ///     missing: the code and the document disagreed for four milestones and neither side was
-    ///     reading the other.
+    /// The rows this class exercises are pinned here against docs/plan/09's own table, so that
+    /// changing the document without changing the tool fails the build. This is the half that was
+    /// missing: the code and the document disagreed for four milestones and neither side was
+    /// reading the other.
     /// </remarks>
     [Fact]
     public void TheDocumentStillSaysWhatThisClassAsserts() {

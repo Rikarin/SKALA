@@ -23,6 +23,34 @@ public sealed partial class CSharpDocumentBuilder {
 
         // 1. Caps. The author's runs are truncated, never extended.
         var cap = Math.Max(0, declaration ? _options.KeepBlankLinesInDeclarations : _options.KeepBlankLinesInCode);
+
+        // 0. ⚠ Inside a `///` run the blank count is structure, and none of the three systems below
+        // gets a vote. Roslyn ends a documentation comment at a blank line, so the gap between two
+        // `///` lines is the only whitespace in the language where 0 → 1 *splits one trivia into
+        // two* and 1 → 0 fuses two into one. Either is a changed token stream, the safety net
+        // abandons the file, and `skala format` is a total outage on it — SK9099 rather than a
+        // misplaced blank line.
+        //
+        // ⚠ Not hypothetical and not exotic (SK-FUZZ-0002). `stick_comment`'s early return below
+        // spends a member's requirement on the gap *above* its comment rather than below it, but it
+        // asks `previous.StartsLine` first — and the first `///` of a run that begins on the brace
+        // line does not start a line:
+        //
+        //     interface I { /// <summary>x</summary>
+        //       /// <remarks>y</remarks>
+        //       int M();
+        //
+        // so the guard missed, `blank_lines_around_invocable` landed between the two `///` lines,
+        // and the file could not be formatted at all. Move the run down one line and it formats
+        // correctly, which is the whole tell: a token-stream outage that depends only on where the
+        // run starts.
+        //
+        // ⚠ Only `///`. Two consecutive `//` lines are two separate trivia, so a blank between them
+        // moves whitespace and nothing else.
+        if (BetweenDocumentationLines(previous, nextPieceIndex)) {
+            return sourceBlanks == 0 ? 0 : Math.Max(1, Math.Min(sourceBlanks, cap));
+        }
+
         var blanks = Math.Min(sourceBlanks, cap);
 
         // 2. Requirements. A minimum inserted where absent.
@@ -35,6 +63,19 @@ public sealed partial class CSharpDocumentBuilder {
 
         return blanks;
     }
+
+    /// <summary>
+    /// Whether the gap runs between two lines of documentation comment.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ A blank line here is not spacing, it is the delimiter that ends a <c>///</c> run. See
+    /// <see cref="ResolveBlankLines"/> for what putting one in the wrong place costs.
+    /// </remarks>
+    bool BetweenDocumentationLines(Piece previous, int nextPieceIndex) =>
+        previous.Kind == PieceKind.DocCommentLine
+        && nextPieceIndex >= 0
+        && nextPieceIndex < _pieces.Length
+        && _pieces[nextPieceIndex].Kind == PieceKind.DocCommentLine;
 
     bool RemovesNearBrace(Piece previous, SyntaxToken nextToken, bool declaration) {
         var enabled = declaration
@@ -273,8 +314,106 @@ public sealed partial class CSharpDocumentBuilder {
         // gives it. Reading the source's leading whitespace instead makes the answer depend on the
         // author's indentation, and `format(mutate_indentation(x)) ≡ format(x)` is a property the
         // suite asserts on every corpus file.
-        var width = OutputIndentColumns(member) + TextWidth.Measure(_source[member.Span.Start..member.Span.End]);
+        //
+        // ⚠ And not the source's *interior* whitespace either, which is the same mistake one step
+        // in and took a fuzzer to find (SK-FUZZ-0004's sibling, SK-FUZZ-0007). `TextWidth.Measure`
+        // over the member's span counts the gaps the author wrote between its tokens — gaps this
+        // formatter is about to collapse to one column or to none. `void M(int a);` and
+        // `void M(int<108 spaces>a);` are the same member and the same output, and the second was
+        // measured at 122 columns, called multi-line, and given the blank line above it that
+        // `blank_lines_around_single_line_invocable = 0` had just declined to give the first. Two
+        // inputs differing in one inter-token gap produced outputs differing by a whole line, on a
+        // line the formatter rewrites anyway. docs/plan/16 § R2 is about exactly this: the fitter
+        // is the novel code, and the property suite is what contains its risk.
+        var width = OutputIndentColumns(member) + OutputWidth(member);
         return width <= _options.MaxLineLength;
+    }
+
+    /// <summary>
+    /// The columns the member's own text will occupy once the formatter has respaced it.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ A function of the token stream, never of the gaps between the tokens in the source. That
+    /// is the whole point: the caller is deciding a blank line, and a decision that reads whitespace
+    /// the formatter is about to rewrite is not absorbed by <c>format(mutate_whitespace(x)) ≡
+    /// format(x)</c>.
+    /// <para>
+    /// The one place the source is still consulted is <see cref="SpaceKind.Preserve"/>, and there it
+    /// is correct rather than tolerated: an ungoverned gap is one <c>extra_spaces = remove_all</c>
+    /// collapses to whatever the author had — one space or none — so the output really does carry
+    /// that bit, and reading it is reading the output. Widening such a gap does not change the
+    /// answer, because a run and a single space collapse alike.
+    /// </para>
+    /// <para>
+    /// ⚠ Only ever called for a member <see cref="IsSingleLine"/> has already found on one source
+    /// line, so no token here spans lines and <see cref="TextWidth.Measure"/>'s newline reset cannot
+    /// be reached.
+    /// </para>
+    /// </remarks>
+    int OutputWidth(SyntaxNode member) {
+        var width = 0;
+        var previous = default(SyntaxToken);
+        var budget = _options.MaxLineLength;
+
+        foreach (var token in member.DescendantTokens()) {
+            // ⚠ Zero-width tokens are not pieces and are not written; see EmitToken.
+            if (token.Span.Length == 0) {
+                continue;
+            }
+
+            if (!previous.IsKind(SyntaxKind.None)) {
+                width += GapWidth(previous, token);
+            }
+
+            width += TextWidth.Measure(token.Text);
+            previous = token;
+
+            // Nothing above this call cares how far past the margin a member is, only that it is.
+            if (width > budget) {
+                return width;
+            }
+        }
+
+        return width;
+    }
+
+    /// <summary>The columns the formatter will write between two adjacent tokens of a member.</summary>
+    int GapWidth(SyntaxToken previous, SyntaxToken next) {
+        // A comment in the gap is written out, with `space_before_trailing_comment` on each side of
+        // it — the same answer GapSpace gives, which resolves a gap whose neighbour is not a token
+        // to Required.
+        var width = 0;
+        var comments = false;
+        foreach (var trivia in previous.TrailingTrivia) {
+            Measure(trivia, ref width, ref comments);
+        }
+
+        foreach (var trivia in next.LeadingTrivia) {
+            Measure(trivia, ref width, ref comments);
+        }
+
+        if (comments) {
+            return width + (_options.SpaceBeforeTrailingComment ? 1 : 0);
+        }
+
+        var kind = SpaceRules.Decide(previous, next, _options);
+        if (kind == SpaceKind.Preserve) {
+            kind = HasSpace(previous.Span.End, next.SpanStart) ? SpaceKind.Required : SpaceKind.Forbidden;
+        }
+
+        return kind == SpaceKind.Forbidden ? 0 : 1;
+    }
+
+    void Measure(SyntaxTrivia trivia, ref int width, ref bool comments) {
+        if (trivia.Kind() is not (SyntaxKind.SingleLineCommentTrivia
+                or SyntaxKind.MultiLineCommentTrivia
+                or SyntaxKind.SingleLineDocumentationCommentTrivia
+                or SyntaxKind.MultiLineDocumentationCommentTrivia)) {
+            return;
+        }
+
+        width += (_options.SpaceBeforeTrailingComment ? 1 : 0) + TextWidth.Measure(trivia.ToString());
+        comments = true;
     }
 
     /// <summary>The column a member will start at, counted from the tree rather than from the text.</summary>

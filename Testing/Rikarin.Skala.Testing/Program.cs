@@ -743,7 +743,7 @@ static int Regenerate(string[] sets, string? only) {
         }
     }
 
-    written += RegenerateVariants(runner, editorConfig, header, sets);
+    written += RegenerateVariants(runner, editorConfig, header, sets, only);
     written += RegenerateCleanup(runner, editorConfig, version, hash, sets, only);
     Console.WriteLine($"{written.ToString(CultureInfo.InvariantCulture)} fixtures written.");
     return 0;
@@ -835,14 +835,28 @@ static IReadOnlyList<CorpusFile> Only(IReadOnlyList<CorpusFile> files, string? p
 // docs/plan/05's four-way keep_existing_* table. Each variant is a separate cleanupcode run with the
 // overrides appended to the copied .editorconfig, and its output lands in
 // `<file>.<variant>.expected.cs`.
-static int RegenerateVariants(OracleRunner runner, string editorConfig, OracleHeader header, string[] sets) {
+// ⚠ `only` filters here too. It did not, and the leak had exactly the shape `--only` exists to
+// prevent: regenerating one pathological fixture rewrote the 52 variant fixtures of
+// constructs/ as well, each with a fresh `generated=` stamp and identical content. A date-only
+// diff across 52 files reviews as noise, and noise is where a real change hides.
+static int RegenerateVariants(
+    OracleRunner runner,
+    string editorConfig,
+    OracleHeader header,
+    string[] sets,
+    string? only
+) {
     var written = 0;
     foreach (var set in sets) {
         var byVariant = CorpusVariants.Pairs(set)
             .GroupBy(static pair => pair.Variant, static pair => pair.File);
 
         foreach (var group in byVariant) {
-            var files = group.ToArray();
+            var files = Only([.. group], only).ToArray();
+            if (files.Length == 0) {
+                continue;
+            }
+
             var results = runner.Format(files, editorConfig, group.Key.Overrides);
             foreach (var file in files) {
                 if (results.TryGetValue(file.Path, out var body)) {

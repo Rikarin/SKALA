@@ -100,8 +100,11 @@ public sealed class OpenDefectTests {
             violations.Any(violation => string.Equals(violation.Property, entry.Property, StringComparison.Ordinal)),
             $"{entry} no longer violates `{entry.Property}` — which is good news, and this suite is where it "
             + "is delivered.\n\n"
+            // ⚠ A space, not an `=`. NUKE binds `--only <value>` and silently drops
+            // `--only=<value>` — no error, no warning, the parameter is null and the target
+            // regenerates all 1 212 fixtures instead of the one. This message used to say `=`.
             + "Move the file into Testing/corpus/pathological/, regenerate its fixture with\n"
-            + $"  ./build.sh Oracle --only=<name>\n"
+            + $"  ./build.sh Oracle --only {Path.GetFileNameWithoutExtension(entry.File)}\n"
             + $"and delete the {id} entry from Testing/corpus/pathological/open/register.md.\n\n"
             + $"What the file does produce now: "
             + (violations.IsEmpty
