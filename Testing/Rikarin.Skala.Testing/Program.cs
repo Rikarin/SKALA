@@ -367,6 +367,16 @@ static int Fuzz(string[] args) {
             Console.WriteLine("  ✗ " + violation);
         }
 
+        // ⚠ Both halves, when the caller asks. An absorption failure is a statement about a *pair*
+        // — `format(mutate(x))` against `format(x)` — and printing only the mutated half leaves the
+        // reader with one of the two files the finding is about.
+        if (options.OutputDirectory is { Length: > 0 } into && args.Contains("--dump")) {
+            Directory.CreateDirectory(into);
+            File.WriteAllText(Path.Combine(into, "replay-baseline.cs"), subject.Baseline);
+            File.WriteAllText(Path.Combine(into, "replay-mutated.cs"), subject.Text);
+            Console.Error.WriteLine($"baseline and mutated input written to {into}");
+        }
+
         Console.WriteLine();
         Console.WriteLine(subject.Text);
         return violations.Any(violation => violation.Property != FuzzProperties.ParseLost) ? 1 : 0;
@@ -408,7 +418,8 @@ static int Fuzz(string[] args) {
         var resolved = Fuzzer.OptionsFor(full);
 
         bool Fails(string candidate) =>
-            FuzzProperties.Check(full, candidate, resolved, Corpus.PropertySymbols)
+            FuzzProperties
+                .Check(full, candidate, resolved, Corpus.PropertySymbols, arrangement: options.ArrangeEvery > 0)
                 .Any(violation => Flag("property") is not { } wanted
                     || string.Equals(violation.Property, wanted, StringComparison.Ordinal)
                 );

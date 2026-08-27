@@ -68,14 +68,31 @@ public sealed class OpenDefectTests {
         var entry = Find(id);
         Assert.True(File.Exists(entry.Path), $"{entry}: the register names a file that is not there.");
 
-        // ⚠ Read as bytes and never through a line-normalising helper. Two of the three entries are
-        // *about* a trailing space, a missing final newline or a lone `\r`.
+        // ⚠ Read as bytes and never through a line-normalising helper. Several entries are *about* a
+        // trailing space, a missing final newline, a lone `\r` or the width of one gap.
         var source = File.ReadAllText(entry.Path);
+        var options = Fuzzer.OptionsFor(entry.Path);
+
+        // ⚠ Absorption needs the pair, and the arrangement properties need the pipeline switched on
+        // — it is off by default because it costs a compilation. An entry checked without the thing
+        // its property is about reports "fixed" for every candidate, which is the one answer this
+        // suite must never give wrongly.
+        (string None, string Defined)? baseline = null;
+        if (entry.BaselinePath is { } unmutated) {
+            var text = File.ReadAllText(unmutated);
+            baseline = (
+                FuzzProperties.Format(entry.Path, text, options, []),
+                FuzzProperties.Format(entry.Path, text, options, Corpus.PropertySymbols)
+            );
+        }
+
         var violations = FuzzProperties.Check(
             entry.Path,
             source,
-            Fuzzer.OptionsFor(entry.Path),
+            options,
             Corpus.PropertySymbols,
+            baseline,
+            entry.Property is FuzzProperties.ArrangementIdempotency or FuzzProperties.ArrangementConvergence,
             cancellation: TestContext.Current.CancellationToken
         );
 
@@ -97,14 +114,21 @@ public sealed class OpenDefectTests {
     /// ⚠ The register is a queue, not a filing cabinet.
     /// </summary>
     /// <remarks>
-    /// A cap rather than a rule about any one entry: three open defects is a to-do list and thirty
-    /// is a policy of not fixing them. The number is deliberately close to what is there, so that
-    /// adding a fourth is a decision somebody makes rather than a thing that happens.
+    /// A cap rather than a rule about any one entry: a handful of open defects is a to-do list and
+    /// thirty is a policy of not fixing them. The number is deliberately close to what is there, so
+    /// that adding one more is a decision somebody makes rather than a thing that happens.
+    /// <para>
+    /// ⚠ It was six, and seven arrived from the same fifteen-minute run that produced the sixth.
+    /// Raising it rather than dropping a finding is the honest move — a register that only ever
+    /// holds what fits under its own cap is a register that hides what it cannot hold, which is the
+    /// failure this whole directory exists to prevent. Seven findings from a fuzzer's first day is a
+    /// first harvest, not a backlog; the next commit to touch this number should be lowering it.
+    /// </para>
     /// </remarks>
     [Fact]
     public void TheRegister_HasNotBecomeAFilingCabinet() {
         Assert.True(
-            OpenDefects.Register.Count <= 6,
+            OpenDefects.Register.Count <= 8,
             $"{OpenDefects.Register.Count.ToString(CultureInfo.InvariantCulture)} open fuzz findings. "
             + "The register is a queue: fix one before adding another, or raise this bound in a commit "
             + "that argues for it."

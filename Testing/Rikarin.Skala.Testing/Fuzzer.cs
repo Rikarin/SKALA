@@ -560,7 +560,15 @@ public static class Fuzzer {
     static IEnumerable<PropertyViolation> Violations(FuzzCase subject, string candidate, string property) {
         var options = OptionsFor(subject.Path);
         if (property != FuzzProperties.Absorption) {
-            return FuzzProperties.Check(subject.Path, candidate, options, Corpus.PropertySymbols)
+            // ⚠ The arrangement half is off by default and has to be asked for, or the predicate
+            // for an arrangement finding never runs the pipeline that produced it and answers "no
+            // longer fails" on every candidate — including the unreduced original.
+            var arrangement = property
+                is FuzzProperties.ArrangementIdempotency
+                    or FuzzProperties.ArrangementConvergence;
+
+            return FuzzProperties
+                .Check(subject.Path, candidate, options, Corpus.PropertySymbols, arrangement: arrangement)
                 .Where(violation => violation.Property == property);
         }
 

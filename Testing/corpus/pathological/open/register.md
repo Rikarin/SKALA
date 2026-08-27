@@ -10,7 +10,7 @@ it pins is fixed.
 ⚠ **It is excluded from `Corpus.Files()`, and the exclusion is the point rather than a dodge.** A
 file that makes `skala format` throw does not fail one assertion — it poisons every harness path that
 formats the corpus, `fidelity` and the differential report included, and it takes the measurement
-down with it. So these three are not in the measured sets. What they are instead is
+down with it. So none of these is in the measured sets. What they are instead is
 `OpenDefectTests`, which asserts of every entry below that it **still fails, in the way recorded
 here**. That is a stronger obligation than a comment in a bug tracker:
 
@@ -20,10 +20,15 @@ here**. That is a stronger obligation than a comment in a bug tracker:
   asserted;
 - and nothing here can be quietly forgotten, because the file is a test rather than a note.
 
-⚠ Each entry's `.cs` file is **byte-significant**. Two of the three are about a trailing space, a
-missing final newline or a lone `\r`, so an editor that tidies on save destroys the case. There are
-no `.expected.cs` fixtures here: an oracle fixture is a measurement, and a file the tool cannot
-process has nothing to measure.
+⚠ Each entry's `.cs` file is **byte-significant**. Several are about a trailing space, a missing
+final newline, a lone `\r` or the width of one gap, so an editor that tidies on save destroys the
+case. `.gitattributes` marks the corpus `-text` for the same reason. There are no `.expected.cs`
+fixtures here: an oracle fixture is a measurement, and a file the tool cannot process has nothing to
+measure.
+
+⚠ A `whitespace-absorption` entry carries **two** files, because the property is a statement about a
+pair: `<name>.cs` is the mutated input and `<name>.baseline.cs` is what it was mutated from, and the
+two must differ only in whitespace. The test formats both and asserts the outputs still differ.
 
 ## SK-FUZZ-0001 — `skala format` throws on `@formatter:off` running to a whitespace-only end of file
 
@@ -172,3 +177,53 @@ this was found: a paragraph in `Fuzzer.cs` explaining that a formatter-off span 
 the absorption property switched formatting off for the rest of the file, and the interpolated
 strings below it then tripped SK9099. The comment is now written without the literal tag, and says
 why. A file that documents a directive should not be governed by it.
+
+## SK-FUZZ-0006 — a comment between two usings, and arrangement stops being a fixed point
+
+- file: `comment-between-usings-with-inner-whitespace.cs`
+- property: `arrangement-idempotency`
+- seed: `11809147520796568340`
+- found: a generated unit printed with `widen-gap`, `comment-line`, `tabs`, `region`; minimised from
+  388 characters to 67 in 27 evaluations, and narrowed by hand to 45.
+
+```
+using System;
+// c
+using   System.  Collections ;
+```
+
+`pipeline(pipeline(x)) ≠ pipeline(x)`: the first pass applies **SK2010** and the second still wants
+one edit. M4's own bar, from doc 12 § "Properties" — *"Formatting is idempotent on its own and
+arrangement is idempotent on its own, and neither fact implies the pair is."*
+
+⚠ Both ingredients are needed and neither is exotic. Remove the interior whitespace from the
+qualified name and it converges; remove the comment between the two usings and it converges. Both
+appear in real code constantly, and 391 corpus files under `ArrangementPropertyTests` do not contain
+the combination — which is the same sentence as SK-FUZZ-0004's, for the second time.
+
+## SK-FUZZ-0007 — a blank line appears because the *input* line was too wide
+
+- file: `blank-line-from-an-over-wide-input-line.cs`
+- property: `whitespace-absorption`
+- seed: `15123090416411387126`
+- found: a generated unit mutated with `widen-gap`, `tabs`, `widen-gap`, `indent`, `widen-gap`,
+  `widen-gap`; minimised from 460 characters to 176, and narrowed by hand to two files that differ
+  in **one gap**.
+
+```
+interface I {                    interface I {
+    int P { get; }                   int P { get; }
+    void M(int a);                   void M(int<…108 spaces…>a);
+}                                }
+```
+
+The left one formats to itself. The right one formats to the same four lines **plus a blank line
+between `P` and `M`** — from an input that differs only in the width of one inter-token gap, on a
+line the formatter is about to rewrite anyway.
+
+⚠ This is the fitting engine reading a measurement it should not have. The blank-line decision is a
+function of whether the member is "wide", and the width it uses is the *input's* rather than the
+output's — so a gap the formatter is about to collapse changes a decision about a different line
+entirely. docs/plan/16 § R2 argues the fitter is the only genuinely novel code in the project and
+that the property suite is what contains its risk; this is that risk, in four lines, found by the
+only mutation in the catalogue that changes a width.

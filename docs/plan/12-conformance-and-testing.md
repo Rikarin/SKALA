@@ -326,13 +326,14 @@ included. What holds those files to account instead is `OpenDefectTests`, which 
 entry that it **still fails, in the way its register entry records**. A defect that gets fixed breaks
 that suite and is told where its file goes next; a defect that changes shape breaks it too. It is
 deliberately not an `[Fact(Skip = …)]`: a skipped test is invisible in a green run and stays skipped
-for a year. The register is capped at six entries, because three open findings are a queue and thirty
-are a policy of not fixing them.
+for a year. The register is capped, because a handful of open findings is a queue and thirty are a
+policy of not fixing them — and the cap is raised in a commit that argues for it rather than met by
+dropping a finding, which would hide exactly what this directory exists to show.
 
-#### What the first run found
+#### What the first day found
 
-Four defects, in the first hour the fuzzer existed, all minimised and all reproduced through `skala
-format` itself rather than only through the harness. In full in the register; in one line each:
+Seven defects, all minimised and all reproduced through `skala format` itself rather than only
+through the harness. In full in the register; in one line each:
 
 | | property | shape | size |
 |---|---|---|---|
@@ -340,6 +341,9 @@ format` itself rather than only through the harness. In full in the register; in
 | SK-FUZZ-0002 | token equivalence | a `///` run whose first line begins on the same line as the `{` loses its continuation lines; SK9099 catches it and the file cannot be formatted at all | 79 B |
 | SK-FUZZ-0003 | idempotency | mixed line endings converge in two passes, not one | 22 B |
 | SK-FUZZ-0004 | idempotency | the closing `]` of an array-rank specifier split across lines is indented eight columns on the first pass and four on the second | 33 B |
+| SK-FUZZ-0005 | token equivalence | an interpolated string inside a formatter-off span; found by `./build.sh Lint` refusing to format the fuzzer's own source | 74 B |
+| SK-FUZZ-0006 | pair idempotency | a comment between two usings, one of which carries interior whitespace: SK2010 applies and the second pipeline pass still wants an edit | 45 B |
+| SK-FUZZ-0007 | whitespace absorption | a blank line appears between two members because the **input** line was wider than the margin — from two files differing in one gap | 2×60 B |
 
 ⚠ **SK-FUZZ-0004 is the argument for this whole section in one case.** The *converged* answer is the
 right one, which is exactly why no corpus file catches it: every file in `corpus/` has already been
@@ -348,6 +352,12 @@ holds. It takes an input whose `]` starts at column zero to make the first pass 
 second, and nothing in a committed corpus is ever that input. SK-FUZZ-0003 makes the same point from
 the other side: `pathological/mixed-crlf-and-lf.cs` exists, and does not catch it. The corpus had the
 construct and not the shape.
+
+⚠ **SK-FUZZ-0007 is [16](16-risks-and-open-questions.md) § R2's risk, in four lines.** The blank-line
+decision is a function of whether a member is "wide", and the width it reads is the *input's* rather
+than the output's — so a gap the formatter is about to collapse changes a decision about a different
+line entirely. It was found by `widen-identifier` and `widen-gap`, the only mutations in the
+catalogue that change a width, which is why they are weighted as heavily as they are.
 
 ## Testing the rules
 
