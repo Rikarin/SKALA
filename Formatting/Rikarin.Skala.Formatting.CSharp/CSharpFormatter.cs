@@ -186,19 +186,22 @@ public static class CSharpFormatter {
             newLine,
             options.ContinuousIndentMultiplier
         );
-        var output = ApplyFileLevelRules(layout.Text, options, newLine);
+        // ⚠ Two post-passes over the laid-out text, and the order between them is a decision.
+        // The xmldoc sub-formatter goes first because it re-wraps comments against the *final* code
+        // indentation, and column alignment goes second because it measures the widest of a run of
+        // siblings and must see text nothing will move again. Reversing them would align against
+        // columns the reflow then changes.
+        var output = layout.Text;
 
-        // ⚠ After the layout and before anything measures or diffs it, because the sub-formatter
-        // wraps against the *final* code indentation. Wrapping against the indentation the source
-        // happened to have would make format(format(x)) differ from format(x) on every file whose
-        // indentation the pipeline changed. See XmlDocFormatter.
         var reflowed = 0;
         if (xmlDoc is { } xml) {
             var outcome = XmlDocFormatter.Rewrite(output, xml, parseOptions, newLine);
             layout = XmlDocFormatter.Reanchor(layout, outcome.Text, outcome.Replacements);
-            output = ApplyFileLevelRules(outcome.Text, options, newLine);
+            output = outcome.Text;
             reflowed = outcome.Reflowed;
         }
+
+        output = ApplyFileLevelRules(IntAlign.Apply(output, options, parseOptions), options, newLine);
 
         ReportLongLines(path, output, options, diagnostics);
         var edits = EditEmitter.Emit(text.ToString(), layout with { Text = output });

@@ -281,7 +281,8 @@ public sealed class BreakPlan {
                     _options.WrapArgumentsStyle,
                     _options.WrapAfterInvocationLpar,
                     _options.WrapBeforeInvocationRpar,
-                    _options.MaxInvocationArgumentsOnLine
+                    _options.MaxInvocationArgumentsOnLine,
+                    wrapBeforeOpen: _options.WrapBeforeInvocationLpar
                 );
                 return;
 
@@ -296,7 +297,8 @@ public sealed class BreakPlan {
                     _options.WrapArgumentsStyle,
                     _options.WrapAfterInvocationLpar,
                     _options.WrapBeforeInvocationRpar,
-                    _options.MaxInvocationArgumentsOnLine
+                    _options.MaxInvocationArgumentsOnLine,
+                    wrapBeforeOpen: _options.WrapBeforeInvocationLpar
                 );
                 return;
 
@@ -315,7 +317,8 @@ public sealed class BreakPlan {
                     _options.WrapPrimaryConstructorParametersStyle,
                     _options.WrapAfterPrimaryConstructorLpar,
                     _options.WrapBeforePrimaryConstructorRpar,
-                    _options.MaxPrimaryConstructorParametersOnLine
+                    _options.MaxPrimaryConstructorParametersOnLine,
+                    wrapBeforeOpen: _options.WrapBeforePrimaryConstructorLpar
                 );
                 return;
 
@@ -330,7 +333,8 @@ public sealed class BreakPlan {
                     _options.WrapParametersStyle,
                     _options.WrapAfterDeclarationLpar,
                     _options.WrapBeforeDeclarationRpar,
-                    _options.MaxFormalParametersOnLine
+                    _options.MaxFormalParametersOnLine,
+                    wrapBeforeOpen: _options.WrapBeforeDeclarationLpar
                 );
                 return;
 
@@ -442,6 +446,13 @@ public sealed class BreakPlan {
 
             case SwitchSectionSyntax section:
                 PlanCaseStatements(section);
+                return;
+
+            // ⚠ Planned only when the key is on, and the guard is not a micro-optimisation: a type
+            // parameter list has no group otherwise, and giving it one unconditionally would change
+            // where a long generic declaration wraps at the export's own values.
+            case TypeParameterListSyntax typeParameters when _options.WrapBeforeTypeParameterLangle:
+                PlanBreakBefore(typeParameters, typeParameters.LessThanToken);
                 return;
 
             case TypeParameterConstraintClauseSyntax constraint when !_options.PlaceTypeConstraintsOnSameLine:
@@ -601,7 +612,8 @@ public sealed class BreakPlan {
         bool wrapAfterOpen,
         bool wrapBeforeClose,
         int maxOnLine = int.MaxValue,
-        bool? placeOnSingleLine = null
+        bool? placeOnSingleLine = null,
+        bool wrapBeforeOpen = false
     )
         where T : SyntaxNode {
         if (open.IsKind(SyntaxKind.None) || close.IsKind(SyntaxKind.None) || items.Count == 0) {
@@ -633,6 +645,17 @@ public sealed class BreakPlan {
         // `record R(\n a,\n b\n)`, where the oracle keeps the closing parenthesis where the author
         // left it and Flat would pull it back up. The sole-lambda case below is the one place the
         // oracle really does re-join, and it says so with its own key.
+        // ⚠ `wrap_before_X_lpar = true` gives the opening parenthesis a line of its own, and it is a
+        // point of the *list's* group rather than a break of its own: when the list chops, the
+        // parenthesis goes with it. Asked directly at a 70-column margin, `void Decl(int a, …)`
+        // comes back as `void Decl` / `(` / one parameter per line / `) { }`, so the parenthesis
+        // breaks exactly when the parameters do.
+        // ⚠ Registered before the gap after the parenthesis, because `_gaps` is keyed by position
+        // and the two are different positions — the opening token's own start, and the first item's.
+        if (wrapBeforeOpen && !soleLambda) {
+            Point(open, group);
+        }
+
         if (wrapAfterOpen && !soleLambda) {
             Point(first, group);
         } else if (soleLambda) {
@@ -724,7 +747,12 @@ public sealed class BreakPlan {
                 JoinsIfFits: joins && !overCap,
                 BreaksIfTooLong: true,
                 HidesFlatWidthWhenBroken: true
-            )
+            ),
+            // ⚠ The list's node starts *at* its opening parenthesis, so a break point registered on
+            // that parenthesis is written before the group is opened and the writer, finding the
+            // group unresolved, renders it flat. This is the same correction a base list needs
+            // under `wrap_before_extends_colon`; see GroupPlan.LeadingGapInside.
+            leadingGapInside: wrapBeforeOpen
         );
     }
 
@@ -1228,7 +1256,15 @@ public sealed class BreakPlan {
         return _chainOwner.TryGetValue(Key(root), out var group) ? group : -1;
     }
 
-    static bool IsChainRootOperator(SyntaxNode node) => !SameChain(node.Parent, node);
+    /// <summary>
+    /// The outermost link of a chain of same-precedence binary operators or patterns.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ Internal because the builder needs the same answer: <c>align_multiline_binary_*</c> anchors
+    /// the whole chain to one column, and "the whole chain" is exactly this node. A second copy of
+    /// the precedence test in the builder would be one place for the two to drift apart.
+    /// </remarks>
+    internal static bool IsChainRootOperator(SyntaxNode node) => !SameChain(node.Parent, node);
 
     /// <summary>
     /// Whether two nested binary nodes belong to the same chain.
@@ -1332,6 +1368,35 @@ public sealed class BreakPlan {
     /// <c>wrap_before_eq = false</c>: a break around an assignment lands after the <c>=</c>, never
     /// before it.
     /// </summary>
+    /// <summary>
+    /// A construct whose only break point is the gap in front of it.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ <c>leadingGapInside</c>, always: the point is at the node's own first token, so the group
+    /// has to be open before that gap is written or the writer finds the group unresolved and
+    /// renders it flat. See GroupPlan.LeadingGapInside.
+    /// </remarks>
+    void PlanBreakBefore(SyntaxNode node, SyntaxToken token) {
+        if (token.IsKind(SyntaxKind.None)) {
+            return;
+        }
+
+        var group = NewGroup();
+        Point(token, group);
+        Describe(
+            node,
+            group,
+            GroupMode.Preserve,
+            new GroupFacts(
+                SourceBroken: _options.KeepsUserBreaksBetweenItems && BreaksBefore(token),
+                BreaksIfTooLong: true,
+                MeasuresHead: true
+            ),
+            spendsIndent: true,
+            leadingGapInside: true
+        );
+    }
+
     void PlanAroundEquals(SyntaxNode node, SyntaxToken equals, ExpressionSyntax value) {
         if (equals.IsKind(SyntaxKind.None)) {
             return;
@@ -1373,12 +1438,23 @@ public sealed class BreakPlan {
                 // 97.47 % → 96.29 %). Which of a long line's candidate points is taken is
                 // GroupFacts.PrefersOuterBreak's rule, and it is what makes this key observable.
                 BreaksIfTooLong: true,
-                MeasuresHead: true,
-                PrefersOuterBreak: true
+
+                // ⚠ `wrap_before_linq_expression = true` takes the query out of the ordering rule.
+                // Every other right-hand side is measured by what is left of the line and breaks
+                // only when its own break is the one worth taking; a query under this key breaks
+                // whenever the whole query does not fit, which is what puts `from` on a line of its
+                // own. Measured at a 70-column margin: `var q = from … select …;` keeps `from` on
+                // the declaration's line at false and moves it down at true, with nothing else in
+                // the file changing.
+                MeasuresHead: !QueryLeadsTheWay(value),
+                PrefersOuterBreak: !QueryLeadsTheWay(value)
             ),
             spendsIndent: true
         );
     }
+
+    bool QueryLeadsTheWay(ExpressionSyntax value) =>
+        _options.WrapBeforeLinqExpression && value is QueryExpressionSyntax;
 
     /// <summary>
     /// <c>place_expr_{method,property,accessor}_on_single_line = if_owner_is_single_line</c>: the

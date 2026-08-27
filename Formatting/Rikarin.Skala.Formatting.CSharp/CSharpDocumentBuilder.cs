@@ -105,11 +105,84 @@ public sealed partial class CSharpDocumentBuilder {
     /// </code>
     /// </remarks>
     void Visit(SyntaxNode node) {
+        if (!AlignsFromOwnColumn(node)) {
+            VisitPlanned(node);
+            return;
+        }
+
+        // ⚠ The gap before the anchor is emitted *before* the scope opens, and that is the whole of
+        // what makes the column right. A break in that gap belongs to whatever encloses the
+        // construct, so the column to align to is the one after it — and the writer only knows that
+        // column once the gap has been resolved.
+        EmitLeadingGapAt(AlignAnchor(node));
+        OpenIndent(IndentKind.Align, unconditional: true);
+        VisitPlanned(node);
+        EmitUpTo(node.Span.End);
+        CloseIndent(IndentKind.Align);
+    }
+
+    /// <summary>The position the alignment column is read at.</summary>
+    /// <remarks>
+    /// ⚠ The construct's own first token for every kind but one, and the exception is measured. An
+    /// anonymous object's node starts at <c>new</c> and the oracle aligns it to the <c>{</c>:
+    /// <code>
+    /// var v = new {
+    ///                 A = 1     ← the brace's column plus one level, not `new`'s
+    ///             };
+    /// </code>
+    /// Every other braced construct here <em>is</em> its brace — an <c>InitializerExpressionSyntax</c>
+    /// and a <c>PropertyPatternClauseSyntax</c> both start at one — so the distinction only ever
+    /// shows on this node.
+    /// </remarks>
+    static int AlignAnchor(SyntaxNode node) =>
+        node is AnonymousObjectCreationExpressionSyntax anonymous
+            ? anonymous.OpenBraceToken.SpanStart
+            : node.SpanStart;
+
+    /// <summary>
+    /// Whether an <c>align_multiline_*</c> key anchors this construct to the column its own first
+    /// token lands on, rather than to an indent level of the line it is on.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ One rule for six constructs, and the anchor is the <em>node's</em> start rather than the
+    /// opening delimiter's — which is the same token for four of them and is not for the other two.
+    /// A switch expression starts at its governing expression and an initializer starts at its
+    /// brace, and the oracle aligns each to its own node:
+    /// <code>
+    /// var r = v switch {              var v = new SomeType {
+    ///             1 => "a",                                    A = 1,
+    ///             _ => "b"                                     B = 2
+    ///         };                                           };
+    /// </code>
+    /// Both columns fall out of "the construct's first token" and neither falls out of "the brace".
+    /// <para>
+    /// ⚠ Every key here is <c>false</c> in the export, so this returns false for every file the
+    /// fidelity number is measured over. That is not an argument for guessing at the shape: the
+    /// columns above are the oracle's, asked at a 70-column margin with one key flipped at a time.
+    /// </para>
+    /// </remarks>
+    bool AlignsFromOwnColumn(SyntaxNode node) =>
+        node switch {
+            InitializerExpressionSyntax or AnonymousObjectCreationExpressionSyntax =>
+                _options.AlignMultilineArrayAndObjectInitializer,
+            CollectionExpressionSyntax or ListPatternSyntax => _options.AlignMultilineListPattern,
+            PropertyPatternClauseSyntax => _options.AlignMultilinePropertyPattern,
+            SwitchExpressionSyntax => _options.AlignMultilineSwitchExpression,
+            QueryExpressionSyntax => _options.AlignLinqQuery,
+            BinaryExpressionSyntax =>
+                _options.AlignMultilineBinaryExpressionsChain && BreakPlan.IsChainRootOperator(node),
+            BinaryPatternSyntax => _options.AlignMultilineBinaryPatterns && BreakPlan.IsChainRootOperator(node),
+            _ => false
+        };
+
+    void VisitPlanned(SyntaxNode node) {
         var planned = _plan.GroupsOf(node);
         if (planned.Count == 0) {
             VisitInner(node);
             return;
         }
+
+        var aligned = AlignsFromOwnColumn(node);
 
         // ⚠ The gap *before* the construct is emitted first, outside the group. It belongs to
         // whatever encloses the construct, and a group that swallows it is measured wrong twice
@@ -143,7 +216,13 @@ public sealed partial class CSharpDocumentBuilder {
             // 1 did and it is fine while the document stack holds nothing but indent scopes; a group
             // on the same stack closes before the statement that owns the frame does, and pops the
             // indent instead of itself.
-            indented[i] = (plan.SpendsIndent && CanSpendAContinuationLevel() ? 1 : 0) + (plan.OwnLevel ? 1 : 0);
+            // ⚠ An aligned construct spends no level of its own: the Align scope around it is an
+            // absolute column and its contents start there. `OwnLevel` has to go too — a binary
+            // pattern chain takes an extra level everywhere else, and under alignment the oracle
+            // puts its operands on the pattern's own column and not one indent past it.
+            indented[i] = aligned
+                ? 0
+                : (plan.SpendsIndent && CanSpendAContinuationLevel() ? 1 : 0) + (plan.OwnLevel ? 1 : 0);
 
             // ⚠ Whether the level is actually spent is decided here and not in the plan, and the
             // fitter needs the answer: the ordering rule asks what column a break inside this group
@@ -255,7 +334,17 @@ public sealed partial class CSharpDocumentBuilder {
         //   x is A            a
         //       or B    vs    + b     ← one level, not two
         if (IsChainRoot(node) || IsPatternChainRoot(node)) {
-            _frames.Add(new Frame(IsPatternChainRoot(node) ? FrameKind.Pattern : FrameKind.Chain, false));
+            _frames.Add(
+                new Frame(
+                    IsPatternChainRoot(node) ? FrameKind.Pattern : FrameKind.Chain,
+                    false,
+                    // ⚠ An aligned chain spends no continuation level of its own. The Align scope is
+                    // an absolute column and everything under it starts there; adding the level the
+                    // chain would otherwise pay for puts the operands one indent past the column the
+                    // oracle writes them at.
+                    Aligned: AlignsFromOwnColumn(node)
+                )
+            );
             Dispatch(node);
             if (_frames[^1].Activated) {
                 CloseIndent(IndentKind.Continuous);
@@ -1288,6 +1377,14 @@ public sealed partial class CSharpDocumentBuilder {
                 return -1;
             }
 
+            // ⚠ An aligned frame pays for nothing, and it stops the walk rather than passing the
+            // break outward: the Align scope under it is an absolute column, so a level spent by an
+            // enclosing frame would be discarded by the writer anyway and only the bookkeeping
+            // would differ.
+            if (_frames[i].Aligned) {
+                return -1;
+            }
+
             if (_frames[i].Kind == FrameKind.Chain) {
                 if (beforeDot) {
                     return i;
@@ -1327,7 +1424,8 @@ public sealed partial class CSharpDocumentBuilder {
         bool Activated,
         bool Started = false,
         bool ResetsDepth = false,
-        int SavedDepth = 0);
+        int SavedDepth = 0,
+        bool Aligned = false);
 
     /// <summary>
     /// Whether the break continues an expression rather than starting a new statement, member or

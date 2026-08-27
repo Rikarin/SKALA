@@ -156,6 +156,29 @@ public readonly struct PhaseOneOptions {
         // ── Indentation ──────────────────────────────────────────────────────────────────────
         IndentBraces = options.GetBool(Ids.IndentBraces);
         AlignMultilineStatementConditions = options.GetBool(Ids.AlignMultilineStatementConditions);
+        AlignMultilineArrayAndObjectInitializer = options.GetBool(Ids.AlignMultilineArrayAndObjectInitializer);
+        AlignMultilineListPattern = options.GetBool(Ids.AlignMultilineListPattern);
+        AlignMultilinePropertyPattern = options.GetBool(Ids.AlignMultilinePropertyPattern);
+        AlignMultilineSwitchExpression = options.GetBool(Ids.AlignMultilineSwitchExpression);
+        AlignMultilineBinaryExpressionsChain = options.GetBool(Ids.AlignMultilineBinaryExpressionsChain);
+        AlignMultilineBinaryPatterns = options.GetBool(Ids.AlignMultilineBinaryPatterns);
+        AlignLinqQuery = options.GetBool(Ids.AlignLinqQuery);
+
+        IntAlignFields = options.GetBool(Ids.IntAlignFields);
+        IntAlignVariables = options.GetBool(Ids.IntAlignVariables);
+        IntAlignAssignments = options.GetBool(Ids.IntAlignAssignments);
+        IntAlignProperties = options.GetBool(Ids.IntAlignProperties);
+        IntAlignMethods = options.GetBool(Ids.IntAlignMethods);
+        IntAlignComments = options.GetBool(Ids.IntAlignComments);
+        IntAlignSwitchExpressions = options.GetBool(Ids.IntAlignSwitchExpressions);
+        IntAlignSwitchSections = options.GetBool(Ids.IntAlignSwitchSections);
+        DisableIntAlign = options.GetBool(Ids.DisableIntAlign);
+        IntAlignFixInAdjacent = options.GetBool(Ids.IntAlignFixInAdjacent);
+        AllowFarAlignment = options.GetBool(Ids.AllowFarAlignment);
+        IntAlign = options.GetBool(Ids.IntAlign);
+        IntAlignEq = options.GetBool(Ids.IntAlignEq);
+        IntAlignDeclarationNames = options.GetBool(Ids.IntAlignDeclarationNames);
+        IntAlignEnumInitializers = options.GetBool(Ids.IntAlignEnumInitializers);
         IndentSwitchLabels = options.GetBool(Ids.IndentSwitchLabels);
         IndentBreakFromCase = options.GetBool(Ids.IndentBreakFromCase);
         IndentInsideNamespace = options.GetBool(Ids.IndentInsideNamespace);
@@ -240,6 +263,11 @@ public readonly struct PhaseOneOptions {
         WrapBeforeInvocationRpar = options.GetBool(Ids.WrapBeforeInvocationRpar);
         WrapAfterDeclarationLpar = options.GetBool(Ids.WrapAfterDeclarationLpar);
         WrapBeforeDeclarationRpar = options.GetBool(Ids.WrapBeforeDeclarationRpar);
+        WrapBeforeDeclarationLpar = options.GetBool(Ids.WrapBeforeDeclarationLpar);
+        WrapBeforeInvocationLpar = options.GetBool(Ids.WrapBeforeInvocationLpar);
+        WrapBeforePrimaryConstructorLpar = options.GetBool(Ids.WrapBeforePrimaryConstructorLpar);
+        WrapBeforeTypeParameterLangle = options.GetBool(Ids.WrapBeforeTypeParameterLangle);
+        WrapBeforeLinqExpression = options.GetBool(Ids.WrapBeforeLinqExpression);
         WrapBeforeArrowWithExpressions = options.GetBool(Ids.WrapBeforeArrowWithExpressions);
 
         PlaceAttributeOnSameLine = (PlacementStyle)options.GetRaw(Ids.PlaceAttributeOnSameLine);
@@ -506,6 +534,50 @@ public readonly struct PhaseOneOptions {
     /// </summary>
     public bool AlignMultilineStatementConditions { get; }
 
+    public bool AlignMultilineArrayAndObjectInitializer { get; }
+    public bool AlignMultilineListPattern { get; }
+    public bool AlignMultilinePropertyPattern { get; }
+    public bool AlignMultilineSwitchExpression { get; }
+    public bool AlignMultilineBinaryExpressionsChain { get; }
+    public bool AlignMultilineBinaryPatterns { get; }
+    public bool AlignLinqQuery { get; }
+
+    public bool IntAlignFields { get; }
+    public bool IntAlignVariables { get; }
+    public bool IntAlignAssignments { get; }
+    public bool IntAlignProperties { get; }
+    public bool IntAlignMethods { get; }
+    public bool IntAlignComments { get; }
+    public bool IntAlignSwitchExpressions { get; }
+    public bool IntAlignSwitchSections { get; }
+    public bool DisableIntAlign { get; }
+    public bool IntAlignFixInAdjacent { get; }
+    public bool AllowFarAlignment { get; }
+    public bool IntAlign { get; }
+    public bool IntAlignEq { get; }
+    public bool IntAlignDeclarationNames { get; }
+    public bool IntAlignEnumInitializers { get; }
+
+    /// <summary>
+    /// Whether any construct is column-aligned at all, and therefore whether <see cref="IntAlign"/>
+    /// has to parse the output.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ <c>disable_int_align</c> is honoured here and only here: it is the family's master switch
+    /// and it wins over every member, which the oracle confirms — with <c>int_align = true</c> and
+    /// <c>disable_int_align = true</c> together, the output is the unaligned one.
+    /// </remarks>
+    public bool IntAlignAnything =>
+        !DisableIntAlign
+        && (IntAlignFields
+            || IntAlignVariables
+            || IntAlignAssignments
+            || IntAlignProperties
+            || IntAlignMethods
+            || IntAlignComments
+            || IntAlignSwitchExpressions
+            || IntAlignSwitchSections);
+
     public bool IndentSwitchLabels { get; }
     public bool IndentBreakFromCase { get; }
     public bool IndentInsideNamespace { get; }
@@ -602,6 +674,11 @@ public readonly struct PhaseOneOptions {
     public bool WrapBeforeInvocationRpar { get; }
     public bool WrapAfterDeclarationLpar { get; }
     public bool WrapBeforeDeclarationRpar { get; }
+    public bool WrapBeforeDeclarationLpar { get; }
+    public bool WrapBeforeInvocationLpar { get; }
+    public bool WrapBeforePrimaryConstructorLpar { get; }
+    public bool WrapBeforeTypeParameterLangle { get; }
+    public bool WrapBeforeLinqExpression { get; }
     public bool WrapBeforeArrowWithExpressions { get; }
 
     public PlacementStyle PlaceAttributeOnSameLine { get; }
@@ -980,6 +1057,124 @@ public static class Ids {
     public static readonly OptionId AlignMultilineStatementConditions =
         Of("resharper_csharp_align_multiline_statement_conditions");
 
+    // ⚠ The seven `align_multiline_*` keys whose column the writer's scope stack can express, all
+    // of them `false` in the export. The column is the construct's own first token, and the level
+    // its contents take from that column is whatever the construct already spends — one indent for
+    // a braced or bracketed body, none at all for a chain. See
+    // CSharpDocumentBuilder.AlignsFromOwnColumn.
+    public static readonly OptionId AlignMultilineArrayAndObjectInitializer =
+        Of("resharper_csharp_align_multiline_array_and_object_initializer");
+
+    public static readonly OptionId AlignMultilineListPattern =
+        Of("resharper_csharp_align_multiline_list_pattern");
+
+    public static readonly OptionId AlignMultilinePropertyPattern =
+        Of("resharper_csharp_align_multiline_property_pattern");
+
+    public static readonly OptionId AlignMultilineSwitchExpression =
+        Of("resharper_csharp_align_multiline_switch_expression");
+
+    public static readonly OptionId AlignMultilineBinaryExpressionsChain =
+        Of("resharper_csharp_align_multiline_binary_expressions_chain");
+
+    public static readonly OptionId AlignMultilineBinaryPatterns =
+        Of("resharper_csharp_align_multiline_binary_patterns");
+
+    // ⚠ Read, implemented, and Tier D — on the evidence and not on the wiring. The oracle aligns a
+    // wrapped query's clauses to the column of its `from`, and this reads the key and opens that
+    // scope. What is missing is the wrap: Skala does not break a query expression at its clauses at
+    // all (a milestone-3 gap that has nothing to do with alignment), so the only continuation a
+    // query has in Skala's output is one inside a single clause, and a fixture pinning that column
+    // would be pinning a line the oracle does not write. Tier A when the query wraps at its
+    // clauses, and not before.
+    public static readonly OptionId AlignLinqQuery = OfInert("resharper_csharp_align_linq_query");
+
+    // ⚠ The rest of the `align_*` family, read so the crash snapshot records them, and Tier D each
+    // for a reason the oracle gave rather than for a gap in the wiring. All measured one key at a
+    // time at a 70-column margin against `jb cleanupcode`.
+    //
+    // Never read by the C# formatter — the unprefixed spellings are the C++ and VB formatters'
+    // keys, which this export writes without a language prefix. Each set to true (or, where the
+    // export already says true, to false) on a file that wraps the construct it names returns
+    // byte-identical oracle output, while the construct's real key changes it:
+    //   align_multiline_array_initializer, align_multiline_ctor_init, align_multiline_expression_braces,
+    //   align_multiline_implements_list, align_multiline_type_argument, align_multiline_type_parameter,
+    //   align_multiline_type_parameter_constraints, align_multiline_type_parameter_list,
+    //   align_ternary, alignment_tab_fill_style.
+    //
+    // Masked by another key at the export's own values, so the per-option unit — which flips one key
+    // from the repository's configuration — cannot reach them:
+    //   align_multiline_argument, align_multiline_parameter — the export sets
+    //     wrap_after_{invocation,declaration}_lpar = true, which gives the first item a line of its
+    //     own, and there is then no first item on the delimiter's line to align the rest to. With
+    //     the lpar key off as well, both change the output.
+    //   align_multiline_for_stmt — align_multiline_statement_conditions = true already aligns a
+    //     `for` header by its `(`. Either key alone is enough and the export has the other one on.
+    //
+    // Observable and not implemented, with the shape recorded so the next attempt starts from it:
+    //   align_first_arg_by_paren — puts the arguments on the `(`'s column plus one and the closing
+    //     parenthesis one column *left* of them. The writer's scope stack has one column per scope
+    //     and no expression for "the closer is the column minus one".
+    //   align_multiline_calls_chain — the anchor is the chain's first `.`, and a chain's
+    //     continuation level is spent lazily at the first break, by which time the writer has
+    //     written past that dot.
+    //   align_multiline_extends_list — the anchor is the first base type, two columns past the base
+    //     list's own node, which is where every other member of this family reads its column.
+    //   align_multiline_expression — the union of four specific keys, except for binary patterns:
+    //     it aligns a pattern chain one level from the *enclosing* expression where
+    //     align_multiline_binary_patterns aligns it on the pattern's own column, one further right.
+    //     An Align scope reads the column where it opens and cannot see the enclosing expression.
+    //   align_multiple_declaration, align_tuple_components, align_multiline_comments — no probe
+    //     found a shape where they change the oracle's output, which is weaker evidence than the
+    //     rest of this list: they are unmeasured rather than measured inert.
+
+    // ── Column alignment of adjacent constructs (int_align_*) ────────────────────────────────
+    // ⚠ Every one of these is `false` in the export and every one of them is read here, so the
+    // generalized `resharper_int_align` — which the registry expands into all thirteen — is
+    // observable through them. See IntAlign, and Ids.DisableIntAlign below for the three keys of
+    // the family that stay Tier D.
+    public static readonly OptionId IntAlignFields = Of("resharper_csharp_int_align_fields");
+    public static readonly OptionId IntAlignVariables = Of("resharper_csharp_int_align_variables");
+    public static readonly OptionId IntAlignAssignments = Of("resharper_csharp_int_align_assignments");
+    public static readonly OptionId IntAlignProperties = Of("resharper_csharp_int_align_properties");
+    public static readonly OptionId IntAlignMethods = Of("resharper_csharp_int_align_methods");
+    public static readonly OptionId IntAlignComments = Of("resharper_csharp_int_align_comments");
+
+    public static readonly OptionId IntAlignSwitchExpressions =
+        Of("resharper_csharp_int_align_switch_expressions");
+
+    public static readonly OptionId IntAlignSwitchSections = Of("resharper_csharp_int_align_switch_sections");
+
+    // ⚠ Read and Tier D, all three for the same reason and none of them for a missing
+    // implementation: they refine an alignment that the export never asks for. `disable_int_align`
+    // is a master switch over a family whose every member is already false, and
+    // `int_align_fix_in_adjacent` and `allow_far_alignment` say which neighbours join a run and how
+    // far a column may be dragged — questions with no answer while no run exists. Measured: with
+    // `int_align = true` supplied alongside, `disable_int_align` turns the whole family off again
+    // and the other two change nothing on any shape tried. The per-option unit flips one key from
+    // the repository's configuration, so none of the three can be demonstrated there.
+    public static readonly OptionId DisableIntAlign = OfInert("resharper_disable_int_align");
+    public static readonly OptionId IntAlignFixInAdjacent = OfInert("resharper_csharp_int_align_fix_in_adjacent");
+    public static readonly OptionId AllowFarAlignment = OfInert("resharper_csharp_allow_far_alignment");
+
+    // ⚠ Read and Tier D on the measurement: the C# formatter does not consult the unprefixed
+    // spellings at all. Asked directly with each set to true on a file that exercises it, the oracle
+    // returns byte-identical output, while the `resharper_csharp_int_align_*` key covering the same
+    // construct changes it — `int_align_fields` is what aligns an enum's initializers, not
+    // `int_align_enum_initializers`. They are the C++ and VB formatters' keys, which this export
+    // writes without a language prefix.
+    // ⚠ Read and Tier D on the configuration model rather than on the formatter. The registry
+    // records that `resharper_int_align` expands into the thirteen `resharper_csharp_int_align_*`
+    // keys — that is what `expands` in options.json is for — and nothing applies the expansion:
+    // OptionResolver resolves keys and aliases and leaves generalized properties alone. Setting it
+    // therefore changes no value the formatter reads, whatever the formatter implements. Tier A when
+    // the resolver expands it, and the fix belongs to docs/plan/03's configuration model.
+    public static readonly OptionId IntAlign = OfInert("resharper_int_align");
+
+    public static readonly OptionId IntAlignEq = OfInert("resharper_int_align_eq");
+    public static readonly OptionId IntAlignDeclarationNames = OfInert("resharper_int_align_declaration_names");
+    public static readonly OptionId IntAlignEnumInitializers = OfInert("resharper_int_align_enum_initializers");
+
     public static readonly OptionId IndentSwitchLabels = Of("resharper_indent_switch_labels");
     public static readonly OptionId IndentBreakFromCase = Of("resharper_indent_break_from_case");
     public static readonly OptionId IndentInsideNamespace = Of("resharper_csharp_indent_inside_namespace");
@@ -1134,12 +1329,82 @@ public static class Ids {
     public static readonly OptionId WrapBeforeBinaryOpsign = Of("resharper_csharp_wrap_before_binary_opsign");
     public static readonly OptionId WrapBeforeBinaryPatternOp = Of("resharper_csharp_wrap_before_binary_pattern_op");
     public static readonly OptionId WrapBeforeTernaryOpsigns = Of("resharper_csharp_wrap_before_ternary_opsigns");
-    public static readonly OptionId WrapBeforeEq = OfInert("resharper_csharp_wrap_before_eq");
+    // ⚠ No longer inert. Milestone 2 recorded that no input could tell its two values apart,
+    // because M2 never *added* a break at either side of an `=` and the key only chooses a side.
+    // M3 added one — GroupFacts.PrefersOuterBreak — and the key became observable the moment it
+    // did; the M2 note outlived the reason for it. Asked directly at a 70-column margin,
+    // `target = a + b + c;` comes back broken after the `=` at false and before it at true.
+    public static readonly OptionId WrapBeforeEq = Of("resharper_csharp_wrap_before_eq");
     public static readonly OptionId WrapBeforeComma = Of("resharper_csharp_wrap_before_comma");
     public static readonly OptionId WrapAfterInvocationLpar = Of("resharper_csharp_wrap_after_invocation_lpar");
     public static readonly OptionId WrapBeforeInvocationRpar = Of("resharper_csharp_wrap_before_invocation_rpar");
     public static readonly OptionId WrapAfterDeclarationLpar = Of("resharper_csharp_wrap_after_declaration_lpar");
     public static readonly OptionId WrapBeforeDeclarationRpar = Of("resharper_csharp_wrap_before_declaration_rpar");
+
+    // ⚠ The opening half of the three `lpar` pairs. `wrap_after_X_lpar` says whether the first item
+    // gets a line of its own; these say whether the *parenthesis itself* does, which is a break at
+    // the gap before it and therefore a point of the same group:
+    //     void Decl              SomeCall
+    //     (                      (
+    //         int a,                 argument
+    //     ) { }                  );
+    public static readonly OptionId WrapBeforeDeclarationLpar =
+        Of("resharper_csharp_wrap_before_declaration_lpar");
+
+    public static readonly OptionId WrapBeforeInvocationLpar = Of("resharper_csharp_wrap_before_invocation_lpar");
+
+    public static readonly OptionId WrapBeforePrimaryConstructorLpar =
+        Of("resharper_csharp_wrap_before_primary_constructor_declaration_lpar");
+
+    // ⚠ Read, implemented, and Tier D — both of them blocked by a wrapping gap of their own rather
+    // than by anything to do with the key.
+    //
+    //   wrap_before_type_parameter_langle — implemented in BreakPlan and verified: with the key on,
+    //     Skala's output on a type parameter list too long for its line is byte-identical to the
+    //     oracle's. With it off the two disagree, because Skala gives a type parameter list no group
+    //     at all and the oracle wraps one — after the `<` when a single parameter overflows, at the
+    //     last comma that fits when several do. A fixture pinning this key would be committing that
+    //     unrelated divergence to the corpus. Tier A once a type parameter list wraps.
+    //   wrap_before_linq_expression — implemented in PlanAroundEquals: with the key on, a query is
+    //     taken out of the ordering rule and breaks whenever the whole query does not fit, which is
+    //     what puts `from` on a line of its own. Blocked by the same gap as `align_linq_query`:
+    //     Skala does not break a query at its clauses, so every query long enough to make the key
+    //     matter is one Skala already lays out differently.
+    public static readonly OptionId WrapBeforeTypeParameterLangle =
+        OfInert("resharper_csharp_wrap_before_type_parameter_langle");
+
+    public static readonly OptionId WrapBeforeLinqExpression =
+        OfInert("resharper_csharp_wrap_before_linq_expression");
+
+    // ⚠ The rest of the `wrap_*` family the export sets, measured the same way and Tier D.
+    //
+    // Never read by the C# formatter. Each is the unprefixed spelling of a key whose C# form is
+    // elsewhere in this list, and setting it changes nothing in the oracle's output on a file that
+    // exercises the construct: wrap_after_binary_opsign (the C# key is wrap_before_binary_opsign),
+    // wrap_after_dot (wrap_after_dot_in_method_calls), wrap_arguments (csharp_wrap_arguments_style),
+    // wrap_base_clause_style (csharp_wrap_extends_list_style), wrap_braced_init_list_style
+    // (wrap_array_initializer_style), wrap_ctor_initializer_style, wrap_enumeration_style
+    // (wrap_enum_declaration), wrap_before_colon, wrap_comments.
+    //
+    // ⚠ The four lambda keys belong here too, and the measurement is the interesting one: with
+    // wrap_{before,after}_lambda_and_anonymous_function_declaration_{lpar,rpar} and
+    // wrap_lambda_and_anonymous_function_parameters_style at any value, the oracle's layout of a
+    // lambda's parameter list does not move — and it *does* move when
+    // wrap_before_declaration_lpar changes. A lambda's parameter list is governed by the method
+    // declaration keys; the five keys named for it are not read.
+    //
+    // Master switches with nothing behind them: csharp_wrap_lines = false leaves an over-long line
+    // wrapped exactly as before, enable_wrapping = true changes nothing, and keep_user_wrapping
+    // has no observable effect in this export (BreakPlan records the same, from M2).
+    //
+    // Not reached by any probe: wrap_before_first_type_parameter_constraint and
+    // wrap_multiple_type_parameter_constraints_style — the export forces every `where` onto its own
+    // line with place_type_constraints_on_same_line = false, and no shape tried put two constraint
+    // clauses in a position where either key could decide anything.
+    //
+    // wrap_verbatim_interpolated_strings is observable — chop_if_long breaks the oracle's output
+    // *inside* the interpolation holes of a verbatim string — and is not implemented: Skala emits an
+    // interpolated string as one piece and has no break point inside one.
 
     public static readonly OptionId WrapBeforeArrowWithExpressions =
         Of("resharper_csharp_wrap_before_arrow_with_expressions");
