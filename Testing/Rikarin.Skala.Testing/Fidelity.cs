@@ -6,8 +6,35 @@ namespace Rikarin.Skala.Testing;
 /// <summary>One place Skala and the oracle disagree, classified by the construct it happened in.</summary>
 public sealed record Divergence(string File, int Line, string Expected, string Actual, string Class);
 
+/// <summary>
+/// Which lines a fidelity number is computed over.
+/// </summary>
+/// <remarks>
+/// ⚠ It is a parameter and it is printed with every number, because a fidelity figure that
+/// silently excludes a category is how a measurement stops meaning anything. Skala formats
+/// documentation comments and the oracle's pinned profile does not (SK-DIV-0006), so on
+/// <c>///</c> lines the two are measuring different questions and the answer is not a fidelity at
+/// all. Every other line is still compared, and that is the number the ratchet holds.
+/// </remarks>
+public enum FidelityBasis {
+    /// <summary>Every line of both texts. The number that includes the known disagreement.</summary>
+    EveryLine,
+
+    /// <summary>
+    /// Every line that is not a <c>///</c> line, removed from <b>both</b> sides before comparing.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ Drawn this way and not another. Excluding "the lines Skala changed" would be marking one's
+    /// own homework, and excluding "the files that have doc comments" would hide a real regression
+    /// in the code around them. What is left is every line the sub-formatter is not allowed to
+    /// touch, and it may not move at all.
+    /// </remarks>
+    OutsideDocComments
+}
+
 /// <summary>The differential number, and the work queue behind it.</summary>
 public sealed record FidelityReport(
+    FidelityBasis Basis,
     int Files,
     int IdenticalFiles,
     int Lines,
@@ -17,20 +44,27 @@ public sealed record FidelityReport(
 
     public double FileFidelity => Files == 0 ? 1 : (double)IdenticalFiles / Files;
 
+    /// <summary>The basis, as it is printed after every number this report produces.</summary>
+    public string BasisName => Name(Basis);
+
+    /// <summary>⚠ Used in the report, in the ratchet's messages and in <c>fidelity.json</c>.</summary>
+    public static string Name(FidelityBasis basis) =>
+        basis == FidelityBasis.OutsideDocComments ? "outside doc comments" : "every line";
+
     /// <summary>
     /// ⚠ The output of a differential run is not pass/fail. It is a ranked report of divergence
     /// classes by line count, which is the work queue (docs/plan/12 § "Differential").
     /// </summary>
     public string Render(int topClasses = 20) {
         var builder = new StringBuilder();
-        builder.Append("line fidelity: ")
+        builder.Append("line fidelity (").Append(BasisName).Append("): ")
             .Append((LineFidelity * 100).ToString("F2", CultureInfo.InvariantCulture))
             .Append("%  (")
             .Append(IdenticalLines.ToString(CultureInfo.InvariantCulture))
             .Append('/')
             .Append(Lines.ToString(CultureInfo.InvariantCulture))
             .AppendLine(" lines)");
-        builder.Append("file fidelity: ")
+        builder.Append("file fidelity (").Append(BasisName).Append("): ")
             .Append((FileFidelity * 100).ToString("F2", CultureInfo.InvariantCulture))
             .Append("%  (")
             .Append(IdenticalFiles.ToString(CultureInfo.InvariantCulture))
@@ -74,16 +108,29 @@ public sealed record FidelityReport(
 /// of the file and turns an honest 85 % into a meaningless 50 %. Line fidelity is
 /// <em>matched lines ÷ total lines</em> over the longest common subsequence, which is what
 /// docs/plan/12 § "Differential" means by "identical lines".
+/// <para>
+/// ⚠ The default basis is <see cref="FidelityBasis.OutsideDocComments"/> and the default is a
+/// decision, taken when the documentation-comment sub-formatter became the default (SK-DIV-0006).
+/// The oracle profile Skala pins does not run ReSharper's "Reformat embedded XML doc comments"
+/// task and Skala does; comparing those lines measures that, not fidelity. The other basis is one
+/// argument away and both are reported at every re-base — docs/plan/12 § "A ratchet compares
+/// numbers over the same population".
+/// </para>
 /// </remarks>
 public static class Fidelity {
-    public static FidelityReport Compare(IEnumerable<(string File, string Expected, string Actual)> results) {
+    public static FidelityReport Compare(
+        IEnumerable<(string File, string Expected, string Actual)> results,
+        FidelityBasis basis = FidelityBasis.OutsideDocComments
+    ) {
         var files = 0;
         var identicalFiles = 0;
         var lines = 0;
         var identicalLines = 0;
         var divergences = new List<Divergence>();
 
-        foreach (var (file, expected, actual) in results) {
+        foreach (var (file, rawExpected, rawActual) in results) {
+            var expected = basis == FidelityBasis.OutsideDocComments ? OutsideDocComments(rawExpected) : rawExpected;
+            var actual = basis == FidelityBasis.OutsideDocComments ? OutsideDocComments(rawActual) : rawActual;
             files++;
             var left = TextNormalisation.Lines(expected);
             var right = TextNormalisation.Lines(actual);
@@ -105,8 +152,24 @@ public static class Fidelity {
             Classify(file, trace, divergences);
         }
 
-        return new FidelityReport(files, identicalFiles, lines, identicalLines, divergences);
+        return new FidelityReport(basis, files, identicalFiles, lines, identicalLines, divergences);
     }
+
+    /// <summary>
+    /// The text with every <c>///</c> line removed.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ A <c>///</c> inside a string literal would be removed too, and it is removed from both
+    /// sides, so it cannot make the two texts agree when they do not. It could in principle make
+    /// them disagree in a place that is really identical, which would understate fidelity rather
+    /// than overstate it — the direction a measurement is allowed to be wrong in.
+    /// </remarks>
+    public static string OutsideDocComments(string text) =>
+        string.Join(
+            '\n',
+            TextNormalisation.Lines(text)
+                .Where(static line => !line.TrimStart().StartsWith("///", StringComparison.Ordinal))
+        );
 
     /// <summary>
     /// Pairs each hunk's removed lines with its added lines so that a divergence is described as

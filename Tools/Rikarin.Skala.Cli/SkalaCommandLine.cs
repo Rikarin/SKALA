@@ -195,14 +195,16 @@ public static partial class SkalaCommandLine {
             Description = "Do everything in this process. The daemon is only ever an optimisation."
         };
 
-        // ⚠ SK-DIV-0006, and the same shape as `arrange --aggressive`. The export configures the
-        // whole `resharper_xmldoc_*` family and `jb cleanupcode` honours none of it — measured — so
-        // a Skala that re-wrapped doc comments by default would disagree with Rider on every doc
-        // comment in every repository. This is the flag for a tree that wants the layout its
-        // .editorconfig describes and accepts that Rider will not reproduce it.
-        var xmlDoc = new Option<bool>("--xmldoc") {
+        // ⚠ SK-DIV-0006, inverted. Documentation comments are formatted by default because Rider's
+        // editor formats them; `jb cleanupcode` does not, which makes this the one place the oracle
+        // and the editor are known to disagree and Skala sides with the editor. `--no-xmldoc` is
+        // for a tree that would rather keep the oracle's answer, and it is a flag rather than
+        // `resharper_xmldoc_wrap_lines = false` because that key means "do not wrap long lines" and
+        // would still leave the comment re-indented — inventing a ReSharper semantic to get a kill
+        // switch is the mistake this default is undoing.
+        var noXmlDoc = new Option<bool>("--no-xmldoc") {
             Description =
-                "Also re-wrap documentation comments. Off by default: Rider's cleanup does not format them."
+                "Leave documentation comments exactly as written. On by default because Rider formats them."
         };
 
         // ⚠ SK-DIV-0004. Without symbols Roslyn hands back every `#if DEBUG` body as disabled text
@@ -245,7 +247,7 @@ public static partial class SkalaCommandLine {
         command.Options.Add(noDaemon);
         command.Options.Add(define);
         command.Options.Add(load);
-        command.Options.Add(xmlDoc);
+        command.Options.Add(noXmlDoc);
 
         command.SetAction(parse => {
                 var stagedValue = parse.GetResult(staged) is null
@@ -310,7 +312,7 @@ public static partial class SkalaCommandLine {
                     Verbose = parse.GetValue(Verbose),
                     Overrides = ParseOverrides(parse.GetValue(option)),
                     Jobs = parse.GetValue(jobs),
-                    XmlDoc = parse.GetValue(xmlDoc)
+                    XmlDoc = !parse.GetValue(noXmlDoc)
                 };
 
                 // ⚠ The daemon is tried first and its failure is never an error. docs/plan/11's

@@ -83,6 +83,50 @@ public sealed class OptionObservabilityTests {
     /// silently governs real output. Promote it and delete the reason — that is what the failure
     /// message asks for.
     /// </remarks>
+    public static TheoryData<string> Unoracled {
+        get {
+            var data = new TheoryData<string>();
+            foreach (var id in Ids.ReadButUnoracled) {
+                data.Add(OptionRegistry.Get(id).Key);
+            }
+
+            return data;
+        }
+    }
+
+    /// <summary>
+    /// ⚠ The mirror of the inert theory, and it exists because these keys used to be inert.
+    /// </summary>
+    /// <remarks>
+    /// The <c>resharper_xmldoc_*</c> family was <c>OfInert</c> while the sub-formatter was behind a
+    /// flag: read, and unable to change anything, because nothing ran it. The sub-formatter is the
+    /// default now, so the honest claim inverted — every one of these must change output, or it is
+    /// an unimplemented key wearing a reason. Tier A is still closed to them (no oracle fixture can
+    /// pin a documentation comment under the pinned profile, SK-DIV-0006), which is exactly the
+    /// combination <c>OfUnoracled</c> marks: honoured, observable, and unprovable against the
+    /// oracle.
+    /// <para>
+    /// ⚠ Not scoped to <see cref="InFamily"/>. The inert theories are, because the conformance
+    /// suite runs the wider net; this set is seventeen keys that nothing else asks the question of.
+    /// </para>
+    /// </remarks>
+    [Theory]
+    [MemberData(nameof(Unoracled))]
+    public void AnUnoracledKey_IsObservable(string key) {
+        var outputs = FormatAtEveryValue(key, out var files, out var values);
+        Assert.True(
+            outputs.Count > 1,
+            $"{key} is registered OfUnoracled — honoured, and not provable against the oracle — and every value "
+            + $"in [{string.Join(", ", values)}] formats [{string.Join(", ", files)}] to the same bytes. "
+            + "Unoracled is a statement about the evidence, never about the wiring: a key nothing can observe is "
+            + "unimplemented, and calling it unoracled hides that behind a reason that sounds like one."
+        );
+
+        Assert.True(OptionRegistry.TryResolve(key, out var id));
+        Assert.NotEqual(OptionTier.A, OptionRegistry.Get(id).Tier);
+        Assert.NotEqual(OptionTier.B, OptionRegistry.Get(id).Tier);
+    }
+
     [Theory]
     [MemberData(nameof(Inert))]
     public void AnInertKey_StillCannotBeObserved(string key) {

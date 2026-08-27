@@ -95,30 +95,32 @@ public static class CSharpFormatter {
         in FormattingOptions options,
         string? crashRoot = null,
         IReadOnlyList<string>? preprocessorSymbols = null,
-        bool xmlDoc = false
+        bool xmlDoc = true
     ) {
         var phaseOne = new PhaseOneOptions(options);
-        return Format(
-            path,
-            text,
-            phaseOne,
-            crashRoot,
-            preprocessorSymbols,
-            xmlDoc ? new XmlDocOptions(options) : null
-        );
+        return Format(path, text, phaseOne, crashRoot, preprocessorSymbols, xmlDoc);
     }
 
     /// <summary>
-    /// ⚠ <paramref name="xmlDoc"/> is null unless <c>skala format --xmldoc</c> asked for the
-    /// documentation-comment sub-formatter.
+    /// ⚠ <paramref name="xmlDoc"/> defaults to <c>true</c>: documentation comments are formatted.
     /// </summary>
     /// <remarks>
-    /// ⚠ Off by default, and that is a measurement rather than caution. <c>jb cleanupcode</c> does
-    /// not format doc comments (SK-DIV-0006), so a Skala that re-wrapped them by default would
-    /// disagree with Rider on every doc comment in every repository — which is the divergence
-    /// SK-DIV-0009 spells out as "an option Skala honours and Rider ignores is a divergence wearing
-    /// a tier badge". The flag has the same shape and the same reason as <c>arrange
-    /// --aggressive</c> in SK-DIV-0014.
+    /// ⚠ On by default, and the default changed. It was off from milestone 9 because
+    /// <c>jb cleanupcode</c> does not format documentation comments (SK-DIV-0006) and the oracle is
+    /// the definition of correct under ADR-011 — so re-wrapping them by default read as a 3.59-point
+    /// fidelity regression. The premise was wrong in one specific way: <b>Rider's editor formats
+    /// them and <c>jb cleanupcode</c> does not</b>, so the two disagree, and matching the oracle here
+    /// means diverging from Rider on every documentation comment in every repository. Skala follows
+    /// Rider. The consequence is that this is the one area of the formatter with no differential
+    /// safety net at all, which is why <see cref="XmlDocFormatter"/> carries a round-trip check on
+    /// every comment of every run rather than a fixture.
+    /// <para>
+    /// ⚠ The escape hatch is <c>skala format --no-xmldoc</c> and not
+    /// <c>resharper_xmldoc_wrap_lines = false</c>. That key means "do not wrap long lines" — with it
+    /// false the sub-formatter still re-indents, still collapses blank lines between tags, still
+    /// inserts the marker space — so making it the kill switch would attach a meaning to a
+    /// ReSharper key that ReSharper does not give it, which is the mistake this change is undoing.
+    /// </para>
     /// </remarks>
     public static FormatResult Format(
         string path,
@@ -126,7 +128,7 @@ public static class CSharpFormatter {
         in PhaseOneOptions options,
         string? crashRoot = null,
         IReadOnlyList<string>? preprocessorSymbols = null,
-        XmlDocOptions? xmlDoc = null
+        bool xmlDoc = true
     ) {
         var diagnostics = ImmutableArray.CreateBuilder<SkalaDiagnostic>();
 
@@ -194,8 +196,8 @@ public static class CSharpFormatter {
         var output = layout.Text;
 
         var reflowed = 0;
-        if (xmlDoc is { } xml) {
-            var outcome = XmlDocFormatter.Rewrite(output, xml, parseOptions, newLine, options.Tags);
+        if (xmlDoc) {
+            var outcome = XmlDocFormatter.Rewrite(output, options.XmlDoc, parseOptions, newLine, options.Tags);
             layout = XmlDocFormatter.Reanchor(layout, outcome.Text, outcome.Replacements);
             output = outcome.Text;
             reflowed = outcome.Reflowed;
@@ -283,7 +285,7 @@ public static class CSharpFormatter {
         IReadOnlyList<KeyValuePair<string, string>>? overrides = null,
         string? crashRoot = null,
         IReadOnlyList<string>? preprocessorSymbols = null,
-        bool xmlDoc = false
+        bool xmlDoc = true
     ) {
         var text = Read(path);
         // ⚠ Through ConfigurationCache: resolving 483 options from a re-parsed chain per file is

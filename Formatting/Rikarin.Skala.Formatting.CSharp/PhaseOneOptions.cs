@@ -335,6 +335,12 @@ public readonly struct PhaseOneOptions {
         FormatterOffTag = options.GetString(Ids.FormatterOffTag) ?? "@formatter:off";
         FormatterOnTag = options.GetString(Ids.FormatterOnTag) ?? "@formatter:on";
         FormatterTagsAcceptRegexp = options.GetBool(Ids.FormatterTagsAcceptRegexp);
+
+        // ── Documentation comments ───────────────────────────────────────────────────────────
+        // ⚠ Read here, and therefore read on every path, because the sub-formatter is on by
+        // default. It used to be built only where a caller passed `--xmldoc`, which meant a caller
+        // that held a `PhaseOneOptions` and nothing else could not turn it on at all.
+        XmlDoc = new XmlDocOptions(options);
     }
 
     public int IndentSize { get; }
@@ -749,6 +755,16 @@ public readonly struct PhaseOneOptions {
     public FormatterTags Tags => new(FormatterTagsEnabled, FormatterOffTag, FormatterOnTag, FormatterTagsAcceptRegexp);
 
     /// <summary>
+    /// The <c>resharper_xmldoc_*</c> subset, resolved from the same configuration.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ It is not part of <see cref="Implemented"/> and never can be. See
+    /// <see cref="XmlDocOptions"/>: these keys govern real output and no oracle fixture can pin
+    /// them, which is a combination the tier table has no row for.
+    /// </remarks>
+    public XmlDocOptions XmlDoc { get; }
+
+    /// <summary>
     /// Every option milestone 1 reads, in registry order. The Tier A promotion and the per-option
     /// corpus test are checked against this list, so an option that stops being read here stops
     /// claiming to be implemented.
@@ -769,6 +785,9 @@ public static class Ids {
 
     /// <summary>Ids <see cref="OfInert"/> marked; read but excluded from <see cref="All"/>.</summary>
     static readonly List<OptionId> Inert = [];
+
+    /// <summary>Ids <see cref="OfUnoracled"/> marked; observable, and excluded from <see cref="All"/>.</summary>
+    static readonly List<OptionId> Unoracled = [];
 
     public static readonly OptionId IndentSize = Of("resharper_csharp_indent_size");
     public static readonly OptionId TabWidth = OfInert("resharper_csharp_tab_width");
@@ -1041,11 +1060,14 @@ public static class Ids {
 
     public static readonly OptionId SpaceBeforeTrailingComment = Of("resharper_csharp_space_before_trailing_comment");
     public static readonly OptionId SpaceBeforeTrailingCommentText = Of("resharper_space_before_trailing_comment_text");
-    // ⚠ Inert since milestone 3, and it was Tier A before it — wrongly. The oracle does not insert
-    // the space, on this option's own fixture or anywhere else, because `jb cleanupcode` does not
-    // format doc comments (SK-DIV-0006). An option Skala honours and Rider ignores is a divergence
-    // wearing a tier badge.
-    public static readonly OptionId SpaceAfterTripleSlash = OfInert("resharper_space_after_triple_slash");
+    // ⚠ Unoracled, not inert, and it has now been both. Milestone 1 had it Tier A; milestone 3
+    // demoted it to inert because the oracle does not insert the space and doing it anyway cost 79
+    // lines across 15 files of `corpus/real/`. That demotion rested on `jb cleanupcode` being the
+    // definition of correct, and SK-DIV-0006 no longer says it is: Rider's editor formats
+    // documentation comments and cleanup does not, so the 79 lines were the oracle's divergence
+    // being charged to Skala. The space is inserted again, by the sub-formatter, on every
+    // well-formed comment — and the key still cannot be Tier A, because no fixture can pin it.
+    public static readonly OptionId SpaceAfterTripleSlash = OfUnoracled("resharper_space_after_triple_slash");
     public static readonly OptionId StickComment = Of("resharper_csharp_stick_comment");
     public static readonly OptionId PlaceCommentsAtFirstColumn = Of("resharper_csharp_place_comments_at_first_column");
 
@@ -1559,46 +1581,47 @@ public static class Ids {
     public static readonly OptionId FormatterTagsAcceptRegexp = Of("resharper_formatter_tags_accept_regexp");
 
     // ── The xmldoc sub-formatter's subset ────────────────────────────────────────────────────
-    // ⚠ Every one of these is inert on the default path and stays Tier D, and the reason is not
-    // that the wiring is missing. `jb cleanupcode` does not format documentation comments at all
-    // (SK-DIV-0006), so there is no fixture that can show the oracle honouring any of them, and
-    // Tier A rests on fixture evidence and nothing else. They come alive only under
-    // `skala format --xmldoc`, where what pins them is hand-written fixtures plus the round-trip
-    // property in XmlDocFormatter. See XmlDocOptions for the full argument.
-    public static readonly OptionId XmlDocWrapLines = OfInert("resharper_xmldoc_wrap_lines");
-    public static readonly OptionId XmlDocMaxLineLength = OfInert("resharper_xmldoc_max_line_length");
-    public static readonly OptionId XmlDocWrapText = OfInert("resharper_xmldoc_wrap_text");
-    public static readonly OptionId XmlDocWrapTagsAndPi = OfInert("resharper_xmldoc_wrap_tags_and_pi");
-    public static readonly OptionId XmlDocKeepUserLinebreaks = OfInert("resharper_xmldoc_keep_user_linebreaks");
+    // ⚠ Every one of these governs real output on the default path and every one of them stays
+    // Tier D, which is a combination no other key in the registry has. `jb cleanupcode` does not
+    // format documentation comments at all, so there is no fixture that can show the oracle
+    // honouring any of them — and Rider's editor does format them, so leaving them off would be
+    // the divergence rather than turning them on (SK-DIV-0006). What pins them is hand-written
+    // fixtures plus the round-trip property in XmlDocFormatter. See XmlDocOptions for the full
+    // argument, and `OfUnoracled` for what the mark means.
+    public static readonly OptionId XmlDocWrapLines = OfUnoracled("resharper_xmldoc_wrap_lines");
+    public static readonly OptionId XmlDocMaxLineLength = OfUnoracled("resharper_xmldoc_max_line_length");
+    public static readonly OptionId XmlDocWrapText = OfUnoracled("resharper_xmldoc_wrap_text");
+    public static readonly OptionId XmlDocWrapTagsAndPi = OfUnoracled("resharper_xmldoc_wrap_tags_and_pi");
+    public static readonly OptionId XmlDocKeepUserLinebreaks = OfUnoracled("resharper_xmldoc_keep_user_linebreaks");
 
     public static readonly OptionId XmlDocMaxBlankLinesBetweenTags =
-        OfInert("resharper_xmldoc_max_blank_lines_between_tags");
+        OfUnoracled("resharper_xmldoc_max_blank_lines_between_tags");
 
-    public static readonly OptionId XmlDocIndentChildElements = OfInert("resharper_xmldoc_indent_child_elements");
-    public static readonly OptionId XmlDocIndentText = OfInert("resharper_xmldoc_indent_text");
+    public static readonly OptionId XmlDocIndentChildElements = OfUnoracled("resharper_xmldoc_indent_child_elements");
+    public static readonly OptionId XmlDocIndentText = OfUnoracled("resharper_xmldoc_indent_text");
 
     public static readonly OptionId XmlDocLinebreaksInsideTagsForElementsWithChildElements =
-        OfInert("resharper_xmldoc_linebreaks_inside_tags_for_elements_with_child_elements");
+        OfUnoracled("resharper_xmldoc_linebreaks_inside_tags_for_elements_with_child_elements");
 
     public static readonly OptionId XmlDocLinebreaksInsideTagsForMultilineElements =
-        OfInert("resharper_xmldoc_linebreaks_inside_tags_for_multiline_elements");
+        OfUnoracled("resharper_xmldoc_linebreaks_inside_tags_for_multiline_elements");
 
     public static readonly OptionId XmlDocLinebreakBeforeMultilineElements =
-        OfInert("resharper_xmldoc_linebreak_before_multiline_elements");
+        OfUnoracled("resharper_xmldoc_linebreak_before_multiline_elements");
 
     public static readonly OptionId XmlDocLinebreakBeforeSinglelineElements =
-        OfInert("resharper_xmldoc_linebreak_before_singleline_elements");
+        OfUnoracled("resharper_xmldoc_linebreak_before_singleline_elements");
 
-    public static readonly OptionId XmlDocSpacesInsideTags = OfInert("resharper_xmldoc_spaces_inside_tags");
+    public static readonly OptionId XmlDocSpacesInsideTags = OfUnoracled("resharper_xmldoc_spaces_inside_tags");
 
     public static readonly OptionId XmlDocSpaceBeforeSelfClosing =
-        OfInert("resharper_xmldoc_space_before_self_closing");
+        OfUnoracled("resharper_xmldoc_space_before_self_closing");
 
-    public static readonly OptionId XmlDocIndentSize = OfInert("resharper_xmldoc_indent_size");
-    public static readonly OptionId XmlDocIndentStyle = OfInert("resharper_xmldoc_indent_style");
+    public static readonly OptionId XmlDocIndentSize = OfUnoracled("resharper_xmldoc_indent_size");
+    public static readonly OptionId XmlDocIndentStyle = OfUnoracled("resharper_xmldoc_indent_style");
 
     public static readonly OptionId XmlDocLinebreakBeforeElements =
-        OfInert("resharper_xmldoc_linebreak_before_elements");
+        OfUnoracled("resharper_xmldoc_linebreak_before_elements");
 
     // ── Generalized keys ─────────────────────────────────────────────────────────────────────
     // ⚠ These are not read by the formatter and never will be. A generalized key is a way of
@@ -1633,7 +1656,14 @@ public static class Ids {
     public static readonly OptionId GeneralizedIndentStyle = OfGeneralized("indent_style");
 
     /// <summary>Every id above that phase 1 can actually be observed to honour.</summary>
-    public static ImmutableArray<OptionId> All { get; } = [.. Collected.Distinct().Except(Inert).Order()];
+    /// <remarks>
+    /// ⚠ <see cref="Unoracled"/> is subtracted as well as <see cref="Inert"/>, and for the opposite
+    /// reason. An inert id is excluded because it changes nothing; an unoracled id is excluded
+    /// because what it changes cannot be checked against the oracle, and this list is what the Tier
+    /// A promotion reads.
+    /// </remarks>
+    public static ImmutableArray<OptionId> All { get; } =
+        [.. Collected.Distinct().Except(Inert).Except(Unoracled).Order()];
 
     /// <summary>
     /// The ids phase 1 reads and cannot be observed to honour, each with a reason at its
@@ -1647,6 +1677,25 @@ public static class Ids {
     /// key that has quietly become observable produces two.
     /// </remarks>
     public static ImmutableArray<OptionId> ReadButInert { get; } = [.. Inert.Distinct().Order()];
+
+    /// <summary>
+    /// The ids phase 1 reads and honours, and that no oracle fixture can pin.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ The third shape, and it exists because the second one stopped being true. Until the
+    /// documentation-comment sub-formatter became the default these were <see cref="OfInert"/> —
+    /// "read, and unable to change anything" — which was accurate only because nothing ran them.
+    /// They run on every file now, so "inert" would be a lie, and Tier A would be a different lie:
+    /// Tier A means "pinned by at least one oracle fixture" and <c>jb cleanupcode</c> returns every
+    /// documentation comment exactly as written, so no fixture can ever show it agreeing or
+    /// disagreeing (SK-DIV-0006).
+    /// <para>
+    /// So they stay Tier D and out of <see cref="All"/>, and what is checked instead is the
+    /// opposite of the inert claim: an unoracled key must be <em>observable</em>, or it is an
+    /// unimplemented key hiding behind a reason. <c>OptionObservabilityTests</c> asserts it.
+    /// </para>
+    /// </remarks>
+    public static ImmutableArray<OptionId> ReadButUnoracled { get; } = [.. Unoracled.Distinct().Order()];
 
     /// <summary>
     /// ⚠ An option phase 1 reads but whose value it cannot yet make a difference to. No fitting
@@ -1669,6 +1718,21 @@ public static class Ids {
     }
 
     /// <summary>
+    /// A key the formatter honours and that the oracle cannot be asked about.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ See <see cref="ReadButUnoracled"/>. It is not a softer <see cref="Of"/>: it is the mark
+    /// that says the evidence for this key is hand-written fixtures and a round-trip property
+    /// rather than a committed <c>.expected.cs</c>, and it keeps the key out of the Tier A claim so
+    /// that "Tier A" keeps meaning one thing.
+    /// </remarks>
+    static OptionId OfUnoracled(string key) {
+        var id = Of(key);
+        Unoracled.Add(id);
+        return id;
+    }
+
+    /// <summary>
     /// A key the formatter honours without reading: the resolver expands it into the specific keys
     /// it names, and those are what the rules consult.
     /// </summary>
@@ -1678,7 +1742,12 @@ public static class Ids {
     /// is the exact failure mode M3.1 found. At least one target must be implemented and not
     /// <see cref="OfInert"/>; the rest may belong to a component that does not exist yet —
     /// <c>indent_size</c> also names <c>resharper_xmldoc_indent_size</c>, and Skala's honouring it
-    /// for C# is not made less true by the doc-comment formatter being unwritten.
+    /// for C# is not made less true by the doc-comment target being pinned differently.
+    /// <para>
+    /// ⚠ <see cref="OfUnoracled"/> targets do not satisfy the requirement either, for the same
+    /// reason <see cref="OfInert"/> ones do not: a generalized key inherits the tier claim of what
+    /// it expands to, and an unoracled target carries no Tier A claim to inherit.
+    /// </para>
     /// </remarks>
     static OptionId OfGeneralized(string key) {
         var id = Of(key);
@@ -1689,7 +1758,9 @@ public static class Ids {
             );
         }
 
-        if (!targets.Any(target => Collected.Contains(target) && !Inert.Contains(target))) {
+        if (!targets.Any(
+                target => Collected.Contains(target) && !Inert.Contains(target) && !Unoracled.Contains(target)
+            )) {
             throw new InvalidOperationException(
                 $"'{key}' expands to [{string.Join(", ", targets.Select(static t => OptionRegistry.Get(t).Key))}] and phase 1 implements none of them. A generalized key is honoured through its targets or not at all."
             );

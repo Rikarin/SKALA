@@ -65,15 +65,22 @@ public sealed record FormatRequest {
     public IReadOnlyList<string> Define { get; init; } = [];
 
     /// <summary>
-    /// <c>--xmldoc</c>: also re-wrap documentation comments.
+    /// Re-wrap documentation comments. <b>On</b>; <c>--no-xmldoc</c> is what turns it off.
     /// </summary>
     /// <remarks>
-    /// ⚠ SK-DIV-0006, and the reason it is a flag rather than a key. The whole
-    /// <c>resharper_xmldoc_*</c> family is set in the export and <c>jb cleanupcode</c> honours none
-    /// of it — measured, not assumed — so a Skala that re-wrapped doc comments by default would
-    /// disagree with Rider on every doc comment in every repository. Off is the setting that agrees
-    /// with the oracle; this is the setting for a tree that wants the layout its .editorconfig
-    /// describes and accepts that Rider will not reproduce it.
+    /// ⚠ SK-DIV-0006, and the default is the opposite of what it was. The whole
+    /// <c>resharper_xmldoc_*</c> family is set in the export, <c>jb cleanupcode</c> honours none of
+    /// it — measured, not assumed — and <b>Rider's editor honours all of it</b>. Those two facts
+    /// together mean the oracle and the editor disagree, and Skala follows the editor: not
+    /// formatting doc comments is the divergence, not formatting them.
+    /// <para>
+    /// ⚠ The escape hatch is a flag rather than <c>resharper_xmldoc_wrap_lines = false</c>, because
+    /// that key means "do not wrap long lines" and not "do not touch documentation comments" —
+    /// with it false the sub-formatter still re-indents, still collapses blank lines between tags
+    /// and still inserts the marker space, which is what Rider does with it false too. Overloading
+    /// it into a kill switch would invent a ReSharper semantic, which is the class of mistake this
+    /// default is fixing.
+    /// </para>
     /// <para>
     /// ⚠ It makes <c>--diff</c> and <c>--range</c> coarser around a re-wrapped comment, and only
     /// there. The anchor points that make an edit minimal are offsets into the text the
@@ -82,7 +89,7 @@ public sealed record FormatRequest {
     /// the wrong bytes.
     /// </para>
     /// </remarks>
-    public bool XmlDoc { get; init; }
+    public bool XmlDoc { get; init; } = true;
 }
 
 /// <summary>How <c>--staged</c> behaves in the presence of unstaged edits.</summary>

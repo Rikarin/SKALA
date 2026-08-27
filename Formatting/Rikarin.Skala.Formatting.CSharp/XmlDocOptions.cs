@@ -14,12 +14,19 @@ namespace Rikarin.Skala.Formatting.CSharp;
 /// comments at all (SK-DIV-0006, measured), so no fixture can ever show it, and an oracle that
 /// never moves would score a correct re-wrap as a divergence.
 /// <para>
-/// So the sub-formatter is <b>off unless asked for</b> — <c>skala format --xmldoc</c>, the same
-/// shape as <c>arrange --aggressive</c> in SK-DIV-0014 — and these ids are registered
-/// <c>OfInert</c>: read, never claiming Tier A. What pins them is two things that need no oracle:
-/// hand-written fixtures asserting the semantics JetBrains' own settings pages state, and the
-/// round-trip property in <see cref="XmlDocFormatter"/>, which is checked on every comment of every
-/// run rather than on a fixture.
+/// ⚠ That used to be the argument for keeping the sub-formatter behind a flag, and it was the
+/// wrong conclusion from a correct measurement. <b>Rider's editor formats documentation comments;
+/// <c>jb cleanupcode</c> does not.</b> Both are true, and where they disagree ADR-011's oracle is
+/// not the specification — Rider is. So the sub-formatter runs by default, these keys govern real
+/// output, and the only way to switch them off wholesale is <c>skala format --no-xmldoc</c>.
+/// </para>
+/// <para>
+/// The ids are registered <c>OfUnoracled</c> rather than <c>OfInert</c>: read, honoured, and never
+/// claiming Tier A, because Tier A is fixture evidence and there is none to be had. What pins them
+/// instead is two things that need no oracle: hand-written fixtures asserting the semantics
+/// JetBrains' own settings pages state, and the round-trip property in
+/// <see cref="XmlDocFormatter"/>, which is checked on every comment of every run rather than on a
+/// fixture.
 /// </para>
 /// <para>
 /// ⚠ The ten keys of the family that are <em>not</em> here are refused rather than pending, and
@@ -133,9 +140,11 @@ public readonly struct XmlDocOptions {
     /// </summary>
     /// <remarks>
     /// ⚠ Demoted from Tier A in milestone 3 because the oracle does not insert the space and doing
-    /// it anyway cost 79 lines across 15 files of <c>corpus/real/</c> (SK-DIV-0006). It stays
-    /// demoted: the default pipeline still does not insert it. It is honoured only when the
-    /// sub-formatter has been asked for, where the marker is being rewritten anyway.
+    /// it anyway cost 79 lines across 15 files of <c>corpus/real/</c> (SK-DIV-0006). The demotion
+    /// stands and its reason does not: those 79 lines were <c>jb cleanupcode</c> declining to do
+    /// what Rider does, charged to Skala. The space is inserted again — by the sub-formatter, on
+    /// every well-formed comment, which is every comment whose marker is being rewritten anyway —
+    /// and the key is Tier D for ever, because no fixture can pin it.
     /// </remarks>
     public bool SpaceAfterTripleSlash { get; }
 
@@ -184,9 +193,11 @@ public readonly struct XmlDocOptions {
 /// The registry ids the sub-formatter reads, and the ones it refuses.
 /// </summary>
 /// <remarks>
-/// ⚠ Every id here is registered through <see cref="Ids"/>'s inert path, so none of them enters
+/// ⚠ Every id here is registered through <see cref="Ids"/>'s unoracled path, so none of them enters
 /// <see cref="PhaseOneOptions.Implemented"/> and none of them claims Tier A. That is the honest
-/// state: Tier A means "pinned by an oracle fixture" and the oracle has nothing to say here.
+/// state: Tier A means "pinned by an oracle fixture" and the oracle has nothing to say here. It is
+/// <em>not</em> the inert path, which would say these keys change nothing, and they change output on
+/// every file with a documentation comment in it.
 /// </remarks>
 public static class XmlDocIds {
     public static readonly OptionId WrapLines = Ids.XmlDocWrapLines;
