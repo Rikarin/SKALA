@@ -141,9 +141,11 @@ public static class BaselineCommand {
                 break;
         }
 
-        builder.AppendLine(apply
-            ? "  written."
-            : "  nothing written; pass --apply to write it.");
+        builder.AppendLine(
+            apply
+                ? "  written."
+                : "  nothing written; pass --apply to write it."
+        );
 
         return (new CommandResult(ExitCodes.Ok, builder.ToString()), report);
     }
@@ -181,14 +183,14 @@ public static class BaselineCommand {
 
     static void Describe(StringBuilder builder, string verb, string path, int before, int firing) =>
         builder.Append("baseline ")
-        .Append(verb)
-        .Append("  ")
-        .AppendLine(path)
-        .Append("  ")
-        .Append(before.ToString(CultureInfo.InvariantCulture))
-        .Append(" accepted before  ·  ")
-        .Append(firing.ToString(CultureInfo.InvariantCulture))
-        .AppendLine(" finding(s) firing now");
+            .Append(verb)
+            .Append("  ")
+            .AppendLine(path)
+            .Append("  ")
+            .Append(before.ToString(CultureInfo.InvariantCulture))
+            .Append(" accepted before  ·  ")
+            .Append(firing.ToString(CultureInfo.InvariantCulture))
+            .AppendLine(" finding(s) firing now");
 
     static string Show(Baseline baseline, BaselineComparison comparison, RunReport report, string path) {
         var builder = new StringBuilder();

@@ -31,11 +31,11 @@ public static partial class SkalaCommandLine {
         );
 
         foreach (var (name, verb, description) in new[] {
-                ("create", BaselineCommand.Verb.Create, "Accept everything that fires now, replacing any existing baseline."),
-                ("update", BaselineCommand.Verb.Update, "Accept what fires now in addition to what is already accepted. Never removes."),
-                ("prune", BaselineCommand.Verb.Prune, "⚠ Remove accepted entries that no longer fire. Deliberately separate from `update`."),
-                ("show", BaselineCommand.Verb.Show, "What the baseline holds, and how a fresh run compares to it.")
-            }) {
+                     ("create", BaselineCommand.Verb.Create, "Accept everything that fires now, replacing any existing baseline."),
+                     ("update", BaselineCommand.Verb.Update, "Accept what fires now in addition to what is already accepted. Never removes."),
+                     ("prune", BaselineCommand.Verb.Prune, "⚠ Remove accepted entries that no longer fire. Deliberately separate from `update`."),
+                     ("show", BaselineCommand.Verb.Show, "What the baseline holds, and how a fresh run compares to it.")
+                 }) {
             baseline.Subcommands.Add(CreateBaselineVerb(name, verb, description));
         }
 

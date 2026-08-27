@@ -101,7 +101,7 @@ public static class IncrementalAnalysis {
         var hasCompilationScopedRule = analyzers
             .SelectMany(static analyzer => analyzer.SupportedDiagnostics)
             .Any(static descriptor =>
-                    descriptor.IsEnabledByDefault && DiagnosticCache.Uncacheable.Contains(descriptor.Id)
+                descriptor.IsEnabledByDefault && DiagnosticCache.Uncacheable.Contains(descriptor.Id)
             );
 
         if (misses.Count == 0 && !hasCompilationScopedRule) {

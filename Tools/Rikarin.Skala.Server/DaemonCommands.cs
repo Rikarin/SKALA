@@ -39,9 +39,10 @@ public static class DaemonCommands {
         } catch (IOException exception) {
             await Console.Error.WriteLineAsync($"skala daemon: {exception.Message}").ConfigureAwait(false);
             return 2;
-        } catch (Exception exception) when (exception is ArgumentException or SocketException
+        } catch (Exception exception) when (exception is ArgumentException
+                                                or SocketException
                                                 or UnauthorizedAccessException
-                                           ) {
+        ) {
             // ⚠ Was uncaught, and the daemon died with an unhandled exception and exit code 0. The
             // one that actually happened is ArgumentOutOfRangeException from a socket path over the
             // kernel's 104-byte cap (see DaemonProtocol.SocketPath); the path itself is fixed, but

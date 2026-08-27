@@ -12,9 +12,7 @@ namespace Rikarin.Skala.Server.Tests;
 /// that is tested once, by hand, before it is first shipped and never again.
 /// </remarks>
 public sealed class MemoryPolicyTests {
-    static readonly MemoryPolicy Policy = new() {
-        SoftLimitBytes = 1000, HardLimitBytes = 2000, TreeCacheBytes = 400
-    };
+    static readonly MemoryPolicy Policy = new() { SoftLimitBytes = 1000, HardLimitBytes = 2000, TreeCacheBytes = 400 };
 
     [Fact]
     public void UnderTheSoftLimit_NothingIsDropped() =>

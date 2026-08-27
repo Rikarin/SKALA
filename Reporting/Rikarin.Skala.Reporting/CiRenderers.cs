@@ -212,7 +212,7 @@ public static class JUnitRenderer {
             );
 
             foreach (var group in findings.GroupBy(static finding => finding.RuleId, StringComparer.Ordinal)
-                .OrderBy(static group => group.Key, StringComparer.Ordinal)) {
+                         .OrderBy(static group => group.Key, StringComparer.Ordinal)) {
                 writer.WriteStartElement("testsuite");
                 writer.WriteAttributeString("name", group.Key);
                 writer.WriteAttributeString("tests", group.Count().ToString(CultureInfo.InvariantCulture));

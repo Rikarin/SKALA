@@ -103,8 +103,8 @@ internal sealed class CloneIndex {
             file.Write(header);
             file.Write(payload);
         } catch (Exception exception) when (exception is IOException
-            or UnauthorizedAccessException
-            or NotSupportedException) {
+                                                or UnauthorizedAccessException
+                                                or NotSupportedException) {
             // A read-only tree does not fail a check.
         }
     }
@@ -167,10 +167,10 @@ internal sealed class CloneIndex {
                 _changed = true;
             }
         } catch (Exception exception) when (exception is IOException
-            or UnauthorizedAccessException
-            or NotSupportedException
-            or InvalidDataException
-            or OutOfMemoryException) {
+                                                or UnauthorizedAccessException
+                                                or NotSupportedException
+                                                or InvalidDataException
+                                                or OutOfMemoryException) {
             _loaded.Clear();
             _changed = true;
         }

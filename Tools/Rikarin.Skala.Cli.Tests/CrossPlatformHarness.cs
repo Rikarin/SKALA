@@ -16,8 +16,7 @@ namespace Rikarin.Skala.Cli.Tests;
 /// and their own <c>.git</c>, so they carry their own runner.
 /// </remarks>
 public sealed class CrossPlatformScratch : IDisposable {
-    public CrossPlatformScratch(string prefix) =>
-        Root = Directory.CreateTempSubdirectory(prefix).FullName;
+    public CrossPlatformScratch(string prefix) => Root = Directory.CreateTempSubdirectory(prefix).FullName;
 
     public string Root { get; }
 

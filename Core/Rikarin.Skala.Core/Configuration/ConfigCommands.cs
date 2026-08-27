@@ -113,9 +113,11 @@ public static class ConfigCommands {
         var policy = toolConfig?.Canonical ?? CanonicalPolicy.Default;
         var canonical = CanonicalSync.Status(directory);
         foreach (var diagnostic in canonical.Diagnostics) {
-            diagnostics.Add(diagnostic.Id == ConfigDiagnosticIds.CanonicalDrift
-                ? diagnostic with { Severity = policy.Drift }
-                : diagnostic);
+            diagnostics.Add(
+                diagnostic.Id == ConfigDiagnosticIds.CanonicalDrift
+                    ? diagnostic with { Severity = policy.Drift }
+                    : diagnostic
+            );
         }
 
         var output = new StringBuilder();
@@ -123,12 +125,17 @@ public static class ConfigCommands {
         output.AppendLine();
         output.AppendLine(Counts(resolution));
         output.AppendLine();
-        output.Append("Canonical: ").AppendLine(canonical switch {
-            { Drifted: true } => $"DRIFTED from {canonical.Layout.Marker!.Version} — see SK9008",
-            { Behind: true } => $"{canonical.Layout.Marker!.Version}, intact; {canonical.Tool.Version} available",
-            { Current: true } => $"{canonical.Tool.Version}, intact and current",
-            _ => "unmanaged — `skala config sync --apply` adopts this .editorconfig"
-        });
+        output.Append("Canonical: ")
+            .AppendLine(
+                canonical switch {
+                    { Drifted: true } => $"DRIFTED from {canonical.Layout.Marker!.Version} — see SK9008",
+                    {
+                        Behind: true
+                    } => $"{canonical.Layout.Marker!.Version}, intact; {canonical.Tool.Version} available",
+                    { Current: true } => $"{canonical.Tool.Version}, intact and current",
+                    _ => "unmanaged — `skala config sync --apply` adopts this .editorconfig"
+                }
+            );
         output.AppendLine();
 
         var byNamespace = resolution.Unknown
@@ -293,7 +300,10 @@ public static class ConfigCommands {
 
         output.Append("Canonical status for ").AppendLine(status.Path);
         output.AppendLine();
-        output.Append("  tool carries    ").Append(status.Tool.Version).Append("  sha256 ").AppendLine(Short(status.Tool.Sha256));
+        output.Append("  tool carries    ")
+            .Append(status.Tool.Version)
+            .Append("  sha256 ")
+            .AppendLine(Short(status.Tool.Sha256));
         output.Append("  repository on   ")
             .Append(status.Layout.Marker?.Version ?? "(unmanaged)")
             .Append(status.Layout.IsManaged ? "  sha256 " : string.Empty)
@@ -302,21 +312,32 @@ public static class ConfigCommands {
         output.Append("  local overrides ").AppendLine(CanonicalLayout.Number(status.Overrides.Length));
         output.AppendLine();
 
-        output.AppendLine(status switch {
-            { Drifted: true } => "DRIFTED — the managed block is not what its marker says it is.",
-            { Behind: true } => "CLEAN, behind — the block is intact; a newer canonical exists.",
-            { Current: true } => "CLEAN — the block matches the canonical this build of Skala carries.",
-            _ => "UNMANAGED — no canonical block. `skala config sync --apply` adopts the file."
-        });
+        output.AppendLine(
+            status switch {
+                { Drifted: true } => "DRIFTED — the managed block is not what its marker says it is.",
+                { Behind: true } => "CLEAN, behind — the block is intact; a newer canonical exists.",
+                { Current: true } => "CLEAN — the block matches the canonical this build of Skala carries.",
+                _ => "UNMANAGED — no canonical block. `skala config sync --apply` adopts the file."
+            }
+        );
 
         if (status.Overrides.Length > 0) {
             output.AppendLine();
             output.AppendLine("Local overrides — the canonical block sets these and the local block takes them back:");
             foreach (var local in status.Overrides) {
-                output.Append("  [").Append(local.Section).Append("] ").Append(local.Key)
-                    .Append(": canonical ").Append(local.CanonicalValue)
-                    .Append(" -> local ").Append(local.LocalValue)
-                    .Append("  (").Append(status.Path).Append(':').Append(CanonicalLayout.Number(local.Line)).AppendLine(")");
+                output.Append("  [")
+                    .Append(local.Section)
+                    .Append("] ")
+                    .Append(local.Key)
+                    .Append(": canonical ")
+                    .Append(local.CanonicalValue)
+                    .Append(" -> local ")
+                    .Append(local.LocalValue)
+                    .Append("  (")
+                    .Append(status.Path)
+                    .Append(':')
+                    .Append(CanonicalLayout.Number(local.Line))
+                    .AppendLine(")");
             }
         }
 
@@ -327,9 +348,15 @@ public static class ConfigCommands {
         }
 
         output.AppendLine();
-        AppendDiagnostics(output, [.. status.Diagnostics.Select(diagnostic => diagnostic.Id == ConfigDiagnosticIds.CanonicalDrift
-            ? diagnostic with { Severity = driftSeverity }
-            : diagnostic)]);
+        AppendDiagnostics(
+            output,
+            [
+                .. status.Diagnostics.Select(diagnostic => diagnostic.Id == ConfigDiagnosticIds.CanonicalDrift
+                        ? diagnostic with { Severity = driftSeverity }
+                        : diagnostic
+                )
+            ]
+        );
 
         var failed = status.Drifted && driftSeverity >= SkalaSeverity.Error;
         return new CommandResult(failed ? ConfigurationFailure : 0, output.ToString());
@@ -344,7 +371,10 @@ public static class ConfigCommands {
 
         if (!result.Changed) {
             output.Append(result.Path).AppendLine(" is already on the canonical this build of Skala carries.");
-            output.Append("  canonical ").Append(result.Before.Tool.Version).Append("  sha256 ").AppendLine(Short(result.Before.ActualSha));
+            output.Append("  canonical ")
+                .Append(result.Before.Tool.Version)
+                .Append("  sha256 ")
+                .AppendLine(Short(result.Before.ActualSha));
             return CommandResult.Ok(output.ToString());
         }
 
@@ -365,7 +395,9 @@ public static class ConfigCommands {
             File.WriteAllText(result.Path, result.Text);
             output.AppendLine();
             output.AppendLine("⚠ This changes the effective formatting configuration. The reformatting commit is a");
-            output.AppendLine("  separate, deliberate step: `skala format` alone, with its SHA in .git-blame-ignore-revs.");
+            output.AppendLine(
+                "  separate, deliberate step: `skala format` alone, with its SHA in .git-blame-ignore-revs."
+            );
         } else {
             output.AppendLine();
             output.AppendLine("Re-run with --apply to write the file.");
@@ -415,8 +447,12 @@ public static class ConfigCommands {
             }
 
             changes++;
-            output.Append("  ").Append(OptionRegistry.Get(id).Key).Append(": ")
-                .Append(Describe(before[id])).Append(" -> ").AppendLine(Describe(after[id]));
+            output.Append("  ")
+                .Append(OptionRegistry.Get(id).Key)
+                .Append(": ")
+                .Append(Describe(before[id]))
+                .Append(" -> ")
+                .AppendLine(Describe(after[id]));
         }
 
         if (changes == 0) {

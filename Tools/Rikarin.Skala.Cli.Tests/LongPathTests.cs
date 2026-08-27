@@ -48,8 +48,8 @@ public sealed class LongPathTests : IDisposable {
             File.WriteAllText(full, "class C{void M(){M();}}\n");
             return full;
         } catch (Exception exception) when (exception is PathTooLongException
-                                               or DirectoryNotFoundException
-                                               or IOException) {
+                                                or DirectoryNotFoundException
+                                                or IOException) {
             return null;
         }
     }

@@ -58,9 +58,8 @@ public sealed class ThreadSleepInTestAnalyzer : DiagnosticAnalyzer {
 
         // The cheap half first: a name test over syntax, so the semantic model is asked about the
         // handful of calls that could possibly be this rather than about every invocation.
-        if (invocation.Expression is not (MemberAccessExpressionSyntax {
-                Name.Identifier.ValueText: "Sleep"
-            } or IdentifierNameSyntax { Identifier.ValueText: "Sleep" })) {
+        if (invocation.Expression is not (MemberAccessExpressionSyntax { Name.Identifier.ValueText: "Sleep" }
+                or IdentifierNameSyntax { Identifier.ValueText: "Sleep" })) {
             return;
         }
 

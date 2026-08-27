@@ -63,7 +63,8 @@ public static class CloneDetector {
         int minTokens,
         string? cacheDirectory,
         CancellationToken cancellation
-    ) => Detect(files, minTokens, cacheDirectory, collapseHashes: false, cancellation);
+    ) =>
+        Detect(files, minTokens, cacheDirectory, collapseHashes: false, cancellation);
 
     /// <summary>
     /// The test seam for the rule's central promise.
@@ -516,7 +517,7 @@ public static class CloneDetector {
 
         var right = 0;
         while (minTokens + left + right + 1 <= maximum
-            && Agrees(codes, positions, owners, fileStart, minTokens + right)) {
+               && Agrees(codes, positions, owners, fileStart, minTokens + right)) {
             right++;
         }
 

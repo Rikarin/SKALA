@@ -228,7 +228,7 @@ public static class Gate {
         ImmutableArray<string>.Builder failures
     ) {
         foreach (var (pattern, maximum) in
-            definition.RuleOverrides.OrderBy(static pair => pair.Key, StringComparer.Ordinal)) {
+                 definition.RuleOverrides.OrderBy(static pair => pair.Key, StringComparer.Ordinal)) {
             var count = report.Reportable.Count(finding => Matches(pattern, finding.RuleId));
             if (count > maximum) {
                 failures.Add(

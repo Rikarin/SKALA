@@ -85,7 +85,7 @@ internal static class AsyncContext {
 
                 // An initializer runs outside any method body.
                 case EqualsValueClauseSyntax when current.Parent is PropertyDeclarationSyntax
-                    or VariableDeclaratorSyntax { Parent.Parent: FieldDeclarationSyntax } :
+                    or VariableDeclaratorSyntax { Parent.Parent: FieldDeclarationSyntax }:
 
                 // `await` in a query clause is not supported by the language.
                 case QueryExpressionSyntax:

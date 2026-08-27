@@ -26,7 +26,9 @@ public sealed class DaemonBed : IDisposable {
 
         // doc 13's row is a 500-line file; take the closest real one in the corpus.
         var source = Directory
-            .EnumerateFiles(Path.Combine(CliRunner.RepositoryRoot, "Testing", "corpus", "real"), "*.cs",
+            .EnumerateFiles(
+                Path.Combine(CliRunner.RepositoryRoot, "Testing", "corpus", "real"),
+                "*.cs",
                 SearchOption.AllDirectories
             )
             .Where(static path => !path.EndsWith(".expected.cs", StringComparison.Ordinal))

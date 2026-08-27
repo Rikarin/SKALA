@@ -134,7 +134,8 @@ public sealed class MemoryPolicy {
                         CultureInfo.InvariantCulture,
                         $"skala daemon: holding {after / (1024 * 1024)} MB after dropping every cache, over the {HardLimitBytes / (1024 * 1024)} MB limit. Exiting rather than swapping; the next `skala` invocation starts a fresh one."
                     )
-                ).ConfigureAwait(false);
+                )
+                    .ConfigureAwait(false);
 
                 return true;
             }

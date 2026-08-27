@@ -214,8 +214,8 @@ public sealed class PerformanceBudgetTests {
             CultureInfo.InvariantCulture,
             out var value
         )
-            ? value
-            : -1;
+                ? value
+                : -1;
     }
 
     static void Report(string row, double measured, double budget, double floor) =>
@@ -229,12 +229,13 @@ public sealed class PerformanceBudgetTests {
 
 /// <summary>The published `skala` / `skala-tool` pair, if `./build.sh Native` has been run.</summary>
 public static class NativeLayout {
-    static string Directory => Path.Combine(
-        CliRunner.RepositoryRoot,
-        "artifacts",
-        "native",
-        System.Runtime.InteropServices.RuntimeInformation.RuntimeIdentifier
-    );
+    static string Directory =>
+        Path.Combine(
+            CliRunner.RepositoryRoot,
+            "artifacts",
+            "native",
+            System.Runtime.InteropServices.RuntimeInformation.RuntimeIdentifier
+        );
 
     static string? Find(string name) {
         var path = Path.Combine(Directory, name + (OperatingSystem.IsWindows() ? ".exe" : string.Empty));

@@ -88,7 +88,8 @@ public sealed class AbstractTypeConstructorAnalyzer : DiagnosticAnalyzer {
                 Descriptor,
                 keyword.GetLocation(),
                 FixEdits.Pack((keyword.Span, "protected")),
-                "`" + declaration.Identifier.ValueText
+                "`"
+                + declaration.Identifier.ValueText
                 + "` is abstract, so only a derived constructor can call this; make it `protected`"
             )
         );
