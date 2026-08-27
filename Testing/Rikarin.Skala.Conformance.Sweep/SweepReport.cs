@@ -161,9 +161,7 @@ public static class SweepReport {
         builder.AppendLine("final-newline options are in that position, and a normalised comparison reports");
         builder.AppendLine("them `UNEXERCISED` for a reason that is about the instrument, not the option.");
         builder.AppendLine();
-        builder.AppendLine(
-            "| option | tier | outcome | values | oracle | skala | agree | base | raw | ms | fixture |"
-        );
+        builder.AppendLine("| option | tier | outcome | values | oracle | skala | agree | base | raw | ms | fixture |");
         builder.AppendLine("|---|---|---|---:|---:|---:|---:|---|---|---:|---|");
 
         foreach (var option in run.Options

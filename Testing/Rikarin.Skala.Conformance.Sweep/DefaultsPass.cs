@@ -99,12 +99,6 @@ public sealed class DefaultsPass {
             static _ => new List<string>(),
             StringComparer.Ordinal
         );
-        var distinct = candidates.ToDictionary(
-            static candidate => candidate.Key,
-            static _ => new HashSet<string>(StringComparer.Ordinal),
-            StringComparer.Ordinal
-        );
-
         for (var round = 0; round < rounds; round++) {
             var work = candidates.Where(candidate => round < candidate.Values.Count).ToArray();
             var agreed = 0;
@@ -122,7 +116,6 @@ public sealed class DefaultsPass {
                         continue;
                     }
 
-                    distinct[batch[i].Key].Add(body);
                     if (string.Equals(body, expected, StringComparison.Ordinal)) {
                         matched[batch[i].Key].Add(batch[i].Values[round]);
                         agreed++;
@@ -137,11 +130,11 @@ public sealed class DefaultsPass {
         }
 
         return [
-            .. candidates.Select(candidate => Verdict(candidate, matched[candidate.Key], distinct[candidate.Key].Count))
+            .. candidates.Select(candidate => Verdict(candidate, matched[candidate.Key]))
         ];
     }
 
-    static DerivedDefault Verdict(SweepCandidate candidate, List<string> hits, int distinct) {
+    static DerivedDefault Verdict(SweepCandidate candidate, List<string> hits) {
         // ⚠ `Masked` is set from this pass's own evidence rather than from the conformance run's,
         // so that the two passes stay independent: if the bare pass itself saw the oracle produce
         // more than one output while every value still reproduced the baseline, something is wrong
@@ -168,11 +161,16 @@ public sealed class DefaultsPass {
         }
 
         if (hits.Count == candidate.Values.Count) {
+            // ⚠ `Masked` is false here and only `CrossCheck` may set it. The tempting intra-pass
+            // rule — "the bare oracle produced one output" — is vacuously true for every
+            // Insensitive verdict, because a value that changed the output cannot also have
+            // reproduced the baseline. It made the field read 47 of 47 and mean nothing. Only the
+            // export-base run can say whether the fixture could have seen this option.
             return new DerivedDefault(
                 candidate.Key,
                 null,
                 DefaultsVerdict.Insensitive,
-                distinct <= 1,
+                false,
                 candidate.Fixture + " does not distinguish its values under bare defaults"
             );
         }
@@ -192,13 +190,8 @@ public sealed class DefaultsPass {
     /// </remarks>
     public static IReadOnlyList<DerivedDefault> CrossCheck(
         IReadOnlyList<DerivedDefault> probed,
-        SweepRun conformance
+        IReadOnlyCollection<string> observable
     ) {
-        var observable = conformance.Options
-            .Where(static option => option.OracleDistinct > 1)
-            .Select(static option => option.Key)
-            .ToHashSet(StringComparer.Ordinal);
-
         return [
             .. probed.Select(entry => entry.Verdict == DefaultsVerdict.Insensitive && observable.Contains(entry.Key)
                     ? entry with {

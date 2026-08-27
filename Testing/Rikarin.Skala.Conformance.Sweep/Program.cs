@@ -17,10 +17,16 @@ using Rikarin.Skala.Testing;
 //   verify <key>      one option, unbatched, with both engines' output at every value printed in
 //                     full. ⚠ How a row in the table is checked before anything is demoted on the
 //                     strength of it.
+//   nightly [--family=…] [--apply]
+//                     both passes in one process: the export-base sweep, then the bare-base defaults
+//                     pass cross-checked against it. ⚠ The shape the nightly job wants — the
+//                     cross-check that separates a weak fixture from a masked key needs both passes'
+//                     view, and running them separately makes the first write a sidecar for the
+//                     second to read back.
 
 if (args.Length == 0) {
     Console.Error.WriteLine(
-        "usage: sweep [--family=…] [--out=…] | defaults [--family=…] [--apply] | plan [--family=…] | verify <key>"
+        "usage: sweep | defaults | nightly [--family=…] [--out=…] [--apply] | plan [--family=…] | verify <key>"
     );
     return 2;
 }
@@ -37,7 +43,9 @@ switch (args[0]) {
     case "sweep":
         return Sweep();
     case "defaults":
-        return Defaults();
+        return Defaults(null);
+    case "nightly":
+        return Nightly();
     case "verify":
         if (args.Length < 2) {
             Console.Error.WriteLine("usage: verify <key>");
@@ -78,7 +86,10 @@ int Plan() {
     return 0;
 }
 
-int Sweep() {
+int Sweep() => Measure(out _);
+
+int Measure(out SweepRun? measured) {
+    measured = null;
     if (OracleRunner.FindExecutableOrNull() is null) {
         Console.Error.WriteLine(
             "jb (JetBrains.ReSharper.GlobalTools) is not installed. The sweep is a nightly job and a "
@@ -100,19 +111,64 @@ int Sweep() {
         );
 
     File.WriteAllText(output, text);
+
+    // ⚠ The sidecar is what the defaults pass reads to tell "this fixture is too weak" from
+    // "ReSharper's own defaults mask this option". The two passes run under different base
+    // configurations, so the export-base run writes down what the bare one cannot observe.
+    var archive = Path.ChangeExtension(output, ".json");
+    SweepArchive.Write(archive, run);
+
     Console.WriteLine();
     Console.WriteLine(Summary(run));
     Console.WriteLine("written: " + output);
+    Console.WriteLine("written: " + archive);
+    measured = run;
     return 0;
 }
 
-int Defaults() {
+int Nightly() {
+    var status = Measure(out var run);
+    if (status != 0 || run is null) {
+        return status;
+    }
+
+    Console.WriteLine();
+    return Defaults(
+        [.. run.Options.Where(static option => option.OracleDistinct > 1).Select(static option => option.Key)]
+    );
+}
+
+int Defaults(IReadOnlyCollection<string>? inProcess) {
     if (OracleRunner.FindExecutableOrNull() is null) {
         Console.Error.WriteLine("jb (JetBrains.ReSharper.GlobalTools) is not installed.");
         return 3;
     }
 
     var probed = new DefaultsPass(new OracleRunner(), Console.Out).Run(plan);
+
+    var archive = Path.Combine(
+        Corpus.RepositoryRoot,
+        "Testing",
+        "Rikarin.Skala.Conformance.Sweep",
+        "conformance-sweep.json"
+    );
+    // ⚠ In-process first. `nightly` hands the sweep's own view straight over; a bare `defaults` run
+    // falls back to the last sweep's sidecar, which may be from another day.
+    var observable = inProcess ?? SweepArchive.ReadObservable(archive);
+    if (observable is not null) {
+        probed = DefaultsPass.CrossCheck(probed, observable);
+        Console.WriteLine(
+            $"cross-checked against {Count(observable.Count)} options the export-base sweep watched the oracle distinguish"
+        );
+    } else {
+        // ⚠ Said rather than silently skipped. Without the cross-check, every `Insensitive` verdict
+        // reads as "this fixture is too weak", and some of them are "bare defaults mask this key" —
+        // which is a fact about the configuration and not a reason to replace a fixture.
+        Console.WriteLine(
+            "⚠ no " + archive + ": `Insensitive` cannot be separated from `masked by bare defaults`. Run `sweep` first."
+        );
+    }
+
     Console.WriteLine();
     Console.WriteLine(DefaultsPass.Render(probed));
 

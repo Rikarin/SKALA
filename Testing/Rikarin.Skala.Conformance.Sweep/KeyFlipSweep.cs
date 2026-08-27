@@ -329,7 +329,7 @@ public sealed class KeyFlipSweep {
     /// <c>.editorconfig</c> per path with no eviction, and a fresh 294 KB copy per (option, value)
     /// would fill it with about a thousand parses of the same document.
     /// </remarks>
-    static string FormatWithSkala(SweepCandidate candidate, string value) {
+    public static string FormatWithSkala(SweepCandidate candidate, string value) {
         var resolved = OptionResolver.Resolve(
             candidate.Fixture.Path,
             [new KeyValuePair<string, string>(candidate.Key, value)]
@@ -339,11 +339,13 @@ public sealed class KeyFlipSweep {
             return "value-error: " + string.Join("; ", resolved.ValueErrors);
         }
 
+        // ⚠ Raw, exactly as the oracle side is. `Verdict` normalises both together; normalising
+        // here and not there made `resharper_csharp_insert_final_newline` look INERT — the oracle
+        // moving and Skala not — when `skala format --option` on the same fixture writes 12 bytes
+        // at `true` and 11 at `false`. The whole point of an option's verdict is that both engines
+        // were asked the same question in the same units.
         var text = CSharpFormatter.Read(candidate.Fixture.Path);
-        return TextNormalisation.Normalise(
-            CSharpFormatter.Format(candidate.Fixture.Path, text, resolved.Options)
-                .Formatted
-        );
+        return CSharpFormatter.Format(candidate.Fixture.Path, text, resolved.Options).Formatted;
     }
 
     /// <summary>
