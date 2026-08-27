@@ -130,6 +130,15 @@ public sealed class BreakPlan {
     /// <summary>The chain-wide group of a binary chain, keyed by its root node.</summary>
     readonly Dictionary<long, int> _chainOwner = [];
 
+    /// <summary>The group of a delimited list, keyed by the list node.</summary>
+    /// <remarks>
+    /// ⚠ Recorded so that a construct <em>outside</em> the list can read whether the list broke.
+    /// <c>place_expr_method_on_single_line = if_owner_is_single_line</c> asks whether the
+    /// declaration occupies one line, and a chopped parameter list is the commonest way for it not
+    /// to — which no width test on the arrow itself can see.
+    /// </remarks>
+    readonly Dictionary<long, int> _delimited = [];
+
     /// <summary>
     /// The group opened <em>inside</em> a construct's delimiters rather than around them.
     /// </summary>
@@ -418,9 +427,18 @@ public sealed class BreakPlan {
                 PlanAroundEquals(initializer, initializer.EqualsToken, initializer.Value);
                 return;
 
+            // ⚠ `[LoggerMessage(Message = "…" + "…")]` — a named attribute argument's `=` is neither
+            // an assignment nor an equals-value clause, so it had no plan at all and its right-hand
+            // side sat at the attribute list's level rather than one continuation in. The oracle
+            // treats it like every other `=`.
+            case AttributeArgumentSyntax { NameEquals: { } nameEquals, Expression: not null } attributeArgument:
+                PlanAroundEquals(attributeArgument, nameEquals.EqualsToken, attributeArgument.Expression);
+                return;
+
             case ArrowExpressionClauseSyntax { Expression: not null } arrow:
                 PlanExpressionBody(arrow);
                 return;
+
 
             case SwitchSectionSyntax section:
                 PlanCaseStatements(section);
@@ -606,6 +624,7 @@ public sealed class BreakPlan {
             && IsLambdaArgument(items[0]);
 
         var group = NewGroup();
+        _delimited[Key(node)] = group;
         var first = FirstToken(items[0]);
         var delimiterBroken = !soleLambda && BreaksBefore(first) || BreaksBefore(close);
 
@@ -620,6 +639,23 @@ public sealed class BreakPlan {
             Flat(first);
         }
 
+        // ⚠ A fill re-flows every gap it owns, and one construct family will not have that.
+        // `keep_existing_list_patterns_arrangement = true` preserves the author's break at each
+        // *individual* item gap, so a collection expression the author wrote one element per line
+        // comes back one element per line however well two of them would have shared. Measured, and
+        // the distinction is between the two constructs rather than between two widths:
+        // <code>
+        // static readonly int[] A = [        static readonly int[] A = new[] {
+        //     1,                                 1, 2,                    ← re-filled
+        //     2,                             };
+        // ];                                 ← kept
+        // </code>
+        // The array initializer has no `keep_existing_*` key of its own and the oracle re-fills it;
+        // the list pattern has one and the oracle does not. A per-group flag cannot say this — the
+        // preserved gaps and the filled ones are siblings — so the preserved ones become ordinary
+        // required breaks and the rest stay fill points.
+        var pinsItemBreaks = fill && keepExisting && _options.KeepsUserBreaksBetweenItems;
+
         var interBroken = false;
         foreach (var comma in separators) {
             var next = comma.GetNextToken();
@@ -629,15 +665,16 @@ public sealed class BreakPlan {
 
             // wrap_before_comma = false puts the break after the comma, which is the gap before the
             // next item; true puts it before the comma.
-            if (_options.WrapBeforeComma) {
-                Point(comma, group, fill);
-                Flat(next);
-                interBroken |= BreaksBefore(comma);
+            var gap = _options.WrapBeforeComma ? comma : next;
+            var broke = BreaksBefore(gap);
+            if (pinsItemBreaks && broke) {
+                Mandatory(gap);
             } else {
-                Flat(comma);
-                Point(next, group, fill);
-                interBroken |= BreaksBefore(next);
+                Point(gap, group, fill);
             }
+
+            Flat(_options.WrapBeforeComma ? next : comma);
+            interBroken |= broke;
         }
 
         if (wrapBeforeClose) {
@@ -970,7 +1007,8 @@ public sealed class BreakPlan {
             _options.WrapChainedMethodCalls == WrapStyle.ChopAlways ? GroupMode.Break : GroupMode.Preserve,
             new GroupFacts(
                 SourceBroken: _options.KeepsUserBreaksBetweenItems && broken,
-                BreaksIfTooLong: _options.WrapChainedMethodCalls != WrapStyle.WrapIfLong
+                BreaksIfTooLong: _options.WrapChainedMethodCalls != WrapStyle.WrapIfLong,
+                HidesFlatWidthWhenBroken: true
             ),
             // ⚠ The chain opens its own continuation scope. Milestone 2 spent that level lazily, in
             // `Break`, at the first break landing before a `.` — and a group's break point never
@@ -980,7 +1018,18 @@ public sealed class BreakPlan {
             //     .AppendLine("…")
             // The frame machinery still serves breaks the author wrote; this serves the ones the
             // fitter adds.
-            spendsIndent: true
+            // ⚠ `ownLevel` rather than `spendsIndent`, which is the difference between "a level if
+            // no other continuation is open" and "a level, always". A chained call takes one even
+            // inside another continuation and a binary chain does not — the asymmetry
+            // CSharpDocumentBuilder.VisitInner records — and the shape that shows it is an
+            // expression-bodied member whose arrow has already broken:
+            //     static void Member(Packer packer) =>
+            //         packer.Enum(a)
+            //             .Enum(b);      ← two levels, not one
+            // The one-level-per-opening-line collapse in LayoutWriter.Level is what keeps
+            // `var x = a.B()\n    .C();` at one: there the `=`'s scope and the chain's open on the
+            // same line.
+            ownLevel: true
         );
 
         void Collect(SyntaxNode node) {
@@ -999,7 +1048,7 @@ public sealed class BreakPlan {
                         var dot = access.OperatorToken;
                         var receiver = access.Expression;
                         while (!_options.WrapAfterPropertyInChainedMethodCalls
-                            && receiver is MemberAccessExpressionSyntax property) {
+                               && receiver is MemberAccessExpressionSyntax property) {
                             dot = property.OperatorToken;
                             receiver = property.Expression;
                         }
@@ -1139,6 +1188,15 @@ public sealed class BreakPlan {
         );
     }
 
+    /// <summary>The parameter list whose breaking makes an expression-bodied member multi-line.</summary>
+    static SyntaxNode? OwnerListOf(ArrowExpressionClauseSyntax node) =>
+        node.Parent switch {
+            BaseMethodDeclarationSyntax method => method.ParameterList,
+            LocalFunctionStatementSyntax function => function.ParameterList,
+            IndexerDeclarationSyntax indexer => indexer.ParameterList,
+            _ => null
+        };
+
     /// <summary>Whether this expression is the condition of an if, while, do, for or switch.</summary>
     static bool IsStatementCondition(SyntaxNode node) {
         for (var current = node; current is not null; current = current.Parent) {
@@ -1226,10 +1284,28 @@ public sealed class BreakPlan {
         var group = NewGroup();
         bool broken;
 
+        // ⚠ A ternary keeps the author's breaks one point at a time rather than chopping at both.
+        // `align_ternary = align_not_nested` and `nested_ternary_style = autodetect` between them
+        // make a chain of conditionals a flat list of `cond ? value :` lines, and the shape the
+        // oracle preserves is exactly the one people write:
+        //     OperatingSystem.IsWindows() ? "win"
+        //     : OperatingSystem.IsMacOS() ? "osx"
+        //     : "linux";
+        // A single group whose points all break together turns that into six lines and a staircase.
+        var pins = _options.KeepsUserBreaksBetweenItems;
+
         if (_options.WrapBeforeTernaryOpsigns) {
-            Point(node.QuestionToken, group);
-            Point(node.ColonToken, group);
-            broken = BreaksBefore(node.QuestionToken) || BreaksBefore(node.ColonToken);
+            var atQuestion = BreaksBefore(node.QuestionToken);
+            var atColon = BreaksBefore(node.ColonToken);
+            if (pins && (atQuestion || atColon)) {
+                Pin(node.QuestionToken, atQuestion);
+                Pin(node.ColonToken, atColon);
+            } else {
+                Point(node.QuestionToken, group);
+                Point(node.ColonToken, group);
+            }
+
+            broken = atQuestion || atColon;
             Flat(FirstToken(node.WhenTrue));
             Flat(FirstToken(node.WhenFalse));
         } else {
@@ -1280,7 +1356,16 @@ public sealed class BreakPlan {
             group,
             GroupMode.Preserve,
             new GroupFacts(
-                SourceBroken: _options.KeepsUserBreaksBetweenItems && broken,
+                // ⚠ Not preserved when the value opens with a delimiter of its own, which in C# is
+                // the collection expression and nothing else. Asked directly, `int[] y =\n[\n 1,\n
+                // 2\n];` comes back `int[] y = [` while `= \n new[] {`, `= \n new Thing {` and
+                // `= \n Make(` all keep the break the author wrote. The `=` break and the `[`'s are
+                // alternatives rather than a pair, so leaving the decision to the ordering rule is
+                // what reproduces both halves: a bracket that fits on a continuation line still gets
+                // the `=` break, and one that has to chop does not.
+                SourceBroken: _options.KeepsUserBreaksBetweenItems && broken
+                && value is not CollectionExpressionSyntax,
+
                 // ⚠ `prefer_wrap_around_eq`, and the reason milestone 2 stopped at presence. The
                 // oracle does break after `=` on a line that is too long — but not always, and
                 // breaking whenever the line is long costs 1.18 points of line fidelity against
@@ -1336,12 +1421,33 @@ public sealed class BreakPlan {
 
         var group = NewGroup();
         Point(target, group);
+
+        // ⚠ `if_owner_is_single_line`, literally: the owner is the declaration, and the commonest
+        // way for a declaration not to occupy one line is a chopped parameter list. Measured — the
+        // oracle writes
+        //     public void RenderPassSetBindGroup(
+        //         WebGpuObject pass,
+        //         …
+        //     ) =>
+        //         SetBindGroup(pass, group, bindGroup, dynamicOffsets);
+        // and the body's own width says nothing about it: `SetBindGroup(…)` fits on the `) =>` line
+        // with sixty columns to spare. A width test on the arrow can never produce this break.
+        var ownerGroup = OwnerListOf(node) is { } list && _delimited.TryGetValue(Key(list), out var id) ? id : -1;
         Describe(
             node,
             group,
             GroupMode.Preserve,
             new GroupFacts(
-                SourceBroken: BreaksBefore(target),
+                // ⚠ Same exception as the `=`'s, and measured the same way: a collection expression
+                // opens with a delimiter of its own, so the arrow's break and the bracket's are
+                // alternatives rather than a pair. `TheoryData<string> Corpus =>\n[…]` comes back
+                // from the oracle as `Corpus => [` when the bracket has to chop, and
+                // `Vector4[] Planes(…) =>\n    [a, b, c];` keeps the arrow's break when it does not.
+                // Leaving both to the ordering rule is what produces the pair.
+                SourceBroken: BreaksBefore(target) && node.Expression is not CollectionExpressionSyntax,
+                PrefersOuterBreak: node.Expression is CollectionExpressionSyntax,
+                BreaksWithOwner: ownerGroup >= 0,
+                Owner: ownerGroup,
                 // keep_existing_expr_member_arrangement = false: a break the author wrote after the
                 // arrow is removed when the declaration fits on one line, and left alone when it
                 // does not. Adding one where the author wrote none is milestone 3's.
@@ -1354,7 +1460,15 @@ public sealed class BreakPlan {
                 // a chain under it is the shape that shows the difference. Measuring the head
                 // instead costs 0.12 points of line fidelity on `corpus/real/` and two of the four
                 // preservation corners, which is how the reading was settled rather than argued.
+                // ⚠ And gated on the keep key, the same way a delimited list's placement key is
+                // (see PlanList): `keep_existing_expr_member_arrangement = true` outranks the
+                // placement key in *both* directions, so an arrow the author left on the
+                // declaration's line stays there however unbreakable the body is. Asked directly,
+                // `bool P(object o) => o is {\n First: 1\n };` comes back with the arrow where the
+                // author put it under keep, and moved onto its own line under rearrange — the same
+                // source, the same body, two answers, and only this key between them.
                 BreaksIfTooLong: placement == PlacementStyle.IfOwnerIsSingleLine
+                && !_options.KeepExistingExprMemberArrangement
             ),
             spendsIndent: true
         );
@@ -1399,7 +1513,16 @@ public sealed class BreakPlan {
             new GroupFacts(
                 SourceBroken: BreaksBefore(first),
                 JoinsIfFits: !_options.KeepExistingEmbeddedArrangement,
-                BreaksIfTooLong: !_options.KeepExistingEmbeddedArrangement
+
+                // ⚠ Not gated on the keep key, and that is the difference between this and a
+                // delimited list. `keep_existing_embedded_arrangement = true` says the author's
+                // break is not *removed*; it does not say a break may not be added. Measured on
+                // the export's own values: `if (depth < 0) throw new ArgumentOutOfRangeException(…);`
+                // written on one 168-column line comes back from the oracle with the `throw` on a
+                // line of its own, which is `if_owner_is_single_line` — the `if` does not occupy one
+                // line, so the statement leaves it.
+                BreaksIfTooLong: _options.PlaceSimpleEmbeddedStatementOnSameLine
+                == PlacementStyle.IfOwnerIsSingleLine
             )
         );
     }
@@ -1656,6 +1779,15 @@ public sealed class BreakPlan {
         }
 
         _gaps[token.SpanStart] = new GapSpec(fill ? GapRule.FillPoint : GapRule.Point, group);
+    }
+
+    /// <summary>A point the source broke stays broken; one it did not stays flat.</summary>
+    void Pin(SyntaxToken token, bool broken) {
+        if (broken) {
+            Mandatory(token);
+        } else {
+            Flat(token);
+        }
     }
 
     void Flat(SyntaxToken token) {

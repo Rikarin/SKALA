@@ -27,8 +27,8 @@ public static class Corpus {
 
     public static string RepositoryRoot { get; } =
         Assembly.GetExecutingAssembly()
-        .GetCustomAttributes<AssemblyMetadataAttribute>()
-        .FirstOrDefault(static attribute => attribute.Key == "SkalaRepositoryRoot")?.Value
+            .GetCustomAttributes<AssemblyMetadataAttribute>()
+            .FirstOrDefault(static attribute => attribute.Key == "SkalaRepositoryRoot")?.Value
         ?? throw new InvalidOperationException("SkalaRepositoryRoot was not stamped into the assembly.");
 
     public static string Root { get; } = Path.Combine(RepositoryRoot, "Testing", "corpus");

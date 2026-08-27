@@ -110,7 +110,7 @@ internal static class NullComparison {
             var converted = model.GetTypeInfo(current, cancellation).ConvertedType;
             for (var type = converted; type is not null; type = type.BaseType) {
                 if (type.ToDisplayString()
-                    .StartsWith("System.Linq.Expressions.Expression", System.StringComparison.Ordinal)) {
+                        .StartsWith("System.Linq.Expressions.Expression", System.StringComparison.Ordinal)) {
                     return true;
                 }
             }

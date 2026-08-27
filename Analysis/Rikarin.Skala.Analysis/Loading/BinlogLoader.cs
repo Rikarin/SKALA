@@ -31,7 +31,8 @@ namespace Rikarin.Skala.Analysis.Loading;
 public static class BinlogLoader {
     /// <summary>Where a binlog is looked for when none is named.</summary>
     public static readonly string[] Conventions = [
-        Path.Combine("artifacts", "skala.binlog"), Path.Combine("artifacts", "build.binlog"), Path.Combine(
+        Path.Combine("artifacts", "skala.binlog"), Path.Combine("artifacts", "build.binlog"),
+        Path.Combine(
             "artifacts",
             "msbuild.binlog"
         ), "msbuild.binlog", "build.binlog"
@@ -88,7 +89,8 @@ public static class BinlogLoader {
             Mode = LoadMode.Binlog,
             Units = units.ToImmutable(),
             Diagnostics = diagnostics.ToImmutable(),
-            Summary = $"binlog {Relative(request.RepositoryRoot, path)} ({units.Count.ToString(CultureInfo.InvariantCulture)} compilation(s))"
+            Summary =
+                $"binlog {Relative(request.RepositoryRoot, path)} ({units.Count.ToString(CultureInfo.InvariantCulture)} compilation(s))"
         };
     }
 
@@ -106,12 +108,12 @@ public static class BinlogLoader {
             Walk(BinaryLog.ReadBuild(path), invocations);
             return true;
         } catch (Exception exception) when (exception is IOException
-            or InvalidDataException
-            or NotSupportedException
-            or ArgumentException
-            or FileNotFoundException
-            or FileLoadException
-            or BadImageFormatException) {
+                                                or InvalidDataException
+                                                or NotSupportedException
+                                                or ArgumentException
+                                                or FileNotFoundException
+                                                or FileLoadException
+                                                or BadImageFormatException) {
             diagnostics.Add(
                 new SkalaDiagnostic(
                     "SK9022",

@@ -200,7 +200,7 @@ public sealed class LanguageServerTests {
     }
 
     static JsonObject Request(int id, string method, JsonObject? parameters = null) =>
-        new() { ["jsonrpc"] = "2.0",["id"] = id,["method"] = method,["params"] = parameters ?? new JsonObject() };
+        new() { ["jsonrpc"] = "2.0", ["id"] = id, ["method"] = method, ["params"] = parameters ?? new JsonObject() };
 
     [Fact]
     public async Task Initialize_AdvertisesExactlyTheFourCapabilities() {
@@ -225,7 +225,7 @@ public sealed class LanguageServerTests {
                 ["jsonrpc"] = "2.0",
                 ["method"] = "textDocument/didOpen",
                 ["params"] = new JsonObject {
-                    ["textDocument"] = new JsonObject { ["uri"] = uri,["text"] = "class C{void M(){M();}}\n" }
+                    ["textDocument"] = new JsonObject { ["uri"] = uri, ["text"] = "class C{void M(){M();}}\n" }
                 }
             },
             Request(
@@ -252,7 +252,7 @@ public sealed class LanguageServerTests {
         var open = new JsonObject {
             ["jsonrpc"] = "2.0",
             ["method"] = "textDocument/didOpen",
-            ["params"] = new JsonObject { ["textDocument"] = new JsonObject { ["uri"] = uri,["text"] = source } }
+            ["params"] = new JsonObject { ["textDocument"] = new JsonObject { ["uri"] = uri, ["text"] = source } }
         };
 
         var whole = await Converse(
@@ -272,8 +272,8 @@ public sealed class LanguageServerTests {
                 new JsonObject {
                     ["textDocument"] = new JsonObject { ["uri"] = uri },
                     ["range"] = new JsonObject {
-                        ["start"] = new JsonObject { ["line"] = 1,["character"] = 0 },
-                        ["end"] = new JsonObject { ["line"] = 1,["character"] = 14 }
+                        ["start"] = new JsonObject { ["line"] = 1, ["character"] = 0 },
+                        ["end"] = new JsonObject { ["line"] = 1, ["character"] = 14 }
                     }
                 }
             )
@@ -296,7 +296,7 @@ public sealed class LanguageServerTests {
             new JsonObject {
                 ["jsonrpc"] = "2.0",
                 ["method"] = "textDocument/didOpen",
-                ["params"] = new JsonObject { ["textDocument"] = new JsonObject { ["uri"] = uri,["text"] = source } }
+                ["params"] = new JsonObject { ["textDocument"] = new JsonObject { ["uri"] = uri, ["text"] = source } }
             },
             Request(
                 1,
@@ -320,7 +320,7 @@ public sealed class LanguageServerTests {
             new JsonObject {
                 ["jsonrpc"] = "2.0",
                 ["method"] = "textDocument/didOpen",
-                ["params"] = new JsonObject { ["textDocument"] = new JsonObject { ["uri"] = uri,["text"] = source } }
+                ["params"] = new JsonObject { ["textDocument"] = new JsonObject { ["uri"] = uri, ["text"] = source } }
             },
             Request(
                 1,
@@ -328,8 +328,8 @@ public sealed class LanguageServerTests {
                 new JsonObject {
                     ["textDocument"] = new JsonObject { ["uri"] = uri },
                     ["range"] = new JsonObject {
-                        ["start"] = new JsonObject { ["line"] = 0,["character"] = 0 },
-                        ["end"] = new JsonObject { ["line"] = 0,["character"] = 0 }
+                        ["start"] = new JsonObject { ["line"] = 0, ["character"] = 0 },
+                        ["end"] = new JsonObject { ["line"] = 0, ["character"] = 0 }
                     }
                 }
             )
@@ -344,7 +344,7 @@ public sealed class LanguageServerTests {
     public async Task AnUnknownRequest_IsMethodNotFound_AndAnUnknownNotificationIsSilent() {
         // ⚠ A server that answers a notification wedges every client that counts responses.
         var responses = await Converse(
-            new JsonObject { ["jsonrpc"] = "2.0",["method"] = "textDocument/didSave" },
+            new JsonObject { ["jsonrpc"] = "2.0", ["method"] = "textDocument/didSave" },
             Request(7, "textDocument/inlayHint")
         );
 

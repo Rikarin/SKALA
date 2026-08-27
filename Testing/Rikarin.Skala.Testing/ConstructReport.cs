@@ -31,9 +31,15 @@ public sealed record ConstructShare(string Kind, int Occurrences, int Lines, int
 /// divergent line is a line of output and the oracle's is the one that is correct by definition. It
 /// parses: the oracle emits compilable C# or the fixture would not have been committed.
 /// </para>
+/// <para>
+/// ⚠ Measured with the oracle's own preprocessor symbols supplied. Without them a file wrapped in a
+/// <c>#if</c> is disabled text for Skala and reproduced unchanged, and every line of it counts
+/// against whatever construct happens to own it — which attributes SK-DIV-0004 to
+/// <c>ClassDeclaration</c> and <c>Block</c> and says nothing about either.
+/// </para>
 /// </remarks>
 public static class ConstructReport {
-    public static IReadOnlyList<ConstructShare> Build(string set) {
+    public static IReadOnlyList<ConstructShare> Build(string set, IReadOnlyList<string>? symbols = null) {
         var occurrences = new Dictionary<string, int>(StringComparer.Ordinal);
         var lines = new Dictionary<string, int>(StringComparer.Ordinal);
         var divergent = new Dictionary<string, int>(StringComparer.Ordinal);
@@ -44,7 +50,9 @@ public static class ConstructReport {
                 Formatting.CSharp.CSharpFormatter.Format(
                     file.Path,
                     Formatting.CSharp.CSharpFormatter.Read(file.Path),
-                    Rikarin.Skala.Core.Configuration.OptionResolver.Resolve(file.Path).Options
+                    Rikarin.Skala.Core.Configuration.OptionResolver.Resolve(file.Path).Options,
+                    null,
+                    symbols ?? []
                 ).Formatted
             );
 
@@ -81,6 +89,50 @@ public static class ConstructReport {
                 .OrderByDescending(static share => share.Divergent)
                 .ThenBy(static share => share.Kind, StringComparer.Ordinal)
         ];
+    }
+
+    /// <summary>
+    /// Where the divergent lines attributed to one construct actually are.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ The report ranks by line count and R1 counts <em>constructs</em>, so the work queue the two
+    /// imply is not the same one: a construct with two divergent lines is as far from the rule as
+    /// one with ninety. This is how the two-line ones get found.
+    /// </remarks>
+    public static string Locate(string set, string kind, IReadOnlyList<string>? symbols = null) {
+        var builder = new StringBuilder();
+        foreach (var file in Corpus.Files(set).Where(static f => f.HasFixture)) {
+            var expected = TextNormalisation.Normalise(OracleFixture.Read(file));
+            var actual = TextNormalisation.Normalise(
+                Formatting.CSharp.CSharpFormatter.Format(
+                    file.Path,
+                    Formatting.CSharp.CSharpFormatter.Read(file.Path),
+                    Rikarin.Skala.Core.Configuration.OptionResolver.Resolve(file.Path).Options,
+                    null,
+                    symbols ?? []
+                ).Formatted
+            );
+
+            if (string.Equals(expected, actual, StringComparison.Ordinal)) {
+                continue;
+            }
+
+            var text = SourceText.From(expected);
+            var root = CSharpSyntaxTree.ParseText(text, Formatting.CSharp.CSharpFormatter.ParseOptions).GetRoot();
+            var owner = OwnersByLine(text, root);
+            var lines = TextNormalisation.Lines(expected);
+            foreach (var index in DivergentLines(expected, actual)) {
+                if (index < owner.Length && string.Equals(owner[index], kind, StringComparison.Ordinal)) {
+                    builder.Append(file.ToString())
+                        .Append(':')
+                        .Append((index + 1).ToString(CultureInfo.InvariantCulture))
+                        .Append("  ")
+                        .AppendLine(index < lines.Length ? lines[index] : string.Empty);
+                }
+            }
+        }
+
+        return builder.ToString();
     }
 
     /// <summary>The innermost node that owns each line, by kind.</summary>

@@ -78,9 +78,9 @@ public static class CacheKey {
     ) {
         var builder = new StringBuilder();
         foreach (var analyzer in analyzers.OrderBy(
-                static analyzer => analyzer.GetType().FullName,
-                StringComparer.Ordinal
-            )) {
+                     static analyzer => analyzer.GetType().FullName,
+                     StringComparer.Ordinal
+                 )) {
             var type = analyzer.GetType();
             builder.Append(type.FullName).Append('@').Append(type.Assembly.ManifestModule.ModuleVersionId).Append(';');
             foreach (var descriptor in analyzer.SupportedDiagnostics) {
@@ -198,9 +198,9 @@ public sealed class DiagnosticCache {
                 _entries[entry.Key] = entry;
             }
         } catch (Exception exception) when (exception is IOException
-            or JsonException
-            or UnauthorizedAccessException
-            or NotSupportedException) {
+                                                or JsonException
+                                                or UnauthorizedAccessException
+                                                or NotSupportedException) {
             // ⚠ Corruption is never a failure. Discard and re-run.
             _entries.Clear();
         }

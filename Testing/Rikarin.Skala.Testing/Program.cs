@@ -11,8 +11,11 @@ using Rikarin.Skala.Testing;
 //                     disagrees is a tautology (docs/plan/12 § "The oracle").
 //   fidelity [set…]   print the differential report without failing anything, which is the work
 //                     queue the divergence classes rank.
-//   dump <set> <dir>  write Skala's output and the oracle's side by side, so a class named in the
-//                     report can be read as a diff rather than as two sample lines.
+//   dump <set> <dir> [defined]
+//                     write Skala's output and the oracle's side by side, so a class named in the
+//                     report can be read as a diff rather than as two sample lines. `defined`
+//                     supplies the oracle's own preprocessor symbols, which is the run the
+//                     conformance bar is read against.
 //   variants [set…]   the differential number for each alternative configuration a set is run
 //                     under — docs/plan/05's four-way keep_existing_* table.
 //   constructs [set]  every divergent line attributed to the construct that owns it, beside how
@@ -22,6 +25,20 @@ using Rikarin.Skala.Testing;
 //                     happens to a 121-column array initializer, and asking does.
 //   audit [dir…]      every rule's findings over a tree, grouped by rule, for the
 //                     false-positive review docs/plan/16 § R3 makes the shipping bar.
+//   sample <tree> <n> <dest>
+//                     redraw a corpus sample from a tree, reproducibly: the file is chosen by a
+//                     hash of its path rather than by a seeded sequence, so the same commit and
+//                     the same filters give the same files on any machine.
+//   tree <dir> [n]    the differential over an arbitrary tree rather than over the corpus: what
+//                     the oracle would move, what Skala would move, and Skala against the oracle
+//                     over all of it. Tens of minutes.
+//   locate <set> <kind>
+//                     the divergent lines attributed to one construct, with file and line. R1
+//                     counts constructs rather than lines, so a construct with two divergent lines
+//                     is as far from the rule as one with ninety and the ranked report never shows
+//                     it.
+//   margin [out]      SK-DIV-0005's constant, swept: eleven right-hand-side shapes at five block
+//                     depths under both values of `wrap_before_eq`, one character at a time.
 //   preprocessor      SK-DIV-0004's number: `corpus/real/` fidelity with the oracle's own
 //                     preprocessor symbols supplied, split by whether the file contains a `#if`.
 //                     The symbols are read out of a real binary log rather than typed.
@@ -47,7 +64,7 @@ switch (args[0]) {
     case "fidelity":
         return Report(sets);
     case "dump":
-        return Dump(args[1], args[2]);
+        return Dump(args[1], args[2], args.Length > 3 && args[3] == "defined");
     case "variants":
         return Variants(sets);
     case "probe":
@@ -71,11 +88,76 @@ switch (args[0]) {
         );
 
         return 0;
+    case "sample":
+        // ⚠ Redraws a corpus sample from a tree, reproducibly. `sample <tree> <count> <dest>`.
+        // A deliberate action whose output is reviewed in its own commit, like `oracle`: it
+        // replaces the corpus, and a corpus that changes without a commit is not a measurement.
+        if (args.Length < 4) {
+            Console.Error.WriteLine("usage: sample <tree> <count> <destination>");
+            return 2;
+        }
+
+        Console.WriteLine(
+            CorpusSample.Draw(
+                Path.GetFullPath(args[1]),
+                int.Parse(args[2], CultureInfo.InvariantCulture),
+                Path.GetFullPath(args[3]),
+                Console.Error
+            )
+        );
+
+        return 0;
+    case "margin":
+        // SK-DIV-0005, swept. A developer action of tens of seconds; never a test.
+        if (OracleRunner.FindExecutableOrNull() is null) {
+            Console.Error.WriteLine("jb is not installed.");
+            return 2;
+        }
+
+        var sweep = MarginSweep.Run(
+            new OracleRunner(),
+            Path.Combine(Corpus.RepositoryRoot, ".editorconfig"),
+            Console.Error
+        );
+
+        if (args.Length > 1) {
+            File.WriteAllText(args[1], sweep);
+            Console.WriteLine($"written to {args[1]}");
+        } else {
+            Console.WriteLine(sweep);
+        }
+
+        return 0;
+    case "tree":
+        // ⚠ The differential over an arbitrary tree rather than over the corpus. `tree <dir>`.
+        // The corpus samples 200 files of Vixen; this measures all 4 711, which is the number the
+        // `.editorconfig` commit is actually decided on — "how many files would Rider move back"
+        // is a question about the tree, not about a sample of it.
+        if (args.Length < 2) {
+            Console.Error.WriteLine("usage: tree <directory>");
+            return 2;
+        }
+
+        return TreeFidelity(
+            Path.GetFullPath(args[1]),
+            args.Length > 2 ? int.Parse(args[2], CultureInfo.InvariantCulture) : int.MaxValue
+        );
+    case "locate":
+        // Where the divergent lines attributed to one construct are. `locate <set> <kind>`.
+        if (args.Length < 3) {
+            Console.Error.WriteLine("usage: locate <set> <SyntaxKind>");
+            return 2;
+        }
+
+        Console.WriteLine(ConstructReport.Locate(args[1], args[2], Symbols()));
+        return 0;
     case "constructs":
         // docs/plan/16 § R1: any construct occurring more than 50 times must be at 100 %. A single
         // fidelity number cannot answer that; this attributes every divergent line to the construct
         // that owns it and puts it beside how often the construct occurs.
-        Console.WriteLine(ConstructReport.Render(ConstructReport.Build(args.Length > 1 ? args[1] : Corpus.Real)));
+        Console.WriteLine(
+            ConstructReport.Render(ConstructReport.Build(args.Length > 1 ? args[1] : Corpus.Real, Symbols()))
+        );
         return 0;
     default:
         Console.Error.WriteLine($"unknown command '{args[0]}'");
@@ -229,28 +311,43 @@ static int RegenerateVariants(OracleRunner runner, string editorConfig, OracleHe
     return written;
 }
 
+// ⚠ The differential runs under BOTH symbol sets, and that is the default rather than a flag.
+// Milestone 5 found a defect that had survived M1 → M5 — `count > (n)` came back `count >(n)` —
+// because every corpus line that shows it sits inside a `#if` body the formatter could not see. A
+// single-symbol-set run cannot find that class at all, and there is no reason to think it was the
+// only one, so the last section of this report is the divergences that appear under one symbol set
+// and not the other. Those are the interesting kind.
 static int Report(string[] sets) {
+    var symbols = Symbols();
     foreach (var set in sets) {
         var files = Corpus.Files(set).Where(static file => file.HasFixture).ToArray();
         if (files.Length == 0) {
             continue;
         }
 
-        var results = new List<(string File, string Expected, string Actual)>(files.Length);
+        var bare = new List<(string File, string Expected, string Actual)>(files.Length);
+        var defined = new List<(string File, string Expected, string Actual)>(files.Length);
         foreach (var file in files) {
             var text = CSharpFormatter.Read(file.Path);
-            var result = CSharpFormatter.Format(file.Path, text, Resolve(file.Path));
-            results.Add((file.ToString(), OracleFixture.Read(file), result.Formatted));
+            var options = Resolve(file.Path);
+            var expected = OracleFixture.Read(file);
+            bare.Add((file.ToString(), expected, CSharpFormatter.Format(file.Path, text, options).Formatted));
+            defined.Add(
+                (file.ToString(), expected, CSharpFormatter.Format(file.Path, text, options, null, symbols).Formatted)
+            );
         }
 
-        Console.WriteLine($"── {set} ──────────────────────────────────────────────────────────");
-        Console.WriteLine(Fidelity.Compare(results).Render());
+        var without = Fidelity.Compare(bare);
+        var with = Fidelity.Compare(defined);
 
-        foreach (var origin in results.GroupBy(static r => r.File.Split('/')[1], StringComparer.Ordinal)
-            .OrderBy(
-                static g => g.Key,
-                StringComparer.Ordinal
-            )) {
+        Console.WriteLine($"── {set} ──────────────────────────────────────────────────────────");
+        Console.WriteLine("                    line      file      lines");
+        Row("no symbols", without);
+        Row("with symbols", with);
+        Console.WriteLine();
+
+        foreach (var origin in defined.GroupBy(static r => r.File.Split('/')[1], StringComparer.Ordinal)
+                     .OrderBy(static g => g.Key, StringComparer.Ordinal)) {
             var report = Fidelity.Compare(origin);
             Console.WriteLine(
                 $"  {origin.Key,-14} line {report.LineFidelity * 100:F2}%  file {report.FileFidelity * 100:F2}%  ({report.Files} files)"
@@ -258,20 +355,144 @@ static int Report(string[] sets) {
         }
 
         Console.WriteLine();
+        Console.WriteLine("with symbols supplied:");
+        Console.WriteLine(with.Render());
+        OneSided(without, with);
+        Console.WriteLine();
     }
 
+    return 0;
+}
+
+static void Row(string label, FidelityReport report) =>
+    Console.WriteLine(
+        $"  {label,-16} {report.LineFidelity * 100,7:F2} % {report.FileFidelity * 100,7:F2} %   "
+        + $"({report.IdenticalLines.ToString(CultureInfo.InvariantCulture)}/{report.Lines.ToString(CultureInfo.InvariantCulture)})"
+    );
+
+// The divergences one symbol set has and the other does not, keyed by what they say rather than by
+// where they are: supplying symbols changes how many lines a file has, so a line number is not a
+// stable identity across the two runs.
+static void OneSided(FidelityReport without, FidelityReport with) {
+    var bare = without.Divergences.Select(KeyOf).ToHashSet(StringComparer.Ordinal);
+    var defined = with.Divergences.Select(KeyOf).ToHashSet(StringComparer.Ordinal);
+    var onlyWith = with.Divergences.Where(divergence => !bare.Contains(KeyOf(divergence))).ToArray();
+    var onlyWithout = without.Divergences.Where(divergence => !defined.Contains(KeyOf(divergence))).ToArray();
+
+    Console.WriteLine(
+        $"⚠ divergences under one symbol set only: {onlyWith.Length.ToString(CultureInfo.InvariantCulture)} with, "
+        + $"{onlyWithout.Length.ToString(CultureInfo.InvariantCulture)} without"
+    );
+
+    Sample("  only with symbols", onlyWith);
+    Sample("  only without symbols", onlyWithout);
+}
+
+static string KeyOf(Divergence divergence) =>
+    divergence.File + "\u0000" + divergence.Expected.Trim() + "\u0000" + divergence.Actual.Trim();
+
+static void Sample(string label, IReadOnlyList<Divergence> entries) {
+    if (entries.Count == 0) {
+        return;
+    }
+
+    Console.WriteLine(label + ":");
+    foreach (var group in entries.GroupBy(static entry => entry.Class, StringComparer.Ordinal)
+                 .OrderByDescending(static group => group.Count())
+                 .Take(6)) {
+        Console.WriteLine(
+            $"    {group.Count().ToString(CultureInfo.InvariantCulture),5}  {group.Key}  ({group.First().File})"
+        );
+    }
+}
+
+// `tree <dir>`: run the oracle and Skala over every .cs file of a tree and report both against the
+// tree as committed. Tens of minutes on a large repository, and a developer action like `oracle`.
+static int TreeFidelity(string directory, int count) {
+    if (OracleRunner.FindExecutableOrNull() is null) {
+        Console.Error.WriteLine("jb is not installed.");
+        return 2;
+    }
+
+    var files = Directory.EnumerateFiles(directory, "*.cs", SearchOption.AllDirectories)
+        .Where(static path => !path.Contains("/obj/", StringComparison.Ordinal)
+            && !path.Contains("/bin/", StringComparison.Ordinal)
+            && !path.Contains("/.claude/", StringComparison.Ordinal)
+        )
+        .Select(path => new CorpusFile("tree", Path.GetRelativePath(directory, path).Replace('\\', '/'), path))
+        .OrderBy(static file => CorpusSample.KeyOf(CorpusSample.Seed, file.RelativePath))
+        .ThenBy(static file => file.RelativePath, StringComparer.Ordinal)
+        .Take(count)
+        .ToArray();
+
+    Console.WriteLine($"{files.Length.ToString(CultureInfo.InvariantCulture)} files under {directory}");
+
+    var runner = new OracleRunner();
+    var config = Path.Combine(directory, ".editorconfig");
+    if (!File.Exists(config)) {
+        config = Path.Combine(Corpus.RepositoryRoot, ".editorconfig");
+    }
+
+    var against = new List<(string File, string Expected, string Actual)>(files.Length);
+    var oracleMoved = 0;
+    var skalaMoved = 0;
+    const int batch = 120;
+    for (var start = 0; start < files.Length; start += batch) {
+        var slice = files.Skip(start).Take(batch).ToArray();
+        var results = runner.Format(slice, config);
+        foreach (var file in slice) {
+            if (!results.TryGetValue(file.Path, out var expected)) {
+                continue;
+            }
+
+            var text = CSharpFormatter.Read(file.Path);
+            var original = text.ToString();
+            var actual = CSharpFormatter.Format(file.Path, text, Resolve(file.Path)).Formatted;
+            against.Add((file.ToString(), expected, actual));
+            if (!string.Equals(
+                    TextNormalisation.Normalise(expected),
+                    TextNormalisation.Normalise(original),
+                    StringComparison.Ordinal
+                )) {
+                oracleMoved++;
+            }
+
+            if (!string.Equals(
+                    TextNormalisation.Normalise(actual),
+                    TextNormalisation.Normalise(original),
+                    StringComparison.Ordinal
+                )) {
+                skalaMoved++;
+            }
+        }
+
+        Console.WriteLine(
+            $"  {Math.Min(start + batch, files.Length).ToString(CultureInfo.InvariantCulture)}/{files.Length.ToString(CultureInfo.InvariantCulture)}"
+        );
+    }
+
+    Console.WriteLine();
+    Console.WriteLine(
+        $"files the oracle would move: {oracleMoved.ToString(CultureInfo.InvariantCulture)}"
+        + $"; files Skala would move: {skalaMoved.ToString(CultureInfo.InvariantCulture)}"
+    );
+
+    Console.WriteLine();
+    Console.WriteLine("Skala against the oracle, over the whole tree:");
+    Console.WriteLine(Fidelity.Compare(against).Render(10));
     return 0;
 }
 
 // `dump <set> <dir>`: write Skala's output and the oracle's side by side, so that a divergence
 // class named in the report can be read as a diff rather than as two sample lines. A developer
 // action like `fidelity`, never part of a test run.
-static int Dump(string set, string directory) {
+static int Dump(string set, string directory, bool defined) {
     Directory.CreateDirectory(directory);
+    var symbols = defined ? Symbols() : [];
     foreach (var file in Corpus.Files(set).Where(static file => file.HasFixture)) {
         var name = file.RelativePath.Replace('/', '_');
         var text = CSharpFormatter.Read(file.Path);
-        var result = CSharpFormatter.Format(file.Path, text, Resolve(file.Path));
+        var result = CSharpFormatter.Format(file.Path, text, Resolve(file.Path), null, symbols);
         File.WriteAllText(Path.Combine(directory, name + ".skala"), TextNormalisation.Normalise(result.Formatted));
         File.WriteAllText(
             Path.Combine(directory, name + ".oracle"),
@@ -287,7 +508,7 @@ static int Dump(string set, string directory) {
 static int Variants(string[] sets) {
     foreach (var set in sets) {
         foreach (var group in CorpusVariants.Pairs(set)
-            .GroupBy(static pair => pair.Variant, static pair => pair.File)) {
+                     .GroupBy(static pair => pair.Variant, static pair => pair.File)) {
             var results = new List<(string File, string Expected, string Actual)>();
             foreach (var file in group) {
                 if (!group.Key.HasFixture(file)) {
@@ -394,5 +615,30 @@ static IEnumerable<string> LegalValues(Rikarin.Skala.Options.OptionInfo info) {
     }
 }
 
+// ⚠ Read out of a real binary log of the same scratch project OracleRunner builds, not typed: the
+// measurement and the binlog loader then test each other (PreprocessorFidelity). Memoised, because
+// it costs a `dotnet build`.
+static IReadOnlyList<string> Symbols() {
+    if (SymbolCache.Value is null) {
+        try {
+            SymbolCache.Value = PreprocessorFidelity.OracleSymbols(Console.Error);
+        } catch (Exception exception) when (exception is IOException or InvalidOperationException) {
+            Console.Error.WriteLine("the symbol probe failed; falling back to DEBUG;TRACE: " + exception.Message);
+            SymbolCache.Value = ["DEBUG", "TRACE"];
+        }
+    }
+
+    return SymbolCache.Value;
+}
+
 static Rikarin.Skala.Options.FormattingOptions Resolve(string path) =>
     Rikarin.Skala.Core.Configuration.OptionResolver.Resolve(path).Options;
+
+/// <summary>The memoised symbol set behind <c>Symbols()</c>.</summary>
+/// <remarks>
+/// ⚠ A holder type rather than a top-level local, because a top-level local is a local of the
+/// generated <c>Main</c> and a static local function may not capture one.
+/// </remarks>
+static class SymbolCache {
+    public static IReadOnlyList<string>? Value { get; set; }
+}

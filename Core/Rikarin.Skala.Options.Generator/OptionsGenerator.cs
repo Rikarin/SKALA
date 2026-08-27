@@ -114,10 +114,10 @@ public sealed class OptionsGenerator : IIncrementalGenerator {
 
         var clean = true;
         foreach (var pair in owners.Where(static p => p.Value.Count > 1)
-            .OrderBy(
-                static p => p.Key,
-                StringComparer.Ordinal
-            )) {
+                     .OrderBy(
+                         static p => p.Key,
+                         StringComparer.Ordinal
+                     )) {
             context.ReportDiagnostic(
                 Diagnostic.Create(
                     DuplicateAlias,

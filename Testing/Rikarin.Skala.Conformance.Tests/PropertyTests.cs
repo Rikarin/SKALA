@@ -1,5 +1,7 @@
+using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
 using Rikarin.Skala.Core.Configuration;
 using Rikarin.Skala.Formatting;
@@ -14,13 +16,45 @@ public static class CorpusFormatter {
     static readonly Dictionary<string, FormattingOptions> Cache = [];
     static readonly Lock Gate = new();
 
-    public static FormatResult Format(CorpusFile file) {
+    /// <summary>
+    /// A symbol set that makes a conditional body live, for the properties to be asserted under.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ Not the oracle's own eighteen, and it does not need to be. What a *fidelity* measurement
+    /// needs is the symbols the oracle actually had (`fidelity preprocessor` reads them out of a
+    /// binary log for exactly that reason); what a *property* needs is only that `#if` bodies stop
+    /// being disabled text, because that is the code path the properties were never asserted over.
+    /// A hard-coded list keeps the suite runnable on a machine with no SDK probe and no oracle.
+    /// </remarks>
+    public static readonly ImmutableArray<string> Symbols = [
+        "DEBUG",
+        "TRACE",
+        "NET",
+        "NET10_0",
+        "NETCOREAPP",
+        "NET5_0_OR_GREATER",
+        "NET6_0_OR_GREATER",
+        "NET7_0_OR_GREATER",
+        "NET8_0_OR_GREATER",
+        "NET9_0_OR_GREATER",
+        "NET10_0_OR_GREATER",
+        "HAVE_ASYNC",
+        "FEATURE_SPAN"
+    ];
+
+    public static FormatResult Format(CorpusFile file, bool defined = false) {
         var text = CSharpFormatter.Read(file.Path);
-        return CSharpFormatter.Format(file.Path, text, OptionsFor(file.Path));
+        return CSharpFormatter.Format(file.Path, text, OptionsFor(file.Path), null, defined ? Symbols : []);
     }
 
-    public static FormatResult Format(CorpusFile file, string source) =>
-        CSharpFormatter.Format(file.Path, SourceText.From(source), OptionsFor(file.Path));
+    public static FormatResult Format(CorpusFile file, string source, bool defined = false) =>
+        CSharpFormatter.Format(
+            file.Path,
+            SourceText.From(source),
+            OptionsFor(file.Path),
+            null,
+            defined ? Symbols : []
+        );
 
     public static FormattingOptions OptionsFor(string path) {
         var directory = Path.GetDirectoryName(path) ?? path;
@@ -43,11 +77,23 @@ public static class CorpusFormatter {
 /// there is no ratchet and no allowance.
 /// </remarks>
 public sealed class PropertyTests {
-    public static TheoryData<CorpusFile> AllFiles {
+    /// <summary>
+    /// Every corpus file, under **both** symbol sets.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ The second column is milestone 3.1's, and the reason is milestone 5's: a file wrapped in a
+    /// <c>#if</c> is disabled text for a formatter with no symbols, copied byte-for-byte, so every
+    /// property holds over it trivially and the code that formats its body is never asserted at
+    /// all. The <c>&gt;</c>-before-<c>(</c> defect survived four milestones in exactly that blind
+    /// spot. Doubling the theory doubles the cheapest tests in the suite and lights the half of the
+    /// corpus nobody was testing.
+    /// </remarks>
+    public static TheoryData<CorpusFile, bool> AllFiles {
         get {
-            var data = new TheoryData<CorpusFile>();
+            var data = new TheoryData<CorpusFile, bool>();
             foreach (var file in Corpus.All()) {
-                data.Add(file);
+                data.Add(file, false);
+                data.Add(file, true);
             }
 
             return data;
@@ -56,13 +102,13 @@ public sealed class PropertyTests {
 
     [Theory]
     [MemberData(nameof(AllFiles))]
-    public void Idempotency_FormatOfFormatIsFormat(CorpusFile file) {
-        var first = CorpusFormatter.Format(file);
+    public void Idempotency_FormatOfFormatIsFormat(CorpusFile file, bool defined) {
+        var first = CorpusFormatter.Format(file, defined);
         if (first.Outcome is FormatOutcome.NotParseable or FormatOutcome.Generated) {
             return;
         }
 
-        var second = CorpusFormatter.Format(file, first.Formatted);
+        var second = CorpusFormatter.Format(file, first.Formatted, defined);
         Assert.True(
             second.Edits.IsEmpty,
             $"{file} is not idempotent; the second pass still wants {second.Edits.Length} edit(s): "
@@ -72,15 +118,15 @@ public sealed class PropertyTests {
 
     [Theory]
     [MemberData(nameof(AllFiles))]
-    public void TokenEquivalence_HoldsForEveryCorpusFile(CorpusFile file) {
-        var result = CorpusFormatter.Format(file);
+    public void TokenEquivalence_HoldsForEveryCorpusFile(CorpusFile file, bool defined) {
+        var result = CorpusFormatter.Format(file, defined);
         Assert.NotEqual(FormatOutcome.VerificationFailed, result.Outcome);
     }
 
     [Theory]
     [MemberData(nameof(AllFiles))]
-    public void ParseStability_TheOutputParsesWithTheSameDiagnostics(CorpusFile file) {
-        var result = CorpusFormatter.Format(file);
+    public void ParseStability_TheOutputParsesWithTheSameDiagnostics(CorpusFile file, bool defined) {
+        var result = CorpusFormatter.Format(file, defined);
         if (result.Outcome is not FormatOutcome.Formatted) {
             return;
         }
@@ -103,16 +149,16 @@ public sealed class PropertyTests {
 
     [Theory]
     [MemberData(nameof(AllFiles))]
-    public void Determinism_ThreeRunsProduceIdenticalBytes(CorpusFile file) {
-        var first = CorpusFormatter.Format(file).Formatted;
-        Assert.Equal(first, CorpusFormatter.Format(file).Formatted);
-        Assert.Equal(first, CorpusFormatter.Format(file).Formatted);
+    public void Determinism_ThreeRunsProduceIdenticalBytes(CorpusFile file, bool defined) {
+        var first = CorpusFormatter.Format(file, defined).Formatted;
+        Assert.Equal(first, CorpusFormatter.Format(file, defined).Formatted);
+        Assert.Equal(first, CorpusFormatter.Format(file, defined).Formatted);
     }
 
     [Theory]
     [MemberData(nameof(AllFiles))]
-    public void RangeConsistency_ARangeFormatIsTheWholeFilesEditsFiltered(CorpusFile file) {
-        var result = CorpusFormatter.Format(file);
+    public void RangeConsistency_ARangeFormatIsTheWholeFilesEditsFiltered(CorpusFile file, bool defined) {
+        var result = CorpusFormatter.Format(file, defined);
         if (result.Edits.IsEmpty) {
             return;
         }
@@ -130,11 +176,11 @@ public sealed class PropertyTests {
 
     [Theory]
     [MemberData(nameof(AllFiles))]
-    public void WhitespaceMutation_IsAbsorbed(CorpusFile file) {
+    public void WhitespaceMutation_IsAbsorbed(CorpusFile file, bool defined) {
         // ⚠ format(mutate_whitespace(x)) ≡ format(x) — a strong property that the preservation model
         // makes non-trivial (docs/plan/12 § "Fuzzing"). The mutation here is deliberately the one
         // phase 1 must absorb completely: extra spaces inside a line.
-        var result = CorpusFormatter.Format(file);
+        var result = CorpusFormatter.Format(file, defined);
         if (result.Outcome is not FormatOutcome.Formatted) {
             return;
         }
@@ -149,8 +195,8 @@ public sealed class PropertyTests {
             return;
         }
 
-        var mutated = MutateIndentationOnly(source);
-        var second = CorpusFormatter.Format(file, mutated);
+        var mutated = MutateIndentationOnly(source, defined);
+        var second = CorpusFormatter.Format(file, mutated, defined);
         if (second.Outcome is not FormatOutcome.Formatted) {
             return;
         }
@@ -162,14 +208,42 @@ public sealed class PropertyTests {
     /// Doubles the leading whitespace of every line that is not inside a multi-line token. Only
     /// indentation is touched, because a space inside a raw string is not whitespace, it is data.
     /// </summary>
-    static string MutateIndentationOnly(string source) {
-        var tree = CSharpSyntaxTree.ParseText(SourceText.From(source), CSharpFormatter.ParseOptions);
+    static string MutateIndentationOnly(string source, bool defined) {
+        // ⚠ Parsed with the same symbols the formatter is about to use. Which lines are disabled
+        // text is a function of the symbol set, and a mutation computed from a different set
+        // protects the wrong half of a `#if`/`#else` — it then adds whitespace inside a region the
+        // formatter copies byte-for-byte, and the property fails for the test's reason rather than
+        // the formatter's.
+        var tree = CSharpSyntaxTree.ParseText(
+            SourceText.From(source),
+            defined
+                ? CSharpFormatter.ParseOptionsFor(CorpusFormatter.Symbols)
+                : CSharpFormatter.ParseOptions
+        );
         var text = tree.GetText();
         var multiline = new HashSet<int>();
         foreach (var token in tree.GetRoot().DescendantTokens(descendIntoTrivia: true)) {
             var start = text.Lines.GetLineFromPosition(token.SpanStart).LineNumber;
             var end = text.Lines.GetLineFromPosition(token.Span.End).LineNumber;
             for (var line = start + 1; line <= end; line++) {
+                multiline.Add(line);
+            }
+        }
+
+        // ⚠ An interpolated string spanning lines is data too, and it is not one token — it is a run
+        // of them with expressions between, so the per-token test above lets the mutation into it.
+        // Skala emits the whole expression byte-for-byte (`NodeLayout.Verbatim`, docs/plan/04 §
+        // "where a moved space changes the value") and so does the oracle, so a space added inside
+        // one is a space neither tool is allowed to absorb. C# 11 put newlines inside interpolation
+        // holes, which is what made this reachable from real code at all.
+        foreach (var node in tree.GetRoot().DescendantNodes()) {
+            if (node is not InterpolatedStringExpressionSyntax) {
+                continue;
+            }
+
+            var first = text.Lines.GetLineFromPosition(node.SpanStart).LineNumber;
+            var last = text.Lines.GetLineFromPosition(node.Span.End).LineNumber;
+            for (var line = first + 1; line <= last; line++) {
                 multiline.Add(line);
             }
         }

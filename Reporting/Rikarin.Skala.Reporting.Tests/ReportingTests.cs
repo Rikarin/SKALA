@@ -65,10 +65,10 @@ public sealed class ReportingTests {
         Assert.Equal(
             "Core/Foo.cs",
             result.GetProperty("locations")[0]
-            .GetProperty("physicalLocation")
-            .GetProperty("artifactLocation")
-            .GetProperty("uri")
-            .GetString()
+                .GetProperty("physicalLocation")
+                .GetProperty("artifactLocation")
+                .GetProperty("uri")
+                .GetString()
         );
 
         var replacement = result.GetProperty("fixes")[0]

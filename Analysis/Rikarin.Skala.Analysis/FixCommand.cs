@@ -96,9 +96,9 @@ public static class FixCommand {
         var reverted = 0;
 
         foreach (var group in applicable
-                .SelectMany(static finding => finding.Fix.Select(edit => (finding, edit)))
-                .GroupBy(static pair => pair.edit.Path, StringComparer.Ordinal)
-                .OrderBy(static group => group.Key, StringComparer.Ordinal)) {
+                     .SelectMany(static finding => finding.Fix.Select(edit => (finding, edit)))
+                     .GroupBy(static pair => pair.edit.Path, StringComparer.Ordinal)
+                     .OrderBy(static group => group.Key, StringComparer.Ordinal)) {
             var (count, wasReverted, message) = ApplyToFile(group.Key, [.. group], request, root);
             applied += count;
             reverted += wasReverted ? 1 : 0;
@@ -223,8 +223,8 @@ public static class FixCommand {
             .. tree.GetDiagnostics()
                 .Where(static diagnostic => diagnostic.Severity == Microsoft.CodeAnalysis.DiagnosticSeverity.Error)
                 .Select(static diagnostic => diagnostic.Id
-                        + "@"
-                        + diagnostic.Location.SourceSpan.Start.ToString(CultureInfo.InvariantCulture)
+                    + "@"
+                    + diagnostic.Location.SourceSpan.Start.ToString(CultureInfo.InvariantCulture)
                 )
         ];
     }

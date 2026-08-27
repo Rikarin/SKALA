@@ -64,7 +64,7 @@ public static class Distiller {
                     dropByLine.Add(assignment.Line);
                     droppedKeys.Add(assignment.Key);
                 } else if (info.DefaultSource is not (OptionDefaultSource.ReSharperDocs
-                        or OptionDefaultSource.OracleProbe)) {
+                               or OptionDefaultSource.OracleProbe)) {
                     retained++;
                 }
             }

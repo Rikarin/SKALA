@@ -41,9 +41,9 @@ public sealed record FidelityReport(
         builder.AppendLine("divergence classes, by line count:");
 
         foreach (var group in Divergences
-                .GroupBy(static d => d.Class, StringComparer.Ordinal)
-                .OrderByDescending(static g => g.Count())
-                .Take(topClasses)) {
+                     .GroupBy(static d => d.Class, StringComparer.Ordinal)
+                     .OrderByDescending(static g => g.Count())
+                     .Take(topClasses)) {
             var files = group.Select(static d => d.File).Distinct(StringComparer.Ordinal).Count();
             builder.Append("  ")
                 .Append(group.Count().ToString(CultureInfo.InvariantCulture).PadLeft(6))
@@ -159,8 +159,8 @@ public static class Fidelity {
             return right.Length == 0
                 ? "blank line: Skala has one, the oracle does not"
                 : removedCount < addedCount && addedCount > 1
-                    ? "line break presence: Skala left a line the oracle joined (phase 2)"
-                    : "extra line";
+                ? "line break presence: Skala left a line the oracle joined (phase 2)"
+                : "extra line";
         }
 
         if (actual == "(no line)") {
@@ -228,19 +228,19 @@ public static class LineDiff {
         // the quadratic table is only paid for the middle.
         var head = 0;
         while (head < left.Length
-            && head < right.Length
-            && string.Equals(
-                left[head],
-                right[head],
-                StringComparison.Ordinal
-            )) {
+               && head < right.Length
+               && string.Equals(
+                   left[head],
+                   right[head],
+                   StringComparison.Ordinal
+               )) {
             head++;
         }
 
         var tail = 0;
         while (tail < left.Length - head
-            && tail < right.Length - head
-            && string.Equals(left[^(tail + 1)], right[^(tail + 1)], StringComparison.Ordinal)) {
+               && tail < right.Length - head
+               && string.Equals(left[^(tail + 1)], right[^(tail + 1)], StringComparison.Ordinal)) {
             tail++;
         }
 

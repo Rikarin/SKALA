@@ -120,6 +120,7 @@ public readonly struct PhaseOneOptions {
 
         // ── Indentation ──────────────────────────────────────────────────────────────────────
         IndentBraces = options.GetBool(Ids.IndentBraces);
+        AlignMultilineStatementConditions = options.GetBool(Ids.AlignMultilineStatementConditions);
         IndentSwitchLabels = options.GetBool(Ids.IndentSwitchLabels);
         IndentBreakFromCase = options.GetBool(Ids.IndentBreakFromCase);
         IndentInsideNamespace = options.GetBool(Ids.IndentInsideNamespace);
@@ -371,6 +372,13 @@ public readonly struct PhaseOneOptions {
     public bool AllowCommentAfterLbrace { get; }
 
     public bool IndentBraces { get; }
+
+    /// <summary>
+    /// <c>align_multiline_statement_conditions</c>: a condition broken across lines is laid out from
+    /// the column just after the statement's <c>(</c> rather than from an indent level.
+    /// </summary>
+    public bool AlignMultilineStatementConditions { get; }
+
     public bool IndentSwitchLabels { get; }
     public bool IndentBreakFromCase { get; }
     public bool IndentInsideNamespace { get; }
@@ -721,7 +729,14 @@ public static class Ids {
         Of("resharper_csharp_space_within_single_line_array_initializer_braces");
 
     public static readonly OptionId SpaceWithinSlicePattern = Of("resharper_csharp_space_within_slice_pattern");
-    public static readonly OptionId SpaceWithinSpreadPattern = Of("resharper_space_within_spread_pattern");
+
+    // ⚠ Inert since milestone 3.1, and it was Tier A before it — on a fixture that cannot tell the
+    // two values apart. Asked directly at both values, the oracle returns `[1, .. xs, 2]` and
+    // `[1, ..xs, 2]` exactly as written: the gap after a collection expression's `..` is not
+    // governed by anything, and this key's name is the only reason anyone thought it was.
+    // `space_within_slice_pattern` is the one that really does govern its own construct, and it
+    // stays Tier A. SK-DIV-0009.
+    public static readonly OptionId SpaceWithinSpreadPattern = OfInert("resharper_space_within_spread_pattern");
 
     public static readonly OptionId SpaceBeforeTrailingComment = Of("resharper_csharp_space_before_trailing_comment");
     public static readonly OptionId SpaceBeforeTrailingCommentText = Of("resharper_space_before_trailing_comment_text");
@@ -743,6 +758,10 @@ public static class Ids {
     public static readonly OptionId AllowCommentAfterLbrace = Of("resharper_csharp_allow_comment_after_lbrace");
 
     public static readonly OptionId IndentBraces = Of("csharp_indent_braces");
+
+    public static readonly OptionId AlignMultilineStatementConditions =
+        Of("resharper_csharp_align_multiline_statement_conditions");
+
     public static readonly OptionId IndentSwitchLabels = Of("resharper_indent_switch_labels");
     public static readonly OptionId IndentBreakFromCase = Of("resharper_indent_break_from_case");
     public static readonly OptionId IndentInsideNamespace = Of("resharper_csharp_indent_inside_namespace");

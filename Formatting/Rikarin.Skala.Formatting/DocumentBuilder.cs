@@ -40,6 +40,15 @@ public sealed class DocumentBuilder {
     /// <summary>Width from a group's own first break point to the next. <see cref="Document.AfterPointOf"/>.</summary>
     int[] _afterPoint = new int[512];
 
+    /// <summary>
+    /// The groups that own at least one break point.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ It gates <see cref="MeasureSegments"/>'s descent, so that the root group — which owns no
+    /// points and contains the file — is never walked and the measure stays linear in practice.
+    /// </remarks>
+    readonly HashSet<int> _ownPoints = [];
+
     /// <summary>Flat width from one fill point to the next. <see cref="Document.SegmentOf"/>.</summary>
     int[] _segment = new int[512];
 
@@ -163,8 +172,17 @@ public sealed class DocumentBuilder {
         ref var node = ref _nodes[_pending[index]];
         node.Arg2 = group;
         node.Flags = (flatSpace ? (int)LineFlags.FlatSpace : 0) | (fill ? (int)LineFlags.FillPoint : 0);
+        _ownPoints.Add(group);
 
         // ⚠ A break point stops the point measure, which is what distinguishes it from the head.
+        // ⚠ And it contributes nothing to it. "The rest of this line if every break point is taken"
+        // ends *before* the space the point would have rendered as, and LayoutWriter.TrailingWidth
+        // already says so for a point that is a direct sibling — but a point nested inside a group
+        // reached that code through the group's own point width, which was counting it. The two
+        // disagreeing is worth a column, and a column is a wrap: an expression-bodied member whose
+        // declaration is exactly 120 wide came back with its parameter list chopped, while the same
+        // declaration with a block body did not.
+        _pointWidth[_pending[index]] = 0;
         _breaks[_pending[index]] = true;
     }
 
@@ -336,40 +354,83 @@ public sealed class DocumentBuilder {
     /// visited by exactly one of them.
     /// </remarks>
     int MeasureSegments(int childStart, int count, int group) {
+        if (!_ownPoints.Contains(group)) {
+            return 0;
+        }
+
         var first = -1;
-        for (var i = 0; i < count; i++) {
-            var child = _children[childStart + i];
-            if (!IsOwnBreakPoint(child, group)) {
-                continue;
-            }
+        var current = -1;
+        var flat = 0;
+        var point = 0;
+        var pointStopped = false;
 
-            var flat = 0;
-            var point = 0;
-            var pointStopped = false;
-            for (var j = i + 1; j < count; j++) {
-                var following = _children[childStart + j];
-                if (IsOwnBreakPoint(following, group)) {
-                    break;
-                }
+        Walk(childStart, count);
+        Flush();
+        return first < 0 ? 0 : _afterPoint[first];
 
-                flat = flat >= Document.Unbounded || _flatWidth[following] >= Document.Unbounded
-                    ? Document.Unbounded
-                    : flat + _flatWidth[following];
-
-                if (!pointStopped) {
-                    point += _pointWidth[following];
-                    pointStopped = _breaks[following];
-                }
-            }
-
-            _segment[child] = flat;
-            _afterPoint[child] = point;
-            if (first < 0) {
-                first = child;
+        void Flush() {
+            if (current >= 0) {
+                _segment[current] = flat;
+                _afterPoint[current] = point;
             }
         }
 
-        return first < 0 ? 0 : _afterPoint[first];
+        void Walk(int start, int n) {
+            for (var i = 0; i < n; i++) {
+                var child = _children[start + i];
+                if (IsOwnBreakPoint(child, group)) {
+                    Flush();
+                    current = child;
+                    flat = 0;
+                    point = 0;
+                    pointStopped = false;
+                    if (first < 0) {
+                        first = child;
+                    }
+
+                    continue;
+                }
+
+                // ⚠ A container is spliced rather than measured, because a group's own break points
+                // are not always its direct children: a group that spends a continuation level opens
+                // the indent scope *inside* itself, so every one of its points is a grandchild.
+                // Measuring the container as one child leaves both numbers below at zero for the
+                // whole `=` family and for every delimited list that spends a level — which makes a
+                // fill never break and the ordering rule's second question answer "yes"
+                // unconditionally.
+                // ⚠ `IfBroken` is not spliced: its flat width is one branch's rather than the sum,
+                // so splicing it would count both.
+                ref var node = ref _nodes[child];
+                if (node.Count > 0 && node.Kind is DocKind.Concat or DocKind.Group or DocKind.Indent or DocKind.Fill) {
+                    Walk(node.Payload, node.Count);
+                    continue;
+                }
+
+                // ⚠ A break the rules require ends the segment rather than making it infinite. A
+                // list pattern whose items the author pinned one per line has hard lines between
+                // the fill's own points, and measuring one of those as "infinitely wide" makes the
+                // fill point in front of it break — so a byte array written eight per line came back
+                // seven and one.
+                if (node.Kind == DocKind.Line && _flatWidth[child] >= Document.Unbounded) {
+                    Flush();
+                    current = -1;
+                    continue;
+                }
+
+                if (current < 0) {
+                    continue;
+                }
+
+                flat = flat >= Document.Unbounded || _flatWidth[child] >= Document.Unbounded
+                    ? Document.Unbounded
+                    : flat + _flatWidth[child];
+
+                if (!pointStopped) {
+                    point += _pointWidth[child];
+                    pointStopped = _breaks[child];
+                }
+            }
+        }
     }
 
     /// <summary>Whether this child is a break point belonging to the group being closed.</summary>

@@ -36,7 +36,35 @@ of the formatter. And "99 % means 13 000 lines Rider will reformat back" is the 
 two, because Skala does not *touch* what it cannot see — the disagreement is code Skala left alone,
 not code it moved.
 
-**Residual risk: high.** This is the risk that decides whether the project succeeds.
+⚠ **M3.1 measured it again at 99.70 %, and the rule is still not met: 37 of 56.** The count is
+`constructs`' own, now run with the oracle's preprocessor symbols supplied — without them a file
+wrapped in a `#if` is disabled text for Skala and every line of it counts against whatever construct
+happens to own it, which attributes SK-DIV-0004 to `ClassDeclaration` and says nothing about either.
+
+⚠ **And R1 as written cannot be met short of 100 %, which is worth saying plainly rather than
+missing it four milestones in a row.** The report attributes every divergent line to the innermost
+node that owns it, so "at 100 %" means "no divergent line is attributed to this construct". The
+nineteen constructs that fail are `IdentifierName` (92 divergent lines), `ArgumentList` (28),
+`StringLiteralExpression` (25), `Block` (21) — and `ForStatement` (2 of 2 lines it owns),
+`OmittedTypeArgument` (2), `DefaultLiteralExpression` (1). The first four are where a wrap decision
+*lands*; the last three are constructs that own two or three lines of the whole corpus, so one
+divergence is 33 % of them. Both halves say the same thing: **every divergent line is attributed to
+something that occurs more than fifty times, because everything that occurs at all occurs more than
+fifty times.** R1 is therefore equivalent to 100 % line fidelity, and it should be re-stated for M4
+as a rule about constructs whose *attributed share* is above a threshold rather than about any
+divergence at all.
+
+⚠ **The tool for working it is new and it is not the ranked report.** `locate <set> <kind>` prints
+the divergent lines attributed to one construct with file and line, because the ranked report orders
+by line count and R1 counts constructs — a construct with two divergent lines is exactly as far from
+the rule as one with ninety, and the ranked report never shows it. Nine of the eleven constructs
+that moved to 100 % at M3.1 were found that way.
+
+**Residual risk: high.** This is the risk that decides whether the project succeeds. ⚠ The number is
+much better than it was — one line in 333 rather than one in a hundred — and the *shape* of the
+residue is now known well enough to say that the last of it is not reachable by more of the same
+work: see [../divergences.md](../divergences.md) § SK-DIV-0005, where the rule ReSharper applies was
+swept over a hundred cells and is not a function of anything this formatter measures.
 
 ### R2 — The fitting engine is the only novel code, and novel code is where the bugs are
 
@@ -55,6 +83,15 @@ three worst bugs in the milestone were found by properties rather than by fideli
 non-idempotency that no corpus file contains and that took a 4 708-file tree to surface, and a
 blank-line rule that disagreed with itself between the first pass and the second. Neither moved the
 fidelity number at all before it was fixed.
+
+⚠ **M3.1 found the third and it had been there since M3.** Two of the fitter's three measures —
+`AfterPoint` and `SegmentOf` — were **zero for every group that spends a continuation level**,
+because `MeasureSegments` looked for a group's own break points among its direct children and such a
+group opens its indent scope inside itself. Neither property caught it: the output was idempotent,
+token-equivalent, deterministic and stable, and simply not what the oracle writes. It cost 0.1 points
+of line fidelity and three points of file fidelity, and it was found by reading a diff rather than by
+a test. ⚠ The lesson for M4 is that the property suite tests *consistency*, and a measure that is
+consistently zero is consistent.
 
 **Residual risk: medium.** Contained by testing, not by cleverness.
 

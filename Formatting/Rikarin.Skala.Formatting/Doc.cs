@@ -144,7 +144,18 @@ public enum IndentKind {
     None,
 
     /// <summary>One level less — the nested-statement outdent family.</summary>
-    Outdent
+    Outdent,
+
+    /// <summary>
+    /// A column rather than a level: everything inside starts at the column the scope opened at.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ docs/plan/04 reserves an <c>Align</c> node and milestones 1–3 never produced one, which is
+    /// what SK-DIV-0008 recorded. <c>align_multiline_statement_conditions = true</c> is the key that
+    /// needs it: a condition broken across lines is laid out from the column just after the
+    /// statement's <c>(</c>, which is not a multiple of the indent width.
+    /// </remarks>
+    Align
 }
 
 /// <summary>

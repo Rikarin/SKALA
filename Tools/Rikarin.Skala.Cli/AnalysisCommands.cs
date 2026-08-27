@@ -74,15 +74,16 @@ public static partial class SkalaCommandLine {
         // ⚠ Off by default. docs/plan/16 § Q5: the severities in a Rider export were chosen for
         // ReSharper's inspections, and the author's own export would switch SK1020 off.
         var resharperSeverities = new Option<bool>("--resharper-severities") {
-            Description = "Let a resharper_*_highlighting key set a Skala rule's severity. dotnet_diagnostic.SK… still wins."
+            Description =
+                "Let a resharper_*_highlighting key set a Skala rule's severity. dotnet_diagnostic.SK… still wins."
         };
 
         var command = new Command("check", "Run the analyzers and report, with a gate.");
         command.Arguments.Add(paths);
         foreach (var option in new Option[] {
-                load, binlog, project, requireFresh, gate, format, output, includeHints, noCache, noColor,
-                showSuppressions, rules, define, noFormatting, resharperSeverities
-            }) {
+                     load, binlog, project, requireFresh, gate, format, output, includeHints, noCache, noColor,
+                     showSuppressions, rules, define, noFormatting, resharperSeverities
+                 }) {
             command.Options.Add(option);
         }
 

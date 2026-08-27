@@ -737,10 +737,10 @@ public sealed class BreakPositionTests {
         // walk order rather than an iteration. If a front end ever breaks it, the only monotone
         // answer is Broken and the layout is a guess; this counts the guesses and there are none.
         foreach (var source in new[] {
-                "class C { int P => 1; }", "class C { void M(bool f) { if (f) G(); } }",
-                "class C { void M(int v) { switch (v) { case 1: G(); break; } } }",
-                "class C { int P { get => 1; set => _f = value; } }"
-            }) {
+                     "class C { int P => 1; }", "class C { void M(bool f) { if (f) G(); } }",
+                     "class C { void M(int v) { switch (v) { case 1: G(); break; } } }",
+                     "class C { int P { get => 1; set => _f = value; } }"
+                 }) {
             Assert.Equal(0, Format.OwnerUnresolved(source));
         }
     }
@@ -767,7 +767,8 @@ public sealed class XmlDocTests {
     public void TwoSiblingParamTags_AreWellFormed() {
         // ⚠ A doc comment is a fragment, not a document. Two <param> siblings are ordinary, and
         // judging them by document rules would report most of the corpus.
-        const string source = "class C {\n    /// <param name=\"a\">A.</param>\n    /// <param name=\"b\">B.</param>\n    void M(int a, int b) { }\n}\n";
+        const string source =
+            "class C {\n    /// <param name=\"a\">A.</param>\n    /// <param name=\"b\">B.</param>\n    void M(int a, int b) { }\n}\n";
 
         Assert.DoesNotContain(
             Format.Run(source).Diagnostics,
@@ -781,7 +782,8 @@ public sealed class XmlDocTests {
         // missing space after `///`, not a 128-column summary, not two tags on one line — so Skala
         // does not either. A formatter that re-wrapped them would diverge from the oracle on every
         // doc comment in the corpus, with no oracle to check itself against while doing it.
-        const string source = "class C {\n    ///<summary>A summary line that runs a long way past one hundred and twenty columns in total, easily.</summary>\n    void M() { }\n}\n";
+        const string source =
+            "class C {\n    ///<summary>A summary line that runs a long way past one hundred and twenty columns in total, easily.</summary>\n    void M() { }\n}\n";
 
         Assert.Contains("///<summary>", Format.Text(source), StringComparison.Ordinal);
     }

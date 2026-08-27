@@ -30,10 +30,10 @@ public sealed class ProjectGraphTests {
         // Rikarin.Skala.Cli` is not.
         foreach (var project in Projects) {
             foreach (var reference in project.ProjectReferences.Where(static r => r.Path.EndsWith(
-                        "Rikarin.Skala.Cli.csproj",
-                        StringComparison.Ordinal
-                    )
-                )) {
+                             "Rikarin.Skala.Cli.csproj",
+                             StringComparison.Ordinal
+                         )
+                     )) {
                 Assert.False(
                     reference.ReferencesOutputAssembly,
                     $"{project.Name} takes a compile-time reference on the CLI."
@@ -42,11 +42,7 @@ public sealed class ProjectGraphTests {
         }
 
         var sources = Directory.EnumerateFiles(RepositoryPaths.Root, "*.cs", SearchOption.AllDirectories)
-            .Where(static path => !path.Contains(
-                    $"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}",
-                    StringComparison.Ordinal
-                )
-            )
+            .Where(static path => !ProjectFile.IsScratch(path))
             .Where(static path => !path.Contains(
                     $"{Path.DirectorySeparatorChar}Rikarin.Skala.Cli{Path.DirectorySeparatorChar}",
                     StringComparison.Ordinal
@@ -89,10 +85,7 @@ public sealed class ProjectGraphTests {
         // hand-rolled `SyntaxKind` copy would, and it would be worse.
         var directory = System.IO.Path.GetDirectoryName(formatting.Path)!;
         foreach (var source in Directory.EnumerateFiles(directory, "*.cs", SearchOption.AllDirectories)) {
-            if (source.Contains(
-                    $"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}",
-                    StringComparison.Ordinal
-                )) {
+            if (ProjectFile.IsScratch(source)) {
                 continue;
             }
 
@@ -167,11 +160,11 @@ public sealed class ProjectGraphTests {
         // netstandard2.0 for the same reason but is an ordinary library rather than a Roslyn
         // component, and its own reference set is checked by being the only thing Rules may name.
         foreach (var project in Projects.Where(static p => p.Name.EndsWith(".Rules", StringComparison.Ordinal)
-                    || p.Name.EndsWith(
-                        ".Generator",
-                        StringComparison.Ordinal
-                    )
-            )) {
+                     || p.Name.EndsWith(
+                         ".Generator",
+                         StringComparison.Ordinal
+                     )
+                 )) {
             Assert.Equal("netstandard2.0", project.TargetFramework);
 
             foreach (var package in project.PackageReferences) {
@@ -209,24 +202,38 @@ public sealed record ProjectFile(
     string? TargetFramework,
     IReadOnlyList<string> PackageReferences,
     IReadOnlyList<ProjectDependency> ProjectReferences) {
+    /// <summary>
+    /// Every project of the repository, from the file system.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ <c>.claude/worktrees/</c> is excluded, and it is not housekeeping. An agent worktree is a
+    /// second checkout of this repository <em>inside</em> it, so every project appears twice and
+    /// `Assert.Single` fails on a tree nobody edited — a gate that goes red because somebody else
+    /// started a task is not a gate. It is the same mistake the Vixen corpus sample made, one
+    /// directory up.
+    /// </remarks>
     public static IReadOnlyList<ProjectFile> LoadAll(string root) =>
         Directory.EnumerateFiles(root, "*.csproj", SearchOption.AllDirectories)
-        .Where(static path => !path.Contains(
-                $"{System.IO.Path.DirectorySeparatorChar}obj{System.IO.Path.DirectorySeparatorChar}",
-                StringComparison.Ordinal
-            )
-        )
-        .Select(Load)
-        .OrderBy(static project => project.Name, StringComparer.Ordinal)
-        .ToArray();
+            .Where(static path => !IsScratch(path))
+            .Select(Load)
+            .OrderBy(static project => project.Name, StringComparer.Ordinal)
+            .ToArray();
+
+    /// <summary>Build output, and any checkout of this repository nested inside it.</summary>
+    internal static bool IsScratch(string path) {
+        var separator = System.IO.Path.DirectorySeparatorChar;
+        return path.Contains($"{separator}obj{separator}", StringComparison.Ordinal)
+            || path.Contains($"{separator}bin{separator}", StringComparison.Ordinal)
+            || path.Contains($"{separator}.claude{separator}", StringComparison.Ordinal);
+    }
 
     static ProjectFile Load(string path) {
         var document = XDocument.Load(path);
         var name = System.IO.Path.GetFileNameWithoutExtension(path);
         var packages = document.Descendants("PackageReference")
             .Select(static element => element.Attribute("Include")?.Value
-                    ?? element.Attribute("Update")?.Value
-                    ?? string.Empty
+                ?? element.Attribute("Update")?.Value
+                ?? string.Empty
             )
             .Where(static value => value.Length > 0 && !value.StartsWith("@(", StringComparison.Ordinal))
             .ToArray();

@@ -77,7 +77,8 @@ public static class OptionResolver {
     public static ResolutionResult Resolve(
         string sourcePath,
         IReadOnlyList<KeyValuePair<string, string>>? overrides = null
-    ) => Resolve(EditorConfigChain.For(sourcePath), overrides);
+    ) =>
+        Resolve(EditorConfigChain.For(sourcePath), overrides);
 
     public static ResolutionResult Resolve(
         EditorConfigChain chain,

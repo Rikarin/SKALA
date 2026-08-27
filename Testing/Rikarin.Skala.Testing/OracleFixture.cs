@@ -26,7 +26,7 @@ public sealed record OracleHeader(string ReSharperVersion, string ConfigHash, st
             ? new OracleHeader(
                 version,
                 fields.GetValueOrDefault("config", string.Empty)
-                .Replace("sha256:", string.Empty, StringComparison.Ordinal),
+                    .Replace("sha256:", string.Empty, StringComparison.Ordinal),
                 fields.GetValueOrDefault("profile", string.Empty),
                 fields.GetValueOrDefault("generated", string.Empty)
             )

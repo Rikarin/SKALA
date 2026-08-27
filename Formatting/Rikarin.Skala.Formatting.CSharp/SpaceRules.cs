@@ -18,8 +18,40 @@ namespace Rikarin.Skala.Formatting.CSharp;
 /// </para>
 /// </remarks>
 public static class SpaceRules {
-    public static SpaceKind Decide(SyntaxToken prev, SyntaxToken next, in PhaseOneOptions o) =>
-        MustSeparate(prev, next) || Required(prev, next, o) ? SpaceKind.Required : SpaceKind.Forbidden;
+    public static SpaceKind Decide(SyntaxToken prev, SyntaxToken next, in PhaseOneOptions o) {
+        if (MustSeparate(prev, next)) {
+            return SpaceKind.Required;
+        }
+
+        return Ungoverned(prev, next)
+            ? SpaceKind.Preserve
+            : Required(prev, next, o) ? SpaceKind.Required : SpaceKind.Forbidden;
+    }
+
+    /// <summary>
+    /// The gaps no rule in the export governs, where the oracle leaves whatever the author wrote.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ <see cref="SpaceKind.Preserve"/> exists in the IR from milestone 1 and nothing produced it
+    /// until now, which made this class total in the wrong way: every gap got an answer and two of
+    /// them were answers the oracle does not give. Asked directly, <c>[1, ..a]</c> comes back
+    /// <c>..a</c> and <c>[1, ..   a]</c> comes back <c>.. a</c>; <c>a[1..3]</c> stays closed up and
+    /// <c>a[1  ..  3]</c> comes back <c>a[1 .. 3]</c>. That is not a rule with a value, it is
+    /// <c>extra_spaces = remove_all</c> collapsing a run in a gap nobody legislated.
+    /// <para>
+    /// ⚠ A slice pattern is <em>not</em> in this set and looks as though it should be:
+    /// <c>a is [1, ..var r]</c> comes back <c>.. var r</c>, a space the oracle inserts, because
+    /// <c>space_within_slice_pattern = true</c> really does govern that one. Reading
+    /// <c>space_within_spread_pattern</c> as the collection-expression twin of it — which is what
+    /// its name says — is what put a space Skala had no evidence for into 58 lines of
+    /// <c>corpus/real/</c>.
+    /// </para>
+    /// </remarks>
+    static bool Ungoverned(SyntaxToken prev, SyntaxToken next) =>
+        prev.IsKind(SyntaxKind.DotDotToken)
+            ? prev.Parent is SpreadElementSyntax or RangeExpressionSyntax { RightOperand: not null }
+            : next.IsKind(SyntaxKind.DotDotToken)
+            && next.Parent is RangeExpressionSyntax { LeftOperand: not null };
 
     static bool Required(SyntaxToken prev, SyntaxToken next, in PhaseOneOptions o) {
         var left = prev.Kind();
@@ -73,7 +105,12 @@ public static class SpaceRules {
         }
 
         if (left == SyntaxKind.CommaToken) {
-            return o.SpaceAfterComma;
+            // ⚠ `typeof(ValueTuple<,>)` — an unbound generic name's type argument list is nothing
+            // but commas and zero-width `OmittedTypeArgumentSyntax` nodes, so "a space follows a
+            // comma" writes `ValueTuple<, >`. The equivalent `int[,]` is already correct because a
+            // rank specifier's `]` is handled above; the angle brackets fall through to here.
+            return prev.Parent is not TypeArgumentListSyntax { Arguments: [OmittedTypeArgumentSyntax, ..] }
+                && o.SpaceAfterComma;
         }
 
         if (right == SyntaxKind.SemicolonToken) {
@@ -98,8 +135,8 @@ public static class SpaceRules {
         }
 
         // ── Spread and range ─────────────────────────────────────────────────────────────────
-        // `[.. items]` — space_within_spread_pattern = true. A range `a..b` binds tight; the
-        // spread's `..` is a prefix operator with an operand after it.
+        // `a is [1, .. var rest]` — space_within_slice_pattern = true. A collection expression's
+        // spread never reaches here: `Ungoverned` answered it before `Required` was called.
         if (left == SyntaxKind.DotDotToken) {
             return SpreadSpacing(prev, o);
         }
@@ -150,6 +187,32 @@ public static class SpaceRules {
             return !ClingsLeft(right);
         }
 
+        // ⚠ Colons before braces, because a case label's pattern can end with one:
+        // `case NamedTypeSymbol { TypeKind: TypeKind.Enum }:` reached the brace rule first, which
+        // asks only what clings to the left, and put a space in front of the colon.
+        // ── Colons ───────────────────────────────────────────────────────────────────────────
+        if (right == SyntaxKind.ColonToken) {
+            return next.Parent switch {
+                BaseListSyntax => o.SpaceBeforeColonInInheritance,
+                TypeParameterConstraintClauseSyntax => o.SpaceBeforeTypeParameterConstraintColon,
+                ConstructorInitializerSyntax or PrimaryConstructorBaseTypeSyntax => o.SpaceBeforeColonInCtorInitializer,
+                SwitchLabelSyntax => o.SpaceBeforeColonInCase,
+                ConditionalExpressionSyntax => o.SpaceBeforeTernaryColon,
+                _ => false
+            };
+        }
+
+        if (left == SyntaxKind.ColonToken) {
+            return prev.Parent switch {
+                BaseListSyntax => o.SpaceAfterColonInInheritance,
+                TypeParameterConstraintClauseSyntax => o.SpaceAfterTypeParameterConstraintColon,
+                ConstructorInitializerSyntax or PrimaryConstructorBaseTypeSyntax => true,
+                SwitchLabelSyntax => o.SpaceAfterColonInCase,
+                ConditionalExpressionSyntax => o.SpaceAfterTernaryColon,
+                _ => true
+            };
+        }
+
         // ── Braces ───────────────────────────────────────────────────────────────────────────
         if (right == SyntaxKind.OpenBraceToken) {
             return BeforeOpenBrace(prev, next, o);
@@ -221,29 +284,6 @@ public static class SpaceRules {
             return !ClingsLeft(right);
         }
 
-        // ── Colons ───────────────────────────────────────────────────────────────────────────
-        if (right == SyntaxKind.ColonToken) {
-            return next.Parent switch {
-                BaseListSyntax => o.SpaceBeforeColonInInheritance,
-                TypeParameterConstraintClauseSyntax => o.SpaceBeforeTypeParameterConstraintColon,
-                ConstructorInitializerSyntax or PrimaryConstructorBaseTypeSyntax => o.SpaceBeforeColonInCtorInitializer,
-                SwitchLabelSyntax => o.SpaceBeforeColonInCase,
-                ConditionalExpressionSyntax => o.SpaceBeforeTernaryColon,
-                _ => false
-            };
-        }
-
-        if (left == SyntaxKind.ColonToken) {
-            return prev.Parent switch {
-                BaseListSyntax => o.SpaceAfterColonInInheritance,
-                TypeParameterConstraintClauseSyntax => o.SpaceAfterTypeParameterConstraintColon,
-                ConstructorInitializerSyntax or PrimaryConstructorBaseTypeSyntax => true,
-                SwitchLabelSyntax => o.SpaceAfterColonInCase,
-                ConditionalExpressionSyntax => o.SpaceAfterTernaryColon,
-                _ => true
-            };
-        }
-
         // ── Operators ────────────────────────────────────────────────────────────────────────
         if (right == SyntaxKind.EqualsGreaterThanToken || left == SyntaxKind.EqualsGreaterThanToken) {
             return o.SpaceAroundLambdaArrow;
@@ -265,8 +305,15 @@ public static class SpaceRules {
             return !ClingsRight(left);
         }
 
-        if (IsPointerDeclarator(prev) || IsPointerDeclarator(next)) {
-            return o.SpaceBeforePointerAsterikDeclaration && IsPointerDeclarator(next);
+        // ⚠ `space_before_pointer_asterik_declaration` governs the gap in front of the `*` and there
+        // is no key for the one behind it, because behind it is an ordinary "a type is followed by a
+        // name" gap. Answering both sides from the one key writes `int*p` and `void M(int**q)`.
+        if (IsPointerDeclarator(next)) {
+            return o.SpaceBeforePointerAsterikDeclaration;
+        }
+
+        if (IsPointerDeclarator(prev)) {
+            return !ClingsLeft(right);
         }
 
         if (IsBinaryOperator(prev) || IsBinaryOperator(next)) {
@@ -330,17 +377,16 @@ public static class SpaceRules {
     /// The gap around a <c>..</c>. ⚠ A prefix range with no left operand — which is how Roslyn
     /// parses a spread inside an array initializer — is a spread, not a range, and gets the space.
     /// </summary>
+    /// <summary>
+    /// The gap beside a <c>..</c> that a rule really does govern: a slice pattern's.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ A collection expression's spread element used to be answered here too, out of
+    /// <c>space_within_spread_pattern</c>. It is not governed at all — see <see cref="Ungoverned"/>
+    /// — and the key is inert at both values.
+    /// </remarks>
     static bool SpreadSpacing(SyntaxToken token, in PhaseOneOptions o) =>
-        token.Parent switch {
-            SpreadElementSyntax => o.SpaceWithinSpreadPattern,
-            SlicePatternSyntax => o.SpaceWithinSlicePattern,
-            RangeExpressionSyntax {
-                LeftOperand: null,
-                Parent: InitializerExpressionSyntax or CollectionExpressionSyntax
-            } =>
-                o.SpaceWithinSpreadPattern,
-            _ => false
-        };
+        token.Parent is SlicePatternSyntax && o.SpaceWithinSlicePattern;
 
     /// <summary>Tokens that never take a space on their left.</summary>
     static bool ClingsLeft(SyntaxKind kind) =>
@@ -398,7 +444,11 @@ public static class SpaceRules {
                 return o.SpaceBeforeCheckedParentheses;
 
             case SyntaxKind.NewKeyword:
-                return o.SpaceBeforeNewParentheses;
+                // ⚠ `new (string Name, int Value)[] { … }` — the parenthesis opens a tuple *type*,
+                // not an argument list, so `space_before_new_parentheses = false` has nothing to say
+                // about it and closing it up produces `new(string Name, int Value)[]`, which reads
+                // as an implicit object creation and is not one.
+                return next.Parent is TupleTypeSyntax || o.SpaceBeforeNewParentheses;
 
             default:
                 break;
@@ -412,7 +462,7 @@ public static class SpaceRules {
             or BaseParameterListSyntax { Parameters.Count: 0 };
 
         switch (next.Parent) {
-            case ParameterListSyntax { Parent: ParenthesizedLambdaExpressionSyntax } :
+            case ParameterListSyntax { Parent: ParenthesizedLambdaExpressionSyntax }:
                 // ⚠ A lambda's parentheses are the head of an operand, not a call site: whatever
                 // precedes decides. `x += (a, b) => …` needs its space; `M((a, b) => …)` does not.
                 return !ClingsRight(prev.Kind()) && !IsCallSite(prev);
@@ -422,7 +472,7 @@ public static class SpaceRules {
 
             case ArgumentListSyntax {
                 Parent: ObjectCreationExpressionSyntax or ImplicitObjectCreationExpressionSyntax
-            } :
+            }:
                 return o.SpaceBeforeNewParentheses;
 
             case ArgumentListSyntax or AttributeArgumentListSyntax:
@@ -474,8 +524,20 @@ public static class SpaceRules {
             : next.Parent switch {
                 AttributeListSyntax => !ClingsRight(prev.Kind()),
                 ArrayRankSpecifierSyntax => o.SpaceBeforeArrayRankBrackets,
-                BracketedArgumentListSyntax or ImplicitElementAccessSyntax => o.SpaceBeforeArrayAccessBrackets,
+                // ⚠ `{ [key] = v, [key2] = v2 }` — an implicit element access has no operand in
+                // front of it, so `space_before_array_access_brackets` has no gap to govern and
+                // whatever precedes decides. Sharing the rule with a real `a[i]` deletes the space
+                // after the separating comma, which is 55 lines of `corpus/real/`. ⚠ The `[` of an
+                // implicit element access hangs from its `BracketedArgumentListSyntax` like any
+                // other indexer's, so the two are told apart by that list's own parent.
+                BracketedArgumentListSyntax { Parent: ImplicitElementAccessSyntax } => !ClingsRight(prev.Kind()),
+                BracketedArgumentListSyntax => o.SpaceBeforeArrayAccessBrackets,
+                ImplicitElementAccessSyntax => !ClingsRight(prev.Kind()),
                 BracketedParameterListSyntax => o.SpaceBeforeMethodParentheses,
+                // ⚠ A cast's closing parenthesis is not a call site, and this is the one place the
+                // difference shows: `(IrBindingKind[]) [a, b]` comes back from the oracle with the
+                // space, because the bracket is the cast's operand rather than an indexer on its
+                // result. `a[i]` and `M()[i]` still close up.
                 CollectionExpressionSyntax or ListPatternSyntax => !ClingsRight(prev.Kind()) && !IsCallSite(prev),
                 _ => o.SpaceBeforeOpenSquareBrackets
             };
@@ -535,6 +597,7 @@ public static class SpaceRules {
         token.Kind() is SyntaxKind.LessThanToken or SyntaxKind.GreaterThanToken
         && token.Parent is TypeArgumentListSyntax
             or TypeParameterListSyntax
+            or FunctionPointerParameterListSyntax
             or FunctionPointerUnmanagedCallingConventionListSyntax;
 
     static bool IsPrefixOperator(SyntaxToken token) =>
@@ -543,8 +606,17 @@ public static class SpaceRules {
     static bool IsPostfixOperator(SyntaxToken token) =>
         token.Parent is PostfixUnaryExpressionSyntax postfix && postfix.OperatorToken == token;
 
+    /// <summary>
+    /// The <c>*</c> of a pointer type, <c>delegate*</c>'s included.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ A function pointer's asterisk hangs from <see cref="FunctionPointerTypeSyntax"/> rather
+    /// than from a <see cref="PointerTypeSyntax"/>, so it fell through to the operator rules and
+    /// came back as a multiplication: <c>readonly delegate * unmanaged &lt; nint, nint &gt; f;</c>.
+    /// </remarks>
     static bool IsPointerDeclarator(SyntaxToken token) =>
-        token.IsKind(SyntaxKind.AsteriskToken) && token.Parent is PointerTypeSyntax;
+        token.IsKind(SyntaxKind.AsteriskToken)
+        && token.Parent is PointerTypeSyntax or FunctionPointerTypeSyntax;
 
     static bool IsBinaryOperator(SyntaxToken token) =>
         token.Parent is BinaryExpressionSyntax binary

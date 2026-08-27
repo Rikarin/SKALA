@@ -131,7 +131,7 @@ public sealed class LanguageServer {
                 ["documentRangeFormattingProvider"] = true,
                 ["codeActionProvider"] = true,
                 ["diagnosticProvider"] =
-                    new JsonObject { ["interFileDependencies"] = false,["workspaceDiagnostics"] = false }
+                    new JsonObject { ["interFileDependencies"] = false, ["workspaceDiagnostics"] = false }
             },
             ["serverInfo"] = new JsonObject {
                 ["name"] = "skala",
@@ -177,7 +177,7 @@ public sealed class LanguageServer {
 
         var array = new JsonArray();
         foreach (var edit in edits) {
-            array.Add(new JsonObject { ["range"] = RangeOf(source, edit.Span),["newText"] = edit.NewText });
+            array.Add(new JsonObject { ["range"] = RangeOf(source, edit.Span), ["newText"] = edit.NewText });
         }
 
         return array;
@@ -193,16 +193,16 @@ public sealed class LanguageServer {
             }
         }
 
-        return new JsonObject { ["kind"] = "full",["items"] = items };
+        return new JsonObject { ["kind"] = "full", ["items"] = items };
     }
 
     static JsonObject Render(SourceText source, SkalaDiagnostic diagnostic) {
         var line = Math.Clamp(diagnostic.Line - 1, 0, Math.Max(0, source.Lines.Count - 1));
         return new JsonObject {
             ["range"] = new JsonObject {
-                ["start"] = new JsonObject { ["line"] = line,["character"] = 0 },
+                ["start"] = new JsonObject { ["line"] = line, ["character"] = 0 },
                 ["end"] = new JsonObject {
-                    ["line"] = line,["character"] = source.Lines.Count == 0 ? 0 : source.Lines[line].Span.Length
+                    ["line"] = line, ["character"] = source.Lines.Count == 0 ? 0 : source.Lines[line].Span.Length
                 }
             },
             ["severity"] = diagnostic.Severity switch {
@@ -231,7 +231,7 @@ public sealed class LanguageServer {
         var source = SourceText.From(_open.GetValueOrDefault(uri) ?? result.Original.ToString(), Encoding.UTF8);
         var edits = new JsonArray();
         foreach (var edit in result.Edits) {
-            edits.Add(new JsonObject { ["range"] = RangeOf(source, edit.Span),["newText"] = edit.NewText });
+            edits.Add(new JsonObject { ["range"] = RangeOf(source, edit.Span), ["newText"] = edit.NewText });
         }
 
         actions.Add(
@@ -266,8 +266,8 @@ public sealed class LanguageServer {
         var start = source.Lines.GetLinePosition(Math.Clamp(span.Start, 0, source.Length));
         var end = source.Lines.GetLinePosition(Math.Clamp(span.End, 0, source.Length));
         return new JsonObject {
-            ["start"] = new JsonObject { ["line"] = start.Line,["character"] = start.Character },
-            ["end"] = new JsonObject { ["line"] = end.Line,["character"] = end.Character }
+            ["start"] = new JsonObject { ["line"] = start.Line, ["character"] = start.Character },
+            ["end"] = new JsonObject { ["line"] = end.Line, ["character"] = end.Character }
         };
     }
 
@@ -276,13 +276,13 @@ public sealed class LanguageServer {
         Uri.TryCreate(uri, UriKind.Absolute, out var parsed) && parsed.IsFile ? parsed.LocalPath : null;
 
     static JsonObject Result(JsonNode? id, JsonNode? value) =>
-        new() { ["jsonrpc"] = "2.0",["id"] = id?.DeepClone(),["result"] = value };
+        new() { ["jsonrpc"] = "2.0", ["id"] = id?.DeepClone(), ["result"] = value };
 
     static JsonObject Error(JsonNode? id, int code, string message) =>
         new() {
             ["jsonrpc"] = "2.0",
             ["id"] = id?.DeepClone(),
-            ["error"] = new JsonObject { ["code"] = code,["message"] = message }
+            ["error"] = new JsonObject { ["code"] = code, ["message"] = message }
         };
 
     async Task<JsonObject?> ReadMessageAsync() {

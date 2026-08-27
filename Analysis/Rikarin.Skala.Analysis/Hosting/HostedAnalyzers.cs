@@ -151,21 +151,21 @@ public static class HostedAnalyzers {
             var context = new PackageLoadContext(package.Package, directory);
             var loaded = 0;
             foreach (var assembly in Directory.EnumerateFiles(directory, "*.dll")
-                .OrderBy(
-                    static file => file,
-                    StringComparer.Ordinal
-                )) {
+                         .OrderBy(
+                             static file => file,
+                             StringComparer.Ordinal
+                         )) {
                 try {
                     foreach (var analyzer in Instantiate(context.LoadFromAssemblyPath(assembly))) {
                         analyzers.Add(analyzer);
                         loaded++;
                     }
                 } catch (Exception exception) when (exception is BadImageFormatException
-                    or FileLoadException
-                    or ReflectionTypeLoadException
-                    or TypeLoadException
-                    or MissingMethodException
-                    or IOException) {
+                                                        or FileLoadException
+                                                        or ReflectionTypeLoadException
+                                                        or TypeLoadException
+                                                        or MissingMethodException
+                                                        or IOException) {
                     // ⚠ Never fatal. See the type's remarks.
                     diagnostics.Add(
                         new SkalaDiagnostic(

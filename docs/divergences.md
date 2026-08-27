@@ -8,18 +8,32 @@ difference is a bug, and the harness cannot tell them apart without this file**
 
 Format: `## SK-DIV-nnnn — one line`, then the argument, then the option keys it touches.
 
-At milestone 3, `corpus/real/` is **98.86 %** of lines identical to the oracle over 380 files and
-76 660 lines — 874 lines that differ. Split by cause, which is the shape that says what is left:
-
-⚠ Milestone 5 leaves the line number where it was and moves the file number: 71.05 % → **71.32 %**,
-from the `>`-before-`(` fix in SK-DIV-0004 below. With preprocessor symbols supplied it is 98.93 % /
-71.58 %.
+At milestone 3.1, `corpus/real/` is **99.70 %** of lines and **85.79 %** of files identical to the
+oracle over 380 files and 76 375 lines, with the oracle's own preprocessor symbols supplied —
+**99.63 % / 85.26 %** without them. ⚠ Both numbers are reported because both are true of a real
+invocation: `skala format` on a loose file has no symbols and `skala format --load=binlog` has them,
+and `./build.sh Fidelity` prints the pair.
 
 | Files | Line fidelity | File fidelity | What the residue is |
 |---|---:|---:|---|
-| containing a `#if` (91) | 98.60 % | 62.64 % | SK-DIV-0001 and SK-DIV-0004 |
-| containing a raw literal (15) | 97.81 % | 53.33 % | SK-DIV-0003's remaining half |
-| neither (274) | 99.02 % | 74.82 % | SK-DIV-0005 and SK-DIV-0007, mostly |
+| containing a `#if` (91) | 99.36 % | 72.53 % | SK-DIV-0001, SK-DIV-0004 and ordinary tail |
+| containing a raw literal (11) | 99.68 % | 90.91 % | SK-DIV-0003's interpolated half |
+| neither (289) | **99.79 %** | 89.97 % | SK-DIV-0005 and SK-DIV-0011, mostly |
+
+⚠ **The revised milestone-3 bar of ≥ 99.5 % on files with no `#if` is met at 99.79 %. The ≥ 99.9 %
+overall bar is not met at 99.70 %,** and the entries below are what stands between the two: about
+230 divergent line slots across 51 files, of which roughly a tenth are inside a conditional branch
+neither tool compiles and the rest are the wrapping tail.
+
+The trajectory, so that "asymptotic" is a measurement rather than an adjective:
+
+| | line | file | corpus |
+|---|---:|---:|---|
+| M1 | 85 % bar | — | 380 files |
+| M2 | 97.47 % | 49.47 % | 380 files |
+| M3 | 98.86 % | 71.05 % | 380 files |
+| M5 | 98.93 % | 71.58 % | 380 files, symbols supplied |
+| M3.1 | **99.70 %** | **85.79 %** | 380 files, Vixen sample re-based |
 
 ---
 
@@ -38,9 +52,9 @@ disabled branch is the branch nobody compiled, so nobody would notice if it were
 exactly the property that makes mangling it unacceptable. A formatter that edits code it cannot
 parse is a formatter that will eventually edit it wrongly.
 
-Measured on `corpus/real/`: 141 lines across 73 files at M2, and of the same order at M3. Almost all
-of it is one blank line per `#if` region in Newtonsoft.Json, whose files are largely wrapped in
-`#if HAVE_BENCHMARKS`.
+Measured on `corpus/real/`: 141 lines across 73 files at M2; **18 lines across 17 files** at M3.1 —
+11 where Skala keeps a blank line the oracle removed and 7 where the oracle inserts one Skala does
+not. The class shrank because the rest of the tail shrank around it, not because it changed.
 
 - options: `resharper_csharp_keep_blank_lines_in_code`, `resharper_csharp_keep_blank_lines_in_declarations`
 
@@ -60,8 +74,6 @@ thing. The measurements are kept because the trajectory is the argument for the 
 | M2 | 747 | 175 | 0.97 % |
 | M3 | — | — | — (see SK-DIV-0005) |
 
-- options: `resharper_csharp_wrap_arguments_style`, `resharper_csharp_wrap_parameters_style`, `resharper_csharp_wrap_chained_method_calls`
-
 ## SK-DIV-0003 — an interpolated raw string literal is still emitted verbatim
 
 `resharper_csharp_indent_raw_literal_string = align` asks the formatter to move the closing
@@ -74,35 +86,26 @@ shift** — every interior line and the closing delimiter by the same number of 
 stripped result identical, character for character. The token-equivalence check would abort the file
 if that were untrue.
 
-⚠ What remains is the **interpolated** literal. `$"""…{x}…"""` is not one token but a run of them
-with expressions between, and it stays on the verbatim path [04](plan/04-formatting-engine.md) puts
-it on — "where a moved space changes the value". The option is Tier A on the strength of
+⚠ What remains is the **interpolated** literal, and the plain interpolated string with it.
+`$"""…{x}…"""` is not one token but a run of them with expressions between, and it stays on the
+verbatim path [04](plan/04-formatting-engine.md) puts it on — "where a moved space changes the
+value". The option is Tier A on the strength of
 `constructs/trivia/resharper_csharp_indent_raw_literal_string.cs`, and this entry is what its Tier B
 caveat in doc 04 was pointing at.
 
-Measured on `corpus/real/`: files containing a raw literal went from 94.41 % to 97.81 % of lines,
-and the 102 that remain are the interpolated ones and the alignment of what surrounds them.
+Measured on `corpus/real/`: files containing a raw literal went 94.41 % (M1) → 97.81 % (M3) →
+**99.68 %** of lines and **90.91 %** of files at M3.1, over the re-based sample's 11 such files.
+
+⚠ **C# 11 made this reachable from ordinary code and it broke a property test rather than the
+formatter.** A newline is legal inside an interpolation hole, so a multi-line interpolated string is
+now something people write; `PropertyTests.MutateIndentationOnly` walked into one — it is a run of
+tokens rather than one token, so the per-token guard missed it — and added whitespace that neither
+Skala nor the oracle absorbs. The mutation now leaves the whole expression alone, the same way it
+already left raw strings and disabled text alone.
 
 - options: `resharper_csharp_indent_raw_literal_string`
 
-## SK-DIV-0004 — `skala format` has no preprocessor symbols, so `#if DEBUG` bodies are frozen
-
-The oracle runs `cleanupcode` against a project, so `DEBUG`, `TRACE` and the target framework's
-symbols are defined and it formats the inside of a `#if DEBUG` block. `skala format` parses a file
-with no project and no symbols, so Roslyn hands that block back as `DisabledTextTrivia` and Skala
-leaves it byte-for-byte.
-
-⚠ This is a real limitation and not only a measurement artefact: on a tree with much conditional
-code, the conditional half is not formatted at all. It is safe — nothing is mangled — but it is not
-what a user would expect, and it is the strongest argument for `skala check`'s project loading
-([07](plan/07-analysis-host.md)) reaching `format` as well.
-
-Measured at M3: the 91 files of `corpus/real/` that contain a `#if` are at 98.60 % of lines against
-99.02 % for the 274 that do not, and 62.64 % of files against 74.82 %. Whole files are affected
-rather than lines: `Issue2504.cs` is wrapped in `#if (NET45 || NET5_0_OR_GREATER)`, so for Skala the
-entire body is disabled text and the file is reproduced unchanged.
-
-## ✅ Closed at milestone 5, and it was worth less than it looked
+## SK-DIV-0004 — ✅ closed at milestone 5, and the residue is not preprocessor-shaped
 
 `skala format --define A,B` supplies preprocessor symbols, and `--load=binlog|workspace` takes them
 from what the build actually compiled. `fidelity preprocessor` measures the result against the same
@@ -118,63 +121,86 @@ NETCOREAPP1_0_OR_GREATER … NETCOREAPP3_1_OR_GREATER          (18 symbols)
 
 | `corpus/real/` | no symbols | with symbols |
 |---|---:|---:|
-| the 91 files containing a `#if` | 98.60 % line / 62.64 % file | **98.92 %** / 63.74 % |
-| the 289 that do not | 98.93 % / 74.05 % | 98.93 % / 74.05 % |
-| overall (380) | 98.86 % / 71.32 % | **98.93 %** / 71.58 % |
+| the 91 files containing a `#if` | 99.04 % line / 70.33 % file | **99.36 %** / 72.53 % |
+| the 289 that do not | 99.79 % / 89.97 % | 99.79 % / 89.97 % |
+| overall (380) | 99.63 % / 85.26 % | **99.70 %** / 85.79 % |
 
-⚠ **A third of the M3 gap was the estimate; a fifth of it is the measurement.** Symbols close
-0.32 points on the `#if` files and 0.07 overall, not the ~0.4 that "a third of 874 divergent lines"
-implied. The reason is visible once the residue is attributed: what is left in those files is
-`wrap: one side continues where the other broke` (47 lines), the base64-literal shape SK-DIV-0005
-names (36), and blank lines around directives (23) — ordinary tail, not frozen disabled text. The
-`#if` files were never mostly SK-DIV-0004; they were tail with SK-DIV-0004 on top of it.
+⚠ **The branches nobody compiles stay frozen for both tools.** The oracle had these eighteen symbols
+and no more, so `#if HAVE_BENCHMARKS` in Newtonsoft is disabled text for ReSharper too. The entry is
+closed in the sense that Skala now sees whatever the oracle sees; it does not follow that either of
+them formats every branch, and neither does. Measured at M3.1: of 271 divergent line slots,
+**27 of 271 sat inside a branch neither tool compiles** when it was last attributed — the rest of the `#if` files' residue is ordinary
+tail that happens to live in a file that also has a `#if` in it.
 
-⚠ **And the branches nobody compiles stay frozen for both tools.** The oracle had these eighteen
-symbols and no more, so `#if HAVE_BENCHMARKS` in Newtonsoft is disabled text for ReSharper too. The
-entry is closed in the sense that Skala now sees whatever the oracle sees; it does not follow that
-either of them formats every branch, and neither does.
-
-⚠ **It also uncovered a formatter bug that had been invisible.** With `#if` bodies live, `count > (n)`
-came back as `count >(n)`: `IsCallSite` treated every `>` as a type-argument close, so the space
-after the operator was suppressed. Every corpus line that shows it is inside a `#if` body. The
-symbols did not cause the bug, they revealed it — file fidelity on the files with *no* `#if` went
-from 73.70 % to 74.05 % when it was fixed, which is a file that had been wrong since M1.
+⚠ **The symbols also uncovered a formatter bug that had been invisible**, which is why the
+differential now runs under both symbol sets by default. With `#if` bodies live, `count > (n)` came
+back as `count >(n)`: `IsCallSite` treated every `>` as a type-argument close. Every corpus line
+that shows it is inside a `#if` body. See [12](plan/12-conformance-and-testing.md) § "Both symbol
+sets"; the report's closing section names the divergences that appear under one and not the other,
+and at M3.1 it reads **0 with-symbols-only, 65 without**.
 
 - options: none
 - commands: `skala format --define`, `skala format --load=`, `fidelity preprocessor`
 
-## SK-DIV-0005 — the ordering rule's margin is an empirical constant, not a derivation
+## SK-DIV-0005 — the ordering rule's margin is a fitted constant, and the sweep says it is not a rule
 
 Milestone 3's ordering rule (`GroupFacts.PrefersOuterBreak`) decides which of a long line's
 candidate points is wrapped at. Its first question is "does this break alone finish the job", and
-the budget that question is asked against is **not** `max_line_length`.
+the budget that question is asked against is **not** `max_line_length`: the oracle stops taking the
+`=` break well before the continuation line reaches 120, and the result it declines fits with room
+to spare.
 
-Sweeping one shape a character at a time through the oracle at three nesting depths gives a clean
-threshold each time, and in every case the oracle stops taking the `=` break well before the
-continuation line reaches 120:
+⚠ **Milestone 3 read a formula off three cells and milestone 3.1 swept it properly.**
+`Testing/Rikarin.Skala.Testing/MarginSweep.cs`, run as `margin`, writes
+`var <name> = <rhs>;` with the right-hand side padded to a known length and the *name* padded so
+that the flat line comes to a chosen total — which sweeps the continuation width independently of
+how far over the margin the line was, something the milestone-3 experiment could not do. Eleven
+right-hand-side shapes, five block depths, both values of `wrap_before_eq`, one character at a time.
+The result is in [sk-div-0005-margin-sweep.md](sk-div-0005-margin-sweep.md), and it contradicts the
+milestone-3 note in three ways:
 
-| block depth | continuation column | longest continuation line the oracle still writes |
-|---:|---:|---:|
-| 2 | 12 | 109 |
-| 3 | 16 | 108 |
-| 4 | 20 | 107 |
+1. **The threshold does not depend on the nesting depth.** At a flat width of 121 the last
+   continuation line the oracle still writes is 112 columns at block depth 2, 3, 4, 5 and 6 alike.
+   The `column / indent` term milestone 3 derived was read off three cells that were confounded with
+   the shape's own width.
+2. **It does depend on the flat width, and not monotonically.** Same shape, same depth, sweeping the
+   flat width: 122 → 113, 124 → 115, 126 to 140 → 116, then back down, 146 → 112, 158 → 107.
+3. **It depends on the shape.** At a flat width of 137 and depth 2 the threshold is 116 for
+   `Convert.FromBase64String("…")`, 117 for a call on an identifier, 118 for a binary chain, 120 for
+   a cast; an object initializer and an array initializer go the other way, 107 and 101. And under
+   `wrap_before_eq = true` the whole table moves down by two to four columns.
 
-So the budget for this one decision is `120 − (8 + column / indent)`. What ReSharper is really
-computing there is not known — it is not a width test on the result, because the result fits with
-eleven columns to spare — and the formula above reproduces its answer exactly at all three depths.
-
-⚠ It is an approximation and it has a known counter-example. `byte[] data =
-Convert.FromBase64String("…");` at 121 columns comes back from the oracle broken after the `=`, with
-the call whole on a 110-column continuation line; the margin declines that break and chops the call
-instead. Gating the margin on whether the right-hand side opens with an *expression brace* fixes
-that shape and costs 0.15 points of line fidelity and 3 points of file fidelity elsewhere, so it is
-not what ships. Measured alternatives, on `corpus/real/`:
+**So the constant stays, and it is now honestly a fitted constant rather than a derived one.**
+Fitted against `corpus/real/` with everything else in the ordering rule held fixed:
 
 | Rule | line | file |
 |---|---:|---:|
-| margin everywhere (ships) | 98.86 % | 71.05 % |
-| margin only where the RHS opens with a brace | 98.71 % | 67.37 % |
-| no margin at all | 98.42 % | — |
+| never prefer the outer break | 99.11 % | 76.05 % |
+| margin 0 | 99.02 % | 72.37 % |
+| margin 4, a constant | 99.37 % | 78.95 % |
+| margin 8, a constant — what the sweep supports | 99.42 % | 80.00 % |
+| `8 + column/indent` — milestone 3's | 99.51 % | 82.11 % |
+| **`11 + column/indent` — ships** | **99.53 %** | **82.63 %** |
+| `16 + column/indent` | 99.51 % | 81.84 % |
+| `24 + column/indent` | 99.48 % | 80.79 % |
+
+⚠ **And the two measurements disagree, which is the finding worth carrying forward.** The isolated
+sweep says the threshold is depth-independent and near 112 — that is the `margin 8` row, and it is
+0.11 points and eleven files *worse* on real code than a depth-dependent constant the sweep does not
+support. The margin is therefore absorbing error from the rest of the ordering rule rather than
+reproducing a rule of ReSharper's, and no value of it closes the last of this class.
+
+⚠ Two candidate second terms were measured and neither helps. Requiring the break to *save* at least
+N columns — which is a test on the left-hand side's width, and is what the sweep's rising region
+looks like — is inert at every N from 1 to 26 in combination with the shipping margin, and worse in
+combination with a smaller one. A hard cap at `120 − k` with a saving term, which fits the sweep's
+plateau, tops out at 99.50 % against 99.53 %.
+
+⚠ It has a known counter-example, and it is the largest single class left:
+`byte[] data = Convert.FromBase64String("…");` at 123 columns comes back from the oracle broken
+after the `=` with the call whole on a 113-column continuation line, and the margin declines that
+break and chops the call instead. That shape and its siblings are **64 lines across 38 files** of
+the residue, which is still the largest single class.
 
 - options: `resharper_prefer_wrap_around_eq`, `resharper_csharp_wrap_before_eq`
 
@@ -217,8 +243,8 @@ whitespace — the writer still cannot produce any of its own, which is why
 `remove_spaces_on_blank_lines` stays inert. It also settles `trim_trailing_whitespace`, whose value
 the export sets to `false`: probed at `= true` on this fixture, the oracle **returns the trailing
 space anyway**. Skala follows the oracle rather than the key, so the key is inert in both
-directions and stays Tier D — implementing it would create a ninth divergence in exchange for
-nothing anyone asked for.
+directions and stays Tier D — implementing it would create a divergence in exchange for nothing
+anyone asked for.
 
 - options: `resharper_space_after_triple_slash`, `resharper_xmldoc_wrap_lines`, `resharper_xmldoc_max_line_length`, `resharper_xmldoc_linebreak_before_elements`, `trim_trailing_whitespace`
 
@@ -240,31 +266,166 @@ operator groups asking it of each other — a question the current one-flat-widt
 cannot express. Measured: the wrong fix buys 0.01 points of line fidelity and loses two committed
 fixtures.
 
+⚠ Milestone 3.1 gave the same fact to the **chain** group, where the objection does not apply —
+a chain is one group rather than a nest of them — and it is what makes
+`static void Member(Packer p) =>\n    p.Enum(a)\n        .Enum(b);` come out with the arrow broken.
+That half is done; the binary chain's half is not.
+
 - options: `resharper_csharp_wrap_arguments_style`, `resharper_keep_user_linebreaks`
 
-## SK-DIV-0008 — column alignment is not implemented, and four keys in the export ask for it
+## SK-DIV-0008 — ⚠ half closed: statement conditions are aligned, four other keys are not
 
 `int_align` and all eight `int_align_*` sub-keys are `false`, and so are `align_multiline_argument`,
-`…_parameter`, `…_calls_chain`, `…_expression` and `align_multiline_binary_expressions_chain`. Four
-survive: `align_multiline_type_argument`, `align_multiline_type_parameter`,
-`align_multiline_ctor_init` and `align_multiline_array_initializer`, all `true`.
+`…_parameter`, `…_calls_chain`, `…_expression` and `align_multiline_binary_expressions_chain`.
 
-Skala implements none of them, and the `Align` IR node [04](plan/04-formatting-engine.md) reserves
-is still unused. Two shapes in `corpus/real/` show it:
+⚠ **Milestone 3 said four keys survive and there are nine**, which is the first correction:
+`align_multiline_statement_conditions`, `align_multiline_type_argument`,
+`align_multiline_type_parameter`, `align_multiline_ctor_init`, `align_multiline_array_initializer`,
+`align_multiline_implements_list`, `align_multiline_comments`, `align_first_arg_by_paren`'s
+companion `align_ternary = align_not_nested`, and `int_align_fix_in_adjacent`.
+
+**Measured before building, which is what decided it.** Of 313 divergent line slots at the time,
+**40 across 11 files** were a line the oracle had put at a column that is not a multiple of the
+indent width, and all forty were one key:
 
 ```csharp
-for (int i = 0;
-     i < n && i < 100;      ← aligned to the `(`, not indented one level
-     i++) { }
-
-var directions = new[] {
-                     new Vector3(…), new Vector3(…),   ← aligned to `new[]`
-                 };
+else if (ReflectionUtils.ImplementsGenericDefinition(
+             NonNullableUnderlyingType,          ← the `(`'s column plus one continuation level
+             typeof(IEnumerable<>),
+             out tempCollectionType
+         )) {                                    ← the `(`'s column
 ```
 
-The consequence [05](plan/05-csharp-formatting-rules.md) § "Alignment" claims — "with column
-alignment off, laying out line *n* never requires knowing the contents of line *n−1*" — remains true
-of the hot path and is why the fitting pass is linear. The four keys that are on are the exception,
-they are rare in the corpus, and they are Tier D with this entry as the reason.
+That is 12.8 % of the residue and 17 % of the files still diverging, so it was built.
+`IndentKind.Align` is the node [04](plan/04-formatting-engine.md) reserved, and the writer's indent
+stack now holds **columns rather than levels** — after which an alignment scope is a block scope
+whose column is absolute and no new stack semantics were needed. Covered: `if`, `while`, `do`,
+`for`, `foreach`, `using`, `fixed`, `lock`, `switch`, and `catch … when`, which is the one condition
+`VisitEmbedded` never saw because a catch clause has no embedded statement. Worth 0.06 points of
+line fidelity and 1.3 of file fidelity.
 
-- options: `resharper_csharp_align_multiline_for_stmt`, `resharper_align_multiline_array_initializer`, `resharper_align_multiline_type_argument`, `resharper_align_multiline_ctor_init`
+⚠ What is still not implemented, and what each is worth on `corpus/real/`:
+
+| key | shape | residue |
+|---|---|---:|
+| `align_multiline_for_stmt` | `for (;\n     cond;\n     step)` — the clauses chop | 4 lines, 2 files |
+| `align_multiline_array_initializer` | `new[] {\n     a,` aligned to `new[]` | 0 lines |
+| `align_multiline_type_argument`, `…_type_parameter` | a type argument list broken across lines | 0 lines |
+| `align_multiline_ctor_init` | `: base(\n      a)` | 0 lines |
+
+The consequence [05](plan/05-csharp-formatting-rules.md) § "Alignment" claims — "with column
+alignment off, laying out line *n* never requires knowing the contents of line *n−1*" — **survives
+the change**, and that is worth stating: an alignment scope's column is the column the writer is
+already at when the scope opens, which is on the current line. The fitting pass is still linear.
+
+- options: `resharper_csharp_align_multiline_statement_conditions` (now Tier A), `resharper_csharp_align_multiline_for_stmt`, `resharper_align_multiline_array_initializer`, `resharper_align_multiline_type_argument`, `resharper_align_multiline_ctor_init`
+
+## SK-DIV-0009 — `space_within_spread_pattern` is inert, and the gap it names is not governed at all
+
+The export sets `resharper_space_within_spread_pattern = true` and Skala honoured it, putting a
+space after the `..` of every collection expression's spread element. The oracle does not, and
+neither value of the key changes anything it writes. Asked directly at both:
+
+```csharp
+[1, .. xs, 2]     stays [1, .. xs, 2]
+[1, ..xs, 2]      stays [1, ..xs, 2]
+[1, ..   xs, 2]   comes back [1, .. xs, 2]
+```
+
+That is not a rule with a value. It is `extra_spaces = remove_all` collapsing a run of spaces in a
+gap nobody legislated — the same shape as `a[1..3]` and `a[1  ..  3]`, which come back closed up and
+as `a[1 .. 3]` respectively. `SpaceKind.Preserve` has existed in the IR since milestone 1 and
+nothing produced it; these two gaps are the first, and the C# front end resolves them against the
+source rather than carrying the third state into the writer.
+
+⚠ A slice pattern is **not** in this set and looks as though it should be: `a is [1, ..var r]` comes
+back `.. var r`, a space the oracle inserts, because `space_within_slice_pattern = true` really does
+govern its own construct and stays Tier A. Reading `space_within_spread_pattern` as the
+collection-expression twin of it — which is what its name says — put a space Skala had no evidence
+for into 58 lines of `corpus/real/`.
+
+`resharper_space_within_spread_pattern` is demoted from Tier A to Tier D and its fixture withdrawn,
+for the same reason `trim_trailing_whitespace` is Tier D under SK-DIV-0006: an option Skala honours
+and Rider ignores is a divergence wearing a tier badge.
+
+- options: `resharper_space_within_spread_pattern`
+
+## SK-DIV-0010 — the oracle has break points of last resort that Skala does not
+
+When nothing else will make a line fit, the oracle breaks in places no option names and no
+construct owns. Three of them occur in `corpus/real/`, all in code that was generated or that has
+very long identifiers:
+
+```csharp
+public partial class                       // between `class` and the type's name
+    CustomersDataTable : global::System.Data.DataTable, global::System.Collections.IEnumerable {
+
+global::System.Xml.Schema.XmlSchemaSequence    // between a type and the declarator's name
+    sequence = new global::System.Xml.Schema.XmlSchemaSequence();
+
+JsonConvert                                    // at the *only* dot of a one-dot chain
+    .DeserializeObject<PublicParameterizedConstructorRequiringConverterWithParameterAttribute>(json);
+```
+
+Skala has no break point at any of these gaps, and adding one is not a matter of a missing option:
+the first two are gaps between a keyword and an identifier, which the break-position model
+([04](plan/04-formatting-engine.md)) has no vocabulary for, and the third contradicts
+`wrap_before_first_method_call = false`, which is the key that says the first dot stays with its
+receiver — the oracle honours it right up to the point where the line cannot be made to fit and then
+breaks there anyway.
+
+⚠ The argument for leaving them is that all three produce output the author did not write and would
+not want, and Skala's answer is a legal line that is merely too long. The counter-argument is R1:
+these are `ClassDeclaration` and `IdentifierName`, which are not rare. Measured on `corpus/real/`:
+**12 lines across 4 files**, of which 8 are one generated `DataSet` partial class and one is a
+`class` keyword left alone at the end of a line.
+
+- options: `resharper_wrap_before_first_method_call`, `resharper_csharp_wrap_multiple_declaration_style`
+
+## SK-DIV-0011 — a lambda's expression body may leave the arrow's line, and the discriminator is unknown
+
+The oracle sometimes breaks after a lambda's `=>` and sometimes chops the body instead:
+
+```csharp
+var geometry = Build(list =>                      Assert.Throws<ArgumentException>(() => UvStacking.Fold(
+    list.Add(Sliced(0, 0, 200, 100) with { … })           islands,
+);                                                        [new(0, 1, false, 0f)],
+                                                          out _
+                                                      )
+                                                  );
+```
+
+Both bodies fit on a continuation line; both calls are the sole argument, so
+`place_single_method_argument_lambda_on_same_line` does not separate them; both lambdas are
+parenthesis-free or parenthesised in either direction, so the parameter form does not either. Both
+of the ordering rule's two questions give the same answer for the two shapes, and the layout the
+oracle picks is the one with *more* lines in the second case, so a line-count preference does not
+explain it.
+
+⚠ Implemented as the `=`'s rule — a break point after the arrow with `PrefersOuterBreak` — it fixes
+five files and breaks five others, and costs 0.02 points of line fidelity and 0.5 of file fidelity
+on `corpus/real/`. That is the measurement, and it is why the gap has no rule rather than the wrong
+one. Worth **45 lines across 21 files**, which makes it the second largest class after SK-DIV-0005.
+
+- options: `resharper_place_single_method_argument_lambda_on_same_line`
+
+## SK-DIV-0012 — three small shapes, each measured, each left
+
+Collected rather than given entries of their own, because each is one or two lines and the argument
+for all three is the same: the rule is known, the implementation is not free, and the residue is
+smaller than the risk.
+
+1. **A cast before a collection expression that breaks takes a space.** `(Kind[])[a, b]` closes up
+   and `(Kind[]) [\n    a,\n    b\n]` does not — the space depends on the *resolved mode* of the
+   group after it, which the space rules cannot see. Implementing it means an `IfBroken` node around
+   a gap. Worth 1 line of `corpus/real/`, and adding the space unconditionally costs 6 lines and 5
+   files.
+2. **A single-statement anonymous function's block is joined onto one line.**
+   `Action a = () => {\n    Write("a");\n};` comes back `Action a = () => { Write("a"); };`, and two
+   statements do not. `keep_existing_embedded_block_arrangement` governs it — flipped to `true`, the
+   oracle keeps the break — and there is no `place_simple_anonymousmethod_on_single_line` key in the
+   export to hang it on. Worth **0 lines** of `corpus/real/`: nobody in the corpus writes one.
+3. **A `for` header's clauses chop.** `for (init;\n     cond;\n     step)` rather than filling.
+   Worth 4 lines across 2 files, both of them the same generated `DataSet`.
+
+- options: `resharper_csharp_keep_existing_embedded_block_arrangement`, `resharper_csharp_align_multiline_for_stmt`

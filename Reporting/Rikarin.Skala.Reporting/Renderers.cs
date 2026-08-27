@@ -88,9 +88,9 @@ public static class Renderer {
 
         var findings = Ordered(report, includeHints).ToList();
         foreach (var group in findings.GroupBy(
-                finding => SarifWriter.Relative(report.RepositoryRoot, finding.Path),
-                StringComparer.Ordinal
-            )) {
+                     finding => SarifWriter.Relative(report.RepositoryRoot, finding.Path),
+                     StringComparer.Ordinal
+                 )) {
             builder.Append("  ").AppendLine(group.Key);
             foreach (var finding in group) {
                 builder.Append("    ")
@@ -176,13 +176,13 @@ public static class Renderer {
 
     internal static string FormatDuration(TimeSpan duration) =>
         duration.TotalSeconds < 1
-            ? duration.TotalMilliseconds.ToString("F0", CultureInfo.InvariantCulture) + " ms"
-            : duration.TotalSeconds < 90
-                ? duration.TotalSeconds.ToString("F1", CultureInfo.InvariantCulture) + " s"
-                : ((int)duration.TotalMinutes).ToString(CultureInfo.InvariantCulture)
-                + " m "
-                + duration.Seconds.ToString(CultureInfo.InvariantCulture)
-                + " s";
+        ? duration.TotalMilliseconds.ToString("F0", CultureInfo.InvariantCulture) + " ms"
+        : duration.TotalSeconds < 90
+        ? duration.TotalSeconds.ToString("F1", CultureInfo.InvariantCulture) + " s"
+        : ((int)duration.TotalMinutes).ToString(CultureInfo.InvariantCulture)
+        + " m "
+        + duration.Seconds.ToString(CultureInfo.InvariantCulture)
+        + " s";
 }
 
 /// <summary>

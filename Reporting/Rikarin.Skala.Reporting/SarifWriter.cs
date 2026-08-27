@@ -225,11 +225,11 @@ public static class SarifWriter {
         if (!report.Diagnostics.IsEmpty) {
             invocation.ToolExecutionNotifications = [
                 .. report.Diagnostics.Select(static diagnostic =>
-                        new Notification {
-                            Level = Level(diagnostic.Severity),
-                            Message = new Message { Text = diagnostic.Message },
-                            Descriptor = new ReportingDescriptorReference { Id = diagnostic.Id }
-                        }
+                    new Notification {
+                        Level = Level(diagnostic.Severity),
+                        Message = new Message { Text = diagnostic.Message },
+                        Descriptor = new ReportingDescriptorReference { Id = diagnostic.Id }
+                    }
                 )
             ];
         }

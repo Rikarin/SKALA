@@ -277,16 +277,50 @@ public sealed partial class CSharpDocumentBuilder {
         // The reset is deferred to the frame's first piece, not applied here: the break that lands
         // just before the lambda is still the enclosing member's to pay for, and zeroing the depth
         // early lets the member's own level be spent inside the lambda's frame instead.
-        var saved = _continuousDepth;
-        _frames.Add(new Frame(FrameKind.Unit, false, ResetsDepth: node is AnonymousFunctionExpressionSyntax));
+        //
+        // ⚠ The depth to restore lives on the frame rather than in a local, and that is what makes
+        // the deferral work at all. A lambda's own parameter opens a frame of its own, and it is the
+        // parameter's first token that starts the lambda's frame and triggers the reset — so a local
+        // captured before the parameter was visited puts the enclosing scope's depth back the moment
+        // the parameter ends, and the body never sees the reset. Measured: `M(\n a,\n x => p\n
+        // && q\n)` came out with `&&` at the argument's own level where the oracle gives it one more.
+        _frames.Add(
+            new Frame(
+                FrameKind.Unit,
+                false,
+                ResetsDepth: node is AnonymousFunctionExpressionSyntax && !IsSoleLambdaArgument(node),
+                SavedDepth: _continuousDepth
+            )
+        );
+
         Dispatch(node);
         if (_frames[^1].Activated) {
             CloseIndent(IndentKind.Continuous);
         }
 
+        var restored = _frames[^1].SavedDepth;
         _frames.RemoveAt(_frames.Count - 1);
-        _continuousDepth = saved;
+        _continuousDepth = restored;
     }
+
+    /// <summary>
+    /// The lambda that <c>place_single_method_argument_lambda_on_same_line = true</c> keeps on the
+    /// call's own line.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ Its body is not a continuation context of its own, and every other lambda's is. The
+    /// difference is that the call's parenthesis has already spent a level <em>on the lambda's own
+    /// line</em> — which is why <see cref="VisitDelimited"/> opens that one unconditionally — so a
+    /// second level for the body is the one-level-per-opening-line rule being paid twice:
+    /// <code>
+    /// var b = new Func&lt;int, bool&gt;(x =&gt; x &gt; 0
+    ///     &amp;&amp; x &lt; 10          ← one level, not the two an argument on its own line takes
+    /// );
+    /// </code>
+    /// </remarks>
+    bool IsSoleLambdaArgument(SyntaxNode node) =>
+        _options.PlaceSingleMethodArgumentLambdaOnSameLine
+        && node.Parent is ArgumentSyntax { Parent: ArgumentListSyntax { Arguments.Count: 1 } };
 
     /// <summary>
     /// A break is attributed to the innermost statement, member or accessor, because those are the
@@ -374,6 +408,27 @@ public sealed partial class CSharpDocumentBuilder {
                 VisitSwitch((SwitchStatementSyntax)node);
                 return;
 
+            // ⚠ A `catch … when (…)` filter is a statement condition too, and the only one that is
+            // not reached through VisitEmbedded — a catch clause has no embedded statement, so it
+            // was `Transparent` and its parentheses opened no scope at all. The oracle aligns it
+            // like every other condition:
+            //     } catch (Exception exception) when (exception is YamlBindingException
+            //                                             or YamlParseException) {
+            case NodeLayout.Transparent when node is CatchFilterClauseSyntax filter:
+                EmitToken(filter.WhenKeyword);
+                if (filter.OpenParenToken.IsKind(SyntaxKind.None)) {
+                    VisitChildren(node);
+                    return;
+                }
+
+                EmitToken(filter.OpenParenToken);
+                OpenIndent(ConditionIndent, unconditional: true);
+                Visit(filter.FilterExpression);
+                EmitUpTo(filter.CloseParenToken.SpanStart);
+                CloseIndent(ConditionIndent, alignsCloser: true);
+                EmitToken(filter.CloseParenToken);
+                return;
+
             case NodeLayout.SwitchSection:
                 VisitSwitchSection((SwitchSectionSyntax)node);
                 return;
@@ -382,14 +437,30 @@ public sealed partial class CSharpDocumentBuilder {
                 // ⚠ A ternary's arms take a level of their own, on top of whatever continuation the
                 // expression already sits in — `outdent_ternary_ops = false`. A binary chain does
                 // not, which is why the two are not the same case.
+                // ⚠ Except when the ternary is another one's else-arm. `align_ternary =
+                // align_not_nested` says a *chain* of conditionals is not nested, and the oracle
+                // writes it flat:
+                //     OperatingSystem.IsWindows() ? "win"
+                //     : OperatingSystem.IsMacOS() ? "osx"
+                //     : "linux";
+                // One level per link turns six lines into a staircase six levels deep.
+                var nested = ternary.Parent is ConditionalExpressionSyntax outer
+                    && outer.WhenFalse == ternary
+                    || ternary.WhenFalse is ConditionalExpressionSyntax;
                 Visit(ternary.Condition);
-                OpenIndent(IndentKind.Continuous);
+                if (!nested) {
+                    OpenIndent(IndentKind.Continuous);
+                }
+
                 EmitToken(ternary.QuestionToken);
                 Visit(ternary.WhenTrue);
                 EmitToken(ternary.ColonToken);
                 Visit(ternary.WhenFalse);
                 EmitUpTo(ternary.Span.End);
-                CloseIndent(IndentKind.Continuous);
+                if (!nested) {
+                    CloseIndent(IndentKind.Continuous);
+                }
+
                 return;
 
             case NodeLayout.Continuation when node is TypeParameterConstraintClauseSyntax:
@@ -643,14 +714,14 @@ public sealed partial class CSharpDocumentBuilder {
                 var token = child.AsToken();
                 if (parenOpen && token.SpanStart == close.SpanStart) {
                     EmitUpTo(close.SpanStart);
-                    CloseIndent(IndentKind.Continuous, alignsCloser: true);
+                    CloseIndent(ConditionIndent, alignsCloser: true);
                     parenOpen = false;
                 }
 
                 EmitToken(token);
 
                 if (!parenOpen && !open.IsKind(SyntaxKind.None) && token.SpanStart == open.SpanStart) {
-                    OpenIndent(IndentKind.Continuous, unconditional: true);
+                    OpenIndent(ConditionIndent, unconditional: true);
                     parenOpen = true;
                 }
 
@@ -673,18 +744,39 @@ public sealed partial class CSharpDocumentBuilder {
 
         if (parenOpen) {
             EmitUpTo(close.SpanStart);
-            CloseIndent(IndentKind.Continuous);
+            CloseIndent(ConditionIndent);
         }
     }
+
+    /// <summary>
+    /// What a statement's condition parentheses open.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ <c>align_multiline_statement_conditions = true</c> — the export's value — lays the
+    /// condition out from the column just after the <c>(</c> rather than from an indent level:
+    /// <code>
+    /// else if (ReflectionUtils.ImplementsGenericDefinition(
+    ///              NonNullableUnderlyingType,      ← the `(`'s column plus one level
+    ///              typeof(IEnumerable&lt;&gt;),
+    ///              out tempCollectionType
+    ///          )) {                                ← the `(`'s column
+    /// </code>
+    /// It is the one thing <see cref="IndentKind.Align"/> exists for, and SK-DIV-0008 recorded it
+    /// as unimplemented from milestone 1 until 3.1.
+    /// </remarks>
+    IndentKind ConditionIndent =>
+        _options.AlignMultilineStatementConditions
+            ? IndentKind.Align
+            : IndentKind.Continuous;
 
     void VisitSwitch(SwitchStatementSyntax node) {
         EmitToken(node.SwitchKeyword);
         if (!node.OpenParenToken.IsKind(SyntaxKind.None)) {
             EmitToken(node.OpenParenToken);
-            OpenIndent(IndentKind.Continuous, unconditional: true);
+            OpenIndent(ConditionIndent, unconditional: true);
             Visit(node.Expression);
             EmitUpTo(node.CloseParenToken.SpanStart);
-            CloseIndent(IndentKind.Continuous, alignsCloser: true);
+            CloseIndent(ConditionIndent, alignsCloser: true);
             EmitToken(node.CloseParenToken);
         } else {
             Visit(node.Expression);
@@ -760,7 +852,7 @@ public sealed partial class CSharpDocumentBuilder {
             return;
         }
 
-        if (kind == IndentKind.Continuous) {
+        if (kind is IndentKind.Continuous or IndentKind.Align) {
             _continuousDepth++;
             return;
         }
@@ -783,7 +875,7 @@ public sealed partial class CSharpDocumentBuilder {
             return;
         }
 
-        if (kind == IndentKind.Continuous) {
+        if (kind is IndentKind.Continuous or IndentKind.Align) {
             _continuousDepth--;
         } else {
             if (_frames[^1].Activated) {
@@ -971,8 +1063,16 @@ public sealed partial class CSharpDocumentBuilder {
     void MarkFramesStarted() {
         for (var i = _frames.Count - 1; i >= 0 && !_frames[i].Started; i--) {
             _frames[i] = _frames[i] with { Started = true };
-            if (_frames[i].ResetsDepth) {
-                _continuousDepth = 0;
+            if (!_frames[i].ResetsDepth) {
+                continue;
+            }
+
+            _continuousDepth = 0;
+
+            // ⚠ Every frame the same walk has just started sits inside this one, so it restores to
+            // the reset value rather than to the depth it captured before the reset happened.
+            for (var j = i + 1; j < _frames.Count; j++) {
+                _frames[j] = _frames[j] with { SavedDepth = 0 };
             }
         }
     }
@@ -1182,7 +1282,12 @@ public sealed partial class CSharpDocumentBuilder {
     /// <c>M() =&gt;</c> is the member's to pay for even though the lambda that follows has already
     /// been entered.
     /// </param>
-    readonly record struct Frame(FrameKind Kind, bool Activated, bool Started = false, bool ResetsDepth = false);
+    readonly record struct Frame(
+        FrameKind Kind,
+        bool Activated,
+        bool Started = false,
+        bool ResetsDepth = false,
+        int SavedDepth = 0);
 
     /// <summary>
     /// Whether the break continues an expression rather than starting a new statement, member or
@@ -1247,8 +1352,18 @@ public sealed partial class CSharpDocumentBuilder {
         return false;
     }
 
+    /// <summary>
+    /// ⚠ A list pattern's elements are list elements too, and leaving it out of this test is only
+    /// visible once something forces a break between them: <c>o is [\n 1,\n 2\n]</c> put the
+    /// second element one level deeper than the first, because the break before it was read as a
+    /// continuation of an expression rather than as the start of an element.
+    /// </summary>
     static bool IsListElement(SyntaxNode child) =>
-        child.Parent is InitializerExpressionSyntax or CollectionExpressionSyntax or BaseListSyntax;
+        child.Parent is InitializerExpressionSyntax
+            or CollectionExpressionSyntax
+            or ListPatternSyntax
+            or PropertyPatternClauseSyntax
+            or BaseListSyntax;
 
     static SyntaxToken FirstTokenAfterAttributes(SyntaxNode node) {
         foreach (var element in node.ChildNodesAndTokens()) {
@@ -1314,7 +1429,26 @@ public sealed partial class CSharpDocumentBuilder {
             return SpaceKind.Required;
         }
 
-        return SpaceRules.Decide(_tokens[previous.TokenIndex], nextToken, _options);
+        var kind = SpaceRules.Decide(_tokens[previous.TokenIndex], nextToken, _options);
+
+        // ⚠ A gap no rule governs is resolved against the source, here rather than in the writer.
+        // `extra_spaces = remove_all` collapses a run to one space and inserts none, so "preserve"
+        // is a one-bit question — did the author write any horizontal space — and the answer is
+        // still Required or Forbidden by the time the document is built. Keeping the third state
+        // alive all the way to the writer would mean carrying the source into it for one construct.
+        return kind == SpaceKind.Preserve
+            ? HasSpace(previous.Span.End, nextToken.SpanStart) ? SpaceKind.Required : SpaceKind.Forbidden
+            : kind;
+    }
+
+    bool HasSpace(int start, int end) {
+        for (var i = start; i < end && i < _source.Length; i++) {
+            if (_source[i] is ' ' or '\t') {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /// <summary>

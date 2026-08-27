@@ -206,8 +206,8 @@ public static class CheckCommand {
         var exit = !gate.Passed
             ? ExitCodes.GateFailed
             : report.Diagnostics.Any(static d => d.Id == RuleIds.TokenStreamChanged)
-                ? ExitCodes.InternalError
-                : ExitCodes.Ok;
+            ? ExitCodes.InternalError
+            : ExitCodes.Ok;
 
         return (new CommandResult(exit, output), report);
     }

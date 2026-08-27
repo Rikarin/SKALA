@@ -76,9 +76,9 @@ public sealed class LoadingTests {
         Assert.Contains(
             "Debug",
             loaded.Units[0].Compilation.SyntaxTrees.First()
-            .GetRoot(TestContext.Current.CancellationToken)
-            .DescendantTokens()
-            .Select(static token => token.ValueText)
+                .GetRoot(TestContext.Current.CancellationToken)
+                .DescendantTokens()
+                .Select(static token => token.ValueText)
         );
     }
 
