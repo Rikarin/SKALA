@@ -406,6 +406,7 @@ public readonly struct PhaseOneOptions {
     /// the column just after the statement's <c>(</c> rather than from an indent level.
     /// </summary>
     public bool AlignMultilineStatementConditions { get; }
+
     public bool AlignMultilineArrayAndObjectInitializer { get; }
     public bool AlignMultilineListPattern { get; }
     public bool AlignMultilinePropertyPattern { get; }
@@ -870,6 +871,45 @@ public static class Ids {
     // clauses, and not before.
     public static readonly OptionId AlignLinqQuery = OfInert("resharper_csharp_align_linq_query");
 
+    // ⚠ The rest of the `align_*` family, read so the crash snapshot records them, and Tier D each
+    // for a reason the oracle gave rather than for a gap in the wiring. All measured one key at a
+    // time at a 70-column margin against `jb cleanupcode`.
+    //
+    // Never read by the C# formatter — the unprefixed spellings are the C++ and VB formatters'
+    // keys, which this export writes without a language prefix. Each set to true (or, where the
+    // export already says true, to false) on a file that wraps the construct it names returns
+    // byte-identical oracle output, while the construct's real key changes it:
+    //   align_multiline_array_initializer, align_multiline_ctor_init, align_multiline_expression_braces,
+    //   align_multiline_implements_list, align_multiline_type_argument, align_multiline_type_parameter,
+    //   align_multiline_type_parameter_constraints, align_multiline_type_parameter_list,
+    //   align_ternary, alignment_tab_fill_style.
+    //
+    // Masked by another key at the export's own values, so the per-option unit — which flips one key
+    // from the repository's configuration — cannot reach them:
+    //   align_multiline_argument, align_multiline_parameter — the export sets
+    //     wrap_after_{invocation,declaration}_lpar = true, which gives the first item a line of its
+    //     own, and there is then no first item on the delimiter's line to align the rest to. With
+    //     the lpar key off as well, both change the output.
+    //   align_multiline_for_stmt — align_multiline_statement_conditions = true already aligns a
+    //     `for` header by its `(`. Either key alone is enough and the export has the other one on.
+    //
+    // Observable and not implemented, with the shape recorded so the next attempt starts from it:
+    //   align_first_arg_by_paren — puts the arguments on the `(`'s column plus one and the closing
+    //     parenthesis one column *left* of them. The writer's scope stack has one column per scope
+    //     and no expression for "the closer is the column minus one".
+    //   align_multiline_calls_chain — the anchor is the chain's first `.`, and a chain's
+    //     continuation level is spent lazily at the first break, by which time the writer has
+    //     written past that dot.
+    //   align_multiline_extends_list — the anchor is the first base type, two columns past the base
+    //     list's own node, which is where every other member of this family reads its column.
+    //   align_multiline_expression — the union of four specific keys, except for binary patterns:
+    //     it aligns a pattern chain one level from the *enclosing* expression where
+    //     align_multiline_binary_patterns aligns it on the pattern's own column, one further right.
+    //     An Align scope reads the column where it opens and cannot see the enclosing expression.
+    //   align_multiple_declaration, align_tuple_components, align_multiline_comments — no probe
+    //     found a shape where they change the oracle's output, which is weaker evidence than the
+    //     rest of this list: they are unmeasured rather than measured inert.
+
     // ── Column alignment of adjacent constructs (int_align_*) ────────────────────────────────
     // ⚠ Every one of these is `false` in the export and every one of them is read here, so the
     // generalized `resharper_int_align` — which the registry expands into all thirteen — is
@@ -1115,6 +1155,36 @@ public static class Ids {
 
     public static readonly OptionId WrapBeforeLinqExpression =
         OfInert("resharper_csharp_wrap_before_linq_expression");
+
+    // ⚠ The rest of the `wrap_*` family the export sets, measured the same way and Tier D.
+    //
+    // Never read by the C# formatter. Each is the unprefixed spelling of a key whose C# form is
+    // elsewhere in this list, and setting it changes nothing in the oracle's output on a file that
+    // exercises the construct: wrap_after_binary_opsign (the C# key is wrap_before_binary_opsign),
+    // wrap_after_dot (wrap_after_dot_in_method_calls), wrap_arguments (csharp_wrap_arguments_style),
+    // wrap_base_clause_style (csharp_wrap_extends_list_style), wrap_braced_init_list_style
+    // (wrap_array_initializer_style), wrap_ctor_initializer_style, wrap_enumeration_style
+    // (wrap_enum_declaration), wrap_before_colon, wrap_comments.
+    //
+    // ⚠ The four lambda keys belong here too, and the measurement is the interesting one: with
+    // wrap_{before,after}_lambda_and_anonymous_function_declaration_{lpar,rpar} and
+    // wrap_lambda_and_anonymous_function_parameters_style at any value, the oracle's layout of a
+    // lambda's parameter list does not move — and it *does* move when
+    // wrap_before_declaration_lpar changes. A lambda's parameter list is governed by the method
+    // declaration keys; the five keys named for it are not read.
+    //
+    // Master switches with nothing behind them: csharp_wrap_lines = false leaves an over-long line
+    // wrapped exactly as before, enable_wrapping = true changes nothing, and keep_user_wrapping
+    // has no observable effect in this export (BreakPlan records the same, from M2).
+    //
+    // Not reached by any probe: wrap_before_first_type_parameter_constraint and
+    // wrap_multiple_type_parameter_constraints_style — the export forces every `where` onto its own
+    // line with place_type_constraints_on_same_line = false, and no shape tried put two constraint
+    // clauses in a position where either key could decide anything.
+    //
+    // wrap_verbatim_interpolated_strings is observable — chop_if_long breaks the oracle's output
+    // *inside* the interpolation holes of a verbatim string — and is not implemented: Skala emits an
+    // interpolated string as one piece and has no break point inside one.
 
     public static readonly OptionId WrapBeforeArrowWithExpressions =
         Of("resharper_csharp_wrap_before_arrow_with_expressions");

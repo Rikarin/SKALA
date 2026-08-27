@@ -134,9 +134,10 @@ public sealed partial class CSharpDocumentBuilder {
     /// and a <c>PropertyPatternClauseSyntax</c> both start at one — so the distinction only ever
     /// shows on this node.
     /// </remarks>
-    static int AlignAnchor(SyntaxNode node) => node is AnonymousObjectCreationExpressionSyntax anonymous
-        ? anonymous.OpenBraceToken.SpanStart
-        : node.SpanStart;
+    static int AlignAnchor(SyntaxNode node) =>
+        node is AnonymousObjectCreationExpressionSyntax anonymous
+            ? anonymous.OpenBraceToken.SpanStart
+            : node.SpanStart;
 
     /// <summary>
     /// Whether an <c>align_multiline_*</c> key anchors this construct to the column its own first
@@ -160,18 +161,19 @@ public sealed partial class CSharpDocumentBuilder {
     /// columns above are the oracle's, asked at a 70-column margin with one key flipped at a time.
     /// </para>
     /// </remarks>
-    bool AlignsFromOwnColumn(SyntaxNode node) => node switch {
-        InitializerExpressionSyntax or AnonymousObjectCreationExpressionSyntax =>
-            _options.AlignMultilineArrayAndObjectInitializer,
-        CollectionExpressionSyntax or ListPatternSyntax => _options.AlignMultilineListPattern,
-        PropertyPatternClauseSyntax => _options.AlignMultilinePropertyPattern,
-        SwitchExpressionSyntax => _options.AlignMultilineSwitchExpression,
-        QueryExpressionSyntax => _options.AlignLinqQuery,
-        BinaryExpressionSyntax =>
-            _options.AlignMultilineBinaryExpressionsChain && BreakPlan.IsChainRootOperator(node),
-        BinaryPatternSyntax => _options.AlignMultilineBinaryPatterns && BreakPlan.IsChainRootOperator(node),
-        _ => false
-    };
+    bool AlignsFromOwnColumn(SyntaxNode node) =>
+        node switch {
+            InitializerExpressionSyntax or AnonymousObjectCreationExpressionSyntax =>
+                _options.AlignMultilineArrayAndObjectInitializer,
+            CollectionExpressionSyntax or ListPatternSyntax => _options.AlignMultilineListPattern,
+            PropertyPatternClauseSyntax => _options.AlignMultilinePropertyPattern,
+            SwitchExpressionSyntax => _options.AlignMultilineSwitchExpression,
+            QueryExpressionSyntax => _options.AlignLinqQuery,
+            BinaryExpressionSyntax =>
+                _options.AlignMultilineBinaryExpressionsChain && BreakPlan.IsChainRootOperator(node),
+            BinaryPatternSyntax => _options.AlignMultilineBinaryPatterns && BreakPlan.IsChainRootOperator(node),
+            _ => false
+        };
 
     void VisitPlanned(SyntaxNode node) {
         var planned = _plan.GroupsOf(node);

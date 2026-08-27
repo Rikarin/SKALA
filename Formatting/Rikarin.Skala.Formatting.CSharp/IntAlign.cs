@@ -155,23 +155,24 @@ public static class IntAlign {
         run.Clear();
     }
 
-    static IEnumerable<SyntaxNode>? Siblings(SyntaxNode node, Kind kind) => kind switch {
-        Kind.Fields => node switch {
-            TypeDeclarationSyntax type => type.Members,
-            EnumDeclarationSyntax enumeration => enumeration.Members,
+    static IEnumerable<SyntaxNode>? Siblings(SyntaxNode node, Kind kind) =>
+        kind switch {
+            Kind.Fields => node switch {
+                TypeDeclarationSyntax type => type.Members,
+                EnumDeclarationSyntax enumeration => enumeration.Members,
+                _ => null
+            },
+            Kind.Properties => node is TypeDeclarationSyntax properties ? properties.Members : null,
+            Kind.Methods => node is TypeDeclarationSyntax methods ? methods.Members : null,
+            Kind.Variables or Kind.Assignments => node switch {
+                BlockSyntax block => block.Statements,
+                SwitchSectionSyntax section => section.Statements,
+                _ => null
+            },
+            Kind.SwitchExpressions => node is SwitchExpressionSyntax arms ? arms.Arms : null,
+            Kind.SwitchSections => node is SwitchStatementSyntax sections ? sections.Sections : null,
             _ => null
-        },
-        Kind.Properties => node is TypeDeclarationSyntax properties ? properties.Members : null,
-        Kind.Methods => node is TypeDeclarationSyntax methods ? methods.Members : null,
-        Kind.Variables or Kind.Assignments => node switch {
-            BlockSyntax block => block.Statements,
-            SwitchSectionSyntax section => section.Statements,
-            _ => null
-        },
-        Kind.SwitchExpressions => node is SwitchExpressionSyntax arms ? arms.Arms : null,
-        Kind.SwitchSections => node is SwitchStatementSyntax sections ? sections.Sections : null,
-        _ => null
-    };
+        };
 
     /// <summary>The slots one construct offers, or null when it is not alignable.</summary>
     /// <remarks>
@@ -314,6 +315,5 @@ public static class IntAlign {
         return builder.ToString();
     }
 
-    static int ColumnOf(string text, in Row row, int slot) =>
-        TextWidth.Measure(text[row.LineStart..row.Slots[slot]]);
+    static int ColumnOf(string text, in Row row, int slot) => TextWidth.Measure(text[row.LineStart..row.Slots[slot]]);
 }
