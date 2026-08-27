@@ -133,7 +133,14 @@ public sealed class CertificateValidationAnalyzer : DiagnosticAnalyzer {
 
         // `HttpClientHandler.DangerousAcceptAnyServerCertificateValidator` — the framework's own
         // name for it, and the name is not an accident.
-        if (operation is IFieldReferenceOperation { Field.Name: "DangerousAcceptAnyServerCertificateValidator" }) {
+        //
+        // ⚠ A *property*, not a field. Matching only `IFieldReferenceOperation` here made the rule
+        // miss the single most explicit way of writing this finding, and it missed it silently:
+        // the corpus caught it, reading the code did not.
+        if (operation is IPropertyReferenceOperation {
+                Property.Name: "DangerousAcceptAnyServerCertificateValidator"
+            }
+            or IFieldReferenceOperation { Field.Name: "DangerousAcceptAnyServerCertificateValidator" }) {
             return true;
         }
 

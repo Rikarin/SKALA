@@ -256,10 +256,29 @@ public static class TaintAnalysis {
 
             foreach (var argument in invocation.Arguments) {
                 if (IsTainted(argument.Value)) {
-                    Assign(invocation.Instance, true);
+                    Assign(RootReceiver(invocation.Instance), true);
                     return;
                 }
             }
+        }
+
+        /// <summary>
+        /// The variable a fluent chain is really about.
+        /// </summary>
+        /// <remarks>
+        /// ⚠ <c>builder.Append(a).Append(b)</c> — the receiver of the second <c>Append</c> is the
+        /// <em>result</em> of the first, not <c>builder</c>, so taint arriving through <c>b</c> had
+        /// nowhere to land and the whole chain came out clean. Chaining is how most
+        /// <c>StringBuilder</c> code is actually written, so this was not an edge case; it was the
+        /// common path, and only the corpus found it.
+        /// </remarks>
+        IOperation RootReceiver(IOperation instance) {
+            while (instance is IInvocationOperation { Instance: { } inner } chained
+                   && _symbols.IsPropagator(chained.TargetMethod)) {
+                instance = inner;
+            }
+
+            return instance;
         }
 
         void Assign(IOperation target, bool tainted) {
@@ -458,19 +477,51 @@ public static class TaintAnalysis {
         /// from a request is tainted". <c>request.Query.Count</c> is an <c>int</c> and stops here;
         /// <c>request.Query["id"]</c> is a <c>StringValues</c> and does not.
         /// </remarks>
-        static bool CarriesText(ITypeSymbol? type) {
-            switch (type?.SpecialType) {
+        static bool CarriesText(ITypeSymbol? type) => CarriesText(type, depth: 0);
+
+        static bool CarriesText(ITypeSymbol? type, int depth) {
+            // ⚠ Bounded. A deeply nested generic is not worth an unbounded walk inside an analyzer,
+            // and stopping early is the safe direction: it under-taints.
+            if (type is null || depth > 3) {
+                return false;
+            }
+
+            switch (type.SpecialType) {
                 case SpecialType.System_String:
                 case SpecialType.System_Object:
                     return true;
             }
 
             if (type is IArrayTypeSymbol array) {
-                return CarriesText(array.ElementType);
+                return CarriesText(array.ElementType, depth + 1);
             }
 
-            return type is not null
-                && type.Name is "StringValues" or "StringBuilder" or "Uri" or "Stream" or "TextReader";
+            // ⚠ `IEnumerator` and `IEnumerable` are here as *names* rather than through the type
+            // arguments below, because the control-flow graph's `foreach` lowering reaches for the
+            // non-generic pair: block 5 of the graph for `foreach (var a in xs)` is
+            // `GetEnumerator()` typed `IEnumerator`, and its `Current` is typed `object`. With the
+            // generic path alone the enumerator came out clean and the loop variable with it, so a
+            // request read inside any loop lost its taint at the top of the loop. The corpus found
+            // that; reading the code twice did not.
+            if (type.Name is "StringValues" or "StringBuilder" or "Uri" or "Stream" or "TextReader"
+                or "IEnumerator" or "IEnumerable") {
+                return true;
+            }
+
+            // ⚠ Through the type arguments, which is what makes a `foreach` propagate. Roslyn's
+            // control-flow graph lowers `foreach (var s in xs)` into `e = xs.GetEnumerator()` and
+            // `s = e.Current`, so without this the enumerator is an opaque type, `e` comes out
+            // clean, and every loop over request data silently loses its taint at the top. That is
+            // one of the two misses the vulnerable corpus caught and review did not.
+            if (type is INamedTypeSymbol { IsGenericType: true } generic) {
+                foreach (var argument in generic.TypeArguments) {
+                    if (CarriesText(argument, depth + 1)) {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
         }
 
         static string Describe(IOperation value) {

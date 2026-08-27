@@ -2,7 +2,7 @@
 
 <!-- Generated from Rules/Rikarin.Skala.Rules.Metadata/rules.json. Do not edit. -->
 
-`SK` + four digits, allocated once and never re-purposed (ADR-012). 32 ids are allocated.
+`SK` + four digits, allocated once and never re-purposed (ADR-012). 37 ids are allocated.
 
 ## Async
 
@@ -61,6 +61,16 @@
 | Id | Rule | Severity | Fix | Loose mode |
 |---|---|---|---|---|
 | [SK4010](SK4010.md) | A `Where` the next operator could have taken as its predicate | suggestion | safe | no |
+
+## Security
+
+| Id | Rule | Severity | Fix | Loose mode |
+|---|---|---|---|---|
+| [SK5001](SK5001.md) | Request data is concatenated into SQL | error | — | no |
+| [SK5002](SK5002.md) | Request data reaches a process start | error | — | no |
+| [SK5005](SK5005.md) | A broken cipher, or a mode that leaks structure | error | — | no |
+| [SK5007](SK5007.md) | A certificate callback that accepts everything | error | — | no |
+| [SK5009](SK5009.md) | An XML reader that parses a DTD and fetches what it names | error | — | no |
 
 ## Tests
 
