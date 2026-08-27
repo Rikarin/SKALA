@@ -50,7 +50,7 @@ Skala/
 ├── Tools/
 │   ├── Rikarin.Skala.Cli/                   # dotnet tool `skala`
 │   ├── Rikarin.Skala.Cli.Tests/
-│   ├── Rikarin.Skala.Server/                # daemon + LSP
+│   ├── Rikarin.Skala.Server/                # daemon + LSP        ← exists from M3
 │   ├── Rikarin.Skala.Server.Tests/
 │   ├── Rikarin.Skala.Mcp/
 │   ├── Rikarin.Skala.Mcp.Tests/

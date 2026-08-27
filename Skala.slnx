@@ -19,5 +19,7 @@
   <Folder Name="/Tools/">
     <Project Path="Tools/Rikarin.Skala.Cli/Rikarin.Skala.Cli.csproj" />
     <Project Path="Tools/Rikarin.Skala.Cli.Tests/Rikarin.Skala.Cli.Tests.csproj" />
+    <Project Path="Tools/Rikarin.Skala.Server/Rikarin.Skala.Server.csproj" />
+    <Project Path="Tools/Rikarin.Skala.Server.Tests/Rikarin.Skala.Server.Tests.csproj" />
   </Folder>
 </Solution>

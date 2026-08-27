@@ -12,6 +12,16 @@
     <PackAsTool>true</PackAsTool>
     <ToolCommandName>skala</ToolCommandName>
     <PackageId>Rikarin.Skala.Cli</PackageId>
+
+    <!--
+      Measured, not assumed. `format check` over Vixen (4 708 files) with the workstation GC and
+      ten-way parallelism is 19.5 s of wall time for 69 s of CPU: the collector, not the formatter,
+      is the contended resource once ten threads are each building a ~40 000-node document. The
+      server GC takes the same run to 10.9 s. Sequential it is 30.9 s, so the parallelism is worth
+      2.8× and the GC choice is worth another 1.8× on top of it (docs/plan/13 § "Parallelism").
+    -->
+    <ServerGarbageCollection>true</ServerGarbageCollection>
+    <ConcurrentGarbageCollection>true</ConcurrentGarbageCollection>
   </PropertyGroup>
 
   <ItemGroup>
@@ -21,6 +31,7 @@
   <ItemGroup>
     <ProjectReference Include="../../Core/Rikarin.Skala.Core/Rikarin.Skala.Core.csproj" />
     <ProjectReference Include="../../Formatting/Rikarin.Skala.Formatting.CSharp/Rikarin.Skala.Formatting.CSharp.csproj" />
+    <ProjectReference Include="../Rikarin.Skala.Server/Rikarin.Skala.Server.csproj" />
   </ItemGroup>
 
 </Project>

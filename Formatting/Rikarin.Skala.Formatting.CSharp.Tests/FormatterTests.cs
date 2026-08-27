@@ -6,8 +6,19 @@ using Rikarin.Skala.Options;
 namespace Rikarin.Skala.Formatting.CSharp.Tests;
 
 /// <summary>Formats a string with the repository's own configuration, which is the Rider export.</summary>
+/// <remarks>
+/// ⚠ The repository's <c>.editorconfig</c>, resolved for real, and not
+/// <c>FormattingOptions.Defaults</c>. The two were interchangeable while every registry default was
+/// the export's own value; milestone 3 derived ReSharper's actual defaults from the oracle, and they
+/// are Allman-braced with <c>wrap_if_long</c> chains — a different formatter, correctly. These tests
+/// are about the export's behaviour, so they have to say so.
+/// </remarks>
 public static class Format {
-    public static PhaseOneOptions Options { get; } = new(FormattingOptions.Defaults);
+    public static PhaseOneOptions Options { get; } = new(
+        Rikarin.Skala.Core.Configuration.OptionResolver
+            .Resolve(Path.Combine(Rikarin.Skala.Testing.Corpus.RepositoryRoot, "Test.cs"))
+            .Options
+    );
 
     public static FormatResult Run(string source, string path = "Test.cs") =>
         CSharpFormatter.Format(path, SourceText.From(source), Options);
@@ -32,8 +43,12 @@ public static class Format {
 
 public sealed class SpacingTests {
     [Theory]
-    [InlineData("class C { void M(int a,int b) { M(a,b); } }", "void M(int a, int b) { M(a, b); }")]
-    [InlineData("class C { void M() { M ( ) ; } }", "void M() { M(); }")]
+    // ⚠ The body is on its own line since milestone 3, and these two rows say so on purpose. Every
+    // statement gets a line of its own — `csharp_preserve_single_line_blocks = true` is in the export
+    // and ReSharper ignores it (BreakPlan.PlanOnePerLine) — so a one-line method with a body in it
+    // is three lines, and asserting the spacing on one line was asserting the wrong shape.
+    [InlineData("class C { void M(int a,int b) { M(a,b); } }", "void M(int a, int b) {\n        M(a, b);\n    }")]
+    [InlineData("class C { void M() { M ( ) ; } }", "void M() {\n        M();\n    }")]
     [InlineData("class C { int M(int a) => ( int ) a ; }", "int M(int a) => (int)a;")]
     [InlineData("class C { void M(bool b) { if(b){} } }", "if (b) { }")]
     [InlineData("class C { int M(int a) => a<1?2:3; }", "int M(int a) => a < 1 ? 2 : 3;")]
@@ -343,10 +358,18 @@ public sealed class TriviaTests {
     }
 
     [Fact]
-    public void ARawStringLiteral_IsUntouched() {
+    public void ARawStringLiteral_MovesAsOnePiece() {
+        // ⚠ `indent_raw_literal_string = align` since milestone 3, and this test asserted the
+        // opposite until then: SK-DIV-0003 recorded raw literals as emitted verbatim because
+        // re-indenting one wrongly changes what the program prints. The transformation that is safe
+        // is a *uniform shift* — every interior line and the closing delimiter by the same number of
+        // columns — because C# strips the closing delimiter's own prefix from every line, so the
+        // stripped result is identical. The interior's own relative indentation is preserved: the
+        // `x` line stays two columns further in than the `{  }` line, and the braces inside the
+        // string are untouched.
         const string source = "class C {\n    const string A = \"\"\"\n        {  }\n          x\n        \"\"\";\n}\n";
         Assert.Contains(
-            "\"\"\"\n        {  }\n          x\n        \"\"\"",
+            "\"\"\"\n                     {  }\n                       x\n                     \"\"\"",
             Format.Text(source),
             StringComparison.Ordinal
         );
@@ -717,5 +740,61 @@ public sealed class BreakPositionTests {
         }) {
             Assert.Equal(0, Format.OwnerUnresolved(source));
         }
+    }
+}
+
+/// <summary>Phase 4, and the shape of it that is evidence-led rather than schedule-led.</summary>
+public sealed class XmlDocTests {
+    [Fact]
+    public void AMalformedDocComment_IsReportedAtHint_AndLeftExactlyAsWritten() {
+        // ⚠ docs/plan/05 § "Phase 4": "A doc comment that is not well-formed XML — extremely common
+        // in real code — must be left exactly as it is and reported at hint (SK0003), not 'fixed'."
+        const string source = "class C {\n    /// <summary>Not closed <b>at all.</summary>\n    void M() { }\n}\n";
+        var result = Format.Run(source);
+
+        Assert.Contains(
+            result.Diagnostics,
+            d => d.Id == FormatDiagnosticIds.MalformedXmlDoc && d.Severity == SkalaSeverity.Hidden
+        );
+
+        Assert.Contains("/// <summary>Not closed <b>at all.</summary>", result.Formatted, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void TwoSiblingParamTags_AreWellFormed() {
+        // ⚠ A doc comment is a fragment, not a document. Two <param> siblings are ordinary, and
+        // judging them by document rules would report most of the corpus.
+        const string source = "class C {\n    /// <param name=\"a\">A.</param>\n    /// <param name=\"b\">B.</param>\n    void M(int a, int b) { }\n}\n";
+
+        Assert.DoesNotContain(
+            Format.Run(source).Diagnostics,
+            static d => d.Id == FormatDiagnosticIds.MalformedXmlDoc
+        );
+    }
+
+    [Fact]
+    public void AWellFormedDocComment_IsNotRewrappedEither() {
+        // ⚠ SK-DIV-0006. `jb cleanupcode` does not format documentation comments at all — not the
+        // missing space after `///`, not a 128-column summary, not two tags on one line — so Skala
+        // does not either. A formatter that re-wrapped them would diverge from the oracle on every
+        // doc comment in the corpus, with no oracle to check itself against while doing it.
+        const string source = "class C {\n    ///<summary>A summary line that runs a long way past one hundred and twenty columns in total, easily.</summary>\n    void M() { }\n}\n";
+
+        Assert.Contains("///<summary>", Format.Text(source), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void ALineNothingCouldBreak_IsLeftLongAndReportedAtHint() {
+        // docs/plan/04 § "The fitting algorithm": "Unfittable lines are left long. […] never emits a
+        // diagnostic for it by default (SK0002 at hint for the audit)."
+        var source = "class C {\n    const string S = \"" + new string('x', 200) + "\";\n}\n";
+        var result = Format.Run(source);
+
+        Assert.Contains(
+            result.Diagnostics,
+            static d => d.Id == FormatDiagnosticIds.LineTooLong && d.Severity == SkalaSeverity.Hidden
+        );
+
+        Assert.Contains(new string('x', 200), result.Formatted, StringComparison.Ordinal);
     }
 }

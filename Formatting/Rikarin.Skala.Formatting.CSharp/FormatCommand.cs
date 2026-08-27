@@ -29,6 +29,17 @@ public sealed record FormatRequest {
     public IReadOnlyList<KeyValuePair<string, string>> Overrides { get; init; } = [];
 
     public string? RepositoryRoot { get; init; }
+
+    /// <summary>
+    /// <c>--jobs</c>: how many files are formatted at once. Null means <c>min(cores, 10)</c>.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ Formatting is embarrassingly parallel and this loop was sequential until milestone 3.
+    /// Measured on Vixen at M2: 34.3 s of wall time for 36.7 s of CPU, a speedup of 1.07× on a
+    /// ten-core machine against a 20 s budget (docs/plan/13 § "Parallelism"). The missing factor was
+    /// never the formatter.
+    /// </remarks>
+    public int? Jobs { get; init; }
 }
 
 /// <summary>How <c>--staged</c> behaves in the presence of unstaged edits.</summary>
@@ -91,59 +102,45 @@ public static class FormatCommand {
         }
 
         var range = ParseRange(request.Range);
+        var outcomes = FormatAll(files, request, crashRoot, root, range);
+
         var changed = 0;
         var failures = 0;
         var diagnostics = new List<SkalaDiagnostic>();
 
-        foreach (var file in files) {
-            FormatResult result;
-            try {
-                result = CSharpFormatter.FormatFile(file, request.Overrides, crashRoot);
-            } catch (IOException exception) {
-                diagnostics.Add(new SkalaDiagnostic("SK9012", SkalaSeverity.Error, exception.Message, file));
+        // ⚠ The results are consumed in the order the files were collected, not the order they
+        // finished. docs/plan/13 § "Parallelism": "determinism is restored by sorting after the
+        // fact, never by serialising." Two runs of `--check` over the same tree must print the same
+        // bytes, or the output is unusable in CI and in a review.
+        for (var i = 0; i < outcomes.Length; i++) {
+            var outcome = outcomes[i];
+            if (outcome is null) {
+                continue;
+            }
+
+            diagnostics.AddRange(outcome.Diagnostics);
+            if (outcome.Failed) {
                 failures++;
                 continue;
             }
 
-            diagnostics.AddRange(result.Diagnostics);
-            if (result.Outcome == FormatOutcome.VerificationFailed) {
-                failures++;
-                continue;
-            }
-
-            var edits = range is { } span ? EditEmitter.Restrict(result.Edits, span) : result.Edits;
-            if (edits.Count == 0) {
+            if (!outcome.Changed) {
                 continue;
             }
 
             changed++;
             if (request.Diff) {
-                output.Append(
-                    UnifiedDiff.Render(
-                        Relative(root, file),
-                        result.Original.ToString(),
-                        EditEmitter.Apply(result.Original.ToString(), edits)
-                    )
-                );
+                output.Append(outcome.Diff);
             } else if (!request.Quiet) {
-                output.Append(Relative(root, file)).AppendLine();
+                output.Append(Relative(root, files[i])).AppendLine();
             }
 
-            // ⚠ `--diff` does not write, any more than `--check` does. docs/plan/04 § "Emitting
-            // minimal edits" says so — "`--diff` is a unified diff over the edits" — and a reporting
-            // flag that also rewrites the tree is the kind of thing a person discovers by running it
-            // on someone else's repository. It rewrote 9 000 files across four worktrees once.
-            if (request.Check || request.Diff) {
-                continue;
-            }
-
-            var text = EditEmitter.Apply(result.Original.ToString(), edits);
-            File.WriteAllText(file, text, result.Original.Encoding ?? new UTF8Encoding(false));
-
-            if (request.Staged != StagedMode.Off && root is not null) {
-                // Both the worktree and the index, which is the only correct behaviour for a
-                // pre-commit hook and the one that is easy to get wrong in a way that loses work.
-                GitIndex.Add(root, file);
+            if (request.Staged != StagedMode.Off && root is not null && !request.Check && !request.Diff) {
+                // ⚠ Serial, and after the writes. `git add` is a process launch against one index
+                // file; running 4 700 of them at ten-way parallelism is both slower than doing it in
+                // order and a lock contention on `.git/index` that git reports as a failure rather
+                // than a wait.
+                GitIndex.Add(root, files[i]);
             }
         }
 
@@ -165,6 +162,99 @@ public static class FormatCommand {
 
         var exit = failures > 0 ? Failed : (request.Check || request.Diff) && changed > 0 ? ChangesFound : 0;
         return new CommandResult(exit, output.ToString());
+    }
+
+    /// <summary>One file's result, reduced to what the ordered pass needs.</summary>
+    sealed record FileOutcome(
+        bool Failed,
+        bool Changed,
+        string? Diff,
+        IReadOnlyList<SkalaDiagnostic> Diagnostics);
+
+    /// <summary>
+    /// Formats every file, in parallel, into a result slot of its own.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ The write happens inside the parallel body and the <em>reporting</em> does not. Writing is
+    /// per-file and independent; appending to one <see cref="StringBuilder"/> from ten threads is
+    /// neither, and sorting the pieces afterwards is not the same thing as writing them in order —
+    /// a diff whose hunks arrive interleaved is not a diff.
+    /// </remarks>
+    static FileOutcome?[] FormatAll(
+        List<string> files,
+        FormatRequest request,
+        string? crashRoot,
+        string? root,
+        SourceSpan? range
+    ) {
+        var outcomes = new FileOutcome?[files.Count];
+        var jobs = request.Jobs is { } requested and > 0
+            ? requested
+            : Math.Min(Environment.ProcessorCount, 10);
+
+        if (jobs == 1 || files.Count <= 1) {
+            for (var i = 0; i < files.Count; i++) {
+                outcomes[i] = FormatOne(files[i], request, crashRoot, root, range);
+            }
+
+            return outcomes;
+        }
+
+        Parallel.For(
+            0,
+            files.Count,
+            new ParallelOptions { MaxDegreeOfParallelism = jobs },
+            index => outcomes[index] = FormatOne(files[index], request, crashRoot, root, range)
+        );
+
+        return outcomes;
+    }
+
+    static FileOutcome FormatOne(
+        string file,
+        FormatRequest request,
+        string? crashRoot,
+        string? root,
+        SourceSpan? range
+    ) {
+        FormatResult result;
+        try {
+            result = CSharpFormatter.FormatFile(file, request.Overrides, crashRoot);
+        } catch (IOException exception) {
+            return new FileOutcome(
+                true,
+                false,
+                null,
+                [new SkalaDiagnostic("SK9012", SkalaSeverity.Error, exception.Message, file)]
+            );
+        }
+
+        if (result.Outcome == FormatOutcome.VerificationFailed) {
+            return new FileOutcome(true, false, null, result.Diagnostics);
+        }
+
+        var edits = range is { } span ? EditEmitter.Restrict(result.Edits, span) : result.Edits;
+        if (edits.Count == 0) {
+            return new FileOutcome(false, false, null, result.Diagnostics);
+        }
+
+        var original = result.Original.ToString();
+        var text = EditEmitter.Apply(original, edits);
+
+        // ⚠ `--diff` does not write, any more than `--check` does. docs/plan/04 § "Emitting minimal
+        // edits" says so — "`--diff` is a unified diff over the edits" — and a reporting flag that
+        // also rewrites the tree is the kind of thing a person discovers by running it on someone
+        // else's repository. It rewrote 9 000 files across four worktrees once.
+        if (!request.Check && !request.Diff) {
+            File.WriteAllText(file, text, result.Original.Encoding ?? new UTF8Encoding(false));
+        }
+
+        return new FileOutcome(
+            false,
+            true,
+            request.Diff ? UnifiedDiff.Render(Relative(root, file), original, text) : null,
+            result.Diagnostics
+        );
     }
 
     static SourceSpan? ParseRange(string? range) {

@@ -58,6 +58,21 @@ public sealed partial class CSharpDocumentBuilder {
             required = Math.Max(required, RegionRequirement(previous, nextPieceIndex));
         }
 
+        // ⚠ A gap that touches a conditional or a `#pragma` gets no requirement at all, and the
+        // caps still apply to it. The requirement belongs to the boundary between two members and
+        // not to whichever gap the directive happens to have landed in:
+        // <code>
+        // using System.Collections.Generic;
+        // #if DNXCORE50            ← `blank_lines_after_using_list = 1` fired here
+        // </code>
+        // The oracle puts nothing there and the blank line after the matching `#endif` instead,
+        // which is the same requirement paid at the boundary it is about. Measured at 156 lines
+        // across 84 files of `corpus/real/` — one blank line per conditional region, and
+        // Newtonsoft.Json is largely wrapped in them.
+        if (TouchesDirective(previous, nextPieceIndex)) {
+            return required;
+        }
+
         // ⚠ stick_comment = true: a comment directly above a declaration is part of it, so the gap
         // BELOW the comment is inside the member and takes none of the member's requirement. The
         // requirement was already spent on the gap above the comment, which is the whole point of
@@ -120,6 +135,24 @@ public sealed partial class CSharpDocumentBuilder {
 
         return required;
     }
+
+    /// <summary>
+    /// Whether either side of the gap is a conditional directive, a <c>#pragma</c> or disabled text.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ Not a region. <c>blank_lines_around_region</c> and <c>blank_lines_inside_region</c> are
+    /// requirements <em>about</em> the directive, and they are the only ones that are.
+    /// </remarks>
+    bool TouchesDirective(Piece previous, int nextPieceIndex) {
+        if (IsDirective(previous.Kind)) {
+            return true;
+        }
+
+        return nextPieceIndex >= 0 && nextPieceIndex < _pieces.Length && IsDirective(_pieces[nextPieceIndex].Kind);
+    }
+
+    static bool IsDirective(PieceKind kind) =>
+        kind is PieceKind.ConditionalDirective or PieceKind.OtherDirective or PieceKind.DisabledText;
 
     int RegionRequirement(Piece previous, int nextPieceIndex) {
         var nextIsRegion = nextPieceIndex >= 0 && nextPieceIndex < _pieces.Length && _pieces[nextPieceIndex].Kind == PieceKind.RegionDirective;
@@ -194,20 +227,22 @@ public sealed partial class CSharpDocumentBuilder {
             return false;
         }
 
-        if (_plan.HasForcedBreakIn(member.Span.Start, member.Span.End)) {
+        // ⚠ From *after* the member's first token, not from its start. The break that puts a member
+        // on a line of its own sits exactly at the member's first character, and counting it as a
+        // break "inside" the member makes every member multi-line at once — which reads as a
+        // blank-line bug rather than as a measurement one: adjacent single-line fields suddenly take
+        // `blank_lines_around_field = 1` instead of `blank_lines_around_single_line_field = 0`.
+        if (_plan.HasForcedBreakIn(member.Span.Start + 1, member.Span.End)) {
             return false;
         }
 
-        // ⚠ A member that shares its line with the member before it is not "single line" in the
-        // sense the blank-line keys mean, and calling it one is unstable: its width test is against
-        // column 0 while the fitter meets it half way along a line, so the first pass calls it
-        // single and the second does not.
-        var previous = member.GetFirstToken().GetPreviousToken();
-        if (!previous.IsKind(SyntaxKind.None)
-            && lines.GetLineFromPosition(previous.Span.End).LineNumber == first.LineNumber
-            && MemberEndingAt(previous) is not null) {
-            return false;
-        }
+        // ⚠ Milestone 2 also declined here for a member that shared its line with the member above
+        // it, because such a member had no stable notion of "single line" — its width test is
+        // against column 0 while the fitter met it half way along a line. That guard is gone,
+        // because the case it guarded against is gone: BreakPlan.PlanOnePerLine gives every member a
+        // line of its own, so the question is now asked about the shape the output will have. The
+        // guard outliving the case is what put a blank line between `int B => 2;` and `int C => 3;`
+        // that the oracle does not write.
 
         // A line the fitter will chop is not a line, so the width has to be the one the fitter will
         // see. ⚠ Not the source line's width: the member's own span plus the indentation the OUTPUT
@@ -249,6 +284,11 @@ public sealed partial class CSharpDocumentBuilder {
     /// <summary>
     /// Where a member starts once the comment block directly above it is counted as part of it.
     /// </summary>
+    /// <remarks>
+    /// ⚠ Only for <see cref="IsSingleLine"/>. <c>stick_comment = true</c> still moves a plain
+    /// comment with its member for the purposes of the blank-line <em>gap</em>; what this answers is
+    /// the narrower question of whether the member counts as occupying one line.
+    /// </remarks>
     static int StickyStart(SyntaxNode member) {
         var start = member.Span.Start;
         foreach (var trivia in member.GetLeadingTrivia().Reverse()) {
@@ -261,11 +301,26 @@ public sealed partial class CSharpDocumentBuilder {
                     // does not.
                     continue;
 
-                case SyntaxKind.SingleLineCommentTrivia:
+                // ⚠ A *documentation* comment joins the member for the purpose of "is this member
+                // single line"; a plain comment does not, and the two are two lines apart in the
+                // oracle's output:
+                //     // A plain comment above a one-line property.
+                //     public int A => 1;
+                //     public int B => 2;      ← no blank line: A is single-line
+                //
+                //     /// <summary>A doc comment.</summary>
+                //     public int C => 3;
+                //                             ← a blank line: C is not
+                //     public int D => 4;
+                // docs/plan/05 § "Blank lines" says exactly this — "M() has a doc comment and is not
+                // single-line" — and milestone 1 read it as being about comments in general.
                 case SyntaxKind.SingleLineDocumentationCommentTrivia:
-                case SyntaxKind.MultiLineCommentTrivia:
                 case SyntaxKind.MultiLineDocumentationCommentTrivia:
                     start = trivia.FullSpan.Start;
+                    continue;
+
+                case SyntaxKind.SingleLineCommentTrivia:
+                case SyntaxKind.MultiLineCommentTrivia:
                     continue;
 
                 default:

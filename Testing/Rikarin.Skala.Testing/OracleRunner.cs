@@ -128,6 +128,63 @@ public sealed class OracleRunner {
         }
     }
 
+    /// <summary>
+    /// Formats one batch of files where each file carries its own <c>.editorconfig</c>.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ The isolation is a subdirectory per file, and that is what makes the defaults probe answer
+    /// a question about one option rather than about a configuration. Batching by value index — one
+    /// run with every option at its 1st value, one at its 2nd — is the only affordable shape,
+    /// because <c>cleanupcode</c>'s startup dominates; but with one shared configuration every
+    /// fixture is moved by whatever else is in the batch, and the first attempt at this came back
+    /// with 197 options and zero fixtures unchanged. A directory per file, each with its own
+    /// <c>root = true</c> plus one key, gives the batching for free and the isolation with it.
+    /// </remarks>
+    public IReadOnlyDictionary<string, string> FormatIsolated(IReadOnlyList<(CorpusFile File, string Config)> work) {
+        var scratch = Directory.CreateTempSubdirectory("skala-isolated-");
+        try {
+            File.WriteAllText(Path.Combine(scratch.FullName, "Oracle.csproj"), ProjectFile);
+            File.WriteAllText(Path.Combine(scratch.FullName, "Oracle.sln"), SolutionFile);
+            var settings = Path.Combine(scratch.FullName, "Oracle.sln.DotSettings");
+            File.WriteAllText(settings, SettingsFile);
+
+            var names = new Dictionary<string, string>(StringComparer.Ordinal);
+            for (var i = 0; i < work.Count; i++) {
+                var directory = Path.Combine(scratch.FullName, "d" + i.ToString(System.Globalization.CultureInfo.InvariantCulture));
+                Directory.CreateDirectory(directory);
+                File.WriteAllText(Path.Combine(directory, ".editorconfig"), work[i].Config);
+                var produced = Path.Combine(directory, "F.cs");
+                File.Copy(work[i].File.Path, produced);
+                names[produced] = work[i].File.Path;
+            }
+
+            Run(
+                scratch.FullName,
+                "cleanupcode",
+                "--no-build",
+                "--profile=" + Profile,
+                "--settings=" + settings,
+                "--verbosity=WARN",
+                Path.Combine(scratch.FullName, "Oracle.sln")
+            );
+
+            var results = new Dictionary<string, string>(StringComparer.Ordinal);
+            foreach (var (produced, original) in names) {
+                if (File.Exists(produced)) {
+                    results[original] = File.ReadAllText(produced);
+                }
+            }
+
+            return results;
+        } finally {
+            try {
+                scratch.Delete(recursive: true);
+            } catch (IOException) {
+                // A scratch directory the tool still holds open is not worth failing a build over.
+            }
+        }
+    }
+
     string Run(string workingDirectory, params string[] arguments) {
         var start = new ProcessStartInfo(_executable) {
             WorkingDirectory = workingDirectory,

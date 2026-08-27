@@ -26,7 +26,13 @@ skala daemon   status|stop
 ```
 
 Global: `--format`, `--output`, `--no-color`, `--verbose`, `--config <file>`, `--option k=v`,
-`--jobs n`, `--no-cache`, `--no-daemon`.
+`--jobs n`, `--no-cache`, `--no-daemon`. ⚠ `--jobs`, `--no-cache` and `--no-daemon` exist on
+`format` from M3 and nowhere else yet; the rest are still the intent.
+
+⚠ `skala daemon` has no `start`. The daemon is started lazily by whatever needs it and exits after
+thirty minutes idle; a `start` verb invites a person to run one by hand and then wonder why their
+editor is using a different one. `skala daemon run` is the foreground form, for a supervisor and for
+the tests.
 
 ### Path resolution
 
@@ -47,15 +53,35 @@ Per-repository, started lazily on the first command, exits after 30 minutes idle
 trees keyed by content hash, the option registry, resolved `.editorconfig` chains, and — for
 `check` — loaded compilations and metadata references.
 
+⚠ "Lazily" means the first single-file `skala format` in a repository finds no socket, **does the
+work itself**, and leaves a daemon behind for the next one. It does not wait for the daemon it
+starts: waiting would put the daemon's own start — process, JIT, first configuration resolution —
+inside the very budget the daemon exists to meet, and lazy starting would then feel slower than no
+daemon at all. Measured: the first `format --check` of a 615-line file is 310 ms and every one after
+it is 70 ms. The start is skipped entirely unless the running executable is `skala` itself, so a
+`dotnet run`, a test host, or anything using the formatter as a library never spawns one.
+
 - Socket: a unix domain socket (named pipe on Windows) under `.skala/daemon.sock`, permissions
   0600.
 - Protocol: private, length-prefixed JSON, versioned by exact match. A client that meets a daemon of
   a different version kills it and starts its own. No negotiation, no compatibility window.
 - Correctness rule: **every command must work identically with `SKALA_NO_DAEMON=1`.** The daemon is
-  only allowed to make things faster. The conformance suite runs the entire corpus both ways and
-  diffs, which is the only way this property survives contact with a cache.
-- The daemon never watches the filesystem. It is asked; it does not observe. File watching is where
-  daemons acquire their stale-state bugs, and the client already knows what changed.
+  only allowed to make things faster. It holds the results of the same `CSharpFormatter` the CLI
+  calls and never a second implementation of anything, and the suite compares the two answers byte
+  for byte.
+- The daemon never watches the filesystem. It is asked; it does not observe. ⚠ The way that is made
+  safe is the *cache key*: a file's content hash together with the identity of every
+  `.editorconfig` above it, so there is no invalidation to get wrong and no window in which a stale
+  answer is served. A config edited under a running daemon is picked up the same way — a reloaded
+  document carries a new version stamp and the stamp is in the key.
+- ⚠ Every failure on the client side is a fallback and never an error: absent, stale, or of another
+  protocol version, and the CLI does the work itself. An optimisation that can fail a pre-commit hook
+  is not one. A socket file left by a crashed daemon is probed before it is unlinked, so recovering
+  is not the same as stealing a live daemon's socket.
+- ⚠ The daemon serves exactly one shape — a single named file, no `--staged`, no `--range`, no
+  overrides — because that is the shape the budget is about. A whole-corpus run is already parallel
+  and is bounded by the formatter rather than by process start; serving more shapes would mean a
+  second implementation of the reporting, the writing and the exit codes.
 
 ## LSP
 
@@ -69,7 +95,11 @@ trees keyed by content hash, the option registry, resolved `.editorconfig` chain
 | `textDocument/codeAction` | the fixes, as `quickfix` actions with the SARIF's `artifactChanges` |
 
 Enough for VS Code, Neovim, Helix, Zed and anything else with a generic LSP client to get Skala
-formatting on save and Skala squiggles inline.
+formatting on save and Skala squiggles inline. ⚠ Range formatting is a *filter over a whole-file
+fit* and never a fit of the range, and the test asserts that a range's edits are a strict subset of
+the file's: the column a construct is measured against depends on the indentation stack above it, so
+a fit that starts half way down a file has to guess, and the guess is what makes "format selection"
+and "format document" disagree.
 
 ⚠ **Rider is not an LSP consumer for formatting, and does not need to be.** Rider already implements
 this `.editorconfig` — it is where the file came from. The Rider integration is: nothing. That is the
@@ -111,9 +141,16 @@ skala verify --format=plain  || exit 1
 
 Budget: under 500 ms for a typical commit (a handful of files, warm daemon). [13](13-performance.md)
 § "Startup" is what makes that possible, and it is why NativeAOT for the CLI front end is on the
-table.
+table. ⚠ M3 measures a warm single-file format at 60–70 ms against a 40 ms budget, of which
+essentially all is the client's own process start — `skala daemon status`, which does no work at
+all, is the same 60 ms. The daemon itself answers in single-digit milliseconds; nothing in the
+budget is left for Skala to optimise, and the fix is NativeAOT for the client, which is not done.
 
 `skala hooks install` writes them, detecting an existing hook manager rather than clobbering it.
+⚠ husky, lefthook, `pre-commit` and a `core.hooksPath` pointing elsewhere are all detected, and the
+last matters most: git would never run `.git/hooks/pre-commit`, so writing one there looks installed
+and is inert. It also refuses to overwrite a `pre-commit` it did not write, and says what to add
+instead. Without `--apply` it only says what it would do.
 
 ## CI
 

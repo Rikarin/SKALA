@@ -1,37 +1,37 @@
 {
   "real": {
-    "LineFidelity": 0.9747,
-    "FileFidelity": 0.4947,
-    "Milestone": "M2 - break presence and position; keep_existing_*; expression-body placement. M1 was 0.9428/0.3684."
+    "LineFidelity": 0.9886,
+    "FileFidelity": 0.7053,
+    "Milestone": "M3 - wrapping, the ordering rule, the trailing-context measure, and blank lines that no longer fire across a preprocessor directive. M2 was 0.9747/0.4947."
   },
   "constructs": {
-    "LineFidelity": 0.9305,
-    "FileFidelity": 0.8615,
-    "Milestone": "M2 - the set grew by 33 files (breaks/, placement/, preservation/, three idempotency regressions), so this is a different population from M1's 0.9320. On M1's own 228 files it is 0.9364."
+    "LineFidelity": 0.9597,
+    "FileFidelity": 0.8967,
+    "Milestone": "M3 - the set grew by 9 files (wrapping/), so this is a different population from M2's 0.9305."
   },
   "pathological": {
-    "LineFidelity": 0.8843,
-    "FileFidelity": 0.6731,
-    "Milestone": "M2. M1 was 0.8493/0.6346."
+    "LineFidelity": 0.9473,
+    "FileFidelity": 0.8077,
+    "Milestone": "M3. M2 was 0.8843/0.6731."
   },
   "preservation/keep-keep": {
-    "LineFidelity": 0.8101,
-    "FileFidelity": 0.6923,
-    "Milestone": "M2 - constructs/preservation/ under keep_user_linebreaks=true, keep_existing_*=true"
+    "LineFidelity": 0.9086,
+    "FileFidelity": 0.7692,
+    "Milestone": "M3 - constructs/preservation/ under keep_user_linebreaks=true, keep_existing_*=true. M2 was 0.8101."
   },
   "preservation/keep-rearrange": {
-    "LineFidelity": 0.8765,
-    "FileFidelity": 0.6923,
-    "Milestone": "M2 - keep_user_linebreaks=true, keep_existing_*=false; the corner that costs a first-run diff"
+    "LineFidelity": 1.0,
+    "FileFidelity": 1.0,
+    "Milestone": "M3 - keep_user_linebreaks=true, keep_existing_*=false; the corner that costs a first-run diff, and now exact. M2 was 0.8765."
   },
   "preservation/reflow-keep": {
-    "LineFidelity": 0.8582,
-    "FileFidelity": 0.7692,
-    "Milestone": "M2 - keep_user_linebreaks=false, keep_existing_*=true"
+    "LineFidelity": 0.9265,
+    "FileFidelity": 0.8462,
+    "Milestone": "M3 - keep_user_linebreaks=false, keep_existing_*=true. M2 was 0.8582."
   },
   "preservation/reflow-rearrange": {
-    "LineFidelity": 0.8844,
-    "FileFidelity": 0.7692,
-    "Milestone": "M2 - keep_user_linebreaks=false, keep_existing_*=false (--reflow)"
+    "LineFidelity": 1.0,
+    "FileFidelity": 1.0,
+    "Milestone": "M3 - keep_user_linebreaks=false, keep_existing_*=false (--reflow), and now exact. M2 was 0.8844."
   }
 }

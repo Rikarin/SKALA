@@ -23,7 +23,13 @@ public enum GapRule {
     Flat,
 
     /// <summary>A break the rules require, whatever the source did.</summary>
-    Mandatory
+    Mandatory,
+
+    /// <summary>
+    /// A break point of a <em>fill</em>: it breaks when what follows would not fit on the line, and
+    /// not merely because its group broke. <c>wrap_if_long</c>.
+    /// </summary>
+    FillPoint
 }
 
 /// <summary>One gap's rule.</summary>
@@ -44,7 +50,28 @@ public readonly record struct GapSpec(GapRule Rule, int Group);
 /// close pops the indent instead of the group. The symptom is the second operand of
 /// <c>a\n + b\n + c</c> landing a level short of the first.
 /// </param>
-public readonly record struct GroupPlan(int Id, GroupMode Mode, GroupFacts Facts, bool SpendsIndent = false);
+/// <param name="LeadingGapInside">
+/// ⚠ The group's first break point is the gap <em>before</em> the node, so the group has to open
+/// before that gap is written or the point is emitted outside the group it belongs to and the
+/// writer, finding the group unresolved, renders it flat. The one construct that needs it is a base
+/// list under <c>wrap_before_extends_colon = true</c>, whose only break point is the colon that
+/// starts the node. Every other group's first point is at a token in its interior.
+/// </param>
+/// <param name="OwnLevel">
+/// ⚠ A second continuation level, on top of whatever the construct around it already spends. Only a
+/// binary <em>pattern</em> chain asks for it, and docs/plan/04 § "Indentation" is where the
+/// asymmetry is recorded: a binary expression chain spends no level of its own and a binary pattern
+/// chain spends one. It looks arbitrary and it is what the oracle writes —
+/// <c>return x is A\n        or B;</c> puts the operand two levels in and
+/// <c>return a\n    + b;</c> puts it one.
+/// </param>
+public readonly record struct GroupPlan(
+    int Id,
+    GroupMode Mode,
+    GroupFacts Facts,
+    bool SpendsIndent = false,
+    bool LeadingGapInside = false,
+    bool OwnLevel = false);
 
 /// <summary>
 /// Decides, before a token is emitted, which gaps of a construct may break and which may not.
@@ -87,7 +114,33 @@ public readonly record struct GroupPlan(int Id, GroupMode Mode, GroupFacts Facts
 /// </remarks>
 public sealed class BreakPlan {
     readonly Dictionary<int, GapSpec> _gaps = [];
-    readonly Dictionary<long, GroupPlan> _groups = [];
+
+    /// <summary>
+    /// The groups opened around one node, outermost first.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ A list rather than one plan, because two constructs can start and end at the same token and
+    /// need two groups. A binary chain is the case that forces it: the operators keep their own
+    /// groups so that <c>a &amp;&amp; b\n || c</c> comes back unchanged, and the chain needs a group
+    /// of its own on the same node so that <c>chop_if_long</c> can break <em>all</em> of them at once
+    /// when the whole chain is too wide. One group cannot be both.
+    /// </remarks>
+    readonly Dictionary<long, List<GroupPlan>> _groups = [];
+
+    /// <summary>The chain-wide group of a binary chain, keyed by its root node.</summary>
+    readonly Dictionary<long, int> _chainOwner = [];
+
+    /// <summary>
+    /// The group opened <em>inside</em> a construct's delimiters rather than around them.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ It cannot be one of <see cref="_groups"/>, because those are opened around the node and are
+    /// therefore entered at the column the node starts at. The elements of a braced initializer are
+    /// measured against the column they land on <em>after</em> the brace has broken, which is one
+    /// continuation level in and one line down, so the group has to be opened where the elements
+    /// begin. <see cref="CSharpDocumentBuilder.VisitBraced"/> opens it.
+    /// </remarks>
+    readonly Dictionary<long, GroupPlan> _inner = [];
     readonly string _source;
     readonly PhaseOneOptions _options;
     int[] _forced = [];
@@ -111,11 +164,27 @@ public sealed class BreakPlan {
     /// <summary>The rule for the gap immediately before <paramref name="position"/>, if any.</summary>
     public bool TryGap(int position, out GapSpec spec) => _gaps.TryGetValue(position, out spec);
 
-    /// <summary>The group the builder opens around <paramref name="node"/>, if any.</summary>
-    public bool TryGroup(SyntaxNode node, out GroupPlan plan) => _groups.TryGetValue(Key(node), out plan);
+    /// <summary>The groups the builder opens around <paramref name="node"/>, outermost first.</summary>
+    public IReadOnlyList<GroupPlan> GroupsOf(SyntaxNode node) =>
+        _groups.TryGetValue(Key(node), out var plans) ? plans : [];
+
+    /// <summary>The group the builder opens just inside <paramref name="node"/>'s delimiters, if any.</summary>
+    public bool TryInnerGroup(SyntaxNode node, out GroupPlan plan) => _inner.TryGetValue(Key(node), out plan);
 
     /// <summary>Every group the plan created, so the builder can describe them to the document.</summary>
-    public IEnumerable<GroupPlan> Groups => _groups.Values;
+    public IEnumerable<GroupPlan> Groups {
+        get {
+            foreach (var plans in _groups.Values) {
+                foreach (var plan in plans) {
+                    yield return plan;
+                }
+            }
+
+            foreach (var plan in _inner.Values) {
+                yield return plan;
+            }
+        }
+    }
 
     /// <summary>
     /// Whether anything between <paramref name="start"/> and <paramref name="end"/> is certain to
@@ -145,9 +214,11 @@ public sealed class BreakPlan {
     /// </summary>
     void CollectForcedBreaks() {
         var forced = new List<int>();
-        foreach (var (key, plan) in _groups) {
-            if (plan.Mode == GroupMode.Break) {
-                forced.Add((int)(key >> 32));
+        foreach (var (key, plans) in _groups) {
+            foreach (var plan in plans) {
+                if (plan.Mode == GroupMode.Break) {
+                    forced.Add((int)(key >> 32));
+                }
             }
         }
 
@@ -178,6 +249,7 @@ public sealed class BreakPlan {
     void Plan(SyntaxNode node) {
         PlanAttributes(node);
         PlanEmbeddedStatement(node, EmbeddedStatementOf(node));
+        PlanOnePerLine(node);
 
         switch (node) {
             case EnumDeclarationSyntax enumeration:
@@ -198,7 +270,8 @@ public sealed class BreakPlan {
                     InvocationKeeps(arguments),
                     _options.WrapArgumentsStyle,
                     _options.WrapAfterInvocationLpar,
-                    _options.WrapBeforeInvocationRpar
+                    _options.WrapBeforeInvocationRpar,
+                    _options.MaxInvocationArgumentsOnLine
                 );
                 return;
 
@@ -212,7 +285,8 @@ public sealed class BreakPlan {
                     _options.KeepExistingInvocationParensArrangement,
                     _options.WrapArgumentsStyle,
                     _options.WrapAfterInvocationLpar,
-                    _options.WrapBeforeInvocationRpar
+                    _options.WrapBeforeInvocationRpar,
+                    _options.MaxInvocationArgumentsOnLine
                 );
                 return;
 
@@ -230,7 +304,8 @@ public sealed class BreakPlan {
                     _options.KeepExistingPrimaryConstructorParensArrangement,
                     _options.WrapPrimaryConstructorParametersStyle,
                     _options.WrapAfterPrimaryConstructorLpar,
-                    _options.WrapBeforePrimaryConstructorRpar
+                    _options.WrapBeforePrimaryConstructorRpar,
+                    _options.MaxPrimaryConstructorParametersOnLine
                 );
                 return;
 
@@ -244,16 +319,90 @@ public sealed class BreakPlan {
                     DeclarationKeeps(parameters),
                     _options.WrapParametersStyle,
                     _options.WrapAfterDeclarationLpar,
-                    _options.WrapBeforeDeclarationRpar
+                    _options.WrapBeforeDeclarationRpar,
+                    _options.MaxFormalParametersOnLine
                 );
                 return;
 
+            case InitializerExpressionSyntax initializer:
+                PlanInitializer(initializer);
+                return;
+
+            case AnonymousObjectCreationExpressionSyntax anonymous:
+                PlanAnonymousObject(anonymous);
+                return;
+
+            case CollectionExpressionSyntax collection:
+                PlanList(
+                    node,
+                    collection.OpenBracketToken,
+                    collection.CloseBracketToken,
+                    collection.Elements,
+                    collection.Elements.GetSeparators(),
+                    _options.KeepExistingListPatternsArrangement,
+                    _options.WrapListPattern,
+                    wrapAfterOpen: true,
+                    wrapBeforeClose: true,
+                    placeOnSingleLine: _options.PlaceSimpleListPatternOnSingleLine
+                );
+                return;
+
+            case ListPatternSyntax listPattern:
+                PlanList(
+                    node,
+                    listPattern.OpenBracketToken,
+                    listPattern.CloseBracketToken,
+                    listPattern.Patterns,
+                    listPattern.Patterns.GetSeparators(),
+                    _options.KeepExistingListPatternsArrangement,
+                    _options.WrapListPattern,
+                    wrapAfterOpen: true,
+                    wrapBeforeClose: true,
+                    placeOnSingleLine: _options.PlaceSimpleListPatternOnSingleLine
+                );
+                return;
+
+            case PropertyPatternClauseSyntax propertyPattern:
+                PlanList(
+                    node,
+                    propertyPattern.OpenBraceToken,
+                    propertyPattern.CloseBraceToken,
+                    propertyPattern.Subpatterns,
+                    propertyPattern.Subpatterns.GetSeparators(),
+                    _options.KeepExistingPropertyPatternsArrangement,
+                    _options.WrapPropertyPattern,
+                    _options.WrapAfterExpressionLbrace,
+                    _options.WrapBeforeExpressionRbrace,
+                    placeOnSingleLine: _options.PlaceSimplePropertyPatternOnSingleLine
+                );
+                return;
+
+            case BaseListSyntax baseList:
+                PlanBaseList(baseList);
+                return;
+
+            case VariableDeclarationSyntax { Variables.Count: > 1 } declaration:
+                PlanDeclarators(declaration);
+                return;
+
             case BinaryExpressionSyntax binary:
+                if (IsChainRootOperator(binary)) {
+                    PlanChainWide(binary, _options.WrapChainedBinaryExpressions);
+                }
+
                 PlanOperator(binary, binary.OperatorToken, binary.Right, _options.WrapBeforeBinaryOpsign);
                 return;
 
             case BinaryPatternSyntax pattern:
+                if (IsChainRootOperator(pattern)) {
+                    PlanChainWide(pattern, _options.WrapChainedBinaryPatterns);
+                }
+
                 PlanOperator(pattern, pattern.OperatorToken, pattern.Right, _options.WrapBeforeBinaryPatternOp);
+                return;
+
+            case InvocationExpressionSyntax or ConditionalAccessExpressionSyntax when IsChainRoot(node):
+                PlanChainedCalls(node);
                 return;
 
             case ConditionalExpressionSyntax ternary:
@@ -366,13 +515,29 @@ public sealed class BreakPlan {
         Point(node.CloseBraceToken, group);
         broken |= BreaksBefore(node.CloseBraceToken);
 
+        // ⚠ `place_simple_switch_expression_on_single_line` outranks `chop_always`, and that is why
+        // both keys are observable rather than only the wrap style. With it on, `x switch { 1 => 1,
+        // _ => 0 }` stays on its line although the wrap style says every arm gets one;
+        // `keep_existing_switch_expression_arrangement` is the other direction, keeping the author's
+        // breaks when the placement rule would otherwise join them.
+        // ⚠ `keep_existing_switch_expression_arrangement` outranks `chop_always`, which the option
+        // names do not suggest and the oracle settles: with it on, `value switch { 1 => 1, _ => 0 }`
+        // comes back on one line although the wrap style says every arm gets one of its own. With it
+        // off — the export's value — the same expression is chopped. That is what makes both keys
+        // observable rather than only the wrap style.
+        var keep = _options.KeepExistingSwitchExpressionArrangement;
+        var always = _options.WrapSwitchExpression == WrapStyle.ChopAlways
+            && !keep
+            && !_options.PlaceSimpleSwitchExpressionOnSingleLine;
+
         Describe(
             node,
             group,
-            _options.WrapSwitchExpression == WrapStyle.ChopAlways ? GroupMode.Break : GroupMode.Preserve,
+            always ? GroupMode.Break : GroupMode.Preserve,
             new GroupFacts(
                 SourceBroken: broken,
-                BreaksIfTooLong: _options.WrapSwitchExpression == WrapStyle.ChopIfLong
+                JoinsIfFits: _options.PlaceSimpleSwitchExpressionOnSingleLine && !keep,
+                BreaksIfTooLong: _options.WrapSwitchExpression != WrapStyle.WrapIfLong
             )
         );
     }
@@ -388,6 +553,24 @@ public sealed class BreakPlan {
     /// re-joins and <c>Foo2(\n a,\n b)</c> does not, because the first has no inter-item break to
     /// keep and the second has one.
     /// </remarks>
+    /// <param name="maxOnLine">
+    /// <c>max_*_on_line</c>. ⚠ A hard chop and not a fill: measured against the oracle,
+    /// <c>new List&lt;int&gt; { 1, 2, 3, 4, 5 }</c> comes back with one element per line under
+    /// <c>max_initializer_elements_on_line = 4</c> although it is 41 columns wide, while
+    /// <c>new[] { 1, 2, 3, 4, 5 }</c> — governed by <c>max_array_initializer_elements_on_line =
+    /// 10000</c> — does not move. The counter is not a width and does not consult one.
+    /// </param>
+    /// <param name="placeOnSingleLine">
+    /// A <c>place_simple_*_on_single_line</c> key, or null where the construct has none.
+    /// </param>
+    /// <remarks>
+    /// ⚠ The key runs in both directions and the name only suggests one of them. At <c>true</c> it
+    /// joins, overriding <c>keep_user_linebreaks</c>: a four-line
+    /// <c>new Thing\n{\n A = 1,\n B = 2\n}</c> comes back as <c>new Thing { A = 1, B = 2 }</c>. At
+    /// <c>false</c> it <em>forces</em> the delimiters apart however short the construct is —
+    /// <c>xs is [1, 2, 3]</c> becomes three lines. Measured against the oracle, because "place on
+    /// single line = false" reads like permission withheld rather than a break required.
+    /// </remarks>
     void PlanList<T>(
         SyntaxNode node,
         SyntaxToken open,
@@ -397,18 +580,20 @@ public sealed class BreakPlan {
         bool keepExisting,
         WrapStyle style,
         bool wrapAfterOpen,
-        bool wrapBeforeClose
+        bool wrapBeforeClose,
+        int maxOnLine = int.MaxValue,
+        bool? placeOnSingleLine = null
     )
         where T : SyntaxNode {
         if (open.IsKind(SyntaxKind.None) || close.IsKind(SyntaxKind.None) || items.Count == 0) {
             return;
         }
 
-        // wrap_if_long is a fill, which milestone 3 owns; only the chop styles are planned here, and
-        // a construct with no plan keeps milestone 1's behaviour of copying the source.
-        if (style == WrapStyle.WrapIfLong) {
-            return;
-        }
+        // ⚠ `wrap_if_long` is a fill: the delimiters break together with the group and the gaps
+        // between items break one at a time, as the line runs out. Milestone 2 declined to plan
+        // these constructs at all rather than chop them, which is why an over-long initializer came
+        // back untouched.
+        var fill = style == WrapStyle.WrapIfLong;
 
         // ⚠ place_single_method_argument_lambda_on_same_line = true governs the OPENING parenthesis
         // only. `Assert.Throws(() => {` keeps the lambda on the call's line however long its body
@@ -444,12 +629,12 @@ public sealed class BreakPlan {
             // wrap_before_comma = false puts the break after the comma, which is the gap before the
             // next item; true puts it before the comma.
             if (_options.WrapBeforeComma) {
-                Point(comma, group);
+                Point(comma, group, fill);
                 Flat(next);
                 interBroken |= BreaksBefore(comma);
             } else {
                 Flat(comma);
-                Point(next, group);
+                Point(next, group, fill);
                 interBroken |= BreaksBefore(next);
             }
         }
@@ -467,15 +652,434 @@ public sealed class BreakPlan {
         //   false                | false           | re-joined  | re-joined
         // The global switch turns the per-construct one off; the per-construct one does not turn the
         // global one on.
+        // ⚠ The counter wins over everything else, joining included: over the cap the construct is
+        // chopped whatever its width and whatever the author wrote.
+        var overCap = items.Count > maxOnLine;
+
+        // ⚠ And the per-construct `keep_existing_*` key outranks the placement key in both
+        // directions: with keep on, neither the join at `true` nor the forced break at `false`
+        // happens at all.
+        var joins = placeOnSingleLine == true && !keepExisting;
+        var forced = placeOnSingleLine == false && !keepExisting;
+
         var broken = style == WrapStyle.ChopAlways
+            || overCap
+            || forced
             || _options.KeepsUserBreaksBetweenItems && interBroken
             || _options.KeepsUserBreaksBetweenItems && keepExisting && delimiterBroken;
+
+        // ⚠ The per-construct `keep_existing_*` key outranks `place_simple_*_on_single_line`, and the
+        // oracle is the only place that says so. With
+        // `keep_existing_list_patterns_arrangement = true` — the export's value — a list pattern the
+        // author split over three lines stays split, although `place_simple_list_pattern_on_single_line`
+        // is also true and would otherwise join it; flipping the keep key to false joins it. Reading
+        // the placement key as the stronger of the two makes both of them unobservable at once.
+        Describe(
+            node,
+            group,
+            style == WrapStyle.ChopAlways || overCap || forced ? GroupMode.Break : GroupMode.Preserve,
+            new GroupFacts(
+                SourceBroken: broken,
+                JoinsIfFits: joins && !overCap,
+                BreaksIfTooLong: true,
+                HidesFlatWidthWhenBroken: true
+            )
+        );
+    }
+
+    /// <summary>
+    /// An initializer's braces: <c>wrap_array_initializer_style = wrap_if_long</c> plus the two
+    /// element counters and <c>place_simple_initializer_on_single_line</c>.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ Two counters, and which one applies is the syntax kind rather than the option name.
+    /// Measured against the oracle: <c>new List&lt;int&gt; { 1, 2, 3, 4, 5 }</c> comes back with one
+    /// element per line and <c>new[] { 1, 2, 3, 4, 5 }</c> does not, because the first is a
+    /// collection initializer (<c>max_initializer_elements_on_line = 4</c>) and the second an array
+    /// initializer (<c>max_array_initializer_elements_on_line = 10000</c>). Reading
+    /// "array initializer" as "any initializer of a collection" gets both wrong at once.
+    /// </remarks>
+    void PlanInitializer(InitializerExpressionSyntax node) =>
+        PlanBracedElements(
+            node,
+            node.OpenBraceToken,
+            node.CloseBraceToken,
+            node.Expressions,
+            node.Expressions.GetSeparators(),
+            node.IsKind(SyntaxKind.ArrayInitializerExpression)
+        );
+
+    void PlanAnonymousObject(AnonymousObjectCreationExpressionSyntax node) =>
+        PlanBracedElements(
+            node,
+            node.OpenBraceToken,
+            node.CloseBraceToken,
+            node.Initializers,
+            node.Initializers.GetSeparators(),
+            array: false
+        );
+
+    /// <summary>
+    /// A braced initializer: two groups, because it has three layouts and one group has two.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ Established against the oracle, and it is not what the option names suggest. The three
+    /// layouts an initializer can take are
+    /// <code>
+    /// new Thing { A = 1, B = 2 }                          — everything on the owner's line
+    /// new Thing {
+    ///     A = 1, B = 2, C = 3                             — braces broken, elements together
+    /// }
+    /// new Thing {
+    ///     A = "…", B = "…", C = "…", D = "…"              — braces broken, one element per line
+    /// }                                                     (written one per line)
+    /// </code>
+    /// and the second and third are one group's decision while the first is another's. A single
+    /// group can only offer two of the three, which is why milestone 3's first attempt filled
+    /// <c>Title = "Episode VII", Description = "…", Categories =\n    new List&lt;string&gt; {…}</c>
+    /// where the oracle writes four lines.
+    /// <para>
+    /// ⚠ The inner group is a <em>fill</em> for an array initializer and a chop for an object or
+    /// collection one, and that distinction is real: <c>new[] { six, long, string, literals, here,
+    /// again }</c> comes back with five on one line and one on the next, while
+    /// <c>new List&lt;string&gt; { four, long, string, literals }</c> comes back with one per line
+    /// even though two of them would have shared. It matches the two counters —
+    /// <c>max_array_initializer_elements_on_line = 10000</c> against
+    /// <c>max_initializer_elements_on_line = 4</c> — being separate keys.
+    /// </para>
+    /// </remarks>
+    void PlanBracedElements<T>(
+        SyntaxNode node,
+        SyntaxToken open,
+        SyntaxToken close,
+        SeparatedSyntaxList<T> items,
+        IEnumerable<SyntaxToken> separators,
+        bool array
+    )
+        where T : SyntaxNode {
+        if (open.IsKind(SyntaxKind.None) || close.IsKind(SyntaxKind.None) || items.Count == 0) {
+            return;
+        }
+
+        var style = _options.WrapArrayInitializerStyle;
+        var cap = array ? _options.MaxArrayInitializerElementsOnLine : _options.MaxInitializerElementsOnLine;
+        var overCap = items.Count > cap;
+        var joins = _options.PlaceSimpleInitializerOnSingleLine && !overCap;
+        var forced = !_options.PlaceSimpleInitializerOnSingleLine;
+
+        var outer = NewGroup();
+        var first = FirstToken(items[0]);
+        var broken = BreaksBefore(first) || BreaksBefore(close);
+
+        if (_options.WrapAfterExpressionLbrace) {
+            Point(first, outer);
+        }
+
+        if (_options.WrapBeforeExpressionRbrace) {
+            Point(close, outer);
+        }
+
+        // ⚠ A fill only for an array initializer; an object or collection initializer chops.
+        var fill = array && style == WrapStyle.WrapIfLong;
+        var inner = NewGroup();
+        var interBroken = false;
+        foreach (var comma in separators) {
+            var next = comma.GetNextToken();
+            if (next.IsKind(SyntaxKind.None) || next.SpanStart >= close.SpanStart) {
+                continue;
+            }
+
+            if (_options.WrapBeforeComma) {
+                Point(comma, inner, fill);
+                Flat(next);
+                interBroken |= BreaksBefore(comma);
+            } else {
+                Flat(comma);
+                Point(next, inner, fill);
+                interBroken |= BreaksBefore(next);
+            }
+        }
+
+        broken |= interBroken;
+        var mode = style == WrapStyle.ChopAlways || overCap || forced ? GroupMode.Break : GroupMode.Preserve;
+        var facts = new GroupFacts(
+            SourceBroken: _options.KeepUserLinebreaks && broken || forced,
+            JoinsIfFits: joins,
+            BreaksIfTooLong: true
+        );
+
+        Describe(node, outer, mode, facts);
+        DescribeInner(
+            node,
+            inner,
+            mode,
+            facts with { SourceBroken = _options.KeepsUserBreaksBetweenItems && interBroken }
+        );
+    }
+
+    /// <summary>
+    /// <c>wrap_extends_list_style = chop_if_long</c>: a long base list puts one base type per line.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ Neither delimiter is a break point. <c>wrap_before_extends_colon = false</c> keeps the
+    /// <c>:</c> and the first base type on the declaration's line, and there is no closing delimiter
+    /// to move, so the only points are the commas:
+    /// <code>
+    /// class C : Base,
+    ///     IFirst,
+    ///     ISecond {
+    /// </code>
+    /// The list therefore opens its own continuation scope rather than living inside a delimiter's.
+    /// </remarks>
+    void PlanBaseList(BaseListSyntax node) {
+        if (node.Types.Count == 0) {
+            return;
+        }
+
+        if (node.Types.Count < 2 && !_options.WrapBeforeExtendsColon) {
+            return;
+        }
+
+        var group = NewGroup();
+        var broken = false;
+
+        // ⚠ `wrap_before_extends_colon = true` makes the `:` itself a break point, which is the only
+        // way a base list with a single base type can wrap at all. At `false` — the export's value —
+        // the gap is left unplanned rather than marked flat: a `false` placement key is permissive
+        // and does not remove a break the author wrote, which is the correction docs/plan/05 records
+        // for the whole `place_*_on_same_line` family.
+        if (_options.WrapBeforeExtendsColon) {
+            Point(node.ColonToken, group);
+            broken |= BreaksBefore(node.ColonToken);
+        }
+        foreach (var comma in node.Types.GetSeparators()) {
+            var next = comma.GetNextToken();
+            if (next.IsKind(SyntaxKind.None)) {
+                continue;
+            }
+
+            if (_options.WrapBeforeCommaInBaseClause) {
+                Point(comma, group);
+                Flat(next);
+                broken |= BreaksBefore(comma);
+            } else {
+                Flat(comma);
+                Point(next, group);
+                broken |= BreaksBefore(next);
+            }
+        }
 
         Describe(
             node,
             group,
+            _options.WrapExtendsListStyle == WrapStyle.ChopAlways ? GroupMode.Break : GroupMode.Preserve,
+            new GroupFacts(
+                SourceBroken: _options.KeepsUserBreaksBetweenItems && broken,
+                BreaksIfTooLong: _options.WrapExtendsListStyle != WrapStyle.WrapIfLong
+            ),
+            spendsIndent: true,
+            leadingGapInside: _options.WrapBeforeExtendsColon
+        );
+    }
+
+    /// <summary>
+    /// <c>wrap_multiple_declaration_style = chop_if_long</c>: <c>int a = 1, b = 2, c = 3;</c> puts
+    /// one declarator per line when it does not fit.
+    /// </summary>
+    void PlanDeclarators(VariableDeclarationSyntax node) {
+        var group = NewGroup();
+        var broken = false;
+        foreach (var comma in node.Variables.GetSeparators()) {
+            var next = comma.GetNextToken();
+            if (next.IsKind(SyntaxKind.None)) {
+                continue;
+            }
+
+            Flat(comma);
+            Point(next, group);
+            broken |= BreaksBefore(next);
+        }
+
+        Describe(
+            node,
+            group,
+            _options.WrapMultipleDeclarationStyle == WrapStyle.ChopAlways ? GroupMode.Break : GroupMode.Preserve,
+            new GroupFacts(
+                SourceBroken: _options.KeepsUserBreaksBetweenItems && broken,
+                BreaksIfTooLong: _options.WrapMultipleDeclarationStyle != WrapStyle.WrapIfLong
+            ),
+            spendsIndent: true
+        );
+    }
+
+    /// <summary>
+    /// <c>wrap_chained_method_calls = chop_if_long</c>: every <c>.</c> of a chain that does not fit
+    /// starts a line, and the first call does not.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ Three keys decide which dots are points, and the answer is not "all of them".
+    /// <c>wrap_before_first_method_call = false</c> keeps <c>source.Where(…)</c> together, so the
+    /// first invoked dot is not a point; <c>wrap_after_property_in_chained_method_calls = false</c>
+    /// means a dot that reaches a property rather than a method is not one either. Verified against
+    /// the oracle, which writes
+    /// <code>
+    /// var q = source.Where(x => x.IsActive)
+    ///     .OrderBy(x => x.Name)
+    ///     .Select(x => x.Id);
+    /// </code>
+    /// and not a break before <c>.Where</c>.
+    /// </remarks>
+    void PlanChainedCalls(SyntaxNode root) {
+        var dots = new List<SyntaxToken>();
+        Collect(root);
+
+        if (dots.Count < 2) {
+            return;
+        }
+
+        // wrap_before_first_method_call = false: the first invoked dot stays with its receiver.
+        // ⚠ The list is built outermost-first by the walk below, so the *last* entry is the first
+        // dot of the chain.
+        var first = _options.WrapBeforeFirstMethodCall ? dots.Count : dots.Count - 1;
+        var group = NewGroup();
+        var broken = false;
+        for (var i = 0; i < first; i++) {
+            if (_options.WrapAfterDotInMethodCalls) {
+                Flat(dots[i]);
+                var next = dots[i].GetNextToken();
+                Point(next, group);
+                broken |= BreaksBefore(next);
+            } else {
+                Point(dots[i], group);
+                broken |= BreaksBefore(dots[i]);
+            }
+        }
+
+        if (first == 0) {
+            return;
+        }
+
+        Describe(
+            root,
+            group,
+            _options.WrapChainedMethodCalls == WrapStyle.ChopAlways ? GroupMode.Break : GroupMode.Preserve,
+            new GroupFacts(
+                SourceBroken: _options.KeepsUserBreaksBetweenItems && broken,
+                BreaksIfTooLong: _options.WrapChainedMethodCalls != WrapStyle.WrapIfLong
+            ),
+            // ⚠ The chain opens its own continuation scope. Milestone 2 spent that level lazily, in
+            // `Break`, at the first break landing before a `.` — and a group's break point never
+            // goes through `Break`, so a chain that the fitter chops comes out flush with its
+            // receiver:
+            //     text.AppendLine("…")
+            //     .AppendLine("…")
+            // The frame machinery still serves breaks the author wrote; this serves the ones the
+            // fitter adds.
+            spendsIndent: true
+        );
+
+        void Collect(SyntaxNode node) {
+            switch (node) {
+                case InvocationExpressionSyntax invocation:
+                    if (invocation.Expression is MemberAccessExpressionSyntax access) {
+                        // ⚠ `wrap_after_property_in_chained_method_calls = false` does not mean "a
+                        // property's dot is not a break point"; it means the break lands *before*
+                        // the property rather than after it, so the property travels with the call
+                        // it feeds. The oracle writes
+                        //     .ToList()
+                        //     .Count.ToString()
+                        // and not `.ToList().Count` followed by `.ToString()`. Registering the
+                        // invoked dot and skipping the property's gives exactly the wrong one of the
+                        // two.
+                        var dot = access.OperatorToken;
+                        var receiver = access.Expression;
+                        while (!_options.WrapAfterPropertyInChainedMethodCalls
+                            && receiver is MemberAccessExpressionSyntax property) {
+                            dot = property.OperatorToken;
+                            receiver = property.Expression;
+                        }
+
+                        dots.Add(dot);
+                        Collect(receiver);
+                        return;
+                    }
+
+                    if (invocation.Expression is MemberBindingExpressionSyntax binding) {
+                        dots.Add(binding.OperatorToken);
+                        return;
+                    }
+
+                    Collect(invocation.Expression);
+                    return;
+
+                case ConditionalAccessExpressionSyntax conditional:
+                    // `a?.B().C()` — the `?.` is the binding's dot, already added by the invocation
+                    // above; what remains is the receiver.
+                    Collect(conditional.Expression);
+                    return;
+
+                case MemberAccessExpressionSyntax member:
+                    // ⚠ A dot that reaches a property is not a point in this export
+                    // (`wrap_after_property_in_chained_method_calls = false`), but it is still part
+                    // of the chain and its receiver still has to be walked.
+                    if (_options.WrapAfterPropertyInChainedMethodCalls) {
+                        dots.Add(member.OperatorToken);
+                    }
+
+                    Collect(member.Expression);
+                    return;
+
+                case ElementAccessExpressionSyntax element:
+                    Collect(element.Expression);
+                    return;
+
+                case PostfixUnaryExpressionSyntax postfix:
+                    Collect(postfix.Operand);
+                    return;
+
+                default:
+                    return;
+            }
+        }
+    }
+
+    /// <summary>
+    /// The group that makes <c>chop_if_long</c> mean "chop <em>all</em> of them" for a chain whose
+    /// links each carry a group of their own.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ It exists because the two behaviours the export asks for cannot live in one group.
+    /// <c>keep_user_linebreaks = true</c> means <c>a &amp;&amp; b\n || c</c> comes back with exactly
+    /// that one break, so each operator keeps its own <see cref="GroupMode.Preserve"/> group;
+    /// <c>wrap_chained_binary_expressions = chop_if_long</c> means a chain that does not fit on one
+    /// line breaks at every operator at once, which no per-operator group can decide. This group
+    /// spans the whole chain, holds no break points of its own, and the operator groups read its
+    /// resolved mode through <see cref="GroupFacts.BreaksWithOwner"/>.
+    /// </remarks>
+    void PlanChainWide(SyntaxNode root, WrapStyle style) {
+        if (style == WrapStyle.WrapIfLong) {
+            return;
+        }
+
+        var group = NewGroup();
+        _chainOwner[Key(root)] = group;
+        var pattern = root is BinaryPatternSyntax;
+        Describe(
+            root,
+            group,
             style == WrapStyle.ChopAlways ? GroupMode.Break : GroupMode.Preserve,
-            new GroupFacts(SourceBroken: broken, BreaksIfTooLong: true)
+            new GroupFacts(BreaksIfTooLong: true),
+            // ⚠ A pattern chain spends a level of its own *and* the continuation the construct
+            // around it would have spent; a binary expression chain spends only the latter. See
+            // GroupPlan.OwnLevel and docs/plan/04 § "Indentation".
+            //
+            // ⚠ Except as a statement's condition, where `align_multiline_statement_conditions` puts
+            // the continuation level and the alignment at the same column and the oracle writes one
+            // step, not two:
+            //     if (o is IDisposable
+            //         or IAsyncDisposable) {     ← one, where an argument would take two
+            spendsIndent: pattern,
+            ownLevel: pattern && !IsStatementCondition(root)
         );
     }
 
@@ -514,10 +1118,98 @@ public sealed class BreakPlan {
             node,
             group,
             GroupMode.Preserve,
-            new GroupFacts(SourceBroken: _options.KeepsUserBreaksBetweenItems && broken),
+            new GroupFacts(
+                SourceBroken: _options.KeepsUserBreaksBetweenItems && broken,
+                // ⚠ Deliberately *not* HidesFlatWidthWhenBroken. An argument list around a chain the
+                // author broke does chop — `Use(a > 0\n && b > 0)` comes back with the argument on a
+                // line of its own — but hiding the flat width is not how to get it: an operator group
+                // is nested inside the next operator's group, so an unbreakable inner one makes the
+                // outer one break too, and `a && b\n || c` comes back chopped at both operators
+                // instead of unchanged. Measured: it costs `breaks/binary-operators.cs` and
+                // `wrapping/binary-chains.cs`, and buys 0.01 points. SK-DIV-0007.
+                BreaksWithOwner: true,
+                Owner: ChainOwnerOf(node)
+            ),
             spendsIndent: true
         );
     }
+
+    /// <summary>Whether this expression is the condition of an if, while, do, for or switch.</summary>
+    static bool IsStatementCondition(SyntaxNode node) {
+        for (var current = node; current is not null; current = current.Parent) {
+            switch (current.Parent) {
+                case IfStatementSyntax statement when statement.Condition == current:
+                case WhileStatementSyntax statement2 when statement2.Condition == current:
+                case DoStatementSyntax statement3 when statement3.Condition == current:
+                case SwitchStatementSyntax statement4 when statement4.Expression == current:
+                    return true;
+
+                case ExpressionSyntax:
+                    continue;
+
+                default:
+                    return false;
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>The chain-wide group of the chain this operator belongs to, or −1.</summary>
+    int ChainOwnerOf(SyntaxNode node) {
+        var root = node;
+        while (SameChain(root.Parent, root)) {
+            root = root.Parent!;
+        }
+
+        return _chainOwner.TryGetValue(Key(root), out var group) ? group : -1;
+    }
+
+    static bool IsChainRootOperator(SyntaxNode node) => !SameChain(node.Parent, node);
+
+    /// <summary>
+    /// Whether two nested binary nodes belong to the same chain.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ Same <em>precedence</em>, not merely "both are binary expressions", and getting this wrong
+    /// is visible immediately. <c>a &gt; 0 &amp;&amp; b &gt; 0 &amp;&amp; c &gt; 0</c> is one chain
+    /// of <c>&amp;&amp;</c> whose operands happen to be comparisons; the oracle chops it at the
+    /// <c>&amp;&amp;</c>s and nowhere else. Treating every nested binary as part of the chain makes
+    /// the comparisons break too, and produces
+    /// <code>
+    /// if (a
+    ///     &gt; 0
+    ///     &amp;&amp; b
+    /// </code>
+    /// which is not a shape any formatter writes.
+    /// </remarks>
+    static bool SameChain(SyntaxNode? parent, SyntaxNode child) =>
+        (parent, child) switch {
+            (BinaryExpressionSyntax outer, BinaryExpressionSyntax inner) =>
+                Precedence(outer.OperatorToken.Kind()) == Precedence(inner.OperatorToken.Kind()),
+            (BinaryPatternSyntax, BinaryPatternSyntax) => true,
+            _ => false
+        };
+
+    /// <summary>C#'s binary precedence levels, coarse enough to name a chain and no finer.</summary>
+    static int Precedence(SyntaxKind kind) =>
+        kind switch {
+            SyntaxKind.AsteriskToken or SyntaxKind.SlashToken or SyntaxKind.PercentToken => 1,
+            SyntaxKind.PlusToken or SyntaxKind.MinusToken => 2,
+            SyntaxKind.LessThanLessThanToken or SyntaxKind.GreaterThanGreaterThanToken
+                or SyntaxKind.GreaterThanGreaterThanGreaterThanToken => 3,
+            SyntaxKind.LessThanToken or SyntaxKind.GreaterThanToken
+                or SyntaxKind.LessThanEqualsToken or SyntaxKind.GreaterThanEqualsToken => 4,
+            SyntaxKind.EqualsEqualsToken or SyntaxKind.ExclamationEqualsToken => 5,
+            SyntaxKind.AmpersandToken => 6,
+            SyntaxKind.CaretToken => 7,
+            SyntaxKind.BarToken => 8,
+            // ⚠ `&&` and `||` are one chain, not two. `a && b || c` is chopped at both operators by
+            // the oracle, which is what `wrap_chained_binary_expressions` means by "chained".
+            SyntaxKind.AmpersandAmpersandToken or SyntaxKind.BarBarToken => 9,
+            SyntaxKind.QuestionQuestionToken => 10,
+            _ => 11
+        };
 
     /// <summary>
     /// <c>wrap_before_ternary_opsigns = true</c>: <c>?</c> and <c>:</c> start their lines.
@@ -543,8 +1235,11 @@ public sealed class BreakPlan {
         Describe(
             node,
             group,
-            GroupMode.Preserve,
-            new GroupFacts(SourceBroken: _options.KeepsUserBreaksBetweenItems && broken),
+            _options.WrapTernaryExprStyle == WrapStyle.ChopAlways ? GroupMode.Break : GroupMode.Preserve,
+            new GroupFacts(
+                SourceBroken: _options.KeepsUserBreaksBetweenItems && broken,
+                BreaksIfTooLong: _options.WrapTernaryExprStyle != WrapStyle.WrapIfLong
+            ),
             spendsIndent: true
         );
     }
@@ -578,12 +1273,15 @@ public sealed class BreakPlan {
             GroupMode.Preserve,
             new GroupFacts(
                 SourceBroken: _options.KeepsUserBreaksBetweenItems && broken,
-                // ⚠ Presence only, again. The oracle does break after `=` on a line that is too
-                // long, and preferring that break over chopping the call on the same line is
-                // prefer_wrap_around_eq's ordering. Breaking here whenever the line is long, without
-                // the ordering, lands one line away from the oracle often enough to cost 0.24 points
-                // of line fidelity and five points of file fidelity — measured, not feared. M3.
-                MeasuresHead: true
+                // ⚠ `prefer_wrap_around_eq`, and the reason milestone 2 stopped at presence. The
+                // oracle does break after `=` on a line that is too long — but not always, and
+                // breaking whenever the line is long costs 1.18 points of line fidelity against
+                // leaving it alone (measured on this branch before the ordering rule existed:
+                // 97.47 % → 96.29 %). Which of a long line's candidate points is taken is
+                // GroupFacts.PrefersOuterBreak's rule, and it is what makes this key observable.
+                BreaksIfTooLong: true,
+                MeasuresHead: true,
+                PrefersOuterBreak: true
             ),
             spendsIndent: true
         );
@@ -645,7 +1343,9 @@ public sealed class BreakPlan {
                 // ⚠ Measured against the whole flat width, not the head: "if owner is single line"
                 // means the declaration occupies one line, and a body that spans lines makes it not
                 // single-line however short its first line is. `Target Docs => definition => …` with
-                // a chain under it is the shape that shows the difference.
+                // a chain under it is the shape that shows the difference. Measuring the head
+                // instead costs 0.12 points of line fidelity on `corpus/real/` and two of the four
+                // preservation corners, which is how the reading was settled rather than argued.
                 BreaksIfTooLong: placement == PlacementStyle.IfOwnerIsSingleLine
             ),
             spendsIndent: true
@@ -737,6 +1437,81 @@ public sealed class BreakPlan {
     }
 
     /// <summary>
+    /// Every member and every statement gets a line of its own.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ Unconditional, which is not what the option names suggest and is what the oracle does.
+    /// <c>csharp_preserve_single_line_blocks = true</c> is in the export and reads like permission
+    /// to leave <c>void M() { Call(); Call(); }</c> alone; ReSharper ignores it, and
+    /// <c>class B { public int P => 1; public int Q => 2; }</c> comes back as five lines. There is
+    /// no width test and no <c>keep_user_linebreaks</c> in it: a body with anything in it is broken.
+    /// <para>
+    /// ⚠ Three exclusions, each measured rather than assumed. An <em>empty</em> body stays together
+    /// (<c>empty_block_style = together</c>). An accessor's body does not break —
+    /// <c>get { return _street; }</c> comes back from the oracle exactly as written, and
+    /// <c>public int X { get; set; }</c> is one line and has its own spacing keys. And a lambda's or
+    /// anonymous method's block does not, because the call it is an argument to keeps it on its line:
+    /// <c>Register(() => { Body(); });</c> comes back whole.
+    /// </para>
+    /// <para>
+    /// It is also what makes "single line" a stable property of the output. A member sharing a line
+    /// with the member before it has no answer to <c>blank_lines_around_single_line_field</c>, which
+    /// is why <c>constructs/blank-lines/two-members-on-one-line.cs</c> was committed failing at M2.
+    /// </para>
+    /// </remarks>
+    void PlanOnePerLine(SyntaxNode node) {
+        switch (node) {
+            case BlockSyntax { Statements.Count: > 0 } block
+                when block.Parent is not (AnonymousFunctionExpressionSyntax or AccessorDeclarationSyntax)
+                && !Keeps(block):
+                foreach (var statement in block.Statements) {
+                    Mandatory(FirstToken(statement));
+                }
+
+                Mandatory(block.CloseBraceToken);
+                return;
+
+            case TypeDeclarationSyntax { Members.Count: > 0 } type
+                when !_options.KeepExistingDeclarationBlockArrangement:
+                MembersOnOwnLines(type.Members, type.CloseBraceToken);
+                return;
+
+            case NamespaceDeclarationSyntax { Members.Count: > 0 } declaration
+                when !_options.KeepExistingDeclarationBlockArrangement:
+                MembersOnOwnLines(declaration.Members, declaration.CloseBraceToken);
+                return;
+
+            default:
+                return;
+        }
+    }
+
+    /// <summary>
+    /// Whether the author's arrangement of this block wins over the one-per-line rule.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ Two keys, and which applies is what the block is the body of.
+    /// <c>keep_existing_declaration_block_arrangement</c> governs a method's or a local function's;
+    /// <c>keep_existing_embedded_block_arrangement</c> governs an <c>if</c>'s or a <c>while</c>'s.
+    /// Both are <c>false</c> in the export, which is why the rule looks unconditional there; set
+    /// either to <c>true</c> and the oracle keeps <c>void M() { Body(); }</c> and
+    /// <c>if (flag) { First(); }</c> exactly as written. The four-way preservation table is what
+    /// found this — the two <c>keep_existing_* = true</c> corners were the only ones that moved.
+    /// </remarks>
+    bool Keeps(BlockSyntax block) =>
+        block.Parent is StatementSyntax
+            ? _options.KeepExistingEmbeddedBlockArrangement
+            : _options.KeepExistingDeclarationBlockArrangement;
+
+    void MembersOnOwnLines(SyntaxList<MemberDeclarationSyntax> members, SyntaxToken close) {
+        foreach (var member in members) {
+            Mandatory(FirstToken(member));
+        }
+
+        Mandatory(close);
+    }
+
+    /// <summary>
     /// <c>place_*_attribute_on_same_line = never</c>: an attribute section never shares a line with
     /// what follows it.
     /// </summary>
@@ -816,14 +1591,46 @@ public sealed class BreakPlan {
     static bool IsLambdaArgument(SyntaxNode item) =>
         item is ArgumentSyntax { Expression: AnonymousFunctionExpressionSyntax };
 
+    /// <summary>
+    /// The outermost link of an <c>a.B().C()</c> chain — the node the whole chain's group hangs from.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ The same predicate <see cref="CSharpDocumentBuilder"/> uses to decide which node spends the
+    /// chain's continuation level; the two must agree, or the group and the indent scope are opened
+    /// around different nodes.
+    /// </remarks>
+    static bool IsChainRoot(SyntaxNode node) =>
+        node is InvocationExpressionSyntax { Expression: MemberAccessExpressionSyntax or MemberBindingExpressionSyntax }
+            or ConditionalAccessExpressionSyntax
+        && node.Parent is not (InvocationExpressionSyntax or MemberAccessExpressionSyntax
+            or ElementAccessExpressionSyntax or ConditionalAccessExpressionSyntax
+            or MemberBindingExpressionSyntax or PostfixUnaryExpressionSyntax);
+
     // ── Registration ─────────────────────────────────────────────────────────────────────────
 
     int NewGroup() => _nextGroup++;
 
-    void Describe(SyntaxNode node, int group, GroupMode mode, in GroupFacts facts, bool spendsIndent = false) =>
-        _groups[Key(node)] = new GroupPlan(group, mode, facts, spendsIndent);
+    void Describe(
+        SyntaxNode node,
+        int group,
+        GroupMode mode,
+        in GroupFacts facts,
+        bool spendsIndent = false,
+        bool leadingGapInside = false,
+        bool ownLevel = false
+    ) {
+        var key = Key(node);
+        if (!_groups.TryGetValue(key, out var plans)) {
+            _groups[key] = plans = [];
+        }
 
-    void Point(SyntaxToken token, int group) {
+        plans.Add(new GroupPlan(group, mode, facts, spendsIndent, leadingGapInside, ownLevel));
+    }
+
+    void DescribeInner(SyntaxNode node, int group, GroupMode mode, in GroupFacts facts) =>
+        _inner[Key(node)] = new GroupPlan(group, mode, facts);
+
+    void Point(SyntaxToken token, int group, bool fill = false) {
         if (token.IsKind(SyntaxKind.None)) {
             return;
         }
@@ -833,7 +1640,7 @@ public sealed class BreakPlan {
             return;
         }
 
-        _gaps[token.SpanStart] = new GapSpec(GapRule.Point, group);
+        _gaps[token.SpanStart] = new GapSpec(fill ? GapRule.FillPoint : GapRule.Point, group);
     }
 
     void Flat(SyntaxToken token) {

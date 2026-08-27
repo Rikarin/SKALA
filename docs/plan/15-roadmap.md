@@ -59,7 +59,12 @@ attributes.
 sitting. ✅ **97.47 %**. ⚠ The Vixen diff is *not* small: 2 374 files of 4 703, against milestone 1's
 999. Roughly half of that is a configuration artefact — Vixen sets none of the phase-2 keys, and
 `options.json`'s `default` is the export's value rather than ReSharper's, so the two fall back
-differently. Repairing `defaultSource` is M3's first job and it is worth 45 % of this diff.
+differently. Repairing `defaultSource` is M3's first job and it is worth 45 % of this diff. ✅ Done:
+measured at the commit that introduced it, the derived table takes the Vixen diff from 2 700 files
+to 2 506 and Skala's agreement with the oracle *under Vixen's own configuration* from 97.00 % to
+97.84 % of lines. ⚠ The shipped build's number is 2 552, not 2 506: the four commits after it —
+raw-literal realignment, the pattern chain's own level, the fill fix, comment trailing whitespace —
+moved it, and the pair above is a controlled A/B at one commit rather than a running total.
 
 ## M3 — Formatter, phase 3–4 · L/XL
 
@@ -73,9 +78,63 @@ it is for.**
 **Done when:** line fidelity ≥ 99.9 %, all divergences are documented `SK-DIV-*` entries, and
 Vixen's `.editorconfig` is replaced by the export with `skala format --check` clean in CI.
 
-**This is release 0.4 and the first one anyone else could use.**
+⚠ **Measured: 98.86 %, not 99.9 %. The bar was unreachable as this milestone was scoped, and it was
+set before anyone knew why.** Splitting the remaining gap by whether a file contains a `#if`:
 
-## M4 — Arrangement · M/L
+| | line fidelity | divergent lines |
+|---|---:|---:|
+| Files containing `#if` (91 of 380) | 98.39 % | 263 |
+| Files without | **99.05 %** | 556 |
+
+A third of the gap is SK-DIV-0004 and cannot be closed here at all: without a project Roslyn hands
+back `#if` bodies as disabled text and Skala correctly refuses to touch them, while the oracle runs
+against a project with `DEBUG` defined and formats them. That is [07](07-analysis-host.md)'s project
+loading, which is **M5**. A further share is SK-DIV-0005, a margin constant reverse-engineered by
+sweeping the oracle, where ReSharper's actual computation is unknown and three alternatives were
+measured.
+
+**The revised bar, therefore, is two bars.** Without a compilation: **≥ 99.5 %** on the files that
+contain no `#if`, which is 99.05 % today and is ordinary tail work. With one, after M5 supplies
+symbols: the original ≥ 99.9 % overall, and [16](16-risks-and-open-questions.md) § R1's frequency
+rule with it. Neither is dropped; they are sequenced behind the thing that makes them possible.
+
+What landed, and what it is short of:
+
+| | |
+|---|---|
+| Line fidelity, `corpus/real/` | **98.86 %** (M2 97.47 %), file 71.05 % (M2 49.47 %) |
+| [16](16-risks-and-open-questions.md) § R1 | 27 of the 54 constructs occurring more than 50 times are at 100 % |
+| Divergences | eight `SK-DIV-*` entries, each with a measurement; SK-DIV-0002 is resolved |
+| Wrapping | ✅ `Fill`, the counters, the ordering rule, chains, ternaries, declarators, base lists |
+| xmldoc | ⚠ the oracle does not format doc comments (SK-DIV-0006); the well-formedness hint is done |
+| Daemon, LSP, hooks | ✅ all three, with tests |
+| 40 ms warm | ⚠ 60–70 ms, of which ~60 is the client's process start; NativeAOT is the fix |
+| Daemon lazy start | ✅ the first single-file format leaves one behind: 310 ms, then 70 ms |
+| 20 s whole corpus | ✅ **11.9 s** over Vixen, from 34.2 s |
+| `defaultSource` | ✅ derived from the oracle: 123 keys `oracle-probe`, `distill` drops 108 |
+| Tier A | 201 options, up from 172, each pinned by a committed fixture |
+| Vixen `.editorconfig` | prepared and measured — 2 717 files, 83 241 diff lines — **not committed, deliberately deferred** |
+
+⚠ **The Vixen commit is deferred until the tail is closed, and that is a decision rather than a
+delay.** At 98.86 % about one reformatted line in a hundred still disagrees with Rider, so opening
+those files in the IDE reformats them back — the formatting ping-pong that
+[16](16-risks-and-open-questions.md) § R1 names as worse than either tool alone. Committing 83 241
+lines *before* the disagreement is closed converts a one-time commit into a recurring fight. The
+diff is measured and reproducible; it is re-made when the number supports it.
+
+**This is release 0.4 and the first one anyone else could use.** ⚠ It is offered as one on the
+strength of the properties rather than the percentage: idempotency, token equivalence, parse
+stability, determinism and whitespace absorption hold on every file of every corpus and on all
+4 708 files of Vixen, and the fidelity gap is eight named, measured disagreements rather than an
+unknown.
+
+## M4 — Arrangement · M/L — ⚠ **deferred; M5 runs first**
+
+**Decided after M3: M4 and M5 swap places.** M3 established the dependency inversion below — M4's
+semantic half needs a compilation, and building one is M5's work — and the same compilation is what
+closes SK-DIV-0004 and the `#if` third of M3's fidelity gap. One milestone unblocks both, so it goes
+first. M4 then runs with semantics available from the start rather than shipping a syntactic subset
+and revisiting.
 
 The `arrange_*` and body-style settings from [06](06-arrangement-and-syntax-styles.md), plus the
 syntactic subset that runs without a compilation.
@@ -86,6 +145,31 @@ syntactic subset that runs without a compilation.
 
 **Done when:** the oracle's cleanup profile and Skala agree on `corpus/real/` at ≥ 99 % of changed
 spans, and arrangement over Vixen introduces zero compiler diagnostics.
+
+⚠ **What M4 needs that M3 did not provide**, written down at the end of M3 while it is still known:
+
+1. **A different oracle profile.** Every fixture in the corpus is generated under
+   `SkalaFormatOnly`, which is `CSReformatCode` and nothing else. Arrangement is a *cleanup* profile
+   with `CSUseVar`, `CSOptimizeUsings`, `CSReorderTypeMembers` and the body-style actions in it, so
+   M4's first act is a second profile and a second `.expected.cs` extension beside the first —
+   `OracleRunner.Profile` is a constant today and `OracleFixture` assumes one fixture per file.
+2. **A compilation, for the semantic half.** M3 formats a file with no project and no preprocessor
+   symbols, which is already SK-DIV-0004's whole content. `arrange` re-binds each document to check
+   that it did not change meaning; the "syntactic subset that runs without a compilation" is the
+   part M3's infrastructure can carry, and the rest waits on [07](07-analysis-host.md)'s project
+   loading, which is M5. ⚠ The roadmap has M4 before M5 and this is the dependency that argues for
+   swapping them, or for M4 shipping only the syntactic subset.
+3. **Multi-pass output.** Formatting is one document build and one emit. Arrangement moves members
+   and then the result has to be re-formatted, so the pipeline needs a fixed point and a bound on
+   it, and the idempotency property has to hold across the pair rather than across either half.
+4. **Range mapping through an edit that moves text.** `--range` and the LSP's range formatting are
+   filters over a whole-file fit, which is exact while every edit is local. A member that moves 200
+   lines breaks that, and `skala arrange --check` on a range needs a real edit-to-span map.
+5. **What M3 did provide and M4 can rely on:** the `.editorconfig` chain and the derived default
+   table, the three-state group model, the daemon and the LSP transport, the property suite
+   (idempotency, token equivalence, parse stability, determinism), and the `fidelity ask` harness —
+   which is how M3's rules stopped being readings of option names, and is the tool the `arrange_*`
+   family needs most, because its option names are vaguer than the formatter's.
 
 ## M5 — Analysis and the AI gate · L
 
@@ -145,9 +229,12 @@ exercised by lifting the XML sub-formatter out of the C# front end.
 ## The critical path, stated plainly
 
 ```
-M0 ─▶ M1 ─▶ M2 ─▶ M3 ─────────────▶ M4 ─▶ (adoption complete for formatting)
-                   └──▶ M5 ─▶ M6 ─▶ M7 ─▶ M8
-                                     └──▶ M9
+M0 ─▶ M1 ─▶ M2 ─▶ M3 ─▶ M5 ─┬─▶ M3.1 (the fidelity tail, with symbols) ─▶ M4 ─▶ adoption
+   ✅     ✅     ✅    ⚠      └─▶ M6 ─▶ M7 ─▶ M8
+                                  └──▶ M9
+
+⚠ M4 and M5 are swapped against the original order. M5 builds the compilation that M4's semantic
+half and M3's #if gap both wait on; see M4's header.
 ```
 
 M3 is the milestone everything else waits on and the one most likely to overrun, because the fitting

@@ -7,6 +7,17 @@ public static class FormatDiagnosticIds {
     /// <summary>A line exceeded the width and nothing could break. Hint; the audit only.</summary>
     public const string LineTooLong = "SK0002";
 
+    /// <summary>
+    /// A documentation comment is not well-formed XML. Hint; it is left exactly as written.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ Never "fixed" (docs/plan/05 § "Phase 4"). Malformed doc comments are extremely common in
+    /// real code — an unescaped <c>&lt;</c>, a <c>&lt;br&gt;</c> borrowed from HTML, a tag somebody
+    /// forgot to close — and a formatter that repairs them is a formatter that changes what the
+    /// documentation says.
+    /// </remarks>
+    public const string MalformedXmlDoc = "SK0003";
+
     /// <summary>The file does not parse. Reported, left byte-identical, never formatted (ADR-003).</summary>
     public const string NotParseable = "SK9010";
 

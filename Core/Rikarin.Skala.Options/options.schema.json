@@ -60,8 +60,8 @@
             "type": ["string", "null"]
           },
           "defaultSource": {
-            "description": "Where `default` came from. resharper-docs: verified against JetBrains' published property tables. template: the value the Rider export holds, which is Rider's default for most keys and the author's choice for the rest, with nothing distinguishing the two. unknown: no basis beyond the export. `skala config distill` may only drop a key when this is resharper-docs.",
-            "enum": ["resharper-docs", "template", "unknown"]
+            "description": "Where `default` came from. resharper-docs: verified against JetBrains' published property tables. oracle-probe: derived by running jb cleanupcode under a configuration carrying nothing but root = true and comparing against the fixture that exercises the option — a strong signal rather than proof, because options interact. template: the value the Rider export holds, which is Rider's default for most keys and the author's choice for the rest, with nothing distinguishing the two. unknown: no basis beyond the export. `skala config distill` may only drop a key when this is resharper-docs or oracle-probe.",
+            "enum": ["resharper-docs", "oracle-probe", "template", "unknown"]
           },
           "tier": {
             "description": "docs/plan/03 § \"Four tiers\". A: implemented and pinned by an oracle fixture. B: approximated, with a documented divergence. C: accepted and deliberately ignored. D: known but not implemented.",

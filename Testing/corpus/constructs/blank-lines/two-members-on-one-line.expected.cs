@@ -1,8 +1,10 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:98ff52570e019fac profile=SkalaFormatOnly generated=2026-08-26
+// skala-oracle: resharper=2025.2.6 config=sha256:98ff52570e019fac profile=SkalaFormatOnly generated=2026-08-27
 class C {
-    // ⚠ The oracle gives every member its own line; Skala does not yet, and the shape is here for
-    // the idempotency property rather than for the fidelity number. A member that shares a line has
-    // no stable notion of "single line", which is what the blank-line keys branch on.
+    // ⚠ Every member gets a line of its own, and `csharp_preserve_single_line_blocks = true` in the
+    // export does not stop it — ReSharper ignores that key. The shape is here for the idempotency
+    // property as much as for the fidelity number: a member that shares a line has no stable notion
+    // of "single line", which is what the blank-line keys branch on, so the first pass and the
+    // second disagreed about the blank line between the members until M3 split them.
     public int A => 1;
     public int B => 2;
     public int C => 3;

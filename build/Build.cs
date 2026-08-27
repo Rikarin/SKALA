@@ -118,12 +118,25 @@ class Build : NukeBuild {
             .SetApplicationArguments("oracle")));
 
     /// <summary>The differential report without a pass/fail: the ranked work queue.</summary>
+    /// <remarks>
+    /// ⚠ Two reports, because they answer different questions and only the second is the bar.
+    /// <c>fidelity</c> ranks the divergence classes by line count, which is what to work on next;
+    /// <c>constructs</c> attributes every divergent line to the construct that owns it and puts it
+    /// beside how often that construct occurs, which is what docs/plan/16 § R1 actually asks — any
+    /// construct occurring more than 50 times must be at 100 %, and a percentage cannot say whether
+    /// it is.
+    /// </remarks>
     Target Fidelity => definition => definition
         .DependsOn(Compile)
-        .Executes(() => DotNetRun(settings => settings
-            .SetProjectFile(RootDirectory / "Testing" / "Rikarin.Skala.Testing")
-            .SetConfiguration(Configuration)
-            .EnableNoBuild()
-            .EnableNoRestore()
-            .SetApplicationArguments("fidelity")));
+        .Executes(() => {
+            DotNetRun(settings => Harness(settings, "fidelity"));
+            DotNetRun(settings => Harness(settings, "constructs"));
+        });
+
+    DotNetRunSettings Harness(DotNetRunSettings settings, string command) => settings
+        .SetProjectFile(RootDirectory / "Testing" / "Rikarin.Skala.Testing")
+        .SetConfiguration(Configuration)
+        .EnableNoBuild()
+        .EnableNoRestore()
+        .SetApplicationArguments(command);
 }

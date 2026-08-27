@@ -105,7 +105,8 @@ public sealed partial class CSharpDocumentBuilder {
     /// </code>
     /// </remarks>
     void Visit(SyntaxNode node) {
-        if (!_plan.TryGroup(node, out var planned)) {
+        var planned = _plan.GroupsOf(node);
+        if (planned.Count == 0) {
             VisitInner(node);
             return;
         }
@@ -116,26 +117,58 @@ public sealed partial class CSharpDocumentBuilder {
         // is entered at is the one before that break rather than the one after it. The symptom is a
         // statement-level group that never joins and never fits — `if (flag)\n First();` measured as
         // starting at column 23 on the previous line.
-        EmitLeadingGap(node);
-        _doc.OpenGroup(planned.Mode, planned.Id);
+        //
+        // ⚠ Unless the group says otherwise: a construct whose own first break point *is* that gap
+        // has to own it. See GroupPlan.LeadingGapInside.
+        var gapInside = false;
+        for (var i = 0; i < planned.Count; i++) {
+            gapInside |= planned[i].LeadingGapInside;
+        }
 
-        // ⚠ The continuation scope a group's own break points need is opened here, inside the group
-        // and closed inside it, rather than lazily at the break. Lazily is what milestone 1 did and
-        // it is fine while the document stack holds nothing but indent scopes; a group on the same
-        // stack closes before the statement that owns the frame does, and pops the indent instead of
-        // itself.
-        var indented = planned.SpendsIndent && CanSpendAContinuationLevel();
-        if (indented) {
-            OpenIndent(IndentKind.Continuous);
+        if (!gapInside) {
+            EmitLeadingGap(node);
+        }
+
+        // ⚠ Outermost first, and every one of them opened before the body. Two constructs can start
+        // and end at the same token — a binary chain and its outermost operator — and the outer one
+        // has to be the outer group or the fitter resolves the inner first and the ordering is
+        // inverted.
+        var indented = new int[planned.Count];
+        for (var i = 0; i < planned.Count; i++) {
+            var plan = planned[i];
+            _doc.OpenGroup(plan.Mode, plan.Id);
+
+            // ⚠ The continuation scope a group's own break points need is opened here, inside the
+            // group and closed inside it, rather than lazily at the break. Lazily is what milestone
+            // 1 did and it is fine while the document stack holds nothing but indent scopes; a group
+            // on the same stack closes before the statement that owns the frame does, and pops the
+            // indent instead of itself.
+            indented[i] = (plan.SpendsIndent && CanSpendAContinuationLevel() ? 1 : 0) + (plan.OwnLevel ? 1 : 0);
+
+            // ⚠ Whether the level is actually spent is decided here and not in the plan, and the
+            // fitter needs the answer: the ordering rule asks what column a break inside this group
+            // lands on, and that is one level deeper only when this group is the one paying for it.
+            _doc.DescribeGroup(plan.Id, plan.Facts with { SpendsIndent = indented[i] > 0 });
+
+            for (var level = 0; level < indented[i]; level++) {
+                OpenIndent(IndentKind.Continuous);
+            }
+        }
+
+        if (gapInside) {
+            EmitLeadingGap(node);
         }
 
         VisitInner(node);
         EmitUpTo(node.Span.End);
-        if (indented) {
-            CloseIndent(IndentKind.Continuous);
-        }
 
-        _doc.Close();
+        for (var i = planned.Count - 1; i >= 0; i--) {
+            for (var level = 0; level < indented[i]; level++) {
+                CloseIndent(IndentKind.Continuous);
+            }
+
+            _doc.Close();
+        }
     }
 
     /// <summary>
@@ -164,8 +197,25 @@ public sealed partial class CSharpDocumentBuilder {
     }
 
     /// <summary>Emits everything before <paramref name="node"/>'s first piece, its gap included.</summary>
-    void EmitLeadingGap(SyntaxNode node) {
-        EmitUpTo(node.SpanStart);
+    void EmitLeadingGap(SyntaxNode node) => EmitLeadingGapAt(node.SpanStart);
+
+    /// <summary>The first element inside a braced construct, or the closing brace when it is empty.</summary>
+    static int FirstElementStart(SyntaxNode node) {
+        var seenOpen = false;
+        foreach (var child in node.ChildNodesAndTokens()) {
+            if (!seenOpen) {
+                seenOpen = child.IsToken && child.AsToken().IsKind(SyntaxKind.OpenBraceToken);
+                continue;
+            }
+
+            return child.SpanStart;
+        }
+
+        return node.Span.End;
+    }
+
+    void EmitLeadingGapAt(int position) {
+        EmitUpTo(position);
         if (_cursor >= _pieces.Length || _lastPiece < 0) {
             return;
         }
@@ -382,9 +432,15 @@ public sealed partial class CSharpDocumentBuilder {
     }
 
     /// <summary>A <c>{ }</c> body: everything between the braces takes one block indent.</summary>
-    void VisitBraced(SyntaxNode node) {
+    internal void VisitBraced(SyntaxNode node) {
         var (open, close) = BraceTokens(node);
         var opened = false;
+
+        // ⚠ A group opened *inside* the braces, at the column its contents land on. An initializer's
+        // elements are measured against the continuation column, not against the column the
+        // construct starts at, and a group opened around the node is entered at the latter. See
+        // BreakPlan's `_inner` for why the two cannot be the same group.
+        var hasInner = _plan.TryInnerGroup(node, out var elements);
 
         // csharp_indent_braces: the braces themselves take the inner level rather than the outer.
         var indentBraces = _options.IndentBraces;
@@ -403,6 +459,10 @@ public sealed partial class CSharpDocumentBuilder {
                 var token = child.AsToken();
                 if (opened && !close.IsKind(SyntaxKind.None) && token.SpanStart == close.SpanStart) {
                     EmitUpTo(close.SpanStart);
+                    if (hasInner) {
+                        _doc.Close();
+                    }
+
                     if (!indentBraces) {
                         CloseIndent(IndentKind.Block, alignsCloser: true);
                     }
@@ -433,6 +493,20 @@ public sealed partial class CSharpDocumentBuilder {
                         OpenIndent(IndentKind.Block);
                     }
 
+                    if (hasInner) {
+                        // ⚠ The gap after the brace is emitted *before* the group opens, and the
+                        // order is the whole point. That gap holds the outer group's break point, so
+                        // emitting it first is what puts the elements group's first character on the
+                        // continuation line — which is the column its contents have to be measured
+                        // against. Opening the group first measures the elements from the column
+                        // just after the `{`, four columns and one line too optimistic, and every
+                        // initializer that would have fitted on one continuation line comes out with
+                        // one element per line instead.
+                        EmitLeadingGapAt(FirstElementStart(node));
+                        _doc.DescribeGroup(elements.Id, elements.Facts);
+                        _doc.OpenGroup(elements.Mode, elements.Id);
+                    }
+
                     opened = true;
                     continue;
                 }
@@ -445,6 +519,10 @@ public sealed partial class CSharpDocumentBuilder {
 
         if (opened) {
             EmitUpTo(close.IsKind(SyntaxKind.None) ? int.MaxValue : close.SpanStart);
+            if (hasInner) {
+                _doc.Close();
+            }
+
             CloseIndent(IndentKind.Block);
         }
     }
@@ -459,6 +537,26 @@ public sealed partial class CSharpDocumentBuilder {
 
         var opened = false;
         var suppress = layout == NodeLayout.Parens && !_options.UseContinuousIndentInsideParens;
+
+        // ⚠ Which delimited scopes spend their level unconditionally — that is, even when another
+        // scope opened on the same line — and which are collapsed with it. Both answers come from
+        // the oracle and neither is guessable:
+        //
+        //   if ((expr           ← two levels. A *grouping* parenthesis is a level of its own, and
+        //           == value))    the condition's parenthesis is another.
+        //   [Attr(              ← one. The bracket and the argument list's parenthesis are one step.
+        //       argument
+        //   )]
+        //   var d = Drawn(      ← one. The `=` does not pay for what the parenthesis pays for.
+        //       argument
+        //   );
+        //
+        // The sole-lambda case is the third: `place_single_method_argument_lambda_on_same_line`
+        // keeps the lambda on the call's line, so that parenthesis never gets a line of its own and
+        // would otherwise be collapsed into whatever the lambda's body opens.
+        var unconditional = node is ParenthesizedExpressionSyntax
+            || _options.PlaceSingleMethodArgumentLambdaOnSameLine
+            && node is ArgumentListSyntax { Arguments: [{ Expression: AnonymousFunctionExpressionSyntax }] };
 
         // ⚠ A collection expression's elements are elements, like an initializer's: a chain broken
         // inside one takes its own continuation level rather than living off the bracket's.
@@ -485,7 +583,7 @@ public sealed partial class CSharpDocumentBuilder {
                 EmitToken(token);
 
                 if (!opened && !suppress && token.SpanStart == open.SpanStart) {
-                    OpenIndent(IndentKind.Continuous);
+                    OpenIndent(IndentKind.Continuous, unconditional);
                     opened = true;
                     if (element) {
                         savedDepth = _continuousDepth;
@@ -534,7 +632,7 @@ public sealed partial class CSharpDocumentBuilder {
                 EmitToken(token);
 
                 if (!parenOpen && !open.IsKind(SyntaxKind.None) && token.SpanStart == open.SpanStart) {
-                    OpenIndent(IndentKind.Continuous);
+                    OpenIndent(IndentKind.Continuous, unconditional: true);
                     parenOpen = true;
                 }
 
@@ -565,7 +663,7 @@ public sealed partial class CSharpDocumentBuilder {
         EmitToken(node.SwitchKeyword);
         if (!node.OpenParenToken.IsKind(SyntaxKind.None)) {
             EmitToken(node.OpenParenToken);
-            OpenIndent(IndentKind.Continuous);
+            OpenIndent(IndentKind.Continuous, unconditional: true);
             Visit(node.Expression);
             EmitUpTo(node.CloseParenToken.SpanStart);
             CloseIndent(IndentKind.Continuous, alignsCloser: true);
@@ -637,8 +735,8 @@ public sealed partial class CSharpDocumentBuilder {
 
     // ── Indent scopes ────────────────────────────────────────────────────────────────────────
 
-    void OpenIndent(IndentKind kind) {
-        _doc.OpenIndent(kind);
+    void OpenIndent(IndentKind kind, bool unconditional = false) {
+        _doc.OpenIndent(kind, unconditional);
         if (kind == IndentKind.Outdent) {
             return;
         }
@@ -750,7 +848,17 @@ public sealed partial class CSharpDocumentBuilder {
 
         switch (piece.Kind) {
             case PieceKind.Token:
-                _doc.Text(piece.Text, span);
+                // ⚠ `indent_raw_literal_string = align`: a multi-line raw literal's interior and its
+                // closing delimiter move with the opening quotes. The shift is uniform, so the
+                // string's value is unchanged; see VerbatimFlags.Realign.
+                _doc.Text(
+                    piece.Text,
+                    span,
+                    _tokens[piece.TokenIndex].IsKind(SyntaxKind.MultiLineRawStringLiteralToken)
+                    && _options.IndentRawLiteralString == RawStringIndentStyle.Align
+                        ? VerbatimFlags.Realign
+                        : VerbatimFlags.None
+                );
                 break;
 
             case PieceKind.DisabledText:
@@ -760,16 +868,20 @@ public sealed partial class CSharpDocumentBuilder {
                 _doc.Verbatim(piece.Text, span, VerbatimFlags.SelfIndented);
                 break;
 
+            // ⚠ Trimmed on the right. A directive's trailing whitespace is never part of anything,
+            // the oracle removes it, and `#if HAVE_DYNAMIC` followed by twenty-eight spaces is real
+            // code in the corpus — 71 lines across 14 files of `corpus/real/` were nothing but this.
+            // The rest of a verbatim piece is still byte-for-byte.
             case PieceKind.ConditionalDirective:
-                _doc.Verbatim(piece.Text, span, DirectiveFlags(_options.IndentPreprocessorIf));
+                _doc.Verbatim(piece.Text.TrimEnd(), span, DirectiveFlags(_options.IndentPreprocessorIf));
                 break;
 
             case PieceKind.OtherDirective:
-                _doc.Verbatim(piece.Text, span, DirectiveFlags(_options.IndentPreprocessorOther));
+                _doc.Verbatim(piece.Text.TrimEnd(), span, DirectiveFlags(_options.IndentPreprocessorOther));
                 break;
 
             case PieceKind.RegionDirective:
-                _doc.Verbatim(piece.Text, span, DirectiveFlags(_options.IndentPreprocessorRegion));
+                _doc.Verbatim(piece.Text.TrimEnd(), span, DirectiveFlags(_options.IndentPreprocessorRegion));
                 break;
 
             case PieceKind.BlockComment:
@@ -780,11 +892,24 @@ public sealed partial class CSharpDocumentBuilder {
                 break;
 
             case PieceKind.DocCommentLine:
-                _doc.Text(SpaceAfterMarker(piece.Text, "///", _options.SpaceAfterTripleSlash), span, CommentFlags(piece));
+                // ⚠ `space_after_triple_slash` is read and deliberately not applied. Milestone 1
+                // inserted the space; the oracle does not, on its own dedicated fixture
+                // (`constructs/trivia/resharper_space_after_triple_slash.cs` comes back with
+                // `///<summary>` untouched) and nowhere else either. Applying it costs 79 lines
+                // across 15 files of `corpus/real/`. See SK-DIV-0006: `jb cleanupcode`'s
+                // CSReformatCode does not format doc comments at all.
+                _doc.Text(piece.Text, span, CommentFlags(piece));
                 break;
 
+            // ⚠ Not trimmed. A comment's own text is the author's — `space_before_trailing_comment_text
+            // = false` — and the oracle leaves the trailing space on `// … during and ` exactly where
+            // it is. Only directives are trimmed; see the ConditionalDirective arm above.
             case PieceKind.LineComment:
-                _doc.Text(SpaceAfterMarker(piece.Text, "//", _options.SpaceBeforeTrailingCommentText), span, CommentFlags(piece));
+                _doc.Text(
+                    SpaceAfterMarker(piece.Text, "//", _options.SpaceBeforeTrailingCommentText),
+                    span,
+                    CommentFlags(piece)
+                );
                 break;
 
             default:
@@ -896,10 +1021,12 @@ public sealed partial class CSharpDocumentBuilder {
         if (planned) {
             switch (spec.Rule) {
                 case GapRule.Point:
+                case GapRule.FillPoint:
                     _doc.BreakPoint(
                         spec.Group,
                         GapSpace(previous, nextKind, nextToken) != SpaceKind.Forbidden,
-                        newLines == 0 ? 0 : ResolveBlankLines(previous, nextPieceIndex, nextToken, newLines - 1),
+                        spec.Rule == GapRule.FillPoint,
+                        ResolveBlankLines(previous, nextPieceIndex, nextToken, Math.Max(0, newLines - 1)),
                         newLines == 0
                             ? DefaultNewLine()
                             : _options.EnforceLineEndingStyle ? DefaultNewLine() : FirstNewLine(gap) ?? DefaultNewLine());
@@ -910,10 +1037,16 @@ public sealed partial class CSharpDocumentBuilder {
                     return;
 
                 default:
+                    // ⚠ The requirement is resolved even when the source gap held no newline, and
+                    // that is a correction rather than a tidy-up. A break the *rules* introduce —
+                    // one member per line — creates a gap the blank-line requirements have an
+                    // opinion about, and skipping them because the author wrote no newline there
+                    // makes the first pass emit no blank and the second emit one:
+                    // `int A => 1;    int B => 2;` is not idempotent under the old reading.
                     Break(
                         nextPieceIndex,
                         nextToken,
-                        newLines == 0 ? 0 : ResolveBlankLines(previous, nextPieceIndex, nextToken, newLines - 1),
+                        ResolveBlankLines(previous, nextPieceIndex, nextToken, Math.Max(0, newLines - 1)),
                         newLines == 0
                             ? DefaultNewLine()
                             : _options.EnforceLineEndingStyle ? DefaultNewLine() : FirstNewLine(gap) ?? DefaultNewLine());

@@ -26,7 +26,12 @@ public sealed class ConfigCommandTests {
         );
         Assert.Contains("120", width, StringComparison.Ordinal);
         Assert.Contains(".editorconfig:", width, StringComparison.Ordinal);
-        Assert.Contains(" D ", width, StringComparison.Ordinal);
+
+        // ⚠ Tier A since milestone 3, and it was Tier D before it for a reason worth remembering:
+        // milestone 1 read `max_line_length` and could not act on it, because nothing wrapped. A
+        // tier is a claim about behaviour, so it moved when the behaviour arrived and not when the
+        // option was first read.
+        Assert.Contains(" A ", width, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -145,7 +150,7 @@ public sealed class ConfigCommandTests {
     }
 
     [Fact]
-    public void Distill_SaysWhyItDroppedNothing() {
+    public void Distill_SaysWhatAKeyHasToProveBeforeItIsDropped() {
         var run = CliRunner.Run(
             "config",
             "distill",
@@ -154,8 +159,13 @@ public sealed class ConfigCommandTests {
             Path.Combine(Path.GetTempPath(), $"skala-{Guid.NewGuid():N}.editorconfig")
         );
 
-        Assert.Contains("0 key(s) dropped", run.StandardOutput, StringComparison.Ordinal);
+        // ⚠ Not "0 key(s) dropped" any more. Until milestone 3 the answer was that distill could
+        // drop nothing, because no default had been checked against anything; the derived table
+        // changed the answer and the explanation has to say what the evidence now is.
+        Assert.Contains("key(s) dropped", run.StandardOutput, StringComparison.Ordinal);
+        Assert.DoesNotContain("0 key(s) dropped", run.StandardOutput, StringComparison.Ordinal);
         Assert.Contains("never its default", run.StandardOutput, StringComparison.Ordinal);
+        Assert.Contains("oracle-probe", run.StandardOutput, StringComparison.Ordinal);
     }
 
     [Fact]

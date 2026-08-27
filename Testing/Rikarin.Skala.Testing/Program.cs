@@ -3,7 +3,8 @@ using Rikarin.Skala.Formatting;
 using Rikarin.Skala.Formatting.CSharp;
 using Rikarin.Skala.Testing;
 
-// The harness's own entry point. ⚠ Two commands, both deliberate developer-machine actions:
+// The harness's own entry point. ⚠ Every one of these is a deliberate developer-machine action and
+// none of them is a test:
 //
 //   oracle [set…]     regenerate the committed `.expected.cs` fixtures from `jb cleanupcode`.
 //                     `./build.sh Oracle`, never a test — an oracle that regenerates when it
@@ -14,11 +15,22 @@ using Rikarin.Skala.Testing;
 //                     report can be read as a diff rather than as two sample lines.
 //   variants [set…]   the differential number for each alternative configuration a set is run
 //                     under — docs/plan/05's four-way keep_existing_* table.
+//   constructs [set]  every divergent line attributed to the construct that owns it, beside how
+//                     often that construct occurs — docs/plan/16 § R1's actual question.
+//   ask <dir>         run the oracle over a scratch directory, in place. The tool the milestone-3
+//                     wrapping rules were established with: an option name does not say what
+//                     happens to a 121-column array initializer, and asking does.
+//   defaults [out]    derive ReSharper's built-in default table from the oracle, because nobody
+//                     publishes it (docs/plan/03 § "Deriving ReSharper's defaults"). Tens of
+//                     minutes.
 //
 // It is not the `skala` tool and is never packaged.
 
 if (args.Length == 0) {
-    Console.Error.WriteLine("usage: oracle [set…] | fidelity [set…] | dump <set> <dir>");
+    Console.Error.WriteLine(
+        "usage: oracle [set…] | fidelity [set…] | constructs [set…] | dump <set> <dir>"
+        + " | ask <dir> | defaults [round…]"
+    );
     return 2;
 }
 
@@ -35,9 +47,90 @@ switch (args[0]) {
         return Variants(sets);
     case "probe":
         return Probe();
+    case "ask":
+        return Ask(args[1], args[2..]);
+    case "defaults":
+        return Defaults(args.Length > 1 ? args[1] : null);
+    case "constructs":
+        // docs/plan/16 § R1: any construct occurring more than 50 times must be at 100 %. A single
+        // fidelity number cannot answer that; this attributes every divergent line to the construct
+        // that owns it and puts it beside how often the construct occurs.
+        Console.WriteLine(ConstructReport.Render(ConstructReport.Build(args.Length > 1 ? args[1] : Corpus.Real)));
+        return 0;
     default:
         Console.Error.WriteLine($"unknown command '{args[0]}'");
         return 2;
+}
+
+// `ask <dir> [key=value…]`: run the oracle over a scratch directory of .cs files, in place, under
+// the repository's .editorconfig plus any overrides.
+//
+// ⚠ It is the tool the milestone-3 rules were established with, and it is why they are rules rather
+// than readings of an option name. `wrap_array_initializer_style = wrap_if_long` does not say what
+// happens to `new[] { a, b, c }` at 121 columns; asking cleanupcode does. It is also what derives
+// the default table (docs/plan/03 § "Deriving ReSharper's defaults"), where the override is
+// `root = true` and nothing else.
+static int Ask(string directory, string[] overrides) {
+    if (OracleRunner.FindExecutableOrNull() is null) {
+        Console.Error.WriteLine("jb is not installed.");
+        return 2;
+    }
+
+    var full = Path.GetFullPath(directory);
+    var files = Directory.EnumerateFiles(full, "*.cs", SearchOption.AllDirectories)
+        .OrderBy(static path => path, StringComparer.Ordinal)
+        .Select(path => new CorpusFile("ask", Path.GetRelativePath(full, path), path))
+        .ToArray();
+
+    if (files.Length == 0) {
+        Console.Error.WriteLine($"no .cs files under {full}");
+        return 2;
+    }
+
+    var pairs = new List<KeyValuePair<string, string>>();
+    var config = Path.Combine(Corpus.RepositoryRoot, ".editorconfig");
+    foreach (var entry in overrides) {
+        if (entry.StartsWith("--config=", StringComparison.Ordinal)) {
+            config = Path.GetFullPath(entry["--config=".Length..]);
+            continue;
+        }
+
+        var equals = entry.IndexOf('=', StringComparison.Ordinal);
+        if (equals > 0) {
+            pairs.Add(new KeyValuePair<string, string>(entry[..equals].Trim(), entry[(equals + 1)..].Trim()));
+        }
+    }
+
+    var results = new OracleRunner().Format(files, config, pairs);
+    foreach (var file in files) {
+        if (results.TryGetValue(file.Path, out var body)) {
+            File.WriteAllText(file.Path, body);
+        }
+    }
+
+    Console.WriteLine($"{results.Count.ToString(CultureInfo.InvariantCulture)}/{files.Length.ToString(CultureInfo.InvariantCulture)} files answered.");
+    return 0;
+}
+
+// `defaults [out]`: derive ReSharper's built-in defaults from the oracle, because nobody publishes
+// them (docs/plan/03 § "Deriving ReSharper's defaults"). Tens of minutes; a deliberate developer
+// action, never a test.
+static int Defaults(string? outputPath) {
+    if (OracleRunner.FindExecutableOrNull() is null) {
+        Console.Error.WriteLine("jb is not installed.");
+        return 2;
+    }
+
+    var probed = DefaultsProbe.Run(new OracleRunner(), Console.Out);
+    var report = DefaultsProbe.Render(probed);
+    if (outputPath is { Length: > 0 }) {
+        File.WriteAllText(outputPath, report);
+        Console.WriteLine($"written to {outputPath}");
+    } else {
+        Console.WriteLine(report);
+    }
+
+    return 0;
 }
 
 static int Regenerate(string[] sets) {

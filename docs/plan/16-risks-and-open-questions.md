@@ -21,6 +21,21 @@ places where the tools cannot agree. Plus, honestly: if a divergence is small an
 better, change the Rider setting to match Skala rather than the reverse — the settings are the
 author's, and they can move.
 
+⚠ **M3 measured it, and the shape is exactly as predicted.** `fidelity constructs` attributes every
+divergent line to the innermost node that owns it and puts that beside how often the construct
+occurs: of the 54 constructs occurring more than 50 times in `corpus/real/`, **27 are at 100 %** at
+98.86 % overall. The rule is not met. What it is short of is characterised rather than mysterious —
+the largest attributed shares are `IdentifierName`, `StringLiteralExpression` and `ArgumentList`,
+which are where a wrap decision *lands* rather than constructs mishandled in themselves, and the
+eight `SK-DIV-*` entries name the decisions.
+
+⚠ The paragraph above under-states one thing and over-states another. The tail is *not* mostly
+exotic constructs: two of the eight entries (SK-DIV-0001, SK-DIV-0004) are about preprocessor
+conditionals, which are ordinary, and they are limitations of parsing without a project rather than
+of the formatter. And "99 % means 13 000 lines Rider will reformat back" is the wrong test for those
+two, because Skala does not *touch* what it cannot see — the disagreement is code Skala left alone,
+not code it moved.
+
 **Residual risk: high.** This is the risk that decides whether the project succeeds.
 
 ### R2 — The fitting engine is the only novel code, and novel code is where the bugs are
@@ -32,6 +47,14 @@ implementation is closed.
 **Mitigation:** the property suite ([12](12-conformance-and-testing.md)) is designed for exactly
 this — idempotency, token equivalence, width monotonicity and preservation are all violated by the
 plausible bugs in a three-state resolver. Fuzzing runs nightly from M1, not from M7.
+
+⚠ **M3 is where the novel code arrived, and the property suite earned its place immediately.** The
+three-state model needed a fourth measure and a fifth: `pointWidth`, which stops at the first
+*optional* break, and the trailing context, because a group is not the line it lands on. Two of the
+three worst bugs in the milestone were found by properties rather than by fidelity — a
+non-idempotency that no corpus file contains and that took a 4 708-file tree to surface, and a
+blank-line rule that disagreed with itself between the first pass and the second. Neither moved the
+fidelity number at all before it was fixed.
 
 **Residual risk: medium.** Contained by testing, not by cleverness.
 
