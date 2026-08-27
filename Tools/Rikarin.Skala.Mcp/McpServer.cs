@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using System.Text;
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.CodeAnalysis.Text;
 using ModelContextProtocol.Protocol;
 using ModelContextProtocol.Server;
@@ -31,24 +32,36 @@ namespace Rikarin.Skala.Mcp;
 /// </remarks>
 public static class McpServer {
     public static async Task RunAsync(string repositoryRoot, CancellationToken cancellation) {
-        var tools = new SkalaTools(Path.GetFullPath(repositoryRoot));
-        var options = new McpServerOptions {
-            ServerInfo = new Implementation { Name = "skala", Version = SkalaVersion.Value },
-            ServerInstructions = Instructions,
-            Capabilities = new ServerCapabilities { Tools = new ToolsCapability() }
-        };
-
-        foreach (var tool in tools.Create()) {
-            options.ToolCollection?.Add(tool);
-        }
-
         await using var transport = new StdioServerTransport("skala");
-        await using var server = McpServer.CreateServer(transport, options);
+        await using var server = Create(transport, repositoryRoot);
         await server.RunAsync(cancellation).ConfigureAwait(false);
     }
 
-    static ModelContextProtocol.Server.McpServer CreateServer(ITransport transport, McpServerOptions options) =>
-        ModelContextProtocol.Server.McpServer.Create(transport, options, null!, null!);
+    /// <summary>Builds the server over any transport, so a test can drive it without a process.</summary>
+    public static ModelContextProtocol.Server.McpServer Create(ITransport transport, string repositoryRoot) {
+        var options = new McpServerOptions {
+            ServerInfo = new Implementation { Name = "skala", Version = SkalaVersion.Value },
+            ServerInstructions = Instructions,
+            Capabilities = new ServerCapabilities { Tools = new ToolsCapability() },
+
+            // ⚠ Constructed, not left to the default. `McpServerOptions.ToolCollection` is **null**
+            // until something assigns one, so `options.ToolCollection?.Add(tool)` compiles, runs,
+            // adds nothing, and produces a server that answers `tools/list` with an empty array —
+            // a working handshake and no tools, which looks like a client problem.
+            ToolCollection = new McpServerPrimitiveCollection<McpServerTool>()
+        };
+
+        foreach (var tool in new SkalaTools(Path.GetFullPath(repositoryRoot)).Create()) {
+            options.ToolCollection.Add(tool);
+        }
+
+        return ModelContextProtocol.Server.McpServer.Create(
+            transport,
+            options,
+            NullLoggerFactory.Instance,
+            serviceProvider: null!
+        );
+    }
 
     /// <summary>
     /// What the agent is told about the server, once, at connect time.

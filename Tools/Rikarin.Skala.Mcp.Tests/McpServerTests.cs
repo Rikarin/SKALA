@@ -1,3 +1,6 @@
+using System.Text;
+using System.Text.Json;
+using ModelContextProtocol.Protocol;
 using ModelContextProtocol.Server;
 using Rikarin.Skala.Mcp;
 
@@ -71,6 +74,113 @@ public sealed class McpServerTests {
         );
 
         Assert.Contains("does not parse", answer, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// The whole server, over a real transport, answering a real <c>tools/list</c>.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ This exists because of a bug the tool-list unit tests could not see:
+    /// <c>McpServerOptions.ToolCollection</c> is <b>null</b> until something assigns one, so
+    /// <c>options.ToolCollection?.Add(tool)</c> compiled, ran, added nothing, and produced a server
+    /// that completed the handshake and answered <c>tools/list</c> with an empty array. Every unit
+    /// test passed, because they asked <c>SkalaTools</c> for the list rather than the server. A
+    /// transport-level test is the only kind that could have caught it.
+    /// </remarks>
+    [Fact]
+    public async Task TheServer_AnswersToolsListOverATransport() {
+        var input = new MemoryStream(
+            Encoding.UTF8.GetBytes(
+                """
+                {"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"test","version":"1"}}}
+                {"jsonrpc":"2.0","method":"notifications/initialized"}
+                {"jsonrpc":"2.0","id":2,"method":"tools/list"}
+
+                """.ReplaceLineEndings("\n")
+            )
+        );
+
+        var output = new MemoryStream();
+
+        // ⚠ The reader must not see EOF before the server has answered. A plain MemoryStream is at
+        // EOF the moment its bytes are consumed, and the SDK's loop then stops — which is also why
+        // piping three lines into `skala mcp` and closing stdin prints nothing. Holding the input
+        // open until the answer is on the way is what makes this test about the server rather than
+        // about the race.
+        await using (var transport = new StreamServerTransport(new HoldOpen(input, output), output, "skala")) {
+            await using var server = McpServer.Create(transport, Directory.GetCurrentDirectory());
+            await server.RunAsync(TestContext.Current.CancellationToken);
+        }
+
+        var names = new List<string>();
+        foreach (var line in Encoding.UTF8.GetString(output.ToArray()).Split('\n')) {
+            if (line.Length == 0) {
+                continue;
+            }
+
+            using var document = JsonDocument.Parse(line);
+            if (!document.RootElement.TryGetProperty("result", out var result)
+                || !result.TryGetProperty("tools", out var tools)) {
+                continue;
+            }
+
+            names.AddRange(tools.EnumerateArray().Select(static tool => tool.GetProperty("name").GetString()!));
+        }
+
+        Assert.Equal(
+            [
+                "skala_check", "skala_config_explain", "skala_explain", "skala_fix", "skala_format", "skala_verify"
+            ],
+            names.Order(StringComparer.Ordinal)
+        );
+    }
+
+    /// <summary>
+    /// A read-only stream that stays open until the server has written two JSON-RPC results.
+    /// </summary>
+    sealed class HoldOpen(Stream source, MemoryStream written) : Stream {
+        public override bool CanRead => true;
+
+        public override bool CanSeek => false;
+
+        public override bool CanWrite => false;
+
+        public override long Length => throw new NotSupportedException();
+
+        public override long Position {
+            get => throw new NotSupportedException();
+            set => throw new NotSupportedException();
+        }
+
+        public override int Read(byte[] buffer, int offset, int count) {
+            var read = source.Read(buffer, offset, count);
+            if (read > 0) {
+                return read;
+            }
+
+            // Exhausted: wait for the two answers, then report EOF so the loop ends.
+            var deadline = DateTime.UtcNow.AddSeconds(20);
+            while (DateTime.UtcNow < deadline && Answers() < 2) {
+                Thread.Sleep(10);
+            }
+
+            return 0;
+        }
+
+        int Answers() {
+            lock (written) {
+                var text = System.Text.Encoding.UTF8.GetString(written.GetBuffer(), 0, (int)written.Length);
+                return text.Split('\n').Count(static line => line.Contains("\"result\"", StringComparison.Ordinal));
+            }
+        }
+
+        public override void Flush() { }
+
+        public override long Seek(long offset, SeekOrigin origin) => throw new NotSupportedException();
+
+        public override void SetLength(long value) => throw new NotSupportedException();
+
+        public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
     }
 
     [Fact]

@@ -16,7 +16,7 @@
     <Copyright>Copyright (c) Rikarin</Copyright>
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
     <RepositoryUrl>https://github.com/Rikarin/Skala</RepositoryUrl>
-    <VersionPrefix>0.1.0</VersionPrefix>
+    <VersionPrefix>0.6.0</VersionPrefix>
     <IsPackable>false</IsPackable>
   </PropertyGroup>
 
