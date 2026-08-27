@@ -70,7 +70,7 @@
       SkalaSdkTargetsTests.RuleIds_MatchRulesJson — ADR-012 makes ids append-only, so a new rule
       that is missing here is a failing test rather than a rule that quietly fails somebody's build.
     -->
-    <SkalaRuleIds>SK1005;SK1010;SK1020;SK1030;SK1034;SK1035;SK2013;SK2015;SK3001;SK3002;SK4010;SK5001;SK5002;SK5005;SK5007;SK5009;SK6003;SK7001;SK7002;SK7003;SK7004;SK7005;SK7006;SK7010;SK7020;SK8005</SkalaRuleIds>
+    <SkalaRuleIds>SK1001;SK1005;SK1006;SK1010;SK1015;SK1020;SK1030;SK1031;SK1033;SK1034;SK1035;SK2007;SK2013;SK2015;SK3001;SK3002;SK3004;SK3007;SK3501;SK3503;SK4010;SK5001;SK5002;SK5005;SK5007;SK5009;SK6003;SK7001;SK7002;SK7003;SK7004;SK7005;SK7006;SK7010;SK7020;SK8005</SkalaRuleIds>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(SkalaRulesAsErrors)' != 'true' and '$(TreatWarningsAsErrors)' == 'true'">
