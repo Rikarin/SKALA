@@ -29,7 +29,10 @@ that must agree to the column is the kind of duplication that produces a wrap wh
 nothing moved. M2 resolves each group on entry, at the column the writer is actually at.
 
 Steps 1, 3–7 need no `Compilation` and no project file. That is what makes `skala format` work on a
-folder, in a git hook, on an agent's scratch directory, and at 4 691 files in under twenty seconds.
+folder, in a git hook, on an agent's scratch directory, and at 4 708 files in eleven seconds — ⚠ a
+number this document could not write until M3 made the loop parallel (doc 13 § "Parallelism"). It is
+also why `#if DEBUG` bodies are frozen, which is SK-DIV-0004 and the strongest argument for the
+project loading of doc 07 reaching `format`.
 
 ## The document IR
 
@@ -43,7 +46,7 @@ record Concat(ImmutableArray<Doc> Parts) : Doc;
 record Space(SpaceKind Kind) : Doc;                      // Required | Forbidden | Preserve
 record Line(LineKind Kind) : Doc;                        // Hard | Soft | Blank(n) | Preserve
 record Group(Doc Body, GroupMode Mode, GroupId Id) : Doc;
-record Fill(ImmutableArray<Doc> Items) : Doc;            // wrap_if_long
+record Fill(ImmutableArray<Doc> Items) : Doc;            // wrap_if_long — ⚠ a flag on a break point
 record Indent(Doc Body, IndentKind Kind) : Doc;          // Block | Continuous | None | Outdent
 record IfBroken(GroupId Of, Doc Then, Doc Else) : Doc;   // trailing commas, `=>` placement, …
 record Verbatim(string Text) : Doc;                      // raw strings, disabled #if regions, off-tag spans
@@ -65,6 +68,14 @@ per run. Read the shapes here for what the IR *means* and the arena for what it 
 `Anchor` is what makes step 5 a *minimal edit* rather than a rewrite: every `Text` is traceable to
 the source span it came from, so a run of output that matches the original bytes exactly produces no
 edit.
+
+⚠ **`Fill` is not a node, and M3 established that it cannot be one.** A fill's delimiters and its
+item separators do not behave alike: `wrap_array_initializer_style = wrap_if_long` puts the `{` at
+the end of the opening line and the `}` on a line of its own *whenever the initializer wraps at
+all*, and fills only the gaps between elements. A `Fill` node would have to either swallow the
+braces — producing `new[] { "aaa",` — or exclude the elements from the group that decides whether it
+wraps. It is a flag on a break point (`LineFlags.FillPoint`) instead: the group decides whether the
+construct wraps, and a fill point decides on its own whether what follows it fits.
 
 ### Three-state groups
 
@@ -92,8 +103,16 @@ directions and the export wants a different direction per construct family:
 Neither is the other's default. Giving an expression body the argument list's rule — break after
 `=>` whenever the declaration is over 120 — costs 0.24 points of line fidelity on `corpus/real/`,
 because the oracle wraps such a line at a different point and Skala's break lands one line away from
-the oracle's. *Which* of a line's candidate points to wrap at is `prefer_wrap_around_eq`'s job and
-belongs to milestone 3.
+the oracle's. *Which* of a line's candidate points to wrap at is `prefer_wrap_around_eq`'s job; M3
+implements it as `PrefersOuterBreak` and the rule is under "The fitting algorithm" below.
+
+⚠ **A group certain to break has no flat form, and that is true of a `Preserve` group too.**
+`GroupMode.Break` already reported ∞; a `Preserve` group whose source was broken at its own points
+and which may not re-join is just as certain, and whatever contains it has to know — the oracle chops
+`Report(Diagnostic.Create(` into two lines as soon as the inner call is broken, although the outer
+call is 59 columns wide. ⚠ On **delimited lists only**, and that is measured rather than tidy: an
+expression body's arrow is resolved against its whole flat width, so an unbreakable body would break
+every such arrow and `bool Property(object o) => o is { … };` would lose its first line.
 
 ⚠ **The two directions are also measured against different widths.** Joining needs the whole flat
 width, because the join puts all of it on one line; breaking needs only the width up to the group's
@@ -167,15 +186,57 @@ only ever one. The oracle's actual behaviour is five rules:
 
 | Construct | Spends a level? |
 |---|---|
-| Delimited group (parens, brackets, initializer braces) | Yes — one per *opening line*, so they nest |
-| Undelimited continuation | No — however deep the expression, they collapse to one |
+| **Grouping** parenthesis (a `(expr)`, a statement's condition) | Yes — always, even beside another scope on the same line |
+| Other delimited group (argument list, brackets, initializer braces) | Yes — one per *opening line*, so several on one line are one step |
+| Undelimited continuation | No — one per line at most, and none where a delimited scope inside it already paid |
 | Chained method call | Yes, its own |
 | Binary **expression** chain | No |
-| Binary **pattern** chain | Yes |
+| Binary **pattern** chain | Yes, its own — except as a statement's condition |
 
 The distinction in the last two rows looks arbitrary and is not: it is what `jb cleanupcode`
 produces, it is pinned by fixtures in `constructs/indentation/`, and a formatter that "rationalises"
 it diverges on real code immediately.
+
+⚠ **The first row is M3's correction, and the second and third are its other half.** "One level per
+opening line" was M1's rule and it is really three, which sweeping the oracle separates cleanly:
+
+```csharp
+if ((expr                  ← two levels, one per parenthesis, both opened on the same line
+        == value))
+[Attr(                     ← one. The bracket and the argument list are one step.
+    argument
+)]
+var d = Drawn(             ← one. The `=` does not pay for what the parenthesis pays for.
+    argument
+);
+```
+
+Dropping either half costs about 1.9 points of line fidelity on `corpus/real/`, in opposite
+directions: without the first, `if ((… == …))` puts the operand one level short — 176 lines across
+26 files; with the first but without the third, `[Attr(` and `var d = Drawn(` both gain a level they
+should not have.
+
+⚠ **A sole lambda argument's parenthesis is a grouping one for this purpose.**
+`place_single_method_argument_lambda_on_same_line = true` keeps the lambda on the call's line, so
+that parenthesis never gets a line of its own and would otherwise be collapsed into whatever the
+lambda's body opens:
+
+```csharp
+messages.Any(message => message.Contains(
+        "…"          ← two levels, from `Any(` and from `Contains(`
+    )                ← one, back to `Contains(`'s opener
+);
+```
+
+⚠ **The level a scope nests *from* is not the level a line starting now takes**, and the two differ
+by exactly the scope that opened on the current line. A closing delimiter and a block's own level
+both ask the first question; every line start asks the second.
+
+⚠ **A binary pattern chain's own level is not spent as a statement's condition**, where
+`align_multiline_statement_conditions = true` puts the alignment and the continuation level at the
+same column: `if (o is IDisposable
+    or IAsyncDisposable)` is one step where the same chain as an
+argument takes two.
 
 ReSharper's `double` and `resharper_continuous_indent_multiplier` change the level size and are Tier
 A too, but the export uses `single`, so that is the path with fixture coverage.
@@ -210,12 +271,12 @@ must be a decision Skala makes, not one it inherits.
 |---|---|
 | End-of-line comment | Attached to the *preceding* token. `resharper_space_before_trailing_comment = true` inserts exactly one space; `space_before_trailing_comment_text = false` leaves `//x` alone. ⚠ A trailing comment makes its line unbreakable after the comment — the fit algorithm must treat it as infinite-width tail, or it will "fix" a long line by moving code onto the comment's line. |
 | Own-line comment | `resharper_stick_comment = true`: a comment immediately above a declaration binds to it and moves with it; blank-line rules see the comment as part of the member. `place_comments_at_first_column = false`: indent with the code. |
-| XML doc comment | Its own sub-formatter: `resharper_xmldoc_wrap_lines = true`, `xmldoc_max_line_length = 120`, `xmldoc_linebreak_before_elements = summary,remarks,…`. Parsed as XML with Roslyn's `DocumentationCommentTrivia`, re-wrapped, re-prefixed with `/// `. ⚠ Text inside `<code>` is `Verbatim`. |
+| XML doc comment | ⚠ **Not formatted at all, and that is the measurement rather than the schedule.** `jb cleanupcode` does not touch documentation comments — not the missing space after `///`, not a 128-column summary, not two `<param>` tags on one line — with the export's whole `resharper_xmldoc_*` family in force. A sub-formatter here would diverge from the oracle on every doc comment in the corpus with no oracle to check itself against (SK-DIV-0006). What Skala does do is detect a comment that is not well-formed XML and report it at `hint` (`SK0003`), leaving it exactly as written; `<code>` and `<c>` are moot while nothing is re-wrapped. |
 | `#region` / `#endregion` | `resharper_indent_preprocessor_region = usual_indent` — indented like code. `blank_lines_inside_region`, `blank_lines_around_region` apply. Regions do not affect grouping. |
 | `#if` / `#else` and **disabled text** | ⚠ The dangerous one. Roslyn parses the inactive branch as `DisabledTextTrivia` — an unstructured string. Skala emits it `Verbatim`, byte-for-byte, and *never* reindents it. `resharper_indent_preprocessor_if = no_indent` puts the directives at column 0. A construct whose braces are split across a `#if` (`#if X` … `{` … `#else` … `{` …) is detected and the whole member is emitted `Verbatim` with `SK9011` (info): "not formatted, unbalanced preprocessor structure". Silently doing something clever here is how formatters destroy code. |
 | `#pragma`, `#nullable`, `#line` | Own line, no indent change, no grouping effect. Between attributes and a member they suppress attribute-placement rules for that member. |
 | Formatter tags | `resharper_formatter_tags_enabled = true`, `off_tag = @formatter:off`, `on_tag = @formatter:on`. A comment containing the off tag starts a `Verbatim` span that ends at the on tag or at end of file. `formatter_tags_accept_regexp = false` ⇒ literal match. This is the escape hatch, and it must work on the first attempt or people stop trusting the tool. |
-| Raw string literals (`"""`) | `Verbatim`, with the one exception of `resharper_indent_raw_literal_string`, which re-indents the *closing delimiter and the common prefix* — a transformation that changes the string's value if done wrong. Tier B until the fixtures cover interpolated raw strings with nested braces. |
+| Raw string literals (`"""`) | ⚠ **Shifted, not re-indented.** `resharper_indent_raw_literal_string = align` moves the content to the opening quotes' column, and the transformation that cannot be got wrong is a *uniform shift*: C# strips the closing delimiter's own whitespace prefix from every line, so moving every interior line and the closing delimiter by the same number of columns leaves the stripped result identical, character for character. Re-indenting the lines independently, or moving the content without the delimiter, changes what the program prints. Tier A for the uninterpolated token; an interpolated raw string is a run of tokens with expressions between them and stays `Verbatim` (SK-DIV-0003). |
 | Blank lines | Not trivia in the IR: `Line(Blank(n))`, computed from the blank-line option set (below). |
 
 ### Blank lines
@@ -254,20 +315,69 @@ Wadler-shaped, iterative rather than recursive (C# has no TCO and files nest 30 
 per group tree because of `if_owner_is_single_line`.
 
 ```
-build(tree):    per node, accumulate flatWidth and headWidth as the arena is filled
-                — ⚠ the measure pass is FUSED into the build (doc 13), not a traversal of its own
+build(tree):    per node, accumulate flatWidth, headWidth, pointWidth and afterPoint as the arena
+                is filled — ⚠ the measure pass is FUSED into the build (doc 13), not a traversal of
+                its own
 fit+emit(doc, width):
   walk depth-first, maintaining (column, indentStack), and on entering each Group:
             Group(Flat)     -> flat
             Group(Break)    -> broken                        (and its flatWidth is ∞, so nothing
                                                               containing it can be flat either)
-            Group(Auto)     -> flat if column + headWidth <= width else broken
+            Group(Auto)     -> flat if column + headWidth + trailing <= width else `worth`
             Group(Preserve) -> sourceBroken ? (joinsIfFits && whole group fits ? flat : broken)
-                                            : (breaksIfTooLong && !fits ? broken : flat)
+                                            : (breaksIfTooLong && !fits ? `worth` : flat)
             Group(Owner)    -> the owner's resolved mode; the owner is an ancestor, so it is known
-            Fill(items)     -> emit items, breaking before the first item that would overflow,
-                               then continue on the new line (classic fill)
+      a fill point         -> broken iff what follows it, up to the next fill point, does not fit
 ```
+
+⚠ **Four widths, not two, and M3 needed every one of them.**
+
+| Measure | Stops at | The question it answers |
+|---|---|---|
+| `flatWidth` | nothing | can the whole group go on one line — the test for *joining* |
+| `headWidth` | the first **certain** break | how much lands on this line whatever happens |
+| `pointWidth` | the first break **point**, optional ones included | how much lands on this line if the construct inside wraps |
+| `afterPoint` | the point after this group's own first | what follows this group's own break, up to the next |
+
+`headWidth` and `pointWidth` differ exactly where a construct's only breaks are optional: for
+`= new Dictionary<…> { a, b }` the head is the whole thing and the point width is
+`= new Dictionary<…> {`, which is what the ordering rule needs and what the head cannot say.
+
+⚠ **A group is not the line it lands on.** Every fit is `column + width + trailing`, where `trailing`
+is what remains of the line after the group ends, up to the next break. `var f = new Thing { A = 1,
+B = 2, C = 3 };` at 121 columns is the shape that proves it: the initializer's group covers `{ … }`,
+is entered at column 26, measures 94, concludes 120 and stays flat — and then the semicolon that is
+not in it makes the line 121. Every construct that ends before its statement does has the same blind
+spot, and closing parentheses, semicolons and commas are exactly what follows the constructs that
+wrap. It is Prettier's `fits(next, restCommands)`; the walk's own stack already holds it.
+
+⚠ **A break point's own flat rendering is not part of `trailing`.** The measure is "the rest of this
+line assuming every break point is taken", and if the point is taken the line ends there and the
+space it would have rendered as is never written. Counting it made this measure one column larger
+than the one a fill point uses on the same gap, and the two disagreeing is a *non-idempotency*: the
+fill keeps an item on the line, the item's own group finds itself one column over and breaks, and the
+second pass sees a multi-line item and breaks before it. Two files out of Vixen's 4 708 did exactly
+that, and no corpus file did.
+
+### The ordering rule
+
+⚠ `worth` above is milestone 3's substance, and the thing milestone 2 left out on purpose. A group
+that does not fit does not therefore break: it breaks when its own break is the one worth taking.
+Two questions, in order:
+
+1. **Does this break alone finish the job?** If what follows the group's own first break point fits
+   on a continuation line, take it — two lines beat the three that wrapping something inside would
+   cost. `JsonObjectContract c =
+    (JsonObjectContract)r.ResolveContract(typeof(T));` is that
+   case; chopping the argument list instead produces a third line the oracle does not write.
+2. **Otherwise, does the line end here anyway?** Something inside is going to wrap, so the current
+   line runs to the first break point whether this group breaks or not. If that much fits, this
+   group's break buys a line and gains nothing: `schema.Properties = new Dictionary<…> {` is the
+   oracle's first line, not `schema.Properties =`. If it does *not* fit — the call's own name runs
+   past the margin — then both breaks are needed and this one is taken.
+
+⚠ The budget in question 1 is **not** `max_line_length`, and SK-DIV-0005 records the measurement and
+the counter-example. It is a local rule and not a search; the paragraph below still holds.
 
 Complexity is O(n) in document nodes, in one traversal.
 No backtracking, no search. The optimal-layout algorithms (Yelland/Bernardy, "A Pretty Expressive

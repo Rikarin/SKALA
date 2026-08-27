@@ -80,7 +80,9 @@ hand-written docs and hand-written tests. There is exactly one source of truth:
   "aliases": ["resharper_wrap_arguments_style"],   // ReSharper's language-generic spelling
   "language": "csharp",
   "type": "enum:WrapStyle",                        // wrap_if_long | chop_if_long | chop_always
-  "default": "wrap_if_long",                       // ReSharper's default, not ours
+  "default": "wrap_if_long",                       // ReSharper's default, not ours — and since M3
+                                                   // `defaultSource` says whether that is a claim
+                                                   // or a measurement
   "tier": "A",
   "construct": "ArgumentList",
   "summary": "How an argument list that does not fit on one line is broken.",
@@ -140,7 +142,9 @@ Resolution order for a given file, first match wins within a key:
    Microsoft equivalent (`csharp_x`) beats the generic editorconfig key. This is ReSharper's own
    order and the reason for hazard 3 above.
 4. `options.json` default — which is **ReSharper's default**, not a Skala opinion. A key absent from
-   the config must produce what Rider produces with that key absent.
+   the config must produce what Rider produces with that key absent. ⚠ M3 makes that true for 126
+   keys by deriving the value from the oracle rather than taking the export's; see "Deriving
+   ReSharper's defaults" below for what the other 397 still record and why.
 
 `skala.jsonc` never participates. It cannot set a style option; attempting to is `SK9003` (error).
 
@@ -187,34 +191,83 @@ skala config check                # tier report + contradictions, exit non-zero 
 ReSharper's defaults, measured against `options.json`. A distilled file a human can read, review in
 a diff, and reason about, that produces byte-identical formatting.
 
-⚠ **This does not work yet, and the reason is a mistake in this document.** The original text said
-`options.json` "stores those defaults precisely for this purpose", and M0 established that it cannot:
-JetBrains' EditorConfig property tables publish each property's name, language and possible values,
-and **never its shipped default** — all 22 schema pages and the 5 200-row index were checked. So
-every registry entry records the export's own value as its default, marked `defaultSource:
-"template"` or `"unknown"`, and none is marked `"resharper-docs"`.
+⚠ **The problem this used to have, and what it cost.** The original text said `options.json` "stores
+those defaults precisely for this purpose", and M0 established that it cannot: JetBrains' EditorConfig
+property tables publish each property's name, language and possible values, and **never its shipped
+default** — all 22 schema pages and the 5 200-row index were checked. So every registry entry
+recorded the export's own value as its default, marked `defaultSource: "template"` or `"unknown"`,
+and `distill` — which may only drop a key whose default was *checked* — dropped 0 of 4 226 and said
+so, at length, on stdout.
 
-`distill` may only drop a key whose default is `resharper-docs`, so today it drops **0 of 4 226** and
-says so, at length, on stdout. That is the correct answer, not a failure: dropping a key on a guessed
-default silently changes formatting, which non-negotiable #4 forbids.
-
-**What unblocks it** is a verified default table, and the only reliable source is a one-off human
-action: export an `.editorconfig` from a *pristine* Rider profile with nothing customised, and diff
-it against the author's export. The difference is, by construction, exactly the set of non-default
-keys. Until that exists, `distill` is honest and useless, and no option may claim Tier A on the
-grounds that its default is known.
-
-⚠ **It costs more than `distill`, and M2 measured how much.** A registry entry whose `default` is the
+⚠ **It cost more than `distill`, and M2 measured how much.** A registry entry whose `default` is the
 export's value is not merely unusable for distilling — it is what Skala *applies* to any repository
 whose `.editorconfig` leaves that key unset, which is most repositories. Rider applies its own
-default to the same file, and the two disagree. Formatted with nothing but `indent_style` and
-`indent_size` set, `jb cleanupcode` produces Allman braces, keeps a partly-broken argument list partly
-broken, and leaves `int P =>\n 1;` alone; Skala produces K&R braces, chops the argument list at every
-point, and re-joins the expression body. Over Vixen — 4 703 files, whose `.editorconfig` sets no
-`wrap_*`, `keep_*` or `place_*` key at all — that is the difference between 2 374 files changing and
-1 301: **45 % of the diff on a real repository is this one gap**, and it is invisible on
-`corpus/real/`, which carries the export. The pristine-profile export is the highest-value hour of
-human work available to the project.
+default to the same file, and the two disagree. Over Vixen — 4 708 files, whose `.editorconfig` sets
+157 keys and no `wrap_*`, `keep_*` or `place_*` key at all — that was the difference between 2 374
+files changing and 1 301: **45 % of the diff on a real repository was this one gap**, and it is
+invisible on `corpus/real/`, which carries the export.
+
+## Deriving ReSharper's defaults
+
+The document used to say the only reliable source was a one-off human action — export an
+`.editorconfig` from a pristine Rider profile and diff it against the author's — and that until it
+existed `distill` was honest and useless. ⚠ **There is a second source, and it is the oracle.** A
+`jb cleanupcode` run under a configuration carrying nothing but `root = true` *is*
+ReSharper-with-defaults, by construction. M3 derives the table from it.
+
+The method, and the two things that have to be got right:
+
+1. Run the oracle over the fixture corpus with `root = true` and nothing else. That is the baseline.
+2. Run it again, a handful of times, with every option set to its 1st legal value, then its 2nd, and
+   so on. Batching by value index is the only affordable shape: `cleanupcode`'s startup dominates and
+   one run per option per value is thousands of runs.
+3. For each option, compare only *its own* fixture — the one `options.json`'s `oracle` field names.
+   The value whose run reproduces the baseline there is the default.
+
+⚠ **The isolation is by directory, not by round.** The first attempt gave every fixture the same
+configuration and answered nothing at all: 197 options and *zero* fixtures unchanged in round one,
+because every fixture was moved by something else in the batch. One subdirectory per fixture, each
+with its own `root = true` plus one key, gives the batching for free and the isolation with it — 144,
+110, 17 and 2 fixtures unchanged over four rounds, and the whole probe runs in three minutes.
+`fidelity defaults` is the command.
+
+| Verdict | Count | Meaning |
+|---|---:|---|
+| `Derived` | 131 | exactly one value reproduced the baseline |
+| `Insensitive` | 54 | every value did; the fixture cannot see the option |
+| `Ambiguous` | 10 | several did, but not all |
+| `Contradicted` | 2 | none did; something else moved the fixture |
+
+⚠ Only `Derived` is written, and it is written as `defaultSource: "oracle-probe"` and never
+`"resharper-docs"`, because it is derived and JetBrains still documents nothing. 110 of the 131
+agree with the export, which is itself a result: those keys are Rider's defaults and the export is
+redundant in them. Fourteen genuinely differ, and they are recognisably ReSharper out of the box —
+Allman braces, `new_line_before_else = true`, `empty_block_style = multiline`,
+`wrap_chained_method_calls = wrap_if_long`, `keep_existing_invocation_parens_arrangement = true`.
+
+⚠ **Options interact, so this is a strong signal and not proof, and four of the fourteen are recorded
+`unknown` rather than adopted.** Formatting 60 Vixen files with Vixen's own `.editorconfig` and
+comparing against the oracle under the same configuration is an independent check, and the four chain
+keys — `wrap_after_dot_in_method_calls`, `wrap_after_property_in_chained_method_calls`,
+`wrap_before_first_method_call`, `wrap_primary_constructor_parameters_style` — make it worse rather
+than better. They come back `Derived` because they are unobservable under ReSharper's own defaults:
+nothing chops while `wrap_chained_method_calls` is `wrap_if_long`, so the probe saw no change and
+read it as agreement.
+
+Measured, on those 60 files against the oracle under Vixen's configuration:
+
+| Fallback table | line | file |
+|---|---:|---:|
+| the export's values (M0–M2) | 97.00 % | 38.33 % |
+| the ten corroborated derived values | **97.84 %** | **51.67 %** |
+| all fourteen | 96.30 % | 30.00 % |
+
+Over the whole Vixen tree, `format --check` goes from 2 700 files to 2 506. And `distill` now drops
+**108 keys** of the export's 4 239 lines, where it dropped none.
+
+A pristine-profile export is still worth having: it would settle the 54 insensitive keys, the 10
+ambiguous ones and the 4 contradicted ones without another probe. It is no longer the only way
+forward.
 
 It is offered, never imposed. The export must keep working forever (ADR-001), because the workflow
 that produced it — change a setting in Rider, re-export — must keep working. `distill` is for the

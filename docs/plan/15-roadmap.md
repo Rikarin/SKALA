@@ -59,7 +59,9 @@ attributes.
 sitting. ✅ **97.47 %**. ⚠ The Vixen diff is *not* small: 2 374 files of 4 703, against milestone 1's
 999. Roughly half of that is a configuration artefact — Vixen sets none of the phase-2 keys, and
 `options.json`'s `default` is the export's value rather than ReSharper's, so the two fall back
-differently. Repairing `defaultSource` is M3's first job and it is worth 45 % of this diff.
+differently. Repairing `defaultSource` is M3's first job and it is worth 45 % of this diff. ✅ Done:
+the derived table takes the Vixen diff from 2 700 files to 2 506 and Skala's agreement with the
+oracle *under Vixen's own configuration* from 97.00 % to 97.84 % of lines.
 
 ## M3 — Formatter, phase 3–4 · L/XL
 
@@ -73,7 +75,27 @@ it is for.**
 **Done when:** line fidelity ≥ 99.9 %, all divergences are documented `SK-DIV-*` entries, and
 Vixen's `.editorconfig` is replaced by the export with `skala format --check` clean in CI.
 
-**This is release 0.4 and the first one anyone else could use.**
+⚠ **Measured: 98.86 %, not 99.9 %.** What landed, and what it is short of:
+
+| | |
+|---|---|
+| Line fidelity, `corpus/real/` | **98.86 %** (M2 97.47 %), file 70.53 % (M2 49.47 %) |
+| [16](16-risks-and-open-questions.md) § R1 | 26 of the 54 constructs occurring more than 50 times are at 100 % |
+| Divergences | eight `SK-DIV-*` entries, each with a measurement; SK-DIV-0002 is resolved |
+| Wrapping | ✅ `Fill`, the counters, the ordering rule, chains, ternaries, declarators, base lists |
+| xmldoc | ⚠ the oracle does not format doc comments (SK-DIV-0006); the well-formedness hint is done |
+| Daemon, LSP, hooks | ✅ all three, with tests |
+| 40 ms warm | ⚠ 60–70 ms, of which ~60 is the client's process start; NativeAOT is the fix |
+| 20 s whole corpus | ✅ **11.0 s** over Vixen, from 34.2 s |
+| `defaultSource` | ✅ derived from the oracle: 126 keys `oracle-probe`, `distill` drops 108 |
+| Tier A | 202 options, up from 172, each pinned by a committed fixture |
+| Vixen `.editorconfig` | prepared and measured — 2 718 files, 82 339 diff lines — **not committed** |
+
+**This is release 0.4 and the first one anyone else could use.** ⚠ It is offered as one on the
+strength of the properties rather than the percentage: idempotency, token equivalence, parse
+stability, determinism and whitespace absorption hold on every file of every corpus and on all
+4 708 files of Vixen, and the fidelity gap is eight named, measured disagreements rather than an
+unknown.
 
 ## M4 — Arrangement · M/L
 

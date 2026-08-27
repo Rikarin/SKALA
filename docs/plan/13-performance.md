@@ -24,6 +24,12 @@ Reference machine: Apple M-series, 10 cores, 32 GB. Reference corpus: Vixen — 
 Each is a test ([12](12-conformance-and-testing.md) § "Performance tests") with a 20 % band, not an
 aspiration.
 
+⚠ M3 measures the first row at 280–320 ms cold and 60–70 ms warm, and the second at 11.0 s. The
+whole-corpus budget is met; the warm single-file one is missed by the client's own process start,
+which § "Startup" predicts exactly — `skala daemon status`, doing no work at all, is the same 60 ms.
+NativeAOT for the thin client is the prescribed fix and it is not done: the client still carries the
+full fallback path, and would have to stop.
+
 ## Where the time goes, and what is done about it
 
 ### Startup
@@ -74,12 +80,27 @@ for performance reasons:
   group is measured against is the writer's state, and a separate fitting pass has to reproduce it.
   See [04](04-formatting-engine.md) § "The pipeline".
 
-⚠ **`skala format` is a sequential loop over files, and this document's `Parallel.ForEachAsync` with
-`--jobs` does not exist.** Measured on Vixen (4 703 files, 1.37 M lines, Release, warm page cache):
-`format --check` takes 34.3 s of wall time for 36.7 s of CPU — a speedup of 1.07× on a ten-core
-machine. The budget below is 20 s and it has never been met, at M1 or at M2. M2 costs 10 % over M1
-(31.1 s → 34.3 s) for the break-plan pre-pass, which is inside this document's 20 % band; the factor
-of eight that is missing is the parallelism, not the formatter.
+⚠ **`skala format` was a sequential loop over files until M3, and the 20 s budget had never been
+met.** Measured on Vixen (4 708 files, 1.36 M lines, Release, warm page cache), each step separately:
+
+| | wall | CPU |
+|---|---:|---:|
+| M2: sequential, no configuration cache | 34.2 s | 34.6 s |
+| + `ConfigurationCache`, still sequential | 30.9 s | 32.9 s |
+| + ten-way parallelism, workstation GC | 19.5 s | 69.4 s |
+| + server GC | **10.9 s** | 81.4 s |
+| M3 as it ships, with the wrapping pass | **11.0 s** | 81.4 s |
+
+⚠ The CPU number rising is not a mistake and is worth stating: ten threads each building a
+~40 000-node document is a collector problem before it is a formatter problem, and the workstation
+GC serialises them. The wall time is what the budget measures and what a hook waits on.
+
+⚠ **The configuration was being re-resolved per file**, and this document did not say so because
+nobody had looked. Every file re-read every `.editorconfig` above it, re-parsed ~900 assignment
+lines, and allocated two 483-element arrays and 483 records — 4.3 M line parses and 2.3 M records
+over Vixen for an answer that is the same for nearly every file in the tree. `ConfigurationCache`
+keys a resolution on the *matched sections* and not on the directory, because an `.editorconfig` may
+carry `[*.Designer.cs]` and keying on the directory would hand one file another's options.
 
 ### Analysis
 
@@ -118,10 +139,17 @@ The daemon's job is to hold things; its risk is holding everything. Policy:
 
 ## Parallelism
 
-`Parallel.ForEachAsync` over files with `--jobs` (default `min(cores, 10)`), one file per work item.
-Formatting is embarrassingly parallel and scales to ~8× on 10 cores; the tail is a handful of
-20 000-line generated files, which is why generated files are excluded by default (correct for two
-independent reasons).
+`Parallel.For` over files with `--jobs` (default `min(cores, 10)`), one file per work item.
+Formatting is embarrassingly parallel and scales to ~2.8× on 10 cores measured — the collector, not
+the loop, is what keeps it from eight — and the server GC is worth another 1.8× on top. The tail is
+a handful of 20 000-line generated files, which is why generated files are excluded by default
+(correct for two independent reasons).
+
+⚠ **The writes happen inside the parallel body and every byte of reporting happens outside it**, in
+collection order. A diff whose hunks arrive interleaved is not a diff, and three runs of
+`format --check` over Vixen/Core produce byte-identical output. `git add` for `--staged` stays serial
+and after the writes: 4 700 process launches against one `.git/index` is slower than doing it in
+order, and git reports the contention as a failure rather than as a wait.
 
 Analysis parallelism is inside Roslyn (`concurrentAnalysis: true`) plus bounded parallelism across
 compilations. Over-subscribing these two against each other is the classic mistake: the outer degree

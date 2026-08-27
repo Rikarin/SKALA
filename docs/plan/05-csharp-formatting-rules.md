@@ -34,7 +34,11 @@ reason recorded rather than Tier A.** M1 found five: `blank_lines_inside_type` a
 ordering, so no input can distinguish them), `max_line_length` and `tab_width` (nothing wraps yet;
 the writer emits spaces), `end_of_line` while `enforce_line_ending_style = false`, and
 `remove_spaces_on_blank_lines` (the writer cannot emit trailing whitespace at all, so the option has
-no off state). An option that cannot change behaviour must not claim a tier that says it was
+no off state). ⚠ `max_line_length` is Tier A from M3, because M3 is the phase where the column limit
+is the whole point; the other four are still inert. M3 adds two of its own —
+`space_in_singleline_method`, whose shape no longer exists in any output, and
+`place_simple_list_pattern_on_single_line`, which `keep_existing_list_patterns_arrangement` outranks
+on ReSharper's own defaults. An option that cannot change behaviour must not claim a tier that says it was
 verified — that is the difference between the tier matrix being a progress bar and it being
 decoration.
 
@@ -136,15 +140,20 @@ line), `blank_lines_after_file_scoped_namespace_directive = 1`.
 ⚠ Three corrections M2 established, all of them by running the oracle rather than by reading the
 option names:
 
-- **`resharper_new_line_before_enumerators` is not in `options.json`.** It is in the export template
-  and M0's importer dropped it, along with about forty other C#-relevant keys that the export writes
+- **`resharper_new_line_before_enumerators` is not in `options.json`.** ⚠ It is, from M3: the
+  importer's blind spot is repaired and 37 keys are registered, `resharper_prefer_wrap_around_eq`
+  and `resharper_continuous_line_indent` among them. It was in the export template and M0's importer
+  dropped it, along with about forty other C#-relevant keys that the export writes
   without a language prefix (`place_property_attribute_on_same_line`,
   `place_event_attribute_on_same_line`, `place_namespace_definitions_on_same_line`,
   `continuous_line_indent`, `indent_wrapped_function_names`, `wrap_base_clause_style`,
   `wrap_ctor_initializer_style`, `wrap_enumeration_style`, `simple_block_style`,
   `align_multiline_ctor_init`, `int_align_eq`, …). The mechanism is spelled with the two registered
-  keys named above. Repairing the importer is M3's, and until then the tier matrix is over 483 keys
-  rather than the ~525 the template holds.
+  keys named above. ⚠ The importer registered an option only when one of the forms JetBrains
+  *documents* for it appeared in the template, so a key the export writes in a spelling the tables do
+  not list among that property's names was dropped whole — and surfaced as an SK9001 unknown key,
+  which reads like a stray line in somebody's config rather than like a gap in the registry. The
+  tier matrix is over 520 keys from M3.
 - **`place_*_on_same_line = true` is permissive, not mandatory.** `place_type_constraints_on_same_line`
   and `place_constructor_initializer_on_same_line` at `true` do not *join* a `where` clause or a
   `: base(…)` the author put on its own line; they only decline to force a break. Their `false` value
@@ -232,7 +241,42 @@ collapses the table — both "reflow" corners come out identical to their "keep"
 
 The 47 `wrap_*` keys, plus the `max_*_on_line` counters, plus `csharp_max_line_length = 120`. This
 is where the fitting engine earns its existence, and it is the phase that is allowed to take a
-month.
+month. ✅ Measured: **98.86 %** line fidelity and 70.53 % file fidelity on `corpus/real/`.
+
+⚠ Six rules M3 established against the oracle, none of which is readable off an option name:
+
+- **`wrap_if_long` is a fill, and an object or collection initializer is not one.**
+  `new[] { six, long, strings, here, again, again }` comes back with five on one line and one on the
+  next; `new List<string> { four, long, strings, here }` comes back with one per line although two
+  of them would have shared. An initializer therefore needs *two* groups — the braces decide whether
+  it wraps, the elements decide whether they share a line — because it has three layouts and one
+  group offers two of them.
+- **The counters are not width tests.** `max_initializer_elements_on_line = 4` chops five elements
+  onto five lines at 41 columns wide, and `max_array_initializer_elements_on_line = 10000` leaves the
+  same five alone. Which counter applies is the syntax kind, not the option name.
+- **`keep_existing_*` outranks `place_simple_*_on_single_line`, in both directions.** With keep on,
+  neither the join at `true` nor the forced break at `false` happens. And `place_… = false` is not
+  permission withheld: it forces the delimiters apart however short the construct is.
+- **A chain's links break together**, which no per-operator group can decide, so the chain gets a
+  group of its own holding no break points and the operator groups read it. ⚠ Same *precedence*, not
+  merely "both are binary": `a > 0 && b > 0` is one chain of `&&` and the oracle chops it nowhere
+  else.
+- **A property in a call chain travels with the call it feeds**, not with the call before it —
+  `.ToList()` then `.Count.ToString()`, which is the opposite of what
+  `wrap_after_property_in_chained_method_calls = false` reads like.
+- **`keep_existing_switch_expression_arrangement` outranks `chop_always`.** With it on,
+  `value switch { 1 => 1, _ => 0 }` comes back on one line although the wrap style says every arm
+  gets one of its own.
+
+⚠ **Every member and every statement gets a line of its own**, which this document lists under phase
+2 and which M2 left as a deliberately-failing fixture. `csharp_preserve_single_line_blocks = true` is
+in the export and ReSharper ignores it: `class B { int P => 1; int Q => 2; }` comes back as five
+lines and `if (flag) { First(); }` as three, with no width test in it. Three exclusions, each from
+the oracle: an empty body stays together, an accessor's body does not break
+(`get { return _street; }` comes back exactly as written), and a lambda's block does not, because
+the call it is an argument to keeps it on its line. Two more come from the preservation table —
+`keep_existing_declaration_block_arrangement` and `keep_existing_embedded_block_arrangement` gate the
+rule.
 
 The export's wrap settings, which are the conformance target:
 
@@ -302,15 +346,27 @@ not, and the quadratic worst case that alignment brings does not exist for this 
 
 ## Phase 4 — comments and xmldoc
 
-`resharper_xmldoc_*` — 12 keys — is a small formatter in its own right: parse the doc comment as
-XML, re-wrap text to `xmldoc_max_line_length = 120`, break before
+`resharper_xmldoc_*` — 12 keys — reads like a small formatter in its own right: parse the doc comment
+as XML, re-wrap text to `xmldoc_max_line_length = 120`, break before
 `summary,remarks,example,returns,param,typeparam,value,para`, `xmldoc_max_blank_lines_between_tags = 0`,
 `xmldoc_indent_child_elements`/`attribute_indent = single_indent`,
 `xmldoc_space_before_self_closing = true`, `space_after_triple_slash = true`.
 
-⚠ Two hazards. Text inside `<code>` and `<c>` is verbatim and must never be re-wrapped. A doc
-comment that is not well-formed XML — extremely common in real code — must be left exactly as it is
-and reported at `hint` (`SK0003`), not "fixed".
+⚠ **It is not implemented, and the reason is a measurement rather than a schedule.** `jb cleanupcode`
+does not touch documentation comments. Asked directly, with the whole family in force, it returns
+`///<summary>…`, a 128-column summary, two `<param>` tags on one line and a `<summary>` followed by a
+`<remarks>` on the same line — every one of them exactly as written. A Skala that re-wrapped them
+would diverge from the oracle on every doc comment in the corpus, and would have no oracle to check
+itself against while doing it. SK-DIV-0006 records it; the twelve keys stay Tier D with that as the
+reason, and `resharper_space_after_triple_slash` was **demoted** from Tier A because milestone 1
+inserted the space and the oracle does not — worth 79 lines across 15 files.
+
+⚠ The hazard half is implemented, because it needs no oracle. A doc comment that is not well-formed
+XML — extremely common in real code — is left exactly as it is and reported at `hint` (`SK0003`),
+never "fixed". ⚠ Judged as a *fragment* and not a document: two sibling `<param>` tags are ordinary,
+and document rules would report most of the corpus. DTD processing is prohibited and there is no
+resolver, because the text comes from a source file anybody may have written. Text inside `<code>`
+and `<c>` is moot while nothing is re-wrapped, and stays moot until something is.
 
 ## Ordering summary
 
@@ -321,8 +377,20 @@ independently shippable and independently measurable against the oracle:
 |---|---|---|
 | 1 | Any file, safely; produces correct spacing/blanks/indent, never moves a line | ~85 % of lines — ✅ measured 94.28 % |
 | 2 | Same, plus correct break *presence* and *position* | ~93 % — ✅ measured 97.47 % |
-| 3 | Everything the export configures | ≥ 99.9 % (the bar from [00](00-vision-and-principles.md)) |
-| 4 | Same, plus doc comments | ≥ 99.9 % including xmldoc |
+| 3 | Everything the export configures | ≥ 99.9 % — ⚠ **measured 98.86 %**, see below |
+| 4 | Same, plus doc comments | ⚠ the oracle does not format doc comments; SK-DIV-0006 |
+
+⚠ **Phase 3 does not reach the bar, and the residue is characterised rather than mysterious.** 876
+lines of 76 660 differ. Split by cause: the 274 files with neither a `#if` nor a raw literal are at
+99.02 %, the 91 with a `#if` at 98.60 % (SK-DIV-0001 and SK-DIV-0004, which is a limitation of
+parsing without a project rather than of the formatter), and the 15 with a raw literal at 97.81 %
+(SK-DIV-0003's interpolated half). What is left after those is SK-DIV-0005 — the ordering rule's
+margin — and SK-DIV-0007.
+
+⚠ [16](16-risks-and-open-questions.md) § R1 asks a sharper question than the aggregate, and
+`fidelity constructs` answers it: of the 54 constructs occurring more than 50 times in
+`corpus/real/`, **26 are at 100 %**. That is the number to move, and it is not the same number as
+the percentage.
 
 Percentages are lines-identical-to-oracle over `Testing/corpus/real/`, reported by
 `./build.sh Conformance` on every commit, and published in the README. A phase is done when its
