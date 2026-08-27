@@ -94,18 +94,19 @@ public static partial class SkalaCommandLine {
     static void RejectOptionLikeTokens(Command command) {
         foreach (var argument in command.Arguments) {
             argument.Validators.Add(static result => {
-                foreach (var token in result.Tokens) {
-                    if (!LooksLikeAnOption(token.Value)) {
-                        continue;
-                    }
+                    foreach (var token in result.Tokens) {
+                        if (!LooksLikeAnOption(token.Value)) {
+                            continue;
+                        }
 
-                    result.AddError(
-                        $"Unrecognized option '{token.Value}'. "
-                        + "Run with --help for the options this command accepts. "
-                        + $"If you meant a file or directory called '{token.Value}', write './{token.Value}'."
-                    );
+                        result.AddError(
+                            $"Unrecognized option '{token.Value}'. "
+                            + "Run with --help for the options this command accepts. "
+                            + $"If you meant a file or directory called '{token.Value}', write './{token.Value}'."
+                        );
+                    }
                 }
-            });
+            );
 
             // ⚠ And a path that does not exist is named, rather than analysed as nothing.
             //
@@ -118,16 +119,17 @@ public static partial class SkalaCommandLine {
             // definition" makes the same argument about untracked files).
             if (argument.Name == "paths") {
                 argument.Validators.Add(static result => {
-                    foreach (var token in result.Tokens) {
-                        if (LooksLikeAnOption(token.Value) || IsGlob(token.Value)) {
-                            continue;
-                        }
+                        foreach (var token in result.Tokens) {
+                            if (LooksLikeAnOption(token.Value) || IsGlob(token.Value)) {
+                                continue;
+                            }
 
-                        if (!File.Exists(token.Value) && !Directory.Exists(token.Value)) {
-                            result.AddError($"'{token.Value}' does not exist.");
+                            if (!File.Exists(token.Value) && !Directory.Exists(token.Value)) {
+                                result.AddError($"'{token.Value}' does not exist.");
+                            }
                         }
                     }
-                });
+                );
             }
         }
 

@@ -177,13 +177,8 @@ public sealed class ExitCodeContractTests : IDisposable {
         Assert.Contains("### Exit codes", text, StringComparison.Ordinal);
 
         var expected = new (int Code, string Meaning)[] {
-            (0, "gate passed"),
-            (1, "gate failed"),
-            (2, "formatting changes needed"),
-            (3, "configuration error"),
-            (4, "load failure"),
-            (5, "internal error"),
-            (130, "cancelled")
+            (0, "gate passed"), (1, "gate failed"), (2, "formatting changes needed"), (3, "configuration error"),
+            (4, "load failure"), (5, "internal error"), (130, "cancelled")
         };
 
         foreach (var (code, meaning) in expected) {

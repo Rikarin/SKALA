@@ -83,6 +83,7 @@ public sealed class RuleCatalogTests {
 
             Assert.Equal(RuleCoverage.State.Shipped, coverage.States[rule.Id]);
         }
+
         Assert.Equal(
             coverage.Named,
             coverage.Count(RuleCoverage.State.Shipped)
