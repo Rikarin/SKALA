@@ -154,7 +154,7 @@ public static class DocsSite {
 
         builder.Append("<h2>The rules, by category</h2>\n");
         builder.Append(
-            "<table>\n<thead><tr><th>Category</th><th>Rules</th><th>With a fix</th>"
+            "<div class=\"scroll\">\n<table>\n<thead><tr><th>Category</th><th>Rules</th><th>With a fix</th>"
             + "<th>Run without a project</th></tr></thead>\n<tbody>\n"
         );
         foreach (var group in rules.GroupBy(static rule => rule.Category, StringComparer.Ordinal)
@@ -165,7 +165,7 @@ public static class DocsSite {
             builder.Append("</td></tr>\n");
         }
 
-        builder.Append("</tbody>\n</table>\n");
+        builder.Append("</tbody>\n</table>\n</div>\n");
 
         builder.Append("<h2>The options, by tier</h2>\n");
         builder.Append(
@@ -173,14 +173,16 @@ public static class DocsSite {
             + "<em>and</em> pinned by a committed oracle fixture; tier D is recorded so that the key is not "
             + "reported as unknown, and nothing reads it yet.</p>\n"
         );
-        builder.Append("<table>\n<thead><tr><th>Tier</th><th>Keys</th></tr></thead>\n<tbody>\n");
+        builder.Append(
+            "<div class=\"scroll\">\n<table>\n<thead><tr><th>Tier</th><th>Keys</th></tr></thead>\n<tbody>\n"
+        );
         foreach (var group in options.GroupBy(static option => option.Tier)
                      .OrderBy(static group => group.Key)) {
             builder.Append("<tr><td>").Append(Esc(group.Key.ToString())).Append("</td><td>");
             builder.Append(Num(group.Count())).Append("</td></tr>\n");
         }
 
-        builder.Append("</tbody>\n</table>\n");
+        builder.Append("</tbody>\n</table>\n</div>\n");
         builder.Append("<p class=\"note\">The ")
             .Append(Num(options.Count))
             .Append(" keys are grouped into ")
@@ -208,7 +210,7 @@ public static class DocsSite {
             builder.Append("<h2 id=\"").Append(Esc(Slug(group.Key))).Append("\">").Append(Esc(group.Key));
             builder.Append("</h2>\n");
             builder.Append(
-                "<table>\n<thead><tr><th>Id</th><th>Rule</th><th>Severity</th><th>Fix</th>"
+                "<div class=\"scroll\">\n<table>\n<thead><tr><th>Id</th><th>Rule</th><th>Severity</th><th>Fix</th>"
                 + "<th>Loose mode</th></tr></thead>\n<tbody>\n"
             );
             foreach (var rule in group) {
@@ -224,7 +226,7 @@ public static class DocsSite {
                 builder.Append("</td></tr>\n");
             }
 
-            builder.Append("</tbody>\n</table>\n");
+            builder.Append("</tbody>\n</table>\n</div>\n");
         }
 
         return Close(builder, "../");
@@ -322,7 +324,7 @@ public static class DocsSite {
 
         builder.Append("<h2 id=\"constructs\">By construct</h2>\n");
         builder.Append(
-            "<table>\n<thead><tr><th>Construct</th><th>Keys</th><th>Tier A</th>"
+            "<div class=\"scroll\">\n<table>\n<thead><tr><th>Construct</th><th>Keys</th><th>Tier A</th>"
             + "<th>Languages</th></tr></thead>\n<tbody>\n"
         );
         foreach (var (construct, members) in constructs) {
@@ -335,7 +337,7 @@ public static class DocsSite {
             builder.Append("</td><td>").Append(Esc(string.Join(", ", languages))).Append("</td></tr>\n");
         }
 
-        builder.Append("</tbody>\n</table>\n");
+        builder.Append("</tbody>\n</table>\n</div>\n");
 
         builder.Append("<h2 id=\"keys\">Every key</h2>\n");
         builder.Append("<p>Ordinal order, which is the order the registry assigns ids in.</p>\n");
@@ -909,26 +911,44 @@ public static class DocsSite {
         nav .tab { color: var(--dim); }
         nav .tab.active, nav a:hover { color: var(--accent); }
         main { max-width: 52rem; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
-        h1 { font-size: 1.9rem; line-height: 1.25; margin: 0 0 0.5rem; }
+        h1 { font-size: 1.9rem; line-height: 1.25; margin: 0 0 0.5rem; overflow-wrap: anywhere; }
         h1 .title { font-weight: 400; color: var(--dim); }
         h2 { font-size: 1.25rem; margin: 2.25rem 0 0.75rem; }
         a { color: var(--accent); }
+        /* ⚠ `overflow-wrap: anywhere` on inline code, and explicitly *not* inside a `pre`. A rule's
+           prose names things like `resharper_use_throw_if_null_method_highlighting` and
+           `ArgumentNullException.ThrowIfNull` mid-sentence; unbroken, those push the document past
+           the viewport on a phone. A code *block* must not break — broken C# is unreadable and
+           uncopyable — so it scrolls in its own box instead. */
         code {
           font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
           font-size: 0.9em; background: var(--code-bg); padding: 0.1em 0.32em; border-radius: 3px;
+          overflow-wrap: anywhere;
         }
         pre { background: var(--code-bg); padding: 0.9rem 1rem; border-radius: 5px; overflow-x: auto; }
-        pre code { background: none; padding: 0; font-size: 0.86rem; line-height: 1.5; }
+        pre code {
+          background: none; padding: 0; font-size: 0.86rem; line-height: 1.5; overflow-wrap: normal;
+        }
         pre.bad { border-left: 3px solid var(--bad); }
         pre.good { border-left: 3px solid var(--good); }
         p.lede { font-size: 1.05rem; color: var(--dim); margin-top: 0; }
         p.crumb { color: var(--dim); font-size: 0.85rem; margin: 0 0 0.75rem; }
         p.note { color: var(--dim); font-size: 0.9rem; }
         p.banner { border-left: 3px solid var(--bad); padding: 0.5rem 0.9rem; background: var(--code-bg); }
+        /* ⚠ An index table scrolls inside its own box; the document never scrolls sideways. The
+           rules index is five columns wide and one of them is a rule title, so on a phone it is
+           wider than the viewport no matter what — and a body that scrolls horizontally hides the
+           navigation as soon as it does. */
+        .scroll { overflow-x: auto; }
         table { border-collapse: collapse; width: 100%; margin: 0.5rem 0 1rem; font-size: 0.92rem; }
         th, td { text-align: left; padding: 0.4rem 0.6rem; border-bottom: 1px solid var(--line); }
         th { color: var(--dim); font-weight: 600; }
-        table.facts th { width: 14rem; vertical-align: top; }
+        /* ⚠ `table-layout: fixed` plus `anywhere`: an option's `docs` URL is one token with no break
+           opportunity — the longest are 132 characters — and 453 of the 520 keys carry one. Left to
+           itself the table widens past the viewport and every option page scrolls sideways. */
+        table.facts { table-layout: fixed; }
+        table.facts th { width: 32%; vertical-align: top; }
+        table.facts td { overflow-wrap: anywhere; }
         .tag {
           display: inline-block; font-size: 0.78rem; padding: 0.05em 0.45em; border-radius: 3px;
           background: var(--code-bg); border: 1px solid var(--line);
@@ -947,10 +967,13 @@ public static class DocsSite {
         .card strong { display: block; margin-top: 0.5rem; }
         .card .blurb { display: block; color: var(--dim); font-size: 0.88rem; margin-top: 0.25rem; }
         ul.keys { columns: 2 20rem; list-style: none; padding: 0; font-size: 0.88rem; }
-        ul.keys li { break-inside: avoid; margin-bottom: 0.15rem; }
-        ul.config li { margin-bottom: 0.35rem; }
+        /* ⚠ The longest key is 81 characters — resharper_csharp_keep_existing_primary_constructor_
+           declaration_parens_arrangement — and a monospace run that long has no break opportunity,
+           so without this the "Every key" list widens the page and the whole document scrolls. */
+        ul.keys li { break-inside: avoid; margin-bottom: 0.15rem; overflow-wrap: anywhere; }
+        ul.config li { margin-bottom: 0.35rem; overflow-wrap: anywhere; }
         section.option { margin-top: 2rem; padding-top: 0.5rem; border-top: 1px solid var(--line); }
-        section.option h2 { margin-top: 0; font-size: 1.05rem; }
+        section.option h2 { margin-top: 0; font-size: 1.05rem; overflow-wrap: anywhere; }
         section.option h2 code { background: none; padding: 0; font-size: 1em; }
         a.self { color: var(--line); text-decoration: none; font-weight: 400; }
         section.option:hover a.self { color: var(--dim); }

@@ -13,6 +13,7 @@
 <h1>Rules</h1>
 <p class="lede"><code>SK</code> + four digits, allocated once and never re-purposed (ADR-012). 32 ids are allocated.</p>
 <h2 id="async">Async</h2>
+<div class="scroll">
 <table>
 <thead><tr><th>Id</th><th>Rule</th><th>Severity</th><th>Fix</th><th>Loose mode</th></tr></thead>
 <tbody>
@@ -20,7 +21,9 @@
 <tr><td><a href="SK3002.html">SK3002</a></td><td>Blocking on an async call</td><td><span class="tag sev-warning">warning</span></td><td>review</td><td>no</td></tr>
 </tbody>
 </table>
+</div>
 <h2 id="correctness">Correctness</h2>
+<div class="scroll">
 <table>
 <thead><tr><th>Id</th><th>Rule</th><th>Severity</th><th>Fix</th><th>Loose mode</th></tr></thead>
 <tbody>
@@ -28,14 +31,18 @@
 <tr><td><a href="SK2015.html">SK2015</a></td><td><code>throw ex;</code> resets the stack trace</td><td><span class="tag sev-warning">warning</span></td><td>safe</td><td>yes</td></tr>
 </tbody>
 </table>
+</div>
 <h2 id="design">Design</h2>
+<div class="scroll">
 <table>
 <thead><tr><th>Id</th><th>Rule</th><th>Severity</th><th>Fix</th><th>Loose mode</th></tr></thead>
 <tbody>
 <tr><td><a href="SK6003.html">SK6003</a></td><td>An abstract type has a public constructor</td><td><span class="tag sev-suggestion">suggestion</span></td><td>safe</td><td>yes</td></tr>
 </tbody>
 </table>
+</div>
 <h2 id="formatting">Formatting</h2>
+<div class="scroll">
 <table>
 <thead><tr><th>Id</th><th>Rule</th><th>Severity</th><th>Fix</th><th>Loose mode</th></tr></thead>
 <tbody>
@@ -44,7 +51,9 @@
 <tr><td><a href="SK0003.html">SK0003</a></td><td>The documentation comment is not well-formed XML</td><td><span class="tag sev-hint">hint</span></td><td>—</td><td>yes</td></tr>
 </tbody>
 </table>
+</div>
 <h2 id="maintainability">Maintainability</h2>
+<div class="scroll">
 <table>
 <thead><tr><th>Id</th><th>Rule</th><th>Severity</th><th>Fix</th><th>Loose mode</th></tr></thead>
 <tbody>
@@ -58,7 +67,9 @@
 <tr><td><a href="SK7020.html">SK7020</a></td><td>Duplicated block</td><td><span class="tag sev-warning">warning</span></td><td>—</td><td>no</td></tr>
 </tbody>
 </table>
+</div>
 <h2 id="modernization">Modernization</h2>
+<div class="scroll">
 <table>
 <thead><tr><th>Id</th><th>Rule</th><th>Severity</th><th>Fix</th><th>Loose mode</th></tr></thead>
 <tbody>
@@ -70,21 +81,27 @@
 <tr><td><a href="SK1035.html">SK1035</a></td><td>Use <code>Enum.GetValues&lt;T&gt;()</code></td><td><span class="tag sev-suggestion">suggestion</span></td><td>safe</td><td>no</td></tr>
 </tbody>
 </table>
+</div>
 <h2 id="performance">Performance</h2>
+<div class="scroll">
 <table>
 <thead><tr><th>Id</th><th>Rule</th><th>Severity</th><th>Fix</th><th>Loose mode</th></tr></thead>
 <tbody>
 <tr><td><a href="SK4010.html">SK4010</a></td><td>A <code>Where</code> the next operator could have taken as its predicate</td><td><span class="tag sev-suggestion">suggestion</span></td><td>safe</td><td>no</td></tr>
 </tbody>
 </table>
+</div>
 <h2 id="tests">Tests</h2>
+<div class="scroll">
 <table>
 <thead><tr><th>Id</th><th>Rule</th><th>Severity</th><th>Fix</th><th>Loose mode</th></tr></thead>
 <tbody>
 <tr><td><a href="SK8005.html">SK8005</a></td><td><code>Thread.Sleep</code> in a test</td><td><span class="tag sev-suggestion">suggestion</span></td><td>—</td><td>no</td></tr>
 </tbody>
 </table>
+</div>
 <h2 id="tool">Tool</h2>
+<div class="scroll">
 <table>
 <thead><tr><th>Id</th><th>Rule</th><th>Severity</th><th>Fix</th><th>Loose mode</th></tr></thead>
 <tbody>
@@ -98,6 +115,7 @@
 <tr><td><a href="SK9099.html">SK9099</a></td><td>The formatter's output was not token-equivalent</td><td><span class="tag sev-error">error</span></td><td>—</td><td>yes</td></tr>
 </tbody>
 </table>
+</div>
 </main>
 <footer>Generated from <code>rules.json</code> and <code>options.json</code> by <code>skala docs site</code>. Editing a page here edits nothing: the next regeneration overwrites it, and <code>DocsSiteTests</code> fails until it does. <a href="../index.html">Home</a></footer>
 </body>
