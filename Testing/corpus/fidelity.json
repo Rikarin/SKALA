@@ -10,9 +10,9 @@
     "Milestone": "M10, formatter tags: constructs/arrangement/formatter-tags/ adds three files to the set, taking it from 324 to 327. All three are byte-identical to CSReformatCode's answer, so the number rises rather than falls — which is the point of committing them: the oracle honours the tags under the format-only profile and ignores them under the cleanup profile (SK-DIV-0016), and the .arranged.expected.cs beside each of these is where that is pinned. M9 was 324 files at 0.9745/0.9228."
   },
   "pathological": {
-    "LineFidelity": 0.9636,
-    "FileFidelity": 0.8889,
-    "Milestone": "M10, formatter tags: two files added, 52 to 54. formatter-off-to-a-whitespace-only-end-of-file.cs is SK-FUZZ-0001's 32-byte reproduction, which used to throw IndexOutOfRangeException out of the process; formatter-off-around-an-interpolated-string.cs is SK-FUZZ-0005's, which used to trip SK9099 and leave the file unformattable. Both now match the oracle exactly. M9 was 52 files at 0.9626/0.8846."
+    "LineFidelity": 0.9589,
+    "FileFidelity": 0.8814,
+    "Milestone": "⚠ The one baseline in this file that has been LOWERED, and the argument is SK-DIV-0018. Four more fuzz reproductions were retired into the set (54 to 59): SK-FUZZ-0002's, -0003's, -0004's, and SK-FUZZ-0007's pair. Five of the six match the oracle byte for byte and raised the number to 0.9649/0.8966; mixed-line-endings-after-a-trailing-comment.cs then took it to 0.9589/0.8814 on its own. That file's three lines are SK-DIV-0018 entire — on a file whose endings are ALREADY mixed the oracle normalises the whole file to one ending and Skala keeps each gap's own, which is what `enforce_line_ending_style = false` says. It is not reachable on any internally consistent file, and crlf-throughout.cs and mixed-crlf-and-lf.cs are both still exact. ⚠ The alternative was to leave the reproduction out of the corpus, and that is the wrong instinct: docs/plan/12 says the corpus only grows, the pathological set exists to hold the files that are hard, and a minimised reproduction dropped because it embarrasses a number is a measurement managing its own result. M10 was 54 files at 0.9636/0.8889."
   },
   "preservation/keep-keep": {
     "LineFidelity": 0.9598,

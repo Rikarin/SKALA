@@ -900,3 +900,36 @@ own block expects neither to move.
 - ⚠ status: **permanent**, pinned by `Formatting.CSharp.Tests/FormatterTagTests` rather than by a
   corpus fixture — a fixture recording the oracle's answer here would lower the format-fidelity
   ratchet to pin a divergence that costs nothing on any real file.
+
+## SK-DIV-0018 — on a file with mixed line endings the oracle normalises; Skala keeps each gap's own
+
+`resharper_enforce_line_ending_style = false` means an existing line ending is kept rather than
+rewritten. Skala reads that per **gap**: every break in the output ends the way that break ended in
+the input, and only a break the formatter *inserts* has to choose. The oracle reads it per **file**:
+asked directly, `class C { // fuzz<CRLF>} <CR>` comes back with all three of its breaks as lone
+`<CR>`, the CRLF included.
+
+```
+input          class C { // fuzz<CRLF>} <CR>
+
+oracle         class C {<CR>    // fuzz<CR>}<CR>          ← one ending, chosen for the file
+Skala          class C {<LF>    // fuzz<CRLF>}<CRLF>      ← each gap as the author left it
+```
+
+⚠ The disagreement is only reachable on a file whose endings are **already** mixed, which is a
+corrupt file rather than a style. Every file in `corpus/real/` is internally consistent, and on a
+consistent file the two readings give the same answer on every line. `pathological/mixed-crlf-and-lf.cs`
+and `pathological/crlf-throughout.cs` are both exact.
+
+Skala's reading is kept, because per-gap preservation is what "keep the existing ending" says and
+because normalising is the one thing a formatter must not do to a file it was told not to normalise:
+a repository with a deliberate CRLF fixture inside an LF tree would have it silently rewritten.
+
+⚠ **This entry is the reason `pathological`'s ratchet fell** from 0.9636 to 0.9589 when
+`mixed-line-endings-after-a-trailing-comment.cs` was committed — SK-FUZZ-0003's 22-byte
+reproduction, which the tool could not process idempotently until it was fixed and which the corpus
+therefore never held. The three lines it loses are this divergence and nothing else. See
+`Testing/corpus/fidelity.json`.
+
+- options: `resharper_enforce_line_ending_style`, `end_of_line`, `insert_final_newline`
+- ⚠ status: **permanent**, pinned by the fixture above.

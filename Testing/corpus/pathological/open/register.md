@@ -35,32 +35,6 @@ bespoke test: two corpus files that differ only in whitespace acquire two `.expe
 and those fixtures being **byte-identical** is the absorption statement, now asserted by the
 ordinary differential instead of by an entry here. SK-FUZZ-0007 was retired that way.
 
-## SK-FUZZ-0003 — mixed line endings need two passes to converge
-
-- file: `mixed-line-endings-after-a-trailing-comment.cs`
-- property: `idempotency`
-- seed: `1642622263352775298`
-- found: mutating `constructs/file/resharper_enforce_line_ending_style.cs` with `comment-line`,
-  `trailing-comment`, `trailing-space`; minimised from 149 characters to 22.
-
-`class C { // fuzz\r\n} \r` — a trailing comment, a CRLF, and a final lone CR.
-`format(format(x)) ≠ format(x)`: the second pass inserts one `\r`, the third is stable. Reproduced
-through the CLI byte for byte, on a second, independently found 36-character case
-(`"  \nusing System;\r\nusing System.Linq;\n"`, seed `8809199335211412045`, generative half):
-
-```
-input   using System;<CR><LF>using System.Linq;<LF>   (after the leading blank line is dropped)
-pass 1  using System;<CR><LF>using System.Linq;<LF>
-pass 2  using System;<CR><LF>using System.Linq;<CR><LF>
-pass 3  unchanged
-```
-
-⚠ `enforce_line_ending_style = false` means an existing ending is kept per gap
-(`CSharpDocumentBuilder.FirstNewLine`), which is correct — but the ending chosen for the *inserted
-final newline* is not the one the rest of the file converged on, and it changes once the first pass
-has rewritten the gap above it. `pathological/mixed-crlf-and-lf.cs` exists and does not catch this,
-which is the whole argument for the fuzzer: the corpus has the construct and not the shape.
-
 ## SK-FUZZ-0006 — a comment between two usings, and arrangement stops being a fixed point
 
 - file: `comment-between-usings-with-inner-whitespace.cs`
@@ -131,6 +105,7 @@ that it is worth running — and an empty register would read as a fuzzer that f
 |---|---|---|
 | `SK-FUZZ-0001` | crash — `@formatter:off` running to a whitespace-only end of file threw out of `EditEmitter`, past the crash handler, out of the process | the formatter-tag pass. `EditEmitter` indexed past the output because the file-level rules shorten it *after* the writer ran; and the exit code was wrong until `EnableDefaultExceptionHandler = false`, because System.CommandLine was swallowing the exception before any handler saw it |
 | `SK-FUZZ-0005` | token equivalence — an interpolated string inside a formatter-off span | the same pass: `EmitVerbatim` was writing a node a second time inside an already-written region |
+| `SK-FUZZ-0003` | idempotency — mixed line endings converged in two passes, not one | `insert_final_newline` chose its ending with `DefaultNewLine`, which answers with the first newline in the **input** — and the first pass can move, rewrite or delete the text above that newline, so the second pass asks a different question. It now reads the ending of the last break in the **output**, which is stable by construction and still keeps a CRLF file ending CRLF. ⚠ Committing the reproduction lowered `pathological`'s ratchet to 0.9589; its three lines are SK-DIV-0018, the oracle normalising a mixed-ending file where Skala preserves each gap |
 | `SK-FUZZ-0002` | token equivalence — a `///` run beginning on the `{` line lost its continuation lines (SK9099, the file unformattable) | nothing was ever lost: both `///` lines were emitted, and a **blank line was inserted between them**. Roslyn ends a documentation comment at a blank line, so that split one trivia into two and the token stream changed. `stick_comment`'s early return spends a member's requirement above its comment rather than below it, but asks `previous.StartsLine` first — and the first `///` of a run that starts on the brace line does not start a line, so `blank_lines_around_invocable` landed inside the run. `ResolveBlankLines` now treats the gap between two `///` lines as structure that none of the three systems votes on: 0 → 1 splits a trivia and 1 → 0 fuses two |
 | `SK-FUZZ-0007` | whitespace absorption — a blank line appeared because the *input* line was wider than the margin | `IsSingleLine` measured the member with `TextWidth.Measure` over its source span, which counts the gaps the author wrote between its tokens — gaps the formatter is about to collapse. It now measures the token stream and the spaces `SpaceRules` will actually emit. The leading-whitespace half of this had already been fixed once (`OutputIndentColumns`); the interior half is the same mistake one step in, and only a mutation that changes a width could reach it. Both halves of the pair are now measured fixtures whose `.expected.cs` are byte-identical |
 | `SK-FUZZ-0004` | idempotency — the closing `]` of a split array-rank specifier landed at eight columns, then four | `EmitToken` matched a piece by its start position alone. A zero-width token has no piece of its own (`SourcePieces.Split` skips it), so the omitted size of `byte[…]` arrived holding the *next* token's piece — and it shares that token's start whenever no trivia separates them. The `]` was emitted one caller early, from inside the bracket's continuation scope instead of after it closed. Matching on the piece's length as well as its start is the fix; a space before the `]` moved it off the collision, which is why the second pass was right |

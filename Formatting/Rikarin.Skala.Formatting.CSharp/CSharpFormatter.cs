@@ -313,7 +313,53 @@ public static class CSharpFormatter {
             return options.InsertFinalNewline && output.Length > 0 ? newLine : output;
         }
 
-        return options.InsertFinalNewline ? trimmed + newLine : trimmed;
+        return options.InsertFinalNewline ? trimmed + FinalNewLine(trimmed, options, newLine) : trimmed;
+    }
+
+    /// <summary>
+    /// The ending for the newline <c>insert_final_newline</c> adds: the one the line above it ends
+    /// with, read from the <b>output</b>.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ Read from the output and not from the input, and that is the whole of SK-FUZZ-0003.
+    /// <see cref="DefaultNewLine"/> answers with the first newline in the *input*, and the first
+    /// pass can move, rewrite or delete the text above that newline — so the second pass asks a
+    /// different question and gets a different answer:
+    /// <code>
+    /// input   ␠␠&lt;LF&gt;using System;&lt;CRLF&gt;using System.Linq;&lt;LF&gt;
+    /// pass 1  using System;&lt;CRLF&gt;using System.Linq;&lt;LF&gt;    ← the leading blank line is gone,
+    /// pass 2  using System;&lt;CRLF&gt;using System.Linq;&lt;CRLF&gt;    so "the first newline" is now the CRLF
+    /// pass 3  unchanged
+    /// </code>
+    /// `class C { // fuzz&lt;CRLF&gt;} &lt;CR&gt;` is the same story from the other side: the brace rule puts an
+    /// LF above the CRLF, and the final newline follows whichever ends up first.
+    /// <para>
+    /// The ending of the last break in the finished text is stable by construction — it is a
+    /// function of the output, so a second pass computes it from the text the first pass produced
+    /// and agrees. It also keeps what the input-reading version was *for*: a CRLF file still ends
+    /// CRLF and an LF file still ends LF, because the last break is the file's own.
+    /// </para>
+    /// <para>
+    /// ⚠ <c>enforce_line_ending_style = true</c> normalises every break to <c>end_of_line</c>, so
+    /// there is nothing to read and the configured ending is the answer.
+    /// </para>
+    /// </remarks>
+    static string FinalNewLine(string trimmed, in PhaseOneOptions options, string newLine) {
+        if (options.EnforceLineEndingStyle) {
+            return newLine;
+        }
+
+        var index = trimmed.LastIndexOfAny(['\n', '\r']);
+        if (index < 0) {
+            // A file with no line break at all: nothing has an opinion but the configuration.
+            return newLine;
+        }
+
+        if (trimmed[index] == '\r') {
+            return "\r";
+        }
+
+        return index > 0 && trimmed[index - 1] == '\r' ? "\r\n" : "\n";
     }
 
     /// <summary>
