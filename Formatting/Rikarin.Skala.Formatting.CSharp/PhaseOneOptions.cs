@@ -230,6 +230,8 @@ public readonly struct PhaseOneOptions {
         WrapBeforeDeclarationLpar = options.GetBool(Ids.WrapBeforeDeclarationLpar);
         WrapBeforeInvocationLpar = options.GetBool(Ids.WrapBeforeInvocationLpar);
         WrapBeforePrimaryConstructorLpar = options.GetBool(Ids.WrapBeforePrimaryConstructorLpar);
+        WrapBeforeTypeParameterLangle = options.GetBool(Ids.WrapBeforeTypeParameterLangle);
+        WrapBeforeLinqExpression = options.GetBool(Ids.WrapBeforeLinqExpression);
         WrapBeforeArrowWithExpressions = options.GetBool(Ids.WrapBeforeArrowWithExpressions);
 
         PlaceAttributeOnSameLine = (PlacementStyle)options.GetRaw(Ids.PlaceAttributeOnSameLine);
@@ -544,6 +546,8 @@ public readonly struct PhaseOneOptions {
     public bool WrapBeforeDeclarationLpar { get; }
     public bool WrapBeforeInvocationLpar { get; }
     public bool WrapBeforePrimaryConstructorLpar { get; }
+    public bool WrapBeforeTypeParameterLangle { get; }
+    public bool WrapBeforeLinqExpression { get; }
     public bool WrapBeforeArrowWithExpressions { get; }
 
     public PlacementStyle PlaceAttributeOnSameLine { get; }
@@ -1091,6 +1095,26 @@ public static class Ids {
 
     public static readonly OptionId WrapBeforePrimaryConstructorLpar =
         Of("resharper_csharp_wrap_before_primary_constructor_declaration_lpar");
+
+    // ⚠ Read, implemented, and Tier D — both of them blocked by a wrapping gap of their own rather
+    // than by anything to do with the key.
+    //
+    //   wrap_before_type_parameter_langle — implemented in BreakPlan and verified: with the key on,
+    //     Skala's output on a type parameter list too long for its line is byte-identical to the
+    //     oracle's. With it off the two disagree, because Skala gives a type parameter list no group
+    //     at all and the oracle wraps one — after the `<` when a single parameter overflows, at the
+    //     last comma that fits when several do. A fixture pinning this key would be committing that
+    //     unrelated divergence to the corpus. Tier A once a type parameter list wraps.
+    //   wrap_before_linq_expression — implemented in PlanAroundEquals: with the key on, a query is
+    //     taken out of the ordering rule and breaks whenever the whole query does not fit, which is
+    //     what puts `from` on a line of its own. Blocked by the same gap as `align_linq_query`:
+    //     Skala does not break a query at its clauses, so every query long enough to make the key
+    //     matter is one Skala already lays out differently.
+    public static readonly OptionId WrapBeforeTypeParameterLangle =
+        OfInert("resharper_csharp_wrap_before_type_parameter_langle");
+
+    public static readonly OptionId WrapBeforeLinqExpression =
+        OfInert("resharper_csharp_wrap_before_linq_expression");
 
     public static readonly OptionId WrapBeforeArrowWithExpressions =
         Of("resharper_csharp_wrap_before_arrow_with_expressions");

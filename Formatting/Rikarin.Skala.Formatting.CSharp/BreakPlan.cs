@@ -448,6 +448,13 @@ public sealed class BreakPlan {
                 PlanCaseStatements(section);
                 return;
 
+            // ⚠ Planned only when the key is on, and the guard is not a micro-optimisation: a type
+            // parameter list has no group otherwise, and giving it one unconditionally would change
+            // where a long generic declaration wraps at the export's own values.
+            case TypeParameterListSyntax typeParameters when _options.WrapBeforeTypeParameterLangle:
+                PlanBreakBefore(typeParameters, typeParameters.LessThanToken);
+                return;
+
             case TypeParameterConstraintClauseSyntax constraint when !_options.PlaceTypeConstraintsOnSameLine:
                 // place_type_constraints_on_same_line = false: every `where` starts its own line.
                 Mandatory(constraint.WhereKeyword);
@@ -1361,6 +1368,35 @@ public sealed class BreakPlan {
     /// <c>wrap_before_eq = false</c>: a break around an assignment lands after the <c>=</c>, never
     /// before it.
     /// </summary>
+    /// <summary>
+    /// A construct whose only break point is the gap in front of it.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ <c>leadingGapInside</c>, always: the point is at the node's own first token, so the group
+    /// has to be open before that gap is written or the writer finds the group unresolved and
+    /// renders it flat. See GroupPlan.LeadingGapInside.
+    /// </remarks>
+    void PlanBreakBefore(SyntaxNode node, SyntaxToken token) {
+        if (token.IsKind(SyntaxKind.None)) {
+            return;
+        }
+
+        var group = NewGroup();
+        Point(token, group);
+        Describe(
+            node,
+            group,
+            GroupMode.Preserve,
+            new GroupFacts(
+                SourceBroken: _options.KeepsUserBreaksBetweenItems && BreaksBefore(token),
+                BreaksIfTooLong: true,
+                MeasuresHead: true
+            ),
+            spendsIndent: true,
+            leadingGapInside: true
+        );
+    }
+
     void PlanAroundEquals(SyntaxNode node, SyntaxToken equals, ExpressionSyntax value) {
         if (equals.IsKind(SyntaxKind.None)) {
             return;
@@ -1402,12 +1438,23 @@ public sealed class BreakPlan {
                 // 97.47 % → 96.29 %). Which of a long line's candidate points is taken is
                 // GroupFacts.PrefersOuterBreak's rule, and it is what makes this key observable.
                 BreaksIfTooLong: true,
-                MeasuresHead: true,
-                PrefersOuterBreak: true
+
+                // ⚠ `wrap_before_linq_expression = true` takes the query out of the ordering rule.
+                // Every other right-hand side is measured by what is left of the line and breaks
+                // only when its own break is the one worth taking; a query under this key breaks
+                // whenever the whole query does not fit, which is what puts `from` on a line of its
+                // own. Measured at a 70-column margin: `var q = from … select …;` keeps `from` on
+                // the declaration's line at false and moves it down at true, with nothing else in
+                // the file changing.
+                MeasuresHead: !QueryLeadsTheWay(value),
+                PrefersOuterBreak: !QueryLeadsTheWay(value)
             ),
             spendsIndent: true
         );
     }
+
+    bool QueryLeadsTheWay(ExpressionSyntax value) =>
+        _options.WrapBeforeLinqExpression && value is QueryExpressionSyntax;
 
     /// <summary>
     /// <c>place_expr_{method,property,accessor}_on_single_line = if_owner_is_single_line</c>: the
