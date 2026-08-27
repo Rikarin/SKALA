@@ -83,6 +83,50 @@ public sealed class OptionCoverageTests {
     }
 
     /// <summary>
+    /// A Tier D option may keep its <c>oracle</c> fixture only where the sweep demoted it.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ The other half of a rule <c>OptionRegistryTests.Tiers_AreHonest</c> used to state as "no
+    /// Tier D entry carries a glob at all". That was right until the sweep started demoting options
+    /// that have fixtures and fail on them, and it cannot be checked in the registry's own test
+    /// project, which cannot reach the sidecar.
+    /// <para>
+    /// ⚠ Both directions matter. A glob on an undemoted Tier D entry is the original defect — a
+    /// promotion nobody made. A demoted entry that *lost* its glob is the worse one: the sweep only
+    /// sweeps options that have one, so the option would silently leave the next run and its
+    /// demotion could never be reversed or disproved.
+    /// </para>
+    /// </remarks>
+    [Fact]
+    public void TierD_CarriesAFixtureOnlyWhereTheSweepDemotedIt() {
+        var unsubstantiated = SweepUnsubstantiated();
+
+        var unexplained = OptionRegistry.All
+            .Where(info => info.Tier == OptionTier.D
+                && info.Oracle is { Length: > 0 }
+                && !unsubstantiated.Contains(info.Id))
+            .Select(static info => info.Key)
+            .Order(StringComparer.Ordinal)
+            .ToArray();
+        Assert.True(
+            unexplained.Length == 0,
+            "Tier D with an `oracle` fixture the sweep does not account for: " + string.Join(", ", unexplained)
+        );
+
+        var stripped = unsubstantiated
+            .Select(static id => OptionRegistry.Get(id))
+            .Where(static info => info.Tier == OptionTier.D && info.Oracle is not { Length: > 0 })
+            .Select(static info => info.Key)
+            .Order(StringComparer.Ordinal)
+            .ToArray();
+        Assert.True(
+            stripped.Length == 0,
+            "Demoted by the sweep but no longer fixtured, so the next sweep cannot re-measure it: "
+            + string.Join(", ", stripped)
+        );
+    }
+
+    /// <summary>
     /// The options the last committed sweep could not substantiate, and which are therefore
     /// deliberately not Tier A however much of them the formatter reads.
     /// </summary>

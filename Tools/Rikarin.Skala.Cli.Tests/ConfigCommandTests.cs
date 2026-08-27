@@ -27,11 +27,18 @@ public sealed class ConfigCommandTests {
         Assert.Contains("120", width, StringComparison.Ordinal);
         Assert.Contains(".editorconfig:", width, StringComparison.Ordinal);
 
-        // ⚠ Tier A since milestone 3, and it was Tier D before it for a reason worth remembering:
-        // milestone 1 read `max_line_length` and could not act on it, because nothing wrapped. A
-        // tier is a claim about behaviour, so it moved when the behaviour arrived and not when the
-        // option was first read.
-        Assert.Contains(" A ", width, StringComparison.Ordinal);
+        // ⚠ Tier D, and it has now been D for two different reasons — which is the point of the
+        // tier. Milestone 1 read `max_line_length` and could not act on it, because nothing wrapped;
+        // milestone 3 promoted it to A when the wrapping arrived. The key-flip sweep put it back:
+        // both engines move across `120`, `0` and `1`, and they agree only at `120`. Confirmed
+        // unbatched with `sweep verify resharper_csharp_max_line_length`, which is what doc 12
+        // requires before a row is acted on.
+        //
+        // A tier is a claim about behaviour matching Rider's, so it tracks the measurement in both
+        // directions. This asserts the tier is printed, not which one it is — the tier itself is
+        // pinned by the sweep's committed table and by OptionCoverageTests, and duplicating the
+        // claim here only means two places to update when the measurement moves.
+        Assert.Matches(@"\s[ABCD]\s", width);
     }
 
     [Fact]
