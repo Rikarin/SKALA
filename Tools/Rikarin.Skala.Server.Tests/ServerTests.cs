@@ -130,6 +130,18 @@ public sealed class DaemonTests {
     }
 
     [Fact]
+    public void TheLazyStart_DoesNothingUnlessTheRunningExecutableIsSkala() {
+        // ⚠ The half of the lazy start that can be tested in process, and the half that matters:
+        // under the test host `Environment.ProcessPath` is not `skala`, so nothing is launched. A
+        // formatter used as a library must not spawn background processes, and a test run must not
+        // leave daemons behind. The other half — that `skala format <one file>` leaves a daemon for
+        // the next invocation — is a two-process fact and lives in docs/plan/11.
+        using var scratch = new Scratch();
+        DaemonClient.StartInBackground(scratch.Root);
+        Assert.False(File.Exists(DaemonProtocol.SocketPath(scratch.Root)));
+    }
+
+    [Fact]
     public async Task ASocketFileWithNoDaemonBehindIt_IsReclaimed() {
         // A crashed daemon leaves its socket file behind, and a tool that refuses to start because
         // of it is a tool that needs a manual `rm` in its documentation.

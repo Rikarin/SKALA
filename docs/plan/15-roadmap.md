@@ -89,6 +89,7 @@ Vixen's `.editorconfig` is replaced by the export with `skala format --check` cl
 | xmldoc | ⚠ the oracle does not format doc comments (SK-DIV-0006); the well-formedness hint is done |
 | Daemon, LSP, hooks | ✅ all three, with tests |
 | 40 ms warm | ⚠ 60–70 ms, of which ~60 is the client's process start; NativeAOT is the fix |
+| Daemon lazy start | ✅ the first single-file format leaves one behind: 310 ms, then 70 ms |
 | 20 s whole corpus | ✅ **11.9 s** over Vixen, from 34.2 s |
 | `defaultSource` | ✅ derived from the oracle: 123 keys `oracle-probe`, `distill` drops 108 |
 | Tier A | 201 options, up from 172, each pinned by a committed fixture |

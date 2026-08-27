@@ -53,6 +53,14 @@ Per-repository, started lazily on the first command, exits after 30 minutes idle
 trees keyed by content hash, the option registry, resolved `.editorconfig` chains, and — for
 `check` — loaded compilations and metadata references.
 
+⚠ "Lazily" means the first single-file `skala format` in a repository finds no socket, **does the
+work itself**, and leaves a daemon behind for the next one. It does not wait for the daemon it
+starts: waiting would put the daemon's own start — process, JIT, first configuration resolution —
+inside the very budget the daemon exists to meet, and lazy starting would then feel slower than no
+daemon at all. Measured: the first `format --check` of a 615-line file is 310 ms and every one after
+it is 70 ms. The start is skipped entirely unless the running executable is `skala` itself, so a
+`dotnet run`, a test host, or anything using the formatter as a library never spawns one.
+
 - Socket: a unix domain socket (named pipe on Windows) under `.skala/daemon.sock`, permissions
   0600.
 - Protocol: private, length-prefixed JSON, versioned by exact match. A client that meets a daemon of
@@ -135,7 +143,8 @@ Budget: under 500 ms for a typical commit (a handful of files, warm daemon). [13
 § "Startup" is what makes that possible, and it is why NativeAOT for the CLI front end is on the
 table. ⚠ M3 measures a warm single-file format at 60–70 ms against a 40 ms budget, of which
 essentially all is the client's own process start — `skala daemon status`, which does no work at
-all, is the same 60 ms.
+all, is the same 60 ms. The daemon itself answers in single-digit milliseconds; nothing in the
+budget is left for Skala to optimise, and the fix is NativeAOT for the client, which is not done.
 
 `skala hooks install` writes them, detecting an existing hook manager rather than clobbering it.
 ⚠ husky, lefthook, `pre-commit` and a `core.hooksPath` pointing elsewhere are all detected, and the

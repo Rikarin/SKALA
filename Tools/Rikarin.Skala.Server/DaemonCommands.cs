@@ -39,7 +39,14 @@ public static class DaemonCommands {
             return 2;
         }
 
-        Console.WriteLine($"skala daemon {DaemonProtocol.Version} on {daemon.SocketPath}");
+        // ⚠ Guarded, because a lazily started daemon outlives the process that started it and
+        // inherits that process's pipes: by the time it says anything else, the other end may be
+        // gone. A banner is not worth a dead daemon.
+        try {
+            Console.WriteLine($"skala daemon {DaemonProtocol.Version} on {daemon.SocketPath}");
+        } catch (IOException) {
+        }
+
         await daemon.RunAsync(cancellation).ConfigureAwait(false);
         return 0;
     }

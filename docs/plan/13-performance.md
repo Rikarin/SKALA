@@ -30,6 +30,11 @@ which § "Startup" predicts exactly — `skala daemon status`, doing no work at 
 NativeAOT for the thin client is the prescribed fix and it is not done: the client still carries the
 full fallback path, and would have to stop.
 
+⚠ The daemon is also *started* lazily rather than assumed: the first single-file format in a
+repository finds no socket, does the work itself, and leaves one behind. The cold-to-warm sequence
+on a 615-line file is 310 ms, then 70 ms, then 70 ms. Without that, the warm row was unreachable
+without a person running `skala daemon run` by hand, which is not a budget being met.
+
 ## Where the time goes, and what is done about it
 
 ### Startup

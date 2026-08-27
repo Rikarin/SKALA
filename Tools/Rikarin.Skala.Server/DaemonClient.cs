@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Net.Sockets;
 
 namespace Rikarin.Skala.Server;
@@ -47,4 +48,49 @@ public static class DaemonClient {
     /// <summary>Whether the daemon should be used at all. <c>SKALA_NO_DAEMON=1</c> and <c>--no-daemon</c>.</summary>
     public static bool Enabled =>
         !string.Equals(Environment.GetEnvironmentVariable("SKALA_NO_DAEMON"), "1", StringComparison.Ordinal);
+
+    static int _started;
+
+    /// <summary>
+    /// Starts a daemon for <paramref name="repositoryRoot"/> in the background and returns
+    /// immediately. ⚠ It does not wait for it and the caller does not use it: this run stays cold
+    /// and does its own work, and the *next* one finds a socket. Waiting here would put the daemon's
+    /// own start — parse, JIT, the first configuration resolution — inside the budget the daemon
+    /// exists to meet, which is the shape that makes lazy starting feel slower than no daemon at all.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ At most once per process, and only when the running executable is <c>skala</c> itself.
+    /// Under `dotnet run`, under a test host, or wherever else the formatter is being used as a
+    /// library, <see cref="Environment.ProcessPath"/> is somebody else's program and re-launching it
+    /// with `daemon run` would start something nobody asked for. Every failure is silent, for the
+    /// reason in the type's remarks.
+    /// </remarks>
+    public static void StartInBackground(string repositoryRoot) {
+        if (!Enabled || Interlocked.Exchange(ref _started, 1) != 0) {
+            return;
+        }
+
+        var executable = Environment.ProcessPath;
+        if (executable is null
+            || !string.Equals(Path.GetFileNameWithoutExtension(executable), "skala", StringComparison.Ordinal)) {
+            return;
+        }
+
+        try {
+            using var process = Process.Start(
+                new ProcessStartInfo(executable) {
+                    ArgumentList = { "daemon", "run" },
+                    WorkingDirectory = Path.GetFullPath(repositoryRoot),
+                    UseShellExecute = false,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    RedirectStandardInput = true
+                }
+            );
+        } catch (System.ComponentModel.Win32Exception) {
+            // No daemon, and the caller has already fallen through to doing the work itself.
+        } catch (InvalidOperationException) {
+        } catch (IOException) {
+        }
+    }
 }
