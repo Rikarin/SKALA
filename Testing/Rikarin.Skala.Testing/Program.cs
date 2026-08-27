@@ -229,8 +229,13 @@ switch (args[0]) {
         return 2;
 }
 
-// `ask <dir> [key=value…]`: run the oracle over a scratch directory of .cs files, in place, under
-// the repository's .editorconfig plus any overrides.
+// `ask <dir> [--profile=NAME] [key=value…]`: run the oracle over a scratch directory of .cs files,
+// in place, under the repository's .editorconfig plus any overrides.
+//
+// ⚠ `--profile=SkalaCleanup` asks the *arrangement* half, and it is not decoration: the two profiles
+// answer different questions and a question asked of the wrong one is worse than not asking. The
+// `@formatter:off` measurement in SK-DIV-0017 is exactly that — CSReformatCode honours the tags and
+// the cleanup profile does not, and nothing but running both would have shown it.
 //
 // ⚠ It is the tool the milestone-3 rules were established with, and it is why they are rules rather
 // than readings of an option name. `wrap_array_initializer_style = wrap_if_long` does not say what
@@ -256,9 +261,17 @@ static int Ask(string directory, string[] overrides) {
 
     var pairs = new List<KeyValuePair<string, string>>();
     var config = Path.Combine(Corpus.RepositoryRoot, ".editorconfig");
+    var profile = OracleProfile.FormatOnly;
     foreach (var entry in overrides) {
         if (entry.StartsWith("--config=", StringComparison.Ordinal)) {
             config = Path.GetFullPath(entry["--config=".Length..]);
+            continue;
+        }
+
+        if (entry.StartsWith("--profile=", StringComparison.Ordinal)) {
+            profile = OracleProfile.ByName(entry["--profile=".Length..])
+                ?? throw new ArgumentException($"no such oracle profile: {entry["--profile=".Length..]}");
+
             continue;
         }
 
@@ -268,7 +281,7 @@ static int Ask(string directory, string[] overrides) {
         }
     }
 
-    var results = new OracleRunner().Format(files, config, pairs);
+    var results = new OracleRunner().Format(files, config, pairs, profile);
     foreach (var file in files) {
         if (results.TryGetValue(file.Path, out var body)) {
             File.WriteAllText(file.Path, body);

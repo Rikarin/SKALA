@@ -953,6 +953,18 @@ public sealed partial class CSharpDocumentBuilder {
 
     /// <summary>A whole node written from its original span: never reindented, never respaced.</summary>
     void EmitVerbatim(SyntaxNode node) {
+        // ⚠ Inside a `@formatter:off` span everything was written as one raw chunk already — the
+        // same check EmitPiece makes at the top, and for a sharper reason. The tree walk still
+        // reaches every node between the tags, and this is the one arm that writes a node's *text*
+        // instead of skipping it. An interpolated string between the tags was therefore written
+        // twice, under a second anchor covering source the emitter had already covered, and
+        // EditEmitter turned the overlap into an edit that deleted the rest of the file. The
+        // token-stream check refused the write, so nothing was ever lost on disk — but the file
+        // could not be formatted at all until the tag was taken out.
+        if (node.SpanStart < _verbatimUntil) {
+            return;
+        }
+
         EmitUpTo(node.SpanStart);
         var span = node.Span;
         if (span.Start != _gapEmittedAt) {
