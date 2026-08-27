@@ -113,6 +113,31 @@ syntactic subset that runs without a compilation.
 **Done when:** the oracle's cleanup profile and Skala agree on `corpus/real/` at ≥ 99 % of changed
 spans, and arrangement over Vixen introduces zero compiler diagnostics.
 
+⚠ **What M4 needs that M3 did not provide**, written down at the end of M3 while it is still known:
+
+1. **A different oracle profile.** Every fixture in the corpus is generated under
+   `SkalaFormatOnly`, which is `CSReformatCode` and nothing else. Arrangement is a *cleanup* profile
+   with `CSUseVar`, `CSOptimizeUsings`, `CSReorderTypeMembers` and the body-style actions in it, so
+   M4's first act is a second profile and a second `.expected.cs` extension beside the first —
+   `OracleRunner.Profile` is a constant today and `OracleFixture` assumes one fixture per file.
+2. **A compilation, for the semantic half.** M3 formats a file with no project and no preprocessor
+   symbols, which is already SK-DIV-0004's whole content. `arrange` re-binds each document to check
+   that it did not change meaning; the "syntactic subset that runs without a compilation" is the
+   part M3's infrastructure can carry, and the rest waits on [07](07-analysis-host.md)'s project
+   loading, which is M5. ⚠ The roadmap has M4 before M5 and this is the dependency that argues for
+   swapping them, or for M4 shipping only the syntactic subset.
+3. **Multi-pass output.** Formatting is one document build and one emit. Arrangement moves members
+   and then the result has to be re-formatted, so the pipeline needs a fixed point and a bound on
+   it, and the idempotency property has to hold across the pair rather than across either half.
+4. **Range mapping through an edit that moves text.** `--range` and the LSP's range formatting are
+   filters over a whole-file fit, which is exact while every edit is local. A member that moves 200
+   lines breaks that, and `skala arrange --check` on a range needs a real edit-to-span map.
+5. **What M3 did provide and M4 can rely on:** the `.editorconfig` chain and the derived default
+   table, the three-state group model, the daemon and the LSP transport, the property suite
+   (idempotency, token equivalence, parse stability, determinism), and the `fidelity ask` harness —
+   which is how M3's rules stopped being readings of option names, and is the tool the `arrange_*`
+   family needs most, because its option names are vaguer than the formatter's.
+
 ## M5 — Analysis and the AI gate · L
 
 The point at which Skala replaces Qodana for this workflow.
