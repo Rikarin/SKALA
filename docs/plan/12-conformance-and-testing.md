@@ -228,6 +228,16 @@ every option's comparison into a measurement of the default table. A baseline pa
 with nothing overridden first, so that a fixture the two already disagreed on is reported as such
 rather than blamed on the key that was flipped on it.
 
+**Both engines are asked in the same units.** Every other measurement here compares line-ending
+*normalised* text, because a committed fixture may have been generated on another OS. Two options —
+`resharper_enforce_line_ending_style` and `resharper_csharp_insert_final_newline` — change nothing
+that survives that normalisation, so the sweep falls back to raw bytes for them and marks the row
+`raw`. ⚠ The trap either side of that is real and the harness has been on both sides of it: normalise
+both and those two keys read `UNEXERCISED` for a reason that is about the instrument; normalise one
+side only and `insert_final_newline` reads `INERT` — *"ReSharper honours the key and Skala ignores
+it"* — for a key `skala format --option` demonstrably honours. `SkalaSideTests` pins the units,
+because Skala's whole side of a 201-option sweep runs in under a second and needs no oracle at all.
+
 **It is a nightly job, not a commit gate.** It needs JetBrains installed, which is a developer-machine
 and nightly dependency and never a runtime one (ADR-011). What the fast path gets is the committed
 result table, `conformance-sweep.md`, reviewed in its diff exactly as the oracle fixtures are: an
