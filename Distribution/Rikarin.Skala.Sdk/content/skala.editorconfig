@@ -1,0 +1,39 @@
+# ==============================================================================
+# Skala starter .editorconfig.
+#
+# Copy this file to the root of the repository as `.editorconfig`, then run
+#
+#     skala config sync --apply
+#
+# which inserts the canonical managed block above the `# skala:local begin`
+# marker, at the version this repository has pinned for
+# `Rikarin.Skala.Canonical`. Everything below that marker is preserved verbatim
+# by every later sync: editorconfig's own later-section-wins rule is what layers
+# your settings over the managed block, which is why the local half is last.
+#
+# ⚠ There is deliberately no `# skala:canonical begin` marker in this file, and
+# no placeholder for one. A marker carries a version and a SHA-256 of the block
+# it names, and a marker with invented values is a file that claims to be on a
+# canonical it has never seen — `skala config diff --canonical` would call that
+# drift (SK9008) rather than "not adopted yet". With no marker at all, the tool
+# and the `Rikarin.Skala.Canonical` build target both say the true thing:
+# `.editorconfig` carries no canonical block, and `skala config sync --apply`
+# adopts it.
+#
+# ⚠ This file is a skeleton and not a copy of the canonical. The canonical is
+# 295 kB and is versioned separately from the tool, because a canonical bump is
+# a repository-wide reformatting commit and a tool bump is not. A second copy of
+# it inside this package would have a second version number and two ways to be
+# out of date; the payload comes from the dependency, where it has exactly one.
+# ==============================================================================
+
+# `root = true` stops the chain here rather than picking up an .editorconfig
+# above the repository — SK9002 is the diagnostic for the alternative.
+root = true
+
+# skala:local begin
+# Everything below this line is yours.
+
+[*]
+insert_final_newline = true
+trim_trailing_whitespace = true

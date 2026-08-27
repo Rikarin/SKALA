@@ -1,0 +1,10 @@
+<Project>
+
+  <!--
+    A project that only references a project that references this package is still a project in this
+    repository, and the repository has one formatting configuration. The same reason
+    Rikarin.Skala.Canonical's check flows transitively.
+  -->
+  <Import Project="$(MSBuildThisFileDirectory)../build/Rikarin.Skala.MSBuild.props" />
+
+</Project>

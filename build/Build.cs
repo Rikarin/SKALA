@@ -273,15 +273,106 @@ class Build : NukeBuild {
             Skala("docs", "site", RootDirectory / "docs" / "site");
         });
 
-    /// <summary>The published artefacts. `Rikarin.Skala.Canonical` is the only one packable today.</summary>
+    /// <summary>
+    /// The five published artefacts of docs/plan/02 § "Package boundaries".
+    /// </summary>
+    /// <remarks>
+    /// `Rikarin.Skala.Rules`, `Rikarin.Skala.Canonical`, `Rikarin.Skala.MSBuild` and
+    /// `Rikarin.Skala.Sdk` are ordinary packs. `Rikarin.Skala.Cli` is not, and the shape of this
+    /// target is that difference.
+    /// <para>
+    /// ⚠ The tool package is <b>RID-specific</b>, because its command is a NativeAOT binary. .NET 10
+    /// packs that as <c>tools/any/&lt;rid&gt;/</c> with <c>Runner="executable"</c> in
+    /// <c>DotnetToolSettings.xml</c>; <c>Runner="dotnet"</c> — the only option before — can only
+    /// name a managed assembly, which would put the 79.5 ms framework-dependent tool back on the
+    /// hook path for everyone who installs from NuGet.
+    /// </para>
+    /// <para>
+    /// ⚠ The two publishes happen <b>here</b> and in this order, rather than inside the .csproj:
+    /// the full tool first, because the client is useless without something to fall back to, and
+    /// both into one staging directory, because that adjacency is how <c>Fallback.Locate</c> finds
+    /// the tool. A nested publish inside pack is a second evaluation of the project graph in the
+    /// middle of the first; pack is then only a copy.
+    /// </para>
+    /// <para>
+    /// ⚠ Packing more than one RID also produces a RID-agnostic wrapper package of the same id whose
+    /// <c>DotnetToolSettings.xml</c> lists the per-RID package ids. Publishing the wrapper without
+    /// every package it names produces an install that fails on the platform whose package is
+    /// missing, so the default is the host RID alone and the full matrix is an explicit
+    /// <c>--rids</c>.
+    /// </para>
+    /// </remarks>
     Target Pack => definition => definition
         .DependsOn(Compile)
-        .Executes(() => DotNetPack(settings => settings
-            .SetProject(CanonicalDirectory / "Rikarin.Skala.Canonical.csproj")
-            .SetConfiguration(Configuration)
-            .SetOutputDirectory(RootDirectory / "artifacts" / "packages")
-            .EnableNoBuild()
-            .EnableNoRestore()));
+        .Executes(() => {
+            var packages = RootDirectory / "artifacts" / "packages";
+            packages.CreateOrCleanDirectory();
+
+            // ⚠ NU5128 — "no lib/ or ref/ for the framework in the dependency group" — is what an
+            // analyzer package *is*: the assembly ships under analyzers/dotnet/cs and nothing goes
+            // in lib/. It is a warning, TreatWarningsAsErrors makes it an error, and the two other
+            // content-only packages suppress it in their own .csproj. It is suppressed here instead
+            // for Rikarin.Skala.Rules because Rules/ is a formatting-and-rules concern and this is a
+            // packaging one; the project file has nothing else to say about packing.
+            DotNetPack(settings => settings
+                .SetProject(RootDirectory / "Rules" / "Rikarin.Skala.Rules" / "Rikarin.Skala.Rules.csproj")
+                .SetConfiguration(Configuration)
+                .SetOutputDirectory(packages)
+                .SetProperty("NoWarn", "NU5128")
+                .EnableNoBuild()
+                .EnableNoRestore());
+
+            foreach (var project in new[] {
+                    CanonicalDirectory / "Rikarin.Skala.Canonical.csproj",
+                    RootDirectory / "Tools" / "Rikarin.Skala.MSBuild" / "Rikarin.Skala.MSBuild.csproj",
+                    RootDirectory / "Distribution" / "Rikarin.Skala.Sdk" / "Rikarin.Skala.Sdk.csproj"
+                }) {
+                DotNetPack(settings => settings
+                    .SetProject(project)
+                    .SetConfiguration(Configuration)
+                    .SetOutputDirectory(packages)
+                    .EnableNoBuild()
+                    .EnableNoRestore());
+            }
+
+            foreach (var rid in ToolRuntimes) {
+                var payload = RootDirectory / "artifacts" / "tool-payload" / rid;
+                payload.CreateOrCleanDirectory();
+
+                DotNetPublish(settings => settings
+                    .SetProject(RootDirectory / "Tools" / "Rikarin.Skala.Cli" / "Rikarin.Skala.Cli.csproj")
+                    .SetConfiguration(Configuration)
+                    .SetRuntime(rid)
+                    .SetSelfContained(false)
+                    .SetOutput(payload));
+
+                DotNetPack(settings => settings
+                    .SetProject(RootDirectory / "Tools" / "Rikarin.Skala.Client" / "Rikarin.Skala.Client.csproj")
+                    .SetConfiguration(Configuration)
+                    .SetRuntime(rid)
+                    .SetOutputDirectory(packages)
+                    .SetProperty("IsPackable", "true")
+                    .SetProperty("SkalaToolPayload", payload));
+            }
+
+            foreach (var package in packages.GlobFiles("*.nupkg").OrderBy(static path => path.Name)) {
+                Serilog.Log.Information(
+                    "{Package} — {Size:N0} bytes",
+                    package.Name,
+                    new System.IO.FileInfo(package).Length);
+            }
+        });
+
+    /// <summary>
+    /// The RIDs the tool package is built for. The host's alone by default — see <see cref="Pack"/>
+    /// for why a wrapper without all of its per-RID packages is worse than none.
+    /// </summary>
+    [Parameter("Semicolon-separated RIDs for the tool package — defaults to the host's")]
+    readonly string Rids = null!;
+
+    string[] ToolRuntimes =>
+        Rids?.Split(';', System.StringSplitOptions.RemoveEmptyEntries)
+        ?? [System.Runtime.InteropServices.RuntimeInformation.RuntimeIdentifier];
 
     AbsolutePath CanonicalDirectory => RootDirectory / "Distribution" / "Rikarin.Skala.Canonical";
 

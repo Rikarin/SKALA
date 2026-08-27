@@ -1,0 +1,89 @@
+<Project>
+
+  <!--
+    The knobs, declared early so that a consuming Directory.Build.props can override any of them
+    before the targets read them. docs/plan/11-cli-and-integrations.md § "MSBuild".
+
+    ⚠ Defaults are not symmetric, and the asymmetry is the whole design. `format --check` is seconds
+    and runs in the inner loop; `check` is minutes and does not. A build tool that triples build
+    time gets disabled by whoever is in a hurry — permanently, in a Directory.Build.props nobody
+    revisits — and then it is not protecting anything. So the inner loop gets the cheap half and CI
+    sets SkalaMode=check to get the rest.
+  -->
+
+  <PropertyGroup>
+    <!-- The master switch. `false` removes the target from the build entirely. -->
+    <SkalaEnabled Condition="'$(SkalaEnabled)' == ''">true</SkalaEnabled>
+
+    <!--
+      check | format | off
+
+      off    — formatting verification only (the default: `skala format --check`, seconds)
+      check  — the full analysis pass as well (`skala check`, minutes; what CI sets)
+      format — rewrite files in place. ⚠ Never a default: a build that edits the tree it is
+               building surprises people, breaks incremental builds, and races across projects.
+    -->
+    <SkalaMode Condition="'$(SkalaMode)' == ''">off</SkalaMode>
+
+    <!-- The gate `skala check` evaluates. `local` locally, `ci` on a build server. -->
+    <SkalaGate Condition="'$(SkalaGate)' == '' and '$(ContinuousIntegrationBuild)' == 'true'">ci</SkalaGate>
+    <SkalaGate Condition="'$(SkalaGate)' == '' and '$(CI)' == 'true'">ci</SkalaGate>
+    <SkalaGate Condition="'$(SkalaGate)' == ''">local</SkalaGate>
+
+    <!--
+      ⚠ Whether a finding fails the build. Off by default for the same reason `SkalaMode` is `off`:
+      the first thing this package must not do is turn a working build red on the day it is added.
+      A repository turns it on when it has run the tool once and looked at the output.
+    -->
+    <SkalaTreatFindingsAsErrors Condition="'$(SkalaTreatFindingsAsErrors)' == ''">false</SkalaTreatFindingsAsErrors>
+
+    <!--
+      ⚠ What to run the tool over: this project's own directory, not the repository.
+
+      The alternative — one repository-wide run, coordinated so that it happens once per build — was
+      considered and rejected. MSBuild has no per-build hook, so "once" has to be faked with a
+      marker file or with a task holding `RegisteredTaskObjectLifetime.Build` state, and both are
+      wrong under `dotnet build --no-incremental`, under multi-targeting, and under two solutions
+      built in one process. Per-project needs no coordination, is what every other build-integrated
+      checker does, and puts the diagnostic on the project that owns the file.
+
+      `FormatCommand.Collect` already skips `bin/`, `obj/`, `.git/` and `artifacts/`, so this is the
+      project's sources and nothing else. ⚠ Do not pass the .csproj itself: `Collect` treats an
+      existing file as a file to format, and would hand the formatter an XML document.
+    -->
+    <SkalaPaths Condition="'$(SkalaPaths)' == ''">$(MSBuildProjectDirectory)</SkalaPaths>
+
+    <!-- Extra arguments, appended verbatim. The escape hatch, so this package needs no new knob per CLI flag. -->
+    <SkalaArguments Condition="'$(SkalaArguments)' == ''"></SkalaArguments>
+
+    <!--
+      How to reach the tool, in the order docs/plan/11 § "Distribution" recommends adopting it.
+
+      1. SkalaToolPath      — an explicit path, which is what a self-contained CI image sets.
+      2. a local manifest   — `dotnet tool restore` + `dotnet tool run skala`. ⚠ The recommended
+                              form: a formatter whose version drifts between developers reformats
+                              the tree back and forth, and only the manifest pins it.
+      3. `skala` on PATH    — a global install. Works, unpinned.
+
+      Resolution happens in the targets rather than here, because a manifest can appear between
+      evaluation of this file and the end of the build.
+    -->
+    <SkalaToolPath Condition="'$(SkalaToolPath)' == ''"></SkalaToolPath>
+
+    <!--
+      ⚠ `.config/dotnet-tools.json`, with the directory in the path — `GetDirectoryNameOfFileAbove`
+      combines the fragment onto each ancestor and tests for existence, so the nested name works and
+      a bare `dotnet-tools.json` would find nothing at all.
+    -->
+    <SkalaToolManifestDirectory Condition="'$(SkalaToolManifestDirectory)' == ''">$([MSBuild]::GetDirectoryNameOfFileAbove('$(MSBuildProjectDirectory)', '.config/dotnet-tools.json'))</SkalaToolManifestDirectory>
+
+    <!--
+      ⚠ Absent tool is a warning and never an error. This package is imported by a
+      Directory.Build.props that every project in the repository inherits, including on a machine
+      that has just cloned it. Failing the build there means the first thing Skala does to a new
+      contributor is break `dotnet build`, and the second thing is get removed.
+    -->
+    <SkalaRequireTool Condition="'$(SkalaRequireTool)' == ''">false</SkalaRequireTool>
+  </PropertyGroup>
+
+</Project>

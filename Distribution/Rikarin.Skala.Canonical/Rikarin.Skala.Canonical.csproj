@@ -18,6 +18,17 @@
   -->
 
   <PropertyGroup>
+    <!--
+      ⚠ netstandard2.0, and it is a compatibility declaration rather than a build target: the
+      assembly is not in the package. The dependency group's framework is what a consumer's restore
+      matches against, so a `net10.0` group would refuse this package to a net8.0 or netstandard2.0
+      project — and every project in a repository has one .editorconfig, including the old ones.
+      It is also what lets `Rikarin.Skala.Sdk` reference it without pinning the meta package to
+      net10.0 as well.
+    -->
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <ImplicitUsings>disable</ImplicitUsings>
+
     <IsPackable>true</IsPackable>
     <PackageId>Rikarin.Skala.Canonical</PackageId>
     <Description>The canonical .editorconfig shared across Rikarin repositories. Installed by `skala config sync`; verified by `skala config diff --canonical`.</Description>

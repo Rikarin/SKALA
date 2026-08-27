@@ -32,6 +32,7 @@
   </Folder>
   <Folder Name="/Distribution/">
     <Project Path="Distribution/Rikarin.Skala.Canonical/Rikarin.Skala.Canonical.csproj" />
+    <Project Path="Distribution/Rikarin.Skala.Sdk/Rikarin.Skala.Sdk.csproj" />
   </Folder>
   <Folder Name="/Tools/">
     <Project Path="Tools/Rikarin.Skala.Cli/Rikarin.Skala.Cli.csproj" />
@@ -42,5 +43,6 @@
     <Project Path="Tools/Rikarin.Skala.Server.Tests/Rikarin.Skala.Server.Tests.csproj" />
     <Project Path="Tools/Rikarin.Skala.Mcp/Rikarin.Skala.Mcp.csproj" />
     <Project Path="Tools/Rikarin.Skala.Mcp.Tests/Rikarin.Skala.Mcp.Tests.csproj" />
+    <Project Path="Tools/Rikarin.Skala.MSBuild/Rikarin.Skala.MSBuild.csproj" />
   </Folder>
 </Solution>

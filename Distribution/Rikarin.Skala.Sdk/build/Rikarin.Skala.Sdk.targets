@@ -1,0 +1,28 @@
+<Project>
+
+  <!--
+    The meta package's own contribution, which is deliberately almost nothing: everything that acts
+    arrives through the three dependencies. What is left is the one thing a meta package is uniquely
+    able to say — where the starter files it carries are, on the machine that just restored them.
+
+    ⚠ Once, quietly, and only when there is nothing to point at yet. `Rikarin.Skala.Canonical`'s
+    target already reports a repository that has a `.editorconfig` without a canonical block; this
+    one covers the case before that, where the file does not exist at all, and stays silent
+    afterwards. Two packages shouting the same sentence is how a package gets removed.
+  -->
+
+  <PropertyGroup>
+    <SkalaSdkAdoptionNotice Condition="'$(SkalaSdkAdoptionNotice)' == ''">true</SkalaSdkAdoptionNotice>
+    <SkalaSdkStarterDirectory Condition="'$(SkalaSdkStarterDirectory)' == ''">$(MSBuildThisFileDirectory)../content</SkalaSdkStarterDirectory>
+    <SkalaSdkEditorConfig Condition="'$(SkalaSdkEditorConfig)' == ''">$([MSBuild]::GetPathOfFileAbove('.editorconfig', '$(MSBuildProjectDirectory)'))</SkalaSdkEditorConfig>
+  </PropertyGroup>
+
+  <Target Name="SkalaSdkAdoption"
+          BeforeTargets="CoreCompile"
+          Condition="'$(SkalaSdkAdoptionNotice)' == 'true' and '$(SkalaSdkEditorConfig)' == ''">
+
+    <Message Importance="high"
+             Text="Skala: no .editorconfig at or above $(MSBuildProjectDirectory). Start from $([System.IO.Path]::GetFullPath('$(SkalaSdkStarterDirectory)/skala.editorconfig')) and $([System.IO.Path]::GetFullPath('$(SkalaSdkStarterDirectory)/skala.jsonc')), then run `skala config sync --apply`." />
+  </Target>
+
+</Project>
