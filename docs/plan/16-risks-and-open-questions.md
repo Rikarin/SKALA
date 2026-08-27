@@ -143,16 +143,62 @@ not is a commit with an arbitrary boundary in it.
 Leaning: syntactic subset in the hook, full arrangement as a deliberate command and in CI as a
 *check* (not a fix).
 
-### Q4 — What is the story for multi-repository consistency?
+### Q4 — What is the story for multi-repository consistency? — ✅ **resolved**
 
-The stated goal is "used across all my projects so everything is consistent". Today that means
-copying `.editorconfig` into each repository, which drifts. Options: a `Rikarin.Skala.Sdk` package
-that carries the canonical `.editorconfig` and drops it at restore time (drift becomes a version
-bump); an `.editorconfig` that `import`s — which editorconfig does not support; or a git submodule,
-which nobody enjoys.
+Designed and built: [03](03-configuration-model.md) § "Canonical distribution across repositories".
+The package survives; the mechanism this document leaned toward does not.
 
-Leaning toward the SDK package, with `skala config diff` against the packaged canonical file as a
-gate condition so drift is a finding rather than a surprise. Not designed yet.
+**The lean was wrong on its central claim.** "A package that drops the canonical `.editorconfig` at
+restore time" cannot be built. A probe package carrying the file three ways, restored and built by a
+consumer, showed that `content/` and `contentFiles/` are never copied into a consuming project
+directory under `PackageReference`, and that a package's `build/*.targets` do not run during restore
+at all — they arrive through the `obj/*.nuget.g.targets` that restore is in the middle of writing.
+
+Dropping it from a **build** target does run, and is worse. On a probe repository whose canonical
+made a block-scoped namespace an `IDE0161` error, the configuration took **three builds** to take
+effect: build 1 installed the file after the compiler had already been handed the old configuration,
+build 2 was incremental and skipped `CoreCompile` entirely, and only build 3 failed. **A gate whose
+first two runs pass is not a gate** — and that is before the parallel writes into the source tree
+and the file changing under Rider.
+
+There is also a constraint the original framing missed, and it is the one that decides the shape:
+**Rider reads exactly one file per directory and it is called `.editorconfig`.** Every design that
+puts the canonical elsewhere — `EditorConfigFiles` from a package, a `.globalconfig`, a second file
+beside it — is invisible to the IDE. And the compiler cannot bridge it either: an `.editorconfig`'s
+section globs resolve relative to the directory containing the file, so a canonical in the NuGet
+cache has a `[*]` that matches only the NuGet cache. That is now a test, asked through Roslyn's own
+matcher.
+
+**What replaced it:** the package stops being an installer and becomes a *carrier*.
+`Rikarin.Skala.Canonical` ships the payload, its manifest, and a **check-only** MSBuild target
+(5 ms per project, measured). `skala config sync` is the only thing that writes — explicit, offline,
+one reviewable diff. `skala config diff --canonical` is the gate condition and exits 3 on drift, as
+this document proposed.
+
+**Layering.** One file, two blocks, separated by `# skala:canonical begin` / `# skala:local begin`
+markers, the local block second — so editorconfig's own later-section-wins rule makes local
+overrides beat the canonical, and Skala never has to know what they are. Tested against Vixen's real
+file: all **56** path-scoped sections and their reasoning comments survive verbatim, the effective
+options still resolve to Vixen's values where Vixen set them and the canonical's where it did not,
+and the override report is **7 lines** against a 5 188-line file.
+
+**Rollout.** Drift (`SK9008`, error) is `sha256(block) ≠ the marker's own sha256` — decidable from
+the file alone, offline, at any version. Behindness (`SK9009`, info) is `the marker ≠ the tool's
+canonical` and never fails anything. So publishing a new canonical changes nothing anywhere until a
+repository chooses to bump, and eighteen repositories take the reformatting commit in whatever order
+suits them. That is the same shape as the baseline story in [09](09-quality-gates-and-reporting.md):
+accept the present, gate the future.
+
+**ADR-001 survives.** The canonical is the export plus exactly the two additions `skala config fix`
+already makes (`root = true`, `max_line_length`); all 4 226 of the export's assignments are carried
+through with their values unchanged, asserted by a test. The maintainer loop is still change a
+setting in Rider, re-export, `./build.sh Canonical`, publish — and a re-export that skips the
+regeneration is a red build, not a silent divergence.
+
+The one thing left open is whether `Rikarin.Skala.Sdk` should reference `Rikarin.Skala.Canonical` or
+absorb it. It should reference it: a canonical bump is a repository-wide reformatting commit and a
+rule bump is not, and one version across both forces every repository to take the reformat to get a
+bug fix.
 
 ### Q5 — Does the ReSharper severity mapping survive?
 

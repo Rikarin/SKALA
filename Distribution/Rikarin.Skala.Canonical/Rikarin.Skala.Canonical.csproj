@@ -1,0 +1,45 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    The canonical .editorconfig, versioned and restorable.
+
+    ⚠ This package does not install anything, and it cannot: measured on a probe repository,
+    NuGet copies neither `content/` nor `contentFiles/` into a consuming project directory under
+    PackageReference, and a package's `build/*.targets` are not imported during restore at all.
+    docs/plan/03 § "Canonical distribution across repositories" has the measurements.
+
+    What it is instead: the versioned carrier. A repository pins it in Directory.Packages.props
+    beside everything else it pins, and the targets file makes "this repository is not on the
+    canonical this package carries" visible in the build, where people already look.
+
+    It is separate from Rikarin.Skala.Sdk, and separate from Rikarin.Skala.Rules, because a
+    canonical bump is a repository-wide reformatting commit and a rule bump is not. Sharing a
+    version between them would force one to wait for the other.
+  -->
+
+  <PropertyGroup>
+    <IsPackable>true</IsPackable>
+    <PackageId>Rikarin.Skala.Canonical</PackageId>
+    <Description>The canonical .editorconfig shared across Rikarin repositories. Installed by `skala config sync`; verified by `skala config diff --canonical`.</Description>
+    <PackageTags>editorconfig;formatting;skala</PackageTags>
+
+    <!-- Content only: there is no code here and nothing to reference. -->
+    <IncludeBuildOutput>false</IncludeBuildOutput>
+    <SuppressDependenciesWhenPacking>true</SuppressDependenciesWhenPacking>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <NoWarn>$(NoWarn);NU5128</NoWarn>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="PackageMarker.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="canonical.editorconfig" Pack="true" PackagePath="content/" />
+    <None Include="canonical.json" Pack="true" PackagePath="content/" />
+    <None Include="build/Rikarin.Skala.Canonical.targets" Pack="true" PackagePath="build/" />
+    <None Include="buildTransitive/Rikarin.Skala.Canonical.targets" Pack="true" PackagePath="buildTransitive/" />
+  </ItemGroup>
+
+</Project>

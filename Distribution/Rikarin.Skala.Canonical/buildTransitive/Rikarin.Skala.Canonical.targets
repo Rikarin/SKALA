@@ -1,0 +1,9 @@
+<Project>
+
+  <!--
+    The check should reach a project that only references a project that references this package:
+    the repository has one .editorconfig and every project in it is formatted by that file.
+  -->
+  <Import Project="$(MSBuildThisFileDirectory)../build/Rikarin.Skala.Canonical.targets" />
+
+</Project>

@@ -17,4 +17,25 @@
     <ProjectReference Include="../Rikarin.Skala.Options/Rikarin.Skala.Options.csproj" />
   </ItemGroup>
 
+  <!--
+    The canonical payload, carried twice from one file on disk: embedded here so that
+    `skala config sync` works offline behind the tool's own version pin, and packed into
+    Rikarin.Skala.Canonical so a repository can pin it in Directory.Packages.props.
+    CanonicalDistributionTests asserts the two carriers agree byte for byte.
+  -->
+  <ItemGroup>
+    <!--
+      Conditional so that the payload can be bootstrapped by the tool that embeds it: with the
+      files absent Core still builds, and CanonicalEditorConfig throws a message naming
+      `./build.sh Canonical`. They are checked in, and a test asserts they are up to date with
+      editor_config_template, so the condition is never false in a normal tree.
+    -->
+    <EmbeddedResource Include="../../Distribution/Rikarin.Skala.Canonical/canonical.editorconfig"
+                      LogicalName="Rikarin.Skala.Core.canonical.editorconfig"
+                      Condition="Exists('$(MSBuildThisFileDirectory)../../Distribution/Rikarin.Skala.Canonical/canonical.editorconfig')" />
+    <EmbeddedResource Include="../../Distribution/Rikarin.Skala.Canonical/canonical.json"
+                      LogicalName="Rikarin.Skala.Core.canonical.json"
+                      Condition="Exists('$(MSBuildThisFileDirectory)../../Distribution/Rikarin.Skala.Canonical/canonical.json')" />
+  </ItemGroup>
+
 </Project>

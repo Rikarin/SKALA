@@ -6,6 +6,9 @@
     <Project Path="Core/Rikarin.Skala.Options.Generator/Rikarin.Skala.Options.Generator.csproj" />
     <Project Path="Core/Rikarin.Skala.Options.Tests/Rikarin.Skala.Options.Tests.csproj" />
   </Folder>
+  <Folder Name="/Distribution/">
+    <Project Path="Distribution/Rikarin.Skala.Canonical/Rikarin.Skala.Canonical.csproj" />
+  </Folder>
   <Folder Name="/Tools/">
     <Project Path="Tools/Rikarin.Skala.Cli/Rikarin.Skala.Cli.csproj" />
     <Project Path="Tools/Rikarin.Skala.Cli.Tests/Rikarin.Skala.Cli.Tests.csproj" />

@@ -54,12 +54,56 @@ class Build : NukeBuild {
     Target Lint => definition => definition
         .DependsOn(Compile)
         .Executes(() => {
-            var cli = RootDirectory / "Tools" / "Rikarin.Skala.Cli" / "Rikarin.Skala.Cli.csproj";
-            DotNetRun(settings => settings
-                .SetProjectFile(cli)
-                .SetConfiguration(Configuration)
-                .EnableNoBuild()
-                .EnableNoRestore()
-                .SetApplicationArguments("config", "check", RootDirectory));
+            Skala("config", "check", RootDirectory);
         });
+
+    /// <summary>
+    /// Regenerate the distributable canonical payload from the Rider export.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ ADR-001's maintainer loop, and the only step in it that is not "use Rider": change a
+    /// setting in Rider, re-export over <c>editor_config_template</c>, run this, commit, publish.
+    /// <c>CanonicalDistributionTests</c> fails when the checked-in payload is not what this target
+    /// would produce, so a re-export that skips this step is a red build rather than a silent
+    /// divergence between the export and what eighteen repositories are given.
+    /// </remarks>
+    Target Canonical => definition => definition
+        .DependsOn(Compile)
+        .Executes(() => {
+            Skala(
+                "config", "canonical",
+                RootDirectory / "editor_config_template",
+                "--out", CanonicalDirectory,
+                "--version", CanonicalVersion);
+        });
+
+    /// <summary>The published artefacts. `Rikarin.Skala.Canonical` is the only one packable today.</summary>
+    Target Pack => definition => definition
+        .DependsOn(Compile)
+        .Executes(() => DotNetPack(settings => settings
+            .SetProject(CanonicalDirectory / "Rikarin.Skala.Canonical.csproj")
+            .SetConfiguration(Configuration)
+            .SetOutputDirectory(RootDirectory / "artifacts" / "packages")
+            .EnableNoBuild()
+            .EnableNoRestore()));
+
+    AbsolutePath CanonicalDirectory => RootDirectory / "Distribution" / "Rikarin.Skala.Canonical";
+
+    /// <summary>
+    /// The canonical's version, which is deliberately not the tool's: a canonical bump is a
+    /// repository-wide reformatting commit and a tool bump is not, and tying them together forces
+    /// every repository to take the reformat to get a bug fix.
+    /// </summary>
+    [Parameter("The version stamped into the canonical manifest")]
+    readonly string CanonicalVersion = "0.1.0";
+
+    void Skala(params object[] arguments) {
+        var cli = RootDirectory / "Tools" / "Rikarin.Skala.Cli" / "Rikarin.Skala.Cli.csproj";
+        DotNetRun(settings => settings
+            .SetProjectFile(cli)
+            .SetConfiguration(Configuration)
+            .EnableNoBuild()
+            .EnableNoRestore()
+            .SetApplicationArguments(arguments.Select(static argument => argument.ToString()!).ToArray()));
+    }
 }

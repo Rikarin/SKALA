@@ -1,0 +1,916 @@
+# Vixen — see docs/plan/00-vision-and-principles.md § "Coding standards"
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 4
+
+[*.{json,yaml,yml,csproj,props,targets,slnx,xml,g4}]
+indent_size = 2
+
+[*.md]
+trim_trailing_whitespace = false
+
+[*.cs]
+indent_size = 4
+csharp_using_directive_placement = outside_namespace:warning
+csharp_style_namespace_declarations = file_scoped:warning
+dotnet_sort_system_directives_first = true
+dotnet_separate_import_directive_groups = false
+
+# Layout. These are not preferences so much as a description: every file in the repository is
+# written this way, and until they were written down `dotnet format` defaulted to Allman and
+# reported some forty thousand whitespace violations against code that was entirely consistent
+# with itself. A config that disagrees with the whole codebase is the thing that is wrong.
+csharp_new_line_before_open_brace = none
+csharp_new_line_before_else = false
+csharp_new_line_before_catch = false
+csharp_new_line_before_finally = false
+csharp_new_line_before_members_in_object_initializers = true
+csharp_new_line_before_members_in_anonymous_types = true
+csharp_new_line_between_query_expression_clauses = true
+csharp_indent_case_contents = true
+csharp_indent_switch_labels = true
+csharp_indent_labels = one_less_than_current
+csharp_indent_block_contents = true
+csharp_indent_braces = false
+csharp_indent_case_contents_when_block = false
+csharp_space_after_cast = false
+csharp_space_after_keywords_in_control_flow_statements = true
+csharp_space_before_colon_in_inheritance_clause = true
+csharp_space_after_colon_in_inheritance_clause = true
+csharp_space_around_binary_operators = before_and_after
+csharp_space_between_method_declaration_parameter_list_parentheses = false
+csharp_space_between_method_declaration_empty_parameter_list_parentheses = false
+csharp_space_between_method_declaration_name_and_open_parenthesis = false
+csharp_space_between_method_call_parameter_list_parentheses = false
+csharp_space_between_method_call_empty_parameter_list_parentheses = false
+csharp_space_between_method_call_name_and_opening_parenthesis = false
+csharp_space_after_comma = true
+csharp_space_before_comma = false
+csharp_space_after_dot = false
+csharp_space_before_dot = false
+csharp_space_after_semicolon_in_for_statement = true
+csharp_space_before_semicolon_in_for_statement = false
+csharp_space_around_declaration_statements = false
+csharp_space_before_open_square_brackets = false
+csharp_space_between_empty_square_brackets = false
+csharp_space_between_square_brackets = false
+csharp_preserve_single_line_statements = true
+csharp_preserve_single_line_blocks = true
+
+# Modern C# the plan leans on
+csharp_style_var_for_built_in_types = true:suggestion
+csharp_style_var_when_type_is_apparent = true:suggestion
+csharp_prefer_braces = when_multiline:suggestion
+csharp_style_expression_bodied_methods = when_on_single_line:suggestion
+csharp_style_expression_bodied_properties = when_on_single_line:silent
+csharp_style_prefer_primary_constructors = true:suggestion
+csharp_style_prefer_collection_expression = true:suggestion
+csharp_style_prefer_pattern_matching = true:suggestion
+csharp_style_prefer_switch_expression = true:suggestion
+csharp_style_prefer_readonly_struct = true:suggestion
+csharp_style_prefer_readonly_struct_member = true:suggestion
+csharp_prefer_static_local_function = true:suggestion
+csharp_prefer_static_anonymous_function = true:suggestion
+dotnet_style_readonly_field = true:warning
+dotnet_style_prefer_conditional_expression_over_assignment = true:silent
+dotnet_style_namespace_match_folder = true:suggestion
+
+# Accessibility modifiers are written only when they change something: `private` on
+# a member and `internal` on a type are the defaults and are left off, which is what
+# the whole tree does. `private protected` and friends still get spelled out.
+dotnet_style_require_accessibility_modifiers = omit_if_default:suggestion
+
+# ------------------------------------------------------------------------------
+# Naming. Two styles, and the line between them is visibility, not storage:
+# PascalCase for anything a caller can name, camelCase for mutable private state.
+#
+# No `_` prefix. This file used to mandate one and not a single file in the
+# repository has ever had one — `Vixen.Core.Syntax` and Raven both write bare
+# `readonly string text;`. A convention that every file violates is not a
+# convention, so the config now records the style that is actually written.
+#
+# Order matters: the first matching rule wins, so the const and static-readonly
+# rules have to precede the private-field rule they carve exceptions out of.
+# ------------------------------------------------------------------------------
+dotnet_naming_style.pascal.capitalization = pascal_case
+dotnet_naming_style.camel.capitalization = camel_case
+
+# Constants name a value, so they read as names regardless of accessibility.
+dotnet_naming_rule.constants_pascal.severity = warning
+dotnet_naming_rule.constants_pascal.symbols = constants
+dotnet_naming_rule.constants_pascal.style = pascal
+dotnet_naming_symbols.constants.applicable_kinds = field
+dotnet_naming_symbols.constants.applicable_accessibilities = *
+dotnet_naming_symbols.constants.required_modifiers = const
+
+# So do the static readonly lookup tables the compiler and the engine are full of
+# (`Intrinsics.FloatTypes`, `GlslTypes.Reserved`, `PooledDictionary.Pool`): they are
+# fixed data, not state that changes as the program runs.
+dotnet_naming_rule.static_readonly_pascal.severity = warning
+dotnet_naming_rule.static_readonly_pascal.symbols = static_readonly_fields
+dotnet_naming_rule.static_readonly_pascal.style = pascal
+dotnet_naming_symbols.static_readonly_fields.applicable_kinds = field
+dotnet_naming_symbols.static_readonly_fields.applicable_accessibilities = *
+dotnet_naming_symbols.static_readonly_fields.required_modifiers = static,readonly
+
+# Everything else that is private state: camelCase, no prefix.
+dotnet_naming_rule.private_fields_camel.severity = warning
+dotnet_naming_rule.private_fields_camel.symbols = private_fields
+dotnet_naming_rule.private_fields_camel.style = camel
+dotnet_naming_symbols.private_fields.applicable_kinds = field
+dotnet_naming_symbols.private_fields.applicable_accessibilities = private, private_protected
+
+# Members are PascalCase at every accessibility. Only fields distinguish, because
+# only fields are state; a private helper like `SlidingTextWindow.GetText` reads the
+# same as a public one and the tree has always written it that way.
+dotnet_naming_rule.members_pascal.severity = warning
+dotnet_naming_rule.members_pascal.symbols = members
+dotnet_naming_rule.members_pascal.style = pascal
+dotnet_naming_symbols.members.applicable_kinds = property,method,event
+dotnet_naming_symbols.members.applicable_accessibilities = *
+
+dotnet_naming_rule.public_fields_pascal.severity = warning
+dotnet_naming_rule.public_fields_pascal.symbols = public_fields
+dotnet_naming_rule.public_fields_pascal.style = pascal
+dotnet_naming_symbols.public_fields.applicable_kinds = field
+dotnet_naming_symbols.public_fields.applicable_accessibilities = public,protected,internal
+
+# Performance analyzers the "zero allocation in the frame loop" rule depends on.
+# Kept at `suggestion` repo-wide so the IDE surfaces them without breaking the
+# build on existing code. Escalate to `warning` under Core/ and Platform/ (below)
+# where the allocation budget is actually enforced.
+dotnet_diagnostic.CA1852.severity = suggestion   # seal internal types
+dotnet_diagnostic.CA1859.severity = suggestion   # concrete types for performance
+dotnet_diagnostic.CA1860.severity = suggestion   # avoid Enumerable.Any()
+dotnet_diagnostic.CA1861.severity = suggestion   # no constant arrays as arguments
+dotnet_diagnostic.CA1863.severity = suggestion   # use CompositeFormat
+dotnet_diagnostic.CA2016.severity = suggestion   # forward CancellationToken
+
+# ADR-002: no runtime IL generation, no reflection-driven activation in runtime code.
+# Escalated to error under Core/ and Platform/ below.
+dotnet_diagnostic.IL2026.severity = warning
+dotnet_diagnostic.IL3050.severity = warning
+
+# Generated code is not ours to style
+[**/{obj,bin}/**]
+generated_code = true
+
+[**/*.g.cs]
+generated_code = true
+
+# Runtime assemblies: trimming and AOT violations are errors, not suggestions.
+# Gameplay/ is here because Directory.Build.props puts it in the same RUNTIME
+# profile — doc 28's libraries run in the frame and a phone runs the client that
+# links them, so the allocation and AOT budgets are the same ones.
+[{Core,Gameplay,Platform}/**/*.cs]
+dotnet_diagnostic.CA1852.severity = warning
+dotnet_diagnostic.CA1859.severity = warning
+dotnet_diagnostic.CA1860.severity = warning
+dotnet_diagnostic.CA1861.severity = warning
+dotnet_diagnostic.CA1863.severity = warning
+dotnet_diagnostic.CA2016.severity = warning
+dotnet_diagnostic.IL2026.severity = error
+dotnet_diagnostic.IL2067.severity = error
+dotnet_diagnostic.IL2075.severity = error
+dotnet_diagnostic.IL3050.severity = error
+
+# Tests may allocate, mock, and be verbose
+[**/*.Tests/**/*.cs]
+dotnet_diagnostic.CA1852.severity = none
+dotnet_diagnostic.CA1859.severity = none
+
+# =======================================================================# Rules disabled by name under AnalysisLevel=latest-all.
+# Each needs a reason. Prefer fixing code over adding to this list.
+# ==============================================================================
+
+[*.cs]
+# CA1720 — identifier contains a type name.
+# Raven is a compiler for a shading language whose own type names are `int`,
+# `uint`, `float`, `double`, `string`. `SpecialType.Float`, `IrType.Double` and
+# friends are the domain vocabulary; renaming them to satisfy a .NET API-naming
+# rule would make the compiler harder to read, not easier. 19 findings.
+dotnet_diagnostic.CA1720.severity = none
+
+# CA1000 — do not declare static members on generic types.
+# The rule predates generic type inference and argues that `Handle<Buffer>.Null`
+# is hard to read. The BCL disagrees with itself here — Span<T>.Empty,
+# Vector128<T>.Zero, ImmutableArray<T>.Empty — and static abstract interface
+# members make static members on generic types mandatory rather than merely
+# idiomatic. A `Null`/`Empty`/`Zero` on the type it belongs to is the discoverable
+# place for it; the alternative is a non-generic helper class nobody finds.
+dotnet_diagnostic.CA1000.severity = none
+
+# CA1062 — validate arguments of public methods.
+# An engine cannot afford a null check on every public entry point: these sit in
+# frame-loop hot paths, and the "zero allocation / no overhead in the frame loop"
+# rule (docs/plan/00) outranks defensive validation. Nullable reference types are
+# the mechanism we rely on instead, enforced at compile time rather than runtime.
+dotnet_diagnostic.CA1062.severity = none
+
+# ------------------------------------------------------------------------------
+# The Raven compiler.
+# ------------------------------------------------------------------------------
+[Raven/Vixen.Raven/**.cs]
+# CA1711 — identifiers should not have a reserved suffix.
+# `stream` is one of Raven's own keywords: a value written by one pipeline stage
+# and read by the next (docs/plan/07 § I). `IrStream` and `PlannedStream` are
+# named after the declaration they model, and sit beside `IrBinding` and
+# `IrStageIo` where nothing could read them as a System.IO.Stream. Same reasoning
+# as CA1720 above — the shading language's vocabulary wins over a .NET API-naming
+# convention — and scoped to the compiler so a genuinely misleading `FooStream`
+# elsewhere is still reported. 2 findings.
+dotnet_diagnostic.CA1711.severity = none
+
+# ------------------------------------------------------------------------------
+# The indexed priority queue.
+# ------------------------------------------------------------------------------
+[Core/Vixen.Core.Collections/IndexedPriorityQueue.cs]
+# CA1711 — identifiers should not have a reserved suffix.
+# The rule wants a `*Queue` to derive from System.Collections.Queue, a
+# non-generic type from .NET 1.0 that nothing should derive from. This type is a
+# priority queue in every sense that matters — Enqueue, Dequeue, Peek, Count —
+# and "priority queue" is what somebody looking for it will search for. Calling
+# it a heap to satisfy the rule would name the implementation instead of the
+# abstraction. 1 finding.
+dotnet_diagnostic.CA1711.severity = none
+
+# ------------------------------------------------------------------------------
+# Pooled collection rentals.
+# ------------------------------------------------------------------------------
+[Core/Vixen.Core/Pooling/PooledDictionary.cs]
+# CA1711 — identifiers should not have a reserved suffix.
+# The rule wants a type named `*Dictionary` to implement IDictionary<K,V>.
+# PooledDictionary<K,V> deliberately does not: it is a mutable struct handle to a
+# rented dictionary, and implementing the interface would box it at every call
+# site — precisely the allocation the type exists to remove. The suffix is not
+# misleading, it is accurate, and docs/plan/03 specifies the name. 1 finding.
+dotnet_diagnostic.CA1711.severity = none
+
+# ------------------------------------------------------------------------------
+# The constraint stage.
+# ------------------------------------------------------------------------------
+[Core/Vixen.Animation/Constraints/ConstraintStack.cs]
+# CA1711 — identifiers should not have a reserved suffix.
+# The rule reserves `*Stack` for something LIFO deriving from
+# System.Collections.Stack. This is a stack in the other, older sense the word
+# has in this field — a protocol stack, a middleware stack, a stack of
+# corrections applied in order to one pose — and that is the sense every
+# neighbouring engine uses for the same thing. Renaming it to satisfy the rule
+# would mean either a vaguer word or one that names its implementation, and
+# docs/plan/34 specifies the name. 1 finding.
+dotnet_diagnostic.CA1711.severity = none
+
+# ------------------------------------------------------------------------------
+# Test projects.
+# ------------------------------------------------------------------------------
+[**/*.Tests/**.cs]
+# CA1707 — identifiers should not contain underscores.
+# docs/plan/12 mandates `MethodOrScenario_Condition_ExpectedResult` test naming.
+# The rule and our own standard are in direct conflict, and the standard wins:
+# it is the dominant xunit convention and it makes failure output readable.
+# 250 findings — this single rule was 88% of everything latest-recommended found.
+dotnet_diagnostic.CA1707.severity = none
+
+# CA1861 — prefer static readonly fields over constant array arguments.
+# The rule targets repeated calls in hot code. In a test the constant array *is*
+# the expectation: `Assert.Equal(new[] { "pipeline", "swapchain", "device" }, log)`
+# says what the test asserts on the line that asserts it, and hoisting each one to
+# a named field would scatter every expectation away from its assertion for an
+# allocation that happens once per test. Escalated to warning under Core/ and
+# Platform/ above, where the allocation budget is real.
+dotnet_diagnostic.CA1861.severity = none
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Core/Vixen.Core.Serialization.Tests/Contracts.cs
+#
+# CA1051 (do not declare visible instance fields). These types exist to exercise
+# every shape the [DataContract] generator has to handle, and a public mutable
+# field is one of them — the attribute's own documentation names public fields as
+# part of the serialised form. A contract that avoided them would test the
+# generator against a shape no real contract uses.
+# ─────────────────────────────────────────────────────────────────────────────
+[Core/Vixen.Core.Serialization.Tests/Contracts.cs]
+dotnet_diagnostic.CA1051.severity = none
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Core/Vixen.Platform/Input/Key.cs
+#
+# CS1591 (missing XML comment). `Key` names roughly 120 physical key positions,
+# and the name of each one is already the whole of what can be said about it: a
+# `<summary>The A key.</summary>` on `A` adds nothing and, repeated a hundred
+# times, buries the members that genuinely need explaining — why `Q` is not the
+# letter Q, what `NonUsBackslash` is, why `Back` sits outside the HID range. Those
+# carry comments; the rest are their own documentation.
+# ─────────────────────────────────────────────────────────────────────────────
+[Core/Vixen.Platform/Input/Key.cs]
+dotnet_diagnostic.CS1591.severity = none
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Core/Vixen.Input/Controls/InputKey.cs
+#
+# CS1591, for the same reason and about the same table. `InputKey` is the Core
+# layer's copy of the USB HID key positions, value for value — Vixen.Input cannot
+# reference Vixen.Platform (CheckArchitecture forbids Core → Platform) and
+# Vixen.Ui, which consumes it, must stay usable with no platform backend at all.
+# InputKeyTests asserts member by member that the two agree, which is what makes
+# the duplication safe; documenting each of a hundred and twenty positions twice
+# is what would make it unreadable.
+# ─────────────────────────────────────────────────────────────────────────────
+[Core/Vixen.Input/Controls/InputKey.cs]
+dotnet_diagnostic.CS1591.severity = none
+
+# ─────────────────────────────────────────────────────────────────────────────
+# ECS component declarations
+#
+# CA1051 (do not declare visible instance fields). A component *is* a public
+# mutable field or several. `world.Get<Position>(e).Y = 9` writes through a `ref`
+# into a chunk, and a property returning a copy would silently drop the write —
+# which is why docs/plan/04 § Storage specifies fields, and why the same choice
+# is already made for the mathematics types (docs/plan/03 § Layout). The rule is
+# aimed at API surface that could later want validation; a component cannot have
+# validation, because nothing calls anything when a chunk byte changes.
+#
+# Scoped by file name rather than by directory, so the exemption is something a
+# file opts into by being called what it is. A file that declares components is
+# named `*Components.cs`; anything else in the same project still answers to the
+# rule.
+#
+# Users' own component types live in their own assemblies and will meet this rule
+# too. That is a documented consequence rather than an oversight, and the manual
+# says so where it introduces components.
+# ─────────────────────────────────────────────────────────────────────────────
+[**/*Components.cs]
+dotnet_diagnostic.CA1051.severity = none
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Core/Vixen.Rendering/RenderObject.cs
+#
+# CA1051 (do not declare visible instance fields). The same reasoning as the ECS
+# components above, arrived at from the other end: `system.Objects[id].Bounds =
+# …` writes through a `ref` into a NativeArray, and a property returning a copy
+# would silently drop the write. `RenderObject` is one element of the array the
+# culling loop walks for every object in the scene, so it is a data layout rather
+# than an API surface — and a layout cannot have validation, because nothing
+# calls anything when a byte in native memory changes.
+#
+# Scoped to the one file that declares it. Everything else in the project, this
+# type's own methods included, still answers to the rule.
+# ─────────────────────────────────────────────────────────────────────────────
+[Core/Vixen.Rendering/RenderObject.cs]
+dotnet_diagnostic.CA1051.severity = none
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Core/Vixen.Core.Imaging/SphericalHarmonicsL1.cs
+#
+# CA1051 (do not declare visible instance fields). The third instance of the same
+# argument, and the clearest: a brick of an irradiance field is sixty-four of
+# these and a clipmap is thousands of bricks, and the array is copied into a
+# volume texture as bytes. The layout — four `Vector3`s in declaration order — is
+# therefore part of the contract with the shader that reads it, and auto-property
+# backing fields are laid out at the compiler's discretion rather than the type's.
+#
+# The fields are `readonly` and the type is immutable, so none of what the rule
+# guards against is available anyway: there is nothing to validate on write
+# because there is no write.
+#
+# Scoped to the one file. The nine-coefficient version next to it is a class with
+# a private array and still answers to the rule.
+# ─────────────────────────────────────────────────────────────────────────────
+[Core/Vixen.Core.Imaging/SphericalHarmonicsL1.cs]
+dotnet_diagnostic.CA1051.severity = none
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Core/Vixen.Shaders/ParameterCollection.cs
+#
+# CA1711 (rename type so it does not end in 'Collection'). The rule reserves the
+# suffix for types implementing ICollection. This one holds parameters and is not
+# one: it is a packed byte buffer with an offset per key, and exposing it as a
+# collection of anything would mean giving out the boxed values the packing exists
+# to avoid.
+#
+# The name is also fixed by the specification rather than chosen here — docs/plan
+# 06 and 07 both call it ParameterCollection, following Stride, and a host reading
+# either would look for that name. Renaming it to satisfy a suffix convention
+# would make the code and the two documents that specify it disagree.
+# ─────────────────────────────────────────────────────────────────────────────
+[Core/Vixen.Shaders/ParameterCollection.cs]
+dotnet_diagnostic.CA1711.severity = none
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Core/Vixen.Rendering/Mesh.cs
+#
+# CA1051 (do not declare visible instance fields). `MeshDraw` is an element of a
+# RenderDataHolder array — native memory, read through a `ref` per object in the
+# draw loop — so it is a data layout for the same reasons RenderObject.cs is
+# exempted above, and a property returning a copy would silently drop a write.
+#
+# `Material` in the same file is an ordinary reference type with properties, and
+# is unaffected: the exemption is about the struct that shares the file with it.
+# ─────────────────────────────────────────────────────────────────────────────
+[Core/Vixen.Rendering/Mesh.cs]
+dotnet_diagnostic.CA1051.severity = none
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Core/Vixen.Rendering/Features/VirtualGeometryRenderFeature.cs
+#
+# CA1051 (do not declare visible instance fields). `VirtualGeometryDraw` is an
+# element of a RenderDataHolder array, exactly as `MeshDraw` above is: native
+# memory, read through a `ref` per object, and a property returning a copy would
+# silently drop a write. Same exemption, same reason, different feature.
+# ─────────────────────────────────────────────────────────────────────────────
+[Core/Vixen.Rendering/Features/VirtualGeometryRenderFeature.cs]
+dotnet_diagnostic.CA1051.severity = none
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Core/Vixen.Animation/BoneTransform.cs
+#
+# CA1051 (do not declare visible instance fields). A `BoneTransform` is one
+# element of a pose array, and every blend in the module writes it in place
+# through a `Span<BoneTransform>` — `bones[i].Rotation = …`. A property returning
+# a copy would compile and silently drop the write, which is the same trap
+# RenderObject.cs and the ECS components are exempted for. It is also the element
+# of the array a hundred of which are read per character per frame, so the
+# indirection is not free either.
+# ─────────────────────────────────────────────────────────────────────────────
+[Core/Vixen.Animation/BoneTransform.cs]
+dotnet_diagnostic.CA1051.severity = none
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Core/Vixen.Rendering/Lights.cs
+#
+# CA1051 (do not declare visible instance fields). Two structs, exempted for two
+# different reasons that happen to point the same way.
+#
+# `PunctualLightData` is a memory layout the GPU reads: its field order and its
+# sixty-four-byte size are fixed by the std140 rules and by the matching struct in
+# Raven/Library/Shading/Lighting.rvn, and an upload is a blit of an array of them.
+# Properties would add nothing a shader can see and would break the blit the
+# moment one of them stopped being auto-implemented.
+#
+# `RenderLight` is the authoring side of the same record, mutated field by field
+# by whatever extracts lights from a scene. It is a struct held in a list, so
+# `lights[i].Intensity = …` through a property would write to a copy — the same
+# trap RenderObject.cs is exempted for.
+# ─────────────────────────────────────────────────────────────────────────────
+[Core/Vixen.Rendering/Lights.cs]
+dotnet_diagnostic.CA1051.severity = none
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Core/Vixen.Ui.Markup/Binding/BoundNodes.cs
+#
+# CA1711 (identifiers should not have incorrect suffix). `BoundAttribute` is a
+# bound markup attribute — `class="…"`, `on:click="@Go"` — and has nothing to do
+# with `System.Attribute`. The rule exists so that a type named `…Attribute` can
+# be assumed to be one, and here the word is the domain's, not the CLR's: the
+# syntax node beside it is `AttributeSyntax` and the thing in the file is called
+# an attribute by everyone who writes one. Renaming it would make the binder's
+# vocabulary disagree with the language's.
+# ─────────────────────────────────────────────────────────────────────────────
+[Core/Vixen.Ui.Markup/Binding/BoundNodes.cs]
+dotnet_diagnostic.CA1711.severity = none
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Core/Vixen.Net.Transport.WebSocket/WebSocketUpgrade.cs
+#
+# CA5350 (do not use weak cryptographic algorithms). The SHA-1 here is not a
+# security decision and cannot be changed: RFC 6455 § 4.2.2 defines the opening
+# handshake as base64(SHA1(key + "258EAFA5-…")), and a browser that gets any
+# other answer refuses the upgrade. It authenticates nothing and protects
+# nothing — its purpose is to prove the server understood the WebSocket
+# handshake rather than being an HTTP cache that echoed a header. Confidentiality
+# on this transport is `wss`, which is TLS underneath and a separate decision.
+#
+# The exemption moved here from SystemWebSocketFactory.cs when the handshake was
+# lifted out of it — the parsing had to become a function over bytes to be
+# fuzzable, and the response belongs beside the request it answers.
+# ─────────────────────────────────────────────────────────────────────────────
+[Core/Vixen.Net.Transport.WebSocket/WebSocketUpgrade.cs]
+dotnet_diagnostic.CA5350.severity = none
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Editor/Vixen.Editor.Core/CommandStack.cs
+#
+# CA1711 (identifiers should not have incorrect suffix). The rule reserves
+# `…Stack` for types deriving from System.Collections.Stack, a non-generic .NET
+# 1.0 type nothing should derive from. `CommandStack` is the undo history, and
+# "command stack" is the term docs/plan/11 uses for it and the term every editor
+# uses for it — Photoshop, Blender, Visual Studio. It is also literally a stack
+# in the sense that matters: entries are pushed, undone from the top, and moved
+# to a second stack. Naming it `CommandHistory` to satisfy the rule would rename
+# the concept the whole document model is built around.
+# ─────────────────────────────────────────────────────────────────────────────
+[Editor/Vixen.Editor.Core/CommandStack.cs]
+dotnet_diagnostic.CA1711.severity = none
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Editor/Vixen.Editor.Core/IEditorCommand.cs
+#
+# CA1716 (identifiers should not match keywords). `Do` is a Visual Basic keyword,
+# and the rule's concern is a VB consumer implementing the interface. Vixen has
+# no VB surface and will not grow one; against that, `Do`/`Undo` is the pair
+# docs/plan/11 specifies and the pair that reads correctly at every call site —
+# `command.Do(context)` beside `command.Undo(context)`. The alternatives break
+# the symmetry (`Apply`/`Undo`) or collide with the stack's own vocabulary
+# (`Execute`, which is what CommandStack.Execute does *to* a command).
+# ─────────────────────────────────────────────────────────────────────────────
+[Editor/Vixen.Editor.Core/IEditorCommand.cs]
+dotnet_diagnostic.CA1716.severity = none
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Core/Vixen.Audio/Devices/AudioDevice.cs
+#
+# CA1716 (identifier conflicts with a reserved language keyword). `Stop` is a
+# statement in Visual Basic, so the rule wants `IAudioDevice.Stop()` renamed.
+# `Start`/`Stop` is what every audio API in existence calls this pair — OpenAL's
+# source play/stop, WebAudio's `AudioBufferSourceNode.start`/`stop`, WASAPI's
+# `IAudioClient::Start`/`Stop` — and a backend author implementing this interface
+# is coming straight from one of them. Renaming it to `Halt` or `Cease` to spare
+# a VB consumer an escaped identifier would cost every reader of the contract
+# more than it saves the consumer, and there is no VB in this repository.
+#
+# Scoped to the files that declare the interfaces. A stray `Stop` on some other
+# virtual member elsewhere is still reported. AudioCaptureDevice.cs is the same
+# contract pointing at a microphone, with the same `Start`/`Stop` pair for the
+# same reason.
+# ─────────────────────────────────────────────────────────────────────────────
+[Core/Vixen.Audio/Devices/{AudioDevice,AudioCaptureDevice}.cs]
+dotnet_diagnostic.CA1716.severity = none
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Core/Vixen.Rendering/Lighting/SphericalHarmonics.cs
+#
+# CA1051 (do not declare visible instance fields). `ShCoefficients` is the CPU
+# side of a struct the GPU reads: Raven/Library/Shading/Ibl.rvn declares the same
+# nine `float3`s in the same order, and the nine names are the parameter names a
+# host writes them under. It is also accumulated in place — `Accumulate` takes it
+# by `ref` and adds a texel's contribution to each band — which is the same
+# `lights[i].Intensity = …` trap Lights.cs is exempted for, one level down.
+# ─────────────────────────────────────────────────────────────────────────────
+[Core/Vixen.Rendering/Lighting/SphericalHarmonics.cs]
+dotnet_diagnostic.CA1051.severity = none
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Core/Vixen.Navigation/NavMeshTileData.cs
+#
+# CA1051 (do not declare visible instance fields). `NavMeshPolyData` is one
+# element of the array a baked tile is, and the same reasoning as
+# Vixen.Rendering/RenderObject.cs applies from both ends: the pathfinder reads it
+# through a `ref` into that array once per polygon it expands, and the baker fills
+# it field by field while building — `polys[i].Area = …` through a property would
+# write to a copy and the write would be lost.
+#
+# It is also the on-disk shape. A tile is a bake artefact, and a layout that a
+# reader can blit is worth more here than a property that could later validate
+# something nothing is in a position to validate.
+# ─────────────────────────────────────────────────────────────────────────────
+[Core/Vixen.Navigation/NavMeshTileData.cs]
+dotnet_diagnostic.CA1051.severity = none
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Core/Vixen.Navigation/NavQueryFilter.cs
+#
+# CA1711 (identifiers should not have incorrect suffix). The rule reserves the
+# `Flags` suffix. `NavPolyFlags` is a `[Flags]` enum whose members are exactly
+# what everyone who has ever configured a navmesh filter calls the polygon flags —
+# the word is the domain's, and the filter beside it has `IncludeFlags` and
+# `ExcludeFlags` for the same reason. Renaming the type would leave the two
+# properties reading as flags of a thing that is not called flags.
+# ─────────────────────────────────────────────────────────────────────────────
+[Core/Vixen.Navigation/NavQueryFilter.cs]
+dotnet_diagnostic.CA1711.severity = none
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Core/Vixen.Navigation/Agents/NavPathQueue.cs
+#
+# CA1711 (identifiers should not have incorrect suffix). The rule reserves the
+# `Queue` suffix for types implementing IEnumerable. This one is a queue of
+# *requests* in the ordinary sense of the word — submit, wait, collect — and is
+# deliberately not enumerable: what it holds are slots with generations, and
+# handing them out as a sequence would invite iteration over results whose
+# lifetime is "until somebody takes them". Detour calls the same thing a path
+# queue, which is what anybody looking for it will search for.
+# ─────────────────────────────────────────────────────────────────────────────
+[Core/Vixen.Navigation/Agents/NavPathQueue.cs]
+dotnet_diagnostic.CA1711.severity = none
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Core/Vixen.Ai/Goap/GoapPlanQueue.cs
+#
+# CA1711 (identifiers should not have incorrect suffix). The same case
+# NavPathQueue makes, and deliberately the same word: this is a queue of resolve
+# *requests* — submit, wait, collect — and is not enumerable, because what it
+# holds are slots with generations whose lifetime is "until somebody takes them".
+# docs/plan/37 § D16 names it after NavPathQueue on purpose, since it is that
+# arrangement for that reason, and a reader who has met one has met both.
+# ─────────────────────────────────────────────────────────────────────────────
+[Core/Vixen.Ai/Goap/GoapPlanQueue.cs]
+dotnet_diagnostic.CA1711.severity = none
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Core/Vixen.Vfx/VfxAttribute.cs
+#
+# CA1711 (identifiers should not have incorrect suffix). The rule reserves the
+# `Attribute` suffix for types deriving from System.Attribute. This one is a
+# particle *attribute* — position, velocity, colour — which is the word every
+# system of this kind uses for the idea and the word docs/plan/06 uses for it:
+# "SoA NativeArray per attribute, with attributes allocated only if the graph
+# uses them". Unity's VFX Graph and Stride's particle runtime both call them
+# attributes too, so it is also the term anybody reading this code arrives with.
+# Renaming it would rename the concept the whole storage design is built around,
+# and there is no System.Attribute anywhere near it to be confused with.
+# ─────────────────────────────────────────────────────────────────────────────
+[Core/Vixen.Vfx/VfxAttribute.cs]
+dotnet_diagnostic.CA1711.severity = none
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Core/Vixen.Rendering/Features/ParticleRenderFeature.cs
+#
+# CA1051 (do not declare visible instance fields). `ParticleDraw` is an element
+# of a RenderDataHolder array, exactly as `MeshDraw` is — native memory, written
+# per object in the prepare loop and read per node in the draw loop — so it is a
+# data layout rather than an object, and a property returning a copy would
+# silently drop a write. Same rule, same reason, one file further along.
+# ─────────────────────────────────────────────────────────────────────────────
+[Core/Vixen.Rendering/Features/ParticleRenderFeature.cs]
+dotnet_diagnostic.CA1051.severity = none
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Core/Vixen.Rendering/Features/SpriteRenderFeature.cs
+#
+# CA1051 (do not declare visible instance fields). `SpriteDraw` is the third of
+# these — an element of a RenderDataHolder array, written per object in the
+# prepare loop and read per node in the draw loop, exactly as `MeshDraw` and
+# `ParticleDraw` are. Same rule, same reason, one file further along again.
+# ─────────────────────────────────────────────────────────────────────────────
+[Core/Vixen.Rendering/Features/SpriteRenderFeature.cs]
+dotnet_diagnostic.CA1051.severity = none
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Core/Vixen.Ui.Controls/Selects.cs
+#
+# CA1716 (identifiers should not match keywords). `Select` and `Option` are both
+# Visual Basic statements, so the rule wants both types renamed. They are the
+# names docs/plan/09 § "Control library" gives these controls, they are the names
+# HTML gives them — `<select>` with `<option>` inside it — and they are what every
+# designer handing over a mock-up calls them. A control library whose select is
+# called something else is a control library nobody can search.
+#
+# Scoped to the one file that declares them. `Select` on some other member
+# elsewhere is still reported — including, deliberately, nothing in this file but
+# `MultiSelect.Select`, which is the same word about the same thing.
+# ─────────────────────────────────────────────────────────────────────────────
+[Core/Vixen.Ui.Controls/Selects.cs]
+dotnet_diagnostic.CA1716.severity = none
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Editor/Vixen.Editor.Inspector.Tests/Fixtures.cs
+#
+# CA1051 (do not declare visible instance fields). These types exist to exercise
+# every shape the inspector's generator has to handle, and a public mutable field
+# is the shape doc 11's own example uses — `[Inspector] public float Roughness =
+# 0.2f;`. A field is also the only member kind that can be reached by `ref`, which
+# is the accessor the generator emits and the reason a struct member is editable
+# in place; a fixture without one would leave that path untested.
+#
+# The same argument the [DataContract] fixtures make, and scoped the same way: to
+# the one file whose job is to be every shape at once.
+# ─────────────────────────────────────────────────────────────────────────────
+[Editor/Vixen.Editor.Inspector.Tests/Fixtures.cs]
+dotnet_diagnostic.CA1051.severity = none
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Core/Vixen.Engine.Tests/SceneAssetTests.cs
+#
+# CA1051 (do not declare visible instance fields). The two components declared
+# here stand in for a game's own, and every ECS component in the engine —
+# LocalTransform, Camera, SceneTag — is public mutable fields, because a chunk
+# column is written through a `ref` to the value. A fixture with properties
+# instead would compile a shape no component in the repository has, and would
+# quietly stop testing what a game's components actually do.
+# ─────────────────────────────────────────────────────────────────────────────
+[Core/Vixen.Engine.Tests/SceneAssetTests.cs]
+dotnet_diagnostic.CA1051.severity = none
+
+# ==============================================================================
+# VXIO0001 — System.IO.Path in engine code.
+#
+# The rule is docs/plan/10 § "Cross-platform discipline": only virtual paths in
+# engine code. The analyzer is Core/Vixen.Core.IO.Analyzers, referenced from
+# Directory.Build.props by every Core project that is not a test, a generator, or
+# the analyzer itself. Platform/**, Editor/**, Tools/** and Raven/** do not get it
+# at all — translating to a host path is their job.
+#
+# Everything below is a host-filesystem layer inside Core: code whose work is to
+# turn a path the engine gave it into one the operating system understands, or to
+# put a file somewhere on a developer's disk. Switching the rule off there is what
+# makes it enforceable everywhere else. Scoped to the file, never to the project,
+# so the next file in the same library is still reported.
+# ==============================================================================
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Core/Vixen.Core.IO/PhysicalFileProvider.cs
+#
+# The translation itself, and the reason every other file can be held to the rule:
+# a VirtualPath in, a host path out, once, here. It is also where the separator is
+# swapped and where the case probe lives, both of which are questions about the
+# filesystem underneath rather than about the path.
+# ─────────────────────────────────────────────────────────────────────────────
+[Core/Vixen.Core.IO/PhysicalFileProvider.cs]
+dotnet_diagnostic.VXIO0001.severity = none
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Core/Vixen.Core.IO/Watch/FileWatcher.cs
+#
+# FileSystemWatcher reports host paths and knows nothing else. Turning one back
+# into a mount-relative VirtualPath — rooting it, relativising it, swapping the
+# separator — is the whole of what this file adds to the BCL type.
+# ─────────────────────────────────────────────────────────────────────────────
+[Core/Vixen.Core.IO/Watch/FileWatcher.cs]
+dotnet_diagnostic.VXIO0001.severity = none
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Core/Vixen.Ui.Testing/Visual/*.cs
+#
+# Golden-image plumbing: the baseline beside the test source, the rendered and
+# diff images under artifacts/, the directory walk that finds the project root
+# from AppContext.BaseDirectory. None of it is content a build ships or a player
+# addresses — it is files on the disk of whoever ran the tests, and the paths come
+# from MSBuild and the test host rather than from a mount.
+# ─────────────────────────────────────────────────────────────────────────────
+[Core/Vixen.Ui.Testing/Visual/*.cs]
+dotnet_diagnostic.VXIO0001.severity = none
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Core/Vixen.Core.Imaging/PngCodec.cs
+#
+# The same argument as the block above, which is where this file used to be. A
+# PNG written by this codec is a picture for a person to open — a golden
+# reference, a diff under artifacts/, the frame a --vixen-capture run was asked
+# for — and the directory it goes in arrived from a command line or from MSBuild.
+# None of it is content a build ships or a player addresses, so there is no mount
+# it could be named against, and the one Path call is the mkdir -p that keeps a
+# capture from failing on a directory nobody created.
+#
+# ⚠ Encode and Decode are the assembly's real surface and touch no path at all.
+# A caller that does have a mount reads its own bytes and calls those.
+# ─────────────────────────────────────────────────────────────────────────────
+[Core/Vixen.Core.Imaging/PngCodec.cs]
+dotnet_diagnostic.VXIO0001.severity = none
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Core/Vixen.App.Hosting/FrameCapture.cs
+#
+# --vixen-capture names a directory on the machine running the game, the way
+# --vixen-log-file does, and joins one file name onto it. It is an operator's
+# path from a command line, not an address into content: no mount contains the
+# place a person wants a screenshot put, and the file is read by an image viewer
+# rather than by the engine. One Path.Combine, in the one file that has it.
+# ─────────────────────────────────────────────────────────────────────────────
+[Core/Vixen.App.Hosting/FrameCapture.cs]
+dotnet_diagnostic.VXIO0001.severity = none
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Core/Vixen.Fuzz/Corpus.cs
+#
+# A fuzz corpus is a directory of loose .bin files — Core/Vixen.Fuzz.Tests/
+# Corpus, committed and replayed before every run — that the harness reads and
+# adds to when a target fails. It has no place in a mount table: nothing in a
+# shipped game ever reads it, and the directory arrives as an argument.
+# ─────────────────────────────────────────────────────────────────────────────
+[Core/Vixen.Fuzz/Corpus.cs]
+dotnet_diagnostic.VXIO0001.severity = none
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Core/Vixen.Shaders/EffectDiskCache.cs
+#
+# Named for what it is. The host picks a directory — a build's obj/, an editor's
+# project cache — and this writes one file per compiled variant into it. The cache
+# is not content, is not addressed, and is deleted by whoever made it.
+# ─────────────────────────────────────────────────────────────────────────────
+[Core/Vixen.Shaders/EffectDiskCache.cs]
+dotnet_diagnostic.VXIO0001.severity = none
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Core/Vixen.Video/VideoContent.cs
+#
+# FileVideoContentSource is the loose-files source: a cutscene is streamed rather
+# than loaded, so it is one of the few things a shipping title leaves beside the
+# executable instead of packing. The containment check that catches an absolute
+# path baked into a clip is a comparison of two host paths, which is exactly what
+# System.IO.Path is for. A title that would rather address its videos through a
+# mount implements IVideoContentSource itself; that is what the interface is for.
+# ─────────────────────────────────────────────────────────────────────────────
+[Core/Vixen.Video/VideoContent.cs]
+dotnet_diagnostic.VXIO0001.severity = none
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Core/Vixen.Ui.HotReload/HotReloadWatcher.cs
+#
+# The same argument as FileWatcher, for the same reason: what arrives from
+# FileSystemWatcher is a host path, and rooting it is how it is recognised again
+# when the editor saves. Editor-time only; a shipped game does not construct one.
+# ─────────────────────────────────────────────────────────────────────────────
+[Core/Vixen.Ui.HotReload/HotReloadWatcher.cs]
+dotnet_diagnostic.VXIO0001.severity = none
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Core/Vixen.Platform/StandardFileSystemHost.cs
+#
+# The other end of the same translation. This is what *supplies* the host paths a
+# mount table is built from — where the OS says an application's data, cache and
+# temporary directories are — so it is upstream of every VirtualPath in the
+# process rather than a consumer of one. The rule's own statement of scope says
+# "System.IO.Path is for Vixen.Platform.*", and that did not stop being true when
+# the contracts moved into Core; what moved was the folder, not the job.
+# ─────────────────────────────────────────────────────────────────────────────
+[Core/Vixen.Platform/StandardFileSystemHost.cs]
+dotnet_diagnostic.VXIO0001.severity = none
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Core/Vixen.App.Hosting/ContentMount.cs
+#
+# One directory, named on the command line by whoever launched the process:
+# `--vixen-content <path>` is how a developer points a build at loose content
+# that is not beside the executable. It is rooted and probed once and then
+# mounted, after which every read through it is a VirtualPath like any other.
+# ─────────────────────────────────────────────────────────────────────────────
+[Core/Vixen.App.Hosting/ContentMount.cs]
+dotnet_diagnostic.VXIO0001.severity = none
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Editor/Vixen.Editor.AssetEditors/Compositor/*.cs
+#
+# CA1051 (do not declare visible instance fields). A node's ports *are* its
+# fields — docs/plan/11's design, and what lets a node read as
+# `[Input] public Flow In;`. `Vixen.Editor.ShaderGraph` and
+# `Vixen.Editor.VfxGraph` suppress it for their whole assembly for the same
+# reason; this one holds documents and views as well as nodes, so the exemption
+# is scoped to the folder the node library lives in rather than to the project.
+# ─────────────────────────────────────────────────────────────────────────────
+[Editor/Vixen.Editor.AssetEditors/Compositor/*.cs]
+dotnet_diagnostic.CA1051.severity = none
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Core/Vixen.Ai/BehaviorTrees/BehaviorTreeTemplate.cs
+#
+# CA1051 (do not declare visible instance fields). `BehaviorNode` is an element
+# of a flat array a compiler writes once and a stepper then reads through
+# `ref readonly` several times per node per step — docs/plan/37 § D3, where the
+# whole point is that the tree is a layout rather than an object graph. It is the
+# same case `MeshDraw` and `RenderObject` are exempted for above: a property
+# returning a copy would silently drop the compiler's writes, and the layout is
+# the feature rather than an implementation detail somebody might later want to
+# put validation in front of.
+# ─────────────────────────────────────────────────────────────────────────────
+[Core/Vixen.Ai/BehaviorTrees/BehaviorTreeTemplate.cs]
+dotnet_diagnostic.CA1051.severity = none
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Gameplay/Vixen.Gameplay/Definitions/DefinitionRegistry.cs
+#
+# CA1716 (identifier conflicts with a reserved language keyword). `Get` is a
+# property accessor keyword in Visual Basic, so the rule wants
+# `IDefinitionRegistry.Get<T>` renamed. `defs.Get<ItemDefinition>(id)` is the
+# call docs/plan/28 § Definitions writes, it is the pair to `TryGet` that every
+# .NET reader already knows, and the gameplay libraries will say it a few hundred
+# times. There is no VB in this repository and there will not be one.
+#
+# Scoped to the file that declares the interface. A stray `Get` on some other
+# virtual member elsewhere is still reported.
+# ─────────────────────────────────────────────────────────────────────────────
+[Gameplay/Vixen.Gameplay/Definitions/DefinitionRegistry.cs]
+dotnet_diagnostic.CA1716.severity = none
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Gameplay/Vixen.Gameplay.Combat/DamagePipeline.cs
+#
+# CA1051 (do not declare visible instance fields). `DamageEvent` is a mutable
+# struct passed by `ref` through six pipeline stages, and one of its members is
+# the `GameplayRandom` every roll in the pipeline comes out of.
+#
+# ⚠ That member cannot be a property, and the reason is a silent bug rather than
+# a preference: `hit.Random.Chance(…)` through a property getter mutates a *copy*
+# of the stream and discards the advance, so every rule that rolled would draw the
+# same number — the crit rule and a game's proc rule would agree perfectly, for
+# ever, and nothing would report it. Once one member has to be a field the rest
+# follow, because a struct that is half fields and half properties invites exactly
+# that mistake to be made again by whoever adds the seventh member.
+#
+# Scoped to the one file that declares the event. A stray public field elsewhere
+# in the library is still reported.
+# ─────────────────────────────────────────────────────────────────────────────
+[Gameplay/Vixen.Gameplay.Combat/DamagePipeline.cs]
+dotnet_diagnostic.CA1051.severity = none

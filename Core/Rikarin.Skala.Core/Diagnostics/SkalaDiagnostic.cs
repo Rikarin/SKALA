@@ -61,4 +61,33 @@ public static class ConfigDiagnosticIds {
 
     /// <summary>A setting is on that Skala cannot honour, and that makes the IDE and the oracle disagree.</summary>
     public const string UnhonourableSetting = "SK9006";
+
+    /// <summary>
+    /// The managed canonical block does not hash to what its own marker says. Somebody edited it.
+    /// This is the gate condition: drift is a finding, not a surprise (docs/plan/03 § "Canonical
+    /// distribution").
+    /// </summary>
+    public const string CanonicalDrift = "SK9008";
+
+    /// <summary>
+    /// The repository is on an older canonical than the tool carries. Info, never a failure — a
+    /// canonical bump must not turn eighteen repositories red on the day it is published.
+    /// </summary>
+    public const string CanonicalBehind = "SK9009";
+
+    /// <summary>
+    /// The local block overrides an option the canonical block also sets. Info: this is the
+    /// mechanism working, and the report is the review artefact.
+    /// </summary>
+    public const string CanonicalLocalOverride = "SK9013";
+
+    /// <summary>The repository's <c>.editorconfig</c> carries no canonical block at all.</summary>
+    public const string CanonicalUnmanaged = "SK9014";
+
+    /// <summary>
+    /// <c>skala.jsonc</c> tried to pin a canonical version. The pin lives in the
+    /// <c>.editorconfig</c> marker, beside the bytes it describes, because a version recorded away
+    /// from the thing it versions is a version that drifts.
+    /// </summary>
+    public const string CanonicalVersionInToolConfig = "SK9012";
 }

@@ -47,6 +47,8 @@ Skala/
 ├── Reporting/
 │   ├── Rikarin.Skala.Reporting/             # SARIF model, renderers, baselines, gates
 │   └── Rikarin.Skala.Reporting.Tests/
+├── Distribution/
+│   └── Rikarin.Skala.Canonical/             # the canonical .editorconfig, packed and embedded
 ├── Tools/
 │   ├── Rikarin.Skala.Cli/                   # dotnet tool `skala`
 │   ├── Rikarin.Skala.Cli.Tests/
@@ -111,7 +113,8 @@ what MSBuild and MCP need.
 | `Rikarin.Skala.Cli` | .NET tool (`skala`) | Everything, self-contained-ish | `dotnet tool install -g` |
 | `Rikarin.Skala.Rules` | Analyzer | `analyzers/dotnet/cs/*.dll`, `.editorconfig` defaults | `PackageReference` with `PrivateAssets=all` |
 | `Rikarin.Skala.MSBuild` | Build | `build/*.targets`, the task, a tool reference | `PackageReference` in `Directory.Build.props` |
-| `Rikarin.Skala.Sdk` | Meta | References the two above and drops a starter `.editorconfig` | One-line adoption in a new repo |
+| `Rikarin.Skala.Canonical` | Content | `content/canonical.editorconfig`, its manifest, and a check-only target | `PackageReference`; installed by `skala config sync` ([03](03-configuration-model.md) § "Canonical distribution") |
+| `Rikarin.Skala.Sdk` | Meta | References the three above | One-line adoption in a new repo |
 
 The API packages (`Core`, `Formatting*`, `Analysis`) are **not published** until something outside
 this repository needs them. A published assembly is a compatibility promise, and the option model

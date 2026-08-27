@@ -1,0 +1,84 @@
+<Project>
+
+  <!--
+    Makes "this repository is not on the canonical this package carries" visible in the build.
+
+    ⚠ This target NEVER WRITES. Dropping the .editorconfig from a build target was measured and
+    rejected: on a probe repository the config took three builds to become effective (build 1
+    installed it after the compiler had already been handed the old configuration; build 2 was
+    incremental and skipped CoreCompile entirely; only build 3 failed), and the first two of those
+    were green. A gate whose first two runs pass is not a gate. It also writes into the source tree
+    from parallel project builds, and changes a file Rider has open. docs/plan/03 § "Canonical
+    distribution across repositories" has the numbers.
+
+    What this target does instead is the half of the check that needs no tooling: compare the
+    version identity recorded in the repository's own marker against the one this package carries.
+    It cannot detect an *edit* to the managed block — that needs a SHA-256 of the block, which
+    MSBuild has no way to compute, and a second implementation of Skala's marker grammar in MSBuild
+    would be a second thing to keep in sync. `skala config diff` with the canonical switch is the
+    authoritative check and the gate condition; the messages below spell it.
+
+    (An XML comment cannot contain a double hyphen, which is why the switch is not written out
+    here. The Text attributes have the exact spelling.)
+  -->
+
+  <PropertyGroup>
+    <SkalaCanonicalCheck Condition="'$(SkalaCanonicalCheck)' == ''">true</SkalaCanonicalCheck>
+
+    <!-- `warning`, `error`, or `message` for a repository that is deliberately behind. -->
+    <SkalaCanonicalCheckSeverity Condition="'$(SkalaCanonicalCheckSeverity)' == ''">message</SkalaCanonicalCheckSeverity>
+
+    <SkalaCanonicalPayload Condition="'$(SkalaCanonicalPayload)' == ''">$(MSBuildThisFileDirectory)../content/canonical.editorconfig</SkalaCanonicalPayload>
+    <SkalaCanonicalManifest Condition="'$(SkalaCanonicalManifest)' == ''">$(MSBuildThisFileDirectory)../content/canonical.json</SkalaCanonicalManifest>
+
+    <!--
+      The .editorconfig carrying the marker. Defaults to the nearest one at or above the project;
+      set it explicitly in Directory.Build.props when projects have their own.
+    -->
+    <SkalaCanonicalEditorConfig Condition="'$(SkalaCanonicalEditorConfig)' == ''">$([MSBuild]::GetPathOfFileAbove('.editorconfig', '$(MSBuildProjectDirectory)'))</SkalaCanonicalEditorConfig>
+  </PropertyGroup>
+
+  <Target Name="SkalaCanonicalVerify"
+          BeforeTargets="CoreCompile"
+          Condition="'$(SkalaCanonicalCheck)' == 'true' and Exists('$(SkalaCanonicalEditorConfig)') and Exists('$(SkalaCanonicalManifest)')">
+
+    <PropertyGroup>
+      <!--
+        Both reads are whole-file, and both files are read through a Regex so that neither ends up
+        as an MSBuild property (the canonical is ~295 kB; a property that size lands in every
+        binlog). The match is anchored on a literal prefix and hits within the first line.
+      -->
+      <_SkalaRepositorySha>$([System.Text.RegularExpressions.Regex]::Match($([System.IO.File]::ReadAllText('$(SkalaCanonicalEditorConfig)')), 'skala:canonical begin[^\n]*sha256=([0-9a-f]{64})').Value)</_SkalaRepositorySha>
+      <_SkalaPackagedSha>$([System.Text.RegularExpressions.Regex]::Match($([System.IO.File]::ReadAllText('$(SkalaCanonicalManifest)')), '[0-9a-f]{64}').Value)</_SkalaPackagedSha>
+      <!-- A lookbehind, so that .Value is the version itself rather than the whole `"version": "x"`. -->
+      <_SkalaPackagedVersion>$([System.Text.RegularExpressions.Regex]::Match($([System.IO.File]::ReadAllText('$(SkalaCanonicalManifest)')), '(?&lt;=&quot;version&quot;:\s*&quot;)[^&quot;]*').Value)</_SkalaPackagedVersion>
+    </PropertyGroup>
+
+    <!--
+      No marker at all: the repository has not adopted the canonical. Say so once, quietly. A
+      package that shouts at a repository for not having opted in yet gets removed.
+    -->
+    <Message Condition="'$(_SkalaRepositorySha)' == ''"
+             Importance="normal"
+             Text="Skala: $(SkalaCanonicalEditorConfig) carries no canonical block. `skala config sync --apply` adopts it." />
+
+    <Message Condition="'$(_SkalaRepositorySha)' != '' and $(_SkalaRepositorySha.EndsWith('$(_SkalaPackagedSha)'))"
+             Importance="low"
+             Text="Skala: canonical block matches Rikarin.Skala.Canonical ($(_SkalaPackagedVersion))." />
+
+    <Message Condition="'$(SkalaCanonicalCheckSeverity)' == 'message' and '$(_SkalaRepositorySha)' != '' and !$(_SkalaRepositorySha.EndsWith('$(_SkalaPackagedSha)'))"
+             Importance="high"
+             Text="Skala: this repository's canonical block is not the one Rikarin.Skala.Canonical carries ($(_SkalaPackagedVersion)). Run `skala config diff --canonical` to see whether that is a pending upgrade or drift." />
+
+    <Warning Condition="'$(SkalaCanonicalCheckSeverity)' == 'warning' and '$(_SkalaRepositorySha)' != '' and !$(_SkalaRepositorySha.EndsWith('$(_SkalaPackagedSha)'))"
+             Code="SK9009"
+             File="$(SkalaCanonicalEditorConfig)"
+             Text="This repository's canonical block is not the one Rikarin.Skala.Canonical carries ($(_SkalaPackagedVersion)). Run `skala config diff --canonical`." />
+
+    <Error Condition="'$(SkalaCanonicalCheckSeverity)' == 'error' and '$(_SkalaRepositorySha)' != '' and !$(_SkalaRepositorySha.EndsWith('$(_SkalaPackagedSha)'))"
+           Code="SK9009"
+           File="$(SkalaCanonicalEditorConfig)"
+           Text="This repository's canonical block is not the one Rikarin.Skala.Canonical carries ($(_SkalaPackagedVersion)). Run `skala config diff --canonical`." />
+  </Target>
+
+</Project>

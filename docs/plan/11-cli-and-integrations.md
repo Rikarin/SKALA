@@ -118,6 +118,7 @@ table.
 ## CI
 
 ```yaml
+- run: skala config diff --canonical          # exits 3 if the managed block has been edited
 - run: dotnet build -bl:artifacts/build.binlog
 - run: skala check --load=binlog --binlog artifacts/build.binlog
                    --gate ci --since origin/${{ github.base_ref }}
@@ -146,7 +147,10 @@ Target Lint => _ => _
 
 The order matters, because the wrong order produces a 40 000-line first diff and a reverted commit.
 
-1. `cp editor_config_template .editorconfig`, add `root = true`.
+1. `skala config sync --apply` — writes the canonical block and preserves whatever `.editorconfig`
+   was already there, verbatim, below the `skala:local begin` marker
+   ([03](03-configuration-model.md) § "Canonical distribution across repositories"). On a repository
+   with existing path-scoped sections this is the whole migration, and its git diff is reviewable.
 2. `skala config check` — read the tier report and the contradictions. Fix the config, not the code.
 3. `skala format --check --diff | head -200` — look at what it *would* do, on a branch.
 4. `skala format` in one commit, alone, with a message saying so. Add its SHA to
@@ -168,6 +172,7 @@ Steps 4 and 6 are the two that make adoption survivable on a 1.35 M-line tree, a
 | `dotnet tool install` in a local manifest | pinned per repository — ⚠ the recommended form, because a formatter whose version drifts between developers reformats the tree back and forth |
 | `PackageReference Rikarin.Skala.Rules` | analyzers in build and IDE |
 | `PackageReference Rikarin.Skala.MSBuild` | the build target |
+| `PackageReference Rikarin.Skala.Canonical` | the canonical `.editorconfig`, and a 5 ms build-time check that the repository is on it |
 | GitHub Releases | standalone NativeAOT binaries per RID, for CI images and hooks |
 | GitHub Action | a thin wrapper that installs the pinned version and runs it |
 
