@@ -535,8 +535,8 @@ which is a different quantity and the one doc 16 § R3 keeps having to name:
   `MemoryStream`, where `Stream.DisposeAsync` calls `Dispose` and the asynchronous path buys a state
   machine and nothing else. Correct, and a baseline entry.
 
-⚠ **Every fix was applied and re-bound, on both trees and in the harness.** Over Vixen, 243 fixes
-across 75 files: **128 833 compiler errors before, 128 821 after, 0 `(file, id)` pairs worse than
+⚠ **Every fix was applied and re-bound, on both trees and in the harness.** Over Vixen, 236 fixes
+across 74 files: **128 833 compiler errors before, 128 821 after, 0 `(file, id)` pairs worse than
 before**. Over `corpus/real`, 172 fixes across 66 files, 15 743 → 15 731, same zero. And the harness
 now asks the question the audit cannot: `EveryFix_SilencesTheRuleAndIntroducesNoDiagnostic` applies a
 fixture's own fix, re-binds it, and fails if the rule still fires or if a diagnostic appeared that
