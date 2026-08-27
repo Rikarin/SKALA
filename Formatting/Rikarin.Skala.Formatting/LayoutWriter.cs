@@ -31,7 +31,22 @@ public enum VerbatimFlags {
     AtColumnZero = 1,
 
     /// <summary>The text already carries its own leading indentation; write it as-is at the line start.</summary>
-    SelfIndented = 2
+    SelfIndented = 2,
+
+    /// <summary>
+    /// A multi-line raw string literal: its interior lines and its closing delimiter move with the
+    /// opening one. <c>indent_raw_literal_string = align</c>.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ The one re-indentation in the formatter that could change a string's value, and the reason
+    /// it does not is that it is a <em>uniform shift</em>. C# strips the closing delimiter's own
+    /// whitespace prefix from every line of a raw literal, so moving every interior line and the
+    /// closing delimiter by the same number of columns leaves the stripped result identical —
+    /// character for character, and the token-equivalence check would abort the file if it did not.
+    /// Re-indenting the lines independently, or moving the content without the delimiter, changes
+    /// what the program prints.
+    /// </remarks>
+    Realign = 4
 }
 
 /// <summary>
@@ -346,6 +361,65 @@ public sealed class LayoutWriter {
     }
 
     /// <summary>
+    /// Shifts a multi-line raw string literal so that its closing delimiter lands at
+    /// <paramref name="column"/>.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ <c>indent_raw_literal_string = align</c> aligns to the column of the opening quotes, which
+    /// is where this token starts. Established against the oracle, including the detail that an
+    /// interpolated opener aligns to its quotes and not to its dollar sign — the content lands one
+    /// column further right than for a plain literal in the same place.
+    /// <para>
+    /// ⚠ Whitespace-only lines are left exactly as they are. C# treats a line whose whitespace is
+    /// shorter than the closing delimiter's as empty rather than as an error, so shifting one is
+    /// both unnecessary and, when the shift is negative, impossible.
+    /// </para>
+    /// </remarks>
+    static string Realign(string text, int column) {
+        var lines = text.Split('\n');
+        if (lines.Length < 2) {
+            return text;
+        }
+
+        var closer = lines[^1];
+        var current = 0;
+        while (current < closer.Length && closer[current] is ' ' or '\t') {
+            current++;
+        }
+
+        var shift = column - current;
+        if (shift == 0) {
+            return text;
+        }
+
+        var builder = new StringBuilder(text.Length + (Math.Abs(shift) + 1) * lines.Length);
+        builder.Append(lines[0]);
+        for (var i = 1; i < lines.Length; i++) {
+            builder.Append('\n');
+            var line = lines[i];
+            var body = line.EndsWith('\r') ? line[..^1] : line;
+            if (body.AsSpan().TrimStart(" \t").IsEmpty) {
+                builder.Append(line);
+                continue;
+            }
+
+            if (shift > 0) {
+                builder.Append(' ', shift).Append(line);
+                continue;
+            }
+
+            var removable = 0;
+            while (removable < -shift && removable < body.Length && body[removable] is ' ' or '\t') {
+                removable++;
+            }
+
+            builder.Append(line, removable, line.Length - removable);
+        }
+
+        return builder.ToString();
+    }
+
+    /// <summary>
     /// How much of the current line is still to come after this node, up to the next break.
     /// </summary>
     /// <remarks>
@@ -467,6 +541,15 @@ public sealed class LayoutWriter {
     }
 
     void WritePiece(string text, SourceSpan source, VerbatimFlags flags) {
+        if ((flags & VerbatimFlags.Realign) != 0) {
+            text = Realign(
+                text,
+                _atLineStart
+                    ? (_pendingCloserLevel ?? Effective()) * _indentWidth
+                    : _column + (_pendingSpace ? 1 : 0)
+            );
+        }
+
         if (_atLineStart) {
             if ((flags & VerbatimFlags.AtColumnZero) == 0 && (flags & VerbatimFlags.SelfIndented) == 0) {
                 var level = _pendingCloserLevel ?? Effective();

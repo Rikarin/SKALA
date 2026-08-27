@@ -848,7 +848,17 @@ public sealed partial class CSharpDocumentBuilder {
 
         switch (piece.Kind) {
             case PieceKind.Token:
-                _doc.Text(piece.Text, span);
+                // ⚠ `indent_raw_literal_string = align`: a multi-line raw literal's interior and its
+                // closing delimiter move with the opening quotes. The shift is uniform, so the
+                // string's value is unchanged; see VerbatimFlags.Realign.
+                _doc.Text(
+                    piece.Text,
+                    span,
+                    _tokens[piece.TokenIndex].IsKind(SyntaxKind.MultiLineRawStringLiteralToken)
+                    && _options.IndentRawLiteralString == RawStringIndentStyle.Align
+                        ? VerbatimFlags.Realign
+                        : VerbatimFlags.None
+                );
                 break;
 
             case PieceKind.DisabledText:

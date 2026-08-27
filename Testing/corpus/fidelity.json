@@ -1,17 +1,17 @@
 {
   "real": {
-    "LineFidelity": 0.9865,
-    "FileFidelity": 0.6947,
+    "LineFidelity": 0.9886,
+    "FileFidelity": 0.7053,
     "Milestone": "M3 - wrapping, the ordering rule, the trailing-context measure, and blank lines that no longer fire across a preprocessor directive. M2 was 0.9747/0.4947."
   },
   "constructs": {
-    "LineFidelity": 0.9572,
-    "FileFidelity": 0.8922,
+    "LineFidelity": 0.9593,
+    "FileFidelity": 0.8963,
     "Milestone": "M3 - the set grew by 9 files (wrapping/), so this is a different population from M2's 0.9305."
   },
   "pathological": {
-    "LineFidelity": 0.9407,
-    "FileFidelity": 0.7885,
+    "LineFidelity": 0.9473,
+    "FileFidelity": 0.8077,
     "Milestone": "M3. M2 was 0.8843/0.6731."
   },
   "preservation/keep-keep": {

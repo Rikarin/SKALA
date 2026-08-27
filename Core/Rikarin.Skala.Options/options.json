@@ -3282,11 +3282,11 @@
       "type": "enum:RawStringIndentStyle",
       "default": "align",
       "defaultSource": "template",
-      "tier": "D",
+      "tier": "A",
       "construct": "AlignMultilineConstructs",
       "summary": "Align multiline constructs — How to indent raw string literals",
       "since": "0.1",
-      "oracle": null,
+      "oracle": "constructs/trivia/resharper_csharp_indent_raw_literal_string.cs",
       "docs": "https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpIndentStylePageSchema.html#resharper_csharp_indent_raw_literal_string",
       "templateLine": 799,
       "expands": []

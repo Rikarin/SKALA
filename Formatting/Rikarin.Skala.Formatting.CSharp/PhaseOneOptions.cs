@@ -267,6 +267,7 @@ public readonly struct PhaseOneOptions {
         PreferWrapAroundEq = options.GetString(Ids.PreferWrapAroundEq) ?? "default";
 
         // ── Escape hatch ─────────────────────────────────────────────────────────────────────
+        IndentRawLiteralString = (RawStringIndentStyle)options.GetRaw(Ids.IndentRawLiteralString);
         FormatterTagsEnabled = options.GetBool(Ids.FormatterTagsEnabled);
         FormatterOffTag = options.GetString(Ids.FormatterOffTag) ?? "@formatter:off";
         FormatterOnTag = options.GetString(Ids.FormatterOnTag) ?? "@formatter:on";
@@ -522,6 +523,7 @@ public readonly struct PhaseOneOptions {
     public int MaxPrimaryConstructorParametersOnLine { get; }
     public string PreferWrapAroundEq { get; }
 
+    public RawStringIndentStyle IndentRawLiteralString { get; }
     public bool FormatterTagsEnabled { get; }
     public string FormatterOffTag { get; }
     public string FormatterOnTag { get; }
@@ -1133,6 +1135,7 @@ public static class Ids {
     // option changing an output and Tier A would be a claim the corpus cannot support.
     public static readonly OptionId PreferWrapAroundEq = OfInert("resharper_prefer_wrap_around_eq");
 
+    public static readonly OptionId IndentRawLiteralString = Of("resharper_csharp_indent_raw_literal_string");
     public static readonly OptionId FormatterTagsEnabled = Of("resharper_formatter_tags_enabled");
     public static readonly OptionId FormatterOffTag = Of("resharper_formatter_off_tag");
     public static readonly OptionId FormatterOnTag = Of("resharper_formatter_on_tag");

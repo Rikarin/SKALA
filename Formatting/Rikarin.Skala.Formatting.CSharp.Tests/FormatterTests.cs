@@ -358,10 +358,18 @@ public sealed class TriviaTests {
     }
 
     [Fact]
-    public void ARawStringLiteral_IsUntouched() {
+    public void ARawStringLiteral_MovesAsOnePiece() {
+        // ⚠ `indent_raw_literal_string = align` since milestone 3, and this test asserted the
+        // opposite until then: SK-DIV-0003 recorded raw literals as emitted verbatim because
+        // re-indenting one wrongly changes what the program prints. The transformation that is safe
+        // is a *uniform shift* — every interior line and the closing delimiter by the same number of
+        // columns — because C# strips the closing delimiter's own prefix from every line, so the
+        // stripped result is identical. The interior's own relative indentation is preserved: the
+        // `x` line stays two columns further in than the `{  }` line, and the braces inside the
+        // string are untouched.
         const string source = "class C {\n    const string A = \"\"\"\n        {  }\n          x\n        \"\"\";\n}\n";
         Assert.Contains(
-            "\"\"\"\n        {  }\n          x\n        \"\"\"",
+            "\"\"\"\n                     {  }\n                       x\n                     \"\"\"",
             Format.Text(source),
             StringComparison.Ordinal
         );

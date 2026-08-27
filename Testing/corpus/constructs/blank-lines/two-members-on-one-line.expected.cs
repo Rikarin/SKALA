@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:98ff52570e019fac profile=SkalaFormatOnly generated=2026-08-26
+// skala-oracle: resharper=2025.2.6 config=sha256:98ff52570e019fac profile=SkalaFormatOnly generated=2026-08-27
 class C {
     // ⚠ Every member gets a line of its own, and `csharp_preserve_single_line_blocks = true` in the
     // export does not stop it — ReSharper ignores that key. The shape is here for the idempotency
