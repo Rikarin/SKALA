@@ -165,8 +165,51 @@ enough to fire on ordinary code teaches people to switch the category off. So th
 above the corpus p99, six of the seven ship at `hint`, and `SK7010` ships at `none` because turning
 it on produces 1 868 findings on `Testing/corpus` alone.
 
-**Residual risk: medium**, and unchanged. Ten analyzers is more evidence than six and still not
-enough, and M6 *added* to the "measured at zero, tested at nothing" pile rather than draining it.
+⚠ **M7 shipped three more analyzers out of the twenty-three ids in `SK4xxx`/`SK6xxx`/`SK8xxx`, and
+for the first time the binding clause was not the false-positive one.** It was the reference trees
+not containing the shape. The measurements:
+
+| | |
+|---|---|
+| Fixtures | 10 positive, **27 negative** for the three rules |
+| `corpus/real` (380 files) | **1** finding, `SK6003`, read and correct |
+| Vixen (4 681 files, loose + semantic) | **25** findings, all `SK8005`, every one read, **zero false positives** |
+| Fix verification | the ten positive fixtures compiled as one tree: **0 compiler errors before applying every fix, 0 after** |
+
+⚠ **`SK8005`'s twenty-five findings are M6's `SK3002` case again, at four times the scale.** All
+twenty-five are true. Three are the shape the rule exists for — a bare sleep with no deadline
+followed straight by an assertion. Fourteen are a back-off *inside* a `while (… && elapsed <
+patience)` loop, where the sleep is the polling interval rather than the wait. Eight are tests where
+advancing a real clock is the subject: `Wall_time_passing_does_not_advance_the_script`, a frame
+limiter fed a deliberate 50 ms hitch, a runaway-guard watchdog whose case has to be slow. So the
+rule is right 25 times out of 25 and *useful* three times out of 25, which is a different quantity
+and the one this section keeps having to name. It ships at `suggestion` rather than at the `warning`
+its range defaults to, so it never fails a gate.
+
+⚠ **The loose audit's floor was raised before the numbers were believed, and that mattered.** A first
+pass over Vixen reported `SK8005` **zero** times. The reason was not the rule: Vixen builds with
+`<ImplicitUsings>enable</ImplicitUsings>`, the generated `GlobalUsings.g.cs` does not exist in a
+loose compilation, and so `Thread`, `Task` and `List<T>` are unresolved in every file that never
+writes the `using` — 195 724 compiler errors, and every semantic rule quietly answering "no finding"
+for the wrong reason. Handing the audit a stand-in global-usings file dropped the tree to 128 833
+errors and turned that zero into 25, and `SK3002` from 7 into 44. **A semantic rule's zero under
+`--load=loose` is not evidence of anything until the errors around it have been looked at**, which
+is the same asymmetry doc 12 § "Testing the rules" describes and a sharper version of it: the misses
+are silent and they are not small.
+
+⚠ **`SK4010` is a new entry on the "measured at zero, tested at nothing" pile, and `SK8002` is why
+one rule was cut rather than shipped silent.** `SK4010` fires nowhere on either tree; the four
+candidate chains in Vixen are three the rule correctly reads as different shapes and one — an
+indexed `Where((t, i) => …).Any()` — that a guard refuses, so at least the zero has one live guard
+behind it. `SK8002` (`Assert.True(x == y)`) was measured before it was written: 12 396 candidate
+calls in Vixen, 90 of them in the shape the rule would fire on, and **all 90** are cases where the
+rewrite either does not compile or asserts something else. Doc 08 § "What M7 added" has the
+breakdown. A rule that would have been the loudest in the milestone is the one that never existed.
+
+**Residual risk: medium**, and unchanged. Thirteen analyzers is more evidence than ten. M7 drained
+one entry from the "measured at zero" pile (`SK6003` has a corpus finding, `SK8005` has 25) and
+added one (`SK4010`), and it found a *new* way for a measurement to lie — the loose compilation's
+unresolved-symbol floor — which is the kind of thing this section exists to keep writing down.
 
 ### R4 — Scope. This is three products
 
