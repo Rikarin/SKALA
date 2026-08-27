@@ -20,7 +20,13 @@ public enum ReportFormat {
     Github,
 
     /// <summary>The three-bucket agent report (docs/plan/10).</summary>
-    Agent
+    Agent,
+
+    /// <summary><c>skala report --format=markdown</c> — a PR comment.</summary>
+    Markdown,
+
+    /// <summary>JUnit XML, for a CI system that only knows how to render tests.</summary>
+    JUnit
 }
 
 /// <summary>
@@ -39,8 +45,63 @@ public static class Renderer {
             ReportFormat.Json => SarifWriter.Serialize(SarifWriter.Build(report)),
             ReportFormat.Github => Github(report, includeHints),
             ReportFormat.Agent => AgentRenderer.Render(report),
+            ReportFormat.Markdown => MarkdownRenderer.Render(report, includeHints),
+            ReportFormat.JUnit => JUnitRenderer.Render(report, includeHints),
             _ => Terminal(report, includeHints)
         };
+
+    /// <summary>
+    /// <c>--summary</c>: doc 09's last three lines and nothing else.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ Rendered from the same report by the same code as the tail of <see cref="Terminal"/>, not
+    /// re-derived. Two implementations of "the summary" is two chances for the summary to disagree
+    /// with the report it summarises.
+    /// </remarks>
+    public static string Summary(RunReport report) {
+        var builder = new StringBuilder();
+        Tail(builder, report);
+        return builder.ToString();
+    }
+
+    /// <summary>The totals, the metrics and the gate — the three lines doc 09's example ends with.</summary>
+    static void Tail(StringBuilder builder, RunReport report) {
+        builder.Append("  ").AppendLine(ReportTotals.Render(report));
+
+        var thresholds = report.Gate is null ? null : GateThresholds(report);
+        var metrics = report.Metrics.Render(thresholds);
+        if (metrics.Length > 0) {
+            builder.Append("  ").AppendLine(metrics);
+        }
+
+        if (report.Gate is { } gate) {
+            builder.Append("  gate `")
+                .Append(gate.Name)
+                .Append("`: ")
+                .Append(gate.Passed ? "PASS" : "FAIL")
+                .Append(" in ")
+                .Append(FormatDuration(report.Duration))
+                .AppendLine(report.Partial ? "  ·  ⚠ partial run" : string.Empty);
+
+            foreach (var failure in gate.Failures) {
+                builder.Append("    ").AppendLine(failure);
+            }
+
+            return;
+        }
+
+        builder.Append("  ")
+            .Append(FormatDuration(report.Duration))
+            .AppendLine(report.Partial ? "  ·  ⚠ partial run" : string.Empty);
+    }
+
+    /// <summary>
+    /// ⚠ The thresholds are read back off the report's own gate result rather than re-read from
+    /// <c>skala.jsonc</c>. A renderer that re-read the configuration could render a gate line that
+    /// disagrees with the verdict beside it.
+    /// </summary>
+    static System.Collections.Immutable.ImmutableDictionary<string, double>? GateThresholds(RunReport report) =>
+        report.GateThresholds.IsEmpty ? null : report.GateThresholds;
 
     /// <summary>
     /// ⚠ Determinism is enforced after the fact, not during (docs/plan/07 § "Parallelism").
@@ -122,21 +183,7 @@ public static class Renderer {
             builder.AppendLine();
         }
 
-        builder.Append("  ").AppendLine(ReportTotals.Render(report));
-        builder.Append("  ")
-            .Append(FormatDuration(report.Duration))
-            .AppendLine(report.Partial ? "  ·  ⚠ partial run" : string.Empty);
-
-        if (report.Gate is { } gate) {
-            builder.Append("  gate `")
-                .Append(gate.Name)
-                .Append("`: ")
-                .AppendLine(gate.Passed ? "PASS" : "FAIL");
-            foreach (var failure in gate.Failures) {
-                builder.Append("    ").AppendLine(failure);
-            }
-        }
-
+        Tail(builder, report);
         return builder.ToString();
     }
 

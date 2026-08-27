@@ -220,10 +220,67 @@ findings and the modernization set, which is the differentiator) → `SK2xxx`/`S
 replacement's core) → `SK7xxx` (metrics and duplication, needed for the gate) → `SK4xxx`/`SK6xxx` →
 `SK5xxx` last, because security rules that are wrong are worse than absent.
 
+### ⚠ What M6 added: four rules, seven metrics and duplication
+
+M6 is the `SK2xxx`/`SK3xxx` milestone, and it ships **four** analyzers out of the twenty-nine those
+two ranges list. The same bar did the same job it did in M5, and the reasoning is below the table.
+
+| Id | Scope | Default | Fixtures (+/−) | `corpus/real` | Vixen (4 660 files) |
+|---|---|---|---:|---:|---:|
+| `SK2013` exception constructed, not thrown | Semantic | warning | 3 / 6 | 0 | 0 |
+| `SK2015` `throw ex;` resets the stack trace | Syntax | warning | 3 / 7 | 0 | 0 |
+| `SK3001` `async void` outside an event handler | Compilation | ⚠ **none** | 3 / 8 | 0 | 0 |
+| `SK3002` blocking on an async call | Semantic | warning | 4 / 9 | 0 | **7** |
+| `SK7001`–`SK7006`, `SK7010` metrics | Syntax/Semantic | hint … none | 14 / 25 | — | 85 / 768 / 5 / 13 / 197 / 2 / — |
+| `SK7020` duplicated block | Compilation | warning | — | — | **514 groups, 4.8 %** |
+
+⚠ **Only `SK3002` has corpus evidence, and this is the honest part.** Its seven Vixen findings were
+each read: one is a deliberately synchronous public API whose own doc comment argues for blocking,
+and six are the same shape — a test helper draining a child process's `stdout`/`stderr` with
+`ReadToEndAsync()` and then `GetAwaiter().GetResult()` after `WaitForExit()`, which is a documented
+deadlock-avoidance pattern. All seven are *true*; none is something anyone would change, which is
+what a baseline is for. Six of the seven are in `*.Tests` projects, where the `.editorconfig`
+mechanism this document already describes is the right tool rather than a guard inside the rule.
+
+⚠ **`SK2013` and `SK2015` fire zero times on both reference trees, and the zero is real rather than
+absent machinery.** `SK2015` is purely syntactic, so it cannot be silenced by an unresolved symbol:
+a grep finds exactly two `throw <identifier>;` statements in Vixen and one in `corpus/real`, and all
+three are throwing a captured local from outside any `catch` clause — which the rule correctly does
+not report. They are cheap rules with no cache cost, so shipping them enabled costs nothing; their
+evidence is their fixtures, and doc 16 § R3's distinction applies to them exactly as it does to
+`SK1030` and `SK1035`.
+
+⚠ **`SK3001` ships disabled, and the reason is the incremental cache rather than noise.** Deciding
+whether an `async void` method is an event handler needs the whole compilation — the `+=` may be
+anywhere — which makes the rule `Compilation`-scoped and therefore never servable from the per-file
+cache. Enabling it costs every run the warm path that doc 07 § "The incremental cache" promises,
+and it buys nothing measurable: Vixen contains **no `async void` method at all**. So it is correct,
+it is tested, and a repository that has `async void` turns it on knowing what it costs. M6 also fixed
+the guard that made this coherent — `IncrementalAnalysis` now asks whether a compilation-scoped rule
+is *enabled*, not merely supported, so a rule nobody turned on can no longer disable the cache.
+
+⚠ **Two of the twenty-nine were cut outright rather than deferred.** `SK3006` (`async` with no
+`await`) duplicates the compiler's own `CS1998`, which is on by default in every C# project, and a
+rule whose whole content is a second copy of a warning the user already sees is noise with a rule id.
+The rest of `SK2xxx`/`SK3xxx` need either a fix that is a refactor (`SK3004` threading a
+`CancellationToken` through call sites) or a guard that is most of the rule (`SK3501`'s disposal
+paths, `SK3008`'s lock-across-await, which in C# is a compile error in the syntactic case and a
+`SemaphoreSlim` dataflow problem in the real one).
+
+⚠ **The metrics are a different kind of rule and the bar reads differently for them.** A metric has
+no false positives in doc 16 § R3's sense: it reports a measurement against a threshold, and the
+measurement is either right or a bug. What it can be is *useless* — a threshold low enough to fire on
+ordinary code teaches people to switch the category off, which is the same outcome by another route.
+So the defaults sit well above the corpus's p99 rather than at the textbook number, all but `SK7002`
+ship at `hint`, and `SK7010` ships at `none` because enabling it on a repository that has never
+documented anything produces 1 868 findings on `Testing/corpus` alone. Cognitive complexity is pinned
+to SonarSource's published worked examples so that a number here is comparable to SonarQube's on the
+same code.
+
 ### ⚠ What M5 actually shipped, and why it is nine ids rather than forty
 
-Seventeen ids are allocated; **six are analyzers**, three are the formatter's own findings, and eight
-are tool diagnostics.
+Seventeen ids are allocated at the end of M5; **six are analyzers**, three are the formatter's own
+findings, and eight are tool diagnostics. (M6 takes the total to twenty-nine — see the section above.)
 
 | Id | Scope | Loose mode | Floor | Fixtures (+/−) | corpus/real | Vixen |
 |---|---|---|---:|---:|---:|---:|

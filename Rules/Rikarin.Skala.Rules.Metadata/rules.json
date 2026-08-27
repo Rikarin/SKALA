@@ -254,6 +254,314 @@
       ]
     },
     {
+      "id": "SK2013",
+      "concept": "exception-constructed-not-thrown",
+      "title": "An exception is constructed and then discarded",
+      "category": "Correctness",
+      "defaultSeverity": "warning",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": true,
+      "fixIsSafe": true,
+      "resharperId": "ObjectCreationAsStatement",
+      "supersedes": [],
+      "since": "0.8",
+      "languageVersion": null,
+      "summary": "`new SomeException(...)` is an expression statement, so the exception is allocated and thrown away.",
+      "rationale": "Writing `new InvalidOperationException(\"...\");` where `throw new InvalidOperationException(\"...\");` was meant is a guard clause that does nothing. The method continues on the path the author intended to abort, and the failure surfaces later somewhere unrelated. There is no legitimate reason to construct an exception as a standalone statement: an exception object that is neither thrown, returned, assigned nor passed anywhere has no observable effect beyond its own allocation. The fix is the missing keyword.",
+      "examples": {
+        "bad": "if (count < 0) {\n    new ArgumentOutOfRangeException(nameof(count));\n}",
+        "good": "if (count < 0) {\n    throw new ArgumentOutOfRangeException(nameof(count));\n}"
+      },
+      "falsePositives": "The rule fires only on an object-creation expression that *is* the whole of an expression statement, and only when the semantic model resolves the created type and that type derives from `System.Exception`. A constructed exception that is assigned, returned, passed as an argument, added to a collection or used in any other position is not an expression statement and is never seen. Construction whose constructor argument has an intentional side effect is still reported, because the exception is still discarded; that is documented rather than guarded, and no occurrence exists on either reference tree.",
+      "configuration": [
+        "dotnet_diagnostic.SK2013.severity"
+      ]
+    },
+    {
+      "id": "SK2015",
+      "concept": "rethrow-loses-stack-trace",
+      "title": "`throw ex;` resets the stack trace",
+      "category": "Correctness",
+      "defaultSeverity": "warning",
+      "scope": "Syntax",
+      "requiresSemantics": false,
+      "hasFix": true,
+      "fixIsSafe": true,
+      "resharperId": "PossibleIntendedRethrow",
+      "supersedes": [],
+      "since": "0.8",
+      "languageVersion": null,
+      "summary": "Re-throwing the caught exception by name restarts its stack trace at the `throw`.",
+      "rationale": "`throw ex;` inside `catch (Exception ex)` assigns a fresh stack trace to the exception, so every frame between the original throw site and this `catch` is erased. The result is a production log that points at the handler rather than at the fault, which is the one piece of information the log existed to carry. `throw;` re-throws the same exception with its trace intact. The two forms look interchangeable and are not, which is why this is worth a rule rather than a review comment.",
+      "examples": {
+        "bad": "try {\n    Parse(input);\n} catch (FormatException ex) {\n    Log(ex);\n    throw ex;\n}",
+        "good": "try {\n    Parse(input);\n} catch (FormatException ex) {\n    Log(ex);\n    throw;\n}"
+      },
+      "falsePositives": "The rule fires only when the thrown expression is a bare identifier whose name is the identifier the *nearest enclosing* catch clause declares, and that name is never assigned anywhere inside the clause. Throwing a different exception, a wrapped exception, an exception belonging to an outer catch clause, a field, a parameter, or a variable the clause reassigned is not this pattern and is not reported. `throw ex;` inside a lambda, a local function or a nested catch clause within the block is excluded, because a bare `throw;` is either illegal or means something else there.",
+      "configuration": [
+        "dotnet_diagnostic.SK2015.severity"
+      ]
+    },
+    {
+      "id": "SK3001",
+      "concept": "async-void-method",
+      "title": "`async void` outside an event handler",
+      "category": "Async",
+      "defaultSeverity": "none",
+      "scope": "Compilation",
+      "requiresSemantics": true,
+      "hasFix": true,
+      "fixIsSafe": false,
+      "resharperId": "AsyncVoidMethod",
+      "supersedes": [],
+      "since": "0.8",
+      "languageVersion": null,
+      "summary": "An `async void` method that nothing subscribes as an event handler.",
+      "rationale": "An `async void` method cannot be awaited, so its caller cannot know when it finished and cannot observe its exceptions. An exception thrown after the first `await` is raised on whatever synchronization context resumed the method, which in a console or server process means an unhandled exception that terminates it. `async Task` gives the caller both. The one legitimate use is an event handler, whose delegate type returns `void` and whose exceptions the framework expects to handle, so the rule is silent there.",
+      "examples": {
+        "bad": "async void SaveAsync() {\n    await File.WriteAllTextAsync(path, text);\n}",
+        "good": "async Task SaveAsync() {\n    await File.WriteAllTextAsync(path, text);\n}"
+      },
+      "falsePositives": "⚠ **The rule ships disabled — `defaultSeverity: none` — and this is the interesting part of its story rather than a hedge.** It is silent on anything that could be an event handler or is bound to a delegate: an `override`, a `virtual` or `new` method (whose return type binds every override below it), any method implementing an interface member, any method whose name begins `On`, any method with the `(object, EventArgs)` shape, any method carrying an attribute, a partial method, and — the check that costs the most — every method whose name appears anywhere in the compilation in a position other than a direct invocation, which covers `+=` subscription, a method group passed as an argument and a delegate construction. That last check is why the rule is compilation-scoped and can never be served from the per-file incremental cache.\n\nTwo measurements decided the default. First, the rule fires **zero** times on both reference trees: Vixen contains no `async void` method at all, and neither does `corpus/real`. Its evidence is therefore three positive and eight negative fixtures and nothing else — a false-positive rate *measured* at zero and *tested* at nothing, which is the distinction docs/plan/16 § R3 is about. Second, enabling it costs every run the warm path of the incremental cache (docs/plan/07 § \"The incremental cache\"), because a compilation-scoped rule's answer for one file depends on files that file's cache key does not name. Trading the cache for a rule with no measured occurrences is a bad trade to make on someone's behalf, so a repository that has `async void` turns it on deliberately with `dotnet_diagnostic.SK3001.severity = warning` and pays the cost knowing what it bought.",
+      "configuration": [
+        "dotnet_diagnostic.SK3001.severity (`none` by default; set it to `warning` to enable — ⚠ doing so disables the incremental cache's warm path, because the rule is compilation-scoped)"
+      ],
+      "resharperNote": "⚠ The export sets `resharper_async_void_method_highlighting = suggestion` and this rule defaults to `none`. ReSharper's inspection fires on every `async void` including the event handlers, so a low severity is how it stays usable; this rule excludes the event-handler cases by analysis instead, and ships off for the cost reason its `falsePositives` field explains rather than for a noise reason. Reading the ReSharper key — off by default, doc 03 § \"Severities\" — would turn it on at suggestion."
+    },
+    {
+      "id": "SK3002",
+      "concept": "blocking-on-async",
+      "title": "Blocking on an async call",
+      "category": "Async",
+      "defaultSeverity": "warning",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": true,
+      "fixIsSafe": false,
+      "resharperId": null,
+      "supersedes": [],
+      "since": "0.8",
+      "languageVersion": null,
+      "summary": "`.Result`, `.Wait()` or `.GetAwaiter().GetResult()` on a `Task` or `ValueTask`.",
+      "rationale": "Blocking a thread on a task is the classic ASP.NET and WPF deadlock: the continuation needs the synchronization context the blocked thread is holding, and neither side moves again. Even where it does not deadlock it consumes a pool thread for the duration, which under load is how a server stops responding to anything at all. It also re-wraps the exception in an `AggregateException`, so the `catch` a reader expects to fire does not. `await` does none of these things.",
+      "examples": {
+        "bad": "async Task<int> LoadAsync() {\n    var text = File.ReadAllTextAsync(path).Result;\n    return text.Length;\n}",
+        "good": "async Task<int> LoadAsync() {\n    var text = await File.ReadAllTextAsync(path);\n    return text.Length;\n}"
+      },
+      "falsePositives": "The rule fires only when the receiver's type is `System.Threading.Tasks.Task`, `Task<T>`, `ValueTask` or `ValueTask<T>` as resolved by the semantic model — never on a `.Result` property of a user type that happens to be called that, and never when the type did not resolve. It is silent wherever `await` is unavailable or wrong: an entry point, a constructor, a finalizer, an operator, a property or field initializer, a `lock` body, an `unsafe` context, an expression tree, a query clause, and inside a test method, where blocking is deliberate. A fix is offered only where the enclosing method or lambda is *already* `async` and the expression is not inside a `lock`, which is where the rewrite is provably correct; elsewhere the finding is reported with no fix, because making a method `async` changes its signature and therefore its callers, which is not an edit a tool may apply unreviewed.",
+      "configuration": [
+        "dotnet_diagnostic.SK3002.severity"
+      ]
+    },
+    {
+      "id": "SK7001",
+      "concept": "cyclomatic-complexity",
+      "title": "Cyclomatic complexity is over the threshold",
+      "category": "Maintainability",
+      "defaultSeverity": "hint",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "resharperId": null,
+      "supersedes": [],
+      "since": "0.8",
+      "languageVersion": null,
+      "summary": "The number of linearly independent paths through a member, from its control-flow graph.",
+      "rationale": "Cyclomatic complexity counts the decision points in a body, and it is the number that predicts how many test cases the body needs to cover. It is computed from Roslyn's `ControlFlowGraph` rather than by counting keywords, so a `switch` expression, a pattern with a `when` clause, a conditional access chain and a `&&` short-circuit are each counted the way the compiler sees them rather than the way a regular expression would. It is the least interesting of the metrics on its own — a long flat `switch` scores high and reads fine — which is why it defaults to `hint` and why cognitive complexity is the one the gate reads.",
+      "examples": {
+        "bad": "// a member whose control-flow graph has 40 conditional edges",
+        "good": "// the same logic split across members, or expressed as a table"
+      },
+      "falsePositives": "A metric rule has no false positives in the sense doc 16 § R3 means: it reports a measurement against a threshold, and the measurement is either right or a bug. What it can be is *useless* — a threshold low enough to fire on ordinary code teaches people to switch the category off, which is the same outcome by another route. The default is therefore set well above the corpus's p99 rather than at the textbook number, and the threshold is an .editorconfig option so a repository can tighten it deliberately. Generated code is excluded from the rule entirely; doc 07 § Metrics keeps it in the aggregate numbers, which is a separate surface.",
+      "configuration": [
+        "dotnet_diagnostic.SK7001.severity",
+        "dotnet_code_quality.SK7001.threshold (default 25)"
+      ]
+    },
+    {
+      "id": "SK7002",
+      "concept": "cognitive-complexity",
+      "title": "Cognitive complexity is over the threshold",
+      "category": "Maintainability",
+      "defaultSeverity": "suggestion",
+      "scope": "Syntax",
+      "requiresSemantics": false,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "resharperId": null,
+      "supersedes": [],
+      "since": "0.8",
+      "languageVersion": null,
+      "summary": "How hard a member is to read, by Sonar's published definition: nesting-weighted, with no penalty for a `switch`.",
+      "rationale": "Cognitive complexity is the metric worth gating on, and it is the one SonarQube users actually miss. It differs from cyclomatic complexity in the two ways that matter: a `switch` over twenty cases costs one, because a reader takes it in at a glance, and a condition nested three deep costs four rather than one, because a reader has to hold three contexts to understand it. That makes it track the thing people mean by \"this method is hard\" rather than the thing that is easy to count. The implementation follows Sonar's specification — increments for each control-flow break, a nesting increment for each structure nested inside another, one increment per sequence of like binary operators, and increments for `goto`, recursion and each `catch` — so a number here is comparable to a number from SonarQube on the same code.",
+      "examples": {
+        "bad": "if (a) {\n    foreach (var x in xs) {\n        if (b && c) {   // +1, +2 (nested), +3 (nested) and +1 for `&&`\n            Use(x);\n        }\n    }\n}",
+        "good": "if (!a) {\n    return;\n}\n\nforeach (var x in xs) {\n    if (!Matches(x)) {\n        continue;\n    }\n\n    Use(x);\n}"
+      },
+      "falsePositives": "A metric rule has no false positives in the sense doc 16 § R3 means: it reports a measurement against a threshold, and the measurement is either right or a bug. What it can be is *useless* — a threshold low enough to fire on ordinary code teaches people to switch the category off, which is the same outcome by another route. The default is therefore set well above the corpus's p99 rather than at the textbook number, and the threshold is an .editorconfig option so a repository can tighten it deliberately. Generated code is excluded from the rule entirely; doc 07 § Metrics keeps it in the aggregate numbers, which is a separate surface. The default threshold is 15, which is Sonar's own and the number doc 09's `ci` gate names.",
+      "configuration": [
+        "dotnet_diagnostic.SK7002.severity",
+        "dotnet_code_quality.SK7002.threshold (default 15)"
+      ]
+    },
+    {
+      "id": "SK7003",
+      "concept": "method-length-in-statements",
+      "title": "The member is over the statement-count threshold",
+      "category": "Maintainability",
+      "defaultSeverity": "hint",
+      "scope": "Syntax",
+      "requiresSemantics": false,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "resharperId": null,
+      "supersedes": [],
+      "since": "0.8",
+      "languageVersion": null,
+      "summary": "Method length counted in statements, not in lines.",
+      "rationale": "Counting lines makes the metric a function of the formatter: the same body scores differently at a 100-column width and at a 160-column one, and wrapping a long argument list makes a method \"longer\" without changing anything a reader has to understand. Counting statements is invariant under formatting, which is the property that makes the number worth putting in a gate at all. Declarations, expression statements, and each statement nested inside a block are counted once each; a `for` header is one statement, not three.",
+      "examples": {
+        "bad": "// a 300-statement method",
+        "good": "// the same work as several members with names"
+      },
+      "falsePositives": "A metric rule has no false positives in the sense doc 16 § R3 means: it reports a measurement against a threshold, and the measurement is either right or a bug. What it can be is *useless* — a threshold low enough to fire on ordinary code teaches people to switch the category off, which is the same outcome by another route. The default is therefore set well above the corpus's p99 rather than at the textbook number, and the threshold is an .editorconfig option so a repository can tighten it deliberately. Generated code is excluded from the rule entirely; doc 07 § Metrics keeps it in the aggregate numbers, which is a separate surface.",
+      "configuration": [
+        "dotnet_diagnostic.SK7003.severity",
+        "dotnet_code_quality.SK7003.threshold (default 120)"
+      ]
+    },
+    {
+      "id": "SK7004",
+      "concept": "type-size-in-members",
+      "title": "The type is over the member-count threshold",
+      "category": "Maintainability",
+      "defaultSeverity": "hint",
+      "scope": "Syntax",
+      "requiresSemantics": false,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "resharperId": null,
+      "supersedes": [],
+      "since": "0.8",
+      "languageVersion": null,
+      "summary": "Members declared on a type, with fields counted separately.",
+      "rationale": "A type's member count is the crudest of the metrics and still the one that finds god objects. Fields are counted separately from methods because the two mean different things: forty fields is a data carrier, which may be exactly right, while forty methods is a type doing forty jobs. The report carries both numbers and the rule fires on the member count. A partial type is measured per declaration rather than per symbol, because that is the file a person opens.",
+      "examples": {
+        "bad": "// a type with 200 methods",
+        "good": "// the same surface split along the seams the names already suggest"
+      },
+      "falsePositives": "A metric rule has no false positives in the sense doc 16 § R3 means: it reports a measurement against a threshold, and the measurement is either right or a bug. What it can be is *useless* — a threshold low enough to fire on ordinary code teaches people to switch the category off, which is the same outcome by another route. The default is therefore set well above the corpus's p99 rather than at the textbook number, and the threshold is an .editorconfig option so a repository can tighten it deliberately. Generated code is excluded from the rule entirely; doc 07 § Metrics keeps it in the aggregate numbers, which is a separate surface. Enum members are not counted: a 300-member enum is a table, not a god object.",
+      "configuration": [
+        "dotnet_diagnostic.SK7004.severity",
+        "dotnet_code_quality.SK7004.threshold (default 80)"
+      ]
+    },
+    {
+      "id": "SK7005",
+      "concept": "parameter-count",
+      "title": "The member takes more parameters than the threshold",
+      "category": "Maintainability",
+      "defaultSeverity": "hint",
+      "scope": "Syntax",
+      "requiresSemantics": false,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "resharperId": null,
+      "supersedes": [],
+      "since": "0.8",
+      "languageVersion": null,
+      "summary": "Parameter count, including a primary constructor's parameters.",
+      "rationale": "A long parameter list is the one design smell that is unambiguous from the outside: past about seven the call sites stop being readable and start being positional puzzles, and every one of them has to change when the list does. Primary-constructor parameters count, because they are the type's constructor whatever the syntax; doc 07 § Metrics says so explicitly.",
+      "examples": {
+        "bad": "void Configure(int a, int b, int c, int d, int e, int f, int g, int h) { }",
+        "good": "void Configure(in ConfigureOptions options) { }"
+      },
+      "falsePositives": "A metric rule has no false positives in the sense doc 16 § R3 means: it reports a measurement against a threshold, and the measurement is either right or a bug. What it can be is *useless* — a threshold low enough to fire on ordinary code teaches people to switch the category off, which is the same outcome by another route. The default is therefore set well above the corpus's p99 rather than at the textbook number, and the threshold is an .editorconfig option so a repository can tighten it deliberately. Generated code is excluded from the rule entirely; doc 07 § Metrics keeps it in the aggregate numbers, which is a separate surface. A `this` parameter on an extension method is counted, because a caller supplies it. Generated code is excluded, which matters here: a generated `record`'s positional constructor and a DI factory's constructor are both routinely wide and neither is a design decision anybody made.",
+      "configuration": [
+        "dotnet_diagnostic.SK7005.severity",
+        "dotnet_code_quality.SK7005.threshold (default 8)"
+      ]
+    },
+    {
+      "id": "SK7006",
+      "concept": "nesting-depth",
+      "title": "The member nests deeper than the threshold",
+      "category": "Maintainability",
+      "defaultSeverity": "hint",
+      "scope": "Syntax",
+      "requiresSemantics": false,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "resharperId": null,
+      "supersedes": [],
+      "since": "0.8",
+      "languageVersion": null,
+      "summary": "The deepest block nesting inside a member body.",
+      "rationale": "Nesting depth is what cognitive complexity's nesting weight is built on, reported on its own because it is the actionable half: a body six levels deep almost always has an early return or a `continue` that flattens it, and a reader can see that from the number without reading the body. A lambda body restarts the count, because a lambda is a separate reading context.",
+      "examples": {
+        "bad": "if (a) {\n    while (b) {\n        foreach (var x in xs) {\n            if (c) {\n                if (d) {\n                    Use(x);\n                }\n            }\n        }\n    }\n}",
+        "good": "if (!a) {\n    return;\n}\n\nwhile (b) {\n    foreach (var x in xs) {\n        if (c && d) {\n            Use(x);\n        }\n    }\n}"
+      },
+      "falsePositives": "A metric rule has no false positives in the sense doc 16 § R3 means: it reports a measurement against a threshold, and the measurement is either right or a bug. What it can be is *useless* — a threshold low enough to fire on ordinary code teaches people to switch the category off, which is the same outcome by another route. The default is therefore set well above the corpus's p99 rather than at the textbook number, and the threshold is an .editorconfig option so a repository can tighten it deliberately. Generated code is excluded from the rule entirely; doc 07 § Metrics keeps it in the aggregate numbers, which is a separate surface.",
+      "configuration": [
+        "dotnet_diagnostic.SK7006.severity",
+        "dotnet_code_quality.SK7006.threshold (default 6)"
+      ]
+    },
+    {
+      "id": "SK7010",
+      "concept": "public-api-comment-density",
+      "title": "Public API without a documentation comment",
+      "category": "Maintainability",
+      "defaultSeverity": "none",
+      "scope": "Syntax",
+      "requiresSemantics": false,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "resharperId": null,
+      "supersedes": [],
+      "since": "0.8",
+      "languageVersion": null,
+      "summary": "Doc-comment coverage of the publicly visible surface, reported as a metric and — opt-in — as a finding.",
+      "rationale": "Comment density is the metric most likely to be gamed and the one most worth having as a *number* rather than as a finding. As an aggregate it says whether a library's public surface is documented; as a per-member warning on a repository that has never documented anything it produces thousands of findings on day one and gets switched off by lunchtime. So it ships disabled — `defaultSeverity: none` — and a repository that wants it turns it on for the paths where it means something, exactly the way doc 08 § SK1000 describes for the hot-path rules. The aggregate is computed either way and appears in the report and in `skala trend`.",
+      "examples": {
+        "bad": "public sealed class Archetype {\n    public int Count { get; }\n}",
+        "good": "/// <summary>A set of components stored together.</summary>\npublic sealed class Archetype {\n    /// <summary>How many entities the archetype holds.</summary>\n    public int Count { get; }\n}"
+      },
+      "falsePositives": "Disabled by default, so it produces nothing until a repository asks for it. When enabled it counts only members that are publicly visible through their whole containing chain, ignores accessors, explicit interface implementations, operators, finalizers, compiler-generated members, `record` positional members and anything in generated code, and treats an `<inheritdoc/>` as documentation.",
+      "configuration": [
+        "dotnet_diagnostic.SK7010.severity (`none` by default; set it per path to enable)"
+      ]
+    },
+    {
+      "id": "SK7020",
+      "concept": "duplicated-block",
+      "title": "Duplicated block",
+      "category": "Maintainability",
+      "defaultSeverity": "warning",
+      "scope": "Compilation",
+      "requiresSemantics": false,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "resharperId": null,
+      "supersedes": [],
+      "since": "0.8",
+      "languageVersion": null,
+      "summary": "A run of at least `minTokens` tokens that occurs identically, up to identifier and literal names, somewhere else in the repository.",
+      "rationale": "Duplication is the one SonarQube feature with no Roslyn equivalent, and the AI workflow needs it more than most: agents copy-paste by nature, and a block pasted four times is four places a fix has to land. Detection is token-level type-2 clone detection — identifiers and literals normalised to a class, keywords and punctuation kept exact — so a block copied and renamed is still found, which is the copy people actually make. A clone group is reported once, at its first occurrence, with the rest as related locations; reporting it at every occurrence would turn one problem into n findings and make the count meaningless.",
+      "examples": {
+        "bad": "// the same 100-token block, pasted into four files with the variables renamed",
+        "good": "// one method, called four times"
+      },
+      "falsePositives": "Not a false-positive-prone rule in the usual sense — a reported group either is or is not a token-for-token match, and the match is verified exactly rather than trusted from the rolling hash, so a hash collision cannot produce a finding. What it can do is report duplication that is deliberate. Three exclusions handle the cases that matter and are the whole of the rule's tuning: generated files are excluded from the findings and from both halves of the percentage; test files are measured but counted and reported separately, because duplication in tests is often the readable choice and gating it drives people to write worse tests; and the 100-token default is Sonar's own for C#, which is roughly 25 lines and well above the length of any idiomatic boilerplate.",
+      "configuration": [
+        "dotnet_diagnostic.SK7020.severity",
+        "dotnet_code_quality.SK7020.minTokens (default 100)"
+      ]
+    },
+    {
       "id": "SK9001",
       "concept": "unknown-config-key",
       "title": "Unknown configuration key",
@@ -269,7 +577,10 @@
       "languageVersion": null,
       "summary": "A key in the `.editorconfig` chain is not in the option registry.",
       "rationale": "The Rider export carries roughly two thousand keys Skala will never implement. Reporting them at suggestion rather than warning is the difference between an audit and an uninstall.",
-      "examples": { "bad": "resharper_cpp_indent_size = 2", "good": "" },
+      "examples": {
+        "bad": "resharper_cpp_indent_size = 2",
+        "good": ""
+      },
       "falsePositives": "Any key outside the registry, which includes every C++, VB and XAML key in the export. That is why it is not a warning.",
       "configuration": []
     },
@@ -289,7 +600,10 @@
       "languageVersion": null,
       "summary": "The file has parse errors, so it is reported and left byte-identical.",
       "rationale": "ADR-003, and the single most important safety property in the tool: a file Skala cannot parse is a file Skala does not touch.",
-      "examples": { "bad": "class C { void M( }", "good": "class C { void M() { } }" },
+      "examples": {
+        "bad": "class C { void M( }",
+        "good": "class C { void M() { } }"
+      },
       "falsePositives": "None. The check is Roslyn's own error diagnostics.",
       "configuration": []
     },
@@ -309,7 +623,10 @@
       "languageVersion": null,
       "summary": "The member is emitted verbatim, because its brace structure depends on which branch is active.",
       "rationale": "Roslyn parses one branch and hands back a tree describing only that one. Reindenting from it moves braces the other branch owns.",
-      "examples": { "bad": "#if A\nvoid M() {\n#else\nvoid M() {\n#endif\n}", "good": "" },
+      "examples": {
+        "bad": "#if A\nvoid M() {\n#else\nvoid M() {\n#endif\n}",
+        "good": ""
+      },
       "falsePositives": "None known; the check counts braces per branch and only fires when the branches disagree.",
       "configuration": []
     },
@@ -329,7 +646,10 @@
       "languageVersion": null,
       "summary": "The file on disk differs from what the recorded build compiled; the current text was substituted.",
       "rationale": "Analysing what the build saw rather than what is on disk would report findings against code nobody has. Substituting the current text keeps the report about the working tree and says so.",
-      "examples": { "bad": "", "good": "" },
+      "examples": {
+        "bad": "",
+        "good": ""
+      },
       "falsePositives": "None; it is a comparison of file content against the compilation's recorded source list.",
       "configuration": []
     },
@@ -349,7 +669,10 @@
       "languageVersion": null,
       "summary": "A `.cs` file under the repository is in no recorded compilation. Rebuild.",
       "rationale": "A new file that the binlog does not name is invisible to every compilation and is therefore silently unanalysed, which is the worst failure this tool can have. It is a warning and not an info for exactly that reason.",
-      "examples": { "bad": "", "good": "" },
+      "examples": {
+        "bad": "",
+        "good": ""
+      },
       "falsePositives": "A file genuinely excluded from compilation — a scratch file, a `.cs` under a directory with `EnableDefaultCompileItems=false` — is reported too. `skala.jsonc`'s `exclude` is the answer, and the message names the file.",
       "configuration": [
         "skala.jsonc: exclude"
@@ -371,7 +694,10 @@
       "languageVersion": null,
       "summary": "An analyzer raised an exception; it is disabled for the rest of the run and everything else continues.",
       "rationale": "A third-party analyzer that throws on one syntax shape must not be able to turn a CI gate red for unrelated reasons — or, worse, green by aborting the run early.",
-      "examples": { "bad": "", "good": "" },
+      "examples": {
+        "bad": "",
+        "good": ""
+      },
       "falsePositives": "None; it reports an exception that happened.",
       "configuration": []
     },
@@ -391,7 +717,10 @@
       "languageVersion": null,
       "summary": "A hosted analyzer package named in `skala.jsonc` could not be loaded. Never fatal.",
       "rationale": "ADR-008: third-party rules are hosted, never bundled. A package that is missing, is for another framework, or drags a conflicting dependency is a configuration problem to report, not a reason to produce no report at all.",
-      "examples": { "bad": "", "good": "" },
+      "examples": {
+        "bad": "",
+        "good": ""
+      },
       "falsePositives": "None; it reports a load that failed.",
       "configuration": [
         "skala.jsonc: analysis.hostedAnalyzers"
@@ -413,7 +742,10 @@
       "languageVersion": null,
       "summary": "A Skala bug by definition. Nothing was written and a reproduction was dropped under `.skala/crash/`.",
       "rationale": "ADR-005. The check is one extra parse per file, it costs about 15 % of formatting time, and there is no flag that turns it off.",
-      "examples": { "bad": "", "good": "" },
+      "examples": {
+        "bad": "",
+        "good": ""
+      },
       "falsePositives": "None. A finding here is a bug in Skala.",
       "configuration": []
     }

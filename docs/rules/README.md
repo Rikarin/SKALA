@@ -2,7 +2,21 @@
 
 <!-- Generated from Rules/Rikarin.Skala.Rules.Metadata/rules.json. Do not edit. -->
 
-`SK` + four digits, allocated once and never re-purposed (ADR-012). 17 ids are allocated.
+`SK` + four digits, allocated once and never re-purposed (ADR-012). 29 ids are allocated.
+
+## Async
+
+| Id | Rule | Severity | Fix | Loose mode |
+|---|---|---|---|---|
+| [SK3001](SK3001.md) | `async void` outside an event handler | none | review | no |
+| [SK3002](SK3002.md) | Blocking on an async call | warning | review | no |
+
+## Correctness
+
+| Id | Rule | Severity | Fix | Loose mode |
+|---|---|---|---|---|
+| [SK2013](SK2013.md) | An exception is constructed and then discarded | warning | safe | no |
+| [SK2015](SK2015.md) | `throw ex;` resets the stack trace | warning | safe | yes |
 
 ## Formatting
 
@@ -11,6 +25,19 @@
 | [SK0001](SK0001.md) | The file is not formatted | suggestion | safe | yes |
 | [SK0002](SK0002.md) | The line is over the width and nothing in it can break | hint | — | yes |
 | [SK0003](SK0003.md) | The documentation comment is not well-formed XML | hint | — | yes |
+
+## Maintainability
+
+| Id | Rule | Severity | Fix | Loose mode |
+|---|---|---|---|---|
+| [SK7001](SK7001.md) | Cyclomatic complexity is over the threshold | hint | — | no |
+| [SK7002](SK7002.md) | Cognitive complexity is over the threshold | suggestion | — | yes |
+| [SK7003](SK7003.md) | The member is over the statement-count threshold | hint | — | yes |
+| [SK7004](SK7004.md) | The type is over the member-count threshold | hint | — | yes |
+| [SK7005](SK7005.md) | The member takes more parameters than the threshold | hint | — | yes |
+| [SK7006](SK7006.md) | The member nests deeper than the threshold | hint | — | yes |
+| [SK7010](SK7010.md) | Public API without a documentation comment | none | — | yes |
+| [SK7020](SK7020.md) | Duplicated block | warning | — | no |
 
 ## Modernization
 

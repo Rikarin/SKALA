@@ -8,6 +8,9 @@ using Rikarin.Skala.Core.Diagnostics;
 using Rikarin.Skala.Reporting;
 using Rikarin.Skala.Rules;
 using Rikarin.Skala.Rules.Metadata;
+using Rikarin.Skala.Rules.Async;
+using Rikarin.Skala.Rules.Correctness;
+using Rikarin.Skala.Rules.Maintainability;
 using Rikarin.Skala.Rules.Modernization;
 
 namespace Rikarin.Skala.Analysis.Hosting;
@@ -42,7 +45,8 @@ public static class AnalyzerHost {
     /// <summary>Skala's own analyzers. One instance set, reused across compilations (ADR-006).</summary>
     public static ImmutableArray<DiagnosticAnalyzer> Own { get; } = [
         new FileScopedNamespaceAnalyzer(), new NullPatternAnalyzer(), new ThrowIfNullAnalyzer(), new NullCoalescingAssignmentAnalyzer(),
-        new CountPropertyAnalyzer(), new EnumGetValuesAnalyzer()
+        new CountPropertyAnalyzer(), new EnumGetValuesAnalyzer(), new DiscardedExceptionAnalyzer(), new RethrowAnalyzer(),
+        new AsyncVoidAnalyzer(), new BlockingOnAsyncAnalyzer(), new MetricsAnalyzer()
     ];
 
     /// <summary>
@@ -162,6 +166,12 @@ public static class AnalyzerHost {
         }
 
         var findings = ImmutableArray.CreateBuilder<Finding>();
+
+        // ⚠ One semantic model per tree, reused. The enclosing symbol is the fingerprint's third
+        // term and needs a model; building a fresh one per finding turns a file with forty findings
+        // into forty binds of the same tree.
+        var models = new Dictionary<SyntaxTree, SemanticModel>();
+
         foreach (var diagnostic in produced) {
             // ⚠ In loose mode the compiler's own diagnostics are dropped, and it is not a
             // convenience. There is no project, so half the references are missing and CS0246 is
@@ -173,7 +183,14 @@ public static class AnalyzerHost {
                 continue;
             }
 
-            if (Convert(diagnostic, unit) is { } finding) {
+            // ⚠ The per-descriptor half of the loose-mode filter; see `Select`. An analyzer that
+            // reports both semantic and syntactic rules runs, and the semantic ones are dropped
+            // here — so what a loose run reports is exactly what `SkippedFor` says it reports.
+            if (mode == LoadMode.Loose && RuleCatalog.Find(diagnostic.Id) is { RequiresSemantics: true }) {
+                continue;
+            }
+
+            if (Convert(diagnostic, unit, models) is { } finding) {
                 findings.Add(finding);
             }
         }
@@ -217,25 +234,33 @@ public static class AnalyzerHost {
         // analyzer declares nothing Skala can read, so it does not run either: an analyzer answering
         // "no finding" because a symbol did not resolve is worse than an analyzer that did not run,
         // because only one of the two says so.
+        //
+        // ⚠ The filter is <b>per descriptor, not per analyzer</b>, and the difference is a whole
+        // rule category. M6's metrics arrive as one analyzer reporting seven rules — one walk of the
+        // member rather than seven — and only <c>SK7001</c> needs semantics, for the control-flow
+        // graph. Dropping the analyzer because one of its seven descriptors needs a model would
+        // silence the other six under <c>--load=loose</c> while <see cref="SkippedFor"/> named only
+        // the one, which is precisely the "clean report that means two different things" that
+        // docs/plan/07 § loose exists to prevent. So the analyzer runs and
+        // <see cref="Execute"/> drops the findings of the rules that could not honestly answer.
         var builder = ImmutableArray.CreateBuilder<DiagnosticAnalyzer>();
         foreach (var analyzer in Own) {
-            var needsSemantics = false;
             foreach (var descriptor in analyzer.SupportedDiagnostics) {
-                if (RuleCatalog.Find(descriptor.Id) is { RequiresSemantics: true }) {
-                    needsSemantics = true;
+                if (RuleCatalog.Find(descriptor.Id) is not { RequiresSemantics: true }) {
+                    builder.Add(analyzer);
                     break;
                 }
-            }
-
-            if (!needsSemantics) {
-                builder.Add(analyzer);
             }
         }
 
         return builder.ToImmutable();
     }
 
-    static Finding? Convert(Diagnostic diagnostic, CompilationUnit unit) {
+    static Finding? Convert(
+        Diagnostic diagnostic,
+        CompilationUnit unit,
+        Dictionary<SyntaxTree, SemanticModel> models
+    ) {
         var tree = diagnostic.Location.SourceTree;
         if (tree is null) {
             return null;
@@ -267,8 +292,71 @@ public static class AnalyzerHost {
             Fix = ReadFix(diagnostic, path),
             FixIsSafe = RuleCatalog.Find(diagnostic.Id) is { FixIsSafe: true },
             TargetFrameworks = unit.TargetFramework.Length == 0 ? [] : [unit.TargetFramework],
-            Suppression = diagnostic.IsSuppressed ? SuppressionKind.Pragma : SuppressionKind.None
+            Suppression = diagnostic.IsSuppressed ? SuppressionKind.Pragma : SuppressionKind.None,
+            EnclosingSymbol = EnclosingSymbol(unit, tree, textSpan.Start, models),
+            Snippet = Snippet(tree, textSpan)
         };
+    }
+
+    /// <summary>
+    /// The display string of the symbol a finding sits in — the fingerprint's third term.
+    /// </summary>
+    /// <remarks>
+    /// docs/plan/09 § "The fingerprint": <c>Vixen.Core.Foo.Bar(int, string)</c>, "stable across file
+    /// moves".
+    /// <para>
+    /// ⚠ A lambda or a local function reports its <em>containing</em> member instead of itself.
+    /// Roslyn's display string for an anonymous function contains its position in the file, so a
+    /// fingerprint built on it would move whenever anything above it moved — which is the one
+    /// failure this term exists to prevent, reintroduced through the back door.
+    /// </para>
+    /// <para>
+    /// ⚠ Empty rather than throwing when the model cannot be built. A finding with no enclosing
+    /// symbol still gets a fingerprint; it is simply a weaker one, which is better than no finding.
+    /// </para>
+    /// </remarks>
+    static string EnclosingSymbol(
+        CompilationUnit unit,
+        SyntaxTree tree,
+        int position,
+        Dictionary<SyntaxTree, SemanticModel> models
+    ) {
+        try {
+            if (!models.TryGetValue(tree, out var model)) {
+                model = unit.Compilation.GetSemanticModel(tree);
+                models[tree] = model;
+            }
+
+            var symbol = model.GetEnclosingSymbol(position);
+            while (symbol is IMethodSymbol { MethodKind: MethodKind.AnonymousFunction or MethodKind.LocalFunction }) {
+                symbol = symbol.ContainingSymbol;
+            }
+
+            return symbol?.ToDisplayString() ?? string.Empty;
+        } catch (ArgumentException) {
+            // A position outside the tree, which can happen for a diagnostic whose location was
+            // mapped through a #line directive. Not worth failing a run over.
+            return string.Empty;
+        }
+    }
+
+    /// <summary>
+    /// The finding's own span, whitespace collapsed — the fingerprint's second term.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ Bounded. A finding whose span is a whole 4 000-line type would otherwise put 4 000 lines
+    /// into every fingerprint computation and into the baseline's memory; the leading window is
+    /// enough to identify it and the ordinal disambiguates what is left.
+    /// </remarks>
+    static string Snippet(SyntaxTree tree, TextSpan span) {
+        const int Limit = 400;
+        var text = tree.GetText();
+        if (span.Start < 0 || span.End > text.Length) {
+            return string.Empty;
+        }
+
+        var bounded = span.Length <= Limit ? span : new TextSpan(span.Start, Limit);
+        return Reporting.Fingerprints.Normalize(text.ToString(bounded));
     }
 
     /// <summary>Unpacks the text edits a Skala rule attached to its diagnostic.</summary>

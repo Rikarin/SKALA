@@ -258,3 +258,31 @@ things is a second traversal:
 All thresholds are `.editorconfig` options in Skala's own namespace
 (`dotnet_code_quality.SK7002.threshold = 15`), which is the standard mechanism Roslyn analyzers
 already use for configuration and therefore needs no invention.
+
+⚠ **One analyzer reporting seven rules, and one walker computing seven numbers per member.** Seven
+analyzers means seven visits of the same node; seven walkers means seven traversals of the same body.
+`MemberMetrics.Compute` is the single visit and `MetricsAnalyzer` is the single analyzer.
+
+⚠ **This broke loose mode, and the fix is worth recording.** `AnalyzerHost.Select` dropped an
+analyzer if *any* of its supported descriptors needed semantics — and `SK7001` does, for the
+control-flow graph. So one semantic metric silenced the other six under `--load=loose` while the
+SARIF's skipped-rules list named only `SK7001`: a clean report meaning two different things, which is
+exactly what the loose-mode honesty rule exists to prevent. The filter is now per *descriptor* — the
+analyzer runs and the findings of rules that could not honestly answer are dropped — so what a loose
+run reports is exactly what it says it reports.
+
+⚠ **The aggregates are a second walk, and the design could not avoid it.** A `DiagnosticAnalyzer` can
+report diagnostics and cannot publish anything else out of Roslyn's driver, so an aggregate computed
+inside the analyzer has no way out. The alternatives were worse: a hidden diagnostic per member turns
+1.35 M lines into a diagnostic per member, and computing the aggregate from a *different* walker is
+how the gate and the findings come to disagree about the same method. So `MetricsPass` folds the same
+`MemberMetrics` over the trees the loader already parsed — no re-parse, syntax only, and it uses the
+syntactic cyclomatic count rather than building a control-flow graph per member, because a percentile
+over 1.35 M lines does not move when one `foreach` scores 2 instead of 3. The *findings* still use
+the graph, and `CyclomaticFromControlFlowGraph` is how a reader tells the two numbers apart.
+
+⚠ Percentiles rather than means, and nearest-rank rather than interpolated. A mean is dominated by
+the thousands of three-line members every codebase has and moves by 0.01 when something terrible is
+added; and an interpolated percentile over integers produces a number that is not any member's actual
+score, when the point of every one of these numbers is that it is traceable back to the member that
+produced it.

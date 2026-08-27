@@ -33,6 +33,12 @@ public static class CacheKey {
         hash.Append(Encoding.UTF8.GetBytes(ruleSetFingerprint));
         hash.Append(Encoding.UTF8.GetBytes(editorConfigFingerprint));
         hash.Append(Encoding.UTF8.GetBytes(SkalaVersion.Value));
+
+        // ⚠ The shape of a cached entry, in the key. `CachedFinding` gained the fingerprint's
+        // enclosing-symbol and snippet terms in M6, and an entry written before that deserialises
+        // happily with both empty — a stale hit that is wrong rather than absent, which is the
+        // failure mode a cache must never have. Bumping this discards them instead.
+        hash.Append(Encoding.UTF8.GetBytes("cache/v2"));
         return Convert.ToHexStringLower(hash.GetCurrentHash());
     }
 
@@ -121,7 +127,17 @@ public sealed record CachedFinding(
     string[] FixLengths,
     string[] FixTexts,
     string[] TargetFrameworks,
-    int Suppression);
+    int Suppression,
+
+    // ⚠ The fingerprint's third and second terms, and they are not optional.
+    // `Fingerprints.V2` hashes the enclosing symbol and the normalised snippet, so a rehydrated
+    // finding that lost them hashes differently from the same finding computed cold — and a
+    // baseline written by a cold run then matches nothing on a warm one. That is the exact failure
+    // docs/plan/09 § "The fingerprint" exists to prevent, reintroduced by the cache rather than by
+    // a line number. Measured before the fix: 686 accepted findings, 686 reported "fixed" and 686
+    // reported "new", on a tree where nothing had changed.
+    string EnclosingSymbol,
+    string Snippet);
 
 /// <summary>
 /// The per-file diagnostic cache, and the one condition that makes it correct.
@@ -277,7 +293,9 @@ public sealed class DiagnosticCache {
             [.. finding.Fix.Select(static edit => edit.Length.ToString(CultureInfo.InvariantCulture))],
             [.. finding.Fix.Select(static edit => edit.Text)],
             [.. finding.TargetFrameworks],
-            (int)finding.Suppression
+            (int)finding.Suppression,
+            finding.EnclosingSymbol,
+            finding.Snippet
         );
 
     static Finding Rehydrate(CachedFinding cached, string path) {
@@ -307,7 +325,9 @@ public sealed class DiagnosticCache {
             Fix = fix.ToImmutable(),
             FixIsSafe = cached.FixIsSafe,
             TargetFrameworks = [.. cached.TargetFrameworks],
-            Suppression = (SuppressionKind)cached.Suppression
+            Suppression = (SuppressionKind)cached.Suppression,
+            EnclosingSymbol = cached.EnclosingSymbol,
+            Snippet = cached.Snippet
         };
     }
 

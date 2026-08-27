@@ -72,6 +72,63 @@ public sealed record RunReport {
     /// <summary>The gate's verdict, or null when no gate was evaluated.</summary>
     public GateResult? Gate { get; init; }
 
+    /// <summary>The aggregate metrics, and what <c>metrics.*</c> in a gate reads.</summary>
+    public MetricsSummary Metrics { get; init; } = MetricsSummary.Empty;
+
+    /// <summary>
+    /// The <c>metrics.*</c> thresholds the evaluated gate carried, so a renderer can print
+    /// "duplication 1.8 % (gate 3.0 %)" without re-reading <c>skala.jsonc</c>.
+    /// </summary>
+    public ImmutableDictionary<string, double> GateThresholds { get; init; } =
+        ImmutableDictionary<string, double>.Empty;
+
+    /// <summary>⚠ Whether a baseline took part. Distinct from "the baseline was empty".</summary>
+    public bool HasBaseline { get; init; }
+
+    /// <summary>Where the baseline came from, for the failure message.</summary>
+    public string BaselineSummary { get; init; } = string.Empty;
+
+    /// <summary>
+    /// Baseline entries that no longer fire.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ Carried rather than acted on. docs/plan/09: pruning must be explicit, because "a baseline
+    /// that self-prunes lets a rule that silently stopped working look like progress".
+    /// </remarks>
+    public ImmutableArray<BaselineEntry> Fixed { get; init; } = [];
+
+    /// <summary>The git ref <c>--since</c> named, or null when the run was not scoped.</summary>
+    public string? ChangedCodeReference { get; init; }
+
+    /// <summary>What <c>--no-new-suppressions</c> found, or <see cref="SuppressionAudit.Off"/>.</summary>
+    public SuppressionAudit Suppressions { get; init; } = SuppressionAudit.Off;
+
+    /// <summary>The clone groups duplication detection found, for the report.</summary>
+    public int CloneGroupCount => Metrics.CloneGroupCount;
+
+    /// <summary>
+    /// The findings that count as new, under whichever scopings are in play.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ The intersection of the scopings, not the union — see <see cref="Gate"/>. With a baseline
+    /// and <c>--since</c> both active, a finding is new only if it is absent from the baseline
+    /// <em>and</em> on a line the branch touched.
+    /// </remarks>
+    public IEnumerable<Finding> New {
+        get {
+            var findings = Reportable;
+            if (HasBaseline) {
+                findings = findings.Where(static finding => finding.Bucket == BaselineBucket.New);
+            }
+
+            if (ChangedCodeReference is not null) {
+                findings = findings.Where(static finding => finding.IsInChangedCode);
+            }
+
+            return findings;
+        }
+    }
+
     public int Count(SkalaSeverity severity) =>
         Findings.Count(finding => finding.Severity == severity && finding.Suppression == SuppressionKind.None);
 
@@ -143,6 +200,24 @@ public static class ReportTotals {
             builder.Append("  ·  ")
                 .Append(suppressed.ToString(CultureInfo.InvariantCulture))
                 .Append(" suppressed");
+        }
+
+        // ⚠ The new count only appears when something defines "new". Printing "0 new" on an
+        // unscoped run reads as "nothing was added", which is a claim the run cannot make.
+        if (report.HasBaseline || report.ChangedCodeReference is not null) {
+            builder.Append("  ·  ")
+                .Append(report.New.Count().ToString(CultureInfo.InvariantCulture))
+                .Append(" new");
+
+            if (report.ChangedCodeReference is { } reference) {
+                builder.Append(" since ").Append(reference);
+            }
+        }
+
+        if (!report.Fixed.IsEmpty) {
+            builder.Append("  ·  ")
+                .Append(report.Fixed.Length.ToString(CultureInfo.InvariantCulture))
+                .Append(" fixed (`skala baseline prune`)");
         }
 
         return builder.ToString();

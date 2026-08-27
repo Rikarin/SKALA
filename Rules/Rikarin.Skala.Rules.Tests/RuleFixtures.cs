@@ -4,6 +4,7 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Text;
+using Rikarin.Skala.Rules.Metadata;
 
 namespace Rikarin.Skala.Rules.Tests;
 
@@ -80,9 +81,33 @@ public static class RuleFixtures {
             References,
             new CSharpCompilationOptions(
                 OutputKind.DynamicallyLinkedLibrary,
-                nullableContextOptions: NullableContextOptions.Enable
+                nullableContextOptions: NullableContextOptions.Enable,
+                specificDiagnosticOptions: OptIn
             )
         );
+    }
+
+    /// <summary>
+    /// ⚠ The rules that ship <c>defaultSeverity: none</c>, turned on for the fixture harness.
+    /// </summary>
+    /// <remarks>
+    /// A rule that is disabled by default is one Roslyn's severity filter drops before the analyzer's
+    /// diagnostic reaches anybody — so without this, its positive fixtures would prove that the
+    /// filter works and nothing at all about the rule. Turning it on here is the same thing a
+    /// repository does with <c>dotnet_diagnostic.SK7010.severity</c> per path, which is how
+    /// rules.json says the rule is meant to be used.
+    /// </remarks>
+    static ImmutableDictionary<string, ReportDiagnostic> OptIn { get; } = BuildOptIn();
+
+    static ImmutableDictionary<string, ReportDiagnostic> BuildOptIn() {
+        var builder = ImmutableDictionary.CreateBuilder<string, ReportDiagnostic>(StringComparer.Ordinal);
+        foreach (var rule in RuleCatalog.All) {
+            if (!rule.Retired && rule.DefaultSeverity == RuleSeverity.None) {
+                builder[rule.Id] = ReportDiagnostic.Warn;
+            }
+        }
+
+        return builder.ToImmutable();
     }
 
     public static ImmutableArray<MetadataReference> References { get; } = Build();

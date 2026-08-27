@@ -90,7 +90,46 @@ It runs the semantic rules under a loose compilation, which `skala check` refuse
 an audit the asymmetry is in the safe direction: every finding it produces is one to check, and the
 ones it misses are misses rather than false positives.
 
-**Residual risk: medium**, and unchanged — six rules is not enough evidence to lower it.
+⚠ **M6 shipped four more analyzers, seven metrics and duplication, and the bar bit again.** Four of
+the twenty-nine ids in `SK2xxx`/`SK3xxx`. The measurements:
+
+| | |
+|---|---|
+| Fixtures | 13 positive, **30 negative** for the four rules; 14 / 25 for the metrics |
+| `corpus/real/` (380 files) | **0** findings from the four new rules |
+| Vixen (4 660 files, loose + semantic) | **7** findings, all `SK3002`, every one read, **zero false positives** |
+| Fix verification | 38 fixes across 10 Vixen files: 195 253 compiler errors before, 195 241 after, **0 `(file, id)` pairs worse** |
+| Duplication | 4.8 % production over Vixen, 514 groups |
+
+⚠ **Three of the four fire zero times on both reference trees**, so the risk this section is about is
+*larger* after M6 rather than smaller. `SK2013`, `SK2015` and `SK3001` have their fixtures and
+nothing else. The mitigation applied differently to each, and the difference is the useful part:
+
+- `SK2015` is purely syntactic, so its zero cannot be an unresolved symbol in disguise. A grep found
+  the only three candidate statements across both trees and all three are correctly not reported.
+  Shipped enabled: a cheap rule whose zero is a measurement rather than a silence.
+- `SK2013` is semantic but trivially guarded — an object creation that *is* an expression statement,
+  on a type deriving from `Exception`. Shipped enabled for the same reason.
+- ⚠ `SK3001` ships **disabled**, and not for a noise reason. It is compilation-scoped, so enabling it
+  costs every run the incremental cache's warm path, and Vixen contains no `async void` method at
+  all. Paying a repository-wide performance cost for a rule with no measured occurrences is not a
+  trade to make on somebody's behalf.
+
+⚠ **`SK3002`'s seven findings are the interesting case, because all seven are true and none is
+actionable.** One is a public API whose own doc comment argues for blocking; six are the same
+child-process-draining pattern in test helpers. That is not a false-positive rate — it is the case
+the baseline exists for, and six of the seven sit in `*.Tests` where doc 08's `.editorconfig`
+mechanism is the right instrument. The distinction between "wrong" and "true but unwanted" is the
+one this section has to keep making, and conflating them is how a correct rule gets deleted.
+
+⚠ **A metric rule cannot have a false positive in this section's sense** — it reports a measurement
+against a threshold. What it can be is useless, and the failure mode is identical: a threshold low
+enough to fire on ordinary code teaches people to switch the category off. So the thresholds sit
+above the corpus p99, six of the seven ship at `hint`, and `SK7010` ships at `none` because turning
+it on produces 1 868 findings on `Testing/corpus` alone.
+
+**Residual risk: medium**, and unchanged. Ten analyzers is more evidence than six and still not
+enough, and M6 *added* to the "measured at zero, tested at nothing" pile rather than draining it.
 
 ### R4 — Scope. This is three products
 
