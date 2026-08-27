@@ -343,7 +343,8 @@ tool was built.
 | SARIF shape | — | unchanged, 53 paths |
 | option registry | **major** | 84 changes: **6 defaults changed on Tier A keys**, 77 moved `D → A`, 1 type changed while inert |
 
-**Verdict: major. Version: `2.0.0-alpha.126`** for the `master` build; `2.0.0` for a release.
+**Verdict: major. Version: `2.0.0-alpha.<height>`** for the `master` build — `alpha.126` at the
+commit it was first run on — and `2.0.0` for a release.
 
 The exit-code findings are the ones worth reading, because they are what a hand-written changelog
 would have missed:
