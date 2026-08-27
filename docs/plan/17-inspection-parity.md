@@ -93,10 +93,15 @@ Every C#-relevant inspection lands in exactly one bucket, first match wins:
 | **Uncovered** | None of the above. The real gap, and the only bucket that is a work queue |
 
 ⚠ **`Hosted` and `Catalogued` are hand-built maps and are therefore lower bounds.** 126 inspections
-are mapped to 49 distinct `SK` ids and 44 to Roslyn analyzers; both maps were written by reading, not
-generated, so each will be missing entries. **Every entry missing from them inflates `Uncovered`.**
-The uncovered count below is an *upper* bound on the gap, and the honest reading of it is "at most
-this many", not "exactly this many".
+are mapped to 49 distinct `SK` ids, and 76 to Roslyn `CA*`/`IDE*` or to a test framework's own
+analyzer package; both maps were written by reading, not generated, so each will be missing entries.
+**Every entry missing from them inflates `Uncovered`.** The uncovered count below is an *upper* bound
+on the gap, and the honest reading of it is "at most this many", not "exactly this many".
+
+⚠ Only **49 of doc 08's 109 rules have a ReSharper counterpart at all**. The other 60 — the taint
+rules, the metrics, the duplication detector, the `SK9xxx` tool diagnostics — are ground ReSharper
+does not cover, and they are the reason this document is a parity map rather than a to-do list.
+Parity with ReSharper is not the whole of what Skala is for.
 
 ## The classification
 
@@ -108,15 +113,35 @@ inspections are counted separately: they are C#, and they are not code Skala is 
 
 | Bucket | Count | of 888 | `error` | `warning` | `suggestion` | `hint` | `none` |
 |---|---:|---:|---:|---:|---:|---:|---:|
-| **Uncovered** | **658** | **74.1 %** | 12 | 380 | 174 | 64 | 28 |
+| **Uncovered** | **580** | **65.3 %** | 3 | 322 | 171 | 57 | 27 |
 | Catalogued | 89 | 10.0 % | 0 | 38 | 31 | 12 | 8 |
+| Hosted | 76 | 8.6 % | 0 | 45 | 18 | 10 | 3 |
 | Option | 67 | 7.5 % | 0 | 1 | 3 | 15 | 48 |
-| Hosted | 44 | 5.0 % | 0 | 14 | 18 | 10 | 2 |
-| Out of scope | 28 | 3.2 % | 1 | 16 | 2 | 3 | 6 |
+| Out of scope | 74 | 8.3 % | 10 | 43 | 5 | 10 | 6 |
 | Compiler | 2 | 0.2 % | 1 | 1 | 0 | 0 | 0 |
 | **Total** | **888** | | 14 | 450 | 228 | 104 | 92 |
 
 A further 65 Unity/Burst inspections are out of scope for the engine rather than for the language.
+
+⚠ **Three corrections during the pass moved 78 inspections out of `Uncovered`, and all three are
+recorded because each was initially got wrong the same way — by classifying on the key's name.** The
+first pass put the uncovered count at 658; reading the entries rather than their names took it to
+580. **That 12 % error, all of it in one direction, is the measure of how much this kind of table
+should be trusted before somebody has read it.**
+
+- **30 `n_unit_*`/`xunit_*` inspections are `Hosted`, not uncovered.** NUnit.Analyzers ships the
+  equivalent `NUnit####` diagnostic with the test framework, and `xunit.analyzers` does the same.
+  **This is doc 08's own reasoning**: `SK8003` and `SK8004` were cut precisely because `xUnit1001`
+  and `xUnit1049` already exist. Applying it consistently to NUnit removes 30 entries.
+- **17 `RouteTemplates.*` (ASP.NET Core routing) and 8 `entity_framework_*` are framework front
+  ends**, in the same class as the Godot and MEF inspections — a plugin's audience, not the core's.
+- ⚠ **8 markup inspections were counted as C# because their keys carry no language prefix** —
+  `UnclosedScript`, `OtherTagsInsideScript1/2`, `Mvc.InvalidModelType`, `ResourceNotResolved` and
+  kin. They were 8 of what this document first reported as "12 uncovered inspections at `error`".
+  **The real number is 3**, and the alarming version of that row was an artefact of the filter.
+
+The uncovered set is by category: `CodeSmell` 200, `BestPractice` 144, `CodeRedundancy` 103,
+`LanguageUsage` 57, `DeclarationRedundancy` 38, and a long tail.
 
 ### ⚠ The `Option` bucket is the one this document most expects to be argued with, and it is smaller than it looks
 
@@ -161,7 +186,117 @@ are the formatter's output as a whole, and `SK0001` "the file is not formatted" 
 diagnostic that reports them. Treating those 40-odd inspections as 40 missing rules would be the
 clearest possible case of the double-count.
 
-<!-- FIRE COUNTS -->
+## The uncovered set, ranked by what fires on real code
+
+**This is the work queue**, and it is the section [08](08-rule-catalogue.md)'s next revision should
+be built from. A list of inspections is a wish; a list ordered by how often each one has something to
+say about code somebody actually wrote is a plan.
+
+### What was measured
+
+A `git archive` of Vixen at `44b88648`, ten projects, **49 757 findings** deduplicated on
+(rule, file, line, column):
+
+| Project | Findings |
+|---|---:|
+| `Vixen.Rendering.Tests` | 16 286 |
+| `Vixen.Rendering` | 10 227 |
+| `Vixen.Editor.AssetEditors` | 6 160 |
+| `Vixen.Raven` | 3 892 |
+| `Vixen.Ui` | 3 086 |
+| `Vixen.Engine` | 2 712 |
+| `Vixen.Animation` | 2 651 |
+| `Vixen.Audio` | 1 869 |
+| `Vixen.Ai` | 1 784 |
+| `Vixen.Net` | 1 090 |
+
+⚠ **Ten projects, not the whole tree, and the reason is a failure worth recording.** Loading Vixen's
+412-project solution did not converge in 45 minutes of wall time. A project at a time loads only that
+project's `ProjectReference` closure and completes in one to three minutes each. The ten were chosen
+as the largest non-generated projects plus one test project, ≈ 900 files of the 4 717 in the tree.
+**A fire count here is therefore a lower bound**, and the ranking rather than the magnitude is what
+should be read.
+
+### ⚠ Two ways a zero can lie, and both are present
+
+1. **Disabled, not clean** — handled. Every inspection was raised to `warning` first. The proof that
+   this mattered: **44 inspections sitting at `none` in the export fired anyway**, led by
+   `InternalOrPrivateMemberNotDocumented` at 3 408 and `ArrangeRedundantParentheses` at 1 231. Under
+   the export's own severities every one of those would have read as a clean zero.
+2. ⚠ **Solution-wide, not clean** — *not* handled, and it must be stated. The runs used `--no-swea`,
+   so ReSharper's solution-wide analysis was off. The `.Local` variants fired (`UnusedMember.Local`
+   112, `UnusedParameter.Local` 61) and **every `.Global` variant scored zero for that reason rather
+   than for any fact about Vixen**. Roughly 55 inspections — the whole "unused across the solution",
+   "never instantiated", "can be sealed" family — are unmeasured here, not measured at zero.
+
+**499 of the 580 uncovered inspections did not fire at all.** Read with the two caveats above, that
+is mostly a statement about a 900-file sample and a disabled analysis mode, not evidence that four
+fifths of the gap is theoretical.
+
+### The top of the queue
+
+| Fires | Inspection | Export severity | Category | What it reports |
+|---:|---|---|---|---|
+| 3 408 | `InternalOrPrivateMemberNotDocumented` | `none` | BestPractice | Missing XML comment for a private or internal member |
+| 951 | `InheritdocConsiderUsage` | `none` | CodeSmell | `<inheritdoc />` would inherit the base's documentation |
+| 397 | `LambdaExpressionCanBeMadeStatic` | `none` | LanguageUsage | Lambda can be `static` — an allocation, not a style |
+| 331 | `ArrangeEmptyString` | `none` | CodeStyleIssues | Empty string style |
+| 220 | `ArrangeTypeModifiers` | `hint` | CodeStyleIssues | Explicit vs implicit modifier on types |
+| 172 | `PrimaryConstructorParameterCaptureDisallowed` | `none` | CodeSmell | Primary constructor parameter capture |
+| 139 | `SuggestBaseTypeForParameter` | `none` | BestPractice | Parameter could take the base type |
+| 135 | `CheckNamespace` | `warning` | ConstraintViolation | Namespace does not match file location |
+| 83 | `LoopCanBePartlyConvertedToQuery` | `none` | LanguageUsage | Part of a loop body is a LINQ expression |
+| 63 | `ForeachCanBePartlyConvertedToQuery…` | `hint` | LanguageUsage | As above, via another `GetEnumerator` |
+| 58 | `UsingStatementResourceInitialization` | `warning` | CodeSmell | Object initializer on a `using` variable |
+| 53 | `InlineTemporaryVariable` | `hint` | LanguageUsage | Temporary used once |
+| 39 | `PartialTypeWithSinglePart` | `warning` | DeclarationRedundancy | Redundant `partial` |
+| 25 | `ForCanBeConvertedToForeach` | `suggestion` | LanguageUsage | `for` over an indexable is a `foreach` |
+| 24 | `TailRecursiveCall` | `hint` | CodeSmell | Tail recursion could be a loop |
+| 23 | `RedundantEmptySwitchSection` | `warning` | CodeRedundancy | Empty `switch` section |
+| 21 | `RedundantCast` | `warning` | CodeRedundancy | Redundant cast |
+| 21 | `MoveLocalFunctionAfterJumpStatement` | `hint` | BestPractice | Local function before `return`/`continue` |
+| 20 | `LocalVariableHidesMember` | `warning` | CodeSmell | Local hides a member |
+| 20 | `ParameterHidesMember` | `warning` | CodeSmell | Parameter hides a member |
+
+By category, among the 81 uncovered inspections that fired:
+
+| Category | Fired | Findings |
+|---|---:|---:|
+| BestPractice | 17 | 3 677 |
+| CodeSmell | 23 | 1 328 |
+| LanguageUsage | 17 | 707 |
+| CodeStyleIssues | 3 | 554 |
+| ConstraintViolation | 1 | 135 |
+| CodeRedundancy | 15 | 111 |
+| DeclarationRedundancy | 5 | 51 |
+
+⚠ **The top of this table is documentation and naming, and that is a finding rather than a
+disappointment.** `InternalOrPrivateMemberNotDocumented` and `InheritdocConsiderUsage` are 4 359 of
+the 6 563 findings — two thirds — and doc 08 has one rule in that space (`SK7010`, public API only,
+shipped at `none`). ⚠ **They are also the clearest case in this document for not letting a fire count
+drive a decision on its own.** `SK7010` at `warning` already produces 1 868 findings on
+`Testing/corpus` alone, and [08](08-rule-catalogue.md) lists that threshold as suspect precisely
+because calibrating against the tree the rule runs on is how a metric comes to certify the present.
+A high count here means the rule *has something to say*; it does not mean the rule should be loud.
+
+⚠ **The genuinely valuable ones are further down and are quiet by configuration.**
+`LambdaExpressionCanBeMadeStatic` fires 397 times at `none`: each is a closure allocation in a game
+engine's hot path, it is exactly `SK4002`'s subject, and today nothing reports it. `RedundantCast`
+(21) and `PartialTypeWithSinglePart` (39) are the mechanical cleanups a Rider user does not notice
+they rely on until they are gone.
+
+### ⚠ The Tier D arrangement gap has a number, and it is the largest single one in this measurement
+
+`ArrangeRedundantParentheses` — governed by `resharper_parentheses_redundancy_style`, **Tier D, not
+implemented** — fires **1 231 times** on 900 files. `ArrangeObjectCreationWhenTypeNotEvident` fires
+950. Together with the rest of the `Option` bucket, arrangement accounts for **3 718 findings**,
+against 6 563 for the entire uncovered rule set.
+
+**The thing standing between Skala and retiring ReSharper is not mostly a rule catalogue.** It is
+fifteen unimplemented arrangement options, and they outweigh most of the rule gap by volume on real
+code. That is the practical conclusion of this document and it was not the expected one.
+
+
 
 ## SonarQube
 
@@ -242,14 +377,14 @@ gap badly, and ADR-008's position is that Skala hosts them rather than rebuildin
 **481 Sonar + 888 ReSharper is not 1 369 problems.** The two tools overlap heavily and neither
 overlap can be measured precisely. What can be said:
 
-- ReSharper uncovered: **≤ 658** inspection ids, **≤ 587** distinct concepts after collapsing
+- ReSharper uncovered: **≤ 580** inspection ids, **≤ 510** distinct concepts after collapsing
   variants (below).
 - Sonar uncovered: **≈ 256**, 95 % CI 195–317.
 - Of the 60-rule Sonar sample, 13 were already catalogued by an `SK` id and several more had a
   ReSharper counterpart in the uncovered set — so a substantial share of Sonar's 256 is *the same
-  problem* as one of ReSharper's 658, not an additional one.
+  problem* as one of ReSharper's 580, not an additional one.
 
-A defensible union of **distinct uncovered problems is 700–900**, and the honest thing to say about
+A defensible union of **distinct uncovered problems is 600–800**, and the honest thing to say about
 that range is that its width is the finding. It is not 1 369, and it is not 111.
 
 ## ⚠ Inspection ids are not concepts, and a catalogue is sized in concepts
@@ -263,13 +398,13 @@ Collapsing numbered variants, `.Global`/`.Local` pairs and long shared prefixes:
 
 | | |
 |---|---:|
-| Uncovered inspection ids | 658 |
-| after collapsing numbered and `.Global`/`.Local` variants | 602 |
-| after also merging long shared prefixes | **587** |
+| Uncovered inspection ids | 580 |
+| after collapsing numbered and `.Global`/`.Local` variants | 525 |
+| after also merging long shared prefixes | **510** |
 
-⚠ **The collapse is real but modest — 11 %.** It was worth measuring precisely because it is the
+⚠ **The collapse is real but modest — 12 %.** It was worth measuring precisely because it is the
 obvious way to argue the gap down, and it does not carry that argument. The `ReplaceWithOfType`
-family is vivid and it is not representative; most of the 658 are genuinely distinct ideas.
+family is vivid and it is not representative; most of the 580 are genuinely distinct ideas.
 
 ## The recommended catalogue target
 
@@ -277,11 +412,12 @@ family is vivid and it is not representative; most of the 658 are genuinely dist
 
 [08](08-rule-catalogue.md) names 109 rules. The measurement says the reachable surface, after every
 deduction this document could justify — the compiler's, Roslyn's, the option registry's, other
-languages', other engines' — is **587 uncovered ReSharper concepts plus roughly 256 Sonar rules, of
-which a large but unmeasured share are the same problems**. Even at the pessimistic end of the
-overlap, the catalogue is naming **under a fifth of what it would take to replace the two tools.**
+languages', other engines', the test frameworks' own analyzers' — is **510 uncovered ReSharper
+concepts plus roughly 256 Sonar rules, of which a large but unmeasured share are the same
+problems**. Even at the pessimistic end of the overlap, the catalogue is naming **under a fifth of
+what it would take to replace the two tools.**
 
-**A target of 450–550 concepts** is what the evidence supports for full parity. But the number that
+**A target of 400–500 concepts** is what the evidence supports for full parity. But the number that
 should govern planning is not that one, and this is the part [08](08-rule-catalogue.md)'s next
 revision should take:
 
@@ -292,9 +428,9 @@ revision should take:
    [16](16-risks-and-open-questions.md) § R3 already names "a hundred that are usually right" as the
    failure mode.
 2. **So the target is a statement about scope, not a commitment about dates.** The value of knowing
-   it is 587 rather than 111 is that it converts "we are 27 % done" into "we are about 5 % done", and
+   it is 510 rather than 111 is that it converts "we are 27 % done" into "we are about 5 % done", and
    the second number is the one that should inform whether ReSharper can be retired and when.
-3. ⚠ **A large share of the 658 is cheap.** The `CodeRedundancy` (103) and `DeclarationRedundancy`
+3. ⚠ **A large share of the 580 is cheap.** The `CodeRedundancy` (103) and `DeclarationRedundancy`
    (38) families are syntactic, mechanically fixable, and have near-zero false-positive surface —
    `RedundantCast`, `RedundantJumpStatement`, `RedundantBoolCompare`, `RedundantCatchClause`. These
    are the rules the shipping bar is *easiest* on, and they are 141 of the gap. **The catalogue's
@@ -318,9 +454,9 @@ Ordered by what a user loses on the day Rider is switched off, not by fire count
    `this.` qualification, redundant parentheses, trailing commas, attribute placement, trailing
    whitespace. `skala format` is the tool's headline feature and it silently does not perform these.
    **This is a formatter gap and it blocks replacement more directly than any rule does.**
-2. **The 12 `error`-severity uncovered inspections.** The author configured these as errors; after
+2. **The 3 `error`-severity uncovered inspections.** The author configured these as errors; after
    replacement nothing reports them.
-3. **The 380 `warning`-severity uncovered inspections**, ranked by fire count below.
+3. **The 322 `warning`-severity uncovered inspections**, ranked by fire count below.
 4. **The `CodeRedundancy`/`DeclarationRedundancy` families (141)** — cheap, mechanical, high volume,
    and the bulk of what "code cleanup" means to a Rider user.
 
