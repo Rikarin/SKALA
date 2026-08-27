@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using System.Reflection;
 
 namespace Rikarin.Skala.Testing;
@@ -47,6 +48,38 @@ public static class Corpus {
     /// arrangement subtree and <see cref="Real"/> are where the second profile has something to say.
     /// </remarks>
     public const string ArrangementPrefix = "arrangement/";
+
+    /// <summary>
+    /// A symbol set that makes a conditional body live, for the properties to be asserted under.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ Not the oracle's own eighteen, and it does not need to be. What a *fidelity* measurement
+    /// needs is the symbols the oracle actually had (<c>fidelity preprocessor</c> reads them out of
+    /// a binary log for exactly that reason); what a *property* needs is only that <c>#if</c> bodies
+    /// stop being disabled text, because that is the code path the properties were never asserted
+    /// over. A hard-coded list keeps the suite runnable on a machine with no SDK probe and no
+    /// oracle.
+    /// <para>
+    /// ⚠ It lives here rather than in the conformance test project because the fuzzer needs it too
+    /// and the fuzzer is a library, not a test. Two lists would be two answers to "what does
+    /// <c>defined</c> mean", and the second one would drift.
+    /// </para>
+    /// </remarks>
+    public static readonly ImmutableArray<string> PropertySymbols = [
+        "DEBUG",
+        "TRACE",
+        "NET",
+        "NET10_0",
+        "NETCOREAPP",
+        "NET5_0_OR_GREATER",
+        "NET6_0_OR_GREATER",
+        "NET7_0_OR_GREATER",
+        "NET8_0_OR_GREATER",
+        "NET9_0_OR_GREATER",
+        "NET10_0_OR_GREATER",
+        "HAVE_ASYNC",
+        "FEATURE_SPAN"
+    ];
 
     public static string RepositoryRoot { get; } =
         Assembly.GetExecutingAssembly()

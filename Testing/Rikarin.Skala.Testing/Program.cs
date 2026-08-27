@@ -39,6 +39,21 @@ using Rikarin.Skala.Testing;
 //                     it.
 //   margin [out]      SK-DIV-0005's constant, swept: eleven right-hand-side shapes at five block
 //                     depths under both values of `wrap_before_eq`, one character at a time.
+//   fuzz [flags]      docs/plan/12 § "4. Fuzzing", as a program. Seeded mutation of the corpus and
+//                     a weighted generative grammar, both asserted against the seven properties
+//                     under both symbol sets, with a delta-debugging minimiser behind any failure.
+//                     ⚠ Bounded by a time budget rather than a case count, and every case is a
+//                     function of its seed alone: `--replay=<seed>` reconstructs one exactly.
+//                       --seed=N          the root seed. Default 1; the nightly job passes the run id.
+//                       --minutes=N       the wall-clock budget. Default 2.
+//                       --cases=N         an exact case count instead of a budget.
+//                       --mode=…          mutate | generate | both (default).
+//                       --arrange-every=N run the arrange-and-format pair on one case in N. 0 is off.
+//                       --out=DIR         write minimised findings there. Default `.skala/fuzz/`.
+//                       --no-minimise     report the raw failing input instead of shrinking it.
+//                       --replay=SEED     re-execute one case and print it.
+//                       --mutation-test   break the formatter deliberately, per property, and
+//                                         report which property caught it and after how many cases.
 //   preprocessor      SK-DIV-0004's number: `corpus/real/` fidelity with the oracle's own
 //                     preprocessor symbols supplied, split by whether the file contains a `#if`.
 //                     The symbols are read out of a real binary log rather than typed.
@@ -52,6 +67,7 @@ if (args.Length == 0) {
     Console.Error.WriteLine(
         "usage: oracle [set…] | fidelity [set…] | constructs [set…] | dump <set> <dir>"
         + " | ask <dir> | defaults [round…] | preprocessor [symbol…] | audit [dir…]"
+        + " | fuzz [--seed=N] [--minutes=N] [--cases=N] [--mode=…] [--replay=SEED] [--mutation-test]"
     );
     return 2;
 }
@@ -154,6 +170,8 @@ switch (args[0]) {
             Path.GetFullPath(args[1]),
             args.Length > 2 ? int.Parse(args[2], CultureInfo.InvariantCulture) : int.MaxValue
         );
+    case "fuzz":
+        return Fuzz(args[1..]);
     case "arrangement":
         // ⚠ M4's bar: the oracle's cleanup profile against Skala's arrange-and-format pipeline, per
         // changed span rather than per line. `--aggressive` turns on parenthesis removal, which the
@@ -291,6 +309,104 @@ static int Defaults(string? outputPath) {
     }
 
     return 0;
+}
+
+// `fuzz [flags]`: docs/plan/12 § "4. Fuzzing".
+//
+// ⚠ The exit code is 1 when a property did not hold, so the nightly job fails rather than uploading
+// a green report with a finding buried in it. It is 0 when the run found nothing — which is a claim
+// the report is required to back up with coverage numbers, because a fuzzer whose mutations never
+// reach the formatter also finds nothing and looks identical from the outside.
+static int Fuzz(string[] args) {
+    string? Flag(string name) =>
+        args.FirstOrDefault(argument => argument.StartsWith("--" + name + "=", StringComparison.Ordinal))
+            ?[(name.Length + 3)..];
+
+    var options = new FuzzOptions {
+        Seed = Flag("seed") is { } seed ? FuzzRandom.Parse(seed) : 1,
+        Budget = TimeSpan.FromMinutes(
+            Flag("minutes") is { } minutes ? double.Parse(minutes, CultureInfo.InvariantCulture) : 2
+        ),
+        Cases = Flag("cases") is { } cases ? long.Parse(cases, CultureInfo.InvariantCulture) : null,
+        Mode = Flag("mode") switch {
+            "mutate" => FuzzMode.Mutate,
+            "generate" => FuzzMode.Generate,
+            _ => FuzzMode.Both
+        },
+        ArrangeEvery = Flag("arrange-every") is { } every
+            ? int.Parse(every, CultureInfo.InvariantCulture)
+            : 25,
+        Minimise = !args.Contains("--no-minimise"),
+        OutputDirectory = Flag("out") ?? Path.Combine(Corpus.RepositoryRoot, ".skala", "fuzz")
+    };
+
+    // ⚠ `--replay=<seed>` reconstructs one case from its seed and nothing else. This is the whole
+    // point of the SplitMix64 stream in FuzzRandom: a seed recorded in a nightly log six months ago
+    // rebuilds the same bytes today, on any runtime, on any platform.
+    if (Flag("replay") is { } replay) {
+        var subject = Fuzzer.Build(FuzzRandom.Parse(replay), options.Mode, Corpus.All());
+        Console.WriteLine(
+            $"seed {FuzzRandom.Format(subject.Seed)} — {subject.Kind.ToString().ToLowerInvariant()} of {subject.Origin}"
+        );
+
+        Console.WriteLine(
+            $"mutations: {string.Join(", ", subject.Mutations.Select(mutation => mutation.Name))}"
+            + (subject.AbsorbedOnly ? " (whitespace only — absorption is asserted)" : string.Empty)
+        );
+
+        var (violations, edits) = Fuzzer.Execute(subject, options.ArrangeEvery > 0);
+        Console.WriteLine(
+            $"the formatter wanted {edits.ToString(CultureInfo.InvariantCulture)} edit(s) on it; "
+            + $"{violations.Length.ToString(CultureInfo.InvariantCulture)} property violation(s)."
+        );
+
+        foreach (var violation in violations) {
+            Console.WriteLine("  ✗ " + violation);
+        }
+
+        Console.WriteLine();
+        Console.WriteLine(subject.Text);
+        return violations.Any(violation => violation.Property != FuzzProperties.ParseLost) ? 1 : 0;
+    }
+
+    if (args.Any(argument => argument.StartsWith("--grammar-check", StringComparison.Ordinal))) {
+        Console.WriteLine(
+            Fuzzer.GrammarCheck(
+                options.Seed,
+                Flag("grammar-check") is { Length: > 0 } sample
+                    ? int.Parse(sample, CultureInfo.InvariantCulture)
+                    : 500
+            )
+        );
+
+        return 0;
+    }
+
+    if (args.Contains("--mutation-test")) {
+        Console.WriteLine(Fuzzer.MutationTest(options, Console.Error));
+        return 0;
+    }
+
+    Console.Error.WriteLine(
+        $"fuzzing from seed {FuzzRandom.Format(options.Seed)}, "
+        + (options.Cases is { } total
+            ? total.ToString(CultureInfo.InvariantCulture) + " cases"
+            : options.Budget.TotalMinutes.ToString("F1", CultureInfo.InvariantCulture) + " minutes")
+        + $", mode {options.Mode.ToString().ToLowerInvariant()}…"
+    );
+
+    var report = Fuzzer.Run(options, Console.Error);
+    Console.WriteLine(report.Render());
+
+    try {
+        var directory = Path.Combine(Corpus.RepositoryRoot, ".skala");
+        Directory.CreateDirectory(directory);
+        File.WriteAllText(Path.Combine(directory, "fuzz.md"), report.Render());
+    } catch (IOException) {
+        // The written report is a convenience; a read-only tree does not fail the run.
+    }
+
+    return report.Findings.IsEmpty ? 0 : 1;
 }
 
 // `arrangement [--aggressive] [--all-rules] [set…]`: the M4 differential.
