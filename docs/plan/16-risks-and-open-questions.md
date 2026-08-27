@@ -45,6 +45,33 @@ reads as though it were always right.
 ⚠ This belongs in [00](00-vision-and-principles.md) § "Non-negotiables" as well as here, and is not
 yet written there.
 
+### ⚠ The opt-in that does not cost what it says
+
+M9 revisited `SK3001` under the instruction above. Half of its recorded justification — "Vixen
+contains no `async void` method at all" — is struck, and the other half held up under measurement:
+enabling any compilation-scoped rule sends every run with a change down the cold path, which on
+Skala's own tree is 8.5 s against a warm 6.9 s and moves the analyzer phase from one tree to all of
+them. **The `none` default stands on reason 2 alone, which is where it should always have stood.**
+
+⚠ **What did not survive is the sentence that made the default acceptable.** `rules.json` tells a
+repository that has `async void` to set `dotnet_diagnostic.SK3001.severity = warning` and "pay the
+cost knowing what it bought". It does not pay it. `IncrementalAnalysis` decides whether the warm path
+is available by asking `descriptor.IsEnabledByDefault`, which comes from `rules.json` and which an
+`.editorconfig` severity does not change; Roslyn's driver, meanwhile, filters on the *effective*
+severity and runs the analyzer. So the opted-in repository gets the rule **and** keeps the warm path
+— and `DiagnosticCache.Store` drops uncacheable rule ids from what it writes, so every unchanged file
+contributes a cache entry containing no `SK3001` findings at all.
+
+The rule therefore reports correctly on a cold run and **silently under-reports on every warm one**.
+Findings vanish rather than going stale, which is the direction that looks clean. Nothing in the
+repository fails when this happens, because the only compilation-scoped rule that is on by default is
+`SK7020`, which is behind `--duplication`.
+
+⚠ It is worth naming what this is an instance of. **A cost that is documented and not actually
+charged is not a conservative default — it is an unmeasured one wearing a measurement's clothes.**
+The guard needs to ask the effective severity, and the per-tree scan that answers it needs its own
+`--profile` measurement before it goes in, because the warm path exists to stay under five seconds.
+
 ## The risks that could sink this
 
 ### R1 — ⚠ Rider fidelity is asymptotic, and the last 0.1 % is most of the work

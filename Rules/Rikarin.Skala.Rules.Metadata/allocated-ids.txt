@@ -50,6 +50,11 @@ SK1006 using-declaration
 SK1015 type-pattern-over-cast
 SK1031 null-conditional-assignment
 SK1033 dictionary-double-lookup
+SK2007 collection-modified-during-enumeration
+SK3004 cancellation-token-not-forwarded
+SK3007 task-returned-from-using
+SK3501 disposable-not-disposed
+SK3503 async-disposable-disposed-synchronously
 
 # Retired: allocated, superseded by a live id, and never to be built. The line stays so the
 # number cannot be handed out a second time; there is no rules.json entry to point at, because

@@ -2,7 +2,7 @@
 
 <!-- Generated from Rules/Rikarin.Skala.Rules.Metadata/rules.json. Do not edit. -->
 
-`SK` + four digits, allocated once and never re-purposed (ADR-012). 42 ids are allocated.
+`SK` + four digits, allocated once and never re-purposed (ADR-012). 47 ids are allocated.
 
 ## Async
 
@@ -10,11 +10,14 @@
 |---|---|---|---|---|
 | [SK3001](SK3001.md) | `async void` outside an event handler | none | review | no |
 | [SK3002](SK3002.md) | Blocking on an async call | warning | review | no |
+| [SK3004](SK3004.md) | A `CancellationToken` is accepted and not passed on | warning | review | no |
+| [SK3007](SK3007.md) | A `Task` that uses a `using` resource is returned instead of awaited | warning | review | no |
 
 ## Correctness
 
 | Id | Rule | Severity | Fix | Loose mode |
 |---|---|---|---|---|
+| [SK2007](SK2007.md) | The collection being enumerated is modified inside the loop | warning | review | no |
 | [SK2013](SK2013.md) | An exception is constructed and then discarded | warning | safe | no |
 | [SK2015](SK2015.md) | `throw ex;` resets the stack trace | warning | safe | yes |
 
@@ -31,6 +34,13 @@
 | [SK0001](SK0001.md) | The file is not formatted | suggestion | safe | yes |
 | [SK0002](SK0002.md) | The line is over the width and nothing in it can break | hint | — | yes |
 | [SK0003](SK0003.md) | The documentation comment is not well-formed XML | hint | — | yes |
+
+## Lifetime
+
+| Id | Rule | Severity | Fix | Loose mode |
+|---|---|---|---|---|
+| [SK3501](SK3501.md) | A disposable is created in a local and never disposed | warning | safe | no |
+| [SK3503](SK3503.md) | An `IAsyncDisposable` is disposed synchronously | warning | review | no |
 
 ## Maintainability
 

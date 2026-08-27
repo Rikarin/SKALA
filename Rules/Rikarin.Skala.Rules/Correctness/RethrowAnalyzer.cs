@@ -63,7 +63,26 @@ public sealed class RethrowAnalyzer : DiagnosticAnalyzer {
             return;
         }
 
-        var fix = FixEdits.Pack((statement.Span, "throw;"));
+        // ⚠ The rewrite leaves the catch variable with no readers, and an unused one is CS0168 — a
+        // warning this rule's own `fixIsSafe: true` promises not to introduce, and a broken build
+        // wherever `TreatWarningsAsErrors` is on. Dropping the name is part of the same edit, and it
+        // is carried by the *last* rewritable throw in the clause so that a clause containing two of
+        // them produces the deletion once rather than twice over the same span.
+        var edits = ImmutableArray.CreateBuilder<(Microsoft.CodeAnalysis.Text.TextSpan, string)>();
+        edits.Add((statement.Span, "throw;"));
+        if (IsLastRewritableThrowIn(clause, statement) && !IsReadElsewhereIn(clause, thrown.Identifier.ValueText)) {
+            edits.Add(
+                (
+                    Microsoft.CodeAnalysis.Text.TextSpan.FromBounds(
+                        declaration.Type!.Span.End,
+                        declaration.Identifier.Span.End
+                    ),
+                    string.Empty
+                )
+            );
+        }
+
+        var fix = FixEdits.Pack([.. edits]);
         context.ReportDiagnostic(
             Diagnostic.Create(
                 Descriptor,
@@ -102,6 +121,52 @@ public sealed class RethrowAnalyzer : DiagnosticAnalyzer {
         }
 
         return null;
+    }
+
+    /// <summary>
+    /// Whether the name is read anywhere in the clause other than by a <c>throw</c> this rule
+    /// rewrites.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ <c>catch (IOException ex) when (ex.HResult != 0) { throw ex; }</c> reads the variable in
+    /// its filter, so the name has to stay. The filter is part of the clause and the walk sees it.
+    /// </remarks>
+    static bool IsReadElsewhereIn(CatchClauseSyntax clause, string name) {
+        foreach (var node in clause.DescendantNodes()) {
+            if (node is not IdentifierNameSyntax identifier
+                || !string.Equals(identifier.Identifier.ValueText, name, StringComparison.Ordinal)) {
+                continue;
+            }
+
+            if (identifier.Parent is ThrowStatementSyntax rewritten
+                && ReferenceEquals(EnclosingCatch(rewritten), clause)) {
+                continue;
+            }
+
+            return true;
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// Whether this is the last <c>throw &lt;name&gt;;</c> in the clause that the rule rewrites.
+    /// </summary>
+    static bool IsLastRewritableThrowIn(CatchClauseSyntax clause, ThrowStatementSyntax statement) {
+        ThrowStatementSyntax? last = null;
+        foreach (var node in clause.DescendantNodes()) {
+            if (node is ThrowStatementSyntax { Expression: IdentifierNameSyntax name } candidate
+                && string.Equals(
+                    name.Identifier.ValueText,
+                    clause.Declaration!.Identifier.ValueText,
+                    StringComparison.Ordinal
+                )
+                && ReferenceEquals(EnclosingCatch(candidate), clause)) {
+                last = candidate;
+            }
+        }
+
+        return ReferenceEquals(last, statement);
     }
 
     /// <summary>Whether the clause assigns the name anywhere, including through <c>ref</c>/<c>out</c>.</summary>

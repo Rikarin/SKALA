@@ -35,3 +35,8 @@ SK1006  | Skala.Modernization | Info | Use a `using` declaration where the block
 SK1015  | Skala.Modernization | Info | Use `is T t` instead of `is T` and a cast.
 SK1031  | Skala.Modernization | Info | Use a null-conditional assignment.
 SK1033  | Skala.Modernization | Info | Use `TryGetValue` / `TryAdd` instead of `ContainsKey` and a second lookup.
+SK2007  | Skala.Correctness | Warning | The collection being enumerated is modified inside the loop.
+SK3004  | Skala.Async | Warning | A `CancellationToken` is accepted and not passed on.
+SK3007  | Skala.Async | Warning | A `Task` built from a `using` resource is returned instead of awaited.
+SK3501  | Skala.Lifetime | Warning | A disposable is created in a local and never disposed.
+SK3503  | Skala.Lifetime | Warning | An `IAsyncDisposable` is disposed synchronously.
