@@ -9,6 +9,13 @@ using Rikarin.Skala.Testing;
 //   oracle [set…]     regenerate the committed `.expected.cs` fixtures from `jb cleanupcode`.
 //                     `./build.sh Oracle`, never a test — an oracle that regenerates when it
 //                     disagrees is a tautology (docs/plan/12 § "The oracle").
+//   restamp --from=<digest> --to=<digest>
+//                     ⚠ rewrite the recorded base-configuration digest in every fixture header,
+//                     WITHOUT regenerating a byte of any fixture. Legitimate only when the
+//                     configuration change has been measured not to move the oracle's output; see
+//                     the remarks on `OracleFixture.Restamp`, which carry the one measurement that
+//                     has ever justified it. Both digests are required so it cannot be run blind,
+//                     and `--to` must be the digest actually on disk.
 //   fidelity [set…]   print the differential report without failing anything, which is the work
 //                     queue the divergence classes rank.
 //   xmldoc [set]      what the doc-comment sub-formatter costs against an oracle profile that
@@ -103,6 +110,8 @@ var only = args.FirstOrDefault(static argument => argument.StartsWith("--only=",
 switch (args[0]) {
     case "oracle":
         return Regenerate(sets, only);
+    case "restamp":
+        return Restamp(args);
     case "fidelity":
         return Report(sets);
     case "xmldoc":
@@ -666,6 +675,32 @@ static int UnformatCommand(string[] arguments) {
             Console.Error.WriteLine("usage: unformat [report|generate|oracle|regenerate] [--count=N]");
             return 2;
     }
+}
+
+// ⚠ `restamp --from=… --to=…`: rewrite what the fixture headers say they were measured against,
+// without re-measuring anything. It is the one operation in this file that changes a committed
+// measurement's provenance while leaving the measurement alone, and it is only ever honest when the
+// configuration change has been shown not to move the oracle. `OracleFixture.Restamp` carries that
+// argument and the one measurement that has satisfied it; this is only the plumbing.
+static int Restamp(string[] args) {
+    var from = args.FirstOrDefault(static a => a.StartsWith("--from=", StringComparison.Ordinal))?["--from=".Length..];
+    var to = args.FirstOrDefault(static a => a.StartsWith("--to=", StringComparison.Ordinal))?["--to=".Length..];
+
+    if (from is null || to is null) {
+        Console.Error.WriteLine(
+            "usage: restamp --from=<digest> --to=<digest>\n"
+            + "Both are required: a re-stamp that discovers for itself what it is replacing is a "
+            + "re-stamp nobody decided to make."
+        );
+        return 2;
+    }
+
+    var restamped = OracleFixture.Restamp(from, to);
+    Console.WriteLine(
+        $"{restamped.ToString(CultureInfo.InvariantCulture)} fixtures re-stamped sha256:{from} -> sha256:{to}. "
+        + "No fixture body was regenerated."
+    );
+    return 0;
 }
 
 static int Regenerate(string[] sets, string? only) {

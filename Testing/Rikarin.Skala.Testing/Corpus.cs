@@ -89,7 +89,36 @@ public static class Corpus {
 
     public static string Root { get; } = Path.Combine(RepositoryRoot, "Testing", "corpus");
 
+    /// <summary>
+    ///     The base configuration every oracle run is measured against.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ One property rather than five spellings of <c>Path.Combine(RepositoryRoot, ".editorconfig")</c>.
+    ///     The fixture generator, the variant generator and the key-flip sweep each open this file and each
+    ///     records its digest in what they commit; a sixth call site that opened a different file would
+    ///     produce fixtures whose recorded provenance is a statement about somebody else's configuration.
+    /// </remarks>
+    public static string BaseEditorConfigPath { get; } = Path.Combine(RepositoryRoot, ".editorconfig");
+
     public static string SetRoot(string set) => Path.Combine(Root, set);
+
+    /// <summary>
+    ///     Every committed oracle fixture: <c>*.expected.cs</c> anywhere under the corpus.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ The filesystem rather than <see cref="All" /> paired with <see cref="OracleProfile" />, and
+    ///     the difference is the whole point of the invariant this feeds. A fixture is only reachable
+    ///     through a <see cref="CorpusFile" /> if some enumeration still claims it: a fixture whose input
+    ///     was renamed, or which belongs to a variant nobody enumerates any more, is exactly the fixture
+    ///     whose provenance nothing would ever check. Walking the directory finds those too.
+    /// </remarks>
+    public static IReadOnlyList<string> Fixtures() =>
+        Directory.Exists(Root)
+            ? [
+                .. Directory.EnumerateFiles(Root, "*.expected.cs", SearchOption.AllDirectories)
+                    .OrderBy(static path => path, StringComparer.Ordinal)
+            ]
+            : [];
 
     public static IReadOnlyList<CorpusFile> Files(string set) {
         var root = SetRoot(set);
