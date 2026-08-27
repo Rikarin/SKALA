@@ -52,7 +52,9 @@ public sealed class WeakCipherAnalyzer : DiagnosticAnalyzer {
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
         context.RegisterCompilationStartAction(static start => {
-                var symmetric = start.Compilation.GetTypeByMetadataName("System.Security.Cryptography.SymmetricAlgorithm");
+                var symmetric = start.Compilation.GetTypeByMetadataName(
+                    "System.Security.Cryptography.SymmetricAlgorithm"
+                );
                 var mode = start.Compilation.GetTypeByMetadataName("System.Security.Cryptography.CipherMode");
 
                 // No `System.Security.Cryptography` in the compilation means nothing to say.
@@ -113,7 +115,10 @@ public sealed class WeakCipherAnalyzer : DiagnosticAnalyzer {
             Diagnostic.Create(
                 Descriptor,
                 context.Operation.Syntax.GetLocation(),
-                "`" + name + "` is " + Why(family)
+                "`"
+                + name
+                + "` is "
+                + Why(family)
                 + "; use `Aes` — or `AesGcm`, which authenticates the ciphertext as well as hiding it"
             )
         );

@@ -137,9 +137,7 @@ public sealed class CertificateValidationAnalyzer : DiagnosticAnalyzer {
         // ⚠ A *property*, not a field. Matching only `IFieldReferenceOperation` here made the rule
         // miss the single most explicit way of writing this finding, and it missed it silently:
         // the corpus caught it, reading the code did not.
-        if (operation is IPropertyReferenceOperation {
-                Property.Name: "DangerousAcceptAnyServerCertificateValidator"
-            }
+        if (operation is IPropertyReferenceOperation { Property.Name: "DangerousAcceptAnyServerCertificateValidator" }
             or IFieldReferenceOperation { Field.Name: "DangerousAcceptAnyServerCertificateValidator" }) {
             return true;
         }

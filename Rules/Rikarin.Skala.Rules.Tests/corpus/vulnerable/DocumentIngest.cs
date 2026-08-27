@@ -5,10 +5,7 @@ namespace Corpus.Vulnerable;
 /// <summary>SK5009 — DTD parsing with a resolver that will go and fetch.</summary>
 public static class DocumentIngest {
     public static XmlReaderSettings ViaInitializer() =>
-        new XmlReaderSettings {
-            DtdProcessing = DtdProcessing.Parse,
-            XmlResolver = new XmlUrlResolver()
-        };
+        new XmlReaderSettings { DtdProcessing = DtdProcessing.Parse, XmlResolver = new XmlUrlResolver() };
 
     public static XmlReaderSettings ViaStatements() {
         var settings = new XmlReaderSettings();

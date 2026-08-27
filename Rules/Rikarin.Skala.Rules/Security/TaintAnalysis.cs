@@ -403,7 +403,8 @@ public static class TaintAnalysis {
 
                 case IPropertyReferenceOperation property:
                     return _symbols.IsSource(property.Property)
-                        || CarriesText(property.Property.Type) && IsTainted(property.Instance);
+                        || CarriesText(property.Property.Type)
+                        && IsTainted(property.Instance);
 
                 case IFieldReferenceOperation field:
                     return _symbols.IsSource(field.Field)
@@ -503,8 +504,13 @@ public static class TaintAnalysis {
             // generic path alone the enumerator came out clean and the loop variable with it, so a
             // request read inside any loop lost its taint at the top of the loop. The corpus found
             // that; reading the code twice did not.
-            if (type.Name is "StringValues" or "StringBuilder" or "Uri" or "Stream" or "TextReader"
-                or "IEnumerator" or "IEnumerable") {
+            if (type.Name is "StringValues"
+                or "StringBuilder"
+                or "Uri"
+                or "Stream"
+                or "TextReader"
+                or "IEnumerator"
+                or "IEnumerable") {
                 return true;
             }
 

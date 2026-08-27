@@ -15,11 +15,7 @@ public static class TrustEverything {
     }
 
     public static HttpClient ViaObjectInitializer() =>
-        new HttpClient(
-            new HttpClientHandler {
-                ServerCertificateCustomValidationCallback = (_, _, _, _) => true
-            }
-        );
+        new HttpClient(new HttpClientHandler { ServerCertificateCustomValidationCallback = (_, _, _, _) => true });
 
     public static void ViaServicePointManager() {
         ServicePointManager.ServerCertificateValidationCallback =
@@ -28,8 +24,7 @@ public static class TrustEverything {
             };
     }
 
-    public static SslStream ViaConstructorArgument(Stream inner) =>
-        new SslStream(inner, false, (_, _, _, _) => true);
+    public static SslStream ViaConstructorArgument(Stream inner) => new SslStream(inner, false, (_, _, _, _) => true);
 
     public static HttpClient ViaTheFrameworksOwnName() {
         var handler = new HttpClientHandler();

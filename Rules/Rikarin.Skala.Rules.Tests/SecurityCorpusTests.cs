@@ -173,7 +173,13 @@ public sealed class SecurityCorpusTests {
 
     static string Describe(Diagnostic diagnostic) {
         var span = diagnostic.Location.GetLineSpan();
-        return "  " + diagnostic.Id + " " + Path.GetFileName(span.Path) + ":" + (span.StartLinePosition.Line + 1)
-            + " — " + diagnostic.GetMessage();
+        return "  "
+            + diagnostic.Id
+            + " "
+            + Path.GetFileName(span.Path)
+            + ":"
+            + (span.StartLinePosition.Line + 1)
+            + " — "
+            + diagnostic.GetMessage();
     }
 }

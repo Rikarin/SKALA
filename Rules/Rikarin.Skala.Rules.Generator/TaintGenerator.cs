@@ -125,7 +125,9 @@ public sealed class TaintGenerator : IIncrementalGenerator {
         builder.Append("namespace ").Append(Namespace).AppendLine(";");
         builder.AppendLine();
 
-        builder.AppendLine("/// <summary>One declared member: a type name and the members on it that matter.</summary>");
+        builder.AppendLine(
+            "/// <summary>One declared member: a type name and the members on it that matter.</summary>"
+        );
         builder.AppendLine("public sealed record TaintMembers(string Type, IReadOnlyList<string> Members);");
         builder.AppendLine();
 
@@ -175,11 +177,19 @@ public sealed class TaintGenerator : IIncrementalGenerator {
         builder.AppendLine("    };");
         builder.AppendLine();
 
-        builder.AppendLine("    /// <summary>Every type named anywhere in the table, for the compilation-start gate.</summary>");
+        builder.AppendLine(
+            "    /// <summary>Every type named anywhere in the table, for the compilation-start gate.</summary>"
+        );
         builder.AppendLine("    /// <remarks>");
-        builder.AppendLine("    /// ⚠ The gate is what keeps the taint engine off the warm path. A compilation in which");
-        builder.AppendLine("    /// not one source type resolves cannot produce a tainted value, so the analyzer registers");
-        builder.AppendLine("    /// nothing at all rather than building a control-flow graph to discover the same thing.");
+        builder.AppendLine(
+            "    /// ⚠ The gate is what keeps the taint engine off the warm path. A compilation in which"
+        );
+        builder.AppendLine(
+            "    /// not one source type resolves cannot produce a tainted value, so the analyzer registers"
+        );
+        builder.AppendLine(
+            "    /// nothing at all rather than building a control-flow graph to discover the same thing."
+        );
         builder.AppendLine("    /// </remarks>");
         builder.AppendLine("    public static IReadOnlyList<string> SourceTypes { get; } = new string[] {");
         foreach (var source in model.Sources) {
@@ -194,7 +204,9 @@ public sealed class TaintGenerator : IIncrementalGenerator {
 
     static void EmitMembers(StringBuilder builder, string name, List<TaintMemberModel> entries) {
         builder.Append("    /// <summary>The declared ").Append(name.ToLowerInvariant()).AppendLine(".</summary>");
-        builder.Append("    public static IReadOnlyList<TaintMembers> ").Append(name).AppendLine(" { get; } = new TaintMembers[] {");
+        builder.Append("    public static IReadOnlyList<TaintMembers> ")
+            .Append(name)
+            .AppendLine(" { get; } = new TaintMembers[] {");
         foreach (var entry in entries) {
             builder.Append("        new(")
                 .Append(Literal(entry.Type))

@@ -171,7 +171,8 @@ public sealed class TaintSymbols {
             yield break;
         }
 
-        for (var current = type.OriginalDefinition; current is not null; current = current.BaseType?.OriginalDefinition) {
+        for (var current = type.OriginalDefinition; current is not null; current =
+             current.BaseType?.OriginalDefinition) {
             yield return Name(current);
         }
 
@@ -184,7 +185,8 @@ public sealed class TaintSymbols {
     }
 
     static string Name(INamedTypeSymbol type) =>
-        type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat.WithGlobalNamespaceStyle(
-            SymbolDisplayGlobalNamespaceStyle.Omitted
-        ).WithGenericsOptions(SymbolDisplayGenericsOptions.None));
+        type.ToDisplayString(
+            SymbolDisplayFormat.FullyQualifiedFormat.WithGlobalNamespaceStyle(SymbolDisplayGlobalNamespaceStyle.Omitted)
+                .WithGenericsOptions(SymbolDisplayGenericsOptions.None)
+        );
 }

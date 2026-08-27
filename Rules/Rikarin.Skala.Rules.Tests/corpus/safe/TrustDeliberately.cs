@@ -37,7 +37,12 @@ public static class TrustDeliberately {
         new SslStream(inner, false, (_, _, _, errors) => errors == SslPolicyErrors.None);
 
     /// <summary>⚠ Permissive, and still not reported: following a method group is out of scope.</summary>
-    static bool Named(HttpRequestMessage request, X509Certificate2? certificate, X509Chain? chain, SslPolicyErrors errors) =>
+    static bool Named(
+        HttpRequestMessage request,
+        X509Certificate2? certificate,
+        X509Chain? chain,
+        SslPolicyErrors errors
+    ) =>
         errors == SslPolicyErrors.None;
 
     public static HttpClient ViaMethodGroup() {

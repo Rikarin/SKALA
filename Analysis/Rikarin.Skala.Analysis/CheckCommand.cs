@@ -314,7 +314,9 @@ public static class CheckCommand {
         }
 
         var total = TimeSpan.Zero;
-        var byAnalyzer = new Dictionary<string, (ImmutableArray<string> Rules, TimeSpan Elapsed)>(StringComparer.Ordinal);
+        var byAnalyzer = new Dictionary<string, (ImmutableArray<string> Rules, TimeSpan Elapsed)>(
+            StringComparer.Ordinal
+        );
         foreach (var cost in costs) {
             total += cost.Elapsed;
             byAnalyzer[cost.Analyzer] = byAnalyzer.TryGetValue(cost.Analyzer, out var existing)

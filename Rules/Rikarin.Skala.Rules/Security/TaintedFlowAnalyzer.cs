@@ -69,9 +69,7 @@ public static class TaintedFlow {
 
             var graph = context.GetControlFlowGraph(block);
             foreach (var finding in TaintAnalysis.Run(graph, symbols, context.CancellationToken)) {
-                context.ReportDiagnostic(
-                    Diagnostic.Create(descriptor, finding.Location, Message(finding))
-                );
+                context.ReportDiagnostic(Diagnostic.Create(descriptor, finding.Location, Message(finding)));
             }
         }
     }
@@ -120,8 +118,12 @@ public static class TaintedFlow {
     /// rather than inheriting a generic sentence.
     /// </remarks>
     static string Message(TaintFinding finding) =>
-        "`" + finding.SourceDescription + "` came from the request and reaches " + finding.Sink.What
-        + "; " + finding.Sink.Instead;
+        "`"
+        + finding.SourceDescription
+        + "` came from the request and reaches "
+        + finding.Sink.What
+        + "; "
+        + finding.Sink.Instead;
 }
 
 /// <summary>
