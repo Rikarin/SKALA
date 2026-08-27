@@ -89,8 +89,47 @@ is not yet understood.
 exclusion to raw strings in general would silence the class the fuzzer exists to find. Every other
 property still runs over this file.
 
+### ⚠ The diagnosis above is wrong, and here is what four probes say instead
+
+⚠ **It is not `indent`, and it is not the content line.** Running every absorbed mutation over this
+one file across 5 000 seeds: **2 466 of 3 462 applied mutations change a token**, and they are
+spread across `indent` (1 260 applied), `widen-gap` (1 230) and `trailing-space` (972) — not one
+mutation, three. The by-name exclusion is therefore masking three mutations rather than the one it
+names.
+
+Four targeted probes, each a single edit compared with `TokenEquivalence.Compare`:
+
+| edit | result |
+|---|---|
+| append five spaces at **end of file** | ⚠ **CHANGED** at token 20: `T8517:\n` → `T8517:\n·····` |
+| indent **line 0** (`class C {`) only | token-equivalent |
+| add one space to the **string's content line** | CHANGED at token 11: `T8517:········{` → `T8517:·········{` |
+| append five spaces at end of a **plain file** with no raw string | token-equivalent |
+
+Read the first and the fourth together. Appending whitespace *after the file's final newline* —
+touching nothing else, nowhere near the string — changes a token, and the identical edit on an
+ordinary file does not. Token 8517 is `InterpolatedStringTextToken`, and in the unmutated file its
+text is exactly `\n`.
+
+⚠ So the region that must not be written to is not the string's content lines: it is **everything
+from the unclosed `{{` to the end of the file**. `{{ brace` in a `$$"""` string opens an
+interpolation that is never closed, and the parser's recovery extends a text token over the rest of
+the file — the trailing empty line included. That is why all three whitespace mutations trip it and
+why the file's *last* line is as unsafe as its middle.
+
+⚠ **And it is why the three `SourceMap` attempts failed.** All three looked for a bounded region to
+protect — a node's span, an intersection, the lines a token spans — and computed it from a tree
+whose recovery token has no meaningful end. A line-level safe-lines map cannot be right about a
+token that runs to EOF. The next attempt should start from "does this file parse cleanly?" rather
+than from the shape of the region: a file with parse errors has no reliable notion of a safe line
+for an absorbed mutation, and the honest answer may be that this fixture has *no* safe lines at all.
+
+⚠ The third probe is a real hazard and is **not** this defect: a space added to the content line
+genuinely changes what the program prints, and `TokenEquivalence` catches it correctly. That one is
+what the original entry describes, and it is the rarer of the two.
+
 - property: `whitespace-absorption` (fuzzer-oracle)
-- ⚠ status: **open**, reproduced and minimised, cause not established
+- ⚠ status: **open**, reproduced and minimised; cause now characterised but **not fixed**
 - ⚠ ⚠ This is the *only* entry here whose defect is in the test harness rather than the tool. When it
   is fixed the exclusion goes, not the fixture.
 
