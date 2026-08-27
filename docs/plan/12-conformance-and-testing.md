@@ -109,7 +109,7 @@ Line fidelity is the headline (≥ 99.9 % is the bar from [00](00-vision-and-pri
 fidelity will be much lower for a long time and that is expected — one divergent construct spoils a
 whole file — but its *trend* is the honest progress signal.
 
-⚠ **This number sits on a floor, and the floor is 92 %.** See
+⚠ **This number sits on a floor, and the floor is 90.95 %.** See
 [§ The unformat differential](#-the-unformat-differential) below: the corpus inputs are already
 mostly formatted, so most of what this measures is that Skala leaves good code alone. It is a real
 requirement and it is not the requirement that retires ReSharper.
@@ -202,15 +202,15 @@ non-default corners are precisely where nobody looks.
 
 `Testing/corpus/unformatted/`, `./build.sh Unformat`.
 
-**The 99.63 % headline sits on a 92 % floor.** Score a formatter that returns its input unchanged —
+**The 99.63 % headline sits on a 90.95 % floor.** Score a formatter that returns its input unchanged —
 compare each `corpus/real/` **input** directly against its `.expected.cs` — and it gets:
 
 | | null hypothesis | Skala |
 |---|---|---|
-| line fidelity | **92.08 %** | 99.63 % |
+| line fidelity | **90.95 %** | 99.63 % |
 | file fidelity | **26.84 %** | 85.26 % |
 
-92 % of corpus lines never needed changing, so the entire discriminating power of that differential
+91 % of corpus lines never needed changing, so the entire discriminating power of that differential
 lives in the other 8 %. Skala closes 95 % of the available line gap, which is real — but the test
 mostly asks *"does Skala leave good code alone"* and only faintly asks *"does Skala make the same
 decisions ReSharper makes"*. **The second question is the one that decides whether ReSharper can be
@@ -239,8 +239,8 @@ each recorded at the line that fixes it: structured doc trivia losing its `///` 
 an interpolated string decomposing into tokens a separator could be written between, and text that is
 live code under one symbol set and disabled data under the other.
 
-Measured over the degradation as committed: `scramble` leaves 31.7 % of the original's lines
-untouched, `collapse` 28.2 %; no file in either mode is unchanged.
+Measured over the degradation as committed: 33.8 % of the original's lines survive `scramble`
+unchanged and 28.2 % survive `collapse`; no file in either mode is unchanged.
 
 #### ⚠ The null hypothesis, beside every number
 
@@ -324,7 +324,7 @@ supposed to find.
 
 ⚠ Oracle runs dominate: `jb cleanupcode`'s startup is tens of seconds and its per-file marginal cost
 is milliseconds, so the only variable worth tuning is the batch. **Measured on the reference machine
-at a batch of 60: 0.37 s/file amortised, 13 invocations, 4 min 40 s for all 760 files.**
+at a batch of 60: 0.37 s/file amortised, 14 invocations, 4 min 38 s for all 760 files.**
 
 That is cheap enough that **there is no sample**: all 380 files of `corpus/real/`, in both modes.
 The sampler is still there — `unformat generate --count=N` draws by `SHA-256(seed + "\n" + path)` so

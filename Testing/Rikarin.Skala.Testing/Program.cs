@@ -65,6 +65,8 @@ using Rikarin.Skala.Testing;
 //   unformat […]      the differential over *degraded* input, with the null hypothesis beside every
 //                     number. `report` reads committed fixtures; `regenerate` re-degrades the
 //                     sample and re-runs the oracle over it, and is a reviewed action.
+//                     ⚠ `generate` on its own DELETES the fixtures with the inputs — the two are
+//                     one artefact — so it is `unformat oracle` or nothing after it.
 //   preprocessor      SK-DIV-0004's number: `corpus/real/` fidelity with the oracle's own
 //                     preprocessor symbols supplied, split by whether the file contains a `#if`.
 //                     The symbols are read out of a real binary log rather than typed.
@@ -258,7 +260,7 @@ switch (args[0]) {
         // other 8 %. This degrades a file's formatting, runs both tools over the degraded copy and
         // compares them, with the null hypothesis reported beside every number.
         //   unformat report                the measurement, from committed fixtures. No jb needed.
-        //   unformat generate [--count=N]  redraw and re-degrade the corpus. Reviewed, like `sample`.
+        //   unformat generate [--count=N]  redraw and re-degrade the corpus. ⚠ Deletes the fixtures.
         //   unformat oracle                the fixtures for whatever is committed. Needs jb.
         //   unformat regenerate [--count=N]  both, in order.
         return UnformatCommand(args[1..]);

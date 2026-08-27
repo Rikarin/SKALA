@@ -9,7 +9,7 @@ namespace Rikarin.Skala.Testing;
 /// <remarks>
 /// ⚠ The reason it exists is a number. Comparing each <c>corpus/real/</c> <b>input</b> directly
 /// against its <c>.expected.cs</c> — scoring a formatter that returns its input unchanged — gives
-/// 92.08 % of lines and 26.84 % of files. The 99.63 % headline therefore sits on a 92 % floor: 92 %
+/// 90.95 % of lines and 26.84 % of files. The 99.63 % headline therefore sits on a 91 % floor: 91 %
 /// of corpus lines never needed changing, so the whole discriminating power of that differential
 /// lives in the other 8 %, and the test mostly asks <em>"does Skala leave good code alone"</em>
 /// rather than <em>"does Skala make the same decisions ReSharper makes"</em>. The second question is
@@ -41,7 +41,7 @@ public static class UnformatCorpus {
     /// docs/plan/12 § "The unformat differential". Oracle runs dominate — <c>jb cleanupcode</c>'s
     /// startup is tens of seconds and its per-file marginal cost is milliseconds — so the only
     /// variable worth tuning is the batch, and at a batch of 60 the measured cost is 0.37 s/file
-    /// amortised: 13 invocations and 4 min 40 s for all 760 files across both modes. That is cheap
+    /// amortised: 14 invocations and 4 min 38 s for all 760 files across both modes. That is cheap
     /// enough that there is no sample to argue about.
     /// <para>
     /// ⚠ <see cref="Sources"/> still draws by <c>SHA-256(seed + "\n" + path)</c> rather than by
@@ -97,6 +97,13 @@ public static class UnformatCorpus {
     /// ⚠ A deliberate developer action whose diff is reviewed in its own commit, exactly like
     /// <c>sample</c> and <c>oracle</c>. It replaces a corpus, and a corpus that changes without a
     /// commit is not a measurement.
+    /// <para>
+    /// ⚠ <b>It deletes the fixtures with the inputs, and that is deliberate.</b> A degraded input
+    /// and the oracle's answer for it are one artefact; a new input beside the previous input's
+    /// fixture is a comparison of two unrelated files, which is the one failure the whole design is
+    /// arranged to prevent. Follow it with <c>unformat oracle</c>, or use
+    /// <c>unformat regenerate</c>, which is the pair. <c>UnformatTests</c> fails loudly in between.
+    /// </para>
     /// </remarks>
     public static string Generate(int count, TextWriter log) {
         var sources = Sources(count);
@@ -113,6 +120,7 @@ public static class UnformatCorpus {
             var glued = 0;
             long originalLines = 0;
             long degradedLines = 0;
+            long survivingLines = 0;
 
             foreach (var source in sources) {
                 var text = File.ReadAllText(source.Path);
@@ -131,8 +139,15 @@ public static class UnformatCorpus {
                 File.WriteAllText(target, degraded.Text);
                 written++;
                 glued += degraded.Glued ? 1 : 0;
-                originalLines += TextNormalisation.Lines(text).Length;
+                // ⚠ How many of the original's lines came through untouched, by the same LCS the
+                // differential uses. The *count* of lines barely moves under `scramble` — a join
+                // removes a line and a split adds one back — so reporting only that would say the
+                // degradation did almost nothing, when in fact it moves two lines in three.
+                var before = TextNormalisation.Lines(text);
+                originalLines += before.Length;
                 degradedLines += degraded.Lines;
+                survivingLines += LineDiff.Compute(before, TextNormalisation.Lines(degraded.Text))
+                    .Count(static entry => entry.Kind == LineDiff.Kind.Same);
             }
 
             report.Append(Unformat.Name(mode))
@@ -142,12 +157,12 @@ public static class UnformatCorpus {
                 .Append(originalLines.ToString(CultureInfo.InvariantCulture))
                 .Append(" lines → ")
                 .Append(degradedLines.ToString(CultureInfo.InvariantCulture))
-                .Append(" lines (")
+                .Append(" lines; ")
                 .Append(
-                    (originalLines == 0 ? 0 : (double)degradedLines / originalLines)
+                    (originalLines == 0 ? 0 : (double)survivingLines / originalLines)
                         .ToString("P1", CultureInfo.InvariantCulture)
                 )
-                .AppendLine(")");
+                .AppendLine(" of the original's lines survive unchanged");
 
             if (glued > 0) {
                 report.Append("  ")
@@ -162,7 +177,10 @@ public static class UnformatCorpus {
                     .AppendLine(string.Join(", ", rejected.Take(6)));
             }
 
-            log.WriteLine($"  {Unformat.Name(mode)}: {written.ToString(CultureInfo.InvariantCulture)} written");
+            log.WriteLine(
+                $"  {Unformat.Name(mode)}: {written.ToString(CultureInfo.InvariantCulture)} written, "
+                + "fixtures deleted — run `unformat oracle` next"
+            );
         }
 
         WriteNotice(sources.Count, report.ToString());
@@ -176,9 +194,10 @@ public static class UnformatCorpus {
             $"""
              # `corpus/unformatted/`
 
-             Degraded copies of the first {count.ToString(CultureInfo.InvariantCulture)} files of
-             `corpus/real/` in `SHA-256("{Seed}" + "\n" + path)` order, one subtree per degradation
-             mode, each with the `jb cleanupcode` output of the **degraded** file beside it.
+             Degraded copies of {count.ToString(CultureInfo.InvariantCulture)} files of `corpus/real/`,
+             taken in `SHA-256("{Seed}" + "\n" + path)` order so that a smaller `--count=N` draw is
+             reproducible, one subtree per degradation mode, each with the `jb cleanupcode` output of
+             the **degraded** file beside it.
 
              ⚠ Generated by `dotnet run --project Testing/Rikarin.Skala.Testing -- unformat regenerate`,
              which is a deliberate developer action like `oracle` and `sample`. Do not hand-edit; the
@@ -189,7 +208,7 @@ public static class UnformatCorpus {
              its own test corpus has destroyed its own measurement.
 
              ```
-             {report.TrimEnd().Replace("\n", "\n             ", StringComparison.Ordinal)}
+             {report.TrimEnd()}
              ```
 
              `./build.sh Unformat` reports the differential, with the null hypothesis beside every

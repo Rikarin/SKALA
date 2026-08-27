@@ -8,7 +8,7 @@ namespace Rikarin.Skala.Conformance.Tests;
 /// </summary>
 /// <remarks>
 /// ⚠ These are the ratchets for the second differential, and the reason there is a second one is a
-/// number: <c>corpus/real/</c>'s inputs are already 92.08 % line-identical to their fixtures, so the
+/// number: <c>corpus/real/</c>'s inputs are already 90.95 % line-identical to their fixtures, so the
 /// 99.63 % headline is mostly a measurement of Skala leaving good code alone. Here the input's
 /// formatting has been destroyed first, so what is measured is whether Skala <em>decides</em> what
 /// ReSharper decides.

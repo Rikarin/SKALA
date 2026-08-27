@@ -11,8 +11,8 @@ namespace Rikarin.Skala.Testing;
 /// </summary>
 /// <remarks>
 /// ⚠ The null hypothesis is not decoration and it is not optional. <c>corpus/real/</c>'s inputs are
-/// already 92.08 % line-identical to their fixtures, so a formatter that returns its input unchanged
-/// scores 92 % there — and the absence of that figure beside the 99.63 % headline is what made the
+/// already 90.95 % line-identical to their fixtures, so a formatter that returns its input unchanged
+/// scores 91 % there — and the absence of that figure beside the 99.63 % headline is what made the
 /// headline look better than it was. Every number this file prints is printed next to what "change
 /// nothing" scores on the same population, because the difference between them is the only part that
 /// is the formatter's.
@@ -110,9 +110,32 @@ public static class UnformatDifferential {
     static Dictionary<string, CorpusFile> OriginalsByRelativePath() =>
         Corpus.Files(Corpus.Real).ToDictionary(static file => file.RelativePath, StringComparer.Ordinal);
 
+    /// <summary>
+    /// <c>corpus/real/</c>'s own null hypothesis: its inputs scored directly against its fixtures.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ Measured here, through <see cref="Fidelity.Compare"/>, rather than quoted from anywhere.
+    /// It is the calibration for the number the whole project is steered by, and a calibration that
+    /// came from a different diff basis than the number it calibrates is worse than none — the
+    /// LCS/positional gap on this corpus is forty points (docs/plan/12 § 2). Printed at the top of
+    /// every unformat report so the two floors are read side by side.
+    /// </remarks>
+    public static FidelityReport RealCorpusNullHypothesis() {
+        var results = new List<(string File, string Expected, string Actual)>();
+        foreach (var file in Corpus.Files(Corpus.Real).Where(static file => file.HasFixture)) {
+            results.Add((file.ToString(), OracleFixture.Read(file), CSharpFormatter.Read(file.Path).ToString()));
+        }
+
+        return Fidelity.Compare(results);
+    }
+
     /// <summary>The whole report, both modes, with the ranked divergence classes behind each.</summary>
     public static string Render(IReadOnlyList<string> symbols, int topClasses = 14, int topConstructs = 14) {
         var builder = new StringBuilder();
+        builder.AppendLine("                              line      file      lines");
+        Row(builder, "corpus/real null", RealCorpusNullHypothesis());
+        builder.AppendLine("  ⚠ what the existing differential's 99.63 % sits on: change nothing, score this.");
+        builder.AppendLine();
         foreach (var mode in Unformat.Modes) {
             var result = Measure(mode, symbols);
             if (result is null) {
@@ -131,8 +154,8 @@ public static class UnformatDifferential {
             builder.AppendLine();
 
             // ⚠ The share of the *available* gap, which is the only honest way to compare a number
-            // taken over a 92 % floor with one taken over a floor near zero. 99.63 % over a 92.08 %
-            // null closes 95.3 % of the gap; the same 99.63 % over a 4 % null would close 99.6 %,
+            // taken over a 91 % floor with one taken over a floor near zero. 99.63 % over a 90.95 %
+            // null closes 95.9 % of the gap; the same 99.63 % over a 4 % null would close 99.6 %,
             // and the two are not the same achievement.
             builder.Append("  gap closed by Skala: line ")
                 .Append(Share(result.Null.LineFidelity, result.Bare.LineFidelity))

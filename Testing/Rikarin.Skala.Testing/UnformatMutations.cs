@@ -196,15 +196,15 @@ public static class Unformat {
     /// compare equal. Trailing whitespace inside a trivia is trimmed on both sides because neither
     /// mode creates it and no formatter is obliged to keep it.
     /// <para>
-    /// ⚠ Disabled text is compared with its whitespace runs squashed, and that relaxation is the
+    /// ⚠ Disabled text is compared with its whitespace removed, and that relaxation is the
     /// whole reason the fingerprint is taken once <em>per symbol set</em> rather than once. Under
     /// set S, disabled text is not part of the program — it is part of the program under some other
     /// set, and that set has its own fingerprint where the same bytes are live tokens and are
     /// compared exactly. Serilog's <c>TimeProvider.cs</c> is the case that forced this: the entire
     /// file sits under <c>#if !NET8_0_OR_GREATER</c>, so collapsing it is a legitimate degradation
     /// of live code under the empty symbol set and a byte-for-byte rewrite of disabled text under
-    /// <see cref="Corpus.PropertySymbols"/>. Squashing keeps the corruption guard — a deletion or a
-    /// reordering still fails — without rejecting the file for being conditional.
+    /// <see cref="Corpus.PropertySymbols"/>. The relaxation keeps the corruption guard — a deletion
+    /// or a reordering still fails — without rejecting the file for being conditional.
     /// </para>
     /// </remarks>
     static string Fingerprint(SyntaxNode root) {

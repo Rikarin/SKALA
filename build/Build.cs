@@ -263,7 +263,7 @@ class Build : NukeBuild {
     /// <remarks>
     /// ⚠ <see cref="Fidelity"/> answers "does Skala leave good code alone" much more loudly than it
     /// answers "does Skala make the same decisions ReSharper makes", because <c>corpus/real/</c>'s
-    /// inputs are already 92.08 % line-identical to their fixtures. This reformats a corpus whose
+    /// inputs are already 90.95 % line-identical to their fixtures. This reformats a corpus whose
     /// formatting has been destroyed first, so the second question is the one being asked — and it
     /// prints what "change nothing" scores beside every number it produces, because that floor is
     /// the calibration the 99.63 % headline was missing.
