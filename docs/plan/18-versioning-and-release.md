@@ -463,10 +463,15 @@ by the repository root's path so that the several agent worktrees this repositor
 not share one and measure each other's baselines. `artifacts/` was added to `IsScratch` as well, so
 that the next thing to publish there does not rediscover this.
 
-⚠ The baseline build needs an **explicit restore**. Without one it fails instantly with
-`CS0234: 'Options' does not exist in the namespace 'Rikarin.Skala'` — five unresolved
-`ProjectReference`s, because nothing had written a `project.assets.json` for a tree that came out of
-a tarball a moment earlier. It reads as a broken baseline and it is a missing restore.
+⚠ **The baseline's restore and build are written out as `dotnet` command lines and logged**, rather
+than driven through NUKE's `DotNetRestore`/`DotNetBuild`. Through the tasks the baseline failed every
+run with `CS0234: 'Options' does not exist in the namespace 'Rikarin.Skala'` — after four seconds,
+which is less time than the build takes, so the reference closure was never built. The same two
+commands typed by hand, from the same working directory, against the same extracted tree, succeed.
+What the cause was is not established; what is established is that a release measurement must not
+turn on it, so what runs is what is printed and the printed line is one a person can paste. The
+extraction also asserts it found more than ten projects, because a partial checkout would otherwise
+be measured as a release that deleted most of the tool.
 
 ## Known gaps
 
