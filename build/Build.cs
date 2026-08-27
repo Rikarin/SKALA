@@ -128,8 +128,13 @@ class Build : NukeBuild {
                             .SetApplicationArguments("config", "check", RootDirectory)
                     );
 
+                    // ⚠ `Distribution` was missing from this list and its two projects' sources
+                    // were never checked. There is not much there — a marker type each — but "the
+                    // formatter formats its own repository" (ADR-015) is a claim about the
+                    // repository and not about six of its seven top-level directories.
                     foreach (var area in new[] {
-                            "Analysis", "Core", "Formatting", "Reporting", "Rules", "Testing", "Tools"
+                            "Analysis", "Core", "Distribution", "Formatting", "Reporting", "Rules",
+                            "Testing", "Tools"
                         }) {
                         var directory = RootDirectory / area;
                         if (area == "Testing") {
