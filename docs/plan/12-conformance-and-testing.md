@@ -147,8 +147,30 @@ Nightly, unbounded, seeded and reproducible:
 
 ## Testing the rules
 
-Standard Roslyn analyzer testing (`Microsoft.CodeAnalysis.Testing`), with three additions that come
-from the false-positive bar:
+Standard Roslyn analyzer testing, with three additions that come from the false-positive bar.
+
+⚠ **Not `Microsoft.CodeAnalysis.Testing`, as it turns out.** That package's model is a source string
+with `{|SK1010:…|}` markup inside it, which is fine for a handful of cases and wrong for the shape
+this bar needs: a "should not fire" fixture is a *file that compiles and produces nothing*, and the
+markup model has nowhere to put "and here is why". `Rules/Rikarin.Skala.Rules.Tests/fixtures/` is one
+directory per rule with `positive/` and `negative/` beside each other, one real `.cs` file per case,
+named for the reason it exists — `user-defined-equality.cs`, `expression-tree.cs`,
+`receiver-is-a-call.cs`. The file *is* the documentation of the guard, and the reviewer reads C#
+rather than markup.
+
+⚠ **A fixture that does not compile proves nothing**, and that is asserted before the rule is run: a
+semantic rule reading an error type answers "no finding" for the wrong reason, and the negative case
+passes for free. `RuleFixtureTests` fails the fixture rather than the rule when that happens.
+
+⚠ **`fidelity audit <dir>` is the corpus-scale instrument**, and it deliberately runs the semantic
+rules under a *loose* compilation, which the product refuses to do. For an audit the asymmetry is in
+the safe direction: every finding it produces is one to check by hand, and the ones it misses are
+misses rather than false positives. It also applies every fix it found and compares compiler-error
+counts per `(file, diagnostic id)` before and after — per `(file, id)` and not per `(file, line,
+id)`, because a fix that deletes the namespace braces moves every error in the file down a line and
+a line-keyed comparison reports dozens of regressions that are all the same shrug.
+
+The three additions:
 
 1. **Every rule has a "should not fire" fixture set** at least as large as its "should fire" set.
    `rules.json`'s `falsePositives` field must be non-empty, and the cases described there must exist
@@ -159,6 +181,11 @@ from the false-positive bar:
    over-firing gets caught before a release rather than after adoption.
 3. **Every fix is round-tripped**: apply the fix, re-parse, re-bind, assert no new diagnostics, and
    assert the rule no longer fires (a fix that does not fix is a common and embarrassing bug).
+   ⚠ M5 does the first half at the unit level (`EveryFix_ProducesTextThatStillParses`) and the second
+   at corpus scale (`fidelity audit`'s before/after). The *re-bind* half is the expensive one — a
+   semantic re-check per file rebuilds the compilation — and `skala fix` therefore compares syntactic
+   diagnostics per file and reverts on regression. The compilation-wide delta is M4's, beside the
+   arrangement pass that cannot avoid it.
 
 For `SK5xxx`, additionally: a corpus of known-vulnerable and known-safe samples, kept apart from the
 main corpus, with a required 100 % on the safe side. A security rule that cries wolf is uninstalled

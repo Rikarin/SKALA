@@ -1,0 +1,43 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Project loading (ADR-007), the analyzer host, the incremental cache, and the implementations
+    behind `skala check`, `verify`, `fix` and `explain`.
+
+    ⚠ It references Reporting and not the other way round. Analysis produces a RunReport; Reporting
+    renders one. That direction is what makes docs/plan/09's "no renderer contains analysis logic" a
+    compile-time fact.
+  -->
+
+  <PropertyGroup>
+    <RootNamespace>Rikarin.Skala.Analysis</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" />
+    <PackageReference Include="MSBuild.StructuredLogger" />
+    <PackageReference Include="System.IO.Hashing" />
+
+    <!--
+      ⚠ ExcludeAssets=runtime, and it is not an optimisation. MSBuildLocator's whole job is to make
+      the *SDK's* MSBuild win; shipping our own copies beside it is the documented way to get an
+      assembly-load failure that names a file which is obviously present.
+    -->
+    <PackageReference Include="Microsoft.Build.Locator" />
+    <PackageReference Include="Microsoft.CodeAnalysis.Workspaces.MSBuild" ExcludeAssets="runtime" />
+    <PackageReference Include="Microsoft.Build" ExcludeAssets="runtime" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.Build.Framework" ExcludeAssets="runtime" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.Build.Utilities.Core" ExcludeAssets="runtime" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.NET.StringTools" ExcludeAssets="runtime" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../Core/Rikarin.Skala.Core/Rikarin.Skala.Core.csproj" />
+    <ProjectReference Include="../../Formatting/Rikarin.Skala.Formatting.CSharp/Rikarin.Skala.Formatting.CSharp.csproj" />
+    <ProjectReference Include="../../Reporting/Rikarin.Skala.Reporting/Rikarin.Skala.Reporting.csproj" />
+    <ProjectReference Include="../../Rules/Rikarin.Skala.Rules/Rikarin.Skala.Rules.csproj" />
+    <ProjectReference Include="../../Rules/Rikarin.Skala.Rules.Metadata/Rikarin.Skala.Rules.Metadata.csproj" />
+  </ItemGroup>
+
+</Project>

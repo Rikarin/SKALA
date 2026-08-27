@@ -41,9 +41,9 @@ public sealed record FidelityReport(
         builder.AppendLine("divergence classes, by line count:");
 
         foreach (var group in Divergences
-            .GroupBy(static d => d.Class, StringComparer.Ordinal)
-            .OrderByDescending(static g => g.Count())
-            .Take(topClasses)) {
+                .GroupBy(static d => d.Class, StringComparer.Ordinal)
+                .OrderByDescending(static g => g.Count())
+                .Take(topClasses)) {
             var files = group.Select(static d => d.File).Distinct(StringComparer.Ordinal).Count();
             builder.Append("  ")
                 .Append(group.Count().ToString(CultureInfo.InvariantCulture).PadLeft(6))
@@ -53,9 +53,8 @@ public sealed record FidelityReport(
                 .AppendLine(group.Key);
 
             var sample = group.First();
-            builder.Append("          ").AppendLine(
-                sample.File + ":" + sample.Line.ToString(CultureInfo.InvariantCulture)
-            );
+            builder.Append("          ")
+                .AppendLine(sample.File + ":" + sample.Line.ToString(CultureInfo.InvariantCulture));
             builder.Append("          oracle: ").AppendEscaped(Trim(sample.Expected)).AppendLine();
             builder.Append("          skala:  ").AppendEscaped(Trim(sample.Actual)).AppendLine();
         }
@@ -90,11 +89,12 @@ public static class Fidelity {
             var right = TextNormalisation.Lines(actual);
             lines += Math.Max(left.Length, right.Length);
 
-            if (left.Length == right.Length && string.Equals(
-                string.Join('\n', left),
-                string.Join('\n', right),
-                StringComparison.Ordinal
-            )) {
+            if (left.Length == right.Length
+                && string.Equals(
+                    string.Join('\n', left),
+                    string.Join('\n', right),
+                    StringComparison.Ordinal
+                )) {
                 identicalFiles++;
                 identicalLines += left.Length;
                 continue;
@@ -227,16 +227,19 @@ public static class LineDiff {
         // Trim the common head and tail first: two formatter outputs agree on most of a file, and
         // the quadratic table is only paid for the middle.
         var head = 0;
-        while (head < left.Length && head < right.Length && string.Equals(
-            left[head],
-            right[head],
-            StringComparison.Ordinal
-        )) {
+        while (head < left.Length
+            && head < right.Length
+            && string.Equals(
+                left[head],
+                right[head],
+                StringComparison.Ordinal
+            )) {
             head++;
         }
 
         var tail = 0;
-        while (tail < left.Length - head && tail < right.Length - head
+        while (tail < left.Length - head
+            && tail < right.Length - head
             && string.Equals(left[^(tail + 1)], right[^(tail + 1)], StringComparison.Ordinal)) {
             tail++;
         }

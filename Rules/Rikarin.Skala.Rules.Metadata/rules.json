@@ -1,0 +1,421 @@
+{
+  "$schema": "./rules.schema.json",
+  "version": 1,
+  "notes": [
+    "docs/plan/08-rule-catalogue.md is the specification. This file is the single source for the",
+    "analyzer's DiagnosticDescriptor, the docs/rules/ page, the `skala explain` text, the SARIF",
+    "rules[] block and the ReSharper severity mapping.",
+    "",
+    "ADR-012: an id is allocated once and never re-purposed. RuleCatalogTests.RuleIds_AreAppendOnly",
+    "reads Rules/Rikarin.Skala.Rules.Metadata/allocated-ids.txt and fails the build when an id in it",
+    "is absent here or when a shipped id's `concept` changes. Retiring a rule means `retired: true`,",
+    "never deleting the entry.",
+    "",
+    "`scope` drives two separate things and they are not the same thing:",
+    "  - Syntax | Semantic  -> whether the rule may run in --load=loose (docs/plan/07 § loose).",
+    "  - Compilation        -> excluded from the per-file incremental cache, because its output for",
+    "                          one file depends on files the cache key does not name.",
+    "",
+    "`languageVersion` is a floor and is checked against the compilation's *effective* LangVersion,",
+    "never the SDK's. A rule that suggests C# 12 syntax to a project pinned at C# 10 produces",
+    "uncompilable fixes."
+  ],
+  "rules": [
+    {
+      "id": "SK0001",
+      "concept": "file-is-not-formatted",
+      "title": "The file is not formatted",
+      "category": "Formatting",
+      "defaultSeverity": "suggestion",
+      "scope": "Syntax",
+      "requiresSemantics": false,
+      "hasFix": true,
+      "fixIsSafe": true,
+      "resharperId": null,
+      "supersedes": [],
+      "since": "0.6",
+      "languageVersion": null,
+      "summary": "`skala format` would change this file.",
+      "rationale": "The formatting half of Skala and the analysis half are one report. A finding that says \"this file is not formatted\" carries the formatter's own edits as its fix, so a machine reading the SARIF can apply them without a second tool invocation and a human sees formatting and analysis in one list. It is a suggestion rather than a warning because formatting is unconditional and free: the gate that cares is `formatting: clean`, not a severity.",
+      "examples": {
+        "bad": "if(x){DoThing();}",
+        "good": "if (x) {\n    DoThing();\n}"
+      },
+      "falsePositives": "None by construction: the finding is produced by running the formatter, so it exists exactly when the formatter has an edit to make. A file that does not parse produces SK9010 instead and is never reported here.",
+      "configuration": [
+        "Every resharper_* formatting key; the finding is whatever the configured formatter does."
+      ]
+    },
+    {
+      "id": "SK0002",
+      "concept": "line-too-long-unbreakable",
+      "title": "The line is over the width and nothing in it can break",
+      "category": "Formatting",
+      "defaultSeverity": "hint",
+      "scope": "Syntax",
+      "requiresSemantics": false,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "resharperId": null,
+      "supersedes": [],
+      "since": "0.2",
+      "languageVersion": null,
+      "summary": "A line exceeds `max_line_length` and the formatter had no break point to use.",
+      "rationale": "A 200-character string literal and a deeply-qualified generic type are not the formatter's to shorten: it never breaks a token and never breaks inside a string. Reporting it at hint makes the audit possible without making the ordinary run noisy.",
+      "examples": {
+        "bad": "const string Message = \"…a literal 200 characters wide…\";",
+        "good": "const string Message =\n    \"…the same literal, on a continuation line…\";"
+      },
+      "falsePositives": "None. The check is a width measurement of the formatter's own output.",
+      "configuration": [
+        "resharper_csharp_max_line_length"
+      ]
+    },
+    {
+      "id": "SK0003",
+      "concept": "malformed-xml-doc",
+      "title": "The documentation comment is not well-formed XML",
+      "category": "Formatting",
+      "defaultSeverity": "hint",
+      "scope": "Syntax",
+      "requiresSemantics": false,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "resharperId": null,
+      "supersedes": [],
+      "since": "0.4",
+      "languageVersion": null,
+      "summary": "A `///` comment does not parse as XML, so it is left exactly as written.",
+      "rationale": "Malformed doc comments are common in real code — an unescaped `<`, a `<br>` borrowed from HTML, a tag someone forgot to close. Skala never repairs them: a formatter that repairs documentation is a formatter that changes what the documentation says. Reporting it is the whole of the response.",
+      "examples": {
+        "bad": "/// <summary>Returns x < y.</summary>",
+        "good": "/// <summary>Returns x &lt; y.</summary>"
+      },
+      "falsePositives": "None known. The check is an XML parse of the comment body.",
+      "configuration": []
+    },
+    {
+      "id": "SK1005",
+      "concept": "file-scoped-namespace",
+      "title": "Use a file-scoped namespace",
+      "category": "Modernization",
+      "defaultSeverity": "suggestion",
+      "scope": "Syntax",
+      "requiresSemantics": false,
+      "hasFix": true,
+      "fixIsSafe": true,
+      "resharperId": null,
+      "supersedes": [
+        "IDE0161"
+      ],
+      "since": "0.6",
+      "languageVersion": "10.0",
+      "summary": "A file with exactly one block-scoped namespace and nothing beside it can use `namespace X;`.",
+      "rationale": "One level of indentation across every file in the repository, for no expressive gain. The configuration this tool serves already says `csharp_style_namespace_declarations = file_scoped`; the rule is what makes that true in code an agent wrote rather than only in code the IDE touched.",
+      "examples": {
+        "bad": "namespace Vixen.Core {\n    public sealed class Archetype;\n}",
+        "good": "namespace Vixen.Core;\n\npublic sealed class Archetype;"
+      },
+      "falsePositives": "Only fires when the compilation unit contains exactly one namespace declaration, that namespace is the only member of the unit, it is block-scoped, it contains no nested namespace declaration, and it has no attribute lists or extern aliases after it. A file with two namespaces cannot be converted at all and is not reported; a file whose namespace declaration carries a `#if` inside its braces is skipped, because the conversion moves a brace the disabled branch may own.",
+      "configuration": [
+        "csharp_style_namespace_declarations",
+        "dotnet_diagnostic.SK1005.severity"
+      ],
+      "resharperNote": "ReSharper has no inspection id for this: it drives the conversion from `csharp_style_namespace_declarations = file_scoped:suggestion` and reports the result under `resharper_arrange_namespace_body_highlighting = hint`. Two mechanisms, two severities, one concept — so this rule maps to no key at all. docs/plan/16 § Q5."
+    },
+    {
+      "id": "SK1010",
+      "concept": "is-null-pattern",
+      "title": "Use `is null` / `is not null` instead of `==` / `!=`",
+      "category": "Modernization",
+      "defaultSeverity": "suggestion",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": true,
+      "fixIsSafe": true,
+      "resharperId": "MergeIntoPattern",
+      "supersedes": [],
+      "since": "0.6",
+      "languageVersion": "9.0",
+      "summary": "A null comparison written with an operator, on a type that does not define one.",
+      "rationale": "`x == null` calls whatever `operator ==` the type declares; `x is null` is a pattern and always tests reference (or default) equality. On a type with a user-defined `==` the two are different programs, and on a type without one they are the same program written two ways. Preferring the pattern removes the question. It also survives a later refactor that *adds* an `operator ==`, which is exactly when `== null` silently changes meaning.",
+      "examples": {
+        "bad": "if (source != null) {\n    Use(source);\n}",
+        "good": "if (source is not null) {\n    Use(source);\n}"
+      },
+      "falsePositives": "The rule is silent unless the semantic model resolves the non-null operand's type and that type declares no `operator ==`/`operator !=`, directly or on any base type. It is silent on unconstrained type parameters (where `== null` has its own lifted meaning), on `dynamic`, on pointer types, on any operand whose type could not be resolved, and inside an expression tree, where the pattern form does not compile.",
+      "configuration": [
+        "dotnet_diagnostic.SK1010.severity"
+      ],
+      "resharperNote": "⚠ A choice, not a derivation. The author's export carries at least six inspections over this ground at four severities: merge_into_pattern (suggestion), arrange_null_checking_pattern (hint), convert_type_check_to_null_check (warning), convert_type_check_pattern_to_null_check (warning), join_null_check_with_usage (suggestion), use_null_propagation (hint). MergeIntoPattern is the closest and the mapping is recorded rather than computed. docs/plan/16 § Q5."
+    },
+    {
+      "id": "SK1020",
+      "concept": "argument-null-throw-if-null",
+      "title": "Use `ArgumentNullException.ThrowIfNull`",
+      "category": "Modernization",
+      "defaultSeverity": "suggestion",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": true,
+      "fixIsSafe": true,
+      "resharperId": "UseThrowIfNullMethod",
+      "supersedes": [],
+      "since": "0.6",
+      "languageVersion": null,
+      "summary": "A hand-written null guard that `ArgumentNullException.ThrowIfNull` already is.",
+      "rationale": "The BCL helper is one line instead of three, captures the argument expression itself through `CallerArgumentExpression` so the message cannot drift from the parameter name, and is annotated so the nullable analysis knows the argument is non-null afterwards — which the hand-written form only manages when the `throw` is the whole `if` body.",
+      "examples": {
+        "bad": "if (source is null) {\n    throw new ArgumentNullException(nameof(source));\n}",
+        "good": "ArgumentNullException.ThrowIfNull(source);"
+      },
+      "falsePositives": "Requires `System.ArgumentNullException.ThrowIfNull` to exist in the compilation, so a project on an older target framework is silent rather than offered an uncompilable fix. Only fires when the guard is an `if` whose condition is exactly `x is null` or `x == null` (with the same operator-== check SK1010 makes) and whose body is exactly one `throw new ArgumentNullException(nameof(x))` with no message argument and no other statement — a guard that also logs, or that throws a derived exception, or that passes a custom message, is a deliberate choice and is left alone.",
+      "configuration": [
+        "dotnet_diagnostic.SK1020.severity"
+      ],
+      "resharperNote": "⚠ The export sets `resharper_use_throw_if_null_method_highlighting = none`, so reading the key as authoritative would switch this rule off in the repository Skala was built for. That measurement is why --resharper-severities is opt-in. docs/plan/16 § Q5."
+    },
+    {
+      "id": "SK1030",
+      "concept": "null-coalescing-assignment",
+      "title": "Use `??=`",
+      "category": "Modernization",
+      "defaultSeverity": "suggestion",
+      "scope": "Syntax",
+      "requiresSemantics": false,
+      "hasFix": true,
+      "fixIsSafe": true,
+      "resharperId": "ConvertToNullCoalescingCompoundAssignment",
+      "supersedes": [
+        "IDE0074"
+      ],
+      "since": "0.6",
+      "languageVersion": "8.0",
+      "summary": "`x = x ?? y` is `x ??= y`.",
+      "rationale": "The compound form says the intent once instead of naming the target twice, and it is the form that cannot drift — a rename that misses one of the two occurrences of `x` turns the long form into a silent bug.",
+      "examples": {
+        "bad": "_cache = _cache ?? new Dictionary<string, int>();",
+        "good": "_cache ??= new Dictionary<string, int>();"
+      },
+      "falsePositives": "Only fires when the assignment target and the left operand of the `??` are the *same* expression syntactically, and that expression is a chain of plain identifiers (`x`, `this.x`, `a.b.c`) — never an element access and never anything containing a call, because `a[i] = a[i] ?? b` evaluates the indexer twice and `a[i] ??= b` evaluates it once, which for a side-effecting indexer is a different program.",
+      "configuration": [
+        "dotnet_diagnostic.SK1030.severity"
+      ]
+    },
+    {
+      "id": "SK1034",
+      "concept": "count-property-over-linq",
+      "title": "Use the `Count` property, not `Count()` or `Any()`",
+      "category": "Modernization",
+      "defaultSeverity": "suggestion",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": true,
+      "fixIsSafe": true,
+      "resharperId": "UseCollectionCountProperty",
+      "supersedes": [],
+      "since": "0.6",
+      "languageVersion": null,
+      "summary": "`list.Count() > 0` and `list.Any()` on something that already has a `Count`.",
+      "rationale": "`Enumerable.Count()` has a fast path for `ICollection` and `Any()` allocates an enumerator; both are strictly more work than reading the property, and both hide from the reader that the length is already known. The value is legibility more than speed.",
+      "examples": {
+        "bad": "if (items.Any()) {\n    Consume(items);\n}",
+        "good": "if (items.Count > 0) {\n    Consume(items);\n}"
+      },
+      "falsePositives": "Only fires when the invoked method is exactly `System.Linq.Enumerable.Count()` or `Enumerable.Any()` with no argument, the receiver's type has an accessible instance `Count` (or `Length`) property of type `int`, and the receiver expression is a plain identifier or member-access chain with no invocation in it — so `GetItems().Any()` is left alone, because reading `.Count` on it would still call `GetItems()` and the rewrite is only obviously equivalent when the receiver is a variable. Silent on `IQueryable`, where `Any()` is a database round-trip and `Count` is not the same query.",
+      "configuration": [
+        "dotnet_diagnostic.SK1034.severity"
+      ],
+      "resharperNote": "Three inspections cover this ground: use_collection_count_property, replace_with_single_call_to_any and replace_with_single_call_to_count, all `suggestion` in the export. The first is recorded; the mapping is many-to-one from ReSharper's side. docs/plan/16 § Q5."
+    },
+    {
+      "id": "SK1035",
+      "concept": "generic-enum-getvalues",
+      "title": "Use `Enum.GetValues<T>()`",
+      "category": "Modernization",
+      "defaultSeverity": "suggestion",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": true,
+      "fixIsSafe": true,
+      "resharperId": null,
+      "supersedes": [],
+      "since": "0.6",
+      "languageVersion": null,
+      "summary": "`Enum.GetValues(typeof(T))` returns `Array`; the generic overload returns `T[]`.",
+      "rationale": "The non-generic overload returns `System.Array`, so every caller casts or enumerates as `object` and boxes each member. The generic overload is typed and allocation-free per element, and it is the same call.",
+      "examples": {
+        "bad": "foreach (TokenKind kind in Enum.GetValues(typeof(TokenKind))) {\n}",
+        "good": "foreach (var kind in Enum.GetValues<TokenKind>()) {\n}"
+      },
+      "falsePositives": "Requires the generic `System.Enum.GetValues<T>()` to exist in the compilation, and requires the argument to be a `typeof` naming a type the semantic model resolves to an enum. A `typeof` over a type parameter, over a non-enum, or over anything the model cannot resolve is silent, and so is a call to a user-declared type that happens to be named `Enum`.",
+      "configuration": [
+        "dotnet_diagnostic.SK1035.severity"
+      ]
+    },
+    {
+      "id": "SK9001",
+      "concept": "unknown-config-key",
+      "title": "Unknown configuration key",
+      "category": "Tool",
+      "defaultSeverity": "suggestion",
+      "scope": "Compilation",
+      "requiresSemantics": false,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "resharperId": null,
+      "supersedes": [],
+      "since": "0.1",
+      "languageVersion": null,
+      "summary": "A key in the `.editorconfig` chain is not in the option registry.",
+      "rationale": "The Rider export carries roughly two thousand keys Skala will never implement. Reporting them at suggestion rather than warning is the difference between an audit and an uninstall.",
+      "examples": { "bad": "resharper_cpp_indent_size = 2", "good": "" },
+      "falsePositives": "Any key outside the registry, which includes every C++, VB and XAML key in the export. That is why it is not a warning.",
+      "configuration": []
+    },
+    {
+      "id": "SK9010",
+      "concept": "file-does-not-parse",
+      "title": "The file does not parse",
+      "category": "Tool",
+      "defaultSeverity": "warning",
+      "scope": "Syntax",
+      "requiresSemantics": false,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "resharperId": null,
+      "supersedes": [],
+      "since": "0.2",
+      "languageVersion": null,
+      "summary": "The file has parse errors, so it is reported and left byte-identical.",
+      "rationale": "ADR-003, and the single most important safety property in the tool: a file Skala cannot parse is a file Skala does not touch.",
+      "examples": { "bad": "class C { void M( }", "good": "class C { void M() { } }" },
+      "falsePositives": "None. The check is Roslyn's own error diagnostics.",
+      "configuration": []
+    },
+    {
+      "id": "SK9011",
+      "concept": "unbalanced-preprocessor",
+      "title": "A member's braces are split across a preprocessor branch",
+      "category": "Tool",
+      "defaultSeverity": "suggestion",
+      "scope": "Syntax",
+      "requiresSemantics": false,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "resharperId": null,
+      "supersedes": [],
+      "since": "0.2",
+      "languageVersion": null,
+      "summary": "The member is emitted verbatim, because its brace structure depends on which branch is active.",
+      "rationale": "Roslyn parses one branch and hands back a tree describing only that one. Reindenting from it moves braces the other branch owns.",
+      "examples": { "bad": "#if A\nvoid M() {\n#else\nvoid M() {\n#endif\n}", "good": "" },
+      "falsePositives": "None known; the check counts braces per branch and only fires when the branches disagree.",
+      "configuration": []
+    },
+    {
+      "id": "SK9020",
+      "concept": "binlog-stale-for-file",
+      "title": "The binlog is stale for this file",
+      "category": "Tool",
+      "defaultSeverity": "suggestion",
+      "scope": "Compilation",
+      "requiresSemantics": false,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "resharperId": null,
+      "supersedes": [],
+      "since": "0.6",
+      "languageVersion": null,
+      "summary": "The file on disk differs from what the recorded build compiled; the current text was substituted.",
+      "rationale": "Analysing what the build saw rather than what is on disk would report findings against code nobody has. Substituting the current text keeps the report about the working tree and says so.",
+      "examples": { "bad": "", "good": "" },
+      "falsePositives": "None; it is a comparison of file content against the compilation's recorded source list.",
+      "configuration": []
+    },
+    {
+      "id": "SK9021",
+      "concept": "binlog-missing-file",
+      "title": "The binlog does not name a file that exists",
+      "category": "Tool",
+      "defaultSeverity": "warning",
+      "scope": "Compilation",
+      "requiresSemantics": false,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "resharperId": null,
+      "supersedes": [],
+      "since": "0.6",
+      "languageVersion": null,
+      "summary": "A `.cs` file under the repository is in no recorded compilation. Rebuild.",
+      "rationale": "A new file that the binlog does not name is invisible to every compilation and is therefore silently unanalysed, which is the worst failure this tool can have. It is a warning and not an info for exactly that reason.",
+      "examples": { "bad": "", "good": "" },
+      "falsePositives": "A file genuinely excluded from compilation — a scratch file, a `.cs` under a directory with `EnableDefaultCompileItems=false` — is reported too. `skala.jsonc`'s `exclude` is the answer, and the message names the file.",
+      "configuration": [
+        "skala.jsonc: exclude"
+      ]
+    },
+    {
+      "id": "SK9030",
+      "concept": "analyzer-threw",
+      "title": "An analyzer threw",
+      "category": "Tool",
+      "defaultSeverity": "warning",
+      "scope": "Compilation",
+      "requiresSemantics": false,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "resharperId": null,
+      "supersedes": [],
+      "since": "0.6",
+      "languageVersion": null,
+      "summary": "An analyzer raised an exception; it is disabled for the rest of the run and everything else continues.",
+      "rationale": "A third-party analyzer that throws on one syntax shape must not be able to turn a CI gate red for unrelated reasons — or, worse, green by aborting the run early.",
+      "examples": { "bad": "", "good": "" },
+      "falsePositives": "None; it reports an exception that happened.",
+      "configuration": []
+    },
+    {
+      "id": "SK9031",
+      "concept": "analyzer-failed-to-load",
+      "title": "An analyzer package failed to load",
+      "category": "Tool",
+      "defaultSeverity": "warning",
+      "scope": "Compilation",
+      "requiresSemantics": false,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "resharperId": null,
+      "supersedes": [],
+      "since": "0.6",
+      "languageVersion": null,
+      "summary": "A hosted analyzer package named in `skala.jsonc` could not be loaded. Never fatal.",
+      "rationale": "ADR-008: third-party rules are hosted, never bundled. A package that is missing, is for another framework, or drags a conflicting dependency is a configuration problem to report, not a reason to produce no report at all.",
+      "examples": { "bad": "", "good": "" },
+      "falsePositives": "None; it reports a load that failed.",
+      "configuration": [
+        "skala.jsonc: analysis.hostedAnalyzers"
+      ]
+    },
+    {
+      "id": "SK9099",
+      "concept": "token-stream-changed",
+      "title": "The formatter's output was not token-equivalent",
+      "category": "Tool",
+      "defaultSeverity": "error",
+      "scope": "Syntax",
+      "requiresSemantics": false,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "resharperId": null,
+      "supersedes": [],
+      "since": "0.2",
+      "languageVersion": null,
+      "summary": "A Skala bug by definition. Nothing was written and a reproduction was dropped under `.skala/crash/`.",
+      "rationale": "ADR-005. The check is one extra parse per file, it costs about 15 % of formatting time, and there is no flag that turns it off.",
+      "examples": { "bad": "", "good": "" },
+      "falsePositives": "None. A finding here is a bug in Skala.",
+      "configuration": []
+    }
+  ]
+}

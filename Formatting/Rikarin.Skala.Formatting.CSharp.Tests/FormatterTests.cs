@@ -320,14 +320,14 @@ public sealed class TriviaTests {
     [Fact]
     public void DisabledText_IsNeverReindented() {
         const string source = """
-            class C {
-            #if NEVER
-                            int   _a  ;
-              int _b;
-            #endif
-                int _c;
-            }
-            """;
+                              class C {
+                              #if NEVER
+                                              int   _a  ;
+                                int _b;
+                              #endif
+                                  int _c;
+                              }
+                              """;
 
         var formatted = Format.Text(source);
         Assert.Contains("                int   _a  ;\n  int _b;", formatted, StringComparison.Ordinal);
@@ -336,17 +336,17 @@ public sealed class TriviaTests {
     [Fact]
     public void AFormatterOffSpan_IsCopiedByteForByte() {
         const string source = """
-            class C {
-                // @formatter:off
-                var  matrix = new[,] {
-                    { 1 , 0 },
-                    { 0 , 1 }
-                };
-                // @formatter:on
-                void   M( )   {
-                }
-            }
-            """;
+                              class C {
+                                  // @formatter:off
+                                  var  matrix = new[,] {
+                                      { 1 , 0 },
+                                      { 0 , 1 }
+                                  };
+                                  // @formatter:on
+                                  void   M( )   {
+                                  }
+                              }
+                              """;
 
         var formatted = Format.Text(source);
         Assert.Contains(
@@ -378,14 +378,14 @@ public sealed class TriviaTests {
     [Fact]
     public void ADocComment_IsReindentedLineByLine() {
         const string source = """
-            class C {
-                    /// <summary>
-                    /// Docs.
-                    /// </summary>
-                void M() {
-                }
-            }
-            """;
+                              class C {
+                                      /// <summary>
+                                      /// Docs.
+                                      /// </summary>
+                                  void M() {
+                                  }
+                              }
+                              """;
 
         Assert.Equal(
             "class C {\n    /// <summary>\n    /// Docs.\n    /// </summary>\n    void M() { }\n}\n",
@@ -410,16 +410,16 @@ public sealed class SafetyTests {
     [Fact]
     public void AMemberWhoseBracesAreSplitAcrossAnIf_IsEmittedVerbatimWithSK9011() {
         const string source = """
-            class C {
-            #if DEBUG
-                void M(int a) {
-            #else
-                void M(int a, int b) {
-            #endif
-                    M(a);
-                }
-            }
-            """;
+                              class C {
+                              #if DEBUG
+                                  void M(int a) {
+                              #else
+                                  void M(int a, int b) {
+                              #endif
+                                      M(a);
+                                  }
+                              }
+                              """;
 
         var result = Format.Run(source);
         Assert.Contains(result.Diagnostics, static d => d.Id == FormatDiagnosticIds.UnbalancedPreprocessor);
@@ -491,15 +491,15 @@ public sealed class EditTests {
     [Fact]
     public void AlreadyFormattedCode_ProducesNoEdits() {
         const string source = """
-            class C {
-                int _a;
+                              class C {
+                                  int _a;
 
-                void M() {
-                    M();
-                }
-            }
+                                  void M() {
+                                      M();
+                                  }
+                              }
 
-            """;
+                              """;
 
         Assert.Empty(Format.Run(source).Edits);
     }
@@ -610,7 +610,11 @@ public sealed class BreakPositionTests {
             """
         );
 
-        Assert.Contains("Foo(\n            first,\n            second\n        );", formatted, StringComparison.Ordinal);
+        Assert.Contains(
+            "Foo(\n            first,\n            second\n        );",
+            formatted,
+            StringComparison.Ordinal
+        );
     }
 
     [Fact]
@@ -733,11 +737,10 @@ public sealed class BreakPositionTests {
         // walk order rather than an iteration. If a front end ever breaks it, the only monotone
         // answer is Broken and the layout is a guess; this counts the guesses and there are none.
         foreach (var source in new[] {
-            "class C { int P => 1; }",
-            "class C { void M(bool f) { if (f) G(); } }",
-            "class C { void M(int v) { switch (v) { case 1: G(); break; } } }",
-            "class C { int P { get => 1; set => _f = value; } }"
-        }) {
+                "class C { int P => 1; }", "class C { void M(bool f) { if (f) G(); } }",
+                "class C { void M(int v) { switch (v) { case 1: G(); break; } } }",
+                "class C { int P { get => 1; set => _f = value; } }"
+            }) {
             Assert.Equal(0, Format.OwnerUnresolved(source));
         }
     }

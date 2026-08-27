@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -22,9 +23,12 @@ public sealed record FormatResult(
         get {
             var lines = 0;
             foreach (var edit in Edits) {
-                lines += 1 + CSharpDocumentBuilder.CountNewLines(
-                    Original.ToString(Microsoft.CodeAnalysis.Text.TextSpan.FromBounds(edit.Span.Start, edit.Span.End))
-                );
+                lines += 1
+                    + CSharpDocumentBuilder.CountNewLines(
+                        Original.ToString(
+                            Microsoft.CodeAnalysis.Text.TextSpan.FromBounds(edit.Span.Start, edit.Span.End)
+                        )
+                    );
             }
 
             return lines;
@@ -54,30 +58,70 @@ public static class CSharpFormatter {
     public static readonly CSharpParseOptions ParseOptions =
         new CSharpParseOptions(LanguageVersion.Preview).WithDocumentationMode(DocumentationMode.Parse);
 
+    static readonly ConcurrentDictionary<string, CSharpParseOptions> SymbolisedOptions = new(StringComparer.Ordinal);
+
+    /// <summary>
+    /// The parse options for a file, given the preprocessor symbols that are defined for it.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ SK-DIV-0004. With no symbols Roslyn hands back every <c>#if DEBUG</c> body as
+    /// <see cref="SyntaxKind.DisabledTextTrivia"/> — an unstructured string the formatter is not
+    /// allowed to touch — while the oracle runs against a project where <c>DEBUG</c> is defined and
+    /// formats it. Nothing else in the pipeline needs to change: which branch is disabled text is
+    /// entirely a parse-time decision, so supplying the symbols is the whole fix.
+    /// <para>
+    /// Memoised because the symbol set is per-compilation and the file count per compilation is in
+    /// the thousands; <see cref="CSharpParseOptions.WithPreprocessorSymbols(IEnumerable{string})"/>
+    /// allocates a new options object and a new symbol map every call.
+    /// </para>
+    /// </remarks>
+    public static CSharpParseOptions ParseOptionsFor(IReadOnlyList<string>? symbols) {
+        if (symbols is null || symbols.Count == 0) {
+            return ParseOptions;
+        }
+
+        // Ordinal-sorted and de-duplicated, so that two orderings of one set share a cache entry
+        // and — more importantly — produce the same parse. Roslyn's symbol map is a set; the key
+        // has to be one too or the memo is keyed on something the answer does not depend on.
+        var normalised = new SortedSet<string>(symbols, StringComparer.Ordinal);
+        var key = string.Join(";", normalised);
+        return SymbolisedOptions.GetOrAdd(key, _ => ParseOptions.WithPreprocessorSymbols(normalised));
+    }
+
     /// <summary>Formats text that has already been read, with options that have already been resolved.</summary>
     public static FormatResult Format(
         string path,
         SourceText text,
         in FormattingOptions options,
-        string? crashRoot = null
+        string? crashRoot = null,
+        IReadOnlyList<string>? preprocessorSymbols = null
     ) {
         var phaseOne = new PhaseOneOptions(options);
-        return Format(path, text, phaseOne, crashRoot);
+        return Format(path, text, phaseOne, crashRoot, preprocessorSymbols);
     }
 
     public static FormatResult Format(
         string path,
         SourceText text,
         in PhaseOneOptions options,
-        string? crashRoot = null
+        string? crashRoot = null,
+        IReadOnlyList<string>? preprocessorSymbols = null
     ) {
         var diagnostics = ImmutableArray.CreateBuilder<SkalaDiagnostic>();
 
         if (GeneratedCode.IsGenerated(path, text)) {
-            return new FormatResult(path, text, [], text.ToString(), diagnostics.ToImmutable(), FormatOutcome.Generated);
+            return new FormatResult(
+                path,
+                text,
+                [],
+                text.ToString(),
+                diagnostics.ToImmutable(),
+                FormatOutcome.Generated
+            );
         }
 
-        var tree = CSharpSyntaxTree.ParseText(text, ParseOptions, path);
+        var parseOptions = ParseOptionsFor(preprocessorSymbols);
+        var tree = CSharpSyntaxTree.ParseText(text, parseOptions, path);
         foreach (var diagnostic in tree.GetDiagnostics()) {
             if (diagnostic.Severity != DiagnosticSeverity.Error) {
                 continue;
@@ -127,7 +171,7 @@ public static class CSharpFormatter {
         var formatted = EditEmitter.Apply(text.ToString(), edits);
 
         var after = SourceText.From(formatted, text.Encoding ?? System.Text.Encoding.UTF8);
-        if (TokenEquivalence.Compare(text, after, ParseOptions) is { } failure) {
+        if (TokenEquivalence.Compare(text, after, parseOptions) is { } failure) {
             var artefact = CrashArtifacts.Write(crashRoot, path, text.ToString(), formatted, options);
             diagnostics.Add(
                 new SkalaDiagnostic(
@@ -136,7 +180,9 @@ public static class CSharpFormatter {
                     $"not written, the formatted output has a different token stream (at token {failure.Index.ToString(System.Globalization.CultureInfo.InvariantCulture)}: '{failure.Before}' became '{failure.After}')",
                     path,
                     0,
-                    artefact is null ? null : $"A reproduction is in {artefact}. This is a Skala bug; the file was left untouched."
+                    artefact is null
+                        ? null
+                        : $"A reproduction is in {artefact}. This is a Skala bug; the file was left untouched."
                 )
             );
 
@@ -198,14 +244,15 @@ public static class CSharpFormatter {
     public static FormatResult FormatFile(
         string path,
         IReadOnlyList<KeyValuePair<string, string>>? overrides = null,
-        string? crashRoot = null
+        string? crashRoot = null,
+        IReadOnlyList<string>? preprocessorSymbols = null
     ) {
         var text = Read(path);
         // ⚠ Through ConfigurationCache: resolving 483 options from a re-parsed chain per file is
         // most of what `format --check` over a large tree spends its time on, and the answer is the
         // same for every file the same sections match (docs/plan/13 § "The fitting pass").
         var options = ConfigurationCache.Options(EditorConfigChain.For(path), overrides);
-        return Format(path, text, options, crashRoot);
+        return Format(path, text, options, crashRoot, preprocessorSymbols);
     }
 
     public static SourceText Read(string path) {

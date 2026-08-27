@@ -168,8 +168,7 @@ public sealed class EditEmitterTests {
         var layout = new Layout(
             "a b",
             [
-                new AnchorPoint(new SourceSpan(0, 1), 0, 1, 0),
-                new AnchorPoint(new SourceSpan(2, 1), 2, 3, 1)
+                new AnchorPoint(new SourceSpan(0, 1), 0, 1, 0), new AnchorPoint(new SourceSpan(2, 1), 2, 3, 1)
             ]
         );
 
@@ -182,8 +181,7 @@ public sealed class EditEmitterTests {
         var layout = new Layout(
             "a b",
             [
-                new AnchorPoint(new SourceSpan(0, 1), 0, 1, 0),
-                new AnchorPoint(new SourceSpan(5, 1), 2, 3, 1)
+                new AnchorPoint(new SourceSpan(0, 1), 0, 1, 0), new AnchorPoint(new SourceSpan(5, 1), 2, 3, 1)
             ]
         );
 
@@ -196,8 +194,7 @@ public sealed class EditEmitterTests {
     [Fact]
     public void Restrict_KeepsOnlyTheEditsThatIntersectTheRange() {
         TextEdit[] edits = [
-            new(new SourceSpan(0, 2), "x"),
-            new(new SourceSpan(10, 2), "y")
+            new(new SourceSpan(0, 2), "x"), new(new SourceSpan(10, 2), "y")
         ];
 
         var restricted = EditEmitter.Restrict(edits, new SourceSpan(9, 5));

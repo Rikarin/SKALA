@@ -137,8 +137,11 @@ public static class ConfigCommands {
             output.AppendLine("  `skala config fix` adds it.");
         }
 
-        var hasStandardWidth = OptionRegistry.TryResolve("max_line_length", out var widthId) && !resolution[widthId].IsDefault;
-        var reSharperWidth = OptionRegistry.TryResolve("resharper_csharp_max_line_length", out var rsWidthId) ? resolution[rsWidthId] : null;
+        var hasStandardWidth =
+            OptionRegistry.TryResolve("max_line_length", out var widthId) && !resolution[widthId].IsDefault;
+        var reSharperWidth = OptionRegistry.TryResolve("resharper_csharp_max_line_length", out var rsWidthId)
+            ? resolution[rsWidthId]
+            : null;
         if (!hasStandardWidth && reSharperWidth is { IsDefault: false }) {
             output.AppendLine(
                 $"⚠ no `max_line_length`; the column limit lives only in `resharper_csharp_max_line_length = {reSharperWidth.Value}`."
@@ -211,7 +214,9 @@ public static class ConfigCommands {
         output.AppendLine("  possible values, and never its default — so no key can claim `resharper-docs` and, until");
         output.AppendLine("  milestone 3, distill dropped nothing at all. The defaults are derived from the oracle");
         output.AppendLine("  instead: a `jb cleanupcode` run under a configuration carrying nothing but `root = true`");
-        output.AppendLine("  is ReSharper-with-defaults by construction, and the value that reproduces it on the key's");
+        output.AppendLine(
+            "  is ReSharper-with-defaults by construction, and the value that reproduces it on the key's"
+        );
         output.AppendLine("  own fixture is the default. Those are marked `oracle-probe` and only those are dropped.");
         output.AppendLine("  Every other key is kept, because dropping one on a guessed default would silently change");
         output.AppendLine("  formatting in whoever's repository accepted this file.");
@@ -258,17 +263,19 @@ public static class ConfigCommands {
 
     static string Counts(ResolutionResult resolution) {
         var configured = resolution.Configured.Count();
-        var tiers = resolution.Resolved.GroupBy(static option => option.Info.Tier).ToDictionary(
-            static g => g.Key,
-            static g => g.Count()
-        );
+        var tiers = resolution.Resolved.GroupBy(static option => option.Info.Tier)
+            .ToDictionary(
+                static g => g.Key,
+                static g => g.Count()
+            );
 
         string Tier(OptionTier tier) =>
             tiers.TryGetValue(tier, out var count) ? count.ToString(CultureInfo.InvariantCulture) : "0";
 
         return string.Create(
             CultureInfo.InvariantCulture,
-            $"{OptionRegistry.Count} options known: {configured} set by the configuration, {OptionRegistry.Count - configured} at the registry default." + $"{Environment.NewLine}Tiers — A (implemented): {Tier(OptionTier.A)}, B (approximated): {Tier(OptionTier.B)}, C (accepted, ignored): {Tier(OptionTier.C)}, D (not implemented): {Tier(OptionTier.D)}."
+            $"{OptionRegistry.Count} options known: {configured} set by the configuration, {OptionRegistry.Count - configured} at the registry default."
+            + $"{Environment.NewLine}Tiers — A (implemented): {Tier(OptionTier.A)}, B (approximated): {Tier(OptionTier.B)}, C (accepted, ignored): {Tier(OptionTier.C)}, D (not implemented): {Tier(OptionTier.D)}."
         );
     }
 
@@ -308,7 +315,8 @@ public static class ConfigCommands {
         }
 
         output.AppendLine();
-        foreach (var group in diagnostics.GroupBy(static d => d.Id).OrderBy(static g => g.Key, StringComparer.Ordinal)) {
+        foreach (var group in diagnostics.GroupBy(static d => d.Id)
+            .OrderBy(static g => g.Key, StringComparer.Ordinal)) {
             output.Append("  ")
                 .Append(group.Key)
                 .Append(": ")

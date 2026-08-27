@@ -48,11 +48,14 @@ public sealed class SyntaxKindInventoryTests {
 
     [Fact]
     public void EveryKindInTheInventory_StillExists() {
-        var known = Enum.GetValues<SyntaxKind>().Select(static kind => kind.ToString()).ToHashSet(
-            StringComparer.Ordinal
-        );
+        var known = Enum.GetValues<SyntaxKind>()
+            .Select(static kind => kind.ToString())
+            .ToHashSet(StringComparer.Ordinal);
         var gone = Inventory.Keys.Where(name => !known.Contains(name)).Order(StringComparer.Ordinal).ToArray();
-        Assert.True(gone.Length == 0, "The inventory names kinds Roslyn no longer declares: " + string.Join(", ", gone));
+        Assert.True(
+            gone.Length == 0,
+            "The inventory names kinds Roslyn no longer declares: " + string.Join(", ", gone)
+        );
     }
 
     [Fact]

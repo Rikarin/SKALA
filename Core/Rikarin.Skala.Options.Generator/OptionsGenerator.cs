@@ -113,10 +113,11 @@ public sealed class OptionsGenerator : IIncrementalGenerator {
         }
 
         var clean = true;
-        foreach (var pair in owners.Where(static p => p.Value.Count > 1).OrderBy(
-            static p => p.Key,
-            StringComparer.Ordinal
-        )) {
+        foreach (var pair in owners.Where(static p => p.Value.Count > 1)
+            .OrderBy(
+                static p => p.Key,
+                StringComparer.Ordinal
+            )) {
             context.ReportDiagnostic(
                 Diagnostic.Create(
                     DuplicateAlias,
@@ -139,10 +140,10 @@ public sealed class OptionsGenerator : IIncrementalGenerator {
             }
 
             var declared = model.Enums.FirstOrDefault(e => string.Equals(
-                e.Name,
-                option.EnumName,
-                StringComparison.Ordinal
-            )
+                    e.Name,
+                    option.EnumName,
+                    StringComparison.Ordinal
+                )
             );
             var text = option.Default;
             if (option.SeveritySuffix) {
@@ -156,10 +157,11 @@ public sealed class OptionsGenerator : IIncrementalGenerator {
                 ? text.Split(',').Select(static part => part.Trim()).Where(static part => part.Length > 0).ToArray()
                 : [text];
 
-            if (declared is not null && parts.All(part =>
-                IndexOfValue(declared, part) >= 0
-                || declared.ValueAliases.Any(a => string.Equals(a.Key, part, StringComparison.Ordinal))
-            )) {
+            if (declared is not null
+                && parts.All(part =>
+                    IndexOfValue(declared, part) >= 0
+                    || declared.ValueAliases.Any(a => string.Equals(a.Key, part, StringComparison.Ordinal))
+                )) {
                 continue;
             }
 
@@ -317,7 +319,9 @@ public sealed class OptionsGenerator : IIncrementalGenerator {
         builder.AppendLine("public enum OptionTier {");
         builder.AppendLine("    /// <summary>Implemented, and pinned by at least one oracle fixture.</summary>");
         builder.AppendLine("    A,");
-        builder.AppendLine("    /// <summary>Implemented, with a documented divergence in stated edge cases.</summary>");
+        builder.AppendLine(
+            "    /// <summary>Implemented, with a documented divergence in stated edge cases.</summary>"
+        );
         builder.AppendLine("    B,");
         builder.AppendLine("    /// <summary>Parsed, validated, and deliberately not implemented.</summary>");
         builder.AppendLine("    C,");
@@ -406,7 +410,14 @@ public sealed class OptionsGenerator : IIncrementalGenerator {
                 ? "[]"
                 : "[" + string.Join(", ", option.Expands.Select(e => "OptionId." + Naming.Pascal(e))) + "]";
             builder.AppendLine(
-                $"        new(OptionId.{option.MemberName}, {OptionRegistryReader.Literal(option.Key)}, {aliases}, " + $"{OptionRegistryReader.Literal(option.Language)}, OptionValueKind.{option.Kind}, " + $"{OptionRegistryReader.Literal(option.EnumName)}, {OptionRegistryReader.Literal(option.Default)}, " + $"OptionDefaultSource.{DefaultSourceMember(option.DefaultSource)}, OptionTier.{option.Tier}, " + $"{OptionRegistryReader.Literal(option.Construct)}, {OptionRegistryReader.Literal(option.Summary)}, " + $"{OptionRegistryReader.Literal(option.Since)}, {OptionRegistryReader.Literal(option.Oracle)}, " + $"{OptionRegistryReader.Literal(option.Docs)}, {OptionRegistryReader.IntLiteral(option.TemplateLine)}, " + $"{(option.SeveritySuffix ? "true" : "false")}, {expands}),"
+                $"        new(OptionId.{option.MemberName}, {OptionRegistryReader.Literal(option.Key)}, {aliases}, "
+                + $"{OptionRegistryReader.Literal(option.Language)}, OptionValueKind.{option.Kind}, "
+                + $"{OptionRegistryReader.Literal(option.EnumName)}, {OptionRegistryReader.Literal(option.Default)}, "
+                + $"OptionDefaultSource.{DefaultSourceMember(option.DefaultSource)}, OptionTier.{option.Tier}, "
+                + $"{OptionRegistryReader.Literal(option.Construct)}, {OptionRegistryReader.Literal(option.Summary)}, "
+                + $"{OptionRegistryReader.Literal(option.Since)}, {OptionRegistryReader.Literal(option.Oracle)}, "
+                + $"{OptionRegistryReader.Literal(option.Docs)}, {OptionRegistryReader.IntLiteral(option.TemplateLine)}, "
+                + $"{(option.SeveritySuffix ? "true" : "false")}, {expands}),"
             );
         }
 
@@ -478,7 +489,9 @@ public sealed class OptionsGenerator : IIncrementalGenerator {
         builder.AppendLine(
             "            OptionValueKind.Int => _scalars[(int)id].ToString(System.Globalization.CultureInfo.InvariantCulture),"
         );
-        builder.AppendLine("            OptionValueKind.Enum => OptionEnums.ToText(info.EnumName!, _scalars[(int)id]),");
+        builder.AppendLine(
+            "            OptionValueKind.Enum => OptionEnums.ToText(info.EnumName!, _scalars[(int)id]),"
+        );
         builder.AppendLine("            OptionValueKind.Flags => _strings[(int)id] ?? string.Empty,");
         builder.AppendLine("            _ => _strings[(int)id] ?? string.Empty");
         builder.AppendLine("        };");
@@ -722,10 +735,10 @@ public sealed class OptionsGenerator : IIncrementalGenerator {
                     : "0";
             case OptionValueKind.Enum:
                 var declared = model.Enums.FirstOrDefault(e => string.Equals(
-                    e.Name,
-                    option.EnumName,
-                    StringComparison.Ordinal
-                )
+                        e.Name,
+                        option.EnumName,
+                        StringComparison.Ordinal
+                    )
                 );
                 if (declared is null) {
                     return "0";

@@ -77,12 +77,15 @@ public sealed class DistillTests {
     [InlineData(OptionDefaultSource.OracleProbe, "chop_always", false)]
     [InlineData(OptionDefaultSource.Template, "chop_if_long", false)]
     [InlineData(OptionDefaultSource.Unknown, "chop_if_long", false)]
-    public void ADroppableKey_IsOnlyOneWhoseDefaultWasVerified(OptionDefaultSource source, string value, bool expected) {
+    public void ADroppableKey_IsOnlyOneWhoseDefaultWasVerified(
+        OptionDefaultSource source,
+        string value,
+        bool expected
+    ) {
         // The rule that makes distill safe. A distill that drops a key on a guessed default
         // silently changes formatting, which is unacceptable.
         var info = OptionRegistry.Get(OptionId.ResharperCsharpWrapArgumentsStyle) with {
-            Default = "chop_if_long",
-            DefaultSource = source
+            Default = "chop_if_long", DefaultSource = source
         };
 
         Assert.Equal(expected, Distiller.ShouldDrop(info, value));
@@ -91,9 +94,7 @@ public sealed class DistillTests {
     [Fact]
     public void ADroppableKey_IgnoresAMicrosoftSeveritySuffix() {
         var info = OptionRegistry.Get(OptionId.CsharpStyleNamespaceDeclarations) with {
-            Default = "file_scoped:suggestion",
-            DefaultSource = OptionDefaultSource.ReSharperDocs,
-            SeveritySuffix = true
+            Default = "file_scoped:suggestion", DefaultSource = OptionDefaultSource.ReSharperDocs, SeveritySuffix = true
         };
 
         Assert.True(Distiller.ShouldDrop(info, "file_scoped:silent"));

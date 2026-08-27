@@ -70,7 +70,27 @@ reference corpus, a documented false-positive story, and a "should not fire" fix
 large as the positive one. Plus the nightly rule-count job, which catches drift. Plus shipping
 uncertain rules at `hint`, where they are invisible until asked for.
 
-**Residual risk: medium.**
+⚠ **M5 shipped the first rules and the bar bit immediately: six analyzers of the thirty-six the
+catalogue lists.** That is not the milestone falling short, it is the third clause — a "should not
+fire" set at least as large as the positive one — costing more than the rule. The measurements:
+
+| | |
+|---|---|
+| Fixtures | 21 positive, **36 negative**; every rule's negative set is larger than its positive one, asserted by a test |
+| `corpus/real/` (380 files) | 143 findings — 27 `SK1005`, 114 `SK1010`, 2 `SK1020` — every one reviewed, **zero false positives** |
+| Vixen (4 688 files, via binlog) | 12 findings, all `SK1010`, all correct |
+| Fix verification | 170 fixes applied across 65 corpus files: 16 327 compiler errors before, 16 315 after, **no `(file, id)` pair worse than before** |
+
+⚠ **Two of the six shipped rules fire zero times on both reference trees.** `SK1030` and `SK1035`
+have their fixtures and nothing else. A rule with no corpus occurrences has a false-positive rate
+that is *measured* at zero and *tested* at nothing, and that distinction is the whole of this risk.
+
+⚠ **`fidelity audit` is the instrument, and it is deliberately more aggressive than the product.**
+It runs the semantic rules under a loose compilation, which `skala check` refuses to do, because for
+an audit the asymmetry is in the safe direction: every finding it produces is one to check, and the
+ones it misses are misses rather than false positives.
+
+**Residual risk: medium**, and unchanged — six rules is not enough evidence to lower it.
 
 ### R4 — Scope. This is three products
 
@@ -177,16 +197,47 @@ which nobody enjoys.
 Leaning toward the SDK package, with `skala config diff` against the packaged canonical file as a
 gate condition so drift is a finding rather than a surprise. Not designed yet.
 
-### Q5 — Does the ReSharper severity mapping survive?
+### Q5 — Does the ReSharper severity mapping survive? — ✅ **resolved at M5: partly, and off by default**
 
-[03](03-configuration-model.md) claims the 853 `resharper_*_highlighting` keys can configure Skala's
-rules through a mapping table. That works where a Skala rule corresponds one-to-one with a ReSharper
-inspection. Many do not: one ReSharper inspection may cover what Skala splits into three rules, or
-vice versa.
+[03](03-configuration-model.md) claimed the 853 `resharper_*_highlighting` keys can configure
+Skala's rules through a mapping table. That works where a Skala rule corresponds one-to-one with a
+ReSharper inspection. Many do not: one ReSharper inspection may cover what Skala splits into three
+rules, or vice versa.
 
-**Resolution needed by M5.** The likely answer is that the mapping is many-to-one in the direction
-that is safe (a ReSharper key sets the severity of every Skala rule it maps to) and that
-`dotnet_diagnostic.SK…` overrides it, with `skala config explain` showing which mechanism won.
+**The guess was right about the direction and wrong about the default.** M5 measured it against the
+real export; the full argument is in [03](03-configuration-model.md) § "Severities" and the four
+findings are:
+
+1. **Many-to-many in both directions.** The null-check neighbourhood alone carries six inspections at
+   four severities (`merge_into_pattern` suggestion, `join_null_check_with_usage` suggestion,
+   `convert_type_check_to_null_check` warning, `convert_type_check_pattern_to_null_check` warning,
+   `arrange_null_checking_pattern` hint, `use_null_propagation` hint), and `SK1034` covers what three
+   `replace_with_single_call_to_*` inspections split. So the table is a **recorded choice** — one key
+   per rule in `rules.json`, with a `resharperNote` naming what was passed over — and never a
+   derivation. The safe direction is the one the guess named: rule → at most one key, never the
+   reverse.
+2. **Partial.** `SK1005` maps to nothing: Rider drives file-scoped namespaces from the *Microsoft*
+   key `csharp_style_namespace_declarations = file_scoped:suggestion` and reports them under
+   `resharper_arrange_namespace_body_highlighting = hint`. One concept, two mechanisms, two
+   severities, no inspection id.
+3. ⚠ **A plausible key that does not exist is worse than none.** `ConvertToFileScopedNamespace` and
+   `ConvertToThrowIfNull` both snake-case into keys JetBrains never emits; a mapping nothing can set
+   looks like a feature and behaves like a comment.
+   `RuleCatalogTests.EveryDeclaredReSharperKey_ExistsInTheExport` reads the export and fails the
+   build for it.
+4. ⚠ **The decisive one.** The export sets
+   `resharper_use_throw_if_null_method_highlighting = none`, so reading these keys as authoritative
+   would switch `SK1020` off in the repository Skala was built for, without anyone deciding to. The
+   912 values in an export were chosen for ReSharper's inspections; a value nobody has looked at is
+   not consent.
+
+**So the mechanism ships opt-in** — `skala check --resharper-severities`, or
+`"analysis": { "resharperSeverities": true }` — with the predicted precedence:
+`dotnet_diagnostic.SK…` beats the ReSharper key beats the rule's default. `skala explain <id>`
+prints the key, its value here, and the note. The headline claim survives in a smaller and truer
+form: the export *can* configure Skala's rules, one rule at a time, when someone asks it to.
+
+**Residual risk: low**, and it moved from a design question to a documented per-rule decision.
 
 ### Q6 — Duplication across repositories?
 

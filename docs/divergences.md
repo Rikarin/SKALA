@@ -11,6 +11,10 @@ Format: `## SK-DIV-nnnn — one line`, then the argument, then the option keys i
 At milestone 3, `corpus/real/` is **98.86 %** of lines identical to the oracle over 380 files and
 76 660 lines — 874 lines that differ. Split by cause, which is the shape that says what is left:
 
+⚠ Milestone 5 leaves the line number where it was and moves the file number: 71.05 % → **71.32 %**,
+from the `>`-before-`(` fix in SK-DIV-0004 below. With preprocessor symbols supplied it is 98.93 % /
+71.58 %.
+
 | Files | Line fidelity | File fidelity | What the residue is |
 |---|---:|---:|---|
 | containing a `#if` (91) | 98.60 % | 62.64 % | SK-DIV-0001 and SK-DIV-0004 |
@@ -91,15 +95,53 @@ leaves it byte-for-byte.
 ⚠ This is a real limitation and not only a measurement artefact: on a tree with much conditional
 code, the conditional half is not formatted at all. It is safe — nothing is mangled — but it is not
 what a user would expect, and it is the strongest argument for `skala check`'s project loading
-([07](plan/07-analysis-host.md)) reaching `format` as well. Milestone 5 supplies the compilation;
-until then a repository that cares can pass the symbols explicitly once `--define` exists.
+([07](plan/07-analysis-host.md)) reaching `format` as well.
 
 Measured at M3: the 91 files of `corpus/real/` that contain a `#if` are at 98.60 % of lines against
 99.02 % for the 274 that do not, and 62.64 % of files against 74.82 %. Whole files are affected
 rather than lines: `Issue2504.cs` is wrapped in `#if (NET45 || NET5_0_OR_GREATER)`, so for Skala the
 entire body is disabled text and the file is reproduced unchanged.
 
+## ✅ Closed at milestone 5, and it was worth less than it looked
+
+`skala format --define A,B` supplies preprocessor symbols, and `--load=binlog|workspace` takes them
+from what the build actually compiled. `fidelity preprocessor` measures the result against the same
+symbol set the oracle itself had — read out of a real binary log of the same scratch project
+`OracleRunner` builds, rather than from a list someone typed, which makes the measurement and the
+binlog loader test each other:
+
+```
+DEBUG TRACE NET NET10_0 NETCOREAPP
+NET5_0_OR_GREATER … NET10_0_OR_GREATER
+NETCOREAPP1_0_OR_GREATER … NETCOREAPP3_1_OR_GREATER          (18 symbols)
+```
+
+| `corpus/real/` | no symbols | with symbols |
+|---|---:|---:|
+| the 91 files containing a `#if` | 98.60 % line / 62.64 % file | **98.92 %** / 63.74 % |
+| the 289 that do not | 98.93 % / 74.05 % | 98.93 % / 74.05 % |
+| overall (380) | 98.86 % / 71.32 % | **98.93 %** / 71.58 % |
+
+⚠ **A third of the M3 gap was the estimate; a fifth of it is the measurement.** Symbols close
+0.32 points on the `#if` files and 0.07 overall, not the ~0.4 that "a third of 874 divergent lines"
+implied. The reason is visible once the residue is attributed: what is left in those files is
+`wrap: one side continues where the other broke` (47 lines), the base64-literal shape SK-DIV-0005
+names (36), and blank lines around directives (23) — ordinary tail, not frozen disabled text. The
+`#if` files were never mostly SK-DIV-0004; they were tail with SK-DIV-0004 on top of it.
+
+⚠ **And the branches nobody compiles stay frozen for both tools.** The oracle had these eighteen
+symbols and no more, so `#if HAVE_BENCHMARKS` in Newtonsoft is disabled text for ReSharper too. The
+entry is closed in the sense that Skala now sees whatever the oracle sees; it does not follow that
+either of them formats every branch, and neither does.
+
+⚠ **It also uncovered a formatter bug that had been invisible.** With `#if` bodies live, `count > (n)`
+came back as `count >(n)`: `IsCallSite` treated every `>` as a type-argument close, so the space
+after the operator was suppressed. Every corpus line that shows it is inside a `#if` body. The
+symbols did not cause the bug, they revealed it — file fidelity on the files with *no* `#if` went
+from 73.70 % to 74.05 % when it was fixed, which is a file that had been wrong since M1.
+
 - options: none
+- commands: `skala format --define`, `skala format --load=`, `fidelity preprocessor`
 
 ## SK-DIV-0005 — the ordering rule's margin is an empirical constant, not a derivation
 

@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="../Rikarin.Skala.Reporting/Rikarin.Skala.Reporting.csproj" />
+  </ItemGroup>
+
+</Project>

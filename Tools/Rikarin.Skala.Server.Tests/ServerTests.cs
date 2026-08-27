@@ -7,7 +7,10 @@ namespace Rikarin.Skala.Server.Tests;
 
 /// <summary>A scratch repository: a `.git` directory, an `.editorconfig`, and files.</summary>
 public sealed class Scratch : IDisposable {
-    public Scratch(string editorConfig = "root = true\n[*.cs]\nindent_size = 4\nresharper_csharp_new_line_before_open_brace = none\ncsharp_new_line_before_open_brace = none\n") {
+    public Scratch(
+        string editorConfig =
+        "root = true\n[*.cs]\nindent_size = 4\nresharper_csharp_new_line_before_open_brace = none\ncsharp_new_line_before_open_brace = none\n"
+    ) {
         Root = Directory.CreateTempSubdirectory("skala-server-").FullName;
         Directory.CreateDirectory(Path.Combine(Root, ".git"));
         File.WriteAllText(Path.Combine(Root, ".editorconfig"), editorConfig);
@@ -197,12 +200,7 @@ public sealed class LanguageServerTests {
     }
 
     static JsonObject Request(int id, string method, JsonObject? parameters = null) =>
-        new() {
-            ["jsonrpc"] = "2.0",
-            ["id"] = id,
-            ["method"] = method,
-            ["params"] = parameters ?? new JsonObject()
-        };
+        new() { ["jsonrpc"] = "2.0",["id"] = id,["method"] = method,["params"] = parameters ?? new JsonObject() };
 
     [Fact]
     public async Task Initialize_AdvertisesExactlyTheFourCapabilities() {
@@ -227,15 +225,14 @@ public sealed class LanguageServerTests {
                 ["jsonrpc"] = "2.0",
                 ["method"] = "textDocument/didOpen",
                 ["params"] = new JsonObject {
-                    ["textDocument"] = new JsonObject {
-                        ["uri"] = uri,
-                        ["text"] = "class C{void M(){M();}}\n"
-                    }
+                    ["textDocument"] = new JsonObject { ["uri"] = uri,["text"] = "class C{void M(){M();}}\n" }
                 }
             },
-            Request(2, "textDocument/formatting", new JsonObject {
-                ["textDocument"] = new JsonObject { ["uri"] = uri }
-            })
+            Request(
+                2,
+                "textDocument/formatting",
+                new JsonObject { ["textDocument"] = new JsonObject { ["uri"] = uri } }
+            )
         );
 
         var edits = (JsonArray)responses[1]["result"]!;
@@ -255,27 +252,31 @@ public sealed class LanguageServerTests {
         var open = new JsonObject {
             ["jsonrpc"] = "2.0",
             ["method"] = "textDocument/didOpen",
-            ["params"] = new JsonObject {
-                ["textDocument"] = new JsonObject { ["uri"] = uri, ["text"] = source }
-            }
+            ["params"] = new JsonObject { ["textDocument"] = new JsonObject { ["uri"] = uri,["text"] = source } }
         };
 
         var whole = await Converse(
             open,
-            Request(1, "textDocument/formatting", new JsonObject {
-                ["textDocument"] = new JsonObject { ["uri"] = uri }
-            })
+            Request(
+                1,
+                "textDocument/formatting",
+                new JsonObject { ["textDocument"] = new JsonObject { ["uri"] = uri } }
+            )
         );
 
         var ranged = await Converse(
             open,
-            Request(1, "textDocument/rangeFormatting", new JsonObject {
-                ["textDocument"] = new JsonObject { ["uri"] = uri },
-                ["range"] = new JsonObject {
-                    ["start"] = new JsonObject { ["line"] = 1, ["character"] = 0 },
-                    ["end"] = new JsonObject { ["line"] = 1, ["character"] = 14 }
+            Request(
+                1,
+                "textDocument/rangeFormatting",
+                new JsonObject {
+                    ["textDocument"] = new JsonObject { ["uri"] = uri },
+                    ["range"] = new JsonObject {
+                        ["start"] = new JsonObject { ["line"] = 1,["character"] = 0 },
+                        ["end"] = new JsonObject { ["line"] = 1,["character"] = 14 }
+                    }
                 }
-            })
+            )
         );
 
         var all = (JsonArray)whole[0]["result"]!;
@@ -295,13 +296,13 @@ public sealed class LanguageServerTests {
             new JsonObject {
                 ["jsonrpc"] = "2.0",
                 ["method"] = "textDocument/didOpen",
-                ["params"] = new JsonObject {
-                    ["textDocument"] = new JsonObject { ["uri"] = uri, ["text"] = source }
-                }
+                ["params"] = new JsonObject { ["textDocument"] = new JsonObject { ["uri"] = uri,["text"] = source } }
             },
-            Request(1, "textDocument/diagnostic", new JsonObject {
-                ["textDocument"] = new JsonObject { ["uri"] = uri }
-            })
+            Request(
+                1,
+                "textDocument/diagnostic",
+                new JsonObject { ["textDocument"] = new JsonObject { ["uri"] = uri } }
+            )
         );
 
         var items = (JsonArray)responses[0]["result"]!["items"]!;
@@ -319,17 +320,19 @@ public sealed class LanguageServerTests {
             new JsonObject {
                 ["jsonrpc"] = "2.0",
                 ["method"] = "textDocument/didOpen",
-                ["params"] = new JsonObject {
-                    ["textDocument"] = new JsonObject { ["uri"] = uri, ["text"] = source }
-                }
+                ["params"] = new JsonObject { ["textDocument"] = new JsonObject { ["uri"] = uri,["text"] = source } }
             },
-            Request(1, "textDocument/codeAction", new JsonObject {
-                ["textDocument"] = new JsonObject { ["uri"] = uri },
-                ["range"] = new JsonObject {
-                    ["start"] = new JsonObject { ["line"] = 0, ["character"] = 0 },
-                    ["end"] = new JsonObject { ["line"] = 0, ["character"] = 0 }
+            Request(
+                1,
+                "textDocument/codeAction",
+                new JsonObject {
+                    ["textDocument"] = new JsonObject { ["uri"] = uri },
+                    ["range"] = new JsonObject {
+                        ["start"] = new JsonObject { ["line"] = 0,["character"] = 0 },
+                        ["end"] = new JsonObject { ["line"] = 0,["character"] = 0 }
+                    }
                 }
-            })
+            )
         );
 
         var actions = (JsonArray)responses[0]["result"]!;
@@ -341,7 +344,7 @@ public sealed class LanguageServerTests {
     public async Task AnUnknownRequest_IsMethodNotFound_AndAnUnknownNotificationIsSilent() {
         // ⚠ A server that answers a notification wedges every client that counts responses.
         var responses = await Converse(
-            new JsonObject { ["jsonrpc"] = "2.0", ["method"] = "textDocument/didSave" },
+            new JsonObject { ["jsonrpc"] = "2.0",["method"] = "textDocument/didSave" },
             Request(7, "textDocument/inlayHint")
         );
 

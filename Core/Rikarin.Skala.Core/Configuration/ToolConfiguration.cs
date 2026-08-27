@@ -32,7 +32,9 @@ public sealed class ToolConfiguration {
 
     public static ToolConfiguration FromText(string path, string text) {
         var diagnostics = ImmutableArray.CreateBuilder<SkalaDiagnostic>();
-        var options = new JsonDocumentOptions { CommentHandling = JsonCommentHandling.Skip, AllowTrailingCommas = true };
+        var options = new JsonDocumentOptions {
+            CommentHandling = JsonCommentHandling.Skip, AllowTrailingCommas = true
+        };
 
         try {
             using var document = JsonDocument.Parse(text, options);

@@ -16,6 +16,12 @@ was taken. Read 00–03 first; after that each file is the spec for one subsyste
 **These documents do not say what is built.** When there is an `overview.md` beside this directory,
 it does, and it is checked against the code — so where it and a document here disagree, it wins.
 
+⚠ Where a document *has* been measured against the code, it says so inline with a ⚠ and a number.
+Milestones 0–3 and 5 have been; **4 has not**, and it is deferred behind 5 (see
+[15](15-roadmap.md) § M4). `docs/rules/` and `docs/options/` are generated from `rules.json` and
+`options.json` and are not hand-edited — `skala rules docs` regenerates the first, and a test fails
+when a page is stale.
+
 ## The one-sentence problem
 
 `dotnet format` cannot wrap a line, CSharpier will not be configured, ReSharper's own CLI is the
@@ -54,7 +60,7 @@ its shape is the reason this project is hard rather than tedious:
 |---|---|
 | Lines / assignments | 4 238 / 4 226 |
 | `resharper_*` formatting keys | 648, of which ≈ 380 apply to C# |
-| `resharper_*_highlighting` severities | 3 021, of which 853 apply to C# |
+| `resharper_*_highlighting` severities | 3 021, of which 853 apply to C# (M5 recounts it at 912; [03](03-configuration-model.md) says why both) |
 | `dotnet_diagnostic.*` severities | 253 |
 | `dotnet_naming_*` keys | 215, forming 20 naming rules |
 | Microsoft `csharp_*` / `dotnet_style_*` keys | 40 |

@@ -1,4 +1,8 @@
 <Solution>
+  <Folder Name="/Analysis/">
+    <Project Path="Analysis/Rikarin.Skala.Analysis/Rikarin.Skala.Analysis.csproj" />
+    <Project Path="Analysis/Rikarin.Skala.Analysis.Tests/Rikarin.Skala.Analysis.Tests.csproj" />
+  </Folder>
   <Folder Name="/Core/">
     <Project Path="Core/Rikarin.Skala.Core/Rikarin.Skala.Core.csproj" />
     <Project Path="Core/Rikarin.Skala.Core.Tests/Rikarin.Skala.Core.Tests.csproj" />
@@ -12,6 +16,16 @@
     <Project Path="Formatting/Rikarin.Skala.Formatting.CSharp/Rikarin.Skala.Formatting.CSharp.csproj" />
     <Project Path="Formatting/Rikarin.Skala.Formatting.CSharp.Tests/Rikarin.Skala.Formatting.CSharp.Tests.csproj" />
   </Folder>
+  <Folder Name="/Reporting/">
+    <Project Path="Reporting/Rikarin.Skala.Reporting/Rikarin.Skala.Reporting.csproj" />
+    <Project Path="Reporting/Rikarin.Skala.Reporting.Tests/Rikarin.Skala.Reporting.Tests.csproj" />
+  </Folder>
+  <Folder Name="/Rules/">
+    <Project Path="Rules/Rikarin.Skala.Rules/Rikarin.Skala.Rules.csproj" />
+    <Project Path="Rules/Rikarin.Skala.Rules.Generator/Rikarin.Skala.Rules.Generator.csproj" />
+    <Project Path="Rules/Rikarin.Skala.Rules.Metadata/Rikarin.Skala.Rules.Metadata.csproj" />
+    <Project Path="Rules/Rikarin.Skala.Rules.Tests/Rikarin.Skala.Rules.Tests.csproj" />
+  </Folder>
   <Folder Name="/Testing/">
     <Project Path="Testing/Rikarin.Skala.Testing/Rikarin.Skala.Testing.csproj" />
     <Project Path="Testing/Rikarin.Skala.Conformance.Tests/Rikarin.Skala.Conformance.Tests.csproj" />
@@ -21,5 +35,7 @@
     <Project Path="Tools/Rikarin.Skala.Cli.Tests/Rikarin.Skala.Cli.Tests.csproj" />
     <Project Path="Tools/Rikarin.Skala.Server/Rikarin.Skala.Server.csproj" />
     <Project Path="Tools/Rikarin.Skala.Server.Tests/Rikarin.Skala.Server.Tests.csproj" />
+    <Project Path="Tools/Rikarin.Skala.Mcp/Rikarin.Skala.Mcp.csproj" />
+    <Project Path="Tools/Rikarin.Skala.Mcp.Tests/Rikarin.Skala.Mcp.Tests.csproj" />
   </Folder>
 </Solution>

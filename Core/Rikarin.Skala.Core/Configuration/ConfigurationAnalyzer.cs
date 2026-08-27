@@ -39,21 +39,21 @@ public static class ConfigurationAnalyzer {
             "resharper_remove_spaces_on_blank_lines",
             static (generic, specific) => IsFalse(generic) && IsTrue(specific),
             "trim_trailing_whitespace says leave trailing whitespace alone; resharper_remove_spaces_on_blank_lines says strip it from blank lines."
-        ),
-        new(
+        ), new(
             "end_of_line",
             "resharper_enforce_line_ending_style",
             static (generic, specific) => generic.Length > 0 && IsFalse(specific),
             "end_of_line names a line ending; resharper_enforce_line_ending_style says do not enforce one."
-        ),
-        new(
+        ), new(
             "max_line_length",
             "resharper_csharp_max_line_length",
-            static (generic, specific) => generic.Length > 0 && specific.Length > 0 && !string.Equals(
-                generic,
-                specific,
-                StringComparison.Ordinal
-            ),
+            static (generic, specific) => generic.Length > 0
+                && specific.Length > 0
+                && !string.Equals(
+                    generic,
+                    specific,
+                    StringComparison.Ordinal
+                ),
             "Two column limits that disagree. Skala reads the ReSharper key as authoritative."
         )
     ];
@@ -103,11 +103,12 @@ public static class ConfigurationAnalyzer {
 
         foreach (var document in resolution.Chain.Above(repositoryRoot)) {
             var keys = resolution.Configured
-                .Where(option => option.Origin is not null && string.Equals(
-                    option.Origin.File,
-                    document.Path,
-                    StringComparison.Ordinal
-                )
+                .Where(option => option.Origin is not null
+                    && string.Equals(
+                        option.Origin.File,
+                        document.Path,
+                        StringComparison.Ordinal
+                    )
                 )
                 .Select(static option => option.Origin!.Spelling)
                 .OrderBy(static key => key, StringComparer.Ordinal)
@@ -161,11 +162,12 @@ public static class ConfigurationAnalyzer {
         foreach (var option in resolution.Configured) {
             var winner = option.Origin!;
             foreach (var candidate in option.Candidates) {
-                if (candidate.Specificity <= winner.Specificity || string.Equals(
-                    candidate.Value,
-                    winner.Value,
-                    StringComparison.Ordinal
-                )) {
+                if (candidate.Specificity <= winner.Specificity
+                    || string.Equals(
+                        candidate.Value,
+                        winner.Value,
+                        StringComparison.Ordinal
+                    )) {
                     continue;
                 }
 
@@ -184,11 +186,12 @@ public static class ConfigurationAnalyzer {
 
         // Pairs that describe the same behaviour under different names.
         foreach (var rule in KnownContradictions) {
-            if (!TryFind(resolution, rule.Generic, out var generic) || !TryFind(
-                resolution,
-                rule.Specific,
-                out var specific
-            )) {
+            if (!TryFind(resolution, rule.Generic, out var generic)
+                || !TryFind(
+                    resolution,
+                    rule.Specific,
+                    out var specific
+                )) {
                 continue;
             }
 
@@ -215,7 +218,10 @@ public static class ConfigurationAnalyzer {
     ) {
         // docs/plan/16 § Q1: indentation autodetection makes the IDE and the oracle disagree with
         // each other, and Skala — which has no autodetection — cannot match both.
-        foreach (var key in new[] { "resharper_autodetect_indent_settings", "resharper_apply_auto_detected_rules", "resharper_use_indent_from_vs" }) {
+        foreach (var key in new[] {
+                "resharper_autodetect_indent_settings", "resharper_apply_auto_detected_rules",
+                "resharper_use_indent_from_vs"
+            }) {
             if (!TryFind(resolution, key, out var option) || !IsTrue(option.Value)) {
                 continue;
             }

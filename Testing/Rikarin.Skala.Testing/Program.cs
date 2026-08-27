@@ -20,6 +20,11 @@ using Rikarin.Skala.Testing;
 //   ask <dir>         run the oracle over a scratch directory, in place. The tool the milestone-3
 //                     wrapping rules were established with: an option name does not say what
 //                     happens to a 121-column array initializer, and asking does.
+//   audit [dir…]      every rule's findings over a tree, grouped by rule, for the
+//                     false-positive review docs/plan/16 § R3 makes the shipping bar.
+//   preprocessor      SK-DIV-0004's number: `corpus/real/` fidelity with the oracle's own
+//                     preprocessor symbols supplied, split by whether the file contains a `#if`.
+//                     The symbols are read out of a real binary log rather than typed.
 //   defaults [out]    derive ReSharper's built-in default table from the oracle, because nobody
 //                     publishes it (docs/plan/03 § "Deriving ReSharper's defaults"). Tens of
 //                     minutes.
@@ -29,7 +34,7 @@ using Rikarin.Skala.Testing;
 if (args.Length == 0) {
     Console.Error.WriteLine(
         "usage: oracle [set…] | fidelity [set…] | constructs [set…] | dump <set> <dir>"
-        + " | ask <dir> | defaults [round…]"
+        + " | ask <dir> | defaults [round…] | preprocessor [symbol…] | audit [dir…]"
     );
     return 2;
 }
@@ -51,6 +56,21 @@ switch (args[0]) {
         return Ask(args[1], args[2..]);
     case "defaults":
         return Defaults(args.Length > 1 ? args[1] : null);
+    case "audit":
+        // docs/plan/16 § R3's shipping bar, as a list a person can read: every rule's findings over
+        // a tree, grouped, so that "zero false positives" is checked rather than claimed.
+        Console.WriteLine(RuleAudit.Run(args.Length > 1 ? args[1..] : [Corpus.SetRoot(Corpus.Real)], true));
+        return 0;
+    case "preprocessor":
+        // SK-DIV-0004, measured. The symbol set comes from a real binary log of the same project
+        // the oracle's fixtures were produced under, read through the loader `skala check` uses.
+        Console.WriteLine(
+            PreprocessorFidelity.Measure(
+                args.Length > 1 && args[1] != "-" ? args[1..] : PreprocessorFidelity.OracleSymbols(Console.Out)
+            )
+        );
+
+        return 0;
     case "constructs":
         // docs/plan/16 § R1: any construct occurring more than 50 times must be at 100 %. A single
         // fidelity number cannot answer that; this attributes every divergent line to the construct
@@ -108,7 +128,9 @@ static int Ask(string directory, string[] overrides) {
         }
     }
 
-    Console.WriteLine($"{results.Count.ToString(CultureInfo.InvariantCulture)}/{files.Length.ToString(CultureInfo.InvariantCulture)} files answered.");
+    Console.WriteLine(
+        $"{results.Count.ToString(CultureInfo.InvariantCulture)}/{files.Length.ToString(CultureInfo.InvariantCulture)} files answered."
+    );
     return 0;
 }
 
@@ -224,10 +246,11 @@ static int Report(string[] sets) {
         Console.WriteLine($"── {set} ──────────────────────────────────────────────────────────");
         Console.WriteLine(Fidelity.Compare(results).Render());
 
-        foreach (var origin in results.GroupBy(static r => r.File.Split('/')[1], StringComparer.Ordinal).OrderBy(
-            static g => g.Key,
-            StringComparer.Ordinal
-        )) {
+        foreach (var origin in results.GroupBy(static r => r.File.Split('/')[1], StringComparer.Ordinal)
+            .OrderBy(
+                static g => g.Key,
+                StringComparer.Ordinal
+            )) {
             var report = Fidelity.Compare(origin);
             Console.WriteLine(
                 $"  {origin.Key,-14} line {report.LineFidelity * 100:F2}%  file {report.FileFidelity * 100:F2}%  ({report.Files} files)"
@@ -263,7 +286,8 @@ static int Dump(string set, string directory) {
 // Testing/corpus/fidelity.json is set from.
 static int Variants(string[] sets) {
     foreach (var set in sets) {
-        foreach (var group in CorpusVariants.Pairs(set).GroupBy(static pair => pair.Variant, static pair => pair.File)) {
+        foreach (var group in CorpusVariants.Pairs(set)
+            .GroupBy(static pair => pair.Variant, static pair => pair.File)) {
             var results = new List<(string File, string Expected, string Actual)>();
             foreach (var file in group) {
                 if (!group.Key.HasFixture(file)) {
@@ -271,7 +295,10 @@ static int Variants(string[] sets) {
                 }
 
                 var text = CSharpFormatter.Read(file.Path);
-                var options = Rikarin.Skala.Core.Configuration.OptionResolver.Resolve(file.Path, group.Key.Overrides).Options;
+                var options = Rikarin.Skala.Core.Configuration.OptionResolver.Resolve(
+                    file.Path,
+                    group.Key.Overrides
+                ).Options;
                 var result = CSharpFormatter.Format(file.Path, text, options);
                 results.Add((file.ToString(), OracleFixture.Read(file, group.Key), result.Formatted));
             }
@@ -348,7 +375,14 @@ static IEnumerable<string> LegalValues(Rikarin.Skala.Options.OptionInfo info) {
             break;
 
         case Rikarin.Skala.Options.OptionValueKind.Int:
-            var current = int.TryParse(info.Default, NumberStyles.Integer, CultureInfo.InvariantCulture, out var number) ? number : 0;
+            var current = int.TryParse(
+                info.Default,
+                NumberStyles.Integer,
+                CultureInfo.InvariantCulture,
+                out var number
+            )
+                    ? number
+                    : 0;
             yield return current.ToString(CultureInfo.InvariantCulture);
             yield return (current == 0 ? 3 : current == 1 ? 2 : 0).ToString(CultureInfo.InvariantCulture);
             break;

@@ -37,7 +37,9 @@ public sealed partial class CSharpDocumentBuilder {
     }
 
     bool RemovesNearBrace(Piece previous, SyntaxToken nextToken, bool declaration) {
-        var enabled = declaration ? _options.RemoveBlankLinesNearBracesInDeclarations : _options.RemoveBlankLinesNearBracesInCode;
+        var enabled = declaration
+            ? _options.RemoveBlankLinesNearBracesInDeclarations
+            : _options.RemoveBlankLinesNearBracesInCode;
         if (!enabled) {
             return false;
         }
@@ -53,7 +55,9 @@ public sealed partial class CSharpDocumentBuilder {
         var required = 0;
 
         // Regions get their blank lines whether or not there is a declaration on either side.
-        if (nextPieceIndex >= 0 && nextPieceIndex < _pieces.Length && _pieces[nextPieceIndex].Kind == PieceKind.RegionDirective
+        if (nextPieceIndex >= 0
+            && nextPieceIndex < _pieces.Length
+            && _pieces[nextPieceIndex].Kind == PieceKind.RegionDirective
             || previous.Kind == PieceKind.RegionDirective) {
             required = Math.Max(required, RegionRequirement(previous, nextPieceIndex));
         }
@@ -87,7 +91,8 @@ public sealed partial class CSharpDocumentBuilder {
 
             // ⚠ blank_lines_after_block_statements: a statement that ended with a brace is
             // separated from the next one.
-            if (previousToken.IsKind(SyntaxKind.CloseBraceToken) && previousToken.Parent is BlockSyntax { Parent: StatementSyntax }) {
+            if (previousToken.IsKind(SyntaxKind.CloseBraceToken)
+                && previousToken.Parent is BlockSyntax { Parent: StatementSyntax }) {
                 required = Math.Max(required, _options.BlankLinesAfterBlockStatements);
             }
 
@@ -96,14 +101,18 @@ public sealed partial class CSharpDocumentBuilder {
             }
         }
 
-        if (!nextToken.IsKind(SyntaxKind.None) && nextToken.Parent is SwitchLabelSyntax
+        if (!nextToken.IsKind(SyntaxKind.None)
+            && nextToken.Parent is SwitchLabelSyntax
             && nextToken.Parent.Parent is SwitchSectionSyntax section
-            && section.Parent is SwitchStatementSyntax owner && owner.Sections.IndexOf(section) > 0) {
+            && section.Parent is SwitchStatementSyntax owner
+            && owner.Sections.IndexOf(section) > 0) {
             required = Math.Max(required, _options.BlankLinesBeforeCase);
         }
 
-        if (nextPieceIndex >= 0 && nextPieceIndex < _pieces.Length
-            && _pieces[nextPieceIndex].Kind == PieceKind.LineComment && _pieces[nextPieceIndex].StartsLine) {
+        if (nextPieceIndex >= 0
+            && nextPieceIndex < _pieces.Length
+            && _pieces[nextPieceIndex].Kind == PieceKind.LineComment
+            && _pieces[nextPieceIndex].StartsLine) {
             required = Math.Max(required, _options.BlankLinesBeforeSingleLineComment);
         }
 
@@ -115,13 +124,14 @@ public sealed partial class CSharpDocumentBuilder {
         }
 
         // ⚠ blank_lines_after_using_list applies to the boundary, not to either member's own rule.
-        if (above is UsingDirectiveSyntax or ExternAliasDirectiveSyntax && below is not (UsingDirectiveSyntax or ExternAliasDirectiveSyntax)) {
+        if (above is UsingDirectiveSyntax or ExternAliasDirectiveSyntax
+            && below is not (UsingDirectiveSyntax or ExternAliasDirectiveSyntax)) {
             required = Math.Max(required, _options.BlankLinesAfterUsingList);
         }
 
-        if (above is FileScopedNamespaceDeclarationSyntax || previous.Kind == PieceKind.Token && EndsFileScopedNamespaceDirective(
-            _tokens[previous.TokenIndex]
-        )) {
+        if (above is FileScopedNamespaceDeclarationSyntax
+            || previous.Kind == PieceKind.Token
+            && EndsFileScopedNamespaceDirective(_tokens[previous.TokenIndex])) {
             required = Math.Max(required, _options.BlankLinesAfterFileScopedNamespaceDirective);
         }
 
@@ -155,7 +165,9 @@ public sealed partial class CSharpDocumentBuilder {
         kind is PieceKind.ConditionalDirective or PieceKind.OtherDirective or PieceKind.DisabledText;
 
     int RegionRequirement(Piece previous, int nextPieceIndex) {
-        var nextIsRegion = nextPieceIndex >= 0 && nextPieceIndex < _pieces.Length && _pieces[nextPieceIndex].Kind == PieceKind.RegionDirective;
+        var nextIsRegion = nextPieceIndex >= 0
+            && nextPieceIndex < _pieces.Length
+            && _pieces[nextPieceIndex].Kind == PieceKind.RegionDirective;
         var previousIsRegion = previous.Kind == PieceKind.RegionDirective;
 
         // Right inside the braces the removal rule wins anyway; elsewhere a region is separated
@@ -167,7 +179,8 @@ public sealed partial class CSharpDocumentBuilder {
         // The gap just inside a region — after `#region`, before `#endregion` — is the region's
         // inside, not its outside.
         var opensBefore = previousIsRegion && previous.Text.StartsWith("#region", StringComparison.Ordinal);
-        var closesAfter = nextIsRegion
+        var closesAfter =
+            nextIsRegion
             && _pieces[nextPieceIndex].Text.StartsWith("#endregion", StringComparison.Ordinal);
 
         return opensBefore || closesAfter ? _options.BlankLinesInsideRegion : _options.BlankLinesAroundRegion;
@@ -183,8 +196,11 @@ public sealed partial class CSharpDocumentBuilder {
             NamespaceDeclarationSyntax or FileScopedNamespaceDeclarationSyntax => _options.BlankLinesAroundNamespace,
             BaseTypeDeclarationSyntax or DelegateDeclarationSyntax =>
                 single ? _options.BlankLinesAroundSingleLineType : _options.BlankLinesAroundType,
-            MethodDeclarationSyntax or ConstructorDeclarationSyntax or DestructorDeclarationSyntax
-                or OperatorDeclarationSyntax or ConversionOperatorDeclarationSyntax =>
+            MethodDeclarationSyntax
+                or ConstructorDeclarationSyntax
+                or DestructorDeclarationSyntax
+                or OperatorDeclarationSyntax
+                or ConversionOperatorDeclarationSyntax =>
                 single ? _options.BlankLinesAroundSingleLineInvocable : _options.BlankLinesAroundInvocable,
             LocalFunctionStatementSyntax =>
                 single ? _options.BlankLinesAroundSingleLineLocalMethod : _options.BlankLinesAroundLocalMethod,
@@ -202,8 +218,8 @@ public sealed partial class CSharpDocumentBuilder {
     }
 
     static bool IsAutoProperty(PropertyDeclarationSyntax property) =>
-        property.AccessorList is { } accessors && accessors.Accessors.All(static a => a.Body is null && a.ExpressionBody is null
-        );
+        property.AccessorList is { } accessors
+        && accessors.Accessors.All(static a => a.Body is null && a.ExpressionBody is null);
 
     /// <summary>
     /// One line including whatever <c>stick_comment</c> attached to it: a method with a doc comment
@@ -387,8 +403,11 @@ public sealed partial class CSharpDocumentBuilder {
     }
 
     static bool IsBlankLineSubject(SyntaxNode node) =>
-        node is MemberDeclarationSyntax or AccessorDeclarationSyntax or UsingDirectiveSyntax
-        or ExternAliasDirectiveSyntax or LocalFunctionStatementSyntax;
+        node is MemberDeclarationSyntax
+            or AccessorDeclarationSyntax
+            or UsingDirectiveSyntax
+            or ExternAliasDirectiveSyntax
+            or LocalFunctionStatementSyntax;
 
     /// <summary>
     /// Declarations or code? The caps differ (<c>keep_blank_lines_in_declarations</c> against

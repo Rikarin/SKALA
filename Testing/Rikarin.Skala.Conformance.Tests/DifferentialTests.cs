@@ -72,9 +72,11 @@ public sealed class DifferentialTests {
     public void EveryCorpusFile_HasAnOracleFixture() {
         // A corpus file with no fixture is a file that is not measured, which is worse than not
         // having it: it looks like coverage.
-        var missing = Corpus.All().Where(static file => !file.HasFixture).Select(static file => file.ToString()).Order(
-            StringComparer.Ordinal
-        ).ToArray();
+        var missing = Corpus.All()
+            .Where(static file => !file.HasFixture)
+            .Select(static file => file.ToString())
+            .Order(StringComparer.Ordinal)
+            .ToArray();
         Assert.True(
             missing.Length == 0,
             $"{missing.Length.ToString(CultureInfo.InvariantCulture)} corpus file(s) have no committed .expected.cs. Run ./build.sh Oracle: "

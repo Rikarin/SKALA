@@ -50,7 +50,10 @@ public readonly record struct Piece(
     int TokenIndex,
     bool StartsLine) {
     public bool IsComment =>
-        Kind is PieceKind.LineComment or PieceKind.BlockComment or PieceKind.DocCommentLine or PieceKind.BlockDocComment;
+        Kind is PieceKind.LineComment
+            or PieceKind.BlockComment
+            or PieceKind.DocCommentLine
+            or PieceKind.BlockDocComment;
 
     public bool IsDirective =>
         Kind is PieceKind.ConditionalDirective or PieceKind.RegionDirective or PieceKind.OtherDirective;

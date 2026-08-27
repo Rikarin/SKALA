@@ -43,7 +43,8 @@ Skala/
 ├── Rules/
 │   ├── Rikarin.Skala.Rules/                 # ← the shippable analyzer package
 │   ├── Rikarin.Skala.Rules.Tests/
-│   └── Rikarin.Skala.Rules.Metadata/        # rules.json + the generator that reads it
+│   ├── Rikarin.Skala.Rules.Metadata/        # rules.json, allocated-ids.txt, the generated catalogue
+│   └── Rikarin.Skala.Rules.Generator/       # ⚠ the generator is its own project, see below
 ├── Reporting/
 │   ├── Rikarin.Skala.Reporting/             # SARIF model, renderers, baselines, gates
 │   └── Rikarin.Skala.Reporting.Tests/
@@ -95,6 +96,19 @@ into `csc` and into Rider. A transitive reference on `Spectre.Console`, on `Syst
 on anything that is not `netstandard2.0` makes the analyzer package fail to load with an error
 message that names none of those things. This is enforced by a test that walks the package's
 dependency closure, not by discipline.
+
+⚠ **`Rules.Metadata` is a third MSBuild profile, and it had to be.** It is `netstandard2.0` like the
+analyzer profile — `Rikarin.Skala.Rules` references it and that assembly loads into `csc` and into
+Rider — but it is an ordinary library rather than a Roslyn component, so it is packed and has no
+analyzer wiring. And the *generator* is a separate project rather than living inside it, for the same
+reason `Options.Generator` is separate from `Options`: a generator cannot generate into itself.
+`Rules.Generator` links `Json.cs` from `Options.Generator` rather than copying it, because a source
+generator may not reference another assembly that is not already in `csc`'s load context.
+
+⚠ **`Reporting` does not reference `Analysis`; the arrow runs the other way.** `Analysis` produces a
+`RunReport` and hands it to `Reporting`, which renders it. That direction is what makes
+[09](09-quality-gates-and-reporting.md)'s "no renderer contains analysis logic" a compile-time fact
+rather than a review comment.
 
 ⚠ **`Rikarin.Skala.Formatting` knows nothing about C#.** The IR and the fitting algorithm are the
 part that HTML and CSS reuse ([14](14-web-languages.md)); the moment `SyntaxKind` appears in that

@@ -63,7 +63,8 @@ public static class Distiller {
                 if (ShouldDrop(info, assignment.Value)) {
                     dropByLine.Add(assignment.Line);
                     droppedKeys.Add(assignment.Key);
-                } else if (info.DefaultSource is not (OptionDefaultSource.ReSharperDocs or OptionDefaultSource.OracleProbe)) {
+                } else if (info.DefaultSource is not (OptionDefaultSource.ReSharperDocs
+                        or OptionDefaultSource.OracleProbe)) {
                     retained++;
                 }
             }
@@ -76,12 +77,10 @@ public static class Distiller {
         var line = 0;
 
         builder.Append("# Distilled by skala config distill.").Append(newline);
-        builder.Append("# Every key below either differs from ReSharper's default or has a default Skala could not").Append(
-            newline
-        );
-        builder.Append("# verify. Re-exporting from Rider over this file is safe and supported (ADR-001).").Append(
-            newline
-        );
+        builder.Append("# Every key below either differs from ReSharper's default or has a default Skala could not")
+            .Append(newline);
+        builder.Append("# verify. Re-exporting from Rider over this file is safe and supported (ADR-001).")
+            .Append(newline);
 
         foreach (var raw in document.Text.Split('\n')) {
             line++;
