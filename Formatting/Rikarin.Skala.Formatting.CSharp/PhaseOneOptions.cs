@@ -128,6 +128,22 @@ public readonly struct PhaseOneOptions {
         AlignMultilineBinaryExpressionsChain = options.GetBool(Ids.AlignMultilineBinaryExpressionsChain);
         AlignMultilineBinaryPatterns = options.GetBool(Ids.AlignMultilineBinaryPatterns);
         AlignLinqQuery = options.GetBool(Ids.AlignLinqQuery);
+
+        IntAlignFields = options.GetBool(Ids.IntAlignFields);
+        IntAlignVariables = options.GetBool(Ids.IntAlignVariables);
+        IntAlignAssignments = options.GetBool(Ids.IntAlignAssignments);
+        IntAlignProperties = options.GetBool(Ids.IntAlignProperties);
+        IntAlignMethods = options.GetBool(Ids.IntAlignMethods);
+        IntAlignComments = options.GetBool(Ids.IntAlignComments);
+        IntAlignSwitchExpressions = options.GetBool(Ids.IntAlignSwitchExpressions);
+        IntAlignSwitchSections = options.GetBool(Ids.IntAlignSwitchSections);
+        DisableIntAlign = options.GetBool(Ids.DisableIntAlign);
+        IntAlignFixInAdjacent = options.GetBool(Ids.IntAlignFixInAdjacent);
+        AllowFarAlignment = options.GetBool(Ids.AllowFarAlignment);
+        IntAlign = options.GetBool(Ids.IntAlign);
+        IntAlignEq = options.GetBool(Ids.IntAlignEq);
+        IntAlignDeclarationNames = options.GetBool(Ids.IntAlignDeclarationNames);
+        IntAlignEnumInitializers = options.GetBool(Ids.IntAlignEnumInitializers);
         IndentSwitchLabels = options.GetBool(Ids.IndentSwitchLabels);
         IndentBreakFromCase = options.GetBool(Ids.IndentBreakFromCase);
         IndentInsideNamespace = options.GetBool(Ids.IndentInsideNamespace);
@@ -395,6 +411,42 @@ public readonly struct PhaseOneOptions {
     public bool AlignMultilineBinaryExpressionsChain { get; }
     public bool AlignMultilineBinaryPatterns { get; }
     public bool AlignLinqQuery { get; }
+
+    public bool IntAlignFields { get; }
+    public bool IntAlignVariables { get; }
+    public bool IntAlignAssignments { get; }
+    public bool IntAlignProperties { get; }
+    public bool IntAlignMethods { get; }
+    public bool IntAlignComments { get; }
+    public bool IntAlignSwitchExpressions { get; }
+    public bool IntAlignSwitchSections { get; }
+    public bool DisableIntAlign { get; }
+    public bool IntAlignFixInAdjacent { get; }
+    public bool AllowFarAlignment { get; }
+    public bool IntAlign { get; }
+    public bool IntAlignEq { get; }
+    public bool IntAlignDeclarationNames { get; }
+    public bool IntAlignEnumInitializers { get; }
+
+    /// <summary>
+    /// Whether any construct is column-aligned at all, and therefore whether <see cref="IntAlign"/>
+    /// has to parse the output.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ <c>disable_int_align</c> is honoured here and only here: it is the family's master switch
+    /// and it wins over every member, which the oracle confirms — with <c>int_align = true</c> and
+    /// <c>disable_int_align = true</c> together, the output is the unaligned one.
+    /// </remarks>
+    public bool IntAlignAnything =>
+        !DisableIntAlign
+        && (IntAlignFields
+            || IntAlignVariables
+            || IntAlignAssignments
+            || IntAlignProperties
+            || IntAlignMethods
+            || IntAlignComments
+            || IntAlignSwitchExpressions
+            || IntAlignSwitchSections);
 
     public bool IndentSwitchLabels { get; }
     public bool IndentBreakFromCase { get; }
@@ -813,6 +865,53 @@ public static class Ids {
     // would be pinning a line the oracle does not write. Tier A when the query wraps at its
     // clauses, and not before.
     public static readonly OptionId AlignLinqQuery = OfInert("resharper_csharp_align_linq_query");
+
+    // ── Column alignment of adjacent constructs (int_align_*) ────────────────────────────────
+    // ⚠ Every one of these is `false` in the export and every one of them is read here, so the
+    // generalized `resharper_int_align` — which the registry expands into all thirteen — is
+    // observable through them. See IntAlign, and Ids.DisableIntAlign below for the three keys of
+    // the family that stay Tier D.
+    public static readonly OptionId IntAlignFields = Of("resharper_csharp_int_align_fields");
+    public static readonly OptionId IntAlignVariables = Of("resharper_csharp_int_align_variables");
+    public static readonly OptionId IntAlignAssignments = Of("resharper_csharp_int_align_assignments");
+    public static readonly OptionId IntAlignProperties = Of("resharper_csharp_int_align_properties");
+    public static readonly OptionId IntAlignMethods = Of("resharper_csharp_int_align_methods");
+    public static readonly OptionId IntAlignComments = Of("resharper_csharp_int_align_comments");
+
+    public static readonly OptionId IntAlignSwitchExpressions =
+        Of("resharper_csharp_int_align_switch_expressions");
+
+    public static readonly OptionId IntAlignSwitchSections = Of("resharper_csharp_int_align_switch_sections");
+
+    // ⚠ Read and Tier D, all three for the same reason and none of them for a missing
+    // implementation: they refine an alignment that the export never asks for. `disable_int_align`
+    // is a master switch over a family whose every member is already false, and
+    // `int_align_fix_in_adjacent` and `allow_far_alignment` say which neighbours join a run and how
+    // far a column may be dragged — questions with no answer while no run exists. Measured: with
+    // `int_align = true` supplied alongside, `disable_int_align` turns the whole family off again
+    // and the other two change nothing on any shape tried. The per-option unit flips one key from
+    // the repository's configuration, so none of the three can be demonstrated there.
+    public static readonly OptionId DisableIntAlign = OfInert("resharper_disable_int_align");
+    public static readonly OptionId IntAlignFixInAdjacent = OfInert("resharper_csharp_int_align_fix_in_adjacent");
+    public static readonly OptionId AllowFarAlignment = OfInert("resharper_csharp_allow_far_alignment");
+
+    // ⚠ Read and Tier D on the measurement: the C# formatter does not consult the unprefixed
+    // spellings at all. Asked directly with each set to true on a file that exercises it, the oracle
+    // returns byte-identical output, while the `resharper_csharp_int_align_*` key covering the same
+    // construct changes it — `int_align_fields` is what aligns an enum's initializers, not
+    // `int_align_enum_initializers`. They are the C++ and VB formatters' keys, which this export
+    // writes without a language prefix.
+    // ⚠ Read and Tier D on the configuration model rather than on the formatter. The registry
+    // records that `resharper_int_align` expands into the thirteen `resharper_csharp_int_align_*`
+    // keys — that is what `expands` in options.json is for — and nothing applies the expansion:
+    // OptionResolver resolves keys and aliases and leaves generalized properties alone. Setting it
+    // therefore changes no value the formatter reads, whatever the formatter implements. Tier A when
+    // the resolver expands it, and the fix belongs to docs/plan/03's configuration model.
+    public static readonly OptionId IntAlign = OfInert("resharper_int_align");
+
+    public static readonly OptionId IntAlignEq = OfInert("resharper_int_align_eq");
+    public static readonly OptionId IntAlignDeclarationNames = OfInert("resharper_int_align_declaration_names");
+    public static readonly OptionId IntAlignEnumInitializers = OfInert("resharper_int_align_enum_initializers");
 
     public static readonly OptionId IndentSwitchLabels = Of("resharper_indent_switch_labels");
     public static readonly OptionId IndentBreakFromCase = Of("resharper_indent_break_from_case");

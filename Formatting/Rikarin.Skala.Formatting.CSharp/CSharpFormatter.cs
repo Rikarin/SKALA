@@ -165,7 +165,7 @@ public static class CSharpFormatter {
             newLine,
             options.ContinuousIndentMultiplier
         );
-        var output = ApplyFileLevelRules(layout.Text, options, newLine);
+        var output = ApplyFileLevelRules(IntAlign.Apply(layout.Text, options, parseOptions), options, newLine);
         ReportLongLines(path, output, options, diagnostics);
         var edits = EditEmitter.Emit(text.ToString(), layout with { Text = output });
         var formatted = EditEmitter.Apply(text.ToString(), edits);
