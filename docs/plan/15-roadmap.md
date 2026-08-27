@@ -517,11 +517,34 @@ compatibility surfaces (ADR-012). The two tests that hold that line are `RuleCat
 (`ToolDiagnosticIds_AreDeclaredOnce`, `…_AreInTheRegister`). Both now read the tree they are run
 against, which the second did not before.
 
-## M8 — Security · M
+## M8 — Security · M — ✅
 
 `SK5xxx`, the taint table, the vulnerable/safe corpus, intra-procedural flow on
 `ControlFlowGraph`. Last because a wrong security rule is worse than a missing one, and because it
 is the only category where the corpus cannot validate correctness on its own.
+
+**Five of nine ship**, all at `error`: `SK5001` SQL from the request · `SK5002` process start from
+the request · `SK5005` broken cipher or ECB · `SK5007` certificate callback that accepts everything ·
+`SK5009` XML reader that parses a DTD and resolves it. Cut with reasons in
+[08](08-rule-catalogue.md) § "What M8 added": `SK5003` (its sanitizer is inter-procedural, which
+fails in the direction that fires), `SK5004` (a second copy of `SYSLIB0011` and `CA2326`),
+`SK5006` (no entropy threshold separates a credential from a GUID), `SK5008` (identifier names
+cannot decide it; the narrower crypto-key question needs its own id).
+
+| | |
+|---|---|
+| Fixtures | 17 positive, **40 negative** |
+| `Rules/…/corpus/vulnerable` (7 files) | 23 findings, every rule represented, pinned per rule |
+| `Rules/…/corpus/safe` (7 files) | **0** — the number that decided the milestone, held after three sensitivity fixes |
+| `corpus/real` (380 files) | **0**, and the zero verified symbol-independently |
+| Vixen (4 717 files, `44b88648`) | **0**, same |
+| Cost (`--profile`, self-check) | cold 297 ms of 2 249 ms analysis; **warm 26.7 ms of 312 ms** |
+
+⚠ **The reference trees cannot validate this range and their zeros prove nothing about it**, which
+is why doc 08 required a separate corpus. ⚠ **`skala check --profile` did not exist**: doc 13 had
+promised it since M5 and `logAnalyzerExecutionTime: true` had been set and never read. Built here,
+and it reported 0.0 ms for every analyzer on its first run before the telemetry was taken off
+`AnalysisResult` rather than asked for after the driver went back to its pool.
 
 ## M9 — Web languages · XL
 
