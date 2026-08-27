@@ -60,7 +60,7 @@ snapshots, which is exactly why `Verify` is a dependency and hand-written assert
 
 ### 2. Differential — the number that matters
 
-Over `corpus/real/` (~600 files including a 200-file Vixen snapshot), compare Skala's output with the
+Over `corpus/real/` (380 files including a 200-file Vixen sample), compare Skala's output with the
 oracle's, and report:
 
 | Metric | Definition |
@@ -91,6 +91,58 @@ denominator, and a set that grows by thirty deliberately-hard files can lose agg
 while every file in it improves. When a set's population changes, the commit that changes it re-bases
 the number and says so in `fidelity.json`'s `Milestone` field, *and* records what the old population
 now scores — otherwise the ratchet has been quietly loosened rather than re-based.
+
+### ⚠ Both symbol sets, by default
+
+`./build.sh Fidelity` runs the whole differential **twice** — once with no preprocessor symbols and
+once with the oracle's own eighteen, read out of a real binary log rather than typed — and reports
+the two numbers side by side. It closes with the divergences that appear under **one** symbol set and
+not the other.
+
+The reason is a defect rather than a preference. Milestone 5 supplied symbols for the first time and
+`count > (n)` came back `count >(n)`: every `>` was being read as a type-argument close. The bug had
+survived M1, M2, M3 and M5 because every corpus line that shows it sits inside a `#if` body, which a
+formatter with no symbols hands back as disabled text and copies verbatim. **A single-symbol-set run
+cannot find that class of bug at all**, and there is no reason to believe it was the only one.
+
+⚠ Both numbers are the truth about a real invocation, which is why neither is "the" number:
+`skala format` on a loose file has no symbols and `skala format --load=binlog` has them. The
+`fidelity.json` ratchet is the without-symbols number, because that is the weaker one and a ratchet
+should hold the weaker claim.
+
+⚠ The same applies to `dump` and to `constructs`, which take a `defined` switch and use the symbols
+respectively; a construct report without them attributes a whole frozen `#if` file to whatever node
+owns its lines, which measures SK-DIV-0004 and calls it `ClassDeclaration`.
+
+### Redrawing a corpus sample
+
+`corpus/real/vixen/` is a 200-file sample of a 4 711-file repository, and until milestone 3.1 the
+answer to "which 200" was "whichever ones somebody copied". 167 of them had come from
+`.claude/worktrees/` — agent scratch checkouts of the same tree, which duplicate content and record a
+provenance that does not survive the checkout being deleted.
+
+`sample <tree> <count> <destination>` draws one reproducibly. ⚠ A file is chosen by
+`SHA-256(seed + "\n" + relative path)`, sorted ascending, first N — **a hash of the path rather than
+a seeded pseudo-random sequence**, because a PRNG's answer depends on the order the file system
+enumerated in and on how many candidates it rejected before, while a hash depends on nothing but the
+path. The same commit and the same filters give the same files on any machine, in any order, forever.
+
+Redrawing a sample re-bases the ratchet, so the commit that does it reports the number **before and
+after** at the same commit of the formatter — otherwise a corpus that got easier reads as a formatter
+that got better. `Testing/corpus/real/NOTICE.md` carries that pair.
+
+### Beyond the corpus: `tree`
+
+The corpus samples 200 files of Vixen. `tree <dir> [n]` runs the oracle *and* Skala over an arbitrary
+repository and reports three things: how many files the oracle would move, how many Skala would move,
+and Skala against the oracle over all of it. It is tens of minutes and a developer action, never a
+test.
+
+⚠ It exists because "should the `.editorconfig` be replaced" is a question about a tree and not about
+a sample of it, and because the interesting denominator is the oracle rather than the tree as
+committed. Measured over 600 files of Vixen at milestone 3.1: **the oracle would move 302 of them**
+and Skala would move 304. The diff a formatting commit produces is mostly the configuration swap and
+the drift, and only the difference between those two numbers is Skala's.
 
 ### Alternative configurations
 

@@ -8,22 +8,22 @@ difference is a bug, and the harness cannot tell them apart without this file**
 
 Format: `## SK-DIV-nnnn — one line`, then the argument, then the option keys it touches.
 
-At milestone 3.1, `corpus/real/` is **99.66 %** of lines and **84.74 %** of files identical to the
-oracle over 380 files and 76 386 lines, with the oracle's own preprocessor symbols supplied —
-**99.59 % / 84.21 %** without them. ⚠ Both numbers are reported because both are true of a real
+At milestone 3.1, `corpus/real/` is **99.70 %** of lines and **85.79 %** of files identical to the
+oracle over 380 files and 76 375 lines, with the oracle's own preprocessor symbols supplied —
+**99.63 % / 85.26 %** without them. ⚠ Both numbers are reported because both are true of a real
 invocation: `skala format` on a loose file has no symbols and `skala format --load=binlog` has them,
 and `./build.sh Fidelity` prints the pair.
 
 | Files | Line fidelity | File fidelity | What the residue is |
 |---|---:|---:|---|
-| containing a `#if` (91) | 99.34 % | 71.43 % | SK-DIV-0001, SK-DIV-0004 and ordinary tail |
+| containing a `#if` (91) | 99.36 % | 72.53 % | SK-DIV-0001, SK-DIV-0004 and ordinary tail |
 | containing a raw literal (11) | 99.68 % | 90.91 % | SK-DIV-0003's interpolated half |
-| neither (289) | **99.75 %** | 88.58 % | SK-DIV-0005 and SK-DIV-0011, mostly |
+| neither (289) | **99.79 %** | 89.97 % | SK-DIV-0005 and SK-DIV-0011, mostly |
 
-⚠ **The revised milestone-3 bar of ≥ 99.5 % on files with no `#if` is met at 99.75 %. The ≥ 99.9 %
-overall bar is not met at 99.66 %,** and the entries below are what stands between the two: about
-270 divergent line slots across 59 files, of which 27 are inside a conditional branch neither tool
-compiles and the rest are the wrapping tail.
+⚠ **The revised milestone-3 bar of ≥ 99.5 % on files with no `#if` is met at 99.79 %. The ≥ 99.9 %
+overall bar is not met at 99.70 %,** and the entries below are what stands between the two: about
+230 divergent line slots across 51 files, of which roughly a tenth are inside a conditional branch
+neither tool compiles and the rest are the wrapping tail.
 
 The trajectory, so that "asymptotic" is a measurement rather than an adjective:
 
@@ -33,7 +33,7 @@ The trajectory, so that "asymptotic" is a measurement rather than an adjective:
 | M2 | 97.47 % | 49.47 % | 380 files |
 | M3 | 98.86 % | 71.05 % | 380 files |
 | M5 | 98.93 % | 71.58 % | 380 files, symbols supplied |
-| M3.1 | **99.66 %** | **84.74 %** | 380 files, Vixen sample re-based |
+| M3.1 | **99.70 %** | **85.79 %** | 380 files, Vixen sample re-based |
 
 ---
 
@@ -105,7 +105,7 @@ already left raw strings and disabled text alone.
 
 - options: `resharper_csharp_indent_raw_literal_string`
 
-## SK-DIV-0004 — ✅ closed at milestone 5; the residue is 27 lines and it is not preprocessor-shaped
+## SK-DIV-0004 — ✅ closed at milestone 5, and the residue is not preprocessor-shaped
 
 `skala format --define A,B` supplies preprocessor symbols, and `--load=binlog|workspace` takes them
 from what the build actually compiled. `fidelity preprocessor` measures the result against the same
@@ -121,15 +121,15 @@ NETCOREAPP1_0_OR_GREATER … NETCOREAPP3_1_OR_GREATER          (18 symbols)
 
 | `corpus/real/` | no symbols | with symbols |
 |---|---:|---:|
-| the 91 files containing a `#if` | 99.02 % line / 69.23 % file | **99.34 %** / 71.43 % |
-| the 289 that do not | 99.75 % / 88.58 % | 99.75 % / 88.58 % |
-| overall (380) | 99.59 % / 84.21 % | **99.66 %** / 84.74 % |
+| the 91 files containing a `#if` | 99.04 % line / 70.33 % file | **99.36 %** / 72.53 % |
+| the 289 that do not | 99.79 % / 89.97 % | 99.79 % / 89.97 % |
+| overall (380) | 99.63 % / 85.26 % | **99.70 %** / 85.79 % |
 
 ⚠ **The branches nobody compiles stay frozen for both tools.** The oracle had these eighteen symbols
 and no more, so `#if HAVE_BENCHMARKS` in Newtonsoft is disabled text for ReSharper too. The entry is
 closed in the sense that Skala now sees whatever the oracle sees; it does not follow that either of
-them formats every branch, and neither does. Measured at M3.1: of ~270 divergent line slots,
-**27 sit inside a branch neither tool compiles** — the rest of the `#if` files' residue is ordinary
+them formats every branch, and neither does. Measured at M3.1: of 271 divergent line slots,
+**27 of 271 sat inside a branch neither tool compiles** when it was last attributed — the rest of the `#if` files' residue is ordinary
 tail that happens to live in a file that also has a `#if` in it.
 
 ⚠ **The symbols also uncovered a formatter bug that had been invisible**, which is why the
@@ -199,8 +199,8 @@ plateau, tops out at 99.50 % against 99.53 %.
 ⚠ It has a known counter-example, and it is the largest single class left:
 `byte[] data = Convert.FromBase64String("…");` at 123 columns comes back from the oracle broken
 after the `=` with the call whole on a 113-column continuation line, and the margin declines that
-break and chops the call instead. That shape and its siblings are **71 lines across 43 files** of
-the residue.
+break and chops the call instead. That shape and its siblings are **64 lines across 38 files** of
+the residue, which is still the largest single class.
 
 - options: `resharper_prefer_wrap_around_eq`, `resharper_csharp_wrap_before_eq`
 
@@ -377,7 +377,8 @@ breaks there anyway.
 ⚠ The argument for leaving them is that all three produce output the author did not write and would
 not want, and Skala's answer is a legal line that is merely too long. The counter-argument is R1:
 these are `ClassDeclaration` and `IdentifierName`, which are not rare. Measured on `corpus/real/`:
-**26 lines across 6 files**, of which 21 are one generated `DataSet` partial class.
+**12 lines across 4 files**, of which 8 are one generated `DataSet` partial class and one is a
+`class` keyword left alone at the end of a line.
 
 - options: `resharper_wrap_before_first_method_call`, `resharper_csharp_wrap_multiple_declaration_style`
 
@@ -404,7 +405,7 @@ explain it.
 ⚠ Implemented as the `=`'s rule — a break point after the arrow with `PrefersOuterBreak` — it fixes
 five files and breaks five others, and costs 0.02 points of line fidelity and 0.5 of file fidelity
 on `corpus/real/`. That is the measurement, and it is why the gap has no rule rather than the wrong
-one. Worth **57 lines across 26 files**, which makes it the second largest class after SK-DIV-0005.
+one. Worth **45 lines across 21 files**, which makes it the second largest class after SK-DIV-0005.
 
 - options: `resharper_place_single_method_argument_lambda_on_same_line`
 

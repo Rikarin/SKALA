@@ -47,7 +47,7 @@ record Space(SpaceKind Kind) : Doc;                      // Required | Forbidden
 record Line(LineKind Kind) : Doc;                        // Hard | Soft | Blank(n) | Preserve
 record Group(Doc Body, GroupMode Mode, GroupId Id) : Doc;
 record Fill(ImmutableArray<Doc> Items) : Doc;            // wrap_if_long — ⚠ a flag on a break point
-record Indent(Doc Body, IndentKind Kind) : Doc;          // Block | Continuous | None | Outdent
+record Indent(Doc Body, IndentKind Kind) : Doc;          // Block | Continuous | None | Outdent | Align
 record IfBroken(GroupId Of, Doc Then, Doc Else) : Doc;   // trailing commas, `=>` placement, …
 record Verbatim(string Text) : Doc;                      // raw strings, disabled #if regions, off-tag spans
 record Anchor(SourceSpan Source, int TokenId) : Doc;     // maps output back to input for edits + verify
@@ -76,6 +76,19 @@ all*, and fills only the gaps between elements. A `Fill` node would have to eith
 braces — producing `new[] { "aaa",` — or exclude the elements from the group that decides whether it
 wraps. It is a flag on a break point (`LineFlags.FillPoint`) instead: the group decides whether the
 construct wraps, and a fill point decides on its own whether what follows it fits.
+
+⚠ **`Align` is real from M3.1, and it made the writer simpler rather than more complicated.** The
+node this document reserved for column alignment went unused through M1–M3 (SK-DIV-0008), and
+implementing it needed one change: **the writer's indent stack holds columns rather than levels.**
+After that an alignment scope is a *block* scope whose column happens not to be a multiple of the
+indent width — "absolute, and nothing below it applies" is what a block already means — and no new
+stack semantics were required at all. The conversion on its own is byte-for-byte neutral over the
+whole corpus, which is how it was checked before anything was wired to it.
+
+⚠ And the property this document's alignment section worried about **survives**: "with column
+alignment off, laying out line *n* never requires knowing the contents of line *n−1*". An alignment
+scope's column is the column the writer is *already at* when the scope opens, which is on the current
+line. The fitting pass is still linear.
 
 ### Three-state groups
 
@@ -192,10 +205,28 @@ only ever one. The oracle's actual behaviour is five rules:
 | Chained method call | Yes, its own |
 | Binary **expression** chain | No |
 | Binary **pattern** chain | Yes, its own — except as a statement's condition |
+| A **ternary** | Yes, its own — ⚠ unless it is part of a *chain* of ternaries, which takes none |
+| A lambda's expression body | ⚠ Its own continuation *context*, which is not the same as a level |
 
-The distinction in the last two rows looks arbitrary and is not: it is what `jb cleanupcode`
-produces, it is pinned by fixtures in `constructs/indentation/`, and a formatter that "rationalises"
-it diverges on real code immediately.
+The distinction in the binary rows looks arbitrary and is not: it is what `jb cleanupcode` produces,
+it is pinned by fixtures in `constructs/indentation/`, and a formatter that "rationalises" it
+diverges on real code immediately.
+
+⚠ **M3.1 added the last three rows and corrected one.**
+
+- **A chained method call takes its level even inside another continuation.** M3 gated it on "is any
+  other continuation open", which is right for an undelimited one and wrong here, so an
+  expression-bodied member whose arrow had broken came out with its chain flush against its receiver.
+- **A chain of ternaries takes none.** `align_ternary = align_not_nested` and `nested_ternary_style =
+  autodetect` between them make `cond ? a : cond ? b : c` a flat list of lines rather than a
+  staircase, and it is the shape people write. A ternary that is *not* part of a chain still takes
+  its level.
+- **A lambda body is a continuation context of its own**, which is a different thing from a level: it
+  resets "is a continuation already open" so that a chain or a binary chain inside it may take one,
+  and the level itself still obeys the one-per-opening-line rule. ⚠ The reset is deferred to the
+  frame's first piece, because the break that lands just *before* the lambda belongs to whatever
+  encloses it — and the deferral was being undone by the lambda's own parameter, which opens a frame
+  of its own and put the enclosing depth back on the way out.
 
 ⚠ **The first row is M3's correction, and the second and third are its other half.** "One level per
 opening line" was M1's rule and it is really three, which sweeping the oracle separates cleanly:
@@ -378,6 +409,29 @@ Two questions, in order:
 
 ⚠ The budget in question 1 is **not** `max_line_length`, and SK-DIV-0005 records the measurement and
 the counter-example. It is a local rule and not a search; the paragraph below still holds.
+
+⚠ **Question 2 had never actually run, from M3 until M3.1.** It is answered from `afterPoint`, and
+`afterPoint` was zero for every group in the family the rule exists for. `MeasureSegments` looks for
+a group's own break points among its **direct children**, and a group that spends a continuation
+level opens the indent scope *inside itself* — so the `=` family's only break point is a grandchild
+and the scan found none. Zero then makes question 2 answer "yes, the line ends here" unconditionally,
+so the `=` break was taken when it finished the job and never otherwise, including when nothing
+inside the right-hand side could wrap at all:
+
+```csharp
+const string CallableDirectiveRegex = @"^(?<directive>audit-to|…){0,1}$";   // 163 columns, left whole
+```
+
+The same scan sets `segment`, which is what a fill point asks, so a `wrap_if_long` list broke at its
+delimiters and then ran off the right margin without ever breaking between items. Two of the fitter's
+four measures were consistently zero, and **no property caught it**: the output was idempotent,
+token-equivalent, deterministic and stable, and simply not what the oracle writes.
+
+⚠ Two corrections the general scan then needed, both found by measurement: a break the *rules*
+require ends a segment rather than making it infinite — a list pattern whose items the author pinned
+one per line has hard lines between the fill's own points, and measuring one of those as infinitely
+wide breaks the fill point in front of it — and `IfBroken` is not spliced, because its flat width is
+one branch's rather than the sum of both.
 
 Complexity is O(n) in document nodes, in one traversal.
 No backtracking, no search. The optimal-layout algorithms (Yelland/Bernardy, "A Pretty Expressive

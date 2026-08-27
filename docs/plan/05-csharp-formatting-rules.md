@@ -65,6 +65,30 @@ public void M() { }             // space_within_empty_method_parentheses = false
 new[] { 1, 2, 3 }               // space_within_single_line_array_initializer_braces = true
 ```
 
+⚠ **Two gaps are governed by no rule at all, and `SpaceKind.Preserve` is what says so.** The IR has
+carried a third state since milestone 1 and nothing produced one until 3.1, which made this family
+total in the wrong way: every gap got an answer and two of them were answers the oracle does not
+give. Asked directly, `[1, ..a]` comes back `..a`, `[1, ..   a]` comes back `.. a`, `a[1..3]` stays
+closed up and `a[1  ..  3]` comes back `a[1 .. 3]`. That is not a rule with a value — it is
+`extra_spaces` collapsing a run in a gap nobody legislated. The two are the operand side of a
+collection expression's spread element and both sides of a range expression's `..`.
+
+⚠ A slice pattern is **not** one of them and looks as though it should be: `a is [1, ..var r]` comes
+back `.. var r`, a space the oracle inserts, because `space_within_slice_pattern = true` really does
+govern its own construct. `space_within_spread_pattern` is inert at both values and is demoted to
+Tier D — SK-DIV-0009.
+
+⚠ **Five more gaps the ninety keys do not describe, all found by ranking the divergence classes:**
+an unbound generic's type argument list is commas and zero-width omitted arguments, so "a space
+follows a comma" writes `ValueTuple<, >`; there is no key for the gap *after* a pointer's asterisk,
+because behind it is an ordinary "a type is followed by a name" gap, and answering both sides from
+`space_before_pointer_asterik_declaration` writes `int*p`; a function pointer's asterisk hangs from
+`FunctionPointerTypeSyntax` rather than a `PointerTypeSyntax`, so `delegate* unmanaged<nint, nint>`
+came back as a multiplication; an implicit element access has no operand in front of it, so
+`space_before_array_access_brackets` has no gap to govern and `{ [a] = 1, [b] = 2 }` lost the space
+after the comma; and `new (string Name, int Value)[]` opens a tuple *type*, which
+`space_before_new_parentheses` has nothing to say about.
+
 `resharper_extra_spaces = remove_all` is the global backstop: any run of spaces not required by a
 rule collapses to one, or to none. ⚠ With one exception —
 `disable_space_changes_before_trailing_comment = false`, so trailing-comment alignment that authors
@@ -237,11 +261,40 @@ per-language form of the global `keep_user_linebreaks`, and putting it on the `k
 collapses the table — both "reflow" corners come out identical to their "keep" neighbours and the
 2×2 stops measuring anything.
 
+⚠ **And "outranks the placement key in both directions" is true of a delimited list and false of an
+embedded statement**, which milestone 3.1 measured because the two readings disagree on the export's
+own values:
+
+| key | what it governs | may a break be *added*? |
+|---|---|---|
+| `keep_existing_invocation_parens_arrangement` and the rest of the delimited family | the construct's delimiters | ⚠ no — `place_simple_*_on_single_line` is inert while keep is on |
+| `keep_existing_expr_member_arrangement` | the gap after a member's `=>` | ⚠ no — same |
+| `keep_existing_embedded_arrangement` | the gap before an embedded statement | ✅ **yes** |
+
+`if (depth < 0) throw new ArgumentOutOfRangeException(…);` written on one 168-column line comes back
+from the oracle with the `throw` on a line of its own, under `keep_existing_embedded_arrangement =
+true`. The key says the author's break is not *removed*; it does not say a break may not be added,
+and `place_simple_embedded_statement_on_same_line = if_owner_is_single_line` then does exactly what
+it says — the `if` does not occupy one line, so the statement leaves it. Reading the key the other
+way made the placement key inert, which the option's own doc comment recorded as a fact about the
+export for four milestones.
+
+⚠ **`keep_existing_list_patterns_arrangement` preserves each *individual* item gap**, which a fill
+cannot express — a collection expression the author wrote one element per line comes back one element
+per line however well two of them would have shared, while the same shape written `new[] { … }` is
+re-filled because an array initializer has no `keep_existing_*` key of its own. A per-group flag
+cannot say it: the preserved gaps and the filled ones are siblings, so the preserved ones become
+ordinary required breaks and the rest stay fill points.
+
 ## Phase 3 — wrapping
 
 The 47 `wrap_*` keys, plus the `max_*_on_line` counters, plus `csharp_max_line_length = 120`. This
 is where the fitting engine earns its existence, and it is the phase that is allowed to take a
 month. ✅ Measured: **98.86 %** line fidelity and 71.05 % file fidelity on `corpus/real/`.
+
+⚠ **Measured again at M3.1: 99.70 % line and 85.79 % file with the oracle's own preprocessor
+symbols, 99.63 % / 85.26 % without.** The paragraph above is M3's number and is kept as the
+trajectory.
 
 ⚠ Six rules M3 established against the oracle, none of which is readable off an option name:
 
@@ -267,6 +320,33 @@ month. ✅ Measured: **98.86 %** line fidelity and 71.05 % file fidelity on `cor
 - **`keep_existing_switch_expression_arrangement` outranks `chop_always`.** With it on,
   `value switch { 1 => 1, _ => 0 }` comes back on one line although the wrap style says every arm
   gets one of its own.
+
+⚠ Five more that M3.1 established the same way, and every one of them is about *which* break is
+taken rather than about a width:
+
+- **The `=` break before a collection expression is not preserved, and it is the only right-hand side
+  that behaves that way.** `int[] y =\n[\n 1,\n 2\n];` comes back `int[] y = [`, while
+  `= \n new[] {`, `= \n new Thing {`, `= \n Make(` and `= \n @"…"` all keep the break the author
+  wrote. The `=` break and the bracket's are alternatives rather than a pair, so the decision goes to
+  the ordering rule — which then produces both halves, because a bracket that fits on a continuation
+  line still gets the `=` break and one that has to chop does not. The arrow behaves the same way,
+  and the two are measured separately because they need not have.
+- **`if_owner_is_single_line` means the owner, and the owner is the declaration.** A chopped parameter
+  list makes a declaration multi-line, so the arrow's body leaves its line — and the body's own width
+  says nothing about it, because `SetBindGroup(pass, group, bindGroup, offsets)` fits on the `) =>`
+  line with sixty columns to spare. `GroupFacts.BreaksWithOwner` is how the arrow reads the parameter
+  list's resolved mode.
+- **`blank_lines_after_block_statements` applies to a statement that *ends* with a brace**, which is
+  not the same as a statement that *is* a block. An `if … else { }`, a `switch { }` and a
+  `try … catch { }` all take the blank line, and none of their closing braces hangs from a
+  `BlockSyntax` whose parent is a statement. ⚠ Not before a `case`, which is a label.
+- **A chain of ternaries is a list rather than a staircase.** `align_ternary = align_not_nested` and
+  `nested_ternary_style = autodetect` between them put `cond ? a` / `: cond ? b` / `: c` at one
+  column. ⚠ A break the *formatter* chooses lands **after** the `:` although
+  `wrap_before_ternary_opsigns = true`; every occurrence in the corpus is a chain the author had
+  already broken, so the preserved position is the one that is measured.
+- **A named attribute argument's `=` is an `=`.** `[LoggerMessage(Message = "…" + "…")]` — it is
+  neither an assignment nor an equals-value clause, and it had no plan at all.
 
 ⚠ **Every member and every statement gets a line of its own**, which this document lists under phase
 2 and which M2 left as a deliberately-failing fixture. `csharp_preserve_single_line_blocks = true` is
@@ -339,10 +419,33 @@ var kind = token switch {
 `align_multiline_switch_expression` all `false`; `align_multiline_type_argument = true` and
 `align_multiline_type_parameter*` and `align_multiline_ctor_init` are the survivors.
 
-✅ This is a significant simplification and it is verified, not assumed: with column alignment off,
-laying out line *n* never requires knowing the contents of line *n−1*. The `Align` IR node exists
-(the handful of `true` keys need it, and other people's configs will use it), but the hot path does
-not, and the quadratic worst case that alignment brings does not exist for this configuration.
+⚠ **The list above is wrong about which keys survive, and about one of them mattering.** Nine are
+`true`, not three, and the one that matters most is missing from it:
+**`align_multiline_statement_conditions`**. Measured at milestone 3.1, before implementing anything:
+of 313 divergent line slots on `corpus/real/`, **40 across 11 files** were a line the oracle had put
+at a column that is not a multiple of the indent width, and every one of the forty was that key.
+
+```csharp
+else if (ReflectionUtils.ImplementsGenericDefinition(
+             NonNullableUnderlyingType,          // the `(`'s column plus one continuation level
+             typeof(IEnumerable<>),
+             out tempCollectionType
+         )) {                                    // the `(`'s column
+```
+
+It is implemented, for `if`, `while`, `do`, `for`, `foreach`, `using`, `fixed`, `lock`, `switch` and
+`catch … when`. `IndentKind.Align` is real and the writer's indent stack holds **columns rather than
+levels** — see [04](04-formatting-engine.md) § "The document IR".
+
+✅ **And the simplification survives, which is the part worth keeping:** with column alignment
+*applied this way*, laying out line *n* still never requires knowing the contents of line *n−1*. An
+alignment scope's column is the column the writer is already at when the scope opens, and that is on
+the current line. The quadratic worst case alignment is supposed to bring does not exist here, and
+the fitting pass is still linear.
+
+⚠ What is still unimplemented is `align_multiline_for_stmt` — a `for` header whose clauses chop
+rather than fill, worth 4 lines and 2 files — and the four keys whose constructs never occur broken
+in the corpus. SK-DIV-0008 has the table.
 
 ## Phase 4 — comments and xmldoc
 
