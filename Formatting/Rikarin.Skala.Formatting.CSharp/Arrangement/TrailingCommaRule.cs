@@ -136,12 +136,12 @@ public sealed class TrailingCommaRule : ArrangementRule {
             var text = node.SyntaxTree?.GetText();
             if (text is null) {
                 return closing.GetPreviousToken().ToFullString().Contains('\n', StringComparison.Ordinal)
-                       || closing.LeadingTrivia.ToFullString().Contains('\n', StringComparison.Ordinal);
+                    || closing.LeadingTrivia.ToFullString().Contains('\n', StringComparison.Ordinal);
             }
 
             var previous = closing.GetPreviousToken();
             return text.Lines.GetLinePosition(previous.Span.End).Line
-                   != text.Lines.GetLinePosition(closing.SpanStart).Line;
+                != text.Lines.GetLinePosition(closing.SpanStart).Line;
         }
     }
 }

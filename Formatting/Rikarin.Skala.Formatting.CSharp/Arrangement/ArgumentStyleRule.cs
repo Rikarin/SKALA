@@ -181,7 +181,8 @@ public sealed class DiscardDeclarationRule : ArrangementRule {
                 SyntaxFactory.DeclarationExpression(
                     SyntaxFactory.IdentifierName("var"),
                     SyntaxFactory.DiscardDesignation()
-                ).WithTriviaFrom(visited.Expression)
+                )
+                    .WithTriviaFrom(visited.Expression)
             );
         }
     }

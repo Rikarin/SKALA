@@ -90,15 +90,15 @@ public sealed class NamespaceBodyRule : ArrangementRule {
             .WithTrailingTrivia(block.OpenBraceToken.TrailingTrivia);
 
         var scoped = SyntaxFactory.FileScopedNamespaceDeclaration(
-                block.AttributeLists,
-                block.Modifiers,
-                SyntaxFactory.Token(SyntaxKind.NamespaceKeyword).WithTriviaFrom(block.NamespaceKeyword),
-                block.Name.WithoutTrailingTrivia(),
-                semicolon,
-                block.Externs,
-                block.Usings,
-                block.Members
-            )
+            block.AttributeLists,
+            block.Modifiers,
+            SyntaxFactory.Token(SyntaxKind.NamespaceKeyword).WithTriviaFrom(block.NamespaceKeyword),
+            block.Name.WithoutTrailingTrivia(),
+            semicolon,
+            block.Externs,
+            block.Usings,
+            block.Members
+        )
             .WithLeadingTrivia(block.GetLeadingTrivia());
 
         var rewritten = unit.ReplaceNode(block, scoped);

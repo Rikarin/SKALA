@@ -1415,7 +1415,7 @@ public static class Ids {
     public static readonly OptionId WrapBeforeArrowWithExpressions =
         Of("resharper_csharp_wrap_before_arrow_with_expressions");
 
-        public static readonly OptionId PlaceTypeAttributeOnSameLine =
+    public static readonly OptionId PlaceTypeAttributeOnSameLine =
         Of("resharper_csharp_place_type_attribute_on_same_line");
 
     public static readonly OptionId PlaceMethodAttributeOnSameLine =
@@ -1445,6 +1445,7 @@ public static class Ids {
     /// </summary>
     public static readonly OptionId PlaceAttributeOnSameLine =
         OfGeneralized("resharper_place_attribute_on_same_line");
+
     // ⚠ Four keys read but never observable, and Tier D with the reason rather than Tier A:
     //   max_attribute_length_for_same_line — a length threshold for a placement that never happens.
     //   place_attribute_on_same_line — the six per-owner keys cover every C# attribute target, so

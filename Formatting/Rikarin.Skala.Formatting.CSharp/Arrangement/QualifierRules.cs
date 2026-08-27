@@ -128,10 +128,10 @@ public sealed class StaticQualifierRule : ArrangementRule {
                 : model.GetEnclosingSymbol(node.SpanStart)?.ContainingType ?? member.ContainingType;
 
             return SyntaxFactory.MemberAccessExpression(
-                    SyntaxKind.SimpleMemberAccessExpression,
-                    SyntaxFactory.IdentifierName(owner.Name),
-                    visited.WithoutTrivia()
-                )
+                SyntaxKind.SimpleMemberAccessExpression,
+                SyntaxFactory.IdentifierName(owner.Name),
+                visited.WithoutTrivia()
+            )
                 .WithLeadingTrivia(visited.GetLeadingTrivia())
                 .WithTrailingTrivia(visited.GetTrailingTrivia());
         }
