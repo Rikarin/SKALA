@@ -29,6 +29,9 @@ using Rikarin.Skala.Testing;
 //                     redraw a corpus sample from a tree, reproducibly: the file is chosen by a
 //                     hash of its path rather than by a seeded sequence, so the same commit and
 //                     the same filters give the same files on any machine.
+//   tree <dir> [n]    the differential over an arbitrary tree rather than over the corpus: what
+//                     the oracle would move, what Skala would move, and Skala against the oracle
+//                     over all of it. Tens of minutes.
 //   locate <set> <kind>
 //                     the divergent lines attributed to one construct, with file and line. R1
 //                     counts constructs rather than lines, so a construct with two divergent lines
@@ -125,6 +128,20 @@ switch (args[0]) {
         }
 
         return 0;
+    case "tree":
+        // ⚠ The differential over an arbitrary tree rather than over the corpus. `tree <dir>`.
+        // The corpus samples 200 files of Vixen; this measures all 4 711, which is the number the
+        // `.editorconfig` commit is actually decided on — "how many files would Rider move back"
+        // is a question about the tree, not about a sample of it.
+        if (args.Length < 2) {
+            Console.Error.WriteLine("usage: tree <directory>");
+            return 2;
+        }
+
+        return TreeFidelity(
+            Path.GetFullPath(args[1]),
+            args.Length > 2 ? int.Parse(args[2], CultureInfo.InvariantCulture) : int.MaxValue
+        );
     case "locate":
         // Where the divergent lines attributed to one construct are. `locate <set> <kind>`.
         if (args.Length < 3) {
@@ -387,6 +404,83 @@ static void Sample(string label, IReadOnlyList<Divergence> entries) {
             $"    {group.Count().ToString(CultureInfo.InvariantCulture),5}  {group.Key}  ({group.First().File})"
         );
     }
+}
+
+// `tree <dir>`: run the oracle and Skala over every .cs file of a tree and report both against the
+// tree as committed. Tens of minutes on a large repository, and a developer action like `oracle`.
+static int TreeFidelity(string directory, int count) {
+    if (OracleRunner.FindExecutableOrNull() is null) {
+        Console.Error.WriteLine("jb is not installed.");
+        return 2;
+    }
+
+    var files = Directory.EnumerateFiles(directory, "*.cs", SearchOption.AllDirectories)
+        .Where(static path => !path.Contains("/obj/", StringComparison.Ordinal)
+            && !path.Contains("/bin/", StringComparison.Ordinal)
+            && !path.Contains("/.claude/", StringComparison.Ordinal)
+        )
+        .Select(path => new CorpusFile("tree", Path.GetRelativePath(directory, path).Replace('\\', '/'), path))
+        .OrderBy(static file => CorpusSample.KeyOf(CorpusSample.Seed, file.RelativePath))
+        .ThenBy(static file => file.RelativePath, StringComparer.Ordinal)
+        .Take(count)
+        .ToArray();
+
+    Console.WriteLine($"{files.Length.ToString(CultureInfo.InvariantCulture)} files under {directory}");
+
+    var runner = new OracleRunner();
+    var config = Path.Combine(directory, ".editorconfig");
+    if (!File.Exists(config)) {
+        config = Path.Combine(Corpus.RepositoryRoot, ".editorconfig");
+    }
+
+    var against = new List<(string File, string Expected, string Actual)>(files.Length);
+    var oracleMoved = 0;
+    var skalaMoved = 0;
+    const int batch = 120;
+    for (var start = 0; start < files.Length; start += batch) {
+        var slice = files.Skip(start).Take(batch).ToArray();
+        var results = runner.Format(slice, config);
+        foreach (var file in slice) {
+            if (!results.TryGetValue(file.Path, out var expected)) {
+                continue;
+            }
+
+            var text = CSharpFormatter.Read(file.Path);
+            var original = text.ToString();
+            var actual = CSharpFormatter.Format(file.Path, text, Resolve(file.Path)).Formatted;
+            against.Add((file.ToString(), expected, actual));
+            if (!string.Equals(
+                    TextNormalisation.Normalise(expected),
+                    TextNormalisation.Normalise(original),
+                    StringComparison.Ordinal
+                )) {
+                oracleMoved++;
+            }
+
+            if (!string.Equals(
+                    TextNormalisation.Normalise(actual),
+                    TextNormalisation.Normalise(original),
+                    StringComparison.Ordinal
+                )) {
+                skalaMoved++;
+            }
+        }
+
+        Console.WriteLine(
+            $"  {Math.Min(start + batch, files.Length).ToString(CultureInfo.InvariantCulture)}/{files.Length.ToString(CultureInfo.InvariantCulture)}"
+        );
+    }
+
+    Console.WriteLine();
+    Console.WriteLine(
+        $"files the oracle would move: {oracleMoved.ToString(CultureInfo.InvariantCulture)}"
+        + $"; files Skala would move: {skalaMoved.ToString(CultureInfo.InvariantCulture)}"
+    );
+
+    Console.WriteLine();
+    Console.WriteLine("Skala against the oracle, over the whole tree:");
+    Console.WriteLine(Fidelity.Compare(against).Render(10));
+    return 0;
 }
 
 // `dump <set> <dir>`: write Skala's output and the oracle's side by side, so that a divergence

@@ -187,6 +187,32 @@ public static class SpaceRules {
             return !ClingsLeft(right);
         }
 
+        // ⚠ Colons before braces, because a case label's pattern can end with one:
+        // `case NamedTypeSymbol { TypeKind: TypeKind.Enum }:` reached the brace rule first, which
+        // asks only what clings to the left, and put a space in front of the colon.
+        // ── Colons ───────────────────────────────────────────────────────────────────────────
+        if (right == SyntaxKind.ColonToken) {
+            return next.Parent switch {
+                BaseListSyntax => o.SpaceBeforeColonInInheritance,
+                TypeParameterConstraintClauseSyntax => o.SpaceBeforeTypeParameterConstraintColon,
+                ConstructorInitializerSyntax or PrimaryConstructorBaseTypeSyntax => o.SpaceBeforeColonInCtorInitializer,
+                SwitchLabelSyntax => o.SpaceBeforeColonInCase,
+                ConditionalExpressionSyntax => o.SpaceBeforeTernaryColon,
+                _ => false
+            };
+        }
+
+        if (left == SyntaxKind.ColonToken) {
+            return prev.Parent switch {
+                BaseListSyntax => o.SpaceAfterColonInInheritance,
+                TypeParameterConstraintClauseSyntax => o.SpaceAfterTypeParameterConstraintColon,
+                ConstructorInitializerSyntax or PrimaryConstructorBaseTypeSyntax => true,
+                SwitchLabelSyntax => o.SpaceAfterColonInCase,
+                ConditionalExpressionSyntax => o.SpaceAfterTernaryColon,
+                _ => true
+            };
+        }
+
         // ── Braces ───────────────────────────────────────────────────────────────────────────
         if (right == SyntaxKind.OpenBraceToken) {
             return BeforeOpenBrace(prev, next, o);
@@ -256,29 +282,6 @@ public static class SpaceRules {
 
         if (left == SyntaxKind.CloseBraceToken) {
             return !ClingsLeft(right);
-        }
-
-        // ── Colons ───────────────────────────────────────────────────────────────────────────
-        if (right == SyntaxKind.ColonToken) {
-            return next.Parent switch {
-                BaseListSyntax => o.SpaceBeforeColonInInheritance,
-                TypeParameterConstraintClauseSyntax => o.SpaceBeforeTypeParameterConstraintColon,
-                ConstructorInitializerSyntax or PrimaryConstructorBaseTypeSyntax => o.SpaceBeforeColonInCtorInitializer,
-                SwitchLabelSyntax => o.SpaceBeforeColonInCase,
-                ConditionalExpressionSyntax => o.SpaceBeforeTernaryColon,
-                _ => false
-            };
-        }
-
-        if (left == SyntaxKind.ColonToken) {
-            return prev.Parent switch {
-                BaseListSyntax => o.SpaceAfterColonInInheritance,
-                TypeParameterConstraintClauseSyntax => o.SpaceAfterTypeParameterConstraintColon,
-                ConstructorInitializerSyntax or PrimaryConstructorBaseTypeSyntax => true,
-                SwitchLabelSyntax => o.SpaceAfterColonInCase,
-                ConditionalExpressionSyntax => o.SpaceAfterTernaryColon,
-                _ => true
-            };
         }
 
         // ── Operators ────────────────────────────────────────────────────────────────────────
@@ -459,7 +462,7 @@ public static class SpaceRules {
             or BaseParameterListSyntax { Parameters.Count: 0 };
 
         switch (next.Parent) {
-            case ParameterListSyntax { Parent: ParenthesizedLambdaExpressionSyntax } :
+            case ParameterListSyntax { Parent: ParenthesizedLambdaExpressionSyntax }:
                 // ⚠ A lambda's parentheses are the head of an operand, not a call site: whatever
                 // precedes decides. `x += (a, b) => …` needs its space; `M((a, b) => …)` does not.
                 return !ClingsRight(prev.Kind()) && !IsCallSite(prev);
@@ -469,7 +472,7 @@ public static class SpaceRules {
 
             case ArgumentListSyntax {
                 Parent: ObjectCreationExpressionSyntax or ImplicitObjectCreationExpressionSyntax
-            } :
+            }:
                 return o.SpaceBeforeNewParentheses;
 
             case ArgumentListSyntax or AttributeArgumentListSyntax:

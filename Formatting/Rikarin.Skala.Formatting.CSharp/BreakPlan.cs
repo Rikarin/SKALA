@@ -1487,7 +1487,16 @@ public sealed class BreakPlan {
             new GroupFacts(
                 SourceBroken: BreaksBefore(first),
                 JoinsIfFits: !_options.KeepExistingEmbeddedArrangement,
-                BreaksIfTooLong: !_options.KeepExistingEmbeddedArrangement
+
+                // ⚠ Not gated on the keep key, and that is the difference between this and a
+                // delimited list. `keep_existing_embedded_arrangement = true` says the author's
+                // break is not *removed*; it does not say a break may not be added. Measured on
+                // the export's own values: `if (depth < 0) throw new ArgumentOutOfRangeException(…);`
+                // written on one 168-column line comes back from the oracle with the `throw` on a
+                // line of its own, which is `if_owner_is_single_line` — the `if` does not occupy one
+                // line, so the statement leaves it.
+                BreaksIfTooLong: _options.PlaceSimpleEmbeddedStatementOnSameLine
+                == PlacementStyle.IfOwnerIsSingleLine
             )
         );
     }
