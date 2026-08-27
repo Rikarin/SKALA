@@ -216,11 +216,11 @@ It reads 0 with-symbols-only and 65 without today.
 "one line in a hundred still disagrees with Rider, so the IDE reformats them back". At 99.70 % it is
 one line in 333, and the honest number for the decision is not the corpus at all: measured over a
 600-file sample of the whole tree rather than the corpus's 200, **the oracle itself would move 302
-of 600 files** under the export and Skala would move 304 — the diff is the configuration swap plus
-twenty years of drift, not Skala disagreeing. Skala against the oracle over that sample is 99.44 %
-of lines and 86.7 % of files. The remaining objection is the 13 % of files where Rider would still
-move something, and that is a judgement for the person who owns the repository rather than a number
-that decides itself.
+of 600 files** under the export and Skala would move 299 — the diff is the configuration swap plus
+twenty years of drift, not Skala disagreeing. Skala against the oracle over that sample is 99.47 %
+of lines and 87.33 % of files. The remaining objection is the 12.7 % of files where Rider would
+still move something, and that is a judgement for the person who owns the repository rather than a
+number that decides itself.
 
 **Release 0.7.**
 

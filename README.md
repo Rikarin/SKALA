@@ -85,9 +85,10 @@ Replacing Vixen's own `.editorconfig` with the export and formatting changes **2
 4 711 files, and no file has a token stream that differs from the one it started with.
 
 ⚠ The number that decides whether to commit it is not that one. Measured over a 600-file sample of
-the same tree, **the oracle itself would move 302 of them** and Skala would move 304 — the diff is
+the same tree, **the oracle itself would move 302 of them** and Skala would move 299 — the diff is
 the configuration swap plus twenty years of drift, not Skala disagreeing. Skala against the oracle
-over that sample is 99.4 % of lines and 87 % of files.
+over that sample is **99.47 % of lines and 87.33 % of files**, which is the honest estimate of how
+much Rider would move back after the commit.
 
 ⚠ Part of that is a **configuration** result rather than a formatting one, and milestone 3 halved it.
 `options.json`'s `default` used to be *the Rider export's value*, not ReSharper's built-in default,
