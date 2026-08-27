@@ -83,9 +83,10 @@ public sealed class XmlDocSubFormatterTests {
         );
 
         Assert.All(narrow.Split('\n'), line => Assert.True(TextWidth.Measure(line) <= 60, line));
-        Assert.True(XmlDoc.DocLines(narrow).Length > XmlDoc.DocLines(
-            XmlDoc.Text(XmlDoc.InClass("/// <summary>" + text + "</summary>"))
-        ).Length);
+        Assert.True(
+            XmlDoc.DocLines(narrow).Length
+            > XmlDoc.DocLines(XmlDoc.Text(XmlDoc.InClass("/// <summary>" + text + "</summary>"))).Length
+        );
     }
 
     [Fact]
@@ -336,19 +337,16 @@ public sealed class XmlDocPropertyTests {
         get {
             var data = new TheoryData<string>();
             foreach (var comment in new[] {
-                         "/// <summary>Docs.</summary>",
-                         "///<summary>No space.</summary>",
+                         "/// <summary>Docs.</summary>", "///<summary>No space.</summary>",
                          "/// <summary>" + string.Join(" ", Enumerable.Repeat("word", 60)) + "</summary>",
-                         "/// <summary>One.</summary><remarks>Two.</remarks>",
-                         "/// <summary>A <c>b</c>c d.</summary>",
+                         "/// <summary>One.</summary><remarks>Two.</remarks>", "/// <summary>A <c>b</c>c d.</summary>",
                          "/// <summary>Use &lt;T&gt;.</summary>",
                          "/// <remarks><para>One.</para><para>Two.</para></remarks>",
                          "/// <summary>\n    /// <code>\n    ///     var x =  1;\n    /// </code>\n    /// </summary>",
                          "/// <summary>Not closed <b>at all.</summary>",
                          "/// <param name=\"a\">A.</param>\n    /// <param name=\"b\">B.</param>",
                          "/// <summary>\n    ///\n    ///\n    /// Text.\n    /// </summary>",
-                         "/// <summary>Trailing space. </summary>",
-                         "/// <summary><![CDATA[ raw < > & ]]></summary>",
+                         "/// <summary>Trailing space. </summary>", "/// <summary><![CDATA[ raw < > & ]]></summary>",
                          "/// <inheritdoc />",
                          "/// Bare prose with no tags at all, running on for a while so that it has to wrap somewhere."
                      }) {

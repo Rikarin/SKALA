@@ -85,8 +85,7 @@ public sealed class XmlDocModel {
 
     XmlDocModel() { }
 
-    public static bool IsVerbatimElement(string name) =>
-        VerbatimElements.Contains(name, StringComparer.Ordinal);
+    public static bool IsVerbatimElement(string name) => VerbatimElements.Contains(name, StringComparer.Ordinal);
 
     /// <summary>
     /// The comment's content, or null when it is not something the sub-formatter will touch.

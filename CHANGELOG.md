@@ -11,6 +11,42 @@ missed it says so and by how much; three of them were, and one of those is still
 
 ---
 
+## Unreleased
+
+### Added — the documentation-comment sub-formatter, behind `skala format --xmldoc`
+
+⚠ **Off by default, and off is the setting that agrees with Rider.** `jb cleanupcode` 2025.2.6 does
+not format documentation comments at all — SK-DIV-0006, re-verified at this release by a committed
+oracle fixture — so nothing in the `resharper_xmldoc_*` family can be pinned the way every other
+option in Skala is pinned, and turning it on by default would be a divergence from Rider on every
+doc comment in every repository.
+
+- **Seventeen of the twenty-seven `resharper_xmldoc_*` keys** are honoured under the flag, plus
+  `resharper_space_after_triple_slash`. **Ten are refused with a reason each**, six of them under one
+  rule: a tag header is emitted byte-for-byte and never broken open, so it has no attribute style,
+  no attribute indent, and no spaces around its `=`.
+- ⚠ **None of them is Tier A and none of them can become Tier A.** They are read through the
+  registry's inert path. What pins them instead is hand-written fixtures for the documented
+  semantics, a round trip checked on every comment of every run, and four corpus-wide properties.
+- ⚠ **The output effect, measured over `corpus/real/`** (380 files, 3 032 doc comments): line
+  fidelity 99.63 % → 96.04 % with the flag on, and **99.53 % → 99.53 % with every `///` line
+  excluded from both sides** — nothing the flag is not allowed to touch moved. 3 030 comments
+  re-wrap and round-trip clean; the 2 left are the 2 that are not well-formed XML.
+- Malformed doc comments stay byte-identical and reported at `hint` (`SK0003`) under every setting,
+  now with a corpus fixture that the real oracle produced.
+
+### Changed
+
+- The safety net gained the allowance for the xmldoc rewrap that
+  [04](docs/plan/04-formatting-engine.md) § "The safety net" had described for four milestones
+  without it existing. It applies only under `--xmldoc`, only to `///` trivia, and it is the
+  sub-formatter's own signature — which compares a `<code>` body **byte-for-byte**, so the net is
+  stricter there than it was before, not looser.
+- `format --xmldoc` does not use the daemon. The daemon protocol carries no such flag, and serving
+  the request would silently format without the sub-formatter.
+
+---
+
 ## 1.0.0 — 2026-08-27
 
 The version at which four surfaces become compatibility promises (ADR-012). What is *not* frozen is

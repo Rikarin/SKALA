@@ -161,7 +161,7 @@ What landed, and what it is short of:
 | [16](16-risks-and-open-questions.md) § R1 | 27 of the 54 constructs occurring more than 50 times are at 100 % |
 | Divergences | eight `SK-DIV-*` entries, each with a measurement; SK-DIV-0002 is resolved |
 | Wrapping | ✅ `Fill`, the counters, the ordering rule, chains, ternaries, declarators, base lists |
-| xmldoc | ⚠ the oracle does not format doc comments (SK-DIV-0006); the well-formedness hint is done |
+| xmldoc | ⚠ the oracle does not format doc comments (SK-DIV-0006); the well-formedness hint is done, and the sub-formatter shipped later, behind `format --xmldoc` |
 | Daemon, LSP, hooks | ✅ all three, with tests |
 | 40 ms warm | ⚠ 60–70 ms, of which ~60 is the client's process start; NativeAOT is the fix |
 | Daemon lazy start | ✅ the first single-file format leaves one behind: 310 ms, then 70 ms |

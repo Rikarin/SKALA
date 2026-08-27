@@ -172,7 +172,9 @@ public static class XmlDocFormatter {
             }
 
             if (!dropped) {
-                anchors.Add(anchor with { OutputStart = anchor.OutputStart + shift, OutputEnd = anchor.OutputEnd + shift });
+                anchors.Add(
+                    anchor with { OutputStart = anchor.OutputStart + shift, OutputEnd = anchor.OutputEnd + shift }
+                );
             }
         }
 

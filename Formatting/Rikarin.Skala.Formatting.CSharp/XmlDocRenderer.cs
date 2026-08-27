@@ -107,8 +107,8 @@ public sealed class XmlDocRenderer {
         if (!element.GluedToWord
             && (owns
                 || (multiline
-                    ? _options.LinebreakBeforeMultilineElements
-                    : _options.LinebreakBeforeSinglelineElements))) {
+                        ? _options.LinebreakBeforeMultilineElements
+                        : _options.LinebreakBeforeSinglelineElements))) {
             Break();
         }
 
@@ -179,9 +179,10 @@ public sealed class XmlDocRenderer {
         Break();
 
         var outer = _level;
-        _level = outer + XmlDocOptions.Delta(
-            element.Verbatim is not null || element.HasText ? _options.IndentText : _options.IndentChildElements
-        );
+        _level = outer
+            + XmlDocOptions.Delta(
+                element.Verbatim is not null || element.HasText ? _options.IndentText : _options.IndentChildElements
+            );
 
         if (element.Verbatim is { } verbatim) {
             Lines(verbatim);

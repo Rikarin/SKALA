@@ -62,11 +62,16 @@ public static class XmlDocFidelity {
                 // run that reports "14" without saying which has hidden its only real finding.
                 if (refusal.Reason != XmlDocRefusalReason.Malformed) {
                     sites.Add(
-                        "    " + refusal.Reason + "  " + file + ":"
+                        "    "
+                        + refusal.Reason
+                        + "  "
+                        + file
+                        + ":"
                         + refusal.Line.ToString(CultureInfo.InvariantCulture)
                     );
                 }
             }
+
             if (!string.Equals(without, with, StringComparison.Ordinal)) {
                 changed++;
             }

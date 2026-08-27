@@ -302,7 +302,7 @@ must be a decision Skala makes, not one it inherits.
 |---|---|
 | End-of-line comment | Attached to the *preceding* token. `resharper_space_before_trailing_comment = true` inserts exactly one space; `space_before_trailing_comment_text = false` leaves `//x` alone. ⚠ A trailing comment makes its line unbreakable after the comment — the fit algorithm must treat it as infinite-width tail, or it will "fix" a long line by moving code onto the comment's line. |
 | Own-line comment | `resharper_stick_comment = true`: a comment immediately above a declaration binds to it and moves with it; blank-line rules see the comment as part of the member. `place_comments_at_first_column = false`: indent with the code. |
-| XML doc comment | ⚠ **Not formatted at all, and that is the measurement rather than the schedule.** `jb cleanupcode` does not touch documentation comments — not the missing space after `///`, not a 128-column summary, not two `<param>` tags on one line — with the export's whole `resharper_xmldoc_*` family in force. A sub-formatter here would diverge from the oracle on every doc comment in the corpus with no oracle to check itself against (SK-DIV-0006). What Skala does do is detect a comment that is not well-formed XML and report it at `hint` (`SK0003`), leaving it exactly as written; `<code>` and `<c>` are moot while nothing is re-wrapped. |
+| XML doc comment | ⚠ **Not formatted by default, and that is the measurement rather than the schedule.** `jb cleanupcode` does not touch documentation comments — not the missing space after `///`, not a 128-column summary, not two `<param>` tags on one line — with the export's whole `resharper_xmldoc_*` family in force (SK-DIV-0006, re-verified at 2025.2.6 by `constructs/trivia/a-malformed-doc-comment-is-left-alone.cs`). A comment that is not well-formed XML is reported at `hint` (`SK0003`) and left exactly as written, under every setting. ⚠ **`skala format --xmldoc` turns on the sub-formatter**, which re-wraps them and honours 17 of the 27 `resharper_xmldoc_*` keys; it is off by default because on is a divergence from Rider on every doc comment in every repository, and it is worth 3.59 points of line fidelity when on. `<code>` and `<c>` are emitted verbatim, and no comment is written unless its content survives a round trip through `XmlDocSignature`. |
 | `#region` / `#endregion` | `resharper_indent_preprocessor_region = usual_indent` — indented like code. `blank_lines_inside_region`, `blank_lines_around_region` apply. Regions do not affect grouping. |
 | `#if` / `#else` and **disabled text** | ⚠ The dangerous one. Roslyn parses the inactive branch as `DisabledTextTrivia` — an unstructured string. Skala emits it `Verbatim`, byte-for-byte, and *never* reindents it. `resharper_indent_preprocessor_if = no_indent` puts the directives at column 0. A construct whose braces are split across a `#if` (`#if X` … `{` … `#else` … `{` …) is detected and the whole member is emitted `Verbatim` with `SK9011` (info): "not formatted, unbalanced preprocessor structure". Silently doing something clever here is how formatters destroy code. |
 | `#pragma`, `#nullable`, `#line` | Own line, no indent change, no grouping effect. Between attributes and a member they suppress attribute-placement rules for that member. |
@@ -487,6 +487,16 @@ static bool IsEquivalent(SourceText before, SourceText after) =>
 // in order, plus every disabled-text block verbatim.
 ```
 
+⚠ **"Normalised for the intentional xmldoc rewrap" was not true until the sub-formatter shipped, and
+it is now true in a narrower way than it sounds.** The normalisation is per-line trimming plus the
+one space after a marker, which no re-wrap survives, because a re-wrap moves the line breaks. The
+allowance exists only when `--xmldoc` actually re-wrapped something in this file, applies only to
+`///` trivia, and is `XmlDocSignature` — the same boundary the sub-formatter itself refuses to
+cross — rather than "comments are exempt" or "the words in order". Both of the weaker readings would
+have to be widened again for `space_before_self_closing` and again for `spaces_inside_tags`, and
+each widening is a class of damage the net stops seeing. The signature is *tighter* than the old
+comparison where it counts: a `<code>` body is compared byte-for-byte, which it never was before.
+
 A failure is a Skala bug by definition. It aborts the file, writes nothing, emits `SK9099` (error),
 and drops `.skala/crash/<hash>/{input.cs,output.cs,config.snapshot}` — a ready-made regression test.
 Cost measured on the corpus: one extra parse, ≈ 15 % of format time. ⚠ There is no flag to turn it
@@ -498,8 +508,9 @@ being a blank-line rule fighting a brace rule — is a build break.
 
 ## What the engine does not do
 
-- **It does not reflow prose in ordinary comments.** Only xmldoc, and only because
-  `xmldoc_wrap_lines = true` asks for it.
+- **It does not reflow prose in ordinary comments.** Only xmldoc, only under `format --xmldoc`, and
+  only because `xmldoc_wrap_lines = true` asks for it — the key alone is not enough, because the
+  oracle sets it and ignores it (SK-DIV-0006).
 - **It does not sort or move members.** Member ordering is arrangement, is a semantic change, is
   never part of `format`, and is not in the export's option set anyway.
 - **It does not touch generated files.** `*.g.cs`, `<auto-generated>` headers, and anything matched

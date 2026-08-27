@@ -10,8 +10,13 @@ configuration is 380 options deep. HTML and CSS are worth doing when three thing
 
 1. Line fidelity on C# is at the bar and stable ([12](12-conformance-and-testing.md)).
 2. `ISkalaLanguage` (ADR-013) has been exercised by a second implementation cheaply — the XML/xmldoc
-   sub-formatter, which already exists inside the C# path, is that exercise, and lifting it out is
-   the test of whether the seam is real.
+   sub-formatter is that exercise, and lifting it out is the test of whether the seam is real.
+   ⚠ **Correction.** This line said the sub-formatter "already exists inside the C# path" for four
+   milestones while it did not; what existed was a well-formedness check. It exists now
+   (`XmlDocFormatter`, `XmlDocModel`, `XmlDocRenderer`, `XmlDocOptions` in
+   `Formatting.CSharp`, opt-in behind `format --xmldoc`, SK-DIV-0006) and shares no state with the
+   document builder, which is what would make lifting it out cheap. `ISkalaLanguage` still does not
+   exist in any C# source, so the seam is still untested.
 3. Vixen's `.vxml`/`.vcss` parsers are stable enough to build against, or the decision is taken to
    write tolerant parsers here.
 

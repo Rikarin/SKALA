@@ -158,8 +158,7 @@ public readonly struct XmlDocOptions {
     /// </remarks>
     public ImmutableArray<string> LinebreakBeforeElements { get; }
 
-    public bool BreakBefore(string element) =>
-        LinebreakBeforeElements.Contains(element, StringComparer.Ordinal);
+    public bool BreakBefore(string element) => LinebreakBeforeElements.Contains(element, StringComparer.Ordinal);
 
     /// <summary>The indent unit, as text.</summary>
     public string IndentUnit => UseTabs ? "\t" : new string(' ', IndentSize);

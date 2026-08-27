@@ -233,7 +233,7 @@ is the right way to ship it, and the number above is the whole of what it runs.
 
 | | |
 |---|---|
-| Documentation comments | ⛔ **Not formatted, deliberately** — the oracle does not format them either ([`divergences.md`](divergences.md) § SK-DIV-0006). `XmlDocComments.cs` detects malformed XML and reports `SK0003`; it does not reflow. ⚠ [`plan/14`](plan/14-web-languages.md) describes this sub-formatter as **already built** and makes lifting it out the exercise that proves the language seam |
+| Documentation comments | ⚠ **Not formatted by default, deliberately** — the oracle does not format them ([`divergences.md`](divergences.md) § SK-DIV-0006). `XmlDocComments.cs` detects malformed XML and reports `SK0003`, always. ✅ `skala format --xmldoc` turns on the sub-formatter (`XmlDocFormatter`), which honours 17 of the 27 `resharper_xmldoc_*` keys, refuses ten with a reason each, and writes no comment whose content does not survive a round trip. Off by default because on costs 3.59 points of line fidelity against Rider; measured, not assumed |
 | Interpolated raw string literals | ⛔ Emitted verbatim (SK-DIV-0003) |
 | Disabled `#if` text | ⛔ Never touched, byte for byte (SK-DIV-0001) |
 | Arrangement | ⬜ M4 |
@@ -449,7 +449,7 @@ variable, and is not true of the command a developer runs.
 | **Adoption beyond Vixen** | ⬜ | Zero repositories. ⚠ **Including Vixen** — it has been measured read-only at every milestone and never written to. `git status` in `/Users/jiu/Projects/Vixen` is unchanged by this pass. The formatting commit is prepared and deferred ([`plan/15`](plan/15-roadmap.md) § M3.1) |
 | **`.vxml` / `.vcss`** | ⛔ | M9, and postponed to last. See below |
 | **HTML and the CSS family** | ⛔ | Same |
-| **`ISkalaLanguage`** | ⛔ | ⚠ **The interface does not exist in any C# source.** It is described in [`plan/01`](plan/01-technology-decisions.md), [`plan/14`](plan/14-web-languages.md) and [`plan/15`](plan/15-roadmap.md), and M9 is gated on it "having been exercised" by lifting the xmldoc sub-formatter out — which also does not exist. Three pieces of work where the plan records one |
+| **`ISkalaLanguage`** | ⛔ | ⚠ **The interface does not exist in any C# source.** It is described in [`plan/01`](plan/01-technology-decisions.md), [`plan/14`](plan/14-web-languages.md) and [`plan/15`](plan/15-roadmap.md), and M9 is gated on it "having been exercised" by lifting the xmldoc sub-formatter out. ✅ That sub-formatter now exists — four files in `Formatting.CSharp` sharing no state with the document builder — so one of the two missing pieces is gone; the interface is still the other |
 | **`skala arrange`** | ⬜ | M4. The command, the second oracle profile, the fixed point across format-and-arrange, and the edit-to-span map for `--range` are all outstanding |
 | **`SK5xxx` security** | ⬜ | M8. Nine ids, none in `rules.json`; no `taint.json` in the tree |
 | **`SK9098`** | ⬜ | Allocated in the register for "arrangement reverted, new diagnostics". Arrangement does not exist, so neither does it |
