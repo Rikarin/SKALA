@@ -73,14 +73,14 @@ public static class Unformat {
     /// <see cref="SyntaxKind.DisabledTextTrivia"/> is entirely a function of the symbol set, so a
     /// check run under one set walks straight into the other's data.
     /// </remarks>
-    public static IReadOnlyList<IReadOnlyList<string>> CheckedSymbolSets { get; } =
-        [[], Corpus.PropertySymbols];
+    public static IReadOnlyList<IReadOnlyList<string>> CheckedSymbolSets { get; } = [[], Corpus.PropertySymbols];
 
-    public static string Name(UnformatMode mode) => mode switch {
-        UnformatMode.Scramble => "scramble",
-        UnformatMode.Collapse => "collapse",
-        _ => throw new ArgumentOutOfRangeException(nameof(mode))
-    };
+    public static string Name(UnformatMode mode) =>
+        mode switch {
+            UnformatMode.Scramble => "scramble",
+            UnformatMode.Collapse => "collapse",
+            _ => throw new ArgumentOutOfRangeException(nameof(mode))
+        };
 
     public static IReadOnlyList<UnformatMode> Modes { get; } = [UnformatMode.Scramble, UnformatMode.Collapse];
 
@@ -230,9 +230,10 @@ public static class Unformat {
             builder.Append('T')
                 .Append(trivia.RawKind.ToString(CultureInfo.InvariantCulture))
                 .Append('')
-                .Append(trivia.IsKind(SyntaxKind.DisabledTextTrivia)
-                    ? Squash(trivia.ToFullString())
-                    : TrimTrailingWhitespace(trivia.ToFullString())
+                .Append(
+                    trivia.IsKind(SyntaxKind.DisabledTextTrivia)
+                        ? Squash(trivia.ToFullString())
+                        : TrimTrailingWhitespace(trivia.ToFullString())
                 )
                 .Append('');
         }

@@ -34,17 +34,23 @@ public static class UnformatCorpus {
     public const string Seed = "skala-unformat-20260827";
 
     /// <summary>
-    /// How many of <c>corpus/real/</c>'s 380 files each mode is drawn over.
+    /// How many of <c>corpus/real/</c>'s 380 files each mode is degraded from.
     /// </summary>
     /// <remarks>
-    /// ⚠ A measured subset rather than the whole set, and the arithmetic is in
-    /// docs/plan/12 § "The unformat differential". Two modes over 380 files is 760 oracle files and
-    /// about 90 MB of committed fixtures; 120 files is 240 oracle files in four
-    /// <c>jb cleanupcode</c> invocations and about 28 MB, over roughly 24 000 degraded lines — which
-    /// is far more line evidence than the 8 % of <c>corpus/real/</c> that the existing differential
-    /// actually discriminates on. A subset that is measured beats a full run that never completes.
+    /// ⚠ All of them, and the arithmetic behind that is in
+    /// docs/plan/12 § "The unformat differential". Oracle runs dominate — <c>jb cleanupcode</c>'s
+    /// startup is tens of seconds and its per-file marginal cost is milliseconds — so the only
+    /// variable worth tuning is the batch, and at a batch of 60 the measured cost is 0.37 s/file
+    /// amortised: 13 invocations and 4 min 40 s for all 760 files across both modes. That is cheap
+    /// enough that there is no sample to argue about.
+    /// <para>
+    /// ⚠ <see cref="Sources"/> still draws by <c>SHA-256(seed + "\n" + path)</c> rather than by
+    /// enumeration order, so a smaller <c>--count=N</c> is reproducible if the corpus grows or the
+    /// modes multiply. A sample that cannot be redrawn is not a sample, it is whatever somebody
+    /// copied — which is the mistake milestone 3.1 found in <c>corpus/real/vixen/</c>.
+    /// </para>
     /// </remarks>
-    public const int SampleSize = 120;
+    public const int SampleSize = 380;
 
     public static string Root { get; } = Corpus.SetRoot(Set);
 
@@ -137,8 +143,9 @@ public static class UnformatCorpus {
                 .Append(" lines → ")
                 .Append(degradedLines.ToString(CultureInfo.InvariantCulture))
                 .Append(" lines (")
-                .Append((originalLines == 0 ? 0 : (double)degradedLines / originalLines)
-                    .ToString("P1", CultureInfo.InvariantCulture)
+                .Append(
+                    (originalLines == 0 ? 0 : (double)degradedLines / originalLines)
+                        .ToString("P1", CultureInfo.InvariantCulture)
                 )
                 .AppendLine(")");
 

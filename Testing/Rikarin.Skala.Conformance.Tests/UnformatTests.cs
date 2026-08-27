@@ -83,7 +83,8 @@ public sealed class UnformatTests {
         Assert.True(
             missing.Length == 0,
             $"{missing.Length.ToString(CultureInfo.InvariantCulture)} degraded file(s) have no committed "
-            + ".expected.cs. `unformat oracle`: " + string.Join(", ", missing.Take(8))
+            + ".expected.cs. `unformat oracle`: "
+            + string.Join(", ", missing.Take(8))
         );
 
         foreach (var file in UnformatCorpus.Files(mode)) {

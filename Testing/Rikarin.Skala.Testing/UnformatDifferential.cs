@@ -105,8 +105,7 @@ public static class UnformatDifferential {
         );
     }
 
-    static string SourceOf(CorpusFile file, UnformatMode mode) =>
-        file.RelativePath[(Unformat.Name(mode).Length + 1)..];
+    static string SourceOf(CorpusFile file, UnformatMode mode) => file.RelativePath[(Unformat.Name(mode).Length + 1)..];
 
     static Dictionary<string, CorpusFile> OriginalsByRelativePath() =>
         Corpus.Files(Corpus.Real).ToDictionary(static file => file.RelativePath, StringComparer.Ordinal);
@@ -145,9 +144,7 @@ public static class UnformatDifferential {
             builder.AppendLine(result.Defined.Render(topClasses));
 
             builder.AppendLine("constructs, by divergent lines:");
-            builder.Append(
-                Constructs(UnformatCorpus.Set + "/" + Unformat.Name(mode), symbols, topConstructs)
-            );
+            builder.Append(Constructs(UnformatCorpus.Set + "/" + Unformat.Name(mode), symbols, topConstructs));
 
             builder.AppendLine();
         }
