@@ -427,6 +427,14 @@ public sealed class BreakPlan {
                 PlanAroundEquals(initializer, initializer.EqualsToken, initializer.Value);
                 return;
 
+            // ⚠ `[LoggerMessage(Message = "…" + "…")]` — a named attribute argument's `=` is neither
+            // an assignment nor an equals-value clause, so it had no plan at all and its right-hand
+            // side sat at the attribute list's level rather than one continuation in. The oracle
+            // treats it like every other `=`.
+            case AttributeArgumentSyntax { NameEquals: { } nameEquals, Expression: not null } attributeArgument:
+                PlanAroundEquals(attributeArgument, nameEquals.EqualsToken, attributeArgument.Expression);
+                return;
+
             case ArrowExpressionClauseSyntax { Expression: not null } arrow:
                 PlanExpressionBody(arrow);
                 return;
