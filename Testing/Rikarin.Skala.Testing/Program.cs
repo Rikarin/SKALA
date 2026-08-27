@@ -39,6 +39,12 @@ switch (args[0]) {
         return Ask(args[1], args[2..]);
     case "defaults":
         return Defaults(args.Length > 1 ? args[1] : null);
+    case "constructs":
+        // docs/plan/16 § R1: any construct occurring more than 50 times must be at 100 %. A single
+        // fidelity number cannot answer that; this attributes every divergent line to the construct
+        // that owns it and puts it beside how often the construct occurs.
+        Console.WriteLine(ConstructReport.Render(ConstructReport.Build(args.Length > 1 ? args[1] : Corpus.Real)));
+        return 0;
     default:
         Console.Error.WriteLine($"unknown command '{args[0]}'");
         return 2;
