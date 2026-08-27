@@ -11,7 +11,7 @@ namespace Rikarin.Skala.Testing;
 /// against its <c>.expected.cs</c> — scoring a formatter that returns its input unchanged — gives
 /// 90.95 % of lines and 26.84 % of files. The 99.63 % headline therefore sits on a 91 % floor: 91 %
 /// of corpus lines never needed changing, so the whole discriminating power of that differential
-/// lives in the other 8 %, and the test mostly asks <em>"does Skala leave good code alone"</em>
+/// lives in the other 9 %, and the test mostly asks <em>"does Skala leave good code alone"</em>
 /// rather than <em>"does Skala make the same decisions ReSharper makes"</em>. The second question is
 /// the one that decides whether ReSharper can be retired.
 /// <para>

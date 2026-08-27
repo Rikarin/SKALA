@@ -211,7 +211,7 @@ compare each `corpus/real/` **input** directly against its `.expected.cs` — an
 | file fidelity | **26.84 %** | 85.26 % |
 
 91 % of corpus lines never needed changing, so the entire discriminating power of that differential
-lives in the other 8 %. Skala closes 95 % of the available line gap, which is real — but the test
+lives in the other 9 %. Skala closes 96 % of the available line gap, which is real — but the test
 mostly asks *"does Skala leave good code alone"* and only faintly asks *"does Skala make the same
 decisions ReSharper makes"*. **The second question is the one that decides whether ReSharper can be
 retired.**
@@ -336,7 +336,7 @@ The committed cost is 15 MB and 1 520 files: 760 degraded inputs and 760 fixture
 #### Regenerating
 
 ```
-dotnet run --project Testing/Rikarin.Skala.Testing -- unformat generate [--count=N]  # re-degrade
+dotnet run --project Testing/Rikarin.Skala.Testing -- unformat generate [--count=N]  # ⚠ also deletes the fixtures
 dotnet run --project Testing/Rikarin.Skala.Testing -- unformat oracle                # re-fixture
 dotnet run --project Testing/Rikarin.Skala.Testing -- unformat regenerate            # both
 ./build.sh Unformat                                                                  # measure

@@ -255,9 +255,9 @@ switch (args[0]) {
         return 0;
     case "unformat":
         // ⚠ The differential over *degraded* input — the measurement the 99.63 % headline was
-        // missing. `corpus/real/`'s inputs are already 92.08 % line-identical to their fixtures, so
-        // that number sits on a 92 % floor and the whole discriminating power of it lives in the
-        // other 8 %. This degrades a file's formatting, runs both tools over the degraded copy and
+        // missing. `corpus/real/`'s inputs are already 90.95 % line-identical to their fixtures, so
+        // that number sits on a 91 % floor and the whole discriminating power of it lives in the
+        // other 9 %. This degrades a file's formatting, runs both tools over the degraded copy and
         // compares them, with the null hypothesis reported beside every number.
         //   unformat report                the measurement, from committed fixtures. No jb needed.
         //   unformat generate [--count=N]  redraw and re-degrade the corpus. ⚠ Deletes the fixtures.
