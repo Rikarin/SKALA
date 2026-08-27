@@ -278,9 +278,9 @@ registry disagree. Regenerate with `skala rules docs`.
 |---|---:|---|
 | Rules this document names | **109** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
 | **Shipped** — present in `rules.json` | **34** | **31.5 %** |
-| **Cut** — deliberately not built, reason recorded | **10** | § "Cut, with the reason" |
+| **Cut** — deliberately not built, reason recorded | **12** | § "Cut, with the reason" |
 | **Retired** — allocated, superseded, never to be built | **1** | the id stays taken for ever (ADR-012) |
-| **Outstanding** — planned, not built, not disposed of | **64** | includes the twelve declared cut with no reason recorded |
+| **Outstanding** — planned, not built, not disposed of | **62** | includes the twelve declared cut with no reason recorded |
 
 <!-- END GENERATED COVERAGE -->
 
@@ -346,6 +346,8 @@ does not follow a rule, Vixen changes.**
 | ID | Reason | Kind | Recorded at |
 |---|---|---|---|
 | `SK3006` `async` with no `await` | The compiler's `CS1998` says it, on by default in every project | 1 | M6 |
+| `SK2006` `ref`/`out` parameter never assigned on a path | An `out` parameter left unassigned is **`CS0177`, a compiler error** — the code does not build, so there is nothing to warn about. A `ref` parameter is never required to be assigned, so the other half of the id names no defect at all | 1 | M9 |
+| `SK3008` lock held across an `await` | **`CS1996`, a compiler error**: `await` inside a `lock` body does not compile, so the shape this id names cannot be written down. ⚠ see below | 1 | M9 |
 | `SK8003` `[Fact]` with parameters | `xUnit1001`, on by default wherever `xunit.analyzers` is referenced | 1 | M7 |
 | `SK8004` `async void` test | `xUnit1049`, same | 1 | M7 |
 | `SK8002` `Assert.True(x == y)` | ⚠ see below | 3 | M7 |
@@ -368,6 +370,44 @@ repository, and they are reason 3. The half that does not survive is the conclus
 a Vixen count and it is struck.** The cut stands on the first half alone; what is *not* disposed of
 by it is a narrower or fixless `SK8002` that reports only the shapes the rewrite is valid for, and
 this note is the record that nobody has ruled that out.
+
+⚠ **What `SK3008`'s cut does not dispose of.** `lock` is a keyword and `CS1996` makes its bad
+spelling impossible, so the id as written names nothing. Holding a lock across a suspension is still
+a real bug — it is just spelled `await semaphore.WaitAsync(); … await Work();` or
+`Monitor.Enter(gate)`, neither of which is a `lock` statement. That is a **different concept**, and
+ADR-012 says a different concept takes a different number rather than the nearest tidy one, so it is
+not `SK3008` and nobody has allocated it. The obstacle M6 recorded — the dataflow that decides
+whether a semaphore is still held at the `await` — is unchanged and is still most of the rule.
+
+### ⚠ The compiler already says it, measured rather than assumed
+
+M9's cuts rest on a claim that was worth checking rather than remembering: which of these shapes does
+`csc` already report, on by default, in an ordinary SDK project? Compiled at `net10.0` with
+`EnableNETAnalyzers` on and nothing suppressed:
+
+| Shape | What the compiler says | Disposes of |
+|---|---|---|
+| `value = value;`, `_field = _field;` | `CS1717` warning | most of `SK2012` |
+| `a == a`, `a < a` | `CS1718` warning | most of `SK2012` |
+| `Equals(object)` overridden, no `GetHashCode` | `CS0659` warning | most of `SK2004` |
+| `operator ==` without `Equals`/`GetHashCode` | `CS0660`, `CS0661` warnings | most of `SK2004` |
+| `out` parameter unassigned on a path | **`CS0177` error** | all of `SK2006` |
+| `await` inside a `lock` body | **`CS1996` error** | all of `SK3008` |
+| unawaited task **inside an `async` method** | `CS4014` warning | part of `SK3005` |
+| comparison to a constant outside the type's range | `CS0652` warning | part of `SK2001` |
+
+⚠ **And which it does not**, which is the half that mattered more, because three rules were nearly
+cut on a guess. `CA2016` (forward the `CancellationToken`), `CA2254` (logger template),
+`CA2000` (dispose objects before losing scope) and `CA1001` (own disposable fields) **did not fire**
+in that project. They are shipped in the SDK and they are not in the default analysis set, so a rule
+that duplicates one of them does not duplicate a diagnostic the user already sees. `SK3004` and
+`SK3501` ship because of that measurement.
+
+⚠ **`CS1717`/`CS1718` reach the identifier spellings only.** `Prop = Prop`, `other.Prop =
+other.Prop` and `other.Prop == other.Prop` produce nothing, so `SK2012` is not fully disposed of and
+stays outstanding rather than cut. The same is true of `SK2004`: an `IEquatable<T>` implemented
+without overriding `Equals(object)` or `GetHashCode` is silent, and it is the shape that puts a type
+in a `HashSet` and gets reference equality.
 
 ### ⚠ Declared cut with no recorded reason — reclassified as outstanding
 
@@ -396,9 +436,10 @@ reason is kept; it is a description of remaining work, not a disposal.
 | Evaluation-changing rewrites | `SK1006`, `SK1012`, `SK1015` | The guard that makes each provably behaviour-preserving is most of the rule (M5) |
 | ⚠ Hot-path rules | `SK1022`, `SK1025`, `SK1027`, `SK1032` | Path-scoped configuration. **The `hint` default is suspect — see below** |
 | The rest of the modernization set | `SK1003`, `SK1004`, `SK1007`, `SK1009`, `SK1011`, `SK1013`, `SK1014`, `SK1021`, `SK1023`, `SK1024`, `SK1026`, `SK1028`, `SK1029`, `SK1031`, `SK1033`, `SK1036` | Nothing recorded. Not started |
-| Correctness | `SK2001`–`SK2012`, `SK2014`, `SK2016` | Nothing recorded beyond the shipping bar. Not started |
-| Async and lifetime | `SK3003`, `SK3005`, `SK3007`, `SK3009`, `SK3502`, `SK3503` | Nothing recorded. Not started |
-| Async and lifetime, with a recorded obstacle | `SK3004`, `SK3008`, `SK3501` | `SK3004`'s fix threads a `CancellationToken` through call sites, which is a refactor; `SK3501`'s disposal paths and `SK3008`'s `SemaphoreSlim` dataflow are each most of the rule (M6). ⚠ A fixless form of any of the three is not disposed of |
+| Correctness | `SK2003`, `SK2005`, `SK2008`–`SK2011`, `SK2014`, `SK2016` | Nothing recorded beyond the shipping bar. Not started |
+| ⚠ Correctness, partly disposed of by a compiler warning | `SK2001`, `SK2004`, `SK2012` | § "The compiler already says it" measures which spellings `csc` reports. What is left of each is the shape it does *not*: an always-true comparison that is not to an integral constant; an `IEquatable<T>` with no `GetHashCode`; `Prop = Prop` and `a.P == a.P`, where a property accessor may have a side effect and the fix is therefore not mechanical |
+| Async and lifetime | `SK3003`, `SK3009`, `SK3502` | Nothing recorded. Not started |
+| ⚠ Async, partly disposed of by a compiler warning | `SK3005` | `CS4014` covers the fire-and-forget inside an `async` method. What is left is the same call in a *synchronous* method, where the compiler says nothing — and where the repair is to make the caller `async`, which changes its signature. A fixless form is not disposed of |
 | Security | `SK5001`–`SK5009` | **M8**, and deliberately last: a wrong security rule is worse than a missing one |
 | Maintainability, non-metric | `SK7030`, `SK7040`, `SK7050`, `SK7051`, `SK7060` | Nothing recorded. Not started |
 
@@ -411,7 +452,7 @@ document that reads as though it were always right.
 | Decision | What it rested on | Status |
 |---|---|---|
 | **`SK8005` ships at `suggestion`**, not at the `warning` its range defaults to | 25 true findings on Vixen judged "true and not what you would change" — 14 polling back-offs, 8 tests whose subject is a real clock | ⚠ **Suspect.** Twenty-five true findings are twenty-five baseline entries and a piece of Vixen's backlog. The severity needs re-deciding against the standard, not against the tree |
-| **`SK3001` ships disabled** (`none`) | Two reasons stacked: (a) compilation-scoped, so it costs every run the warm incremental path; (b) "Vixen contains no `async void` method at all" | ⚠ **Half struck.** (a) is reason 2 and the default stands on it alone. (b) is a Vixen count and is struck; it should never have been load-bearing |
+| **`SK3001` ships disabled** (`none`) | Two reasons stacked: (a) compilation-scoped, so it costs every run the warm incremental path; (b) "Vixen contains no `async void` method at all" | ⚠ **Half struck, and (a) is now measured.** (b) is a Vixen count and is struck. (a) held up: enabling any compilation-scoped rule turns every run with a change into a cold one, which on Skala's own tree is **8.5 s against 6.9 s**, and moves the analyzer phase from one tree to all of them — 3.3 s of work the warm path did not do. The default stands. ⚠ **What does not stand is the note saying an opting-in repository "pays the cost knowing what it bought"** — see [16](16-risks-and-open-questions.md) § "The opt-in that does not cost what it says" |
 | **Hot-path rules ship at `hint` and are promoted per path** | The mechanism, plus "Vixen already segments its config by folder exactly this way" | ⚠ **The mechanism is fine and other repositories will legitimately use it. The citation is not.** A default justified by how one repository's `.editorconfig` happens to be laid out is a default derived from that repository |
 | **Metric thresholds sit above the corpus p99**, and `SK7010` ships at `none` | `SK7010` at `warning` produces 1 868 findings on `Testing/corpus` alone | ⚠ **Suspect, and the hardest case.** A threshold has no correct value independent of *some* population, so calibration is not optional — but calibrating against the tree the rule will be run on is how a metric comes to certify the present. Each threshold needs an argument against a standard rather than against a p99 |
 | **`SK3002`'s seven Vixen findings**, triaged as "true, but none is something anyone would change" | — | ✅ **Not a decision about the rule, and never was.** Seven correct findings, seven baseline entries, and Vixen's work. The rule is unaffected and this row is here so that nobody re-reads the triage as a defect report |
@@ -428,6 +469,87 @@ about itself and are needed to develop everything else) → `SK0xxx`/`SK1xxx` (t
 findings and the modernization set, which is the differentiator) → `SK2xxx`/`SK3xxx` (the SonarQube
 replacement's core) → `SK7xxx` (metrics and duplication, needed for the gate) → `SK4xxx`/`SK6xxx` →
 `SK5xxx` last, because security rules that are wrong are worse than absent.
+
+### ⚠ What M9 added: five rules out of twenty-two, and the one false positive a tree found
+
+M9 is the `SK2xxx`/`SK3xxx` milestone. Twenty-two ids were outstanding in the two bands; **five**
+ship, two are cut with a reason, and the rest stay outstanding. Every one that ships is `Semantic`,
+so **none of them costs the incremental cache anything** — the warm path is available on every run
+that does not enable a compilation-scoped rule, and after M9 that is still only `SK3001` and
+`SK7020`.
+
+| Id | Scope | Fix | Fixtures (+/−) | `corpus/real` (380) | Vixen (4 680) | Cost |
+|---|---|---|---:|---:|---:|---:|
+| `SK2007` collection modified during enumeration | Semantic | `.ToList()` | 3 / 8 | 0 | **0** | 54.5 ms |
+| `SK3004` `CancellationToken` accepted, not passed on | Semantic | a named or appended argument | 3 / 9 | 0 | **0** | 68.2 ms |
+| `SK3007` a task built from a `using` resource is returned | Semantic | `async` + `await` | 3 / 9 | 0 | **0** | 43.9 ms |
+| `SK3501` a disposable local is never disposed | Semantic | `using var` | 3 / 12 | 1 | **157** | 39.8 ms |
+| `SK3503` an `IAsyncDisposable` is disposed synchronously | Semantic | `await using` | 3 / 7 | 0 | **36** | 6.9 ms |
+
+Cost is `skala check --profile` over Skala's own binlog, summed across compilations. The five
+together are 213 ms of a 3 269 ms analyzer budget — 6.5 %, all of it behind `MetricsAnalyzer`'s
+79 %. ⚠ Two of them were four times that before the order of their checks was measured: `SK3007`
+cost 400.7 ms asking a semantic question before a syntactic one that excludes almost everything, and
+`SK3004` 330.9 ms resolving every parameter of every enclosing method on every invocation in the
+tree to ask whether its type was `CancellationToken`, which the name in the source answers for free.
+That is what doc 13's "every Skala rule's cost is reviewed against `--profile` before release" is
+for, and it is the first milestone where it caught something.
+
+⚠ **The false positive, and it is the reason this section exists.** `SK3501` reported
+`var backend = new NullAudioBackend();` in `Samples/10-VoiceChat/Program.cs`. The backend is never
+returned, never assigned, never passed and never captured — every guard the rule had said it kept
+ownership. What it does is `device = backend.OpenDevice(options)`, and the device, which is
+`IDisposable`, goes into a field and is used for the rest of the program's life. A `using` on the
+backend closes it. **Ownership travels outward through what an object hands back, not only inward
+through what is handed to it**, and no amount of reading the rule produced that; a reference tree
+did. The guard is now "a read whose result is itself disposable withdraws the finding", it removed
+six findings on Vixen, and it is the shape a fifth negative fixture documents.
+
+⚠ **Three zeros, each with a denominator.** M7 established that a semantic rule's zero under a loose
+compilation can be an artefact of unresolved symbols. Two things were done before these were
+believed. First, **containment**: a probe file carrying one positive fixture per rule was audited
+*alongside* each tree, and all five rules fired on it — so the analyzers are alive in that exact
+compilation and the zeros are about the trees. Second, a **syntactic candidate count**, which is
+what turns a zero into a ratio:
+
+| | Vixen | What the candidates are |
+|---|---:|---|
+| `SK2007` — `foreach (… in X)` whose body names `X.Add`/`X.Remove`/… | 7 → **0** | All seven are `foreach (var x in items) this.items.Add(x)`: a parameter enumerated, a field mutated. One symbol, two collections. This is exactly what the receiver-text check exists to separate, and it is the only thing it caught |
+| `SK3004` — method bodies declaring a `CancellationToken` | 348 | 244 of the awaits inside them pass the token; **13 do not**, and every one of the 13 calls a method that declares no token parameter at all — `Task.WhenAll`, `HttpListener.GetContextAsync`, `WaitForEarlierAsync(IReadOnlyList<AssetId>)`, `WebInterop.ImportAsync(string)`. There is nothing to forward |
+| `SK3007` — a `return …Async(` inside a `using` | **0** | The shape does not occur. Vixen awaits inside the block |
+
+⚠ **`SK3501`'s 157 and `SK3503`'s 36 were read, and all 193 are true.** They are not all *useful*,
+which is a different quantity and the one doc 16 § R3 keeps having to name:
+
+- **`SK3501`, 157 findings.** 11 hold a real resource — `ForwardLightingRenderFeature` disposing GPU
+  scene and record buffers (×4), a `VolumetricFogRenderer`, a `ThumbnailCache`, an `MmoRealm` (×2), a
+  `TcpListener`, a `MemoryStream`. The other 146 are ECS systems and one decoder, whose `Dispose` is
+  inherited from `SystemBase` and is `GC.SuppressFinalize(this)` and nothing else. Those findings are
+  correct — the type is `IDisposable` and the local is not disposed — and their repair changes
+  nothing at runtime. ⚠ That `ISystem : IDisposable` where most systems have nothing to dispose is a
+  fact about Vixen's ECS, not a defect in the rule, and 157 baseline entries is what the baseline is
+  for. Vixen's own tests already write `using var world = new World();` on the line above.
+- **`SK3503`, 36 findings.** 15 are on types whose `DisposeAsync` does real work — file streams, two
+  `NamedPipeServerStream`s, two `CancellationTokenRegistration`s (whose `Dispose` blocks on a running
+  callback and whose `DisposeAsync` does not, which is the case the rule exists for). 21 are
+  `MemoryStream`, where `Stream.DisposeAsync` calls `Dispose` and the asynchronous path buys a state
+  machine and nothing else. Correct, and a baseline entry.
+
+⚠ **Every fix was applied and re-bound, on both trees and in the harness.** Over Vixen, 243 fixes
+across 75 files: **128 833 compiler errors before, 128 821 after, 0 `(file, id)` pairs worse than
+before**. Over `corpus/real`, 172 fixes across 66 files, 15 743 → 15 731, same zero. And the harness
+now asks the question the audit cannot: `EveryFix_SilencesTheRuleAndIntroducesNoDiagnostic` applies a
+fixture's own fix, re-binds it, and fails if the rule still fires or if a diagnostic appeared that
+was not there. ⚠ It found one in a rule that had shipped a milestone earlier — `SK2015`'s
+`throw ex;` → `throw;` left the catch variable unused, which is `CS0168` from a rule carrying
+`fixIsSafe: true`, and a broken build wherever `TreatWarningsAsErrors` is on.
+
+⚠ **The Vixen numbers need a global-usings stand-in and it is still not committed.** Vixen builds
+with `<ImplicitUsings>enable</…>` and a loose compilation has none, so without one the tree has
+195 253 errors and every semantic rule answers "no finding" for the wrong reason. With the SDK's
+default implicit-using set as a stand-in the tree falls to **128 833** — reproducing M7's figure
+exactly rather than M8's re-derived 128 490, so the two stand-ins differed and neither is in the
+repository. Every M9 count above was measured with one, and the next milestone will build a third.
 
 ### ⚠ What M8 added: five rules out of nine, and the corpus that is the only real evidence
 
