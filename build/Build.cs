@@ -479,7 +479,35 @@ class Build : NukeBuild {
     [Parameter("Cut a release rather than measure a master build")]
     readonly bool Release;
 
+    /// <summary>Where the three release outputs land: the notes, the changelog block, version.json.</summary>
     AbsolutePath ReleaseDirectory => RootDirectory / "artifacts" / "release";
+
+    /// <summary>
+    /// The scratch the measurement needs, and it is <b>outside the repository</b>.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ It was inside, under <c>artifacts/release/</c>, and that broke three
+    /// <c>ProjectGraphTests</c>: the baseline is a whole second checkout, so <c>ProjectFile.LoadAll</c>
+    /// found two <c>Rikarin.Skala.Testing</c>, two <c>Rikarin.Skala.Formatting</c> and two
+    /// <c>Rikarin.Skala.Core</c>, and every <c>Assert.Single</c> in that class failed at once. A copy
+    /// of the repository inside the repository is a trap for every tree-walking tool this project has
+    /// — the graph tests, `skala config check`, `rules docs`, the docs-site check — and the fix is not
+    /// to teach each of them a new exclusion.
+    /// <para>
+    /// Keyed by the root's path so that the several agent worktrees this repository is usually
+    /// carrying do not share one scratch directory and measure each other's baselines.
+    /// </para>
+    /// </remarks>
+    AbsolutePath ReleaseScratch =>
+        (AbsolutePath)System.IO.Path.Combine(
+            System.IO.Path.GetTempPath(),
+            "skala-release",
+            System.Convert.ToHexStringLower(
+                System.Security.Cryptography.SHA256.HashData(
+                    System.Text.Encoding.UTF8.GetBytes(RootDirectory.ToString())
+                )
+            )[..12]
+        );
 
     /// <summary>
     /// ⚠ <b>The version, measured.</b> docs/plan/18-versioning-and-release.md.
@@ -527,7 +555,7 @@ class Build : NukeBuild {
                         "--out",
                         ReleaseDirectory,
                         "--work",
-                        ReleaseDirectory / "work",
+                        ReleaseScratch / "work",
                         "--commit",
                         Output(Nuke.Common.Tools.Git.GitTasks.Git("rev-parse --short HEAD"))
                     };
@@ -617,10 +645,10 @@ class Build : NukeBuild {
     /// release's binary and a Debug build of it would measure the configuration.
     /// </remarks>
     AbsolutePath Materialise(string reference) {
-        var baseline = ReleaseDirectory / "baseline";
+        var baseline = ReleaseScratch / "baseline";
         baseline.CreateOrCleanDirectory();
 
-        var archive = ReleaseDirectory / "baseline.tar";
+        var archive = ReleaseScratch / "baseline.tar";
         Nuke.Common.Tools.Git.GitTasks.Git($"archive --format=tar --output=\"{archive}\" {reference}");
         using (var extract = Nuke.Common.Tooling.ProcessTasks
                    .StartProcess("tar", $"-xf \"{archive}\" -C \"{baseline}\"")) {
@@ -632,9 +660,18 @@ class Build : NukeBuild {
 
         archive.DeleteFile();
 
+        var cli = baseline / "Tools" / "Rikarin.Skala.Cli" / "Rikarin.Skala.Cli.csproj";
+
+        // ⚠ The restore is explicit, and it is not decoration. A `DotNetBuild` alone here fails
+        // instantly with `CS0234: 'Options' does not exist in the namespace 'Rikarin.Skala'` — five
+        // ProjectReferences unresolved, because no `project.assets.json` had been written for a tree
+        // that was extracted from a tarball ten milliseconds earlier. It looks like a broken
+        // baseline and it is a missing restore.
+        DotNetRestore(settings => settings.SetProjectFile(cli));
         DotNetBuild(settings => settings
-                .SetProjectFile(baseline / "Tools" / "Rikarin.Skala.Cli" / "Rikarin.Skala.Cli.csproj")
+                .SetProjectFile(cli)
                 .SetConfiguration(Configuration.Release)
+                .EnableNoRestore()
         );
 
         return baseline;

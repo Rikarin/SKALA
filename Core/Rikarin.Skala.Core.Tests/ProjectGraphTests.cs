@@ -251,7 +251,15 @@ public sealed record ProjectFile(
         var relative = separator + System.IO.Path.GetRelativePath(root, path) + separator;
         return relative.Contains($"{separator}obj{separator}", StringComparison.Ordinal)
             || relative.Contains($"{separator}bin{separator}", StringComparison.Ordinal)
-            || relative.Contains($"{separator}.claude{separator}", StringComparison.Ordinal);
+            || relative.Contains($"{separator}.claude{separator}", StringComparison.Ordinal)
+            // ⚠ `artifacts/` is build output and never source. It was missing here, and
+            // `./build.sh ReleasePlan` briefly materialised the previous release's whole checkout
+            // into it — at which point `LoadAll` found two `Rikarin.Skala.Core` and every
+            // `Assert.Single` in this class failed at once. The scratch moved out of the repository
+            // (docs/plan/18, `Build.ReleaseScratch`), and this stays so that the next thing to
+            // publish into `artifacts/` does not rediscover it. `EnumerateSources` already excludes
+            // it, which is the same rule stated in the other half of the tree.
+            || relative.Contains($"{separator}artifacts{separator}", StringComparison.Ordinal);
     }
 
     static ProjectFile Load(string path) {

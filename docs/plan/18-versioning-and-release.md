@@ -227,10 +227,10 @@ The recommendation's premise is right and the pipeline's first run substantiates
 recommendation claimed. [02](02-repository-layout.md) § "Repository policy" records that 1.0 was
 declared at M7 because ADR-012 froze four surfaces: rule ids, option behaviour, exit codes and the
 SARIF shape. Run against the tree that declared it, the detectors report that **two of the four moved
-within 125 commits** — the exit code for "this file needs formatting" went from 1 to 2, and an
-option changed type. A 1.0 that broke its own freeze inside a week, before publishing anything, was
-declared early. The README's "a version number is not a claim of completeness" is a true sentence
-that NuGet does not read.
+within 125 commits** — the exit code for "this file needs formatting" went from 1 to 2, and six
+`.editorconfig` defaults changed on keys that were already honoured. A 1.0 that broke its own freeze
+inside a week, before publishing anything, was declared early. The README's "a version number is not
+a claim of completeness" is a true sentence that NuGet does not read.
 
 **But `0.x` is the wrong instrument, and it is wrong for a reason the design supplies.** At `0.x`
 the convention is that *minor* carries breaking changes, which leaves exactly two meaningful
@@ -450,7 +450,23 @@ or pass --baseline-tool.
 `ReleasePlan` materialises the baseline with `git archive` rather than a second worktree — a worktree
 mutates the repository's worktree list, and this runs on developer machines that already have
 several — and builds the baseline tool in **Release** whatever the current configuration is, because
-a Debug build of it would measure the configuration.
+a Debug build of it would measure the configuration. The target refuses to run in Debug for the same
+reason.
+
+⚠ **The baseline is materialised into the temp directory, never into `artifacts/`.** It was in
+`artifacts/release/baseline/` first, and three `ProjectGraphTests` failed at once: a whole second
+checkout inside the tree means `ProjectFile.LoadAll` finds two `Rikarin.Skala.Core`, and every
+`Assert.Single` in that class breaks. A copy of the repository inside the repository is a trap for
+every tree-walking tool this project has — the graph tests, `skala config check`, `rules docs`, the
+docs-site check — and the fix is not to teach each of them a new exclusion. The scratch path is keyed
+by the repository root's path so that the several agent worktrees this repository usually carries do
+not share one and measure each other's baselines. `artifacts/` was added to `IsScratch` as well, so
+that the next thing to publish there does not rediscover this.
+
+⚠ The baseline build needs an **explicit restore**. Without one it fails instantly with
+`CS0234: 'Options' does not exist in the namespace 'Rikarin.Skala'` — five unresolved
+`ProjectReference`s, because nothing had written a `project.assets.json` for a tree that came out of
+a tarball a moment earlier. It reads as a broken baseline and it is a missing restore.
 
 ## Known gaps
 
