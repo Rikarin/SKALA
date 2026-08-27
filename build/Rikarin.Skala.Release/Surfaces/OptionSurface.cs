@@ -97,8 +97,10 @@ public static class OptionSurface {
         var added = candidate.Keys.Where(key => !baseline.ContainsKey(key)).Order(StringComparer.Ordinal).ToList();
         if (added.Count > 0) {
             bump = RuleSurface.Max(bump, BumpKind.Minor);
-            details.Add($"{added.Count} option(s) added: {string.Join(", ", added.Take(10).Select(static key => $"`{key}`"))}"
-                + (added.Count > 10 ? ", …" : ""));
+            details.Add(
+                $"{added.Count} option(s) added: {string.Join(", ", added.Take(10).Select(static key => $"`{key}`"))}"
+                + (added.Count > 10 ? ", …" : "")
+            );
         }
 
         var honoured = candidate.Values.Count(Honoured);

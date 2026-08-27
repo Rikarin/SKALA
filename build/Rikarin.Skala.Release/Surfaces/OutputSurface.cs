@@ -37,7 +37,7 @@ public sealed record OutputMeasurement(
 /// § "Corpus expansion"), and a file added since the previous release has no "before" — counting it
 /// as changed would report a diff on every release that added a fixture, and counting it as
 /// unchanged would be a lie. It is reported as an addition and excluded from the change count.
-/// ⚠ This is not a detail: the first real run of this detector, 1.0.0 against `master`, had 66 such
+/// ⚠ This is not a detail: the first real run of this detector, 1.0.0 against `master`, had 60 such
 /// files and the previous release's tool <b>crashed</b> on one of them, which is the point — those
 /// files exist because they broke the formatter.
 /// </item>
@@ -154,11 +154,19 @@ public static class OutputSurface {
             )
         );
 
-        foreach (var relative in baselineRefused.Where(relative => !candidateRefused.Contains(relative, StringComparer.Ordinal))) {
+        foreach (var relative in baselineRefused.Where(relative => !candidateRefused.Contains(
+                         relative,
+                         StringComparer.Ordinal
+                     )
+                 )) {
             details.Add($"**`{relative}` now formats** — the previous release refused it");
         }
 
-        foreach (var relative in candidateRefused.Where(relative => !baselineRefused.Contains(relative, StringComparer.Ordinal))) {
+        foreach (var relative in candidateRefused.Where(relative => !baselineRefused.Contains(
+                         relative,
+                         StringComparer.Ordinal
+                     )
+                 )) {
             details.Add($"⚠ **`{relative}` no longer formats** — the previous release handled it");
         }
 
@@ -219,7 +227,11 @@ public static class OutputSurface {
     static void Restore(string relative, string corpusRoot, string tree) {
         var target = Staged(tree, relative);
         Directory.CreateDirectory(Path.GetDirectoryName(target)!);
-        File.Copy(Path.Combine(corpusRoot, relative.Replace('/', Path.DirectorySeparatorChar)), target, overwrite: true);
+        File.Copy(
+            Path.Combine(corpusRoot, relative.Replace('/', Path.DirectorySeparatorChar)),
+            target,
+            overwrite: true
+        );
     }
 
     static string Staged(string tree, string relative) =>
@@ -284,8 +296,8 @@ public static class OutputSurface {
                     Lines: group.Count(),
                     Files: group.Select(static d => d.File).Distinct(StringComparer.Ordinal).Count(),
                     Example: group.First().File
-                             + ":"
-                             + group.First().Line.ToString(CultureInfo.InvariantCulture)
+                    + ":"
+                    + group.First().Line.ToString(CultureInfo.InvariantCulture)
                 )
             )
             .ToList();

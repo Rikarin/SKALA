@@ -79,9 +79,7 @@ public static class RuleSurface {
             var movement = Rank(after.DefaultSeverity) - Rank(before.DefaultSeverity);
             if (movement > 0) {
                 bump = BumpKind.Major;
-                details.Add(
-                    $"{id} default severity **raised**: {before.DefaultSeverity} → {after.DefaultSeverity}"
-                );
+                details.Add($"{id} default severity **raised**: {before.DefaultSeverity} → {after.DefaultSeverity}");
             } else if (movement < 0) {
                 details.Add($"{id} default severity lowered: {before.DefaultSeverity} → {after.DefaultSeverity}");
             }

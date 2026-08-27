@@ -49,8 +49,12 @@ public static class SarifSurface {
 
         var baselineShape = Shape(baseline, Path.Combine(workRoot, "sarif-baseline"));
 
-        var added = candidateShape.Except(baselineShape, StringComparer.Ordinal).OrderBy(static p => p, StringComparer.Ordinal).ToList();
-        var removed = baselineShape.Except(candidateShape, StringComparer.Ordinal).OrderBy(static p => p, StringComparer.Ordinal).ToList();
+        var added = candidateShape.Except(baselineShape, StringComparer.Ordinal)
+            .OrderBy(static p => p, StringComparer.Ordinal)
+            .ToList();
+        var removed = baselineShape.Except(candidateShape, StringComparer.Ordinal)
+            .OrderBy(static p => p, StringComparer.Ordinal)
+            .ToList();
 
         var details = new List<string>();
         details.AddRange(removed.Select(static path => $"**removed** `{path}`"));
@@ -61,7 +65,10 @@ public static class SarifSurface {
         // rather than a subset of it.
         var bump = details.Count > 0 ? BumpKind.Major : BumpKind.Patch;
         var headline = details.Count == 0
-            ? string.Create(CultureInfo.InvariantCulture, $"unchanged — {candidateShape.Count} paths, identical to the previous release")
+            ? string.Create(
+                CultureInfo.InvariantCulture,
+                $"unchanged — {candidateShape.Count} paths, identical to the previous release"
+            )
             : string.Create(CultureInfo.InvariantCulture, $"{removed.Count} path(s) removed, {added.Count} added");
 
         return DetectorResult.Measured(Name, bump, headline, details);
@@ -147,8 +154,8 @@ public static class SarifSurface {
                     path
                     + " : "
                     + (element.ValueKind is JsonValueKind.True or JsonValueKind.False
-                        ? "boolean"
-                        : element.ValueKind.ToString().ToLowerInvariant())
+                            ? "boolean"
+                            : element.ValueKind.ToString().ToLowerInvariant())
                 );
 
                 break;

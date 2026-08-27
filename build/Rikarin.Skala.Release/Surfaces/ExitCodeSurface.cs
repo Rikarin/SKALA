@@ -28,7 +28,13 @@ public static partial class ExitCodeSurface {
 
     static readonly string Dirty = "class  C{ void  M( ){} }\n";
 
-    public static DetectorResult Run(SkalaTool? baseline, SkalaTool candidate, string? baselineRoot, string candidateRoot, string workRoot) {
+    public static DetectorResult Run(
+        SkalaTool? baseline,
+        SkalaTool candidate,
+        string? baselineRoot,
+        string candidateRoot,
+        string workRoot
+    ) {
         var candidateTable = Table(candidateRoot);
         var candidateProbes = Probe(candidate, Path.Combine(workRoot, "exit-candidate"));
 
@@ -64,7 +70,10 @@ public static partial class ExitCodeSurface {
             var before = baselineProbes[scenario];
             if (before != after) {
                 details.Add(
-                    string.Create(CultureInfo.InvariantCulture, $"observed: **`{scenario}` exits {after}, was {before}**")
+                    string.Create(
+                        CultureInfo.InvariantCulture,
+                        $"observed: **`{scenario}` exits {after}, was {before}**"
+                    )
                 );
             }
         }
@@ -92,9 +101,7 @@ public static partial class ExitCodeSurface {
         var path = Path.Combine(repositoryRoot, "docs", "plan", "09-quality-gates-and-reporting.md");
         var text = File.ReadAllText(path);
 
-        if (!text.Contains("### Exit codes", StringComparison.Ordinal))
-
-        {
+        if (!text.Contains("### Exit codes", StringComparison.Ordinal)) {
             throw new InvalidOperationException(
                 $"'{path}' has no '### Exit codes' section. The exit-code detector reads that table; "
                 + "without it every comparison passes over nothing."

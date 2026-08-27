@@ -89,18 +89,20 @@ class Build : NukeBuild {
 
                     // The full tool first: the client is useless without something to fall back to.
                     DotNetPublish(settings => settings
-                        .SetProject(RootDirectory / "Tools" / "Rikarin.Skala.Cli" / "Rikarin.Skala.Cli.csproj")
-                        .SetConfiguration(Configuration)
-                        .SetRuntime(rid)
-                        .SetSelfContained(false)
-                        .SetOutput(output)
+                            .SetProject(RootDirectory / "Tools" / "Rikarin.Skala.Cli" / "Rikarin.Skala.Cli.csproj")
+                            .SetConfiguration(Configuration)
+                            .SetRuntime(rid)
+                            .SetSelfContained(false)
+                            .SetOutput(output)
                     );
 
                     DotNetPublish(settings => settings
-                        .SetProject(RootDirectory / "Tools" / "Rikarin.Skala.Client" / "Rikarin.Skala.Client.csproj")
-                        .SetConfiguration(Configuration)
-                        .SetRuntime(rid)
-                        .SetOutput(output)
+                            .SetProject(
+                                RootDirectory / "Tools" / "Rikarin.Skala.Client" / "Rikarin.Skala.Client.csproj"
+                            )
+                            .SetConfiguration(Configuration)
+                            .SetRuntime(rid)
+                            .SetOutput(output)
                     );
 
                     Serilog.Log.Information("Native layout in {Output}", output);
@@ -139,9 +141,9 @@ class Build : NukeBuild {
                     // It also covers `build/Rikarin.Skala.Release`, the measured-version tool
                     // (docs/plan/18), which would otherwise have arrived unchecked.
                     foreach (var area in new[] {
-                            "Analysis", "build", "Core", "Distribution", "Formatting", "Reporting",
-                            "Rules", "Testing", "Tools"
-                        }) {
+                                 "Analysis", "build", "Core", "Distribution", "Formatting", "Reporting", "Rules",
+                                 "Testing", "Tools"
+                             }) {
                         var directory = RootDirectory / area;
                         if (area == "Testing") {
                             // ⚠ Named one by one because Testing/corpus is excluded, and a new
@@ -151,8 +153,11 @@ class Build : NukeBuild {
                             DotNetRun(settings => Format(settings, cli, directory / "Rikarin.Skala.Testing"));
                             DotNetRun(settings => Format(settings, cli, directory / "Rikarin.Skala.Conformance.Tests"));
                             DotNetRun(settings => Format(settings, cli, directory / "Rikarin.Skala.Conformance.Sweep"));
-                            DotNetRun(
-                                settings => Format(settings, cli, directory / "Rikarin.Skala.Conformance.Sweep.Tests")
+                            DotNetRun(settings => Format(
+                                    settings,
+                                    cli,
+                                    directory / "Rikarin.Skala.Conformance.Sweep.Tests"
+                                )
                             );
                             continue;
                         }
@@ -281,15 +286,21 @@ class Build : NukeBuild {
     /// would produce, so a re-export that skips this step is a red build rather than a silent
     /// divergence between the export and what eighteen repositories are given.
     /// </remarks>
-    Target Canonical => definition => definition
-        .DependsOn(Compile)
-        .Executes(() => {
-            Skala(
-                "config", "canonical",
-                RootDirectory / "editor_config_template",
-                "--out", CanonicalDirectory,
-                "--version", CanonicalVersion);
-        });
+    Target Canonical =>
+        definition => definition
+            .DependsOn(Compile)
+            .Executes(() => {
+                    Skala(
+                        "config",
+                        "canonical",
+                        RootDirectory / "editor_config_template",
+                        "--out",
+                        CanonicalDirectory,
+                        "--version",
+                        CanonicalVersion
+                    );
+                }
+            );
 
     /// <summary>
     /// Regenerate every documentation surface the two registries define.
@@ -307,12 +318,14 @@ class Build : NukeBuild {
     /// a forgotten regeneration a red build — which is the mechanism. This is how you satisfy them.
     /// </para>
     /// </remarks>
-    Target Docs => definition => definition
-        .DependsOn(Compile)
-        .Executes(() => {
-            Skala("rules", "docs", RootDirectory / "docs" / "rules");
-            Skala("docs", "site", RootDirectory / "docs" / "site");
-        });
+    Target Docs =>
+        definition => definition
+            .DependsOn(Compile)
+            .Executes(() => {
+                    Skala("rules", "docs", RootDirectory / "docs" / "rules");
+                    Skala("docs", "site", RootDirectory / "docs" / "site");
+                }
+            );
 
     /// <summary>
     /// The five published artefacts of docs/plan/02 § "Package boundaries".
@@ -343,84 +356,93 @@ class Build : NukeBuild {
     /// <c>--rids</c>.
     /// </para>
     /// </remarks>
-    Target Pack => definition => definition
-        .DependsOn(Compile)
-        .Executes(() => {
-            var packages = RootDirectory / "artifacts" / "packages";
-            packages.CreateOrCleanDirectory();
+    Target Pack =>
+        definition => definition
+            .DependsOn(Compile)
+            .Executes(() => {
+                    var packages = RootDirectory / "artifacts" / "packages";
+                    packages.CreateOrCleanDirectory();
 
-            // ⚠ Two properties, and the second one is the difference between a package that
-            // installs and one that cannot.
-            //
-            // NU5128 — "no lib/ or ref/ for the framework in the dependency group" — is what an
-            // analyzer package *is*: the assembly ships under analyzers/dotnet/cs and nothing goes
-            // in lib/. It is a warning, TreatWarningsAsErrors makes it an error, and the two
-            // content-only packages suppress it in their own .csproj.
-            //
-            // ⚠ SuppressDependenciesWhenPacking, because `Rikarin.Skala.Rules` has a ProjectReference
-            // to `Rikarin.Skala.Rules.Metadata` and the reference becomes a .nuspec dependency on a
-            // package id **that is not published** — doc 02's table has five packages and that is
-            // not one of them. Measured in a fresh repository against a local feed:
-            //
-            //   error NU1101: Unable to find package Rikarin.Skala.Rules.Metadata.
-            //     No packages exist with this id in source(s): …, local-skala, nuget.org
-            //
-            // The analyzer package has been unrestorable by anybody since it was written, and
-            // nothing said so because nothing had ever installed it. The dependency is also
-            // redundant: `Rules.csproj` already packs `Rikarin.Skala.Rules.Metadata.dll` into
-            // `analyzers/dotnet/cs` beside its own, which is where Roslyn looks.
-            //
-            // Both are set here rather than in the .csproj because Rules/ is a rules concern and
-            // this is a packaging one.
-            DotNetPack(settings => settings
-                .SetProject(RootDirectory / "Rules" / "Rikarin.Skala.Rules" / "Rikarin.Skala.Rules.csproj")
-                .SetConfiguration(Configuration)
-                .SetOutputDirectory(packages)
-                .SetProperty("NoWarn", "NU5128")
-                .SetProperty("SuppressDependenciesWhenPacking", "true")
-                .EnableNoBuild()
-                .EnableNoRestore());
+                    // ⚠ Two properties, and the second one is the difference between a package that
+                    // installs and one that cannot.
+                    //
+                    // NU5128 — "no lib/ or ref/ for the framework in the dependency group" — is what an
+                    // analyzer package *is*: the assembly ships under analyzers/dotnet/cs and nothing goes
+                    // in lib/. It is a warning, TreatWarningsAsErrors makes it an error, and the two
+                    // content-only packages suppress it in their own .csproj.
+                    //
+                    // ⚠ SuppressDependenciesWhenPacking, because `Rikarin.Skala.Rules` has a ProjectReference
+                    // to `Rikarin.Skala.Rules.Metadata` and the reference becomes a .nuspec dependency on a
+                    // package id **that is not published** — doc 02's table has five packages and that is
+                    // not one of them. Measured in a fresh repository against a local feed:
+                    //
+                    //   error NU1101: Unable to find package Rikarin.Skala.Rules.Metadata.
+                    //     No packages exist with this id in source(s): …, local-skala, nuget.org
+                    //
+                    // The analyzer package has been unrestorable by anybody since it was written, and
+                    // nothing said so because nothing had ever installed it. The dependency is also
+                    // redundant: `Rules.csproj` already packs `Rikarin.Skala.Rules.Metadata.dll` into
+                    // `analyzers/dotnet/cs` beside its own, which is where Roslyn looks.
+                    //
+                    // Both are set here rather than in the .csproj because Rules/ is a rules concern and
+                    // this is a packaging one.
+                    DotNetPack(settings => settings
+                            .SetProject(RootDirectory / "Rules" / "Rikarin.Skala.Rules" / "Rikarin.Skala.Rules.csproj")
+                            .SetConfiguration(Configuration)
+                            .SetOutputDirectory(packages)
+                            .SetProperty("NoWarn", "NU5128")
+                            .SetProperty("SuppressDependenciesWhenPacking", "true")
+                            .EnableNoBuild()
+                            .EnableNoRestore()
+                    );
 
-            foreach (var project in new[] {
-                    CanonicalDirectory / "Rikarin.Skala.Canonical.csproj",
-                    RootDirectory / "Tools" / "Rikarin.Skala.MSBuild" / "Rikarin.Skala.MSBuild.csproj",
-                    RootDirectory / "Distribution" / "Rikarin.Skala.Sdk" / "Rikarin.Skala.Sdk.csproj"
-                }) {
-                DotNetPack(settings => settings
-                    .SetProject(project)
-                    .SetConfiguration(Configuration)
-                    .SetOutputDirectory(packages)
-                    .EnableNoBuild()
-                    .EnableNoRestore());
-            }
+                    foreach (var project in new[] {
+                                 CanonicalDirectory / "Rikarin.Skala.Canonical.csproj",
+                                 RootDirectory / "Tools" / "Rikarin.Skala.MSBuild" / "Rikarin.Skala.MSBuild.csproj",
+                                 RootDirectory / "Distribution" / "Rikarin.Skala.Sdk" / "Rikarin.Skala.Sdk.csproj"
+                             }) {
+                        DotNetPack(settings => settings
+                                .SetProject(project)
+                                .SetConfiguration(Configuration)
+                                .SetOutputDirectory(packages)
+                                .EnableNoBuild()
+                                .EnableNoRestore()
+                        );
+                    }
 
-            foreach (var rid in ToolRuntimes) {
-                var payload = RootDirectory / "artifacts" / "tool-payload" / rid;
-                payload.CreateOrCleanDirectory();
+                    foreach (var rid in ToolRuntimes) {
+                        var payload = RootDirectory / "artifacts" / "tool-payload" / rid;
+                        payload.CreateOrCleanDirectory();
 
-                DotNetPublish(settings => settings
-                    .SetProject(RootDirectory / "Tools" / "Rikarin.Skala.Cli" / "Rikarin.Skala.Cli.csproj")
-                    .SetConfiguration(Configuration)
-                    .SetRuntime(rid)
-                    .SetSelfContained(false)
-                    .SetOutput(payload));
+                        DotNetPublish(settings => settings
+                                .SetProject(RootDirectory / "Tools" / "Rikarin.Skala.Cli" / "Rikarin.Skala.Cli.csproj")
+                                .SetConfiguration(Configuration)
+                                .SetRuntime(rid)
+                                .SetSelfContained(false)
+                                .SetOutput(payload)
+                        );
 
-                DotNetPack(settings => settings
-                    .SetProject(RootDirectory / "Tools" / "Rikarin.Skala.Client" / "Rikarin.Skala.Client.csproj")
-                    .SetConfiguration(Configuration)
-                    .SetRuntime(rid)
-                    .SetOutputDirectory(packages)
-                    .SetProperty("IsPackable", "true")
-                    .SetProperty("SkalaToolPayload", payload));
-            }
+                        DotNetPack(settings => settings
+                                .SetProject(
+                                    RootDirectory / "Tools" / "Rikarin.Skala.Client" / "Rikarin.Skala.Client.csproj"
+                                )
+                                .SetConfiguration(Configuration)
+                                .SetRuntime(rid)
+                                .SetOutputDirectory(packages)
+                                .SetProperty("IsPackable", "true")
+                                .SetProperty("SkalaToolPayload", payload)
+                        );
+                    }
 
-            foreach (var package in packages.GlobFiles("*.nupkg").OrderBy(static path => path.Name)) {
-                Serilog.Log.Information(
-                    "{Package} — {Size:N0} bytes",
-                    package.Name,
-                    new System.IO.FileInfo(package).Length);
-            }
-        });
+                    foreach (var package in packages.GlobFiles("*.nupkg").OrderBy(static path => path.Name)) {
+                        Serilog.Log.Information(
+                            "{Package} — {Size:N0} bytes",
+                            package.Name,
+                            new System.IO.FileInfo(package).Length
+                        );
+                    }
+                }
+            );
 
     /// <summary>
     /// The RIDs the tool package is built for. The host's alone by default — see <see cref="Pack"/>
@@ -479,49 +501,74 @@ class Build : NukeBuild {
     /// least.
     /// </para>
     /// </remarks>
-    Target ReleasePlan => definition => definition
-        .DependsOn(Compile)
-        .Executes(() => {
-            var reference = string.IsNullOrEmpty(BaselineRef) ? HighestReleaseTag() : BaselineRef;
-            var arguments = new List<string> {
-                "plan",
-                "--candidate", RootDirectory,
-                "--candidate-tool", ToolAssembly(RootDirectory),
-                "--out", ReleaseDirectory,
-                "--work", ReleaseDirectory / "work",
-                "--commit", Output(Nuke.Common.Tools.Git.GitTasks.Git("rev-parse --short HEAD"))
-            };
+    Target ReleasePlan =>
+        definition => definition
+            .DependsOn(Compile)
+            .Executes(() => {
+                    // ⚠ Release on both sides, or the measurement is of the configuration.
+                    // `ToolAssembly` names `bin/Release` for the baseline unconditionally, because
+                    // it is the previous release's binary; a Debug candidate would then be compared
+                    // against a Release baseline, and that difference is not a compatibility change.
+                    if (Configuration != Configuration.Release) {
+                        throw new System.InvalidOperationException(
+                            "ReleasePlan measures two binaries and both must be Release; this build is "
+                            + Configuration
+                            + ". Pass --configuration Release."
+                        );
+                    }
 
-            if (Release) {
-                arguments.Add("--release");
-            }
+                    var reference = string.IsNullOrEmpty(BaselineRef) ? HighestReleaseTag() : BaselineRef;
+                    var arguments = new List<string> {
+                        "plan",
+                        "--candidate",
+                        RootDirectory,
+                        "--candidate-tool",
+                        ToolAssembly(RootDirectory),
+                        "--out",
+                        ReleaseDirectory,
+                        "--work",
+                        ReleaseDirectory / "work",
+                        "--commit",
+                        Output(Nuke.Common.Tools.Git.GitTasks.Git("rev-parse --short HEAD"))
+                    };
 
-            if (string.IsNullOrEmpty(reference)) {
-                Serilog.Log.Warning(
-                    "No `v*` tag and no --baseline-ref: every surface will report as unmeasured. "
-                    + "That is correct for the first release and wrong for any other."
-                );
-            } else {
-                var baseline = Materialise(reference);
-                arguments.AddRange([
-                    "--baseline", baseline,
-                    "--baseline-tool", ToolAssembly(baseline),
-                    "--baseline-version",
-                    string.IsNullOrEmpty(BaselineVersion) ? reference.TrimStart('v') : BaselineVersion,
-                    "--height", Output(Nuke.Common.Tools.Git.GitTasks.Git($"rev-list --count {reference}..HEAD"))
-                ]);
-            }
+                    if (Release) {
+                        arguments.Add("--release");
+                    }
 
-            // ⚠ Through the project rather than as a quoted command line. Nuke's `DotNet(string)`
-            // takes one argument string and re-quotes it whole, which turned the twelve arguments
-            // below into a single path that does not exist.
-            DotNetRun(settings => settings
-                .SetProjectFile(RootDirectory / "build" / "Rikarin.Skala.Release" / "Rikarin.Skala.Release.csproj")
-                .SetConfiguration(Configuration)
-                .EnableNoBuild()
-                .EnableNoRestore()
-                .SetApplicationArguments([.. arguments]));
-        });
+                    if (string.IsNullOrEmpty(reference)) {
+                        Serilog.Log.Warning(
+                            "No `v*` tag and no --baseline-ref: every surface will report as unmeasured. "
+                            + "That is correct for the first release and wrong for any other."
+                        );
+                    } else {
+                        var baseline = Materialise(reference);
+                        arguments.AddRange(
+                            [
+                                "--baseline", baseline,
+                                "--baseline-tool", ToolAssembly(baseline),
+                                "--baseline-version",
+                                string.IsNullOrEmpty(BaselineVersion) ? reference.TrimStart('v') : BaselineVersion,
+                                "--height",
+                                Output(Nuke.Common.Tools.Git.GitTasks.Git($"rev-list --count {reference}..HEAD"))
+                            ]
+                        );
+                    }
+
+                    // ⚠ Through the project rather than as a quoted command line. Nuke's `DotNet(string)`
+                    // takes one argument string and re-quotes it whole, which turned the twelve arguments
+                    // below into a single path that does not exist.
+                    DotNetRun(settings => settings
+                            .SetProjectFile(
+                                RootDirectory / "build" / "Rikarin.Skala.Release" / "Rikarin.Skala.Release.csproj"
+                            )
+                            .SetConfiguration(Configuration)
+                            .EnableNoBuild()
+                            .EnableNoRestore()
+                            .SetApplicationArguments([.. arguments])
+                    );
+                }
+            );
 
     /// <summary>
     /// The whole release, up to and not including the publish.
@@ -531,23 +578,28 @@ class Build : NukeBuild {
     /// irreversible, and doc 18 § "Armed, not firing" puts it behind a flag a person sets in the
     /// workflow — not behind a target somebody can reach with a typo.
     /// </remarks>
-    Target ReleaseDryRun => definition => definition
-        .DependsOn(ReleasePlan, Pack)
-        .Executes(() => {
-            var version = (ReleaseDirectory / "version.json").ReadAllText();
-            Serilog.Log.Information("{Version}", version);
+    Target ReleaseDryRun =>
+        definition => definition
+            .DependsOn(ReleasePlan, Pack)
+            .Executes(() => {
+                    var version = (ReleaseDirectory / "version.json").ReadAllText();
+                    Serilog.Log.Information("{Version}", version);
 
-            Serilog.Log.Information("What a release would publish, and does not:");
-            foreach (var package in (RootDirectory / "artifacts" / "packages").GlobFiles("*.nupkg")
-                         .OrderBy(static path => path.Name)) {
-                Serilog.Log.Information(
-                    "  {Package} — {Size:N0} bytes",
-                    package.Name,
-                    new System.IO.FileInfo(package).Length);
-            }
+                    Serilog.Log.Information("What a release would publish, and does not:");
+                    foreach (var package in (RootDirectory / "artifacts" / "packages").GlobFiles("*.nupkg")
+                                 .OrderBy(static path => path.Name)) {
+                        Serilog.Log.Information(
+                            "  {Package} — {Size:N0} bytes",
+                            package.Name,
+                            new System.IO.FileInfo(package).Length
+                        );
+                    }
 
-            Serilog.Log.Information("Nothing was tagged, pushed or published. docs/plan/18 § \"Armed, not firing\".");
-        });
+                    Serilog.Log.Information(
+                        "Nothing was tagged, pushed or published. docs/plan/18 § \"Armed, not firing\"."
+                    );
+                }
+            );
 
     AbsolutePath ReleaseTool =>
         RootDirectory / "build" / "Rikarin.Skala.Release" / "bin" / Configuration / "net10.0" / "skala-release.dll";
@@ -577,11 +629,13 @@ class Build : NukeBuild {
                 throw new System.InvalidOperationException($"tar exited {extract.ExitCode} extracting {reference}.");
             }
         }
+
         archive.DeleteFile();
 
         DotNetBuild(settings => settings
-            .SetProjectFile(baseline / "Tools" / "Rikarin.Skala.Cli" / "Rikarin.Skala.Cli.csproj")
-            .SetConfiguration(Configuration.Release));
+                .SetProjectFile(baseline / "Tools" / "Rikarin.Skala.Cli" / "Rikarin.Skala.Cli.csproj")
+                .SetConfiguration(Configuration.Release)
+        );
 
         return baseline;
     }
@@ -600,10 +654,11 @@ class Build : NukeBuild {
     void Skala(params object[] arguments) {
         var cli = RootDirectory / "Tools" / "Rikarin.Skala.Cli" / "Rikarin.Skala.Cli.csproj";
         DotNetRun(settings => settings
-            .SetProjectFile(cli)
-            .SetConfiguration(Configuration)
-            .EnableNoBuild()
-            .EnableNoRestore()
-            .SetApplicationArguments(arguments.Select(static argument => argument.ToString()!).ToArray()));
+                .SetProjectFile(cli)
+                .SetConfiguration(Configuration)
+                .EnableNoBuild()
+                .EnableNoRestore()
+                .SetApplicationArguments(arguments.Select(static argument => argument.ToString()!).ToArray())
+        );
     }
 }

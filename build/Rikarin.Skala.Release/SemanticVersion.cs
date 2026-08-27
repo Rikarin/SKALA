@@ -47,9 +47,10 @@ public sealed partial record SemanticVersion(int Major, int Minor, int Patch, st
             }
 
             var dot = pre.IndexOf('.', StringComparison.Ordinal);
-            return dot >= 0 && int.TryParse(pre[(dot + 1)..], NumberStyles.None, CultureInfo.InvariantCulture, out var n)
-                ? n
-                : 0;
+            return dot >= 0
+                && int.TryParse(pre[(dot + 1)..], NumberStyles.None, CultureInfo.InvariantCulture, out var n)
+                    ? n
+                    : 0;
         }
     }
 
@@ -82,10 +83,10 @@ public sealed partial record SemanticVersion(int Major, int Minor, int Patch, st
     /// <summary>The release this one becomes when the measurement says <paramref name="bump"/>.</summary>
     /// <remarks>
     /// ⚠ A pre-release is <b>not</b> bumped by the verdict, and this is the whole of doc 18
-    /// § "Why the first release line is `1.0.0-alpha`". <c>1.0.0-alpha.7</c> means 1.0.0 has not
-    /// happened; nothing in the alpha series is a compatibility promise, so a major-classified
+    /// § "Why the first published artefact is a pre-release". <c>2.0.0-alpha.7</c> means 2.0.0 has
+    /// not happened; nothing in the alpha series is a compatibility promise, so a major-classified
     /// change inside it advances the counter and is *recorded in the notes* rather than advancing
-    /// the major. Advancing it would publish <c>2.0.0</c> before <c>1.0.0</c> existed.
+    /// the major. Advancing it would publish <c>3.0.0</c> before <c>2.0.0</c> existed.
     /// </remarks>
     public SemanticVersion Next(BumpKind bump) =>
         IsPreRelease
@@ -97,8 +98,7 @@ public sealed partial record SemanticVersion(int Major, int Minor, int Patch, st
             };
 
     /// <summary>The same release, as the Nth build of a pre-release series.</summary>
-    public SemanticVersion AsPreRelease(string label, int counter) =>
-        this with { PreRelease = $"{label}.{counter}" };
+    public SemanticVersion AsPreRelease(string label, int counter) => this with { PreRelease = $"{label}.{counter}" };
 
     public int CompareTo(SemanticVersion? other) {
         if (other is null) {

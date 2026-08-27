@@ -4,7 +4,13 @@
     The meta package. docs/plan/02 § "Package boundaries": one `PackageReference` is the whole
     adoption of Skala in a new repository.
 
-        PackageReference Include="Rikarin.Skala.Sdk" Version="1.0.0" PrivateAssets="all"
+        PackageReference Include="Rikarin.Skala.Sdk" Version="[2.0.0-alpha.127]" PrivateAssets="all"
+
+    ⚠ The square brackets are exact-version and they are load-bearing, not punctuation. A floating
+    range puts a different analyzer on each developer's machine, and `SK0001` is "this file is not
+    formatted" — so an analyzer at one version and a `skala` tool at another disagree about whether
+    the tree is clean. docs/plan/18 § "What a consumer pins": all five packages ship at one version,
+    so one number pins the whole surface, and the tool manifest must name the same one.
 
     brings the analyzers (SK diagnostics in the build and in Rider), the build integration
     (`format` with the check switch after Build; `check` when CI sets SkalaMode=check) and the canonical
