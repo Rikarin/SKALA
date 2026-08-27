@@ -63,6 +63,24 @@ public sealed class McpServerTests {
     }
 
     /// <summary>
+    /// ⚠ Documentation comments too, because an agent's draft is mostly documentation comments.
+    /// </summary>
+    /// <remarks>
+    /// The MCP surface takes no flags, so whatever the formatter's default is, this is what an agent
+    /// gets — and the default changed (SK-DIV-0006). An agent that formats its draft and still has
+    /// to fix the doc comment by hand has been told the file is formatted when it is not.
+    /// </remarks>
+    [Fact]
+    public void Format_FormatsDocumentationCommentsToo() {
+        var formatted = McpServerInspection.FormatContent(
+            Directory.GetCurrentDirectory(),
+            "public sealed class Draft{///<summary>Docs.</summary>\npublic int Value;}"
+        );
+
+        Assert.Contains("/// <summary>Docs.</summary>", formatted, StringComparison.Ordinal);
+    }
+
+    /// <summary>
     /// ⚠ ADR-003 reaches the MCP surface too: an agent mid-refactor writes text that does not parse,
     /// and the answer is to say so and change nothing, never to guess.
     /// </summary>
