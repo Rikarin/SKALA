@@ -179,6 +179,18 @@ non-default corners are precisely where nobody looks.
 
 `Testing/Rikarin.Skala.Conformance.Sweep/`, `./build.sh Sweep`.
 
+| command | what it does |
+|---|---|
+| `plan [--family=…]` | what would be asked and what it would cost, without an oracle run |
+| `sweep [--family=…] [--out=…]` | the measurement; writes `conformance-sweep.md` and its `.json` sidecar |
+| `defaults [--family=…] [--apply]` | the bare-base pass; `--apply` writes verified defaults into `options.json` |
+| `nightly [--family=…] [--apply]` | both, in one process, so the cross-check needs no sidecar round-trip |
+| `verify <key>` | ⚠ one option, **unbatched**, both engines' output at every value printed in full |
+
+`verify` is how a row is checked before anything is demoted on the strength of it. The batching is
+what makes a whole sweep affordable and it is also the part a suspicious verdict most wants ruled
+out, so the confirmation deliberately does not use it.
+
 Everything above this line measures Skala at **one** configuration — the values in the Rider export.
 That measures the output and not the options, and the gap between the two is not academic:
 
