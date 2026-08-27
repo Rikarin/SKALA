@@ -437,14 +437,30 @@ public sealed partial class CSharpDocumentBuilder {
                 // ⚠ A ternary's arms take a level of their own, on top of whatever continuation the
                 // expression already sits in — `outdent_ternary_ops = false`. A binary chain does
                 // not, which is why the two are not the same case.
+                // ⚠ Except when the ternary is another one's else-arm. `align_ternary =
+                // align_not_nested` says a *chain* of conditionals is not nested, and the oracle
+                // writes it flat:
+                //     OperatingSystem.IsWindows() ? "win"
+                //     : OperatingSystem.IsMacOS() ? "osx"
+                //     : "linux";
+                // One level per link turns six lines into a staircase six levels deep.
+                var nested = ternary.Parent is ConditionalExpressionSyntax outer
+                    && outer.WhenFalse == ternary
+                    || ternary.WhenFalse is ConditionalExpressionSyntax;
                 Visit(ternary.Condition);
-                OpenIndent(IndentKind.Continuous);
+                if (!nested) {
+                    OpenIndent(IndentKind.Continuous);
+                }
+
                 EmitToken(ternary.QuestionToken);
                 Visit(ternary.WhenTrue);
                 EmitToken(ternary.ColonToken);
                 Visit(ternary.WhenFalse);
                 EmitUpTo(ternary.Span.End);
-                CloseIndent(IndentKind.Continuous);
+                if (!nested) {
+                    CloseIndent(IndentKind.Continuous);
+                }
+
                 return;
 
             case NodeLayout.Continuation when node is TypeParameterConstraintClauseSyntax:
@@ -748,9 +764,10 @@ public sealed partial class CSharpDocumentBuilder {
     /// It is the one thing <see cref="IndentKind.Align"/> exists for, and SK-DIV-0008 recorded it
     /// as unimplemented from milestone 1 until 3.1.
     /// </remarks>
-    IndentKind ConditionIndent => _options.AlignMultilineStatementConditions
-        ? IndentKind.Align
-        : IndentKind.Continuous;
+    IndentKind ConditionIndent =>
+        _options.AlignMultilineStatementConditions
+            ? IndentKind.Align
+            : IndentKind.Continuous;
 
     void VisitSwitch(SwitchStatementSyntax node) {
         EmitToken(node.SwitchKeyword);

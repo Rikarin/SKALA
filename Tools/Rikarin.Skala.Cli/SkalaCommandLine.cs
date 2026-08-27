@@ -111,8 +111,8 @@ public static partial class SkalaCommandLine {
                 var stagedValue = parse.GetResult(staged) is null
                     ? StagedMode.Off
                     : string.Equals(parse.GetValue(staged), "worktree", StringComparison.Ordinal)
-                        ? StagedMode.Worktree
-                        : StagedMode.Strict;
+                    ? StagedMode.Worktree
+                    : StagedMode.Strict;
 
                 if (parse.GetValue(noCache)) {
                     ConfigurationCache.Enabled = false;

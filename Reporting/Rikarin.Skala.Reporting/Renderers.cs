@@ -176,13 +176,13 @@ public static class Renderer {
 
     internal static string FormatDuration(TimeSpan duration) =>
         duration.TotalSeconds < 1
-            ? duration.TotalMilliseconds.ToString("F0", CultureInfo.InvariantCulture) + " ms"
-            : duration.TotalSeconds < 90
-                ? duration.TotalSeconds.ToString("F1", CultureInfo.InvariantCulture) + " s"
-                : ((int)duration.TotalMinutes).ToString(CultureInfo.InvariantCulture)
-                + " m "
-                + duration.Seconds.ToString(CultureInfo.InvariantCulture)
-                + " s";
+        ? duration.TotalMilliseconds.ToString("F0", CultureInfo.InvariantCulture) + " ms"
+        : duration.TotalSeconds < 90
+        ? duration.TotalSeconds.ToString("F1", CultureInfo.InvariantCulture) + " s"
+        : ((int)duration.TotalMinutes).ToString(CultureInfo.InvariantCulture)
+        + " m "
+        + duration.Seconds.ToString(CultureInfo.InvariantCulture)
+        + " s";
 }
 
 /// <summary>

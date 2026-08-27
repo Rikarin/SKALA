@@ -1276,10 +1276,28 @@ public sealed class BreakPlan {
         var group = NewGroup();
         bool broken;
 
+        // ⚠ A ternary keeps the author's breaks one point at a time rather than chopping at both.
+        // `align_ternary = align_not_nested` and `nested_ternary_style = autodetect` between them
+        // make a chain of conditionals a flat list of `cond ? value :` lines, and the shape the
+        // oracle preserves is exactly the one people write:
+        //     OperatingSystem.IsWindows() ? "win"
+        //     : OperatingSystem.IsMacOS() ? "osx"
+        //     : "linux";
+        // A single group whose points all break together turns that into six lines and a staircase.
+        var pins = _options.KeepsUserBreaksBetweenItems;
+
         if (_options.WrapBeforeTernaryOpsigns) {
-            Point(node.QuestionToken, group);
-            Point(node.ColonToken, group);
-            broken = BreaksBefore(node.QuestionToken) || BreaksBefore(node.ColonToken);
+            var atQuestion = BreaksBefore(node.QuestionToken);
+            var atColon = BreaksBefore(node.ColonToken);
+            if (pins && (atQuestion || atColon)) {
+                Pin(node.QuestionToken, atQuestion);
+                Pin(node.ColonToken, atColon);
+            } else {
+                Point(node.QuestionToken, group);
+                Point(node.ColonToken, group);
+            }
+
+            broken = atQuestion || atColon;
             Flat(FirstToken(node.WhenTrue));
             Flat(FirstToken(node.WhenFalse));
         } else {
@@ -1753,6 +1771,15 @@ public sealed class BreakPlan {
         }
 
         _gaps[token.SpanStart] = new GapSpec(fill ? GapRule.FillPoint : GapRule.Point, group);
+    }
+
+    /// <summary>A point the source broke stays broken; one it did not stays flat.</summary>
+    void Pin(SyntaxToken token, bool broken) {
+        if (broken) {
+            Mandatory(token);
+        } else {
+            Flat(token);
+        }
     }
 
     void Flat(SyntaxToken token) {
