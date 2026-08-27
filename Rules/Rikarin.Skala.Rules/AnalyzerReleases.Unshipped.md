@@ -30,3 +30,8 @@ SK5002  | Skala.Security | Error | Request data reaches a process start.
 SK5005  | Skala.Security | Error | A broken cipher (`DES`, `TripleDES`, `RC2`) or ECB mode.
 SK5007  | Skala.Security | Error | A certificate callback that accepts everything.
 SK5009  | Skala.Security | Error | An XML reader that parses a DTD and resolves what it names.
+SK2007  | Skala.Correctness | Warning | The collection being enumerated is modified inside the loop.
+SK3004  | Skala.Async | Warning | A `CancellationToken` is accepted and not passed on.
+SK3007  | Skala.Async | Warning | A `Task` built from a `using` resource is returned instead of awaited.
+SK3501  | Skala.Lifetime | Warning | A disposable is created in a local and never disposed.
+SK3503  | Skala.Lifetime | Warning | An `IAsyncDisposable` is disposed synchronously.
