@@ -82,14 +82,53 @@ jobs:
         with:
           global-json-file: global.json
 
+      # ⚠ **The baseline is materialised and built here, in bash, not inside the NUKE target.**
+      # `./build.sh ReleasePlan --baseline-ref` can do it, and on at least one machine it cannot:
+      # building the previous release's CLI project from inside the NUKE process fails with
+      # `CS0234: 'Options' does not exist in the namespace 'Rikarin.Skala'` on the two projects the
+      # CLI reaches transitively, from a tree that is byte-identical to one that builds. A release
+      # measurement must not turn on that, so the step that has to work is the one written here.
+      # docs/plan/18 § "Running it".
+      #
+      # ⚠ The **solution**, not the CLI project: a solution build has a complete, explicit project
+      # graph and no transitive inference to get wrong.
+      - name: Build the previous release
+        id: baseline
+        shell: bash
+        run: |
+          set -euo pipefail
+          reference="${{ github.event.inputs.baseline-ref }}"
+          if [ -z "$reference" ]; then
+            reference="$(git tag --list 'v*' --sort=-v:refname | head -1)"
+          fi
+
+          if [ -z "$reference" ]; then
+            echo "No \`v*\` tag and no baseline-ref: this is the first release and nothing can be measured."
+            echo "directory=" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          directory="$RUNNER_TEMP/skala-baseline"
+          rm -rf "$directory" && mkdir -p "$directory"
+          git archive --format=tar "$reference" | tar -x -C "$directory"
+          ( cd "$directory" && dotnet build Skala.slnx --configuration Release )
+
+          echo "directory=$directory"                  >> "$GITHUB_OUTPUT"
+          echo "version=${reference#v}"                >> "$GITHUB_OUTPUT"
+          echo "height=$(git rev-list --count "$reference"..HEAD)" >> "$GITHUB_OUTPUT"
+
       - name: Measure
         id: plan
         shell: bash
         run: |
           set -euo pipefail
           arguments=(--configuration Release)
-          if [ -n "${{ github.event.inputs.baseline-ref }}" ]; then
-            arguments+=(--baseline-ref "${{ github.event.inputs.baseline-ref }}")
+          if [ -n "${{ steps.baseline.outputs.directory }}" ]; then
+            arguments+=(
+              --baseline-directory "${{ steps.baseline.outputs.directory }}"
+              --baseline-version "${{ steps.baseline.outputs.version }}"
+              --height "${{ steps.baseline.outputs.height }}"
+            )
           fi
           if [ "${{ github.event.inputs.release }}" = "true" ] || [ "${GITHUB_REF_TYPE}" = "tag" ]; then
             arguments+=(--release)

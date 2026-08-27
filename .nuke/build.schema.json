@@ -112,9 +112,17 @@
   "allOf": [
     {
       "properties": {
+        "BaselineDirectory": {
+          "type": "string",
+          "description": "A directory holding the previous release, already built"
+        },
         "BaselineRef": {
           "type": "string",
           "description": "The git ref of the release to measure against. Default: the highest `v*` tag"
+        },
+        "BaselineToolPath": {
+          "type": "string",
+          "description": "The previous release's built skala-tool.dll"
         },
         "BaselineVersion": {
           "type": "string",
@@ -131,6 +139,10 @@
             "Debug",
             "Release"
           ]
+        },
+        "Height": {
+          "type": "string",
+          "description": "Commits since the baseline tag; the pre-release counter"
         },
         "Release": {
           "type": "boolean",

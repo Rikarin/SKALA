@@ -442,10 +442,35 @@ or pass --baseline-tool.
 ## Running it
 
 ```sh
-./build.sh ReleasePlan --baseline-ref v1.2.3 --baseline-version 1.2.3   # measure
-./build.sh ReleasePlan                                                   # baseline = highest v* tag
-./build.sh ReleaseDryRun --baseline-ref v1.2.3                           # measure, pack, print
+# The reliable form, and the one the workflow uses: build the baseline yourself, then measure.
+mkdir -p /tmp/skala-baseline
+git archive --format=tar v1.2.3 | tar -x -C /tmp/skala-baseline
+( cd /tmp/skala-baseline && dotnet build Skala.slnx --configuration Release )
+./build.sh ReleasePlan --baseline-directory /tmp/skala-baseline --baseline-version 1.2.3
+
+# The convenience form, which materialises and builds the baseline itself. See the warning below.
+./build.sh ReleasePlan --baseline-ref v1.2.3
+./build.sh ReleasePlan                       # baseline = the highest v* tag
+./build.sh ReleaseDryRun --baseline-directory /tmp/skala-baseline --baseline-version 1.2.3
 ```
+
+⚠ **`--baseline-ref` builds the previous release from inside the NUKE process, and on at least one
+machine that does not work.** It fails with `CS0234: 'Options' does not exist in the namespace
+'Rikarin.Skala'` on exactly the two projects the CLI reaches *transitively* —
+`Rikarin.Skala.Options` through Core and `Rikarin.Skala.Rules` through Analysis — after reporting all
+twelve referenced projects as built, from a tree that is **byte-for-byte identical** to one that
+builds cleanly from a shell. Ruled out by measurement: the environment (the child's differs from a
+working shell's only in `DOTNET_HOST_PATH`, `DOTNET_ROOT_ARM64` and `_MSBUILDTLENABLED`, and adding
+those three to a shell changes nothing), MSBuild node reuse, `--no-restore`, the working directory,
+and the extraction. Building the **solution** instead of the CLI project makes it succeed more often
+but not always.
+
+NUKE's own in-process MSBuild is visibly unhealthy in this repository — evaluating `Skala.slnx`
+throws `Could not load file or assembly 'NuGet.Frameworks, Version=7.9.0.0'` at every startup, which
+NUKE logs as suppressed, because `_build` pins `NuGet.Packaging` forward for its advisories
+(`Directory.Packages.props`). That is the most likely root and **it is not proven**. So the release
+job does not depend on it: `.github/workflows/release.yml` builds the baseline in a bash step and
+passes `--baseline-directory`, which is the path that is exercised.
 
 `ReleasePlan` materialises the baseline with `git archive` rather than a second worktree — a worktree
 mutates the repository's worktree list, and this runs on developer machines that already have
@@ -494,3 +519,6 @@ otherwise be measured as a release that deleted most of the tool.
 - **`git archive` needs the baseline ref to be in the clone.** The workflow checks out with
   `fetch-depth: 0` and `fetch-tags: true` for exactly this; a shallow clone would silently degrade
   every run to "first release".
+- **`./build.sh ReleasePlan --baseline-ref` is not reliable** — § "Running it". The workflow does not
+  use it, and it should either be fixed or deleted rather than left as a second way to do the one
+  thing this pipeline exists for.

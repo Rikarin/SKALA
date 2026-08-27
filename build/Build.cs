@@ -474,6 +474,28 @@ class Build : NukeBuild {
     readonly string BaselineVersion = null!;
 
     /// <summary>
+    /// A checkout of the previous release that somebody else has already built.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ Supply this with <see cref="BaselineVersion"/> instead of <see cref="BaselineRef"/> when
+    /// the baseline is built outside this build — which is what the workflow does, and what
+    /// docs/plan/18 § "Running it" recommends. <c>Materialise</c>'s convenience path builds the
+    /// baseline from inside this process and is the one part of the pipeline that is not reliable
+    /// everywhere; see its remarks.
+    /// </remarks>
+    [Parameter("A directory holding the previous release, already built")]
+    readonly string BaselineDirectory = null!;
+
+    [Parameter("The previous release's built skala-tool.dll")]
+    readonly string BaselineToolPath = null!;
+
+    /// <summary>
+    /// Commits since the baseline tag, for the pre-release counter. Derived when not given.
+    /// </summary>
+    [Parameter("Commits since the baseline tag; the pre-release counter")]
+    readonly string Height = null!;
+
+    /// <summary>
     /// Cut a release rather than measure a <c>master</c> build: no <c>-alpha.N</c> on the number.
     /// </summary>
     [Parameter("Cut a release rather than measure a master build")]
@@ -564,10 +586,33 @@ class Build : NukeBuild {
                         arguments.Add("--release");
                     }
 
-                    if (string.IsNullOrEmpty(reference)) {
+                    // A baseline that is already on disk and already built is taken as it stands;
+                    // otherwise one is materialised from the reference. ⚠ The first form is what
+                    // the workflow uses, because the second is the unreliable one.
+                    if (!string.IsNullOrEmpty(BaselineDirectory)) {
+                        if (string.IsNullOrEmpty(BaselineVersion)) {
+                            throw new System.InvalidOperationException(
+                                "--baseline-directory needs --baseline-version; the number a directory "
+                                + "published is not derivable from its path."
+                            );
+                        }
+
+                        arguments.AddRange(
+                            [
+                                "--baseline", BaselineDirectory,
+                                "--baseline-tool",
+                                string.IsNullOrEmpty(BaselineToolPath)
+                                    ? ToolAssembly((AbsolutePath)BaselineDirectory).ToString()
+                                    : BaselineToolPath,
+                                "--baseline-version", BaselineVersion,
+                                "--height", Height ?? CommitsSince("v" + BaselineVersion)
+                            ]
+                        );
+                    } else if (string.IsNullOrEmpty(reference)) {
                         Serilog.Log.Warning(
-                            "No `v*` tag and no --baseline-ref: every surface will report as unmeasured. "
-                            + "That is correct for the first release and wrong for any other."
+                            "No `v*` tag, no --baseline-ref and no --baseline-directory: every surface will "
+                            + "report as unmeasured. That is correct for the first release and wrong for any "
+                            + "other."
                         );
                     } else {
                         var baseline = Materialise(reference);
@@ -668,8 +713,6 @@ class Build : NukeBuild {
             );
         }
 
-        var cli = baseline / "Tools" / "Rikarin.Skala.Cli" / "Rikarin.Skala.Cli.csproj";
-
         // ⚠ One `dotnet build`, with its own restore, written out as a command line and logged.
         //
         // It was `DotNetRestore` + `DotNetBuild`, then an explicit `dotnet restore` followed by
@@ -684,18 +727,109 @@ class Build : NukeBuild {
         // The invocation is written out rather than driven through the NUKE task so that what runs
         // is what is printed, and the printed line is one a person can paste when this next goes
         // wrong.
-        Run("dotnet", $"build \"{cli}\" --configuration Release");
+        // ⚠ **The whole solution, not the CLI project.** Building
+        // `Tools/Rikarin.Skala.Cli/Rikarin.Skala.Cli.csproj` alone fails, intermittently and
+        // reproducibly enough to stop every release, with `CS0234: 'Options' does not exist in the
+        // namespace 'Rikarin.Skala'` — on exactly the two projects the CLI reaches
+        // **transitively**: `Rikarin.Skala.Options` through Core and `Rikarin.Skala.Rules` through
+        // Analysis. All twelve referenced projects are reported as built in the same log, moments
+        // before the failure. It is not the environment (measured: the child's differs only in
+        // `DOTNET_HOST_PATH`, `DOTNET_ROOT_ARM64` and `_MSBUILDTLENABLED`), not node reuse, not
+        // `--no-restore`, not the working directory, and not the extraction — the tree is
+        // byte-identical to one that builds.
+        //
+        // A solution build has an explicit, complete project graph and no transitive inference to
+        // get wrong, and it is what CI builds for the candidate anyway. The extra minute buys a
+        // measurement that runs.
+        //
+        // ⚠ Through a script and a shell so that what runs is a file a person can read and execute
+        // unchanged when this next goes wrong.
+        var script = ReleaseScratch / "build-baseline.sh";
+        System.IO.File.WriteAllBytes(
+            script.ToString(),
+            System.Text.Encoding.UTF8.GetBytes(
+                // ⚠ `.ToString()` on the paths, and not for tidiness: `string + AbsolutePath` binds
+                // to AbsolutePath's own operator, which converts the *left* operand to a path and
+                // asserts it is rooted — so concatenating a script body with a path throws
+                // `Path '#!/usr/bin/env bash…' must be rooted`.
+                "#!/usr/bin/env bash\nset -euo pipefail\ncd \""
+                + baseline.ToString()
+                + "\"\nexec dotnet build \""
+                + (baseline / "Skala.slnx").ToString()
+                + "\" --configuration Release\n"
+            )
+        );
+
+        Run("/bin/bash", $"\"{script}\"", baseline);
 
         return baseline;
     }
 
-    /// <summary>One external command, logged, with a non-zero exit turned into a stop.</summary>
-    static void Run(string tool, string arguments) {
+    /// <summary>
+    /// One external command, logged, with a non-zero exit turned into a stop — and with this
+    /// process's MSBuild environment kept out of it.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ <b>The scrubbed variables are why the baseline build works at all.</b> NUKE evaluates
+    /// <c>Skala.slnx</c> through <c>Microsoft.Build</c> in its own process, which registers an
+    /// MSBuild instance and exports <c>MSBUILD_EXE_PATH</c>, <c>MSBuildExtensionsPath</c> and
+    /// <c>MSBuildSDKsPath</c> into the environment every child then inherits. In this repository
+    /// that evaluation does not even succeed — <c>_build</c> pins <c>NuGet.Packaging</c> forward for
+    /// its advisories, so <c>[MSBuild]::GetTargetFrameworkIdentifier</c> throws
+    /// <c>Could not load file or assembly 'NuGet.Frameworks, Version=7.9.0.0'</c> and NUKE logs it
+    /// as suppressed. The half-registered state still leaks, and a <c>dotnet build</c> of a
+    /// <b>freshly extracted</b> tree then fails to resolve its <c>ProjectReference</c>s:
+    /// <c>CS0234: 'Options' does not exist in the namespace 'Rikarin.Skala'</c>. The candidate's own
+    /// build survives it because its <c>obj/</c> is already populated, which is what made this look
+    /// like a broken baseline for an hour.
+    /// </remarks>
+    static void Run(string tool, string arguments, string? workingDirectory = null) {
         Serilog.Log.Information("{Tool} {Arguments}", tool, arguments);
-        using var process = Nuke.Common.Tooling.ProcessTasks.StartProcess(tool, arguments);
+
+        var environment = new Dictionary<string, string>(System.StringComparer.Ordinal);
+        foreach (System.Collections.DictionaryEntry entry in System.Environment.GetEnvironmentVariables()) {
+            var name = (string)entry.Key;
+            if (!name.StartsWith("MSBuild", System.StringComparison.OrdinalIgnoreCase)
+                && !name.StartsWith("MSBUILD", System.StringComparison.Ordinal)) {
+                environment[name] = entry.Value?.ToString() ?? "";
+            }
+        }
+
+        using var process = Nuke.Common.Tooling.ProcessTasks.StartProcess(
+            tool,
+            arguments,
+            workingDirectory,
+            environment
+        );
+
         process.WaitForExit();
         if (process.ExitCode != 0) {
             throw new System.InvalidOperationException($"`{tool} {arguments}` exited {process.ExitCode}.");
+        }
+    }
+
+    /// <summary>
+    /// Commits on this branch since <paramref name="reference"/>, or <c>0</c> when it is not in the
+    /// clone.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ A missing tag is <c>0</c> rather than a stop. `--baseline-directory` names a *tree*, and a
+    /// tree can be a release that was never tagged — which is the state this repository is in, and
+    /// which turned the first run of that path into `git exited 128`. A pre-release counter of 0 is
+    /// wrong-but-harmless on a dry run and is never what a real release publishes; a release with no
+    /// tag to count from is the case doc 18 § "The number" resolves by not tagging `master` at all.
+    /// </remarks>
+    static string CommitsSince(string reference) {
+        try {
+            return Output(Nuke.Common.Tools.Git.GitTasks.Git($"rev-list --count {reference}..HEAD"));
+        } catch (System.Exception exception) {
+            Serilog.Log.Warning(
+                "No commit count from '{Reference}' ({Message}); the pre-release counter is 0.",
+                reference,
+                exception.Message
+            );
+
+            return "0";
         }
     }
 
