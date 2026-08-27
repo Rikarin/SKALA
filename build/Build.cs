@@ -650,31 +650,48 @@ class Build : NukeBuild {
 
         var archive = ReleaseScratch / "baseline.tar";
         Nuke.Common.Tools.Git.GitTasks.Git($"archive --format=tar --output=\"{archive}\" {reference}");
-        using (var extract = Nuke.Common.Tooling.ProcessTasks
-                   .StartProcess("tar", $"-xf \"{archive}\" -C \"{baseline}\"")) {
-            extract.WaitForExit();
-            if (extract.ExitCode != 0) {
-                throw new System.InvalidOperationException($"tar exited {extract.ExitCode} extracting {reference}.");
-            }
-        }
+        Run("tar", $"-xf \"{archive}\" -C \"{baseline}\"");
 
         archive.DeleteFile();
 
+        var sources = baseline.GlobFiles("**/*.csproj").Count;
+        Serilog.Log.Information(
+            "{Reference} extracted to {Baseline} — {Projects} projects",
+            reference,
+            baseline,
+            sources
+        );
+        if (sources < 10) {
+            throw new System.InvalidOperationException(
+                $"'{reference}' extracted to {sources} project(s). A partial checkout would be measured as a "
+                + "release that deleted most of the tool."
+            );
+        }
+
         var cli = baseline / "Tools" / "Rikarin.Skala.Cli" / "Rikarin.Skala.Cli.csproj";
 
-        // ⚠ The restore is explicit, and it is not decoration. A `DotNetBuild` alone here fails
-        // instantly with `CS0234: 'Options' does not exist in the namespace 'Rikarin.Skala'` — five
-        // ProjectReferences unresolved, because no `project.assets.json` had been written for a tree
-        // that was extracted from a tarball ten milliseconds earlier. It looks like a broken
-        // baseline and it is a missing restore.
-        DotNetRestore(settings => settings.SetProjectFile(cli));
-        DotNetBuild(settings => settings
-                .SetProjectFile(cli)
-                .SetConfiguration(Configuration.Release)
-                .EnableNoRestore()
-        );
+        // ⚠ Restore then build, as two explicit `dotnet` invocations with the command line logged.
+        //
+        // This was `DotNetRestore` and `DotNetBuild`, and it failed every run with
+        // `CS0234: 'Options' does not exist in the namespace 'Rikarin.Skala'` — after four seconds,
+        // which is less time than the build takes, so the reference closure was never built. The
+        // same two commands typed by hand from the same working directory succeed. Rather than keep
+        // guessing at what the tasks were adding, the invocation is written out: what runs is what
+        // is printed, and the printed line is one a person can paste.
+        Run("dotnet", $"restore \"{cli}\"");
+        Run("dotnet", $"build \"{cli}\" --configuration Release --no-restore");
 
         return baseline;
+    }
+
+    /// <summary>One external command, logged, with a non-zero exit turned into a stop.</summary>
+    static void Run(string tool, string arguments) {
+        Serilog.Log.Information("{Tool} {Arguments}", tool, arguments);
+        using var process = Nuke.Common.Tooling.ProcessTasks.StartProcess(tool, arguments);
+        process.WaitForExit();
+        if (process.ExitCode != 0) {
+            throw new System.InvalidOperationException($"`{tool} {arguments}` exited {process.ExitCode}.");
+        }
     }
 
     /// <summary>The highest <c>v*</c> tag by version order, or empty when there is none.</summary>
