@@ -69,8 +69,7 @@ public sealed record DiagnosticSeverityChange(
     /// ids ahead of every <c>CS….</c> one, so a capped list showed a C# repository nothing but
     /// Visual Basic.
     /// </summary>
-    public bool IsCSharp =>
-        IsCompilerDiagnostic && Diagnostic.StartsWith("CS", StringComparison.OrdinalIgnoreCase);
+    public bool IsCSharp => IsCompilerDiagnostic && Diagnostic.StartsWith("CS", StringComparison.OrdinalIgnoreCase);
 
     public bool IsCompilerDiagnostic =>
         (Diagnostic.StartsWith("CS", StringComparison.OrdinalIgnoreCase)
@@ -98,6 +97,7 @@ public sealed record CanonicalStatus(
     /// <summary>The subset that can turn a build that compiles into one that does not.</summary>
     public IEnumerable<DiagnosticSeverityChange> BuildBreaking =>
         SeverityChanges.Where(static change => change.IsCompilerDiagnostic && change.CanBreakABuild);
+
     /// <summary>The managed block no longer hashes to what its marker claims.</summary>
     public bool Drifted =>
         Layout.IsManaged && !string.Equals(Layout.Marker!.Sha256, ActualSha, StringComparison.OrdinalIgnoreCase);

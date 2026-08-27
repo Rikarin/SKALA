@@ -401,9 +401,7 @@ public static class ConfigCommands {
             output.AppendLine(
                 "    With `TreatWarningsAsErrors` these become build errors from a commit that touches no"
             );
-            output.AppendLine(
-                "    code. Measured on one repository: 0 errors before, 17 in 15 files after, from the"
-            );
+            output.AppendLine("    code. Measured on one repository: 0 errors before, 17 in 15 files after, from the");
             output.AppendLine("    .editorconfig alone.");
         }
 

@@ -106,7 +106,8 @@ public static class ExplainCommand {
         builder.AppendLine(Wrap(option.Summary, 78));
         builder.AppendLine();
 
-        builder.Append("value  ").Append(option.EnumName is { } name ? name : option.Kind.ToString().ToLowerInvariant());
+        builder.Append("value  ")
+            .Append(option.EnumName is { } name ? name : option.Kind.ToString().ToLowerInvariant());
         if (option.Default is { } value) {
             builder.Append("  ·  default ").Append(value);
         }

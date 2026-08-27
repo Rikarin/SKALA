@@ -164,8 +164,8 @@ public static class CheckCommand {
                 new CommandResult(
                     ExitCodes.LoadFailure,
                     (loaded.IsEmpty
-                        ? "skala check: no compilation could be built.\n"
-                        : "skala check: --require-fresh-binlog refused this load.\n")
+                            ? "skala check: no compilation could be built.\n"
+                            : "skala check: --require-fresh-binlog refused this load.\n")
                     + string.Join("\n", diagnostics.Select(static d => "  " + d))
                     + "\n"
                 ),

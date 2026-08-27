@@ -23,13 +23,14 @@ namespace Rikarin.Skala.Core.Tests;
 /// </para>
 /// </remarks>
 public sealed class SdkAdoptionTests {
-    static string TargetsPath => Path.Combine(
-        RepositoryPaths.Root,
-        "Distribution",
-        "Rikarin.Skala.Sdk",
-        "build",
-        "Rikarin.Skala.Sdk.targets"
-    );
+    static string TargetsPath =>
+        Path.Combine(
+            RepositoryPaths.Root,
+            "Distribution",
+            "Rikarin.Skala.Sdk",
+            "build",
+            "Rikarin.Skala.Sdk.targets"
+        );
 
     static string Targets => File.ReadAllText(TargetsPath);
 
@@ -108,14 +109,12 @@ public sealed class SdkAdoptionTests {
         var declared = document.Descendants()
             .First(static element => element.Name.LocalName == "SkalaRuleIds")
             .Value
-            .Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-            .OrderBy(static id => id, StringComparer.Ordinal)
-            .ToArray();
+                .Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .OrderBy(static id => id, StringComparer.Ordinal)
+                .ToArray();
 
         using var rules = JsonDocument.Parse(
-            File.ReadAllText(
-                Path.Combine(RepositoryPaths.Root, "Rules", "Rikarin.Skala.Rules.Metadata", "rules.json")
-            )
+            File.ReadAllText(Path.Combine(RepositoryPaths.Root, "Rules", "Rikarin.Skala.Rules.Metadata", "rules.json"))
         );
 
         // SK0xxx is the formatter and SK9xxx is the tool talking about itself; neither reaches csc

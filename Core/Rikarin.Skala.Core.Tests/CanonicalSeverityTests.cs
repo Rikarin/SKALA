@@ -42,14 +42,14 @@ public sealed class CanonicalSeverityTests {
     /// </summary>
     [Fact]
     public void AFileThatSetsNoCompilerSeverity_IsToldWhichOnesTheCanonicalIntroduces() {
-        var status = Describe("""
-                              [*]
-                              indent_size = 4
-                              """);
-
-        var change = Assert.Single(
-            status.SeverityChanges.Where(static change => change.Diagnostic == "CS9209")
+        var status = Describe(
+            """
+            [*]
+            indent_size = 4
+            """
         );
+
+        var change = Assert.Single(status.SeverityChanges.Where(static change => change.Diagnostic == "CS9209"));
 
         Assert.Null(change.Before);
         Assert.Equal("warning", change.After);
@@ -86,9 +86,7 @@ public sealed class CanonicalSeverityTests {
     public void AnAnalyzerSeverity_IsReportedSeparatelyFromTheCompilerOnes() {
         var status = Describe("[*]\nindent_size = 4\n");
 
-        var analyzer = Assert.Single(
-            status.SeverityChanges.Where(static change => change.Diagnostic == "CA1852")
-        );
+        var analyzer = Assert.Single(status.SeverityChanges.Where(static change => change.Diagnostic == "CA1852"));
 
         Assert.False(analyzer.IsCompilerDiagnostic);
         Assert.DoesNotContain(status.BuildBreaking, change => change.Diagnostic == "CA1852");
@@ -103,10 +101,12 @@ public sealed class CanonicalSeverityTests {
     /// </summary>
     [Fact]
     public void AKeyTheLocalBlockAlreadyPins_DoesNotCount() {
-        var status = Describe("""
-                              [*]
-                              dotnet_diagnostic.cs9209.severity = warning
-                              """);
+        var status = Describe(
+            """
+            [*]
+            dotnet_diagnostic.cs9209.severity = warning
+            """
+        );
 
         Assert.DoesNotContain(status.SeverityChanges, change => change.Diagnostic == "CS9209");
         Assert.Empty(status.BuildBreaking);
@@ -121,10 +121,12 @@ public sealed class CanonicalSeverityTests {
     /// </summary>
     [Fact]
     public void AStricterLocalSeverity_SurvivesAndIsNotReportedAsLowered() {
-        var status = Describe("""
-                              [*]
-                              dotnet_diagnostic.cs9209.severity = error
-                              """);
+        var status = Describe(
+            """
+            [*]
+            dotnet_diagnostic.cs9209.severity = error
+            """
+        );
 
         Assert.DoesNotContain(status.SeverityChanges, change => change.Diagnostic == "CS9209");
     }
@@ -150,9 +152,7 @@ public sealed class CanonicalSeverityTests {
 
         var status = CanonicalSync.Describe(Path, exists: true, managed, Manifest, Canonical);
 
-        var change = Assert.Single(
-            status.SeverityChanges.Where(static change => change.Diagnostic == "CS9209")
-        );
+        var change = Assert.Single(status.SeverityChanges.Where(static change => change.Diagnostic == "CS9209"));
 
         Assert.Equal(SeverityMove.Lowered, change.Move);
         Assert.Equal("error", change.Before);
@@ -167,10 +167,12 @@ public sealed class CanonicalSeverityTests {
     /// </summary>
     [Fact]
     public void TheSameIdInADifferentSection_IsADifferentSetting() {
-        var status = Describe("""
-                              [Tools/**/*.cs]
-                              dotnet_diagnostic.cs9209.severity = warning
-                              """);
+        var status = Describe(
+            """
+            [Tools/**/*.cs]
+            dotnet_diagnostic.cs9209.severity = warning
+            """
+        );
 
         var change = Assert.Single(
             status.SeverityChanges.Where(static c => c.Diagnostic == "CS9209" && c.Section == "*")
