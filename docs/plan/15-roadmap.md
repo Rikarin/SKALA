@@ -666,6 +666,146 @@ promised it since M5 and `logAnalyzerExecutionTime: true` had been set and never
 and it reported 0.0 ms for every analyzer on its first run before the telemetry was taken off
 `AnalysisResult` rather than asked for after the driver went back to its pool.
 
+## Adoption — Vixen · M — ⚠ **prepared for review, and doc 11's path was wrong in six places**
+
+The step M7's header moved onto the critical path. Prepared as a branch in a worktree of Vixen —
+`skala-adoption`, from `44b88648` — for the repository's owner to review and merge. Vixen's own
+working tree and `master` were not touched.
+
+### What it produced
+
+| | measured |
+|---|---:|
+| `skala config sync --apply` | 5 188 lines; all 56 local sections verbatim; `diff --canonical` CLEAN |
+| Local overrides, seven | **two kept, five dropped**, each argued in the file |
+| `skala format` | **2 533 files of 4 717 · 74 321 diff lines · 11.8 s** |
+| A second pass | ✅ **0 files would be reformatted, 4 717 left alone** |
+| `skala arrange --load binlog` | **1 188 files · 6 291 diff lines**, split into five commits by rule |
+| Compiler diagnostics, before and after arrangement | ✅ **identical**: 0 errors, 104 warnings, all CS9209 |
+| Reverted by the re-bind safety layer | **2 files of 4 717** (0.04 %), both `SK9098`/CS8754 |
+| `skala check --load binlog --duplication` | 2 527 findings · duplication **4.9 %** · complexity p95 **5** · 2 m 7 s |
+| `nuke Lint` end to end | **2 m 46 s**, gate `local` PASS against the baseline |
+| The MSBuild target across ~180 projects | ~**25 s** (80 s with the tool present against 55 s without) |
+
+⚠ **The `#if` caveat does not bite on this tree, and it was worth measuring rather than repeating.**
+Doc 11's step 4 is a symbol-less `skala format`, which leaves an inactive `#if` body as disabled text
+(SK-DIV-0004). Vixen has **six files and fifteen directives** of conditional compilation, and
+`skala format --check --define DEBUG,TRACE` after the reformat reports **0 files**. The commit
+message on the reformat says a later symbol-aware run will move something; on this tree it will not.
+
+### The seven overrides
+
+Kept: `[*] insert_final_newline = true`, because the canonical contradicts itself there —
+`insert_final_newline = false` beside `resharper_csharp_insert_final_newline = true`, which is
+`SK9005` and which Skala resolves to `true` for C# anyway, so the line only extends the canonical's
+own answer to `.json`, `.md` and `.csproj`. And
+`[*.{json,yaml,…}] indent_size = 2`, because the canonical has three sections — `[*]`, `[*.csv]` and
+one list of *source* extensions — and names no data-file section at all, so its `4` is the absence of
+a decision rather than one.
+
+Dropped: `trim_trailing_whitespace = true`, because the canonical's `false` is what `SourcePieces`
+relies on to leave documentation comments alone (SK-DIV-0006), and every other line is rebuilt from
+tokens anyway. `csharp_using_directive_placement` and `csharp_style_namespace_declarations` at
+`warning`, because Vixen sets `EnforceCodeStyleInBuild=false`, so IDE0065 and IDE0161 reach neither
+build nor CI at any severity, and no arrangement rule reads either key.
+`dotnet_sort_system_directives_first = true`, because it is the only one of the seven that changes
+bytes and doc 06 § "Usings" specifies `false` — the cost of dropping it is visible and bounded, 239
+files. `csharp_prefer_braces = when_multiline`, because Skala never braces an `if` and the
+canonical's `true` is the safer of the two.
+
+### ⚠ Six things the adoption path does not say, five of which stop a build
+
+Each was found by running the documented step on a real repository, and none is visible from the
+documents.
+
+1. ⚠ **`skala config sync` silently retunes 213 compiler diagnostics, and nothing says so.** The
+   canonical is the Rider export and the export carries 213 `dotnet_diagnostic.cs*.severity` lines.
+   Vixen's own `.editorconfig` carried none. One of them raises `CS9209` above the compiler's
+   default, and with `TreatWarningsAsErrors` — which is not exotic — adoption turned a tree that
+   built with **0 errors** into one with **17**, in 15 files, from an `.editorconfig` commit that
+   touched no code. `SK9013` reports style-option overrides and says nothing here, because
+   `dotnet_diagnostic` keys are not in the option registry; `config check` files them under "keys the
+   option registry does not own" and moves on. **The fix wanted is a report, not a change to the
+   payload**: `sync` and `diff --canonical` should say which compiler severities the canonical
+   changes relative to the file being replaced, the way `SK9013` says it for options.
+
+2. ⚠ **The `formatting: clean` gate condition cannot be satisfied, and `skala format` cannot help.**
+   Doc 09 defines it as "`skala format --check` must produce no edits". `CheckCommand` computes it as
+   `FormattingFindings.Collect(…).Length == 0`, and that array also carries `SK0002` and `SK0003`.
+   On Vixen, with `format --check` reporting **0 files would be reformatted**, the `ci` gate fails
+   with "formatting is not clean; run `skala format`" on the strength of **700 SK0002** — each of
+   them literally "the line is N columns and nothing in it could break". Running `skala format`
+   changes nothing. The bit is computed before baseline scoping, so accepting all 702 into the
+   baseline does not clear it either; `--no-formatting` turns the same run green. **Any repository
+   with one unbreakable long line can never turn the `ci` gate green.**
+
+3. ⚠ **`Rikarin.Skala.Sdk` cannot be adopted, and cannot be adopted by halves.** It brings
+   `Rikarin.Skala.Rules`, which ships `SK3002` at `error`: on Vixen that is 16 errors and 58 further
+   CS0246/CS0234 from projects downstream of the ones that failed. `.skala/baseline.sarif` is read by
+   `skala check` and by nothing else, so "accept the present, gate the future" — the mechanism doc 09
+   is built on — **stops at the compiler's door**, and the analyser package has no equivalent. Worse,
+   `ExcludeAssets="analyzers"` on the metapackage is *silently ineffective*: its nuspec declares the
+   dependencies with `include="All"`, so `project.assets.json` records `Rikarin.Skala.Rules` with no
+   analyzer assets while `csc` is still handed `/analyzer:…/Rikarin.Skala.Rules.dll`. Doc 11 calls the
+   Sdk "the one-line adoption"; on the first repository to try it, it is the one line that cannot be
+   taken. Two fixes are wanted — an `SkalaRulesEnabled` property the Sdk honours, and a story for
+   accepting an analyser backlog that is not "turn the severity off".
+
+4. ⚠ **A binlog from an incremental build is partial, and every command reports success.**
+   `skala arrange --check` against one saw **824** files to change and left **2 147** in no
+   compilation; against a `--no-incremental` build's binlog, **1 188** and **79**.
+   `--require-fresh-binlog` does not catch it — it compares timestamps, and the binlog was not stale,
+   it was incomplete. The only signal is the "N files were in no loaded compilation" line, which is
+   correct and easy to read past. Doc 11's CI snippet happens to be right because a runner starts
+   clean; a developer running `skala check` after a normal build silently analyses a fraction of the
+   tree. **`--require-fresh-binlog` should also compare the binlog's compilation set against the
+   files the path filter selects.**
+
+5. ⚠ **The baseline is a committed artefact that Skala's own scratch directory ignores.** Doc 09:
+   "a reviewed, committed artefact — its diff in a PR is 'we suppressed these'". `.skala/.gitignore`
+   is `*`, written by Skala, so `.skala/baseline.sarif` needed `git add -f`. Either the baseline
+   belongs outside `.skala/`, or that file needs `!baseline.sarif`.
+
+6. ⚠ **`skala verify` — the agent-facing surface — has neither `--baseline` nor `--since`.** On the
+   adopted tree it reports **778 findings needing a decision**, every time, for ever. Doc 10's
+   three-bucket report is the right shape and it is reading an unscoped world; the one command an
+   agent is told to run is the one command that cannot be told what has already been accepted.
+
+⚠ **Two smaller ones, both about the interface rather than the analysis.** `skala explain` is
+documented as taking `<ruleId | optionKey>` and rejects every option key tried —
+`insert_final_newline`, `csharp_indent_case_contents`, `dotnet_sort_system_directives_first` — with
+"is not a Skala rule". And `skala format --check` walks into `.skala/` and formats Skala's own crash
+reproductions, because the ignore that covers them is a nested `.gitignore` rather than a rule in the
+repository's root one: the file count moves from 4 717 to 4 725 after `arrange` writes two of them.
+
+### What the analysis found, and the triage
+
+2 527 findings, all accepted into `.skala/baseline.sarif`: 767 `SK7002` · 700 `SK0002` · 507
+`SK7020` · 191 `SK7005` · 97 `SK7001` · 44 `SK3002` · 25 `SK8005` · 12 `SK7004` · 5 `SK7003` · 2
+`SK7006` · 2 `SK0003` · 175 compiler diagnostics. M6's and M8's Vixen figures reproduce: `SK7002`
+767 against 768, `SK3002` 44 — M7's corrected number, not M6's 7 — `SK8005` 25, duplication 4.9 %
+against 4.8 %.
+
+Every sampled finding was true, and two are worth quoting because they are the two ends of doc 00
+non-negotiable 9's own distinction. `SK3002` at `RemoteEffectSource.cs:203` is
+`Framing.WriteAsync(…).GetAwaiter().GetResult()` inside a synchronous `Exchange` — a real
+sync-over-async, and unfixable without making the whole `IEffectSource` interface async. `SK7005` at
+`Matrix3x3.cs:74` is a constructor taking nine `float`s, one per element of a 3×3 matrix — correct,
+and nothing anyone should ever do about it. Both are baseline entries, and neither is evidence about
+the rule.
+
+⚠ **175 compiler diagnostics reached the report and 20 of them are not real.** `CS1061`, `CS1503`,
+`CS0117` and `CS0103`, all naming `RpcMethods`, `RpcMethodTable` and `.Rpc` — the output of Vixen's
+RPC source generator, which `dotnet build` produces and the analysis host does not. They count
+toward the gate's error total. This is the residue of the class M6 recorded at 1 675.
+
+### What was not done
+
+`skala baseline` was created and not burned down; step 8 is the repository's work, not the
+adoption's. The `pr` gate is configured and never exercised, because exercising it needs a pull
+request. And the branch is not merged: adoption of somebody's repository ends at a reviewable branch,
+which is the correction M7's header already made to the criterion.
+
 ## M9 — Web languages · XL
 
 ## M9 — Web languages · XL — ⚠ **postponed to last, by decision**
@@ -698,7 +838,7 @@ for that is here rather than discovered at the start of the milestone.
 
 ```
 M0 ─▶ M1 ─▶ M2 ─▶ M3 ─▶ M5 ─┬─▶ M3.1 ─▶ M4 ─▶ adoption ─▶ M9
-   ✅     ✅     ✅    ⚠    ✅  │    ✅      ⬜                ⬜
+   ✅     ✅     ✅    ⚠    ✅  │    ✅      ✅       ⚠        ⬜
                              └─▶ M6 ─▶ M7 ─▶ M8
                                   ✅     ✅     ⬜
 
