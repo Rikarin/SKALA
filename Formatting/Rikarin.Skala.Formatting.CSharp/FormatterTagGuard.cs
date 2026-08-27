@@ -101,14 +101,14 @@ public sealed class FormatterTagGuard {
 
             var text = trivia.ToString();
             if (start < 0) {
-                if (text.Contains(off, StringComparison.Ordinal)) {
+                if (IsTag(text, off)) {
                     start = trivia.SpanStart;
                 }
 
                 continue;
             }
 
-            if (text.Contains(on, StringComparison.Ordinal)) {
+            if (IsTag(text, on)) {
                 regions.Add(TextSpan.FromBounds(start, trivia.Span.End));
                 start = -1;
             }
@@ -122,6 +122,43 @@ public sealed class FormatterTagGuard {
 
         return regions.Count == 0 ? Open : new FormatterTagGuard(regions.ToImmutable(), root.ToFullString());
     }
+
+    /// <summary>
+    /// Whether a comment <em>is</em> the tag rather than mentioning it: the tag must be the first
+    /// thing in the comment, after the marker and any whitespace.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ SK-DIV-0017 and SK-FUZZ-0005. The oracle's own test is a plain substring over the whole
+    /// comment — measured, not assumed — so <c>// we support @formatter:off here</c> turns
+    /// formatting off to end of file in <c>jb cleanupcode</c> 2025.2.6. Skala reads it more narrowly
+    /// on purpose; the argument is in <c>CSharpDocumentBuilder.ContainsTag</c> and the measurement is
+    /// in <c>docs/divergences.md</c>.
+    /// <para>
+    /// One definition, called from both halves of the pipeline, because "which comment is a tag" is
+    /// the single question the escape hatch rests on and two answers to it is one too many.
+    /// </para>
+    /// </remarks>
+    public static bool IsTag(string comment, string tag) {
+        if (tag.Length == 0) {
+            return false;
+        }
+
+        var body = comment.AsSpan();
+        foreach (var marker in Markers) {
+            if (body.StartsWith(marker, StringComparison.Ordinal)) {
+                body = body[marker.Length..];
+                break;
+            }
+        }
+
+        return body.TrimStart().StartsWith(tag, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// ⚠ Longest first. <c>//</c> is a prefix of <c>///</c>, and stripping the shorter one leaves a
+    /// <c>/</c> in front of the tag that no trim removes.
+    /// </summary>
+    static readonly string[] Markers = ["///", "/**", "/*", "//"];
 
     static bool IsComment(SyntaxTrivia trivia) =>
         trivia.IsKind(SyntaxKind.SingleLineCommentTrivia)

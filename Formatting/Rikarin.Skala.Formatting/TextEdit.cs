@@ -32,23 +32,28 @@ public static class EditEmitter {
         for (var i = 0; i < anchors.Count; i++) {
             var anchor = anchors[i];
 
+            // ⚠ Clamped, and this is SK-FUZZ-0001. `layout.Text` is not always the text the anchors
+            // were written against: `CSharpFormatter.Format` runs the file-level rules — the
+            // trailing-whitespace trim and the inserted final newline — over the whole output
+            // *after* the writer produced it, and both can make it shorter than the last anchor
+            // claims. Normally nothing notices, because the last anchor ends before the trailing
+            // whitespace. A `@formatter:off` span running to the end of the file covers it, and the
+            // emitter then indexed past the end of the string and threw IndexOutOfRangeException out
+            // of the process on a 32-byte input.
+            var sourceStart = Math.Clamp(anchor.Source.Start, 0, input.Length);
+            var sourceEnd = Math.Clamp(anchor.Source.End, sourceStart, input.Length);
+            var outputStart = Math.Clamp(anchor.OutputStart, 0, output.Length);
+            var outputEnd = Math.Clamp(anchor.OutputEnd, outputStart, output.Length);
+
             // The gap between the previous piece and this one.
-            AddIfDifferent(edits, input, output, inputCursor, anchor.Source.Start, outputCursor, anchor.OutputStart);
+            AddIfDifferent(edits, input, output, inputCursor, sourceStart, outputCursor, outputStart);
 
             // The piece itself. In phase 1 a piece is copied verbatim, so this is normally a no-op;
             // it is compared anyway so that a builder that ever rewrites a token cannot lose it.
-            AddIfDifferent(
-                edits,
-                input,
-                output,
-                anchor.Source.Start,
-                anchor.Source.End,
-                anchor.OutputStart,
-                anchor.OutputEnd
-            );
+            AddIfDifferent(edits, input, output, sourceStart, sourceEnd, outputStart, outputEnd);
 
-            inputCursor = anchor.Source.End;
-            outputCursor = anchor.OutputEnd;
+            inputCursor = sourceEnd;
+            outputCursor = outputEnd;
         }
 
         AddIfDifferent(edits, input, output, inputCursor, input.Length, outputCursor, output.Length);
@@ -64,7 +69,15 @@ public static class EditEmitter {
         int outputStart,
         int outputEnd
     ) {
-        if (inputEnd < inputStart || outputEnd < outputStart) {
+        // ⚠ The second half of the same guard as the clamp in Emit, kept here as well because this
+        // is the method that indexes the two strings and a caller that gets the arithmetic wrong
+        // should produce no edit rather than a stack trace at the user.
+        if (inputEnd < inputStart
+            || outputEnd < outputStart
+            || inputStart < 0
+            || outputStart < 0
+            || inputEnd > input.Length
+            || outputEnd > output.Length) {
             return;
         }
 

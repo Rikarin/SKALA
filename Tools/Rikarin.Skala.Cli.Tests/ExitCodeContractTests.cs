@@ -159,6 +159,40 @@ public sealed class ExitCodeContractTests : IDisposable {
     }
 
     /// <summary>
+    /// ⚠ 5 is "internal error", and the row had no behavioural test until SK-FUZZ-0001.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ The defect that wanted this: an <c>IndexOutOfRangeException</c> out of <c>EditEmitter</c>
+    /// escaped every per-command handler, System.CommandLine returned the action's default, and a
+    /// crash on a 32-byte file reported <b>0</b> from this binary and <b>1</b> from the coordinator's.
+    /// Both are a wrong <em>success-shaped</em> answer — 0 says "clean", 1 says "your code failed the
+    /// gate" — and in CI a crash was then indistinguishable from a finding. It is the same class as
+    /// M7's daemon exiting 0 while dying.
+    /// <para>
+    /// The input below is the reachable half of the row: <c>SK9099</c>, the formatter's safety net
+    /// tripping on a file it cannot format. The unreachable half is now a top-level handler in
+    /// <c>Program.cs</c> mapping any unhandled exception to 5, and it is verified the only way a
+    /// handler for the impossible can be: by making it happen on purpose and watching it.
+    /// </para>
+    /// <para>
+    /// ⚠ The file is a live open defect (a <c>///</c> run beginning on the brace line loses its
+    /// continuation lines), so if a later change fixes that, this test starts failing and wants a
+    /// different trigger rather than deleting.
+    /// </para>
+    /// </remarks>
+    [Fact]
+    public void Five_WhenTheSafetyNetRefusesAFile() {
+        var path = Write(
+            "Refused.cs",
+            "interface I { /// <summary>x</summary>\n  /// <remarks>y</remarks>\n  int M();\n}\n"
+        );
+        var run = CliRunner.Run("format", path);
+
+        Assert.Equal(5, run.ExitCode);
+        Assert.Contains("SK9099", run.StandardOutput, StringComparison.Ordinal);
+    }
+
+    /// <summary>
     /// ⚠ The table in the document, read rather than remembered.
     /// </summary>
     /// <remarks>
