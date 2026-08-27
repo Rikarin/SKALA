@@ -670,16 +670,21 @@ class Build : NukeBuild {
 
         var cli = baseline / "Tools" / "Rikarin.Skala.Cli" / "Rikarin.Skala.Cli.csproj";
 
-        // ⚠ Restore then build, as two explicit `dotnet` invocations with the command line logged.
+        // ⚠ One `dotnet build`, with its own restore, written out as a command line and logged.
         //
-        // This was `DotNetRestore` and `DotNetBuild`, and it failed every run with
-        // `CS0234: 'Options' does not exist in the namespace 'Rikarin.Skala'` — after four seconds,
-        // which is less time than the build takes, so the reference closure was never built. The
-        // same two commands typed by hand from the same working directory succeed. Rather than keep
-        // guessing at what the tasks were adding, the invocation is written out: what runs is what
-        // is printed, and the printed line is one a person can paste.
-        Run("dotnet", $"restore \"{cli}\"");
-        Run("dotnet", $"build \"{cli}\" --configuration Release --no-restore");
+        // It was `DotNetRestore` + `DotNetBuild`, then an explicit `dotnet restore` followed by
+        // `dotnet build --no-restore`, and both failed every run with `CS0234: 'Options' does not
+        // exist in the namespace 'Rikarin.Skala'` — after four seconds, which is less time than the
+        // build takes, so the reference closure was never built. ⚠ **`--no-restore` is what breaks
+        // it**: a `dotnet restore` of the CLI alone leaves the tree in a state a subsequent
+        // `--no-restore` build cannot resolve its ProjectReferences from, and the same tree builds
+        // clean the moment the flag comes off. The saving was two seconds against a measurement
+        // nobody could run.
+        //
+        // The invocation is written out rather than driven through the NUKE task so that what runs
+        // is what is printed, and the printed line is one a person can paste when this next goes
+        // wrong.
+        Run("dotnet", $"build \"{cli}\" --configuration Release");
 
         return baseline;
     }

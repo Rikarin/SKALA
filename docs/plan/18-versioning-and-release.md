@@ -463,15 +463,19 @@ by the repository root's path so that the several agent worktrees this repositor
 not share one and measure each other's baselines. `artifacts/` was added to `IsScratch` as well, so
 that the next thing to publish there does not rediscover this.
 
-⚠ **The baseline's restore and build are written out as `dotnet` command lines and logged**, rather
-than driven through NUKE's `DotNetRestore`/`DotNetBuild`. Through the tasks the baseline failed every
-run with `CS0234: 'Options' does not exist in the namespace 'Rikarin.Skala'` — after four seconds,
-which is less time than the build takes, so the reference closure was never built. The same two
-commands typed by hand, from the same working directory, against the same extracted tree, succeed.
-What the cause was is not established; what is established is that a release measurement must not
-turn on it, so what runs is what is printed and the printed line is one a person can paste. The
-extraction also asserts it found more than ten projects, because a partial checkout would otherwise
-be measured as a release that deleted most of the tool.
+⚠ **The baseline is built by one `dotnet build` that does its own restore, and `--no-restore` is
+what broke it.** Through NUKE's `DotNetRestore`/`DotNetBuild`, and again through an explicit
+`dotnet restore` followed by `dotnet build --no-restore`, the baseline failed every run with
+`CS0234: 'Options' does not exist in the namespace 'Rikarin.Skala'` — after four seconds, which is
+less time than the build takes, so the reference closure was never built. A `dotnet restore` of the
+CLI alone leaves a freshly extracted tree in a state a subsequent `--no-restore` build cannot resolve
+its `ProjectReference`s from; the same tree builds clean the moment the flag comes off. The saving
+was two seconds against a measurement nobody could run.
+
+The invocation is written out as a command line and logged rather than driven through the task, so
+that what runs is what is printed and the printed line is one a person can paste when this next goes
+wrong. The extraction also asserts it found more than ten projects, because a partial checkout would
+otherwise be measured as a release that deleted most of the tool.
 
 ## Known gaps
 
