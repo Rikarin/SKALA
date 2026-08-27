@@ -283,8 +283,10 @@ public sealed class KeyFlipSweep {
         }
 
         var text = CSharpFormatter.Read(candidate.Fixture.Path);
-        return TextNormalisation.Normalise(CSharpFormatter.Format(candidate.Fixture.Path, text, resolved.Options)
-            .Formatted);
+        return TextNormalisation.Normalise(
+            CSharpFormatter.Format(candidate.Fixture.Path, text, resolved.Options)
+                .Formatted
+        );
     }
 
     /// <summary>
@@ -312,11 +314,9 @@ public sealed class KeyFlipSweep {
     /// The appended section is <c>[*.cs]</c>, which is more specific than the export's own
     /// <c>[*]</c> and than its multi-extension section, and comes last.
     /// </remarks>
-    public string ConfigFor(string key, string value) =>
-        _baseConfig + "\n[*.cs]\n" + key + " = " + value + "\n";
+    public string ConfigFor(string key, string value) => _baseConfig + "\n[*.cs]\n" + key + " = " + value + "\n";
 
-    static string Digest(string text) =>
-        Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(text)))[..8];
+    static string Digest(string text) => Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(text)))[..8];
 
     static string Count(int value) => value.ToString(CultureInfo.InvariantCulture);
 }

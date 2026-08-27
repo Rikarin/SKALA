@@ -22,7 +22,8 @@ public static class SweepVerify {
         var candidate = plan.Candidates.FirstOrDefault(c => string.Equals(c.Key, key, StringComparison.Ordinal));
         if (candidate is null) {
             output.WriteLine("not swept: " + key);
-            foreach (var exclusion in plan.Excluded.Where(e => string.Equals(e.Info.Key, key, StringComparison.Ordinal))) {
+            foreach (var exclusion in plan.Excluded.Where(e => string.Equals(e.Info.Key, key, StringComparison.Ordinal)
+                     )) {
                 output.WriteLine("  " + exclusion.Reason);
             }
 
@@ -59,10 +60,10 @@ public static class SweepVerify {
             skala.Add(
                 TextNormalisation.Normalise(
                     CSharpFormatter.Format(
-                            candidate.Fixture.Path,
-                            CSharpFormatter.Read(candidate.Fixture.Path),
-                            resolved.Options
-                        )
+                        candidate.Fixture.Path,
+                        CSharpFormatter.Read(candidate.Fixture.Path),
+                        resolved.Options
+                    )
                         .Formatted
                 )
             );
@@ -86,10 +87,15 @@ public static class SweepVerify {
             .Count(i => string.Equals(oracle[i], skala[i], StringComparison.Ordinal));
 
         output.WriteLine(
-            "oracle produced " + oracleDistinct.ToString(CultureInfo.InvariantCulture)
-            + " distinct outputs, Skala " + skalaDistinct.ToString(CultureInfo.InvariantCulture)
-            + "; they agree at " + agreements.ToString(CultureInfo.InvariantCulture)
-            + " of " + candidate.Values.Count.ToString(CultureInfo.InvariantCulture) + " values"
+            "oracle produced "
+            + oracleDistinct.ToString(CultureInfo.InvariantCulture)
+            + " distinct outputs, Skala "
+            + skalaDistinct.ToString(CultureInfo.InvariantCulture)
+            + "; they agree at "
+            + agreements.ToString(CultureInfo.InvariantCulture)
+            + " of "
+            + candidate.Values.Count.ToString(CultureInfo.InvariantCulture)
+            + " values"
         );
         output.WriteLine(
             "verdict: " + OptionSweep.Classify(oracleDistinct, skalaDistinct, agreements, candidate.Values.Count)

@@ -75,9 +75,7 @@ public sealed class DefaultsPass {
         }
 
         var rounds = candidates.Max(static candidate => candidate.Values.Count);
-        _log.WriteLine(
-            $"defaults: {Count(candidates.Count)} options, {Count(rounds)} rounds, bare base configuration"
-        );
+        _log.WriteLine($"defaults: {Count(candidates.Count)} options, {Count(rounds)} rounds, bare base configuration");
 
         var fixtures = candidates
             .DistinctBy(static candidate => candidate.Fixture.Path, StringComparer.Ordinal)
@@ -113,8 +111,11 @@ public sealed class DefaultsPass {
             var started = Stopwatch.GetTimestamp();
 
             foreach (var batch in Batches(work)) {
-                var produced = Format(batch, candidate => BareConfig + "\n[*.cs]\n" + candidate.Key + " = "
-                    + candidate.Values[round] + "\n");
+                var produced = Format(
+                    batch,
+                    candidate => BareConfig + "\n[*.cs]\n" + candidate.Key + " = "
+                        + candidate.Values[round] + "\n"
+                );
 
                 for (var i = 0; i < batch.Length; i++) {
                     if (produced[i] is not { } body || !bare.TryGetValue(batch[i].Fixture.Path, out var expected)) {
@@ -147,7 +148,13 @@ public sealed class DefaultsPass {
         // with the comparison and not with the fixture. The conformance run's view is folded in by
         // the caller, which has both.
         if (hits.Count == 1) {
-            return new DerivedDefault(candidate.Key, hits[0], DefaultsVerdict.Verified, false, candidate.Fixture.ToString());
+            return new DerivedDefault(
+                candidate.Key,
+                hits[0],
+                DefaultsVerdict.Verified,
+                false,
+                candidate.Fixture.ToString()
+            );
         }
 
         if (hits.Count == 0) {
@@ -194,11 +201,12 @@ public sealed class DefaultsPass {
 
         return [
             .. probed.Select(entry => entry.Verdict == DefaultsVerdict.Insensitive && observable.Contains(entry.Key)
-                ? entry with {
-                    Masked = true,
-                    Detail = entry.Detail + "; the export-base sweep does distinguish it, so bare defaults mask it"
-                }
-                : entry)
+                    ? entry with {
+                        Masked = true,
+                        Detail = entry.Detail + "; the export-base sweep does distinguish it, so bare defaults mask it"
+                    }
+                    : entry
+            )
         ];
     }
 

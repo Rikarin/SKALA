@@ -91,12 +91,13 @@ int Sweep() {
     var run = new KeyFlipSweep(new OracleRunner(), config, Console.Out).Run(plan);
     var text = SweepReport.Render(run, families);
 
-    var output = Flag("--out") ?? Path.Combine(
-        Corpus.RepositoryRoot,
-        "Testing",
-        "Rikarin.Skala.Conformance.Sweep",
-        "conformance-sweep.md"
-    );
+    var output = Flag("--out")
+        ?? Path.Combine(
+            Corpus.RepositoryRoot,
+            "Testing",
+            "Rikarin.Skala.Conformance.Sweep",
+            "conformance-sweep.md"
+        );
 
     File.WriteAllText(output, text);
     Console.WriteLine();
@@ -131,7 +132,8 @@ int Defaults() {
 
 string Summary(SweepRun run) {
     var lines = Enum.GetValues<SweepOutcome>()
-        .Select(outcome => $"{outcome.ToString().ToUpperInvariant()}: {Count(run.Options.Count(o => o.Outcome == outcome))}");
+        .Select(outcome => $"{outcome.ToString().ToUpperInvariant()}: {Count(run.Options.Count(o => o.Outcome == outcome))}"
+        );
     return string.Join("   ", lines)
         + $"\noracle wall clock {run.OracleWallClock.TotalSeconds.ToString("F1", CultureInfo.InvariantCulture)} s"
         + $" over {Count(run.OracleInvocations)} invocations"

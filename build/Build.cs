@@ -138,8 +138,13 @@ class Build : NukeBuild {
                         }) {
                         var directory = RootDirectory / area;
                         if (area == "Testing") {
+                            // ⚠ Named one by one because Testing/corpus is excluded, and a new
+                            // project under Testing/ is therefore invisible to this target until
+                            // someone adds it here. That is exactly how Distribution's two projects
+                            // went unchecked until M8 (7c56c8f); the sweep is the third entry.
                             DotNetRun(settings => Format(settings, cli, directory / "Rikarin.Skala.Testing"));
                             DotNetRun(settings => Format(settings, cli, directory / "Rikarin.Skala.Conformance.Tests"));
+                            DotNetRun(settings => Format(settings, cli, directory / "Rikarin.Skala.Conformance.Sweep"));
                             continue;
                         }
 
