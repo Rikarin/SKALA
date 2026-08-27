@@ -225,7 +225,7 @@ public static class FuzzMutations {
     }
 
     static string? WidenGaps(SourceMap map, FuzzRandom random) {
-        var gaps = map.Gaps;
+        var gaps = map.AbsorbableGaps;
         if (gaps.Count == 0) {
             return null;
         }
@@ -242,7 +242,7 @@ public static class FuzzMutations {
         // ⚠ Never to zero. `a + +b` with the gap removed re-tokenises to `++`, which is a different
         // program; a run of two or more spaces reduced to exactly one is always the same token
         // stream.
-        var wide = map.Gaps.Where(static gap => gap.End - gap.Start >= 2).ToList();
+        var wide = map.AbsorbableGaps.Where(static gap => gap.End - gap.Start >= 2).ToList();
         if (wide.Count == 0) {
             return null;
         }
@@ -519,6 +519,27 @@ public static class FuzzMutations {
         /// <summary>Maximal whitespace runs between two tokens on one line, with no trivia between.</summary>
         public IReadOnlyList<TextSpan> Gaps { get; private set; } = [];
 
+        /// <summary>
+        /// The gaps whose width the formatter is obliged to <b>decide</b>, which is a subset.
+        /// </summary>
+        /// <remarks>
+        /// ⚠ Found by this fuzzer on its first run, and it is a correction to the property rather
+        /// than to the formatter. <c>SpaceRules.Ungoverned</c> answers <c>SpaceKind.Preserve</c> for
+        /// the gap beside a <c>..</c> in a range or a spread, because no key in ReSharper's export
+        /// governs it and the oracle leaves whatever the author wrote there. Asked directly, both
+        /// tools turn <c>a[1..3]</c>, <c>a[1 .. 3]</c> and <c>a[1.. 3]</c> into three different
+        /// outputs — byte-identical to each other, and each preserving its input.
+        /// <para>
+        /// So <c>format(mutate_whitespace(x)) ≡ format(x)</c> is <b>false as stated</b> for that one
+        /// gap class, and asserting it there would be asserting that Skala should diverge from the
+        /// oracle. Excluded by token kind rather than by parent shape: <c>Preserve</c> is produced
+        /// only for a <c>..</c>, so "any gap touching a <c>..</c>" is a conservative superset that
+        /// does not have to track which parent shapes qualify — and if a *new* preserve class ever
+        /// appears, the fuzzer will find it, which is the outcome that wants a decision.
+        /// </para>
+        /// </remarks>
+        public IReadOnlyList<TextSpan> AbsorbableGaps { get; private set; } = [];
+
         /// <summary>Line starts a whole line may be inserted before.</summary>
         public IReadOnlyList<int> LineBoundaries { get; private set; } = [];
 
@@ -645,6 +666,7 @@ public static class FuzzMutations {
             // interpolated string's interior, which the formatter copies verbatim, and a directive
             // line, which has no tokens outside trivia and so is excluded by not descending.
             var gaps = new List<TextSpan>();
+            var absorbable = new List<TextSpan>();
             SyntaxToken previous = default;
             foreach (var token in root.DescendantTokens(descendIntoTrivia: false)) {
                 if (previous.RawKind != 0 && previous.Span.Length > 0 && token.Span.Length > 0) {
@@ -655,7 +677,11 @@ public static class FuzzMutations {
                         && Text.Lines.GetLineFromPosition(start).LineNumber
                         == Text.Lines.GetLineFromPosition(end).LineNumber
                         && !InVerbatimRegion(start)) {
-                        gaps.Add(TextSpan.FromBounds(start, end));
+                        var gap = TextSpan.FromBounds(start, end);
+                        gaps.Add(gap);
+                        if (!previous.IsKind(SyntaxKind.DotDotToken) && !token.IsKind(SyntaxKind.DotDotToken)) {
+                            absorbable.Add(gap);
+                        }
                     }
                 }
 
@@ -665,6 +691,7 @@ public static class FuzzMutations {
             }
 
             Gaps = gaps;
+            AbsorbableGaps = absorbable;
         }
 
         bool InVerbatimRegion(int position) {

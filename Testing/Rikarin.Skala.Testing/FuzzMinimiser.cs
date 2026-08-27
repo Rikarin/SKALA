@@ -1,3 +1,9 @@
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Microsoft.CodeAnalysis.Text;
+using Rikarin.Skala.Formatting.CSharp;
+
 namespace Rikarin.Skala.Testing;
 
 /// <summary>How much work a minimisation is allowed to do before it hands back what it has.</summary>
@@ -47,21 +53,95 @@ public static class FuzzMinimiser {
     /// ddmin spends its whole budget on candidates that are rejected for the wrong reason.
     /// </remarks>
     public static string Minimise(string source, Func<string, bool> stillFails, MinimiseBudget budget) {
-        var lines = Split(source);
-        if (lines.Count == 0 || !stillFails(source)) {
+        if (source.Length == 0 || !stillFails(source)) {
             return source;
         }
 
-        bool Test(List<string> candidate) =>
-            candidate.Count > 0 && budget.Take() && stillFails(string.Join("\n", candidate));
+        bool Text(string candidate) => candidate.Length > 0 && budget.Take() && stillFails(candidate);
 
-        lines = Ddmin(lines, Test);
-        lines = Greedy(lines, Test);
-        var text = string.Join("\n", lines);
-        return Narrow(text, candidate => budget.Take() && stillFails(candidate));
+        bool Lines(List<string> candidate) => candidate.Count > 0 && Text(string.Join("\n", candidate));
+
+        // ⚠ Syntax first, lines second, and the order is the difference between a 2 400-character
+        // corpus entry and a 200-character one. Removing an arbitrary *line* from C# almost always
+        // unbalances a brace, the candidate stops parsing, the property stops failing for the reason
+        // it was failing, and ddmin spends its whole budget being told no. Removing a whole member
+        // or a whole statement leaves a file that still parses, so nearly every candidate is a real
+        // question. Measured on this fuzzer's first idempotency finding: lines alone took 2 494
+        // characters to 2 433; syntax first takes it to under 200.
+        var text = Nodes(source, Text, budget);
+        text = string.Join("\n", Greedy(Split(text), Lines));
+        text = string.Join("\n", Ddmin(Split(text), Lines));
+        text = string.Join("\n", Greedy(Split(text), Lines));
+        text = Narrow(text, Text);
+
+        // ⚠ Verified once more before it is handed back, outside the budget. Every pass above
+        // accepts only candidates the predicate said yes to, so this should be unreachable — and it
+        // was reachable, because a lossy split made one pass hand back a string it had never tested.
+        // A minimiser that returns an artefact which does not fail is worse than one that returns
+        // the original: the corpus entry it produces pins nothing and looks as though it does.
+        return stillFails(text) ? text : source;
     }
 
-    static List<string> Split(string source) => [.. source.ReplaceLineEndings("\n").Split('\n')];
+    /// <summary>
+    /// Removes whole members and whole statements, largest first, while the failure survives.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ Largest first and re-parsed after every accepted removal. Deleting the outermost node that
+    /// can go removes everything under it in one evaluation, and re-parsing keeps every subsequent
+    /// span valid — a stale span list after an accepted edit is how a reducer produces a file that
+    /// is smaller and is not the failure any more.
+    /// </remarks>
+    static string Nodes(string source, Func<string, bool> stillFails, MinimiseBudget budget) {
+        var changed = true;
+        while (changed && !budget.Exhausted) {
+            changed = false;
+            var tree = CSharpSyntaxTree.ParseText(SourceText.From(source), CSharpFormatter.ParseOptions);
+            var removable = tree.GetRoot()
+                .DescendantNodes()
+                .Where(static node => node is MemberDeclarationSyntax
+                    or StatementSyntax
+                    or UsingDirectiveSyntax
+                    or AttributeListSyntax
+                    or SwitchSectionSyntax
+                    or CatchClauseSyntax
+                    or FinallyClauseSyntax
+                )
+                .Where(static node => node is not BlockSyntax)
+                .OrderByDescending(static node => node.FullSpan.Length)
+                .ToList();
+
+            foreach (var node in removable) {
+                var span = node.FullSpan;
+                if (span.Length == 0 || span.End > source.Length) {
+                    continue;
+                }
+
+                var candidate = source.Remove(span.Start, span.Length);
+                if (!stillFails(candidate)) {
+                    continue;
+                }
+
+                source = candidate;
+                changed = true;
+                break;
+            }
+        }
+
+        return source;
+    }
+
+    /// <summary>
+    /// Splits on <c>\n</c> only, leaving any <c>\r</c> attached to the line it ends.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ Not <see cref="string.ReplaceLineEndings()"/>, and this was a real defect rather than a
+    /// stylistic preference. Normalising here makes the split/join round trip *lossy*: a pass that
+    /// removes no line still hands back a different string, one that was never put to the predicate,
+    /// and the minimiser silently returns an artefact that does not fail. It cost this fuzzer its
+    /// first real finding — a mixed-line-ending case whose whole content was the <c>\r</c> that the
+    /// normalisation deleted on the way past.
+    /// </remarks>
+    static List<string> Split(string source) => [.. source.Split('\n')];
 
     /// <summary>ddmin — Zeller and Hildebrandt, "Simplifying and Isolating Failure-Inducing Input".</summary>
     static List<string> Ddmin(List<string> lines, Func<List<string>, bool> test) {

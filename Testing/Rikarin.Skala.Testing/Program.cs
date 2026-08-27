@@ -337,6 +337,9 @@ static int Fuzz(string[] args) {
             ? int.Parse(every, CultureInfo.InvariantCulture)
             : 25,
         Minimise = !args.Contains("--no-minimise"),
+        Parallelism = Flag("jobs") is { } jobs
+            ? int.Parse(jobs, CultureInfo.InvariantCulture)
+            : Math.Max(1, Environment.ProcessorCount - 1),
         OutputDirectory = Flag("out") ?? Path.Combine(Corpus.RepositoryRoot, ".skala", "fuzz")
     };
 
@@ -367,6 +370,33 @@ static int Fuzz(string[] args) {
         Console.WriteLine();
         Console.WriteLine(subject.Text);
         return violations.Any(violation => violation.Property != FuzzProperties.ParseLost) ? 1 : 0;
+    }
+
+    // ⚠ `--check=<path>` asserts the seven properties over one file, read byte for byte. It is what
+    // turns a minimised artefact into something a person can argue with: the artefact is a file, the
+    // question is "does this file still break the property", and asking it should not require
+    // reconstructing a fuzz case around it.
+    if (Flag("check") is { } target) {
+        var full = Path.GetFullPath(target);
+        var found = FuzzProperties.Check(
+            full,
+            File.ReadAllText(full),
+            Fuzzer.OptionsFor(full),
+            Corpus.PropertySymbols,
+            arrangement: options.ArrangeEvery > 0
+        );
+
+        foreach (var violation in found) {
+            Console.WriteLine("  ✗ " + violation);
+        }
+
+        Console.WriteLine(
+            found.IsEmpty
+                ? "every property holds."
+                : $"{found.Length.ToString(CultureInfo.InvariantCulture)} violation(s)."
+        );
+
+        return found.IsEmpty ? 0 : 1;
     }
 
     if (args.Any(argument => argument.StartsWith("--grammar-check", StringComparison.Ordinal))) {

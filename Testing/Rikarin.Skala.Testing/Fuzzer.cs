@@ -78,7 +78,8 @@ public sealed record FuzzFinding(
     PropertyViolation Violation,
     ImmutableArray<string> Mutations,
     string Source,
-    string Minimised) {
+    string Minimised,
+    string MinimisedDetail) {
     public string Property => Violation.Property;
 }
 
@@ -169,16 +170,18 @@ public sealed record FuzzReport(
 
                 report.AppendLine();
                 report.AppendLine($"- mutations: {string.Join(", ", finding.Mutations)}");
-                report.AppendLine($"- {finding.Violation}");
                 report.AppendLine(
                     $"- minimised from {finding.Source.Length.ToString("N0", CultureInfo.InvariantCulture)} to "
                     + $"{finding.Minimised.Length.ToString("N0", CultureInfo.InvariantCulture)} characters"
                 );
 
+                report.AppendLine($"- as found: {finding.Violation}");
+                report.AppendLine($"- minimised: {finding.MinimisedDetail}");
+
                 report.AppendLine($"- replay: `dotnet run --project Testing/Rikarin.Skala.Testing -- fuzz --replay={FuzzRandom.Format(finding.Seed)}`");
                 report.AppendLine();
                 report.AppendLine("```csharp");
-                report.AppendLine(finding.Minimised.TrimEnd());
+                report.AppendLine(Visible(finding.Minimised));
                 report.AppendLine("```");
                 report.AppendLine();
             }
@@ -189,6 +192,22 @@ public sealed record FuzzReport(
 
     static string Percent(long part, long whole) =>
         whole == 0 ? "0 %" : (part * 100.0 / whole).ToString("F1", CultureInfo.InvariantCulture) + " %";
+
+    /// <summary>
+    /// The artefact with its invisible characters made visible.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ A fuzz finding is very often *about* a character that a code block does not render: a
+    /// trailing space, a tab where the file uses spaces, a lone `\r`, a BOM. Printing the artefact
+    /// raw produces a report where the interesting difference is invisible and the reader concludes
+    /// the tool is confused.
+    /// </remarks>
+    static string Visible(string text) =>
+        text.Replace("﻿", "<BOM>", StringComparison.Ordinal)
+            .Replace("\r", "<CR>", StringComparison.Ordinal)
+            .Replace("\t", "<TAB>", StringComparison.Ordinal)
+            .Replace(" \n", "<SP>\n", StringComparison.Ordinal)
+            .TrimEnd('\n');
 }
 
 /// <summary>
@@ -474,6 +493,12 @@ public static class Fuzzer {
             );
         }
 
+        // ⚠ The violation is re-read off the *minimised* input, not carried over from the case that
+        // found it. A detail like "the second pass still wants 1 edit: [2990..2990) -> \r" names an
+        // offset in a 2 494-character file that no longer exists, which is a fact about the run
+        // rather than about the bug; the same sentence over the 38-character reduction is the bug.
+        var minimisedDetail = Describe(subject, minimised, violation.Property);
+
         var finding = new FuzzFinding(
             subject.Seed,
             subject.Origin,
@@ -481,29 +506,43 @@ public static class Fuzzer {
             violation,
             [.. subject.Mutations.Select(static m => m.Name)],
             artefact,
-            minimised
+            minimised,
+            minimisedDetail
         );
 
         if (options.OutputDirectory is { Length: > 0 } directory) {
             Directory.CreateDirectory(directory);
             var name = $"fuzz-{violation.Property}-{FuzzRandom.Format(subject.Seed)}.cs";
-            File.WriteAllText(Path.Combine(directory, name), minimised.TrimEnd() + "\n");
+
+            // ⚠ Byte for byte, with no trailing trim. A trailing space, a missing final newline and
+            // a lone `\r` are all things this fuzzer finds, and a writer that tidies the artefact
+            // before saving it is a writer that throws the finding away on the way to disk.
+            File.WriteAllText(Path.Combine(directory, name), minimised);
             File.WriteAllText(
                 Path.Combine(directory, Path.ChangeExtension(name, ".txt")),
                 $"seed {FuzzRandom.Format(subject.Seed)}\norigin {subject.Origin}\n"
-                + $"mutations {string.Join(", ", subject.Mutations.Select(static m => m.Name))}\n{violation}\n"
+                + $"mutations {string.Join(", ", subject.Mutations.Select(static m => m.Name))}\n"
+                + $"as found: {violation}\nminimised: {minimisedDetail}\n"
             );
         }
 
         return finding;
     }
 
+    /// <summary>How the property fails on one particular input, in the words the report prints.</summary>
+    static string Describe(FuzzCase subject, string candidate, string property) =>
+        Violations(subject, candidate, property).FirstOrDefault()?.ToString()
+        ?? "⚠ the minimised input no longer exhibits the failure; the reduction is not trustworthy";
+
     /// <summary>Does <paramref name="candidate"/> still break <paramref name="property"/>?</summary>
-    static bool Fails(FuzzCase subject, string candidate, string property) {
+    static bool Fails(FuzzCase subject, string candidate, string property) =>
+        Violations(subject, candidate, property).Any();
+
+    static IEnumerable<PropertyViolation> Violations(FuzzCase subject, string candidate, string property) {
         var options = OptionsFor(subject.Path);
         if (property != FuzzProperties.Absorption) {
             return FuzzProperties.Check(subject.Path, candidate, options, Corpus.PropertySymbols)
-                .Any(violation => violation.Property == property);
+                .Where(violation => violation.Property == property);
         }
 
         // The absorption predicate: is there a whitespace-only mutation of this candidate, derived
@@ -528,14 +567,17 @@ public static class Fuzzer {
                 FuzzProperties.Format(subject.Path, candidate, options, Corpus.PropertySymbols)
             );
 
-            if (FuzzProperties
+            var found = FuzzProperties
                 .Check(subject.Path, mutated, options, Corpus.PropertySymbols, baseline)
-                .Any(static violation => violation.Property == FuzzProperties.Absorption)) {
-                return true;
+                .Where(static violation => violation.Property == FuzzProperties.Absorption)
+                .ToArray();
+
+            if (found.Length > 0) {
+                return found;
             }
         }
 
-        return false;
+        return [];
     }
 
     /// <summary>
