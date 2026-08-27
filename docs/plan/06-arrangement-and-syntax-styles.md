@@ -202,6 +202,13 @@ measured against `jb cleanupcode` rather than read off the key names:
 | Kept | **any** operand of a shift or bitwise expression, whatever the operand is |
 | Declined | assignments and conditionals inside parentheses, the operand of a cast, and anything the re-parse does not prove |
 
+⚠ **The proof refuses one class the oracle removes, and that refusal is the better answer.** Equal
+precedence is not associativity: `a * (x * y)` re-parses as `(a * x) * y`, a different tree, so the
+parentheses stay. On `float` they are load-bearing — Vixen's `SphericalHarmonics` writes
+`coefficients.L2m2 * (x * y)` and the grouping is the author's arithmetic, not decoration. This is
+the whole residue of `ArrangeRedundantParentheses` after the rewrite: **6 findings, down from
+1 231**, and every one of them is this shape.
+
 ⚠ **The second "kept" row is the one that was got wrong first.**
 `resharper_parentheses_non_obvious_operations = shift, bitwise_*` reads like a statement about which
 parenthesized expressions to keep, and it is a statement about which *enclosing* operations need
