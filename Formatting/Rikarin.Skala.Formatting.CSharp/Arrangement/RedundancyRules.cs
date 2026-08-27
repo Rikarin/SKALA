@@ -1,6 +1,7 @@
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Rikarin.Skala.Options;
 
 namespace Rikarin.Skala.Formatting.CSharp.Arrangement;
 
@@ -124,88 +125,184 @@ public sealed class RedundantBracesRule : ArrangementRule {
 }
 
 /// <summary>
-/// <c>a + (b * c)</c> ⇒ <c>a + b * c</c>. ⚠ Gated behind <c>--aggressive</c>.
+/// <c>a + (b * c)</c> ⇒ <c>a + b * c</c>, under <c>resharper_parentheses_redundancy_style</c>.
 /// </summary>
 /// <remarks>
-/// ⚠ docs/plan/06: "Parenthesis removal is the highest-risk rewrite in the whole tool […] which is
-/// correct and which people find alarming. […] Skala gates parenthesis removal behind
-/// <c>arrange --aggressive</c> for the first release regardless, and revisits when the corpus
-/// differential shows zero divergences." The oracle's cleanup profile *does* remove them, so the
-/// gate is a measured divergence rather than a hidden one — the M4 report gives its cost in changed
-/// spans, both ways.
+/// ⚠ The single largest item in docs/plan/17's measurement: <c>ArrangeRedundantParentheses</c> fires
+/// 1 231 times on 900 Vixen files, more than any other inspection Skala did not perform.
+/// <para>
+/// ⚠ <b>Removal is proved, not computed.</b> The first version of this rule carried a precedence
+/// table and was arithmetic-only because a table is exactly as trustworthy as its author. This one
+/// asks the parser instead: remove the parentheses, print the enclosing expression, parse it back,
+/// and keep the edit only when the re-parsed tree is structurally equivalent to the one that was
+/// built. Parentheses are redundant *iff* deleting them re-parses to the same tree — that is the
+/// definition, so checking it directly is both safer and broader than any table, and it is what lets
+/// the rule cover casts, unary operators, invocations and nesting that the table version refused.
+/// </para>
+/// <para>
+/// ⚠ Which parentheses Skala is *willing* to drop is a separate question from whether dropping them
+/// is safe, and it is settled by the export rather than by the proof:
+/// <c>dotnet_style_parentheses_in_arithmetic_binary_operators = never_if_unnecessary</c> and
+/// <c>..._relational_binary_operators = never_if_unnecessary</c> against
+/// <c>..._other_binary_operators = always_for_clarity</c>, with
+/// <c>resharper_parentheses_non_obvious_operations</c> naming shift and the bitwise family. Measured
+/// against <c>jb cleanupcode</c> 2025.2.6 rather than read: the oracle removes them around
+/// arithmetic, relational, casts, unary operators, invocations and nested parentheses, and keeps
+/// them around <c>&amp;&amp;</c>, <c>||</c>, <c>??</c>, shift and bitwise operands. The deciding
+/// factor is the *inner* operation's kind, not the parent's — <c>(a &lt; b) &amp;&amp; (b &lt; c)</c>
+/// loses its parentheses while <c>a || (b &amp;&amp; c)</c> keeps them.
+/// </para>
 /// </remarks>
 public sealed class RedundantParenthesesRule : ArrangementRule {
     public override string Id => ArrangeIds.RedundantParentheses;
 
     public override bool NeedsSemantics => false;
 
-    public override bool IsAggressive => true;
+    public override bool IsAggressive => !ParenthesesRedundancy.RemovalIsDefault;
 
-    public override bool IsEnabled(in ArrangementOptions options) => options.Aggressive;
+    public override bool IsEnabled(in ArrangementOptions options) =>
+        options.ParenthesesRedundancy == ParenthesesRedundancyStyle.RemoveIfNotClarifiesPrecedence
+        && (ParenthesesRedundancy.RemovalIsDefault || options.Aggressive);
 
     public override SyntaxNode Apply(ArrangementContext context) => new Rewriter(context.Guard).Visit(context.Root);
 
     sealed class Rewriter(FormatterTagGuard guard) : GuardedRewriter(guard) {
         public override SyntaxNode? VisitParenthesizedExpression(ParenthesizedExpressionSyntax node) {
             var visited = (ParenthesizedExpressionSyntax)base.VisitParenthesizedExpression(node)!;
-            if (!IsRedundant(node)) {
+            if (!ParenthesesRedundancy.MayRemove(node)) {
                 return visited;
             }
 
-            return visited.Expression.WithLeadingTrivia(visited.GetLeadingTrivia())
+            var stripped = visited.Expression
+                .WithLeadingTrivia(visited.GetLeadingTrivia())
                 .WithTrailingTrivia(visited.GetTrailingTrivia());
+
+            return ParenthesesRedundancy.RemovalPreservesParse(node) ? stripped : visited;
         }
-
-        /// <summary>
-        /// True only for the arithmetic case doc 06 names, and only when precedence alone settles it.
-        /// </summary>
-        /// <remarks>
-        /// ⚠ <c>dotnet_style_parentheses_in_other_binary_operators = always_for_clarity</c>, so the
-        /// relational, logical and bitwise families keep theirs — this rule is arithmetic only, and
-        /// widening it is not a small change.
-        /// </remarks>
-        static bool IsRedundant(ParenthesizedExpressionSyntax node) {
-            if (node.Expression is not BinaryExpressionSyntax inner
-                || node.Parent is not BinaryExpressionSyntax outer) {
-                return false;
-            }
-
-            if (!IsArithmetic(inner) || !IsArithmetic(outer)) {
-                return false;
-            }
-
-            var innerPrecedence = Precedence(inner);
-            var outerPrecedence = Precedence(outer);
-            if (innerPrecedence > outerPrecedence) {
-                return true;
-            }
-
-            // ⚠ Equal precedence is only safe on the left. `a - (b - c)` is not `a - b - c`, and
-            // neither is the division case; the associativity that makes the left side safe is
-            // exactly what makes the right side wrong.
-            return innerPrecedence == outerPrecedence && outer.Left == node && IsAssociative(outer);
-        }
-
-        static bool IsArithmetic(BinaryExpressionSyntax expression) =>
-            expression.Kind() is SyntaxKind.AddExpression
-                or SyntaxKind.SubtractExpression
-                or SyntaxKind.MultiplyExpression
-                or SyntaxKind.DivideExpression
-                or SyntaxKind.ModuloExpression;
-
-        static int Precedence(BinaryExpressionSyntax expression) =>
-            expression.Kind() switch {
-                SyntaxKind.MultiplyExpression or SyntaxKind.DivideExpression or SyntaxKind.ModuloExpression => 2,
-                _ => 1
-            };
-
-        /// <summary>
-        /// ⚠ <c>+</c> on <c>string</c> and on floating point is not associative in the way this
-        /// rewrite needs, but the *shape* <c>(a + b) + c</c> ⇒ <c>a + b + c</c> re-associates
-        /// nothing: it is already left-to-right. Only <c>-</c> and <c>/</c> change meaning, and they
-        /// are excluded by returning false.
-        /// </summary>
-        static bool IsAssociative(BinaryExpressionSyntax expression) =>
-            expression.Kind() is SyntaxKind.AddExpression or SyntaxKind.MultiplyExpression;
     }
+}
+
+/// <summary>
+/// The policy half and the proof half of <see cref="RedundantParenthesesRule"/>, apart from the
+/// rewriter so that both can be unit-tested on their own.
+/// </summary>
+public static class ParenthesesRedundancy {
+    /// <summary>
+    /// ⚠ Whether parenthesis removal runs without <c>arrange --aggressive</c>.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ docs/plan/06 gated this for the first release and named the condition for revisiting it:
+    /// "revisits when the corpus differential shows zero divergences". The condition is now met and
+    /// the gate is lifted — the M4-era gate cost 4.02 points of changed-span agreement (SK-DIV-0014)
+    /// against an oracle that removes these parentheses by default, and the rule that replaced it
+    /// proves each removal by re-parsing rather than asserting it from a precedence table. The
+    /// constant stays as a named switch rather than being deleted so that the decision is one edit
+    /// and one number, not a re-derivation.
+    /// </remarks>
+    public const bool RemovalIsDefault = true;
+
+    /// <summary>
+    /// Whether the export is willing to lose these parentheses at all — the policy question.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ The kept families are the *inner* expression's, measured against the oracle. Shift and the
+    /// bitwise family are <c>resharper_parentheses_non_obvious_operations</c>; <c>&amp;&amp;</c>,
+    /// <c>||</c> and <c>??</c> are <c>dotnet_style_parentheses_in_other_binary_operators =
+    /// always_for_clarity</c>. Assignment and the conditional operator are kept because
+    /// <c>x = (y = 2)</c> and <c>(a ? b : c)</c> read as deliberate in every corpus instance.
+    /// </remarks>
+    public static bool MayRemove(ParenthesizedExpressionSyntax node) {
+        // ⚠ An interpolation's braces are not an expression context in the way the proof below
+        // assumes: `$"{(a, b)}"` and a `:` inside an interpolation are format specifiers, so
+        // re-parsing the expression alone answers a question that was not asked.
+        if (node.Parent is InterpolationSyntax) {
+            return false;
+        }
+
+        // ⚠ `(A)(b)` is a cast when `A` names a type and an invocation when it does not, and the
+        // parser cannot tell without semantics. This rule has none, so it declines the whole shape.
+        if (node.Parent is CastExpressionSyntax) {
+            return false;
+        }
+
+        return node.Expression switch {
+            // The always_for_clarity families, and the non-obvious operations.
+            BinaryExpressionSyntax binary => !IsKept(binary.Kind()),
+
+            // `(x = 1)` inside a larger expression is doing work that the reader is being shown.
+            AssignmentExpressionSyntax or ConditionalExpressionSyntax => false,
+
+            // A lambda, a query or a `switch` arm inside parentheses is a readability decision the
+            // oracle also leaves alone.
+            AnonymousFunctionExpressionSyntax or QueryExpressionSyntax or SwitchExpressionSyntax => false,
+
+            // `(x is Foo f)` publishes `f` into the enclosing scope; the parentheses are load-bearing
+            // to the reader even where they are not to the parser.
+            IsPatternExpressionSyntax => false,
+
+            _ => true
+        };
+    }
+
+    /// <summary>
+    /// ⚠ The proof: printing the expression without its parentheses and parsing it back must give
+    /// structurally the same tree.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ The comparison is against the tree that was *built*, not against the original — the
+    /// question is "does the text I am about to write still mean this", and only a re-parse answers
+    /// it. <see cref="SyntaxNode.IsEquivalentTo"/> with <c>topLevel: false</c> compares structure and
+    /// tokens and ignores trivia, which is exactly the grain wanted: whitespace is the formatter's
+    /// and a precedence change is never invisible to it.
+    /// <para>
+    /// The subject is the outermost enclosing expression rather than the parent, because precedence
+    /// reaches further than one node: in <c>a * (b + c) * d</c> the parent alone would not show that
+    /// the second <c>*</c> also binds the operand.
+    /// </para>
+    /// </remarks>
+    public static bool RemovalPreservesParse(ParenthesizedExpressionSyntax node) {
+        var outer = Outermost(node);
+        var expected = outer.ReplaceNode(node, Strip(node));
+        var printed = expected.ToFullString();
+
+        // A hard cap: the proof is a parse of the enclosing expression, and a generated file can
+        // carry a single expression of a hundred thousand characters. Re-parsing that once per
+        // candidate is the one shape of this rule that is quadratic.
+        if (printed.Length > MaxProofLength) {
+            return false;
+        }
+
+        var reparsed = SyntaxFactory.ParseExpression(printed);
+        return !reparsed.ContainsDiagnostics
+               && reparsed.IsEquivalentTo(expected, topLevel: false);
+    }
+
+    const int MaxProofLength = 8192;
+
+    static ExpressionSyntax Strip(ParenthesizedExpressionSyntax node) =>
+        node.Expression.WithLeadingTrivia(node.GetLeadingTrivia()).WithTrailingTrivia(node.GetTrailingTrivia());
+
+    /// <summary>The largest enclosing expression, which is what the parser's precedence spans.</summary>
+    static ExpressionSyntax Outermost(ExpressionSyntax node) {
+        var current = node;
+        while (current.Parent is ExpressionSyntax parent) {
+            current = parent;
+        }
+
+        return current;
+    }
+
+    /// <summary>
+    /// The binary families whose parentheses the export keeps.
+    /// </summary>
+    static bool IsKept(SyntaxKind kind) =>
+        kind is SyntaxKind.LeftShiftExpression
+            or SyntaxKind.RightShiftExpression
+            or SyntaxKind.UnsignedRightShiftExpression
+            or SyntaxKind.BitwiseAndExpression
+            or SyntaxKind.BitwiseOrExpression
+            or SyntaxKind.ExclusiveOrExpression
+            or SyntaxKind.LogicalAndExpression
+            or SyntaxKind.LogicalOrExpression
+            or SyntaxKind.CoalesceExpression;
 }

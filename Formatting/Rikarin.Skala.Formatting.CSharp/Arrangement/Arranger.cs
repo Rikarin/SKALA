@@ -40,8 +40,13 @@ public static class Arranger {
         new NullCheckingPatternRule(),
         new EmptyStringRule(),
         new ThisQualifierRule(),
+        new StaticQualifierRule(),
+        new ArgumentStyleRule(),
+        new DiscardDeclarationRule(),
         new RedundantBracesRule(),
         new RedundantParenthesesRule(),
+        new TrailingCommaRule(),
+        new NamespaceBodyRule(),
         new UsingsRule(removableUsings),
         new BodyStyleRule()
     ];

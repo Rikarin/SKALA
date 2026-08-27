@@ -75,6 +75,8 @@ public sealed record OracleProfile(string Name, string Suffix, string Tasks) {
         + " ArrangeTrailingCommas=\"True\""
         + " ArrangeAttributes=\"True\""
         + " RemoveRedundantParentheses=\"True\""
+        + " ArrangeArgumentsStyle=\"True\""
+        + " ArrangeNamespaces=\"True\""
         + " />"
     );
 
