@@ -35,7 +35,7 @@ skala mcp                    # the same six answers over the Model Context Proto
 | **Rules shipped** — a fix, zero false positives, a negative fixture set at least as large | **6 analyzers** + 3 formatter findings |
 | False positives on `corpus/real/` + 4 688 Vixen files | **zero**, over 155 findings, every one reviewed |
 | `skala verify`, 5 files, no project, cold process | **0.39–0.54 s** against a 1 s budget |
-| `skala check --load=binlog` over Vixen | **58–65 s** against a 4-minute budget |
+| `skala check --load=binlog` over Vixen | **58–134 s** against a 4-minute budget |
 
 Per origin, because the three measure different things:
 

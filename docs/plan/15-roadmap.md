@@ -195,7 +195,7 @@ and no unexplained suppressions.
 | | |
 |---|---|
 | `skala verify`, 5 files, `--load=loose`, cold process | ✅ **0.39–0.54 s** on a clean tree, **0.50–1.02 s** when all five have findings (0.84 s on the very first run, page cache cold) |
-| `skala check --load=binlog` over Vixen | ✅ **58–65 s** against a 4-minute budget; 4 688 files, 60 compilations |
+| `skala check --load=binlog` over Vixen | ✅ **58–134 s** against a 4-minute budget; 4 688 files, 60 compilations, generators re-run |
 | Load modes | ✅ all three, with a reported fallback ladder and `loadMode` in the SARIF |
 | Rules shipped | ⚠ **six analyzers** + three formatter findings, not the thirty-six of doc 08 — [08](08-rule-catalogue.md) § "What M5 actually shipped" says which were cut and why |
 | False positives | ✅ **zero**: 143 findings on `corpus/real/`, 12 on Vixen, every one reviewed; 170 fixes applied over `corpus/real/` produced **no `(file, id)` pair worse than before** |
