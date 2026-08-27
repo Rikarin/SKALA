@@ -205,20 +205,16 @@ public static class ConfigCommands {
 
         var output = new StringBuilder();
         output.AppendLine(Distiller.Summary(result));
-        if (result.Dropped == 0) {
-            output.AppendLine();
-            output.AppendLine("Nothing was dropped, and that is the correct answer rather than a failure:");
-            output.AppendLine("  JetBrains' EditorConfig property tables publish each property's name, language and");
-            output.AppendLine("  possible values, and never its default. Every entry in options.json therefore records");
-            output.AppendLine(
-                "  the export's own value as its default, marked `template` or `unknown`, and distill may"
-            );
-            output.AppendLine("  only drop a key whose default is marked `resharper-docs`. Dropping a key on a guessed");
-            output.AppendLine("  default would silently change formatting.");
-            output.AppendLine(
-                "  A verified default table — an export from a pristine Rider profile — makes this useful."
-            );
-        }
+        output.AppendLine();
+        output.AppendLine("What a key has to prove before it is dropped:");
+        output.AppendLine("  JetBrains' EditorConfig property tables publish each property's name, language and");
+        output.AppendLine("  possible values, and never its default — so no key can claim `resharper-docs` and, until");
+        output.AppendLine("  milestone 3, distill dropped nothing at all. The defaults are derived from the oracle");
+        output.AppendLine("  instead: a `jb cleanupcode` run under a configuration carrying nothing but `root = true`");
+        output.AppendLine("  is ReSharper-with-defaults by construction, and the value that reproduces it on the key's");
+        output.AppendLine("  own fixture is the default. Those are marked `oracle-probe` and only those are dropped.");
+        output.AppendLine("  Every other key is kept, because dropping one on a guessed default would silently change");
+        output.AppendLine("  formatting in whoever's repository accepted this file.");
 
         if (outputPath is null) {
             output.AppendLine();

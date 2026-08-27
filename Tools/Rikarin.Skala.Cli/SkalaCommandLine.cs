@@ -1,6 +1,7 @@
 using System.CommandLine;
 using Rikarin.Skala.Core.Configuration;
 using Rikarin.Skala.Formatting.CSharp;
+using Rikarin.Skala.Server;
 
 namespace Rikarin.Skala.Cli;
 
@@ -17,6 +18,9 @@ public static class SkalaCommandLine {
         var root = new RootCommand("Skala — one configuration, the same formatting and analysis everywhere.");
         root.Subcommands.Add(CreateFormatCommand());
         root.Subcommands.Add(CreateConfigCommand());
+        root.Subcommands.Add(CreateDaemonCommand());
+        root.Subcommands.Add(CreateLspCommand());
+        root.Subcommands.Add(CreateHooksCommand());
         return root;
     }
 
@@ -51,6 +55,10 @@ public static class SkalaCommandLine {
             Description = "Re-read and re-resolve every .editorconfig per file instead of memoising it."
         };
 
+        var noDaemon = new Option<bool>("--no-daemon") {
+            Description = "Do everything in this process. The daemon is only ever an optimisation."
+        };
+
         var command = new Command(
             "format",
             "Format C# files: spaces, blank lines, braces, indentation, breaks and wrapping."
@@ -64,6 +72,7 @@ public static class SkalaCommandLine {
         command.Options.Add(option);
         command.Options.Add(jobs);
         command.Options.Add(noCache);
+        command.Options.Add(noDaemon);
 
         command.SetAction(parse => {
             var stagedValue = parse.GetResult(staged) is null
@@ -87,12 +96,89 @@ public static class SkalaCommandLine {
                 Jobs = parse.GetValue(jobs)
             };
 
+            // ⚠ The daemon is tried first and its failure is never an error. docs/plan/11's
+            // correctness rule is that every command works identically with SKALA_NO_DAEMON=1, so a
+            // daemon that is absent, stale or of another version has to fall through silently to the
+            // same code the daemon itself would have run.
+            if (!parse.GetValue(noDaemon) && DaemonUse.TryFormat(request) is { } served) {
+                return Run(() => served);
+            }
+
             return Run(() => FormatCommand.Run(request));
         }
         );
 
         return command;
     }
+
+    /// <summary>
+    /// <c>skala daemon status|stop|run</c> — docs/plan/11 § "The daemon".
+    /// </summary>
+    /// <remarks>
+    /// ⚠ There is no `start`. The daemon is started lazily by whatever needs it and exits after
+    /// thirty minutes idle; a `start` verb invites a person to run one by hand and then wonder why
+    /// their editor is using a different one. `run` is the foreground form, for a supervisor and for
+    /// the tests.
+    /// </remarks>
+    static Command CreateDaemonCommand() {
+        var daemon = new Command("daemon", "The per-repository format daemon.");
+        var path = new Argument<string>("path") {
+            Description = "Any path inside the repository.",
+            DefaultValueFactory = static _ => "."
+        };
+
+        var status = new Command("status", "Whether a daemon is running, and what it is holding.");
+        status.Arguments.Add(path);
+        status.SetAction(parse => Run(() => DaemonCommands.Status(Root(parse.GetValue(path)!))));
+
+        var stop = new Command("stop", "Ask the daemon to exit.");
+        stop.Arguments.Add(path);
+        stop.SetAction(parse => Run(() => DaemonCommands.Stop(Root(parse.GetValue(path)!))));
+
+        var run = new Command("run", "Run the daemon in the foreground.");
+        run.Arguments.Add(path);
+        run.SetAction(parse => DaemonCommands.RunAsync(Root(parse.GetValue(path)!), CancellationToken.None)
+            .GetAwaiter()
+            .GetResult());
+
+        daemon.Subcommands.Add(status);
+        daemon.Subcommands.Add(stop);
+        daemon.Subcommands.Add(run);
+        return daemon;
+    }
+
+    /// <summary><c>skala lsp</c> — stdio, four capabilities (docs/plan/11 § "LSP").</summary>
+    static Command CreateLspCommand() {
+        var command = new Command("lsp", "Speak the Language Server Protocol over stdio.");
+        command.SetAction(_ => {
+            var server = new LanguageServer(Console.In, Console.Out);
+            server.RunAsync(CancellationToken.None).GetAwaiter().GetResult();
+            return 0;
+        });
+
+        return command;
+    }
+
+    /// <summary><c>skala hooks install</c> — docs/plan/11 § "Git hooks".</summary>
+    static Command CreateHooksCommand() {
+        var hooks = new Command("hooks", "Install the pre-commit hook, or say what it would do.");
+        var path = new Argument<string>("path") {
+            Description = "Any path inside the repository.",
+            DefaultValueFactory = static _ => "."
+        };
+
+        var apply = new Option<bool>("--apply") { Description = "Write the hook. Without it, install only says what it would do." };
+
+        var install = new Command("install", "Write .git/hooks/pre-commit, unless a hook manager owns it.");
+        install.Arguments.Add(path);
+        install.Options.Add(apply);
+        install.SetAction(parse => Run(() => DaemonCommands.InstallHooks(Root(parse.GetValue(path)!), parse.GetValue(apply))));
+
+        hooks.Subcommands.Add(install);
+        return hooks;
+    }
+
+    static string Root(string path) => FindRepositoryRoot(path) ?? Path.GetFullPath(path);
 
     static List<KeyValuePair<string, string>> ParseOverrides(string[]? values) {
         if (values is null || values.Length == 0) {

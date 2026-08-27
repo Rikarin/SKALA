@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    The daemon and the LSP server. Two transports over one implementation, and neither of them may
+    have behaviour the CLI does not (docs/plan/11 § "The daemon", § "LSP").
+  -->
+
+  <PropertyGroup>
+    <RootNamespace>Rikarin.Skala.Server</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../Core/Rikarin.Skala.Core/Rikarin.Skala.Core.csproj" />
+    <ProjectReference Include="../../Formatting/Rikarin.Skala.Formatting.CSharp/Rikarin.Skala.Formatting.CSharp.csproj" />
+  </ItemGroup>
+
+</Project>

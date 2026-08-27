@@ -31,6 +31,7 @@
   <ItemGroup>
     <ProjectReference Include="../../Core/Rikarin.Skala.Core/Rikarin.Skala.Core.csproj" />
     <ProjectReference Include="../../Formatting/Rikarin.Skala.Formatting.CSharp/Rikarin.Skala.Formatting.CSharp.csproj" />
+    <ProjectReference Include="../Rikarin.Skala.Server/Rikarin.Skala.Server.csproj" />
   </ItemGroup>
 
 </Project>
