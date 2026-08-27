@@ -261,23 +261,45 @@ before anyone holds a baseline containing either.
 
 ## Rule status
 
-⚠ **This catalogue is a plan and it has never been checked against the code.** Three artefacts agree
-with each other and are test-enforced — `rules.json`, `allocated-ids.txt` and `docs/rules/`, 32
-entries each — and none of them is ever compared to the list above. Measured at `8cbd66d` by
-intersecting the ids this document names with `rules.json`:
+⚠ **This count is generated, and the reason it is generated is that the hand-kept one went stale
+inside a single merge.** The table below recorded "21 shipped, 19.8 %", measured at `8cbd66d`; M8's
+five `SK5xxx` landed after it was typed and nothing noticed. A catalogue that misreports its own
+coverage is the same failure as a document describing behaviour the tool does not have, which is
+what the truth pass was for. The numbers now come from intersecting the ids this document names with
+`rules.json`, and `RuleCatalogTests.TheCoverageBlock_MatchesTheRegistry` fails when the block and the
+registry disagree. Regenerate with `skala rules docs`.
+
+<!-- BEGIN GENERATED COVERAGE -->
+<!-- Regenerate with `skala rules docs`. Do not edit by hand: the numbers
+     are computed from this file and rules.json, and a hand-kept count went
+     stale inside one merge. -->
 
 | | | |
 |---|---:|---|
-| Rules this document names, excluding range boundaries and `SK9xxx` | **106** | `SK3499`/`SK3500` are range boundaries in § "The ranges", not rules; `SK9xxx` is a separate register with its own guard |
-| **Shipped** — present in `rules.json` | **21** | **19.8 %** |
-| **Cut** — deliberately not built, reason recorded and it survives § "Reasons that justify a cut" | **10** | |
-| **Outstanding** — planned, not built, not cut | **75** | of which **12** were declared cut in a milestone retrospective with no reason recorded against them |
-| Shipped but **not named in this catalogue at all** | **3** | `SK7003`, `SK7004`, `SK7005` — reconciled below |
+| Rules this document names | **109** | excluding band edges (`SK1000`–`SK1999` and the like), `SK3499`/`SK3500`, and `SK9xxx` |
+| **Shipped** — present in `rules.json` | **29** | **26.9 %** |
+| **Cut** — deliberately not built, reason recorded | **10** | § "Cut, with the reason" |
+| **Retired** — allocated, superseded, never to be built | **1** | the id stays taken for ever (ADR-012) |
+| **Outstanding** — planned, not built, not disposed of | **69** | includes the twelve declared cut with no reason recorded |
 
-The distinction between the last two rows of that table is the whole reason it exists: **a rule
-counted as outstanding when it was actually cut on purpose makes the roadmap look as though it is
-failing at something it decided**, and a rule counted as cut when nobody recorded a reason is a
-decision nobody can review.
+<!-- END GENERATED COVERAGE -->
+
+⚠ **Three states, and the third is what makes the number honest.** A rule counted as outstanding
+when it was actually cut on purpose makes the roadmap look as though it is failing at something it
+decided; a rule counted as cut when nobody recorded a reason is a decision nobody can review. The
+twelve M7 declared cut without recording why are **outstanding**, and § "Declared cut with no
+recorded reason" is where they are named.
+
+⚠ **26 % is the shipping bar working, not the project falling behind.** Four milestones each shipped
+far fewer rules than they planned — 4 of 20, 6 of 36, 3 of ~15, 5 of 9 — because a rule ships only
+with a fix, zero false positives across two reference trees, and a negative fixture set at least as
+large as the positive one. Twenty-nine rules that are always right is the goal.
+[16](16-risks-and-open-questions.md) § R3 describes the alternative — a hundred that are usually
+right — as the failure mode, not the target.
+
+⚠ Three artefacts agree with each other and are test-enforced — `rules.json`, `allocated-ids.txt`
+and `docs/rules/`. `SK7003`, `SK7004` and `SK7005` ship and were named nowhere in this document until
+the reconciliation below.
 
 ### ⚠ The three metrics this catalogue did not name
 
