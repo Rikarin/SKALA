@@ -109,6 +109,11 @@ Line fidelity is the headline (≥ 99.9 % is the bar from [00](00-vision-and-pri
 fidelity will be much lower for a long time and that is expected — one divergent construct spoils a
 whole file — but its *trend* is the honest progress signal.
 
+⚠ **This number sits on a floor, and the floor is 90.95 %.** See
+[§ The unformat differential](#-the-unformat-differential) below: the corpus inputs are already
+mostly formatted, so most of what this measures is that Skala leaves good code alone. It is a real
+requirement and it is not the requirement that retires ReSharper.
+
 The output of a differential run is not pass/fail: it is a ranked report of divergence classes by
 line count, which is the work queue. "Chained call wrapping after a conditional access: 412 lines
 across 31 files" is a day's work, findable in no other way.
@@ -192,6 +197,156 @@ thirteen inputs × four combinations of `keep_user_linebreaks` × `keep_existing
 ⚠ The safety properties are asserted in **every** corner, not only the default one. A formatter that
 corrupts a file when `keep_user_linebreaks = false` is still a formatter that corrupts files, and the
 non-default corners are precisely where nobody looks.
+
+### ⚠ The unformat differential
+
+`Testing/corpus/unformatted/`, `./build.sh Unformat`.
+
+**The 99.63 % headline sits on a 90.95 % floor.** Score a formatter that returns its input unchanged —
+compare each `corpus/real/` **input** directly against its `.expected.cs` — and it gets:
+
+| | null hypothesis | Skala |
+|---|---|---|
+| line fidelity | **90.95 %** | 99.63 % |
+| file fidelity | **26.84 %** | 85.26 % |
+
+91 % of corpus lines never needed changing, so the entire discriminating power of that differential
+lives in the other 9 %. Skala closes 96 % of the available line gap, which is real — but the test
+mostly asks *"does Skala leave good code alone"* and only faintly asks *"does Skala make the same
+decisions ReSharper makes"*. **The second question is the one that decides whether ReSharper can be
+retired.**
+
+So: degrade a corpus file's formatting, run **both** Skala and `jb cleanupcode` over the degraded
+copy, and compare the two outputs. Same oracle, same fixtures-are-committed rule, new corpus.
+
+#### Two modes, and why one is not enough
+
+The export sets `resharper_keep_user_linebreaks = true` and `keep_user_wrapping = true` — ADR-002's
+whole preserve-and-repair model. **Destroying the author's line breaks destroys the input those
+options act on**, so a collapse-everything test measures the *reflow* path and says nothing about the
+*preserve* path, which is what runs in production.
+
+| mode | what it does | what it exercises |
+|---|---|---|
+| `scramble` | random indentation, ~1 in 3 line breaks moved to a legal-but-wrong place, blank lines added and removed, inter-token spacing randomised. The author's breaks are **different**, not absent. | `keep_existing_*` and the preserve machinery — **the mode that matters most**, because it is what real input looks like and what an AI writes |
+| `collapse` | minimal legal whitespace, everything joined onto as few lines as the language allows. Only a directive, its disabled text, a `//` comment and a `///` run force a line. | the fitting engine and the wrap options, from nothing |
+
+Both are **parse-preserving and token-preserving**, and neither re-derives what is safe to touch:
+`FuzzMutations.SourceMap` already knows which bytes are data, and it cost that agent 3 500 false
+reports to learn. `Unformat.Degrade` refuses to emit a file whose token stream is not identical to
+the original's **under both symbol sets** — which caught three real errors while this was written,
+each recorded at the line that fixes it: structured doc trivia losing its `///` under `ToString()`,
+an interpolated string decomposing into tokens a separator could be written between, and text that is
+live code under one symbol set and disabled data under the other.
+
+Measured over the degradation as committed: 33.8 % of the original's lines survive `scramble`
+unchanged and 28.2 % survive `collapse`; no file in either mode is unchanged.
+
+#### ⚠ The null hypothesis, beside every number
+
+**Report what "change nothing" scores on the same population, always.** Its absence beside 99.63 % is
+what made that number look better than it was. `./build.sh Unformat` prints it as the first row of
+every table, and `UnformatTests.TheNullHypothesis_IsFarBelowSkala` asserts it stays low — a ratchet
+on its own cannot tell a formatter that improved from a corpus that got easier.
+
+380 files of `corpus/real/`, both modes, at the commit that added them:
+
+| | scramble | collapse |
+|---|---|---|
+| null hypothesis, line | 30.73 % | 32.38 % |
+| **Skala, line (no symbols)** | **64.18 %** | **91.74 %** |
+| Skala, line (symbols supplied) | 64.24 % | 91.83 % |
+| null hypothesis, file | 0.00 % | 0.00 % |
+| **Skala, file** | **2.11 %** | **1.84 %** |
+| share of the available line gap closed | 48.3 % | 87.8 % |
+| oracle(degraded) vs oracle(original), line | 76.81 % | 87.51 % |
+
+The last row is a **ceiling, not a floor**: it is the oracle measured against its own answer for the
+undegraded file. At 76.81 % on `scramble` the oracle does not recover the canonical form either,
+because `keep_user_linebreaks` tells it not to — the scrambled breaks are the author's breaks now.
+Nothing that agrees with the oracle could score higher against the original, and a differential that
+compared Skala to `corpus/real/`'s fixtures instead would be charging Skala for the configuration's
+own behaviour.
+
+⚠ **`collapse` scores 27 points higher than `scramble`, which is the opposite of the intuition.**
+Rebuilding a layout from nothing is the easier problem; agreeing about *which* of the author's breaks
+to keep is the harder one, and it is the one that runs on every real invocation. A single-mode test
+built on "destroy everything" would have reported 91.74 % and missed it.
+
+#### The ranked divergence classes — the work queue
+
+⚠ One defect dominates `scramble`, and the aggregate is unreadable without the split:
+
+| scramble subset | files | line fidelity |
+|---|---|---|
+| input has a **wrapped file-scoped namespace** | 204 | **38.00 %** |
+| input does not | 176 | **88.93 %** |
+
+**A file-scoped namespace whose qualified name is wrapped makes Skala indent the entire rest of the
+file by one level.** Six lines reproduce it, and the oracle was asked directly rather than assumed:
+
+```csharp
+namespace Serilog
+    .Configuration;
+
+public class Foo {       // ← Skala emits this, and everything after it, at +4
+    public int Bar { get; set; }
+}
+```
+
+Underneath it, over the 176 uncontaminated files (88.94 % line, null hypothesis 31.28 %), the ranked
+classes are:
+
+| lines | files | class |
+|---|---|---|
+| 1 564 | 148 | line break presence: Skala left a line the oracle joined |
+| 1 265 | 157 | wrapping: one side continues where the other broke |
+| 682 | 128 | wrapping: the oracle broke a line Skala left long |
+| 662 | 128 | indentation (−4 columns) |
+| 339 | 82 | other |
+| 194 | 51 | indentation (+4 columns) |
+| 149 | 81 | blank line: Skala has one, the oracle does not |
+
+The first three are largely **one** decision, also confirmed against the oracle directly: given
+`using System; using System.Text;` on one line, **the oracle puts each `using` on its own line and
+Skala leaves them joined**. The second, from the same probe: given an accessor list the author broke
+inside — `{ get; set\n ; }` — the oracle expands the whole list to a block and Skala keeps the shape
+and re-indents it. Both are `keep_existing_*` questions, and neither is visible in `corpus/real/`
+at all, because nothing in that corpus is written that way.
+
+`collapse`'s own list is dominated by wrapping (2 193 lines across 321 files where the oracle broke a
+line Skala left long, 666 where the two broke it in different places) and by blank-line insertion
+between members (605 lines across 361 files where the oracle inserts a blank line and Skala does
+not). That is the fitting engine and `blank_lines_around_*`, which is what a from-nothing test is
+supposed to find.
+
+#### Cost, and the sampling decision
+
+⚠ Oracle runs dominate: `jb cleanupcode`'s startup is tens of seconds and its per-file marginal cost
+is milliseconds, so the only variable worth tuning is the batch. **Measured on the reference machine
+at a batch of 60: 0.37 s/file amortised, 14 invocations, 4 min 38 s for all 760 files.**
+
+That is cheap enough that **there is no sample**: all 380 files of `corpus/real/`, in both modes.
+The sampler is still there — `unformat generate --count=N` draws by `SHA-256(seed + "\n" + path)` so
+a smaller draw survives the person who ran it — and it is what to reach for if the corpus grows or
+the modes multiply. A full set needs no argument about which files it left out.
+
+The committed cost is 15 MB and 1 520 files: 760 degraded inputs and 760 fixtures.
+
+#### Regenerating
+
+```
+dotnet run --project Testing/Rikarin.Skala.Testing -- unformat generate [--count=N]  # ⚠ also deletes the fixtures
+dotnet run --project Testing/Rikarin.Skala.Testing -- unformat oracle                # re-fixture
+dotnet run --project Testing/Rikarin.Skala.Testing -- unformat regenerate            # both
+./build.sh Unformat                                                                  # measure
+```
+
+⚠ The first three are deliberate reviewed actions in their own commit, like `oracle` and `sample`;
+`./build.sh Unformat` and the conformance suite read committed files and need nothing installed
+(ADR-011). The degraded inputs are **inputs**: `UnformatTests` re-checks every one of them against
+its `corpus/real/` source from the committed bytes, because a hand-edit to a degraded file turns
+every number after it into a comparison of two unrelated files and nothing else would notice.
 
 ### The key-flip sweep
 

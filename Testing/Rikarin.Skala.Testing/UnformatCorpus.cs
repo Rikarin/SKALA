@@ -1,0 +1,219 @@
+using System.Globalization;
+using System.Text;
+
+namespace Rikarin.Skala.Testing;
+
+/// <summary>
+/// <c>Testing/corpus/unformatted/</c> — the third corpus, and the second differential.
+/// </summary>
+/// <remarks>
+/// ⚠ The reason it exists is a number. Comparing each <c>corpus/real/</c> <b>input</b> directly
+/// against its <c>.expected.cs</c> — scoring a formatter that returns its input unchanged — gives
+/// 90.95 % of lines and 26.84 % of files. The 99.63 % headline therefore sits on a 91 % floor: 91 %
+/// of corpus lines never needed changing, so the whole discriminating power of that differential
+/// lives in the other 9 %, and the test mostly asks <em>"does Skala leave good code alone"</em>
+/// rather than <em>"does Skala make the same decisions ReSharper makes"</em>. The second question is
+/// the one that decides whether ReSharper can be retired.
+/// <para>
+/// ⚠ The degraded inputs are <b>committed</b>, like every other oracle input, and so are the
+/// fixtures beside them (ADR-011). A degraded input regenerated on the fly is an input nobody
+/// reviewed, and a fixture regenerated beside it is a tautology.
+/// </para>
+/// </remarks>
+public static class UnformatCorpus {
+    public const string Set = "unformatted";
+
+    /// <summary>
+    /// The seed the sample is drawn with, mixed into every path's hash.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ Its own seed rather than <see cref="CorpusSample.Seed"/>, so that redrawing this sample and
+    /// redrawing <c>corpus/real/vixen/</c> are independent actions. Sharing one seed would make a
+    /// Vixen redraw silently reshuffle this corpus too.
+    /// </remarks>
+    public const string Seed = "skala-unformat-20260827";
+
+    /// <summary>
+    /// How many of <c>corpus/real/</c>'s 380 files each mode is degraded from.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ All of them, and the arithmetic behind that is in
+    /// docs/plan/12 § "The unformat differential". Oracle runs dominate — <c>jb cleanupcode</c>'s
+    /// startup is tens of seconds and its per-file marginal cost is milliseconds — so the only
+    /// variable worth tuning is the batch, and at a batch of 60 the measured cost is 0.37 s/file
+    /// amortised: 14 invocations and 4 min 38 s for all 760 files across both modes. That is cheap
+    /// enough that there is no sample to argue about.
+    /// <para>
+    /// ⚠ <see cref="Sources"/> still draws by <c>SHA-256(seed + "\n" + path)</c> rather than by
+    /// enumeration order, so a smaller <c>--count=N</c> is reproducible if the corpus grows or the
+    /// modes multiply. A sample that cannot be redrawn is not a sample, it is whatever somebody
+    /// copied — which is the mistake milestone 3.1 found in <c>corpus/real/vixen/</c>.
+    /// </para>
+    /// </remarks>
+    public const int SampleSize = 380;
+
+    public static string Root { get; } = Corpus.SetRoot(Set);
+
+    public static string ModeRoot(UnformatMode mode) => Path.Combine(Root, Unformat.Name(mode));
+
+    /// <summary>The <c>corpus/real/</c> files the sample draws from, in hash order.</summary>
+    /// <remarks>
+    /// ⚠ Ordered by <c>SHA-256(seed + "\n" + path)</c> for <see cref="CorpusSample"/>'s reason: a
+    /// hash of the path depends on nothing but the path, so the same commit gives the same files on
+    /// any machine, in any order, forever — while a seeded sequence depends on the order the file
+    /// system happened to enumerate in.
+    /// </remarks>
+    public static IReadOnlyList<CorpusFile> Sources(int count) => [
+        .. Corpus.Files(Corpus.Real)
+            .OrderBy(static file => CorpusSample.KeyOf(Seed, file.RelativePath))
+            .ThenBy(static file => file.RelativePath, StringComparer.Ordinal)
+            .Take(count)
+    ];
+
+    /// <summary>The degraded files of one mode that are on disk, fixture or not.</summary>
+    public static IReadOnlyList<CorpusFile> Files(UnformatMode mode) {
+        var root = ModeRoot(mode);
+        if (!Directory.Exists(root)) {
+            return [];
+        }
+
+        return [
+            .. Directory.EnumerateFiles(root, "*.cs", SearchOption.AllDirectories)
+                .Where(static path => !path.EndsWith(".expected.cs", StringComparison.Ordinal))
+                .Select(path => new CorpusFile(
+                        Set,
+                        Unformat.Name(mode) + "/" + Path.GetRelativePath(root, path).Replace('\\', '/'),
+                        path
+                    )
+                )
+                .OrderBy(static file => file.Path, StringComparer.Ordinal)
+        ];
+    }
+
+    /// <summary>
+    /// Degrades the sample and writes it, replacing whatever was there.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ A deliberate developer action whose diff is reviewed in its own commit, exactly like
+    /// <c>sample</c> and <c>oracle</c>. It replaces a corpus, and a corpus that changes without a
+    /// commit is not a measurement.
+    /// <para>
+    /// ⚠ <b>It deletes the fixtures with the inputs, and that is deliberate.</b> A degraded input
+    /// and the oracle's answer for it are one artefact; a new input beside the previous input's
+    /// fixture is a comparison of two unrelated files, which is the one failure the whole design is
+    /// arranged to prevent. Follow it with <c>unformat oracle</c>, or use
+    /// <c>unformat regenerate</c>, which is the pair. <c>UnformatTests</c> fails loudly in between.
+    /// </para>
+    /// </remarks>
+    public static string Generate(int count, TextWriter log) {
+        var sources = Sources(count);
+        var report = new StringBuilder();
+
+        foreach (var mode in Unformat.Modes) {
+            var root = ModeRoot(mode);
+            if (Directory.Exists(root)) {
+                Directory.Delete(root, recursive: true);
+            }
+
+            var written = 0;
+            var rejected = new List<string>();
+            var glued = 0;
+            long originalLines = 0;
+            long degradedLines = 0;
+            long survivingLines = 0;
+
+            foreach (var source in sources) {
+                var text = File.ReadAllText(source.Path);
+                var seed = CorpusSample.KeyOf(Seed + "/" + Unformat.Name(mode), source.RelativePath);
+                var degraded = Unformat.Degrade(mode, text, seed);
+                if (degraded is null) {
+                    // ⚠ Reported rather than silently dropped. A file the degrader cannot prove it
+                    // preserved is a hole in the corpus, and a hole nobody counted is how a
+                    // measurement quietly narrows to the easy files.
+                    rejected.Add(source.RelativePath);
+                    continue;
+                }
+
+                var target = Path.Combine(root, source.RelativePath.Replace('/', Path.DirectorySeparatorChar));
+                Directory.CreateDirectory(Path.GetDirectoryName(target)!);
+                File.WriteAllText(target, degraded.Text);
+                written++;
+                glued += degraded.Glued ? 1 : 0;
+                // ⚠ How many of the original's lines came through untouched, by the same LCS the
+                // differential uses. The *count* of lines barely moves under `scramble` — a join
+                // removes a line and a split adds one back — so reporting only that would say the
+                // degradation did almost nothing, when in fact it moves two lines in three.
+                var before = TextNormalisation.Lines(text);
+                originalLines += before.Length;
+                degradedLines += degraded.Lines;
+                survivingLines += LineDiff.Compute(before, TextNormalisation.Lines(degraded.Text))
+                    .Count(static entry => entry.Kind == LineDiff.Kind.Same);
+            }
+
+            report.Append(Unformat.Name(mode))
+                .Append(": ")
+                .Append(written.ToString(CultureInfo.InvariantCulture))
+                .Append(" files, ")
+                .Append(originalLines.ToString(CultureInfo.InvariantCulture))
+                .Append(" lines → ")
+                .Append(degradedLines.ToString(CultureInfo.InvariantCulture))
+                .Append(" lines; ")
+                .Append(
+                    (originalLines == 0 ? 0 : (double)survivingLines / originalLines)
+                        .ToString("P1", CultureInfo.InvariantCulture)
+                )
+                .AppendLine(" of the original's lines survive unchanged");
+
+            if (glued > 0) {
+                report.Append("  ")
+                    .Append(glued.ToString(CultureInfo.InvariantCulture))
+                    .AppendLine(" files fell back to a space between every token pair");
+            }
+
+            if (rejected.Count > 0) {
+                report.Append("  ⚠ ")
+                    .Append(rejected.Count.ToString(CultureInfo.InvariantCulture))
+                    .Append(" rejected (not provably the same program): ")
+                    .AppendLine(string.Join(", ", rejected.Take(6)));
+            }
+
+            log.WriteLine(
+                $"  {Unformat.Name(mode)}: {written.ToString(CultureInfo.InvariantCulture)} written, "
+                + "fixtures deleted — run `unformat oracle` next"
+            );
+        }
+
+        WriteNotice(sources.Count, report.ToString());
+        return report.ToString();
+    }
+
+    static void WriteNotice(int count, string report) {
+        Directory.CreateDirectory(Root);
+        File.WriteAllText(
+            Path.Combine(Root, "NOTICE.md"),
+            $"""
+             # `corpus/unformatted/`
+
+             Degraded copies of {count.ToString(CultureInfo.InvariantCulture)} files of `corpus/real/`,
+             taken in `SHA-256("{Seed}" + "\n" + path)` order so that a smaller `--count=N` draw is
+             reproducible, one subtree per degradation mode, each with the `jb cleanupcode` output of
+             the **degraded** file beside it.
+
+             ⚠ Generated by `dotnet run --project Testing/Rikarin.Skala.Testing -- unformat regenerate`,
+             which is a deliberate developer action like `oracle` and `sample`. Do not hand-edit; the
+             inputs and the fixtures only mean anything as a pair.
+
+             ⚠ These files are inputs. `./build.sh Lint` excludes `Testing/corpus` for exactly this
+             reason — half the corpus is deliberately misformatted, and a formatter that reformats
+             its own test corpus has destroyed its own measurement.
+
+             ```
+             {report.TrimEnd()}
+             ```
+
+             `./build.sh Unformat` reports the differential, with the null hypothesis beside every
+             number. See docs/plan/12 § "The unformat differential".
+             """
+        );
+    }
+}
