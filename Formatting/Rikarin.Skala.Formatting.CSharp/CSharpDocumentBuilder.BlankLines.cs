@@ -23,6 +23,34 @@ public sealed partial class CSharpDocumentBuilder {
 
         // 1. Caps. The author's runs are truncated, never extended.
         var cap = Math.Max(0, declaration ? _options.KeepBlankLinesInDeclarations : _options.KeepBlankLinesInCode);
+
+        // 0. ⚠ Inside a `///` run the blank count is structure, and none of the three systems below
+        // gets a vote. Roslyn ends a documentation comment at a blank line, so the gap between two
+        // `///` lines is the only whitespace in the language where 0 → 1 *splits one trivia into
+        // two* and 1 → 0 fuses two into one. Either is a changed token stream, the safety net
+        // abandons the file, and `skala format` is a total outage on it — SK9099 rather than a
+        // misplaced blank line.
+        //
+        // ⚠ Not hypothetical and not exotic (SK-FUZZ-0002). `stick_comment`'s early return below
+        // spends a member's requirement on the gap *above* its comment rather than below it, but it
+        // asks `previous.StartsLine` first — and the first `///` of a run that begins on the brace
+        // line does not start a line:
+        //
+        //     interface I { /// <summary>x</summary>
+        //       /// <remarks>y</remarks>
+        //       int M();
+        //
+        // so the guard missed, `blank_lines_around_invocable` landed between the two `///` lines,
+        // and the file could not be formatted at all. Move the run down one line and it formats
+        // correctly, which is the whole tell: a token-stream outage that depends only on where the
+        // run starts.
+        //
+        // ⚠ Only `///`. Two consecutive `//` lines are two separate trivia, so a blank between them
+        // moves whitespace and nothing else.
+        if (BetweenDocumentationLines(previous, nextPieceIndex)) {
+            return sourceBlanks == 0 ? 0 : Math.Max(1, Math.Min(sourceBlanks, cap));
+        }
+
         var blanks = Math.Min(sourceBlanks, cap);
 
         // 2. Requirements. A minimum inserted where absent.
@@ -35,6 +63,19 @@ public sealed partial class CSharpDocumentBuilder {
 
         return blanks;
     }
+
+    /// <summary>
+    /// Whether the gap runs between two lines of documentation comment.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ A blank line here is not spacing, it is the delimiter that ends a <c>///</c> run. See
+    /// <see cref="ResolveBlankLines"/> for what putting one in the wrong place costs.
+    /// </remarks>
+    bool BetweenDocumentationLines(Piece previous, int nextPieceIndex) =>
+        previous.Kind == PieceKind.DocCommentLine
+        && nextPieceIndex >= 0
+        && nextPieceIndex < _pieces.Length
+        && _pieces[nextPieceIndex].Kind == PieceKind.DocCommentLine;
 
     bool RemovesNearBrace(Piece previous, SyntaxToken nextToken, bool declaration) {
         var enabled = declaration

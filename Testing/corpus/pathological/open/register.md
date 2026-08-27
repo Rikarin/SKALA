@@ -35,35 +35,6 @@ bespoke test: two corpus files that differ only in whitespace acquire two `.expe
 and those fixtures being **byte-identical** is the absorption statement, now asserted by the
 ordinary differential instead of by an entry here. SK-FUZZ-0007 was retired that way.
 
-## SK-FUZZ-0002 — a `///` comment that starts on the brace line loses its continuation lines
-
-- file: `doc-comment-starting-on-the-brace-line.cs`
-- property: `token-equivalence`
-- seed: `517720466767192565`
-- found: mutating `real/vixen/Core/Vixen.Platform/Windowing/IGlContext.cs` with `widen-identifier`,
-  `join-line`, `widen-identifier`, `remove-blank-line`; minimised from 6 620 characters to 156, and
-  narrowed by hand to 79.
-
-```
-interface I { /// <summary>x</summary>
-  /// <remarks>y</remarks>
-  int M();
-}
-```
-
-`skala format` reports **SK9099** and refuses to write:
-
-```
-error SK9099: not written, the formatted output has a different token stream (at token 6:
-'C:///<summary>x</summary>\n///<remarks>y</remarks>' became 'C:///<summary>x</summary>')
-```
-
-The second `///` line is dropped. ⚠ The safety net does its job — nothing is written and no comment
-is lost on disk — but the file cannot be formatted at all, which for a formatter is a full outage on
-that file. The trigger is only the position: a `///` run whose first line begins on the same line as
-the `{`. Move the run onto its own line and the file formats correctly. The malformed XML in the
-fuzzer's own reduction was incidental; the hand-narrowed case above is well-formed.
-
 ## SK-FUZZ-0003 — mixed line endings need two passes to converge
 
 - file: `mixed-line-endings-after-a-trailing-comment.cs`
@@ -160,6 +131,7 @@ that it is worth running — and an empty register would read as a fuzzer that f
 |---|---|---|
 | `SK-FUZZ-0001` | crash — `@formatter:off` running to a whitespace-only end of file threw out of `EditEmitter`, past the crash handler, out of the process | the formatter-tag pass. `EditEmitter` indexed past the output because the file-level rules shorten it *after* the writer ran; and the exit code was wrong until `EnableDefaultExceptionHandler = false`, because System.CommandLine was swallowing the exception before any handler saw it |
 | `SK-FUZZ-0005` | token equivalence — an interpolated string inside a formatter-off span | the same pass: `EmitVerbatim` was writing a node a second time inside an already-written region |
+| `SK-FUZZ-0002` | token equivalence — a `///` run beginning on the `{` line lost its continuation lines (SK9099, the file unformattable) | nothing was ever lost: both `///` lines were emitted, and a **blank line was inserted between them**. Roslyn ends a documentation comment at a blank line, so that split one trivia into two and the token stream changed. `stick_comment`'s early return spends a member's requirement above its comment rather than below it, but asks `previous.StartsLine` first — and the first `///` of a run that starts on the brace line does not start a line, so `blank_lines_around_invocable` landed inside the run. `ResolveBlankLines` now treats the gap between two `///` lines as structure that none of the three systems votes on: 0 → 1 splits a trivia and 1 → 0 fuses two |
 | `SK-FUZZ-0007` | whitespace absorption — a blank line appeared because the *input* line was wider than the margin | `IsSingleLine` measured the member with `TextWidth.Measure` over its source span, which counts the gaps the author wrote between its tokens — gaps the formatter is about to collapse. It now measures the token stream and the spaces `SpaceRules` will actually emit. The leading-whitespace half of this had already been fixed once (`OutputIndentColumns`); the interior half is the same mistake one step in, and only a mutation that changes a width could reach it. Both halves of the pair are now measured fixtures whose `.expected.cs` are byte-identical |
 | `SK-FUZZ-0004` | idempotency — the closing `]` of a split array-rank specifier landed at eight columns, then four | `EmitToken` matched a piece by its start position alone. A zero-width token has no piece of its own (`SourcePieces.Split` skips it), so the omitted size of `byte[…]` arrived holding the *next* token's piece — and it shares that token's start whenever no trivia separates them. The `]` was emitted one caller early, from inside the bracket's continuation scope instead of after it closed. Matching on the piece's length as well as its start is the fix; a space before the `]` moved it off the collision, which is why the second pass was right |
 
