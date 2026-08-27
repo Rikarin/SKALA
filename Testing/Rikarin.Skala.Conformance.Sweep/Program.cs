@@ -14,9 +14,14 @@ using Rikarin.Skala.Testing;
 //                     `root = true` is ReSharper's default. `--apply` writes the verified ones back
 //                     into options.json.
 //   plan [--family=…] what the sweep would ask about and what it would cost, without running it.
+//   verify <key>      one option, unbatched, with both engines' output at every value printed in
+//                     full. ⚠ How a row in the table is checked before anything is demoted on the
+//                     strength of it.
 
 if (args.Length == 0) {
-    Console.Error.WriteLine("usage: sweep [--family=…] [--out=…] | defaults [--family=…] [--apply] | plan [--family=…]");
+    Console.Error.WriteLine(
+        "usage: sweep [--family=…] [--out=…] | defaults [--family=…] [--apply] | plan [--family=…] | verify <key>"
+    );
     return 2;
 }
 
@@ -33,6 +38,18 @@ switch (args[0]) {
         return Sweep();
     case "defaults":
         return Defaults();
+    case "verify":
+        if (args.Length < 2) {
+            Console.Error.WriteLine("usage: verify <key>");
+            return 2;
+        }
+
+        return SweepVerify.Run(
+            SweepPlan.Build([]),
+            args[1],
+            Path.Combine(Corpus.RepositoryRoot, ".editorconfig"),
+            Console.Out
+        );
     default:
         Console.Error.WriteLine("unknown command: " + args[0]);
         return 2;
