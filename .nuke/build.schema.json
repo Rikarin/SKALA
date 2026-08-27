@@ -28,6 +28,7 @@
         "Clean",
         "Compile",
         "Conformance",
+        "Docs",
         "Fidelity",
         "Lint",
         "Native",
