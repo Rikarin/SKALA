@@ -13,14 +13,25 @@ dialects — are a second front end behind the same engine, and they come later;
 This directory is the authoritative design record: what Skala is meant to be, and why each decision
 was taken. Read 00–03 first; after that each file is the spec for one subsystem.
 
-**These documents do not say what is built.** When there is an `overview.md` beside this directory,
-it does, and it is checked against the code — so where it and a document here disagree, it wins.
+**These documents do not say what is built.** ✅ [`../overview.md`](../overview.md) does, it is
+checked against the code and the tests, and **where it and a document here disagree, it wins.** It is
+the only place that carries per-feature status; three places recording the same thing is how they
+come to disagree.
 
 ⚠ Where a document *has* been measured against the code, it says so inline with a ⚠ and a number.
-Milestones 0–3 and 5 have been; **4 has not**, and it is deferred behind 5 (see
-[15](15-roadmap.md) § M4). `docs/rules/` and `docs/options/` are generated from `rules.json` and
-`options.json` and are not hand-edited — `skala rules docs` regenerates the first, and a test fails
-when a page is stale.
+Milestones 0–3, 3.1 and 5–7 have been; **4 has not**, and it is deferred behind 5 (see
+[15](15-roadmap.md) § M4), and **9 is postponed to last** (§ M9).
+
+⚠ **The overview found things these documents get wrong, and they are listed there rather than fixed
+in place.** The largest classes: `skala arrange` and seven flags are described in the present tense
+and do not parse; Tier B is documented as a live tier and has no members; the registry holds 520
+options rather than the "~380" several documents still quote; `docs/options/` is named as a generator
+output and does not exist; and `ISkalaLanguage`, which milestone 9 is gated on, exists in three
+documents and in no C# source.
+
+`docs/rules/` and `docs/site/` are generated from `rules.json` and `options.json` and are not
+hand-edited — `skala rules docs` and `skala docs site` regenerate them, `./build.sh Docs` runs both,
+and a test fails when a page is stale.
 
 ## The one-sentence problem
 
@@ -33,6 +44,8 @@ AI agent agree with Rider about what the code should look like.
 
 | # | Document | Scope |
 |---|---|---|
+| — | [**Implementation Overview**](../overview.md) | ⚠ **What is actually built**, measured. Not a plan document; read it first if the question is "does this exist" |
+| — | [Divergences](../divergences.md) | Every deliberate difference from the oracle, with a current measurement |
 | 00 | [Vision and Principles](00-vision-and-principles.md) | What Skala is, what it refuses to be, the non-negotiables |
 | 01 | [Technology Decisions](01-technology-decisions.md) | Dependencies, pinned versions, ADR register |
 | 02 | [Repository Layout](02-repository-layout.md) | Folder tree, project graph, package boundaries, naming |
@@ -89,7 +102,13 @@ configuration — and the decision about which of the 4 226 keys Skala *implemen
 - ⚠ marks a decision that is easy to get wrong and expensive to reverse.
 - ✅ marks a decision that has been validated against the real corpus rather than reasoned about.
 - A "tier" always means the compatibility tier from [03](03-configuration-model.md) § "Four tiers".
-- Measurements are from `~/Projects/Vixen` (4 708 C# files, 1 374 580 lines at M3; the tree grows,
-  so a number quoted against 4 691 files is from an earlier milestone and says so) unless stated. That
-  tree is the reference corpus: it is the largest C# body the tool must handle and the one whose
-  formatting the author actually cares about.
+- Measurements are from `~/Projects/Vixen` unless stated (4 708 C# files at M3; **4 717 at
+  `8cbd66d`** — the tree grows, so a number quoted against 4 691 files is from an earlier milestone
+  and says so). It is the largest C# body the tool must handle and the one whose formatting the
+  author actually cares about.
+- ⚠ **Vixen is a test subject, not a specification.** It is measured against because it is real code
+  at scale, not because its present habits are the standard — and where it does not follow a rule,
+  **Vixen changes**. [16](16-risks-and-open-questions.md) § "The reference trees are a test subject,
+  not a specification" is the argument and the consequences; the short form is that a low finding
+  count on Vixen was never evidence that a rule is good, and that Vixen's own `.editorconfig` — built
+  by agents as they went, 916 lines, never reviewed as a whole — is not a source of requirements.
