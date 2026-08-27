@@ -26,16 +26,16 @@
 
 #endregion
 
-namespace Newtonsoft.Json.Tests.TestObjects {
-    public class TestObject {
-        public TestObject() { }
+namespace Newtonsoft.Json.Tests.TestObjects;
 
-        public TestObject(string name, byte[] data) {
-            Name = name;
-            Data = data;
-        }
+public class TestObject {
+    public TestObject() { }
 
-        public string Name { get; set; }
-        public byte[] Data { get; set; }
+    public TestObject(string name, byte[] data) {
+        Name = name;
+        Data = data;
     }
+
+    public string Name { get; set; }
+    public byte[] Data { get; set; }
 }

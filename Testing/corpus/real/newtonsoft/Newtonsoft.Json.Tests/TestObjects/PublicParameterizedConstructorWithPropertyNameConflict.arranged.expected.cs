@@ -26,14 +26,14 @@
 
 #endregion
 
-namespace Newtonsoft.Json.Tests.TestObjects {
-    public class PublicParameterizedConstructorWithPropertyNameConflict {
-        readonly int _value;
+namespace Newtonsoft.Json.Tests.TestObjects;
 
-        public PublicParameterizedConstructorWithPropertyNameConflict(string name) {
-            _value = Convert.ToInt32(name);
-        }
+public class PublicParameterizedConstructorWithPropertyNameConflict {
+    readonly int _value;
 
-        public int Name => _value;
+    public PublicParameterizedConstructorWithPropertyNameConflict(string name) {
+        _value = Convert.ToInt32(name);
     }
+
+    public int Name => _value;
 }

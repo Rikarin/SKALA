@@ -203,7 +203,7 @@ public class LoggerSinkConfiguration {
         ILogger logger,
         LogEventLevel restrictedToMinimumLevel
     ) =>
-        Logger(logger, attemptDispose: false, restrictedToMinimumLevel);
+        Logger(logger, false, restrictedToMinimumLevel);
 
     /// <summary>
     /// Write log events to a sub-logger, where further processing may occur. Events through

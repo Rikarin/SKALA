@@ -35,65 +35,63 @@ using Assert = Newtonsoft.Json.Tests.XUnitAssert;
 
 #endif
 
-namespace Newtonsoft.Json.Tests.Documentation.Samples.Serializer {
-    [TestFixture]
-    public class ErrorHandlingAttribute : TestFixtureBase {
-        #region Types
+namespace Newtonsoft.Json.Tests.Documentation.Samples.Serializer;
 
-        public class Employee {
-            List<string> _roles;
+[TestFixture]
+public class ErrorHandlingAttribute : TestFixtureBase {
+    #region Types
 
-            public string Name { get; set; }
-            public int Age { get; set; }
+    public class Employee {
+        List<string> _roles;
 
-            public List<string> Roles {
-                get {
-                    if (_roles == null) {
-                        throw new("Roles not loaded!");
-                    }
+        public string Name { get; set; }
+        public int Age { get; set; }
 
-                    return _roles;
+        public List<string> Roles {
+            get {
+                if (_roles == null) {
+                    throw new("Roles not loaded!");
                 }
-                set => _roles = value;
-            }
 
-            public string Title { get; set; }
-
-            [OnError]
-            internal void OnError(StreamingContext context, ErrorContext errorContext) {
-                errorContext.Handled = true;
+                return _roles;
             }
+            set => _roles = value;
         }
+
+        public string Title { get; set; }
+
+        [OnError]
+        internal void OnError(StreamingContext context, ErrorContext errorContext) {
+            errorContext.Handled = true;
+        }
+    }
+
+    #endregion
+
+    [Test]
+    public void Example() {
+        #region Usage
+
+        var person = new Employee { Name = "George Michael Bluth", Age = 16, Roles = null, Title = "Mister Manager" };
+
+        string json = JsonConvert.SerializeObject(person, Formatting.Indented);
+
+        Console.WriteLine(json);
+        // {
+        //   "Name": "George Michael Bluth",
+        //   "Age": 16,
+        //   "Title": "Mister Manager"
+        // }
 
         #endregion
 
-        [Test]
-        public void Example() {
-            #region Usage
-
-            var person = new Employee {
-                Name = "George Michael Bluth", Age = 16, Roles = null, Title = "Mister Manager"
-            };
-
-            string json = JsonConvert.SerializeObject(person, Formatting.Indented);
-
-            Console.WriteLine(json);
-            // {
-            //   "Name": "George Michael Bluth",
-            //   "Age": 16,
-            //   "Title": "Mister Manager"
-            // }
-
-            #endregion
-
-            StringAssert.AreEqual(
-                @"{
+        StringAssert.AreEqual(
+            @"{
   ""Name"": ""George Michael Bluth"",
   ""Age"": 16,
   ""Title"": ""Mister Manager""
 }",
-                json
-            );
-        }
+            json
+        );
     }
 }

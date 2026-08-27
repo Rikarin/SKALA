@@ -200,7 +200,7 @@ public static class YamlSerializer {
             }
 
             if (type.IsEnum) {
-                return Enum.Parse(type, text, ignoreCase: true);
+                return Enum.Parse(type, text, true);
             }
 
             return Type.GetTypeCode(type) switch {

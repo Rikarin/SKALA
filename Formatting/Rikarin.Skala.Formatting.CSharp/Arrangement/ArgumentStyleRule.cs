@@ -20,6 +20,12 @@ namespace Rikarin.Skala.Formatting.CSharp.Arrangement;
 /// four keys look like settings the reference tool ignores.
 /// </para>
 /// <para>
+/// ⚠ `out`/`ref`/`in` arguments are treated like any other, and that was measured rather than
+/// assumed. The first version exempted them on the reasoning that the name is often the only thing
+/// distinguishing one <c>out</c> parameter from the next; the oracle strips them, and an exemption
+/// nobody can point at a rule for is a divergence with no entry in docs/divergences.md.
+/// </para>
+/// <para>
 /// ⚠ Adding a name is semantic — the parameter's name comes from the resolved overload — and so is
 /// removing one, because a named argument may be *out of order*. <c>f(text: "x", number: 1)</c> must
 /// not become <c>f("x", 1)</c>; the name is only redundant when the argument already sits at its own
@@ -59,14 +65,32 @@ public sealed class ArgumentStyleRule : ArrangementRule {
                 return visited;
             }
 
+            var arguments0 = visited.Arguments;
+
+            // ⚠ An out-of-position named argument may not be followed by an unnamed one (CS8323),
+            // so removing a name is only legal *before* the first argument whose name is keeping the
+            // call together. Without this the rule turned `Brush(radius: 1, falloff: f, Curve)` into
+            // a file that does not compile — caught by safety layer 2 on Vixen's TerrainBrushTests,
+            // which is layer 2 doing its job and not a reason to leave the rule wrong.
+            var firstOutOfPosition = arguments0.Count;
+            for (var i = 0; i < arguments0.Count; i++) {
+                if (arguments0[i].NameColon is { } held
+                    && (i >= method.Parameters.Length
+                        || !string.Equals(
+                            method.Parameters[i].Name,
+                            held.Name.Identifier.ValueText,
+                            StringComparison.Ordinal
+                        ))) {
+                    firstOutOfPosition = i;
+                    break;
+                }
+            }
+
             var arguments = visited.Arguments;
             var changed = false;
             for (var i = 0; i < arguments.Count; i++) {
                 var argument = arguments[i];
-
-                // ⚠ `ref`/`out`/`in` arguments are left alone: the name is frequently the only thing
-                // telling a reader which of several `out` parameters is which.
-                if (!argument.RefKindKeyword.IsKind(SyntaxKind.None)) {
+                if (i > firstOutOfPosition) {
                     continue;
                 }
 

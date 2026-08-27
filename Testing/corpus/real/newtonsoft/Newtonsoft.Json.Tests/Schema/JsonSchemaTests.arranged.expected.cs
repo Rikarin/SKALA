@@ -36,54 +36,55 @@ using Assert = Newtonsoft.Json.Tests.XUnitAssert;
 
 #endif
 
-namespace Newtonsoft.Json.Tests.Schema {
-    [TestFixture]
-    public class JsonSchemaTests : TestFixtureBase {
-        [Test]
-        public void Extends() {
-            string json;
-            JsonSchemaResolver resolver = new JsonSchemaResolver();
+namespace Newtonsoft.Json.Tests.Schema;
 
-            json = @"{
+[TestFixture]
+public class JsonSchemaTests : TestFixtureBase {
+    [Test]
+    public void Extends() {
+        string json;
+        JsonSchemaResolver resolver = new JsonSchemaResolver();
+
+        json = @"{
   ""id"":""first"",
   ""type"":""object"",
   ""additionalProperties"":{}
 }";
 
-            JsonSchema first = JsonSchema.Parse(json, resolver);
+        JsonSchema first = JsonSchema.Parse(json, resolver);
 
-            json =
-                @"{
+        json =
+            @"{
   ""id"":""second"",
   ""type"":""object"",
   ""extends"":{""$ref"":""first""},
   ""additionalProperties"":{""type"":""string""}
 }";
 
-            JsonSchema second = JsonSchema.Parse(json, resolver);
-            Assert.AreEqual(first, second.Extends[0]);
+        JsonSchema second = JsonSchema.Parse(json, resolver);
+        Assert.AreEqual(first, second.Extends[0]);
 
-            json =
-                @"{
+        json =
+            @"{
   ""id"":""third"",
   ""type"":""object"",
   ""extends"":{""$ref"":""second""},
   ""additionalProperties"":false
 }";
 
-            JsonSchema third = JsonSchema.Parse(json, resolver);
-            Assert.AreEqual(second, third.Extends[0]);
-            Assert.AreEqual(first, third.Extends[0].Extends[0]);
+        JsonSchema third = JsonSchema.Parse(json, resolver);
+        Assert.AreEqual(second, third.Extends[0]);
+        Assert.AreEqual(first, third.Extends[0].Extends[0]);
 
-            var writer = new StringWriter();
-            JsonTextWriter jsonWriter = new JsonTextWriter(writer);
-            jsonWriter.Formatting = Formatting.Indented;
+        var writer = new StringWriter();
+        JsonTextWriter jsonWriter = new JsonTextWriter(writer);
+        jsonWriter.Formatting = Formatting.Indented;
 
-            third.WriteTo(jsonWriter, resolver);
+        third.WriteTo(jsonWriter, resolver);
 
-            var writtenJson = writer.ToString();
-            StringAssert.AreEqual(
-                @"{
+        var writtenJson = writer.ToString();
+        StringAssert.AreEqual(
+            @"{
   ""id"": ""third"",
   ""type"": ""object"",
   ""additionalProperties"": false,
@@ -91,18 +92,18 @@ namespace Newtonsoft.Json.Tests.Schema {
     ""$ref"": ""second""
   }
 }",
-                writtenJson
-            );
+            writtenJson
+        );
 
-            var writer1 = new StringWriter();
-            JsonTextWriter jsonWriter1 = new JsonTextWriter(writer1);
-            jsonWriter1.Formatting = Formatting.Indented;
+        var writer1 = new StringWriter();
+        JsonTextWriter jsonWriter1 = new JsonTextWriter(writer1);
+        jsonWriter1.Formatting = Formatting.Indented;
 
-            third.WriteTo(jsonWriter1);
+        third.WriteTo(jsonWriter1);
 
-            writtenJson = writer1.ToString();
-            StringAssert.AreEqual(
-                @"{
+        writtenJson = writer1.ToString();
+        StringAssert.AreEqual(
+            @"{
   ""id"": ""third"",
   ""type"": ""object"",
   ""additionalProperties"": false,
@@ -119,28 +120,28 @@ namespace Newtonsoft.Json.Tests.Schema {
     }
   }
 }",
-                writtenJson
-            );
-        }
+            writtenJson
+        );
+    }
 
-        [Test]
-        public void Extends_Multiple() {
-            var json = @"{
+    [Test]
+    public void Extends_Multiple() {
+        var json = @"{
   ""type"":""object"",
   ""extends"":{""type"":""string""},
   ""additionalProperties"":{""type"":""string""}
 }";
 
-            JsonSchema s = JsonSchema.Parse(json);
+        JsonSchema s = JsonSchema.Parse(json);
 
-            var writer = new StringWriter();
-            JsonTextWriter jsonWriter = new JsonTextWriter(writer);
-            jsonWriter.Formatting = Formatting.Indented;
+        var writer = new StringWriter();
+        JsonTextWriter jsonWriter = new JsonTextWriter(writer);
+        jsonWriter.Formatting = Formatting.Indented;
 
-            string newJson = s.ToString();
+        string newJson = s.ToString();
 
-            StringAssert.AreEqual(
-                @"{
+        StringAssert.AreEqual(
+            @"{
   ""type"": ""object"",
   ""additionalProperties"": {
     ""type"": ""string""
@@ -149,25 +150,25 @@ namespace Newtonsoft.Json.Tests.Schema {
     ""type"": ""string""
   }
 }",
-                newJson
-            );
+            newJson
+        );
 
-            json = @"{
+        json = @"{
   ""type"":""object"",
   ""extends"":[{""type"":""string""}],
   ""additionalProperties"":{""type"":""string""}
 }";
 
-            s = JsonSchema.Parse(json);
+        s = JsonSchema.Parse(json);
 
-            writer = new();
-            jsonWriter = new JsonTextWriter(writer);
-            jsonWriter.Formatting = Formatting.Indented;
+        writer = new();
+        jsonWriter = new JsonTextWriter(writer);
+        jsonWriter.Formatting = Formatting.Indented;
 
-            newJson = s.ToString();
+        newJson = s.ToString();
 
-            StringAssert.AreEqual(
-                @"{
+        StringAssert.AreEqual(
+            @"{
   ""type"": ""object"",
   ""additionalProperties"": {
     ""type"": ""string""
@@ -176,25 +177,25 @@ namespace Newtonsoft.Json.Tests.Schema {
     ""type"": ""string""
   }
 }",
-                newJson
-            );
+            newJson
+        );
 
-            json = @"{
+        json = @"{
   ""type"":""object"",
   ""extends"":[{""type"":""string""},{""type"":""object""}],
   ""additionalProperties"":{""type"":""string""}
 }";
 
-            s = JsonSchema.Parse(json);
+        s = JsonSchema.Parse(json);
 
-            writer = new();
-            jsonWriter = new JsonTextWriter(writer);
-            jsonWriter.Formatting = Formatting.Indented;
+        writer = new();
+        jsonWriter = new JsonTextWriter(writer);
+        jsonWriter.Formatting = Formatting.Indented;
 
-            newJson = s.ToString();
+        newJson = s.ToString();
 
-            StringAssert.AreEqual(
-                @"{
+        StringAssert.AreEqual(
+            @"{
   ""type"": ""object"",
   ""additionalProperties"": {
     ""type"": ""string""
@@ -208,30 +209,30 @@ namespace Newtonsoft.Json.Tests.Schema {
     }
   ]
 }",
-                newJson
-            );
-        }
+            newJson
+        );
+    }
 
-        [Test]
-        public void WriteTo_AdditionalProperties() {
-            var writer = new StringWriter();
-            JsonTextWriter jsonWriter = new JsonTextWriter(writer);
-            jsonWriter.Formatting = Formatting.Indented;
+    [Test]
+    public void WriteTo_AdditionalProperties() {
+        var writer = new StringWriter();
+        JsonTextWriter jsonWriter = new JsonTextWriter(writer);
+        jsonWriter.Formatting = Formatting.Indented;
 
-            JsonSchema schema = JsonSchema.Parse(
-                @"{
+        JsonSchema schema = JsonSchema.Parse(
+            @"{
   ""description"":""AdditionalProperties"",
   ""type"":[""string"", ""integer""],
   ""additionalProperties"":{""type"":[""object"", ""boolean""]}
 }"
-            );
+        );
 
-            schema.WriteTo(jsonWriter);
+        schema.WriteTo(jsonWriter);
 
-            var json = writer.ToString();
+        var json = writer.ToString();
 
-            StringAssert.AreEqual(
-                @"{
+        StringAssert.AreEqual(
+            @"{
   ""description"": ""AdditionalProperties"",
   ""type"": [
     ""string"",
@@ -244,14 +245,14 @@ namespace Newtonsoft.Json.Tests.Schema {
     ]
   }
 }",
-                json
-            );
-        }
+            json
+        );
+    }
 
-        [Test]
-        public void WriteTo_Properties() {
-            JsonSchema schema = JsonSchema.Parse(
-                @"{
+    [Test]
+    public void WriteTo_Properties() {
+        JsonSchema schema = JsonSchema.Parse(
+            @"{
   ""description"":""A person"",
   ""type"":""object"",
   ""properties"":
@@ -264,18 +265,18 @@ namespace Newtonsoft.Json.Tests.Schema {
     }
   }
 }"
-            );
+        );
 
-            var writer = new StringWriter();
-            JsonTextWriter jsonWriter = new JsonTextWriter(writer);
-            jsonWriter.Formatting = Formatting.Indented;
+        var writer = new StringWriter();
+        JsonTextWriter jsonWriter = new JsonTextWriter(writer);
+        jsonWriter.Formatting = Formatting.Indented;
 
-            schema.WriteTo(jsonWriter);
+        schema.WriteTo(jsonWriter);
 
-            var json = writer.ToString();
+        var json = writer.ToString();
 
-            StringAssert.AreEqual(
-                @"{
+        StringAssert.AreEqual(
+            @"{
   ""description"": ""A person"",
   ""type"": ""object"",
   ""properties"": {
@@ -290,31 +291,31 @@ namespace Newtonsoft.Json.Tests.Schema {
     }
   }
 }",
-                json
-            );
-        }
+            json
+        );
+    }
 
-        [Test]
-        public void WriteTo_Enum() {
-            JsonSchema schema = JsonSchema.Parse(
-                @"{
+    [Test]
+    public void WriteTo_Enum() {
+        JsonSchema schema = JsonSchema.Parse(
+            @"{
   ""description"":""Type"",
   ""type"":[""string"",""array""],
   ""items"":{},
   ""enum"":[""string"",""object"",""array"",""boolean"",""number"",""integer"",""null"",""any""]
 }"
-            );
+        );
 
-            var writer = new StringWriter();
-            JsonTextWriter jsonWriter = new JsonTextWriter(writer);
-            jsonWriter.Formatting = Formatting.Indented;
+        var writer = new StringWriter();
+        JsonTextWriter jsonWriter = new JsonTextWriter(writer);
+        jsonWriter.Formatting = Formatting.Indented;
 
-            schema.WriteTo(jsonWriter);
+        schema.WriteTo(jsonWriter);
 
-            var json = writer.ToString();
+        var json = writer.ToString();
 
-            StringAssert.AreEqual(
-                @"{
+        StringAssert.AreEqual(
+            @"{
   ""description"": ""Type"",
   ""type"": [
     ""string"",
@@ -332,31 +333,31 @@ namespace Newtonsoft.Json.Tests.Schema {
     ""any""
   ]
 }",
-                json
-            );
-        }
+            json
+        );
+    }
 
-        [Test]
-        public void WriteTo_CircularReference() {
-            var json = @"{
+    [Test]
+    public void WriteTo_CircularReference() {
+        var json = @"{
   ""id"":""CircularReferenceArray"",
   ""description"":""CircularReference"",
   ""type"":[""array""],
   ""items"":{""$ref"":""CircularReferenceArray""}
 }";
 
-            JsonSchema schema = JsonSchema.Parse(json);
+        JsonSchema schema = JsonSchema.Parse(json);
 
-            var writer = new StringWriter();
-            JsonTextWriter jsonWriter = new JsonTextWriter(writer);
-            jsonWriter.Formatting = Formatting.Indented;
+        var writer = new StringWriter();
+        JsonTextWriter jsonWriter = new JsonTextWriter(writer);
+        jsonWriter.Formatting = Formatting.Indented;
 
-            schema.WriteTo(jsonWriter);
+        schema.WriteTo(jsonWriter);
 
-            var writtenJson = writer.ToString();
+        var writtenJson = writer.ToString();
 
-            StringAssert.AreEqual(
-                @"{
+        StringAssert.AreEqual(
+            @"{
   ""id"": ""CircularReferenceArray"",
   ""description"": ""CircularReference"",
   ""type"": ""array"",
@@ -364,31 +365,31 @@ namespace Newtonsoft.Json.Tests.Schema {
     ""$ref"": ""CircularReferenceArray""
   }
 }",
-                writtenJson
-            );
-        }
+            writtenJson
+        );
+    }
 
-        [Test]
-        public void WriteTo_DisallowMultiple() {
-            JsonSchema schema = JsonSchema.Parse(
-                @"{
+    [Test]
+    public void WriteTo_DisallowMultiple() {
+        JsonSchema schema = JsonSchema.Parse(
+            @"{
   ""description"":""Type"",
   ""type"":[""string"",""array""],
   ""items"":{},
   ""disallow"":[""string"",""object"",""array""]
 }"
-            );
+        );
 
-            var writer = new StringWriter();
-            JsonTextWriter jsonWriter = new JsonTextWriter(writer);
-            jsonWriter.Formatting = Formatting.Indented;
+        var writer = new StringWriter();
+        JsonTextWriter jsonWriter = new JsonTextWriter(writer);
+        jsonWriter.Formatting = Formatting.Indented;
 
-            schema.WriteTo(jsonWriter);
+        schema.WriteTo(jsonWriter);
 
-            var json = writer.ToString();
+        var json = writer.ToString();
 
-            StringAssert.AreEqual(
-                @"{
+        StringAssert.AreEqual(
+            @"{
   ""description"": ""Type"",
   ""type"": [
     ""string"",
@@ -401,31 +402,31 @@ namespace Newtonsoft.Json.Tests.Schema {
     ""array""
   ]
 }",
-                json
-            );
-        }
+            json
+        );
+    }
 
-        [Test]
-        public void WriteTo_DisallowSingle() {
-            JsonSchema schema = JsonSchema.Parse(
-                @"{
+    [Test]
+    public void WriteTo_DisallowSingle() {
+        JsonSchema schema = JsonSchema.Parse(
+            @"{
   ""description"":""Type"",
   ""type"":[""string"",""array""],
   ""items"":{},
   ""disallow"":""any""
 }"
-            );
+        );
 
-            var writer = new StringWriter();
-            JsonTextWriter jsonWriter = new JsonTextWriter(writer);
-            jsonWriter.Formatting = Formatting.Indented;
+        var writer = new StringWriter();
+        JsonTextWriter jsonWriter = new JsonTextWriter(writer);
+        jsonWriter.Formatting = Formatting.Indented;
 
-            schema.WriteTo(jsonWriter);
+        schema.WriteTo(jsonWriter);
 
-            var json = writer.ToString();
+        var json = writer.ToString();
 
-            StringAssert.AreEqual(
-                @"{
+        StringAssert.AreEqual(
+            @"{
   ""description"": ""Type"",
   ""type"": [
     ""string"",
@@ -434,177 +435,177 @@ namespace Newtonsoft.Json.Tests.Schema {
   ""items"": {},
   ""disallow"": ""any""
 }",
-                json
-            );
-        }
+            json
+        );
+    }
 
-        [Test]
-        public void WriteTo_MultipleItems() {
-            JsonSchema schema = JsonSchema.Parse(
-                @"{
+    [Test]
+    public void WriteTo_MultipleItems() {
+        JsonSchema schema = JsonSchema.Parse(
+            @"{
   ""items"":[{},{}]
 }"
-            );
+        );
 
-            var writer = new StringWriter();
-            JsonTextWriter jsonWriter = new JsonTextWriter(writer);
-            jsonWriter.Formatting = Formatting.Indented;
+        var writer = new StringWriter();
+        JsonTextWriter jsonWriter = new JsonTextWriter(writer);
+        jsonWriter.Formatting = Formatting.Indented;
 
-            schema.WriteTo(jsonWriter);
+        schema.WriteTo(jsonWriter);
 
-            var json = writer.ToString();
+        var json = writer.ToString();
 
-            StringAssert.AreEqual(
-                @"{
+        StringAssert.AreEqual(
+            @"{
   ""items"": [
     {},
     {}
   ]
 }",
-                json
-            );
-        }
+            json
+        );
+    }
 
-        [Test]
-        public void WriteTo_ExclusiveMinimum_ExclusiveMaximum() {
-            JsonSchema schema = new JsonSchema();
-            schema.ExclusiveMinimum = true;
-            schema.ExclusiveMaximum = true;
+    [Test]
+    public void WriteTo_ExclusiveMinimum_ExclusiveMaximum() {
+        JsonSchema schema = new JsonSchema();
+        schema.ExclusiveMinimum = true;
+        schema.ExclusiveMaximum = true;
 
-            var writer = new StringWriter();
-            JsonTextWriter jsonWriter = new JsonTextWriter(writer);
-            jsonWriter.Formatting = Formatting.Indented;
+        var writer = new StringWriter();
+        JsonTextWriter jsonWriter = new JsonTextWriter(writer);
+        jsonWriter.Formatting = Formatting.Indented;
 
-            schema.WriteTo(jsonWriter);
+        schema.WriteTo(jsonWriter);
 
-            var json = writer.ToString();
+        var json = writer.ToString();
 
-            StringAssert.AreEqual(
-                @"{
+        StringAssert.AreEqual(
+            @"{
   ""exclusiveMinimum"": true,
   ""exclusiveMaximum"": true
 }",
-                json
-            );
-        }
+            json
+        );
+    }
 
-        [Test]
-        public void WriteTo_PatternProperties() {
-            JsonSchema schema = new JsonSchema();
-            schema.PatternProperties = new Dictionary<string, JsonSchema> { { "[abc]", new JsonSchema() } };
+    [Test]
+    public void WriteTo_PatternProperties() {
+        JsonSchema schema = new JsonSchema();
+        schema.PatternProperties = new Dictionary<string, JsonSchema> { { "[abc]", new JsonSchema() } };
 
-            var writer = new StringWriter();
-            JsonTextWriter jsonWriter = new JsonTextWriter(writer);
-            jsonWriter.Formatting = Formatting.Indented;
+        var writer = new StringWriter();
+        JsonTextWriter jsonWriter = new JsonTextWriter(writer);
+        jsonWriter.Formatting = Formatting.Indented;
 
-            schema.WriteTo(jsonWriter);
+        schema.WriteTo(jsonWriter);
 
-            var json = writer.ToString();
+        var json = writer.ToString();
 
-            StringAssert.AreEqual(
-                @"{
+        StringAssert.AreEqual(
+            @"{
   ""patternProperties"": {
     ""[abc]"": {}
   }
 }",
-                json
-            );
-        }
+            json
+        );
+    }
 
-        [Test]
-        public void ToString_AdditionalItems() {
-            JsonSchema schema = JsonSchema.Parse(
-                @"{
+    [Test]
+    public void ToString_AdditionalItems() {
+        JsonSchema schema = JsonSchema.Parse(
+            @"{
     ""additionalItems"": {""type"": ""integer""}
 }"
-            );
+        );
 
-            string json = schema.ToString();
+        string json = schema.ToString();
 
-            StringAssert.AreEqual(
-                @"{
+        StringAssert.AreEqual(
+            @"{
   ""additionalItems"": {
     ""type"": ""integer""
   }
 }",
-                json
-            );
-        }
+            json
+        );
+    }
 
-        [Test]
-        public void WriteTo_PositionalItemsValidation_True() {
-            JsonSchema schema = new JsonSchema();
-            schema.PositionalItemsValidation = true;
+    [Test]
+    public void WriteTo_PositionalItemsValidation_True() {
+        JsonSchema schema = new JsonSchema();
+        schema.PositionalItemsValidation = true;
 
-            var writer = new StringWriter();
-            JsonTextWriter jsonWriter = new JsonTextWriter(writer);
-            jsonWriter.Formatting = Formatting.Indented;
+        var writer = new StringWriter();
+        JsonTextWriter jsonWriter = new JsonTextWriter(writer);
+        jsonWriter.Formatting = Formatting.Indented;
 
-            schema.WriteTo(jsonWriter);
+        schema.WriteTo(jsonWriter);
 
-            var json = writer.ToString();
+        var json = writer.ToString();
 
-            StringAssert.AreEqual(
-                @"{
+        StringAssert.AreEqual(
+            @"{
   ""items"": []
 }",
-                json
-            );
-        }
+            json
+        );
+    }
 
-        [Test]
-        public void WriteTo_PositionalItemsValidation_TrueWithItemsSchema() {
-            JsonSchema schema = new JsonSchema();
-            schema.PositionalItemsValidation = true;
-            schema.Items = new List<JsonSchema> { new JsonSchema { Type = JsonSchemaType.String } };
+    [Test]
+    public void WriteTo_PositionalItemsValidation_TrueWithItemsSchema() {
+        JsonSchema schema = new JsonSchema();
+        schema.PositionalItemsValidation = true;
+        schema.Items = new List<JsonSchema> { new JsonSchema { Type = JsonSchemaType.String } };
 
-            var writer = new StringWriter();
-            JsonTextWriter jsonWriter = new JsonTextWriter(writer);
-            jsonWriter.Formatting = Formatting.Indented;
+        var writer = new StringWriter();
+        JsonTextWriter jsonWriter = new JsonTextWriter(writer);
+        jsonWriter.Formatting = Formatting.Indented;
 
-            schema.WriteTo(jsonWriter);
+        schema.WriteTo(jsonWriter);
 
-            var json = writer.ToString();
+        var json = writer.ToString();
 
-            StringAssert.AreEqual(
-                @"{
+        StringAssert.AreEqual(
+            @"{
   ""items"": [
     {
       ""type"": ""string""
     }
   ]
 }",
-                json
-            );
-        }
+            json
+        );
+    }
 
-        [Test]
-        public void WriteTo_PositionalItemsValidation_FalseWithItemsSchema() {
-            JsonSchema schema = new JsonSchema();
-            schema.Items = new List<JsonSchema> { new JsonSchema { Type = JsonSchemaType.String } };
+    [Test]
+    public void WriteTo_PositionalItemsValidation_FalseWithItemsSchema() {
+        JsonSchema schema = new JsonSchema();
+        schema.Items = new List<JsonSchema> { new JsonSchema { Type = JsonSchemaType.String } };
 
-            var writer = new StringWriter();
-            JsonTextWriter jsonWriter = new JsonTextWriter(writer);
-            jsonWriter.Formatting = Formatting.Indented;
+        var writer = new StringWriter();
+        JsonTextWriter jsonWriter = new JsonTextWriter(writer);
+        jsonWriter.Formatting = Formatting.Indented;
 
-            schema.WriteTo(jsonWriter);
+        schema.WriteTo(jsonWriter);
 
-            var json = writer.ToString();
+        var json = writer.ToString();
 
-            StringAssert.AreEqual(
-                @"{
+        StringAssert.AreEqual(
+            @"{
   ""items"": {
     ""type"": ""string""
   }
 }",
-                json
-            );
-        }
+            json
+        );
+    }
 
-        [Test]
-        public void IntegerValidatesAgainstFloatFlags() {
-            JsonSchema schema = JsonSchema.Parse(
-                @"{
+    [Test]
+    public void IntegerValidatesAgainstFloatFlags() {
+        JsonSchema schema = JsonSchema.Parse(
+            @"{
   ""type"": ""object"",
   ""$schema"": ""http://json-schema.org/draft-03/schema"",
   ""required"": false,
@@ -618,16 +619,15 @@ namespace Newtonsoft.Json.Tests.Schema {
     }
   }
 }"
-            );
+        );
 
-            var json = JObject.Parse(
-                @"{
+        var json = JObject.Parse(
+            @"{
         ""NumberProperty"": 23
       }"
-            );
+        );
 
-            Assert.IsTrue(json.IsValid(schema));
-        }
+        Assert.IsTrue(json.IsValid(schema));
     }
 }
 

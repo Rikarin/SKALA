@@ -35,7 +35,7 @@ class SettingValueConversions {
                     "All users of this dictionary should be annotated with RequiresUnreferencedCode/RequiresDynamicCode"
             )]
 #pragma warning disable IL2057
-            (s) => Type.GetType(s, throwOnError: true)!
+            (s) => Type.GetType(s, true)!
 #pragma warning restore IL2057
         }
     };
@@ -66,7 +66,7 @@ class SettingValueConversions {
             // check if value looks like a static property or field directive
             // like "Namespace.TypeName::StaticProperty, AssemblyName"
             if (TryParseStaticMemberAccessor(value, out var accessorTypeName, out var memberName)) {
-                var accessorType = Type.GetType(accessorTypeName, throwOnError: true)!;
+                var accessorType = Type.GetType(accessorTypeName, true)!;
                 // is there a public static property with that name ?
                 var publicStaticPropertyInfo = accessorType
                     .GetProperties(BindingFlags.Static | BindingFlags.Public)
@@ -94,7 +94,7 @@ class SettingValueConversions {
 
             // maybe it's the assembly-qualified type name of a concrete implementation
             // with a default constructor
-            var type = Type.GetType(value.Trim(), throwOnError: false);
+            var type = Type.GetType(value.Trim(), false);
             if (type != null) {
                 var ctor = type.GetConstructors(BindingFlags.Public | BindingFlags.Instance)
                     .FirstOrDefault(ci => {

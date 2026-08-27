@@ -36,84 +36,84 @@ using Assert = Newtonsoft.Json.Tests.XUnitAssert;
 #else
 #endif
 
-namespace Newtonsoft.Json.Tests.Issues {
-    [TestFixture]
-    public class Issue1576 : TestFixtureBase {
-        [Test]
-        public void Test() {
-            var settings = new JsonSerializerSettings { ContractResolver = new CustomContractResolver() };
+namespace Newtonsoft.Json.Tests.Issues;
 
-            var result = JsonConvert.DeserializeObject<TestClass>("{ 'Items': '11' }", settings);
+[TestFixture]
+public class Issue1576 : TestFixtureBase {
+    [Test]
+    public void Test() {
+        var settings = new JsonSerializerSettings { ContractResolver = new CustomContractResolver() };
 
-            Assert.IsNotNull(result);
-            Assert.AreEqual(result.Items.Count, 1);
-            Assert.AreEqual(result.Items[0], 11);
-        }
+        var result = JsonConvert.DeserializeObject<TestClass>("{ 'Items': '11' }", settings);
 
-        [Test]
-        public void Test_WithJsonConverterAttribute() {
-            var result = JsonConvert.DeserializeObject<TestClassWithJsonConverter>("{ 'Items': '11' }");
+        Assert.IsNotNull(result);
+        Assert.AreEqual(result.Items.Count, 1);
+        Assert.AreEqual(result.Items[0], 11);
+    }
 
-            Assert.IsNotNull(result);
-            Assert.AreEqual(result.Items.Count, 1);
-            Assert.AreEqual(result.Items[0], 11);
-        }
+    [Test]
+    public void Test_WithJsonConverterAttribute() {
+        var result = JsonConvert.DeserializeObject<TestClassWithJsonConverter>("{ 'Items': '11' }");
 
-        public class TestClass {
-            public List<int> Items { get; } = new();
-        }
+        Assert.IsNotNull(result);
+        Assert.AreEqual(result.Items.Count, 1);
+        Assert.AreEqual(result.Items[0], 11);
+    }
 
-        public class TestClassWithJsonConverter {
-            [JsonConverter(typeof(OneItemListJsonConverter))]
-            public List<int> Items { get; } = new();
-        }
+    public class TestClass {
+        public List<int> Items { get; } = new();
+    }
 
-        public class CustomContractResolver : DefaultContractResolver {
-            protected override JsonProperty CreateProperty(MemberInfo member, MemberSerialization memberSerialization) {
-                var property = base.CreateProperty(member, memberSerialization);
+    public class TestClassWithJsonConverter {
+        [JsonConverter(typeof(OneItemListJsonConverter))]
+        public List<int> Items { get; } = new();
+    }
 
-                if (member.Name == "Items") {
-                    property.Converter = new OneItemListJsonConverter();
-                }
+    public class CustomContractResolver : DefaultContractResolver {
+        protected override JsonProperty CreateProperty(MemberInfo member, MemberSerialization memberSerialization) {
+            var property = base.CreateProperty(member, memberSerialization);
 
-                return property;
-            }
-        }
-
-        public class OneItemListJsonConverter : JsonConverter {
-            public override bool CanWrite => false;
-
-            public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer) {
-                throw new NotSupportedException();
+            if (member.Name == "Items") {
+                property.Converter = new OneItemListJsonConverter();
             }
 
-            public override object ReadJson(
-                JsonReader reader,
-                Type objectType,
-                object existingValue,
-                JsonSerializer serializer
-            ) {
-                var token = JToken.Load(reader);
-                if (token.Type == JTokenType.Array) {
-                    return token.ToObject(objectType, serializer);
-                }
+            return property;
+        }
+    }
 
-                var array = new JArray();
-                array.Add(token);
+    public class OneItemListJsonConverter : JsonConverter {
+        public override bool CanWrite => false;
 
-                var list = array.ToObject(objectType, serializer) as IEnumerable;
-                var existing = existingValue as IList;
+        public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer) {
+            throw new NotSupportedException();
+        }
 
-                if (list != null && existing != null) {
-                    foreach (var item in list) {
-                        existing.Add(item);
-                    }
-                }
-
-                return list;
+        public override object ReadJson(
+            JsonReader reader,
+            Type objectType,
+            object existingValue,
+            JsonSerializer serializer
+        ) {
+            var token = JToken.Load(reader);
+            if (token.Type == JTokenType.Array) {
+                return token.ToObject(objectType, serializer);
             }
 
-            public override bool CanConvert(Type objectType) => typeof(ICollection).IsAssignableFrom(objectType);
+            var array = new JArray();
+            array.Add(token);
+
+            var list = array.ToObject(objectType, serializer) as IEnumerable;
+            var existing = existingValue as IList;
+
+            if (list != null && existing != null) {
+                foreach (var item in list) {
+                    existing.Add(item);
+                }
+            }
+
+            return list;
         }
+
+        public override bool CanConvert(Type objectType) => typeof(ICollection).IsAssignableFrom(objectType);
     }
 }

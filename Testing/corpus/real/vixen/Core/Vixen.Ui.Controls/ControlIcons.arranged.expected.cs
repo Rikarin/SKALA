@@ -73,7 +73,7 @@ public static class ControlIcons {
     ///     wide as the button beside it and reads as a verb — so the control says what pressing it
     ///     does rather than what state it is in, which is the one thing a toggle must not do.
     /// </remarks>
-    public static PathBuilder Lock { get; } = Padlock(closed: true);
+    public static PathBuilder Lock { get; } = Padlock(true);
 
     /// <summary>An open padlock. The same thing, off.</summary>
     /// <remarks>
@@ -82,7 +82,7 @@ public static class ControlIcons {
     ///     "locked" is the state whose whole purpose is to explain why something is refusing input.
     ///     The shackle's position says it without any palette.
     /// </remarks>
-    public static PathBuilder Unlock { get; } = Padlock(closed: false);
+    public static PathBuilder Unlock { get; } = Padlock(false);
 
     /// <summary>Turns a polyline into a fillable outline of a given width.</summary>
     /// <remarks>

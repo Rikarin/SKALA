@@ -201,7 +201,7 @@ sealed class BatchingSink : ILogEventSink, IDisposable, ISetLoggingFailureListen
                 LoggingFailureKind.Final,
                 "failed emitting a batch during shutdown; dropping remaining queued events",
                 ex,
-                ignoreShutdownSignal: true
+                true
             );
         }
     }

@@ -76,23 +76,35 @@ public sealed class TrailingCommaRule : ArrangementRule {
                 return null;
             }
 
+            // ⚠ Rebuilt from an alternating node/separator sequence in both directions.
+            // `SeparatedSyntaxList` has no operation that appends or drops a *separator*: every
+            // method that looks like one is about nodes, and `RemoveAt(list.Count)` — the obvious
+            // way to drop a trailing comma — indexes the node list and throws.
+            var last = list[list.Count - 1];
+            var parts = new List<SyntaxNodeOrToken>();
+
             if (!wanted) {
-                // ⚠ The comma's own trailing trivia is not dropped with it: on a multiline list that
+                // The comma's own trailing trivia is not dropped with it: on a multiline list that
                 // trivia is the newline before the closing brace, and losing it joins two lines.
                 var comma = list.GetSeparator(list.Count - 1);
-                var last = list[list.Count - 1];
-                return list.Replace(last, last.WithTrailingTrivia(last.GetTrailingTrivia().AddRange(comma.TrailingTrivia)))
-                    .RemoveAt(list.Count);
+                for (var i = 0; i < list.Count; i++) {
+                    parts.Add(
+                        i == list.Count - 1
+                            ? last.WithTrailingTrivia(last.GetTrailingTrivia().AddRange(comma.TrailingTrivia))
+                            : list[i]
+                    );
+
+                    if (i < list.Count - 1) {
+                        parts.Add(list.GetSeparator(i));
+                    }
+                }
+
+                return SyntaxFactory.SeparatedList<T>(parts);
             }
 
-            // ⚠ Rebuilt from an alternating node/separator sequence rather than inserted into:
-            // `SeparatedSyntaxList` has no "append a separator" operation, and every shortcut that
-            // looks like one appends a *node*.
-            var element = list[list.Count - 1];
-            var trailing = element.GetTrailingTrivia();
-            var parts = new List<SyntaxNodeOrToken>();
+            var trailing = last.GetTrailingTrivia();
             for (var i = 0; i < list.Count; i++) {
-                parts.Add(i == list.Count - 1 ? element.WithoutTrailingTrivia() : list[i]);
+                parts.Add(i == list.Count - 1 ? last.WithoutTrailingTrivia() : list[i]);
                 if (i < list.SeparatorCount) {
                     parts.Add(list.GetSeparator(i));
                 }

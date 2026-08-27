@@ -1,0 +1,21 @@
+// skala-oracle: resharper=2025.2.6 config=sha256:98ff52570e019fac profile=SkalaFormatOnly generated=2026-08-27
+using System;
+
+// csharp_style_namespace_declarations = file_scoped. ⚠ The oracle performs this under
+// `ArrangeNamespaces`, a cleanup task the M4 profile sweep did not find; until it was added the
+// reference tool left every block-scoped namespace alone.
+namespace Skala.Corpus.Arrangement.Namespaces {
+    public class Converted {
+        public int Value { get; set; }
+
+        public void Write() {
+            Console.WriteLine(this.Value);
+        }
+    }
+
+    public class AlsoConverted {
+        // Both types move out with the namespace; the members are not otherwise touched, and the
+        // indentation that the conversion makes wrong is the formatter's to fix afterwards.
+        public string Name => "x";
+    }
+}

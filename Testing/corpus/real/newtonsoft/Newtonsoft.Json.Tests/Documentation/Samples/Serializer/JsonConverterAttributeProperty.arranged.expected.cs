@@ -34,49 +34,49 @@ using Assert = Newtonsoft.Json.Tests.XUnitAssert;
 
 #endif
 
-namespace Newtonsoft.Json.Tests.Documentation.Samples.Serializer {
-    [TestFixture]
-    public class JsonConverterAttributeProperty : TestFixtureBase {
-        #region Types
+namespace Newtonsoft.Json.Tests.Documentation.Samples.Serializer;
 
-        public enum UserStatus {
-            NotConfirmed,
-            Active,
-            Deleted
-        }
+[TestFixture]
+public class JsonConverterAttributeProperty : TestFixtureBase {
+    #region Types
 
-        public class User {
-            public string UserName { get; set; }
+    public enum UserStatus {
+        NotConfirmed,
+        Active,
+        Deleted
+    }
 
-            [JsonConverter(typeof(StringEnumConverter))]
-            public UserStatus Status { get; set; }
-        }
+    public class User {
+        public string UserName { get; set; }
+
+        [JsonConverter(typeof(StringEnumConverter))]
+        public UserStatus Status { get; set; }
+    }
+
+    #endregion
+
+    [Test]
+    public void Example() {
+        #region Usage
+
+        var user = new User { UserName = @"domain\username", Status = UserStatus.Deleted };
+
+        string json = JsonConvert.SerializeObject(user, Formatting.Indented);
+
+        Console.WriteLine(json);
+        // {
+        //   "UserName": "domain\\username",
+        //   "Status": "Deleted"
+        // }
 
         #endregion
 
-        [Test]
-        public void Example() {
-            #region Usage
-
-            var user = new User { UserName = @"domain\username", Status = UserStatus.Deleted };
-
-            string json = JsonConvert.SerializeObject(user, Formatting.Indented);
-
-            Console.WriteLine(json);
-            // {
-            //   "UserName": "domain\\username",
-            //   "Status": "Deleted"
-            // }
-
-            #endregion
-
-            StringAssert.AreEqual(
-                @"{
+        StringAssert.AreEqual(
+            @"{
   ""UserName"": ""domain\\username"",
   ""Status"": ""Deleted""
 }",
-                json
-            );
-        }
+            json
+        );
     }
 }

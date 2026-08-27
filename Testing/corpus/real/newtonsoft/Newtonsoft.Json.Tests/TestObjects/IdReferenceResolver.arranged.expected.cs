@@ -28,36 +28,36 @@
 
 using Newtonsoft.Json.Serialization;
 
-namespace Newtonsoft.Json.Tests.TestObjects {
-    public class IdReferenceResolver : IReferenceResolver {
-        readonly IDictionary<Guid, PersonReference> _people = new Dictionary<Guid, PersonReference>();
+namespace Newtonsoft.Json.Tests.TestObjects;
 
-        public object ResolveReference(object context, string reference) {
-            var id = new Guid(reference);
+public class IdReferenceResolver : IReferenceResolver {
+    readonly IDictionary<Guid, PersonReference> _people = new Dictionary<Guid, PersonReference>();
 
-            PersonReference p;
-            _people.TryGetValue(id, out p);
+    public object ResolveReference(object context, string reference) {
+        var id = new Guid(reference);
 
-            return p;
-        }
+        PersonReference p;
+        _people.TryGetValue(id, out p);
 
-        public string GetReference(object context, object value) {
-            PersonReference p = (PersonReference)value;
-            _people[p.Id] = p;
+        return p;
+    }
 
-            return p.Id.ToString();
-        }
+    public string GetReference(object context, object value) {
+        PersonReference p = (PersonReference)value;
+        _people[p.Id] = p;
 
-        public bool IsReferenced(object context, object value) {
-            PersonReference p = (PersonReference)value;
+        return p.Id.ToString();
+    }
 
-            return _people.ContainsKey(p.Id);
-        }
+    public bool IsReferenced(object context, object value) {
+        PersonReference p = (PersonReference)value;
 
-        public void AddReference(object context, string reference, object value) {
-            var id = new Guid(reference);
+        return _people.ContainsKey(p.Id);
+    }
 
-            _people[id] = (PersonReference)value;
-        }
+    public void AddReference(object context, string reference, object value) {
+        var id = new Guid(reference);
+
+        _people[id] = (PersonReference)value;
     }
 }

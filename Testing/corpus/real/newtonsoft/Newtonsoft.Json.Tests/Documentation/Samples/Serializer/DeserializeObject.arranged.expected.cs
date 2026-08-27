@@ -34,25 +34,26 @@ using Assert = Newtonsoft.Json.Tests.XUnitAssert;
 
 #endif
 
-namespace Newtonsoft.Json.Tests.Documentation.Samples.Serializer {
-    [TestFixture]
-    public class DeserializeObject : TestFixtureBase {
-        #region Types
+namespace Newtonsoft.Json.Tests.Documentation.Samples.Serializer;
 
-        public class Account {
-            public string Email { get; set; }
-            public bool Active { get; set; }
-            public DateTime CreatedDate { get; set; }
-            public IList<string> Roles { get; set; }
-        }
+[TestFixture]
+public class DeserializeObject : TestFixtureBase {
+    #region Types
 
-        #endregion
+    public class Account {
+        public string Email { get; set; }
+        public bool Active { get; set; }
+        public DateTime CreatedDate { get; set; }
+        public IList<string> Roles { get; set; }
+    }
 
-        [Test]
-        public void Example() {
-            #region Usage
+    #endregion
 
-            var json = @"{
+    [Test]
+    public void Example() {
+        #region Usage
+
+        var json = @"{
               'Email': 'james@example.com',
               'Active': true,
               'CreatedDate': '2013-01-20T00:00:00Z',
@@ -62,14 +63,13 @@ namespace Newtonsoft.Json.Tests.Documentation.Samples.Serializer {
               ]
             }";
 
-            Account account = JsonConvert.DeserializeObject<Account>(json);
+        Account account = JsonConvert.DeserializeObject<Account>(json);
 
-            Console.WriteLine(account.Email);
-            // james@example.com
+        Console.WriteLine(account.Email);
+        // james@example.com
 
-            #endregion
+        #endregion
 
-            Assert.AreEqual("james@example.com", account.Email);
-        }
+        Assert.AreEqual("james@example.com", account.Email);
     }
 }

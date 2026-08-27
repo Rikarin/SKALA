@@ -28,23 +28,22 @@
 
 using System.Runtime.Serialization;
 
-namespace Newtonsoft.Json.Tests.TestObjects {
+namespace Newtonsoft.Json.Tests.TestObjects;
 #if !NET20
-    [DataContract]
-    public class SubWithContractNewProperties : BaseWithContract {
+[DataContract]
+public class SubWithContractNewProperties : BaseWithContract {
 #pragma warning disable 108, 114
-        [DataMember(Name = "VirtualWithDataMemberSub")]
-        public string VirtualWithDataMember { get; set; }
+    [DataMember(Name = "VirtualWithDataMemberSub")]
+    public string VirtualWithDataMember { get; set; }
 
-        [DataMember(Name = "Virtual2")]
-        public string Virtual { get; set; }
+    [DataMember(Name = "Virtual2")]
+    public string Virtual { get; set; }
 
-        [DataMember(Name = "WithDataMemberSub")]
-        public string WithDataMember { get; set; }
+    [DataMember(Name = "WithDataMemberSub")]
+    public string WithDataMember { get; set; }
 
-        [DataMember(Name = "JustAProperty2")]
-        public string JustAProperty { get; set; }
+    [DataMember(Name = "JustAProperty2")]
+    public string JustAProperty { get; set; }
 #pragma warning restore 108, 114
-    }
-#endif
 }
+#endif

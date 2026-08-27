@@ -234,11 +234,12 @@ public static class ParenthesesRedundancy {
 
             // A lambda, a query or a `switch` arm inside parentheses is a readability decision the
             // oracle also leaves alone.
+            //
+            // ⚠ `IsPatternExpressionSyntax` was on this list and is not: `(o is string s) && …` looks
+            // like a case where the parentheses earn their keep, and the oracle removes them. Doc 00's
+            // non-negotiable 9 makes the reference tool a test subject rather than a specification,
+            // but a divergence has to be worth recording and this one was only a guess.
             AnonymousFunctionExpressionSyntax or QueryExpressionSyntax or SwitchExpressionSyntax => false,
-
-            // `(x is Foo f)` publishes `f` into the enclosing scope; the parentheses are load-bearing
-            // to the reader even where they are not to the parser.
-            IsPatternExpressionSyntax => false,
 
             _ => true
         };

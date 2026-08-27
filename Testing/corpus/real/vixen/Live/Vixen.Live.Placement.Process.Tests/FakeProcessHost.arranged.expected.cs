@@ -104,7 +104,7 @@ sealed class FakeProcess(string id, RealmProcessRequest request) : IRealmProcess
 
     public void Kill() {
         WasKilled = true;
-        Exit(code: 137);
+        Exit(137);
     }
 
     public Task WaitForExitAsync(CancellationToken cancellation) => exited.Task.WaitAsync(cancellation);

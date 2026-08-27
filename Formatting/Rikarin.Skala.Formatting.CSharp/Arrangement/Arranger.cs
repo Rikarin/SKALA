@@ -27,6 +27,12 @@ public static class Arranger {
     /// becomes <c>List&lt;int&gt; x = new()</c> and then cannot become <c>var</c> at all, and the
     /// output disagrees with the oracle on every local declaration in the corpus.
     /// <para>
+    /// ⚠ <see cref="ArgumentStyleRule"/> must precede <see cref="ObjectCreationRule"/>, for a second
+    /// instance of the same shape: <c>f(other: new object())</c> is not target-typed while the name
+    /// is still on it. Run the other way round, the argument loses its name and keeps its
+    /// <c>new object()</c> where the oracle writes <c>new()</c>.
+    /// </para>
+    /// <para>
     /// <see cref="BodyStyleRule"/> runs last so that the expression it lifts into <c>=&gt;</c> is the
     /// already-arranged one, and the pair reaches a fixed point in one pass rather than two.
     /// </para>
@@ -34,6 +40,7 @@ public static class Arranger {
     public static ImmutableArray<ArrangementRule> Rules(ImmutableHashSet<string>? removableUsings = null) => [
         new AccessibilityRule(),
         new PredefinedTypeRule(),
+        new ArgumentStyleRule(),
         new VarRule(),
         new ObjectCreationRule(),
         new DefaultValueRule(),
@@ -41,7 +48,6 @@ public static class Arranger {
         new EmptyStringRule(),
         new ThisQualifierRule(),
         new StaticQualifierRule(),
-        new ArgumentStyleRule(),
         new DiscardDeclarationRule(),
         new RedundantBracesRule(),
         new RedundantParenthesesRule(),

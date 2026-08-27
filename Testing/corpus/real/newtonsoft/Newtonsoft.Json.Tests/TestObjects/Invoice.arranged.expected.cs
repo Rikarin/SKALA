@@ -28,22 +28,22 @@
 
 using System.ComponentModel;
 
-namespace Newtonsoft.Json.Tests.TestObjects {
-    public class Invoice {
-        public string Company { get; set; }
-        public decimal Amount { get; set; }
+namespace Newtonsoft.Json.Tests.TestObjects;
 
-        // false is default value of bool
-        public bool Paid { get; set; }
+public class Invoice {
+    public string Company { get; set; }
+    public decimal Amount { get; set; }
 
-        // null is default value of nullable
-        public DateTime? PaidDate { get; set; }
+    // false is default value of bool
+    public bool Paid { get; set; }
 
-        // customize default values
-        [DefaultValue(30)]
-        public int FollowUpDays { get; set; }
+    // null is default value of nullable
+    public DateTime? PaidDate { get; set; }
 
-        [DefaultValue("")]
-        public string FollowUpEmailAddress { get; set; }
-    }
+    // customize default values
+    [DefaultValue(30)]
+    public int FollowUpDays { get; set; }
+
+    [DefaultValue("")]
+    public string FollowUpEmailAddress { get; set; }
 }

@@ -386,7 +386,7 @@ public sealed class GoapPlanner {
             var found = Domain.Servers(in condition, candidates);
 
             for (var index = 0; index < found; index++) {
-                Push(snapshot, candidates[index], parent: -1);
+                Push(snapshot, candidates[index], -1);
             }
         }
 

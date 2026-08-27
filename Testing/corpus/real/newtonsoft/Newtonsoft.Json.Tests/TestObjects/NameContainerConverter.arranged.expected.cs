@@ -26,30 +26,30 @@
 
 #endregion
 
-namespace Newtonsoft.Json.Tests.TestObjects {
-    public class NameContainerConverter : JsonConverter {
-        public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer) {
-            NameContainer nameContainer = value as NameContainer;
+namespace Newtonsoft.Json.Tests.TestObjects;
 
-            if (nameContainer != null) {
-                writer.WriteValue(nameContainer.Value);
-            } else {
-                writer.WriteNull();
-            }
+public class NameContainerConverter : JsonConverter {
+    public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer) {
+        NameContainer nameContainer = value as NameContainer;
+
+        if (nameContainer != null) {
+            writer.WriteValue(nameContainer.Value);
+        } else {
+            writer.WriteNull();
         }
-
-        public override object ReadJson(
-            JsonReader reader,
-            Type objectType,
-            object existingValue,
-            JsonSerializer serializer
-        ) {
-            NameContainer nameContainer = new NameContainer();
-            nameContainer.Value = (string)reader.Value;
-
-            return nameContainer;
-        }
-
-        public override bool CanConvert(Type objectType) => objectType == typeof(NameContainer);
     }
+
+    public override object ReadJson(
+        JsonReader reader,
+        Type objectType,
+        object existingValue,
+        JsonSerializer serializer
+    ) {
+        NameContainer nameContainer = new NameContainer();
+        nameContainer.Value = (string)reader.Value;
+
+        return nameContainer;
+    }
+
+    public override bool CanConvert(Type objectType) => objectType == typeof(NameContainer);
 }

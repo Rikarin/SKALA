@@ -27,21 +27,22 @@
 #endregion
 
 #pragma warning disable 618
-namespace Newtonsoft.Json.Tests.Documentation.Samples.Schema {
-    public class JsonValidatingReaderAndSerializer {
-        #region Types
+namespace Newtonsoft.Json.Tests.Documentation.Samples.Schema;
 
-        public class Person {
-            public string Name { get; set; }
-            public IList<string> Hobbies { get; set; }
-        }
+public class JsonValidatingReaderAndSerializer {
+    #region Types
 
-        #endregion
+    public class Person {
+        public string Name { get; set; }
+        public IList<string> Hobbies { get; set; }
+    }
 
-        public void Example() {
-            #region Usage
+    #endregion
 
-            var schemaJson = @"{
+    public void Example() {
+        #region Usage
+
+        var schemaJson = @"{
               'description': 'A person',
               'type': 'object',
               'properties': {
@@ -53,32 +54,31 @@ namespace Newtonsoft.Json.Tests.Documentation.Samples.Schema {
               }
             }";
 
-            var json = @"{
+        var json = @"{
               'name': 'James',
               'hobbies': ['.NET', 'Blogging', 'Reading', 'Xbox', 'LOLCATS']
             }";
 
-            JsonTextReader reader = new JsonTextReader(new StringReader(json));
+        JsonTextReader reader = new JsonTextReader(new StringReader(json));
 
-            JsonValidatingReader validatingReader = new JsonValidatingReader(reader);
-            validatingReader.Schema = JsonSchema.Parse(schemaJson);
+        JsonValidatingReader validatingReader = new JsonValidatingReader(reader);
+        validatingReader.Schema = JsonSchema.Parse(schemaJson);
 
-            IList<string> messages = new List<string>();
-            validatingReader.ValidationEventHandler += (o, a) => messages.Add(a.Message);
+        IList<string> messages = new List<string>();
+        validatingReader.ValidationEventHandler += (o, a) => messages.Add(a.Message);
 
-            JsonSerializer serializer = new JsonSerializer();
-            Person p = serializer.Deserialize<Person>(validatingReader);
+        JsonSerializer serializer = new JsonSerializer();
+        Person p = serializer.Deserialize<Person>(validatingReader);
 
-            Console.WriteLine(p.Name);
-            // James
+        Console.WriteLine(p.Name);
+        // James
 
-            var isValid = messages.Count == 0;
+        var isValid = messages.Count == 0;
 
-            Console.WriteLine(isValid);
-            // true
+        Console.WriteLine(isValid);
+        // true
 
-            #endregion
-        }
+        #endregion
     }
 }
 

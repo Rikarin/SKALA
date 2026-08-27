@@ -26,27 +26,27 @@
 
 #endregion
 
-namespace Newtonsoft.Json.Tests.TestObjects {
-    public class WidgetIdJsonConverter : JsonConverter {
-        public override bool CanConvert(Type objectType) =>
-            objectType == typeof(WidgetId1) || objectType == typeof(WidgetId1?);
+namespace Newtonsoft.Json.Tests.TestObjects;
 
-        public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer) {
-            WidgetId1 id = (WidgetId1)value;
-            writer.WriteValue(id.Value.ToString());
+public class WidgetIdJsonConverter : JsonConverter {
+    public override bool CanConvert(Type objectType) =>
+        objectType == typeof(WidgetId1) || objectType == typeof(WidgetId1?);
+
+    public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer) {
+        WidgetId1 id = (WidgetId1)value;
+        writer.WriteValue(id.Value.ToString());
+    }
+
+    public override object ReadJson(
+        JsonReader reader,
+        Type objectType,
+        object existingValue,
+        JsonSerializer serializer
+    ) {
+        if (reader.TokenType == JsonToken.Null) {
+            return null;
         }
 
-        public override object ReadJson(
-            JsonReader reader,
-            Type objectType,
-            object existingValue,
-            JsonSerializer serializer
-        ) {
-            if (reader.TokenType == JsonToken.Null) {
-                return null;
-            }
-
-            return new WidgetId1 { Value = int.Parse(reader.Value.ToString()) };
-        }
+        return new WidgetId1 { Value = int.Parse(reader.Value.ToString()) };
     }
 }

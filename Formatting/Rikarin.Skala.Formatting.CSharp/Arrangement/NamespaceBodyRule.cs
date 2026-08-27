@@ -61,10 +61,18 @@ public sealed class NamespaceBodyRule : ArrangementRule {
             return context.Root;
         }
 
-        foreach (var trivia in block.DescendantTrivia(descendIntoTrivia: true)) {
-            if (trivia.IsDirective || trivia.IsKind(SyntaxKind.DisabledTextTrivia)) {
-                return context.Root;
-            }
+        // ⚠ Only the four tokens that are actually being moved or deleted are checked for
+        // directives, not the whole body. The first version refused on any directive anywhere
+        // inside the namespace, which is the safe-looking answer and the wrong one: Newtonsoft.Json
+        // puts `#if` around members in most files, and blanket refusal left 110 files unconverted
+        // against an oracle that converts them — 6.27 % changed-span agreement on that tree, from
+        // one over-broad guard. Deleting the braces cannot disturb a directive that sits between
+        // two members; it can only disturb one attached to the braces themselves.
+        if (HasDirective(block.NamespaceKeyword)
+            || HasDirective(block.OpenBraceToken)
+            || HasDirective(block.CloseBraceToken)
+            || block.Name.ContainsDirectives) {
+            return context.Root;
         }
 
         // ⚠ The closing brace's leading trivia is the only place a trailing comment at the bottom of
@@ -72,12 +80,21 @@ public sealed class NamespaceBodyRule : ArrangementRule {
         // the end of the unit.
         var tail = block.CloseBraceToken.LeadingTrivia;
 
+        // ⚠ The semicolon takes the *open brace's* trivia, and the name gives up its own trailing
+        // trivia to it. Getting this wrong is not a cosmetic bug: `namespace N` normally carries a
+        // newline after the name because the `{` was on the next line, so keeping that trivia on the
+        // name emits `namespace N\n; [TestFixture]` — a semicolon stranded on its own line with the
+        // first member behind it. It compiles, which is why only a differential catches it.
+        var semicolon = SyntaxFactory.Token(SyntaxKind.SemicolonToken)
+            .WithLeadingTrivia(block.OpenBraceToken.LeadingTrivia)
+            .WithTrailingTrivia(block.OpenBraceToken.TrailingTrivia);
+
         var scoped = SyntaxFactory.FileScopedNamespaceDeclaration(
                 block.AttributeLists,
                 block.Modifiers,
                 SyntaxFactory.Token(SyntaxKind.NamespaceKeyword).WithTriviaFrom(block.NamespaceKeyword),
-                block.Name,
-                SyntaxFactory.Token(SyntaxKind.SemicolonToken),
+                block.Name.WithoutTrailingTrivia(),
+                semicolon,
                 block.Externs,
                 block.Usings,
                 block.Members
@@ -88,5 +105,21 @@ public sealed class NamespaceBodyRule : ArrangementRule {
         return tail.Count == 0
             ? rewritten
             : rewritten.WithEndOfFileToken(rewritten.EndOfFileToken.WithLeadingTrivia(tail));
+    }
+
+    static bool HasDirective(SyntaxToken token) {
+        foreach (var trivia in token.LeadingTrivia) {
+            if (trivia.IsDirective || trivia.IsKind(SyntaxKind.DisabledTextTrivia)) {
+                return true;
+            }
+        }
+
+        foreach (var trivia in token.TrailingTrivia) {
+            if (trivia.IsDirective || trivia.IsKind(SyntaxKind.DisabledTextTrivia)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

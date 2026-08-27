@@ -28,20 +28,19 @@
 
 using System.Runtime.Serialization;
 
-namespace Newtonsoft.Json.Tests.TestObjects {
+namespace Newtonsoft.Json.Tests.TestObjects;
 #if !(NET20 || NET35)
-    public class PocoDataContractSerializationAttributesClass {
-        public string NoAttribute { get; set; }
+public class PocoDataContractSerializationAttributesClass {
+    public string NoAttribute { get; set; }
 
-        [IgnoreDataMember]
-        public string IgnoreDataMemberAttribute { get; set; }
+    [IgnoreDataMember]
+    public string IgnoreDataMemberAttribute { get; set; }
 
-        [DataMember]
-        public string DataMemberAttribute { get; set; }
+    [DataMember]
+    public string DataMemberAttribute { get; set; }
 
-        [IgnoreDataMember]
-        [DataMember]
-        public string IgnoreDataMemberAndDataMemberAttribute { get; set; }
-    }
-#endif
+    [IgnoreDataMember]
+    [DataMember]
+    public string IgnoreDataMemberAndDataMemberAttribute { get; set; }
 }
+#endif
