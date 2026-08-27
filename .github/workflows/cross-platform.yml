@@ -54,7 +54,10 @@ jobs:
       # ⚠ A git identity, because several tests drive real git. `FormatCommandTests` sets a
       # repository-local one, but a runner with no global identity fails `git commit` before the
       # local config is read in any test that does not, and the failure reads as a tool bug.
+      # ⚠ `shell: bash` on both, because the default is `pwsh` on the Windows leg and this workflow
+      # exists to test the tool on three platforms rather than to test three shells.
       - name: Give git an identity
+        shell: bash
         run: |
           git config --global user.email "ci@skala.invalid"
           git config --global user.name "Skala CI"
@@ -62,6 +65,7 @@ jobs:
       # Recorded rather than assumed: the line-ending state of the checkout is an input to the
       # first hazard, and a log that does not say what it was cannot explain a Windows-only failure.
       - name: Say how the tree was checked out
+        shell: bash
         run: git config --get core.autocrlf || echo "core.autocrlf unset"
 
       - name: Build
