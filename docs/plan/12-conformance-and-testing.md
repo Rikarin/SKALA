@@ -266,7 +266,7 @@ that survives that normalisation, so the sweep falls back to raw bytes for them 
 both and those two keys read `UNEXERCISED` for a reason that is about the instrument; normalise one
 side only and `insert_final_newline` reads `INERT` — *"ReSharper honours the key and Skala ignores
 it"* — for a key `skala format --option` demonstrably honours. `SkalaSideTests` pins the units,
-because Skala's whole side of a 201-option sweep runs in under a second and needs no oracle at all.
+because Skala's whole side of a 258-option sweep runs in under a second and needs no oracle at all.
 
 **It is a nightly job, not a commit gate.** It needs JetBrains installed, which is a developer-machine
 and nightly dependency and never a runtime one (ADR-011). What the fast path gets is the committed
@@ -284,6 +284,60 @@ that meant "the fixture is too weak" or "ReSharper's defaults mask this option";
 export-base run watched the oracle distinguish is one the fixture *can* see, so `Insensitive` on it
 is a masking fact about bare defaults and not a gap in the fixture. Those are marked `masked` and are
 not evidence that a fixture needs replacing.
+
+#### What the run at `2a14dee` measured
+
+258 of the registry's 278 Tier A options, at 567 configurations, in 2.8 minutes of oracle wall clock
+— **645 ms per option**. The other 20 are arrangement keys, excluded below.
+
+| outcome | options | |
+|---|---:|---|
+| ✅ `CONFORMANT` | 188 | both engines moved and every value agrees |
+| ❌ `DIVERGENT` | 44 | both moved, at least one value disagrees |
+| ❌ `SPURIOUS` | 26 | Skala moved, the oracle did not |
+| ❌ `INERT` | 0 | |
+| ⚠ `UNEXERCISED` | 0 | |
+| ⚠ `NO FIXTURE` | 0 | |
+
+**70 Tier A claims were unsubstantiated and all 70 were demoted**, taking the registry from 278 Tier A
+to **208** and `skala config check` on this repository's own export from 234 applied of 458 to **169**.
+⚠ The fall is the point. Every one of the 70 is a key the formatter reads *and acts on* — none is
+`UNEXERCISED`, so no fixture is too weak — and acts on differently from ReSharper. They failed the
+half of Tier A that says *reproduces Rider's behaviour*, and the test guarding the tier had only ever
+checked the half that says *Skala reads it*.
+
+⚠ **A demotion is not an admission that the key is unimplemented.** All 70 stay read and stay
+implemented; per [03](03-configuration-model.md) a divergence is Tier D plus an `SK-DIV` entry, and
+those entries are the work queue this run produced.
+
+#### ⚠ Tier D is not a work queue, and the part of it that is has never been measured
+
+**306 Tier D** after the demotions. That number is quoted as remaining work and most of it is not.
+But the honest breakdown is not the tidy one either — the recorded reasons cover 97 entries, and the
+sweep **cannot extend to the rest**: `oracle` is populated for exactly the Tier A entries, so a Tier D
+option has no fixture and the key-flip sweep has nothing to flip it against.
+
+| Tier D entries | what the evidence is |
+|---:|---|
+| 44 | read by the formatter, **measured** inert — `OfInert` in `PhaseOneOptions`, each with the probe recorded |
+| 37 | named in a `PhaseOneOptions` prose list with a reason: never read by the C# formatter, masked at the export's own values, or observable-and-not-implemented |
+| 15 | `xmldoc` — the oracle does not format doc comments at all (SK-DIV-0006) |
+| 1 | an `inert` reason on the registry entry itself |
+| 5 | a duplicate spelling whose `resharper_*` sibling is Tier A |
+| 10 | `dotnet_*` — Roslyn analyzer keys, never the formatter's |
+| 4 | EditorConfig core keys |
+| **120** | ⚠ **no recorded reason anywhere** |
+
+⚠ **120 is the number that decides whether finishing is weeks or months, and it is unmeasured.** Not
+"observable and not implemented" — *unexamined*: no probe, no fixture, no recorded finding either
+way. Its largest families are `indent_*` 11, `space_*` 9, `blank_lines_*` 9, `disable_*` 7,
+`prefer_*` 6, `arguments_*` 6. Some fraction will prove unimplementable the way the measured 44 did;
+nobody yet knows which fraction, and quoting either 306 or the recorded handful as the remaining work
+is a guess in opposite directions.
+
+The instrument that would settle it is the one that settled Tier A: give these entries `oracle`
+fixtures and sweep them. That is a **third named phase**, and until it runs, the split above is the
+most that can be claimed.
 
 #### ⚠ Interactions are out of scope, and the sweep is therefore incomplete
 
