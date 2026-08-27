@@ -33,7 +33,8 @@ public readonly struct PhaseOneOptions {
         SpaceAfterSemicolonInFor = options.GetBool(Ids.SpaceAfterSemicolonInForStatement);
         SpaceBeforeSemicolonInFor = options.GetBool(Ids.SpaceBeforeSemicolonInForStatement);
         SpaceAfterCast = options.GetBool(Ids.SpaceAfterCast);
-        SpaceAroundMemberAccess = options.GetBool(Ids.SpaceAroundMemberAccessOperator);
+        SpaceAroundDot = options.GetBool(Ids.SpaceAroundDot);
+        SpaceAroundArrowOp = options.GetBool(Ids.SpaceAroundArrowOp);
         SpaceAfterUnaryOperator = options.GetBool(Ids.SpaceAfterUnaryOperator);
         SpaceNearPostfixAndPrefixOp = options.GetBool(Ids.SpaceNearPostfixAndPrefixOp);
         SpaceAroundAssignmentOp = options.GetBool(Ids.SpaceAroundAssignmentOp);
@@ -46,7 +47,39 @@ public readonly struct PhaseOneOptions {
         SpaceBetweenKeywordAndExpression = options.GetBool(Ids.SpaceBetweenKeywordAndExpression);
         SpaceBetweenKeywordAndType = options.GetBool(Ids.SpaceBetweenKeywordAndType);
 
-        SpaceAfterKeywordsInControlFlow = options.GetBool(Ids.SpaceAfterKeywordsInControlFlowStatements);
+        SpaceBeforeIfParentheses = options.GetBool(Ids.SpaceBeforeIfParentheses);
+        SpaceBeforeWhileParentheses = options.GetBool(Ids.SpaceBeforeWhileParentheses);
+        SpaceBeforeForParentheses = options.GetBool(Ids.SpaceBeforeForParentheses);
+        SpaceBeforeForeachParentheses = options.GetBool(Ids.SpaceBeforeForeachParentheses);
+        SpaceBeforeSwitchParentheses = options.GetBool(Ids.SpaceBeforeSwitchParentheses);
+        SpaceBeforeCatchParentheses = options.GetBool(Ids.SpaceBeforeCatchParentheses);
+        SpaceBeforeLockParentheses = options.GetBool(Ids.SpaceBeforeLockParentheses);
+        SpaceBeforeUsingParentheses = options.GetBool(Ids.SpaceBeforeUsingParentheses);
+        SpaceBeforeFixedParentheses = options.GetBool(Ids.SpaceBeforeFixedParentheses);
+
+        SpaceWithinIfParentheses = options.GetBool(Ids.SpaceWithinIfParentheses);
+        SpaceWithinWhileParentheses = options.GetBool(Ids.SpaceWithinWhileParentheses);
+        SpaceWithinForParentheses = options.GetBool(Ids.SpaceWithinForParentheses);
+        SpaceWithinForeachParentheses = options.GetBool(Ids.SpaceWithinForeachParentheses);
+        SpaceWithinSwitchParentheses = options.GetBool(Ids.SpaceWithinSwitchParentheses);
+        SpaceWithinCatchParentheses = options.GetBool(Ids.SpaceWithinCatchParentheses);
+        SpaceWithinLockParentheses = options.GetBool(Ids.SpaceWithinLockParentheses);
+        SpaceWithinUsingParentheses = options.GetBool(Ids.SpaceWithinUsingParentheses);
+        SpaceWithinFixedParentheses = options.GetBool(Ids.SpaceWithinFixedParentheses);
+        SpaceWithinCheckedParentheses = options.GetBool(Ids.SpaceWithinCheckedParentheses);
+        SpaceWithinDefaultParentheses = options.GetBool(Ids.SpaceWithinDefaultParentheses);
+        SpaceWithinNameofParentheses = options.GetBool(Ids.SpaceWithinNameofParentheses);
+        SpaceWithinNewParentheses = options.GetBool(Ids.SpaceWithinNewParentheses);
+        SpaceWithinSizeofParentheses = options.GetBool(Ids.SpaceWithinSizeofParentheses);
+        SpaceWithinTypeofParentheses = options.GetBool(Ids.SpaceWithinTypeofParentheses);
+
+        SpaceWithinMethodCallParentheses = options.GetBool(Ids.SpaceWithinMethodCallParentheses);
+        SpaceWithinEmptyMethodCallParentheses = options.GetBool(Ids.SpaceWithinEmptyMethodCallParentheses);
+        SpaceWithinMethodDeclarationParentheses = options.GetBool(Ids.SpaceWithinMethodDeclarationParentheses);
+
+        SpaceWithinEmptyMethodDeclarationParentheses =
+            options.GetBool(Ids.SpaceWithinEmptyMethodDeclarationParentheses);
+
         SpaceBeforeMethodParentheses = options.GetBool(Ids.SpaceBeforeMethodParentheses);
         SpaceBeforeMethodCallParentheses = options.GetBool(Ids.SpaceBeforeMethodCallParentheses);
         SpaceBeforeEmptyMethodParentheses = options.GetBool(Ids.SpaceBeforeEmptyMethodParentheses);
@@ -64,6 +97,8 @@ public readonly struct PhaseOneOptions {
         SpaceBeforeArrayAccessBrackets = options.GetBool(Ids.SpaceBeforeArrayAccessBrackets);
         SpaceBeforeArrayRankBrackets = options.GetBool(Ids.SpaceBeforeArrayRankBrackets);
         SpaceWithinArrayAccessBrackets = options.GetBool(Ids.SpaceWithinArrayAccessBrackets);
+        SpaceWithinArrayRankBrackets = options.GetBool(Ids.SpaceWithinArrayRankBrackets);
+        SpaceWithinArrayRankEmptyBrackets = options.GetBool(Ids.SpaceWithinArrayRankEmptyBrackets);
         SpaceWithinAttributeBrackets = options.GetBool(Ids.SpaceWithinAttributeBrackets);
         SpaceWithinListPatternBrackets = options.GetBool(Ids.SpaceWithinListPatternBrackets);
 
@@ -288,7 +323,23 @@ public readonly struct PhaseOneOptions {
     public bool SpaceAfterSemicolonInFor { get; }
     public bool SpaceBeforeSemicolonInFor { get; }
     public bool SpaceAfterCast { get; }
-    public bool SpaceAroundMemberAccess { get; }
+
+    /// <summary>
+    /// <c>space_around_dot</c>: the gap beside a <c>.</c> or a <c>?.</c>.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ Read out of the specific key rather than out of the generalized
+    /// <c>space_around_member_access_operator</c> that used to supply it. The two agree in this
+    /// export, and the generalized one is still honoured — through
+    /// <see cref="Rikarin.Skala.Options.OptionInfo.Expands"/>, applied by the resolver — but a
+    /// configuration that sets only <c>space_around_dot</c> is one the oracle answers and Skala
+    /// used to ignore.
+    /// </remarks>
+    public bool SpaceAroundDot { get; }
+
+    /// <summary><c>space_around_arrow_op</c>: the gap beside a pointer member access <c>-&gt;</c>.</summary>
+    public bool SpaceAroundArrowOp { get; }
+
     public bool SpaceAfterUnaryOperator { get; }
     public bool SpaceNearPostfixAndPrefixOp { get; }
     public bool SpaceAroundAssignmentOp { get; }
@@ -301,7 +352,70 @@ public readonly struct PhaseOneOptions {
     public bool SpaceBetweenKeywordAndExpression { get; }
     public bool SpaceBetweenKeywordAndType { get; }
 
-    public bool SpaceAfterKeywordsInControlFlow { get; }
+    /// <summary>
+    /// The nine <c>space_before_&lt;keyword&gt;_parentheses</c> keys, one per control-flow keyword.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ One key per keyword rather than the single generalized
+    /// <c>space_after_keywords_in_control_flow_statements</c> the export writes. The oracle answers
+    /// each of the nine separately — <c>space_before_if_parentheses = false</c> alone produces
+    /// <c>if(n &gt; 0)</c> and leaves every other keyword's space — so a rule written against the
+    /// generalized key silently ignores eight of the nine. The generalized key still reaches these
+    /// fields, through the resolver's expansion of
+    /// <see cref="Rikarin.Skala.Options.OptionInfo.Expands"/>.
+    /// </remarks>
+    public bool SpaceBeforeIfParentheses { get; }
+
+    public bool SpaceBeforeWhileParentheses { get; }
+    public bool SpaceBeforeForParentheses { get; }
+    public bool SpaceBeforeForeachParentheses { get; }
+    public bool SpaceBeforeSwitchParentheses { get; }
+    public bool SpaceBeforeCatchParentheses { get; }
+    public bool SpaceBeforeLockParentheses { get; }
+    public bool SpaceBeforeUsingParentheses { get; }
+    public bool SpaceBeforeFixedParentheses { get; }
+
+    /// <summary>
+    /// The <c>space_within_&lt;construct&gt;_parentheses</c> keys: the gap just inside a
+    /// parenthesis, by what the parenthesis belongs to.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ <see cref="SpaceWithinParentheses"/> used to answer all of them, which made every one of
+    /// these fifteen keys inert. Each is observable on its own against the oracle:
+    /// <c>space_within_if_parentheses = true</c> produces <c>if ( n &gt; 0 )</c> and touches
+    /// nothing else.
+    /// </remarks>
+    public bool SpaceWithinIfParentheses { get; }
+
+    public bool SpaceWithinWhileParentheses { get; }
+    public bool SpaceWithinForParentheses { get; }
+    public bool SpaceWithinForeachParentheses { get; }
+    public bool SpaceWithinSwitchParentheses { get; }
+    public bool SpaceWithinCatchParentheses { get; }
+    public bool SpaceWithinLockParentheses { get; }
+    public bool SpaceWithinUsingParentheses { get; }
+    public bool SpaceWithinFixedParentheses { get; }
+    public bool SpaceWithinCheckedParentheses { get; }
+    public bool SpaceWithinDefaultParentheses { get; }
+    public bool SpaceWithinNameofParentheses { get; }
+
+    /// <summary>
+    /// ⚠ Read and never consulted. <c>space_within_new_parentheses</c> names the gap inside
+    /// <c>new T(…)</c>'s parentheses, and the oracle does not answer it at either value: asked with
+    /// <c>new List&lt;int&gt;(4)</c> and with <c>new object()</c>, the argument list comes back
+    /// governed by <c>space_between_method_call_parameter_list_parentheses</c> instead. It stays
+    /// Tier D with that measurement rather than being wired to a gap it does not own.
+    /// </summary>
+    public bool SpaceWithinNewParentheses { get; }
+
+    public bool SpaceWithinSizeofParentheses { get; }
+    public bool SpaceWithinTypeofParentheses { get; }
+
+    public bool SpaceWithinMethodCallParentheses { get; }
+    public bool SpaceWithinEmptyMethodCallParentheses { get; }
+    public bool SpaceWithinMethodDeclarationParentheses { get; }
+    public bool SpaceWithinEmptyMethodDeclarationParentheses { get; }
+
     public bool SpaceBeforeMethodParentheses { get; }
     public bool SpaceBeforeMethodCallParentheses { get; }
     public bool SpaceBeforeEmptyMethodParentheses { get; }
@@ -319,6 +433,18 @@ public readonly struct PhaseOneOptions {
     public bool SpaceBeforeArrayAccessBrackets { get; }
     public bool SpaceBeforeArrayRankBrackets { get; }
     public bool SpaceWithinArrayAccessBrackets { get; }
+
+    /// <summary>
+    /// <c>space_within_array_rank_brackets</c>: <c>new int[ 2, 3 ]</c> and <c>int[ , ]</c>.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ A rank specifier that is nothing but <c>[]</c> is <see cref="SpaceWithinArrayRankEmptyBrackets"/>'s
+    /// instead, and <c>[,]</c> is not: the oracle answers <c>new[]</c> out of the empty key and
+    /// <c>int[,]</c> out of this one, so the line is one omitted size rather than "no sizes".
+    /// </remarks>
+    public bool SpaceWithinArrayRankBrackets { get; }
+
+    public bool SpaceWithinArrayRankEmptyBrackets { get; }
     public bool SpaceWithinAttributeBrackets { get; }
     public bool SpaceWithinListPatternBrackets { get; }
 
@@ -581,8 +707,8 @@ public static class Ids {
 
     public static readonly OptionId SpaceAfterCast = Of("resharper_space_after_cast");
 
-    public static readonly OptionId SpaceAroundMemberAccessOperator =
-        Of("resharper_space_around_member_access_operator");
+    public static readonly OptionId SpaceAroundDot = Of("resharper_csharp_space_around_dot");
+    public static readonly OptionId SpaceAroundArrowOp = Of("resharper_csharp_space_around_arrow_op");
 
     public static readonly OptionId SpaceAfterUnaryOperator = Of("resharper_csharp_space_after_unary_operator");
 
@@ -603,8 +729,88 @@ public static class Ids {
     public static readonly OptionId SpaceBetweenKeywordAndType =
         OfInert("resharper_csharp_space_between_keyword_and_type");
 
-    public static readonly OptionId SpaceAfterKeywordsInControlFlowStatements =
-        Of("resharper_space_after_keywords_in_control_flow_statements");
+    public static readonly OptionId SpaceBeforeIfParentheses = Of("resharper_csharp_space_before_if_parentheses");
+
+    public static readonly OptionId SpaceBeforeWhileParentheses =
+        Of("resharper_csharp_space_before_while_parentheses");
+
+    public static readonly OptionId SpaceBeforeForParentheses = Of("resharper_csharp_space_before_for_parentheses");
+
+    public static readonly OptionId SpaceBeforeForeachParentheses =
+        Of("resharper_csharp_space_before_foreach_parentheses");
+
+    public static readonly OptionId SpaceBeforeSwitchParentheses =
+        Of("resharper_csharp_space_before_switch_parentheses");
+
+    public static readonly OptionId SpaceBeforeCatchParentheses =
+        Of("resharper_csharp_space_before_catch_parentheses");
+
+    public static readonly OptionId SpaceBeforeLockParentheses = Of("resharper_csharp_space_before_lock_parentheses");
+
+    public static readonly OptionId SpaceBeforeUsingParentheses =
+        Of("resharper_csharp_space_before_using_parentheses");
+
+    public static readonly OptionId SpaceBeforeFixedParentheses =
+        Of("resharper_csharp_space_before_fixed_parentheses");
+
+    public static readonly OptionId SpaceWithinIfParentheses = Of("resharper_csharp_space_within_if_parentheses");
+
+    public static readonly OptionId SpaceWithinWhileParentheses =
+        Of("resharper_csharp_space_within_while_parentheses");
+
+    public static readonly OptionId SpaceWithinForParentheses = Of("resharper_csharp_space_within_for_parentheses");
+
+    public static readonly OptionId SpaceWithinForeachParentheses =
+        Of("resharper_csharp_space_within_foreach_parentheses");
+
+    public static readonly OptionId SpaceWithinSwitchParentheses =
+        Of("resharper_csharp_space_within_switch_parentheses");
+
+    public static readonly OptionId SpaceWithinCatchParentheses =
+        Of("resharper_csharp_space_within_catch_parentheses");
+
+    public static readonly OptionId SpaceWithinLockParentheses = Of("resharper_csharp_space_within_lock_parentheses");
+
+    public static readonly OptionId SpaceWithinUsingParentheses =
+        Of("resharper_csharp_space_within_using_parentheses");
+
+    public static readonly OptionId SpaceWithinFixedParentheses =
+        Of("resharper_csharp_space_within_fixed_parentheses");
+
+    public static readonly OptionId SpaceWithinCheckedParentheses =
+        Of("resharper_csharp_space_within_checked_parentheses");
+
+    public static readonly OptionId SpaceWithinDefaultParentheses =
+        Of("resharper_csharp_space_within_default_parentheses");
+
+    public static readonly OptionId SpaceWithinNameofParentheses =
+        Of("resharper_csharp_space_within_nameof_parentheses");
+
+    // ⚠ Inert, and measured rather than assumed. Asked at both values with `new List<int>(4)` and
+    // with `new object()`, the oracle returns the argument list exactly as
+    // `space_between_method_call_parameter_list_parentheses` and its empty twin decide; nothing
+    // distinguishes the two values of this key. `space_before_new_parentheses` — the gap in *front*
+    // of the parenthesis — is the one `new` really does own, and it stays Tier A.
+    public static readonly OptionId SpaceWithinNewParentheses =
+        OfInert("resharper_csharp_space_within_new_parentheses");
+
+    public static readonly OptionId SpaceWithinSizeofParentheses =
+        Of("resharper_csharp_space_within_sizeof_parentheses");
+
+    public static readonly OptionId SpaceWithinTypeofParentheses =
+        Of("resharper_csharp_space_within_typeof_parentheses");
+
+    public static readonly OptionId SpaceWithinMethodCallParentheses =
+        Of("resharper_space_between_method_call_parameter_list_parentheses");
+
+    public static readonly OptionId SpaceWithinEmptyMethodCallParentheses =
+        Of("resharper_space_between_method_call_empty_parameter_list_parentheses");
+
+    public static readonly OptionId SpaceWithinMethodDeclarationParentheses =
+        Of("resharper_space_between_method_declaration_parameter_list_parentheses");
+
+    public static readonly OptionId SpaceWithinEmptyMethodDeclarationParentheses =
+        Of("resharper_space_between_method_declaration_empty_parameter_list_parentheses");
 
     public static readonly OptionId SpaceBeforeMethodParentheses =
         Of("resharper_csharp_space_before_method_parentheses");
@@ -640,9 +846,6 @@ public static class Ids {
     public static readonly OptionId SpaceBetweenTypecastParentheses =
         Of("resharper_csharp_space_between_typecast_parentheses");
 
-    public static readonly OptionId SpaceBeforeOpenSquareBrackets =
-        OfInert("resharper_space_before_open_square_brackets");
-
     public static readonly OptionId SpaceBeforeArrayAccessBrackets =
         Of("resharper_csharp_space_before_array_access_brackets");
 
@@ -651,6 +854,12 @@ public static class Ids {
 
     public static readonly OptionId SpaceWithinArrayAccessBrackets =
         Of("resharper_csharp_space_within_array_access_brackets");
+
+    public static readonly OptionId SpaceWithinArrayRankBrackets =
+        Of("resharper_csharp_space_within_array_rank_brackets");
+
+    public static readonly OptionId SpaceWithinArrayRankEmptyBrackets =
+        Of("resharper_csharp_space_within_array_rank_empty_brackets");
 
     public static readonly OptionId SpaceWithinAttributeBrackets =
         Of("resharper_csharp_space_within_attribute_brackets");
@@ -718,6 +927,11 @@ public static class Ids {
     // is the spacing of `{ M(); }` on a method's own line, and BreakPlan.PlanOnePerLine gives every
     // statement a line of its own — the oracle does the same, so no input produces a single-line
     // method body with anything in it. An empty one is `empty_block_style`'s.
+    // ⚠ The one shape that *is* single-line, an accessor body, is not this key's. Measured, because
+    // the reason above was true and the wiring was not: with `space_in_singleline_method = false`
+    // the oracle returns `get { return _n; }` unchanged, and with
+    // `space_in_singleline_accessorholder = false` it returns `get {return _n;}`. Skala read the
+    // body out of this key until the inertness of every inert key started being checked.
     public static readonly OptionId SpaceInSinglelineMethod = OfInert("resharper_csharp_space_in_singleline_method");
 
     public static readonly OptionId SpaceInSinglelineAnonymousMethod =
@@ -1067,8 +1281,52 @@ public static class Ids {
     public static readonly OptionId FormatterOnTag = Of("resharper_formatter_on_tag");
     public static readonly OptionId FormatterTagsAcceptRegexp = Of("resharper_formatter_tags_accept_regexp");
 
+    // ── Generalized keys ─────────────────────────────────────────────────────────────────────
+    // ⚠ These are not read by the formatter and never will be. A generalized key is a way of
+    // writing several other keys at once, so the honest implementation is the resolver expanding it
+    // into the keys it names (docs/plan/03 § "The option registry"); the formatter then reads only
+    // the specific ones. They are listed here because Tier A is a claim about what the tool
+    // honours, not about which field a value lands in, and because
+    // `EveryImplementedOption_ChangesTheOutputOfItsCorpusFile` is exactly the right question to ask
+    // of them: set the generalized key and the output has to move.
+    public static readonly OptionId SpaceAfterKeywordsInControlFlowStatements =
+        OfGeneralized("resharper_space_after_keywords_in_control_flow_statements");
+
+    public static readonly OptionId SpaceAroundMemberAccessOperator =
+        OfGeneralized("resharper_space_around_member_access_operator");
+
+    public static readonly OptionId SpaceAroundTernaryOperator = OfGeneralized("resharper_space_around_ternary_operator");
+
+    public static readonly OptionId SpaceBeforeOpenSquareBrackets =
+        OfGeneralized("resharper_space_before_open_square_brackets");
+
+    public static readonly OptionId SpaceBetweenSquareBrackets =
+        OfGeneralized("resharper_space_between_square_brackets");
+
+    public static readonly OptionId SpaceBetweenMethodCallNameAndOpeningParenthesis =
+        OfGeneralized("resharper_space_between_method_call_name_and_opening_parenthesis");
+
+    public static readonly OptionId SpaceBetweenMethodDeclarationNameAndOpenParenthesis =
+        OfGeneralized("resharper_space_between_method_declaration_name_and_open_parenthesis");
+
+    public static readonly OptionId GeneralizedIndentSize = OfGeneralized("indent_size");
+    public static readonly OptionId GeneralizedIndentStyle = OfGeneralized("indent_style");
+
     /// <summary>Every id above that phase 1 can actually be observed to honour.</summary>
     public static ImmutableArray<OptionId> All { get; } = [.. Collected.Distinct().Except(Inert).Order()];
+
+    /// <summary>
+    /// The ids phase 1 reads and cannot be observed to honour, each with a reason at its
+    /// declaration.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ Exposed so that the reason can be checked rather than believed. "Inert" is the sentence a
+    /// key gets when it is honoured vacuously — another rule decides first, or the oracle ignores
+    /// it too — and it is also the sentence an unimplemented key gets when nobody looks. The
+    /// difference is measurable: an inert key produces one output across its whole domain, and a
+    /// key that has quietly become observable produces two.
+    /// </remarks>
+    public static ImmutableArray<OptionId> ReadButInert { get; } = [.. Inert.Distinct().Order()];
 
     /// <summary>
     /// ⚠ An option phase 1 reads but whose value it cannot yet make a difference to. No fitting
@@ -1087,6 +1345,36 @@ public static class Ids {
     static OptionId OfInert(string key) {
         var id = Of(key);
         Inert.Add(id);
+        return id;
+    }
+
+    /// <summary>
+    /// A key the formatter honours without reading: the resolver expands it into the specific keys
+    /// it names, and those are what the rules consult.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ Declared after every id it expands to, and checked rather than trusted: a generalized key
+    /// none of whose targets is implemented would be a Tier A claim with nothing behind it, which
+    /// is the exact failure mode M3.1 found. At least one target must be implemented and not
+    /// <see cref="OfInert"/>; the rest may belong to a component that does not exist yet —
+    /// <c>indent_size</c> also names <c>resharper_xmldoc_indent_size</c>, and Skala's honouring it
+    /// for C# is not made less true by the doc-comment formatter being unwritten.
+    /// </remarks>
+    static OptionId OfGeneralized(string key) {
+        var id = Of(key);
+        var targets = OptionRegistry.Get(id).Expands;
+        if (targets.Count == 0) {
+            throw new InvalidOperationException(
+                $"'{key}' is registered as generalized but expands to nothing. Nothing would honour it."
+            );
+        }
+
+        if (!targets.Any(target => Collected.Contains(target) && !Inert.Contains(target))) {
+            throw new InvalidOperationException(
+                $"'{key}' expands to [{string.Join(", ", targets.Select(static t => OptionRegistry.Get(t).Key))}] and phase 1 implements none of them. A generalized key is honoured through its targets or not at all."
+            );
+        }
+
         return id;
     }
 
