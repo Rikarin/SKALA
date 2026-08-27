@@ -14,7 +14,10 @@ tested first and the residue -- `Uncovered` -- is what nothing else could explai
 import json, os, re, collections
 
 W = os.path.dirname(os.path.abspath(__file__))
-REPO = "/Users/jiu/Projects/Rikarin/Skala/.claude/worktrees/agent-a71a3b86a4d10c068"
+# The repository root, derived from this script's own location. It was previously a
+# hardcoded worktree path, which made the pipeline unrunnable everywhere but that
+# one machine-and-moment; doc 17's README asks for a re-run, so it has to resolve.
+REPO = os.path.dirname(os.path.dirname(W))
 
 universe = json.load(open(f"{W}/universe.json"))
 opts = json.load(open(f"{REPO}/Core/Rikarin.Skala.Options/options.json"))["options"]

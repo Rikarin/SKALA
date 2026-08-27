@@ -8,11 +8,16 @@ here is part of the solution, the build or the test run.
 
 ## Order
 
+⚠ The issue-type dump is read from **this directory**, not from the scratch dir — writing it
+to `$W` left `universe.py` with no metadata to join and silently produced a universe with 888
+entries and 0 of them described. `$W` holds only the SARIF reports.
+
 ```bash
 W=/tmp/parity && mkdir -p $W
+P=$(git rev-parse --show-toplevel)/Testing/parity-analysis
 
 # 1. ReSharper's own catalogue, from whichever jb is being used to measure.
-jb inspectcode --dumpIssuesTypes -o=$W/types-2026.xml -f=Xml
+jb inspectcode --dumpIssuesTypes -o=$P/types-2026.xml -f=Xml
 
 # 2. The universe: the C#-relevant inspections in the author's export, plus metadata.
 python3 universe.py                 # -> universe.json

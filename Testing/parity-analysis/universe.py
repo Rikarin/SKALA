@@ -3,7 +3,10 @@ enriched with the tool's own issue-type metadata."""
 import json, re, os, collections
 
 W = os.path.dirname(os.path.abspath(__file__))
-REPO = "/Users/jiu/Projects/Rikarin/Skala/.claude/worktrees/agent-a71a3b86a4d10c068"
+# The repository root, derived from this script's own location. It was previously a
+# hardcoded worktree path, which made the pipeline unrunnable everywhere but that
+# one machine-and-moment; doc 17's README asks for a re-run, so it has to resolve.
+REPO = os.path.dirname(os.path.dirname(W))
 
 # --- the export: the author's configured severities, and the universe of keys ---
 ec = {}
@@ -25,7 +28,12 @@ def snake(s):
 
 import xml.etree.ElementTree as ET
 
-sources = [json.load(open(f"{W}/types.json"))]
+# `types.json` is an optional cached dump from an older jb; the pipeline runs without
+# it, on `types-2026.xml` alone. It was never committed, so requiring it was a second
+# reason the committed pipeline could not be re-run.
+sources = []
+if os.path.exists(f"{W}/types.json"):
+    sources.append(json.load(open(f"{W}/types.json")))
 # The measuring version's own catalogue: covers plugin + newer-C# inspections that the
 # 2025.2.6 base dump omits (NUnit, EF, logging templates, `ConvertToExtensionBlock`, ...).
 if os.path.exists(f"{W}/types-2026.xml"):
