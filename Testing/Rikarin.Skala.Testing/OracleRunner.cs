@@ -200,6 +200,24 @@ public sealed class OracleRunner {
         }
     }
 
+    /// <summary>
+    /// Runs the tool and returns everything it wrote, on both streams.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ <b>Both pipes are drained concurrently, and that is a deadlock fix rather than a style
+    /// preference.</b> The obvious spelling — <c>StandardOutput.ReadToEnd()</c> and then
+    /// <c>StandardError.ReadToEnd()</c> — reads the second pipe only once the first has reached end
+    /// of stream. A pipe holds 64 KB on macOS; a <c>cleanupcode</c> batch that writes more than that
+    /// to stderr blocks in <c>write(2)</c>, never closes stdout, and the parent waits on a stream the
+    /// child can no longer reach. Both processes then sit still forever.
+    /// <para>
+    /// ⚠ It presents as a hang and not as an error, and it is data-dependent: it needs a batch noisy
+    /// enough to fill the buffer, so a sweep can pass for months and then stop dead on a round whose
+    /// configuration provokes warnings. This one did — a 258-option sweep wedged in round 2 with
+    /// <c>jb</c> at 0 % CPU and its stderr pipe grown to the full 65 536 bytes, after the same
+    /// harness had completed a 201-option run.
+    /// </para>
+    /// </remarks>
     string Run(string workingDirectory, params string[] arguments) {
         var start = new ProcessStartInfo(_executable) {
             WorkingDirectory = workingDirectory,
@@ -216,10 +234,12 @@ public sealed class OracleRunner {
             Process.Start(start)
             ?? throw new InvalidOperationException($"{_executable} did not start.");
 
-        var output = process.StandardOutput.ReadToEnd();
-        var error = process.StandardError.ReadToEnd();
+        // ⚠ Both started before either is awaited, so neither pipe can fill while the other is read.
+        var output = process.StandardOutput.ReadToEndAsync();
+        var error = process.StandardError.ReadToEndAsync();
+        Task.WaitAll(output, error);
         process.WaitForExit();
-        return output + error;
+        return output.Result + error.Result;
     }
 
     public const string ProjectFile = """

@@ -81,6 +81,26 @@ public sealed class KeyFlipSweep {
 
     public string ConfigDigest { get; }
 
+    /// <summary>
+    /// Whether a count is reporting a broken instrument rather than a dramatic result.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ Both of this harness's canaries have the same shape — a non-empty population in which
+    /// <em>nothing</em> was observed — and both have fired for real. M3's "197 options set, 0
+    /// fixtures unchanged" was a shared-<c>.editorconfig</c> bug; this harness's own "0/164 fixtures
+    /// agree at the baseline" was a normalise-one-side-only bug. Neither was an error: each produced
+    /// a confident, entirely wrong table, and each was caught only because a human read a count.
+    /// <para>
+    /// ⚠ It is a named predicate rather than two inline comparisons so that it can be pinned by a
+    /// test. A canary that is only exercised when the harness is already broken is a canary nobody
+    /// has checked is alive — and the live sweep cannot demonstrate it, because a healthy run is
+    /// exactly the run in which it stays silent.
+    /// </para>
+    /// </remarks>
+    /// <param name="population">Fixtures compared, or options in the round.</param>
+    /// <param name="observed">Of those, how many agreed, or moved.</param>
+    public static bool IsBrokenMeasurement(int population, int observed) => population > 0 && observed == 0;
+
     public SweepRun Run(SweepPlanResult plan) {
         var candidates = plan.Candidates;
         if (candidates.Count == 0) {
@@ -117,7 +137,7 @@ public sealed class KeyFlipSweep {
         // was a shared-configuration bug; this harness's own "0/164 fixtures agree at the baseline"
         // was a normalise-one-side-only bug. Both were caught by a human reading a count. A count
         // that can only be read is a count that will eventually be skimmed.
-        if (baseline.Count > 0 && agreeing == 0) {
+        if (IsBrokenMeasurement(baseline.Count, agreeing)) {
             _log.WriteLine(
                 "  ⚠ NOT A FINDING, A BROKEN MEASUREMENT: Skala and the oracle disagree on every fixture "
                 + "before any key is flipped. Check the comparison before reading anything below it."
@@ -171,7 +191,7 @@ public sealed class KeyFlipSweep {
                 $"  round {Count(round + 1)}/{Count(rounds)}: {Count(work.Length)} options, {Count(moved)} oracle outputs differ from the input"
             );
 
-            if (work.Length > 0 && moved == 0) {
+            if (IsBrokenMeasurement(work.Length, moved)) {
                 _log.WriteLine(
                     "  ⚠ NOT A FINDING, A BROKEN MEASUREMENT: `cleanupcode` changed nothing in this whole "
                     + "round. It errored, or the configuration never reached it."
