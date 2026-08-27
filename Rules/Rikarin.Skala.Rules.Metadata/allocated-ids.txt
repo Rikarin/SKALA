@@ -45,6 +45,11 @@ SK5002 process-start-from-request
 SK5005 weak-cipher-algorithm
 SK5007 certificate-validation-disabled
 SK5009 xml-external-entity-resolution
+SK1001 collection-expression
+SK1006 using-declaration
+SK1015 type-pattern-over-cast
+SK1031 null-conditional-assignment
+SK1033 dictionary-double-lookup
 
 # Retired: allocated, superseded by a live id, and never to be built. The line stays so the
 # number cannot be handed out a second time; there is no rules.json entry to point at, because

@@ -26,8 +26,13 @@ using Rikarin.Skala.Testing;
 //   ask <dir>         run the oracle over a scratch directory, in place. The tool the milestone-3
 //                     wrapping rules were established with: an option name does not say what
 //                     happens to a 121-column array initializer, and asking does.
-//   audit [dir…]      every rule's findings over a tree, grouped by rule, for the
+//   audit [dir…] [--implicit-usings]
+//                     every rule's findings over a tree, grouped by rule, for the
 //                     false-positive review docs/plan/16 § R3 makes the shipping bar.
+//                     ⚠ `--implicit-usings` supplies the global-usings file the SDK writes into
+//                     obj/, which the loader skips. A tree that sets `ImplicitUsings` binds
+//                     `Dictionary<,>` to an error type without it and most of the semantic rule
+//                     set goes quiet for the wrong reason.
 //   sample <tree> <n> <dest>
 //                     redraw a corpus sample from a tree, reproducibly: the file is chosen by a
 //                     hash of its path rather than by a seeded sequence, so the same commit and
@@ -110,11 +115,29 @@ switch (args[0]) {
         return Ask(args[1], args[2..]);
     case "defaults":
         return Defaults(args.Length > 1 ? args[1] : null);
-    case "audit":
+    case "audit": {
         // docs/plan/16 § R3's shipping bar, as a list a person can read: every rule's findings over
         // a tree, grouped, so that "zero false positives" is checked rather than claimed.
-        Console.WriteLine(RuleAudit.Run(args.Length > 1 ? args[1..] : [Corpus.SetRoot(Corpus.Real)], true));
+        //
+        // ⚠ `--implicit-usings` supplies the global-usings file the SDK generates into obj/, which
+        // the loader skips. Without it a tree that sets `ImplicitUsings` binds `Dictionary<,>` to an
+        // error type and most of the semantic rule set goes quiet for the wrong reason — over Vixen
+        // it is the difference between 195 724 errors and 128 833. Off by default because
+        // `corpus/real/` predates implicit usings and adding them there moves recorded numbers.
+        var auditPaths = args[1..]
+            .Where(static argument => !argument.StartsWith("--", StringComparison.Ordinal))
+            .ToArray();
+
+        Console.WriteLine(
+            RuleAudit.Run(
+                auditPaths.Length > 0 ? auditPaths : [Corpus.SetRoot(Corpus.Real)],
+                true,
+                Array.IndexOf(args, "--implicit-usings") >= 0
+            )
+        );
+
         return 0;
+    }
     case "preprocessor":
         // SK-DIV-0004, measured. The symbol set comes from a real binary log of the same project
         // the oracle's fixtures were produced under, read through the loader `skala check` uses.

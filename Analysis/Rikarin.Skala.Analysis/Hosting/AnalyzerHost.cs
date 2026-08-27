@@ -68,7 +68,9 @@ public static class AnalyzerHost {
         new WhereBeforeOperatorAnalyzer(), new AbstractTypeConstructorAnalyzer(),
         new ThreadSleepInTestAnalyzer(),
         new SqlInjectionAnalyzer(), new ProcessArgumentInjectionAnalyzer(), new WeakCipherAnalyzer(),
-        new CertificateValidationAnalyzer(), new XmlExternalEntityAnalyzer()
+        new CertificateValidationAnalyzer(), new XmlExternalEntityAnalyzer(),
+        new CollectionExpressionAnalyzer(), new UsingDeclarationAnalyzer(), new TypePatternAnalyzer(),
+        new NullConditionalAssignmentAnalyzer(), new DictionaryLookupAnalyzer()
     ];
 
     /// <summary>
