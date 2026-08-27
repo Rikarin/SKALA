@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.IO.Hashing;
 using System.Runtime.InteropServices;
 using System.Text;
+using Rikarin.Skala.Core;
 using Rikarin.Skala.Reporting;
 
 namespace Rikarin.Skala.Analysis.Duplication;
@@ -80,7 +81,7 @@ internal sealed class CloneIndex {
         }
 
         try {
-            Directory.CreateDirectory(Path.GetDirectoryName(_path)!);
+            SkalaDirectory.EnsureForFile(_path);
 
             // ⚠ Ordinal by path, so two runs over the same tree produce byte-identical files. A cache
             // whose bytes move every run is a cache that shows up in every diff and every backup.

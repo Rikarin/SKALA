@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Globalization;
 using System.Net.Sockets;
+using Rikarin.Skala.Core;
 using Rikarin.Skala.Formatting.CSharp;
 
 namespace Rikarin.Skala.Server;
@@ -46,7 +47,10 @@ public sealed class Daemon : IAsyncDisposable {
 
     /// <summary>Binds the socket. ⚠ Throws if one is already bound, which is how two daemons are prevented.</summary>
     public void Listen() {
-        Directory.CreateDirectory(Path.GetDirectoryName(_socketPath)!);
+        // ⚠ Creates `.skala/` *and* leaves the self-ignore marker in it. The daemon is the most
+        // common way `.skala/` first appears in somebody's tree, because it is started lazily by
+        // the first single-file format — so it is the most important one to keep out of git status.
+        SkalaDirectory.EnsureForFile(_socketPath);
 
         // ⚠ A socket file left by a crashed daemon is not a running daemon. Probing it before
         // unlinking is the difference between recovering and stealing a live daemon's socket.

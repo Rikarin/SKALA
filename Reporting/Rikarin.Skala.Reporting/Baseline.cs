@@ -163,7 +163,7 @@ public sealed class Baseline {
         var log = SarifWriter.Build(report with { Findings = [.. accepted], Gate = null });
         log.Runs[0].Invocations = null;
 
-        Directory.CreateDirectory(System.IO.Path.GetDirectoryName(System.IO.Path.GetFullPath(path))!);
+        Core.SkalaDirectory.EnsureForFile(System.IO.Path.GetFullPath(path));
         File.WriteAllText(path, SarifWriter.Serialize(log));
     }
 }

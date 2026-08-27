@@ -470,19 +470,16 @@ public static partial class SkalaCommandLine {
         }
     }
 
-    /// <summary>The nearest directory above <paramref name="path"/> that looks like a repository.</summary>
-    public static string? FindRepositoryRoot(string path) {
-        var full = Path.GetFullPath(path);
-        var directory = Directory.Exists(full) ? full : Path.GetDirectoryName(full);
-        while (directory is not null) {
-            if (Directory.Exists(Path.Combine(directory, ".git"))) {
-                return directory;
-            }
-
-            var parent = Path.GetDirectoryName(directory);
-            directory = string.Equals(parent, directory, StringComparison.Ordinal) ? null : parent;
-        }
-
-        return null;
-    }
+    /// <summary>
+    /// The nearest directory above <paramref name="path"/> that looks like a repository.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ Delegates rather than duplicating. This was a second copy of
+    /// <see cref="FormatCommand.FindRepositoryRoot"/> that had drifted: it tested only
+    /// <c>Directory.Exists(".git")</c>, so in a git <b>worktree</b> or a <b>submodule</b> — where
+    /// <c>.git</c> is a file containing <c>gitdir: …</c> and not a directory — it walked past the
+    /// root, returned null, and every path the daemon commands printed came out absolute. Two
+    /// implementations of "where is the repository" is one more than the number that can be right.
+    /// </remarks>
+    public static string? FindRepositoryRoot(string path) => FormatCommand.FindRepositoryRoot(path);
 }

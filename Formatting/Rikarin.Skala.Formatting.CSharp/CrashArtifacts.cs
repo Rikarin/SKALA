@@ -20,8 +20,10 @@ public static class CrashArtifacts {
 
         try {
             var hash = Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(input)))[..16];
-            var directory = Path.Combine(root, "crash", hash);
-            Directory.CreateDirectory(directory);
+            // ⚠ `root` is already the `.skala` directory. EnsureAt creates the crash folder and
+            // leaves the self-ignore marker at `.skala/`, so a crash artefact never turns up as an
+            // untracked file in the tree the user was formatting.
+            var directory = Core.SkalaDirectory.EnsureAt(root, "crash", hash);
             File.WriteAllText(Path.Combine(directory, "input.cs"), input);
             File.WriteAllText(Path.Combine(directory, "output.cs"), output);
             File.WriteAllText(Path.Combine(directory, "config.snapshot"), Snapshot(path, options));

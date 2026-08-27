@@ -121,7 +121,7 @@ public static class History {
     /// </remarks>
     public static void Append(string repositoryRoot, HistoryEntry entry) {
         var path = PathFor(repositoryRoot);
-        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+        Core.SkalaDirectory.EnsureForFile(path);
         File.AppendAllText(path, JsonSerializer.Serialize(entry, Options) + "\n");
     }
 

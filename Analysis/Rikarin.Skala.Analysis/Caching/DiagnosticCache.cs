@@ -6,6 +6,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.CodeAnalysis;
 using Rikarin.Skala.Analysis.Loading;
+using Rikarin.Skala.Core;
 using Rikarin.Skala.Reporting;
 using Rikarin.Skala.Rules.Metadata;
 
@@ -228,7 +229,7 @@ public sealed class DiagnosticCache {
         }
 
         try {
-            Directory.CreateDirectory(Path.GetDirectoryName(_path)!);
+            SkalaDirectory.EnsureForFile(_path);
             File.WriteAllText(_path, JsonSerializer.Serialize(_entries.Values.ToList(), Json));
         } catch (Exception exception) when (exception is IOException or UnauthorizedAccessException) {
             // A read-only tree does not fail a check.
