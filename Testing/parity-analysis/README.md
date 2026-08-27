@@ -41,12 +41,30 @@ python3 sonar_sens.py               # why the mechanical title join is not usabl
 `review.py <Category>` and `find.py <regex>…` are for reading the classification, not for producing
 numbers.
 
+## ⚠ The tree's build state changes the answer
+
+The fire-count runs are `--no-build` over a `git archive`, where a great many types do not resolve —
+and an inspection that depends on a type it cannot resolve stays quiet. Re-run with the same ten
+projects restored and built, the same sources report **7 756** `Option`-bucket findings rather than
+3 718.
+
+⚠ **Neither number is wrong and they are not comparable.** A before/after pair must be measured on
+two trees in the *same* build state or the difference is mostly MSBuild. Per-inspection counts are
+much more robust than bucket totals: `ArrangeRedundantParentheses` reproduces at 1 231 unbuilt and
+1 226 built.
+
 ## ⚠ Two files here are judgement, not measurement
 
 `gov.json` (inspection → governing option key) and `catalogued.json` (inspection → `SK` id) were
 written by hand. They are the soft edge of the whole analysis: **every entry missing from them
 inflates the uncovered count.** `sonar_hand.json` is the 60-rule sample classified by hand, kept so
 the projection in doc 17 can be checked rather than taken on trust.
+
+⚠ **`OracleProfile.Cleanup` belongs on this list too**, and doc 17's first run is the proof. Five
+inspections were classified as arrangement Skala "declares and does not perform" when the oracle
+itself was not performing them either — because the profile was missing two real cleanup tasks that
+nobody had probed for. A gap measured against an under-configured oracle is a gap in the oracle.
+See `../../docs/oracle-cleanup-profile.md` § "Two tasks the first sweep missed".
 
 ## ⚠ What these scripts must never do
 

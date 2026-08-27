@@ -296,6 +296,62 @@ against 6 563 for the entire uncovered rule set.
 fifteen unimplemented arrangement options, and they outweigh most of the rule gap by volume on real
 code. That is the practical conclusion of this document and it was not the expected one.
 
+### ⚠ Re-measured after the fifteen were implemented: 1 928 findings become 195
+
+The conclusion above was acted on. [06](06-arrangement-and-syntax-styles.md) § "The fifteen Tier D
+arrangement options, settled" has the per-option verdict; this is what it did to the numbers, on the
+same ten projects, with `skala arrange` run over a `git archive` scratch copy between the two
+`jb inspectcode` runs.
+
+| | before | after | |
+|---|---:|---:|---:|
+| **The fifteen** | **1 928** | **195** | **−1 733** |
+| The whole `Option` bucket | 7 756 | 5 757 | −1 999 |
+
+Per inspection, the ones that moved:
+
+| Inspection | before | after |
+|---|---:|---:|
+| `ArrangeRedundantParentheses` | 1 226 | **1** |
+| `ArgumentsStyleLiteral` | 471 | **1** |
+| `ArgumentsStyleOther` | 20 | **0** |
+| `ArgumentsStyleStringLiteral` | 13 | **0** |
+| `ArrangeThisQualifier` | 5 | **0** |
+| `SeparateControlTransferStatement` | 11 | 11 — stays Tier D, and [06](06-arrangement-and-syntax-styles.md) says why |
+| `SuggestVarOrType_DeconstructionDeclarations` | 182 | 182 — the option moved, the inspection did not; see below |
+
+⚠ **`ArrangeRedundantParentheses` — this document's headline, 1 231 findings — is now 1**, and that
+one is `a * (x * y)`, which Skala keeps on purpose: equal precedence is not associativity and on
+`float` the grouping is the author's arithmetic.
+
+### ⚠ Two corrections to how this document measured, both of which flattered the gap
+
+1. **The `Option` bucket totals here and above are not comparable, and the reason is the tree's build
+   state.** The original run was `--no-build` on an unrestored `git archive`, where a great many
+   types do not resolve and the inspections that depend on them stay quiet. Re-run with the same ten
+   projects *built*, the same unarranged sources report 7 756 `Option` findings rather than 3 718.
+   The before/after pair above is measured on two identically-built trees, so the −1 999 is a
+   controlled difference; **3 718 → 5 757 is not a regression and must not be read as one.**
+   ⚠ The per-inspection counts are robust either way: `ArrangeRedundantParentheses` reproduces at
+   **1 231 on the unbuilt tree — this document's exact figure** — and 1 226 built.
+
+2. ⚠ **Five of the fifteen were never measurable.** `ArrangeNamespaces` and `ArrangeArgumentsStyle`
+   are real `jb cleanupcode` tasks that the M4 profile sweep never probed, so the oracle was running
+   without them and declining five of the export's own settings. Two more —
+   `dotnet_style_predefined_type_for_member_access` and `resharper_place_attribute_on_same_line` —
+   were already implemented and credited to a neighbouring key. **Seven of the fifteen were artefacts
+   of the measurement rather than missing work**, which is the finding this re-run is really for:
+   `gov.json` and `catalogued.json` are named above as "judgement, not measurement", and the oracle
+   profile belongs on that list beside them.
+
+⚠ **`SuggestVarOrType_DeconstructionDeclarations` is the double-count this document warned about,
+caught in the act.** Its option — `resharper_prefer_explicit_discard_declaration` — is now Tier A,
+implemented and pinned. Its *inspection* reports something else entirely, governed by
+`resharper_for_deconstruction_declarations`, which the author's export does not set and the registry
+does not know; `gov.json` names that key first and correctly, and `classify.py` fell through to the
+second because the first had no registry entry. It still fires 182 times and Skala still does not
+address it. **Twelve option keys moved D → A; eleven of the fifteen inspections are retired.**
+
 ## SonarQube
 
 ### ⚠ The licence, and doc 01 currently states it wrongly
