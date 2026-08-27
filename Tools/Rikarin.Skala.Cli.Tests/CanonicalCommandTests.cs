@@ -82,7 +82,9 @@ public sealed class CanonicalCommandTests {
     public void Diff_WithoutTwoFilesAndWithoutCanonical_SaysSo() {
         var run = CliRunner.Run("config", "diff", "editor_config_template");
 
-        Assert.Equal(2, run.ExitCode);
+        // ⚠ 3, `ExitCodes.ConfigurationError`, not 2 — 2 is "formatting changes are needed" and
+        // `config diff` formats nothing.
+        Assert.Equal(3, run.ExitCode);
         Assert.Contains("needs two files", run.StandardOutput, StringComparison.Ordinal);
     }
 

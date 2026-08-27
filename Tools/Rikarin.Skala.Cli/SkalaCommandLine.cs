@@ -3,6 +3,7 @@ using Rikarin.Skala.Analysis;
 using Rikarin.Skala.Analysis.Caching;
 using Rikarin.Skala.Analysis.Loading;
 using Rikarin.Skala.Core.Configuration;
+using Rikarin.Skala.Core.Diagnostics;
 using Rikarin.Skala.Formatting.CSharp;
 using Rikarin.Skala.Formatting.CSharp.Arrangement;
 using Rikarin.Skala.Mcp;
@@ -20,8 +21,30 @@ namespace Rikarin.Skala.Cli;
 /// and nothing may reference this assembly (docs/plan/02 § "The project graph").
 /// </remarks>
 public static partial class SkalaCommandLine {
+    /// <summary>
+    /// ⚠ Global, recursive, and it exists.
+    /// </summary>
+    /// <remarks>
+    /// docs/plan/04 § "What it does not do" says generated files are "reported as skipped in
+    /// <c>--verbose</c>", and until M9 there was no such option: <c>skala check --load loose
+    /// --verbose</c> bound <c>--verbose</c> to the variadic <c>&lt;paths&gt;</c> argument, looked
+    /// for C# files in a directory of that name, found none and exited 4. The flag being missing was
+    /// bad; the flag being silently eaten was the defect.
+    /// <para>
+    /// It is declared once on the root and marked recursive, so every subcommand accepts it and no
+    /// subcommand can spell it differently. <c>format</c>, <c>arrange</c> and <c>check</c> act on
+    /// it — each has something it currently swallows — and the rest accept it without effect rather
+    /// than rejecting it, which is what "global" has to mean for a flag a script puts in a variable.
+    /// </para>
+    /// </remarks>
+    public static Option<bool> Verbose { get; } = new("--verbose") {
+        Description = "Report what was skipped and why: generated files, unparseable files, rules that did not run.",
+        Recursive = true
+    };
+
     public static RootCommand Create() {
         var root = new RootCommand("Skala — one configuration, the same formatting and analysis everywhere.");
+        root.Options.Add(Verbose);
         root.Subcommands.Add(CreateFormatCommand());
         root.Subcommands.Add(CreateArrangeCommand());
         root.Subcommands.Add(CreateCheckCommand());
@@ -39,8 +62,96 @@ public static partial class SkalaCommandLine {
         root.Subcommands.Add(CreateLspCommand());
         root.Subcommands.Add(CreateMcpCommand());
         root.Subcommands.Add(CreateHooksCommand());
+        RejectOptionLikeTokens(root);
         return root;
     }
+
+    /// <summary>
+    /// ⚠ A positional token that begins with <c>-</c> is a mistyped option, not a path.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <c>skala check --load loose --verbose</c> used to report <c>SK9023: no C# files were found</c>
+    /// and exit 4 from a repository full of C# files. <c>&lt;paths&gt;</c> is variadic, so
+    /// System.CommandLine handed it every token it could not match as an option — and a variadic
+    /// argument matches anything. Every typo'd or unimplemented flag on every command with a
+    /// variadic argument behaved the same way, and the failure was indistinguishable from an empty
+    /// directory, which is why it survived: the tool answered a question nobody had asked and
+    /// sounded confident doing it.
+    /// </para>
+    /// <para>
+    /// This is docs/plan/00's non-negotiable 4 — unknown configuration is a diagnostic, never a
+    /// silent default — applied to argv. It is installed by walking the finished command tree
+    /// rather than at each <c>new Argument&lt;T&gt;</c> site, so an argument added later is covered
+    /// without anybody remembering to do it. That is the whole reason it lives here.
+    /// </para>
+    /// <para>
+    /// ⚠ A path that genuinely starts with <c>-</c> is spelled <c>./-weird.cs</c>, which is also
+    /// what every other POSIX tool requires. A lone <c>-</c> is left alone: it is a stdin
+    /// convention, not an option.
+    /// </para>
+    /// </remarks>
+    static void RejectOptionLikeTokens(Command command) {
+        foreach (var argument in command.Arguments) {
+            argument.Validators.Add(static result => {
+                foreach (var token in result.Tokens) {
+                    if (!LooksLikeAnOption(token.Value)) {
+                        continue;
+                    }
+
+                    result.AddError(
+                        $"Unrecognized option '{token.Value}'. "
+                        + "Run with --help for the options this command accepts. "
+                        + $"If you meant a file or directory called '{token.Value}', write './{token.Value}'."
+                    );
+                }
+            });
+
+            // ⚠ And a path that does not exist is named, rather than analysed as nothing.
+            //
+            // `skala format --check no-such-dir` exited **0** — "0 files would be reformatted, 0
+            // left alone" — because a directory that is not there contributes no files and no files
+            // is indistinguishable from no findings. `skala check no-such-dir` was only slightly
+            // better: exit 4, SK9023, naming the repository root instead of the path it was given.
+            // A gate that passes because a CI script has a typo in a path is quiet in exactly the
+            // case it exists for, and the quiet reads as approval (docs/plan/09 § "New-code
+            // definition" makes the same argument about untracked files).
+            if (argument.Name == "paths") {
+                argument.Validators.Add(static result => {
+                    foreach (var token in result.Tokens) {
+                        if (LooksLikeAnOption(token.Value) || IsGlob(token.Value)) {
+                            continue;
+                        }
+
+                        if (!File.Exists(token.Value) && !Directory.Exists(token.Value)) {
+                            result.AddError($"'{token.Value}' does not exist.");
+                        }
+                    }
+                });
+            }
+        }
+
+        foreach (var subcommand in command.Subcommands) {
+            RejectOptionLikeTokens(subcommand);
+        }
+    }
+
+    /// <summary>
+    /// A token carrying glob metacharacters, which is matched later rather than opened now.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ `paths` is documented as "files, directories or globs", so the existence check has to skip
+    /// the third kind. A glob that matches nothing is a different question from a path that is not
+    /// there, and it is <see cref="FormatCommand.Collect"/>'s to answer.
+    /// </remarks>
+    static bool IsGlob(string token) => token.AsSpan().IndexOfAny('*', '?', '[') >= 0;
+
+    /// <summary>A token that begins with <c>-</c> and is longer than a bare <c>-</c>.</summary>
+    /// <remarks>
+    /// ⚠ A negative number is not excluded, because no Skala argument takes one. If one is ever
+    /// added, the exemption belongs on that argument rather than on this predicate.
+    /// </remarks>
+    static bool LooksLikeAnOption(string token) => token.Length > 1 && token[0] == '-';
 
     /// <summary>
     /// <c>skala format</c> — docs/plan/11 § "Command surface".
@@ -165,6 +276,7 @@ public static partial class SkalaCommandLine {
                     Range = parse.GetValue(range),
                     Staged = stagedValue,
                     Quiet = parse.GetValue(quiet),
+                    Verbose = parse.GetValue(Verbose),
                     Overrides = ParseOverrides(parse.GetValue(option)),
                     Jobs = parse.GetValue(jobs)
                 };
@@ -574,9 +686,12 @@ public static partial class SkalaCommandLine {
 
                     var a = parse.GetValue(left);
                     var b = parse.GetValue(right);
+                    // ⚠ 3, not 2. Being invoked with the wrong arguments is a configuration error;
+                    // 2 is "formatting changes are needed", and `config diff` never formats
+                    // anything.
                     return a is null || b is null
                         ? new CommandResult(
-                            2,
+                            ExitCodes.ConfigurationError,
                             "skala: `config diff` needs two files, or --canonical and a repository path."
                             + Environment.NewLine
                         )

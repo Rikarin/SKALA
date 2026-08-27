@@ -12,7 +12,7 @@ namespace Rikarin.Skala.Formatting.CSharp.Arrangement;
 public sealed record ArrangeRequest {
     public IReadOnlyList<string> Paths { get; init; } = [];
 
-    /// <summary>Report, do not write. Exit 1 when there is anything.</summary>
+    /// <summary>Report, do not write. Exit 2 when there is anything (docs/plan/09 § "Exit codes").</summary>
     public bool Check { get; init; }
 
     public bool Diff { get; init; }
@@ -55,10 +55,8 @@ public sealed record ArrangeRequest {
 /// <summary>
 /// The implementation behind <c>skala arrange</c> (docs/plan/11 § "Command surface").
 /// </summary>
+/// <remarks>⚠ The exit codes are <see cref="ExitCodes"/>'s; see the note on <see cref="FormatCommand"/>.</remarks>
 public static class ArrangeCommand {
-    public const int ChangesFound = 1;
-    public const int Failed = 2;
-
     public static CommandResult Run(ArrangeRequest request, CancellationToken cancellation = default) {
         var output = new StringBuilder();
         var root = request.RepositoryRoot
@@ -181,7 +179,12 @@ public static class ArrangeCommand {
             }
         }
 
-        var exit = failures > 0 ? Failed : (request.Check || request.Diff) && changed > 0 ? ChangesFound : 0;
+        var exit = failures > 0
+            ? ExitCodes.InternalError
+            : (request.Check || request.Diff) && changed > 0
+                ? ExitCodes.FormattingNeeded
+                : ExitCodes.Ok;
+
         return new CommandResult(exit, output.ToString());
     }
 

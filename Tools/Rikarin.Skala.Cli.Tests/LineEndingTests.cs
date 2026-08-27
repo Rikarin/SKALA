@@ -113,7 +113,7 @@ public sealed class LineEndingTests : IDisposable {
         Configure("lf", enforce: true);
         var path = _scratch.WriteText("D.cs", Crlf);
 
-        Assert.Equal(1, _scratch.Run("format", "--check", path).ExitCode);
+        Assert.Equal(2, _scratch.Run("format", "--check", path).ExitCode);
 
         _scratch.Run("format", path);
 

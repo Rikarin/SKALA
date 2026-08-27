@@ -14,10 +14,19 @@ namespace Rikarin.Skala.Cli.Tests;
 /// client and through the tool.
 /// <para>
 /// ⚠ It has already caught one: the client returned <b>2</b> from <c>format --check</c> on a file
-/// that needed formatting, because <c>ExitCodes.FormattingNeeded</c> is 2. But <c>format</c> does
-/// not use <c>ExitCodes</c> — it uses <c>FormatCommand.ChangesFound</c>, which is <b>1</b>, and
-/// <c>FormatCommand.Failed</c>, which is 2. A pre-commit hook reading the exit code would have
+/// that needed formatting, because <c>ExitCodes.FormattingNeeded</c> is 2. But <c>format</c> did
+/// not use <c>ExitCodes</c> — it used <c>FormatCommand.ChangesFound</c>, which was <b>1</b>, and
+/// <c>FormatCommand.Failed</c>, which was 2. A pre-commit hook reading the exit code would have
 /// passed where the tool failed and vice versa.
+/// </para>
+/// <para>
+/// ⚠ And the resolution was the opposite of the one taken at the time: the <b>client</b> was right
+/// and the tool was wrong. <c>ExitCodes</c> matched docs/plan/09 § "Exit codes" and the README all
+/// along; <c>FormatCommand</c>'s private pair was the documented table inverted. Making the client
+/// agree with the tool made both wrong, and this test went green on the wrong number — which is
+/// what an agreement test does when it is the only thing asserted. M9 moved <c>ExitCodes</c> into
+/// Core so the two cannot diverge again, and <see cref="ExitCodeContractTests"/> asserts the codes
+/// against the document rather than against each other.
 /// </para>
 /// </remarks>
 public sealed class ClientAgreesWithToolTests {
@@ -39,7 +48,7 @@ public sealed class ClientAgreesWithToolTests {
         Assert.Equal(viaTool.Output, viaClient.Output);
 
         // And the contract the README states and the pre-commit hook reads.
-        Assert.Equal(1, viaTool.Code);
+        Assert.Equal(2, viaTool.Code);
     }
 
     [Fact]

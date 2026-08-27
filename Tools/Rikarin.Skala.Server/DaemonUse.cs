@@ -1,5 +1,6 @@
 using System.Text;
 using Rikarin.Skala.Core.Configuration;
+using Rikarin.Skala.Core.Diagnostics;
 using Rikarin.Skala.Formatting.CSharp;
 using Rikarin.Skala.Protocol;
 
@@ -81,7 +82,9 @@ public static class DaemonUse {
                 .AppendLine(" left alone");
         }
 
-        var exit = (request.Check || request.Diff) && response.Changed ? FormatCommand.ChangesFound : 0;
+        var exit = (request.Check || request.Diff) && response.Changed
+            ? ExitCodes.FormattingNeeded
+            : ExitCodes.Ok;
         return new CommandResult(exit, output.ToString());
     }
 }

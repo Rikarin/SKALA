@@ -179,7 +179,18 @@ public static class Renderer {
                 .Append(report.SkippedRules.Length.ToString(CultureInfo.InvariantCulture))
                 .Append(" rule(s) did not run: ")
                 .AppendLine(string.Join(", ", report.SkippedRules.Select(static rule => rule.RuleId)));
-            builder.Append("  ").AppendLine(report.SkippedRules[0].Reason);
+
+            // ⚠ Without --verbose this prints the first rule's reason and lets it stand for all of
+            // them, which is right when they share one — "no compilation" skips every semantic rule
+            // for the same reason — and wrong the moment they do not.
+            if (report.Verbose) {
+                foreach (var rule in report.SkippedRules) {
+                    builder.Append("    ").Append(rule.RuleId).Append("  ").AppendLine(rule.Reason);
+                }
+            } else {
+                builder.Append("  ").AppendLine(report.SkippedRules[0].Reason);
+            }
+
             builder.AppendLine();
         }
 

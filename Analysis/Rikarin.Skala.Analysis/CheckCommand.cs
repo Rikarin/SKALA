@@ -101,6 +101,9 @@ public sealed record CheckRequest {
     /// contract: it is an instrument, and the shape of what it prints may change.
     /// </remarks>
     public bool Profile { get; init; }
+
+    /// <summary><c>--verbose</c>: name every rule that did not run, with its own reason.</summary>
+    public bool Verbose { get; init; }
 }
 
 /// <summary>
@@ -253,6 +256,7 @@ public static class CheckCommand {
             Findings = merged,
             Diagnostics = diagnostics.ToImmutable(),
             SkippedRules = AnalyzerHost.SkippedFor(loaded.Mode),
+            Verbose = request.Verbose,
             Extensions = hosted.Extensions,
             LoadSummary = loaded.Summary,
             FileCount = files,

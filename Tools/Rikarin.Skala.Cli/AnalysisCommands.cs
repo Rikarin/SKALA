@@ -3,6 +3,7 @@ using Rikarin.Skala.Analysis;
 using Rikarin.Skala.Analysis.Caching;
 using Rikarin.Skala.Analysis.Loading;
 using Rikarin.Skala.Core.Configuration;
+using Rikarin.Skala.Core.Diagnostics;
 using Rikarin.Skala.Mcp;
 using Rikarin.Skala.Options;
 using Rikarin.Skala.Reporting;
@@ -162,7 +163,8 @@ public static partial class SkalaCommandLine {
                     Record = parse.GetValue(record),
                     Summary = parse.GetValue(summary),
                     IncludeDuplication = parse.GetValue(duplication),
-                    Profile = parse.GetValue(profile)
+                    Profile = parse.GetValue(profile),
+                    Verbose = parse.GetValue(Verbose)
                 };
 
                 return RunCancellable(token => CheckCommand.Run(request, token).Result);
