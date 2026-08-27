@@ -341,6 +341,43 @@ agent is concerned.
 Version pinning is a correctness feature here, not a preference. Two Skala versions with different
 formatting behaviour on one repository is a merge conflict generator.
 
+### ⚠ Adopting the analyzers without a flag day
+
+**"The one-line adoption" was, on the first repository to try it, the one line that could not be
+taken.** The Sdk brings `Rikarin.Skala.Rules`; on Vixen that was **16 `SK3002`** and **58 further
+`CS0246`/`CS0234`** from the projects downstream of the ones that failed. Not because `SK3002` ships
+at `error` — it ships at `warning` — but because real repositories set `TreatWarningsAsErrors`.
+
+Doc 09's mechanism for exactly this is "accept the present, gate the future", and it does not reach:
+`.skala/baseline.sarif` is read by `skala check` and by nothing else, so an analyzer package has no
+idea a baseline exists. The escape hatch did not work either. ⚠ **`ExcludeAssets="analyzers"` on the
+metapackage is silently ineffective**: `ExcludeAssets` governs the assets of the package it is
+written on, the Sdk has none, and the analyzer arrives from a transitive dependency whose nuspec
+entry says `include="All"` — which is load-bearing, since `PrivateAssets="none"` is the only reason
+any of the three dependencies delivers anything at all. Reproduced against the packed package:
+`project.assets.json` records `Rikarin.Skala.Rules` with an **empty asset list** and `SK3002` still
+fires three times.
+
+So the Sdk honours two properties itself, rather than leaving it to NuGet:
+
+| Property | Default | What it does |
+|---|---|---|
+| `SkalaRulesAsErrors` | **`false`** | ⚠ **The answer to the flag day.** Skala's own ids are added to `WarningsNotAsErrors`, so the diagnostics fire at their real severities, in the build log and in Rider, and do not turn a warning into a build error. Nothing is silenced and nothing is measured differently. Scoped to `SK` ids — it never touches `TreatWarningsAsErrors` itself, because a package that quietly made a repository's *other* warnings non-fatal would be doing the invisible thing this whole design objects to |
+| `SkalaRulesEnabled` | `true` | The total opt-out: the `Analyzer` item is removed before `CoreCompile`, so the analyzer never reaches `csc`. This works where `ExcludeAssets` does not, and it works matched on the assembly name, so a repository that references `Rikarin.Skala.Rules` directly for its own reasons is unaffected |
+
+The adoption path is then the one doc 09 designed, with no day on which the tree does not build:
+
+1. reference the Sdk — the diagnostics appear, the build stays green
+2. `skala baseline create --apply`, and commit `.skala/baseline.sarif`
+3. `skala check --gate=ci` gates the future against that baseline
+4. burn the backlog down with `skala fix --safe --include <id>`
+5. `<SkalaRulesAsErrors>true</SkalaRulesAsErrors>` — one line, one commit, a decision somebody makes
+   on purpose
+
+Verified by packing the real packages into a local feed and building a real consumer with
+`TreatWarningsAsErrors`: default → 3 `SK3002` **warnings**, exit 0; `SkalaRulesAsErrors=true` → the
+same 3 as **errors**, exit 1; `SkalaRulesEnabled=false` → no `SK` diagnostic at all, exit 0.
+
 ### The tool package ships both binaries
 
 ⚠ **A `dotnet tool` package carries the NativeAOT client as its command and the full tool beside
