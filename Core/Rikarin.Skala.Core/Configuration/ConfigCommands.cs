@@ -23,6 +23,13 @@ public static class ConfigCommands {
     public const int StrictFailure = 1;
 
     /// <summary>
+    /// Exit code for a configuration error, from the table in docs/plan/09 § "Exit codes". Canonical
+    /// drift (SK9008) reports it, which is what makes `skala config diff --canonical` usable as a
+    /// gate condition without a gate engine underneath it.
+    /// </summary>
+    public const int ConfigurationFailure = 3;
+
+    /// <summary>
     /// The effective option set for one file, each with its source file:line and its tier.
     /// </summary>
     /// <param name="configPath">
@@ -103,10 +110,25 @@ public static class ConfigCommands {
             diagnostics.AddRange(toolConfig.Diagnostics);
         }
 
+        var policy = toolConfig?.Canonical ?? CanonicalPolicy.Default;
+        var canonical = CanonicalSync.Status(directory);
+        foreach (var diagnostic in canonical.Diagnostics) {
+            diagnostics.Add(diagnostic.Id == ConfigDiagnosticIds.CanonicalDrift
+                ? diagnostic with { Severity = policy.Drift }
+                : diagnostic);
+        }
+
         var output = new StringBuilder();
         output.Append("Configuration check for ").AppendLine(full);
         output.AppendLine();
         output.AppendLine(Counts(resolution));
+        output.AppendLine();
+        output.Append("Canonical: ").AppendLine(canonical switch {
+            { Drifted: true } => $"DRIFTED from {canonical.Layout.Marker!.Version} — see SK9008",
+            { Behind: true } => $"{canonical.Layout.Marker!.Version}, intact; {canonical.Tool.Version} available",
+            { Current: true } => $"{canonical.Tool.Version}, intact and current",
+            _ => "unmanaged — `skala config sync --apply` adopts this .editorconfig"
+        });
         output.AppendLine();
 
         var byNamespace = resolution.Unknown
@@ -253,6 +275,158 @@ public static class ConfigCommands {
 
         return CommandResult.Ok(output.ToString());
     }
+
+    /// <summary>
+    /// Where this repository stands relative to the canonical, and the gate condition.
+    /// </summary>
+    /// <param name="showOptions">
+    /// Also price the upgrade: the semantic option-by-option difference between the block the
+    /// repository is on and the one this build of Skala carries. This is what makes a per-repository
+    /// bump a reviewable decision rather than a leap.
+    /// </param>
+    public static CommandResult DiffCanonical(string target, bool showOptions = false) {
+        var status = CanonicalSync.Status(target);
+        var full = Path.GetFullPath(target);
+        var directory = Directory.Exists(full) ? full : Path.GetDirectoryName(full)!;
+        var driftSeverity = (ToolConfiguration.Find(directory)?.Canonical ?? CanonicalPolicy.Default).Drift;
+        var output = new StringBuilder();
+
+        output.Append("Canonical status for ").AppendLine(status.Path);
+        output.AppendLine();
+        output.Append("  tool carries    ").Append(status.Tool.Version).Append("  sha256 ").AppendLine(Short(status.Tool.Sha256));
+        output.Append("  repository on   ")
+            .Append(status.Layout.Marker?.Version ?? "(unmanaged)")
+            .Append(status.Layout.IsManaged ? "  sha256 " : string.Empty)
+            .AppendLine(status.Layout.IsManaged ? Short(status.ActualSha) : string.Empty);
+        output.Append("  local sections  ").AppendLine(CanonicalLayout.Number(status.LocalSections.Length));
+        output.Append("  local overrides ").AppendLine(CanonicalLayout.Number(status.Overrides.Length));
+        output.AppendLine();
+
+        output.AppendLine(status switch {
+            { Drifted: true } => "DRIFTED — the managed block is not what its marker says it is.",
+            { Behind: true } => "CLEAN, behind — the block is intact; a newer canonical exists.",
+            { Current: true } => "CLEAN — the block matches the canonical this build of Skala carries.",
+            _ => "UNMANAGED — no canonical block. `skala config sync --apply` adopts the file."
+        });
+
+        if (status.Overrides.Length > 0) {
+            output.AppendLine();
+            output.AppendLine("Local overrides — the canonical block sets these and the local block takes them back:");
+            foreach (var local in status.Overrides) {
+                output.Append("  [").Append(local.Section).Append("] ").Append(local.Key)
+                    .Append(": canonical ").Append(local.CanonicalValue)
+                    .Append(" -> local ").Append(local.LocalValue)
+                    .Append("  (").Append(status.Path).Append(':').Append(CanonicalLayout.Number(local.Line)).AppendLine(")");
+            }
+        }
+
+        if (showOptions && status.Layout.IsManaged) {
+            output.AppendLine();
+            output.AppendLine("What bumping to the tool's canonical would change, semantically:");
+            output.Append(CompareBlocks(status.Layout.CanonicalText, CanonicalEditorConfig.Text, status.Path));
+        }
+
+        output.AppendLine();
+        AppendDiagnostics(output, [.. status.Diagnostics.Select(diagnostic => diagnostic.Id == ConfigDiagnosticIds.CanonicalDrift
+            ? diagnostic with { Severity = driftSeverity }
+            : diagnostic)]);
+
+        var failed = status.Drifted && driftSeverity >= SkalaSeverity.Error;
+        return new CommandResult(failed ? ConfigurationFailure : 0, output.ToString());
+    }
+
+    /// <summary>
+    /// Write the canonical block, preserving the local block below it verbatim.
+    /// </summary>
+    public static CommandResult Sync(string target, bool apply) {
+        var result = CanonicalSync.Sync(target);
+        var output = new StringBuilder();
+
+        if (!result.Changed) {
+            output.Append(result.Path).AppendLine(" is already on the canonical this build of Skala carries.");
+            output.Append("  canonical ").Append(result.Before.Tool.Version).Append("  sha256 ").AppendLine(Short(result.Before.ActualSha));
+            return CommandResult.Ok(output.ToString());
+        }
+
+        output.Append(apply ? "Applied to " : "Would apply to ").Append(result.Path).AppendLine(":");
+        foreach (var change in result.Applied) {
+            output.Append("  - ").AppendLine(change);
+        }
+
+        if (result.Before.LocalSections.Length > 0) {
+            output.AppendLine();
+            output.Append("Preserved below `").Append(CanonicalLayout.LocalMarker).AppendLine("`, untouched:");
+            foreach (var section in result.Before.LocalSections) {
+                output.Append("  [").Append(section).AppendLine("]");
+            }
+        }
+
+        if (apply) {
+            File.WriteAllText(result.Path, result.Text);
+            output.AppendLine();
+            output.AppendLine("⚠ This changes the effective formatting configuration. The reformatting commit is a");
+            output.AppendLine("  separate, deliberate step: `skala format` alone, with its SHA in .git-blame-ignore-revs.");
+        } else {
+            output.AppendLine();
+            output.AppendLine("Re-run with --apply to write the file.");
+        }
+
+        return CommandResult.Ok(output.ToString());
+    }
+
+    /// <summary>
+    /// Regenerate the distributable canonical payload from a Rider export. The maintainer half of
+    /// ADR-001's workflow: change a setting in Rider, re-export, run this, publish.
+    /// </summary>
+    public static CommandResult BuildCanonical(string templatePath, string outputDirectory, string version) {
+        var payload = CanonicalEditorConfig.Compose(File.ReadAllText(templatePath));
+        var manifest = CanonicalEditorConfig.DescribeManifest(version, payload);
+
+        Directory.CreateDirectory(outputDirectory);
+        var payloadPath = Path.Combine(outputDirectory, CanonicalEditorConfig.PayloadFileName);
+        var manifestPath = Path.Combine(outputDirectory, CanonicalEditorConfig.ManifestFileName);
+        File.WriteAllText(payloadPath, payload);
+        File.WriteAllText(manifestPath, CanonicalEditorConfig.WriteManifest(manifest));
+
+        var output = new StringBuilder();
+        output.Append("Composed the canonical payload from ").AppendLine(Path.GetFullPath(templatePath));
+        output.Append("  ").AppendLine(payloadPath);
+        output.Append("  ").AppendLine(manifestPath);
+        output.AppendLine();
+        output.Append("  version     ").AppendLine(manifest.Version);
+        output.Append("  sha256      ").AppendLine(manifest.Sha256);
+        output.Append("  assignments ").AppendLine(CanonicalLayout.Number(manifest.Assignments));
+        output.Append("  sections    ").AppendLine(CanonicalLayout.Number(manifest.Sections));
+        return CommandResult.Ok(output.ToString());
+    }
+
+    /// <summary>The semantic difference between two <c>.editorconfig</c> bodies, as text.</summary>
+    static string CompareBlocks(string left, string right, string path) {
+        var probe = Path.Combine(Path.GetDirectoryName(Path.GetFullPath(path)) ?? ".", "Probe.cs");
+        var before = OptionResolver.Resolve(EditorConfigChain.Of(probe, EditorConfigDocument.FromText(path, left)));
+        var after = OptionResolver.Resolve(EditorConfigChain.Of(probe, EditorConfigDocument.FromText(path, right)));
+
+        var output = new StringBuilder();
+        var changes = 0;
+        for (var i = 0; i < OptionRegistry.Count; i++) {
+            var id = (OptionId)i;
+            if (string.Equals(before[id].Value, after[id].Value, StringComparison.Ordinal)) {
+                continue;
+            }
+
+            changes++;
+            output.Append("  ").Append(OptionRegistry.Get(id).Key).Append(": ")
+                .Append(Describe(before[id])).Append(" -> ").AppendLine(Describe(after[id]));
+        }
+
+        if (changes == 0) {
+            output.AppendLine("  No semantic difference: the two blocks resolve to the same option set.");
+        }
+
+        return output.ToString();
+    }
+
+    static string Short(string sha) => sha.Length <= 12 ? sha : sha[..12];
 
     public static ResolutionResult ResolveStandalone(string editorConfigPath, string sourcePath) {
         var document = EditorConfigDocument.Load(editorConfigPath);

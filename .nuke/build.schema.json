@@ -24,12 +24,11 @@
     "ExecutableTarget": {
       "type": "string",
       "enum": [
+        "Canonical",
         "Clean",
         "Compile",
-        "Conformance",
-        "Fidelity",
         "Lint",
-        "Oracle",
+        "Pack",
         "Restore",
         "Test"
       ]
@@ -105,6 +104,10 @@
   "allOf": [
     {
       "properties": {
+        "CanonicalVersion": {
+          "type": "string",
+          "description": "The version stamped into the canonical manifest"
+        },
         "Configuration": {
           "type": "string",
           "description": "Configuration — Debug locally, Release in CI",

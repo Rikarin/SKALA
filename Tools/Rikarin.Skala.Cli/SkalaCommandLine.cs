@@ -296,7 +296,42 @@ public static partial class SkalaCommandLine {
         config.Subcommands.Add(CreateDiff());
         config.Subcommands.Add(CreateDistill());
         config.Subcommands.Add(CreateFix());
+        config.Subcommands.Add(CreateSync());
+        config.Subcommands.Add(CreateCanonical());
         return config;
+    }
+
+    static Command CreateSync() {
+        var path = new Argument<string>("path") { Description = "The repository root.", DefaultValueFactory = static _ => "." };
+        var apply = new Option<bool>("--apply") { Description = "Write the file. Without it, sync only says what it would do." };
+
+        var command = new Command("sync", "Write the canonical block into .editorconfig, preserving the local block below it.");
+        command.Arguments.Add(path);
+        command.Options.Add(apply);
+        command.SetAction(parse => Run(() => ConfigCommands.Sync(parse.GetValue(path)!, parse.GetValue(apply))));
+        return command;
+    }
+
+    static Command CreateCanonical() {
+        var template = new Argument<string>("template") {
+            Description = "The Rider export to compose from.",
+            DefaultValueFactory = static _ => "editor_config_template"
+        };
+        var output = new Option<string>("--out", "-o") { Description = "The distribution directory to write into.", Required = true };
+        var version = new Option<string>("--version") { Description = "The version to stamp into the manifest.", DefaultValueFactory = static _ => "0.1.0" };
+
+        var command = new Command(
+            "canonical",
+            "Regenerate the distributable canonical payload from a Rider export. Maintainer command; `./build.sh Canonical` runs it.");
+        command.Arguments.Add(template);
+        command.Options.Add(output);
+        command.Options.Add(version);
+        command.SetAction(parse => Run(() => ConfigCommands.BuildCanonical(
+            parse.GetValue(template)!,
+            parse.GetValue(output)!,
+            parse.GetValue(version)!)));
+
+        return command;
     }
 
     static Command CreateExplain() {
@@ -347,13 +382,30 @@ public static partial class SkalaCommandLine {
     }
 
     static Command CreateDiff() {
-        var left = new Argument<string>("a") { Description = "The .editorconfig to compare from." };
-        var right = new Argument<string>("b") { Description = "The .editorconfig to compare to." };
+        var left = new Argument<string?>("a") { Description = "The .editorconfig to compare from.", Arity = ArgumentArity.ZeroOrOne };
+        var right = new Argument<string?>("b") { Description = "The .editorconfig to compare to.", Arity = ArgumentArity.ZeroOrOne };
+        var canonical = new Option<bool>("--canonical") {
+            Description = "Compare the repository's managed block against the canonical instead. Exits 3 on drift; this is the gate condition."
+        };
+        var options = new Option<bool>("--options") { Description = "With --canonical, also price the upgrade option by option." };
 
-        var command = new Command("diff", "What changes between two .editorconfig files, semantically.");
+        var command = new Command("diff", "What changes between two .editorconfig files, semantically — or between this repository and the canonical.");
         command.Arguments.Add(left);
         command.Arguments.Add(right);
-        command.SetAction(parse => Run(() => ConfigCommands.Diff(parse.GetValue(left)!, parse.GetValue(right)!)));
+        command.Options.Add(canonical);
+        command.Options.Add(options);
+        command.SetAction(parse => Run(() => {
+            if (parse.GetValue(canonical)) {
+                return ConfigCommands.DiffCanonical(parse.GetValue(left) ?? ".", parse.GetValue(options));
+            }
+
+            var a = parse.GetValue(left);
+            var b = parse.GetValue(right);
+            return a is null || b is null
+                ? new CommandResult(2, "skala: `config diff` needs two files, or --canonical and a repository path." + Environment.NewLine)
+                : ConfigCommands.Diff(a, b);
+        }));
+
         return command;
     }
 

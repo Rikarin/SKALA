@@ -201,11 +201,22 @@ Already referenced throughout: `SK9001` unknown config key · `SK9002` config in
 repository root · `SK9003` style key in `skala.jsonc` · `SK9004` duplicate option alias ·
 `SK9005` contradictory options · `SK9006` a setting is on that Skala cannot honour and that makes the
 IDE and the oracle disagree (`autodetect_indent_settings`, `use_indent_from_vs`) ·
+`SK9008` canonical block drifted · `SK9009` repository behind the canonical ·
+`SK9012` canonical version pinned in `skala.jsonc` · `SK9013` local block overrides a canonical
+option · `SK9014` `.editorconfig` carries no canonical block ·
 `SK9010` file did not parse · `SK9011` unbalanced preprocessor
 structure, not formatted · `SK9020` binlog stale for a file · `SK9021` binlog missing a file ·
 `SK9030` analyzer threw · `SK9031` analyzer failed to load · `SK9098` arrangement reverted, new
 diagnostics · `SK9099` **formatter output was not token-equivalent** — the one that means "stop and
 file a bug".
+
+⚠ **This list is the allocation register, and ADR-012 makes every entry permanent.** The canonical
+distribution work first claimed `SK9010` and `SK9011` — both already live in the formatter as "file
+did not parse" and "unbalanced preprocessor structure" — and was renumbered to `SK9013` and `SK9014`
+before it merged. Two meanings behind one id is precisely what a baseline cannot survive: a
+fingerprint carries the rule id, so the collision silently un-suppresses one finding and wrongly
+suppresses the other. **Check this list before allocating**, and prefer the next free number over the
+next tidy one.
 
 ## What gets built, in what order
 

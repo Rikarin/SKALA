@@ -258,9 +258,12 @@ terminal by default would bury the 14 errors.
 ```bash
 skala config explain [<path>]     # effective options for a file, with source file:line and tier
 skala config diff <a> <b>         # what changes between two .editorconfig files, semantically
+skala config diff --canonical     # …or between this repository and the canonical. Exit 3 on drift
 skala config distill              # ← the important one
 skala config fix                  # add root/max_line_length, resolve contradictions, in place
 skala config check                # tier report + contradictions, exit non-zero under --strict
+skala config sync [--apply]       # write the canonical block, preserve the local block below it
+skala config canonical --out <d>  # maintainer: recompose the payload from a Rider export
 ```
 
 **`skala config distill`** takes the 4 238-line export and writes back the subset that differs from
@@ -368,6 +371,210 @@ The export's rules, for the record: interfaces `IPascal`, type parameters `TPasc
 public `PascalCase`, locals/parameters `camelCase`, and a Unity serialized-field rule that will
 never fire outside Unity.
 
+## Canonical distribution across repositories
+
+Resolves [16](16-risks-and-open-questions.md) § Q4. The stated goal is that every repository under
+`~/Projects` formats identically; today that means copying `.editorconfig` into each one, which
+drifts silently, and a drifted config is precisely the failure Skala exists to prevent.
+
+### ⚠ The restore-time drop does not exist
+
+Q4 leaned toward "an SDK package that carries the canonical `.editorconfig` and drops it at restore
+time". The carrying half works. **The dropping half cannot be built**, and this was measured rather
+than assumed — a probe package with the file in `content/`, in `contentFiles/any/any/`, and a
+`build/*.targets` with a target hooked `BeforeTargets="Restore"`, restored and built by a consumer:
+
+| Mechanism | `dotnet restore` | `dotnet build` |
+|---|---|---|
+| `content/` | not copied | not copied |
+| `contentFiles/any/any/` | not copied to the project directory | not copied to the project directory |
+| `build/*.targets`, `BeforeTargets="Restore"` | **did not run** | — |
+| `build/*.targets`, `BeforeTargets="Build"` | — | ran; wrote into the project directory |
+
+`content/` is the `packages.config` era and does nothing under `PackageReference`.
+`contentFiles/` links files into the *compilation*, not into the working tree. And a package's
+targets cannot run during restore for the reason that decides it: they are imported through
+`obj/*.nuget.g.targets`, which restore is in the middle of generating.
+
+Dropping it from a **build** target does run — and is worse. Measured on a probe repository whose
+canonical would make a block-scoped namespace an `IDE0161` error:
+
+| | outcome |
+|---|---|
+| build 1, the build that installs the file | **succeeded** — the compiler had already been handed the configuration that existed at evaluation time |
+| build 2, incremental, nothing changed | **succeeded** — the arriving `.editorconfig` did not invalidate `CoreCompile` |
+| build 3, `--no-incremental` | failed, `error IDE0161` |
+
+**A gate whose first two runs pass is not a gate.** Add to that: it writes into the source tree from
+projects MSBuild runs in parallel, and it changes a file Rider has open.
+
+### The deeper constraint: Rider reads one file, by name
+
+Every scheme that puts the canonical somewhere other than the repository's own `.editorconfig` —
+`EditorConfigFiles` from a package, a `.globalconfig`, a second file beside it — is invisible to the
+IDE, which walks directories looking for files literally called `.editorconfig`. And the compiler
+would not help either: **an `.editorconfig`'s section globs resolve relative to the directory
+containing the file**, so a canonical sitting in `~/.nuget/packages/…/content/` has a `[*]` that
+matches only files under the NuGet cache. That is asserted as a test, through Roslyn's own matcher,
+because it is the fact that kills the whole family of designs.
+
+An IDE formatting against a different configuration than the gate is the failure ADR-001 exists to
+prevent. **So the canonical must physically be the repository's `.editorconfig`.** The only open
+questions are who writes it, and when.
+
+### What is built instead: a carrier, a command, and a check
+
+| Piece | Job |
+|---|---|
+| `Rikarin.Skala.Canonical` | The versioned, restorable, hash-addressed carrier: `content/canonical.editorconfig`, `content/canonical.json`, and a **check-only** MSBuild target. Pinned in `Directory.Packages.props` like everything else. |
+| `skala config sync [--apply]` | The only thing that writes. Explicit, offline, produces a reviewable git diff. |
+| `skala config diff --canonical` | The gate condition. Exit `3` on drift ([09](09-quality-gates-and-reporting.md) § "Exit codes"). |
+
+The payload is carried twice from one file on disk: embedded in `Rikarin.Skala.Core`, so `sync`
+works offline behind the tool's own version pin — which [11](11-cli-and-integrations.md) already
+calls the recommended form — and packed, so CI can obtain it without installing the tool. A test
+asserts the two carriers are byte-identical.
+
+`Rikarin.Skala.Canonical` is deliberately *not* `Rikarin.Skala.Sdk` and not `Rikarin.Skala.Rules`: a
+canonical bump is a repository-wide reformatting commit and a rule bump is not, and one version
+across both forces every repository to take the reformat to get a bug fix.
+
+The MSBuild target answers only the half of the question that needs no tool — "is this repository on
+the canonical this package carries?" — by comparing the marker's hash against the manifest's, which
+is a string comparison. It cannot detect an *edit* to the block, because that needs a SHA-256 that
+MSBuild has no way to compute, and a second implementation of the marker grammar in MSBuild would be
+a second thing to keep in sync. ✅ Measured at **5 ms per project**, and off with
+`SkalaCanonicalCheck=false`. Default severity is a message; `SkalaCanonicalCheckSeverity=error`
+for a repository that wants the build to stop.
+
+### The layering: one file, two blocks, editorconfig's own cascade
+
+There is exactly one file, so the layering is inside it:
+
+```ini
+# skala:canonical begin version=0.1.0 sha256=461eabddabf1…
+# … 4 261 lines: the Rider export, `root = true`, `max_line_length = 120` …
+# skala:canonical end
+
+# ------------------------------------------------------------------------------
+# This repository's own configuration. Skala never writes below this line.
+# ------------------------------------------------------------------------------
+# skala:local begin
+
+[{Core,Gameplay,Platform}/**/*.cs]
+dotnet_diagnostic.IL2026.severity = error
+…
+```
+
+The local block comes **after**, and editorconfig resolves later sections over earlier ones within a
+file. That is the whole mechanism: a legitimate local override survives every canonical bump, and
+Skala never has to know it exists. `sync` replaces the block between the markers and copies
+everything below `skala:local begin` byte for byte; `diff --canonical` hashes the block between the
+markers and ignores everything below it.
+
+Vixen is the case this is tested against, because Vixen is what it has to survive: **56 path-scoped
+sections**, `[{Core,Gameplay,Platform}/**/*.cs]` escalating trimming diagnostics to errors,
+`[**/*.Tests/**/*.cs]` relaxing them, forty-odd single-file suppressions each with the paragraph of
+reasoning that justifies it. ✅ After `sync`, all 56 sections and all of their comments are present
+verbatim, and the effective resolution still gives `indent_size = 2` for `.props`,
+`csharp_prefer_braces = when_multiline:suggestion` and `trim_trailing_whitespace = true` for `.cs` —
+Vixen's values, not the canonical's — while `resharper_csharp_max_line_length = 120`, which Vixen
+never set, comes from the canonical.
+
+Overrides are **reported, never fought**: `SK9013`, info, one per option the local block takes back,
+naming both values. That list is the review artefact — "here is what this repository does differently
+from the canonical" is exactly the conversation a canonical is for. On Vixen, `sync` produces a
+5 188-line file and the report is **7 lines**, every one of them a real disagreement between Vixen's
+hand-written config and the Rider export:
+
+```
+[*] insert_final_newline: canonical false -> local true
+[*] trim_trailing_whitespace: canonical false -> local true
+[*.{json,yaml,yml,csproj,props,targets,slnx,xml,g4}] indent_size: canonical 4 -> local 2
+[*.cs] csharp_using_directive_placement: canonical outside_namespace:silent -> local …:warning
+[*.cs] csharp_style_namespace_declarations: canonical file_scoped:suggestion -> local …:warning
+[*.cs] dotnet_sort_system_directives_first: canonical false -> local true
+[*.cs] csharp_prefer_braces: canonical true:none -> local when_multiline:suggestion
+```
+
+⚠ Comparison is by **exact spelling within a section**, falling back to the canonical's `[*]`. The
+tempting shortcut — "the canonical's last value for this `OptionId`" — is wrong twice over: it
+conflates a key with its aliases, so `insert_final_newline = false` reads as an override of
+`resharper_csharp_insert_final_newline = true`, which is the export's own contradiction and already
+`SK9005`; and it conflates sections, so `[*.csv]` reads as overriding `[*]`. Both fired against
+Skala's own configuration, which is the export, and which must report **zero** overrides. It does.
+
+Only keys the registry owns are reported. Vixen's forty-odd per-file `dotnet_diagnostic`
+suppressions are Milestone 5's business, and listing them would bury the seven that matter.
+
+⚠ `skala.jsonc` gets one key, `canonical.drift` (`error` | `warning` | `off`), and deliberately no
+`version`: the version a repository is on is recorded in the marker, beside the bytes it names, so
+the question "is this file what it claims to be" is answerable from the file alone. A version in a
+second file is a version that comes to disagree with itself, which is this feature's whole disease.
+`canonical.version` in `skala.jsonc` is `SK9012` (error).
+
+### The rollout: eighteen repositories, eighteen days
+
+A canonical change must not require eighteen simultaneous reformatting commits. It does not, because
+**drift and behindness are different questions**:
+
+| | test | severity |
+|---|---|---|
+| **Drift** — `SK9008` | `sha256(block) ≠ the marker's own sha256` | error by default; fails the gate |
+| **Behind** — `SK9009` | `the marker's sha256 ≠ the tool's canonical` | info; never fails |
+
+Drift needs no canonical payload at all, only the file — so it is decidable offline, at any version,
+by any version of the tool. Publishing 0.2.0 changes nothing about a repository on 0.1.0: its block
+still hashes to its own marker, and its gate stays green. Bumping is a per-repository PR that is
+always the same three steps — `skala config diff --canonical --options` to price it, `skala config
+sync --apply`, then `skala format` in its own commit with its SHA in `.git-blame-ignore-revs`
+([11](11-cli-and-integrations.md) § "Adoption path"). Eighteen repositories take it in whatever
+order suits them.
+
+Hashing is over LF-normalised UTF-8, so a clone with `core.autocrlf=true` verifies against the same
+hash a Linux runner computes. A hash over raw bytes would make "this repository has drifted" mean
+"this repository is on Windows".
+
+### ⚠ ADR-001 survives intact
+
+The canonical **is** the Rider export. `skala config canonical` composes it, and the composition is
+two additions long — both of them what `skala config fix` already does:
+
+```
+canonical.editorconfig  =  advisory preamble
+                        +  root = true                     ← hazard 1, above
+                        +  editor_config_template verbatim  ← 4 226 assignments, untouched
+                        +  max_line_length = 120            ← hazard 2, beside the ReSharper key
+```
+
+✅ Verified: the composed file carries all 4 226 of the export's assignments with their values
+unchanged, plus exactly two. The maintainer loop is unchanged and is still mostly Rider — change a
+setting in Rider, re-export over `editor_config_template`, `./build.sh Canonical`, commit, publish.
+A test fails the build when the checked-in payload is not what the export would compose to, so a
+re-export that skips the regeneration step is a red build rather than a silent divergence between
+what is in the IDE and what eighteen repositories are given.
+
+### Skala's own repository is deliberately unmanaged, for now
+
+`skala config diff --canonical` on Skala itself reports `UNMANAGED`, `SK9014` (info), exit 0, and
+zero overrides — because Skala's `.editorconfig` *is* the export ([02](02-repository-layout.md),
+ADR-015) and is therefore the canonical's own source. A repository that has not opted in must not be
+failed by a command it did not ask for. Adopting the markers here is a follow-up worth taking once
+Milestone 1 lands, and it is the obvious dogfooding test.
+
+### What was discarded
+
+| Considered | Why not |
+|---|---|
+| Restore-time drop from a package | Does not exist. Measured, table above. |
+| Build-time drop from a package target | Three builds to take effect, the first two green. Writes to the source tree from parallel builds. Fights Rider. |
+| `EditorConfigFiles` / `.globalconfig` from a package | Invisible to Rider, `dotnet format`, and every other editor. Splits the IDE from the gate, which is the thing ADR-001 forbids. |
+| Point the compiler at the packaged `.editorconfig` | Section globs resolve relative to the file's own directory, so it configures the NuGet cache. Asserted as a test. |
+| A second file (`.editorconfig.local`) beside the canonical | editorconfig cascades by *directory*; two files cannot coexist in one, and Rider reads only the one called `.editorconfig`. |
+| `skala.jsonc` declaring which sections are local | A second place to say what code should look like — `SK9003`, and ADR-001. The markers in the file itself carry no information the file does not already have. |
+| A git submodule | Nobody enjoys one, and it still cannot put a file at the repository root. |
+| Version pinned in `skala.jsonc` | Two records of one version. `SK9012`. |
+
 ## What lives in `skala.jsonc`
 
 ```jsonc
@@ -387,8 +594,10 @@ never fire outside Unity.
       { "package": "Meziantou.Analyzer", "version": "2.0.*" }
     ]
   },
+  "canonical": { "drift": "error" },              // error | warning | off. No `version` — SK9012
   "gates": {
-    "ci":   { "maxSeverity": "warning", "newIssues": 0, "baseline": ".skala/baseline.sarif" },
+    "ci":   { "maxSeverity": "warning", "newIssues": 0, "baseline": ".skala/baseline.sarif",
+              "canonical": "clean" },              // ⇒ `skala config diff --canonical` must exit 0
     "local":{ "maxSeverity": "error" }
   },
   "duplication": { "minTokens": 100, "maxPercent": 3.0 }
