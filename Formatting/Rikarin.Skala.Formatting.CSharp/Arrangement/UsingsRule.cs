@@ -215,9 +215,10 @@ public sealed class EmptyStringRule : ArrangementRule {
 
     public override bool IsEnabled(in ArrangementOptions options) => options.EmptyStringIsLiteral;
 
-    public override SyntaxNode Apply(ArrangementContext context) => new Rewriter(context.Semantics).Visit(context.Root);
+    public override SyntaxNode Apply(ArrangementContext context) =>
+        new Rewriter(context.Guard, context.Semantics).Visit(context.Root);
 
-    sealed class Rewriter(SemanticModel model) : CSharpSyntaxRewriter {
+    sealed class Rewriter(FormatterTagGuard guard, SemanticModel model) : GuardedRewriter(guard) {
         public override SyntaxNode? VisitMemberAccessExpression(MemberAccessExpressionSyntax node) {
             var visited = (MemberAccessExpressionSyntax)base.VisitMemberAccessExpression(node)!;
             if (!string.Equals(node.Name.Identifier.ValueText, "Empty", StringComparison.Ordinal)) {

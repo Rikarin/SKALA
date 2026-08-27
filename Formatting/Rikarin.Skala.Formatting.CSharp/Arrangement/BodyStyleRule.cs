@@ -38,9 +38,10 @@ public sealed class BodyStyleRule : ArrangementRule {
 
     public override bool IsEnabled(in ArrangementOptions options) => true;
 
-    public override SyntaxNode Apply(ArrangementContext context) => new Rewriter(context.Options).Visit(context.Root);
+    public override SyntaxNode Apply(ArrangementContext context) =>
+        new Rewriter(context.Guard, context.Options).Visit(context.Root);
 
-    sealed class Rewriter(ArrangementOptions options) : CSharpSyntaxRewriter {
+    sealed class Rewriter(FormatterTagGuard guard, ArrangementOptions options) : GuardedRewriter(guard) {
         public override SyntaxNode? VisitMethodDeclaration(MethodDeclarationSyntax node) {
             var visited = (MethodDeclarationSyntax)base.VisitMethodDeclaration(node)!;
             if (IsAsyncVoid(visited)) {

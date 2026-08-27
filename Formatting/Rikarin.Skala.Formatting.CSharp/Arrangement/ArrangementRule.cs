@@ -57,10 +57,16 @@ public static class ArrangeIds {
 /// its precondition does not run, and "the semantic model happened to be there" is not a proof.
 /// </remarks>
 public sealed class ArrangementContext {
-    public ArrangementContext(SyntaxNode root, SemanticModel? model, in ArrangementOptions options) {
+    public ArrangementContext(
+        SyntaxNode root,
+        SemanticModel? model,
+        in ArrangementOptions options,
+        FormatterTagGuard? guard = null
+    ) {
         Root = root;
         Model = model;
         Options = options;
+        Guard = guard ?? FormatterTagGuard.Open;
     }
 
     public SyntaxNode Root { get; }
@@ -68,6 +74,14 @@ public sealed class ArrangementContext {
     public SemanticModel? Model { get; }
 
     public ArrangementOptions Options { get; }
+
+    /// <summary>
+    /// The <c>@formatter:off</c> regions of <see cref="Root"/>. Every rewriter of the catalogue
+    /// hands this to <see cref="GuardedRewriter"/>; a rule that rebuilds nodes by hand instead —
+    /// <see cref="UsingsRule"/> — is caught by <see cref="FormatterTagGuard.PreservesAll"/> in
+    /// <see cref="Arranger"/>.
+    /// </summary>
+    public FormatterTagGuard Guard { get; }
 
     /// <summary>
     /// The model, or a throw. Only a rule whose <see cref="ArrangementRule.NeedsSemantics"/> is true

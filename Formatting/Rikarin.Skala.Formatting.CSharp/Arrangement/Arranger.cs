@@ -113,6 +113,12 @@ public static class Arranger {
         var boundCompilation = compilation;
         var model = originalModel;
 
+        // ⚠ `@formatter:off`. Computed once here and recomputed only after a rule has actually moved
+        // something, because the spans are into the *current* tree and every firing rule shifts
+        // them. An untagged file — almost every file — pays one trivia walk and then reuses
+        // `FormatterTagGuard.Open` for all twelve rules.
+        var guard = FormatterTagGuard.For(current, options);
+
         foreach (var rule in Rules(removableUsings)) {
             cancellation.ThrowIfCancellationRequested();
             if (!rule.IsEnabled(options) || !filter.Allows(rule)) {
@@ -144,12 +150,34 @@ public static class Arranger {
                 boundTree = reparsed;
                 current = reparsed.GetRoot(cancellation);
                 model = boundCompilation.GetSemanticModel(reparsed);
+
+                // The re-parse produced a different tree object; the guard's spans point into the
+                // old one.
+                if (!guard.IsEmpty) {
+                    guard = FormatterTagGuard.For(current, options);
+                }
             }
 
-            var rewritten = rule.Apply(new ArrangementContext(current, model, options));
-            if (!ReferenceEquals(rewritten, current)) {
-                applied.Add(rule.Id);
-                current = rewritten;
+            var rewritten = rule.Apply(new ArrangementContext(current, model, options, guard));
+            if (ReferenceEquals(rewritten, current)) {
+                continue;
+            }
+
+            // ⚠ The document-level half of the escape hatch. GuardedRewriter stops the twelve
+            // rewriters node by node; this stops a rule that rebuilds nodes by hand and so never
+            // passes through Visit at all — UsingsRule reorders the using block itself. A rule whose
+            // output no longer contains a protected region verbatim is dropped whole. Silently: the
+            // tag is an instruction, not an error, and a file that says "leave this alone" should
+            // not also produce a diagnostic for being obeyed.
+            if (!guard.IsEmpty && !guard.PreservesAll(rewritten.ToFullString())) {
+                continue;
+            }
+
+            applied.Add(rule.Id);
+            current = rewritten;
+
+            if (!guard.IsEmpty) {
+                guard = FormatterTagGuard.For(current, options);
             }
         }
 
