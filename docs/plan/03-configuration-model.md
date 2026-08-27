@@ -567,8 +567,64 @@ conflates a key with its aliases, so `insert_final_newline = false` reads as an 
 `SK9005`; and it conflates sections, so `[*.csv]` reads as overriding `[*]`. Both fired against
 Skala's own configuration, which is the export, and which must report **zero** overrides. It does.
 
-Only keys the registry owns are reported. Vixen's forty-odd per-file `dotnet_diagnostic`
-suppressions are Milestone 5's business, and listing them would bury the seven that matter.
+Only keys the registry owns are reported here. Vixen's forty-odd per-file `dotnet_diagnostic`
+suppressions would bury the seven that matter, so they get their own report instead — the next
+section, which exists because the omission stopped a build.
+
+### ⚠ `SK9016`: what the canonical does to compiler severities
+
+**Adopting the canonical took a repository from 0 build errors to 17, and nothing said so.** The
+canonical is the Rider export and the export carries **253** `dotnet_diagnostic.*.severity` lines,
+**213** of them `cs*`. Vixen carried 71 `dotnet_diagnostic` lines and not one `cs*`. One of the 213
+is `dotnet_diagnostic.cs9209.severity = warning`, which raises `CS9209` above the compiler's own
+default; Vixen builds with `TreatWarningsAsErrors`, which is not exotic. The `.editorconfig` commit
+**alone** — no code touched — turned a tree that built clean into **17 errors in 15 files**,
+isolated by rebuilding with only that file swapped.
+
+`SK9013` said nothing, because `dotnet_diagnostic` keys are deliberately not in the option registry;
+`config check` filed them under "keys the option registry does not own" and moved on. So the loudest
+thing the canonical does to a repository was the one thing it did silently.
+
+⚠ **The fix is a report, not a change to the payload.** The severities are what the canonical is
+*for*. What was missing is that adopting one must state which diagnostics it moves, in which
+direction, **before** it is applied. Both `sync` and `diff --canonical` now do:
+
+```
+Diagnostic severities the canonical moves, relative to the file it replaces:
+  compiler diagnostics  236
+  analyzer diagnostics  17
+
+  ⚠ 236 compiler diagnostic(s) move up to warning or error.
+    With `TreatWarningsAsErrors` these become build errors from a commit that touches no
+    code. Measured on one repository: 0 errors before, 17 in 15 files after, from the
+    .editorconfig alone.
+
+  ⚠ [*] CS9209: (not set) -> warning
+  …
+```
+
+| | |
+|---|---|
+| `SK9016` **warning** | a *compiler* diagnostic moves up to `warning` or `error`. The only warning in this file: drift is an error because somebody edited a managed block, being behind is info because eighteen repositories must not go red on a publication day — this one is neither wrong nor survivable |
+| `SK9016` info | a compiler severity lowered or dropped (docs/plan/09 § "`--no-new-suppressions`": a severity turned down is the widest suppression there is), or an analyzer's changed — those add and remove findings rather than failing the build |
+
+⚠ **Effective value against effective value, not block against block.** "Before" is the whole file as
+it stands; "after" is the incoming canonical with the local block laid *over* it, because sync
+preserves that block verbatim below the canonical one and editorconfig resolves later sections over
+earlier ones. Comparing the two blocks would report a key the local block already pins as changing,
+which is the one case where nothing changes at all.
+
+⚠ **An introduction has no measurable direction, and the report says so rather than guessing.** When
+the file sets nothing, the severity being moved away from is the compiler's own default — not
+written down in any `.editorconfig`, and different by language version. A hand-maintained table of
+Roslyn defaults would be a second copy of somebody else's data, wrong on the next compiler release.
+So the report states what it knows — `(not set) -> warning` — and names `TreatWarningsAsErrors`,
+which is the mechanism that turns that into a build failure.
+
+⚠ `sync` prints the summary and `diff --canonical` prints **every** line, uncapped. A truncated list
+in the command whose job is pricing the change is the same silence, just shorter. The list puts `cs*`
+before `bc*`: sorting 253 ids alphabetically put 23 Visual Basic ids ahead of every C# one, and the
+first capped version of this list showed a C# repository nothing but Visual Basic.
 
 ⚠ `skala.jsonc` gets one key, `canonical.drift` (`error` | `warning` | `off`), and deliberately no
 `version`: the version a repository is on is recorded in the marker, beside the bytes it names, so

@@ -228,6 +228,9 @@ IDE and the oracle disagree (`autodetect_indent_settings`, `use_indent_from_vs`)
 `SK9008` canonical block drifted · `SK9009` repository behind the canonical ·
 `SK9012` canonical version pinned in `skala.jsonc` · `SK9013` local block overrides a canonical
 option · `SK9014` `.editorconfig` carries no canonical block ·
+`SK9016` applying the canonical changes a `dotnet_diagnostic` severity — ⚠ **warning** when it moves
+a *compiler* diagnostic up, because with `TreatWarningsAsErrors` that is a build failure from an
+`.editorconfig` commit touching no code; info for a lowered one or an analyzer's ·
 `SK9010` file did not parse · `SK9011` unbalanced preprocessor
 structure, not formatted · `SK9007` `skala.jsonc` is not valid JSON · `SK9020` binlog stale for a file · `SK9021` binlog missing a file · `SK9022` no binary log found · `SK9023` no C# files under the requested paths · `SK9024` no solution or project to load · `SK9025` load mode produced no compilation, fell back · `SK9015` a file could not be read or written ·
 `SK9030` analyzer threw · `SK9031` analyzer failed to load · `SK9096` arrangement reverted, a touched identifier now resolves to a different symbol ·
