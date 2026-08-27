@@ -262,6 +262,153 @@ public sealed class ArrangementRuleTests {
         Assert.DoesNotContain(ArrangeIds.Var, result.Applied);
     }
 
+    [Fact]
+    public void ArgumentStyle_StopsAtTheFirstNameHoldingTheCallTogether() {
+        // ⚠ Regression. Removing a name from an argument that follows an out-of-position named
+        // one produces CS8323, "named argument used out-of-position but followed by an unnamed
+        // argument". Safety layer 2 caught this on Vixen rather than letting it out, which means the
+        // file was reverted whole — correct, and still a rule that could not arrange those files.
+        var arranged = Arrange(
+            """
+            namespace P;
+            public class C {
+                public void Take(int first, int second, int third) { }
+
+                public void M() {
+                    Take(second: 2, first: 1, third: 3);
+                }
+            }
+            """,
+            only: ArrangeIds.ArgumentStyle
+        );
+
+        // `second:` is out of position and must keep its name; everything after it must too, or the
+        // call stops compiling.
+        Assert.Contains("second: 2", arranged, StringComparison.Ordinal);
+        Assert.Contains("third: 3", arranged, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void ArgumentStyle_RemovesANameOnlyWhereTheArgumentIsAlreadyInPosition() {
+        var arranged = Arrange(
+            """
+            namespace P;
+            public class C {
+                public void Take(int first, int second) { }
+
+                public void M() {
+                    Take(first: 1, second: 2);
+                }
+            }
+            """,
+            only: ArrangeIds.ArgumentStyle
+        );
+
+        Assert.Contains("Take(1, 2)", arranged, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void NamespaceBody_IsLeftAloneWhenTheFileHasMoreThanOne() {
+        // A file-scoped namespace must be the only one in its file, so this is not a style question.
+        var arranged = Arrange(
+            """
+            namespace A {
+                public class X { }
+            }
+
+            namespace B {
+                public class Y { }
+            }
+            """,
+            only: ArrangeIds.NamespaceBody
+        );
+
+        Assert.DoesNotContain("namespace A;", arranged, StringComparison.Ordinal);
+        Assert.DoesNotContain("namespace B;", arranged, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void NamespaceBody_KeepsTheSemicolonOnTheNameLine() {
+        // ⚠ Regression, and it compiled: leaving the name's trailing newline on the name emitted
+        // a semicolon stranded on its own line with the first member behind it. Only a diff showed it.
+        var arranged = Arrange(
+            """
+            namespace P
+            {
+                public class C {
+                    public int N;
+                }
+            }
+            """,
+            only: ArrangeIds.NamespaceBody
+        );
+
+        Assert.Contains("namespace P;", arranged, StringComparison.Ordinal);
+        Assert.DoesNotContain("\n;", arranged, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Parentheses_AreKeptAroundAnOperandOfANonObviousOperation() {
+        // ⚠ Regression. `parentheses_non_obvious_operations = shift, bitwise_*` is about the
+        // *enclosing* operation, so an arithmetic operand of one keeps its parentheses. The first
+        // version keyed on the inner expression alone and stripped these.
+        var arranged = Arrange(
+            """
+            namespace P;
+            public class C {
+                public int And(int a, int b) { return a & (b + 1); }
+                public int Shift(int a, int b) { return a << (b + 1); }
+                public int Plain(int a, int b, int c) { return a + (b * c); }
+            }
+            """,
+            only: ArrangeIds.RedundantParentheses
+        );
+
+        Assert.Contains("a & (b + 1)", arranged, StringComparison.Ordinal);
+        Assert.Contains("a << (b + 1)", arranged, StringComparison.Ordinal);
+        Assert.Contains("a + b * c", arranged, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Parentheses_AreKeptWhereRemovalWouldReassociate() {
+        // Equal precedence is not associativity, and on floating point the grouping is arithmetic
+        // rather than decoration. The re-parse proof refuses this without a table saying so.
+        var arranged = Arrange(
+            """
+            namespace P;
+            public class C {
+                public float M(float a, float x, float y) { return a * (x * y); }
+            }
+            """,
+            only: ArrangeIds.RedundantParentheses
+        );
+
+        Assert.Contains("a * (x * y)", arranged, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void TrailingComma_IsRemovedFromEveryListShapeTheGrammarAllows() {
+        var arranged = Arrange(
+            """
+            namespace P;
+            public class C {
+                public int[] Array = new[] { 1, 2, 3, };
+                public int[] Collection = [4, 5, 6,];
+            }
+
+            public enum E {
+                A,
+                B,
+            }
+            """,
+            only: ArrangeIds.TrailingComma
+        );
+
+        Assert.Contains("new[] { 1, 2, 3 }", arranged, StringComparison.Ordinal);
+        Assert.Contains("[4, 5, 6]", arranged, StringComparison.Ordinal);
+        Assert.DoesNotContain("B,", arranged, StringComparison.Ordinal);
+    }
+
     static int CountBareBlocks(string text) {
         var count = 0;
         foreach (var line in text.Split('\n')) {
