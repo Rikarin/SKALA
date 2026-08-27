@@ -666,6 +666,12 @@ public readonly struct PhaseOneOptions {
     public bool FormatterTagsAcceptRegexp { get; }
 
     /// <summary>
+    /// The four keys as <see cref="FormatterTagGuard"/> wants them — for the passes that run
+    /// <em>outside</em> the document builder and would otherwise not see a tag at all.
+    /// </summary>
+    public FormatterTags Tags => new(FormatterTagsEnabled, FormatterOffTag, FormatterOnTag, FormatterTagsAcceptRegexp);
+
+    /// <summary>
     /// Every option milestone 1 reads, in registry order. The Tier A promotion and the per-option
     /// corpus test are checked against this list, so an option that stops being read here stops
     /// claiming to be implemented.

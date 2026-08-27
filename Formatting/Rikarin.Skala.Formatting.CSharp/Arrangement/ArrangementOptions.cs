@@ -136,6 +136,9 @@ public readonly struct ArrangementOptions {
     public string FormatterOnTag { get; }
     public bool FormatterTagsAcceptRegexp { get; }
 
+    /// <summary>The four keys as <see cref="FormatterTagGuard"/> wants them.</summary>
+    public FormatterTags Tags => new(FormatterTagsEnabled, FormatterOffTag, FormatterOnTag, FormatterTagsAcceptRegexp);
+
     /// <summary>Every option the arranger reads — the arrangement half of the Tier A claim.</summary>
     public static ImmutableArray<OptionId> Implemented => Ids.All;
 

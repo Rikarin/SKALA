@@ -5,6 +5,7 @@ using Rikarin.Skala.Analysis.Loading;
 using Rikarin.Skala.Core.Configuration;
 using Rikarin.Skala.Core.Diagnostics;
 using Rikarin.Skala.Formatting.CSharp;
+using Rikarin.Skala.Options;
 using Rikarin.Skala.Reporting;
 using Rikarin.Skala.Rules.Metadata;
 
@@ -160,6 +161,7 @@ public static class FixCommand {
         }
 
         var before = Diagnostics(original);
+        var guard = TagGuard(path, original);
 
         // Back to front, so that an earlier edit cannot move a later one's offsets.
         var ordered = pairs.OrderByDescending(static pair => pair.Edit.Start).ToList();
@@ -171,6 +173,14 @@ public static class FixCommand {
             if (edit.End > lastStart || edit.Start < 0 || edit.End > text.Length) {
                 // ⚠ Overlaps are dropped, not merged. The next run picks the dropped one up against
                 // text whose offsets are correct.
+                continue;
+            }
+
+            // ⚠ `@formatter:off`. The finding still stands and is still reported — doc 09's
+            // suppression mechanisms are the only four there are, and this is not a fifth. What the
+            // tag forbids is the *rewrite*: report, never rewrite. An edit is dropped silently, the
+            // same way an overlapping one is, and `skala check` goes on naming the line.
+            if (guard.Touches(new Microsoft.CodeAnalysis.Text.TextSpan(edit.Start, edit.End - edit.Start))) {
                 continue;
             }
 
@@ -203,6 +213,38 @@ public static class FixCommand {
         }
 
         return (applied, false, string.Empty);
+    }
+
+    /// <summary>
+    /// The <c>@formatter:off</c> regions of one file on disk.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ Resolved per file rather than once per run, because the tags are <c>.editorconfig</c> keys
+    /// and a repository may spell them differently in one subtree. <see cref="ConfigurationCache"/>
+    /// memoises the resolution on the sections that matched, so the cost is a dictionary hit for
+    /// every file after the first in a directory.
+    /// </remarks>
+    static FormatterTagGuard TagGuard(string path, string text) {
+        FormattingOptions options;
+        try {
+            options = ConfigurationCache.Options(EditorConfigChain.For(path), null);
+        } catch (IOException) {
+            // A config the fixer cannot read is not a reason to refuse the fix; it is the same
+            // situation as no config at all, and the default has the tags on.
+            return FormatterTagGuard.Open;
+        }
+
+        var tags = new PhaseOneOptions(options).Tags;
+        if (!tags.Enabled) {
+            return FormatterTagGuard.Open;
+        }
+
+        var tree = Microsoft.CodeAnalysis.CSharp.CSharpSyntaxTree.ParseText(
+            Microsoft.CodeAnalysis.Text.SourceText.From(text),
+            CSharpFormatter.ParseOptions
+        );
+
+        return FormatterTagGuard.For(tree.GetRoot(), tags);
     }
 
     /// <summary>

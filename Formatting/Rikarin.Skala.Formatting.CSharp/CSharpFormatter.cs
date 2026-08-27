@@ -194,7 +194,7 @@ public static class CSharpFormatter {
         // indentation the pipeline changed. See XmlDocFormatter.
         var reflowed = 0;
         if (xmlDoc is { } xml) {
-            var outcome = XmlDocFormatter.Rewrite(output, xml, parseOptions, newLine);
+            var outcome = XmlDocFormatter.Rewrite(output, xml, parseOptions, newLine, options.Tags);
             layout = XmlDocFormatter.Reanchor(layout, outcome.Text, outcome.Replacements);
             output = ApplyFileLevelRules(outcome.Text, options, newLine);
             reflowed = outcome.Reflowed;

@@ -117,7 +117,7 @@ public static class Arranger {
         // something, because the spans are into the *current* tree and every firing rule shifts
         // them. An untagged file — almost every file — pays one trivia walk and then reuses
         // `FormatterTagGuard.Open` for all twelve rules.
-        var guard = FormatterTagGuard.For(current, options);
+        var guard = FormatterTagGuard.For(current, options.Tags);
 
         foreach (var rule in Rules(removableUsings)) {
             cancellation.ThrowIfCancellationRequested();
@@ -154,7 +154,7 @@ public static class Arranger {
                 // The re-parse produced a different tree object; the guard's spans point into the
                 // old one.
                 if (!guard.IsEmpty) {
-                    guard = FormatterTagGuard.For(current, options);
+                    guard = FormatterTagGuard.For(current, options.Tags);
                 }
             }
 
@@ -177,7 +177,7 @@ public static class Arranger {
             current = rewritten;
 
             if (!guard.IsEmpty) {
-                guard = FormatterTagGuard.For(current, options);
+                guard = FormatterTagGuard.For(current, options.Tags);
             }
         }
 

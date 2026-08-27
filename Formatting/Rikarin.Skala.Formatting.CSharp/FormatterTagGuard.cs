@@ -1,10 +1,25 @@
 using System.Collections.Immutable;
-using System.Diagnostics.CodeAnalysis;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Text;
 
-namespace Rikarin.Skala.Formatting.CSharp.Arrangement;
+namespace Rikarin.Skala.Formatting.CSharp;
+
+/// <summary>
+/// The four <c>resharper_formatter_tag*</c> keys, in the one shape every pass that has to honour
+/// them can take.
+/// </summary>
+/// <remarks>
+/// ⚠ A struct of its own rather than another overload per options type, because the passes that
+/// need it read three different options structs — <see cref="PhaseOneOptions"/> for the document
+/// builder, <c>ArrangementOptions</c> for the arranger, <see cref="XmlDocOptions"/>'s caller for the
+/// sub-formatter — and the escape hatch has to mean the same thing in all of them or it is not an
+/// escape hatch.
+/// </remarks>
+public readonly record struct FormatterTags(bool Enabled, string Off, string On, bool AcceptRegexp) {
+    /// <summary>Tags off. <see cref="FormatterTagGuard.For"/> returns an open guard for this.</summary>
+    public static FormatterTags None { get; }
+}
 
 /// <summary>
 /// The <c>@formatter:off</c> … <c>@formatter:on</c> regions of one tree, and the question every
@@ -57,21 +72,21 @@ public sealed class FormatterTagGuard {
     /// only when a tag was actually found, which is what keeps this off the hot path: an untagged
     /// file pays one descendant-trivia enumeration and allocates nothing.
     /// </remarks>
-    public static FormatterTagGuard For(SyntaxNode root, in ArrangementOptions options) {
-        if (!options.FormatterTagsEnabled) {
+    public static FormatterTagGuard For(SyntaxNode root, in FormatterTags tags) {
+        if (!tags.Enabled) {
             return Open;
         }
 
-        // ⚠ `resharper_formatter_tags_accept_regexp = true` is not implemented, in either half. The
+        // ⚠ `resharper_formatter_tags_accept_regexp = true` is not implemented, in any pass. The
         // document builder makes the same call (`ContainsTag`), and a guard that silently treated a
         // regexp tag as a literal would protect nothing while looking like it protected something.
-        if (options.FormatterTagsAcceptRegexp) {
+        if (tags.AcceptRegexp) {
             return Open;
         }
 
-        var off = options.FormatterOffTag;
-        var on = options.FormatterOnTag;
-        if (off.Length == 0 || on.Length == 0) {
+        var off = tags.Off;
+        var on = tags.On;
+        if (string.IsNullOrEmpty(off) || string.IsNullOrEmpty(on)) {
             return Open;
         }
 
@@ -113,6 +128,27 @@ public sealed class FormatterTagGuard {
         || trivia.IsKind(SyntaxKind.MultiLineCommentTrivia)
         || trivia.IsKind(SyntaxKind.SingleLineDocumentationCommentTrivia)
         || trivia.IsKind(SyntaxKind.MultiLineDocumentationCommentTrivia);
+
+    /// <summary>
+    /// Whether a span meets a region at all.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ The question the passes that produce <em>edits</em> ask, rather than the tree-shaped one
+    /// <see cref="Encloses"/> and <see cref="Straddles"/> split between them. An edit has no children
+    /// and no ancestors: it either lands in protected text or it does not, and one that lands
+    /// half-in is still an edit to protected text. A zero-width span — a pure insertion — counts as
+    /// touching when it falls inside a region, which <see cref="TextSpan.OverlapsWith"/> alone would
+    /// say no to.
+    /// </remarks>
+    public bool Touches(TextSpan span) {
+        foreach (var region in _regions) {
+            if (region.OverlapsWith(span) || region.Contains(span.Start)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
 
     /// <summary>A node that lies entirely inside a region. It is never visited and never rewritten.</summary>
     public bool Encloses(TextSpan span) {
@@ -213,49 +249,5 @@ public sealed class FormatterTagGuard {
         }
 
         return true;
-    }
-}
-
-/// <summary>
-/// The base every arrangement rewriter derives from, and the single place <c>@formatter:off</c> is
-/// enforced for the twelve rules of <see cref="Arranger.Rules"/>.
-/// </summary>
-/// <remarks>
-/// ⚠ <see cref="Visit"/> is sealed on purpose. Twelve rewriters each remembering to ask the guard is
-/// twelve chances to forget, and the one that forgets is the one that eats somebody's table. Rules
-/// override <c>VisitXxx</c>; the choke point is above all of them.
-/// </remarks>
-public abstract class GuardedRewriter(FormatterTagGuard guard) : CSharpSyntaxRewriter {
-    protected FormatterTagGuard Guard { get; } = guard;
-
-    /// <remarks>
-    /// ⚠ <see cref="NotNullIfNotNullAttribute"/> is not decoration: <c>CSharpSyntaxRewriter.Visit</c>
-    /// carries it, every generated <c>VisitXxx</c> relies on it, and an override that drops it turns
-    /// eleven call sites into <c>CS8603</c>. It is honest here because no rule in the catalogue
-    /// deletes a node by returning null from a visit.
-    /// </remarks>
-    [return: NotNullIfNotNull(nameof(node))]
-    public sealed override SyntaxNode? Visit(SyntaxNode? node) {
-        if (node is null || Guard.IsEmpty) {
-            return base.Visit(node);
-        }
-
-        // Entirely inside a region: not descended into, so no rule ever sees it and no semantic
-        // model is ever asked about it.
-        if (Guard.Encloses(node.Span)) {
-            return node;
-        }
-
-        var rewritten = base.Visit(node);
-        if (ReferenceEquals(rewritten, node)) {
-            return node;
-        }
-
-        // Crossing a tag: skipped whole — see FormatterTagGuard.Straddles for why.
-        if (Guard.Straddles(node.Span)) {
-            return node;
-        }
-
-        return Guard.Preserves(node, rewritten) ? rewritten : node;
     }
 }
