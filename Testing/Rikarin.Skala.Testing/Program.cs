@@ -22,6 +22,8 @@ using Rikarin.Skala.Testing;
 //                     happens to a 121-column array initializer, and asking does.
 //   audit [dir…]      every rule's findings over a tree, grouped by rule, for the
 //                     false-positive review docs/plan/16 § R3 makes the shipping bar.
+//   margin [out]      SK-DIV-0005's constant, swept: eleven right-hand-side shapes at five block
+//                     depths under both values of `wrap_before_eq`, one character at a time.
 //   preprocessor      SK-DIV-0004's number: `corpus/real/` fidelity with the oracle's own
 //                     preprocessor symbols supplied, split by whether the file contains a `#if`.
 //                     The symbols are read out of a real binary log rather than typed.
@@ -69,6 +71,27 @@ switch (args[0]) {
                 args.Length > 1 && args[1] != "-" ? args[1..] : PreprocessorFidelity.OracleSymbols(Console.Out)
             )
         );
+
+        return 0;
+    case "margin":
+        // SK-DIV-0005, swept. A developer action of tens of seconds; never a test.
+        if (OracleRunner.FindExecutableOrNull() is null) {
+            Console.Error.WriteLine("jb is not installed.");
+            return 2;
+        }
+
+        var sweep = MarginSweep.Run(
+            new OracleRunner(),
+            Path.Combine(Corpus.RepositoryRoot, ".editorconfig"),
+            Console.Error
+        );
+
+        if (args.Length > 1) {
+            File.WriteAllText(args[1], sweep);
+            Console.WriteLine($"written to {args[1]}");
+        } else {
+            Console.WriteLine(sweep);
+        }
 
         return 0;
     case "constructs":

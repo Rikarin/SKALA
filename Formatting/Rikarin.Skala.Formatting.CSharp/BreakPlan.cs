@@ -620,6 +620,23 @@ public sealed class BreakPlan {
             Flat(first);
         }
 
+        // ⚠ A fill re-flows every gap it owns, and one construct family will not have that.
+        // `keep_existing_list_patterns_arrangement = true` preserves the author's break at each
+        // *individual* item gap, so a collection expression the author wrote one element per line
+        // comes back one element per line however well two of them would have shared. Measured, and
+        // the distinction is between the two constructs rather than between two widths:
+        // <code>
+        // static readonly int[] A = [        static readonly int[] A = new[] {
+        //     1,                                 1, 2,                    ← re-filled
+        //     2,                             };
+        // ];                                 ← kept
+        // </code>
+        // The array initializer has no `keep_existing_*` key of its own and the oracle re-fills it;
+        // the list pattern has one and the oracle does not. A per-group flag cannot say this — the
+        // preserved gaps and the filled ones are siblings — so the preserved ones become ordinary
+        // required breaks and the rest stay fill points.
+        var pinsItemBreaks = fill && keepExisting && _options.KeepsUserBreaksBetweenItems;
+
         var interBroken = false;
         foreach (var comma in separators) {
             var next = comma.GetNextToken();
@@ -629,15 +646,16 @@ public sealed class BreakPlan {
 
             // wrap_before_comma = false puts the break after the comma, which is the gap before the
             // next item; true puts it before the comma.
-            if (_options.WrapBeforeComma) {
-                Point(comma, group, fill);
-                Flat(next);
-                interBroken |= BreaksBefore(comma);
+            var gap = _options.WrapBeforeComma ? comma : next;
+            var broke = BreaksBefore(gap);
+            if (pinsItemBreaks && broke) {
+                Mandatory(gap);
             } else {
-                Flat(comma);
-                Point(next, group, fill);
-                interBroken |= BreaksBefore(next);
+                Point(gap, group, fill);
             }
+
+            Flat(_options.WrapBeforeComma ? next : comma);
+            interBroken |= broke;
         }
 
         if (wrapBeforeClose) {
@@ -1354,7 +1372,15 @@ public sealed class BreakPlan {
                 // a chain under it is the shape that shows the difference. Measuring the head
                 // instead costs 0.12 points of line fidelity on `corpus/real/` and two of the four
                 // preservation corners, which is how the reading was settled rather than argued.
+                // ⚠ And gated on the keep key, the same way a delimited list's placement key is
+                // (see PlanList): `keep_existing_expr_member_arrangement = true` outranks the
+                // placement key in *both* directions, so an arrow the author left on the
+                // declaration's line stays there however unbreakable the body is. Asked directly,
+                // `bool P(object o) => o is {\n First: 1\n };` comes back with the arrow where the
+                // author put it under keep, and moved onto its own line under rearrange — the same
+                // source, the same body, two answers, and only this key between them.
                 BreaksIfTooLong: placement == PlacementStyle.IfOwnerIsSingleLine
+                && !_options.KeepExistingExprMemberArrangement
             ),
             spendsIndent: true
         );

@@ -1,23 +1,23 @@
 {
   "real": {
-    "LineFidelity": 0.9886,
-    "FileFidelity": 0.7132,
-    "Milestone": "M5 - unchanged from M3's 0.9886 line, and 0.7053 -> 0.7132 file: `>` followed by `(` was being read as a call site, so `count > (n)` lost its space. Every corpus line that shows it is inside a `#if` body, which the formatter could not see until M5 supplied preprocessor symbols."
+    "LineFidelity": 0.9922,
+    "FileFidelity": 0.7763,
+    "Milestone": "M3.1 - the tail, before the Vixen re-base. From M5's 0.9886/0.7132. Seven formatter corrections: an unbound generic's `<,>`, a pointer and function-pointer declarator, an implicit element access after a comma, two ungoverned `..` gaps, a lambda body's continuation level, a list pattern's preserved item breaks, and SK-DIV-0005's constant re-fitted from 8 to 12."
   },
   "constructs": {
-    "LineFidelity": 0.9599,
-    "FileFidelity": 0.8971,
-    "Milestone": "M5 - unchanged from M3. The set grew by 9 files (wrapping/) at M3, so this is a different population from M2's 0.9305."
+    "LineFidelity": 0.9654,
+    "FileFidelity": 0.9081,
+    "Milestone": "M3.1. M5 was 0.9599/0.8971."
   },
   "pathological": {
-    "LineFidelity": 0.9473,
-    "FileFidelity": 0.8077,
-    "Milestone": "M3. M2 was 0.8843/0.6731."
+    "LineFidelity": 0.9516,
+    "FileFidelity": 0.8462,
+    "Milestone": "M3.1. M3 was 0.9473/0.8077."
   },
   "preservation/keep-keep": {
-    "LineFidelity": 0.9086,
-    "FileFidelity": 0.7692,
-    "Milestone": "M3 - constructs/preservation/ under keep_user_linebreaks=true, keep_existing_*=true. M2 was 0.8101."
+    "LineFidelity": 0.9598,
+    "FileFidelity": 0.8462,
+    "Milestone": "M3.1 - `keep_existing_expr_member_arrangement` now outranks the placement key in both directions, the same way a delimited list's does. M3 was 0.9086/0.7692."
   },
   "preservation/keep-rearrange": {
     "LineFidelity": 1.0,
@@ -27,7 +27,7 @@
   "preservation/reflow-keep": {
     "LineFidelity": 0.9265,
     "FileFidelity": 0.8462,
-    "Milestone": "M3 - keep_user_linebreaks=false, keep_existing_*=true. M2 was 0.8582."
+    "Milestone": "M3. M2 was 0.8582."
   },
   "preservation/reflow-rearrange": {
     "LineFidelity": 1.0,

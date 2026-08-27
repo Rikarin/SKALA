@@ -223,8 +223,8 @@ public static class FixCommand {
             .. tree.GetDiagnostics()
                 .Where(static diagnostic => diagnostic.Severity == Microsoft.CodeAnalysis.DiagnosticSeverity.Error)
                 .Select(static diagnostic => diagnostic.Id
-                        + "@"
-                        + diagnostic.Location.SourceSpan.Start.ToString(CultureInfo.InvariantCulture)
+                    + "@"
+                    + diagnostic.Location.SourceSpan.Start.ToString(CultureInfo.InvariantCulture)
                 )
         ];
     }

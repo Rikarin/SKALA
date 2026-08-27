@@ -228,27 +228,59 @@ public sealed class Fitter {
     /// How much room the outer break has to leave before it is judged to have "finished the job".
     /// </summary>
     /// <remarks>
-    /// ⚠ Measured, and it is not zero, which is the surprise. Sweeping
-    /// <c>Employee p = new Employee { … };</c> one character at a time through the oracle at three
-    /// nesting depths gives a clean threshold each time, and in every case the oracle stops taking
-    /// the <c>=</c> break well before the continuation line reaches 120:
-    /// <code>
-    /// block depth   continuation column   longest continuation line the oracle still writes
-    ///     2                 12                            109
-    ///     3                 16                            108
-    ///     4                 20                            107
-    /// </code>
-    /// So the budget for this one decision is <c>120 − (8 + column / indent)</c> and not 120. What
-    /// ReSharper is really computing is not known — it is not a width test on the result, because
-    /// the result fits with eleven columns to spare — and this reproduces its answer exactly at all
-    /// three depths. On <c>corpus/real/</c> it is worth 0.19 points of line fidelity against a
-    /// margin of zero (97.36 % → 97.55 %) and 0.05 against never preferring the outer break at all.
+    /// ⚠ Measured, and it is not zero, which is the surprise: the oracle stops taking the <c>=</c>
+    /// break well before the continuation line reaches 120, and the result it declines fits with
+    /// room to spare. What ReSharper is really computing there is <em>not known</em>, and milestone
+    /// 3.1 swept it hard enough to say so with evidence rather than with a shrug — eleven
+    /// right-hand-side shapes, five block depths, both values of <c>wrap_before_eq</c>, one
+    /// character at a time (<c>Testing/Rikarin.Skala.Testing/MarginSweep.cs</c>, run as
+    /// <c>margin</c>). Three things came out of it, and all three contradict the milestone-3 note
+    /// this replaces:
+    /// <list type="number">
+    /// <item>
+    /// <b>The threshold does not depend on the nesting depth.</b> At a flat width of 121 the last
+    /// continuation line the oracle still writes is 112 columns at block depth 2, 3, 4, 5 and 6
+    /// alike. Milestone 3 read a <c>column / indent</c> term off three cells that were confounded
+    /// with the shape's own width.
+    /// </item>
+    /// <item>
+    /// <b>It does depend on the flat width, and not monotonically.</b> Same shape, same depth,
+    /// sweeping the flat width: 122 → 113, 124 → 115, 126 to 140 → 116, then back down, 146 → 112,
+    /// 158 → 107. No affine function of the numbers this fitter has reproduces that curve.
+    /// </item>
+    /// <item>
+    /// <b>It depends on the shape.</b> At a flat width of 137 and depth 2 the threshold is 116 for
+    /// <c>Convert.FromBase64String("…")</c>, 117 for a call on an identifier, 118 for a binary
+    /// chain, 120 for a cast, and 107 for a member chain — and an object initializer and an array
+    /// initializer go the other way, 107 and 101.
+    /// </item>
+    /// </list>
     /// <para>
-    /// ⚠ It is an empirical constant standing in for a rule that has not been reverse-engineered,
-    /// and SK-DIV-0005 records it as such rather than letting it read as a derivation.
+    /// ⚠ So the constant stays, and it is now honestly a <em>fitted</em> constant rather than a
+    /// derived one. Fitted against <c>corpus/real/</c>, with everything else in the ordering rule
+    /// held fixed:
+    /// </para>
+    /// <code>
+    /// margin                  line       file
+    /// never take it          99.11 %    76.05 %
+    /// 0                      99.02 %    72.37 %
+    /// 4                      99.07 %    73.42 %
+    /// 8  (constant)          99.14 %    76.05 %
+    /// 8 + column/indent      99.20 %    76.58 %      ← milestone 3's
+    /// 12 + column/indent     99.22 %    77.63 %      ← ships
+    /// 16 + column/indent     99.20 %    77.11 %
+    /// 24 + column/indent     99.16 %    76.58 %
+    /// </code>
+    /// <para>
+    /// ⚠ And the two measurements disagree, which is the finding worth carrying forward. The
+    /// isolated sweep says the threshold is depth-independent and near 112 — that is the
+    /// <c>constant 8</c> row, and it is 0.08 points and six files <em>worse</em> on real code than a
+    /// depth-dependent constant the sweep does not support. The margin is therefore absorbing error
+    /// from the rest of the ordering rule rather than reproducing a rule of ReSharper's, and no
+    /// value of it will close the last of this class. SK-DIV-0005 records that as the argument.
     /// </para>
     /// </remarks>
-    int OuterBreakMargin(in Measures m) => 8 + m.ContinuationColumn / _indentWidth;
+    int OuterBreakMargin(in Measures m) => 12 + m.ContinuationColumn / _indentWidth;
 
     bool Fits(int column, int flatWidth, int trailing = 0) =>
         flatWidth < Unbounded && trailing < Unbounded && column + flatWidth + trailing <= _width;

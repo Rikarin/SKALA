@@ -167,10 +167,10 @@ public sealed class ProjectGraphTests {
         // netstandard2.0 for the same reason but is an ordinary library rather than a Roslyn
         // component, and its own reference set is checked by being the only thing Rules may name.
         foreach (var project in Projects.Where(static p => p.Name.EndsWith(".Rules", StringComparison.Ordinal)
-                    || p.Name.EndsWith(
-                        ".Generator",
-                        StringComparison.Ordinal
-                    )
+                || p.Name.EndsWith(
+                    ".Generator",
+                    StringComparison.Ordinal
+                )
             )) {
             Assert.Equal("netstandard2.0", project.TargetFramework);
 
@@ -225,8 +225,8 @@ public sealed record ProjectFile(
         var name = System.IO.Path.GetFileNameWithoutExtension(path);
         var packages = document.Descendants("PackageReference")
             .Select(static element => element.Attribute("Include")?.Value
-                    ?? element.Attribute("Update")?.Value
-                    ?? string.Empty
+                ?? element.Attribute("Update")?.Value
+                ?? string.Empty
             )
             .Where(static value => value.Length > 0 && !value.StartsWith("@(", StringComparison.Ordinal))
             .ToArray();
