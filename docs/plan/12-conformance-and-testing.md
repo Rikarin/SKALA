@@ -175,6 +175,121 @@ thirteen inputs × four combinations of `keep_user_linebreaks` × `keep_existing
 corrupts a file when `keep_user_linebreaks = false` is still a formatter that corrupts files, and the
 non-default corners are precisely where nobody looks.
 
+### The key-flip sweep
+
+`Testing/Rikarin.Skala.Conformance.Sweep/`, `./build.sh Sweep`.
+
+| command | what it does |
+|---|---|
+| `plan [--family=…]` | what would be asked and what it would cost, without an oracle run |
+| `sweep [--family=…] [--out=…]` | the measurement; writes `conformance-sweep.md` and its `.json` sidecar |
+| `defaults [--family=…] [--apply]` | the bare-base pass; `--apply` writes verified defaults into `options.json` |
+| `nightly [--family=…] [--apply]` | both, in one process, so the cross-check needs no sidecar round-trip |
+| `verify <key>` | ⚠ one option, **unbatched**, both engines' output at every value printed in full |
+
+`verify` is how a row is checked before anything is demoted on the strength of it. The batching is
+what makes a whole sweep affordable and it is also the part a suspicious verdict most wants ruled
+out, so the confirmation deliberately does not use it.
+
+Everything above this line measures Skala at **one** configuration — the values in the Rider export.
+That measures the output and not the options, and the gap between the two is not academic:
+
+- Skala reached **99.70 %** fidelity while respecting **205 of the 458** options the export sets. An
+  unimplemented key whose configured value happens to coincide with Skala's behaviour costs nothing
+  and is invisible.
+- Flipping `resharper_int_align` between `false` and `true` produced **byte-identical output**. The
+  key was ignored and no test noticed.
+- M3.1 found options marked **Tier A — "pinned by an oracle fixture"** — that could not be observed
+  at all.
+
+The sweep is the instrument that makes Tier A mean something. For each option, for each of its legal
+values: format that option's fixture with Skala, and with `jb cleanupcode` under the same
+configuration, and compare.
+
+⚠ **The verdict is three-way, and only one third of it is green.**
+
+| | verdict |
+|---|---|
+| both engines moved, outputs agree | ✅ `CONFORMANT` — the option is honoured |
+| both engines moved, outputs disagree | ❌ `DIVERGENT` — a real divergence, ranked like any other |
+| **neither moved** | ⚠ **`UNEXERCISED` — not a pass.** Either the fixture does not exercise the option, or the option is inert |
+
+Two more verdicts sit under `DIVERGENT` and are separated because the diagnosis differs. `INERT` is
+the oracle moving while Skala does not — the `resharper_int_align` shape, the defect a
+one-configuration measurement cannot see at all. `SPURIOUS` is Skala moving while the oracle does
+not. **Treating "neither moved" as a pass rebuilds the exact defect this harness exists to detect**,
+which is why `UNEXERCISED` has its own row in every table the sweep writes and never a tick beside
+it.
+
+**It sweeps fixtures, not the corpus.** `options.json` carries an `oracle` field per option naming
+the fixture that exercises it. 380 real files × ~950 configurations is mostly wasted work, because
+most files exercise no part of most options. An option whose fixture cannot distinguish its values
+**is a finding**, reported per option, rather than a rounding error in an average.
+
+**It batches by value index.** `cleanupcode`'s startup is tens of seconds and ~950 invocations one at
+a time is not viable, so one round sets every option to its 1st value, the next to its 2nd, and the
+round count is the widest option's value count rather than the total. ⚠ The hazard in that technique
+is worth restating because M3 hit it: with a **shared** `.editorconfig` across the batch, every
+fixture is moved by every other option in it, and the first attempt came back "197 options set, 0
+fixtures unchanged". Each fixture gets **its own directory and its own `.editorconfig`**.
+
+**Both engines are pinned, not defaulted.** The base configuration is the repository's export with
+exactly one key overridden, so no key is left to fall back on a default — Skala's fallbacks and
+ReSharper's differ, which is the whole reason `DefaultsProbe` exists, and a bare base would turn
+every option's comparison into a measurement of the default table. A baseline pass runs both engines
+with nothing overridden first, so that a fixture the two already disagreed on is reported as such
+rather than blamed on the key that was flipped on it.
+
+**Both engines are asked in the same units.** Every other measurement here compares line-ending
+*normalised* text, because a committed fixture may have been generated on another OS. Two options —
+`resharper_enforce_line_ending_style` and `resharper_csharp_insert_final_newline` — change nothing
+that survives that normalisation, so the sweep falls back to raw bytes for them and marks the row
+`raw`. ⚠ The trap either side of that is real and the harness has been on both sides of it: normalise
+both and those two keys read `UNEXERCISED` for a reason that is about the instrument; normalise one
+side only and `insert_final_newline` reads `INERT` — *"ReSharper honours the key and Skala ignores
+it"* — for a key `skala format --option` demonstrably honours. `SkalaSideTests` pins the units,
+because Skala's whole side of a 201-option sweep runs in under a second and needs no oracle at all.
+
+**It is a nightly job, not a commit gate.** It needs JetBrains installed, which is a developer-machine
+and nightly dependency and never a runtime one (ADR-011). What the fast path gets is the committed
+result table, `conformance-sweep.md`, reviewed in its diff exactly as the oracle fixtures are: an
+option that was `CONFORMANT` yesterday and `UNEXERCISED` today is one line in a pull request rather
+than a number nobody re-derived.
+
+**Verified defaults are a by-product.** `skala config distill` may drop a key only where its default
+is verified, because dropping one on a guessed default silently changes formatting in whoever's
+repository accepted the file. The same machinery under a bare `root = true` base *is* the defaults
+measurement: that run is ReSharper-with-defaults by construction, and the value reproducing it on the
+option's own fixture is the default. ⚠ What the sweep adds over M3's probe is the cross-check. The
+probe reported `Insensitive` whenever every value reproduced the baseline and could not say whether
+that meant "the fixture is too weak" or "ReSharper's defaults mask this option"; an option the
+export-base run watched the oracle distinguish is one the fixture *can* see, so `Insensitive` on it
+is a masking fact about bare defaults and not a gap in the fixture. Those are marked `masked` and are
+not evidence that a fixture needs replacing.
+
+#### ⚠ Interactions are out of scope, and the sweep is therefore incomplete
+
+One key at a time isolates cleanly, which is what makes a verdict a statement about *that option*. It
+is also **provably incomplete**: § "`keep_existing_*`" in [05](05-csharp-formatting-rules.md) is a
+four-way table across **two** keys, and no one-at-a-time sweep can reach three of its corners. A
+family whose members interact can come back all-`CONFORMANT` and still be wrong in combination.
+
+Pairwise sweeps of the known-interacting families — `keep_existing_*` × `keep_user_linebreaks`,
+`wrap_*` × `max_line_length`, `align_*` × `indent_*` — are a **named second phase**. They are not
+approximated here, and a green sweep must not be read as covering them.
+
+#### ⚠ Arrangement options are excluded, and are the other named second phase
+
+The sweep runs the **format-only** profile, which is `CSReformatCode` and nothing else — so its
+output is byte-identical whatever an `arrange_*` or `csharp_style_*` key says, and on Skala's side it
+runs the formatter rather than the arranger. Sweeping those keys here would report every one of them
+as `SPURIOUS`: the harness inventing divergences rather than finding any. They are excluded by name,
+with the reason recorded in the report's "Not swept" table.
+
+Doing them properly needs the cleanup profile on the oracle's side and `CorpusArranger` on Skala's,
+which is the same substitution `OptionCoverageTests` already makes for its arrangement theories. Same
+machinery, different subject.
+
 ### 3. Properties — where the real bugs are
 
 Run over every corpus file, every commit, and over generated input nightly:

@@ -1,0 +1,1610 @@
+[
+  {
+    "Key": "csharp_indent_braces",
+    "Tier": "A",
+    "Outcome": "Divergent",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "csharp_new_line_before_open_brace",
+    "Tier": "A",
+    "Outcome": "Spurious",
+    "OracleDistinct": 1,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_align_multiline_statement_conditions",
+    "Tier": "A",
+    "Outcome": "Divergent",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_allow_comment_after_lbrace",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_blank_lines_after_block_statements",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_blank_lines_after_case",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 3,
+    "SkalaDistinct": 3,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_blank_lines_after_file_scoped_namespace_directive",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_blank_lines_after_using_list",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_blank_lines_around_accessor",
+    "Tier": "A",
+    "Outcome": "Spurious",
+    "OracleDistinct": 1,
+    "SkalaDistinct": 3,
+    "BaselineAgrees": false
+  },
+  {
+    "Key": "resharper_csharp_blank_lines_around_auto_property",
+    "Tier": "A",
+    "Outcome": "Spurious",
+    "OracleDistinct": 1,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": false
+  },
+  {
+    "Key": "resharper_csharp_blank_lines_around_field",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_blank_lines_around_invocable",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_blank_lines_around_local_method",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_blank_lines_around_namespace",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_blank_lines_around_property",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_blank_lines_around_region",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_blank_lines_around_single_line_accessor",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 3,
+    "SkalaDistinct": 3,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_blank_lines_around_single_line_auto_property",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 3,
+    "SkalaDistinct": 3,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_blank_lines_around_single_line_field",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 3,
+    "SkalaDistinct": 3,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_blank_lines_around_single_line_invocable",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 3,
+    "SkalaDistinct": 3,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_blank_lines_around_single_line_local_method",
+    "Tier": "A",
+    "Outcome": "Divergent",
+    "OracleDistinct": 3,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": false
+  },
+  {
+    "Key": "resharper_csharp_blank_lines_around_single_line_property",
+    "Tier": "A",
+    "Outcome": "Spurious",
+    "OracleDistinct": 1,
+    "SkalaDistinct": 3,
+    "BaselineAgrees": false
+  },
+  {
+    "Key": "resharper_csharp_blank_lines_around_single_line_type",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_blank_lines_around_type",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_blank_lines_before_case",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 3,
+    "SkalaDistinct": 3,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_blank_lines_before_single_line_comment",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 3,
+    "SkalaDistinct": 3,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_blank_lines_inside_region",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_continuous_indent_multiplier",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_empty_block_style",
+    "Tier": "A",
+    "Outcome": "Divergent",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_indent_inside_namespace",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_indent_nested_fixed_stmt",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_indent_nested_for_stmt",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_indent_nested_foreach_stmt",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_indent_nested_lock_stmt",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_indent_nested_usings_stmt",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_indent_nested_while_stmt",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_indent_preprocessor_if",
+    "Tier": "A",
+    "Outcome": "Divergent",
+    "OracleDistinct": 3,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_indent_preprocessor_other",
+    "Tier": "A",
+    "Outcome": "Divergent",
+    "OracleDistinct": 3,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_indent_preprocessor_region",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_indent_raw_literal_string",
+    "Tier": "A",
+    "Outcome": "Divergent",
+    "OracleDistinct": 3,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_indent_size",
+    "Tier": "A",
+    "Outcome": "Divergent",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_indent_style",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_indent_type_constraints",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_insert_final_newline",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_keep_blank_lines_in_code",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 3,
+    "SkalaDistinct": 3,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_keep_blank_lines_in_declarations",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 3,
+    "SkalaDistinct": 3,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_keep_existing_attribute_arrangement",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_keep_existing_declaration_block_arrangement",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_keep_existing_declaration_parens_arrangement",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_keep_existing_embedded_arrangement",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_keep_existing_embedded_block_arrangement",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_keep_existing_enum_arrangement",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_keep_existing_expr_member_arrangement",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_keep_existing_invocation_parens_arrangement",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_keep_existing_linebreaks",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_keep_existing_list_patterns_arrangement",
+    "Tier": "A",
+    "Outcome": "Divergent",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": false
+  },
+  {
+    "Key": "resharper_csharp_keep_existing_primary_constructor_declaration_parens_arrangement",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_keep_existing_property_patterns_arrangement",
+    "Tier": "A",
+    "Outcome": "Divergent",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": false
+  },
+  {
+    "Key": "resharper_csharp_keep_existing_switch_expression_arrangement",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_max_array_initializer_elements_on_line",
+    "Tier": "A",
+    "Outcome": "Divergent",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_max_enum_members_on_line",
+    "Tier": "A",
+    "Outcome": "Spurious",
+    "OracleDistinct": 1,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_max_formal_parameters_on_line",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_max_initializer_elements_on_line",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_max_invocation_arguments_on_line",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_max_line_length",
+    "Tier": "A",
+    "Outcome": "Divergent",
+    "OracleDistinct": 3,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_max_primary_constructor_parameters_on_line",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_new_line_before_while",
+    "Tier": "A",
+    "Outcome": "Divergent",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_place_accessor_attribute_on_same_line",
+    "Tier": "A",
+    "Outcome": "Divergent",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_place_accessorholder_attribute_on_same_line",
+    "Tier": "A",
+    "Outcome": "Divergent",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_place_comments_at_first_column",
+    "Tier": "A",
+    "Outcome": "Spurious",
+    "OracleDistinct": 1,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_place_constructor_initializer_on_same_line",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_place_expr_accessor_on_single_line",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_place_expr_method_on_single_line",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_place_expr_property_on_single_line",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_place_field_attribute_on_same_line",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_place_method_attribute_on_same_line",
+    "Tier": "A",
+    "Outcome": "Divergent",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_place_record_field_attribute_on_same_line",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_place_simple_case_statement_on_same_line",
+    "Tier": "A",
+    "Outcome": "Spurious",
+    "OracleDistinct": 1,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_place_simple_embedded_statement_on_same_line",
+    "Tier": "A",
+    "Outcome": "Spurious",
+    "OracleDistinct": 1,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_place_simple_initializer_on_single_line",
+    "Tier": "A",
+    "Outcome": "Divergent",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_place_simple_property_pattern_on_single_line",
+    "Tier": "A",
+    "Outcome": "Divergent",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": false
+  },
+  {
+    "Key": "resharper_csharp_place_simple_switch_expression_on_single_line",
+    "Tier": "A",
+    "Outcome": "Spurious",
+    "OracleDistinct": 1,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_place_type_attribute_on_same_line",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_place_type_constraints_on_same_line",
+    "Tier": "A",
+    "Outcome": "Divergent",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_remove_blank_lines_near_braces_in_code",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_remove_blank_lines_near_braces_in_declarations",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_space_after_attribute_colon",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_space_after_attributes",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_space_after_colon_in_case",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_space_after_operator_keyword",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_space_after_ternary_colon",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_space_after_ternary_quest",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_space_after_type_parameter_constraint_colon",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_space_after_unary_operator",
+    "Tier": "A",
+    "Outcome": "Divergent",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_space_around_additive_op",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_space_around_alias_eq",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_space_around_assignment_op",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_space_around_lambda_arrow",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_space_around_relational_op",
+    "Tier": "A",
+    "Outcome": "Divergent",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_space_around_shift_op",
+    "Tier": "A",
+    "Outcome": "Divergent",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_space_before_array_access_brackets",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_space_before_array_rank_brackets",
+    "Tier": "A",
+    "Outcome": "Divergent",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_space_before_attribute_colon",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_space_before_checked_parentheses",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_space_before_colon_in_case",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_space_before_default_parentheses",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_space_before_empty_method_call_parentheses",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_space_before_empty_method_parentheses",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_space_before_method_call_parentheses",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_space_before_method_parentheses",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_space_before_nameof_parentheses",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_space_before_new_parentheses",
+    "Tier": "A",
+    "Outcome": "Spurious",
+    "OracleDistinct": 1,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_space_before_nullable_mark",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_space_before_pointer_asterik_declaration",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_space_before_semicolon",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_space_before_singleline_accessorholder",
+    "Tier": "A",
+    "Outcome": "Spurious",
+    "OracleDistinct": 1,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_space_before_sizeof_parentheses",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_space_before_ternary_colon",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_space_before_ternary_quest",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_space_before_trailing_comment",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_space_before_type_argument_angle",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_space_before_type_parameter_angle",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_space_before_type_parameter_constraint_colon",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_space_before_typeof_parentheses",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_space_between_accessors_in_singleline_property",
+    "Tier": "A",
+    "Outcome": "Divergent",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_space_between_attribute_sections",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_space_between_keyword_and_expression",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_space_between_typecast_parentheses",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_space_in_singleline_accessorholder",
+    "Tier": "A",
+    "Outcome": "Divergent",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_space_in_singleline_anonymous_method",
+    "Tier": "A",
+    "Outcome": "Divergent",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_space_near_postfix_and_prefix_op",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_space_within_array_access_brackets",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_space_within_attribute_brackets",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_space_within_empty_braces",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_space_within_list_pattern_brackets",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_space_within_parentheses",
+    "Tier": "A",
+    "Outcome": "Divergent",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_space_within_single_line_array_initializer_braces",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_space_within_slice_pattern",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_space_within_type_argument_angles",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_space_within_type_parameter_angles",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_special_else_if_treatment",
+    "Tier": "A",
+    "Outcome": "Divergent",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_stick_comment",
+    "Tier": "A",
+    "Outcome": "Spurious",
+    "OracleDistinct": 1,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_use_continuous_indent_inside_initializer_braces",
+    "Tier": "A",
+    "Outcome": "Spurious",
+    "OracleDistinct": 1,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_use_continuous_indent_inside_parens",
+    "Tier": "A",
+    "Outcome": "Spurious",
+    "OracleDistinct": 1,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_wrap_after_declaration_lpar",
+    "Tier": "A",
+    "Outcome": "Divergent",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": false
+  },
+  {
+    "Key": "resharper_csharp_wrap_after_dot_in_method_calls",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_wrap_after_invocation_lpar",
+    "Tier": "A",
+    "Outcome": "Divergent",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_wrap_after_primary_constructor_declaration_lpar",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_wrap_after_property_in_chained_method_calls",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_wrap_arguments_style",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_wrap_array_initializer_style",
+    "Tier": "A",
+    "Outcome": "Divergent",
+    "OracleDistinct": 3,
+    "SkalaDistinct": 3,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_wrap_before_arrow_with_expressions",
+    "Tier": "A",
+    "Outcome": "Divergent",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_wrap_before_binary_opsign",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_wrap_before_binary_pattern_op",
+    "Tier": "A",
+    "Outcome": "Divergent",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": false
+  },
+  {
+    "Key": "resharper_csharp_wrap_before_comma",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_wrap_before_declaration_rpar",
+    "Tier": "A",
+    "Outcome": "Divergent",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": false
+  },
+  {
+    "Key": "resharper_csharp_wrap_before_extends_colon",
+    "Tier": "A",
+    "Outcome": "Divergent",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": false
+  },
+  {
+    "Key": "resharper_csharp_wrap_before_first_method_call",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_wrap_before_invocation_rpar",
+    "Tier": "A",
+    "Outcome": "Divergent",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_wrap_before_primary_constructor_declaration_rpar",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_wrap_before_ternary_opsigns",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_wrap_chained_binary_expressions",
+    "Tier": "A",
+    "Outcome": "Divergent",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_wrap_chained_binary_patterns",
+    "Tier": "A",
+    "Outcome": "Divergent",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_wrap_chained_method_calls",
+    "Tier": "A",
+    "Outcome": "Divergent",
+    "OracleDistinct": 3,
+    "SkalaDistinct": 3,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_wrap_enum_declaration",
+    "Tier": "A",
+    "Outcome": "Spurious",
+    "OracleDistinct": 1,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_wrap_extends_list_style",
+    "Tier": "A",
+    "Outcome": "Divergent",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": false
+  },
+  {
+    "Key": "resharper_csharp_wrap_list_pattern",
+    "Tier": "A",
+    "Outcome": "Spurious",
+    "OracleDistinct": 1,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": false
+  },
+  {
+    "Key": "resharper_csharp_wrap_multiple_declaration_style",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_wrap_parameters_style",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_wrap_primary_constructor_parameters_style",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_wrap_property_pattern",
+    "Tier": "A",
+    "Outcome": "Divergent",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": false
+  },
+  {
+    "Key": "resharper_csharp_wrap_switch_expression",
+    "Tier": "A",
+    "Outcome": "Divergent",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_csharp_wrap_ternary_expr_style",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_enforce_line_ending_style",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_formatter_off_tag",
+    "Tier": "A",
+    "Outcome": "Spurious",
+    "OracleDistinct": 1,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_formatter_on_tag",
+    "Tier": "A",
+    "Outcome": "Spurious",
+    "OracleDistinct": 1,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_formatter_tags_accept_regexp",
+    "Tier": "A",
+    "Outcome": "Spurious",
+    "OracleDistinct": 1,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_formatter_tags_enabled",
+    "Tier": "A",
+    "Outcome": "Spurious",
+    "OracleDistinct": 1,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_indent_break_from_case",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_indent_switch_labels",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_keep_existing_lambda_and_anonymous_function_parens_arrangement",
+    "Tier": "A",
+    "Outcome": "Spurious",
+    "OracleDistinct": 1,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": false
+  },
+  {
+    "Key": "resharper_keep_user_linebreaks",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_new_line_before_catch",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_new_line_before_else",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_new_line_before_finally",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_place_primary_constructor_initializer_on_same_line",
+    "Tier": "A",
+    "Outcome": "Divergent",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_place_single_method_argument_lambda_on_same_line",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_space_after_cast",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_space_after_colon_in_inheritance_clause",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_space_after_comma",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_space_after_keywords_in_control_flow_statements",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_space_after_semicolon_in_for_statement",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_space_around_member_access_operator",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_space_before_colon_in_ctor_initializer",
+    "Tier": "A",
+    "Outcome": "Spurious",
+    "OracleDistinct": 1,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_space_before_colon_in_inheritance_clause",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_space_before_comma",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_space_before_semicolon_in_for_statement",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_space_before_trailing_comment_text",
+    "Tier": "A",
+    "Outcome": "Spurious",
+    "OracleDistinct": 1,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_wrap_after_expression_lbrace",
+    "Tier": "A",
+    "Outcome": "Spurious",
+    "OracleDistinct": 1,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  },
+  {
+    "Key": "resharper_wrap_before_comma_in_base_clause",
+    "Tier": "A",
+    "Outcome": "Spurious",
+    "OracleDistinct": 1,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": false
+  },
+  {
+    "Key": "resharper_wrap_before_expression_rbrace",
+    "Tier": "A",
+    "Outcome": "Spurious",
+    "OracleDistinct": 1,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true
+  }
+]

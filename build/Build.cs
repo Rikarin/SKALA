@@ -138,8 +138,16 @@ class Build : NukeBuild {
                         }) {
                         var directory = RootDirectory / area;
                         if (area == "Testing") {
+                            // ⚠ Named one by one because Testing/corpus is excluded, and a new
+                            // project under Testing/ is therefore invisible to this target until
+                            // someone adds it here. That is exactly how Distribution's two projects
+                            // went unchecked until M8 (7c56c8f); the sweep is the third entry.
                             DotNetRun(settings => Format(settings, cli, directory / "Rikarin.Skala.Testing"));
                             DotNetRun(settings => Format(settings, cli, directory / "Rikarin.Skala.Conformance.Tests"));
+                            DotNetRun(settings => Format(settings, cli, directory / "Rikarin.Skala.Conformance.Sweep"));
+                            DotNetRun(
+                                settings => Format(settings, cli, directory / "Rikarin.Skala.Conformance.Sweep.Tests")
+                            );
                             continue;
                         }
 
@@ -206,6 +214,28 @@ class Build : NukeBuild {
                         .EnableNoBuild()
                         .EnableNoRestore()
                         .SetApplicationArguments("oracle")
+                )
+            );
+
+    /// <summary>
+    /// ⚠ The key-flip conformance sweep: every option, at every legal value, against the oracle.
+    /// </summary>
+    /// <remarks>
+    /// A nightly job and never a commit gate. It needs JetBrains installed and takes minutes, so
+    /// like <see cref="Oracle"/> it is a developer-machine and nightly dependency (ADR-011) and what
+    /// the fast path reads is the committed result table. ⚠ Its verdict is three-way and only one
+    /// third of it is green: an option whose fixture cannot tell its values apart is reported
+    /// <c>UNEXERCISED</c>, which is not a pass — see docs/plan/12 § "The key-flip sweep".
+    /// </remarks>
+    Target Sweep =>
+        definition => definition
+            .DependsOn(Compile)
+            .Executes(() => DotNetRun(settings => settings
+                        .SetProjectFile(RootDirectory / "Testing" / "Rikarin.Skala.Conformance.Sweep")
+                        .SetConfiguration(Configuration)
+                        .EnableNoBuild()
+                        .EnableNoRestore()
+                        .SetApplicationArguments("sweep")
                 )
             );
 

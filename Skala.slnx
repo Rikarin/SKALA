@@ -29,6 +29,8 @@
   <Folder Name="/Testing/">
     <Project Path="Testing/Rikarin.Skala.Testing/Rikarin.Skala.Testing.csproj" />
     <Project Path="Testing/Rikarin.Skala.Conformance.Tests/Rikarin.Skala.Conformance.Tests.csproj" />
+    <Project Path="Testing/Rikarin.Skala.Conformance.Sweep/Rikarin.Skala.Conformance.Sweep.csproj" />
+    <Project Path="Testing/Rikarin.Skala.Conformance.Sweep.Tests/Rikarin.Skala.Conformance.Sweep.Tests.csproj" />
   </Folder>
   <Folder Name="/Distribution/">
     <Project Path="Distribution/Rikarin.Skala.Canonical/Rikarin.Skala.Canonical.csproj" />
