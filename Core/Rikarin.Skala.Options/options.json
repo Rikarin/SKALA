@@ -6875,11 +6875,11 @@
       "type": "enum:QualifyWith",
       "default": "declared_type",
       "defaultSource": "template",
-      "tier": "A",
+      "tier": "D",
       "construct": "StaticMembersQualification",
       "summary": "Static members qualification — Qualify with the name of",
       "since": "0.1",
-      "oracle": "constructs/arrangement/redundancy/static-qualifier.cs",
+      "oracle": null,
       "docs": "https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpCodeStylePageImplSchema.html#resharper_csharp_static_members_qualify_with",
       "templateLine": 1095,
       "expands": []

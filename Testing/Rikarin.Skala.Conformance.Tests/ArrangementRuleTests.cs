@@ -181,22 +181,33 @@ public sealed class ArrangementRuleTests {
     }
 
     [Fact]
-    public void Parentheses_AreRemovedOnlyUnderAggressive() {
+    public void Parentheses_AreRemovedByDefault_AndOnlyWherePrecedenceAllows() {
+        // ⚠ This test asserted the opposite until the gate was lifted. SK-DIV-0014 gated parenthesis
+        // removal behind `--aggressive` for the first release and named the condition for revisiting
+        // it; the condition is met and the gate cost 4.25 points of changed-span agreement against an
+        // oracle whose own profile removes these by default.
         const string source = """
                               namespace P;
                               public class C {
                                   public int M(int a, int b, int c) { return a + (b * c); }
                                   public int N(int a, int b, int c) { return a - (b - c); }
+                                  public int O(int a, int b, int c) { return a | (b & c); }
+                                  public bool P(int a, int b, int c) { return (a < b) && (b < c); }
                               }
                               """;
 
-        Assert.Contains("a + (b * c)", Arrange(source), StringComparison.Ordinal);
+        var arranged = Arrange(source, only: ArrangeIds.RedundantParentheses);
+        Assert.Contains("a + b * c", arranged, StringComparison.Ordinal);
 
-        var aggressive = Arrange(source, aggressive: true, only: ArrangeIds.RedundantParentheses);
-        Assert.Contains("a + b * c", aggressive, StringComparison.Ordinal);
+        // ⚠ Never on the right of a non-associative operator: `a - (b - c)` is not `a - b - c`. The
+        // re-parse proof refuses it rather than a precedence table remembering to.
+        Assert.Contains("a - (b - c)", arranged, StringComparison.Ordinal);
 
-        // ⚠ Never on the right of a non-associative operator: `a - (b - c)` is not `a - b - c`.
-        Assert.Contains("a - (b - c)", aggressive, StringComparison.Ordinal);
+        // The bitwise family is a `parentheses_non_obvious_operations` member and keeps its own.
+        Assert.Contains("a | (b & c)", arranged, StringComparison.Ordinal);
+
+        // Relational is `never_if_unnecessary`, even as an operand of `&&`.
+        Assert.Contains("a < b && b < c", arranged, StringComparison.Ordinal);
     }
 
     [Fact]

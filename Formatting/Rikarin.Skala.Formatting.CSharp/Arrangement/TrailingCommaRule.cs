@@ -48,6 +48,19 @@ public sealed class TrailingCommaRule : ArrangementRule {
             return members is null ? visited : visited.WithMembers(members.Value);
         }
 
+        /// <remarks>
+        /// ⚠ A collection expression is a list the grammar admits a trailing comma in, and it is not
+        /// an <c>InitializerExpressionSyntax</c> — <c>[1, 2, 3,]</c> is a
+        /// <c>CollectionExpressionSyntax</c>. Leaving it out made
+        /// <c>trailing_comma_in_singleline_lists</c> unobservable, which the option's own coverage
+        /// test reported as a failure rather than letting the Tier A claim through.
+        /// </remarks>
+        public override SyntaxNode? VisitCollectionExpression(CollectionExpressionSyntax node) {
+            var visited = (CollectionExpressionSyntax)base.VisitCollectionExpression(node)!;
+            var elements = Adjust(visited.Elements, node.CloseBracketToken, node);
+            return elements is null ? visited : visited.WithElements(elements.Value);
+        }
+
         public override SyntaxNode? VisitAnonymousObjectCreationExpression(
             AnonymousObjectCreationExpressionSyntax node
         ) {
