@@ -369,24 +369,55 @@ static int RegenerateCleanup(
 
     Console.WriteLine($"oracle: profile={profile.Name} over {files.Length.ToString(CultureInfo.InvariantCulture)} files");
 
-    var written = 0;
-    const int batch = 60;
-    for (var start = 0; start < files.Length; start += batch) {
-        var slice = files.Skip(start).Take(batch).ToArray();
-        var results = runner.Format(slice, editorConfig, null, profile);
-        foreach (var file in slice) {
-            if (results.TryGetValue(file.Path, out var body)) {
+    // ⚠ ONE project holding every file, laid out at its own relative path — not the 60-file batches
+    // of flattened `F0.cs … F59.cs` the format-only profile uses.
+    //
+    // Formatting is per-file and batching is free. Arrangement is not: `var`, target-typed `new` and
+    // using removal are all questions about a compilation, and a batch is a different compilation
+    // from the corpus. Measured, before this was fixed: `JObject o = JObject.Parse(json)` in
+    // Newtonsoft's tests did not convert to `var`, because `JObject`'s own declaration sits in a file
+    // that landed in a different batch and so did not resolve — while `string json` in the statement
+    // above it converted, because `string` needs no resolution. The result was 130 spans of
+    // "skala only" that were not disagreements at all; they were the harness measuring its own
+    // batching. Flattening the names would have the same effect for a different reason: two corpus
+    // files with the same type name in the same directory collide.
+    var scratch = Directory.CreateTempSubdirectory("skala-cleanup-");
+    try {
+        File.Copy(editorConfig, Path.Combine(scratch.FullName, ".editorconfig"));
+        File.WriteAllText(Path.Combine(scratch.FullName, "Oracle.csproj"), OracleRunner.ProjectFile);
+        File.WriteAllText(Path.Combine(scratch.FullName, "Oracle.sln"), OracleRunner.SolutionFile);
+
+        var produced = new Dictionary<string, CorpusFile>(StringComparer.Ordinal);
+        foreach (var file in files) {
+            var target = Path.Combine(
+                scratch.FullName,
+                file.Set,
+                file.RelativePath.Replace('/', Path.DirectorySeparatorChar)
+            );
+
+            Directory.CreateDirectory(Path.GetDirectoryName(target)!);
+            File.Copy(file.Path, target, overwrite: true);
+            produced[target] = file;
+        }
+
+        var results = runner.FormatInPlace(scratch.FullName, [.. produced.Keys], profile);
+        var written = 0;
+        foreach (var (target, file) in produced) {
+            if (results.TryGetValue(target, out var body)) {
                 OracleFixture.Write(file, profile, body, header);
                 written++;
             }
         }
 
-        Console.WriteLine(
-            $"  cleanup: {Math.Min(start + batch, files.Length).ToString(CultureInfo.InvariantCulture)}/{files.Length.ToString(CultureInfo.InvariantCulture)}"
-        );
+        Console.WriteLine($"  cleanup: {written.ToString(CultureInfo.InvariantCulture)} written");
+        return written;
+    } finally {
+        try {
+            scratch.Delete(recursive: true);
+        } catch (IOException) {
+            // A scratch directory the tool still holds open is not worth failing a build over.
+        }
     }
-
-    return written;
 }
 
 // The files of a set whose relative path starts with `--only=`, or all of them when it was absent.

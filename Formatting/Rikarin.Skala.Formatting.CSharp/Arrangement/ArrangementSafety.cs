@@ -119,6 +119,18 @@ public static class ArrangementSafety {
                 continue;
             }
 
+            // ⚠ The ordinal is only meaningful while the *population* of that name in that member is
+            // unchanged. `List<int> a = new List<int>();` ⇒ `var a = new List<int>();` deletes one
+            // `List`, so the 2nd `List` in the method is now the 1st and every later ordinal is
+            // compared against its neighbour — which reports a difference on almost every file that
+            // arranges cleanly. Measured over corpus/real/: this false positive alone reverted 24
+            // files that had nothing wrong with them. Where the count moved, the rewrite changed
+            // that name deliberately and layer 2 has already confirmed the result still binds.
+            if (before.Counts.GetValueOrDefault((key.Name, key.Container))
+                != after.Counts.GetValueOrDefault((key.Name, key.Container))) {
+                continue;
+            }
+
             if (string.Equals(symbol, now, StringComparison.Ordinal)) {
                 continue;
             }
@@ -141,7 +153,16 @@ public static class ArrangementSafety {
 
     readonly record struct BindingKey(string Name, string Container, int Ordinal);
 
-    static Dictionary<BindingKey, string> Bindings(
+    /// <summary>Every identifier's binding, plus how many of each name each member holds.</summary>
+    sealed record BindingSet(
+        Dictionary<BindingKey, string> Symbols,
+        Dictionary<(string Name, string Container), int> Counts) {
+        public bool TryGetValue(BindingKey key, out string value) => Symbols.TryGetValue(key, out value!);
+
+        public Dictionary<BindingKey, string>.Enumerator GetEnumerator() => Symbols.GetEnumerator();
+    }
+
+    static BindingSet Bindings(
         SyntaxNode root,
         SemanticModel model,
         CancellationToken cancellation
@@ -152,6 +173,14 @@ public static class ArrangementSafety {
         foreach (var node in root.DescendantNodes()) {
             cancellation.ThrowIfCancellationRequested();
             if (node is not Microsoft.CodeAnalysis.CSharp.Syntax.SimpleNameSyntax name) {
+                continue;
+            }
+
+            // ⚠ `var` is parsed as an identifier and is not a symbol reference: asking the model
+            // about it returns the *inferred* type, which is by construction different before and
+            // after the rewrite that introduced it. Comparing it compares the rule's output against
+            // the code it replaced and calls every correct conversion a symbol change.
+            if (string.Equals(name.Identifier.ValueText, "var", StringComparison.Ordinal)) {
                 continue;
             }
 
@@ -178,7 +207,7 @@ public static class ArrangementSafety {
                 symbol?.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat) ?? "?";
         }
 
-        return result;
+        return new BindingSet(result, counters);
     }
 
     /// <summary>

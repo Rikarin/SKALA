@@ -31,13 +31,29 @@ public sealed class OptionCoverageTests {
         }
     }
 
+    /// <summary>
+    /// Every option Skala implements: the formatter's and the arranger's.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ Two sets, one claim. Milestone 4 added a second component that reads options, and folding
+    /// its keys into <see cref="PhaseOneOptions.Implemented"/> would have made
+    /// <see cref="EveryImplementedOption_ChangesTheOutputOfItsCorpusFile"/> unprovable for a dozen
+    /// of them — that test formats a file, and an arrangement key changes nothing about formatting.
+    /// The honest shape is to keep the sets apart and measure each against the component that
+    /// implements it, while Tier A stays one claim about the whole tool.
+    /// </remarks>
+    static HashSet<OptionId> Implemented() => [
+        .. PhaseOneOptions.Implemented,
+        .. Rikarin.Skala.Formatting.CSharp.Arrangement.ArrangementOptions.Implemented
+    ];
+
     [Fact]
-    public void TierA_IsExactlyWhatTheFormatterReads() {
+    public void TierA_IsExactlyWhatSkalaReads() {
         // ⚠ Tier A means "Skala reproduces Rider's behaviour, pinned by at least one oracle
         // fixture" (docs/plan/03 § "Four tiers"). It may not rest on a default being known:
         // defaultSource is `template` or `unknown` for every entry in the registry, so the only
         // available evidence is a fixture (docs/plan/03 § "distill", corrected in d081293).
-        var implemented = PhaseOneOptions.Implemented.ToHashSet();
+        var implemented = Implemented();
         var claimed = OptionRegistry.All.Where(static info => info.Tier == OptionTier.A)
             .Select(static info => info.Id)
             .ToHashSet();

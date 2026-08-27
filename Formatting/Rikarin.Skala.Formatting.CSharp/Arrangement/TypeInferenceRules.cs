@@ -62,6 +62,15 @@ public sealed class VarRule : ArrangementRule {
                 return false;
             }
 
+            // ⚠ `const var` is not a thing — CS0822, "Implicitly-typed variables cannot be
+            // constant". Found by safety layer 2 over corpus/real/, on six files, before it was
+            // found by reading.
+            if (node.Parent is LocalDeclarationStatementSyntax declaration
+                && (declaration.Modifiers.Any(SyntaxKind.ConstKeyword)
+                    || declaration.UsingKeyword != default)) {
+                return false;
+            }
+
             // ⚠ `var x = null` and `var x = () => …` do not compile: the initializer has no type of
             // its own to infer. So does a stackalloc in a non-`Span` context, and a method group.
             var initialiserType = model.GetTypeInfo(initializer.Value).Type;
@@ -76,13 +85,32 @@ public sealed class VarRule : ArrangementRule {
             // is not a `var` candidate — converting it changes the static type of `x` and every
             // overload resolved through it. Layer 3 would catch it; layer 1 is supposed to mean it
             // never gets there.
+            //
+            // ⚠ IncludeNullability, not Default, and the difference is not pedantry.
+            // SymbolEqualityComparer.Default considers `string` and `string?` the same symbol, so
+            // `string name = MaybeNull();` looked like a safe conversion and became
+            // `var name = MaybeNull();` — which types `name` as `string?` and changes what the
+            // nullable analysis concludes about every later use of it. Measured over corpus/real/:
+            // this alone produced CS8600 on three files, and made Skala convert declarations the
+            // oracle correctly left alone.
             var declaredType = model.GetTypeInfo(node.Type).Type;
-            if (declaredType is null || !SymbolEqualityComparer.Default.Equals(declaredType, initialiserType)) {
+            if (declaredType is null
+                || !SymbolEqualityComparer.IncludeNullability.Equals(declaredType, initialiserType)) {
                 return false;
             }
 
             // ⚠ An anonymous type already has to be `var`; a pointer never may be.
-            if (initialiserType.IsAnonymousType || initialiserType.TypeKind == TypeKind.Pointer) {
+            if (initialiserType.IsAnonymousType
+                || initialiserType.TypeKind is TypeKind.Pointer or TypeKind.Dynamic) {
+                return false;
+            }
+
+            // ⚠ `Span<byte> s = stackalloc byte[n];` is not `var s = stackalloc byte[n];`. The
+            // declared type is what makes the stackalloc a span; without it the natural type is
+            // `byte*`, which needs an unsafe context and no longer converts to what the next call
+            // expects. Layer 2 found this as CS9360 and CS1503 on two files.
+            if (initializer.Value is StackAllocArrayCreationExpressionSyntax
+                or ImplicitStackAllocArrayCreationExpressionSyntax) {
                 return false;
             }
 
