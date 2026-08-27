@@ -2,7 +2,7 @@
 
 <!-- Generated from Rules/Rikarin.Skala.Rules.Metadata/rules.json. Do not edit. -->
 
-`SK` + four digits, allocated once and never re-purposed (ADR-012). 37 ids are allocated.
+`SK` + four digits, allocated once and never re-purposed (ADR-012). 42 ids are allocated.
 
 ## Async
 
@@ -49,10 +49,15 @@
 
 | Id | Rule | Severity | Fix | Loose mode |
 |---|---|---|---|---|
+| [SK1001](SK1001.md) | Use a collection expression | suggestion | safe | no |
 | [SK1005](SK1005.md) | Use a file-scoped namespace | suggestion | safe | yes |
+| [SK1006](SK1006.md) | Use a `using` declaration | suggestion | safe | yes |
 | [SK1010](SK1010.md) | Use `is null` / `is not null` instead of `==` / `!=` | suggestion | safe | no |
+| [SK1015](SK1015.md) | Use `is T t` instead of `is T` and a cast | suggestion | safe | no |
 | [SK1020](SK1020.md) | Use `ArgumentNullException.ThrowIfNull` | suggestion | safe | no |
 | [SK1030](SK1030.md) | Use `??=` | suggestion | safe | yes |
+| [SK1031](SK1031.md) | Use a null-conditional assignment | suggestion | safe | no |
+| [SK1033](SK1033.md) | Use `TryGetValue` or `TryAdd` instead of `ContainsKey` and a second lookup | suggestion | safe | no |
 | [SK1034](SK1034.md) | Use the `Count` property, not `Count()` or `Any()` | suggestion | safe | no |
 | [SK1035](SK1035.md) | Use `Enum.GetValues<T>()` | suggestion | safe | no |
 

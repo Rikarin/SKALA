@@ -30,3 +30,8 @@ SK5002  | Skala.Security | Error | Request data reaches a process start.
 SK5005  | Skala.Security | Error | A broken cipher (`DES`, `TripleDES`, `RC2`) or ECB mode.
 SK5007  | Skala.Security | Error | A certificate callback that accepts everything.
 SK5009  | Skala.Security | Error | An XML reader that parses a DTD and resolves what it names.
+SK1001  | Skala.Modernization | Info | Use a collection expression where the type is already written.
+SK1006  | Skala.Modernization | Info | Use a `using` declaration where the block runs to the end of the scope.
+SK1015  | Skala.Modernization | Info | Use `is T t` instead of `is T` and a cast.
+SK1031  | Skala.Modernization | Info | Use a null-conditional assignment.
+SK1033  | Skala.Modernization | Info | Use `TryGetValue` / `TryAdd` instead of `ContainsKey` and a second lookup.
