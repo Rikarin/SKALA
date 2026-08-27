@@ -27,7 +27,7 @@ public static class ArrangeIds {
     public const string Reverted = "SK9098";
 
     /// <summary>⚠ A rewrite was reverted because an identifier in it resolved to a different symbol.</summary>
-    public const string SymbolChanged = "SK9099";
+    public const string SymbolChanged = "SK9096";
 
     public static string NameOf(string id) =>
         id switch {

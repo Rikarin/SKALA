@@ -212,7 +212,8 @@ IDE and the oracle disagree (`autodetect_indent_settings`, `use_indent_from_vs`)
 option · `SK9014` `.editorconfig` carries no canonical block ·
 `SK9010` file did not parse · `SK9011` unbalanced preprocessor
 structure, not formatted · `SK9020` binlog stale for a file · `SK9021` binlog missing a file ·
-`SK9030` analyzer threw · `SK9031` analyzer failed to load · `SK9098` arrangement reverted, new
+`SK9030` analyzer threw · `SK9031` analyzer failed to load · `SK9096` arrangement reverted, a touched identifier now resolves to a different symbol ·
+`SK9097` the format-and-arrange pipeline did not reach a fixed point · `SK9098` arrangement reverted, new
 diagnostics · `SK9099` **formatter output was not token-equivalent** — the one that means "stop and
 file a bug".
 
