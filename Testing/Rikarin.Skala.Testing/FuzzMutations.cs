@@ -611,6 +611,19 @@ public static class FuzzMutations {
                     continue;
                 }
 
+                // ⚠ An absorbed mutation may not touch the *interior* of a verbatim region, and the
+                // head/tail protection above does not cover it: `Protect(…, whole: false)` marks the
+                // line a region starts on and the line it ends on, which leaves every line between
+                // them open. That is correct for a token — nothing is between the two ends of one —
+                // and wrong for a multi-line raw string, whose interior lines carry the string's
+                // own value. Indenting one changes what the program prints while changing no token
+                // the parser reports, so the absorption property fails for the fuzzer's reason
+                // rather than the formatter's. Found when a pathological fixture carrying an
+                // interpolated raw string with nested braces entered the corpus.
+                if (absorbing && TouchesVerbatimRegion(Text.Lines[i].Span)) {
+                    continue;
+                }
+
                 if (excludeCommentEnds && commentEndedLines.Contains(i)) {
                     continue;
                 }
@@ -629,10 +642,30 @@ public static class FuzzMutations {
             // Lines that carry data rather than whitespace: anything a token or an interpolated
             // string spans across, plus disabled text and multi-line comments in full.
             foreach (var token in root.DescendantTokens(descendIntoTrivia: true)) {
-                Protect(token.SpanStart, token.Span.End, whole: false);
+                // ⚠ `whole: true` for a token that spans lines, and that is the rule rather
+                // than a list of string kinds. A single-line token has nothing between its two
+                // ends, so protecting head and tail protects all of it; a token that spans lines
+                // has *interior* lines that are its own value — a multi-line raw string, a
+                // verbatim string, an interpolated string with newlines in its holes. Indenting
+                // one changes what the program prints while changing no token the parser reports
+                // at that position, so the absorption property fails for the fuzzer's reason
+                // rather than the formatter's. Found when a pathological fixture carrying a raw
+                // interpolated string with nested braces entered the corpus at the M9 merge.
+                var spansLines = Text.Lines.GetLineFromPosition(token.SpanStart).LineNumber
+                    != Text.Lines.GetLineFromPosition(token.Span.End).LineNumber;
+                Protect(token.SpanStart, token.Span.End, whole: spansLines);
             }
 
             foreach (var node in root.DescendantNodes()) {
+                if (node is LiteralExpressionSyntax literal
+                    && literal.Token.IsKind(SyntaxKind.MultiLineRawStringLiteralToken)) {
+                    // ⚠ A multi-line raw string is one *token*, so the token loop above protects
+                    // only the line it starts on and the line it ends on — every interior line,
+                    // which is where the string's own value lives, was left open.
+                    verbatimRegions.Add(node.Span);
+                    Protect(node.SpanStart, node.Span.End, whole: false);
+                }
+
                 if (node is InterpolatedStringExpressionSyntax) {
                     // ⚠ Verbatim by NodeLayout, so every character inside one is copied
                     // byte-for-byte and no mutation may reach it — not the multi-line ones only.
@@ -771,6 +804,17 @@ public static class FuzzMutations {
         bool InOtherDisabledText(int position) {
             foreach (var region in otherDataRegions) {
                 if (position >= region.Start && position <= region.End) {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        /// <summary>⚠ Intersection, not containment: a region may start mid-line.</summary>
+        bool TouchesVerbatimRegion(TextSpan line) {
+            foreach (var region in verbatimRegions) {
+                if (line.End > region.Start && line.Start < region.End) {
                     return true;
                 }
             }

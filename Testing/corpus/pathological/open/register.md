@@ -30,31 +30,6 @@ measure.
 pair: `<name>.cs` is the mutated input and `<name>.baseline.cs` is what it was mutated from, and the
 two must differ only in whitespace. The test formats both and asserts the outputs still differ.
 
-## SK-FUZZ-0001 — `skala format` throws on `@formatter:off` running to a whitespace-only end of file
-
-- file: `formatter-off-to-end-of-file-with-trailing-space.cs`
-- property: `crash`
-- seed: `17252315466773767716`
-- found: mutating `pathological/formatter-off-to-end-of-file.cs` with `trailing-space`, `widen-gap`,
-  `trailing-space`; minimised from 102 characters to 32.
-
-`IndexOutOfRangeException` out of `EditEmitter.AddIfDifferent`
-(`Formatting/Rikarin.Skala.Formatting/TextEdit.cs`), **unhandled** — it escapes `FormatCommand`, the
-`.skala/crash/` snapshot handler and the CLI's top level, so the process dies with a stack trace
-rather than reporting SK9098 and leaving the file alone.
-
-The three ingredients, established by hand from the minimised case:
-
-| input | outcome |
-|---|---|
-| `class C {\n// @formatter:off\n}   ` (no final newline) | **throws** |
-| `class C {\n// @formatter:off\n}` | fine |
-| `class C {\n}   ` | fine |
-
-So it needs a verbatim region that is still open at the end of file *and* trailing whitespace after
-the last token *and* no final newline. The anchor list that `EditEmitter.Emit` walks ends with an
-output offset past the end of the string it indexes.
-
 ## SK-FUZZ-0002 — a `///` comment that starts on the brace line loses its continuation lines
 
 - file: `doc-comment-starting-on-the-brace-line.cs`
@@ -138,46 +113,6 @@ through a formatter, so its `]` is already at four, the first pass agrees with i
 holds. It takes an input whose `]` starts at zero to make the first pass disagree with the second,
 and `split-line` produced one in a run of nine thousand cases.
 
-## SK-FUZZ-0005 — an interpolated string inside a formatter-off span breaks token equivalence
-
-- file: `interpolated-string-inside-a-formatter-off-span.cs`
-- property: `token-equivalence`
-- seed: `n/a — found by ./build.sh Lint on Testing/Rikarin.Skala.Testing/Fuzzer.cs`
-- found: `Lint` refused to format the fuzzer's own source; minimised with the fuzzer's own
-  `fuzz --minimise=<file> --property=token-equivalence`, 33 432 characters to 542 in 382
-  evaluations, and narrowed by hand to 74.
-
-```
-class C {
-  void M() {
-  // @formatter:off
-  }
-  void N() {
-  X($"a {b} c");
-  }
-}
-```
-
-```
-error SK9099: not written, the formatted output has a different token stream
-(at token 24: 'T8201:)' became 'T8201:')
-```
-
-Everything after the tag is a verbatim region copied byte-for-byte, so token equivalence ought to
-hold there trivially. It does not when the region contains an interpolated string: remove the `$` and
-the file formats; remove the tag and the file formats.
-
-⚠ This is the same corner as SK-FUZZ-0001, from the other side — a formatter-off span that runs to
-the end of the file — and the two together say the region's end handling is what wants looking at.
-
-⚠ **It has a second edge that is worth knowing separately from the defect.**
-`CSharpDocumentBuilder.ContainsTag` is a plain `Contains` over a comment's text, so a comment that
-merely *mentions* the tag turns formatting off from that point to the end of the file. That is how
-this was found: a paragraph in `Fuzzer.cs` explaining that a formatter-off span opts a case out of
-the absorption property switched formatting off for the rest of the file, and the interpolated
-strings below it then tripped SK9099. The comment is now written without the literal tag, and says
-why. A file that documents a directive should not be governed by it.
-
 ## SK-FUZZ-0006 — a comment between two usings, and arrangement stops being a fixed point
 
 - file: `comment-between-usings-with-inner-whitespace.cs`
@@ -227,3 +162,54 @@ output's — so a gap the formatter is about to collapse changes a decision abou
 entirely. docs/plan/16 § R2 argues the fitter is the only genuinely novel code in the project and
 that the property suite is what contains its risk; this is that risk, in four lines, found by the
 only mutation in the catalogue that changes a width.
+
+## SK-FUZZ-0008 — the `indent` mutation is misclassified as absorbed on a raw interpolated string
+
+⚠ **A defect in the fuzzer's own catalogue, not in the formatter.** `pathological/interpolated-raw-string-with-nested-braces.cs`:
+
+```csharp
+class C {
+    string M(int a) => $$"""
+        {{{a}}} and a literal {{ brace
+        """;
+}
+```
+
+`FuzzMutations.Indent` is declared `MutationClass.Absorbed` — whitespace-only, and therefore subject
+to the strongest property the suite has. On this file it writes four spaces into the raw string's
+text token, which is **data**: a raw string literal's content is measured against the indentation of
+its closing delimiter, so indenting a content line changes what the program prints while changing no
+token the parser reports *at that position*. `AnAbsorbedMutation_ChangesNoToken` fails, correctly,
+and the formatter never runs.
+
+⚠ **Three fixes were attempted in `SourceMap` and none of them was it.** Two are kept because they
+are right in their own right and would have been needed anyway: multi-line raw string literals are
+now registered as verbatim regions (the token loop never saw them, since a raw string is one token
+and the node loop only matched interpolated strings), and the safe-line test is an *intersection*
+rather than a containment, because a region may begin mid-line. The third — protecting every line a
+multi-line token spans — is also kept and also did not fix it, which is the part that says the cause
+is not yet understood.
+
+**Excluded by name** from `AnAbsorbedMutation_ChangesNoToken`, and by name only: widening the
+exclusion to raw strings in general would silence the class the fuzzer exists to find. Every other
+property still runs over this file.
+
+- property: `whitespace-absorption` (fuzzer-oracle)
+- ⚠ status: **open**, reproduced and minimised, cause not established
+- ⚠ ⚠ This is the *only* entry here whose defect is in the test harness rather than the tool. When it
+  is fixed the exclusion goes, not the fixture.
+
+---
+
+## Retired
+
+Kept as a list rather than deleted, because "what the fuzzer has already caught" is the evidence
+that it is worth running — and an empty register would read as a fuzzer that finds nothing.
+
+| | property | fixed by |
+|---|---|---|
+| `SK-FUZZ-0001` | crash — `@formatter:off` running to a whitespace-only end of file threw out of `EditEmitter`, past the crash handler, out of the process | the formatter-tag pass. `EditEmitter` indexed past the output because the file-level rules shorten it *after* the writer ran; and the exit code was wrong until `EnableDefaultExceptionHandler = false`, because System.CommandLine was swallowing the exception before any handler saw it |
+| `SK-FUZZ-0005` | token equivalence — an interpolated string inside a formatter-off span | the same pass: `EmitVerbatim` was writing a node a second time inside an already-written region |
+
+Their reproductions now live in `Testing/corpus/pathological/` as ordinary measured fixtures, which
+is where a case belongs once the tool can process it.
