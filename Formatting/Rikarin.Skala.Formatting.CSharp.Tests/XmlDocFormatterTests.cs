@@ -7,13 +7,14 @@ using Rikarin.Skala.Options;
 
 namespace Rikarin.Skala.Formatting.CSharp.Tests;
 
-/// <summary>Runs the pipeline with the documentation-comment sub-formatter switched on.</summary>
+/// <summary>Runs the pipeline, which formats documentation comments by default.</summary>
 /// <remarks>
 /// ⚠ These fixtures assert <b>the semantics JetBrains' settings pages state</b>, not the oracle's
-/// behaviour, and the difference is the whole of SK-DIV-0006: <c>jb cleanupcode</c> 2025.2.6 returns
-/// every doc comment exactly as written, so there is no <c>.expected.cs</c> that could pin any of
-/// this. Every other option in Skala is pinned the other way. That is why the sub-formatter is
-/// opt-in and why none of its keys is Tier A.
+/// behaviour, and the difference is the whole of SK-DIV-0006: the committed <c>.expected.cs</c>
+/// fixtures were produced by a profile that does not run ReSharper's own
+/// <c>CSharpFormatDocComments</c> task, so every one of them returns its doc comments exactly as
+/// written and none of them can pin any of this. Every other option in Skala is pinned the other
+/// way. That is why none of these keys is Tier A — not because the behaviour is optional.
 /// </remarks>
 public static class XmlDoc {
     static FormattingOptions Resolve(params (string Key, string Value)[] overrides) =>
@@ -44,16 +45,24 @@ public static class XmlDoc {
 
 public sealed class XmlDocSubFormatterTests {
     [Fact]
-    public void WithoutTheFlag_TheOracleAgreementIsUntouched() {
-        // ⚠ The default path is the measurement of SK-DIV-0006 and stays that way: no marker space,
-        // no re-wrap, byte-identical. constructs/trivia/resharper_space_after_triple_slash.cs pins
-        // the same fact against the oracle itself.
+    public void UnderNoXmlDoc_TheOracleAgreementIsUntouched() {
+        // ⚠ The escape hatch, and it is now the only thing that reproduces what the pinned oracle
+        // profile does: no marker space, no re-wrap, byte-identical. Asserted rather than assumed,
+        // because `--no-xmldoc` is what a tree that wants the old answer reaches for and a kill
+        // switch that half-works is worse than none.
         const string source = "class C {\n    ///<summary>A summary line.</summary>\n    void M() { }\n}\n";
-        Assert.Contains("///<summary>A summary line.</summary>", Format.Text(source), StringComparison.Ordinal);
+        var options = OptionResolver
+            .Resolve(Path.Combine(Rikarin.Skala.Testing.Corpus.RepositoryRoot, "Test.cs"))
+            .Options;
+        var formatted = CSharpFormatter
+            .Format("Test.cs", SourceText.From(source), options, null, null, xmlDoc: false)
+            .Formatted;
+
+        Assert.Contains("///<summary>A summary line.</summary>", formatted, StringComparison.Ordinal);
     }
 
     [Fact]
-    public void SpaceAfterTripleSlash_IsInsertedOnlyUnderTheFlag() {
+    public void SpaceAfterTripleSlash_IsInserted() {
         var source = XmlDoc.InClass("///<summary>Docs.</summary>");
         Assert.Contains("/// <summary>Docs.</summary>", XmlDoc.Text(source), StringComparison.Ordinal);
     }
