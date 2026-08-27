@@ -95,9 +95,7 @@ public static class OptionSurface {
                     bump = BumpKind.Major;
                     details.Add($"`{key}` **default changed**: `{before.Default}` → `{after.Default}`");
                 } else {
-                    details.Add(
-                        $"`{key}` default changed while inert: `{before.Default}` → `{after.Default}`"
-                    );
+                    details.Add($"`{key}` default changed while inert: `{before.Default}` → `{after.Default}`");
                 }
             }
 
