@@ -13,45 +13,51 @@ on:
   workflow_dispatch:
     inputs:
       seed:
-        description: "Fuzz seed. Empty means the run id, which is recorded either way."
+        description: "Fuzz seed. Empty means the run id. A failure replays from the case seed it prints."
         required: false
         default: ""
+      minutes:
+        description: "Fuzz budget in minutes. doc 12 asks for a time budget rather than a case count."
+        required: false
+        default: "60"
 
 permissions:
   contents: read
 
 jobs:
   # ────────────────────────────────────────────────────────────────────────────────────────────
-  # doc 12 § "4. Fuzzing".
+  # doc 12 § "4. Fuzzing", all four parts of it.
   #
-  # ⚠ **Read this before believing the job name.** doc 12 asks for two things that do not exist in
-  # this repository yet, and this job runs the third:
+  # ⚠ **This job's header used to say that three of the four did not exist**, and listing them was
+  # the honest thing to do at M7 — the job ran the property suite over the committed corpus, which
+  # is a regression suite rather than a fuzzer. They exist now, in `Testing/Rikarin.Skala.Testing`:
   #
-  #   ✗ **Mutation fuzzing**, seeded: take a corpus file, apply random parse-preserving mutations
-  #     (whitespace, comments at trivia positions, `#if` blocks, line-ending swaps, BOM injection,
-  #     identifier widening) and assert the properties — in particular the strong one,
-  #     `format(mutate_whitespace(x)) ≡ format(x)`.
-  #   ✗ **Generative fuzzing** from a grammar weighted toward generics, lambdas, patterns,
-  #     initializers, attributes and raw strings.
-  #   ✓ **The properties themselves**, which is what both of the above would assert. All six —
-  #     idempotency, token equivalence, parse stability, determinism, range consistency, whitespace
-  #     absorption — run over every corpus file under both symbol sets: 8 981 cases.
+  #   ✓ **Mutation fuzzing**, seeded. Nineteen parse-preserving mutations over a corpus file —
+  #     whitespace, comments at trivia positions, `#if` blocks, line-ending swaps, BOM injection,
+  #     identifier widening — split into the five whitespace-only ones the strong property
+  #     `format(mutate_whitespace(x)) ≡ format(x)` is asserted over and the fourteen structural
+  #     ones it is not.
+  #   ✓ **Generative fuzzing** from a grammar weighted toward generics, lambdas, patterns,
+  #     initializers, attributes and raw strings, printed with random whitespace.
+  #   ✓ **A delta-debugging minimiser** behind every failure, and
+  #     `Testing/corpus/pathological/open/` for what it produces.
+  #   ✓ **The properties**, now seven and asserted over both halves under both symbol sets.
   #
-  # `Testing/Rikarin.Skala.Testing`'s harness has fourteen subcommands (`oracle`, `fidelity`,
-  # `dump`, `variants`, `probe`, `ask`, `defaults`, `audit`, `preprocessor`, `sample`, `margin`,
-  # `tree`, `locate`, `constructs`) and **none of them is a fuzzer**. The one mutation function in
-  # the tree, `PropertyTests.MutateIndentationOnly`, is deterministic and private to a test class:
-  # it is a fixed transformation applied once per file, not a seeded stream. So there is no seed for
-  # this job to pass and no corpus-minimising delta-debugger for it to hand a failure to, and
-  # wiring an unread `--seed` through the YAML would be a claim rather than a mechanism.
+  # ⚠ **Two steps, and the difference between them is the point.** The property suite over the
+  # committed corpus is a *gate*: it must pass, and a failure means a regression. The fuzz run is an
+  # *expedition*: it explores inputs nobody has committed, and a failure means a discovery. Running
+  # both here, in that order, is what makes a red nightly readable — the gate says whether today
+  # broke something, the expedition says what was found.
   #
-  # What is here is honest and is not nothing: it is the assertion half of the fuzzer running at
-  # nightly cadence over the whole corpus, with the crash artefacts the formatter already writes
-  # collected. What has to be built for this job to earn its name is a seeded mutation driver
-  # inside `Testing/`, and a `fuzz <seed> [minutes]` subcommand for it to be reached through.
+  # ⚠ The seed is now read. `--seed` reaches `FuzzRandom`, every case is
+  # `FuzzRandom.Derive(seed, index)` and nothing else, and a failure prints the case seed it
+  # replays from. A twelve-hour run that stopped on case 41 907 hands back one number that rebuilds
+  # that case in a second, on any machine, on any runtime — which is why the stream is SplitMix64
+  # rather than `System.Random`, whose sequence for a seed is an implementation detail .NET has
+  # changed before.
   # ────────────────────────────────────────────────────────────────────────────────────────────
   fuzz:
-    name: properties over the corpus (fuzzing, minus the fuzzer)
+    name: the properties, and the fuzzer over them
     runs-on: ubuntu-latest
     timeout-minutes: 180
 
@@ -62,31 +68,79 @@ jobs:
         with:
           global-json-file: global.json
 
-      - name: Record the seed
-        run: |
-          SEED="${{ inputs.seed }}"
-          echo "seed: ${SEED:-${{ github.run_id }}} (recorded; nothing reads it yet — see the header)"
-
       - name: Build
         run: dotnet build Skala.slnx -c Release
 
       # ⚠ The properties, not the fidelity number. Fidelity is a measurement against a ratchet and
       # belongs to the gate; a property is a statement that must hold for every input, which is the
       # thing a fuzzer exists to falsify.
-      - name: The six properties, over every corpus file, under both symbol sets
+      - name: The gate — the properties over every corpus file, under both symbol sets
         run: ./build.sh Conformance --configuration Release
 
-      # ⚠ `if: always()`, because the artefacts matter exactly when the step above failed. The
-      # formatter writes a crash snapshot — the input, the options and the stack — under
-      # `.skala/crash/<hash>/` (`CrashArtifacts`), and doc 12 § "Corpus expansion" says any crash is
-      # minimised and committed to `Testing/corpus/pathological/`. Minimising is by hand until the
-      # delta-debugger the header asks for exists; this is what there is to minimise.
-      - name: Keep any crash snapshot
+      # ⚠ A **time budget**, which is what doc 12 asks for, rather than a case count. The clock
+      # bounds the loop and never enters a case: a run that managed 41 907 cases on a fast runner
+      # and 18 200 on a slow one executed the same first 18 200, and any of them replays from its
+      # own seed. The report says what the run covered — cases, how many reached the formatter, how
+      # many corpus files were mutated, how many units were generated, and the histogram of which
+      # mutations were drawn — because "the fuzzer found nothing" means nothing without it.
+      #
+      # ⚠ `continue-on-error`, and it is not laxity. A finding here is a *discovery about an input
+      # nobody has committed*, and the two steps after it are the ones that turn it into something
+      # actionable; failing the job at this line would skip them. The job still goes red, at the
+      # gate below, once the artefacts are safe.
+      - name: The expedition — seeded mutation and generative fuzzing, on a time budget
+        id: fuzz
+        continue-on-error: true
+        run: >
+          dotnet run --project Testing/Rikarin.Skala.Testing -c Release --no-build --
+          fuzz
+          --seed=${{ inputs.seed || github.run_id }}
+          --minutes=${{ inputs.minutes || 60 }}
+          --arrange-every=25
+          --out=.skala/fuzz
+
+      # ⚠ Break the formatter deliberately, one property at a time, and check the fuzzer notices.
+      # A fuzzer that finds nothing on a given night is the ordinary case; a fuzzer that *cannot*
+      # find anything looks exactly the same from the outside, and this is the difference. It caught
+      # a real gap the day it was written: range consistency could not tell a correct edit list from
+      # one collapsed into a single whole-file edit.
+      - name: The fuzzer's own oracle, mutation-tested
+        run: >
+          dotnet run --project Testing/Rikarin.Skala.Testing -c Release --no-build --
+          fuzz --mutation-test --cases=400 --seed=${{ inputs.seed || github.run_id }}
+
+      - name: Publish the fuzz report
+        if: always()
+        run: cat .skala/fuzz.md >> "$GITHUB_STEP_SUMMARY" || true
+
+      # ⚠ `if: always()`, because the artefacts matter exactly when a step above failed. Two kinds:
+      # the crash snapshot the formatter writes for itself under `.skala/crash/<hash>/`
+      # (`CrashArtifacts`), and the **minimised** artefact the fuzzer writes under `.skala/fuzz/` —
+      # one `.cs` file per property found, byte for byte with no trailing trim, beside a `.txt`
+      # naming the seed, the origin file, the mutation sequence and how the property fails on the
+      # reduction. doc 12 § "Corpus expansion": that file is what gets committed to
+      # `Testing/corpus/pathological/`, and it is now a download rather than an afternoon.
+      - name: Keep the crash snapshots and the minimised findings
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: crash-artefacts
-          path: .skala/crash/
+          name: fuzz-findings
+          path: |
+            .skala/crash/
+            .skala/fuzz/
+            .skala/fuzz.md
+          if-no-files-found: ignore
+
+      # ⚠ Now the job goes red, after the artefacts are safe and the report is in the summary.
+      # `continue-on-error` above deferred the failure; it did not forgive it.
+      - name: Fail if the expedition found something
+        if: steps.fuzz.outcome == 'failure'
+        run: |
+          echo "::error::the fuzzer found a property violation — see the run summary and the"
+          echo "::error::fuzz-findings artefact. Each finding replays from its own seed with"
+          echo "::error::  dotnet run --project Testing/Rikarin.Skala.Testing -- fuzz --replay=<seed>"
+          echo "::error::and is committed to Testing/corpus/pathological/open/ with a register entry."
+          exit 1
           if-no-files-found: ignore
 
   # ────────────────────────────────────────────────────────────────────────────────────────────

@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using System.Reflection;
 
 namespace Rikarin.Skala.Testing;
@@ -48,6 +49,38 @@ public static class Corpus {
     /// </remarks>
     public const string ArrangementPrefix = "arrangement/";
 
+    /// <summary>
+    /// A symbol set that makes a conditional body live, for the properties to be asserted under.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ Not the oracle's own eighteen, and it does not need to be. What a *fidelity* measurement
+    /// needs is the symbols the oracle actually had (<c>fidelity preprocessor</c> reads them out of
+    /// a binary log for exactly that reason); what a *property* needs is only that <c>#if</c> bodies
+    /// stop being disabled text, because that is the code path the properties were never asserted
+    /// over. A hard-coded list keeps the suite runnable on a machine with no SDK probe and no
+    /// oracle.
+    /// <para>
+    /// ⚠ It lives here rather than in the conformance test project because the fuzzer needs it too
+    /// and the fuzzer is a library, not a test. Two lists would be two answers to "what does
+    /// <c>defined</c> mean", and the second one would drift.
+    /// </para>
+    /// </remarks>
+    public static readonly ImmutableArray<string> PropertySymbols = [
+        "DEBUG",
+        "TRACE",
+        "NET",
+        "NET10_0",
+        "NETCOREAPP",
+        "NET5_0_OR_GREATER",
+        "NET6_0_OR_GREATER",
+        "NET7_0_OR_GREATER",
+        "NET8_0_OR_GREATER",
+        "NET9_0_OR_GREATER",
+        "NET10_0_OR_GREATER",
+        "HAVE_ASYNC",
+        "FEATURE_SPAN"
+    ];
+
     public static string RepositoryRoot { get; } =
         Assembly.GetExecutingAssembly()
             .GetCustomAttributes<AssemblyMetadataAttribute>()
@@ -67,10 +100,27 @@ public static class Corpus {
         return [
             .. Directory.EnumerateFiles(root, "*.cs", SearchOption.AllDirectories)
                 .Where(static path => !path.EndsWith(".expected.cs", StringComparison.Ordinal))
-                .OrderBy(static path => path, StringComparer.Ordinal)
                 .Select(path => new CorpusFile(set, Path.GetRelativePath(root, path).Replace('\\', '/'), path))
+                .Where(static file => !IsOpenDefect(file.RelativePath))
+                .OrderBy(static file => file.Path, StringComparer.Ordinal)
         ];
     }
+
+    /// <summary>
+    /// <c>pathological/open/</c> — minimised fuzz findings whose defect is not fixed yet.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ Excluded from every measured set, and the exclusion is the point rather than a dodge. One
+    /// of the entries makes <c>skala format</c> throw an unhandled exception, and a file that throws
+    /// does not fail one assertion — it takes down every harness path that formats the corpus, the
+    /// fidelity number and the differential report included. What holds those files to account
+    /// instead is <c>OpenDefectTests</c>, which asserts that each of them <b>still fails, in the way
+    /// its register entry records</b>: a defect that gets fixed breaks that suite and is told to
+    /// move its file into <c>pathological/</c> proper with an oracle fixture. See
+    /// <c>Testing/corpus/pathological/open/register.md</c>.
+    /// </remarks>
+    static bool IsOpenDefect(string relativePath) =>
+        relativePath.StartsWith(OpenDefects.OpenDirectory + "/", StringComparison.Ordinal);
 
     public static IReadOnlyList<CorpusFile> All() => [.. Files(Constructs), .. Files(Real), .. Files(Pathological)];
 

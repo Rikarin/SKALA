@@ -20,27 +20,11 @@ public static class CorpusFormatter {
     /// A symbol set that makes a conditional body live, for the properties to be asserted under.
     /// </summary>
     /// <remarks>
-    /// ⚠ Not the oracle's own eighteen, and it does not need to be. What a *fidelity* measurement
-    /// needs is the symbols the oracle actually had (`fidelity preprocessor` reads them out of a
-    /// binary log for exactly that reason); what a *property* needs is only that `#if` bodies stop
-    /// being disabled text, because that is the code path the properties were never asserted over.
-    /// A hard-coded list keeps the suite runnable on a machine with no SDK probe and no oracle.
+    /// ⚠ The list moved to <see cref="Corpus.PropertySymbols"/> when the fuzzer needed it, because
+    /// the fuzzer is a library and this is a test class. What <c>defined</c> means has one answer or
+    /// it drifts; this alias is what keeps every existing call site pointing at it.
     /// </remarks>
-    public static readonly ImmutableArray<string> Symbols = [
-        "DEBUG",
-        "TRACE",
-        "NET",
-        "NET10_0",
-        "NETCOREAPP",
-        "NET5_0_OR_GREATER",
-        "NET6_0_OR_GREATER",
-        "NET7_0_OR_GREATER",
-        "NET8_0_OR_GREATER",
-        "NET9_0_OR_GREATER",
-        "NET10_0_OR_GREATER",
-        "HAVE_ASYNC",
-        "FEATURE_SPAN"
-    ];
+    public static ImmutableArray<string> Symbols => Corpus.PropertySymbols;
 
     public static FormatResult Format(CorpusFile file, bool defined = false) {
         var text = CSharpFormatter.Read(file.Path);

@@ -331,30 +331,166 @@ on every file in every test run.
 
 ### 4. Fuzzing
 
-Nightly, unbounded, seeded and reproducible:
+Nightly, bounded by a wall clock rather than a case count, seeded and reproducible. The whole thing
+is `Testing/Rikarin.Skala.Testing`'s `fuzz` subcommand:
 
-- **Mutation fuzzing.** Take a corpus file, apply random text mutations that keep it parseable
-  (insert/delete whitespace, insert comments at random trivia positions, insert `#if` blocks, swap
-  line endings, inject BOM, widen identifiers). Assert the properties above. Whitespace-only
-  mutations must be *absorbed*: `format(mutate_whitespace(x)) ≡ format(x)` — a strong property that
-  the preservation model makes non-trivial and interesting.
-- **Generative fuzzing.** Build random syntax trees from a grammar weighted toward the constructs the
-  formatter handles specially (generics, lambdas, patterns, initializers, attributes, raw strings),
-  print them with random whitespace, and assert the properties.
-- **Corpus expansion.** Any crash, non-idempotent case or token-equivalence failure is minimised
-  (delta-debugging on the input) and committed to `corpus/pathological/` with the bug reference. The
-  corpus only grows.
+```
+fuzz [--seed=N] [--minutes=N | --cases=N] [--mode=mutate|generate|both]
+     [--arrange-every=N] [--out=DIR] [--no-minimise] [--jobs=N]
+fuzz --replay=SEED          re-execute one case from its seed alone and print it
+fuzz --check=FILE           assert the seven properties over one file, read byte for byte
+fuzz --grammar-check[=N]    does the generative grammar emit C# that parses?
+fuzz --mutation-test        break the formatter deliberately; check the fuzzer notices
+```
 
-⚠ **M7 installed the nightly job and did not write the fuzzer, and the difference matters.**
-`.github/workflows/nightly.yml` runs the property suite — all six properties over every corpus file
-under both symbol sets, **8 981 cases** — and uploads any `.skala/crash/` artefacts. That is the
-*assertion half* of what this section describes. What does not exist: a seeded mutation driver, the
-weighted generative grammar, and the delta-debugging minimiser that turns a failure into a committed
-`corpus/pathological/` entry. The only mutation function in the tree is
-`PropertyTests.MutateIndentationOnly`, a deterministic transform applied once per file and private
-to a test class — so there is no seed to pass and nothing to reproduce from. The workflow's header
-says so rather than implying otherwise by existing, and a `--seed` flag was deliberately not
-threaded through the YAML to a parameter nothing reads.
+**Mutation fuzzing.** `FuzzMutations` — nineteen text mutations over a corpus file, each required to
+keep the file parsing the way it parsed before, drawn by weight from a seeded stream:
+
+| class | mutations |
+|---|---|
+| **absorbed** — whitespace and nothing else | `indent`, `trailing-space`, `widen-gap`, `collapse-gap`, `tabs` |
+| **structural** — parse-preserving, information-bearing | `comment-line`, `comment-inline`, `trailing-comment`, `blank-lines`, `remove-blank-line`, `if-true`, `if-disabled`, `region`, `pragma`, `line-endings`, `bom`, `widen-identifier`, `join-line`, `split-line` |
+
+The absorbed five carry the strong property, `format(mutate_whitespace(x)) ≡ format(x)`, which the
+preserve-and-repair model of ADR-002 makes genuinely hard rather than trivially true.
+`widen-identifier` is drawn as hard as they are and for a different reason: it is the only mutation
+that changes a line's *width*, which is the input every decision of the fitting engine is a function
+of — [16](16-risks-and-open-questions.md) § R2's argument that the fitter is the project's only
+genuinely novel code is also the argument for that weight.
+
+**Generative fuzzing.** `FuzzGenerator` — a grammar weighted toward what the formatter handles
+specially: generics, lambdas, patterns, initializers, attributes, raw strings. Its contract is *no
+parse errors, semantic nonsense welcome*: an unresolved type, an operator of the wrong arity and a
+`yield return` outside an iterator all come from the binder, and the formatter is syntactic. A
+**parse** error is different — ADR-003 leaves such a file byte-identical, so the case passes every
+property while asserting none of them. `fuzz --grammar-check` is how that contract is checked rather
+than assumed, and it earned itself immediately: the first draft of the grammar emitted a parse error
+in **147 units of 300**, all of it from greedy productions — a lambda body, a query's `select`, a
+switch arm list and a conditional's `:` each run until the parser cannot continue, so
+`[from a in b select c, d]` is one query whose `select` swallowed the comma. Every operand position
+is parenthesised now, and it is 0 of 1 500.
+
+The generated tree is then "printed with random whitespace" by running it through the same mutation
+catalogue. Two implementations of *where may whitespace go* is one more than the number that can be
+kept correct.
+
+**Corpus expansion.** Any crash, non-idempotent case or token-equivalence failure is minimised
+(`FuzzMinimiser`, delta-debugging on the input) and committed to `corpus/pathological/`. The corpus
+only grows. ⚠ Syntax-aware reduction first — whole members and whole statements, largest first, each
+removal re-parsed — and lines second: removing an arbitrary *line* from C# almost always unbalances a
+brace, the candidate stops parsing, the property stops failing for the reason it was failing, and
+ddmin spends its budget being told no. Measured on the first idempotency finding: lines alone took
+2 494 characters to 2 433; syntax first takes it to **38**.
+
+**Reproducibility is the seed and nothing else.** Case *i* of a run is
+`FuzzRandom.Derive(rootSeed, i)`, and everything inside the case — which corpus file, which
+mutations, where they land — is a function of that one number. A run that stopped at a time budget
+after 41 907 cases still names every case it executed, and `fuzz --replay=<seed>` rebuilds any of
+them in a second. ⚠ `FuzzRandom` is SplitMix64 rather than `System.Random`, because `Random`'s
+sequence for a given seed is an implementation detail .NET has changed before and is free to change
+again — a seed recorded in a nightly log that replays a *different* run is a decoration. The stream
+is pinned by a test vector.
+
+#### Where the properties are not what this document said
+
+Two of them, and both were found by pointing the fuzzer at the corpus.
+
+⚠ **Whitespace absorption is false as stated, for one gap class.** `SpaceRules.Ungoverned` answers
+`SpaceKind.Preserve` beside a `..` in a range or a spread, because no key in ReSharper's export
+governs that gap and the oracle leaves whatever the author wrote there. Asked directly, `jb
+cleanupcode` returns **byte-identical output to Skala** for every spelling of `buffer[1..^2]`,
+`buffer[1 ..^2]` and `buffer[1.. ^2]` — each preserving its input. So asserting absorption there
+would be asserting that Skala should diverge from the oracle. The absorbed mutations skip any gap
+touching a `..`, excluded by token kind rather than by parent shape, so that a *new* preserve class
+would be reported rather than absorbed into the exemption.
+
+⚠ **Range consistency as first written could not fail.** "`format(x, range)` ≡ `format(x)` restricted
+to that range's edits" is satisfied by an edit list collapsed into one whole-file edit: it intersects
+the range, so the count matches; it is in the list, so containment holds; there is one of it, so
+nothing overlaps. Range formatting could silently have become whole-file formatting with the property
+green. It now also asserts that each edit is trimmed to what differs — no shared first or last
+character with the text it replaces — and that the list, applied, reproduces the output. This was
+found by `fuzz --mutation-test` rather than by reading: the `edit-merge` saboteur survived 400 cases.
+
+#### Testing the fuzzer
+
+⚠ **A fuzzer is the one piece of test code whose own defects are invisible.** A fuzzer whose
+mutations never reach the formatter reports the same green run as a formatter with no bugs in it, so
+"it found nothing" is not evidence of anything on its own. Three mechanisms make it evidence:
+
+1. **The coverage half of the report**, which is printed whether or not anything was found: cases
+   executed, how many produced at least one edit, how many distinct corpus files were mutated, how
+   many units were generated, how many cases also ran the arrange-and-format pair, and the histogram
+   of which mutations were drawn. A run where 96 % of cases produce an edit is a run that reached the
+   formatter.
+2. **`fuzz --mutation-test`**: six saboteurs, each a plausible defect that breaks exactly one
+   property — an indentation that grows by one per pass, a dropped `;`, a dropped `}`, an output that
+   counts its own calls, an output that echoes how much whitespace the *input* had, and an edit list
+   collapsed to one edit. The property that should notice must notice, and the row says after how
+   many cases. A property no saboteur can trip is a property that is not being asserted.
+3. **`FuzzerTests`**, on every commit: the seed rebuilds the case byte for byte; the SplitMix64
+   stream matches a pinned vector; the grammar emits no parse errors in 250 units; a whitespace-only
+   mutation changes no token under **either** symbol set; the minimiser returns something smaller
+   that still fails; every saboteur is caught; and a 250-case run reaches the formatter and draws
+   every mutation in the catalogue.
+
+⚠ Every one of those assertions exists because the fuzzer had that defect during the day it was
+written. The two that mattered most, both of which reported in the thousands while the real findings
+sat underneath:
+
+- the protection map was built from **one** symbol set, and which text is `DisabledTextTrivia` is
+  entirely a function of the set — the `#if` branch is data with no symbols and the `#else` branch is
+  data with them. 1 639 absorption reports from one Serilog method. The absorbed mutations now obey
+  the union of both sets; the structural ones deliberately do not, because a `#if` body is live under
+  one of them and is the code path M3.1 opened up.
+- a run of `///` lines is **one** `SingleLineDocumentationCommentTrivia`, not one per line, so
+  protecting only the line it ends on left every line above it open to a trailing-space mutation, and
+  the space landed inside an XML text token. 1 870 more.
+
+#### `corpus/pathological/open/`
+
+Where a minimised finding lives **before** the defect it pins is fixed, with
+[`register.md`](../../Testing/corpus/pathological/open/register.md) beside it.
+
+⚠ It is excluded from `Corpus.Files()`, and the exclusion is the point rather than a dodge: one of
+the entries makes `skala format` throw, and a file that throws does not fail one assertion — it takes
+down every harness path that formats the corpus, the fidelity number and the differential report
+included. What holds those files to account instead is `OpenDefectTests`, which asserts of every
+entry that it **still fails, in the way its register entry records**. A defect that gets fixed breaks
+that suite and is told where its file goes next; a defect that changes shape breaks it too. It is
+deliberately not an `[Fact(Skip = …)]`: a skipped test is invisible in a green run and stays skipped
+for a year. The register is capped, because a handful of open findings is a queue and thirty are a
+policy of not fixing them — and the cap is raised in a commit that argues for it rather than met by
+dropping a finding, which would hide exactly what this directory exists to show.
+
+#### What the first day found
+
+Seven defects, all minimised and all reproduced through `skala format` itself rather than only
+through the harness. In full in the register; in one line each:
+
+| | property | shape | size |
+|---|---|---|---|
+| SK-FUZZ-0001 | crash | `@formatter:off` open at a whitespace-only end of file throws an **unhandled** `IndexOutOfRangeException` out of `EditEmitter` — past `FormatCommand`, past the `.skala/crash/` snapshot handler, out of the process | 32 B |
+| SK-FUZZ-0002 | token equivalence | a `///` run whose first line begins on the same line as the `{` loses its continuation lines; SK9099 catches it and the file cannot be formatted at all | 79 B |
+| SK-FUZZ-0003 | idempotency | mixed line endings converge in two passes, not one | 22 B |
+| SK-FUZZ-0004 | idempotency | the closing `]` of an array-rank specifier split across lines is indented eight columns on the first pass and four on the second | 33 B |
+| SK-FUZZ-0005 | token equivalence | an interpolated string inside a formatter-off span; found by `./build.sh Lint` refusing to format the fuzzer's own source | 74 B |
+| SK-FUZZ-0006 | pair idempotency | a comment between two usings, one of which carries interior whitespace: SK2010 applies and the second pipeline pass still wants an edit | 45 B |
+| SK-FUZZ-0007 | whitespace absorption | a blank line appears between two members because the **input** line was wider than the margin — from two files differing in one gap | 2×60 B |
+
+⚠ **SK-FUZZ-0004 is the argument for this whole section in one case.** The *converged* answer is the
+right one, which is exactly why no corpus file catches it: every file in `corpus/` has already been
+through a formatter, so its `]` is already at four, the first pass agrees with it, and the property
+holds. It takes an input whose `]` starts at column zero to make the first pass disagree with the
+second, and nothing in a committed corpus is ever that input. SK-FUZZ-0003 makes the same point from
+the other side: `pathological/mixed-crlf-and-lf.cs` exists, and does not catch it. The corpus had the
+construct and not the shape.
+
+⚠ **SK-FUZZ-0007 is [16](16-risks-and-open-questions.md) § R2's risk, in four lines.** The blank-line
+decision is a function of whether a member is "wide", and the width it reads is the *input's* rather
+than the output's — so a gap the formatter is about to collapse changes a decision about a different
+line entirely. It was found by `widen-identifier` and `widen-gap`, the only mutations in the
+catalogue that change a width, which is why they are weighted as heavily as they are.
 
 ## Testing the rules
 
