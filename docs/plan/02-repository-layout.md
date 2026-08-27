@@ -252,6 +252,16 @@ force: a static-analysis tool that ships with warnings has an argument to lose.
   is a minor bump at minimum and is listed in `CHANGELOG.md` with a corpus diff summary — because
   downstream, a formatting change means a repository-wide commit.
 
+  ⚠ **[18](18-versioning-and-release.md) supersedes this bullet and the two notes below it**, and
+  keeps the rule they state. What changed at M10 is who decides that a formatting output change
+  happened: the release job builds the previous release's tool beside this one's and **measures** it
+  over the corpus, along with four other compatibility surfaces. Nothing reads a commit message.
+  ⚠ Run against the tree that declared 1.0, that measurement reports that **two of the four surfaces
+  1.0 froze had moved within 125 commits** — the `format` check's exit code inverted from 1 to 2, and
+  `dotnet_style_require_accessibility_modifiers` changed type. The line is `2.0.0` and the first
+  published artefact is `2.0.0-alpha.N`; doc 18 § "Why the first published artefact is a pre-release"
+  has the argument, including why `0.x` was the wrong instrument for it.
+
   ⚠ **1.0 was declared at M7, not at M4**, and the sentence above is what it superseded. M4 remains
   unfinished (`arrange` is partial); what made 1.0 the right number was ADR-012 freezing four
   surfaces — rule ids, option behaviour, exit codes and the SARIF shape — and those became fixed when
