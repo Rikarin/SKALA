@@ -102,7 +102,7 @@ public static class ReleaseNotes {
             notes.Append(
                     string.Create(
                         CultureInfo.InvariantCulture,
-                        $"Taking this release reformats **{output.ChangedFiles} of {output.Files}** files in the corpus, {output.ChangedLines} lines in total. Downstream that is a commit in your repository ([02](docs/plan/02-repository-layout.md) § \"Repository policy\"), so take it in its own commit, and pin the version in a local tool manifest ([11](docs/plan/11-cli-and-integrations.md) § \"Distribution\") so that two developers do not format the same tree two ways."
+                        $"Taking this release reformats **{output.ChangedFiles} of {output.Comparable}** comparable corpus files, {output.ChangedLines} lines in total. Downstream that is a commit in your repository ([02](docs/plan/02-repository-layout.md) § \"Repository policy\"), so take it in its own commit, and pin the version in a local tool manifest ([11](docs/plan/11-cli-and-integrations.md) § \"Distribution\") so that two developers do not format the same tree two ways."
                     )
                 )
                 .AppendLine();
@@ -141,7 +141,7 @@ public static class ReleaseNotes {
             entry.Append(
                     string.Create(
                         CultureInfo.InvariantCulture,
-                        $"⚠ **{output.ChangedFiles} of {output.Files} corpus files format differently** than under `{verdict.Previous}` — {output.ChangedLines} lines. The classes, largest first:"
+                        $"⚠ **{output.ChangedFiles} of {output.Comparable} corpus files format differently** than under `{verdict.Previous}` — {output.ChangedLines} lines. The classes, largest first:"
                     )
                 )
                 .AppendLine();

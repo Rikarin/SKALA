@@ -132,9 +132,15 @@ class Build : NukeBuild {
                     // were never checked. There is not much there — a marker type each — but "the
                     // formatter formats its own repository" (ADR-015) is a claim about the
                     // repository and not about six of its seven top-level directories.
+                    //
+                    // ⚠ `build` is the same hole, found the same way and one directory later: this
+                    // file and `Configuration.cs` were never format-checked by the target they
+                    // define, and `Build.cs` had drifted out of formatting by the time M10 looked.
+                    // It also covers `build/Rikarin.Skala.Release`, the measured-version tool
+                    // (docs/plan/18), which would otherwise have arrived unchecked.
                     foreach (var area in new[] {
-                            "Analysis", "Core", "Distribution", "Formatting", "Reporting", "Rules",
-                            "Testing", "Tools"
+                            "Analysis", "build", "Core", "Distribution", "Formatting", "Reporting",
+                            "Rules", "Testing", "Tools"
                         }) {
                         var directory = RootDirectory / area;
                         if (area == "Testing") {
@@ -436,6 +442,160 @@ class Build : NukeBuild {
     /// </summary>
     [Parameter("The version stamped into the canonical manifest")]
     readonly string CanonicalVersion = "0.1.0";
+
+    // ── The measured release, docs/plan/18 ────────────────────────────────────────────────────
+
+    [Parameter("The git ref of the release to measure against. Default: the highest `v*` tag.")]
+    readonly string BaselineRef = null!;
+
+    [Parameter("The version that ref published. Default: the tag with its `v` removed.")]
+    readonly string BaselineVersion = null!;
+
+    /// <summary>
+    /// Cut a release rather than measure a <c>master</c> build: no <c>-alpha.N</c> on the number.
+    /// </summary>
+    [Parameter("Cut a release rather than measure a master build")]
+    readonly bool Release;
+
+    AbsolutePath ReleaseDirectory => RootDirectory / "artifacts" / "release";
+
+    /// <summary>
+    /// ⚠ <b>The version, measured.</b> docs/plan/18-versioning-and-release.md.
+    /// </summary>
+    /// <remarks>
+    /// Materialises the previous release's tree beside this one, builds <b>its</b> tool, and runs
+    /// the five detectors over the pair: the corpus formatted by both binaries, the rule catalogue,
+    /// the exit-code table and the codes the binaries actually produce, the SARIF each one writes,
+    /// and the option registry. The number falls out of the highest verdict.
+    /// <para>
+    /// ⚠ It computes and writes and does nothing else. No tag, no push, no publish — see
+    /// <c>.github/workflows/release.yml</c>, which creates the tag inside the job and leaves the
+    /// publish behind a flag a person sets.
+    /// </para>
+    /// <para>
+    /// ⚠ With no baseline it reports every surface as <i>unmeasured</i> rather than as unchanged.
+    /// The first release cannot be measured — there is nothing to measure against — and a pipeline
+    /// that said "no change" there would be making its loudest claim at the one moment it knows
+    /// least.
+    /// </para>
+    /// </remarks>
+    Target ReleasePlan => definition => definition
+        .DependsOn(Compile)
+        .Executes(() => {
+            var reference = string.IsNullOrEmpty(BaselineRef) ? HighestReleaseTag() : BaselineRef;
+            var arguments = new List<string> {
+                "plan",
+                "--candidate", RootDirectory,
+                "--candidate-tool", ToolAssembly(RootDirectory),
+                "--out", ReleaseDirectory,
+                "--work", ReleaseDirectory / "work",
+                "--commit", Output(Nuke.Common.Tools.Git.GitTasks.Git("rev-parse --short HEAD"))
+            };
+
+            if (Release) {
+                arguments.Add("--release");
+            }
+
+            if (string.IsNullOrEmpty(reference)) {
+                Serilog.Log.Warning(
+                    "No `v*` tag and no --baseline-ref: every surface will report as unmeasured. "
+                    + "That is correct for the first release and wrong for any other."
+                );
+            } else {
+                var baseline = Materialise(reference);
+                arguments.AddRange([
+                    "--baseline", baseline,
+                    "--baseline-tool", ToolAssembly(baseline),
+                    "--baseline-version",
+                    string.IsNullOrEmpty(BaselineVersion) ? reference.TrimStart('v') : BaselineVersion,
+                    "--height", Output(Nuke.Common.Tools.Git.GitTasks.Git($"rev-list --count {reference}..HEAD"))
+                ]);
+            }
+
+            // ⚠ Through the project rather than as a quoted command line. Nuke's `DotNet(string)`
+            // takes one argument string and re-quotes it whole, which turned the twelve arguments
+            // below into a single path that does not exist.
+            DotNetRun(settings => settings
+                .SetProjectFile(RootDirectory / "build" / "Rikarin.Skala.Release" / "Rikarin.Skala.Release.csproj")
+                .SetConfiguration(Configuration)
+                .EnableNoBuild()
+                .EnableNoRestore()
+                .SetApplicationArguments([.. arguments]));
+        });
+
+    /// <summary>
+    /// The whole release, up to and not including the publish.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ The last step prints the manifest and stops. Pushing to NuGet is outward-facing and
+    /// irreversible, and doc 18 § "Armed, not firing" puts it behind a flag a person sets in the
+    /// workflow — not behind a target somebody can reach with a typo.
+    /// </remarks>
+    Target ReleaseDryRun => definition => definition
+        .DependsOn(ReleasePlan, Pack)
+        .Executes(() => {
+            var version = (ReleaseDirectory / "version.json").ReadAllText();
+            Serilog.Log.Information("{Version}", version);
+
+            Serilog.Log.Information("What a release would publish, and does not:");
+            foreach (var package in (RootDirectory / "artifacts" / "packages").GlobFiles("*.nupkg")
+                         .OrderBy(static path => path.Name)) {
+                Serilog.Log.Information(
+                    "  {Package} — {Size:N0} bytes",
+                    package.Name,
+                    new System.IO.FileInfo(package).Length);
+            }
+
+            Serilog.Log.Information("Nothing was tagged, pushed or published. docs/plan/18 § \"Armed, not firing\".");
+        });
+
+    AbsolutePath ReleaseTool =>
+        RootDirectory / "build" / "Rikarin.Skala.Release" / "bin" / Configuration / "net10.0" / "skala-release.dll";
+
+    static AbsolutePath ToolAssembly(AbsolutePath root) =>
+        root / "Tools" / "Rikarin.Skala.Cli" / "bin" / "Release" / "net10.0" / "skala-tool.dll";
+
+    /// <summary>
+    /// The previous release's tree, extracted beside this one and built.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ <c>git archive</c> rather than a second worktree: a worktree mutates the repository's
+    /// worktree list, and this runs on developer machines that already have several. The tool is
+    /// built in <b>Release</b> whatever this build's configuration is, because it is the previous
+    /// release's binary and a Debug build of it would measure the configuration.
+    /// </remarks>
+    AbsolutePath Materialise(string reference) {
+        var baseline = ReleaseDirectory / "baseline";
+        baseline.CreateOrCleanDirectory();
+
+        var archive = ReleaseDirectory / "baseline.tar";
+        Nuke.Common.Tools.Git.GitTasks.Git($"archive --format=tar --output=\"{archive}\" {reference}");
+        using (var extract = Nuke.Common.Tooling.ProcessTasks
+                   .StartProcess("tar", $"-xf \"{archive}\" -C \"{baseline}\"")) {
+            extract.WaitForExit();
+            if (extract.ExitCode != 0) {
+                throw new System.InvalidOperationException($"tar exited {extract.ExitCode} extracting {reference}.");
+            }
+        }
+        archive.DeleteFile();
+
+        DotNetBuild(settings => settings
+            .SetProjectFile(baseline / "Tools" / "Rikarin.Skala.Cli" / "Rikarin.Skala.Cli.csproj")
+            .SetConfiguration(Configuration.Release));
+
+        return baseline;
+    }
+
+    /// <summary>The highest <c>v*</c> tag by version order, or empty when there is none.</summary>
+    static string HighestReleaseTag() =>
+        Output(Nuke.Common.Tools.Git.GitTasks.Git("tag --list v* --sort=-v:refname"))
+            .Split('\n', System.StringSplitOptions.RemoveEmptyEntries)
+            .Select(static line => line.Trim())
+            .FirstOrDefault(static line => line.Length > 0)
+        ?? "";
+
+    static string Output(IReadOnlyCollection<Nuke.Common.Tooling.Output> lines) =>
+        string.Join('\n', lines.Select(static line => line.Text)).Trim();
 
     void Skala(params object[] arguments) {
         var cli = RootDirectory / "Tools" / "Rikarin.Skala.Cli" / "Rikarin.Skala.Cli.csproj";

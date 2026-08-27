@@ -78,7 +78,18 @@ public static class SarifSurface {
         // ⚠ An absolute output path. A bare filename crashes the tool with exit 5 — see doc 18
         // § "What the pipeline found on its first run".
         var report = Path.Combine(workRoot, "report.sarif");
-        var run = tool.Run(workRoot, "check", "--load=loose", "--include-hints", "--output", report, ".");
+        // ⚠ The probe file by absolute path, never `.`. The tool resolves a bare `.` against the
+        // enclosing repository rather than the process's working directory, and the scratch tree
+        // lives under `artifacts/`, so `.` walked up and analysed nothing.
+        var run = tool.Run(
+            workRoot,
+            "check",
+            "--load=loose",
+            "--include-hints",
+            "--output",
+            report,
+            Path.Combine(workRoot, "Probe.cs")
+        );
 
         if (!File.Exists(report)) {
             throw new InvalidOperationException(

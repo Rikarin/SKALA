@@ -129,7 +129,10 @@ File.WriteAllText(
             output = verdict.Output is null
                 ? null
                 : new {
-                    files = verdict.Output.Files,
+                    comparable = verdict.Output.Comparable,
+                    addedToCorpus = verdict.Output.AddedToCorpus,
+                    baselineRefused = verdict.Output.BaselineRefused,
+                    candidateRefused = verdict.Output.CandidateRefused,
                     changedFiles = verdict.Output.ChangedFiles,
                     changedLines = verdict.Output.ChangedLines,
                     classes = verdict.Output.Classes.Select(static entry => new {

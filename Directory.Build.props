@@ -16,7 +16,33 @@
     <Copyright>Copyright (c) Rikarin</Copyright>
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
     <RepositoryUrl>https://github.com/Rikarin/Skala</RepositoryUrl>
-    <VersionPrefix>1.0.0</VersionPrefix>
+    <!--
+      ⚠ **The one place a Skala version is written down.** docs/plan/18-versioning-and-release.md
+      § "One source of truth". The release workflow overrides `Version` from the number
+      `skala-release plan` measures; it never edits this file, and nothing else in the tree carries
+      a number that would have to agree. `VersionSourcesTests` in Rikarin.Skala.Core.Tests is what
+      keeps a second one from appearing — including the `since` fields in `rules.json` and
+      `options.json`, which are versions and were claiming `1.2` while this said `1.0.0`.
+
+      ⚠ **2.0.0, and it was measured rather than chosen.** M7 declared 1.0 on the strength of four
+      frozen surfaces (doc 02 § "Repository policy"). Run against the tree that declared it, the
+      release detectors report that one of the four moved 125 commits later: a `format` check over
+      an unformatted file exited **1** at 1.0.0 and exits **2** now, and a path that does not exist
+      went from 0 to 3. `dotnet_style_require_accessibility_modifiers` also changed type. Those are
+      major by doc 18's table, so the number is 2.0.0. Nothing was ever published under 1.0.0, which
+      is why this costs nobody anything, and why doc 18 § "Why the first published artefact is a
+      pre-release" makes the first one `2.0.0-alpha.N` rather than `2.0.0`.
+
+      ⚠ **VersionSuffix is the local default, not the release counter.** CI derives `alpha.N` from
+      the commit count since the baseline tag, so a `master` build is reconstructible from the
+      repository alone.
+
+      ⚠ No double hyphen anywhere in this comment, and that is not a style choice: XML forbids one
+      inside a comment, and `Directory.Build.props` failing to parse takes every project in the tree
+      with it. The Sdk package's .csproj carries the same warning for the same reason.
+    -->
+    <VersionPrefix>2.0.0</VersionPrefix>
+    <VersionSuffix>alpha.1</VersionSuffix>
     <IsPackable>false</IsPackable>
   </PropertyGroup>
 

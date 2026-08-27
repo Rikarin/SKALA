@@ -34,6 +34,8 @@
         "Native",
         "Oracle",
         "Pack",
+        "ReleaseDryRun",
+        "ReleasePlan",
         "Restore",
         "Sweep",
         "Test"
@@ -110,6 +112,14 @@
   "allOf": [
     {
       "properties": {
+        "BaselineRef": {
+          "type": "string",
+          "description": "The git ref of the release to measure against. Default: the highest `v*` tag"
+        },
+        "BaselineVersion": {
+          "type": "string",
+          "description": "The version that ref published. Default: the tag with its `v` removed"
+        },
         "CanonicalVersion": {
           "type": "string",
           "description": "The version stamped into the canonical manifest"
@@ -121,6 +131,10 @@
             "Debug",
             "Release"
           ]
+        },
+        "Release": {
+          "type": "boolean",
+          "description": "Cut a release rather than measure a master build"
         },
         "Rids": {
           "type": "string",

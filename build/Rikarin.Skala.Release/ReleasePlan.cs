@@ -63,6 +63,7 @@ public static class ReleasePlan {
         var (output, measurement) = OutputSurface.Run(
             request.BaselineTool,
             request.CandidateTool,
+            request.BaselineRoot,
             corpus,
             request.CandidateRoot,
             Path.Combine(request.WorkRoot, "corpus")
@@ -101,9 +102,24 @@ public static class ReleasePlan {
 
         // ⚠ A dry run on `master` is not a release, so it is stamped as one build of the *pending*
         // pre-release series rather than as the release itself. Height is the commit count since the
-        // baseline tag, so the number is monotonic and reconstructible from the repository alone.
+        // baseline tag, so the number is reconstructible from the repository alone.
+        //
+        // ⚠ The counter is the baseline's plus the height, not the height. When the baseline tag is
+        // itself a pre-release of the same release — `v2.0.0-alpha.126`, one commit ago — the height
+        // is 1 and a bare height would stamp `2.0.0-alpha.1`, which sorts *below* the tag it was
+        // measured against. NuGet would then resolve the older package for `--prerelease`, and a
+        // version that goes backwards is worse than no version. Found by the mutant run in doc 18
+        // § "Proving the detector fires", which produced exactly that.
         if (request.DryRun && request.Height > 0) {
-            next = next.AsPreRelease(next.PreReleaseLabel ?? "alpha", request.Height);
+            var continues = previous is { IsPreRelease: true }
+                && previous.Major == next.Major
+                && previous.Minor == next.Minor
+                && previous.Patch == next.Patch;
+
+            next = next.AsPreRelease(
+                next.PreReleaseLabel ?? "alpha",
+                (continues ? previous!.PreReleaseCounter : 0) + request.Height
+            );
         }
 
         return new ReleaseVerdict(

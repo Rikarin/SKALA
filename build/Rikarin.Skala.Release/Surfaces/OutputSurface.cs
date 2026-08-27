@@ -5,9 +5,12 @@ namespace Rikarin.Skala.Release.Surfaces;
 
 /// <summary>What the corpus looks like after the previous release's tool, and after this one's.</summary>
 public sealed record OutputMeasurement(
-    int Files,
+    int Comparable,
     int ChangedFiles,
     int ChangedLines,
+    int AddedToCorpus,
+    IReadOnlyList<string> BaselineRefused,
+    IReadOnlyList<string> CandidateRefused,
     IReadOnlyList<(string Class, int Lines, int Files, string Example)> Classes
 );
 
@@ -21,21 +24,28 @@ public sealed record OutputMeasurement(
 /// and the same divergence classifier, run over <b>two Skala builds</b> instead of over Skala and
 /// <c>jb cleanupcode</c>.
 /// <para>
-/// ⚠ <b>Three things make it a measurement instead of a tautology, and all three have failed
-/// somewhere in this repository's history:</b>
+/// ⚠ <b>Four things make it a measurement instead of a tautology.</b>
 /// </para>
 /// <list type="number">
 /// <item>
-/// <b>Two binaries, and they are checked for being two.</b> The comparison is between the previous
-/// release's tool and the candidate's, launched as processes. If the two paths resolve to bytes
-/// with the same SHA-256 this throws, because a detector comparing a build against itself reports
-/// "no change" forever and looks exactly like a green one.
+/// <b>Two binaries, and they are checked for being two.</b> If the two paths resolve to bytes with
+/// the same SHA-256 this throws, because a detector comparing a build against itself reports "no
+/// change" forever and looks exactly like a green one.
 /// </item>
 /// <item>
-/// <b>The inputs and the configuration are held constant, and both come from the candidate.</b>
-/// The corpus, the repository's own <c>.editorconfig</c> and <c>skala.jsonc</c> are copied into two
-/// scratch trees at their real relative paths, so that config discovery walks the same directories
-/// it walks in the repository. The only variable in the experiment is which binary ran.
+/// <b>The comparison set is the two corpora's intersection.</b> The corpus only grows (doc 12
+/// § "Corpus expansion"), and a file added since the previous release has no "before" — counting it
+/// as changed would report a diff on every release that added a fixture, and counting it as
+/// unchanged would be a lie. It is reported as an addition and excluded from the change count.
+/// ⚠ This is not a detail: the first real run of this detector, 1.0.0 against `master`, had 66 such
+/// files and the previous release's tool <b>crashed</b> on one of them, which is the point — those
+/// files exist because they broke the formatter.
+/// </item>
+/// <item>
+/// <b>A tool that refuses a file is recorded, not fatal.</b> Formatting runs in chunks, and a chunk
+/// that fails is retried one file at a time so that one bad input costs one input rather than the
+/// release. A comparable file that one side cannot format and the other can <i>is</i> an output
+/// change and is counted as one.
 /// </item>
 /// <item>
 /// <b>Nothing is formatted in this process.</b> Both sides are read back off disk after an external
@@ -44,22 +54,35 @@ public sealed record OutputMeasurement(
 /// </item>
 /// </list>
 /// <para>
+/// ⚠ The inputs and the configuration are held constant and both come from the candidate: the
+/// corpus, the repository's <c>.editorconfig</c> and <c>skala.jsonc</c> are staged at their real
+/// relative paths, so config discovery walks the directories it walks in the repository. The only
+/// variable in the experiment is which binary ran.
+/// </para>
+/// <para>
 /// ⚠ <c>pathological/open/</c> is excluded, the same exclusion <see cref="Corpus.Files"/> makes and
-/// for the same reason: one of those files makes <c>skala format</c> throw, and a throwing file does
-/// not fail one comparison — it takes the whole run down and the release with it.
+/// for the same reason: one of those files makes <c>skala format</c> throw, and they are held to
+/// account by <c>OpenDefectTests</c> instead.
 /// </para>
 /// </remarks>
 public static class OutputSurface {
     public const string Name = "formatted output";
 
+    /// <summary>
+    /// Files per <c>skala format</c> invocation. ⚠ Small enough that one refusing input costs one
+    /// chunk's worth of single-file retries, large enough that 700 files is seven process starts.
+    /// </summary>
+    const int ChunkSize = 128;
+
     public static (DetectorResult Result, OutputMeasurement? Measurement) Run(
         SkalaTool? baseline,
         SkalaTool candidate,
-        string corpusRoot,
+        string? baselineRoot,
+        string candidateCorpus,
         string configurationRoot,
         string workRoot
     ) {
-        if (baseline is null) {
+        if (baseline is null || baselineRoot is null) {
             return (
                 DetectorResult.Unmeasured(
                     Name,
@@ -76,56 +99,89 @@ public static class OutputSurface {
             );
         }
 
-        var inputs = Inputs(corpusRoot);
-        if (inputs.Count == 0) {
-            throw new InvalidOperationException($"No corpus inputs under '{corpusRoot}'.");
+        var candidateInputs = Inputs(candidateCorpus);
+        var baselineInputs = Inputs(Path.Combine(baselineRoot, "Testing", "corpus"));
+        var comparable = candidateInputs.Intersect(baselineInputs, StringComparer.Ordinal)
+            .OrderBy(static relative => relative, StringComparer.Ordinal)
+            .ToList();
+
+        if (comparable.Count == 0) {
+            throw new InvalidOperationException(
+                $"The two corpora share no files ({candidateInputs.Count} here, {baselineInputs.Count} at the "
+                + "baseline). An empty comparison set reports 'no change' for any pair of tools."
+            );
         }
 
-        var left = Stage(inputs, corpusRoot, configurationRoot, Path.Combine(workRoot, "baseline"));
-        var right = Stage(inputs, corpusRoot, configurationRoot, Path.Combine(workRoot, "candidate"));
+        var left = Stage(comparable, candidateCorpus, configurationRoot, Path.Combine(workRoot, "baseline"));
+        var right = Stage(comparable, candidateCorpus, configurationRoot, Path.Combine(workRoot, "candidate"));
 
-        Format(baseline, left);
-        Format(candidate, right);
+        var baselineRefused = Format(baseline, left, candidateCorpus, comparable);
+        var candidateRefused = Format(candidate, right, candidateCorpus, comparable);
 
-        var measurement = Measure(inputs, left, right);
-        var bump = measurement.ChangedFiles > 0 ? BumpKind.Minor : BumpKind.Patch;
+        var refused = baselineRefused.Union(candidateRefused, StringComparer.Ordinal)
+            .OrderBy(static relative => relative, StringComparer.Ordinal)
+            .ToList();
 
-        var headline = measurement.ChangedFiles == 0
+        var measurement = Measure(
+            comparable.Where(relative => !refused.Contains(relative, StringComparer.Ordinal)).ToList(),
+            left,
+            right,
+            candidateInputs.Count - comparable.Count,
+            baselineRefused,
+            candidateRefused
+        );
+
+        // ⚠ A file only one side can format is an output change too — the strongest kind. It is
+        // folded into the verdict rather than reported beside it.
+        var bump = measurement.ChangedFiles > 0 || refused.Count > 0 ? BumpKind.Minor : BumpKind.Patch;
+
+        var headline = bump == BumpKind.Patch
             ? string.Create(
                 CultureInfo.InvariantCulture,
-                $"identical on all {measurement.Files} corpus files"
+                $"identical on all {measurement.Comparable} comparable corpus files ({measurement.AddedToCorpus} added since the previous release, not comparable)"
             )
             : string.Create(
                 CultureInfo.InvariantCulture,
-                $"formatting output changed on {measurement.ChangedFiles} of {measurement.Files} corpus files ({measurement.ChangedLines} lines)"
+                $"formatting output changed on {measurement.ChangedFiles} of {measurement.Comparable} corpus files ({measurement.ChangedLines} lines)"
             );
 
-        var details = measurement.Classes
-            .Select(static entry => string.Create(
+        var details = new List<string>();
+        details.AddRange(
+            measurement.Classes.Select(static entry => string.Create(
                     CultureInfo.InvariantCulture,
                     $"{entry.Lines} lines across {entry.Files} files — {entry.Class} (e.g. {entry.Example})"
                 )
             )
-            .ToList();
+        );
+
+        foreach (var relative in baselineRefused.Where(relative => !candidateRefused.Contains(relative, StringComparer.Ordinal))) {
+            details.Add($"**`{relative}` now formats** — the previous release refused it");
+        }
+
+        foreach (var relative in candidateRefused.Where(relative => !baselineRefused.Contains(relative, StringComparer.Ordinal))) {
+            details.Add($"⚠ **`{relative}` no longer formats** — the previous release handled it");
+        }
 
         return (DetectorResult.Measured(Name, bump, headline, details), measurement);
     }
 
     /// <summary>
-    /// Every corpus file the measured sets contain, as repository-relative paths.
+    /// Every corpus file the measured sets contain, as corpus-relative paths.
     /// </summary>
     /// <remarks>
     /// ⚠ Mirrors <see cref="Corpus.Files"/>'s two exclusions rather than calling it, because the
-    /// corpus root is a parameter here — a release measures the *candidate's* corpus, which is not
-    /// necessarily the one this assembly was stamped with.
+    /// corpus root is a parameter here — a release compares two trees, and neither is necessarily
+    /// the one this assembly was stamped with.
     /// </remarks>
-    static IReadOnlyList<string> Inputs(string corpusRoot) => [
-        .. Directory.EnumerateFiles(corpusRoot, "*.cs", SearchOption.AllDirectories)
-            .Where(static path => !path.EndsWith(".expected.cs", StringComparison.Ordinal))
-            .Select(path => Path.GetRelativePath(corpusRoot, path).Replace('\\', '/'))
-            .Where(static relative => !relative.StartsWith("pathological/open/", StringComparison.Ordinal))
-            .OrderBy(static relative => relative, StringComparer.Ordinal)
-    ];
+    static IReadOnlyCollection<string> Inputs(string corpusRoot) =>
+        Directory.Exists(corpusRoot)
+            ? [
+                .. Directory.EnumerateFiles(corpusRoot, "*.cs", SearchOption.AllDirectories)
+                    .Where(static path => !path.EndsWith(".expected.cs", StringComparison.Ordinal))
+                    .Select(path => Path.GetRelativePath(corpusRoot, path).Replace('\\', '/'))
+                    .Where(static relative => !relative.StartsWith("pathological/open/", StringComparison.Ordinal))
+            ]
+            : [];
 
     /// <summary>
     /// One scratch tree: the corpus at its real relative path, under the repository's own
@@ -153,40 +209,72 @@ public static class OutputSurface {
             }
         }
 
-        var corpus = Path.Combine(destination, "Testing", "corpus");
         foreach (var relative in inputs) {
-            var target = Path.Combine(corpus, relative.Replace('/', Path.DirectorySeparatorChar));
-            Directory.CreateDirectory(Path.GetDirectoryName(target)!);
-            File.Copy(Path.Combine(corpusRoot, relative.Replace('/', Path.DirectorySeparatorChar)), target);
+            Restore(relative, corpusRoot, destination);
         }
 
         return destination;
     }
 
-    static void Format(SkalaTool tool, string tree) {
-        var corpus = Path.Combine(tree, "Testing", "corpus");
-        var run = tool.Run(tree, "format", "--quiet", corpus);
-
-        // ⚠ Exit 2 is "changes were made", which is the normal outcome here — the corpus is
-        // deliberately misformatted. Anything else is the tool failing, and a failed side would
-        // otherwise be measured as "the output changed everywhere".
-        if (run.ExitCode is not (0 or 2)) {
-            throw new InvalidOperationException(
-                $"'{tool.Path}' exited {run.ExitCode} formatting the corpus.\n{run.StandardOutput}\n{run.StandardError}"
-            );
-        }
+    static void Restore(string relative, string corpusRoot, string tree) {
+        var target = Staged(tree, relative);
+        Directory.CreateDirectory(Path.GetDirectoryName(target)!);
+        File.Copy(Path.Combine(corpusRoot, relative.Replace('/', Path.DirectorySeparatorChar)), target, overwrite: true);
     }
 
-    static OutputMeasurement Measure(IReadOnlyList<string> inputs, string left, string right) {
-        var pairs = inputs.Select(relative => (
+    static string Staged(string tree, string relative) =>
+        Path.Combine(tree, "Testing", "corpus", relative.Replace('/', Path.DirectorySeparatorChar));
+
+    /// <summary>
+    /// Formats the staged tree in chunks, and returns the files this tool refused.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ A failed chunk is retried one file at a time from a pristine copy rather than abandoned.
+    /// The corpus contains the formatter's enemies on purpose, and a release process that stops at
+    /// the first of them measures nothing — which is exactly what happened on this detector's first
+    /// real run.
+    /// </remarks>
+    static List<string> Format(SkalaTool tool, string tree, string corpusRoot, IReadOnlyList<string> inputs) {
+        var refused = new List<string>();
+
+        foreach (var chunk in inputs.Chunk(ChunkSize)) {
+            if (Succeeded(tool.Run(tree, ["format", "--quiet", .. chunk.Select(relative => Staged(tree, relative))]))) {
+                continue;
+            }
+
+            foreach (var relative in chunk) {
+                // The chunk ran in parallel and may have written some of its files before failing.
+                Restore(relative, corpusRoot, tree);
+
+                if (!Succeeded(tool.Run(tree, "format", "--quiet", Staged(tree, relative)))) {
+                    refused.Add(relative);
+                }
+            }
+        }
+
+        return refused;
+    }
+
+    // ⚠ Exit 2 is "changes were made", which is the normal outcome here — the corpus is deliberately
+    // misformatted. Anything else is the tool failing on an input.
+    static bool Succeeded(ToolRun run) => run.ExitCode is 0 or 2;
+
+    static OutputMeasurement Measure(
+        IReadOnlyList<string> comparable,
+        string left,
+        string right,
+        int added,
+        IReadOnlyList<string> baselineRefused,
+        IReadOnlyList<string> candidateRefused
+    ) {
+        var report = Fidelity.Compare(
+            comparable.Select(relative => (
                     File: relative,
-                    Expected: File.ReadAllText(Path.Combine(left, "Testing", "corpus", relative)),
-                    Actual: File.ReadAllText(Path.Combine(right, "Testing", "corpus", relative))
+                    Expected: File.ReadAllText(Staged(left, relative)),
+                    Actual: File.ReadAllText(Staged(right, relative))
                 )
             )
-            .ToList();
-
-        var report = Fidelity.Compare(pairs);
+        );
 
         var classes = report.Divergences
             .GroupBy(static divergence => divergence.Class, StringComparer.Ordinal)
@@ -206,6 +294,9 @@ public static class OutputSurface {
             report.Files,
             report.Files - report.IdenticalFiles,
             report.Divergences.Count,
+            added,
+            baselineRefused,
+            candidateRefused,
             classes
         );
     }
