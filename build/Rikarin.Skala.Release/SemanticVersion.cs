@@ -5,9 +5,9 @@ namespace Rikarin.Skala.Release;
 
 /// <summary>How far a measured change moves the number.</summary>
 /// <remarks>
-/// ⚠ There is no <c>None</c>. docs/plan/18 § "The detectors": a release with no detected change is
-/// still a release — different bytes, a different tool — so the floor is <see cref="Patch"/> and
-/// "nothing changed" is a statement about the compatibility surface rather than about the artefact.
+///     ⚠ There is no <c>None</c>. docs/plan/18 § "The detectors": a release with no detected change is
+///     still a release — different bytes, a different tool — so the floor is <see cref="Patch" /> and
+///     "nothing changed" is a statement about the compatibility surface rather than about the artefact.
 /// </remarks>
 public enum BumpKind {
     Patch,
@@ -16,12 +16,12 @@ public enum BumpKind {
 }
 
 /// <summary>
-/// A semantic version, with the pre-release identifier this project's release line depends on.
+///     A semantic version, with the pre-release identifier this project's release line depends on.
 /// </summary>
 /// <remarks>
-/// ⚠ Build metadata (<c>+sha</c>) is parsed and discarded. NuGet strips it from the package version,
-/// so a scheme that carried meaning in it would carry meaning that does not survive `dotnet pack`.
-/// The commit is recorded in <c>SourceRevisionId</c> instead, which is where SourceLink looks.
+///     ⚠ Build metadata (<c>+sha</c>) is parsed and discarded. NuGet strips it from the package version,
+///     so a scheme that carried meaning in it would carry meaning that does not survive `dotnet pack`.
+///     The commit is recorded in <c>SourceRevisionId</c> instead, which is where SourceLink looks.
 /// </remarks>
 public sealed partial record SemanticVersion(int Major, int Minor, int Patch, string? PreRelease)
     : IComparable<SemanticVersion> {
@@ -80,13 +80,13 @@ public sealed partial record SemanticVersion(int Major, int Minor, int Patch, st
         return true;
     }
 
-    /// <summary>The release this one becomes when the measurement says <paramref name="bump"/>.</summary>
+    /// <summary>The release this one becomes when the measurement says <paramref name="bump" />.</summary>
     /// <remarks>
-    /// ⚠ A pre-release is <b>not</b> bumped by the verdict, and this is the whole of doc 18
-    /// § "Why the first published artefact is a pre-release". <c>2.0.0-alpha.7</c> means 2.0.0 has
-    /// not happened; nothing in the alpha series is a compatibility promise, so a major-classified
-    /// change inside it advances the counter and is *recorded in the notes* rather than advancing
-    /// the major. Advancing it would publish <c>3.0.0</c> before <c>2.0.0</c> existed.
+    ///     ⚠ A pre-release is <b>not</b> bumped by the verdict, and this is the whole of doc 18
+    ///     § "Why the first published artefact is a pre-release". <c>2.0.0-alpha.7</c> means 2.0.0 has
+    ///     not happened; nothing in the alpha series is a compatibility promise, so a major-classified
+    ///     change inside it advances the counter and is *recorded in the notes* rather than advancing
+    ///     the major. Advancing it would publish <c>3.0.0</c> before <c>2.0.0</c> existed.
     /// </remarks>
     public SemanticVersion Next(BumpKind bump) =>
         IsPreRelease

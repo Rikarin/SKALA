@@ -15,62 +15,62 @@ public sealed record OutputMeasurement(
 );
 
 /// <summary>
-/// ⚠ <b>The detector that matters.</b> docs/plan/18 § "The output detector".
+///     ⚠ <b>The detector that matters.</b> docs/plan/18 § "The output detector".
 /// </summary>
 /// <remarks>
-/// Skala's compatibility surface is its output, so the question a release has to answer is not
-/// "what did the code change" but "what does the corpus look like afterwards". This is the
-/// differential harness with the oracle taken out of it: the same <see cref="Fidelity"/> line diff
-/// and the same divergence classifier, run over <b>two Skala builds</b> instead of over Skala and
-/// <c>jb cleanupcode</c>.
-/// <para>
-/// ⚠ <b>Four things make it a measurement instead of a tautology.</b>
-/// </para>
-/// <list type="number">
-/// <item>
-/// <b>Two binaries, and they are checked for being two.</b> If the two paths resolve to bytes with
-/// the same SHA-256 this throws, because a detector comparing a build against itself reports "no
-/// change" forever and looks exactly like a green one.
-/// </item>
-/// <item>
-/// <b>The comparison set is the two corpora's intersection.</b> The corpus only grows (doc 12
-/// § "Corpus expansion"), and a file added since the previous release has no "before" — counting it
-/// as changed would report a diff on every release that added a fixture, and counting it as
-/// unchanged would be a lie. It is reported as an addition and excluded from the change count.
-/// ⚠ This is not a detail: the first real run of this detector, 1.0.0 against `master`, had 60 such
-/// files and the previous release's tool <b>crashed</b> on one of them, which is the point — those
-/// files exist because they broke the formatter.
-/// </item>
-/// <item>
-/// <b>A tool that refuses a file is recorded, not fatal.</b> Formatting runs in chunks, and a chunk
-/// that fails is retried one file at a time so that one bad input costs one input rather than the
-/// release. A comparable file that one side cannot format and the other can <i>is</i> an output
-/// change and is counted as one.
-/// </item>
-/// <item>
-/// <b>Nothing is formatted in this process.</b> Both sides are read back off disk after an external
-/// <c>skala format</c> wrote them. This assembly links the formatter — <c>Fidelity</c> lives beside
-/// it — and using it here would silently make the candidate both sides of the comparison.
-/// </item>
-/// </list>
-/// <para>
-/// ⚠ The inputs and the configuration are held constant and both come from the candidate: the
-/// corpus, the repository's <c>.editorconfig</c> and <c>skala.jsonc</c> are staged at their real
-/// relative paths, so config discovery walks the directories it walks in the repository. The only
-/// variable in the experiment is which binary ran.
-/// </para>
-/// <para>
-/// ⚠ <c>pathological/open/</c> is excluded, the same exclusion <see cref="Corpus.Files"/> makes and
-/// for the same reason: one of those files makes <c>skala format</c> throw, and they are held to
-/// account by <c>OpenDefectTests</c> instead.
-/// </para>
+///     Skala's compatibility surface is its output, so the question a release has to answer is not
+///     "what did the code change" but "what does the corpus look like afterwards". This is the
+///     differential harness with the oracle taken out of it: the same <see cref="Fidelity" /> line diff
+///     and the same divergence classifier, run over <b>two Skala builds</b> instead of over Skala and
+///     <c>jb cleanupcode</c>.
+///     <para>
+///         ⚠ <b>Four things make it a measurement instead of a tautology.</b>
+///     </para>
+///     <list type="number">
+///         <item>
+///             <b>Two binaries, and they are checked for being two.</b> If the two paths resolve to bytes with
+///             the same SHA-256 this throws, because a detector comparing a build against itself reports "no
+///             change" forever and looks exactly like a green one.
+///         </item>
+///         <item>
+///             <b>The comparison set is the two corpora's intersection.</b> The corpus only grows (doc 12
+///             § "Corpus expansion"), and a file added since the previous release has no "before" — counting it
+///             as changed would report a diff on every release that added a fixture, and counting it as
+///             unchanged would be a lie. It is reported as an addition and excluded from the change count.
+///             ⚠ This is not a detail: the first real run of this detector, 1.0.0 against `master`, had 60 such
+///             files and the previous release's tool <b>crashed</b> on one of them, which is the point — those
+///             files exist because they broke the formatter.
+///         </item>
+///         <item>
+///             <b>A tool that refuses a file is recorded, not fatal.</b> Formatting runs in chunks, and a chunk
+///             that fails is retried one file at a time so that one bad input costs one input rather than the
+///             release. A comparable file that one side cannot format and the other can <i>is</i> an output
+///             change and is counted as one.
+///         </item>
+///         <item>
+///             <b>Nothing is formatted in this process.</b> Both sides are read back off disk after an external
+///             <c>skala format</c> wrote them. This assembly links the formatter — <c>Fidelity</c> lives beside
+///             it — and using it here would silently make the candidate both sides of the comparison.
+///         </item>
+///     </list>
+///     <para>
+///         ⚠ The inputs and the configuration are held constant and both come from the candidate: the
+///         corpus, the repository's <c>.editorconfig</c> and <c>skala.jsonc</c> are staged at their real
+///         relative paths, so config discovery walks the directories it walks in the repository. The only
+///         variable in the experiment is which binary ran.
+///     </para>
+///     <para>
+///         ⚠ <c>pathological/open/</c> is excluded, the same exclusion <see cref="Corpus.Files" /> makes and
+///         for the same reason: one of those files makes <c>skala format</c> throw, and they are held to
+///         account by <c>OpenDefectTests</c> instead.
+///     </para>
 /// </remarks>
 public static class OutputSurface {
     public const string Name = "formatted output";
 
     /// <summary>
-    /// Files per <c>skala format</c> invocation. ⚠ Small enough that one refusing input costs one
-    /// chunk's worth of single-file retries, large enough that 700 files is seven process starts.
+    ///     Files per <c>skala format</c> invocation. ⚠ Small enough that one refusing input costs one
+    ///     chunk's worth of single-file retries, large enough that 700 files is seven process starts.
     /// </summary>
     const int ChunkSize = 128;
 
@@ -174,12 +174,12 @@ public static class OutputSurface {
     }
 
     /// <summary>
-    /// Every corpus file the measured sets contain, as corpus-relative paths.
+    ///     Every corpus file the measured sets contain, as corpus-relative paths.
     /// </summary>
     /// <remarks>
-    /// ⚠ Mirrors <see cref="Corpus.Files"/>'s two exclusions rather than calling it, because the
-    /// corpus root is a parameter here — a release compares two trees, and neither is necessarily
-    /// the one this assembly was stamped with.
+    ///     ⚠ Mirrors <see cref="Corpus.Files" />'s two exclusions rather than calling it, because the
+    ///     corpus root is a parameter here — a release compares two trees, and neither is necessarily
+    ///     the one this assembly was stamped with.
     /// </remarks>
     static IReadOnlyCollection<string> Inputs(string corpusRoot) =>
         Directory.Exists(corpusRoot)
@@ -192,8 +192,8 @@ public static class OutputSurface {
             : [];
 
     /// <summary>
-    /// One scratch tree: the corpus at its real relative path, under the repository's own
-    /// configuration.
+    ///     One scratch tree: the corpus at its real relative path, under the repository's own
+    ///     configuration.
     /// </summary>
     static string Stage(
         IReadOnlyList<string> inputs,
@@ -238,13 +238,13 @@ public static class OutputSurface {
         Path.Combine(tree, "Testing", "corpus", relative.Replace('/', Path.DirectorySeparatorChar));
 
     /// <summary>
-    /// Formats the staged tree in chunks, and returns the files this tool refused.
+    ///     Formats the staged tree in chunks, and returns the files this tool refused.
     /// </summary>
     /// <remarks>
-    /// ⚠ A failed chunk is retried one file at a time from a pristine copy rather than abandoned.
-    /// The corpus contains the formatter's enemies on purpose, and a release process that stops at
-    /// the first of them measures nothing — which is exactly what happened on this detector's first
-    /// real run.
+    ///     ⚠ A failed chunk is retried one file at a time from a pristine copy rather than abandoned.
+    ///     The corpus contains the formatter's enemies on purpose, and a release process that stops at
+    ///     the first of them measures nothing — which is exactly what happened on this detector's first
+    ///     real run.
     /// </remarks>
     static List<string> Format(SkalaTool tool, string tree, string corpusRoot, IReadOnlyList<string> inputs) {
         var refused = new List<string>();

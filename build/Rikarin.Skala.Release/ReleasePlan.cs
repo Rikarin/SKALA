@@ -28,8 +28,8 @@ public sealed record ReleaseRequest {
     public string Commit { get; init; } = "";
 
     /// <summary>
-    /// A <c>master</c> build between releases rather than a release. ⚠ Never tags and never
-    /// publishes; it exists so the number and the notes are known before anyone decides to cut one.
+    ///     A <c>master</c> build between releases rather than a release. ⚠ Never tags and never
+    ///     publishes; it exists so the number and the notes are known before anyone decides to cut one.
     /// </summary>
     public bool DryRun { get; init; } = true;
 }
@@ -50,7 +50,7 @@ public sealed record ReleaseVerdict(
 }
 
 /// <summary>
-/// docs/plan/18 as a program: measure every surface, take the highest verdict, apply it.
+///     docs/plan/18 as a program: measure every surface, take the highest verdict, apply it.
 /// </summary>
 public static class ReleasePlan {
     public static ReleaseVerdict Measure(ReleaseRequest request) {

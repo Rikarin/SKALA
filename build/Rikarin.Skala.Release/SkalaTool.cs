@@ -6,23 +6,23 @@ namespace Rikarin.Skala.Release;
 public sealed record ToolRun(int ExitCode, string StandardOutput, string StandardError);
 
 /// <summary>
-/// One <c>skala</c> build, driven as a process.
+///     One <c>skala</c> build, driven as a process.
 /// </summary>
 /// <remarks>
-/// ⚠ Two things here are correctness rather than convenience.
-/// <list type="bullet">
-/// <item>
-/// <c>SKALA_NO_DAEMON=1</c> on every invocation. The format daemon is per-repository and version
-/// stamped, and two tool versions racing for one daemon is precisely the situation doc 11
-/// § "Distribution" calls a merge-conflict generator. A detector whose two halves shared a daemon
-/// would measure the daemon.
-/// </item>
-/// <item>
-/// <see cref="Fingerprint"/> is the SHA-256 of the binary itself, printed in the release notes.
-/// It is what makes "the baseline and the candidate were different builds" a checkable claim rather
-/// than an assumption — see <c>OutputSurface.Run</c>, which refuses two tools with the same one.
-/// </item>
-/// </list>
+///     ⚠ Two things here are correctness rather than convenience.
+///     <list type="bullet">
+///         <item>
+///             <c>SKALA_NO_DAEMON=1</c> on every invocation. The format daemon is per-repository and version
+///             stamped, and two tool versions racing for one daemon is precisely the situation doc 11
+///             § "Distribution" calls a merge-conflict generator. A detector whose two halves shared a daemon
+///             would measure the daemon.
+///         </item>
+///         <item>
+///             <see cref="Fingerprint" /> is the SHA-256 of the binary itself, printed in the release notes.
+///             It is what makes "the baseline and the candidate were different builds" a checkable claim rather
+///             than an assumption — see <c>OutputSurface.Run</c>, which refuses two tools with the same one.
+///         </item>
+///     </list>
 /// </remarks>
 public sealed class SkalaTool {
     SkalaTool(string path, bool managed) {

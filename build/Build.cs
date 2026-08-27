@@ -495,14 +495,14 @@ class Build : NukeBuild {
     readonly string BaselineVersion = null!;
 
     /// <summary>
-    /// A checkout of the previous release that somebody else has already built.
+    ///     A checkout of the previous release that somebody else has already built.
     /// </summary>
     /// <remarks>
-    /// ⚠ Supply this with <see cref="BaselineVersion"/> instead of <see cref="BaselineRef"/> when
-    /// the baseline is built outside this build — which is what the workflow does, and what
-    /// docs/plan/18 § "Running it" recommends. <c>Materialise</c>'s convenience path builds the
-    /// baseline from inside this process and is the one part of the pipeline that is not reliable
-    /// everywhere; see its remarks.
+    ///     ⚠ Supply this with <see cref="BaselineVersion" /> instead of <see cref="BaselineRef" /> when
+    ///     the baseline is built outside this build — which is what the workflow does, and what
+    ///     docs/plan/18 § "Running it" recommends. <c>Materialise</c>'s convenience path builds the
+    ///     baseline from inside this process and is the one part of the pipeline that is not reliable
+    ///     everywhere; see its remarks.
     /// </remarks>
     [Parameter("A directory holding the previous release, already built")]
     readonly string BaselineDirectory = null!;
@@ -511,13 +511,13 @@ class Build : NukeBuild {
     readonly string BaselineToolPath = null!;
 
     /// <summary>
-    /// Commits since the baseline tag, for the pre-release counter. Derived when not given.
+    ///     Commits since the baseline tag, for the pre-release counter. Derived when not given.
     /// </summary>
     [Parameter("Commits since the baseline tag; the pre-release counter")]
     readonly string Height = null!;
 
     /// <summary>
-    /// Cut a release rather than measure a <c>master</c> build: no <c>-alpha.N</c> on the number.
+    ///     Cut a release rather than measure a <c>master</c> build: no <c>-alpha.N</c> on the number.
     /// </summary>
     [Parameter("Cut a release rather than measure a master build")]
     readonly bool Release;
@@ -526,20 +526,20 @@ class Build : NukeBuild {
     AbsolutePath ReleaseDirectory => RootDirectory / "artifacts" / "release";
 
     /// <summary>
-    /// The scratch the measurement needs, and it is <b>outside the repository</b>.
+    ///     The scratch the measurement needs, and it is <b>outside the repository</b>.
     /// </summary>
     /// <remarks>
-    /// ⚠ It was inside, under <c>artifacts/release/</c>, and that broke three
-    /// <c>ProjectGraphTests</c>: the baseline is a whole second checkout, so <c>ProjectFile.LoadAll</c>
-    /// found two <c>Rikarin.Skala.Testing</c>, two <c>Rikarin.Skala.Formatting</c> and two
-    /// <c>Rikarin.Skala.Core</c>, and every <c>Assert.Single</c> in that class failed at once. A copy
-    /// of the repository inside the repository is a trap for every tree-walking tool this project has
-    /// — the graph tests, `skala config check`, `rules docs`, the docs-site check — and the fix is not
-    /// to teach each of them a new exclusion.
-    /// <para>
-    /// Keyed by the root's path so that the several agent worktrees this repository is usually
-    /// carrying do not share one scratch directory and measure each other's baselines.
-    /// </para>
+    ///     ⚠ It was inside, under <c>artifacts/release/</c>, and that broke three
+    ///     <c>ProjectGraphTests</c>: the baseline is a whole second checkout, so <c>ProjectFile.LoadAll</c>
+    ///     found two <c>Rikarin.Skala.Testing</c>, two <c>Rikarin.Skala.Formatting</c> and two
+    ///     <c>Rikarin.Skala.Core</c>, and every <c>Assert.Single</c> in that class failed at once. A copy
+    ///     of the repository inside the repository is a trap for every tree-walking tool this project has
+    ///     — the graph tests, `skala config check`, `rules docs`, the docs-site check — and the fix is not
+    ///     to teach each of them a new exclusion.
+    ///     <para>
+    ///         Keyed by the root's path so that the several agent worktrees this repository is usually
+    ///         carrying do not share one scratch directory and measure each other's baselines.
+    ///     </para>
     /// </remarks>
     AbsolutePath ReleaseScratch =>
         (AbsolutePath)System.IO.Path.Combine(
@@ -553,24 +553,24 @@ class Build : NukeBuild {
         );
 
     /// <summary>
-    /// ⚠ <b>The version, measured.</b> docs/plan/18-versioning-and-release.md.
+    ///     ⚠ <b>The version, measured.</b> docs/plan/18-versioning-and-release.md.
     /// </summary>
     /// <remarks>
-    /// Materialises the previous release's tree beside this one, builds <b>its</b> tool, and runs
-    /// the five detectors over the pair: the corpus formatted by both binaries, the rule catalogue,
-    /// the exit-code table and the codes the binaries actually produce, the SARIF each one writes,
-    /// and the option registry. The number falls out of the highest verdict.
-    /// <para>
-    /// ⚠ It computes and writes and does nothing else. No tag, no push, no publish — see
-    /// <c>.github/workflows/release.yml</c>, which creates the tag inside the job and leaves the
-    /// publish behind a flag a person sets.
-    /// </para>
-    /// <para>
-    /// ⚠ With no baseline it reports every surface as <i>unmeasured</i> rather than as unchanged.
-    /// The first release cannot be measured — there is nothing to measure against — and a pipeline
-    /// that said "no change" there would be making its loudest claim at the one moment it knows
-    /// least.
-    /// </para>
+    ///     Materialises the previous release's tree beside this one, builds <b>its</b> tool, and runs
+    ///     the five detectors over the pair: the corpus formatted by both binaries, the rule catalogue,
+    ///     the exit-code table and the codes the binaries actually produce, the SARIF each one writes,
+    ///     and the option registry. The number falls out of the highest verdict.
+    ///     <para>
+    ///         ⚠ It computes and writes and does nothing else. No tag, no push, no publish — see
+    ///         <c>.github/workflows/release.yml</c>, which creates the tag inside the job and leaves the
+    ///         publish behind a flag a person sets.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ With no baseline it reports every surface as <i>unmeasured</i> rather than as unchanged.
+    ///         The first release cannot be measured — there is nothing to measure against — and a pipeline
+    ///         that said "no change" there would be making its loudest claim at the one moment it knows
+    ///         least.
+    ///     </para>
     /// </remarks>
     Target ReleasePlan =>
         definition => definition
@@ -665,12 +665,12 @@ class Build : NukeBuild {
             );
 
     /// <summary>
-    /// The whole release, up to and not including the publish.
+    ///     The whole release, up to and not including the publish.
     /// </summary>
     /// <remarks>
-    /// ⚠ The last step prints the manifest and stops. Pushing to NuGet is outward-facing and
-    /// irreversible, and doc 18 § "Armed, not firing" puts it behind a flag a person sets in the
-    /// workflow — not behind a target somebody can reach with a typo.
+    ///     ⚠ The last step prints the manifest and stops. Pushing to NuGet is outward-facing and
+    ///     irreversible, and doc 18 § "Armed, not firing" puts it behind a flag a person sets in the
+    ///     workflow — not behind a target somebody can reach with a typo.
     /// </remarks>
     Target ReleaseDryRun =>
         definition => definition
@@ -702,13 +702,13 @@ class Build : NukeBuild {
         root / "Tools" / "Rikarin.Skala.Cli" / "bin" / "Release" / "net10.0" / "skala-tool.dll";
 
     /// <summary>
-    /// The previous release's tree, extracted beside this one and built.
+    ///     The previous release's tree, extracted beside this one and built.
     /// </summary>
     /// <remarks>
-    /// ⚠ <c>git archive</c> rather than a second worktree: a worktree mutates the repository's
-    /// worktree list, and this runs on developer machines that already have several. The tool is
-    /// built in <b>Release</b> whatever this build's configuration is, because it is the previous
-    /// release's binary and a Debug build of it would measure the configuration.
+    ///     ⚠ <c>git archive</c> rather than a second worktree: a worktree mutates the repository's
+    ///     worktree list, and this runs on developer machines that already have several. The tool is
+    ///     built in <b>Release</b> whatever this build's configuration is, because it is the previous
+    ///     release's binary and a Debug build of it would measure the configuration.
     /// </remarks>
     AbsolutePath Materialise(string reference) {
         var baseline = ReleaseScratch / "baseline";
@@ -787,22 +787,22 @@ class Build : NukeBuild {
     }
 
     /// <summary>
-    /// One external command, logged, with a non-zero exit turned into a stop — and with this
-    /// process's MSBuild environment kept out of it.
+    ///     One external command, logged, with a non-zero exit turned into a stop — and with this
+    ///     process's MSBuild environment kept out of it.
     /// </summary>
     /// <remarks>
-    /// ⚠ <b>The scrubbed variables are why the baseline build works at all.</b> NUKE evaluates
-    /// <c>Skala.slnx</c> through <c>Microsoft.Build</c> in its own process, which registers an
-    /// MSBuild instance and exports <c>MSBUILD_EXE_PATH</c>, <c>MSBuildExtensionsPath</c> and
-    /// <c>MSBuildSDKsPath</c> into the environment every child then inherits. In this repository
-    /// that evaluation does not even succeed — <c>_build</c> pins <c>NuGet.Packaging</c> forward for
-    /// its advisories, so <c>[MSBuild]::GetTargetFrameworkIdentifier</c> throws
-    /// <c>Could not load file or assembly 'NuGet.Frameworks, Version=7.9.0.0'</c> and NUKE logs it
-    /// as suppressed. The half-registered state still leaks, and a <c>dotnet build</c> of a
-    /// <b>freshly extracted</b> tree then fails to resolve its <c>ProjectReference</c>s:
-    /// <c>CS0234: 'Options' does not exist in the namespace 'Rikarin.Skala'</c>. The candidate's own
-    /// build survives it because its <c>obj/</c> is already populated, which is what made this look
-    /// like a broken baseline for an hour.
+    ///     ⚠ <b>The scrubbed variables are why the baseline build works at all.</b> NUKE evaluates
+    ///     <c>Skala.slnx</c> through <c>Microsoft.Build</c> in its own process, which registers an
+    ///     MSBuild instance and exports <c>MSBUILD_EXE_PATH</c>, <c>MSBuildExtensionsPath</c> and
+    ///     <c>MSBuildSDKsPath</c> into the environment every child then inherits. In this repository
+    ///     that evaluation does not even succeed — <c>_build</c> pins <c>NuGet.Packaging</c> forward for
+    ///     its advisories, so <c>[MSBuild]::GetTargetFrameworkIdentifier</c> throws
+    ///     <c>Could not load file or assembly 'NuGet.Frameworks, Version=7.9.0.0'</c> and NUKE logs it
+    ///     as suppressed. The half-registered state still leaks, and a <c>dotnet build</c> of a
+    ///     <b>freshly extracted</b> tree then fails to resolve its <c>ProjectReference</c>s:
+    ///     <c>CS0234: 'Options' does not exist in the namespace 'Rikarin.Skala'</c>. The candidate's own
+    ///     build survives it because its <c>obj/</c> is already populated, which is what made this look
+    ///     like a broken baseline for an hour.
     /// </remarks>
     static void Run(string tool, string arguments, string? workingDirectory = null) {
         Serilog.Log.Information("{Tool} {Arguments}", tool, arguments);
@@ -830,15 +830,15 @@ class Build : NukeBuild {
     }
 
     /// <summary>
-    /// Commits on this branch since <paramref name="reference"/>, or <c>0</c> when it is not in the
-    /// clone.
+    ///     Commits on this branch since <paramref name="reference" />, or <c>0</c> when it is not in the
+    ///     clone.
     /// </summary>
     /// <remarks>
-    /// ⚠ A missing tag is <c>0</c> rather than a stop. `--baseline-directory` names a *tree*, and a
-    /// tree can be a release that was never tagged — which is the state this repository is in, and
-    /// which turned the first run of that path into `git exited 128`. A pre-release counter of 0 is
-    /// wrong-but-harmless on a dry run and is never what a real release publishes; a release with no
-    /// tag to count from is the case doc 18 § "The number" resolves by not tagging `master` at all.
+    ///     ⚠ A missing tag is <c>0</c> rather than a stop. `--baseline-directory` names a *tree*, and a
+    ///     tree can be a release that was never tagged — which is the state this repository is in, and
+    ///     which turned the first run of that path into `git exited 128`. A pre-release counter of 0 is
+    ///     wrong-but-harmless on a dry run and is never what a real release publishes; a release with no
+    ///     tag to count from is the case doc 18 § "The number" resolves by not tagging `master` at all.
     /// </remarks>
     static string CommitsSince(string reference) {
         try {

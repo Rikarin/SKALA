@@ -2,10 +2,10 @@ namespace Rikarin.Skala.Release;
 
 /// <summary>Whether a detector ran, and if not, why not.</summary>
 /// <remarks>
-/// ⚠ The distinction is the anti-vacuity mechanism. A detector that cannot see a baseline reports
-/// <see cref="Unmeasured"/> and says so in the notes; it never reports "no change", because "no
-/// change" and "I did not look" produce the same version number and must not produce the same
-/// sentence. Three of this repository's four previous guard mechanisms failed by conflating them.
+///     ⚠ The distinction is the anti-vacuity mechanism. A detector that cannot see a baseline reports
+///     <see cref="Unmeasured" /> and says so in the notes; it never reports "no change", because "no
+///     change" and "I did not look" produce the same version number and must not produce the same
+///     sentence. Three of this repository's four previous guard mechanisms failed by conflating them.
 /// </remarks>
 public enum DetectorState {
     Measured,
@@ -32,8 +32,8 @@ public sealed record DetectorResult(
         new(surface, DetectorState.Measured, bump, headline, details ?? []);
 
     /// <summary>
-    /// The bump this result contributes. ⚠ An unmeasured surface contributes nothing rather than
-    /// <see cref="BumpKind.Patch"/>: it has no opinion, and a floor it did not measure is a claim.
+    ///     The bump this result contributes. ⚠ An unmeasured surface contributes nothing rather than
+    ///     <see cref="BumpKind.Patch" />: it has no opinion, and a floor it did not measure is a claim.
     /// </summary>
     public BumpKind? Contribution => State == DetectorState.Measured ? Bump : null;
 }

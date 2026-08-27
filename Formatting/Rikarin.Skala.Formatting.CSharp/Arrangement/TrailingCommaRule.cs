@@ -5,25 +5,25 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 namespace Rikarin.Skala.Formatting.CSharp.Arrangement;
 
 /// <summary>
-/// The trailing comma of a list, added or removed, under
-/// <c>resharper_trailing_comma_in_multiline_lists</c> and
-/// <c>…_in_singleline_lists</c>.
+///     The trailing comma of a list, added or removed, under
+///     <c>resharper_trailing_comma_in_multiline_lists</c> and
+///     <c>…_in_singleline_lists</c>.
 /// </summary>
 /// <remarks>
-/// ⚠ Two keys, one rewrite, and which one applies is decided by whether the list's closing token
-/// sits on a later line than its last element — that is what ReSharper means by "multiline", not
-/// whether the whole declaration spans lines. Measured: with both keys at the export's <c>false</c>
-/// the oracle *deletes* an existing trailing comma from a multiline collection initializer, a
-/// multiline enum and a single-line array initializer alike; with both at <c>true</c> it adds one to
-/// each.
-/// <para>
-/// ⚠ Only lists whose grammar actually admits a trailing comma are touched, and that set is smaller
-/// than it looks: initializers (collection, object, array), enum member lists, and the list of an
-/// anonymous object. ⚠ An **argument list and a parameter list are not in it** — C# does not allow
-/// `f(a, b,)`, so a rule that treated "list" as one concept would produce a file that does not
-/// parse. That is the whole reason this rewrite enumerates node types rather than looking for
-/// separated lists generically.
-/// </para>
+///     ⚠ Two keys, one rewrite, and which one applies is decided by whether the list's closing token
+///     sits on a later line than its last element — that is what ReSharper means by "multiline", not
+///     whether the whole declaration spans lines. Measured: with both keys at the export's <c>false</c>
+///     the oracle *deletes* an existing trailing comma from a multiline collection initializer, a
+///     multiline enum and a single-line array initializer alike; with both at <c>true</c> it adds one to
+///     each.
+///     <para>
+///         ⚠ Only lists whose grammar actually admits a trailing comma are touched, and that set is smaller
+///         than it looks: initializers (collection, object, array), enum member lists, and the list of an
+///         anonymous object. ⚠ An **argument list and a parameter list are not in it** — C# does not allow
+///         `f(a, b,)`, so a rule that treated "list" as one concept would produce a file that does not
+///         parse. That is the whole reason this rewrite enumerates node types rather than looking for
+///         separated lists generically.
+///     </para>
 /// </remarks>
 public sealed class TrailingCommaRule : ArrangementRule {
     public override string Id => ArrangeIds.TrailingComma;
@@ -49,11 +49,11 @@ public sealed class TrailingCommaRule : ArrangementRule {
         }
 
         /// <remarks>
-        /// ⚠ A collection expression is a list the grammar admits a trailing comma in, and it is not
-        /// an <c>InitializerExpressionSyntax</c> — <c>[1, 2, 3,]</c> is a
-        /// <c>CollectionExpressionSyntax</c>. Leaving it out made
-        /// <c>trailing_comma_in_singleline_lists</c> unobservable, which the option's own coverage
-        /// test reported as a failure rather than letting the Tier A claim through.
+        ///     ⚠ A collection expression is a list the grammar admits a trailing comma in, and it is not
+        ///     an <c>InitializerExpressionSyntax</c> — <c>[1, 2, 3,]</c> is a
+        ///     <c>CollectionExpressionSyntax</c>. Leaving it out made
+        ///     <c>trailing_comma_in_singleline_lists</c> unobservable, which the option's own coverage
+        ///     test reported as a failure rather than letting the Tier A claim through.
         /// </remarks>
         public override SyntaxNode? VisitCollectionExpression(CollectionExpressionSyntax node) {
             var visited = (CollectionExpressionSyntax)base.VisitCollectionExpression(node)!;
@@ -70,8 +70,8 @@ public sealed class TrailingCommaRule : ArrangementRule {
         }
 
         /// <summary>
-        /// The list with its trailing comma brought into line with the configuration, or null when
-        /// it already is.
+        ///     The list with its trailing comma brought into line with the configuration, or null when
+        ///     it already is.
         /// </summary>
         SeparatedSyntaxList<T>? Adjust<T>(SeparatedSyntaxList<T> list, SyntaxToken closing, SyntaxNode original)
             where T : SyntaxNode {
@@ -128,9 +128,9 @@ public sealed class TrailingCommaRule : ArrangementRule {
         }
 
         /// <summary>
-        /// ⚠ "Multiline" is about the closing token, not the node: <c>new[] { 1, 2, 3 }</c> written
-        /// inside a declaration that wraps is still a single-line list, and the oracle treats it as
-        /// one.
+        ///     ⚠ "Multiline" is about the closing token, not the node: <c>new[] { 1, 2, 3 }</c> written
+        ///     inside a declaration that wraps is still a single-line list, and the oracle treats it as
+        ///     one.
         /// </summary>
         static bool IsMultiline(SyntaxNode node, SyntaxToken closing) {
             var text = node.SyntaxTree?.GetText();

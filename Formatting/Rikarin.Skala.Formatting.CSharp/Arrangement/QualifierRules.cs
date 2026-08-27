@@ -6,39 +6,39 @@ using Rikarin.Skala.Options;
 namespace Rikarin.Skala.Formatting.CSharp.Arrangement;
 
 /// <summary>
-/// <c>StaticHost.Value</c> ⇒ <c>Value</c> inside <c>StaticHost</c>, under
-/// <c>resharper_static_members_qualify_members</c>.
+///     <c>StaticHost.Value</c> ⇒ <c>Value</c> inside <c>StaticHost</c>, under
+///     <c>resharper_static_members_qualify_members</c>.
 /// </summary>
 /// <remarks>
-/// ⚠ The key is a *member-kind set*, not a boolean, and it runs in both directions: a kind in the
-/// set is qualified, a kind outside it is unqualified. The export writes <c>none</c>, so on this
-/// repository's configuration the rule only ever removes — but the option is implemented both ways,
-/// because "the export happens to ask for one direction" is not a reason to ship half a rewrite.
-/// Measured against <c>jb cleanupcode</c> 2025.2.6 with <c>CSArrangeQualifiers</c>: at <c>none</c>
-/// the oracle deletes an existing <c>StaticHost.</c>, and at <c>field, property, method</c> it adds
-/// one.
-/// <para>
-/// ⚠ <c>resharper_static_members_qualify_with = declared_type</c> chooses the name written when a
-/// qualifier is added — the type that declares the member rather than the type the code is in. It
-/// only has an effect in the adding direction, which is why it is claimed by this rule and not a
-/// separate one.
-/// </para>
-/// <para>
-/// ⚠ There is no instance-member counterpart here and the asymmetry is the configuration's, not an
-/// omission. <c>resharper_instance_members_qualify_members</c> — the key that would say which
-/// instance members take a <c>this.</c> — is not in the author's export and so is not in the option
-/// registry at all. Removing <c>this.</c> is <see cref="ThisQualifierRule"/> under
-/// <c>resharper_remove_this_qualifier</c>; adding it has no key to read.
-/// </para>
+///     ⚠ The key is a *member-kind set*, not a boolean, and it runs in both directions: a kind in the
+///     set is qualified, a kind outside it is unqualified. The export writes <c>none</c>, so on this
+///     repository's configuration the rule only ever removes — but the option is implemented both ways,
+///     because "the export happens to ask for one direction" is not a reason to ship half a rewrite.
+///     Measured against <c>jb cleanupcode</c> 2025.2.6 with <c>CSArrangeQualifiers</c>: at <c>none</c>
+///     the oracle deletes an existing <c>StaticHost.</c>, and at <c>field, property, method</c> it adds
+///     one.
+///     <para>
+///         ⚠ <c>resharper_static_members_qualify_with = declared_type</c> chooses the name written when a
+///         qualifier is added — the type that declares the member rather than the type the code is in. It
+///         only has an effect in the adding direction, which is why it is claimed by this rule and not a
+///         separate one.
+///     </para>
+///     <para>
+///         ⚠ There is no instance-member counterpart here and the asymmetry is the configuration's, not an
+///         omission. <c>resharper_instance_members_qualify_members</c> — the key that would say which
+///         instance members take a <c>this.</c> — is not in the author's export and so is not in the option
+///         registry at all. Removing <c>this.</c> is <see cref="ThisQualifierRule" /> under
+///         <c>resharper_remove_this_qualifier</c>; adding it has no key to read.
+///     </para>
 /// </remarks>
 public sealed class StaticQualifierRule : ArrangementRule {
     public override string Id => ArrangeIds.StaticQualifier;
 
     /// <summary>
-    /// ⚠ Semantic in both directions. Removing <c>T.M</c> is only legal when the bare <c>M</c> binds
-    /// to the same symbol at that position, and adding one is only legal when <c>M</c> resolves to a
-    /// static member in the first place — a local named <c>M</c> that shadows it must not acquire a
-    /// type qualifier.
+    ///     ⚠ Semantic in both directions. Removing <c>T.M</c> is only legal when the bare <c>M</c> binds
+    ///     to the same symbol at that position, and adding one is only legal when <c>M</c> resolves to a
+    ///     static member in the first place — a local named <c>M</c> that shadows it must not acquire a
+    ///     type qualifier.
     /// </summary>
     public override bool NeedsSemantics => true;
 

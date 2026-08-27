@@ -129,11 +129,11 @@ public readonly struct ArrangementOptions {
     public bool PredefinedTypeForLocals { get; }
 
     /// <summary>
-    /// ⚠ A separate key from <see cref="PredefinedTypeForLocals"/>, and separate in the oracle too:
-    /// <c>dotnet_style_predefined_type_for_member_access</c> governs the receiver of a member access
-    /// (<c>Int32.MaxValue</c>) while the other governs a type in a declaration. Before this split the
-    /// rewrite read only the declaration key and applied it to both positions, which made the
-    /// member-access key unobservable — implemented behaviour credited to the wrong option.
+    ///     ⚠ A separate key from <see cref="PredefinedTypeForLocals" />, and separate in the oracle too:
+    ///     <c>dotnet_style_predefined_type_for_member_access</c> governs the receiver of a member access
+    ///     (<c>Int32.MaxValue</c>) while the other governs a type in a declaration. Before this split the
+    ///     rewrite read only the declaration key and applied it to both positions, which made the
+    ///     member-access key unobservable — implemented behaviour credited to the wrong option.
     /// </summary>
     public bool PredefinedTypeForMemberAccess { get; }
 
@@ -243,13 +243,13 @@ public readonly struct ArrangementOptions {
             Of("resharper_csharp_static_members_qualify_members");
 
         /// <summary>
-        /// ⚠ Read and inert, and it stays Tier D for it. <c>static_members_qualify_with</c> chooses
-        /// *which name* a qualifier is written with, and a qualifier is only ever written when
-        /// <c>static_members_qualify_members</c> names a member kind. The export writes
-        /// <c>none</c>, so on this repository's configuration nothing is ever added and the key
-        /// cannot change a byte of output — <c>declared_type</c> and <c>containing_type</c> produce
-        /// identical files. Honoured vacuously is not implemented, and doc 03's Tier A is a claim
-        /// about behaviour rather than about wiring.
+        ///     ⚠ Read and inert, and it stays Tier D for it. <c>static_members_qualify_with</c> chooses
+        ///     *which name* a qualifier is written with, and a qualifier is only ever written when
+        ///     <c>static_members_qualify_members</c> names a member kind. The export writes
+        ///     <c>none</c>, so on this repository's configuration nothing is ever added and the key
+        ///     cannot change a byte of output — <c>declared_type</c> and <c>containing_type</c> produce
+        ///     identical files. Honoured vacuously is not implemented, and doc 03's Tier A is a claim
+        ///     about behaviour rather than about wiring.
         /// </summary>
         public static readonly OptionId StaticMembersQualifyWith =
             OfInert("resharper_csharp_static_members_qualify_with");

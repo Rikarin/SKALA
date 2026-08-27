@@ -6,31 +6,31 @@ using Rikarin.Skala.Options;
 namespace Rikarin.Skala.Formatting.CSharp.Arrangement;
 
 /// <summary>
-/// <c>f(number: 1)</c> ⇔ <c>f(1)</c>, under the four <c>resharper_arguments_*</c> keys.
+///     <c>f(number: 1)</c> ⇔ <c>f(1)</c>, under the four <c>resharper_arguments_*</c> keys.
 /// </summary>
 /// <remarks>
-/// ⚠ Four keys and one rewrite, and they are genuinely four: the argument's *kind* selects which key
-/// governs it. Measured against the oracle with one key flipped and the other three left alone —
-/// with <c>resharper_arguments_literal = named</c> the literal <c>1</c> gains a name while the
-/// string, the lambda and the <c>new()</c> beside it stay positional. Implementing them as one
-/// boolean would have made three of the four unobservable.
-/// <para>
-/// ⚠ Like <see cref="NamespaceBodyRule"/>, this needs a cleanup task the first sweep missed:
-/// <c>ArrangeArgumentsStyle</c>. Without it the oracle leaves every named argument in place and the
-/// four keys look like settings the reference tool ignores.
-/// </para>
-/// <para>
-/// ⚠ `out`/`ref`/`in` arguments are treated like any other, and that was measured rather than
-/// assumed. The first version exempted them on the reasoning that the name is often the only thing
-/// distinguishing one <c>out</c> parameter from the next; the oracle strips them, and an exemption
-/// nobody can point at a rule for is a divergence with no entry in docs/divergences.md.
-/// </para>
-/// <para>
-/// ⚠ Adding a name is semantic — the parameter's name comes from the resolved overload — and so is
-/// removing one, because a named argument may be *out of order*. <c>f(text: "x", number: 1)</c> must
-/// not become <c>f("x", 1)</c>; the name is only redundant when the argument already sits at its own
-/// parameter's position. That check is the whole reason this rule binds rather than pattern-matches.
-/// </para>
+///     ⚠ Four keys and one rewrite, and they are genuinely four: the argument's *kind* selects which key
+///     governs it. Measured against the oracle with one key flipped and the other three left alone —
+///     with <c>resharper_arguments_literal = named</c> the literal <c>1</c> gains a name while the
+///     string, the lambda and the <c>new()</c> beside it stay positional. Implementing them as one
+///     boolean would have made three of the four unobservable.
+///     <para>
+///         ⚠ Like <see cref="NamespaceBodyRule" />, this needs a cleanup task the first sweep missed:
+///         <c>ArrangeArgumentsStyle</c>. Without it the oracle leaves every named argument in place and the
+///         four keys look like settings the reference tool ignores.
+///     </para>
+///     <para>
+///         ⚠ `out`/`ref`/`in` arguments are treated like any other, and that was measured rather than
+///         assumed. The first version exempted them on the reasoning that the name is often the only thing
+///         distinguishing one <c>out</c> parameter from the next; the oracle strips them, and an exemption
+///         nobody can point at a rule for is a divergence with no entry in docs/divergences.md.
+///     </para>
+///     <para>
+///         ⚠ Adding a name is semantic — the parameter's name comes from the resolved overload — and so is
+///         removing one, because a named argument may be *out of order*. <c>f(text: "x", number: 1)</c> must
+///         not become <c>f("x", 1)</c>; the name is only redundant when the argument already sits at its own
+///         parameter's position. That check is the whole reason this rule binds rather than pattern-matches.
+///     </para>
 /// </remarks>
 public sealed class ArgumentStyleRule : ArrangementRule {
     public override string Id => ArrangeIds.ArgumentStyle;
@@ -145,18 +145,18 @@ public sealed class ArgumentStyleRule : ArrangementRule {
 }
 
 /// <summary>
-/// <c>out _</c> ⇒ <c>out var _</c>, under <c>resharper_prefer_explicit_discard_declaration</c>.
+///     <c>out _</c> ⇒ <c>out var _</c>, under <c>resharper_prefer_explicit_discard_declaration</c>.
 /// </summary>
 /// <remarks>
-/// ⚠ The export writes <c>false</c>, at which value this rule does nothing at all on this
-/// repository's configuration — the observable direction is the other one. It is implemented rather
-/// than recorded as inert because the key *is* observable when set: measured, at <c>true</c> the
-/// oracle turns <c>Deconstruct(out var p, out _)</c> into <c>… out var _)</c>.
-/// <para>
-/// ⚠ It deliberately does not do the reverse. At <c>false</c> the oracle does **not** strip an
-/// existing <c>var</c> from a discard: <c>out int _</c> becomes <c>out var _</c> under the <c>var</c>
-/// rule and stays there. `false` means "do not add", not "remove".
-/// </para>
+///     ⚠ The export writes <c>false</c>, at which value this rule does nothing at all on this
+///     repository's configuration — the observable direction is the other one. It is implemented rather
+///     than recorded as inert because the key *is* observable when set: measured, at <c>true</c> the
+///     oracle turns <c>Deconstruct(out var p, out _)</c> into <c>… out var _)</c>.
+///     <para>
+///         ⚠ It deliberately does not do the reverse. At <c>false</c> the oracle does **not** strip an
+///         existing <c>var</c> from a discard: <c>out int _</c> becomes <c>out var _</c> under the <c>var</c>
+///         rule and stays there. `false` means "do not add", not "remove".
+///     </para>
 /// </remarks>
 public sealed class DiscardDeclarationRule : ArrangementRule {
     public override string Id => ArrangeIds.DiscardDeclaration;

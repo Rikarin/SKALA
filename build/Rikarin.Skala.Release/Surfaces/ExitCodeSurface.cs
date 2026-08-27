@@ -4,22 +4,22 @@ using System.Text.RegularExpressions;
 namespace Rikarin.Skala.Release.Surfaces;
 
 /// <summary>
-/// The exit-code contract, as the document publishes it <b>and</b> as the binary produces it.
+///     The exit-code contract, as the document publishes it <b>and</b> as the binary produces it.
 /// </summary>
 /// <remarks>
-/// ⚠ Both halves, because either alone has already failed here. <c>ExitCodeContractTests</c> records
-/// that the contract was wrong from M1 to M9 and every test agreed with it: the constants matched
-/// each other and neither matched the command. So this reads the published table out of
-/// <c>docs/plan/09</c> — the thing hooks, CI and agents are written against — and separately
-/// <b>runs both binaries</b> over the scenarios a table row can actually be observed on. A row that
-/// moves in the document is a change to what people were told; a code that moves in the binary is a
-/// change to what happens. Either is <b>major</b>: a hook that auto-formats on 2 and stops on 1 is
-/// two lines long and has no way to notice it is now inverted.
-/// <para>
-/// ⚠ The probes are deliberately the ones that need no compilation. Anything requiring a project
-/// load would make the detector's verdict depend on whether the runner had an SDK, which turns a
-/// compatibility measurement into an environment measurement.
-/// </para>
+///     ⚠ Both halves, because either alone has already failed here. <c>ExitCodeContractTests</c> records
+///     that the contract was wrong from M1 to M9 and every test agreed with it: the constants matched
+///     each other and neither matched the command. So this reads the published table out of
+///     <c>docs/plan/09</c> — the thing hooks, CI and agents are written against — and separately
+///     <b>runs both binaries</b> over the scenarios a table row can actually be observed on. A row that
+///     moves in the document is a change to what people were told; a code that moves in the binary is a
+///     change to what happens. Either is <b>major</b>: a hook that auto-formats on 2 and stops on 1 is
+///     two lines long and has no way to notice it is now inverted.
+///     <para>
+///         ⚠ The probes are deliberately the ones that need no compilation. Anything requiring a project
+///         load would make the detector's verdict depend on whether the runner had an SDK, which turns a
+///         compatibility measurement into an environment measurement.
+///     </para>
 /// </remarks>
 public static partial class ExitCodeSurface {
     public const string Name = "exit codes";
@@ -90,12 +90,12 @@ public static partial class ExitCodeSurface {
     }
 
     /// <summary>
-    /// The table docs/plan/09 § "Exit codes" publishes.
+    ///     The table docs/plan/09 § "Exit codes" publishes.
     /// </summary>
     /// <remarks>
-    /// ⚠ The heading is asserted before the rows are read. A renamed section would otherwise yield
-    /// an empty table on both sides, and two empty tables compare equal — the vacuous pass that
-    /// <c>ExitCodeContractTests</c> guards against with the same check.
+    ///     ⚠ The heading is asserted before the rows are read. A renamed section would otherwise yield
+    ///     an empty table on both sides, and two empty tables compare equal — the vacuous pass that
+    ///     <c>ExitCodeContractTests</c> guards against with the same check.
     /// </remarks>
     public static IReadOnlyDictionary<int, string> Table(string repositoryRoot) {
         var path = Path.Combine(repositoryRoot, "docs", "plan", "09-quality-gates-and-reporting.md");

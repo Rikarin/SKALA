@@ -6,42 +6,42 @@ namespace Rikarin.Skala.Release.Surfaces;
 public sealed record RuleRecord(string Id, string Concept, string DefaultSeverity, bool Retired, bool Allocated);
 
 /// <summary>
-/// The rule catalogue as a compatibility surface: ids, concepts and default severities.
+///     The rule catalogue as a compatibility surface: ids, concepts and default severities.
 /// </summary>
 /// <remarks>
-/// ⚠ Read out of <c>rules.json</c> and <c>allocated-ids.txt</c> rather than out of the analyzer
-/// assembly, because those two files are what ADR-012 freezes and what a repository's
-/// <c>.skala/baseline.sarif</c> is keyed on. A baseline is a set of <c>(rule, file, hash)</c>
-/// tuples, so:
-/// <list type="bullet">
-/// <item>
-/// a <b>removed or retired</b> id silently un-suppresses nothing and suppresses nothing, but every
-/// entry naming it becomes dead weight the audit can no longer explain — <b>major</b>;
-/// </item>
-/// <item>
-/// a <b>redefined concept</b> on an allocated id is worse: the baseline entries still match and now
-/// suppress a different rule — <b>major</b>, and <c>RuleCatalogTests.RuleIds_AreAppendOnly</c>
-/// should have failed the build long before the release saw it;
-/// </item>
-/// <item>
-/// a <b>raised default severity</b> can fail a gate that passed, and can fail a build outright when
-/// it crosses into <c>warning</c> under <c>TreatWarningsAsErrors</c> — <b>major</b>;
-/// </item>
-/// <item>
-/// a <b>new rule at <c>warning</c> or above</b> can do the same to a repository that has no baseline
-/// entry for it, which is every repository, because the entry cannot pre-exist the rule. It is
-/// <b>minor</b> rather than major only because doc 11's <c>SkalaRulesAsErrors=false</c> default and
-/// the baseline mechanism exist precisely for this and are the documented adoption path.
-/// </item>
-/// </list>
+///     ⚠ Read out of <c>rules.json</c> and <c>allocated-ids.txt</c> rather than out of the analyzer
+///     assembly, because those two files are what ADR-012 freezes and what a repository's
+///     <c>.skala/baseline.sarif</c> is keyed on. A baseline is a set of <c>(rule, file, hash)</c>
+///     tuples, so:
+///     <list type="bullet">
+///         <item>
+///             a <b>removed or retired</b> id silently un-suppresses nothing and suppresses nothing, but every
+///             entry naming it becomes dead weight the audit can no longer explain — <b>major</b>;
+///         </item>
+///         <item>
+///             a <b>redefined concept</b> on an allocated id is worse: the baseline entries still match and now
+///             suppress a different rule — <b>major</b>, and <c>RuleCatalogTests.RuleIds_AreAppendOnly</c>
+///             should have failed the build long before the release saw it;
+///         </item>
+///         <item>
+///             a <b>raised default severity</b> can fail a gate that passed, and can fail a build outright when
+///             it crosses into <c>warning</c> under <c>TreatWarningsAsErrors</c> — <b>major</b>;
+///         </item>
+///         <item>
+///             a <b>new rule at <c>warning</c> or above</b> can do the same to a repository that has no baseline
+///             entry for it, which is every repository, because the entry cannot pre-exist the rule. It is
+///             <b>minor</b> rather than major only because doc 11's <c>SkalaRulesAsErrors=false</c> default and
+///             the baseline mechanism exist precisely for this and are the documented adoption path.
+///         </item>
+///     </list>
 /// </remarks>
 public static class RuleSurface {
     public const string Name = "rule catalogue";
 
     /// <summary>
-    /// ⚠ The order the catalogue uses, lowest first. Not <c>DiagnosticSeverity</c>'s and not
-    /// <c>SkalaSeverity</c>'s: the JSON carries ReSharper's five names, and <c>none</c> is a real
-    /// value that a rule can ship at.
+    ///     ⚠ The order the catalogue uses, lowest first. Not <c>DiagnosticSeverity</c>'s and not
+    ///     <c>SkalaSeverity</c>'s: the JSON carries ReSharper's five names, and <c>none</c> is a real
+    ///     value that a rule can ship at.
     /// </summary>
     static readonly string[] Severities = ["none", "hint", "suggestion", "warning", "error"];
 

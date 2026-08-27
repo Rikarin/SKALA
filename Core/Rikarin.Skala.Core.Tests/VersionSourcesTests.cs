@@ -5,16 +5,16 @@ using System.Xml.Linq;
 namespace Rikarin.Skala.Core.Tests;
 
 /// <summary>
-/// docs/plan/18 § "One source of truth": <c>Directory.Build.props</c> carries the version, and
-/// everything else in the tree agrees with it or is deliberately independent of it.
+///     docs/plan/18 § "One source of truth": <c>Directory.Build.props</c> carries the version, and
+///     everything else in the tree agrees with it or is deliberately independent of it.
 /// </summary>
 /// <remarks>
-/// ⚠ These sit beside <see cref="ProjectGraphTests"/> and <see cref="CanonicalDistributionTests"/>
-/// because they are the same kind of test: an invariant about the repository, asserted against the
-/// real files rather than against a constant. A version scheme enforced by discipline is a version
-/// scheme with two versions in it, and this repository already had a second one — <c>rules.json</c>
-/// carried <c>"since": "1.2"</c> while <c>Directory.Build.props</c> said <c>1.0.0</c>, describing
-/// two releases that never existed.
+///     ⚠ These sit beside <see cref="ProjectGraphTests" /> and <see cref="CanonicalDistributionTests" />
+///     because they are the same kind of test: an invariant about the repository, asserted against the
+///     real files rather than against a constant. A version scheme enforced by discipline is a version
+///     scheme with two versions in it, and this repository already had a second one — <c>rules.json</c>
+///     carried <c>"since": "1.2"</c> while <c>Directory.Build.props</c> said <c>1.0.0</c>, describing
+///     two releases that never existed.
 /// </remarks>
 public sealed partial class VersionSourcesTests {
     static string Root => RepositoryPaths.Root;
@@ -68,14 +68,14 @@ public sealed partial class VersionSourcesTests {
     }
 
     /// <summary>
-    /// ⚠ <c>since</c> is a version, in two registries, and both were describing releases that had
-    /// not happened.
+    ///     ⚠ <c>since</c> is a version, in two registries, and both were describing releases that had
+    ///     not happened.
     /// </summary>
     /// <remarks>
-    /// `rules.json` carried `1.1` and `1.2` against a declared `1.0.0` and zero tags. A `since` in
-    /// the future is not cosmetic: it reaches a consumer through the SARIF (`rules[].properties.
-    /// since`) and through `docs/rules/`, where it is the answer to "can I depend on this rule at
-    /// the version I have pinned".
+    ///     `rules.json` carried `1.1` and `1.2` against a declared `1.0.0` and zero tags. A `since` in
+    ///     the future is not cosmetic: it reaches a consumer through the SARIF (`rules[].properties.
+    ///     since`) and through `docs/rules/`, where it is the answer to "can I depend on this rule at
+    ///     the version I have pinned".
     /// </remarks>
     [Theory]
     [InlineData("Rules/Rikarin.Skala.Rules.Metadata/rules.json", "rules")]
@@ -116,16 +116,16 @@ public sealed partial class VersionSourcesTests {
     }
 
     /// <summary>
-    /// The canonical payload's version is <b>deliberately</b> not the tool's, and nothing may couple
-    /// them.
+    ///     The canonical payload's version is <b>deliberately</b> not the tool's, and nothing may couple
+    ///     them.
     /// </summary>
     /// <remarks>
-    /// ⚠ docs/plan/02 § "Repository policy" and the remark on <c>Build.CanonicalVersion</c>: a
-    /// canonical bump is a repository-wide reformatting commit and a tool bump is not, so a
-    /// repository must be able to take a bug fix without taking the reformat. This asserts the
-    /// *mechanism* rather than the current values — that the build's canonical version is a literal
-    /// and not derived from <c>VersionPrefix</c> — because two numbers that happen to differ today
-    /// are not two numbers that cannot be joined tomorrow.
+    ///     ⚠ docs/plan/02 § "Repository policy" and the remark on <c>Build.CanonicalVersion</c>: a
+    ///     canonical bump is a repository-wide reformatting commit and a tool bump is not, so a
+    ///     repository must be able to take a bug fix without taking the reformat. This asserts the
+    ///     *mechanism* rather than the current values — that the build's canonical version is a literal
+    ///     and not derived from <c>VersionPrefix</c> — because two numbers that happen to differ today
+    ///     are not two numbers that cannot be joined tomorrow.
     /// </remarks>
     [Fact]
     public void TheCanonicalPayloadVersion_IsNotCoupledToTheToolVersion() {
@@ -160,8 +160,8 @@ public sealed partial class VersionSourcesTests {
     }
 
     /// <summary>
-    /// ⚠ The <c>CHANGELOG.md</c> heading a release writes is the one a reader looks the version up
-    /// in, so the top released section may not be ahead of what the tree declares.
+    ///     ⚠ The <c>CHANGELOG.md</c> heading a release writes is the one a reader looks the version up
+    ///     in, so the top released section may not be ahead of what the tree declares.
     /// </summary>
     [Fact]
     public void TheChangelogsTopReleasedSection_IsNotAheadOfTheDeclaredVersion() {

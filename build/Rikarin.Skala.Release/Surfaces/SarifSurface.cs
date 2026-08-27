@@ -4,33 +4,33 @@ using System.Text.Json;
 namespace Rikarin.Skala.Release.Surfaces;
 
 /// <summary>
-/// The shape of the SARIF, measured by producing one from each build.
+///     The shape of the SARIF, measured by producing one from each build.
 /// </summary>
 /// <remarks>
-/// ⚠ ADR-012 freezes the SARIF shape, and doc 09 makes the report the machine-readable contract that
-/// baselines, gates, the MCP surface and every CI integration are written against. So the shape is
-/// read out of a <b>real report from a real run of each binary</b>, not out of the writer's source:
-/// a report model can be refactored without changing a byte of output, and a serializer setting can
-/// change every byte without touching the model.
-/// <para>
-/// ⚠ What is compared is the set of JSON <b>paths</b> and their value kinds, with array indices
-/// collapsed and unioned across elements — never the values. The report carries the tool's own
-/// version, two timestamps and a fingerprint per finding, all of which differ between any two runs;
-/// a value comparison would report "the SARIF changed" on every release and mean nothing.
-/// </para>
-/// <para>
-/// ⚠ The probe input is deliberately misformatted so that <c>SK0001</c> fires. An empty
-/// <c>results[]</c> exercises none of <c>locations</c>, <c>partialFingerprints</c> or <c>fixes</c> —
-/// which is most of the shape a consumer depends on, and <c>partialFingerprints</c> is what every
-/// baseline in every repository is keyed on.
-/// </para>
+///     ⚠ ADR-012 freezes the SARIF shape, and doc 09 makes the report the machine-readable contract that
+///     baselines, gates, the MCP surface and every CI integration are written against. So the shape is
+///     read out of a <b>real report from a real run of each binary</b>, not out of the writer's source:
+///     a report model can be refactored without changing a byte of output, and a serializer setting can
+///     change every byte without touching the model.
+///     <para>
+///         ⚠ What is compared is the set of JSON <b>paths</b> and their value kinds, with array indices
+///         collapsed and unioned across elements — never the values. The report carries the tool's own
+///         version, two timestamps and a fingerprint per finding, all of which differ between any two runs;
+///         a value comparison would report "the SARIF changed" on every release and mean nothing.
+///     </para>
+///     <para>
+///         ⚠ The probe input is deliberately misformatted so that <c>SK0001</c> fires. An empty
+///         <c>results[]</c> exercises none of <c>locations</c>, <c>partialFingerprints</c> or <c>fixes</c> —
+///         which is most of the shape a consumer depends on, and <c>partialFingerprints</c> is what every
+///         baseline in every repository is keyed on.
+///     </para>
 /// </remarks>
 public static class SarifSurface {
     public const string Name = "SARIF shape";
 
     /// <summary>
-    /// Misformatted on purpose: <c>SK0001</c> is syntactic, so it fires under <c>--load=loose</c> on
-    /// any machine, with no SDK, no project and no restore.
+    ///     Misformatted on purpose: <c>SK0001</c> is syntactic, so it fires under <c>--load=loose</c> on
+    ///     any machine, with no SDK, no project and no restore.
     /// </summary>
     const string ProbeSource = "class  C{ async void  M( ){} }\n";
 

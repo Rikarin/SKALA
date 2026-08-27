@@ -4,21 +4,24 @@ using System.Text;
 namespace Rikarin.Skala.Release;
 
 /// <summary>
-/// The release notes, written from the measurements.
+///     The release notes, written from the measurements.
 /// </summary>
 /// <remarks>
-/// ⚠ docs/plan/18 § "The notes are the deliverable". Not generated from the commit log: doc 02
-/// § "Repository policy" requires a formatting change to be listed with a corpus diff summary,
-/// because downstream that change <b>is</b> a commit in someone's repository, and a commit message
-/// cannot say how many of 716 files move. Four times in this project's history a summary and a
-/// measurement disagreed and the measurement was right. So every line below is a number some
-/// detector produced, and a surface that was not measured says so instead of saying "no change".
-/// <para>
-/// ⚠ The <c>CHANGELOG.md</c> block keeps the format that file already has — <c>## &lt;version&gt; —
-/// &lt;date&gt;</c> with <c>### Added/Changed/Fixed</c> beneath — because that file was written by
-/// hand from the merge history and a generator that reformatted it would make the whole record
-/// unreadable in one commit.
-/// </para>
+///     ⚠ docs/plan/18 § "The notes are the deliverable". Not generated from the commit log: doc 02
+///     § "Repository policy" requires a formatting change to be listed with a corpus diff summary,
+///     because downstream that change <b>is</b> a commit in someone's repository, and a commit message
+///     cannot say how many of 716 files move. Four times in this project's history a summary and a
+///     measurement disagreed and the measurement was right. So every line below is a number some
+///     detector produced, and a surface that was not measured says so instead of saying "no change".
+///     <para>
+///         ⚠ The <c>CHANGELOG.md</c> block keeps the format that file already has —
+///         <c>
+///## &lt;version&gt; —
+/// &lt;date&gt;
+///         </c> with <c>### Added/Changed/Fixed</c> beneath — because that file was written by
+///         hand from the merge history and a generator that reformatted it would make the whole record
+///         unreadable in one commit.
+///     </para>
 /// </remarks>
 public static class ReleaseNotes {
     public static string Render(ReleaseVerdict verdict, ReleaseRequest request, DateTimeOffset date) {

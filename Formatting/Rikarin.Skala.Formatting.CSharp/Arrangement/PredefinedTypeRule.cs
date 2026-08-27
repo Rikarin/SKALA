@@ -20,8 +20,8 @@ public sealed class PredefinedTypeRule : ArrangementRule {
     public override bool NeedsSemantics => true;
 
     /// <summary>
-    /// ⚠ Enabled when *either* key asks for it, because the two govern different positions and the
-    /// rewriter checks them one node at a time.
+    ///     ⚠ Enabled when *either* key asks for it, because the two govern different positions and the
+    ///     rewriter checks them one node at a time.
     /// </summary>
     public override bool IsEnabled(in ArrangementOptions options) =>
         options.PredefinedTypeForLocals || options.PredefinedTypeForMemberAccess;
