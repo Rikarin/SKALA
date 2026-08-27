@@ -15,6 +15,14 @@
 
   <ItemGroup>
     <PackageReference Include="Nuke.Common" />
+
+    <!--
+      ⚠ Not used by any target. These exist only to pin Nuke.Common's vulnerable transitives
+      forward; see the note in Directory.Packages.props. Removing Nuke.Common removes the need
+      for both. `dotnet list package` with the vulnerable and include-transitive flags is the check.
+    -->
+    <PackageReference Include="System.Security.Cryptography.Xml" />
+    <PackageReference Include="NuGet.Packaging" />
   </ItemGroup>
 
 </Project>
