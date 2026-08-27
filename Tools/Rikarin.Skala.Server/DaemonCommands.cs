@@ -44,8 +44,7 @@ public static class DaemonCommands {
         // gone. A banner is not worth a dead daemon.
         try {
             Console.WriteLine($"skala daemon {DaemonProtocol.Version} on {daemon.SocketPath}");
-        } catch (IOException) {
-        }
+        } catch (IOException) { }
 
         await daemon.RunAsync(cancellation).ConfigureAwait(false);
         return 0;

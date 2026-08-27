@@ -170,10 +170,17 @@ internal static class OptionRegistryReader {
     }
 
     public static string Literal(string? value) =>
-        value is null ? "null" : "\"" + value.Replace("\\", "\\\\").Replace("\"", "\\\"").Replace("\n", "\\n").Replace(
-            "\r",
-            "\\r"
-        ) + "\"";
+        value is null
+            ? "null"
+            : "\""
+            + value.Replace("\\", "\\\\")
+            .Replace("\"", "\\\"")
+            .Replace("\n", "\\n")
+            .Replace(
+                "\r",
+                "\\r"
+            )
+            + "\"";
 
     public static string IntLiteral(int? value) => value?.ToString(CultureInfo.InvariantCulture) ?? "null";
 }

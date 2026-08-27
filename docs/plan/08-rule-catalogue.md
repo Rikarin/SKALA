@@ -220,6 +220,49 @@ findings and the modernization set, which is the differentiator) → `SK2xxx`/`S
 replacement's core) → `SK7xxx` (metrics and duplication, needed for the gate) → `SK4xxx`/`SK6xxx` →
 `SK5xxx` last, because security rules that are wrong are worse than absent.
 
+### ⚠ What M5 actually shipped, and why it is nine ids rather than forty
+
+Seventeen ids are allocated; **six are analyzers**, three are the formatter's own findings, and eight
+are tool diagnostics.
+
+| Id | Scope | Loose mode | Floor | Fixtures (+/−) | corpus/real | Vixen |
+|---|---|---|---:|---:|---:|---:|
+| `SK0001` the file is not formatted | Syntax | ✅ | — | — | 301 files | not measured¹ |
+| `SK0002` unbreakable long line | Syntax | ✅ | — | — | hint | hint |
+| `SK0003` malformed xmldoc | Syntax | ✅ | — | — | hint | hint |
+| `SK1005` file-scoped namespace | Syntax | ✅ | 10 | 3 / 7 | 27 | 0 |
+| `SK1010` `is null` / `is not null` | Semantic | — | 9 | 5 / 7 | 114 | 12 |
+| `SK1020` `ArgumentNullException.ThrowIfNull` | Semantic | — | — | 3 / 6 | 2 | 0 |
+| `SK1030` `??=` | Syntax | ✅ | 8 | 4 / 6 | 0 | 0 |
+| `SK1034` `Count` over `Count()`/`Any()` | Semantic | — | — | 4 / 6 | 0 | 0 |
+| `SK1035` `Enum.GetValues<T>()` | Semantic | — | — | 2 / 4 | 0 | 0 |
+
+¹ `SK0001` over Vixen is the M3 formatting diff, which doc 15 § M3 records as deliberately deferred.
+The 301 on `corpus/real/` is not a defect count: those files are *inputs*, vendored unformatted on
+purpose, and the rule is reporting exactly that.
+
+The catalogue above lists thirty-six `SK1xxx` ids. Nine shipping is the shipping bar doing its job
+rather than the milestone falling short: **a rule ships when it has a fix, zero false positives on
+the reference corpus, and a "should not fire" fixture set at least as large as the positive one**, and
+most of the thirty-six do not survive the third clause without more work than M5 had. The ones that
+were cut and why is the useful part:
+
+- ⚠ **`SK1001` (collection expressions), `SK1002` (primary constructors), `SK1008` (records)** rewrite
+  a declaration's shape. Every one of them is a *good* rule and none of them is a *safe* fix, so each
+  needs the unsafe-fix path and an `--include` story that M5's `fix --safe` deliberately does not
+  give it.
+- ⚠ **`SK1015` (`is T t`), `SK1006` (`using` declaration), `SK1012` (switch expression)** change how
+  many times something is evaluated or where a `Dispose` happens. The guard that makes each of them
+  provably behaviour-preserving is most of the rule.
+- ⚠ **`SK1022`, `SK1025`, `SK1027`, `SK1032`** are the hot-path rules the catalogue already marks
+  `hint`. They need the path-scoped configuration to be worth anything, and shipping them silent is
+  shipping nothing.
+
+Two of the six that did ship — `SK1030` and `SK1035` — fire **zero** times on both reference trees.
+Their evidence is their fixtures and nothing else, which is worth stating rather than hiding behind a
+count: a rule with no corpus occurrences has a false-positive rate that is measured at zero and
+tested at nothing.
+
 ## Documentation
 
 `docs/rules/SK1002.md` is generated from `rules.json` and contains the summary, the rationale, the

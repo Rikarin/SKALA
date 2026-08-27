@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    The MCP server (ADR-014). ⚠ ModelContextProtocol.Core rather than ModelContextProtocol: the
+    latter is the DI/hosting layer and drags Microsoft.Extensions.Hosting into a tool that has one
+    process, one transport and six tools. The core package is the protocol and the stdio transport.
+  -->
+
+  <PropertyGroup>
+    <RootNamespace>Rikarin.Skala.Mcp</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="ModelContextProtocol.Core" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../Analysis/Rikarin.Skala.Analysis/Rikarin.Skala.Analysis.csproj" />
+    <ProjectReference Include="../../Core/Rikarin.Skala.Core/Rikarin.Skala.Core.csproj" />
+    <ProjectReference Include="../../Formatting/Rikarin.Skala.Formatting.CSharp/Rikarin.Skala.Formatting.CSharp.csproj" />
+  </ItemGroup>
+
+</Project>

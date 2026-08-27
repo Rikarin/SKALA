@@ -141,6 +141,7 @@ public sealed class BreakPlan {
     /// begin. <see cref="CSharpDocumentBuilder.VisitBraced"/> opens it.
     /// </remarks>
     readonly Dictionary<long, GroupPlan> _inner = [];
+
     readonly string _source;
     readonly PhaseOneOptions _options;
     int[] _forced = [];
@@ -665,8 +666,11 @@ public sealed class BreakPlan {
         var broken = style == WrapStyle.ChopAlways
             || overCap
             || forced
-            || _options.KeepsUserBreaksBetweenItems && interBroken
-            || _options.KeepsUserBreaksBetweenItems && keepExisting && delimiterBroken;
+            || _options.KeepsUserBreaksBetweenItems
+            && interBroken
+            || _options.KeepsUserBreaksBetweenItems
+            && keepExisting
+            && delimiterBroken;
 
         // ⚠ The per-construct `keep_existing_*` key outranks `place_simple_*_on_single_line`, and the
         // oracle is the only place that says so. With
@@ -852,6 +856,7 @@ public sealed class BreakPlan {
             Point(node.ColonToken, group);
             broken |= BreaksBefore(node.ColonToken);
         }
+
         foreach (var comma in node.Types.GetSeparators()) {
             var next = comma.GetNextToken();
             if (next.IsKind(SyntaxKind.None)) {
@@ -1196,10 +1201,13 @@ public sealed class BreakPlan {
         kind switch {
             SyntaxKind.AsteriskToken or SyntaxKind.SlashToken or SyntaxKind.PercentToken => 1,
             SyntaxKind.PlusToken or SyntaxKind.MinusToken => 2,
-            SyntaxKind.LessThanLessThanToken or SyntaxKind.GreaterThanGreaterThanToken
+            SyntaxKind.LessThanLessThanToken
+                or SyntaxKind.GreaterThanGreaterThanToken
                 or SyntaxKind.GreaterThanGreaterThanGreaterThanToken => 3,
-            SyntaxKind.LessThanToken or SyntaxKind.GreaterThanToken
-                or SyntaxKind.LessThanEqualsToken or SyntaxKind.GreaterThanEqualsToken => 4,
+            SyntaxKind.LessThanToken
+                or SyntaxKind.GreaterThanToken
+                or SyntaxKind.LessThanEqualsToken
+                or SyntaxKind.GreaterThanEqualsToken => 4,
             SyntaxKind.EqualsEqualsToken or SyntaxKind.ExclamationEqualsToken => 5,
             SyntaxKind.AmpersandToken => 6,
             SyntaxKind.CaretToken => 7,
@@ -1545,8 +1553,12 @@ public sealed class BreakPlan {
     PlacementStyle AttributePlacement(SyntaxNode node) =>
         node switch {
             BaseTypeDeclarationSyntax or DelegateDeclarationSyntax => _options.PlaceTypeAttributeOnSameLine,
-            MethodDeclarationSyntax or ConstructorDeclarationSyntax or DestructorDeclarationSyntax
-                or OperatorDeclarationSyntax or ConversionOperatorDeclarationSyntax or LocalFunctionStatementSyntax =>
+            MethodDeclarationSyntax
+                or ConstructorDeclarationSyntax
+                or DestructorDeclarationSyntax
+                or OperatorDeclarationSyntax
+                or ConversionOperatorDeclarationSyntax
+                or LocalFunctionStatementSyntax =>
                 _options.PlaceMethodAttributeOnSameLine,
             PropertyDeclarationSyntax or IndexerDeclarationSyntax or EventDeclarationSyntax =>
                 _options.PlaceAccessorHolderAttributeOnSameLine,
@@ -1602,9 +1614,12 @@ public sealed class BreakPlan {
     static bool IsChainRoot(SyntaxNode node) =>
         node is InvocationExpressionSyntax { Expression: MemberAccessExpressionSyntax or MemberBindingExpressionSyntax }
             or ConditionalAccessExpressionSyntax
-        && node.Parent is not (InvocationExpressionSyntax or MemberAccessExpressionSyntax
-            or ElementAccessExpressionSyntax or ConditionalAccessExpressionSyntax
-            or MemberBindingExpressionSyntax or PostfixUnaryExpressionSyntax);
+        && node.Parent is not (InvocationExpressionSyntax
+            or MemberAccessExpressionSyntax
+            or ElementAccessExpressionSyntax
+            or ConditionalAccessExpressionSyntax
+            or MemberBindingExpressionSyntax
+            or PostfixUnaryExpressionSyntax);
 
     // ── Registration ─────────────────────────────────────────────────────────────────────────
 

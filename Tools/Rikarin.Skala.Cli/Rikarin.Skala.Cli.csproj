@@ -29,7 +29,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="../../Analysis/Rikarin.Skala.Analysis/Rikarin.Skala.Analysis.csproj" />
     <ProjectReference Include="../../Core/Rikarin.Skala.Core/Rikarin.Skala.Core.csproj" />
+    <ProjectReference Include="../Rikarin.Skala.Mcp/Rikarin.Skala.Mcp.csproj" />
+    <ProjectReference Include="../../Reporting/Rikarin.Skala.Reporting/Rikarin.Skala.Reporting.csproj" />
     <ProjectReference Include="../../Formatting/Rikarin.Skala.Formatting.CSharp/Rikarin.Skala.Formatting.CSharp.csproj" />
     <ProjectReference Include="../Rikarin.Skala.Server/Rikarin.Skala.Server.csproj" />
   </ItemGroup>

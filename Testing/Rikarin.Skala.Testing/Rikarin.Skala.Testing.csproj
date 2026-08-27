@@ -20,6 +20,13 @@
   <ItemGroup>
     <ProjectReference Include="../../Formatting/Rikarin.Skala.Formatting.CSharp/Rikarin.Skala.Formatting.CSharp.csproj" />
 
+    <!--
+      ⚠ The harness measures the analysis half too, and `preprocessor` reads a real binary log
+      through the same loader `skala check` uses — which is what makes the symbol set it measures
+      with the build's own rather than a list someone typed.
+    -->
+    <ProjectReference Include="../../Analysis/Rikarin.Skala.Analysis/Rikarin.Skala.Analysis.csproj" />
+
     <ProjectReference Include="../../Tools/Rikarin.Skala.Cli/Rikarin.Skala.Cli.csproj"
                       ReferenceOutputAssembly="false"
                       Private="false"

@@ -24,6 +24,23 @@ Reference machine: Apple M-series, 10 cores, 32 GB. Reference corpus: Vixen — 
 Each is a test ([12](12-conformance-and-testing.md) § "Performance tests") with a 20 % band, not an
 aspiration.
 
+⚠ **M5 measured the analysis rows.** Reference machine, Release build, warm page cache:
+
+| Row | Budget | Measured | |
+|---|---|---|---|
+| `verify` on a 5-file change, `loose`, cold process | 900 ms | **0.39–0.54 s** clean | ✅ 0.50–1.02 s when the five files actually have findings — the fixes and the formatter's edit list are the difference. 0.84 s on the very first run of all, which is the page cache and not the tool |
+| `check` whole corpus, cold, binlog present | < 4 min | **58–134 s** | ✅ Vixen: 4 688 files, 60 compilations, generators re-run. The spread is other work on the machine, not the tool; the low end is an idle box |
+| `check` on a 5-file change, warm | < 5 s | **not measured on Vixen** | ⚠ the cache writes `.skala/cache/` into the repository under test, and this milestone was under an instruction not to write into Vixen at all |
+| `check`, Skala's own solution (24 compilations) | — | cold 6.8 s, warm **6.0 s** | ⚠ **the cache buys 12 %, not the order of magnitude the budget assumes** |
+
+⚠ **That last row is the interesting one and it is a warning about where the time is.** The
+incremental cache removes the *analyzer* pass over unchanged files, and on a small solution the
+analyzer pass is not the cost — reading the binlog, resolving references and re-running the
+generators is, and no per-file diagnostic cache can remove any of it. The 5 s warm budget needs the
+*compilation* cached, not the diagnostics, which is a daemon that holds `CSharpCompilation` objects
+across invocations. That is the daemon [11](11-cli-and-integrations.md) already describes, extended
+from format results to compilations, and it is unbuilt.
+
 ⚠ M3 measures the first row at 280–320 ms cold and 60–70 ms warm, and the second at 11.9 s. The
 whole-corpus budget is met; the warm single-file one is missed by the client's own process start,
 which § "Startup" predicts exactly — `skala daemon status`, doing no work at all, is the same 60 ms.

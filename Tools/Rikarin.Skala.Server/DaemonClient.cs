@@ -18,7 +18,8 @@ namespace Rikarin.Skala.Server;
 /// </remarks>
 public static class DaemonClient {
     /// <summary>Whether something is listening. Used before unlinking a socket file.</summary>
-    public static bool Probe(string repositoryRoot) => Send(repositoryRoot, new DaemonRequest { Command = "status" }) is { Ok: true };
+    public static bool Probe(string repositoryRoot) =>
+        Send(repositoryRoot, new DaemonRequest { Command = "status" }) is { Ok: true };
 
     /// <summary>Sends one request, or null when the daemon is unreachable.</summary>
     public static DaemonResponse? Send(string repositoryRoot, DaemonRequest request, TimeSpan? timeout = null) {
@@ -89,8 +90,6 @@ public static class DaemonClient {
             );
         } catch (System.ComponentModel.Win32Exception) {
             // No daemon, and the caller has already fallen through to doing the work itself.
-        } catch (InvalidOperationException) {
-        } catch (IOException) {
-        }
+        } catch (InvalidOperationException) { } catch (IOException) { }
     }
 }

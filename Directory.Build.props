@@ -16,7 +16,7 @@
     <Copyright>Copyright (c) Rikarin</Copyright>
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
     <RepositoryUrl>https://github.com/Rikarin/Skala</RepositoryUrl>
-    <VersionPrefix>0.1.0</VersionPrefix>
+    <VersionPrefix>0.6.0</VersionPrefix>
     <IsPackable>false</IsPackable>
   </PropertyGroup>
 
@@ -36,8 +36,21 @@
     <EnforceCodeStyleInBuild>false</EnforceCodeStyleInBuild>
   </PropertyGroup>
 
+  <!--
+    Analyzer-shared profile: *.Rules.Metadata. netstandard2.0 like the analyzer profile, because
+    Rikarin.Skala.Rules references it and that assembly loads into csc and into Rider — but it is an
+    ordinary library rather than a Roslyn component, so it is packed and it has no analyzer wiring.
+    ⚠ This block must come before the analyzer block: '.Rules.Metadata' does not end with '.Rules',
+    but the tool block below keys on SkalaProfile being empty and would otherwise claim it.
+  -->
+  <PropertyGroup Condition="$(MSBuildProjectName.EndsWith('.Rules.Metadata'))">
+    <SkalaProfile>analyzer-shared</SkalaProfile>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <ImplicitUsings>disable</ImplicitUsings>
+  </PropertyGroup>
+
   <!-- Analyzer profile: *.Rules, *.Generator -->
-  <PropertyGroup Condition="$(MSBuildProjectName.EndsWith('.Rules')) or $(MSBuildProjectName.EndsWith('.Generator'))">
+  <PropertyGroup Condition="'$(SkalaProfile)' == '' and ($(MSBuildProjectName.EndsWith('.Rules')) or $(MSBuildProjectName.EndsWith('.Generator')))">
     <SkalaProfile>analyzer</SkalaProfile>
     <TargetFramework>netstandard2.0</TargetFramework>
     <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>

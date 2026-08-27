@@ -69,14 +69,18 @@ public static class ConstructReport {
 
         var kinds = new HashSet<string>(lines.Keys, StringComparer.Ordinal);
         kinds.UnionWith(divergent.Keys);
-        return [.. kinds
-            .Select(kind => new ConstructShare(
-                kind,
-                occurrences.GetValueOrDefault(kind),
-                lines.GetValueOrDefault(kind),
-                divergent.GetValueOrDefault(kind)))
-            .OrderByDescending(static share => share.Divergent)
-            .ThenBy(static share => share.Kind, StringComparer.Ordinal)];
+        return [
+            .. kinds
+                .Select(kind => new ConstructShare(
+                        kind,
+                        occurrences.GetValueOrDefault(kind),
+                        lines.GetValueOrDefault(kind),
+                        divergent.GetValueOrDefault(kind)
+                    )
+                )
+                .OrderByDescending(static share => share.Divergent)
+                .ThenBy(static share => share.Kind, StringComparer.Ordinal)
+        ];
     }
 
     /// <summary>The innermost node that owns each line, by kind.</summary>
@@ -120,8 +124,7 @@ public static class ConstructReport {
         }
     }
 
-    static void Bump(Dictionary<string, int> counter, string key) =>
-        counter[key] = counter.GetValueOrDefault(key) + 1;
+    static void Bump(Dictionary<string, int> counter, string key) => counter[key] = counter.GetValueOrDefault(key) + 1;
 
     /// <summary>
     /// The report, and the R1 verdict.

@@ -8,13 +8,17 @@ different way to reach the same code, and none of them may have behaviour the CL
 ```
 skala format   [paths…]  [--check] [--diff] [--range a:b] [--staged] [--since <ref>]
                          [--arrange[=syntactic|full]] [--reflow] [--quiet]
+                         [--define A,B] [--load binlog|workspace|loose|none]      ← M5
 skala arrange  [paths…]  [--check] [--include <ids>] [--exclude <ids>]
 skala check    [paths…]  [--gate <name>] [--since <ref>] [--baseline <file>]
-                         [--load binlog|workspace|loose] [--binlog <file>]
-                         [--rules <ids>] [--include-hints] [--show-suppressions] [--profile]
-skala fix      [paths…]  [--safe] [--include <ids>] [--dry-run]
-skala verify   [paths…]  [--fix] [--format agent|json]
+                         [--load binlog|workspace|loose] [--binlog <file>] [--project <file>]
+                         [--require-fresh-binlog] [--rules <ids>] [--include-hints]
+                         [--show-suppressions] [--no-formatting] [--define A,B]
+                         [--resharper-severities] [--profile]
+skala fix      [paths…]  [--safe] [--include <ids>] [--dry-run] [--load …] [--binlog <file>]
+skala verify   [paths…]  [--fix] [--format agent|json|plain] [--load …] [--define A,B]
 skala explain  <ruleId | optionKey>
+skala rules    list|docs                                                          ← M5
 skala config   explain|diff|distill|fix|check
 skala baseline create|update|prune
 skala report   [--format …] [--input <sarif>]
@@ -26,8 +30,19 @@ skala daemon   status|stop
 ```
 
 Global: `--format`, `--output`, `--no-color`, `--verbose`, `--config <file>`, `--option k=v`,
-`--jobs n`, `--no-cache`, `--no-daemon`. ⚠ `--jobs`, `--no-cache` and `--no-daemon` exist on
-`format` from M3 and nowhere else yet; the rest are still the intent.
+`--jobs n`, `--no-cache`, `--no-daemon`.
+
+⚠ **What exists after M5**, because a command surface that lists intent as if it were behaviour is a
+surface nobody can trust: `format`, `check`, `verify`, `fix`, `explain`, `rules`, `config`, `cache`,
+`mcp`, `lsp`, `daemon` and `hooks`. Still intent: `arrange` (M4), `baseline`, `report`, `trend` and
+every `--since`/`--baseline` flag (M6). `--jobs` and `--no-daemon` remain `format`-only; `--no-cache`
+is now on `check`, `verify` and `format`.
+
+⚠ **`--define` is on `format`, not only on `check`.** SK-DIV-0004 is a *formatting* limitation —
+without symbols Roslyn hands back every `#if DEBUG` body as disabled text and the formatter correctly
+refuses to touch it — so the symbols have to reach the formatter, and `--load` on `format` is the
+shorthand for "take them from what the build compiled". The daemon protocol carries them too, and
+they are part of its cache key: the same file formatted for Debug and for Release are two answers.
 
 ⚠ `skala daemon` has no `start`. The daemon is started lazily by whatever needs it and exits after
 thirty minutes idle; a `start` verb invites a person to run one by hand and then wonder why their

@@ -55,10 +55,14 @@ public static class UnifiedDiff {
             var rightCount = trace.Skip(start).Take(end - start).Count(static e => e.Kind != EditKind.Removed);
 
             builder.Append("@@ -")
-                .Append(leftStart.ToString(CultureInfo.InvariantCulture)).Append(',')
-                .Append(leftCount.ToString(CultureInfo.InvariantCulture)).Append(" +")
-                .Append(rightStart.ToString(CultureInfo.InvariantCulture)).Append(',')
-                .Append(rightCount.ToString(CultureInfo.InvariantCulture)).AppendLine(" @@");
+                .Append(leftStart.ToString(CultureInfo.InvariantCulture))
+                .Append(',')
+                .Append(leftCount.ToString(CultureInfo.InvariantCulture))
+                .Append(" +")
+                .Append(rightStart.ToString(CultureInfo.InvariantCulture))
+                .Append(',')
+                .Append(rightCount.ToString(CultureInfo.InvariantCulture))
+                .AppendLine(" @@");
 
             for (var i = start; i < end; i++) {
                 var (kind, line) = trace[i];
@@ -68,7 +72,8 @@ public static class UnifiedDiff {
                         EditKind.Removed => '-',
                         _ => ' '
                     }
-                ).AppendLine(line);
+                )
+                    .AppendLine(line);
             }
 
             index = end;

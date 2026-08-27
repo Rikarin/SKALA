@@ -154,7 +154,8 @@ public sealed class Daemon : IAsyncDisposable {
                         path,
                         request.Text,
                         request.Overrides,
-                        Path.Combine(_repositoryRoot, ".skala")
+                        Path.Combine(_repositoryRoot, ".skala"),
+                        request.Define
                     );
 
                     return new DaemonResponse {

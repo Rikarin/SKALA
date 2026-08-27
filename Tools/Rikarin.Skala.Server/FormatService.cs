@@ -39,12 +39,13 @@ public sealed class FormatService {
         string path,
         string? text,
         IReadOnlyList<KeyValuePair<string, string>>? overrides,
-        string? crashRoot
+        string? crashRoot,
+        IReadOnlyList<string>? preprocessorSymbols = null
     ) {
         var source = text is null ? CSharpFormatter.Read(path) : SourceText.From(text, Encoding.UTF8);
         var chain = EditorConfigChain.For(path);
         var options = ConfigurationCache.Options(chain, overrides);
-        var key = KeyOf(source, chain, overrides);
+        var key = KeyOf(source, chain, overrides, preprocessorSymbols);
 
         if (_cache.TryGetValue(key, out var cached)) {
             Hits++;
@@ -52,7 +53,7 @@ public sealed class FormatService {
         }
 
         Misses++;
-        var result = CSharpFormatter.Format(path, source, options, crashRoot);
+        var result = CSharpFormatter.Format(path, source, options, crashRoot, preprocessorSymbols);
 
         // ⚠ Evict wholesale rather than by age. An LRU needs a lock on the hot path to be an LRU at
         // all, and the thing being protected is a bound on memory, not a hit rate.
@@ -76,7 +77,8 @@ public sealed class FormatService {
     static string KeyOf(
         SourceText source,
         EditorConfigChain chain,
-        IReadOnlyList<KeyValuePair<string, string>>? overrides
+        IReadOnlyList<KeyValuePair<string, string>>? overrides,
+        IReadOnlyList<string>? preprocessorSymbols
     ) {
         var builder = new StringBuilder();
         builder.Append(Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(source.ToString()))));
@@ -88,6 +90,14 @@ public sealed class FormatService {
         if (overrides is { Count: > 0 }) {
             foreach (var (key, value) in overrides) {
                 builder.Append('|').Append(key).Append('=').Append(value);
+            }
+        }
+
+        // ⚠ Part of the key, and it has to be: which branch of a `#if` is disabled text is a parse
+        // decision, so the same bytes under two symbol sets are two different formatted files.
+        if (preprocessorSymbols is { Count: > 0 }) {
+            foreach (var symbol in preprocessorSymbols.Order(StringComparer.Ordinal)) {
+                builder.Append("|#").Append(symbol);
             }
         }
 

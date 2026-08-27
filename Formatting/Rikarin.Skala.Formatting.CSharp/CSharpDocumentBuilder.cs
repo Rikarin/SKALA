@@ -302,10 +302,14 @@ public sealed partial class CSharpDocumentBuilder {
         // member access inside it. Testing only for a member access finds the wrong node and the
         // chain never spends its level.
         node is InvocationExpressionSyntax { Expression: MemberAccessExpressionSyntax or MemberBindingExpressionSyntax }
-        or MemberAccessExpressionSyntax or ConditionalAccessExpressionSyntax
-        && node.Parent is not (InvocationExpressionSyntax or MemberAccessExpressionSyntax
-            or ElementAccessExpressionSyntax or ConditionalAccessExpressionSyntax
-            or MemberBindingExpressionSyntax or PostfixUnaryExpressionSyntax);
+            or MemberAccessExpressionSyntax
+            or ConditionalAccessExpressionSyntax
+        && node.Parent is not (InvocationExpressionSyntax
+            or MemberAccessExpressionSyntax
+            or ElementAccessExpressionSyntax
+            or ConditionalAccessExpressionSyntax
+            or MemberBindingExpressionSyntax
+            or PostfixUnaryExpressionSyntax);
 
     static bool IsPatternChainRoot(SyntaxNode node) =>
         node is BinaryPatternSyntax && node.Parent is not BinaryPatternSyntax;
@@ -320,11 +324,21 @@ public sealed partial class CSharpDocumentBuilder {
     /// middle of it.
     /// </remarks>
     static bool OwnsAContinuationFrame(SyntaxNode node) =>
-        node is StatementSyntax or MemberDeclarationSyntax or AccessorDeclarationSyntax
-        or AnonymousFunctionExpressionSyntax or SwitchExpressionArmSyntax or ArgumentSyntax
-        or AttributeArgumentSyntax or ParameterSyntax or AnonymousObjectMemberDeclaratorSyntax
-        or VariableDeclaratorSyntax or SubpatternSyntax or CollectionElementSyntax
-        or SwitchLabelSyntax or BaseTypeSyntax or TypeParameterConstraintClauseSyntax;
+        node is StatementSyntax
+            or MemberDeclarationSyntax
+            or AccessorDeclarationSyntax
+            or AnonymousFunctionExpressionSyntax
+            or SwitchExpressionArmSyntax
+            or ArgumentSyntax
+            or AttributeArgumentSyntax
+            or ParameterSyntax
+            or AnonymousObjectMemberDeclaratorSyntax
+            or VariableDeclaratorSyntax
+            or SubpatternSyntax
+            or CollectionElementSyntax
+            or SwitchLabelSyntax
+            or BaseTypeSyntax
+            or TypeParameterConstraintClauseSyntax;
 
     void Dispatch(SyntaxNode node) {
         if (_verbatimMembers.Contains(node.SpanStart) && node is MemberDeclarationSyntax) {
@@ -423,7 +437,10 @@ public sealed partial class CSharpDocumentBuilder {
     /// expression keeps the continuation, because there the level is real.
     /// </remarks>
     void VisitChild(SyntaxNode owner, SyntaxNode child) {
-        if (child is BlockSyntax or AccessorListSyntax && OwnsAContinuationFrame(owner) && _frames.Count > 0 && _frames[^1].Activated) {
+        if (child is BlockSyntax or AccessorListSyntax
+            && OwnsAContinuationFrame(owner)
+            && _frames.Count > 0
+            && _frames[^1].Activated) {
             CloseIndent(IndentKind.Continuous);
             _frames[^1] = _frames[^1] with { Activated = false };
         }
@@ -450,7 +467,8 @@ public sealed partial class CSharpDocumentBuilder {
 
         // use_continuous_indent_inside_initializer_braces = false leaves an initializer's contents
         // at the level of the construct that owns them.
-        if (node is InitializerExpressionSyntax or AnonymousObjectCreationExpressionSyntax && !_options.UseContinuousIndentInsideInitializerBraces) {
+        if (node is InitializerExpressionSyntax or AnonymousObjectCreationExpressionSyntax
+            && !_options.UseContinuousIndentInsideInitializerBraces) {
             suppress = true;
         }
 
@@ -719,7 +737,8 @@ public sealed partial class CSharpDocumentBuilder {
         foreach (var statement in node.Statements) {
             // ⚠ resharper_indent_break_from_case = false puts the control transfer back at the
             // label's own level, which is a different shape and not a rounding error.
-            if (!_options.IndentBreakFromCase && statement is BreakStatementSyntax or ContinueStatementSyntax or GotoStatementSyntax) {
+            if (!_options.IndentBreakFromCase
+                && statement is BreakStatementSyntax or ContinueStatementSyntax or GotoStatementSyntax) {
                 OpenIndent(IndentKind.Outdent);
                 Visit(statement);
                 CloseIndent(IndentKind.Outdent);

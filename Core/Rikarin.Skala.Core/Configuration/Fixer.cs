@@ -62,19 +62,22 @@ public static class Fixer {
             }
 
             foreach (var option in OptionRegistry.All) {
-                var byKey = document.Assignments.Where(a => OptionRegistry.TryResolve(a.Key, out var id) && id == option.Id
-                ).ToArray();
+                var byKey = document.Assignments.Where(a => OptionRegistry.TryResolve(a.Key, out var id)
+                    && id == option.Id
+                )
+                    .ToArray();
                 if (byKey.Length < 2) {
                     continue;
                 }
 
                 var winner = byKey.MinBy(static a => OptionResolver.SpecificityOf(a.Key))!;
                 foreach (var loser in byKey) {
-                    if (ReferenceEquals(loser, winner) || string.Equals(
-                        loser.Value,
-                        winner.Value,
-                        StringComparison.Ordinal
-                    )) {
+                    if (ReferenceEquals(loser, winner)
+                        || string.Equals(
+                            loser.Value,
+                            winner.Value,
+                            StringComparison.Ordinal
+                        )) {
                         continue;
                     }
 

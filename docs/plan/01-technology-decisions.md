@@ -34,16 +34,16 @@ alternative is not. Central package management (`Directory.Packages.props`) is o
 |---|---|---|
 | `MSBuild.StructuredLogger` | 2.3.246 | Reads a `.binlog` and hands back every `Csc` invocation with its full command line. This is the primary project-loading path (ADR-007). |
 | `Microsoft.Build.Locator` | 1.11.2 | Finds the SDK's MSBuild so the fallback design-time build can run in-process. Only used on the fallback path. |
-| `Microsoft.Build` / `.Framework` / `.Utilities.Core` | matched to SDK, `ExcludeAssets=runtime` | The fallback path only. Never redistributed — MSBuildLocator requires the SDK copy to win. |
+| `Microsoft.Build` / `.Framework` / `.Utilities.Core` / `.NET.StringTools` | 17.14.28, `ExcludeAssets=runtime` + `PrivateAssets=all` | ⚠ **Both** paths, not only the fallback: `MSBuild.StructuredLogger` deserialises a binlog into MSBuild's own event types, so `Microsoft.Build.Framework` must be loadable to *read* one. Never redistributed — MSBuildLocator requires the SDK copy to win, and `MSBL001` fails the build for shipping ours. The 17.11.x the register first pinned is a known high-severity advisory and `TreatWarningsAsErrors` refuses it. |
 
 ### CLI, output, hosting
 
 | Package | Version | Why |
 |---|---|---|
 | `System.CommandLine` | 2.0.10 | The stable v2. Vixen already uses it; one argument parser across the author's tools. |
-| `Spectre.Console` | 0.57.2 | Human rendering only — tables, diffs, progress. Behind an interface so `--no-color`/CI paths never touch it, and so it can be dropped without touching the engine. |
-| `Sarif.Sdk` (`Microsoft.CodeAnalysis.Sarif`) | 5.6.0 | SARIF 2.1.0 object model and validator. Writing SARIF by hand is how you produce SARIF that GitHub rejects. |
-| `ModelContextProtocol` | 2.2.0 | The MCP server ([10](10-ai-agent-integration.md)). Official C# SDK. |
+| `Spectre.Console` | 0.57.2 | Human rendering only — tables, diffs, progress. Behind an interface so `--no-color`/CI paths never touch it, and so it can be dropped without touching the engine. ⚠ **Not referenced as of M5.** The terminal renderer is plain text; at this size the dependency was buying colour and nothing else, and `Rikarin.Skala.Rules` may not have it in its closure anyway (doc 02). It is added when there is a table worth the byte. |
+| `Sarif.Sdk` (`Microsoft.CodeAnalysis.Sarif`) | 5.6.0 | SARIF 2.1.0 object model and validator. Writing SARIF by hand is how you produce SARIF that GitHub rejects. ⚠ 5.6.0 and not 4.x: the older line pins `Newtonsoft.Json` 9.0.1, which is a known high-severity advisory. |
+| `ModelContextProtocol.Core` | 2.2.0 | The MCP server ([10](10-ai-agent-integration.md)). ⚠ The `.Core` package, not `ModelContextProtocol`: the latter is the DI/hosting layer and drags `Microsoft.Extensions.Hosting` into a tool that has one process, one transport and six tools. |
 | `Microsoft.Extensions.Logging.Abstractions` + `ZLogger` | 10.0.10 / 2.5.10 | Same logging stack as Vixen. `ILogger` at the boundary, ZLogger as the sink, so Skala's own diagnostics are structured. |
 
 ### Test

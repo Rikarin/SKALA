@@ -72,9 +72,13 @@ public static class GitHooks {
         if (!OperatingSystem.IsWindows()) {
             File.SetUnixFileMode(
                 path,
-                UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute
-                | UnixFileMode.GroupRead | UnixFileMode.GroupExecute
-                | UnixFileMode.OtherRead | UnixFileMode.OtherExecute
+                UnixFileMode.UserRead
+                | UnixFileMode.UserWrite
+                | UnixFileMode.UserExecute
+                | UnixFileMode.GroupRead
+                | UnixFileMode.GroupExecute
+                | UnixFileMode.OtherRead
+                | UnixFileMode.OtherExecute
             );
         }
 
@@ -105,8 +109,8 @@ public static class GitHooks {
                 Path.Combine(repositoryRoot, ".git", "hooks"),
                 StringComparison.Ordinal
             )
-            ? "core.hooksPath (" + configured + ")"
-            : null;
+                ? "core.hooksPath (" + configured + ")"
+                : null;
     }
 
     static string HooksDirectory(string repositoryRoot) => Path.Combine(repositoryRoot, ".git", "hooks");

@@ -122,21 +122,65 @@ Those are human operations and their absence from the tool list is the enforceme
 
 For Claude Code specifically, and by analogy for anything else with a post-edit hook:
 
-```jsonc
-// .claude/settings.json
+⚠ **The example this section used to carry did not work, in three ways**, and M5 installed the
+working one. Recorded because each is a trap:
+
+1. **`$CLAUDE_FILE_PATH` does not exist.** A `PostToolUse` hook receives the tool call as JSON on
+   *stdin*; the path is `.tool_input.file_path`. A hook using the environment variable formats
+   nothing, silently, forever.
+2. **`.claude/settings.json` is strict JSON.** No comments, so the reasoning for a hook cannot live
+   beside it and has to live here.
+3. **`skala format --quiet` prints nothing at all** when a file needs formatting — `--quiet` means
+   "nothing but diagnostics" and "this file is not formatted" is not a diagnostic. A hook that uses
+   it reports success in every case.
+
+```json
 {
   "hooks": {
-    "PostToolUse": [{
-      "matcher": "Write|Edit",
-      "hooks": [{ "type": "command",
-                  "command": "skala format --quiet \"$CLAUDE_FILE_PATH\"" }]
-    }],
-    "Stop": [{
-      "hooks": [{ "type": "command", "command": "skala verify --format=agent" }]
-    }]
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "timeout": 30,
+            "command": "f=$(python3 -c 'import sys,json;print(json.load(sys.stdin).get(\"tool_input\",{}).get(\"file_path\",\"\"))' 2>/dev/null); case \"$f\" in *.cs) skala format --check \"$f\" 2>&1 | head -20 ;; esac; exit 0"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "timeout": 120,
+            "command": "… stop_hook_active guard …; files=$(git diff --name-only --diff-filter=ACMR HEAD -- '*.cs' | head -50); [ -n \"$files\" ] || exit 0; out=$(skala verify --format=agent $files 2>&1); [ $? -eq 0 ] && exit 0; echo \"$out\" | head -60 >&2; exit 2"
+          }
+        ]
+      }
+    ]
   }
 }
 ```
+
+Three decisions in that `Stop` hook:
+
+- ⚠ **Exit 2, with the report on stderr.** That is the only exit code a `Stop` hook can use to hand
+  the agent something to read; 0 lets the turn end and the findings go nowhere. It is what makes this
+  the honest-work check rather than a log line.
+- ⚠ **The `stop_hook_active` guard.** Without it, an agent that cannot fix a finding loops forever.
+  The field exists for exactly this and the hook exits 0 the second time.
+- ⚠ **Scoped to `git diff --name-only HEAD`, not the whole tree.** `skala verify` over 4 688 files is
+  ten seconds and two thousand findings truncated at the character cap, which is not a check, it is a
+  wall. Scoped to the change it is the question the hook is asking.
+
+⚠ **In Vixen the `PostToolUse` hook is `--check` and not a write, deliberately.** doc 10's design is
+that the file is formatted the moment it is written; [15](15-roadmap.md) § M3 records that Vixen's
+reformat — 2 717 files, 83 241 lines — is **deferred** until the fidelity tail closes, because at
+98.86 % Rider reformats about one line in a hundred back. A writing `PostToolUse` hook performs that
+deferred commit one file at a time, unreviewed, which is the same diff with none of the
+reviewability. It becomes a write by deleting one word, and the word to delete is `--check`.
 
 `PostToolUse` formatting is the right shape: the agent never sees a formatting finding because the
 file is formatted the moment it is written, which is both fewer tokens and fewer opportunities to

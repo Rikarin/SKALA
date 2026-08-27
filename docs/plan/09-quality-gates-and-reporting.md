@@ -19,18 +19,25 @@ One `SarifLog` per run, written to `.skala/report.sarif` (or `--output`), contai
 - `runs[0].invocations[0]` — exit code, timing, whether the run was partial (cancelled, analyzer
   failure), and the list of skipped rules with reasons.
 
+⚠ **M5 built this section and nothing below it.** The renderers, the exit codes and the SARIF are
+M5's; baselines, the fingerprint's second half, `--since`, the full gate condition set, duplication,
+history and `skala report` are M6's. Where the two meet, M5 chose to fail loudly rather than silently:
+a gate definition naming `newIssues`, `baseline`, `metrics` or `ruleOverrides` **fails the gate** with
+"not implemented in this build", because a gate that quietly drops the condition someone relies on
+passes for the wrong reason.
+
 Everything a human or a machine sees is rendered from this object, in `Rikarin.Skala.Reporting`:
 
 | Renderer | Surface | Notes |
 |---|---|---|
-| `terminal` | default TTY output | Spectre, grouped by file, severity-coloured, fixable marked `⟳` |
-| `plain` | `--no-color`, non-TTY | one finding per line, `path:line:col: level SKxxxx: message` — greppable, and the format every editor's error parser already understands |
-| `json` | `--format=json` | the SARIF, verbatim |
-| `github` | CI | `::error file=…,line=…::` annotations plus a `$GITHUB_STEP_SUMMARY` markdown table |
-| `sarif-upload` | CI | the same file, uploaded by `github/codeql-action/upload-sarif` — no Skala-side integration needed |
-| `junit` | CI | for anything that reads JUnit XML |
-| `markdown` | `skala report --format=markdown` | the PR-comment body |
-| `mcp` | agent | [10](10-ai-agent-integration.md) |
+| `terminal` | default TTY output | ✅ grouped by file, fixable marked `⟳`. ⚠ Not Spectre: M5 writes plain text, because the only thing the dependency was buying at this size was colour |
+| `plain` | `--no-color`, non-TTY | ✅ one finding per line, `path:line:col: level SKxxxx: message` — greppable, and the format every editor's error parser already understands |
+| `json` | `--format=json` | ✅ the SARIF, verbatim |
+| `github` | CI | ✅ annotations. ⚠ The `$GITHUB_STEP_SUMMARY` table is M6, with the CI wiring |
+| `sarif-upload` | CI | the same file; no Skala-side integration needed, so nothing to build |
+| `junit` | CI | M6 |
+| `markdown` | `skala report --format=markdown` | M6, with `skala report` |
+| `agent` | agent, and the MCP server | ✅ the three-bucket report of [10](10-ai-agent-integration.md) |
 
 ⚠ No renderer contains analysis logic. A renderer that decides what counts as a failure is a second
 implementation of the gate. Renderers read; the gate decides.
@@ -45,6 +52,13 @@ carries:
 ```
 skala/v1 = xxHash128( ruleId ⊕ normalizedSnippet ⊕ enclosingSymbolDisplayString ⊕ ordinalWithinSymbol )
 ```
+
+⚠ **M5 emits `skala/v1` with the first two terms and the file name, not the last two.** The enclosing
+symbol and the ordinal need the symbol display string, which is M6's work beside the baseline that
+consumes it. The version tag is why that is safe to defer: adding them is a **new fingerprint
+version**, not a silent change of meaning under baselines that already exist. What is already true is
+the property the section is about — `ReportingTests.Fingerprint_SurvivesTheFindingMovingDownTheFile`
+asserts that the same finding at line 12 and at line 480 hashes the same.
 
 - `normalizedSnippet` — the finding's span, with whitespace collapsed and identifiers preserved.
 - `enclosingSymbolDisplayString` — `Vixen.Core.Foo.Bar(int, string)`, stable across file moves.

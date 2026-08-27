@@ -30,10 +30,10 @@ public sealed class ProjectGraphTests {
         // Rikarin.Skala.Cli` is not.
         foreach (var project in Projects) {
             foreach (var reference in project.ProjectReferences.Where(static r => r.Path.EndsWith(
-                "Rikarin.Skala.Cli.csproj",
-                StringComparison.Ordinal
-            )
-            )) {
+                        "Rikarin.Skala.Cli.csproj",
+                        StringComparison.Ordinal
+                    )
+                )) {
                 Assert.False(
                     reference.ReferencesOutputAssembly,
                     $"{project.Name} takes a compile-time reference on the CLI."
@@ -43,14 +43,14 @@ public sealed class ProjectGraphTests {
 
         var sources = Directory.EnumerateFiles(RepositoryPaths.Root, "*.cs", SearchOption.AllDirectories)
             .Where(static path => !path.Contains(
-                $"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}",
-                StringComparison.Ordinal
-            )
+                    $"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}",
+                    StringComparison.Ordinal
+                )
             )
             .Where(static path => !path.Contains(
-                $"{Path.DirectorySeparatorChar}Rikarin.Skala.Cli{Path.DirectorySeparatorChar}",
-                StringComparison.Ordinal
-            )
+                    $"{Path.DirectorySeparatorChar}Rikarin.Skala.Cli{Path.DirectorySeparatorChar}",
+                    StringComparison.Ordinal
+                )
             );
 
         foreach (var source in sources) {
@@ -90,16 +90,17 @@ public sealed class ProjectGraphTests {
         var directory = System.IO.Path.GetDirectoryName(formatting.Path)!;
         foreach (var source in Directory.EnumerateFiles(directory, "*.cs", SearchOption.AllDirectories)) {
             if (source.Contains(
-                $"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}",
-                StringComparison.Ordinal
-            )) {
+                    $"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}",
+                    StringComparison.Ordinal
+                )) {
                 continue;
             }
 
             // Comments may name Roslyn — one of them explains why this project may not use it.
             foreach (var line in File.ReadLines(source)) {
                 var code = line.TrimStart();
-                if (code.StartsWith("//", StringComparison.Ordinal) || code.StartsWith("///", StringComparison.Ordinal)) {
+                if (code.StartsWith("//", StringComparison.Ordinal)
+                    || code.StartsWith("///", StringComparison.Ordinal)) {
                     continue;
                 }
 
@@ -115,9 +116,9 @@ public sealed class ProjectGraphTests {
         var testing = Assert.Single(Projects, static p => p.Name == "Rikarin.Skala.Testing");
         Assert.All(
             testing.ProjectReferences.Where(static r => r.Path.EndsWith(
-                "Rikarin.Skala.Cli.csproj",
-                StringComparison.Ordinal
-            )
+                    "Rikarin.Skala.Cli.csproj",
+                    StringComparison.Ordinal
+                )
             ),
             static reference => Assert.False(reference.ReferencesOutputAssembly)
         );
@@ -161,13 +162,16 @@ public sealed class ProjectGraphTests {
 
     [Fact]
     public void TheAnalyzerPackageReferencesOnlyRoslynAndItsMetadata() {
-        // Rikarin.Skala.Rules arrives in Milestone 5. Until then the guard covers the other project
-        // on the analyzer profile, which has the same load constraints.
-        foreach (var project in Projects.Where(static p => p.Name.EndsWith(".Rules", StringComparison.Ordinal) || p.Name.EndsWith(
-            ".Generator",
-            StringComparison.Ordinal
-        )
-        )) {
+        // ⚠ Rikarin.Skala.Rules arrived at Milestone 5, so this now guards the real analyzer package
+        // as well as the two generators. `.Rules.Metadata` is deliberately outside the filter: it is
+        // netstandard2.0 for the same reason but is an ordinary library rather than a Roslyn
+        // component, and its own reference set is checked by being the only thing Rules may name.
+        foreach (var project in Projects.Where(static p => p.Name.EndsWith(".Rules", StringComparison.Ordinal)
+                    || p.Name.EndsWith(
+                        ".Generator",
+                        StringComparison.Ordinal
+                    )
+            )) {
             Assert.Equal("netstandard2.0", project.TargetFramework);
 
             foreach (var package in project.PackageReferences) {
@@ -207,35 +211,37 @@ public sealed record ProjectFile(
     IReadOnlyList<ProjectDependency> ProjectReferences) {
     public static IReadOnlyList<ProjectFile> LoadAll(string root) =>
         Directory.EnumerateFiles(root, "*.csproj", SearchOption.AllDirectories)
-            .Where(static path => !path.Contains(
+        .Where(static path => !path.Contains(
                 $"{System.IO.Path.DirectorySeparatorChar}obj{System.IO.Path.DirectorySeparatorChar}",
                 StringComparison.Ordinal
             )
-            )
-            .Select(Load)
-            .OrderBy(static project => project.Name, StringComparer.Ordinal)
-            .ToArray();
+        )
+        .Select(Load)
+        .OrderBy(static project => project.Name, StringComparer.Ordinal)
+        .ToArray();
 
     static ProjectFile Load(string path) {
         var document = XDocument.Load(path);
         var name = System.IO.Path.GetFileNameWithoutExtension(path);
         var packages = document.Descendants("PackageReference")
-            .Select(static element => element.Attribute("Include")?.Value ?? element.Attribute("Update")?.Value ?? string.Empty
+            .Select(static element => element.Attribute("Include")?.Value
+                    ?? element.Attribute("Update")?.Value
+                    ?? string.Empty
             )
             .Where(static value => value.Length > 0 && !value.StartsWith("@(", StringComparison.Ordinal))
             .ToArray();
         var projects = document.Descendants("ProjectReference")
             .Select(static element => new ProjectDependency(
-                (element.Attribute("Include")?.Value ?? string.Empty).Replace(
-                    '\\',
-                    System.IO.Path.DirectorySeparatorChar
-                ),
-                !string.Equals(
-                    element.Attribute("ReferenceOutputAssembly")?.Value,
-                    "false",
-                    StringComparison.OrdinalIgnoreCase
+                    (element.Attribute("Include")?.Value ?? string.Empty).Replace(
+                        '\\',
+                        System.IO.Path.DirectorySeparatorChar
+                    ),
+                    !string.Equals(
+                        element.Attribute("ReferenceOutputAssembly")?.Value,
+                        "false",
+                        StringComparison.OrdinalIgnoreCase
+                    )
                 )
-            )
             )
             .Where(static dependency => dependency.Path.Length > 0)
             .ToArray();

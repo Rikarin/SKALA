@@ -40,6 +40,18 @@ public sealed record FormatRequest {
     /// never the formatter.
     /// </remarks>
     public int? Jobs { get; init; }
+
+    /// <summary>
+    /// <c>--define</c>: the preprocessor symbols to parse with.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ SK-DIV-0004, and the reason it is a formatter option rather than an analysis one. Without
+    /// symbols Roslyn hands every <c>#if DEBUG</c> body back as disabled text and Skala leaves it
+    /// byte-for-byte, so on a tree with much conditional code the conditional half is not formatted
+    /// at all. A loaded compilation knows the symbols; <c>--define</c> is how a repository with no
+    /// build says them itself.
+    /// </remarks>
+    public IReadOnlyList<string> Define { get; init; } = [];
 }
 
 /// <summary>How <c>--staged</c> behaves in the presence of unstaged edits.</summary>
@@ -219,7 +231,7 @@ public static class FormatCommand {
     ) {
         FormatResult result;
         try {
-            result = CSharpFormatter.FormatFile(file, request.Overrides, crashRoot);
+            result = CSharpFormatter.FormatFile(file, request.Overrides, crashRoot, request.Define);
         } catch (IOException exception) {
             return new FileOutcome(
                 true,
@@ -290,10 +302,11 @@ public static class FormatCommand {
                 continue;
             }
 
-            foreach (var file in Directory.EnumerateFiles(full, "*.cs", SearchOption.AllDirectories).OrderBy(
-                static f => f,
-                StringComparer.Ordinal
-            )) {
+            foreach (var file in Directory.EnumerateFiles(full, "*.cs", SearchOption.AllDirectories)
+                .OrderBy(
+                    static f => f,
+                    StringComparer.Ordinal
+                )) {
                 // A formatter that reformats artifacts/ is a formatter that is quietly very slow.
                 if (IsExcluded(file) || !seen.Add(file)) {
                     continue;

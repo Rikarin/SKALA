@@ -22,12 +22,15 @@ public sealed record OracleHeader(string ReSharperVersion, string ConfigHash, st
             .Where(static parts => parts.Length == 2)
             .ToDictionary(static parts => parts[0], static parts => parts[1], StringComparer.Ordinal);
 
-        return fields.TryGetValue("resharper", out var version) ? new OracleHeader(
-            version,
-            fields.GetValueOrDefault("config", string.Empty).Replace("sha256:", string.Empty, StringComparison.Ordinal),
-            fields.GetValueOrDefault("profile", string.Empty),
-            fields.GetValueOrDefault("generated", string.Empty)
-        ) : null;
+        return fields.TryGetValue("resharper", out var version)
+            ? new OracleHeader(
+                version,
+                fields.GetValueOrDefault("config", string.Empty)
+                .Replace("sha256:", string.Empty, StringComparison.Ordinal),
+                fields.GetValueOrDefault("profile", string.Empty),
+                fields.GetValueOrDefault("generated", string.Empty)
+            )
+            : null;
     }
 }
 

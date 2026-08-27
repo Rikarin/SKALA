@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    The rule unit level: for each shipped rule, a positive fixture set and a "should not fire"
+    fixture set at least as large (docs/plan/16 § R3).
+  -->
+
+  <!--
+    ⚠ The fixtures are data, not code. Several of them deliberately declare the same type twice
+    across two files and several deliberately do not compile as a set; they are compiled one at a
+    time by RuleFixtures.Compile, which is the only compilation whose result means anything.
+  -->
+  <ItemGroup>
+    <Compile Remove="fixtures/**/*.cs" />
+    <None Include="fixtures/**/*.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../Rikarin.Skala.Rules/Rikarin.Skala.Rules.csproj" />
+    <ProjectReference Include="../Rikarin.Skala.Rules.Metadata/Rikarin.Skala.Rules.Metadata.csproj" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" />
+  </ItemGroup>
+
+</Project>

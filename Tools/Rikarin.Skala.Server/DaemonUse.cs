@@ -37,7 +37,10 @@ public static class DaemonUse {
             return null;
         }
 
-        var response = DaemonClient.Send(root, new DaemonRequest { Command = "format", Path = path });
+        var response = DaemonClient.Send(
+            root,
+            new DaemonRequest { Command = "format", Path = path, Define = request.Define }
+        );
         if (response is not { Ok: true, Formatted: not null }) {
             // ⚠ There is no `skala daemon start`, so this is the lazy start docs/plan/11 promises:
             // the first single-file format in a repository leaves a daemon behind for the second.

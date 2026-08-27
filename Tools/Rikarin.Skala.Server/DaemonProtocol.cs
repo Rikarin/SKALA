@@ -19,6 +19,17 @@ public sealed record DaemonRequest {
     public string? Text { get; init; }
 
     public IReadOnlyList<KeyValuePair<string, string>> Overrides { get; init; } = [];
+
+    /// <summary>
+    /// The preprocessor symbols the file is parsed with (<c>--define</c>, or a loaded compilation's).
+    /// </summary>
+    /// <remarks>
+    /// ⚠ Part of the request rather than of the daemon's own state. Two clients of one repository
+    /// may hold different symbol sets — a `#if DEBUG` file formatted for a Debug compilation and the
+    /// same file formatted for Release are different answers — so the symbols travel with the
+    /// question and are part of the cache key, never a property of the daemon.
+    /// </remarks>
+    public IReadOnlyList<string> Define { get; init; } = [];
 }
 
 /// <summary>What the daemon answers.</summary>
@@ -53,7 +64,7 @@ public sealed record DaemonResponse {
 /// </remarks>
 public static class DaemonProtocol {
     /// <summary>Bumped whenever <see cref="DaemonRequest"/> or <see cref="DaemonResponse"/> changes.</summary>
-    public const string Version = "skala/1";
+    public const string Version = "skala/2";
 
     /// <summary>The socket lives beside the crash artefacts, under the repository root.</summary>
     public const string SocketName = "daemon.sock";
@@ -61,15 +72,13 @@ public static class DaemonProtocol {
     /// <summary>⚠ The daemon exits after this long without a request. It is not a service.</summary>
     public static readonly TimeSpan IdleTimeout = TimeSpan.FromMinutes(30);
 
-    public static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web) {
-        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
-    };
+    public static readonly JsonSerializerOptions Json =
+        new(JsonSerializerDefaults.Web) { DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull };
 
     /// <summary>⚠ A cap, so that a corrupt length prefix cannot ask for a gigabyte.</summary>
     public const int MaxFrame = 64 * 1024 * 1024;
 
-    public static string SocketPath(string repositoryRoot) =>
-        Path.Combine(repositoryRoot, ".skala", SocketName);
+    public static string SocketPath(string repositoryRoot) => Path.Combine(repositoryRoot, ".skala", SocketName);
 
     public static async Task WriteAsync<T>(Stream stream, T message, CancellationToken cancellation) {
         var payload = JsonSerializer.SerializeToUtf8Bytes(message, Json);
@@ -88,7 +97,9 @@ public static class DaemonProtocol {
 
         var length = BinaryPrimitives.ReadInt32BigEndian(header);
         if (length is < 0 or > MaxFrame) {
-            throw new InvalidDataException($"frame length {length.ToString(System.Globalization.CultureInfo.InvariantCulture)} is out of range");
+            throw new InvalidDataException(
+                $"frame length {length.ToString(System.Globalization.CultureInfo.InvariantCulture)} is out of range"
+            );
         }
 
         var payload = new byte[length];

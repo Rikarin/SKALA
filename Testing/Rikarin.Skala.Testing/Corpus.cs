@@ -27,8 +27,8 @@ public static class Corpus {
 
     public static string RepositoryRoot { get; } =
         Assembly.GetExecutingAssembly()
-            .GetCustomAttributes<AssemblyMetadataAttribute>()
-            .FirstOrDefault(static attribute => attribute.Key == "SkalaRepositoryRoot")?.Value
+        .GetCustomAttributes<AssemblyMetadataAttribute>()
+        .FirstOrDefault(static attribute => attribute.Key == "SkalaRepositoryRoot")?.Value
         ?? throw new InvalidOperationException("SkalaRepositoryRoot was not stamped into the assembly.");
 
     public static string Root { get; } = Path.Combine(RepositoryRoot, "Testing", "corpus");
@@ -41,10 +41,12 @@ public static class Corpus {
             return [];
         }
 
-        return [.. Directory.EnumerateFiles(root, "*.cs", SearchOption.AllDirectories)
-            .Where(static path => !path.EndsWith(".expected.cs", StringComparison.Ordinal))
-            .OrderBy(static path => path, StringComparer.Ordinal)
-            .Select(path => new CorpusFile(set, Path.GetRelativePath(root, path).Replace('\\', '/'), path))];
+        return [
+            .. Directory.EnumerateFiles(root, "*.cs", SearchOption.AllDirectories)
+                .Where(static path => !path.EndsWith(".expected.cs", StringComparison.Ordinal))
+                .OrderBy(static path => path, StringComparer.Ordinal)
+                .Select(path => new CorpusFile(set, Path.GetRelativePath(root, path).Replace('\\', '/'), path))
+        ];
     }
 
     public static IReadOnlyList<CorpusFile> All() => [.. Files(Constructs), .. Files(Real), .. Files(Pathological)];

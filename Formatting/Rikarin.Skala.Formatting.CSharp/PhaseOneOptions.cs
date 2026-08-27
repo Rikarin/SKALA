@@ -175,9 +175,8 @@ public readonly struct PhaseOneOptions {
         KeepExistingInvocationParensArrangement = options.GetBool(Ids.KeepExistingInvocationParensArrangement);
         KeepExistingDeclarationParensArrangement = options.GetBool(Ids.KeepExistingDeclarationParensArrangement);
         KeepExistingLambdaParensArrangement = options.GetBool(Ids.KeepExistingLambdaParensArrangement);
-        KeepExistingPrimaryConstructorParensArrangement = options.GetBool(
-            Ids.KeepExistingPrimaryConstructorParensArrangement
-        );
+        KeepExistingPrimaryConstructorParensArrangement =
+            options.GetBool(Ids.KeepExistingPrimaryConstructorParensArrangement);
         KeepExistingExprMemberArrangement = options.GetBool(Ids.KeepExistingExprMemberArrangement);
         KeepExistingEmbeddedArrangement = options.GetBool(Ids.KeepExistingEmbeddedArrangement);
         KeepExistingAttributeArrangement = options.GetBool(Ids.KeepExistingAttributeArrangement);
@@ -211,9 +210,8 @@ public readonly struct PhaseOneOptions {
         PlaceMethodAttributeOnSameLine = (PlacementStyle)options.GetRaw(Ids.PlaceMethodAttributeOnSameLine);
         PlaceFieldAttributeOnSameLine = (PlacementStyle)options.GetRaw(Ids.PlaceFieldAttributeOnSameLine);
         PlaceAccessorAttributeOnSameLine = (PlacementStyle)options.GetRaw(Ids.PlaceAccessorAttributeOnSameLine);
-        PlaceAccessorHolderAttributeOnSameLine = (PlacementStyle)options.GetRaw(
-            Ids.PlaceAccessorHolderAttributeOnSameLine
-        );
+        PlaceAccessorHolderAttributeOnSameLine =
+            (PlacementStyle)options.GetRaw(Ids.PlaceAccessorHolderAttributeOnSameLine);
         PlaceRecordFieldAttributeOnSameLine = (PlacementStyle)options.GetRaw(Ids.PlaceRecordFieldAttributeOnSameLine);
         MaxAttributeLengthForSameLine = options.GetInt(Ids.MaxAttributeLengthForSameLine);
 
@@ -221,13 +219,13 @@ public readonly struct PhaseOneOptions {
         PlaceExprMethodOnSingleLine = (PlacementStyle)options.GetRaw(Ids.PlaceExprMethodOnSingleLine);
         PlaceExprPropertyOnSingleLine = (PlacementStyle)options.GetRaw(Ids.PlaceExprPropertyOnSingleLine);
         PlaceExprAccessorOnSingleLine = (PlacementStyle)options.GetRaw(Ids.PlaceExprAccessorOnSingleLine);
-        PlaceSimpleEmbeddedStatementOnSameLine = (PlacementStyle)options.GetRaw(
-            Ids.PlaceSimpleEmbeddedStatementOnSameLine
-        );
+        PlaceSimpleEmbeddedStatementOnSameLine =
+            (PlacementStyle)options.GetRaw(Ids.PlaceSimpleEmbeddedStatementOnSameLine);
         PlaceSimpleCaseStatementOnSameLine = (PlacementStyle)options.GetRaw(Ids.PlaceSimpleCaseStatementOnSameLine);
         PlaceTypeConstraintsOnSameLine = options.GetBool(Ids.PlaceTypeConstraintsOnSameLine);
         PlaceConstructorInitializerOnSameLine = options.GetBool(Ids.PlaceConstructorInitializerOnSameLine);
-        PlacePrimaryConstructorInitializerOnSameLine = options.GetBool(Ids.PlacePrimaryConstructorInitializerOnSameLine);
+        PlacePrimaryConstructorInitializerOnSameLine =
+            options.GetBool(Ids.PlacePrimaryConstructorInitializerOnSameLine);
         PlaceLinqIntoOnNewLine = options.GetBool(Ids.PlaceLinqIntoOnNewLine);
         NewLineBetweenQueryExpressionClauses = options.GetBool(Ids.NewLineBetweenQueryExpressionClauses);
 
@@ -567,25 +565,21 @@ public static class Ids {
     public static readonly OptionId SpaceBeforeComma = Of("resharper_space_before_comma");
     public static readonly OptionId SpaceBeforeSemicolon = Of("resharper_csharp_space_before_semicolon");
 
-    public static readonly OptionId SpaceAfterSemicolonInForStatement = Of(
-        "resharper_space_after_semicolon_in_for_statement"
-    );
+    public static readonly OptionId SpaceAfterSemicolonInForStatement =
+        Of("resharper_space_after_semicolon_in_for_statement");
 
-    public static readonly OptionId SpaceBeforeSemicolonInForStatement = Of(
-        "resharper_space_before_semicolon_in_for_statement"
-    );
+    public static readonly OptionId SpaceBeforeSemicolonInForStatement =
+        Of("resharper_space_before_semicolon_in_for_statement");
 
     public static readonly OptionId SpaceAfterCast = Of("resharper_space_after_cast");
 
-    public static readonly OptionId SpaceAroundMemberAccessOperator = Of(
-        "resharper_space_around_member_access_operator"
-    );
+    public static readonly OptionId SpaceAroundMemberAccessOperator =
+        Of("resharper_space_around_member_access_operator");
 
     public static readonly OptionId SpaceAfterUnaryOperator = Of("resharper_csharp_space_after_unary_operator");
 
-    public static readonly OptionId SpaceNearPostfixAndPrefixOp = Of(
-        "resharper_csharp_space_near_postfix_and_prefix_op"
-    );
+    public static readonly OptionId SpaceNearPostfixAndPrefixOp =
+        Of("resharper_csharp_space_near_postfix_and_prefix_op");
 
     public static readonly OptionId SpaceAroundAssignmentOp = Of("resharper_csharp_space_around_assignment_op");
     public static readonly OptionId SpaceAroundLambdaArrow = Of("resharper_csharp_space_around_lambda_arrow");
@@ -595,133 +589,104 @@ public static class Ids {
     public static readonly OptionId SpaceAroundAliasEq = Of("resharper_csharp_space_around_alias_eq");
     public static readonly OptionId SpaceAfterOperatorKeyword = Of("resharper_csharp_space_after_operator_keyword");
 
-    public static readonly OptionId SpaceBetweenKeywordAndExpression = Of(
-        "resharper_csharp_space_between_keyword_and_expression"
-    );
+    public static readonly OptionId SpaceBetweenKeywordAndExpression =
+        Of("resharper_csharp_space_between_keyword_and_expression");
 
-    public static readonly OptionId SpaceBetweenKeywordAndType = OfInert(
-        "resharper_csharp_space_between_keyword_and_type"
-    );
+    public static readonly OptionId SpaceBetweenKeywordAndType =
+        OfInert("resharper_csharp_space_between_keyword_and_type");
 
-    public static readonly OptionId SpaceAfterKeywordsInControlFlowStatements = Of(
-        "resharper_space_after_keywords_in_control_flow_statements"
-    );
+    public static readonly OptionId SpaceAfterKeywordsInControlFlowStatements =
+        Of("resharper_space_after_keywords_in_control_flow_statements");
 
-    public static readonly OptionId SpaceBeforeMethodParentheses = Of(
-        "resharper_csharp_space_before_method_parentheses"
-    );
+    public static readonly OptionId SpaceBeforeMethodParentheses =
+        Of("resharper_csharp_space_before_method_parentheses");
 
-    public static readonly OptionId SpaceBeforeMethodCallParentheses = Of(
-        "resharper_csharp_space_before_method_call_parentheses"
-    );
+    public static readonly OptionId SpaceBeforeMethodCallParentheses =
+        Of("resharper_csharp_space_before_method_call_parentheses");
 
-    public static readonly OptionId SpaceBeforeEmptyMethodParentheses = Of(
-        "resharper_csharp_space_before_empty_method_parentheses"
-    );
+    public static readonly OptionId SpaceBeforeEmptyMethodParentheses =
+        Of("resharper_csharp_space_before_empty_method_parentheses");
 
-    public static readonly OptionId SpaceBeforeEmptyMethodCallParentheses = Of(
-        "resharper_csharp_space_before_empty_method_call_parentheses"
-    );
+    public static readonly OptionId SpaceBeforeEmptyMethodCallParentheses =
+        Of("resharper_csharp_space_before_empty_method_call_parentheses");
 
     public static readonly OptionId SpaceBeforeNewParentheses = Of("resharper_csharp_space_before_new_parentheses");
 
-    public static readonly OptionId SpaceBeforeTypeofParentheses = Of(
-        "resharper_csharp_space_before_typeof_parentheses"
-    );
+    public static readonly OptionId SpaceBeforeTypeofParentheses =
+        Of("resharper_csharp_space_before_typeof_parentheses");
 
-    public static readonly OptionId SpaceBeforeSizeofParentheses = Of(
-        "resharper_csharp_space_before_sizeof_parentheses"
-    );
+    public static readonly OptionId SpaceBeforeSizeofParentheses =
+        Of("resharper_csharp_space_before_sizeof_parentheses");
 
-    public static readonly OptionId SpaceBeforeDefaultParentheses = Of(
-        "resharper_csharp_space_before_default_parentheses"
-    );
+    public static readonly OptionId SpaceBeforeDefaultParentheses =
+        Of("resharper_csharp_space_before_default_parentheses");
 
-    public static readonly OptionId SpaceBeforeCheckedParentheses = Of(
-        "resharper_csharp_space_before_checked_parentheses"
-    );
+    public static readonly OptionId SpaceBeforeCheckedParentheses =
+        Of("resharper_csharp_space_before_checked_parentheses");
 
-    public static readonly OptionId SpaceBeforeNameofParentheses = Of(
-        "resharper_csharp_space_before_nameof_parentheses"
-    );
+    public static readonly OptionId SpaceBeforeNameofParentheses =
+        Of("resharper_csharp_space_before_nameof_parentheses");
 
     public static readonly OptionId SpaceWithinParentheses = Of("resharper_csharp_space_within_parentheses");
 
-    public static readonly OptionId SpaceBetweenTypecastParentheses = Of(
-        "resharper_csharp_space_between_typecast_parentheses"
-    );
+    public static readonly OptionId SpaceBetweenTypecastParentheses =
+        Of("resharper_csharp_space_between_typecast_parentheses");
 
-    public static readonly OptionId SpaceBeforeOpenSquareBrackets = OfInert(
-        "resharper_space_before_open_square_brackets"
-    );
+    public static readonly OptionId SpaceBeforeOpenSquareBrackets =
+        OfInert("resharper_space_before_open_square_brackets");
 
-    public static readonly OptionId SpaceBeforeArrayAccessBrackets = Of(
-        "resharper_csharp_space_before_array_access_brackets"
-    );
+    public static readonly OptionId SpaceBeforeArrayAccessBrackets =
+        Of("resharper_csharp_space_before_array_access_brackets");
 
-    public static readonly OptionId SpaceBeforeArrayRankBrackets = Of(
-        "resharper_csharp_space_before_array_rank_brackets"
-    );
+    public static readonly OptionId SpaceBeforeArrayRankBrackets =
+        Of("resharper_csharp_space_before_array_rank_brackets");
 
-    public static readonly OptionId SpaceWithinArrayAccessBrackets = Of(
-        "resharper_csharp_space_within_array_access_brackets"
-    );
+    public static readonly OptionId SpaceWithinArrayAccessBrackets =
+        Of("resharper_csharp_space_within_array_access_brackets");
 
-    public static readonly OptionId SpaceWithinAttributeBrackets = Of(
-        "resharper_csharp_space_within_attribute_brackets"
-    );
+    public static readonly OptionId SpaceWithinAttributeBrackets =
+        Of("resharper_csharp_space_within_attribute_brackets");
 
-    public static readonly OptionId SpaceWithinListPatternBrackets = Of(
-        "resharper_csharp_space_within_list_pattern_brackets"
-    );
+    public static readonly OptionId SpaceWithinListPatternBrackets =
+        Of("resharper_csharp_space_within_list_pattern_brackets");
 
-    public static readonly OptionId SpaceBeforeTypeArgumentAngle = Of(
-        "resharper_csharp_space_before_type_argument_angle"
-    );
+    public static readonly OptionId SpaceBeforeTypeArgumentAngle =
+        Of("resharper_csharp_space_before_type_argument_angle");
 
-    public static readonly OptionId SpaceBeforeTypeParameterAngle = Of(
-        "resharper_csharp_space_before_type_parameter_angle"
-    );
+    public static readonly OptionId SpaceBeforeTypeParameterAngle =
+        Of("resharper_csharp_space_before_type_parameter_angle");
 
-    public static readonly OptionId SpaceWithinTypeArgumentAngles = Of(
-        "resharper_csharp_space_within_type_argument_angles"
-    );
+    public static readonly OptionId SpaceWithinTypeArgumentAngles =
+        Of("resharper_csharp_space_within_type_argument_angles");
 
-    public static readonly OptionId SpaceWithinTypeParameterAngles = Of(
-        "resharper_csharp_space_within_type_parameter_angles"
-    );
+    public static readonly OptionId SpaceWithinTypeParameterAngles =
+        Of("resharper_csharp_space_within_type_parameter_angles");
 
     public static readonly OptionId SpaceAfterAttributes = Of("resharper_csharp_space_after_attributes");
 
-    public static readonly OptionId SpaceBetweenAttributeSections = Of(
-        "resharper_csharp_space_between_attribute_sections"
-    );
+    public static readonly OptionId SpaceBetweenAttributeSections =
+        Of("resharper_csharp_space_between_attribute_sections");
 
     public static readonly OptionId SpaceBeforeAttributeColon = Of("resharper_csharp_space_before_attribute_colon");
     public static readonly OptionId SpaceAfterAttributeColon = Of("resharper_csharp_space_after_attribute_colon");
 
-    public static readonly OptionId SpaceBeforeColonInInheritanceClause = Of(
-        "resharper_space_before_colon_in_inheritance_clause"
-    );
+    public static readonly OptionId SpaceBeforeColonInInheritanceClause =
+        Of("resharper_space_before_colon_in_inheritance_clause");
 
-    public static readonly OptionId SpaceAfterColonInInheritanceClause = Of(
-        "resharper_space_after_colon_in_inheritance_clause"
-    );
+    public static readonly OptionId SpaceAfterColonInInheritanceClause =
+        Of("resharper_space_after_colon_in_inheritance_clause");
 
     public static readonly OptionId SpaceBeforeColonInCase = Of("resharper_csharp_space_before_colon_in_case");
     public static readonly OptionId SpaceAfterColonInCase = Of("resharper_csharp_space_after_colon_in_case");
 
-    public static readonly OptionId SpaceBeforeColonInCtorInitializer = Of(
-        "resharper_space_before_colon_in_ctor_initializer"
-    );
+    public static readonly OptionId SpaceBeforeColonInCtorInitializer =
+        Of("resharper_space_before_colon_in_ctor_initializer");
 
-    public static readonly OptionId SpaceBeforeTypeParameterConstraintColon = Of(
-        "resharper_csharp_space_before_type_parameter_constraint_colon"
-    );
+    public static readonly OptionId SpaceBeforeTypeParameterConstraintColon =
+        Of("resharper_csharp_space_before_type_parameter_constraint_colon");
 
-    public static readonly OptionId SpaceAfterTypeParameterConstraintColon = Of(
-        "resharper_csharp_space_after_type_parameter_constraint_colon"
-    );
+    public static readonly OptionId SpaceAfterTypeParameterConstraintColon =
+        Of("resharper_csharp_space_after_type_parameter_constraint_colon");
 
     public static readonly OptionId SpaceBeforeTernaryQuest = Of("resharper_csharp_space_before_ternary_quest");
     public static readonly OptionId SpaceAfterTernaryQuest = Of("resharper_csharp_space_after_ternary_quest");
@@ -729,39 +694,31 @@ public static class Ids {
     public static readonly OptionId SpaceAfterTernaryColon = Of("resharper_csharp_space_after_ternary_colon");
     public static readonly OptionId SpaceBeforeNullableMark = Of("resharper_csharp_space_before_nullable_mark");
 
-    public static readonly OptionId SpaceBeforePointerAsterikDeclaration = Of(
-        "resharper_csharp_space_before_pointer_asterik_declaration"
-    );
+    public static readonly OptionId SpaceBeforePointerAsterikDeclaration =
+        Of("resharper_csharp_space_before_pointer_asterik_declaration");
 
-    public static readonly OptionId SpaceBeforeSinglelineAccessorholder = Of(
-        "resharper_csharp_space_before_singleline_accessorholder"
-    );
+    public static readonly OptionId SpaceBeforeSinglelineAccessorholder =
+        Of("resharper_csharp_space_before_singleline_accessorholder");
 
-    public static readonly OptionId SpaceInSinglelineAccessorholder = Of(
-        "resharper_csharp_space_in_singleline_accessorholder"
-    );
+    public static readonly OptionId SpaceInSinglelineAccessorholder =
+        Of("resharper_csharp_space_in_singleline_accessorholder");
 
-    public static readonly OptionId SpaceBetweenAccessorsInSinglelineProperty = Of(
-        "resharper_csharp_space_between_accessors_in_singleline_property"
-    );
+    public static readonly OptionId SpaceBetweenAccessorsInSinglelineProperty =
+        Of("resharper_csharp_space_between_accessors_in_singleline_property");
 
     // ⚠ Inert since milestone 3, because the shape it governs no longer exists. `space_in_singleline_method`
     // is the spacing of `{ M(); }` on a method's own line, and BreakPlan.PlanOnePerLine gives every
     // statement a line of its own — the oracle does the same, so no input produces a single-line
     // method body with anything in it. An empty one is `empty_block_style`'s.
-    public static readonly OptionId SpaceInSinglelineMethod = OfInert(
-        "resharper_csharp_space_in_singleline_method"
-    );
+    public static readonly OptionId SpaceInSinglelineMethod = OfInert("resharper_csharp_space_in_singleline_method");
 
-    public static readonly OptionId SpaceInSinglelineAnonymousMethod = Of(
-        "resharper_csharp_space_in_singleline_anonymous_method"
-    );
+    public static readonly OptionId SpaceInSinglelineAnonymousMethod =
+        Of("resharper_csharp_space_in_singleline_anonymous_method");
 
     public static readonly OptionId SpaceWithinEmptyBraces = Of("resharper_csharp_space_within_empty_braces");
 
-    public static readonly OptionId SpaceWithinSingleLineArrayInitializerBraces = Of(
-        "resharper_csharp_space_within_single_line_array_initializer_braces"
-    );
+    public static readonly OptionId SpaceWithinSingleLineArrayInitializerBraces =
+        Of("resharper_csharp_space_within_single_line_array_initializer_braces");
 
     public static readonly OptionId SpaceWithinSlicePattern = Of("resharper_csharp_space_within_slice_pattern");
     public static readonly OptionId SpaceWithinSpreadPattern = Of("resharper_space_within_spread_pattern");
@@ -797,101 +754,86 @@ public static class Ids {
     public static readonly OptionId IndentNestedLockStmt = Of("resharper_csharp_indent_nested_lock_stmt");
     public static readonly OptionId IndentNestedFixedStmt = Of("resharper_csharp_indent_nested_fixed_stmt");
 
-    public static readonly OptionId UseContinuousIndentInsideParens = Of(
-        "resharper_csharp_use_continuous_indent_inside_parens"
-    );
+    public static readonly OptionId UseContinuousIndentInsideParens =
+        Of("resharper_csharp_use_continuous_indent_inside_parens");
 
-    public static readonly OptionId UseContinuousIndentInsideInitializerBraces = Of(
-        "resharper_csharp_use_continuous_indent_inside_initializer_braces"
-    );
+    public static readonly OptionId UseContinuousIndentInsideInitializerBraces =
+        Of("resharper_csharp_use_continuous_indent_inside_initializer_braces");
 
     public static readonly OptionId ContinuousIndentMultiplier = Of("resharper_csharp_continuous_indent_multiplier");
     public static readonly OptionId IndentPreprocessorIf = Of("resharper_csharp_indent_preprocessor_if");
     public static readonly OptionId IndentPreprocessorOther = Of("resharper_csharp_indent_preprocessor_other");
     public static readonly OptionId IndentPreprocessorRegion = Of("resharper_csharp_indent_preprocessor_region");
 
-    public static readonly OptionId IndentAnonymousMethodBlock = OfInert(
-        "resharper_csharp_indent_anonymous_method_block"
-    );
+    public static readonly OptionId IndentAnonymousMethodBlock =
+        OfInert("resharper_csharp_indent_anonymous_method_block");
 
     public static readonly OptionId KeepBlankLinesInCode = Of("resharper_csharp_keep_blank_lines_in_code");
 
-    public static readonly OptionId KeepBlankLinesInDeclarations = Of(
-        "resharper_csharp_keep_blank_lines_in_declarations"
-    );
+    public static readonly OptionId KeepBlankLinesInDeclarations =
+        Of("resharper_csharp_keep_blank_lines_in_declarations");
 
-    public static readonly OptionId RemoveBlankLinesNearBracesInCode = Of(
-        "resharper_csharp_remove_blank_lines_near_braces_in_code"
-    );
+    public static readonly OptionId RemoveBlankLinesNearBracesInCode =
+        Of("resharper_csharp_remove_blank_lines_near_braces_in_code");
 
-    public static readonly OptionId RemoveBlankLinesNearBracesInDeclarations = Of(
-        "resharper_csharp_remove_blank_lines_near_braces_in_declarations"
-    );
+    public static readonly OptionId RemoveBlankLinesNearBracesInDeclarations =
+        Of("resharper_csharp_remove_blank_lines_near_braces_in_declarations");
 
     public static readonly OptionId BlankLinesAroundType = Of("resharper_csharp_blank_lines_around_type");
 
-    public static readonly OptionId BlankLinesAroundSingleLineType = Of(
-        "resharper_csharp_blank_lines_around_single_line_type"
-    );
+    public static readonly OptionId BlankLinesAroundSingleLineType =
+        Of("resharper_csharp_blank_lines_around_single_line_type");
 
     public static readonly OptionId BlankLinesAroundInvocable = Of("resharper_csharp_blank_lines_around_invocable");
 
-    public static readonly OptionId BlankLinesAroundSingleLineInvocable = Of(
-        "resharper_csharp_blank_lines_around_single_line_invocable"
-    );
+    public static readonly OptionId BlankLinesAroundSingleLineInvocable =
+        Of("resharper_csharp_blank_lines_around_single_line_invocable");
 
     public static readonly OptionId BlankLinesAroundField = Of("resharper_csharp_blank_lines_around_field");
 
-    public static readonly OptionId BlankLinesAroundSingleLineField = Of(
-        "resharper_csharp_blank_lines_around_single_line_field"
-    );
+    public static readonly OptionId BlankLinesAroundSingleLineField =
+        Of("resharper_csharp_blank_lines_around_single_line_field");
 
     public static readonly OptionId BlankLinesAroundProperty = Of("resharper_csharp_blank_lines_around_property");
 
-    public static readonly OptionId BlankLinesAroundSingleLineProperty = Of(
-        "resharper_csharp_blank_lines_around_single_line_property"
-    );
+    public static readonly OptionId BlankLinesAroundSingleLineProperty =
+        Of("resharper_csharp_blank_lines_around_single_line_property");
 
-    public static readonly OptionId BlankLinesAroundAutoProperty = Of(
-        "resharper_csharp_blank_lines_around_auto_property"
-    );
+    public static readonly OptionId BlankLinesAroundAutoProperty =
+        Of("resharper_csharp_blank_lines_around_auto_property");
 
-    public static readonly OptionId BlankLinesAroundSingleLineAutoProperty = Of(
-        "resharper_csharp_blank_lines_around_single_line_auto_property"
-    );
+    public static readonly OptionId BlankLinesAroundSingleLineAutoProperty =
+        Of("resharper_csharp_blank_lines_around_single_line_auto_property");
 
     public static readonly OptionId BlankLinesAroundAccessor = Of("resharper_csharp_blank_lines_around_accessor");
 
-    public static readonly OptionId BlankLinesAroundSingleLineAccessor = Of(
-        "resharper_csharp_blank_lines_around_single_line_accessor"
-    );
+    public static readonly OptionId BlankLinesAroundSingleLineAccessor =
+        Of("resharper_csharp_blank_lines_around_single_line_accessor");
 
-    public static readonly OptionId BlankLinesAroundLocalMethod = Of("resharper_csharp_blank_lines_around_local_method");
+    public static readonly OptionId BlankLinesAroundLocalMethod =
+        Of("resharper_csharp_blank_lines_around_local_method");
 
-    public static readonly OptionId BlankLinesAroundSingleLineLocalMethod = Of(
-        "resharper_csharp_blank_lines_around_single_line_local_method"
-    );
+    public static readonly OptionId BlankLinesAroundSingleLineLocalMethod =
+        Of("resharper_csharp_blank_lines_around_single_line_local_method");
 
     public static readonly OptionId BlankLinesAroundNamespace = Of("resharper_csharp_blank_lines_around_namespace");
     public static readonly OptionId BlankLinesAroundRegion = Of("resharper_csharp_blank_lines_around_region");
     public static readonly OptionId BlankLinesInsideRegion = Of("resharper_csharp_blank_lines_inside_region");
     public static readonly OptionId BlankLinesInsideType = OfInert("resharper_csharp_blank_lines_inside_type");
 
-    public static readonly OptionId BlankLinesInsideNamespace = OfInert("resharper_csharp_blank_lines_inside_namespace");
+    public static readonly OptionId BlankLinesInsideNamespace =
+        OfInert("resharper_csharp_blank_lines_inside_namespace");
 
     public static readonly OptionId BlankLinesAfterUsingList = Of("resharper_csharp_blank_lines_after_using_list");
 
-    public static readonly OptionId BlankLinesAfterFileScopedNamespaceDirective = Of(
-        "resharper_csharp_blank_lines_after_file_scoped_namespace_directive"
-    );
+    public static readonly OptionId BlankLinesAfterFileScopedNamespaceDirective =
+        Of("resharper_csharp_blank_lines_after_file_scoped_namespace_directive");
 
-    public static readonly OptionId BlankLinesAfterBlockStatements = Of(
-        "resharper_csharp_blank_lines_after_block_statements"
-    );
+    public static readonly OptionId BlankLinesAfterBlockStatements =
+        Of("resharper_csharp_blank_lines_after_block_statements");
 
-    public static readonly OptionId BlankLinesBeforeSingleLineComment = Of(
-        "resharper_csharp_blank_lines_before_single_line_comment"
-    );
+    public static readonly OptionId BlankLinesBeforeSingleLineComment =
+        Of("resharper_csharp_blank_lines_before_single_line_comment");
 
     public static readonly OptionId BlankLinesAfterCase = Of("resharper_csharp_blank_lines_after_case");
     public static readonly OptionId BlankLinesBeforeCase = Of("resharper_csharp_blank_lines_before_case");
@@ -905,41 +847,32 @@ public static class Ids {
     // keep_user_linebreaks is the key that governs. See the M2 report.
     public static readonly OptionId KeepUserWrapping = OfInert("resharper_keep_user_wrapping");
 
-    public static readonly OptionId KeepExistingInvocationParensArrangement = Of(
-        "resharper_csharp_keep_existing_invocation_parens_arrangement"
-    );
+    public static readonly OptionId KeepExistingInvocationParensArrangement =
+        Of("resharper_csharp_keep_existing_invocation_parens_arrangement");
 
-    public static readonly OptionId KeepExistingDeclarationParensArrangement = Of(
-        "resharper_csharp_keep_existing_declaration_parens_arrangement"
-    );
+    public static readonly OptionId KeepExistingDeclarationParensArrangement =
+        Of("resharper_csharp_keep_existing_declaration_parens_arrangement");
 
-    public static readonly OptionId KeepExistingLambdaParensArrangement = Of(
-        "resharper_keep_existing_lambda_and_anonymous_function_parens_arrangement"
-    );
+    public static readonly OptionId KeepExistingLambdaParensArrangement =
+        Of("resharper_keep_existing_lambda_and_anonymous_function_parens_arrangement");
 
-    public static readonly OptionId KeepExistingPrimaryConstructorParensArrangement = Of(
-        "resharper_csharp_keep_existing_primary_constructor_declaration_parens_arrangement"
-    );
+    public static readonly OptionId KeepExistingPrimaryConstructorParensArrangement =
+        Of("resharper_csharp_keep_existing_primary_constructor_declaration_parens_arrangement");
 
-    public static readonly OptionId KeepExistingExprMemberArrangement = Of(
-        "resharper_csharp_keep_existing_expr_member_arrangement"
-    );
+    public static readonly OptionId KeepExistingExprMemberArrangement =
+        Of("resharper_csharp_keep_existing_expr_member_arrangement");
 
-    public static readonly OptionId KeepExistingEmbeddedArrangement = Of(
-        "resharper_csharp_keep_existing_embedded_arrangement"
-    );
+    public static readonly OptionId KeepExistingEmbeddedArrangement =
+        Of("resharper_csharp_keep_existing_embedded_arrangement");
 
-    public static readonly OptionId KeepExistingAttributeArrangement = Of(
-        "resharper_csharp_keep_existing_attribute_arrangement"
-    );
+    public static readonly OptionId KeepExistingAttributeArrangement =
+        Of("resharper_csharp_keep_existing_attribute_arrangement");
 
-    public static readonly OptionId KeepExistingDeclarationBlockArrangement = Of(
-        "resharper_keep_existing_declaration_block_arrangement"
-    );
+    public static readonly OptionId KeepExistingDeclarationBlockArrangement =
+        Of("resharper_keep_existing_declaration_block_arrangement");
 
-    public static readonly OptionId KeepExistingEmbeddedBlockArrangement = Of(
-        "resharper_keep_existing_embedded_block_arrangement"
-    );
+    public static readonly OptionId KeepExistingEmbeddedBlockArrangement =
+        Of("resharper_keep_existing_embedded_block_arrangement");
 
     public static readonly OptionId KeepExistingEnumArrangement = Of("resharper_csharp_keep_existing_enum_arrangement");
     public static readonly OptionId KeepExistingLinebreaks = Of("resharper_csharp_keep_existing_linebreaks");
@@ -950,17 +883,14 @@ public static class Ids {
     public static readonly OptionId WrapArgumentsStyle = Of("resharper_csharp_wrap_arguments_style");
     public static readonly OptionId WrapParametersStyle = Of("resharper_csharp_wrap_parameters_style");
 
-    public static readonly OptionId WrapPrimaryConstructorParametersStyle = Of(
-        "resharper_csharp_wrap_primary_constructor_parameters_style"
-    );
+    public static readonly OptionId WrapPrimaryConstructorParametersStyle =
+        Of("resharper_csharp_wrap_primary_constructor_parameters_style");
 
-    public static readonly OptionId WrapAfterPrimaryConstructorLpar = Of(
-        "resharper_csharp_wrap_after_primary_constructor_declaration_lpar"
-    );
+    public static readonly OptionId WrapAfterPrimaryConstructorLpar =
+        Of("resharper_csharp_wrap_after_primary_constructor_declaration_lpar");
 
-    public static readonly OptionId WrapBeforePrimaryConstructorRpar = Of(
-        "resharper_csharp_wrap_before_primary_constructor_declaration_rpar"
-    );
+    public static readonly OptionId WrapBeforePrimaryConstructorRpar =
+        Of("resharper_csharp_wrap_before_primary_constructor_declaration_rpar");
 
     public static readonly OptionId WrapBeforeBinaryOpsign = Of("resharper_csharp_wrap_before_binary_opsign");
     public static readonly OptionId WrapBeforeBinaryPatternOp = Of("resharper_csharp_wrap_before_binary_pattern_op");
@@ -972,35 +902,28 @@ public static class Ids {
     public static readonly OptionId WrapAfterDeclarationLpar = Of("resharper_csharp_wrap_after_declaration_lpar");
     public static readonly OptionId WrapBeforeDeclarationRpar = Of("resharper_csharp_wrap_before_declaration_rpar");
 
-    public static readonly OptionId WrapBeforeArrowWithExpressions = Of(
-        "resharper_csharp_wrap_before_arrow_with_expressions"
-    );
+    public static readonly OptionId WrapBeforeArrowWithExpressions =
+        Of("resharper_csharp_wrap_before_arrow_with_expressions");
 
     public static readonly OptionId PlaceAttributeOnSameLine = OfInert("resharper_place_attribute_on_same_line");
 
-    public static readonly OptionId PlaceTypeAttributeOnSameLine = Of(
-        "resharper_csharp_place_type_attribute_on_same_line"
-    );
+    public static readonly OptionId PlaceTypeAttributeOnSameLine =
+        Of("resharper_csharp_place_type_attribute_on_same_line");
 
-    public static readonly OptionId PlaceMethodAttributeOnSameLine = Of(
-        "resharper_csharp_place_method_attribute_on_same_line"
-    );
+    public static readonly OptionId PlaceMethodAttributeOnSameLine =
+        Of("resharper_csharp_place_method_attribute_on_same_line");
 
-    public static readonly OptionId PlaceFieldAttributeOnSameLine = Of(
-        "resharper_csharp_place_field_attribute_on_same_line"
-    );
+    public static readonly OptionId PlaceFieldAttributeOnSameLine =
+        Of("resharper_csharp_place_field_attribute_on_same_line");
 
-    public static readonly OptionId PlaceAccessorAttributeOnSameLine = Of(
-        "resharper_csharp_place_accessor_attribute_on_same_line"
-    );
+    public static readonly OptionId PlaceAccessorAttributeOnSameLine =
+        Of("resharper_csharp_place_accessor_attribute_on_same_line");
 
-    public static readonly OptionId PlaceAccessorHolderAttributeOnSameLine = Of(
-        "resharper_csharp_place_accessorholder_attribute_on_same_line"
-    );
+    public static readonly OptionId PlaceAccessorHolderAttributeOnSameLine =
+        Of("resharper_csharp_place_accessorholder_attribute_on_same_line");
 
-    public static readonly OptionId PlaceRecordFieldAttributeOnSameLine = Of(
-        "resharper_csharp_place_record_field_attribute_on_same_line"
-    );
+    public static readonly OptionId PlaceRecordFieldAttributeOnSameLine =
+        Of("resharper_csharp_place_record_field_attribute_on_same_line");
 
     // ⚠ Four keys read but never observable, and Tier D with the reason rather than Tier A:
     //   max_attribute_length_for_same_line — a length threshold for a placement that never happens.
@@ -1013,63 +936,50 @@ public static class Ids {
     //   wrap_before_eq — it moves the break point from one side of the `=` to the other, and
     //     milestone 2 never adds a break at either side (that ordering is prefer_wrap_around_eq's,
     //     which is M3), so no input distinguishes the values.
-    public static readonly OptionId MaxAttributeLengthForSameLine = OfInert(
-        "resharper_csharp_max_attribute_length_for_same_line"
-    );
+    public static readonly OptionId MaxAttributeLengthForSameLine =
+        OfInert("resharper_csharp_max_attribute_length_for_same_line");
 
-    public static readonly OptionId PlaceSingleMethodArgumentLambdaOnSameLine = Of(
-        "resharper_place_single_method_argument_lambda_on_same_line"
-    );
+    public static readonly OptionId PlaceSingleMethodArgumentLambdaOnSameLine =
+        Of("resharper_place_single_method_argument_lambda_on_same_line");
 
-    public static readonly OptionId PlaceExprMethodOnSingleLine = Of(
-        "resharper_csharp_place_expr_method_on_single_line"
-    );
+    public static readonly OptionId PlaceExprMethodOnSingleLine =
+        Of("resharper_csharp_place_expr_method_on_single_line");
 
-    public static readonly OptionId PlaceExprPropertyOnSingleLine = Of(
-        "resharper_csharp_place_expr_property_on_single_line"
-    );
+    public static readonly OptionId PlaceExprPropertyOnSingleLine =
+        Of("resharper_csharp_place_expr_property_on_single_line");
 
-    public static readonly OptionId PlaceExprAccessorOnSingleLine = Of(
-        "resharper_csharp_place_expr_accessor_on_single_line"
-    );
+    public static readonly OptionId PlaceExprAccessorOnSingleLine =
+        Of("resharper_csharp_place_expr_accessor_on_single_line");
 
-    public static readonly OptionId PlaceSimpleEmbeddedStatementOnSameLine = Of(
-        "resharper_csharp_place_simple_embedded_statement_on_same_line"
-    );
+    public static readonly OptionId PlaceSimpleEmbeddedStatementOnSameLine =
+        Of("resharper_csharp_place_simple_embedded_statement_on_same_line");
 
-    public static readonly OptionId PlaceSimpleCaseStatementOnSameLine = Of(
-        "resharper_csharp_place_simple_case_statement_on_same_line"
-    );
+    public static readonly OptionId PlaceSimpleCaseStatementOnSameLine =
+        Of("resharper_csharp_place_simple_case_statement_on_same_line");
 
-    public static readonly OptionId PlaceTypeConstraintsOnSameLine = Of(
-        "resharper_csharp_place_type_constraints_on_same_line"
-    );
+    public static readonly OptionId PlaceTypeConstraintsOnSameLine =
+        Of("resharper_csharp_place_type_constraints_on_same_line");
 
-    public static readonly OptionId PlaceConstructorInitializerOnSameLine = Of(
-        "resharper_csharp_place_constructor_initializer_on_same_line"
-    );
+    public static readonly OptionId PlaceConstructorInitializerOnSameLine =
+        Of("resharper_csharp_place_constructor_initializer_on_same_line");
 
-    public static readonly OptionId PlacePrimaryConstructorInitializerOnSameLine = Of(
-        "resharper_place_primary_constructor_initializer_on_same_line"
-    );
+    public static readonly OptionId PlacePrimaryConstructorInitializerOnSameLine =
+        Of("resharper_place_primary_constructor_initializer_on_same_line");
 
     public static readonly OptionId PlaceLinqIntoOnNewLine = OfInert("resharper_csharp_place_linq_into_on_new_line");
 
-    public static readonly OptionId NewLineBetweenQueryExpressionClauses = OfInert(
-        "csharp_new_line_between_query_expression_clauses"
-    );
+    public static readonly OptionId NewLineBetweenQueryExpressionClauses =
+        OfInert("csharp_new_line_between_query_expression_clauses");
 
     // ── Wrapping (phase 3) ───────────────────────────────────────────────────────────────────
     public static readonly OptionId WrapArrayInitializerStyle = Of("resharper_csharp_wrap_array_initializer_style");
     public static readonly OptionId MaxInitializerElementsOnLine = Of("resharper_max_initializer_elements_on_line");
 
-    public static readonly OptionId MaxArrayInitializerElementsOnLine = Of(
-        "resharper_max_array_initializer_elements_on_line"
-    );
+    public static readonly OptionId MaxArrayInitializerElementsOnLine =
+        Of("resharper_max_array_initializer_elements_on_line");
 
-    public static readonly OptionId PlaceSimpleInitializerOnSingleLine = Of(
-        "resharper_place_simple_initializer_on_single_line"
-    );
+    public static readonly OptionId PlaceSimpleInitializerOnSingleLine =
+        Of("resharper_place_simple_initializer_on_single_line");
 
     public static readonly OptionId WrapAfterExpressionLbrace = Of("resharper_wrap_after_expression_lbrace");
     public static readonly OptionId WrapBeforeExpressionRbrace = Of("resharper_wrap_before_expression_rbrace");
@@ -1078,31 +988,32 @@ public static class Ids {
     public static readonly OptionId WrapAfterDotInMethodCalls = Of("resharper_wrap_after_dot_in_method_calls");
     public static readonly OptionId WrapBeforeFirstMethodCall = Of("resharper_wrap_before_first_method_call");
 
-    public static readonly OptionId WrapAfterPropertyInChainedMethodCalls = Of(
-        "resharper_wrap_after_property_in_chained_method_calls"
-    );
+    public static readonly OptionId WrapAfterPropertyInChainedMethodCalls =
+        Of("resharper_wrap_after_property_in_chained_method_calls");
 
-    public static readonly OptionId WrapChainedBinaryExpressions = Of("resharper_csharp_wrap_chained_binary_expressions");
+    public static readonly OptionId WrapChainedBinaryExpressions =
+        Of("resharper_csharp_wrap_chained_binary_expressions");
+
     public static readonly OptionId WrapChainedBinaryPatterns = Of("resharper_csharp_wrap_chained_binary_patterns");
     public static readonly OptionId WrapTernaryExprStyle = Of("resharper_csharp_wrap_ternary_expr_style");
-    public static readonly OptionId WrapMultipleDeclarationStyle = Of("resharper_csharp_wrap_multiple_declaration_style");
+
+    public static readonly OptionId WrapMultipleDeclarationStyle =
+        Of("resharper_csharp_wrap_multiple_declaration_style");
+
     public static readonly OptionId WrapExtendsListStyle = Of("resharper_csharp_wrap_extends_list_style");
     public static readonly OptionId WrapBeforeExtendsColon = Of("resharper_wrap_before_extends_colon");
     public static readonly OptionId WrapBeforeCommaInBaseClause = Of("resharper_wrap_before_comma_in_base_clause");
     public static readonly OptionId WrapPropertyPattern = Of("resharper_csharp_wrap_property_pattern");
     public static readonly OptionId WrapListPattern = Of("resharper_csharp_wrap_list_pattern");
 
-    public static readonly OptionId KeepExistingListPatternsArrangement = Of(
-        "resharper_keep_existing_list_patterns_arrangement"
-    );
+    public static readonly OptionId KeepExistingListPatternsArrangement =
+        Of("resharper_keep_existing_list_patterns_arrangement");
 
-    public static readonly OptionId KeepExistingPropertyPatternsArrangement = Of(
-        "resharper_keep_existing_property_patterns_arrangement"
-    );
+    public static readonly OptionId KeepExistingPropertyPatternsArrangement =
+        Of("resharper_keep_existing_property_patterns_arrangement");
 
-    public static readonly OptionId KeepExistingSwitchExpressionArrangement = Of(
-        "resharper_keep_existing_switch_expression_arrangement"
-    );
+    public static readonly OptionId KeepExistingSwitchExpressionArrangement =
+        Of("resharper_keep_existing_switch_expression_arrangement");
 
     // ⚠ Read, implemented, and Tier D — because `keep_existing_list_patterns_arrangement` defaults
     // to true and outranks it in both directions. With keep on, the placement key neither joins a
@@ -1110,24 +1021,20 @@ public static class Ids {
     // values apart on ReSharper's own defaults. Verified against the oracle rather than assumed:
     // flipping it alone changes nothing; flipping it with keep off turns `xs is [1, 2, 3]` into
     // three lines. An option that cannot change behaviour must not claim a tier that says it was.
-    public static readonly OptionId PlaceSimpleListPatternOnSingleLine = OfInert(
-        "resharper_place_simple_list_pattern_on_single_line"
-    );
+    public static readonly OptionId PlaceSimpleListPatternOnSingleLine =
+        OfInert("resharper_place_simple_list_pattern_on_single_line");
 
-    public static readonly OptionId PlaceSimplePropertyPatternOnSingleLine = Of(
-        "resharper_place_simple_property_pattern_on_single_line"
-    );
+    public static readonly OptionId PlaceSimplePropertyPatternOnSingleLine =
+        Of("resharper_place_simple_property_pattern_on_single_line");
 
-    public static readonly OptionId PlaceSimpleSwitchExpressionOnSingleLine = Of(
-        "resharper_place_simple_switch_expression_on_single_line"
-    );
+    public static readonly OptionId PlaceSimpleSwitchExpressionOnSingleLine =
+        Of("resharper_place_simple_switch_expression_on_single_line");
 
     public static readonly OptionId MaxInvocationArgumentsOnLine = Of("resharper_max_invocation_arguments_on_line");
     public static readonly OptionId MaxFormalParametersOnLine = Of("resharper_max_formal_parameters_on_line");
 
-    public static readonly OptionId MaxPrimaryConstructorParametersOnLine = Of(
-        "resharper_max_primary_constructor_parameters_on_line"
-    );
+    public static readonly OptionId MaxPrimaryConstructorParametersOnLine =
+        Of("resharper_max_primary_constructor_parameters_on_line");
 
     // ⚠ Read, but Tier D on the evidence rather than on the wiring. `prefer_wrap_around_eq`'s
     // domain is not published and this export writes `default`; the ordering rule is implemented and

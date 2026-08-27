@@ -83,7 +83,8 @@ public sealed class EditorConfigDocument {
 
     public IReadOnlyList<EditorConfigSection> Sections { get; }
 
-    public IEnumerable<EditorConfigAssignment> Assignments => Sections.SelectMany(static section => section.Assignments);
+    public IEnumerable<EditorConfigAssignment> Assignments =>
+        Sections.SelectMany(static section => section.Assignments);
 
     public static EditorConfigDocument Load(string path) => new(path, File.ReadAllText(path));
 

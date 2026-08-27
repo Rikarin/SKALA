@@ -150,7 +150,10 @@ public sealed class OracleRunner {
 
             var names = new Dictionary<string, string>(StringComparer.Ordinal);
             for (var i = 0; i < work.Count; i++) {
-                var directory = Path.Combine(scratch.FullName, "d" + i.ToString(System.Globalization.CultureInfo.InvariantCulture));
+                var directory = Path.Combine(
+                    scratch.FullName,
+                    "d" + i.ToString(System.Globalization.CultureInfo.InvariantCulture)
+                );
                 Directory.CreateDirectory(directory);
                 File.WriteAllText(Path.Combine(directory, ".editorconfig"), work[i].Config);
                 var produced = Path.Combine(directory, "F.cs");
@@ -197,7 +200,8 @@ public sealed class OracleRunner {
             start.ArgumentList.Add(argument);
         }
 
-        using var process = Process.Start(start)
+        using var process =
+            Process.Start(start)
             ?? throw new InvalidOperationException($"{_executable} did not start.");
 
         var output = process.StandardOutput.ReadToEnd();
@@ -207,34 +211,34 @@ public sealed class OracleRunner {
     }
 
     const string ProjectFile = """
-        <Project Sdk="Microsoft.NET.Sdk">
-          <PropertyGroup>
-            <TargetFramework>net10.0</TargetFramework>
-            <Nullable>enable</Nullable>
-            <ImplicitUsings>enable</ImplicitUsings>
-            <LangVersion>preview</LangVersion>
-            <NoWarn>$(NoWarn);CS1591;CS0168;CS0219;CS8321;CS0067;CS0169</NoWarn>
-            <EnableDefaultCompileItems>true</EnableDefaultCompileItems>
-            <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
-            <OutputType>Library</OutputType>
-          </PropertyGroup>
-        </Project>
-        """;
+                               <Project Sdk="Microsoft.NET.Sdk">
+                                 <PropertyGroup>
+                                   <TargetFramework>net10.0</TargetFramework>
+                                   <Nullable>enable</Nullable>
+                                   <ImplicitUsings>enable</ImplicitUsings>
+                                   <LangVersion>preview</LangVersion>
+                                   <NoWarn>$(NoWarn);CS1591;CS0168;CS0219;CS8321;CS0067;CS0169</NoWarn>
+                                   <EnableDefaultCompileItems>true</EnableDefaultCompileItems>
+                                   <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+                                   <OutputType>Library</OutputType>
+                                 </PropertyGroup>
+                               </Project>
+                               """;
 
     const string SolutionFile = """
-        Microsoft Visual Studio Solution File, Format Version 12.00
-        Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Oracle", "Oracle.csproj", "{11111111-1111-1111-1111-111111111111}"
-        EndProject
-        Global
-        	GlobalSection(SolutionConfigurationPlatforms) = preSolution
-        		Debug|Any CPU = Debug|Any CPU
-        	EndGlobalSection
-        	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-        		{11111111-1111-1111-1111-111111111111}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-        		{11111111-1111-1111-1111-111111111111}.Debug|Any CPU.Build.0 = Debug|Any CPU
-        	EndGlobalSection
-        EndGlobal
-        """;
+                                Microsoft Visual Studio Solution File, Format Version 12.00
+                                Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Oracle", "Oracle.csproj", "{11111111-1111-1111-1111-111111111111}"
+                                EndProject
+                                Global
+                                	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+                                		Debug|Any CPU = Debug|Any CPU
+                                	EndGlobalSection
+                                	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+                                		{11111111-1111-1111-1111-111111111111}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+                                		{11111111-1111-1111-1111-111111111111}.Debug|Any CPU.Build.0 = Debug|Any CPU
+                                	EndGlobalSection
+                                EndGlobal
+                                """;
 
     /// <summary>
     /// A cleanup profile with the formatting half on and the arrangement half off. ⚠ The two are

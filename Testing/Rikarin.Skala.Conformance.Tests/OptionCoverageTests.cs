@@ -38,16 +38,20 @@ public sealed class OptionCoverageTests {
         // defaultSource is `template` or `unknown` for every entry in the registry, so the only
         // available evidence is a fixture (docs/plan/03 § "distill", corrected in d081293).
         var implemented = PhaseOneOptions.Implemented.ToHashSet();
-        var claimed = OptionRegistry.All.Where(static info => info.Tier == OptionTier.A).Select(static info => info.Id).ToHashSet();
+        var claimed = OptionRegistry.All.Where(static info => info.Tier == OptionTier.A)
+            .Select(static info => info.Id)
+            .ToHashSet();
 
-        var overclaimed = claimed.Except(implemented).Select(static id => OptionRegistry.Get(id).Key).Order(
-            StringComparer.Ordinal
-        ).ToArray();
+        var overclaimed = claimed.Except(implemented)
+            .Select(static id => OptionRegistry.Get(id).Key)
+            .Order(StringComparer.Ordinal)
+            .ToArray();
         Assert.True(overclaimed.Length == 0, "Tier A without an implementation: " + string.Join(", ", overclaimed));
 
-        var underclaimed = implemented.Except(claimed).Select(static id => OptionRegistry.Get(id).Key).Order(
-            StringComparer.Ordinal
-        ).ToArray();
+        var underclaimed = implemented.Except(claimed)
+            .Select(static id => OptionRegistry.Get(id).Key)
+            .Order(StringComparer.Ordinal)
+            .ToArray();
         Assert.True(underclaimed.Length == 0, "Implemented but not Tier A: " + string.Join(", ", underclaimed));
     }
 
@@ -146,7 +150,9 @@ public sealed class OptionCoverageTests {
                     NumberStyles.Integer,
                     CultureInfo.InvariantCulture,
                     out var number
-                ) ? number : 0;
+                )
+                        ? number
+                        : 0;
                 yield return current.ToString(CultureInfo.InvariantCulture);
                 yield return (current == 0 ? 3 : current == 1 ? 2 : 0).ToString(CultureInfo.InvariantCulture);
 

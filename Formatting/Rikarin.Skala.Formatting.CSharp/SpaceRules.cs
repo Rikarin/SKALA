@@ -92,7 +92,8 @@ public static class SpaceRules {
         }
 
         // `using Alias = System.Text;` — the alias's own equals sign, not an assignment.
-        if (prev.Parent is NameEqualsSyntax { Parent: UsingDirectiveSyntax } || next.Parent is NameEqualsSyntax { Parent: UsingDirectiveSyntax }) {
+        if (prev.Parent is NameEqualsSyntax { Parent: UsingDirectiveSyntax }
+            || next.Parent is NameEqualsSyntax { Parent: UsingDirectiveSyntax }) {
             return o.SpaceAroundAliasEq;
         }
 
@@ -131,7 +132,9 @@ public static class SpaceRules {
 
         // ── Angles ───────────────────────────────────────────────────────────────────────────
         if (right is SyntaxKind.LessThanToken && IsTypeAngle(next)) {
-            return next.Parent is TypeParameterListSyntax ? o.SpaceBeforeTypeParameterAngle : o.SpaceBeforeTypeArgumentAngle;
+            return next.Parent is TypeParameterListSyntax
+                ? o.SpaceBeforeTypeParameterAngle
+                : o.SpaceBeforeTypeArgumentAngle;
         }
 
         if (IsTypeAngle(next) || IsTypeAngle(prev)) {
@@ -183,7 +186,9 @@ public static class SpaceRules {
 
         // ── Angles ───────────────────────────────────────────────────────────────────────────
         if (right is SyntaxKind.LessThanToken && IsTypeAngle(next)) {
-            return next.Parent is TypeParameterListSyntax ? o.SpaceBeforeTypeParameterAngle : o.SpaceBeforeTypeArgumentAngle;
+            return next.Parent is TypeParameterListSyntax
+                ? o.SpaceBeforeTypeParameterAngle
+                : o.SpaceBeforeTypeArgumentAngle;
         }
 
         if (IsTypeAngle(next) || IsTypeAngle(prev)) {
@@ -305,11 +310,21 @@ public static class SpaceRules {
 
     static bool IntroducesAType(SyntaxKind keyword) =>
         keyword is
-        SyntaxKind.NewKeyword or SyntaxKind.IsKeyword or SyntaxKind.AsKeyword
-        or SyntaxKind.StackAllocKeyword or SyntaxKind.TypeOfKeyword or SyntaxKind.SizeOfKeyword
-        or SyntaxKind.DefaultKeyword or SyntaxKind.RefKeyword or SyntaxKind.OutKeyword
-        or SyntaxKind.InKeyword or SyntaxKind.ScopedKeyword or SyntaxKind.ParamsKeyword
-        or SyntaxKind.ReadOnlyKeyword or SyntaxKind.ConstKeyword or SyntaxKind.WhereKeyword;
+        SyntaxKind.NewKeyword
+            or SyntaxKind.IsKeyword
+            or SyntaxKind.AsKeyword
+            or SyntaxKind.StackAllocKeyword
+            or SyntaxKind.TypeOfKeyword
+            or SyntaxKind.SizeOfKeyword
+            or SyntaxKind.DefaultKeyword
+            or SyntaxKind.RefKeyword
+            or SyntaxKind.OutKeyword
+            or SyntaxKind.InKeyword
+            or SyntaxKind.ScopedKeyword
+            or SyntaxKind.ParamsKeyword
+            or SyntaxKind.ReadOnlyKeyword
+            or SyntaxKind.ConstKeyword
+            or SyntaxKind.WhereKeyword;
 
     /// <summary>
     /// The gap around a <c>..</c>. ⚠ A prefix range with no left operand — which is how Roslyn
@@ -319,22 +334,36 @@ public static class SpaceRules {
         token.Parent switch {
             SpreadElementSyntax => o.SpaceWithinSpreadPattern,
             SlicePatternSyntax => o.SpaceWithinSlicePattern,
-            RangeExpressionSyntax { LeftOperand: null, Parent: InitializerExpressionSyntax or CollectionExpressionSyntax } =>
+            RangeExpressionSyntax {
+                LeftOperand: null,
+                Parent: InitializerExpressionSyntax or CollectionExpressionSyntax
+            } =>
                 o.SpaceWithinSpreadPattern,
             _ => false
         };
 
     /// <summary>Tokens that never take a space on their left.</summary>
     static bool ClingsLeft(SyntaxKind kind) =>
-        kind is SyntaxKind.SemicolonToken or SyntaxKind.CommaToken or SyntaxKind.CloseParenToken
-        or SyntaxKind.CloseBracketToken or SyntaxKind.DotToken or SyntaxKind.ColonColonToken
-        or SyntaxKind.DotDotToken or SyntaxKind.MinusGreaterThanToken or SyntaxKind.ExclamationToken
-        or SyntaxKind.PlusPlusToken or SyntaxKind.MinusMinusToken;
+        kind is SyntaxKind.SemicolonToken
+            or SyntaxKind.CommaToken
+            or SyntaxKind.CloseParenToken
+            or SyntaxKind.CloseBracketToken
+            or SyntaxKind.DotToken
+            or SyntaxKind.ColonColonToken
+            or SyntaxKind.DotDotToken
+            or SyntaxKind.MinusGreaterThanToken
+            or SyntaxKind.ExclamationToken
+            or SyntaxKind.PlusPlusToken
+            or SyntaxKind.MinusMinusToken;
 
     /// <summary>Tokens that never take a space on their right.</summary>
     static bool ClingsRight(SyntaxKind kind) =>
-        kind is SyntaxKind.OpenParenToken or SyntaxKind.OpenBracketToken or SyntaxKind.DotToken
-        or SyntaxKind.ColonColonToken or SyntaxKind.DotDotToken or SyntaxKind.MinusGreaterThanToken;
+        kind is SyntaxKind.OpenParenToken
+            or SyntaxKind.OpenBracketToken
+            or SyntaxKind.DotToken
+            or SyntaxKind.ColonColonToken
+            or SyntaxKind.DotDotToken
+            or SyntaxKind.MinusGreaterThanToken;
 
     static bool BeforeOpenParen(SyntaxToken prev, SyntaxToken next, in PhaseOneOptions o) {
         // `!(value is T x)` — a prefix operator binds to its operand whatever the operand is, and
@@ -391,7 +420,9 @@ public static class SpaceRules {
             case ParameterListSyntax or FunctionPointerParameterListSyntax:
                 return empty ? o.SpaceBeforeEmptyMethodParentheses : o.SpaceBeforeMethodParentheses;
 
-            case ArgumentListSyntax { Parent: ObjectCreationExpressionSyntax or ImplicitObjectCreationExpressionSyntax } :
+            case ArgumentListSyntax {
+                Parent: ObjectCreationExpressionSyntax or ImplicitObjectCreationExpressionSyntax
+            } :
                 return o.SpaceBeforeNewParentheses;
 
             case ArgumentListSyntax or AttributeArgumentListSyntax:
@@ -421,10 +452,20 @@ public static class SpaceRules {
         }
     }
 
-    /// <summary>True when <paramref name="prev"/> would make the following <c>(</c> read as a call.</summary>
+    /// <summary>
+    /// True when <paramref name="prev"/> would make the following <c>(</c> read as a call.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ A <c>&gt;</c> qualifies only when it closes a type argument list — <c>Foo&lt;int&gt;(x)</c>
+    /// is a call and <c>count &gt; (buffer.Length - index)</c> is a comparison. Treating every
+    /// <c>&gt;</c> as a call site removed the space after the operator and produced
+    /// <c>count &gt;(buffer.Length - index)</c>. It survived milestone 3 because every corpus line
+    /// that shows it sits inside a <c>#if</c> body, which the formatter could not see until M5
+    /// supplied preprocessor symbols — the symbols did not cause the bug, they revealed it.
+    /// </remarks>
     static bool IsCallSite(SyntaxToken prev) =>
         prev.Kind() is SyntaxKind.IdentifierToken or SyntaxKind.CloseParenToken or SyntaxKind.CloseBracketToken
-        or SyntaxKind.GreaterThanToken;
+        || IsTypeAngle(prev);
 
     static bool BeforeOpenBracket(SyntaxToken prev, SyntaxToken next, in PhaseOneOptions o) =>
         prev.IsKind(SyntaxKind.OpenBraceToken)
@@ -466,14 +507,19 @@ public static class SpaceRules {
 
         return owner switch {
             AccessorListSyntax => o.SpaceInSinglelineAccessorholder,
-            BlockSyntax { Parent: AnonymousMethodExpressionSyntax or SimpleLambdaExpressionSyntax or ParenthesizedLambdaExpressionSyntax } =>
+            BlockSyntax {
+                Parent: AnonymousMethodExpressionSyntax
+                    or SimpleLambdaExpressionSyntax
+                    or ParenthesizedLambdaExpressionSyntax
+            } =>
                 o.SpaceInSinglelineAnonymousMethod,
-            BlockSyntax { Parent: BaseMethodDeclarationSyntax or LocalFunctionStatementSyntax or AccessorDeclarationSyntax } =>
+            BlockSyntax {
+                Parent: BaseMethodDeclarationSyntax or LocalFunctionStatementSyntax or AccessorDeclarationSyntax
+            } =>
                 o.SpaceInSinglelineMethod,
             InitializerExpressionSyntax initializer =>
-                initializer.IsKind(SyntaxKind.ArrayInitializerExpression) || initializer.IsKind(
-                    SyntaxKind.CollectionInitializerExpression
-                )
+                initializer.IsKind(SyntaxKind.ArrayInitializerExpression)
+                || initializer.IsKind(SyntaxKind.CollectionInitializerExpression)
                     ? o.SpaceWithinSingleLineArrayInitializerBraces
                     : true,
             _ => true
@@ -482,12 +528,14 @@ public static class SpaceRules {
 
     static bool IsMemberAccessPunctuation(SyntaxToken token) =>
         token.Kind() is SyntaxKind.DotToken or SyntaxKind.MinusGreaterThanToken
-        || token.IsKind(SyntaxKind.QuestionToken) && token.Parent is ConditionalAccessExpressionSyntax;
+        || token.IsKind(SyntaxKind.QuestionToken)
+        && token.Parent is ConditionalAccessExpressionSyntax;
 
     static bool IsTypeAngle(SyntaxToken token) =>
         token.Kind() is SyntaxKind.LessThanToken or SyntaxKind.GreaterThanToken
-        && token.Parent is TypeArgumentListSyntax or TypeParameterListSyntax
-        or FunctionPointerUnmanagedCallingConventionListSyntax;
+        && token.Parent is TypeArgumentListSyntax
+            or TypeParameterListSyntax
+            or FunctionPointerUnmanagedCallingConventionListSyntax;
 
     static bool IsPrefixOperator(SyntaxToken token) =>
         token.Parent is PrefixUnaryExpressionSyntax prefix && prefix.OperatorToken == token;
@@ -499,24 +547,33 @@ public static class SpaceRules {
         token.IsKind(SyntaxKind.AsteriskToken) && token.Parent is PointerTypeSyntax;
 
     static bool IsBinaryOperator(SyntaxToken token) =>
-        token.Parent is BinaryExpressionSyntax binary && binary.OperatorToken == token
-        || token.Parent is BinaryPatternSyntax pattern && pattern.OperatorToken == token
-        || token.Parent is RelationalPatternSyntax relational && relational.OperatorToken == token;
+        token.Parent is BinaryExpressionSyntax binary
+        && binary.OperatorToken == token
+        || token.Parent is BinaryPatternSyntax pattern
+        && pattern.OperatorToken == token
+        || token.Parent is RelationalPatternSyntax relational
+        && relational.OperatorToken == token;
 
     static bool BinarySpacing(SyntaxToken op, in PhaseOneOptions o) =>
         op.Kind() switch {
             SyntaxKind.PlusToken or SyntaxKind.MinusToken => o.SpaceAroundAdditiveOp,
-            SyntaxKind.LessThanLessThanToken or SyntaxKind.GreaterThanGreaterThanToken
+            SyntaxKind.LessThanLessThanToken
+                or SyntaxKind.GreaterThanGreaterThanToken
                 or SyntaxKind.GreaterThanGreaterThanGreaterThanToken => o.SpaceAroundShiftOp,
-            SyntaxKind.LessThanToken or SyntaxKind.GreaterThanToken or SyntaxKind.LessThanEqualsToken
-                or SyntaxKind.GreaterThanEqualsToken or SyntaxKind.EqualsEqualsToken
+            SyntaxKind.LessThanToken
+                or SyntaxKind.GreaterThanToken
+                or SyntaxKind.LessThanEqualsToken
+                or SyntaxKind.GreaterThanEqualsToken
+                or SyntaxKind.EqualsEqualsToken
                 or SyntaxKind.ExclamationEqualsToken => o.SpaceAroundRelationalOp,
             _ => true
         };
 
     static bool IsAssignmentOperator(SyntaxToken token) =>
-        token.Parent is AssignmentExpressionSyntax assignment && assignment.OperatorToken == token
-        || token.IsKind(SyntaxKind.EqualsToken) && token.Parent is EqualsValueClauseSyntax or NameEqualsSyntax;
+        token.Parent is AssignmentExpressionSyntax assignment
+        && assignment.OperatorToken == token
+        || token.IsKind(SyntaxKind.EqualsToken)
+        && token.Parent is EqualsValueClauseSyntax or NameEqualsSyntax;
 
     /// <summary>
     /// ⚠ True when omitting the space would let the two tokens lex as one.
@@ -556,11 +613,32 @@ public static class SpaceRules {
 
     static bool Combines(char a, char b) =>
         (a, b) switch {
-            ('+', '+') or ('-', '-') or ('+', '=') or ('-', '=') or ('*', '=') or ('/', '=')
-                or ('%', '=') or ('&', '=') or ('|', '=') or ('^', '=') or ('!', '=') or ('=', '=')
-                or ('<', '=') or ('>', '=') or ('=', '>') or ('-', '>') or ('&', '&') or ('|', '|')
-                or ('<', '<') or ('>', '>') or (':', ':') or ('?', '?')
-                or ('/', '/') or ('/', '*') or ('*', '/') or ('.', '.') => true,
+            ('+', '+')
+                or ('-', '-')
+                or ('+', '=')
+                or ('-', '=')
+                or ('*', '=')
+                or ('/', '=')
+                or ('%', '=')
+                or ('&', '=')
+                or ('|', '=')
+                or ('^', '=')
+                or ('!', '=')
+                or ('=', '=')
+                or ('<', '=')
+                or ('>', '=')
+                or ('=', '>')
+                or ('-', '>')
+                or ('&', '&')
+                or ('|', '|')
+                or ('<', '<')
+                or ('>', '>')
+                or (':', ':')
+                or ('?', '?')
+                or ('/', '/')
+                or ('/', '*')
+                or ('*', '/')
+                or ('.', '.') => true,
             // ⚠ `?.` and `?[` are two tokens in C#, not one: writing them adjacent is what a
             // conditional access IS. Listing them here puts a space in every `a?.B` in a real tree.
             _ => false

@@ -1,0 +1,27 @@
+# ADR-012: a rule id is allocated once and never re-purposed.
+#
+# One line per allocated id: `<id> <concept>`. The concept is a stable slug for what the rule
+# means, and it is what makes this file more than a list of numbers — a baseline is a set of
+# (rule, file, hash) tuples, so a redefined rule silently un-suppresses or wrongly suppresses
+# findings in every repository that has one.
+#
+# RuleCatalogTests.RuleIds_AreAppendOnly asserts that every line here is still present in
+# rules.json with the same concept. Removing a rule means marking it `retired` in rules.json,
+# never deleting its line here.
+SK0001 file-is-not-formatted
+SK0002 line-too-long-unbreakable
+SK0003 malformed-xml-doc
+SK1005 file-scoped-namespace
+SK1010 is-null-pattern
+SK1020 argument-null-throw-if-null
+SK1030 null-coalescing-assignment
+SK1034 count-property-over-linq
+SK1035 generic-enum-getvalues
+SK9001 unknown-config-key
+SK9010 file-does-not-parse
+SK9011 unbalanced-preprocessor
+SK9020 binlog-stale-for-file
+SK9021 binlog-missing-file
+SK9030 analyzer-threw
+SK9031 analyzer-failed-to-load
+SK9099 token-stream-changed

@@ -33,12 +33,38 @@ Details that matter:
   ran. `MetadataReference.CreateFromFile` with a process-wide cache keyed on `(path, mtime, size)` —
   a large solution references the same 300 assemblies from every project and re-reading them is the
   single biggest avoidable cost.
-- **Generated sources.** `EmitCompilerGeneratedFiles` (which Vixen sets) puts them on disk and the
-  command line references them; without it they are absent and Skala re-runs the generators via
-  `CSharpGeneratorDriver` using the analyzer references from the same command line. ⚠ Either way,
-  generated files are **analyzed but never reported on and never formatted** — a diagnostic the user
-  cannot fix is noise. Exception: `SK7xxx` metrics count them separately, because a generator that
-  emits 200 000 lines of pathological code is a fact worth having.
+- **Generated sources.** ⚠ **This paragraph was wrong and M5 measured how wrong.** It said
+  `EmitCompilerGeneratedFiles` (which Vixen sets) "puts them on disk and the command line references
+  them". It does the first and not the second: that property makes `csc` *write* the generated files
+  beside the build output, and the compiler still produces them in-process — nothing puts them on a
+  source line. Loading the command line verbatim therefore gives a compilation missing every
+  generated member. On Vixen that is **1 675 compiler errors**: 894 `CS0103`, 227 `CS8795` (a partial
+  method with no implementation), 137 `CS9248` (a partial property with no implementation), and not
+  one of them about the user's code.
+
+  So the generators are **always** re-run, via `CSharpGeneratorDriver` over the analyzer references
+  from the same command line — and with two things the first attempt forgot, each worth hundreds of
+  errors on its own:
+  - the command line's `AdditionalFiles`, without which a generator that reads a `.vsl` shader or a
+    `.g4` grammar produces nothing;
+  - the command line's `/analyzerconfig:` set, which is where `build_property.RootNamespace` and
+    every other MSBuild property a generator reads actually lives.
+
+  With all three, Vixen goes from 1 675 compiler errors to **20**, all from one incremental generator
+  whose output depends on another's. ⚠ It is not only noise: every semantic rule reads a model built
+  over that program, so without the generators a rule is silent for a reason nothing in the report
+  names.
+
+  ⚠ Either way, generated files are **analyzed but never reported on and never formatted** — a
+  diagnostic the user cannot fix is noise. Exception: `SK7xxx` metrics count them separately, because
+  a generator that emits 200 000 lines of pathological code is a fact worth having.
+
+- ⚠ **Reading a binlog needs MSBuild on disk, which ADR-007 chose the binlog to avoid.**
+  `MSBuild.StructuredLogger` deserialises the log into MSBuild's own event types, so
+  `Microsoft.Build.Framework` has to be loadable at run time. Skala cannot ship its own copy —
+  `MSBuildLocator` requires the SDK's to win, and `MSBL001` fails the build for shipping one — so the
+  locator is registered before the first read, for both load modes. What ADR-007 actually buys is
+  intact: nothing evaluates a project, runs a target, or asks MSBuild what the build *would* do.
 - **Staleness.** The binlog records the source hashes the build saw. If a file on disk differs,
   Skala substitutes the current text into the compilation and notes it (`SK9020`, info). If a file
   the binlog names is gone, or a new file exists that the binlog does not name, that is a
@@ -66,6 +92,20 @@ This mode exists for one consumer: **an AI agent that has just written a file an
 whether it is acceptable, before anything is wired into a project**. It is fast (no build), it is
 honest (the SARIF says `loadMode: loose` and lists the rules that were skipped), and it is the
 default for the MCP `skala_check` tool when no project is specified. [10](10-ai-agent-integration.md).
+
+⚠ **Compiler diagnostics are dropped in this mode**, which is the one place the "compiler diagnostics
+are part of the report" rule below does not apply. There is no project, so half the references are
+missing and `CS0246` is the expected state rather than a finding; reporting the compiler's opinion
+here would bury the rules the mode exists to run under a few hundred complaints about code that is
+fine. Roslyn will not let an *error* be suppressed through `specificDiagnosticOptions`, so the filter
+is in the host and is conditioned on the load mode.
+
+⚠ **The rule set is thin here and the honesty is what makes it usable.** At M5 only `SK0001`,
+`SK0002`, `SK0003`, `SK1005` and `SK1030` declare no need for semantics, so a loose run is those five
+rules and a `SKIPPED` line naming the other four. That is a real limitation of the mode rather than a
+gap in the rules: the alternative — running the semantic rules and letting them answer "no finding"
+because a symbol did not resolve — makes a clean report mean two different things depending on
+something invisible.
 
 ## Running analyzers
 
@@ -150,6 +190,30 @@ file. Rule metadata therefore carries a `Scope` — `Syntax`, `Semantic`, or `Co
 `Compilation`-scoped rules are excluded from per-file caching and re-run whenever *any* file in the
 compilation changes. There are few of them and they are cheap; getting this wrong produces stale
 findings, which is the failure mode that destroys trust in a cache.
+
+⚠ **Three things M5 got wrong on the first attempt and that the tests now pin**, because each of them
+is a stale finding that looks exactly like a real one:
+
+1. **A file with no findings needs a cache entry too.** Without one, "clean" is indistinguishable
+   from "not in the cache", every clean file is a miss forever, and on a tree that is mostly clean
+   that is the whole cache.
+2. **The `.editorconfig` fingerprint is over the raw text, not the resolved global options.** The
+   resolved view is per source path — that is what scoped sections are *for* — so hashing the global
+   view leaves every key unmoved when only a `[Testing/**]` section changed.
+3. **The warm path has to run the semantic actions, not only the syntactic ones.** Running only
+   `GetAnalyzerSyntaxDiagnosticsAsync` over the changed trees silently drops every semantic rule from
+   a warm run, so a file produces different findings depending on whether the cache was cold — the
+   cache lying, in the direction that looks like progress.
+
+`AnalysisTests.Cache_ASecondRunAgreesWithAnUncachedOne` is the property that catches all three: a warm
+run over a changed tree must produce byte-identical findings to a run with `--no-cache`.
+
+⚠ **`dotnet_diagnostic.SK1010.severity` needs a `SyntaxTreeOptionsProvider` on the *compilation*.**
+That is where Roslyn's driver reads rule severities from; `csc` sets one from its analyzer config and
+a hand-built `CSharpCompilation` does not. Without it, a repository turns a rule off, the IDE agrees,
+and CI keeps reporting it. Mechanism 3 in § "Suppression" above is that provider, and the same
+provider is where the opt-in `resharper_*_highlighting` mapping lands
+([03](03-configuration-model.md) § "Severities").
 
 Duplication detection ([09](09-quality-gates-and-reporting.md)) has its own index with its own
 invalidation, because a clone is a property of a pair of files.

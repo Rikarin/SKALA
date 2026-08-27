@@ -4,24 +4,38 @@ One configuration, the same formatting and analysis everywhere: a C# formatter a
 tool that reads the `.editorconfig` Rider exports, so the IDE and the gate agree by construction
 rather than by discipline. See [`docs/plan/`](docs/plan/README.md).
 
-**Status: milestone 3 of nine.** The formatter does spaces, blank lines, braces, indentation, break
-presence and position, and wrapping: it fills what `wrap_if_long` fills, chops what `chop_if_long`
-chops, honours the `max_*_on_line` counters, and chooses *which* of a long line's several candidate
-points to wrap at.
+**Status: milestone 5 of nine** (M4 and M5 are swapped; see
+[15 § M4](docs/plan/15-roadmap.md)). The formatter does spaces, blank lines, braces, indentation,
+break presence and position, and wrapping: it fills what `wrap_if_long` fills, chops what
+`chop_if_long` chops, honours the `max_*_on_line` counters, and chooses *which* of a long line's
+several candidate points to wrap at. The analysis half loads a compilation three ways, hosts
+analyzers, writes SARIF, and answers an agent in three buckets.
+
+```bash
+skala verify                 # is this acceptable? exit 0 or it is not finished
+skala fix --safe             # apply the fixes that are provably behaviour-preserving
+skala explain SK1010         # why the rule exists, before arguing with it
+skala mcp                    # the same six answers over the Model Context Protocol
+```
 
 ## Where it is
 
 | | |
 |---|---|
 | **Line fidelity vs. `jb cleanupcode`** on `corpus/real/` (380 files, 76 660 lines) | **98.86 %** (M2: 97.47 %, M1: 94.28 %) |
-| File fidelity, same corpus | 71.05 % (M2: 49.47 %) |
+| File fidelity, same corpus | **71.32 %** (M3: 71.05 %, M2: 49.47 %) |
 | … on `corpus/constructs/` (271 files) | 95.97 % line, 89.67 % file |
 | … on `corpus/pathological/` (52 files) | 94.73 % line, 80.77 % file |
 | … on `constructs/preservation/` under the four `keep_existing_*` combinations | 90.86 / 100 / 92.65 / 100 % line |
 | Idempotency, token equivalence, parse stability, determinism, range consistency | 100 % of the corpus, every test run, in every configuration — and of all 4 708 Vixen files |
 | **Tier A options** — implemented and pinned by an oracle fixture | **201 of 520** (M2: 172 of 483) |
 | Defaults derived from the oracle rather than guessed | 123 keys `oracle-probe`; `config distill` drops 108 |
-| Documented divergences (`SK-DIV-*`) | 8, each with a measurement |
+| Documented divergences (`SK-DIV-*`) | 8, each with a measurement; **SK-DIV-0004 closed at M5** |
+| Line fidelity with preprocessor symbols supplied | **98.93 %** overall, **98.92 %** on the 91 `#if` files (from 98.60 %) |
+| **Rules shipped** — a fix, zero false positives, a negative fixture set at least as large | **6 analyzers** + 3 formatter findings |
+| False positives on `corpus/real/` + 4 688 Vixen files | **zero**, over 155 findings, every one reviewed |
+| `skala verify`, 5 files, no project, cold process | **0.39–0.54 s** against a 1 s budget |
+| `skala check --load=binlog` over Vixen | **58–134 s** against a 4-minute budget |
 
 Per origin, because the three measure different things:
 
@@ -32,9 +46,16 @@ Per origin, because the three measure different things:
 | `serilog/` | 98.51 % | 71.43 % | Same, a second house style |
 
 The remaining 874 lines are eight named disagreements, not an unknown. Split by cause: the 274 files
-with neither a `#if` nor a raw literal are at 99.02 %, the 91 with a `#if` at 98.60 %
-([SK-DIV-0004](docs/divergences.md) — Skala parses without a project, so a `#if DEBUG` body is
-frozen), and the 15 with a raw literal at 97.81 %.
+with neither a `#if` nor a raw literal are at 99.02 %, the 91 with a `#if` at 98.60 %, and the 15
+with a raw literal at 97.81 %.
+
+⚠ [SK-DIV-0004](docs/divergences.md) — "Skala parses without a project, so a `#if DEBUG` body is
+frozen" — **is closed**: `skala format --define`, and symbols taken from a loaded compilation. It was
+worth less than M3 estimated. A third of the gap was the guess; 0.32 points on those 91 files and
+0.07 overall is the measurement, and what remains in them turns out to be ordinary wrapping tail
+rather than frozen text. It did uncover a formatter bug that had been invisible since M1 — `>`
+followed by `(` was read as a call site, so `count > (n)` lost its space, and every corpus line that
+shows it is inside a conditional body.
 
 ⚠ The number the project is judged on is not this one. [16 § R1](docs/plan/16-risks-and-open-questions.md)
 asks a sharper question — *any construct occurring more than 50 times must be at 100 %* — and

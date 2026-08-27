@@ -143,7 +143,9 @@ public sealed class PreservationTests {
         Assert.True(
             report.LineFidelity >= baseline.LineFidelity - 0.0001,
             $"Line fidelity under '{variantName}' fell from {baseline.LineFidelity * 100:F2}% to "
-            + report.LineFidelity.ToString("P2", CultureInfo.InvariantCulture) + ".\n\n" + report.Render(6)
+            + report.LineFidelity.ToString("P2", CultureInfo.InvariantCulture)
+            + ".\n\n"
+            + report.Render(6)
         );
     }
 

@@ -1,0 +1,373 @@
+using System.CommandLine;
+using Rikarin.Skala.Analysis;
+using Rikarin.Skala.Analysis.Caching;
+using Rikarin.Skala.Analysis.Loading;
+using Rikarin.Skala.Core.Configuration;
+using Rikarin.Skala.Mcp;
+using Rikarin.Skala.Reporting;
+using Rikarin.Skala.Rules.Metadata;
+
+namespace Rikarin.Skala.Cli;
+
+/// <summary>
+/// The analysis half of the <c>skala</c> surface: <c>check</c>, <c>verify</c>, <c>fix</c>,
+/// <c>explain</c>, <c>rules</c>, <c>cache</c> and <c>mcp</c>.
+/// </summary>
+/// <remarks>
+/// Argument parsing and rendering only, like the rest of the CLI. Every behaviour lives in
+/// <c>Rikarin.Skala.Analysis</c>, because the daemon and the MCP server host the same logic and
+/// nothing may reference this assembly (docs/plan/02 § "The project graph").
+/// </remarks>
+public static partial class SkalaCommandLine {
+    /// <summary><c>skala check</c> — docs/plan/09.</summary>
+    static Command CreateCheckCommand() {
+        var paths = new Argument<string[]>("paths") {
+            Description = "Files, directories or globs. Empty means the repository root.",
+            Arity = ArgumentArity.ZeroOrMore
+        };
+
+        var load = new Option<string>("--load") {
+            Description = "binlog | workspace | loose. Default binlog, falling back to workspace then loose.",
+            DefaultValueFactory = static _ => "binlog"
+        };
+
+        var binlog = new Option<string?>("--binlog") {
+            Description = "The binary log to read, instead of the conventional locations."
+        };
+        var project = new Option<string?>("--project") { Description = "The .slnx/.sln/.csproj for --load=workspace." };
+        var requireFresh = new Option<bool>("--require-fresh-binlog") {
+            Description = "Fail rather than analyse against a binlog older than the sources. CI sets it."
+        };
+
+        var gate = new Option<string>("--gate") {
+            Description = "The named gate from skala.jsonc to evaluate.", DefaultValueFactory = static _ => "local"
+        };
+
+        var format = new Option<string>("--format") {
+            Description = "terminal | plain | json | github | agent.", DefaultValueFactory = static _ => "terminal"
+        };
+
+        var output = new Option<string?>("--output", "-o") {
+            Description = "Where to write the SARIF. Default .skala/report.sarif."
+        };
+        var includeHints = new Option<bool>("--include-hints") { Description = "Show hint-level findings too." };
+        var noCache = new Option<bool>("--no-cache") {
+            Description = "Ignore the incremental cache and re-run every analyzer."
+        };
+        var noColor = new Option<bool>("--no-color") { Description = "Plain output, for a pipe or a CI log." };
+        var showSuppressions = new Option<bool>("--show-suppressions") {
+            Description = "Include findings suppressed by #pragma or [SuppressMessage] in the report."
+        };
+
+        var rules = new Option<string[]>("--rules") {
+            Description = "Only these rule ids.", Arity = ArgumentArity.ZeroOrMore
+        };
+
+        var define = new Option<string[]>("--define", "-d") {
+            Description = "Preprocessor symbols, for --load=loose.", Arity = ArgumentArity.ZeroOrMore
+        };
+
+        var noFormatting = new Option<bool>("--no-formatting") {
+            Description = "Leave SK0001 out; report only the analyzers' findings."
+        };
+
+        // ⚠ Off by default. docs/plan/16 § Q5: the severities in a Rider export were chosen for
+        // ReSharper's inspections, and the author's own export would switch SK1020 off.
+        var resharperSeverities = new Option<bool>("--resharper-severities") {
+            Description = "Let a resharper_*_highlighting key set a Skala rule's severity. dotnet_diagnostic.SK… still wins."
+        };
+
+        var command = new Command("check", "Run the analyzers and report, with a gate.");
+        command.Arguments.Add(paths);
+        foreach (var option in new Option[] {
+                load, binlog, project, requireFresh, gate, format, output, includeHints, noCache, noColor,
+                showSuppressions, rules, define, noFormatting, resharperSeverities
+            }) {
+            command.Options.Add(option);
+        }
+
+        command.SetAction(parse => {
+                if (!LoadModes.TryParse(parse.GetValue(load), out var mode)) {
+                    Console.Error.WriteLine($"skala check: --load must be binlog, workspace or loose.");
+                    return ExitCodes.ConfigurationError;
+                }
+
+                var request = new CheckRequest {
+                    Paths = parse.GetValue(paths) ?? [],
+                    Mode = mode,
+                    BinlogPath = parse.GetValue(binlog),
+                    ProjectPath = parse.GetValue(project),
+                    RequireFreshBinlog = parse.GetValue(requireFresh),
+                    Gate = parse.GetValue(gate) ?? "local",
+                    Format = ParseFormat(parse.GetValue(format), parse.GetValue(noColor)),
+                    IncludeHints = parse.GetValue(includeHints),
+                    NoCache = parse.GetValue(noCache),
+                    ShowSuppressions = parse.GetValue(showSuppressions),
+                    Rules = parse.GetValue(rules) ?? [],
+                    Define = ParseDefines(parse.GetValue(define)),
+                    IncludeFormatting = !parse.GetValue(noFormatting),
+                    ReadReSharperSeverities = parse.GetValue(resharperSeverities),
+                    Output = parse.GetValue(output)
+                };
+
+                return RunCancellable(token => CheckCommand.Run(request, token).Result);
+            }
+        );
+
+        return command;
+    }
+
+    /// <summary>
+    /// <c>skala verify</c> — docs/plan/10 § "`skala verify` — the one command".
+    /// </summary>
+    /// <remarks>
+    /// ⚠ Its defaults are the contract. <c>--load=loose</c>, agent output, formatting included: it
+    /// has to work with no project, no build and no network, because the agent that runs it may have
+    /// written a file into a scratch directory thirty seconds ago.
+    /// </remarks>
+    static Command CreateVerifyCommand() {
+        var paths = new Argument<string[]>("paths") {
+            Description = "Files or directories. Empty means the repository root.", Arity = ArgumentArity.ZeroOrMore
+        };
+
+        var fix = new Option<bool>("--fix") { Description = "Apply the safe fixes first, then verify what is left." };
+        var format = new Option<string>("--format") {
+            Description = "agent | json | plain.", DefaultValueFactory = static _ => "agent"
+        };
+
+        var load = new Option<string>("--load") {
+            Description = "binlog | workspace | loose. ⚠ Default loose: verify must work with no project.",
+            DefaultValueFactory = static _ => "loose"
+        };
+
+        var define = new Option<string[]>("--define", "-d") {
+            Description = "Preprocessor symbols.", Arity = ArgumentArity.ZeroOrMore
+        };
+
+        var noCache = new Option<bool>("--no-cache") { Description = "Ignore the incremental cache." };
+
+        var command = new Command(
+            "verify",
+            "format --check + check --gate=local, in one pass, shaped for an agent. Exit 0 means nothing to do."
+        );
+
+        command.Arguments.Add(paths);
+        foreach (var option in new Option[] { fix, format, load, define, noCache }) {
+            command.Options.Add(option);
+        }
+
+        command.SetAction(parse => {
+                var mode = LoadModes.TryParse(parse.GetValue(load), out var parsed) ? parsed : LoadMode.Loose;
+                var request = new VerifyRequest {
+                    Paths = parse.GetValue(paths) ?? [],
+                    Mode = mode,
+                    Fix = parse.GetValue(fix),
+                    Format = ParseFormat(parse.GetValue(format), noColor: false),
+                    NoCache = parse.GetValue(noCache),
+                    Define = ParseDefines(parse.GetValue(define))
+                };
+
+                return RunCancellable(token => VerifyCommand.Run(request, token));
+            }
+        );
+
+        return command;
+    }
+
+    /// <summary><c>skala fix</c> — docs/plan/10 § "Fixes".</summary>
+    static Command CreateFixCommand() {
+        var paths = new Argument<string[]>("paths") {
+            Description = "Files or directories. Empty means the repository root.", Arity = ArgumentArity.ZeroOrMore
+        };
+
+        var safe = new Option<bool>("--safe") {
+            Description = "Apply every fix the catalogue marks safe. The default and the only unqualified mode."
+        };
+
+        var include = new Option<string[]>("--include") {
+            Description = "⚠ Required without --safe: the rules whose unsafe fixes to apply, named explicitly.",
+            Arity = ArgumentArity.ZeroOrMore
+        };
+
+        var dryRun = new Option<bool>("--dry-run") { Description = "Say what would be applied and write nothing." };
+        var load = new Option<string>("--load") {
+            Description = "binlog | workspace | loose.", DefaultValueFactory = static _ => "loose"
+        };
+
+        var binlog = new Option<string?>("--binlog") {
+            Description = "The binary log to read, instead of the conventional locations."
+        };
+
+        var define = new Option<string[]>("--define", "-d") {
+            Description = "Preprocessor symbols.", Arity = ArgumentArity.ZeroOrMore
+        };
+
+        var command = new Command("fix", "Apply the fixes the findings carry, verify each one, and re-format.");
+        command.Arguments.Add(paths);
+        foreach (var option in new Option[] { safe, include, dryRun, load, binlog, define }) {
+            command.Options.Add(option);
+        }
+
+        command.SetAction(parse => {
+                var mode = LoadModes.TryParse(parse.GetValue(load), out var parsed) ? parsed : LoadMode.Loose;
+                var included = parse.GetValue(include) ?? [];
+                var request = new FixRequest {
+                    Paths = parse.GetValue(paths) ?? [],
+                    Mode = mode,
+                    BinlogPath = parse.GetValue(binlog),
+                    SafeOnly = parse.GetValue(safe) || included.Length == 0,
+                    Include = included,
+                    DryRun = parse.GetValue(dryRun),
+                    Define = ParseDefines(parse.GetValue(define))
+                };
+
+                return RunCancellable(token => FixCommand.Run(request, token));
+            }
+        );
+
+        return command;
+    }
+
+    /// <summary><c>skala explain SK1010</c> — docs/plan/08 § "Documentation".</summary>
+    static Command CreateExplainCommand() {
+        var ruleId = new Argument<string>("rule") { Description = "The rule id, e.g. SK1010." };
+        var command = new Command("explain", "Print a rule's rationale, examples and known false positives.");
+        command.Arguments.Add(ruleId);
+        command.SetAction(parse => Run(() => ExplainCommand.Run(parse.GetValue(ruleId)!)));
+        return command;
+    }
+
+    /// <summary><c>skala rules list|docs</c>.</summary>
+    static Command CreateRulesCommand() {
+        var rules = new Command("rules", "The rule catalogue.");
+
+        var list = new Command("list", "Every allocated rule id, with its severity and scope.");
+        list.SetAction(_ => {
+                Console.Out.Write(ExplainCommand.RenderIndex());
+                return ExitCodes.Ok;
+            }
+        );
+
+        var directory = new Argument<string>("directory") {
+            Description = "Where to write the pages.", DefaultValueFactory = static _ => "docs/rules"
+        };
+
+        var docs = new Command("docs", "Regenerate docs/rules/ from rules.json.");
+        docs.Arguments.Add(directory);
+        docs.SetAction(parse => {
+                var target = parse.GetValue(directory)!;
+                Directory.CreateDirectory(target);
+                foreach (var rule in RuleCatalog.All) {
+                    File.WriteAllText(Path.Combine(target, rule.Id + ".md"), ExplainCommand.RenderMarkdown(rule));
+                }
+
+                File.WriteAllText(Path.Combine(target, "README.md"), ExplainCommand.RenderIndex());
+                Console.Out.WriteLine($"{RuleCatalog.All.Count} page(s) written to {target}.");
+                return ExitCodes.Ok;
+            }
+        );
+
+        rules.Subcommands.Add(list);
+        rules.Subcommands.Add(docs);
+        return rules;
+    }
+
+    /// <summary><c>skala cache clear|stats</c> — docs/plan/07 § "The incremental cache".</summary>
+    static Command CreateCacheCommand() {
+        var cache = new Command("cache", "The incremental analysis cache.");
+        var path = new Argument<string>("path") {
+            Description = "Any path inside the repository.", DefaultValueFactory = static _ => "."
+        };
+
+        var clear = new Command(
+            "clear",
+            "Forget everything. ⚠ Never needed for correctness; a bad read already discards."
+        );
+        clear.Arguments.Add(path);
+        clear.SetAction(parse => {
+                var root = Root(parse.GetValue(path)!);
+                DiagnosticCache.Clear(root);
+                Console.Out.WriteLine($"cache cleared: {Path.Combine(root, ".skala", "cache")}");
+                return ExitCodes.Ok;
+            }
+        );
+
+        var stats = new Command("stats", "How much is held, and how large it is.");
+        stats.Arguments.Add(path);
+        stats.SetAction(parse => {
+                var directory = Path.Combine(Root(parse.GetValue(path)!), ".skala", "cache");
+                if (!Directory.Exists(directory)) {
+                    Console.Out.WriteLine("no cache");
+                    return ExitCodes.Ok;
+                }
+
+                var files = Directory.GetFiles(directory);
+                var bytes = files.Sum(static file => new FileInfo(file).Length);
+                Console.Out.WriteLine($"{files.Length} compilation(s), {bytes / 1024} KB, in {directory}");
+
+                return ExitCodes.Ok;
+            }
+        );
+
+        cache.Subcommands.Add(clear);
+        cache.Subcommands.Add(stats);
+        return cache;
+    }
+
+    /// <summary><c>skala mcp</c> — ADR-014.</summary>
+    static Command CreateMcpCommand() {
+        var path = new Argument<string>("path") {
+            Description = "The repository the server answers about.", DefaultValueFactory = static _ => "."
+        };
+
+        var command = new Command("mcp", "Speak the Model Context Protocol over stdio.");
+        command.Arguments.Add(path);
+        command.SetAction(parse => {
+                McpServer.RunAsync(Root(parse.GetValue(path)!), CancellationToken.None).GetAwaiter().GetResult();
+                return ExitCodes.Ok;
+            }
+        );
+
+        return command;
+    }
+
+    static ReportFormat ParseFormat(string? value, bool noColor) =>
+        value?.ToLowerInvariant() switch {
+            "plain" => ReportFormat.Plain,
+            "json" => ReportFormat.Json,
+            "github" => ReportFormat.Github,
+            "agent" => ReportFormat.Agent,
+            _ => noColor || Console.IsOutputRedirected ? ReportFormat.Plain : ReportFormat.Terminal
+        };
+
+    /// <summary>
+    /// ⚠ Ctrl-C cancels and prints what was found so far, marked partial (docs/plan/07).
+    /// </summary>
+    /// <remarks>
+    /// Exit 130 is the documented code for it, and hooks depend on the codes being fixed.
+    /// </remarks>
+    static int RunCancellable(Func<CancellationToken, CommandResult> command) {
+        using var cancellation = new CancellationTokenSource();
+        ConsoleCancelEventHandler handler = (_, args) => {
+            args.Cancel = true;
+            cancellation.Cancel();
+        };
+
+        Console.CancelKeyPress += handler;
+        try {
+            var result = command(cancellation.Token);
+            Console.Out.Write(result.Output);
+            return cancellation.IsCancellationRequested ? ExitCodes.Cancelled : result.ExitCode;
+        } catch (OperationCanceledException) {
+            return ExitCodes.Cancelled;
+        } catch (IOException exception) {
+            Console.Error.WriteLine($"skala: {exception.Message}");
+            return ExitCodes.InternalError;
+        } catch (UnauthorizedAccessException exception) {
+            Console.Error.WriteLine($"skala: {exception.Message}");
+            return ExitCodes.InternalError;
+        } finally {
+            Console.CancelKeyPress -= handler;
+        }
+    }
+}

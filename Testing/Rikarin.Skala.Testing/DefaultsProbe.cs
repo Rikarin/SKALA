@@ -107,7 +107,9 @@ public static class DefaultsProbe {
                 }
 
                 assigned[option.Key] = option.Values[round];
-                work.Add((option.Fixture, EmptyConfig + "\n[*.cs]\n" + option.Key + " = " + option.Values[round] + "\n"));
+                work.Add(
+                    (option.Fixture, EmptyConfig + "\n[*.cs]\n" + option.Key + " = " + option.Values[round] + "\n")
+                );
             }
 
             var results = FormatAll(runner, work);
@@ -123,10 +125,10 @@ public static class DefaultsProbe {
                 }
 
                 if (string.Equals(
-                    TextNormalisation.Normalise(expected),
-                    TextNormalisation.Normalise(actual),
-                    StringComparison.Ordinal
-                )) {
+                        TextNormalisation.Normalise(expected),
+                        TextNormalisation.Normalise(actual),
+                        StringComparison.Ordinal
+                    )) {
                     matched[option.Key].Add(value);
                     agreed++;
                 }
@@ -193,7 +195,8 @@ public static class DefaultsProbe {
                 continue;
             }
 
-            var file = Corpus.All().FirstOrDefault(f => string.Equals(f.Set + "/" + f.RelativePath, glob, StringComparison.Ordinal));
+            var file = Corpus.All()
+                .FirstOrDefault(f => string.Equals(f.Set + "/" + f.RelativePath, glob, StringComparison.Ordinal));
             if (file is null) {
                 continue;
             }

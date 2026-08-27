@@ -72,18 +72,32 @@ public static class TextWidth {
 
     /// <summary>The East Asian Wide and Fullwidth blocks, plus emoji.</summary>
     static bool IsWide(int rune) =>
-        rune is >= 0x1100 and <= 0x115F
-        or >= 0x2E80 and <= 0x303E
-        or >= 0x3041 and <= 0x33FF
-        or >= 0x3400 and <= 0x4DBF
-        or >= 0x4E00 and <= 0x9FFF
-        or >= 0xA000 and <= 0xA4CF
-        or >= 0xAC00 and <= 0xD7A3
-        or >= 0xF900 and <= 0xFAFF
-        or >= 0xFE30 and <= 0xFE6F
-        or >= 0xFF00 and <= 0xFF60
-        or >= 0xFFE0 and <= 0xFFE6
-        or >= 0x1F300 and <= 0x1F64F
-        or >= 0x1F900 and <= 0x1F9FF
-        or >= 0x20000 and <= 0x3FFFD;
+        rune is >= 0x1100
+            and <= 0x115F
+            or >= 0x2E80
+            and <= 0x303E
+            or >= 0x3041
+            and <= 0x33FF
+            or >= 0x3400
+            and <= 0x4DBF
+            or >= 0x4E00
+            and <= 0x9FFF
+            or >= 0xA000
+            and <= 0xA4CF
+            or >= 0xAC00
+            and <= 0xD7A3
+            or >= 0xF900
+            and <= 0xFAFF
+            or >= 0xFE30
+            and <= 0xFE6F
+            or >= 0xFF00
+            and <= 0xFF60
+            or >= 0xFFE0
+            and <= 0xFFE6
+            or >= 0x1F300
+            and <= 0x1F64F
+            or >= 0x1F900
+            and <= 0x1F9FF
+            or >= 0x20000
+            and <= 0x3FFFD;
 }
