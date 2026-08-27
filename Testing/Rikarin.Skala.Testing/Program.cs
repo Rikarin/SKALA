@@ -1076,7 +1076,7 @@ static int Probe() {
     var files = Corpus.Files(Corpus.Constructs);
     foreach (var id in PhaseOneOptions.Implemented) {
         var info = Rikarin.Skala.Options.OptionRegistry.Get(id);
-        var values = LegalValues(info).ToArray();
+        var values = OptionDomain.Probes(info).ToArray();
         var matches = new List<string>();
 
         foreach (var file in files) {
@@ -1104,39 +1104,6 @@ static int Probe() {
     return 0;
 }
 
-static IEnumerable<string> LegalValues(Rikarin.Skala.Options.OptionInfo info) {
-    switch (info.Kind) {
-        case Rikarin.Skala.Options.OptionValueKind.Bool:
-            yield return "true";
-            yield return "false";
-            break;
-
-        case Rikarin.Skala.Options.OptionValueKind.Enum:
-            foreach (var value in Rikarin.Skala.Options.OptionEnums.ValuesOf(info.EnumName!)) {
-                yield return value;
-            }
-
-            break;
-
-        case Rikarin.Skala.Options.OptionValueKind.Int:
-            var current = int.TryParse(
-                info.Default,
-                NumberStyles.Integer,
-                CultureInfo.InvariantCulture,
-                out var number
-            )
-                    ? number
-                    : 0;
-            yield return current.ToString(CultureInfo.InvariantCulture);
-            yield return (current == 0 ? 3 : current == 1 ? 2 : 0).ToString(CultureInfo.InvariantCulture);
-            break;
-
-        default:
-            yield return info.Default ?? string.Empty;
-            yield return info.Default is null or "" ? "x" : info.Default + "x";
-            break;
-    }
-}
 
 // ⚠ Read out of a real binary log of the same scratch project OracleRunner builds, not typed: the
 // measurement and the binlog loader then test each other (PreprocessorFidelity). Memoised, because

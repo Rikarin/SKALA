@@ -247,7 +247,7 @@ Fixed, documented, and depended upon by hooks, CI and agents:
 | 0 | gate passed (findings may exist below the gate) |
 | 1 | gate failed |
 | 2 | formatting changes needed (`format --check` only) |
-| 3 | configuration error — an unrecognized option, a path that does not exist, an invocation the tool refuses, and `SK9001`–`SK9005` under `skala config check --strict` |
+| 3 | configuration error — an unrecognized option, a path that does not exist, an invocation the tool refuses, and `SK9017` from `skala config check` **with or without `--strict`** |
 | 4 | load failure — no compilation could be built |
 | 5 | internal error, including `SK9099` |
 | 130 | cancelled |

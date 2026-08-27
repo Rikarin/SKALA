@@ -52,8 +52,28 @@
           },
           "language": { "enum": ["csharp", "xmldoc", "any"] },
           "type": {
-            "description": "bool | int | string | enum:<Name>, where <Name> is a key of `enums`.",
+            "description": "bool | int | string | enum:<Name> | flags:<Name>, where <Name> is a key of `enums`. `string` means every string is legal, which is a claim about the option and not a shrug: an entry may only carry it together with `freeFormBecause`, and OptionValueValidationTests asserts the exemption list against the registry.",
             "type": "string"
+          },
+          "min": {
+            "description": "For an int, the smallest value the option accepts, inclusive. Omit where no lower bound is knowable; a missing bound is better than a guessed one. ⚠ Read it together with the clamping the consumer does — `max_line_length = 0` and `max_invocation_arguments_on_line = 0` are values the formatter deliberately supports (0 means 'the default width' and 'chop always'), so their minimum is 0 and not 1.",
+            "type": ["integer", "null"]
+          },
+          "max": {
+            "description": "For an int, the largest value the option accepts, inclusive. Almost always absent: an upper bound nobody can justify is a value refused for no reason.",
+            "type": ["integer", "null"]
+          },
+          "boundsBecause": {
+            "description": "Required whenever `min` or `max` is set, and forbidden otherwise: why that bound is knowable. A bound with no reason is the same guess the missing bound was, written down more confidently.",
+            "type": ["string", "null"]
+          },
+          "tabMeans": {
+            "description": "The key whose value the literal `tab` stands for. Set on `indent_size` only, because the EditorConfig specification defines the alias there and nowhere else.",
+            "type": ["string", "null"]
+          },
+          "freeFormBecause": {
+            "description": "Required on, and only on, a `string` entry: why this option has no closed domain. A `string` with no reason is how 27 options that are really enums came to accept anything at all — the reason is what makes the next reader able to challenge it.",
+            "type": ["string", "null"]
           },
           "default": {
             "description": "ReSharper's default for this option, in its .editorconfig spelling. Read together with defaultSource: it is only trustworthy when defaultSource is resharper-docs.",

@@ -166,7 +166,24 @@ public sealed class PrecedenceTests {
             """
         );
 
-        Assert.Contains(resolution.ValueErrors, error => error.Contains("sideways", StringComparison.Ordinal));
-        Assert.True(resolution[OptionId.ResharperCsharpWrapArgumentsStyle].IsDefault);
+        var error = Assert.Single(resolution.ValueErrors);
+        Assert.Equal(OptionId.ResharperCsharpWrapArgumentsStyle, error.Id);
+        Assert.Equal("sideways", error.Value);
+        Assert.Contains("chop_if_long", error.Reason, StringComparison.Ordinal);
+
+        // ⚠ The part that makes the report actionable: what the file is being formatted with now.
+        // Reporting the refusal alone leaves the reader unable to tell, and the fallback is not
+        // guessable from the key.
+        Assert.Equal(OptionRegistry.Get(OptionId.ResharperCsharpWrapArgumentsStyle).Default, error.Effective);
+
+        var option = resolution[OptionId.ResharperCsharpWrapArgumentsStyle];
+        Assert.True(option.IsDefault);
+        Assert.NotNull(option.Refused);
+        Assert.Equal(3, option.Refused.Line);
+
+        // ⚠ `config explain` used to print a bare `(default)` here, beside an option the
+        // .editorconfig visibly sets three lines in. The row has to name the line it refused.
+        Assert.Contains("SK9017", option.SourceText, StringComparison.Ordinal);
+        Assert.Contains("/repo/.editorconfig:3", option.SourceText, StringComparison.Ordinal);
     }
 }

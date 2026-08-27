@@ -60,7 +60,14 @@ public static class ConfigCommands {
         }
 
         output.AppendLine();
-        var rows = (configuredOnly ? resolution.Configured : resolution.Resolved).ToArray();
+
+        // ⚠ A refused option is not a configured one — its value never took effect — but it is the
+        // last thing `--configured-only` should hide, because it is the one row where what the file
+        // says and what the tool does come apart.
+        var rows = (configuredOnly
+                ? resolution.Resolved.Where(static option => !option.IsDefault || option.Refused is not null)
+                : resolution.Resolved)
+                .ToArray();
         var keyWidth = rows.Length == 0 ? 3 : rows.Max(static option => option.Info.Key.Length);
         var valueWidth = Math.Min(
             28,
@@ -84,6 +91,22 @@ public static class ConfigCommands {
                 .AppendLine(option.SourceText);
         }
 
+        // ⚠ The legend, and only when there is something to explain. Before M9 a refused option
+        // printed `(default)` in the source column beside a key the .editorconfig visibly sets, so
+        // the one row that needed reading looked like the 300 rows nobody sets at all. The value
+        // column holds what is in force; the source column names the line that was refused; SK9017
+        // below carries the value and the domain, and repeating them here would be a second place
+        // to keep in step.
+        if (Array.Exists(rows, static option => option.Refused is not null)) {
+            output.AppendLine();
+            output.AppendLine(
+                $"⚠ {ConfigDiagnosticIds.OptionValueOutOfDomain}: the file sets these to a value the option does not accept. The"
+            );
+            output.AppendLine(
+                "  value column is what is in force instead — not what the file says. See the diagnostics below."
+            );
+        }
+
         output.AppendLine();
         output.AppendLine(Counts(resolution));
         AppendDiagnostics(output, diagnostics);
@@ -95,6 +118,14 @@ public static class ConfigCommands {
     ///     A directory, in which case the whole <c>.editorconfig</c> chain above it is checked, or a
     ///     single <c>.editorconfig</c>-shaped file, in which case only that file is.
     /// </param>
+    /// <remarks>
+    ///     ⚠ <c>SK9017</c> fails the command on its own, without <c>--strict</c>, and it is the only
+    ///     configuration diagnostic that does. The rest describe a configuration that means something
+    ///     and might mean the wrong thing, which is a judgement call and therefore <c>--strict</c>'s to
+    ///     make. An out-of-domain value means nothing at all: there is no reading of the file under
+    ///     which the repository is configured the way its author wrote it, and a check that exits 0 on
+    ///     that is a check that told nobody. Exit 3 — configuration error — from docs/plan/09's table.
+    /// </remarks>
     public static CommandResult Check(string target, bool strict = false) {
         var full = Path.GetFullPath(target);
         var isFile = File.Exists(full) && !Directory.Exists(full);
@@ -182,6 +213,10 @@ public static class ConfigCommands {
 
         output.AppendLine();
         AppendDiagnostics(output, diagnostics.ToImmutable());
+
+        if (diagnostics.Any(static d => d.Id == ConfigDiagnosticIds.OptionValueOutOfDomain)) {
+            return new CommandResult(ConfigurationFailure, output.ToString());
+        }
 
         var failing = diagnostics.Any(static d => d.Severity == SkalaSeverity.Error)
             || (strict && diagnostics.Any(static d => d.Severity >= SkalaSeverity.Warning));

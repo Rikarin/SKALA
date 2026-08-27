@@ -515,6 +515,326 @@
         }
       ],
       "valueAliases": {}
+    },
+    "Charset": {
+      "values": [
+        {
+          "name": "latin1",
+          "summary": "ISO 8859-1"
+        },
+        {
+          "name": "utf-8",
+          "summary": "UTF-8 with no byte-order mark"
+        },
+        {
+          "name": "utf-8-bom",
+          "summary": "UTF-8 with a byte-order mark — the specification discourages it"
+        },
+        {
+          "name": "utf-16be",
+          "summary": "UTF-16, big-endian"
+        },
+        {
+          "name": "utf-16le",
+          "summary": "UTF-16, little-endian"
+        }
+      ],
+      "valueAliases": {}
+    },
+    "NewLineBeforeOpenBrace": {
+      "values": [
+        {
+          "name": "all",
+          "summary": "A new line before the brace of every construct listed here"
+        },
+        {
+          "name": "none",
+          "summary": "The brace stays on the same line for every construct"
+        },
+        {
+          "name": "accessors",
+          "summary": "Property, indexer and event accessors"
+        },
+        {
+          "name": "anonymous_methods",
+          "summary": "Anonymous methods"
+        },
+        {
+          "name": "anonymous_types",
+          "summary": "Anonymous types"
+        },
+        {
+          "name": "control_blocks",
+          "summary": "Control blocks — if, for, while, switch and the rest"
+        },
+        {
+          "name": "events",
+          "summary": "Event declarations"
+        },
+        {
+          "name": "indexers",
+          "summary": "Indexer declarations"
+        },
+        {
+          "name": "lambdas",
+          "summary": "Lambda expressions"
+        },
+        {
+          "name": "local_functions",
+          "summary": "Local functions"
+        },
+        {
+          "name": "methods",
+          "summary": "Method declarations"
+        },
+        {
+          "name": "object_collection_array_initializers",
+          "summary": "Object, collection and array initializers"
+        },
+        {
+          "name": "properties",
+          "summary": "Property declarations"
+        },
+        {
+          "name": "types",
+          "summary": "Type declarations"
+        }
+      ],
+      "valueAliases": {}
+    },
+    "BracePreference": {
+      "values": [
+        {
+          "name": "true",
+          "summary": "Braces even around a single statement"
+        },
+        {
+          "name": "false",
+          "summary": "No braces where the language allows them to be left out"
+        },
+        {
+          "name": "when_multiline",
+          "summary": "Braces only when the embedded statement spans more than one line"
+        }
+      ],
+      "valueAliases": {}
+    },
+    "BinaryOperatorSpacing": {
+      "values": [
+        {
+          "name": "before_and_after",
+          "summary": "A space on each side of the operator"
+        },
+        {
+          "name": "none",
+          "summary": "No space on either side"
+        },
+        {
+          "name": "ignore",
+          "summary": "Leave whatever spacing is already there"
+        }
+      ],
+      "valueAliases": {}
+    },
+    "SpaceBetweenParentheses": {
+      "values": [
+        {
+          "name": "control_flow_statements",
+          "summary": "A space inside the parentheses of if, for, while and the rest"
+        },
+        {
+          "name": "expressions",
+          "summary": "A space inside the parentheses of a parenthesized expression"
+        },
+        {
+          "name": "type_casts",
+          "summary": "A space inside the parentheses of a type cast"
+        },
+        {
+          "name": "false",
+          "summary": "None of the three — Microsoft documents `false` as this option's default spelling for the empty set"
+        }
+      ],
+      "valueAliases": {}
+    },
+    "UsingDirectivePlacement": {
+      "values": [
+        {
+          "name": "outside_namespace",
+          "summary": "Using directives above the namespace declaration"
+        },
+        {
+          "name": "inside_namespace",
+          "summary": "Using directives inside the namespace body"
+        }
+      ],
+      "valueAliases": {}
+    },
+    "ParenthesesPreference": {
+      "values": [
+        {
+          "name": "always_for_clarity",
+          "summary": "Parenthesize to make this operator class's precedence explicit"
+        },
+        {
+          "name": "never_if_unnecessary",
+          "summary": "Leave the parentheses out where precedence is already obvious"
+        }
+      ],
+      "valueAliases": {}
+    },
+    "CollectionExpressionPreference": {
+      "values": [
+        {
+          "name": "when_types_exactly_match",
+          "summary": "A collection expression only where the target type matches exactly"
+        },
+        {
+          "name": "when_types_loosely_match",
+          "summary": "Also where the target is IEnumerable<T>, ICollection<T>, IList<T>, IReadOnlyCollection<T> or IReadOnlyList<T> — ⚠ this can change semantics"
+        },
+        {
+          "name": "never",
+          "summary": "Never rewrite to a collection expression"
+        }
+      ],
+      "valueAliases": {
+        "true": "when_types_exactly_match",
+        "false": "never"
+      }
+    },
+    "TernaryAlignStyle": {
+      "values": [
+        {
+          "name": "align_all",
+          "summary": "Align the arms of every wrapped conditional expression"
+        },
+        {
+          "name": "align_not_nested",
+          "summary": "Align the arms except where the conditional is nested inside another"
+        },
+        {
+          "name": "none",
+          "summary": "Do not align the arms"
+        }
+      ],
+      "valueAliases": {}
+    },
+    "ConfigureAwaitAnalysisMode": {
+      "values": [
+        {
+          "name": "disabled",
+          "summary": "No ConfigureAwait analysis — ReSharper’s own default state"
+        },
+        {
+          "name": "library",
+          "summary": "Library code: suggest adding ConfigureAwait(false)"
+        },
+        {
+          "name": "ui",
+          "summary": "UI code: report ConfigureAwait(true) as redundant"
+        }
+      ],
+      "valueAliases": {}
+    },
+    "EmptyStringStyle": {
+      "values": [
+        {
+          "name": "empty_literal",
+          "summary": "Write the empty string as \"\""
+        },
+        {
+          "name": "string_empty",
+          "summary": "Write the empty string as string.Empty"
+        }
+      ],
+      "valueAliases": {}
+    },
+    "BinaryOperationGroup": {
+      "values": [
+        {
+          "name": "none",
+          "summary": "No operation"
+        },
+        {
+          "name": "multiplicative",
+          "summary": "* / %"
+        },
+        {
+          "name": "additive",
+          "summary": "+ -"
+        },
+        {
+          "name": "arithmetic",
+          "summary": "* / % + -"
+        },
+        {
+          "name": "shift",
+          "summary": "<< >>"
+        },
+        {
+          "name": "relational",
+          "summary": "< > <= >="
+        },
+        {
+          "name": "equality",
+          "summary": "== !="
+        },
+        {
+          "name": "bitwise_and",
+          "summary": "&"
+        },
+        {
+          "name": "bitwise_exclusive_or",
+          "summary": "^"
+        },
+        {
+          "name": "bitwise_inclusive_or",
+          "summary": "|"
+        },
+        {
+          "name": "bitwise",
+          "summary": "& ^ |"
+        },
+        {
+          "name": "conditional_and",
+          "summary": "&&"
+        },
+        {
+          "name": "conditional_or",
+          "summary": "||"
+        },
+        {
+          "name": "conditional",
+          "summary": "&& ||"
+        },
+        {
+          "name": "null_coalescing",
+          "summary": "??"
+        },
+        {
+          "name": "range",
+          "summary": ".."
+        }
+      ],
+      "valueAliases": {}
+    },
+    "SimpleStatementStyle": {
+      "values": [
+        {
+          "name": "do_not_change",
+          "summary": "Leave the existing line breaks alone"
+        },
+        {
+          "name": "on_single_line",
+          "summary": "Force it onto one line"
+        },
+        {
+          "name": "line_break",
+          "summary": "Force the line breaks"
+        }
+      ],
+      "valueAliases": {}
     }
   },
   "options": [
@@ -522,12 +842,12 @@
       "key": "charset",
       "aliases": [],
       "language": "any",
-      "type": "string",
+      "type": "enum:Charset",
       "default": "utf-8",
       "defaultSource": "unknown",
       "tier": "D",
       "construct": "File",
-      "summary": "The file's character encoding.",
+      "summary": "The file's character encoding. The EditorConfig specification enumerates the domain: “Set to latin1, utf-8, utf-8-bom, utf-16be or utf-16le to control the character set.”",
       "since": "0.1",
       "oracle": null,
       "docs": "https://spec.editorconfig.org/",
@@ -572,12 +892,12 @@
       "key": "csharp_new_line_before_open_brace",
       "aliases": [],
       "language": "csharp",
-      "type": "string",
+      "type": "flags:NewLineBeforeOpenBrace",
       "default": "none",
       "defaultSource": "unknown",
       "tier": "D",
       "construct": "Braces",
-      "summary": "Which constructs put '{' on a new line.",
+      "summary": "Which constructs put '{' on a new line. Microsoft documents `all`, `none`, or one or more of twelve code elements separated by commas.",
       "since": "0.1",
       "oracle": "constructs/braces/csharp_new_line_before_open_brace.cs",
       "docs": "https://learn.microsoft.com/dotnet/fundamentals/code-analysis/code-style-rule-options",
@@ -607,12 +927,12 @@
       "key": "csharp_prefer_braces",
       "aliases": [],
       "language": "csharp",
-      "type": "string",
+      "type": "enum:BracePreference",
       "default": "true:none",
       "defaultSource": "unknown",
       "tier": "D",
       "construct": "EmbeddedStatement",
-      "summary": "Whether braces are required.",
+      "summary": "Whether braces are required. IDE0011 documents `true`, `false` and `when_multiline`.",
       "since": "0.1",
       "oracle": null,
       "docs": "https://learn.microsoft.com/dotnet/fundamentals/code-analysis/code-style-rule-options",
@@ -635,7 +955,8 @@
       "docs": "https://learn.microsoft.com/dotnet/fundamentals/code-analysis/code-style-rule-options",
       "templateLine": 19,
       "severitySuffix": true,
-      "expands": []
+      "expands": [],
+      "freeFormBecause": "Microsoft documents the value only as “one or more C# modifiers” and publishes no accepted set. Roslyn's OrderModifiersHelpers accepts any token SyntaxFacts recognises as a keyword or contextual keyword, which moves with the compiler version — `closed` and `safe`, which this export writes, exist on roslyn `main` and in no shipped release branch. A domain fixed here would refuse a list a newer compiler accepts, and pin a list an older one rejects."
     },
     {
       "key": "csharp_preserve_single_line_blocks",
@@ -701,7 +1022,7 @@
       "key": "csharp_space_around_binary_operators",
       "aliases": [],
       "language": "csharp",
-      "type": "string",
+      "type": "enum:BinaryOperatorSpacing",
       "default": "before_and_after",
       "defaultSource": "unknown",
       "tier": "D",
@@ -792,7 +1113,7 @@
       "key": "csharp_space_between_parentheses",
       "aliases": [],
       "language": "csharp",
-      "type": "string",
+      "type": "flags:SpaceBetweenParentheses",
       "default": "false",
       "defaultSource": "unknown",
       "tier": "D",
@@ -915,12 +1236,12 @@
       "key": "csharp_using_directive_placement",
       "aliases": [],
       "language": "csharp",
-      "type": "string",
+      "type": "enum:UsingDirectivePlacement",
       "default": "outside_namespace:silent",
       "defaultSource": "unknown",
       "tier": "D",
       "construct": "UsingDirective",
-      "summary": "Usings inside or outside the namespace.",
+      "summary": "Usings inside or outside the namespace. IDE0065 documents `outside_namespace` and `inside_namespace`.",
       "since": "0.1",
       "oracle": null,
       "docs": "https://learn.microsoft.com/dotnet/fundamentals/code-analysis/code-style-rule-options",
@@ -949,7 +1270,7 @@
       "key": "dotnet_style_parentheses_in_arithmetic_binary_operators",
       "aliases": [],
       "language": "csharp",
-      "type": "string",
+      "type": "enum:ParenthesesPreference",
       "default": "never_if_unnecessary:none",
       "defaultSource": "unknown",
       "tier": "D",
@@ -966,7 +1287,7 @@
       "key": "dotnet_style_parentheses_in_other_binary_operators",
       "aliases": [],
       "language": "csharp",
-      "type": "string",
+      "type": "enum:ParenthesesPreference",
       "default": "always_for_clarity:none",
       "defaultSource": "unknown",
       "tier": "D",
@@ -983,7 +1304,7 @@
       "key": "dotnet_style_parentheses_in_relational_binary_operators",
       "aliases": [],
       "language": "csharp",
-      "type": "string",
+      "type": "enum:ParenthesesPreference",
       "default": "never_if_unnecessary:none",
       "defaultSource": "unknown",
       "tier": "D",
@@ -1034,7 +1355,7 @@
       "key": "dotnet_style_prefer_collection_expression",
       "aliases": [],
       "language": "csharp",
-      "type": "string",
+      "type": "enum:CollectionExpressionPreference",
       "default": "when_types_loosely_match:suggestion",
       "defaultSource": "unknown",
       "tier": "D",
@@ -1163,7 +1484,8 @@
       "oracle": null,
       "docs": "https://spec.editorconfig.org/",
       "templateLine": 530,
-      "expands": []
+      "expands": [],
+      "freeFormBecause": "IDE0073's value is the header text itself, optionally carrying a {fileName} placeholder. There is nothing to enumerate."
     },
     {
       "key": "indent_size",
@@ -1182,7 +1504,10 @@
       "expands": [
         "resharper_csharp_indent_size",
         "resharper_xmldoc_indent_size"
-      ]
+      ],
+      "min": 1,
+      "boundsBecause": "Widths and indent units are at least 1. A zero or negative indent is not a narrower indent, it is no unit at all, and the formatter clamps it away (`Math.Max(1, …)` in PhaseOneOptions and ArrangementOptions) rather than honouring it.",
+      "tabMeans": "tab_width"
     },
     {
       "key": "indent_style",
@@ -1217,7 +1542,9 @@
       "oracle": null,
       "docs": "https://spec.editorconfig.org/",
       "templateLine": null,
-      "expands": []
+      "expands": [],
+      "min": 0,
+      "boundsBecause": "At least 0. ⚠ 0 is a supported value and is not 'no limit': PhaseOneOptions reads a width of 0 as 120, and OptionCoverageTests.LegalValues documents that. A negative width is not a width, and was clamped to 120 in silence."
     },
     {
       "key": "resharper_align_multiline_array_initializer",
@@ -1351,7 +1678,7 @@
       "key": "resharper_align_ternary",
       "aliases": [],
       "language": "csharp",
-      "type": "string",
+      "type": "enum:TernaryAlignStyle",
       "default": "align_not_nested",
       "defaultSource": "template",
       "tier": "D",
@@ -1444,13 +1771,15 @@
       "oracle": null,
       "docs": "https://www.jetbrains.com/help/resharper/EditorConfig_Index.html",
       "templateLine": 613,
-      "expands": []
+      "expands": [],
+      "min": 0,
+      "boundsBecause": "At least 0. A count of blank lines cannot be negative."
     },
     {
       "key": "resharper_configure_await_analysis_mode",
       "aliases": [],
       "language": "csharp",
-      "type": "string",
+      "type": "enum:ConfigureAwaitAnalysisMode",
       "default": "disabled",
       "defaultSource": "unknown",
       "tier": "D",
@@ -2072,7 +2401,9 @@
       "oracle": "constructs/blank-lines/resharper_csharp_blank_lines_after_block_statements.cs",
       "docs": "https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_BlankLinesPageScheme.html#resharper_csharp_blank_lines_after_block_statements",
       "templateLine": 596,
-      "expands": []
+      "expands": [],
+      "min": 0,
+      "boundsBecause": "At least 0. A count of blank lines cannot be negative."
     },
     {
       "key": "resharper_csharp_blank_lines_after_case",
@@ -2092,7 +2423,9 @@
       "oracle": "constructs/blank-lines/resharper_csharp_blank_lines_after_case.cs",
       "docs": "https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_BlankLinesPageScheme.html#resharper_csharp_blank_lines_after_case",
       "templateLine": 597,
-      "expands": []
+      "expands": [],
+      "min": 0,
+      "boundsBecause": "At least 0. A count of blank lines cannot be negative."
     },
     {
       "key": "resharper_csharp_blank_lines_after_control_transfer_statements",
@@ -2112,7 +2445,9 @@
       "oracle": null,
       "docs": "https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_BlankLinesPageScheme.html#resharper_csharp_blank_lines_after_control_transfer_statements",
       "templateLine": 598,
-      "expands": []
+      "expands": [],
+      "min": 0,
+      "boundsBecause": "At least 0. A count of blank lines cannot be negative."
     },
     {
       "key": "resharper_csharp_blank_lines_after_file_scoped_namespace_directive",
@@ -2132,7 +2467,9 @@
       "oracle": "constructs/blank-lines/resharper_csharp_blank_lines_after_file_scoped_namespace_directive.cs",
       "docs": "https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_BlankLinesPageScheme.html#resharper_csharp_blank_lines_after_file_scoped_namespace_directive",
       "templateLine": 599,
-      "expands": []
+      "expands": [],
+      "min": 0,
+      "boundsBecause": "At least 0. A count of blank lines cannot be negative."
     },
     {
       "key": "resharper_csharp_blank_lines_after_multiline_statements",
@@ -2152,7 +2489,9 @@
       "oracle": null,
       "docs": "https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_BlankLinesPageScheme.html#resharper_csharp_blank_lines_after_multiline_statements",
       "templateLine": 601,
-      "expands": []
+      "expands": [],
+      "min": 0,
+      "boundsBecause": "At least 0. A count of blank lines cannot be negative."
     },
     {
       "key": "resharper_csharp_blank_lines_after_start_comment",
@@ -2172,7 +2511,9 @@
       "oracle": null,
       "docs": "https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_BlankLinesPageScheme.html#resharper_csharp_blank_lines_after_start_comment",
       "templateLine": 603,
-      "expands": []
+      "expands": [],
+      "min": 0,
+      "boundsBecause": "At least 0. A count of blank lines cannot be negative."
     },
     {
       "key": "resharper_csharp_blank_lines_after_using_list",
@@ -2192,7 +2533,9 @@
       "oracle": "constructs/blank-lines/resharper_csharp_blank_lines_after_using_list.cs",
       "docs": "https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_BlankLinesPageScheme.html#resharper_csharp_blank_lines_after_using_list",
       "templateLine": 604,
-      "expands": []
+      "expands": [],
+      "min": 0,
+      "boundsBecause": "At least 0. A count of blank lines cannot be negative."
     },
     {
       "key": "resharper_csharp_blank_lines_around_accessor",
@@ -2212,7 +2555,9 @@
       "oracle": "constructs/blank-lines/resharper_csharp_blank_lines_around_accessor.cs",
       "docs": "https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_BlankLinesPageScheme.html#resharper_csharp_blank_lines_around_accessor",
       "templateLine": 605,
-      "expands": []
+      "expands": [],
+      "min": 0,
+      "boundsBecause": "At least 0. A count of blank lines cannot be negative."
     },
     {
       "key": "resharper_csharp_blank_lines_around_auto_property",
@@ -2232,7 +2577,9 @@
       "oracle": "constructs/blank-lines/resharper_csharp_blank_lines_around_auto_property.cs",
       "docs": "https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_BlankLinesPageScheme.html#resharper_csharp_blank_lines_around_auto_property",
       "templateLine": 606,
-      "expands": []
+      "expands": [],
+      "min": 0,
+      "boundsBecause": "At least 0. A count of blank lines cannot be negative."
     },
     {
       "key": "resharper_csharp_blank_lines_around_block_case_section",
@@ -2252,7 +2599,9 @@
       "oracle": null,
       "docs": "https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_BlankLinesPageScheme.html#resharper_csharp_blank_lines_around_block_case_section",
       "templateLine": 607,
-      "expands": []
+      "expands": [],
+      "min": 0,
+      "boundsBecause": "At least 0. A count of blank lines cannot be negative."
     },
     {
       "key": "resharper_csharp_blank_lines_around_field",
@@ -2272,7 +2621,9 @@
       "oracle": "constructs/blank-lines/resharper_csharp_blank_lines_around_field.cs",
       "docs": "https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_BlankLinesPageScheme.html#resharper_csharp_blank_lines_around_field",
       "templateLine": 610,
-      "expands": []
+      "expands": [],
+      "min": 0,
+      "boundsBecause": "At least 0. A count of blank lines cannot be negative."
     },
     {
       "key": "resharper_csharp_blank_lines_around_invocable",
@@ -2292,7 +2643,9 @@
       "oracle": "constructs/blank-lines/resharper_csharp_blank_lines_around_invocable.cs",
       "docs": "https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_BlankLinesPageScheme.html#resharper_csharp_blank_lines_around_invocable",
       "templateLine": 614,
-      "expands": []
+      "expands": [],
+      "min": 0,
+      "boundsBecause": "At least 0. A count of blank lines cannot be negative."
     },
     {
       "key": "resharper_csharp_blank_lines_around_local_method",
@@ -2312,7 +2665,9 @@
       "oracle": "constructs/blank-lines/resharper_csharp_blank_lines_around_local_method.cs",
       "docs": "https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_BlankLinesPageScheme.html#resharper_csharp_blank_lines_around_local_method",
       "templateLine": 615,
-      "expands": []
+      "expands": [],
+      "min": 0,
+      "boundsBecause": "At least 0. A count of blank lines cannot be negative."
     },
     {
       "key": "resharper_csharp_blank_lines_around_multiline_case_section",
@@ -2332,7 +2687,9 @@
       "oracle": null,
       "docs": "https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_BlankLinesPageScheme.html#resharper_csharp_blank_lines_around_multiline_case_section",
       "templateLine": 616,
-      "expands": []
+      "expands": [],
+      "min": 0,
+      "boundsBecause": "At least 0. A count of blank lines cannot be negative."
     },
     {
       "key": "resharper_csharp_blank_lines_around_namespace",
@@ -2352,7 +2709,9 @@
       "oracle": "constructs/blank-lines/resharper_csharp_blank_lines_around_namespace.cs",
       "docs": "https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_BlankLinesPageScheme.html#resharper_csharp_blank_lines_around_namespace",
       "templateLine": 618,
-      "expands": []
+      "expands": [],
+      "min": 0,
+      "boundsBecause": "At least 0. A count of blank lines cannot be negative."
     },
     {
       "key": "resharper_csharp_blank_lines_around_property",
@@ -2372,7 +2731,9 @@
       "oracle": "constructs/blank-lines/resharper_csharp_blank_lines_around_property.cs",
       "docs": "https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_BlankLinesPageScheme.html#resharper_csharp_blank_lines_around_property",
       "templateLine": 620,
-      "expands": []
+      "expands": [],
+      "min": 0,
+      "boundsBecause": "At least 0. A count of blank lines cannot be negative."
     },
     {
       "key": "resharper_csharp_blank_lines_around_region",
@@ -2392,7 +2753,9 @@
       "oracle": "constructs/blank-lines/resharper_csharp_blank_lines_around_region.cs",
       "docs": "https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_BlankLinesPageScheme.html#resharper_csharp_blank_lines_around_region",
       "templateLine": 624,
-      "expands": []
+      "expands": [],
+      "min": 0,
+      "boundsBecause": "At least 0. A count of blank lines cannot be negative."
     },
     {
       "key": "resharper_csharp_blank_lines_around_single_line_accessor",
@@ -2412,7 +2775,9 @@
       "oracle": "constructs/blank-lines/resharper_csharp_blank_lines_around_single_line_accessor.cs",
       "docs": "https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_BlankLinesPageScheme.html#resharper_csharp_blank_lines_around_single_line_accessor",
       "templateLine": 625,
-      "expands": []
+      "expands": [],
+      "min": 0,
+      "boundsBecause": "At least 0. A count of blank lines cannot be negative."
     },
     {
       "key": "resharper_csharp_blank_lines_around_single_line_auto_property",
@@ -2432,7 +2797,9 @@
       "oracle": "constructs/blank-lines/resharper_csharp_blank_lines_around_single_line_auto_property.cs",
       "docs": "https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_BlankLinesPageScheme.html#resharper_csharp_blank_lines_around_single_line_auto_property",
       "templateLine": 626,
-      "expands": []
+      "expands": [],
+      "min": 0,
+      "boundsBecause": "At least 0. A count of blank lines cannot be negative."
     },
     {
       "key": "resharper_csharp_blank_lines_around_single_line_field",
@@ -2452,7 +2819,9 @@
       "oracle": "constructs/blank-lines/resharper_csharp_blank_lines_around_single_line_field.cs",
       "docs": "https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_BlankLinesPageScheme.html#resharper_csharp_blank_lines_around_single_line_field",
       "templateLine": 627,
-      "expands": []
+      "expands": [],
+      "min": 0,
+      "boundsBecause": "At least 0. A count of blank lines cannot be negative."
     },
     {
       "key": "resharper_csharp_blank_lines_around_single_line_invocable",
@@ -2472,7 +2841,9 @@
       "oracle": "constructs/blank-lines/resharper_csharp_blank_lines_around_single_line_invocable.cs",
       "docs": "https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_BlankLinesPageScheme.html#resharper_csharp_blank_lines_around_single_line_invocable",
       "templateLine": 629,
-      "expands": []
+      "expands": [],
+      "min": 0,
+      "boundsBecause": "At least 0. A count of blank lines cannot be negative."
     },
     {
       "key": "resharper_csharp_blank_lines_around_single_line_local_method",
@@ -2492,7 +2863,9 @@
       "oracle": "constructs/blank-lines/resharper_csharp_blank_lines_around_single_line_local_method.cs",
       "docs": "https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_BlankLinesPageScheme.html#resharper_csharp_blank_lines_around_single_line_local_method",
       "templateLine": 630,
-      "expands": []
+      "expands": [],
+      "min": 0,
+      "boundsBecause": "At least 0. A count of blank lines cannot be negative."
     },
     {
       "key": "resharper_csharp_blank_lines_around_single_line_property",
@@ -2512,7 +2885,9 @@
       "oracle": "constructs/blank-lines/resharper_csharp_blank_lines_around_single_line_property.cs",
       "docs": "https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_BlankLinesPageScheme.html#resharper_csharp_blank_lines_around_single_line_property",
       "templateLine": 632,
-      "expands": []
+      "expands": [],
+      "min": 0,
+      "boundsBecause": "At least 0. A count of blank lines cannot be negative."
     },
     {
       "key": "resharper_csharp_blank_lines_around_single_line_type",
@@ -2532,7 +2907,9 @@
       "oracle": "constructs/blank-lines/resharper_csharp_blank_lines_around_single_line_type.cs",
       "docs": "https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_BlankLinesPageScheme.html#resharper_csharp_blank_lines_around_single_line_type",
       "templateLine": 633,
-      "expands": []
+      "expands": [],
+      "min": 0,
+      "boundsBecause": "At least 0. A count of blank lines cannot be negative."
     },
     {
       "key": "resharper_csharp_blank_lines_around_type",
@@ -2552,7 +2929,9 @@
       "oracle": "constructs/blank-lines/resharper_csharp_blank_lines_around_type.cs",
       "docs": "https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_BlankLinesPageScheme.html#resharper_csharp_blank_lines_around_type",
       "templateLine": 634,
-      "expands": []
+      "expands": [],
+      "min": 0,
+      "boundsBecause": "At least 0. A count of blank lines cannot be negative."
     },
     {
       "key": "resharper_csharp_blank_lines_before_block_statements",
@@ -2572,7 +2951,9 @@
       "oracle": null,
       "docs": "https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_BlankLinesPageScheme.html#resharper_csharp_blank_lines_before_block_statements",
       "templateLine": 636,
-      "expands": []
+      "expands": [],
+      "min": 0,
+      "boundsBecause": "At least 0. A count of blank lines cannot be negative."
     },
     {
       "key": "resharper_csharp_blank_lines_before_case",
@@ -2592,7 +2973,9 @@
       "oracle": "constructs/blank-lines/resharper_csharp_blank_lines_before_case.cs",
       "docs": "https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_BlankLinesPageScheme.html#resharper_csharp_blank_lines_before_case",
       "templateLine": 637,
-      "expands": []
+      "expands": [],
+      "min": 0,
+      "boundsBecause": "At least 0. A count of blank lines cannot be negative."
     },
     {
       "key": "resharper_csharp_blank_lines_before_control_transfer_statements",
@@ -2612,7 +2995,9 @@
       "oracle": null,
       "docs": "https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_BlankLinesPageScheme.html#resharper_csharp_blank_lines_before_control_transfer_statements",
       "templateLine": 638,
-      "expands": []
+      "expands": [],
+      "min": 0,
+      "boundsBecause": "At least 0. A count of blank lines cannot be negative."
     },
     {
       "key": "resharper_csharp_blank_lines_before_multiline_statements",
@@ -2632,7 +3017,9 @@
       "oracle": null,
       "docs": "https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_BlankLinesPageScheme.html#resharper_csharp_blank_lines_before_multiline_statements",
       "templateLine": 641,
-      "expands": []
+      "expands": [],
+      "min": 0,
+      "boundsBecause": "At least 0. A count of blank lines cannot be negative."
     },
     {
       "key": "resharper_csharp_blank_lines_before_single_line_comment",
@@ -2652,7 +3039,9 @@
       "oracle": "constructs/blank-lines/resharper_csharp_blank_lines_before_single_line_comment.cs",
       "docs": "https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_BlankLinesPageScheme.html#resharper_csharp_blank_lines_before_single_line_comment",
       "templateLine": 642,
-      "expands": []
+      "expands": [],
+      "min": 0,
+      "boundsBecause": "At least 0. A count of blank lines cannot be negative."
     },
     {
       "key": "resharper_csharp_blank_lines_inside_namespace",
@@ -2673,7 +3062,9 @@
       "oracle": null,
       "docs": "https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_BlankLinesPageScheme.html#resharper_csharp_blank_lines_inside_namespace",
       "templateLine": 643,
-      "expands": []
+      "expands": [],
+      "min": 0,
+      "boundsBecause": "At least 0. A count of blank lines cannot be negative."
     },
     {
       "key": "resharper_csharp_blank_lines_inside_region",
@@ -2693,7 +3084,9 @@
       "oracle": "constructs/blank-lines/resharper_csharp_blank_lines_inside_region.cs",
       "docs": "https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_BlankLinesPageScheme.html#resharper_csharp_blank_lines_inside_region",
       "templateLine": 644,
-      "expands": []
+      "expands": [],
+      "min": 0,
+      "boundsBecause": "At least 0. A count of blank lines cannot be negative."
     },
     {
       "key": "resharper_csharp_blank_lines_inside_type",
@@ -2714,7 +3107,9 @@
       "oracle": null,
       "docs": "https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_BlankLinesPageScheme.html#resharper_csharp_blank_lines_inside_type",
       "templateLine": 645,
-      "expands": []
+      "expands": [],
+      "min": 0,
+      "boundsBecause": "At least 0. A count of blank lines cannot be negative."
     },
     {
       "key": "resharper_csharp_braces_redundant",
@@ -2814,7 +3209,9 @@
       "oracle": "constructs/indentation/resharper_csharp_continuous_indent_multiplier.cs",
       "docs": "https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpIndentStylePageSchema.html#resharper_csharp_continuous_indent_multiplier",
       "templateLine": 654,
-      "expands": []
+      "expands": [],
+      "min": 1,
+      "boundsBecause": "At least 1. A multiplier of 0 removes continuation indent rather than scaling it, and the formatter clamps it to 1."
     },
     {
       "key": "resharper_csharp_default_value_when_type_evident",
@@ -3332,7 +3729,9 @@
       "oracle": "constructs/indentation/resharper_csharp_indent_size.cs",
       "docs": "https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpIndentStylePageSchema.html#resharper_csharp_indent_size",
       "templateLine": 8,
-      "expands": []
+      "expands": [],
+      "min": 1,
+      "boundsBecause": "Widths and indent units are at least 1. A zero or negative indent is not a narrower indent, it is no unit at all, and the formatter clamps it away (`Math.Max(1, …)` in PhaseOneOptions and ArrangementOptions) rather than honouring it."
     },
     {
       "key": "resharper_csharp_indent_statement_pars",
@@ -3769,7 +4168,9 @@
       "oracle": "constructs/blank-lines/resharper_csharp_keep_blank_lines_in_code.cs",
       "docs": "https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_BlankLinesPageScheme.html#resharper_csharp_keep_blank_lines_in_code",
       "templateLine": 815,
-      "expands": []
+      "expands": [],
+      "min": 0,
+      "boundsBecause": "At least 0. A count of blank lines cannot be negative."
     },
     {
       "key": "resharper_csharp_keep_blank_lines_in_declarations",
@@ -3789,7 +4190,9 @@
       "oracle": "constructs/blank-lines/resharper_csharp_keep_blank_lines_in_declarations.cs",
       "docs": "https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_BlankLinesPageScheme.html#resharper_csharp_keep_blank_lines_in_declarations",
       "templateLine": 816,
-      "expands": []
+      "expands": [],
+      "min": 0,
+      "boundsBecause": "At least 0. A count of blank lines cannot be negative."
     },
     {
       "key": "resharper_csharp_keep_existing_attribute_arrangement",
@@ -4107,7 +4510,9 @@
       "oracle": "constructs/wrapping/initializers.cs",
       "docs": "https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_LineBreaksPageSchema.html#resharper_csharp_max_array_initializer_elements_on_line",
       "templateLine": 855,
-      "expands": []
+      "expands": [],
+      "min": 0,
+      "boundsBecause": "At least 0. ⚠ 0 is a supported value and means 'chop always' — the formatter clamps the count to 1 — so the floor is 0 rather than 1. A negative count is not a count."
     },
     {
       "key": "resharper_csharp_max_attribute_length_for_same_line",
@@ -4127,7 +4532,9 @@
       "oracle": null,
       "docs": "https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_LineBreaksPageSchema.html#resharper_csharp_max_attribute_length_for_same_line",
       "templateLine": 856,
-      "expands": []
+      "expands": [],
+      "min": 0,
+      "boundsBecause": "At least 0. A length in characters cannot be negative; 0 means 'never'."
     },
     {
       "key": "resharper_csharp_max_enum_members_on_line",
@@ -4147,7 +4554,9 @@
       "oracle": "constructs/breaks/enum-members.cs",
       "docs": "https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_LineBreaksPageSchema.html#resharper_csharp_max_enum_members_on_line",
       "templateLine": 700,
-      "expands": []
+      "expands": [],
+      "min": 0,
+      "boundsBecause": "At least 0. ⚠ 0 is a supported value and means 'chop always' — the formatter clamps the count to 1 — so the floor is 0 rather than 1. A negative count is not a count."
     },
     {
       "key": "resharper_csharp_max_formal_parameters_on_line",
@@ -4167,7 +4576,9 @@
       "oracle": "constructs/wrapping/argument-caps.cs",
       "docs": "https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_LineBreaksPageSchema.html#resharper_csharp_max_formal_parameters_on_line",
       "templateLine": 857,
-      "expands": []
+      "expands": [],
+      "min": 0,
+      "boundsBecause": "At least 0. ⚠ 0 is a supported value and means 'chop always' — the formatter clamps the count to 1 — so the floor is 0 rather than 1. A negative count is not a count."
     },
     {
       "key": "resharper_csharp_max_initializer_elements_on_line",
@@ -4187,7 +4598,9 @@
       "oracle": "constructs/wrapping/initializers.cs",
       "docs": "https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_LineBreaksPageSchema.html#resharper_csharp_max_initializer_elements_on_line",
       "templateLine": 858,
-      "expands": []
+      "expands": [],
+      "min": 0,
+      "boundsBecause": "At least 0. ⚠ 0 is a supported value and means 'chop always' — the formatter clamps the count to 1 — so the floor is 0 rather than 1. A negative count is not a count."
     },
     {
       "key": "resharper_csharp_max_invocation_arguments_on_line",
@@ -4207,7 +4620,9 @@
       "oracle": "constructs/wrapping/argument-caps.cs",
       "docs": "https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_LineBreaksPageSchema.html#resharper_csharp_max_invocation_arguments_on_line",
       "templateLine": 859,
-      "expands": []
+      "expands": [],
+      "min": 0,
+      "boundsBecause": "At least 0. ⚠ 0 is a supported value and means 'chop always' — the formatter clamps the count to 1 — so the floor is 0 rather than 1. A negative count is not a count."
     },
     {
       "key": "resharper_csharp_max_line_length",
@@ -4225,7 +4640,9 @@
       "oracle": "constructs/wrapping/initializers.cs",
       "docs": "https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_LineBreaksPageSchema.html#resharper_csharp_max_line_length",
       "templateLine": 701,
-      "expands": []
+      "expands": [],
+      "min": 0,
+      "boundsBecause": "At least 0. ⚠ 0 is a supported value and is not 'no limit': PhaseOneOptions reads a width of 0 as 120, and OptionCoverageTests.LegalValues documents that. A negative width is not a width, and was clamped to 120 in silence."
     },
     {
       "key": "resharper_csharp_max_primary_constructor_parameters_on_line",
@@ -4245,7 +4662,9 @@
       "oracle": "constructs/wrapping/argument-caps.cs",
       "docs": "https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_LineBreaksPageSchema.html#resharper_csharp_max_primary_constructor_parameters_on_line",
       "templateLine": 861,
-      "expands": []
+      "expands": [],
+      "min": 0,
+      "boundsBecause": "At least 0. ⚠ 0 is a supported value and means 'chop always' — the formatter clamps the count to 1 — so the floor is 0 rather than 1. A negative count is not a count."
     },
     {
       "key": "resharper_csharp_method_or_operator_body",
@@ -6921,7 +7340,9 @@
       "oracle": null,
       "docs": "https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpIndentStylePageSchema.html#resharper_csharp_tab_width",
       "templateLine": 4233,
-      "expands": []
+      "expands": [],
+      "min": 1,
+      "boundsBecause": "Widths and indent units are at least 1. A zero or negative indent is not a narrower indent, it is no unit at all, and the formatter clamps it away (`Math.Max(1, …)` in PhaseOneOptions and ArrangementOptions) rather than honouring it."
     },
     {
       "key": "resharper_csharp_trailing_comma_in_multiline_lists",
@@ -7889,7 +8310,8 @@
       "oracle": null,
       "docs": null,
       "templateLine": 717,
-      "expands": []
+      "expands": [],
+      "freeFormBecause": "The value is a C# identifier chosen by the user. JetBrains publishes no property page for this key at all."
     },
     {
       "key": "resharper_disable_blank_line_changes",
@@ -8039,7 +8461,7 @@
       "key": "resharper_empty_string",
       "aliases": [],
       "language": "csharp",
-      "type": "string",
+      "type": "enum:EmptyStringStyle",
       "default": "empty_literal",
       "defaultSource": "unknown",
       "tier": "A",
@@ -8097,7 +8519,8 @@
       "oracle": null,
       "docs": null,
       "templateLine": 734,
-      "expands": []
+      "expands": [],
+      "freeFormBecause": "A naming template built from the $object$ and $event$ macros, so the value space is every string containing them. JetBrains publishes no property page for this key."
     },
     {
       "key": "resharper_event_handler_pattern_short",
@@ -8113,7 +8536,8 @@
       "oracle": null,
       "docs": null,
       "templateLine": 735,
-      "expands": []
+      "expands": [],
+      "freeFormBecause": "A naming template built from the $event$ macro. JetBrains publishes no property page for this key."
     },
     {
       "key": "resharper_expression_braces",
@@ -8161,7 +8585,8 @@
       "oracle": "constructs/trivia/resharper_formatter_off_tag.cs",
       "docs": null,
       "templateLine": 744,
-      "expands": []
+      "expands": [],
+      "freeFormBecause": "The literal text of the marker comment that switches the formatter off; the user chooses it. JetBrains documents the default marker and no domain, because there is none."
     },
     {
       "key": "resharper_formatter_on_tag",
@@ -8177,7 +8602,8 @@
       "oracle": "constructs/trivia/resharper_formatter_on_tag.cs",
       "docs": null,
       "templateLine": 745,
-      "expands": []
+      "expands": [],
+      "freeFormBecause": "The literal text of the marker comment that switches the formatter back on; the user chooses it."
     },
     {
       "key": "resharper_formatter_tags_accept_regexp",
@@ -8469,7 +8895,8 @@
       "oracle": null,
       "docs": null,
       "templateLine": 833,
-      "expands": []
+      "expands": [],
+      "freeFormBecause": "⚠ A gap, recorded rather than guessed. The key appears on no JetBrains EditorConfig schema page and in no property index, so no domain is published. Its value `line_break` matches the do_not_change/on_single_line/line_break family of the simple_*_style keys and the temptation is to assume it — but an assumed domain refuses values nobody can show are illegal, which is a worse failure than the one SK9017 fixes. Revisit if JetBrains publishes the property."
     },
     {
       "key": "resharper_max_lambda_and_anonymous_function_parameters_on_line",
@@ -8485,7 +8912,9 @@
       "oracle": null,
       "docs": null,
       "templateLine": 860,
-      "expands": []
+      "expands": [],
+      "min": 0,
+      "boundsBecause": "At least 0. ⚠ 0 is a supported value and means 'chop always' — the formatter clamps the count to 1 — so the floor is 0 rather than 1. A negative count is not a count."
     },
     {
       "key": "resharper_new_line_before_catch",
@@ -8596,7 +9025,7 @@
       "key": "resharper_parentheses_non_obvious_operations",
       "aliases": [],
       "language": "csharp",
-      "type": "string",
+      "type": "flags:BinaryOperationGroup",
       "default": "none, shift, bitwise_and, bitwise_exclusive_or, bitwise_inclusive_or, bitwise",
       "defaultSource": "unknown",
       "tier": "D",
@@ -8773,7 +9202,8 @@
       "oracle": null,
       "docs": "https://www.jetbrains.com/help/resharper/EditorConfig_Index.html",
       "templateLine": 912,
-      "expands": []
+      "expands": [],
+      "freeFormBecause": "⚠ A gap, recorded rather than guessed. The key is on no JetBrains EditorConfig page and in no property index; its exported value `default` is attested nowhere in JetBrains' documentation, so not even one member of a candidate domain is confirmed. The neighbouring documented key is `wrap_before_eq`, which is a bool and a different option."
     },
     {
       "key": "resharper_remove_blank_lines_near_braces",
@@ -8876,7 +9306,7 @@
       "key": "resharper_simple_block_style",
       "aliases": [],
       "language": "csharp",
-      "type": "string",
+      "type": "enum:SimpleStatementStyle",
       "default": "do_not_change",
       "defaultSource": "template",
       "tier": "D",
@@ -8892,7 +9322,7 @@
       "key": "resharper_simple_case_statement_style",
       "aliases": [],
       "language": "csharp",
-      "type": "string",
+      "type": "enum:SimpleStatementStyle",
       "default": "do_not_change",
       "defaultSource": "template",
       "tier": "D",
@@ -8908,7 +9338,7 @@
       "key": "resharper_simple_embedded_statement_style",
       "aliases": [],
       "language": "csharp",
-      "type": "string",
+      "type": "enum:SimpleStatementStyle",
       "default": "do_not_change",
       "defaultSource": "template",
       "tier": "D",
@@ -9870,7 +10300,9 @@
       "oracle": null,
       "docs": "https://www.jetbrains.com/help/resharper/EditorConfig_XMLDOC_XmlDocCodeStylePageSchema.html#resharper_xmldoc_indent_size",
       "templateLine": 8,
-      "expands": []
+      "expands": [],
+      "min": 1,
+      "boundsBecause": "Widths and indent units are at least 1. A zero or negative indent is not a narrower indent, it is no unit at all, and the formatter clamps it away (`Math.Max(1, …)` in PhaseOneOptions and ArrangementOptions) rather than honouring it."
     },
     {
       "key": "resharper_xmldoc_indent_style",
@@ -9962,7 +10394,8 @@
       "oracle": null,
       "docs": "https://www.jetbrains.com/help/resharper/EditorConfig_XMLDOC_XmlDocCodeStylePageSchema.html#resharper_xmldoc_linebreak_before_elements",
       "templateLine": 1186,
-      "expands": []
+      "expands": [],
+      "freeFormBecause": "A comma-separated list of XML documentation element names. JetBrains' XML doc property page gives this key no “Possible values” block, unlike every enumerated property beside it, and the set of legal tags is whatever the documentation comments contain."
     },
     {
       "key": "resharper_xmldoc_linebreak_before_multiline_elements",
@@ -10022,7 +10455,9 @@
       "oracle": null,
       "docs": "https://www.jetbrains.com/help/resharper/EditorConfig_XMLDOC_XmlDocCodeStylePageSchema.html#resharper_xmldoc_linebreaks_inside_tags_for_elements_longer_than",
       "templateLine": 835,
-      "expands": []
+      "expands": [],
+      "min": 0,
+      "boundsBecause": "At least 0. A length in characters cannot be negative; 0 means 'never'."
     },
     {
       "key": "resharper_xmldoc_linebreaks_inside_tags_for_elements_with_child_elements",
@@ -10082,7 +10517,9 @@
       "oracle": null,
       "docs": "https://www.jetbrains.com/help/resharper/EditorConfig_XMLDOC_XmlDocCodeStylePageSchema.html#resharper_xmldoc_max_blank_lines_between_tags",
       "templateLine": 1187,
-      "expands": []
+      "expands": [],
+      "min": 0,
+      "boundsBecause": "At least 0. A count of blank lines cannot be negative."
     },
     {
       "key": "resharper_xmldoc_max_line_length",
@@ -10100,7 +10537,9 @@
       "oracle": null,
       "docs": "https://www.jetbrains.com/help/resharper/EditorConfig_XMLDOC_XmlDocCodeStylePageSchema.html#resharper_xmldoc_max_line_length",
       "templateLine": 1188,
-      "expands": []
+      "expands": [],
+      "min": 0,
+      "boundsBecause": "At least 0. ⚠ 0 is a supported value and is not 'no limit': PhaseOneOptions reads a width of 0 as 120, and OptionCoverageTests.LegalValues documents that. A negative width is not a width, and was clamped to 120 in silence."
     },
     {
       "key": "resharper_xmldoc_pi_attribute_style",
@@ -10279,7 +10718,9 @@
       "oracle": null,
       "docs": "https://www.jetbrains.com/help/resharper/EditorConfig_XMLDOC_XmlDocCodeStylePageSchema.html#resharper_xmldoc_tab_width",
       "templateLine": 4233,
-      "expands": []
+      "expands": [],
+      "min": 1,
+      "boundsBecause": "Widths and indent units are at least 1. A zero or negative indent is not a narrower indent, it is no unit at all, and the formatter clamps it away (`Math.Max(1, …)` in PhaseOneOptions and ArrangementOptions) rather than honouring it."
     },
     {
       "key": "resharper_xmldoc_wrap_around_elements",
@@ -10375,7 +10816,9 @@
       "expands": [
         "resharper_csharp_tab_width",
         "resharper_xmldoc_tab_width"
-      ]
+      ],
+      "min": 1,
+      "boundsBecause": "Widths and indent units are at least 1. A zero or negative indent is not a narrower indent, it is no unit at all, and the formatter clamps it away (`Math.Max(1, …)` in PhaseOneOptions and ArrangementOptions) rather than honouring it."
     },
     {
       "key": "trim_trailing_whitespace",

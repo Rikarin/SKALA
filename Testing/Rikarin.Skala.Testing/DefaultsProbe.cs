@@ -221,34 +221,16 @@ public static class DefaultsProbe {
     /// </summary>
     /// <remarks>
     ///     ⚠ An int has no finite domain, so the probe offers the export's value and the two numbers a
-    ///     ReSharper counter is ever likely to hold — <c>0</c> and <c>1</c>. A default outside that set
-    ///     comes back <see cref="DefaultVerdict.Contradicted" /> rather than wrong, which is the failure
-    ///     mode to prefer.
+    ///     ReSharper counter is ever likely to hold, each clamped into the option's declared bounds. A
+    ///     default outside that set comes back <see cref="DefaultVerdict.Contradicted" /> rather than
+    ///     wrong, which is the failure mode to prefer.
+    ///     <para>
+    ///         ⚠ It shares <see cref="OptionDomain.Probes" /> with the sweep and the coverage tests. It
+    ///         used to be a fifth hand-kept copy, and every copy offered <c>0</c> for keys whose floor is
+    ///         1 — a probe value the tool now refuses.
+    ///     </para>
     /// </remarks>
-    static IEnumerable<string> LegalValues(OptionInfo info) {
-        switch (info.Kind) {
-            case OptionValueKind.Bool:
-                yield return "true";
-                yield return "false";
-                break;
-
-            case OptionValueKind.Enum:
-                foreach (var value in OptionEnums.ValuesOf(info.EnumName!)) {
-                    yield return value;
-                }
-
-                break;
-
-            case OptionValueKind.Int:
-                yield return info.Default ?? "0";
-                yield return "0";
-                yield return "1";
-                break;
-
-            default:
-                break;
-        }
-    }
+    static IEnumerable<string> LegalValues(OptionInfo info) => OptionDomain.Probes(info);
 
     sealed record Candidate(string Key, List<string> Values, CorpusFile Fixture);
 

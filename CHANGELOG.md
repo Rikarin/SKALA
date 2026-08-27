@@ -13,6 +13,52 @@ missed it says so and by how much; three of them were, and one of those is still
 
 ## Unreleased
 
+### Added — `SK9017`, and the 83 options that validated nothing
+
+⚠ **An out-of-domain value was a silent default**, which is docs/plan/00's non-negotiable #4 satisfied
+to the letter and missed in substance. `OptionResolver` had always detected these and appended a
+string to `ResolutionResult.ValueErrors`; grepping the tree, nothing outside the tests and the
+key-flip sweep ever read that field — not `config check`, not `config explain`, not the format path.
+
+The measurement, on an `.editorconfig` carrying seven deliberately wrong lines: **before, exit 0 with
+zero diagnostics; after, six `SK9017` and exit 3.** The seventh line, `indent_size = tab`, is legal
+EditorConfig and is now accepted.
+
+- **`SK9017` is a warning**, where `SK9001` (unknown key) is info. `SK9001` is info because the
+  export carries ~2 000 keys Skala will never implement and the user wrote nothing wrong. Here the
+  key *is* in the registry, the configured value was discarded, and the code is formatted against a
+  value nobody chose. It is also the only configuration diagnostic that fails `config check` without
+  `--strict`, at exit 3 — every other warning there describes a configuration that means something
+  and might mean the wrong thing; this one describes a line that means nothing at all.
+- The message names the key, the value, the domain, and **what is in force instead** — the last one
+  measured from the built options rather than assumed from the registry, because a generalized key
+  can have moved it. `config explain` no longer prints `(default)` beside a key the file visibly
+  sets; the row carries the effective value, `SK9017`, and the line that was refused.
+- **17 of the 27 `string` options were enums or flag lists** typed as strings during distillation and
+  therefore accepting anything — `resharper_align_ternary = sideways` and
+  `csharp_using_directive_placement = nowhere` among them. ⚠ The worst was
+  `resharper_csharp_keep_existing_declaration_block_arrangement`: a discarded bool there means the
+  arranger rearranges the file on the strength of a setting it threw away. The remaining **10 stay
+  free-form and now say why**, in a `freeFormBecause` the generator requires; two of them
+  (`resharper_labeled_statement_style`, `resharper_prefer_wrap_around_eq`) are recorded as gaps
+  rather than open domains, because JetBrains publishes no property page for either.
+- **All 56 `int` options gained a `min`**, with the reason on the entry. ⚠ None gained a `max`: an
+  upper bound nobody can justify refuses values for no reason. Widths and indents floor at 1;
+  counters and blank-line settings at 0, because `max_line_length = 0` and `max_*_on_line = 0` are
+  values the formatter deliberately supports.
+- **`indent_size = tab` is accepted**, resolving to `tab_width` and propagating through expansion.
+  The EditorConfig specification defines it — "If this equals `tab`, the `indent_size` shall be set
+  to the tab size, which should be `tab_width` (if specified)" — and both reference cores implement
+  it. ⚠ Only on `indent_size`: JetBrains documents `resharper_csharp_indent_size` as "an integer",
+  so accepting it there would be an invention.
+- `OptionValueValidationTests` sweeps the registry in both directions: every value in every declared
+  domain accepted, every closed domain refusing a value outside it with exactly one `SK9017`, and the
+  free-form set asserted against a reviewed list. ⚠ The suite had **positive coverage only** before
+  this; nothing anywhere fed an illegal value.
+- The five hand-kept copies of `LegalValues` are one `OptionDomain`. One of them carried a comment
+  saying it was "kept deliberately identical" to another; giving `int` options a floor invalidated
+  four of the five at once.
+
 ### Changed — ⚠ documentation comments are formatted by default; `--xmldoc` is now `--no-xmldoc`
 
 **This changes formatting output on almost every file with a documentation comment in it**, which by

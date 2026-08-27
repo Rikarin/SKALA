@@ -50,6 +50,31 @@ public static class ConfigDiagnosticIds {
     /// </summary>
     public const string UnknownKey = "SK9001";
 
+    /// <summary>
+    ///     An option Skala owns was set to a value outside the option's domain, so the configured value
+    ///     was discarded and something else is in force.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠
+    ///     <b>
+    ///         Warning, where <see cref="UnknownKey" /> is info, and the difference is whose mistake it
+    ///         is.
+    ///     </b> SK9001 is info because a Rider export carries some two thousand keys Skala will never
+    ///     implement and a tool that warns about all of them on first run gets uninstalled on first run —
+    ///     the user wrote nothing wrong. This is the opposite case: the key <em>is</em> in the registry,
+    ///     Skala owns it, the user's intent was recorded and then thrown away, and the code is formatted
+    ///     against a value nobody chose. Non-negotiable #4 (docs/plan/00) says unknown configuration is a
+    ///     diagnostic and never a silent default; an out-of-domain value was a silent default until M9,
+    ///     which is the letter of the rule satisfied and its substance missed.
+    ///     <para>
+    ///         ⚠ It is also the one configuration diagnostic that fails <c>skala config check</c> without
+    ///         <c>--strict</c>. Every other warning there describes a configuration that means something
+    ///         and might mean the wrong thing; this one describes a line that means nothing at all, and
+    ///         there is no reading of it under which the repository is configured as its author intended.
+    ///     </para>
+    /// </remarks>
+    public const string OptionValueOutOfDomain = "SK9017";
+
     /// <summary>The effective configuration draws from a file above the repository root.</summary>
     public const string InheritedFromAbove = "SK9002";
 

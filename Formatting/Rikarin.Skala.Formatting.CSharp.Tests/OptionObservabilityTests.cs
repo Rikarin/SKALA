@@ -161,7 +161,7 @@ public sealed class OptionObservabilityTests {
     static HashSet<string> FormatProbeAtEveryValue(string key, out string[] values) {
         Assert.True(OptionRegistry.TryResolve(key, out var id), $"{key} is not in the registry.");
         var info = OptionRegistry.Get(id);
-        values = [.. LegalValues(info)];
+        values = [.. OptionDomain.Probes(info)];
         Assert.True(values.Length >= 2, $"{key}: fewer than two values to compare.");
 
         // ⚠ A real path under the corpus, because the .editorconfig chain is resolved from it and
@@ -206,7 +206,7 @@ public sealed class OptionObservabilityTests {
     static HashSet<string> FormatAtEveryValue(string key, out string[] files, out string[] values) {
         Assert.True(OptionRegistry.TryResolve(key, out var id), $"{key} is not in the registry.");
         var info = OptionRegistry.Get(id);
-        values = [.. LegalValues(info)];
+        values = [.. OptionDomain.Probes(info)];
         Assert.True(values.Length >= 2, $"{key}: fewer than two values to compare.");
 
         // ⚠ A key with no `oracle` glob is measured on the whole constructs set rather than skipped.
@@ -239,36 +239,6 @@ public sealed class OptionObservabilityTests {
         }
 
         return distinct;
-    }
-
-    static IEnumerable<string> LegalValues(OptionInfo info) {
-        switch (info.Kind) {
-            case OptionValueKind.Bool:
-                yield return "true";
-                yield return "false";
-                break;
-
-            case OptionValueKind.Enum:
-                foreach (var value in OptionEnums.ValuesOf(info.EnumName!)) {
-                    yield return value;
-                }
-
-                break;
-
-            case OptionValueKind.Int:
-                var current = int.TryParse(info.Default, NumberStyles.Integer, CultureInfo.InvariantCulture, out var n)
-                    ? n
-                    : 0;
-                yield return current.ToString(CultureInfo.InvariantCulture);
-                yield return (current == 0 ? 3 : current == 1 ? 2 : 0).ToString(CultureInfo.InvariantCulture);
-                yield return "1";
-                break;
-
-            default:
-                yield return info.Default ?? string.Empty;
-                yield return info.Default is null or "" ? "x" : info.Default + "x";
-                break;
-        }
     }
 
     static List<CorpusFile> Resolve(string glob) {

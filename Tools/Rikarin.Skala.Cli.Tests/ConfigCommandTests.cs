@@ -210,6 +210,109 @@ public sealed class ConfigCommandTests {
         Assert.Contains("SK-DIV-0006", run.StandardOutput, StringComparison.Ordinal);
     }
 
+    /// <summary>
+    ///     The end-to-end shape of SK9017: six bad values, six diagnostics, exit 3.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Driven through the real binary and a real <c>.editorconfig</c>, because the defect was
+    ///     never in the detection. <c>OptionResolver</c> has always detected every one of these and put
+    ///     the reason in <c>ResolutionResult.ValueErrors</c>, which no command read: <c>config check</c>
+    ///     printed "No configuration diagnostics"-worth of nothing about them and exited 0, and
+    ///     <c>config explain</c> reported the keys as <c>(default)</c>. A unit test on the resolver
+    ///     would have passed throughout.
+    ///     <para>
+    ///         ⚠ <c>keep_existing_declaration_block_arrangement</c> is in the fixture on purpose. It is
+    ///         the one where a discarded value is not a cosmetic difference: the arranger goes on to
+    ///         rearrange the file on the strength of a setting the tool threw away.
+    ///     </para>
+    /// </remarks>
+    [Fact]
+    public void Check_ReportsEveryOutOfDomainValue_AndFailsWithoutStrict() {
+        var directory = Path.Combine(Path.GetTempPath(), $"skala-valcheck-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(directory);
+        try {
+            File.WriteAllText(
+                Path.Combine(directory, ".editorconfig"),
+                """
+                root = true
+
+                [*.cs]
+                indent_size = tab
+                resharper_csharp_max_line_length = -1
+                resharper_align_ternary = sideways
+                resharper_csharp_wrap_arguments_style = sideways
+                resharper_csharp_keep_existing_declaration_block_arrangement = maybe
+                csharp_using_directive_placement = nowhere
+                resharper_csharp_indent_size = 0
+
+                """
+            );
+            File.WriteAllText(Path.Combine(directory, "a.cs"), "class C { }\n");
+
+            var run = CliRunner.Run("config", "check", directory);
+
+            // docs/plan/09 § "Exit codes": 3 is the configuration error, and this one does not wait
+            // for --strict.
+            Assert.Equal(ConfigCommands.ConfigurationFailure, run.ExitCode);
+            Assert.Contains("SK9017: 6", run.StandardOutput, StringComparison.Ordinal);
+
+            foreach (var (key, value, effective) in new[] {
+                         ("resharper_csharp_max_line_length", "-1", "120"),
+                         ("resharper_align_ternary", "sideways", "align_not_nested"),
+                         ("resharper_csharp_wrap_arguments_style", "sideways", "chop_if_long"),
+                         ("resharper_csharp_keep_existing_declaration_block_arrangement", "maybe", "false"),
+                         ("csharp_using_directive_placement", "nowhere", "outside_namespace"),
+                         ("resharper_csharp_indent_size", "0", "4")
+                     }) {
+                Assert.Contains(
+                    $"'{key} = {value}' is not a value this option accepts",
+                    run.StandardOutput,
+                    StringComparison.Ordinal
+                );
+
+                // ⚠ The clause a reader can act on. Without it they know their line was refused and
+                // still cannot tell what their code is being formatted with.
+                Assert.Contains($"'{effective}' is in force instead", run.StandardOutput, StringComparison.Ordinal);
+            }
+
+            // ⚠ `indent_size = tab` is the seventh line and is *not* one of the six. It is legal
+            // EditorConfig — the specification defines it as "use tab_width" — and Skala refused it
+            // for as long as the key was typed `int`.
+            Assert.DoesNotContain("indent_size = tab' is not", run.StandardOutput, StringComparison.Ordinal);
+        } finally {
+            Directory.Delete(directory, recursive: true);
+        }
+    }
+
+    /// <summary>A refused key may not be printed as <c>(default)</c> with nothing else said.</summary>
+    [Fact]
+    public void Explain_ShowsTheEffectiveValueAndTheRefusedLine() {
+        var directory = Path.Combine(Path.GetTempPath(), $"skala-valexplain-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(directory);
+        try {
+            File.WriteAllText(
+                Path.Combine(directory, ".editorconfig"),
+                "root = true\n[*.cs]\nresharper_csharp_wrap_arguments_style = sideways\n"
+            );
+            var source = Path.Combine(directory, "a.cs");
+            File.WriteAllText(source, "class C { }\n");
+
+            var run = CliRunner.Run("config", "explain", source);
+
+            var row = Assert.Single(
+                run.Lines,
+                line => line.StartsWith("resharper_csharp_wrap_arguments_style ", StringComparison.Ordinal)
+            );
+
+            Assert.Contains("chop_if_long", row, StringComparison.Ordinal);
+            Assert.Contains("SK9017", row, StringComparison.Ordinal);
+            Assert.Contains(".editorconfig:3", row, StringComparison.Ordinal);
+            Assert.Contains("not what the file says", run.StandardOutput, StringComparison.Ordinal);
+        } finally {
+            Directory.Delete(directory, recursive: true);
+        }
+    }
+
     [Fact]
     public void Distill_WritesAFileThatResolvesIdentically() {
         var output = Path.Combine(Path.GetTempPath(), $"skala-distill-{Guid.NewGuid():N}.editorconfig");

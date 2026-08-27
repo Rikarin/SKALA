@@ -231,6 +231,11 @@ option · `SK9014` `.editorconfig` carries no canonical block ·
 `SK9016` applying the canonical changes a `dotnet_diagnostic` severity — ⚠ **warning** when it moves
 a *compiler* diagnostic up, because with `TreatWarningsAsErrors` that is a build failure from an
 `.editorconfig` commit touching no code; info for a lowered one or an analyzer's ·
+`SK9017` an option Skala owns was set to a value outside its domain — ⚠ **warning**, and the only
+configuration diagnostic that fails `config check` without `--strict`. `SK9001` is info because the
+export carries ~2 000 keys Skala will never implement and the user wrote nothing wrong; here the key
+*is* in the registry, the configured value was discarded, and the code is formatted against a value
+nobody chose. The message names the key, the value, the domain and **what is in force instead** ·
 `SK9010` file did not parse · `SK9011` unbalanced preprocessor
 structure, not formatted · `SK9007` `skala.jsonc` is not valid JSON · `SK9020` binlog stale for a file · `SK9021` binlog missing a file · `SK9022` no binary log found · `SK9023` no C# files under the requested paths · `SK9024` no solution or project to load · `SK9025` load mode produced no compilation, fell back · `SK9015` a file could not be read or written ·
 `SK9030` analyzer threw · `SK9031` analyzer failed to load · `SK9096` arrangement reverted, a touched identifier now resolves to a different symbol ·

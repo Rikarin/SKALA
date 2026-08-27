@@ -51,6 +51,26 @@ public sealed class OptionsGenerator : IIncrementalGenerator {
         description: "A default outside the option's domain would be silently replaced by the first enum member, which is a different style than the one configured."
     );
 
+    static readonly DiagnosticDescriptor DefaultOutOfRange = new(
+        "SKG004",
+        "An option's default is outside its own bounds",
+        "'{0}' declares {1} but its default is '{2}'",
+        "Skala.Options",
+        DiagnosticSeverity.Error,
+        isEnabledByDefault: true,
+        description: "A bound that refuses the option's own default refuses a configuration nobody wrote, and the message would name a fallback the tool would not accept back."
+    );
+
+    static readonly DiagnosticDescriptor UnjustifiedFreeForm = new(
+        "SKG005",
+        "A free-form option carries no reason, or a closed one carries a reason",
+        "{0}",
+        "Skala.Options",
+        DiagnosticSeverity.Error,
+        isEnabledByDefault: true,
+        description: "`type: string` claims every string is legal. 27 options that are really enums carried that claim with no reason behind it and therefore validated nothing; `freeFormBecause` is what makes the claim reviewable."
+    );
+
     /// <summary>⚠ Named rather than inline: a bare id bypasses doc 08's register (ADR-012).</summary>
     const string DuplicateAliasId = "SK9004";
 
@@ -93,7 +113,7 @@ public sealed class OptionsGenerator : IIncrementalGenerator {
             return;
         }
 
-        if (!CheckSpellings(context, model) || !CheckDefaults(context, model)) {
+        if (!CheckSpellings(context, model) || !CheckDefaults(context, model) || !CheckDomains(context, model)) {
             return;
         }
 
@@ -175,6 +195,90 @@ public sealed class OptionsGenerator : IIncrementalGenerator {
                 Diagnostic.Create(DefaultOutOfDomain, Location.None, option.Key, option.EnumName, text, domain)
             );
             clean = false;
+        }
+
+        return clean;
+    }
+
+    /// <summary>
+    ///     The bounds are consistent with the defaults, and every free-form entry says why it is one.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Both halves guard the same hole from opposite sides. An <c>int</c> with no bounds accepted
+    ///     <c>max_line_length = -1</c> and <c>indent_size = 0</c>; a <c>string</c> with no reason
+    ///     accepted <c>resharper_align_ternary = sideways</c>. The build is where that has to fail,
+    ///     because a registry entry is added by hand and reviewed once.
+    /// </remarks>
+    static bool CheckDomains(SourceProductionContext context, OptionRegistry model) {
+        var clean = true;
+        foreach (var option in model.Options) {
+            if (option.Kind == OptionValueKind.Int
+                && int.TryParse(option.Default, NumberStyles.Integer, CultureInfo.InvariantCulture, out var number)
+                && (option.Min is { } min && number < min || option.Max is { } max && number > max)) {
+                var bounds = option.Max is null
+                    ? $"min {option.Min}"
+                    : option.Min is null
+                    ? $"max {option.Max}"
+                    : $"min {option.Min} and max {option.Max}";
+                context.ReportDiagnostic(
+                    Diagnostic.Create(DefaultOutOfRange, Location.None, option.Key, bounds, option.Default)
+                );
+                clean = false;
+            }
+
+            if (option.Kind is not OptionValueKind.Int && (option.Min is not null || option.Max is not null)) {
+                context.ReportDiagnostic(
+                    Diagnostic.Create(
+                        UnjustifiedFreeForm,
+                        Location.None,
+                        $"'{option.Key}' is not an int but declares min/max"
+                    )
+                );
+                clean = false;
+            }
+
+            var bounded = option.Min is not null || option.Max is not null;
+            if (bounded != (option.BoundsBecause is { Length: > 0 })) {
+                context.ReportDiagnostic(
+                    Diagnostic.Create(
+                        UnjustifiedFreeForm,
+                        Location.None,
+                        bounded
+                            ? $"'{option.Key}' declares a bound and no `boundsBecause`. A bound with no reason is the same guess the missing bound was."
+                            : $"'{option.Key}' carries `boundsBecause` and declares no bound."
+                    )
+                );
+                clean = false;
+            }
+
+            var freeForm = option.Kind == OptionValueKind.String;
+            if (freeForm != (option.FreeFormBecause is { Length: > 0 })) {
+                context.ReportDiagnostic(
+                    Diagnostic.Create(
+                        UnjustifiedFreeForm,
+                        Location.None,
+                        freeForm
+                            ? $"'{option.Key}' is type 'string' — every value is legal — and gives no `freeFormBecause`. Either name the domain as an enum, or record why there is none."
+                            : $"'{option.Key}' is not a free-form string but carries `freeFormBecause`."
+                    )
+                );
+                clean = false;
+            }
+
+            if (option.TabMeans is { } target
+                && !model.Options.Any(other =>
+                    string.Equals(other.Key, target, StringComparison.Ordinal)
+                    && other.Kind == OptionValueKind.Int
+                )) {
+                context.ReportDiagnostic(
+                    Diagnostic.Create(
+                        UnjustifiedFreeForm,
+                        Location.None,
+                        $"'{option.Key}' says `tab` means '{target}', which is not an int option."
+                    )
+                );
+                clean = false;
+            }
         }
 
         return clean;
@@ -294,6 +398,22 @@ public sealed class OptionsGenerator : IIncrementalGenerator {
 
         builder.AppendLine("        _ => []");
         builder.AppendLine("    };");
+        builder.AppendLine();
+        builder.AppendLine(
+            "    /// <summary>ReSharper's alternative spellings for this enum's values — <c>true</c> for <c>always</c>, and the like. Part of the declared domain: <see cref=\"TryParse\"/> accepts them, so a test that sweeps `ValuesOf` alone sweeps less than the option accepts.</summary>"
+        );
+        builder.AppendLine("    public static string[] AliasesOf(string enumName) => enumName switch {");
+        foreach (var option in model.Enums) {
+            var aliases = string.Join(
+                ", ",
+                option.ValueAliases.Where(alias => IndexOfValue(option, alias.Value) >= 0)
+                    .Select(static alias => Lit(alias.Key))
+            );
+            builder.AppendLine($"        \"{option.Name}\" => [{aliases}],");
+        }
+
+        builder.AppendLine("        _ => []");
+        builder.AppendLine("    };");
         builder.AppendLine("}");
         return builder.ToString();
     }
@@ -373,7 +493,23 @@ public sealed class OptionsGenerator : IIncrementalGenerator {
             "    /// <summary>Why this option can never be observed, or null when it can. ⚠ An inert option is Tier D but is NOT a gap: no input distinguishes its values, because another rule wins by the documented ordering or because the writer cannot produce the shape it governs. docs/plan/05 records each one and the reason. Reporting these as unimplemented makes the coverage number noise; omitting them from the report entirely hides that the configuration set them.</summary>"
         );
         builder.AppendLine("    string? Inert,");
-        builder.AppendLine("    IReadOnlyList<OptionId> Expands);");
+        builder.AppendLine("    IReadOnlyList<OptionId> Expands,");
+        builder.AppendLine(
+            "    /// <summary>The smallest value an <c>Int</c> option accepts, inclusive, or null where no lower bound is knowable. ⚠ Read with the consumer's clamping: `max_line_length = 0` and `max_*_on_line = 0` are supported values, so those minimums are 0.</summary>"
+        );
+        builder.AppendLine("    int? Min,");
+        builder.AppendLine(
+            "    /// <summary>The largest value an <c>Int</c> option accepts, inclusive. Almost always null: an upper bound nobody can justify refuses values for no reason.</summary>"
+        );
+        builder.AppendLine("    int? Max,");
+        builder.AppendLine(
+            "    /// <summary>The option whose value the literal <c>tab</c> stands for, per the EditorConfig specification's <c>indent_size</c>. Resolved by <c>OptionResolver</c>, which can see the rest of the configuration; <c>TrySet</c> cannot.</summary>"
+        );
+        builder.AppendLine("    OptionId? TabMeans,");
+        builder.AppendLine(
+            "    /// <summary>Why a <c>String</c> option has no closed domain, and null for every other kind. ⚠ A string kind is a claim that every string is legal, and 27 options that are really enums carried it without one. The reason is what a reviewer can disagree with.</summary>"
+        );
+        builder.AppendLine("    string? FreeFormBecause);");
         builder.AppendLine();
         builder.AppendLine("public static class OptionRegistry {");
         builder.AppendLine(
@@ -425,7 +561,10 @@ public sealed class OptionsGenerator : IIncrementalGenerator {
                 + $"{OptionRegistryReader.Literal(option.Since)}, {OptionRegistryReader.Literal(option.Oracle)}, "
                 + $"{OptionRegistryReader.Literal(option.Docs)}, {OptionRegistryReader.IntLiteral(option.TemplateLine)}, "
                 + $"{(option.SeveritySuffix ? "true" : "false")}, "
-                + $"{OptionRegistryReader.Literal(option.Inert)}, {expands}),"
+                + $"{OptionRegistryReader.Literal(option.Inert)}, {expands}, "
+                + $"{OptionRegistryReader.IntLiteral(option.Min)}, {OptionRegistryReader.IntLiteral(option.Max)}, "
+                + $"{(option.TabMeans is null ? "null" : "OptionId." + Naming.Pascal(option.TabMeans))}, "
+                + $"{OptionRegistryReader.Literal(option.FreeFormBecause)}),"
             );
         }
 
@@ -627,14 +766,24 @@ public sealed class OptionsGenerator : IIncrementalGenerator {
                             }
 
                         case OptionValueKind.Int:
-                            if (int.TryParse(value, System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out var number)) {
-                                _scalars[(int)id] = number;
-                                error = null;
-                                return true;
+                            if (!int.TryParse(value, System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out var number)) {
+                                error = info.TabMeans is null
+                                    ? "expected an integer" + Range(info)
+                                    : "expected an integer" + Range(info) + ", or `tab` to take the width from " + OptionRegistry.Get(info.TabMeans.Value).Key;
+                                return false;
                             }
 
-                            error = "expected an integer";
-                            return false;
+                            // ⚠ An int with no domain is how `max_line_length = -1` and
+                            // `indent_size = 0` reached the formatter. Both are then clamped —
+                            // silently, to a width the user did not ask for.
+                            if (info.Min is { } min && number < min || info.Max is { } max && number > max) {
+                                error = "expected an integer" + Range(info);
+                                return false;
+                            }
+
+                            _scalars[(int)id] = number;
+                            error = null;
+                            return true;
 
                         case OptionValueKind.Enum:
                             if (OptionEnums.TryParse(info.EnumName!, value, out var member)) {
@@ -669,6 +818,20 @@ public sealed class OptionsGenerator : IIncrementalGenerator {
                             return true;
                     }
                 }
+
+                /// <summary>The bounds an int option declares, as a phrase for the message.</summary>
+                /// <remarks>
+                /// ⚠ It names the range rather than saying "out of range". A message that does not say what
+                /// would have been accepted leaves the reader guessing, and guessing is what produced the
+                /// value being refused.
+                /// </remarks>
+                static string Range(OptionInfo info) =>
+                    (info.Min, info.Max) switch {
+                        (null, null) => "",
+                        ({ } lower, null) => " >= " + lower.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                        (null, { } upper) => " <= " + upper.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                        ({ } lower, { } upper) => " between " + lower.ToString(System.Globalization.CultureInfo.InvariantCulture) + " and " + upper.ToString(System.Globalization.CultureInfo.InvariantCulture)
+                    };
             """
         );
 

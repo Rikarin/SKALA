@@ -38,7 +38,12 @@ internal sealed record OptionEntry(
     int? TemplateLine,
     bool SeveritySuffix,
     string? Inert,
-    IReadOnlyList<string> Expands) {
+    IReadOnlyList<string> Expands,
+    int? Min,
+    int? Max,
+    string? BoundsBecause,
+    string? TabMeans,
+    string? FreeFormBecause) {
     /// <summary>The <c>OptionId</c> member name and the group path from docs/plan/02 § "Naming".</summary>
     public string MemberName => Naming.Pascal(Key);
 
@@ -160,7 +165,12 @@ internal static class OptionRegistryReader {
                     item["templateLine"].IsNull ? null : item["templateLine"].AsInt(),
                     item["severitySuffix"].AsBool(),
                     item["inert"].IsNull ? null : item["inert"].AsString(),
-                    item["expands"].AsStringList()
+                    item["expands"].AsStringList(),
+                    item["min"].IsNull ? null : item["min"].AsInt(),
+                    item["max"].IsNull ? null : item["max"].AsInt(),
+                    item["boundsBecause"].IsNull ? null : item["boundsBecause"].AsString(),
+                    item["tabMeans"].IsNull ? null : item["tabMeans"].AsString(),
+                    item["freeFormBecause"].IsNull ? null : item["freeFormBecause"].AsString()
                 )
             );
         }

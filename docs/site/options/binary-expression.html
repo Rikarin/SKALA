@@ -18,7 +18,7 @@
 <p>Spacing around binary operators. Observed and not implemented: at <code>none</code> the oracle closes up assignment, additive, multiplicative, relational, shift, bitwise and logical operators at once. It is a generalized key whose expansion set the registry does not record, and whose domain (<code>before_and_after</code>/<code>none</code>/<code>ignore</code>) is not the bool domain of the keys it would name, so honouring it needs a value mapping as well as an <code>expands</code> list.</p>
 <table class="facts">
 <tbody>
-<tr><th>Type</th><td>string</td></tr>
+<tr><th>Type</th><td>one of <code>before_and_after</code>, <code>none</code>, <code>ignore</code></td></tr>
 <tr><th>Default</th><td><code>before_and_after</code></td></tr>
 <tr><th>Default known from</th><td>nothing beyond the export</td></tr>
 <tr><th>Tier</th><td>D — recorded so the key is not reported unknown; nothing reads it yet</td></tr>
@@ -33,7 +33,7 @@
 <p>Parentheses in arithmetic expressions.</p>
 <table class="facts">
 <tbody>
-<tr><th>Type</th><td>string</td></tr>
+<tr><th>Type</th><td>one of <code>always_for_clarity</code>, <code>never_if_unnecessary</code></td></tr>
 <tr><th>Default</th><td><code>never_if_unnecessary:none</code></td></tr>
 <tr><th>Default known from</th><td>nothing beyond the export</td></tr>
 <tr><th>Tier</th><td>D — recorded so the key is not reported unknown; nothing reads it yet</td></tr>
@@ -49,7 +49,7 @@
 <p>Parentheses in other binary expressions.</p>
 <table class="facts">
 <tbody>
-<tr><th>Type</th><td>string</td></tr>
+<tr><th>Type</th><td>one of <code>always_for_clarity</code>, <code>never_if_unnecessary</code></td></tr>
 <tr><th>Default</th><td><code>always_for_clarity:none</code></td></tr>
 <tr><th>Default known from</th><td>nothing beyond the export</td></tr>
 <tr><th>Tier</th><td>D — recorded so the key is not reported unknown; nothing reads it yet</td></tr>
@@ -65,7 +65,7 @@
 <p>Parentheses in relational expressions.</p>
 <table class="facts">
 <tbody>
-<tr><th>Type</th><td>string</td></tr>
+<tr><th>Type</th><td>one of <code>always_for_clarity</code>, <code>never_if_unnecessary</code></td></tr>
 <tr><th>Default</th><td><code>never_if_unnecessary:none</code></td></tr>
 <tr><th>Default known from</th><td>nothing beyond the export</td></tr>
 <tr><th>Tier</th><td>D — recorded so the key is not reported unknown; nothing reads it yet</td></tr>
@@ -81,7 +81,7 @@
 <p>Undocumented ReSharper property; classified as C#-relevant by vocabulary.</p>
 <table class="facts">
 <tbody>
-<tr><th>Type</th><td>string</td></tr>
+<tr><th>Type</th><td>any combination, comma-separated, of <code>none</code>, <code>multiplicative</code>, <code>additive</code>, <code>arithmetic</code>, <code>shift</code>, <code>relational</code>, <code>equality</code>, <code>bitwise_and</code>, <code>bitwise_exclusive_or</code>, <code>bitwise_inclusive_or</code>, <code>bitwise</code>, <code>conditional_and</code>, <code>conditional_or</code>, <code>conditional</code>, <code>null_coalescing</code>, <code>range</code></td></tr>
 <tr><th>Default</th><td><code>none, shift, bitwise_and, bitwise_exclusive_or, bitwise_inclusive_or, bitwise</code></td></tr>
 <tr><th>Default known from</th><td>nothing beyond the export</td></tr>
 <tr><th>Tier</th><td>D — recorded so the key is not reported unknown; nothing reads it yet</td></tr>

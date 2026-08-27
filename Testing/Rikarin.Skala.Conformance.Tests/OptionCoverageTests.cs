@@ -1,4 +1,3 @@
-using System.Globalization;
 using Microsoft.CodeAnalysis.Text;
 using Rikarin.Skala.Formatting.CSharp;
 using Rikarin.Skala.Options;
@@ -228,7 +227,7 @@ public sealed class OptionCoverageTests {
         Assert.True(OptionRegistry.TryResolve(key, out var id));
         var info = OptionRegistry.Get(id);
         var files = Resolve(info.Oracle!);
-        var values = LegalValues(info).ToArray();
+        var values = OptionDomain.Probes(info).ToArray();
         Assert.True(values.Length >= 2, $"{key}: fewer than two values to compare.");
 
         foreach (var file in files) {
@@ -278,7 +277,7 @@ public sealed class OptionCoverageTests {
         var info = OptionRegistry.Get(id);
         var files = Resolve(info.Oracle!);
 
-        var values = LegalValues(info).ToArray();
+        var values = OptionDomain.Probes(info).ToArray();
         Assert.True(values.Length >= 2, $"{key}: fewer than two values to compare.");
 
         foreach (var file in files) {
@@ -314,53 +313,6 @@ public sealed class OptionCoverageTests {
             + $"[{string.Join(", ", files.Select(static f => f.ToString()))}]. An option with no observable effect is "
             + "either unimplemented or wrongly wired; both are bugs."
         );
-    }
-
-    /// <summary>
-    ///     For a bool, both values. For an enum, its whole domain. For an int, the configured value and
-    ///     one that is definitely different — an int's domain is unbounded and the point of the test is
-    ///     observability, not exhaustiveness.
-    /// </summary>
-    static IEnumerable<string> LegalValues(OptionInfo info) {
-        switch (info.Kind) {
-            case OptionValueKind.Bool:
-                yield return "true";
-                yield return "false";
-                break;
-
-            case OptionValueKind.Enum:
-                foreach (var value in OptionEnums.ValuesOf(info.EnumName!)) {
-                    yield return value;
-                }
-
-                break;
-
-            case OptionValueKind.Int:
-                var current = int.TryParse(
-                    info.Default,
-                    NumberStyles.Integer,
-                    CultureInfo.InvariantCulture,
-                    out var number
-                )
-                        ? number
-                        : 0;
-                yield return current.ToString(CultureInfo.InvariantCulture);
-                yield return (current == 0 ? 3 : current == 1 ? 2 : 0).ToString(CultureInfo.InvariantCulture);
-
-                // ⚠ A third value, because two are not enough for a counter whose configured value
-                // is a stand-in for "no cap". `max_invocation_arguments_on_line = 10000` against 0
-                // is observable — 0 clamps to 1 and chops — but `max_line_length = 120` against 0 is
-                // not, because 0 clamps to 120 and the pair is the same number twice. One is a cap
-                // on a count and the other is a width; they do not have a common "obviously
-                // different" second value, so the test tries a third.
-                yield return "1";
-                break;
-
-            default:
-                yield return info.Default ?? string.Empty;
-                yield return info.Default is null or "" ? "x" : info.Default + "x";
-                break;
-        }
     }
 
     static List<CorpusFile> Resolve(string glob) {

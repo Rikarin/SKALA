@@ -133,47 +133,17 @@ public static class SweepPlan {
     /// </summary>
     /// <remarks>
     ///     ⚠ An int has no finite domain, so the sweep offers a probe set — the export's value, a value
-    ///     that is definitely different, and <c>1</c> — and not the domain. An int option reported
-    ///     <see cref="SweepOutcome.Unexercised" /> therefore means "this probe set could not move it",
-    ///     which is weaker than the same verdict on a bool or an enum and is labelled as such in the
-    ///     report. Kept deliberately identical to <c>OptionCoverageTests.LegalValues</c>, so that the
-    ///     sweep and the unit floor are asking about the same values; a divergence between the two would
-    ///     be a divergence in the question rather than in the answer.
+    ///     that is definitely different, and <c>1</c>, each clamped into the option's declared bounds —
+    ///     and not the domain. An int option reported <see cref="SweepOutcome.Unexercised" /> therefore
+    ///     means "this probe set could not move it", which is weaker than the same verdict on a bool or
+    ///     an enum and is labelled as such in the report.
+    ///     <para>
+    ///         ⚠ This used to be a copy of <c>OptionCoverageTests.LegalValues</c> with a comment saying
+    ///         it was kept identical by hand. There were five such copies; giving int options a minimum
+    ///         invalidated four of them at once. <see cref="OptionDomain" /> is the one now.
+    ///     </para>
     /// </remarks>
-    public static IEnumerable<string> LegalValues(OptionInfo info) {
-        switch (info.Kind) {
-            case OptionValueKind.Bool:
-                yield return "true";
-                yield return "false";
-                break;
-
-            case OptionValueKind.Enum:
-                foreach (var value in OptionEnums.ValuesOf(info.EnumName!)) {
-                    yield return value;
-                }
-
-                break;
-
-            case OptionValueKind.Int:
-                var current = int.TryParse(
-                    info.Default,
-                    NumberStyles.Integer,
-                    CultureInfo.InvariantCulture,
-                    out var number
-                )
-                        ? number
-                        : 0;
-                yield return current.ToString(CultureInfo.InvariantCulture);
-                yield return (current == 0 ? 3 : current == 1 ? 2 : 0).ToString(CultureInfo.InvariantCulture);
-                yield return "1";
-                break;
-
-            default:
-                yield return info.Default ?? string.Empty;
-                yield return info.Default is null or "" ? "x" : info.Default + "x";
-                break;
-        }
-    }
+    public static IEnumerable<string> LegalValues(OptionInfo info) => OptionDomain.Probes(info);
 }
 
 /// <summary>Resolves a registry <c>oracle</c> glob to the corpus files it names.</summary>

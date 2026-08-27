@@ -19,7 +19,7 @@ public sealed record ContradictionRule(
     string Explanation);
 
 /// <summary>
-///     SK9001–SK9006 over a resolved configuration.
+///     SK9001–SK9006 and SK9017 over a resolved configuration.
 /// </summary>
 /// <remarks>
 ///     Non-negotiable #4 (docs/plan/00): unknown configuration is a diagnostic, never a silent default.
@@ -62,12 +62,49 @@ public static class ConfigurationAnalyzer {
 
     public static ImmutableArray<SkalaDiagnostic> Analyze(ResolutionResult resolution, string? repositoryRoot = null) {
         var diagnostics = ImmutableArray.CreateBuilder<SkalaDiagnostic>();
+        AddValueErrors(diagnostics, resolution);
         AddUnknownKeys(diagnostics, resolution);
         AddInheritedFromAbove(diagnostics, resolution, repositoryRoot);
         AddDuplicateAliases(diagnostics, resolution);
         AddContradictions(diagnostics, resolution);
         AddUnhonourableSettings(diagnostics, resolution);
         return diagnostics.ToImmutable();
+    }
+
+    /// <summary>
+    ///     SK9017: a key Skala owns, set to something outside the option's domain.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ <b>These were computed and discarded until M9.</b> <c>OptionResolver</c> has always
+    ///     detected them and appended a string to <c>ResolutionResult.ValueErrors</c>, and nothing
+    ///     outside the tests and the key-flip sweep ever read that field — not <c>config check</c>, not
+    ///     <c>config explain</c>, not the format path. So a value the tool refused was reported by
+    ///     nobody and replaced by a default, which is precisely the silent default docs/plan/00's
+    ///     non-negotiable #4 forbids. The worst case is not a width: it is
+    ///     <c>keep_existing_declaration_block_arrangement</c>, where discarding the value in silence
+    ///     means the arranger goes on to rearrange the user's code on the strength of a setting it
+    ///     threw away.
+    ///     <para>
+    ///         ⚠ The last clause of the message is the load-bearing one. A reader who is told only that
+    ///         their value was refused still cannot tell what their code is being formatted with, and the
+    ///         fallback is not guessable from the key — it is the registry's default, or a generalized
+    ///         key's value where one names this option.
+    ///     </para>
+    /// </remarks>
+    static void AddValueErrors(ImmutableArray<SkalaDiagnostic>.Builder diagnostics, ResolutionResult resolution) {
+        foreach (var error in resolution.ValueErrors) {
+            var info = OptionRegistry.Get(error.Id);
+            diagnostics.Add(
+                new SkalaDiagnostic(
+                    ConfigDiagnosticIds.OptionValueOutOfDomain,
+                    SkalaSeverity.Warning,
+                    $"'{error.Spelling} = {error.Value}' is not a value this option accepts ({error.Reason}); '{error.Effective}' is in force instead",
+                    error.File,
+                    error.Line,
+                    $"The configured value was discarded, so `{info.Key}` formats at '{error.Effective}' — which nobody chose. Correct the value or delete the line."
+                )
+            );
+        }
     }
 
     static void AddUnknownKeys(ImmutableArray<SkalaDiagnostic>.Builder diagnostics, ResolutionResult resolution) {

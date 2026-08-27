@@ -101,6 +101,26 @@ truth:
 }
 ```
 
+⚠ **`type` is the validation, and for 83 of the 520 entries it was not validating anything.** Until
+M9, 27 entries were `"type": "string"` — which means *every* string is a legal value — and 56 were
+`"type": "int"` with nothing behind them but `int.TryParse`. `resharper_align_ternary = sideways`,
+`csharp_using_directive_placement = nowhere`, `resharper_csharp_max_line_length = -1` and
+`resharper_csharp_indent_size = 0` were all accepted, discarded, and replaced by a default in
+silence. Four fields close that, and each is enforced at build time by the generator (`SKG004`,
+`SKG005`) rather than by review:
+
+| Field | On | Meaning |
+|---|---|---|
+| `min` / `max` | `int` | The inclusive bounds. ⚠ Read with the consumer's clamping — `max_line_length = 0` and `max_*_on_line = 0` are values the formatter deliberately supports, so their floor is 0 and not 1. |
+| `boundsBecause` | any bounded entry | Why that bound is knowable. Required whenever `min` or `max` is set; a bound with no reason is the same guess the missing bound was. |
+| `freeFormBecause` | `string` | Why the option has no closed domain. Required on every `string` entry and forbidden elsewhere. **This is the field that makes "it's a string" reviewable**, and the ten entries that keep it name what JetBrains would have to publish to close them. |
+| `tabMeans` | `indent_size` only | The key whose value the literal `tab` stands for. The EditorConfig specification defines the alias there and nowhere else. |
+
+`OptionValueValidationTests` then sweeps the registry itself: every value in every declared domain is
+accepted, every option with a closed domain refuses a value outside it with exactly one `SK9017`, and
+the free-form set is asserted against a hard-coded list — so a new `string` entry fails the suite
+until somebody writes down why.
+
 From it, `Rikarin.Skala.Options.Generator` (an incremental source generator, so it participates in
 the build rather than being a checked-in codegen step) emits:
 
@@ -127,7 +147,10 @@ would hide a gap rather than close it.
   (Tier A ⇔ what the formatter actually reads, both directions) and `OptionRegistryTests.Tiers_AreHonest`
   (a Tier A/B claim must carry an oracle fixture glob). ⚠ They are scoped to the options the
   formatter reads, not to all 520, so "an option with no test is a build failure" is false for the
-  293 Tier D entries — which is most of the registry.
+  293 Tier D entries — which is most of the registry. M9 narrowed that to *observability*: every one
+  of the 520 is now swept for **value validation** by `OptionValueValidationTests`, which is cheap
+  because it resolves and never formats. What a Tier D option still has no test for is whether
+  anything reads it.
 
 ⚠ Adding support for an option is therefore: add the JSON entry, add the corpus file, implement it,
 and add it to `PhaseOneOptions.Implemented` or `ArrangementOptions.Implemented`. **Forgetting any of
