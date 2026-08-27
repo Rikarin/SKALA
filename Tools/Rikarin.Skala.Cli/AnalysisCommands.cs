@@ -203,13 +203,26 @@ public static partial class SkalaCommandLine {
 
         var noCache = new Option<bool>("--no-cache") { Description = "Ignore the incremental cache." };
 
+        // ⚠ The same two scopings `check` has, on the command an agent actually runs. Without them
+        // `verify` on an adopted repository reported 778 findings needing a decision on every run
+        // for ever — doc 10's report is a decision queue, and a queue nobody can drain is noise.
+        var since = new Option<string?>("--since") {
+            Description = "A git ref. Only findings on lines it changed are to do. Composes with --baseline."
+        };
+
+        var baseline = new Option<string?>("--baseline") {
+            Description = "Findings this repository has already accepted are not to do. "
+                + "Empty uses .skala/baseline.sarif when it exists.",
+            Arity = ArgumentArity.ZeroOrOne
+        };
+
         var command = new Command(
             "verify",
             "format --check + check --gate=local, in one pass, shaped for an agent. Exit 0 means nothing to do."
         );
 
         command.Arguments.Add(paths);
-        foreach (var option in new Option[] { fix, format, load, define, noCache }) {
+        foreach (var option in new Option[] { fix, format, load, define, noCache, since, baseline }) {
             command.Options.Add(option);
         }
 
@@ -221,7 +234,15 @@ public static partial class SkalaCommandLine {
                     Fix = parse.GetValue(fix),
                     Format = ParseFormat(parse.GetValue(format), noColor: false),
                     NoCache = parse.GetValue(noCache),
-                    Define = ParseDefines(parse.GetValue(define))
+                    Define = ParseDefines(parse.GetValue(define)),
+                    Since = parse.GetValue(since),
+
+                    // ⚠ Tri-state, exactly as on `check`: absent is null, bare `--baseline` is the
+                    // empty string and means the conventional path if it is there, a value is that
+                    // path. `GetValue` alone cannot tell "absent" from "given with no value".
+                    BaselinePath = parse.GetResult(baseline) is null
+                        ? null
+                        : parse.GetValue(baseline) ?? string.Empty
                 };
 
                 return RunCancellable(token => VerifyCommand.Run(request, token));

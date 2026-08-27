@@ -17,6 +17,7 @@ skala check    [paths…]  [--gate <name>] [--since <ref>] [--baseline <file>]
                          [--resharper-severities] [--profile]
 skala fix      [paths…]  [--safe] [--include <ids>] [--dry-run] [--load …] [--binlog <file>]
 skala verify   [paths…]  [--fix] [--format agent|json|plain] [--load …] [--define A,B]
+                         [--since <ref>] [--baseline [<file>]]
 skala explain  <ruleId | optionKey>
 skala rules    list|docs                                                          ← M5
 skala config   explain|diff|distill|fix|check
@@ -305,12 +306,24 @@ The order matters, because the wrong order produces a 40 000-line first diff and
    several. ⚠ Not the arrangement ones: `verify` is `format --check` plus `check --gate=local` and
    does not run `arrange`. Arrangement is its own verb and its own step, deliberately, because it
    rewrites the tree and wants a compilation.
-6. `skala baseline create` — accept the current analysis findings.
+6. `skala baseline create --apply` — accept the current analysis findings. ⚠ Commit
+   `.skala/baseline.sarif`. It is the one thing under `.skala/` that is not scratch, and the marker
+   Skala writes there un-ignores it by name for exactly that reason; everything else in the
+   directory — `cache/`, `crash/`, `report.sarif`, `history.jsonl` — stays ignored. Until M9 the
+   marker was a bare `*` and this step needed `git add -f`.
 7. Turn on the `pr` gate with `--since`. New code is clean; old code is a backlog, not a blocker.
-8. Burn the baseline down, rule by rule, with `skala fix --safe --include <id>`.
+8. ⚠ **Point the agents at the baseline too**: `skala verify --baseline --since=origin/master`.
+   `verify` is the one command doc 10 tells an agent to run, and until M9 it had neither flag — so
+   on the first repository to adopt Skala it reported **778 findings needing a decision**, every
+   run, for ever, with no way to be told what step 6 had just accepted. Both scopings compose the
+   same way they do on `check`: a finding is to do only if it is absent from the baseline *and* on
+   a line the branch touched.
+9. Burn the baseline down, rule by rule, with `skala fix --safe --include <id>`.
 
 Steps 4 and 6 are the two that make adoption survivable on a 1.35 M-line tree, and both of them are
-"accept the present, gate the future".
+"accept the present, gate the future". ⚠ Step 8 is what extends that promise to the agent-facing
+surface: a baseline the one command an agent runs cannot read has accepted nothing as far as the
+agent is concerned.
 
 ## Distribution
 
