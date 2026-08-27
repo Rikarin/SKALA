@@ -107,9 +107,22 @@ public sealed class KeyFlipSweep {
         var baselineStart = Stopwatch.GetTimestamp();
         var baseline = MeasureBaseline(candidates, ref invocations);
         oracleClock += Stopwatch.GetElapsedTime(baselineStart);
+        var agreeing = baseline.Count(static entry => entry.Value);
         _log.WriteLine(
-            $"  baseline: {Count(baseline.Count(static entry => entry.Value))}/{Count(baseline.Count)} fixtures already agree under the base configuration"
+            $"  baseline: {Count(agreeing)}/{Count(baseline.Count)} fixtures already agree under the base configuration"
         );
+
+        // ⚠ Both canaries below are loud rather than logged, because a broken measurement and a
+        // dramatic finding look identical in a table. M3's "197 options set, 0 fixtures unchanged"
+        // was a shared-configuration bug; this harness's own "0/164 fixtures agree at the baseline"
+        // was a normalise-one-side-only bug. Both were caught by a human reading a count. A count
+        // that can only be read is a count that will eventually be skimmed.
+        if (baseline.Count > 0 && agreeing == 0) {
+            _log.WriteLine(
+                "  ⚠ NOT A FINDING, A BROKEN MEASUREMENT: Skala and the oracle disagree on every fixture "
+                + "before any key is flipped. Check the comparison before reading anything below it."
+            );
+        }
 
         for (var round = 0; round < rounds; round++) {
             var work = candidates.Where(candidate => round < candidate.Values.Count).ToArray();
@@ -157,6 +170,13 @@ public sealed class KeyFlipSweep {
             _log.WriteLine(
                 $"  round {Count(round + 1)}/{Count(rounds)}: {Count(work.Length)} options, {Count(moved)} oracle outputs differ from the input"
             );
+
+            if (work.Length > 0 && moved == 0) {
+                _log.WriteLine(
+                    "  ⚠ NOT A FINDING, A BROKEN MEASUREMENT: `cleanupcode` changed nothing in this whole "
+                    + "round. It errored, or the configuration never reached it."
+                );
+            }
         }
 
         return new SweepRun(

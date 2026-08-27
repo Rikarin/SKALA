@@ -150,7 +150,8 @@ public static class SweepReport {
         builder.AppendLine("## Per option");
         builder.AppendLine();
         builder.AppendLine("`oracle` and `skala` are the number of distinct outputs each engine produced across the");
-        builder.AppendLine("option's values; `agree` is how many of those values the two agreed on byte for byte.");
+        builder.AppendLine("option's values; `agree` is how many of those values the two agreed on, after the");
+        builder.AppendLine("line-ending normalisation every measurement in this repository uses.");
         builder.AppendLine("`base` is whether the two already agreed on the fixture before the key was touched,");
         builder.AppendLine("and `ms` is the option's share of the rounds it appeared in — the baseline is not");
         builder.AppendLine("attributed to any option, so these sum to less than the wall clock above.");
@@ -223,14 +224,25 @@ public static class SweepReport {
                     .AppendLine(" |");
             }
 
-            var tierA = run.Excluded.Where(static exclusion => exclusion.Info.Tier == OptionTier.A).ToArray();
-            if (tierA.Length > 0) {
+            // ⚠ The arrangement rows are deliberately not counted here. They claim Tier A and they
+            // are entitled to: a cleanup fixture pins them and `OptionCoverageTests` measures them
+            // against the arranger. What this call-out is for is a Tier A claim with *no* evidence
+            // behind it, which is a different and worse thing than one this profile cannot see.
+            var unevidenced = run.Excluded
+                .Where(static exclusion => exclusion.Info.Tier == OptionTier.A
+                    && !exclusion.Reason.StartsWith("arrangement option", StringComparison.Ordinal)
+                )
+                .ToArray();
+            if (unevidenced.Length > 0) {
                 builder.AppendLine();
                 builder.AppendLine(
-                    "Of those, **"
-                    + Count(tierA.Length)
-                    + "** claim Tier A: "
-                    + string.Join(", ", tierA.Select(static e => "`" + e.Info.Key + "`").Order(StringComparer.Ordinal))
+                    "⚠ Of those, **"
+                    + Count(unevidenced.Length)
+                    + "** claim Tier A with nothing this sweep can reach: "
+                    + string.Join(
+                        ", ",
+                        unevidenced.Select(static e => "`" + e.Info.Key + "`").Order(StringComparer.Ordinal)
+                    )
                 );
             }
         }
