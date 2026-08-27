@@ -36,7 +36,8 @@
         "Pack",
         "Restore",
         "Sweep",
-        "Test"
+        "Test",
+        "Unformat"
       ]
     },
     "Verbosity": {

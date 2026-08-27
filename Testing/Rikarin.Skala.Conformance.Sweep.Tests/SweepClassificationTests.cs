@@ -82,6 +82,36 @@ public sealed class SweepClassificationTests {
         }
     }
 
+    /// <summary>
+    /// ⚠ The broken-measurement canary, pinned because a healthy run cannot demonstrate it.
+    /// </summary>
+    /// <remarks>
+    /// Both of this harness's confident-wrong-verdict bugs had the shape "a non-empty population in
+    /// which nothing was observed": M3's "197 options set, 0 fixtures unchanged" and this harness's
+    /// own "0/164 fixtures agree at the baseline". Neither errored; both printed a table. The canary
+    /// is silent on every correct run — which is precisely why its firing has to be pinned here
+    /// rather than trusted to be observed in the sweep's own output.
+    /// </remarks>
+    [Fact]
+    public void TheBrokenMeasurementCanary_FiresOnlyWhenNothingWasObservedAtAll() {
+        // The two shapes that have actually happened.
+        Assert.True(KeyFlipSweep.IsBrokenMeasurement(population: 164, observed: 0));
+        Assert.True(KeyFlipSweep.IsBrokenMeasurement(population: 197, observed: 0));
+
+        // ⚠ And it must stay silent on a healthy run, or it is noise that gets ignored. These are
+        // this sweep's own real counts: 199 of 207 fixtures agreed at the baseline, and 180 of 258
+        // oracle outputs moved in round 1.
+        Assert.False(KeyFlipSweep.IsBrokenMeasurement(population: 207, observed: 199));
+        Assert.False(KeyFlipSweep.IsBrokenMeasurement(population: 258, observed: 180));
+
+        // A single observation is enough to say the instrument reached the subject.
+        Assert.False(KeyFlipSweep.IsBrokenMeasurement(population: 258, observed: 1));
+
+        // ⚠ An empty population is not a broken measurement, it is nothing to measure — a
+        // `--family` filter that matched no option must not print a defect report.
+        Assert.False(KeyFlipSweep.IsBrokenMeasurement(population: 0, observed: 0));
+    }
+
     static OptionSweep Sample(SweepOutcome outcome) =>
         new(
             "resharper_sample",
