@@ -34,14 +34,15 @@ using Assert = Newtonsoft.Json.Tests.XUnitAssert;
 
 #endif
 
-namespace Newtonsoft.Json.Tests.Documentation.Samples.Serializer {
-    [TestFixture]
-    public class MaxDepth : TestFixtureBase {
-        [Test]
-        public void Example() {
-            #region Usage
+namespace Newtonsoft.Json.Tests.Documentation.Samples.Serializer;
 
-            var json = @"[
+[TestFixture]
+public class MaxDepth : TestFixtureBase {
+    [Test]
+    public void Example() {
+        #region Usage
+
+        var json = @"[
               [
                 [
                   '1',
@@ -51,17 +52,16 @@ namespace Newtonsoft.Json.Tests.Documentation.Samples.Serializer {
               ]
             ]";
 
-            try {
-                JsonConvert.DeserializeObject<List<IList<IList<string>>>>(
-                    json,
-                    new JsonSerializerSettings { MaxDepth = 2 }
-                );
-            } catch (JsonReaderException ex) {
-                Console.WriteLine(ex.Message);
-                // The reader's MaxDepth of 2 has been exceeded. Path '[0][0]', line 3, position 12.
-            }
-
-            #endregion
+        try {
+            JsonConvert.DeserializeObject<List<IList<IList<string>>>>(
+                json,
+                new JsonSerializerSettings { MaxDepth = 2 }
+            );
+        } catch (JsonReaderException ex) {
+            Console.WriteLine(ex.Message);
+            // The reader's MaxDepth of 2 has been exceeded. Path '[0][0]', line 3, position 12.
         }
+
+        #endregion
     }
 }

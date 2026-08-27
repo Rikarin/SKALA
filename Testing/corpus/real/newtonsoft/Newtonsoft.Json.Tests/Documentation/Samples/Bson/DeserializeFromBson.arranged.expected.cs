@@ -34,38 +34,38 @@ using Assert = Newtonsoft.Json.Tests.XUnitAssert;
 
 #endif
 
-namespace Newtonsoft.Json.Tests.Documentation.Samples.Bson {
-    [TestFixture]
-    public class DeserializeFromBson : TestFixtureBase {
-        #region Types
+namespace Newtonsoft.Json.Tests.Documentation.Samples.Bson;
 
-        public class Event {
-            public string Name { get; set; }
-            public DateTime StartDate { get; set; }
+[TestFixture]
+public class DeserializeFromBson : TestFixtureBase {
+    #region Types
+
+    public class Event {
+        public string Name { get; set; }
+        public DateTime StartDate { get; set; }
+    }
+
+    #endregion
+
+#pragma warning disable 618
+    [Test]
+    public void Example() {
+        #region Usage
+
+        var data = Convert.FromBase64String("MQAAAAJOYW1lAA8AAABNb3ZpZSBQcmVtaWVyZQAJU3RhcnREYXRlAMDgKWE8AQAAAA==");
+
+        var ms = new MemoryStream(data);
+        using (BsonReader reader = new BsonReader(ms)) {
+            JsonSerializer serializer = new JsonSerializer();
+
+            Event e = serializer.Deserialize<Event>(reader);
+
+            Console.WriteLine(e.Name);
+            // Movie Premiere
         }
 
         #endregion
 
-#pragma warning disable 618
-        [Test]
-        public void Example() {
-            #region Usage
-
-            var data = Convert.FromBase64String("MQAAAAJOYW1lAA8AAABNb3ZpZSBQcmVtaWVyZQAJU3RhcnREYXRlAMDgKWE8AQAAAA==");
-
-            var ms = new MemoryStream(data);
-            using (BsonReader reader = new BsonReader(ms)) {
-                JsonSerializer serializer = new JsonSerializer();
-
-                Event e = serializer.Deserialize<Event>(reader);
-
-                Console.WriteLine(e.Name);
-                // Movie Premiere
-            }
-
-            #endregion
-
 #pragma warning restore 618
-        }
     }
 }

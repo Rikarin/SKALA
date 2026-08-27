@@ -139,7 +139,7 @@ public sealed class SystemGraph {
 
             var ordered = new List<SystemNode>(members.Count);
 
-            foreach (var position in Sort(phase, types, everywhere: null, unsatisfied: null)) {
+            foreach (var position in Sort(phase, types, null, null)) {
                 var system = members[position];
 
                 var access = system is IDeclaredAccess declared

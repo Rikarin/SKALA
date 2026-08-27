@@ -29,34 +29,33 @@
 using System.Globalization;
 using System.Runtime.Serialization;
 
-namespace Newtonsoft.Json.Tests.TestObjects {
+namespace Newtonsoft.Json.Tests.TestObjects;
 #if !(NET20)
-    [Serializable]
-    [DataContract]
-    public class Address {
-        [DataMember]
-        public string Street {
-            get => _street;
-            set => _street = value;
-        }
-
-        string _street = "32 Kaiea";
-
-        [DataMember]
-        public string Phone {
-            get => _Phone;
-            set => _Phone = value;
-        }
-
-        string _Phone = "(503) 814-6335";
-
-        [DataMember]
-        public DateTime Entered {
-            get => _Entered;
-            set => _Entered = value;
-        }
-
-        DateTime _Entered = DateTime.Parse("01/01/2007", CultureInfo.CurrentCulture.DateTimeFormat);
+[Serializable]
+[DataContract]
+public class Address {
+    [DataMember]
+    public string Street {
+        get => _street;
+        set => _street = value;
     }
-#endif
+
+    string _street = "32 Kaiea";
+
+    [DataMember]
+    public string Phone {
+        get => _Phone;
+        set => _Phone = value;
+    }
+
+    string _Phone = "(503) 814-6335";
+
+    [DataMember]
+    public DateTime Entered {
+        get => _Entered;
+        set => _Entered = value;
+    }
+
+    DateTime _Entered = DateTime.Parse("01/01/2007", CultureInfo.CurrentCulture.DateTimeFormat);
 }
+#endif

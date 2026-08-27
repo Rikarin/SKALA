@@ -35,14 +35,15 @@ using Assert = Newtonsoft.Json.Tests.XUnitAssert;
 
 #endif
 
-namespace Newtonsoft.Json.Tests.Documentation.Samples.Linq {
-    [TestFixture]
-    public class ParseJsonObject : TestFixtureBase {
-        [Test]
-        public void Example() {
-            #region Usage
+namespace Newtonsoft.Json.Tests.Documentation.Samples.Linq;
 
-            var json = @"{
+[TestFixture]
+public class ParseJsonObject : TestFixtureBase {
+    [Test]
+    public void Example() {
+        #region Usage
+
+        var json = @"{
               CPU: 'Intel',
               Drives: [
                 'DVD read/writer',
@@ -50,29 +51,28 @@ namespace Newtonsoft.Json.Tests.Documentation.Samples.Linq {
               ]
             }";
 
-            var o = JObject.Parse(json);
+        var o = JObject.Parse(json);
 
-            Console.WriteLine(o.ToString());
-            // {
-            //   "CPU": "Intel",
-            //   "Drives": [
-            //     "DVD read/writer",
-            //     "500 gigabyte hard drive"
-            //   ]
-            // }
+        Console.WriteLine(o.ToString());
+        // {
+        //   "CPU": "Intel",
+        //   "Drives": [
+        //     "DVD read/writer",
+        //     "500 gigabyte hard drive"
+        //   ]
+        // }
 
-            #endregion
+        #endregion
 
-            StringAssert.AreEqual(
-                @"{
+        StringAssert.AreEqual(
+            @"{
   ""CPU"": ""Intel"",
   ""Drives"": [
     ""DVD read/writer"",
     ""500 gigabyte hard drive""
   ]
 }",
-                o.ToString()
-            );
-        }
+            o.ToString()
+        );
     }
 }

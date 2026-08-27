@@ -36,33 +36,33 @@ using Assert = Newtonsoft.Json.Tests.XUnitAssert;
 #else
 #endif
 
-namespace Newtonsoft.Json.Tests.Documentation.Samples.Serializer {
-    [TestFixture]
-    public class SerializeImmutableCollections : TestFixtureBase {
-        [Test]
-        public void Example() {
-            #region Usage
+namespace Newtonsoft.Json.Tests.Documentation.Samples.Serializer;
 
-            var l = ImmutableList.CreateRange(new List<string> { "One", "II", "3" });
+[TestFixture]
+public class SerializeImmutableCollections : TestFixtureBase {
+    [Test]
+    public void Example() {
+        #region Usage
 
-            string json = JsonConvert.SerializeObject(l, Formatting.Indented);
-            // [
-            //   "One",
-            //   "II",
-            //   "3"
-            // ]
+        var l = ImmutableList.CreateRange(new List<string> { "One", "II", "3" });
 
-            #endregion
+        string json = JsonConvert.SerializeObject(l, Formatting.Indented);
+        // [
+        //   "One",
+        //   "II",
+        //   "3"
+        // ]
 
-            StringAssert.AreEqual(
-                @"[
+        #endregion
+
+        StringAssert.AreEqual(
+            @"[
   ""One"",
   ""II"",
   ""3""
 ]",
-                json
-            );
-        }
+            json
+        );
     }
 }
 

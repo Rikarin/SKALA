@@ -34,44 +34,44 @@ using Assert = Newtonsoft.Json.Tests.XUnitAssert;
 
 #endif
 
-namespace Newtonsoft.Json.Tests.Documentation.Samples.Serializer {
-    [TestFixture]
-    public class JsonPropertyName : TestFixtureBase {
-        #region Types
+namespace Newtonsoft.Json.Tests.Documentation.Samples.Serializer;
 
-        public class Videogame {
-            [JsonProperty("name")]
-            public string Name { get; set; }
+[TestFixture]
+public class JsonPropertyName : TestFixtureBase {
+    #region Types
 
-            [JsonProperty("release_date")]
-            public DateTime ReleaseDate { get; set; }
-        }
+    public class Videogame {
+        [JsonProperty("name")]
+        public string Name { get; set; }
+
+        [JsonProperty("release_date")]
+        public DateTime ReleaseDate { get; set; }
+    }
+
+    #endregion
+
+    [Test]
+    public void Example() {
+        #region Usage
+
+        var starcraft = new Videogame { Name = "Starcraft", ReleaseDate = new(1998, 1, 1) };
+
+        string json = JsonConvert.SerializeObject(starcraft, Formatting.Indented);
+
+        Console.WriteLine(json);
+        // {
+        //   "name": "Starcraft",
+        //   "release_date": "1998-01-01T00:00:00"
+        // }
 
         #endregion
 
-        [Test]
-        public void Example() {
-            #region Usage
-
-            var starcraft = new Videogame { Name = "Starcraft", ReleaseDate = new(1998, 1, 1) };
-
-            string json = JsonConvert.SerializeObject(starcraft, Formatting.Indented);
-
-            Console.WriteLine(json);
-            // {
-            //   "name": "Starcraft",
-            //   "release_date": "1998-01-01T00:00:00"
-            // }
-
-            #endregion
-
-            StringAssert.AreEqual(
-                @"{
+        StringAssert.AreEqual(
+            @"{
   ""name"": ""Starcraft"",
   ""release_date"": ""1998-01-01T00:00:00""
 }",
-                json
-            );
-        }
+            json
+        );
     }
 }

@@ -26,26 +26,26 @@
 
 #endregion
 
-namespace Newtonsoft.Json.Tests.TestObjects {
-    public class PosConverter : JsonConverter {
-        public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer) {
-            Pos p = (Pos)value;
+namespace Newtonsoft.Json.Tests.TestObjects;
 
-            if (p != null) {
-                writer.WriteRawValue(string.Format("new Pos({0},{1})", p.X, p.Y));
-            } else {
-                writer.WriteNull();
-            }
+public class PosConverter : JsonConverter {
+    public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer) {
+        Pos p = (Pos)value;
+
+        if (p != null) {
+            writer.WriteRawValue(string.Format("new Pos({0},{1})", p.X, p.Y));
+        } else {
+            writer.WriteNull();
         }
-
-        public override object ReadJson(
-            JsonReader reader,
-            Type objectType,
-            object existingValue,
-            JsonSerializer serializer
-        ) =>
-            throw new NotImplementedException();
-
-        public override bool CanConvert(Type objectType) => objectType == typeof(Pos);
     }
+
+    public override object ReadJson(
+        JsonReader reader,
+        Type objectType,
+        object existingValue,
+        JsonSerializer serializer
+    ) =>
+        throw new NotImplementedException();
+
+    public override bool CanConvert(Type objectType) => objectType == typeof(Pos);
 }

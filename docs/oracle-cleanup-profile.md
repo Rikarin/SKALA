@@ -79,6 +79,31 @@ Probed as `CSCodeStyleAttributes` attributes:
 | `ArrangeStringLiteral`, `ArrangeEmptyString` | ✗ not attribute names |
 | `ArrangeBraces`, `ArrangeRedundantBraces` | ✗ no effect |
 
+## ⚠ Two tasks the first sweep missed
+
+⚠ **The sweep above is a list of what was probed, and its silence is not evidence.** Two real
+`CSCodeStyleAttributes` attributes were never tried, so the profile ran without them and the oracle
+looked like a tool that declines two of the export's settings:
+
+| Attribute | Effect |
+|---|---|
+| `ArrangeNamespaces` | ✅ `namespace N { … }` ⇒ `namespace N;`, under `csharp_style_namespace_declarations = file_scoped` |
+| `ArrangeArgumentsStyle` | ✅ strips a redundant argument name, under the four `resharper_arguments_*` keys at `positional` — and adds one when a key says `named` |
+
+Both are in the `CodeCleanupTask_` resource list that this document already says is recoverable, and
+neither is exotic. They were missed because the probe set was built from doc 06's catalogue rather
+than from the tool's own name list, so a setting doc 06 did not discuss had no probe written for it.
+
+⚠ **The consequence was a measurement that could not come out any other way.** With those two absent,
+`ArrangeNamespaceBody` and the four `ArgumentsStyle*` inspections read as "the oracle does not do
+this" — and [17](plan/17-inspection-parity.md) recorded all five among fifteen arrangement options
+that Skala declares and does not perform. Five of that fifteen were unmeasurable rather than
+unimplemented, which is the same failure mode as an unknown task name being silently ignored, one
+level up.
+
+**The lesson the profile now carries:** probe from `strings -a $JB/*.dll | grep -oE
+"CodeCleanupTask_[A-Za-z]+"`, not from the catalogue you expect to find.
+
 ## ⚠ Three rewrites doc 06 asks for that the oracle will not perform
 
 This is the finding, and it is the M4 analogue of SK-DIV-0005: swept, not found, recorded.

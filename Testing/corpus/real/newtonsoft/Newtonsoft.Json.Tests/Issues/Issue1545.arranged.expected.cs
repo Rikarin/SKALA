@@ -34,12 +34,13 @@ using Assert = Newtonsoft.Json.Tests.XUnitAssert;
 #else
 #endif
 
-namespace Newtonsoft.Json.Tests.Issues {
-    [TestFixture]
-    public class Issue1545 : TestFixtureBase {
-        [Test]
-        public void Test_Populate() {
-            var json = @"{
+namespace Newtonsoft.Json.Tests.Issues;
+
+[TestFixture]
+public class Issue1545 : TestFixtureBase {
+    [Test]
+    public void Test_Populate() {
+        var json = @"{
                 ""array"": [
                     /* comment0 */
                     {
@@ -53,15 +54,15 @@ namespace Newtonsoft.Json.Tests.Issues {
                 ]
             }";
 
-            Simple s = JsonConvert.DeserializeObject<Simple>(json);
-            Assert.AreEqual(2, s.Array.Length);
-            Assert.AreEqual("item1", s.Array[0].Value);
-            Assert.AreEqual("item2", s.Array[1].Value);
-        }
+        Simple s = JsonConvert.DeserializeObject<Simple>(json);
+        Assert.AreEqual(2, s.Array.Length);
+        Assert.AreEqual("item1", s.Array[0].Value);
+        Assert.AreEqual("item2", s.Array[1].Value);
+    }
 
-        [Test]
-        public void Test_Multidimensional() {
-            var json = @"[
+    [Test]
+    public void Test_Multidimensional() {
+        var json = @"[
                 /* comment0 */
                 [1,2,3],
                 /* comment1 */
@@ -76,70 +77,69 @@ namespace Newtonsoft.Json.Tests.Issues {
                 /* comment5 */
             ]";
 
-            int[,] s = JsonConvert.DeserializeObject<int[,]>(json);
-            Assert.AreEqual(6, s.Length);
-            Assert.AreEqual(1, s[0, 0]);
-            Assert.AreEqual(2, s[0, 1]);
-            Assert.AreEqual(3, s[0, 2]);
-            Assert.AreEqual(4, s[1, 0]);
-            Assert.AreEqual(5, s[1, 1]);
-            Assert.AreEqual(6, s[1, 2]);
-        }
+        int[,] s = JsonConvert.DeserializeObject<int[,]>(json);
+        Assert.AreEqual(6, s.Length);
+        Assert.AreEqual(1, s[0, 0]);
+        Assert.AreEqual(2, s[0, 1]);
+        Assert.AreEqual(3, s[0, 2]);
+        Assert.AreEqual(4, s[1, 0]);
+        Assert.AreEqual(5, s[1, 1]);
+        Assert.AreEqual(6, s[1, 2]);
+    }
+}
+
+public class Simple {
+    [JsonProperty(Required = Required.Always)]
+    public SimpleObject[] Array { get; set; }
+}
+
+[JsonConverter(typeof(LineInfoConverter))]
+public class SimpleObject : JsonLineInfo {
+    public string Value { get; set; }
+}
+
+public class JsonLineInfo {
+    [JsonIgnore]
+    public int? LineNumber { get; set; }
+
+    [JsonIgnore]
+    public int? LinePosition { get; set; }
+}
+
+public class LineInfoConverter : JsonConverter {
+    public override bool CanWrite => false;
+
+    public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer) {
+        throw new NotImplementedException("Converter is not writable. Method should not be invoked");
     }
 
-    public class Simple {
-        [JsonProperty(Required = Required.Always)]
-        public SimpleObject[] Array { get; set; }
-    }
-
-    [JsonConverter(typeof(LineInfoConverter))]
-    public class SimpleObject : JsonLineInfo {
-        public string Value { get; set; }
-    }
-
-    public class JsonLineInfo {
-        [JsonIgnore]
-        public int? LineNumber { get; set; }
-
-        [JsonIgnore]
-        public int? LinePosition { get; set; }
-    }
-
-    public class LineInfoConverter : JsonConverter {
-        public override bool CanWrite => false;
-
-        public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer) {
-            throw new NotImplementedException("Converter is not writable. Method should not be invoked");
-        }
-
-        public override bool CanConvert(Type objectType) {
+    public override bool CanConvert(Type objectType) {
 #if DNXCORE50
             return typeof(JsonLineInfo).GetTypeInfo().IsAssignableFrom(objectType.GetTypeInfo());
 #else
-            return typeof(JsonLineInfo).IsAssignableFrom(objectType);
+        return typeof(JsonLineInfo).IsAssignableFrom(objectType);
 #endif
+    }
+
+    public override object ReadJson(
+        JsonReader reader,
+        Type objectType,
+        object existingValue,
+        JsonSerializer serializer
+    ) {
+        if (reader.TokenType == JsonToken.Null) {
+            return null;
         }
 
-        public override object ReadJson(
-            JsonReader reader,
-            Type objectType,
-            object existingValue,
-            JsonSerializer serializer
-        ) {
-            if (reader.TokenType == JsonToken.Null) {
-                return null;
-            }
+        var lineInfoObject = Activator.CreateInstance(objectType) as JsonLineInfo;
+        serializer.Populate(reader, lineInfoObject);
 
-            var lineInfoObject = Activator.CreateInstance(objectType) as JsonLineInfo;
-            serializer.Populate(reader, lineInfoObject);
-
-            IJsonLineInfo jsonLineInfo = reader as IJsonLineInfo;
-            if (jsonLineInfo != null && jsonLineInfo.HasLineInfo()) {
-                lineInfoObject.LineNumber = jsonLineInfo.LineNumber;
-                lineInfoObject.LinePosition = jsonLineInfo.LinePosition;
-            }
-
-            return lineInfoObject;
+        IJsonLineInfo jsonLineInfo = reader as IJsonLineInfo;
+        if (jsonLineInfo != null && jsonLineInfo.HasLineInfo()) {
+            lineInfoObject.LineNumber = jsonLineInfo.LineNumber;
+            lineInfoObject.LinePosition = jsonLineInfo.LinePosition;
         }
+
+        return lineInfoObject;
     }
 }

@@ -35,18 +35,18 @@ using Assert = Newtonsoft.Json.Tests.XUnitAssert;
 #else
 #endif
 
-namespace Newtonsoft.Json.Tests.Issues {
-    [TestFixture]
-    public class Issue1396 : TestFixtureBase {
-        [Test]
-        public void Test() {
-            using (var stringReader = new StringReader(","))
-            using (var jsonReader = new JsonTextReader(stringReader)) {
-                jsonReader.SupportMultipleContent = true;
-                Assert.IsTrue(jsonReader.Read());
-                Assert.AreEqual(JsonToken.Undefined, jsonReader.TokenType);
-                Assert.IsFalse(jsonReader.Read());
-            }
+namespace Newtonsoft.Json.Tests.Issues;
+
+[TestFixture]
+public class Issue1396 : TestFixtureBase {
+    [Test]
+    public void Test() {
+        using (var stringReader = new StringReader(","))
+        using (var jsonReader = new JsonTextReader(stringReader)) {
+            jsonReader.SupportMultipleContent = true;
+            Assert.IsTrue(jsonReader.Read());
+            Assert.AreEqual(JsonToken.Undefined, jsonReader.TokenType);
+            Assert.IsFalse(jsonReader.Read());
         }
     }
 }

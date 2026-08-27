@@ -525,7 +525,7 @@ public static class UtilityComposition {
         // Two passes, because one fragment's initial value is written in terms of the others. The
         // stop list is the only one, and the alternative — a lazily resolved table — would buy
         // generality nothing has asked for and lose the invariant that `Reference` is a pure lookup.
-        Initials[GradientStops] = StopList(via: false);
+        Initials[GradientStops] = StopList(false);
         Names = [.. Initials.Keys.Order(StringComparer.Ordinal)];
     }
 

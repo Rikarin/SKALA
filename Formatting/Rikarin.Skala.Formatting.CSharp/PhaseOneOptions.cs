@@ -1437,8 +1437,6 @@ public static class Ids {
     public static readonly OptionId WrapBeforeArrowWithExpressions =
         Of("resharper_csharp_wrap_before_arrow_with_expressions");
 
-    public static readonly OptionId PlaceAttributeOnSameLine = OfInert("resharper_place_attribute_on_same_line");
-
     public static readonly OptionId PlaceTypeAttributeOnSameLine =
         Of("resharper_csharp_place_type_attribute_on_same_line");
 
@@ -1456,6 +1454,19 @@ public static class Ids {
 
     public static readonly OptionId PlaceRecordFieldAttributeOnSameLine =
         Of("resharper_csharp_place_record_field_attribute_on_same_line");
+
+
+    /// <summary>
+    /// ⚠ Generalized, not inert, and the difference is a Tier D that was understating the tool.
+    /// docs/plan/17 counted <c>ArrangeAttributes</c> among fifteen "declared and not performed"
+    /// arrangement options on the strength of this key's tier. It is in fact honoured in full: the
+    /// resolver expands it into the six <c>place_*_attribute_on_same_line</c> keys below, every one
+    /// of which is implemented and Tier A, and flipping it moves the formatter's output. The key
+    /// needed no rewrite — it needed to be claimed by the mechanism that already exists for exactly
+    /// this shape.
+    /// </summary>
+    public static readonly OptionId PlaceAttributeOnSameLine =
+        OfGeneralized("resharper_place_attribute_on_same_line");
 
     // ⚠ Four keys read but never observable, and Tier D with the reason rather than Tier A:
     //   max_attribute_length_for_same_line — a length threshold for a placement that never happens.

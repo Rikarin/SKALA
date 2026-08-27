@@ -834,27 +834,43 @@ and layer 3 cannot either (no identifier changed meaning); only the precondition
 
 - options: `resharper_csharp_null_checking_pattern_style`, `resharper_empty_string`, `resharper_csharp_braces_redundant`
 
-## SK-DIV-0014 — parenthesis removal is gated behind `--aggressive`, and the gate costs 4.02 points
+## SK-DIV-0014 — ⚠ RETIRED. Parenthesis removal was gated behind `--aggressive`; the gate is lifted
 
-The oracle's cleanup profile removes redundant arithmetic parentheses
-(`dotnet_style_parentheses_in_arithmetic_binary_operators = never_if_unnecessary`), and Skala's
-default does not. [06](plan/06-arrangement-and-syntax-styles.md) § "Qualification and redundancy"
-asks for exactly this: "Parenthesis removal is the highest-risk rewrite in the whole tool […] Skala
-gates parenthesis removal behind `arrange --aggressive` for the first release regardless, and
-revisits when the corpus differential shows zero divergences."
+**This divergence no longer exists.** It is kept as a record because the reasoning that closed it is
+the part worth having.
 
-Measured rather than assumed, over `corpus/real/` plus `constructs/arrangement/`, 391 files:
+The oracle's cleanup profile removes redundant parentheses and Skala's default did not.
+[06](plan/06-arrangement-and-syntax-styles.md) asked for exactly that gate "for the first release
+regardless", and named the condition for revisiting: "when the corpus differential shows zero
+divergences".
+
+⚠ **That condition could never be met, and it took a second measurement to see why.** A gated rule
+contributes divergences *by being gated*, so "wait until `--aggressive` shows zero divergences before
+un-gating" is a test the gate itself keeps failing. The original entry recorded the symptom without
+noticing it: "The condition for revisiting is in the doc and is not yet met: `--aggressive` is not at
+zero divergences either."
+
+What settled it instead was the price, re-measured over 401 files against the cleanup profile:
 
 | | changed spans agreed |
 |---|---|
-| default (gated) | **77.61 %** (2 506 / 3 229) |
-| `--aggressive` | **81.63 %** (2 635 / 3 228) |
+| gate on | **59.43 %** (2 035 / 3 424) |
+| gate off | **63.68 %** (2 183 / 3 428) |
 
-So the gate is worth 4.02 points of agreement, and that is the price of the caution rather than a
-hidden disagreement. The condition for revisiting is in the doc and is not yet met: `--aggressive`
-is not at zero divergences either.
+4.25 points, against an oracle whose own profile performs the rewrite, on the single largest item in
+[17](plan/17-inspection-parity.md)'s parity measurement — `ArrangeRedundantParentheses` fires more
+often on Vixen than any other inspection Skala did not perform.
 
-- options: `dotnet_style_parentheses_in_arithmetic_binary_operators`, `dotnet_style_parentheses_in_other_binary_operators`
+⚠ **The decisive change is not the number.** The gated rule carried a precedence table and was
+arithmetic-only; the caution was really about that table. The rule now proves each removal by
+re-parsing the enclosing expression and comparing the tree, so "these parentheses are redundant" is
+checked rather than asserted. The gate was protecting against a mechanism that is gone.
+
+⚠ The earlier numbers in this entry (77.61 % / 81.63 % over 391 files, a 4.02-point gate) are not
+comparable with the pair above: the cleanup profile has since gained `ArrangeNamespaces` and
+`ArrangeArgumentsStyle`, so the oracle changes more and there are more spans to agree about.
+
+- options: `dotnet_style_parentheses_in_arithmetic_binary_operators`, `dotnet_style_parentheses_in_other_binary_operators`, `resharper_parentheses_redundancy_style`
 
 ## SK-DIV-0015 — the oracle inserts a blank line before the first type; Skala preserves the source
 

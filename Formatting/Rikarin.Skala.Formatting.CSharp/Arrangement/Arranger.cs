@@ -7,51 +7,62 @@ using Rikarin.Skala.Core.Diagnostics;
 namespace Rikarin.Skala.Formatting.CSharp.Arrangement;
 
 /// <summary>
-///     Step 2 of docs/plan/04's pipeline: tree ⇒ tree, with the three safety layers of doc 06 § "Safety".
+/// Step 2 of docs/plan/04's pipeline: tree ⇒ tree, with the three safety layers of doc 06 § "Safety".
 /// </summary>
 /// <remarks>
-///     ⚠ This never emits whitespace decisions of its own. Every rule rewrites nodes and the formatter
-///     lays the result out (doc 06 § "Interaction with the formatter"), which is what makes
-///     arrangement-and-format idempotent as a *pair* rather than only individually — see
-///     <see cref="ArrangementPipeline" />.
+/// ⚠ This never emits whitespace decisions of its own. Every rule rewrites nodes and the formatter
+/// lays the result out (doc 06 § "Interaction with the formatter"), which is what makes
+/// arrangement-and-format idempotent as a *pair* rather than only individually — see
+/// <see cref="ArrangementPipeline"/>.
 /// </remarks>
 public static class Arranger {
     /// <summary>
-    ///     The catalogue, in the order it is applied.
+    /// The catalogue, in the order it is applied.
     /// </summary>
     /// <remarks>
-    ///     ⚠ The order is load-bearing in exactly one place and inert everywhere else.
-    ///     <see cref="VarRule" /> must precede <see cref="ObjectCreationRule" /> and
-    ///     <see cref="DefaultValueRule" />, because <c>var</c> consumes the left-hand type those two rules
-    ///     need as a target: run the other way round, <c>List&lt;int&gt; x = new List&lt;int&gt;()</c>
-    ///     becomes <c>List&lt;int&gt; x = new()</c> and then cannot become <c>var</c> at all, and the
-    ///     output disagrees with the oracle on every local declaration in the corpus.
-    ///     <para>
-    ///         <see cref="BodyStyleRule" /> runs last so that the expression it lifts into <c>=&gt;</c> is the
-    ///         already-arranged one, and the pair reaches a fixed point in one pass rather than two.
-    ///     </para>
+    /// ⚠ The order is load-bearing in exactly one place and inert everywhere else.
+    /// <see cref="VarRule"/> must precede <see cref="ObjectCreationRule"/> and
+    /// <see cref="DefaultValueRule"/>, because <c>var</c> consumes the left-hand type those two rules
+    /// need as a target: run the other way round, <c>List&lt;int&gt; x = new List&lt;int&gt;()</c>
+    /// becomes <c>List&lt;int&gt; x = new()</c> and then cannot become <c>var</c> at all, and the
+    /// output disagrees with the oracle on every local declaration in the corpus.
+    /// <para>
+    /// ⚠ <see cref="ArgumentStyleRule"/> must precede <see cref="ObjectCreationRule"/>, for a second
+    /// instance of the same shape: <c>f(other: new object())</c> is not target-typed while the name
+    /// is still on it. Run the other way round, the argument loses its name and keeps its
+    /// <c>new object()</c> where the oracle writes <c>new()</c>.
+    /// </para>
+    /// <para>
+    /// <see cref="BodyStyleRule"/> runs last so that the expression it lifts into <c>=&gt;</c> is the
+    /// already-arranged one, and the pair reaches a fixed point in one pass rather than two.
+    /// </para>
     /// </remarks>
     public static ImmutableArray<ArrangementRule> Rules(ImmutableHashSet<string>? removableUsings = null) => [
         new AccessibilityRule(),
         new PredefinedTypeRule(),
+        new ArgumentStyleRule(),
         new VarRule(),
         new ObjectCreationRule(),
         new DefaultValueRule(),
         new NullCheckingPatternRule(),
         new EmptyStringRule(),
         new ThisQualifierRule(),
+        new StaticQualifierRule(),
+        new DiscardDeclarationRule(),
         new RedundantBracesRule(),
         new RedundantParenthesesRule(),
+        new TrailingCommaRule(),
+        new NamespaceBodyRule(),
         new UsingsRule(removableUsings),
         new BodyStyleRule()
     ];
 
     /// <summary>Arranges text that has already been read, with options already resolved.</summary>
     /// <param name="compilation">
-    ///     The compilation the document belongs to, or null for the syntactic subset. ⚠ Null is not an
-    ///     error and not a degraded mode — it is <c>skala format --arrange=syntactic</c>, which is the
-    ///     contract an agent gets on a loose file with no project (doc 06 § "A few arrangements need no
-    ///     semantics").
+    /// The compilation the document belongs to, or null for the syntactic subset. ⚠ Null is not an
+    /// error and not a degraded mode — it is <c>skala format --arrange=syntactic</c>, which is the
+    /// contract an agent gets on a loose file with no project (doc 06 § "A few arrangements need no
+    /// semantics").
     /// </param>
     public static ArrangementResult Arrange(
         string path,
@@ -234,14 +245,14 @@ public static class Arranger {
     }
 
     /// <summary>
-    ///     The compilation's own tree for this file, or a fresh parse when it has none.
+    /// The compilation's own tree for this file, or a fresh parse when it has none.
     /// </summary>
     /// <remarks>
-    ///     ⚠ The compilation's tree is preferred and it is not a micro-optimisation: a semantic model is
-    ///     only valid for a tree the compilation actually contains, so re-parsing the text and asking
-    ///     for a model over the new tree would silently answer about a different tree — or throw. When
-    ///     the text has been edited since the compilation was built (the fixed-point loop's second pass
-    ///     does exactly that) the caller passes a compilation it has already updated.
+    /// ⚠ The compilation's tree is preferred and it is not a micro-optimisation: a semantic model is
+    /// only valid for a tree the compilation actually contains, so re-parsing the text and asking
+    /// for a model over the new tree would silently answer about a different tree — or throw. When
+    /// the text has been edited since the compilation was built (the fixed-point loop's second pass
+    /// does exactly that) the caller passes a compilation it has already updated.
     /// </remarks>
     static SyntaxTree FindTree(
         CSharpCompilation? compilation,

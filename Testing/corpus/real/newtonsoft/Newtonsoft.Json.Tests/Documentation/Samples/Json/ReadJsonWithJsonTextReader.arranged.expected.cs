@@ -34,14 +34,15 @@ using Assert = Newtonsoft.Json.Tests.XUnitAssert;
 
 #endif
 
-namespace Newtonsoft.Json.Tests.Documentation.Samples.Json {
-    [TestFixture]
-    public class ReadJsonWithJsonTextReader : TestFixtureBase {
-        [Test]
-        public void Example() {
-            #region Usage
+namespace Newtonsoft.Json.Tests.Documentation.Samples.Json;
 
-            var json = @"{
+[TestFixture]
+public class ReadJsonWithJsonTextReader : TestFixtureBase {
+    [Test]
+    public void Example() {
+        #region Usage
+
+        var json = @"{
                'CPU': 'Intel',
                'PSU': '500W',
                'Drives': [
@@ -52,30 +53,29 @@ namespace Newtonsoft.Json.Tests.Documentation.Samples.Json {
                ]
             }";
 
-            JsonTextReader reader = new JsonTextReader(new StringReader(json));
-            while (reader.Read()) {
-                if (reader.Value != null) {
-                    Console.WriteLine("Token: {0}, Value: {1}", reader.TokenType, reader.Value);
-                } else {
-                    Console.WriteLine("Token: {0}", reader.TokenType);
-                }
+        JsonTextReader reader = new JsonTextReader(new StringReader(json));
+        while (reader.Read()) {
+            if (reader.Value != null) {
+                Console.WriteLine("Token: {0}, Value: {1}", reader.TokenType, reader.Value);
+            } else {
+                Console.WriteLine("Token: {0}", reader.TokenType);
             }
-
-            // Token: StartObject
-            // Token: PropertyName, Value: CPU
-            // Token: String, Value: Intel
-            // Token: PropertyName, Value: PSU
-            // Token: String, Value: 500W
-            // Token: PropertyName, Value: Drives
-            // Token: StartArray
-            // Token: String, Value: DVD read/writer
-            // Token: Comment, Value: (broken)
-            // Token: String, Value: 500 gigabyte hard drive
-            // Token: String, Value: 200 gigabyte hard drive
-            // Token: EndArray
-            // Token: EndObject
-
-            #endregion
         }
+
+        // Token: StartObject
+        // Token: PropertyName, Value: CPU
+        // Token: String, Value: Intel
+        // Token: PropertyName, Value: PSU
+        // Token: String, Value: 500W
+        // Token: PropertyName, Value: Drives
+        // Token: StartArray
+        // Token: String, Value: DVD read/writer
+        // Token: Comment, Value: (broken)
+        // Token: String, Value: 500 gigabyte hard drive
+        // Token: String, Value: 200 gigabyte hard drive
+        // Token: EndArray
+        // Token: EndObject
+
+        #endregion
     }
 }

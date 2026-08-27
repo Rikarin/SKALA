@@ -22,6 +22,11 @@ public static class ArrangeIds {
     public const string Usings = "SK2010";
     public const string PredefinedType = "SK2011";
     public const string Accessibility = "SK2012";
+    public const string NamespaceBody = "SK2013";
+    public const string TrailingComma = "SK2014";
+    public const string StaticQualifier = "SK2015";
+    public const string ArgumentStyle = "SK2016";
+    public const string DiscardDeclaration = "SK2017";
 
     /// <summary>⚠ A rewrite was reverted because re-binding produced a diagnostic it had not.</summary>
     public const string Reverted = "SK9098";
@@ -43,6 +48,11 @@ public static class ArrangeIds {
             Usings => "usings",
             PredefinedType => "predefined type",
             Accessibility => "redundant accessibility",
+            NamespaceBody => "file-scoped namespace",
+            TrailingComma => "trailing comma",
+            StaticQualifier => "static member qualifier",
+            ArgumentStyle => "argument style",
+            DiscardDeclaration => "discard declaration",
             _ => id
         };
 }

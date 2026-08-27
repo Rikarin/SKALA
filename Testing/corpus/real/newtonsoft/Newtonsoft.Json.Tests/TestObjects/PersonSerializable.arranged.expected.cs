@@ -26,26 +26,25 @@
 
 #endregion
 
-namespace Newtonsoft.Json.Tests.TestObjects {
+namespace Newtonsoft.Json.Tests.TestObjects;
 #if !(PORTABLE || DNXCORE50) || NETSTANDARD2_0 || NET6_0_OR_GREATER
-    [Serializable]
-    public class PersonSerializable {
-        public PersonSerializable() { }
+[Serializable]
+public class PersonSerializable {
+    public PersonSerializable() { }
 
-        string _name = "";
+    string _name = "";
 
-        public string Name {
-            get => _name;
-            set => _name = value;
-        }
-
-        [NonSerialized]
-        int _age = 0;
-
-        public int Age {
-            get => _age;
-            set => _age = value;
-        }
+    public string Name {
+        get => _name;
+        set => _name = value;
     }
-#endif
+
+    [NonSerialized]
+    int _age = 0;
+
+    public int Age {
+        get => _age;
+        set => _age = value;
+    }
 }
+#endif

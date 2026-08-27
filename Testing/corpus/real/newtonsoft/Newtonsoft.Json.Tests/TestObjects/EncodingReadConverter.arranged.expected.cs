@@ -28,28 +28,27 @@
 
 using System.Text;
 
-namespace Newtonsoft.Json.Tests.TestObjects {
+namespace Newtonsoft.Json.Tests.TestObjects;
 #if !(DNXCORE50) || NETSTANDARD2_0 || NET6_0_OR_GREATER
-    public class EncodingReadConverter : JsonConverter {
-        public override bool CanConvert(Type objectType) => typeof(Encoding).IsAssignableFrom(objectType);
+public class EncodingReadConverter : JsonConverter {
+    public override bool CanConvert(Type objectType) => typeof(Encoding).IsAssignableFrom(objectType);
 
-        public override object ReadJson(
-            JsonReader reader,
-            Type objectType,
-            object existingValue,
-            JsonSerializer serializer
-        ) {
-            var encodingName = serializer.Deserialize<string>(reader);
-            if (encodingName == null) {
-                return null;
-            }
-
-            return Encoding.GetEncoding(encodingName);
+    public override object ReadJson(
+        JsonReader reader,
+        Type objectType,
+        object existingValue,
+        JsonSerializer serializer
+    ) {
+        var encodingName = serializer.Deserialize<string>(reader);
+        if (encodingName == null) {
+            return null;
         }
 
-        public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer) {
-            throw new NotImplementedException();
-        }
+        return Encoding.GetEncoding(encodingName);
     }
-#endif
+
+    public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer) {
+        throw new NotImplementedException();
+    }
 }
+#endif

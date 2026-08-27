@@ -168,7 +168,7 @@ public class IrradianceShadingDeviceTests {
         }
 
         using var owned = fixture!;
-        var image = Render(owned, lit: true, fills);
+        var image = Render(owned, true, fills);
 
         // The corner the quad does not cover is the clear, so the pass ran at all.
         var corner = Pixel(image, 2, 2);
@@ -201,7 +201,7 @@ public class IrradianceShadingDeviceTests {
         }
 
         using var owned = fixture!;
-        var image = Render(owned, lit: false);
+        var image = Render(owned, false);
         var centre = Pixel(image, image.Width / 2, image.Height / 2);
 
         Assert.True(centre.X < 0.02f, $"something other than the field lit the quad: {centre}");

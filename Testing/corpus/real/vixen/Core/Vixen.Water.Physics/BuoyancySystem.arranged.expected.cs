@@ -256,7 +256,7 @@ public sealed class BuoyancySystem(PhysicsScene scene, IWaterSurface surface) : 
             }
 
             lift += force.Force.Y;
-            Disturb(in force, velocity, entered: was == 0);
+            Disturb(in force, velocity, was == 0);
 
             // At the pontoon's own world position, which is what makes the hull pitch. A force at
             // the centre of mass would be a boat that bobs and never rolls.

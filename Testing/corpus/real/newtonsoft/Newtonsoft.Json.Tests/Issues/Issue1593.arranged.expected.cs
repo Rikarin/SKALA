@@ -35,35 +35,35 @@ using Assert = Newtonsoft.Json.Tests.XUnitAssert;
 #else
 #endif
 
-namespace Newtonsoft.Json.Tests.Issues {
-    [TestFixture]
-    public class Issue1593 : TestFixtureBase {
-        [Test]
-        public void Test() {
-            string json = JsonConvert.SerializeObject(CreateModel());
-            Assert.AreEqual(@"{""Specific"":2,""A"":1}", json);
+namespace Newtonsoft.Json.Tests.Issues;
+
+[TestFixture]
+public class Issue1593 : TestFixtureBase {
+    [Test]
+    public void Test() {
+        string json = JsonConvert.SerializeObject(CreateModel());
+        Assert.AreEqual(@"{""Specific"":2,""A"":1}", json);
+    }
+
+    class BaseModel {
+        public BaseModel() {
+            Extra = new();
         }
 
-        class BaseModel {
-            public BaseModel() {
-                Extra = new();
-            }
+        [JsonExtensionData]
+        public ExpandoObject Extra { get; set; }
+    }
 
-            [JsonExtensionData]
-            public ExpandoObject Extra { get; set; }
-        }
+    class SpecificModel : BaseModel {
+        public int Specific { get; set; }
+    }
 
-        class SpecificModel : BaseModel {
-            public int Specific { get; set; }
-        }
-
-        BaseModel CreateModel() {
-            var model = new SpecificModel();
-            var extra = model.Extra as IDictionary<string, object>;
-            extra["A"] = 1;
-            model.Specific = 2;
-            return model;
-        }
+    BaseModel CreateModel() {
+        var model = new SpecificModel();
+        var extra = model.Extra as IDictionary<string, object>;
+        extra["A"] = 1;
+        model.Specific = 2;
+        return model;
     }
 }
 #endif

@@ -251,7 +251,7 @@ public sealed class ThumbnailSurfaceDeviceTests {
             using var surface = new ThumbnailSurface(device, renderer);
 
             var upright = Round(device, surface, Gradient());
-            var flipped = Round(device, surface, Gradient(flip: true));
+            var flipped = Round(device, surface, Gradient(true));
 
             Assert.Equal(Distinct(upright), Distinct(flipped));
             Assert.Equal(Mean(upright), Mean(flipped), 6);

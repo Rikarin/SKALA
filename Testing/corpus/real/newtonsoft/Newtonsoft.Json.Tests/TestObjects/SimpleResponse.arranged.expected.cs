@@ -26,16 +26,16 @@
 
 #endregion
 
-namespace Newtonsoft.Json.Tests.TestObjects {
-    public abstract class SimpleResponse {
-        public string Result { get; set; }
-        public string Message { get; set; }
-        public object Data { get; set; }
+namespace Newtonsoft.Json.Tests.TestObjects;
 
-        protected SimpleResponse() { }
+public abstract class SimpleResponse {
+    public string Result { get; set; }
+    public string Message { get; set; }
+    public object Data { get; set; }
 
-        protected SimpleResponse(string message) {
-            Message = message;
-        }
+    protected SimpleResponse() { }
+
+    protected SimpleResponse(string message) {
+        Message = message;
     }
 }

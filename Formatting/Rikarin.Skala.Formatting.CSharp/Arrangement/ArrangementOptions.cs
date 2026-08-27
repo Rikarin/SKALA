@@ -69,6 +69,20 @@ public readonly struct ArrangementOptions {
         RemoveThisQualifier = options.GetBool(Ids.RemoveThisQualifier);
         BracesRedundant = options.GetBool(Ids.BracesRedundant);
         PredefinedTypeForLocals = options.GetBool(Ids.PredefinedTypeForLocals);
+        PredefinedTypeForMemberAccess = options.GetBool(Ids.PredefinedTypeForMemberAccess);
+
+        ParenthesesRedundancy = (ParenthesesRedundancyStyle)options.GetRaw(Ids.ParenthesesRedundancy);
+        NamespaceDeclarations = (NamespaceDeclarationStyle)options.GetRaw(Ids.NamespaceDeclarations);
+        StaticMembersQualifyMembers = (MemberKind)options.GetRaw(Ids.StaticMembersQualifyMembers);
+        StaticMembersQualifyWith = (QualifyWith)options.GetRaw(Ids.StaticMembersQualifyWith);
+        TrailingCommaInMultilineLists = options.GetBool(Ids.TrailingCommaInMultilineLists);
+        TrailingCommaInSinglelineLists = options.GetBool(Ids.TrailingCommaInSinglelineLists);
+        PreferExplicitDiscardDeclaration = options.GetBool(Ids.PreferExplicitDiscardDeclaration);
+
+        ArgumentsLiteral = (ArgumentStyle)options.GetRaw(Ids.ArgumentsLiteral);
+        ArgumentsStringLiteral = (ArgumentStyle)options.GetRaw(Ids.ArgumentsStringLiteral);
+        ArgumentsAnonymousFunction = (ArgumentStyle)options.GetRaw(Ids.ArgumentsAnonymousFunction);
+        ArgumentsOther = (ArgumentStyle)options.GetRaw(Ids.ArgumentsOther);
 
         SortUsings = options.GetBool(Ids.SortUsings);
         SystemDirectivesFirst = options.GetBool(Ids.SystemDirectivesFirst);
@@ -113,6 +127,28 @@ public readonly struct ArrangementOptions {
     public bool RemoveThisQualifier { get; }
     public bool BracesRedundant { get; }
     public bool PredefinedTypeForLocals { get; }
+
+    /// <summary>
+    /// ⚠ A separate key from <see cref="PredefinedTypeForLocals"/>, and separate in the oracle too:
+    /// <c>dotnet_style_predefined_type_for_member_access</c> governs the receiver of a member access
+    /// (<c>Int32.MaxValue</c>) while the other governs a type in a declaration. Before this split the
+    /// rewrite read only the declaration key and applied it to both positions, which made the
+    /// member-access key unobservable — implemented behaviour credited to the wrong option.
+    /// </summary>
+    public bool PredefinedTypeForMemberAccess { get; }
+
+    public ParenthesesRedundancyStyle ParenthesesRedundancy { get; }
+    public NamespaceDeclarationStyle NamespaceDeclarations { get; }
+    public MemberKind StaticMembersQualifyMembers { get; }
+    public QualifyWith StaticMembersQualifyWith { get; }
+    public bool TrailingCommaInMultilineLists { get; }
+    public bool TrailingCommaInSinglelineLists { get; }
+    public bool PreferExplicitDiscardDeclaration { get; }
+
+    public ArgumentStyle ArgumentsLiteral { get; }
+    public ArgumentStyle ArgumentsStringLiteral { get; }
+    public ArgumentStyle ArgumentsAnonymousFunction { get; }
+    public ArgumentStyle ArgumentsOther { get; }
 
     public bool SortUsings { get; }
     public bool SystemDirectivesFirst { get; }
@@ -194,6 +230,46 @@ public readonly struct ArrangementOptions {
 
         public static readonly OptionId PredefinedTypeForLocals =
             Of("dotnet_style_predefined_type_for_locals_parameters_members");
+
+        public static readonly OptionId PredefinedTypeForMemberAccess =
+            Of("dotnet_style_predefined_type_for_member_access");
+
+        public static readonly OptionId ParenthesesRedundancy =
+            Of("resharper_csharp_parentheses_redundancy_style");
+
+        public static readonly OptionId NamespaceDeclarations = Of("csharp_style_namespace_declarations");
+
+        public static readonly OptionId StaticMembersQualifyMembers =
+            Of("resharper_csharp_static_members_qualify_members");
+
+        /// <summary>
+        /// ⚠ Read and inert, and it stays Tier D for it. <c>static_members_qualify_with</c> chooses
+        /// *which name* a qualifier is written with, and a qualifier is only ever written when
+        /// <c>static_members_qualify_members</c> names a member kind. The export writes
+        /// <c>none</c>, so on this repository's configuration nothing is ever added and the key
+        /// cannot change a byte of output — <c>declared_type</c> and <c>containing_type</c> produce
+        /// identical files. Honoured vacuously is not implemented, and doc 03's Tier A is a claim
+        /// about behaviour rather than about wiring.
+        /// </summary>
+        public static readonly OptionId StaticMembersQualifyWith =
+            OfInert("resharper_csharp_static_members_qualify_with");
+
+        public static readonly OptionId TrailingCommaInMultilineLists =
+            Of("resharper_csharp_trailing_comma_in_multiline_lists");
+
+        public static readonly OptionId TrailingCommaInSinglelineLists =
+            Of("resharper_csharp_trailing_comma_in_singleline_lists");
+
+        public static readonly OptionId PreferExplicitDiscardDeclaration =
+            Of("resharper_csharp_prefer_explicit_discard_declaration");
+
+        public static readonly OptionId ArgumentsLiteral = Of("resharper_csharp_arguments_literal");
+        public static readonly OptionId ArgumentsStringLiteral = Of("resharper_csharp_arguments_string_literal");
+
+        public static readonly OptionId ArgumentsAnonymousFunction =
+            Of("resharper_csharp_arguments_anonymous_function");
+
+        public static readonly OptionId ArgumentsOther = Of("resharper_csharp_arguments_other");
 
         public static readonly OptionId SortUsings = Of("resharper_sort_usings");
         public static readonly OptionId SystemDirectivesFirst = Of("dotnet_sort_system_directives_first");
