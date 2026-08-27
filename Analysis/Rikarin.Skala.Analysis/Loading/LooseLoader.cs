@@ -33,7 +33,7 @@ public static class LooseLoader {
                 Summary = "loose (no .cs files found)",
                 Diagnostics = [
                     new SkalaDiagnostic(
-                        "SK9023",
+                        ConfigDiagnosticIds.NoSourceFiles,
                         SkalaSeverity.Info,
                         "no C# files were found under the requested paths",
                         request.RepositoryRoot

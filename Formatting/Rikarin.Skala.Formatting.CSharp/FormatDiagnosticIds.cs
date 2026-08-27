@@ -29,5 +29,13 @@ public static class FormatDiagnosticIds {
     /// file is abandoned, nothing is written, and a reproduction is dropped under
     /// <c>.skala/crash/</c>. There is no flag that turns the check off.
     /// </summary>
+    /// <summary>The file could not be read or written. ⚠ Not a formatting failure — an I/O one.</summary>
+    /// <remarks>
+    /// ⚠ Both call sites used a bare <c>"SK9012"</c> literal, which is `SkalaDiagnostic`'s
+    /// canonical-version id. Two meanings behind one number, and the ADR-012 guard missed it
+    /// because it read <em>declarations</em> and these were <em>uses</em>.
+    /// </remarks>
+    public const string FileIoFailed = "SK9015";
+
     public const string TokenStreamChanged = "SK9099";
 }

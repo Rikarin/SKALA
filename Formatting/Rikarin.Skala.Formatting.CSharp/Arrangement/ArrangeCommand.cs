@@ -138,7 +138,9 @@ public static class ArrangeCommand {
                 }
             } catch (IOException exception) {
                 failures++;
-                diagnostics.Add(new SkalaDiagnostic("SK9012", SkalaSeverity.Error, exception.Message, file));
+                diagnostics.Add(
+                    new SkalaDiagnostic(FormatDiagnosticIds.FileIoFailed, SkalaSeverity.Error, exception.Message, file)
+                );
             }
         }
 

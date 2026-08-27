@@ -38,7 +38,7 @@ public static class ProjectLoader {
             if (mode != LoadMode.Loose) {
                 attempted.Add(
                     new SkalaDiagnostic(
-                        "SK9025",
+                        ConfigDiagnosticIds.LoadModeFellBack,
                         SkalaSeverity.Info,
                         $"--load={mode.ToString().ToLowerInvariant()} produced no compilation; falling back",
                         request.RepositoryRoot

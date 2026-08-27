@@ -57,7 +57,7 @@ public sealed class ToolConfiguration {
         } catch (JsonException exception) {
             diagnostics.Add(
                 new SkalaDiagnostic(
-                    "SK9007",
+                    ConfigDiagnosticIds.ToolConfigNotJson,
                     SkalaSeverity.Error,
                     $"{FileName} is not valid JSON: {exception.Message}",
                     path

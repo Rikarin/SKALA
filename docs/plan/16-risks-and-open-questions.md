@@ -1,5 +1,50 @@
 # 16 — Risks and Open Questions
 
+## ⚠ The reference trees are a test subject, not a specification
+
+**Vixen does not get a vote on what the rules are.** It is the tree the tool is measured against
+because it is the largest body of C# the author owns and the one whose formatting the author cares
+about — not because its present habits are the standard. Where Vixen does not follow a rule, **Vixen
+changes.** The rule is not removed, softened, demoted, or guarded until the tree goes quiet.
+
+The reason is that the alternative is circular. Skala exists to make eighteen repositories consistent
+and modern, and the modernization set exists because an agent trained on a decade of C# writes
+2018-era code unless something says no. A rule tuned until the largest existing codebase passes it
+cannot say no to that codebase — it certifies whatever already exists, and the tool can never move
+anything forward. The same applies to Serilog and Newtonsoft.Json in `corpus/real/`, which are there
+to be *unfamiliar* input; a rule adjusted so that vendored third-party code stops firing has been
+adjusted by a repository with no stake in this project's standards.
+
+⚠ **This does not touch the false-positive bar, and conflating the two is the failure mode this
+section is most worried about.**
+
+| | What it is | What it means for a rule |
+|---|---|---|
+| **A false positive** | The finding is **wrong**. The code does not do what the rule says it does. | The rule is defective. Fix it or do not ship it. The zero-false-positives bar in [08](08-rule-catalogue.md) is unchanged and unconditional. |
+| **A correct finding nobody wants to act on** | The finding is **right**. Somebody has decided not to change the code today. | The rule is fine. This is what `skala baseline` is for: accept the present, gate the future ([09](09-quality-gates-and-reporting.md)). |
+
+So `SK3002`'s seven true findings on Vixen are seven baseline entries and a small piece of Vixen's
+backlog. They were never evidence about the rule.
+
+⚠ **What stops being evidence of quality is a low finding count on the reference trees.** "Fires zero
+times on Vixen" is a fact about Vixen. It is a reason to be careful about a rule whose correctness is
+therefore *untested* on real code — that argument is R3's and it survives intact — and it is never a
+reason to cut, demote or disable a rule that is right. The three reasons that still justify cutting a
+rule are all about the rule:
+
+1. **It duplicates a diagnostic the user already sees** from the compiler or a framework analyzer.
+2. **It costs something measurable for no gain** — a compilation-scoped rule that disables the warm
+   incremental path for every run.
+3. **It cannot be implemented correctly**, or its fix cannot be made behaviour-preserving.
+
+[08](08-rule-catalogue.md) § "Rule status" records which decisions rest on those three and which rest
+on a Vixen count and are therefore **suspect and awaiting revisit**. They are marked rather than
+reversed in place, because the record of a decision being reversed is worth more than a document that
+reads as though it were always right.
+
+⚠ This belongs in [00](00-vision-and-principles.md) § "Non-negotiables" as well as here, and is not
+yet written there.
+
 ## The risks that could sink this
 
 ### R1 — ⚠ Rider fidelity is asymptotic, and the last 0.1 % is most of the work
@@ -14,12 +59,13 @@ disagree on roughly one line in a hundred, which on a 1.35 M-line tree is 13 000
 will reformat back the moment someone opens the file. Formatting ping-pong between two tools is
 worse than either tool alone.
 
-**Mitigation:** the divergence register (`SK-DIV-*`) plus a hard rule — any construct that appears in
-the corpus more than 50 times must be at 100 %, and the tail is only allowed in constructs that are
-genuinely rare. Plus `resharper_formatter_tags_enabled` as the human escape hatch for the handful of
-places where the tools cannot agree. Plus, honestly: if a divergence is small and Skala's answer is
-better, change the Rider setting to match Skala rather than the reverse — the settings are the
-author's, and they can move.
+**Mitigation:** the divergence register (`SK-DIV-*`) plus a hard rule about where the residue is
+allowed to sit — § "The rule, re-stated" below has it, and § "The rule as originally written" has
+the version it replaces and the reason that version could never be met. Plus
+`resharper_formatter_tags_enabled` as the human escape hatch for the handful of places where the
+tools cannot agree. Plus, honestly: if a divergence is small and Skala's answer is better, change the
+Rider setting to match Skala rather than the reverse — the settings are the author's, and they can
+move.
 
 ⚠ **M3 measured it, and the shape is exactly as predicted.** `fidelity constructs` attributes every
 divergent line to the innermost node that owns it and puts that beside how often the construct
@@ -41,18 +87,110 @@ not code it moved.
 wrapped in a `#if` is disabled text for Skala and every line of it counts against whatever construct
 happens to own it, which attributes SK-DIV-0004 to `ClassDeclaration` and says nothing about either.
 
-⚠ **And R1 as written cannot be met short of 100 %, which is worth saying plainly rather than
-missing it four milestones in a row.** The report attributes every divergent line to the innermost
-node that owns it, so "at 100 %" means "no divergent line is attributed to this construct". The
-nineteen constructs that fail are `IdentifierName` (92 divergent lines), `ArgumentList` (28),
-`StringLiteralExpression` (25), `Block` (21) — and `ForStatement` (2 of 2 lines it owns),
-`OmittedTypeArgument` (2), `DefaultLiteralExpression` (1). The first four are where a wrap decision
-*lands*; the last three are constructs that own two or three lines of the whole corpus, so one
-divergence is 33 % of them. Both halves say the same thing: **every divergent line is attributed to
-something that occurs more than fifty times, because everything that occurs at all occurs more than
-fifty times.** R1 is therefore equivalent to 100 % line fidelity, and it should be re-stated for M4
-as a rule about constructs whose *attributed share* is above a threshold rather than about any
-divergence at all.
+#### The rule as originally written, and why it could not be met
+
+**The original text, preserved verbatim, because a bar that is quietly replaced is a bar that was
+never measured against:**
+
+> any construct that appears in the corpus more than 50 times must be at 100 %, and the tail is only
+> allowed in constructs that are genuinely rare
+
+⚠ **It cannot be met short of 100 % line fidelity, which is worth saying plainly rather than missing
+it four milestones in a row.** The report attributes every divergent line to the innermost node that
+owns it, so "at 100 %" means "no divergent line is attributed to this construct". Two things follow,
+and they are the two halves of why the rule is unusable:
+
+1. **The population is almost everything.** Every divergent line is attributed to *something*, and
+   almost everything that occurs in a 76 000-line corpus at all occurs more than fifty times. Of the
+   twenty-one constructs the residue touches today, twenty occur more than fifty times; the one
+   exception, `ComplexElementInitializerExpression`, occurs seventeen. So the "genuinely rare"
+   escape hatch the rule promised covers **2 of 185** attributed divergent lines. The rule is
+   therefore equivalent to 100 % line fidelity wearing a frequency test.
+2. ⚠ **The frequency test and the fidelity test count different things, and that is the deeper
+   defect.** "Appears more than 50 times" counts *occurrences of the construct*; "at 100 %" is
+   measured over *lines the construct is the innermost owner of*. Those two populations are unrelated
+   in size. `ForStatement` occurs 376 times and owns **2** lines, so a single divergence makes it
+   0.00 % — a construct that is 376-times common by the gate's own test and statistically empty by
+   the test it is then graded on. `Block` occurs 4 899 times and owns 17 923 lines, so five divergent
+   lines make it 99.97 %. A rule that selects on one number and grades on the other is measuring
+   noise at one end and nothing at the other.
+
+**What R1 is actually for, and what must survive any re-statement.** Rider and Skala must not
+reformat each other's work. A divergence class that is *systematic* — a construct Skala handles
+differently from the oracle every time it appears — produces ping-pong on every file that contains
+the construct, and no amount of overall percentage hides it. A divergence that is a *tail* — one
+line here, one there, in shapes nobody writes twice — costs a handful of lines once. The original
+rule was reaching for that distinction and picked the wrong instrument for it.
+
+#### The rule, re-stated
+
+**R1 is met when, on `corpus/real/`, both of the following hold, measured by
+`ConstructReport` with the oracle's own preprocessor symbols supplied:**
+
+| | Population | Bar |
+|---|---|---|
+| **(a) the share rule** | every construct that is the innermost owner of **≥ 100 lines** of the oracle's output | its **attributed share** — divergent lines it owns over lines it owns — is **≤ 1 %** |
+| **(b) the count rule** | every construct below that floor | it is attributed **≤ 3 divergent lines** |
+
+Three things changed and each is deliberate:
+
+1. **The population is keyed on lines owned, not on occurrences**, because lines owned is what the
+   fidelity half measures. This is the defect in point 2 above, and fixing it is most of the value:
+   `ForStatement` and `Parameter` no longer masquerade as common constructs.
+2. **The bar is a share rather than zero.** 1 % is not an arbitrary round number: it is the rate this
+   document's own opening paragraph calls unacceptable — "at 99 % they disagree on roughly one line
+   in a hundred … which Rider will reformat back". A construct at or under 1 % is inside the tail; a
+   construct above it is a systematic disagreement in a construct with real mass, which is exactly
+   what R1 exists to forbid.
+3. **Below the floor the rule switches to an absolute count**, because a share computed over eleven
+   lines is not a measurement. Three lines is small enough that a systematic defect cannot hide
+   behind a rare construct, and large enough that genuine exotica are permitted — which is the
+   "genuinely rare" allowance the original rule promised and could not deliver.
+
+⚠ **Measured at `8cbd66d`** — `dotnet run --project Testing/Rikarin.Skala.Testing -c Release -- constructs real`,
+which reports 56 constructs occurring more than 50 times and 37 at 100 % under the old rule. Under
+the re-stated rule the same table reads:
+
+| Construct | Occurrences | Lines owned | Divergent | Share | Verdict |
+|---|---:|---:|---:|---:|---|
+| `Block` | 4 899 | 17 923 | 5 | 0.03 % | ✅ (a) |
+| `ClassDeclaration` | 481 | 15 536 | 11 | 0.07 % | ✅ (a) |
+| `IdentifierName` | 78 013 | 13 566 | 64 | 0.47 % | ✅ (a) |
+| `ArgumentList` | 15 779 | 3 642 | 25 | 0.69 % | ✅ (a) |
+| `StringLiteralExpression` | 3 387 | 3 064 | 18 | 0.59 % | ✅ (a) |
+| `NumericLiteralExpression` | 8 537 | 2 937 | 14 | 0.48 % | ✅ (a) |
+| `CompilationUnit` | 380 | 687 | 4 | 0.58 % | ✅ (a) |
+| `PredefinedType` | 6 490 | 415 | 2 | 0.48 % | ✅ (a) |
+| `FalseLiteralExpression` | 396 | 331 | 2 | 0.60 % | ✅ (a) |
+| `TrueLiteralExpression` | 402 | 323 | 1 | 0.31 % | ✅ (a) |
+| `NullLiteralExpression` | 656 | 320 | 1 | 0.31 % | ✅ (a) |
+| `CollectionExpression` | 596 | 290 | 1 | 0.34 % | ✅ (a) |
+| `SingleVariableDesignation` | 725 | 182 | 1 | 0.55 % | ✅ (a) |
+| **`ParameterList`** | 3 125 | 309 | 4 | **1.29 %** | ❌ **(a)** |
+| **`EqualsValueClause`** | 5 368 | 70 | **11** | 15.71 % | ❌ **(b)** |
+| **`Parameter`** | 4 314 | 11 | **8** | 72.73 % | ❌ **(b)** |
+| `IfStatement` | 1 429 | 39 | 2 | 5.13 % | ✅ (b) |
+| `ForStatement` | 376 | 2 | 2 | 100.00 % | ✅ (b) |
+| `ComplexElementInitializerExpression` | 17 | 6 | 2 | 33.33 % | ✅ (b) |
+| `DefaultLiteralExpression` | 91 | 60 | 1 | 1.67 % | ✅ (b) |
+
+Every construct not listed owns no divergent line and passes both clauses trivially. `(file)` — the
+report's row for lines no syntax node owns, 6 of 5 598 — is not a construct and is not graded.
+
+⚠ **R1 is not met, and it now says something.** Three constructs fail rather than nineteen, and all
+three name an entry that is already in the register: `EqualsValueClause` and `Parameter` are
+[SK-DIV-0005](../divergences.md)'s `=` break and the argument-list chop of
+[SK-DIV-0007](../divergences.md); `ParameterList` at 1.29 % is the same chop seen from the enclosing
+list. **That is the property the old rule lacked: its failures are a work queue rather than a
+restatement of the overall percentage.** The old rule's nineteen failures included `Block` at
+99.97 %, which is not work anyone should do.
+
+⚠ **The harness still prints the old rule's verdict.** `ConstructReport.Render` emits
+`R1: constructs occurring more than 50 times: 56; at 100 %: 37` and the columns the re-stated rule
+needs are all in the table beneath it, so the rule above is checkable today by reading them — but
+the headline line is the superseded one. Changing what that line reports is
+`Testing/Rikarin.Skala.Testing/ConstructReport.cs`, and it is owed before M4 rather than after,
+because M4's own bar is per-span and will want the same shape.
 
 ⚠ **The tool for working it is new and it is not the ranked report.** `locate <set> <kind>` prints
 the divergent lines attributed to one construct with file and line, because the ranked report orders
@@ -206,6 +344,27 @@ calls in Vixen, 90 of them in the shape the rule would fire on, and **all 90** a
 rewrite either does not compile or asserts something else. Doc 08 § "What M7 added" has the
 breakdown. A rule that would have been the loudest in the milestone is the one that never existed.
 
+⚠ **Two of this section's own conclusions do not survive § "The reference trees are a test subject",
+and they are marked rather than deleted.** Both are the same move — a true finding on Vixen read as
+evidence about the rule:
+
+- **`SK8005` ships at `suggestion` rather than at its range's `warning`** because 25 of 25 true
+  findings on Vixen were judged "true and not what you would change". That is 25 baseline entries and
+  a piece of Vixen's backlog, not a fact about the rule. The severity is **suspect and awaiting
+  revisit**; [08](08-rule-catalogue.md) § "Rule status" carries the flag.
+- **`SK3001` ships disabled** for two reasons stacked together. The first — it is compilation-scoped,
+  so enabling it costs every run the warm incremental path — is reason 2 of the three above and
+  **survives**. The second, "it buys nothing measurable: Vixen contains no `async void` method at
+  all", **does not**, and it should never have been load-bearing. The default stands on the first
+  reason alone, which is enough, and the second is struck.
+
+⚠ **`SK7010` at `none`, and the metric thresholds sitting above the corpus p99, are the same shape
+and are the harder case.** A threshold has no correct value independent of some population, so
+calibrating one is not optional — but calibrating it against the tree it will be run on is how a
+metric comes to certify the present. Flagged here rather than decided: the thresholds are
+[08](08-rule-catalogue.md)'s and the argument for each is worth making explicitly against a standard
+rather than against a p99.
+
 **Residual risk: medium**, and unchanged. Thirteen analyzers is more evidence than ten. M7 drained
 one entry from the "measured at zero" pile (`SK6003` has a corpus finding, `SK8005` has 25) and
 added one (`SK4010`), and it found a *new* way for a measurement to lie — the loose compilation's
@@ -340,9 +499,28 @@ this document proposed.
 **Layering.** One file, two blocks, separated by `# skala:canonical begin` / `# skala:local begin`
 markers, the local block second — so editorconfig's own later-section-wins rule makes local
 overrides beat the canonical, and Skala never has to know what they are. Tested against Vixen's real
-file: all **56** path-scoped sections and their reasoning comments survive verbatim, the effective
-options still resolve to Vixen's values where Vixen set them and the canonical's where it did not,
-and the override report is **7 lines** against a 5 188-line file.
+file: all **56** path-scoped sections survive **verbatim**, the effective options still resolve to
+Vixen's values where Vixen set them and the canonical's where it did not, and the override report is
+**7 lines** against the 5 188-line result (the 4 272-line canonical block plus Vixen's 916-line local
+one, measured at `8cbd66d`).
+
+⚠ **The reason verbatim preservation is required is not that the local block is good, and the
+document used to say it was.** The earlier version of this paragraph cited Vixen's "reasoning
+comments" as what the mechanism protects. Vixen's `.editorconfig` was not authored: it was built by
+agents as they went, 916 lines and 56 sections, and never reviewed as a whole. Its overrides are not
+decisions. **The true reason is stronger and general:** nobody can tell a reasoned override from an
+accidental one by looking at it, so a sync that dropped, merged or normalised *either* kind would be
+unsafe in every repository rather than only in this one. A mechanism that has to be right about
+which overrides matter is a mechanism that will one day be wrong.
+
+⚠ **`SK9013` is the instrument for the other half of the problem, and the two acts are different.**
+The tool preserving an override is a safety property. A person *auditing* accumulated overrides is a
+review, and `SK9013` — one info-level finding per option the local block sets that the canonical also
+sets — is the artefact it is done from. Seven lines is a reviewable list; a repository whose report
+runs to two hundred has a question to answer that Skala is not going to answer for it. ⚠ Vixen's
+seven are **suspect by default and are not precedent**: they are the unreviewed file's, and each
+needs justifying on its merits or removing. Vixen conforms to the canonical; the canonical does not
+bend to Vixen.
 
 **Rollout.** Drift (`SK9008`, error) is `sha256(block) ≠ the marker's own sha256` — decidable from
 the file alone, offline, at any version. Behindness (`SK9009`, info) is `the marker ≠ the tool's

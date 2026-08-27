@@ -76,6 +76,22 @@ These are the things that, if traded away, mean the tool should not be built at 
    machine with no internet and in a sandboxed agent container.
 8. **Deterministic.** Same inputs, same bytes out, same exit code, on every OS and every run.
    Parallelism is never allowed to reorder a report.
+9. ⚠ **The reference trees are a test subject, never a specification.** Vixen is 1.35 M lines and
+   every measurement in this project runs against it, which makes it tempting to treat as the
+   standard. It is not. Its `.editorconfig` was not designed — AI agents accumulated it, 56
+   path-scoped sections deep, unreviewed — and its code is what the tool exists to *change*. **A rule
+   is judged on its merits; where a reference tree violates it, the tree changes.** Never lower a
+   severity, gate a rule behind a path scope, or cut it because it is loud on Vixen.
+
+   ⚠ Keep the distinction this makes easy to lose: **a false positive is a finding that is _wrong_. A
+   correct finding nobody wants to act on is a baseline entry.** Non-negotiable-grade bar: the
+   zero-false-positives shipping rule in [08](08-rule-catalogue.md) stays exactly as it is. What
+   stops counting as evidence of quality is a *low finding count* on a reference tree. The baseline
+   mechanism exists so the transition is gradual without the gate ever being weakened.
+
+   Reasons that still justify cutting a rule, because none is about a reference tree: it duplicates a
+   compiler or analyzer diagnostic; it costs the warm cache for no gain; it cannot be implemented
+   correctly.
 
 ## The quality bars
 

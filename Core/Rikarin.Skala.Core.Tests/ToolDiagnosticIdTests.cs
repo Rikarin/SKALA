@@ -15,8 +15,19 @@ namespace Rikarin.Skala.Core.Tests;
 /// un-suppresses one finding and wrongly suppresses the other in every repository holding one.
 /// </remarks>
 public sealed class ToolDiagnosticIdTests {
+    static readonly Regex Literal = new(""""  "SK\d{4}"  """".Trim(), RegexOptions.Compiled);
+
+    /// <summary>A test may name an id freely — asserting on one is the point of a test.</summary>
+    static bool IsTest(string path) =>
+        path.Contains($"{Path.DirectorySeparatorChar}Testing{Path.DirectorySeparatorChar}", StringComparison.Ordinal)
+        || Path.GetFileName(Path.GetDirectoryName(path) ?? "").EndsWith(".Tests", StringComparison.Ordinal)
+        || path.EndsWith("Tests.cs", StringComparison.Ordinal);
+
     static readonly Regex Declaration =
-        new("""public const string (?<name>\w+)\s*=\s*"(?<id>SK\d{4})";""", RegexOptions.Compiled);
+        new(
+            """(?:public |internal |private )?const string (?<name>\w+)\s*=\s*"(?<id>SK\d{4})";""",
+            RegexOptions.Compiled
+        );
 
     [Fact]
     public void ToolDiagnosticIds_AreDeclaredOnce() {
@@ -36,8 +47,13 @@ public sealed class ToolDiagnosticIdTests {
 
         Assert.NotEmpty(byId);
 
+        // ⚠ One id may be declared twice when it is the *same* concept mirrored across an assembly
+        // boundary: `Rikarin.Skala.Options.Generator` is netstandard2.0 with a restricted closure
+        // (doc 02) and cannot reference Core's register, so it declares its own constant for a
+        // diagnostic Core also names. That is a mirror, not a collision, and the test tells them
+        // apart by concept rather than waving every duplicate through.
         var collisions = byId
-            .Where(entry => entry.Value.Distinct(StringComparer.Ordinal).Count() > 1)
+            .Where(entry => entry.Value.Select(Concept).Distinct(StringComparer.Ordinal).Count() > 1)
             .Select(entry => $"{entry.Key} is declared as {string.Join(" and ", entry.Value)}")
             .ToList();
 
@@ -46,6 +62,49 @@ public sealed class ToolDiagnosticIdTests {
             "One id, two meanings. ADR-012 forbids it and a baseline cannot survive it — allocate "
             + "the next free number and add it to docs/plan/08's register:\n  "
             + string.Join("\n  ", collisions)
+        );
+    }
+
+    /// <summary>
+    /// ⚠ Every <c>SK####</c> in product code must come from a named constant, never a bare literal.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ This is the hole that let a real ADR-012 violation through after the other two assertions
+    /// were already in place. <c>SK9012</c> meant two things at once — the canonical-version
+    /// diagnostic and an I/O failure — and <c>SK9007</c> was in no register at all, because both
+    /// were written as bare literals at their call sites and
+    /// <see cref="ToolDiagnosticIds_AreDeclaredOnce"/> matches <c>public const string</c>. It read
+    /// declarations; the defects were uses. A guard that only sees the well-behaved half of the
+    /// codebase reports the codebase as well-behaved.
+    /// </remarks>
+    [Fact]
+    public void ToolDiagnosticIds_AreNeverBareLiterals() {
+        var offenders = new List<string>();
+
+        foreach (var file in SourceFiles().Where(static path => !IsTest(path))) {
+            var lineNumber = 0;
+            foreach (var line in File.ReadAllLines(file)) {
+                lineNumber++;
+                var code = line.TrimStart();
+                if (code.StartsWith("//", StringComparison.Ordinal)
+                    || code.StartsWith('*')
+                    || code.StartsWith("/*", StringComparison.Ordinal)) {
+                    continue; // documentation naming an id is not an allocation
+                }
+
+                if (!Literal.IsMatch(line) || Declaration.IsMatch(line)) {
+                    continue;
+                }
+
+                offenders.Add($"{Path.GetRelativePath(RepositoryRoot, file)}:{lineNumber}  {line.Trim()}");
+            }
+        }
+
+        Assert.True(
+            offenders.Count == 0,
+            "An SK id written as a bare literal bypasses the register, and two of them collided "
+            + "before this assertion existed. Declare it as a constant beside its siblings:\n  "
+            + string.Join("\n  ", offenders)
         );
     }
 
@@ -84,6 +143,12 @@ public sealed class ToolDiagnosticIdTests {
     /// worse than none, because it is believed.
     /// </para>
     /// </remarks>
+    /// <summary>The concept a constant names, ignoring its class and a trailing <c>Id</c>.</summary>
+    static string Concept(string qualified) {
+        var name = qualified[(qualified.LastIndexOf('.') + 1)..];
+        return name.EndsWith("Id", StringComparison.Ordinal) ? name[..^2] : name;
+    }
+
     static IEnumerable<string> SourceFiles() {
         var root = RepositoryRoot;
         var separator = Path.DirectorySeparatorChar;

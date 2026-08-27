@@ -25,7 +25,7 @@ public static class WorkspaceLoader {
         if (target is null) {
             diagnostics.Add(
                 new SkalaDiagnostic(
-                    "SK9024",
+                    ConfigDiagnosticIds.NothingToLoad,
                     SkalaSeverity.Warning,
                     "no .slnx, .sln or .csproj was found to load",
                     request.RepositoryRoot
@@ -38,7 +38,7 @@ public static class WorkspaceLoader {
         if (!MSBuildRuntime.Ensure(out var locatorError)) {
             diagnostics.Add(
                 new SkalaDiagnostic(
-                    "SK9024",
+                    ConfigDiagnosticIds.NothingToLoad,
                     SkalaSeverity.Error,
                     $"no MSBuild could be located: {locatorError}",
                     target
@@ -82,7 +82,7 @@ public static class WorkspaceLoader {
                                                 or NotSupportedException) {
             diagnostics.Add(
                 new SkalaDiagnostic(
-                    "SK9024",
+                    ConfigDiagnosticIds.NothingToLoad,
                     SkalaSeverity.Error,
                     $"'{target}' could not be opened: {exception.Message}",
                     target
@@ -97,7 +97,7 @@ public static class WorkspaceLoader {
         foreach (var diagnostic in workspace.Diagnostics) {
             diagnostics.Add(
                 new SkalaDiagnostic(
-                    "SK9024",
+                    ConfigDiagnosticIds.NothingToLoad,
                     diagnostic.Kind == WorkspaceDiagnosticKind.Failure ? SkalaSeverity.Warning : SkalaSeverity.Info,
                     "workspace: " + diagnostic.Message,
                     target

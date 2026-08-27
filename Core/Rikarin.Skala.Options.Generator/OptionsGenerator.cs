@@ -51,8 +51,11 @@ public sealed class OptionsGenerator : IIncrementalGenerator {
         description: "A default outside the option's domain would be silently replaced by the first enum member, which is a different style than the one configured."
     );
 
+    /// <summary>⚠ Named rather than inline: a bare id bypasses doc 08's register (ADR-012).</summary>
+    const string DuplicateAliasId = "SK9004";
+
     static readonly DiagnosticDescriptor DuplicateAlias = new(
-        "SK9004",
+        DuplicateAliasId,
         "Duplicate option alias",
         "'{0}' names more than one option ({1}); a second name for an option is a second thing to keep in sync",
         "Skala.Options",

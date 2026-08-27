@@ -44,7 +44,7 @@ public static class BinlogLoader {
         if (path is null) {
             diagnostics.Add(
                 new SkalaDiagnostic(
-                    "SK9022",
+                    ConfigDiagnosticIds.NoBinlog,
                     SkalaSeverity.Warning,
                     "no binary log was found; run `dotnet build -bl:artifacts/skala.binlog`",
                     request.RepositoryRoot,
@@ -60,7 +60,7 @@ public static class BinlogLoader {
         if (!MSBuildRuntime.Ensure(out var locatorError)) {
             diagnostics.Add(
                 new SkalaDiagnostic(
-                    "SK9022",
+                    ConfigDiagnosticIds.NoBinlog,
                     SkalaSeverity.Warning,
                     $"the SDK's MSBuild could not be located, so '{path}' cannot be read: {locatorError}",
                     path
@@ -116,7 +116,7 @@ public static class BinlogLoader {
                                                 or BadImageFormatException) {
             diagnostics.Add(
                 new SkalaDiagnostic(
-                    "SK9022",
+                    ConfigDiagnosticIds.NoBinlog,
                     SkalaSeverity.Warning,
                     $"'{path}' could not be read: {exception.Message}",
                     path
@@ -199,7 +199,7 @@ public static class BinlogLoader {
         } catch (ArgumentException exception) {
             diagnostics.Add(
                 new SkalaDiagnostic(
-                    "SK9022",
+                    ConfigDiagnosticIds.NoBinlog,
                     SkalaSeverity.Warning,
                     $"a Csc command line could not be parsed: {exception.Message}",
                     projectPath

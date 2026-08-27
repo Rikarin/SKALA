@@ -8,22 +8,102 @@ difference is a bug, and the harness cannot tell them apart without this file**
 
 Format: `## SK-DIV-nnnn — one line`, then the argument, then the option keys it touches.
 
-At milestone 3.1, `corpus/real/` is **99.70 %** of lines and **85.79 %** of files identical to the
-oracle over 380 files and 76 375 lines, with the oracle's own preprocessor symbols supplied —
-**99.63 % / 85.26 %** without them. ⚠ Both numbers are reported because both are true of a real
-invocation: `skala format` on a loose file has no symbols and `skala format --load=binlog` has them,
-and `./build.sh Fidelity` prints the pair.
+⚠ **Re-measured in full at `8cbd66d`.** Every number in this file below this line was produced by
+running the harness at that commit rather than carried over from the milestone that first recorded
+it; where an entry's class cannot be isolated by any instrument the repository ships, it says so
+instead of repeating an old figure. The commands are named beside the numbers.
 
-| Files | Line fidelity | File fidelity | What the residue is |
-|---|---:|---:|---|
-| containing a `#if` (91) | 99.36 % | 72.53 % | SK-DIV-0001, SK-DIV-0004 and ordinary tail |
-| containing a raw literal (11) | 99.68 % | 90.91 % | SK-DIV-0003's interpolated half |
-| neither (289) | **99.79 %** | 89.97 % | SK-DIV-0005 and SK-DIV-0011, mostly |
+`corpus/real/` is **99.70 %** of lines and **85.79 %** of files identical to the oracle over 380
+files and 76 375 lines, with the oracle's own preprocessor symbols supplied — **99.63 % / 85.26 %**
+without them. ⚠ Both numbers are reported because both are true of a real invocation: `skala format`
+on a loose file has no symbols and `skala format --load=binlog` has them, and `./build.sh Fidelity`
+prints the pair.
+
+```
+dotnet run --project Testing/Rikarin.Skala.Testing -c Release -- fidelity
+dotnet run --project Testing/Rikarin.Skala.Testing -c Release -- preprocessor
+```
+
+| Files | Line fidelity | File fidelity | Divergent lines | What the residue is |
+|---|---:|---:|---:|---|
+| all (380) | **99.70 %** | **85.79 %** | 231 | 54 files diverge |
+| containing a `#if` (91) | 99.36 % | 72.53 % | 106 | SK-DIV-0001 and ordinary tail |
+| containing a raw literal (11) | 99.68 % | 90.91 % | 12 | SK-DIV-0003's interpolated half |
+| no `#if` (289) | **99.79 %** | 89.97 % | 125 | SK-DIV-0005 and SK-DIV-0011, mostly |
+| neither (279) | 99.78 % | 89.61 % | 125 | |
+
+Per origin, because the three measure different things
+([`Testing/corpus/real/NOTICE.md`](../Testing/corpus/real/NOTICE.md)):
+
+| Origin | Files | Line | File | Divergent lines |
+|---|---:|---:|---:|---:|
+| `vixen/` | 200 | 99.81 % | 90.00 % | 97 of 51 527 |
+| `newtonsoft/` | 110 | 99.41 % | 80.91 % | 97 of 16 323 |
+| `serilog/` | 70 | 99.57 % | 81.43 % | 37 of 8 525 |
+
+⚠ **`vixen/` is the flattering third and it is the one to read last.** Those 200 files were already
+formatted by Rider under this `.editorconfig`, so their fidelity measures "does Skala leave
+conforming code alone". Serilog and Newtonsoft.Json are formatted to their own houses' styles and
+measure the harder thing. Neither tree is a specification —
+[16](plan/16-risks-and-open-questions.md) § "The reference trees are a test subject, not a
+specification" — and a divergence is not excused by the corpus not containing much of it.
 
 ⚠ **The revised milestone-3 bar of ≥ 99.5 % on files with no `#if` is met at 99.79 %. The ≥ 99.9 %
-overall bar is not met at 99.70 %,** and the entries below are what stands between the two: about
-230 divergent line slots across 51 files, of which roughly a tenth are inside a conditional branch
-neither tool compiles and the rest are the wrapping tail.
+overall bar is not met at 99.70 %,** and the entries below are what stands between the two:
+**231 divergent line slots across 54 files** — `fidelity` reports 54 of 380 identical at 326, and
+the "51 files" this paragraph carried from milestone 3.1 is superseded. Of those, 106 are in a file
+that also contains a `#if`, and most of that is ordinary tail rather than preprocessor-shaped.
+
+The ranked classes the harness itself reports, which is the work queue:
+
+| Lines | Files | Class |
+|---:|---:|---|
+| 63 | 38 | wrapping: one side continues where the other broke (phase 3) |
+| 47 | 22 | other |
+| 45 | 21 | line break presence: Skala left a line the oracle joined (phase 2) |
+| 35 | 18 | wrapping: the oracle broke a line Skala left long (phase 3) |
+| 25 | 8 | indentation (−4 columns) |
+| 11 | 11 | blank line: Skala has one, the oracle does not |
+| 7 | 6 | blank line: the oracle has one, Skala does not |
+| 5 | 4 | brace placement |
+| 2 | 1 | indentation (+4 columns) |
+| 1 | 1 | inter-token spacing |
+
+⚠ **These classes are not the entries below, and nothing maps one onto the other.** A class says what
+a difference *looked like*; an entry says what rule produced it. The repository ships `constructs`
+and `locate` to attribute a divergence to a syntax node, and it ships nothing that attributes one to
+an `SK-DIV` number. That is why several entries below carry a class and a signature rather than an
+exact count, and saying so is better than repeating a figure nobody can reproduce.
+
+## The register at a glance
+
+⚠ Every row re-measured at `8cbd66d`. "Signature" means a lexical test over the diverging files that
+`dump real <dir> defined` writes; it is stated in the entry so the number can be re-derived.
+
+| | Entry | Status | Current measurement |
+|---|---|---|---|
+| 0001 | oracle rewrites disabled `#if` whitespace | open | 14 lines, 14 files |
+| 0002 | no preference among break points | **resolved at M3** | — nothing left to measure |
+| 0003 | interpolated raw literal emitted verbatim | open | 11 raw-literal files at 99.68 % / 90.91 %, 12 divergent lines |
+| 0004 | no preprocessor symbols without a project | **closed at M5** | the six-cell table re-run and identical |
+| 0005 | the ordering rule's margin is a fitted constant | open | 63 lines, 38 files — the largest class. 21 hunks, 14 files by signature |
+| 0006 | the oracle does not format doc comments | open, deliberate | four keys confirmed Tier D; no sub-formatter in the tree |
+| 0007 | an argument list around a broken chain does not chop | half closed | 8 hunks, 39 lines, 6 files |
+| 0008 | alignment keys | half closed | statement conditions Tier A; `for` header 5 hunks, 13 lines, 3 files; three keys at 0 lines |
+| 0009 | `space_within_spread_pattern` is inert | **resolved at M3.1** | Tier D confirmed; 0 spread-spacing divergences |
+| 0010 | breaks of last resort | open, deliberate | 5 lines, 4 files; 2 hunks by the narrow signature |
+| 0011 | a lambda body may leave the arrow's line | open | 12 hunks, 40 lines, 7 files — second largest |
+| 0012 | three small shapes | open | 1 line / 0 lines / 13 lines respectively |
+
+**Three are resolved or closed (0002, 0004, 0009); two are half closed (0007, 0008); the other seven
+are open, and two of them — 0005 and 0011 — are between them most of the residue.**
+
+⚠ **Two entries carried a number that was the enclosing *class*'s rather than their own**, and the
+audit found it by re-measuring rather than by re-reading: SK-DIV-0011's "45 lines across 21 files" is
+the phase-2 class it shares with SK-DIV-0007, and SK-DIV-0010's "12 lines across 4 files" is the
+brace-placement class, now 5. Both are corrected above. The general lesson is the one the header
+already gives: the harness attributes a difference to a *shape*, never to an entry, so any entry-level
+count in this file is a signature and has to say which one.
 
 The trajectory, so that "asymptotic" is a measurement rather than an adjective:
 
@@ -33,7 +113,8 @@ The trajectory, so that "asymptotic" is a measurement rather than an adjective:
 | M2 | 97.47 % | 49.47 % | 380 files |
 | M3 | 98.86 % | 71.05 % | 380 files |
 | M5 | 98.93 % | 71.58 % | 380 files, symbols supplied |
-| M3.1 | **99.70 %** | **85.79 %** | 380 files, Vixen sample re-based |
+| M3.1 | 99.70 % | 85.79 % | 380 files, Vixen sample re-based |
+| **`8cbd66d`** | **99.70 %** | **85.79 %** | 380 files — unchanged through M6 and M7, which added no formatter work |
 
 ---
 
@@ -52,11 +133,17 @@ disabled branch is the branch nobody compiled, so nobody would notice if it were
 exactly the property that makes mangling it unacceptable. A formatter that edits code it cannot
 parse is a formatter that will eventually edit it wrongly.
 
-Measured on `corpus/real/`: 141 lines across 73 files at M2; **18 lines across 17 files** at M3.1 —
-11 where Skala keeps a blank line the oracle removed and 7 where the oracle inserts one Skala does
-not. The class shrank because the rest of the tail shrank around it, not because it changed.
+Measured on `corpus/real/`: 141 lines across 73 files at M2; 18 lines across 17 files at M3.1.
+
+⚠ **Current, at `8cbd66d`: 14 lines across 14 files.** Signature: a hunk in the `dump real … defined`
+output whose whole content on both sides is blank lines, and where a preprocessor directive appears
+within two lines of it. The whole blank-line residue is 18 lines across 17 files
+(11 "Skala has one, the oracle does not" + 7 the other way, from `fidelity`), so **four blank-line
+differences in three files are not next to a directive and belong elsewhere.** The class shrank
+because the rest of the tail shrank around it, not because it changed.
 
 - options: `resharper_csharp_keep_blank_lines_in_code`, `resharper_csharp_keep_blank_lines_in_declarations`
+- ⚠ status: **open**, measured
 
 ## SK-DIV-0002 — resolved at milestone 3; kept for the number it recorded
 
@@ -73,6 +160,10 @@ thing. The measurements are kept because the trajectory is the argument for the 
 | M1 | 3 180 | 205 | 4.1 % |
 | M2 | 747 | 175 | 0.97 % |
 | M3 | — | — | — (see SK-DIV-0005) |
+
+- ⚠ status: **resolved at M3.** Confirmed still resolved at `8cbd66d`: `GroupFacts.PrefersOuterBreak`
+  exists and the whole corpus residue is 231 lines, an order of magnitude below the 747 this entry
+  named at M2. There is nothing left to re-measure.
 
 ## SK-DIV-0003 — an interpolated raw string literal is still emitted verbatim
 
@@ -94,7 +185,15 @@ value". The option is Tier A on the strength of
 caveat in doc 04 was pointing at.
 
 Measured on `corpus/real/`: files containing a raw literal went 94.41 % (M1) → 97.81 % (M3) →
-**99.68 %** of lines and **90.91 %** of files at M3.1, over the re-based sample's 11 such files.
+99.68 % of lines and 90.91 % of files at M3.1, over the re-based sample's 11 such files.
+
+⚠ **Current, at `8cbd66d`: unchanged — 99.68 % of lines and 90.91 % of files over 11 files, 12
+divergent lines of 3 744.** Measured over the `dump real … defined` output by selecting the files
+whose oracle text contains `"""`, which reproduces the harness's own line-fidelity arithmetic
+(matched lines over `max(len(oracle), len(skala))`) and its file test (the two texts are equal).
+The option is Tier A in the registry, confirmed. `corpus/pathological/`'s
+`interpolated-raw-string-with-nested-braces.cs` is **14.29 % of lines and 0 % of files** and is the
+single worst file in any corpus — which is this entry, in its purest form and on purpose.
 
 ⚠ **C# 11 made this reachable from ordinary code and it broke a property test rather than the
 formatter.** A newline is legal inside an interpolation hole, so a multi-line interpolated string is
@@ -103,7 +202,8 @@ tokens rather than one token, so the per-token guard missed it — and added whi
 Skala nor the oracle absorbs. The mutation now leaves the whole expression alone, the same way it
 already left raw strings and disabled text alone.
 
-- options: `resharper_csharp_indent_raw_literal_string`
+- options: `resharper_csharp_indent_raw_literal_string` (Tier A, `default = align`, from the template)
+- ⚠ status: **open**, measured
 
 ## SK-DIV-0004 — ✅ closed at milestone 5, and the residue is not preprocessor-shaped
 
@@ -139,8 +239,15 @@ that shows it is inside a `#if` body. See [12](plan/12-conformance-and-testing.m
 sets"; the report's closing section names the divergences that appear under one and not the other,
 and at M3.1 it reads **0 with-symbols-only, 65 without**.
 
+⚠ **Current, at `8cbd66d`: the table above is a re-run, not a copy.** `preprocessor` reads the
+eighteen symbols out of `artifacts/skala.binlog` through the loader `skala check` uses and prints
+the six cells; all six reproduce M3.1's exactly. The both-symbol-set line reads **0 with-symbols-only
+and 65 without**, also unchanged, and all 65 are in one file
+(`newtonsoft/Newtonsoft.Json.Tests/Issues/Issue2504.cs`).
+
 - options: none
 - commands: `skala format --define`, `skala format --load=`, `fidelity preprocessor`
+- ⚠ status: **closed at M5**, re-verified
 
 ## SK-DIV-0005 — the ordering rule's margin is a fitted constant, and the sweep says it is not a rule
 
@@ -199,10 +306,19 @@ plateau, tops out at 99.50 % against 99.53 %.
 ⚠ It has a known counter-example, and it is the largest single class left:
 `byte[] data = Convert.FromBase64String("…");` at 123 columns comes back from the oracle broken
 after the `=` with the call whole on a 113-column continuation line, and the margin declines that
-break and chops the call instead. That shape and its siblings are **64 lines across 38 files** of
-the residue, which is still the largest single class.
+break and chops the call instead. That shape and its siblings were 64 lines across 38 files at M3.1.
 
-- options: `resharper_prefer_wrap_around_eq`, `resharper_csharp_wrap_before_eq`
+⚠ **Current, at `8cbd66d`: still the largest class, at 63 lines across 38 files.** That is the
+harness's own top-ranked class, *wrapping: one side continues where the other broke (phase 3)*, and
+this entry is what dominates it. Within it, the sub-population whose signature is unambiguous — a
+hunk where a line the oracle wrote ends in `=` and Skala's does not — is **21 hunks across 14
+files**. The named counter-example itself, `Convert.FromBase64String`, occurs in **one** file of the
+380: "and its siblings" is carrying the count, and no shipped instrument separates the siblings from
+the rest of the class. The 38 files are the class's; the 14 are what can be named.
+
+- options: `resharper_prefer_wrap_around_eq` (Tier D), `resharper_csharp_wrap_before_eq` (Tier D)
+- ⚠ status: **open**, measured. The sweep is [sk-div-0005-margin-sweep.md](sk-div-0005-margin-sweep.md)
+  and it says no value of the constant closes this; it is not tail work
 
 ## SK-DIV-0006 — `jb cleanupcode` does not format documentation comments, so neither does Skala
 
@@ -246,7 +362,19 @@ space anyway**. Skala follows the oracle rather than the key, so the key is iner
 directions and stays Tier D — implementing it would create a divergence in exchange for nothing
 anyone asked for.
 
+⚠ **Current, at `8cbd66d`: still true, and now verifiable from the registry rather than from a
+memory of a probe.** `resharper_space_after_triple_slash` is **Tier D**,
+`resharper_xmldoc_wrap_lines` is **Tier D**, `trim_trailing_whitespace` is **Tier D** with
+`defaultSource: oracle-probe` — the probe that established it is recorded in the registry entry
+itself — and `resharper_remove_spaces_on_blank_lines` is **Tier D**, inert as this entry says. There
+is no xmldoc sub-formatter in the tree: `Formatting/Rikarin.Skala.Formatting.CSharp/XmlDocComments.cs`
+detects malformed XML and reports `SK0003`, and does not reflow. ⚠ [14](plan/14-web-languages.md)
+§ "Why they are later" describes that sub-formatter as **already existing**, and makes lifting it out
+the exercise that proves the `ISkalaLanguage` seam. It does not exist, and doc 14 has no correction
+note saying so.
+
 - options: `resharper_space_after_triple_slash`, `resharper_xmldoc_wrap_lines`, `resharper_xmldoc_max_line_length`, `resharper_xmldoc_linebreak_before_elements`, `trim_trailing_whitespace`
+- ⚠ status: **open and deliberate** — a decision not to implement, re-verified
 
 ## SK-DIV-0007 — an argument list around a chain the author broke does not chop
 
@@ -271,7 +399,19 @@ a chain is one group rather than a nest of them — and it is what makes
 `static void Member(Packer p) =>\n    p.Enum(a)\n        .Enum(b);` come out with the arrow broken.
 That half is done; the binary chain's half is not.
 
-- options: `resharper_csharp_wrap_arguments_style`, `resharper_keep_user_linebreaks`
+⚠ **Current, at `8cbd66d`: the binary chain's half is still open, and it is 8 hunks over 39 lines
+across 6 files.** Signature: a hunk in which a line the oracle wrote ends in an open parenthesis —
+the list it chopped — and Skala's does not. This entry sits inside the harness's *line break
+presence: Skala left a line the oracle joined (phase 2)* class, which is 45 lines across 21 files in
+total and which it shares with SK-DIV-0011. ⚠ Neither half of that class can be separated from the
+other by any shipped instrument, so the two entries are measured by signature and the class total is
+the honest upper bound for the pair.
+
+The chain half stays done: `constructs/breaks/binary-operators.cs` and
+`constructs/wrapping/binary-chains.cs` are both in the corpus and both at 100 %.
+
+- options: `resharper_csharp_wrap_arguments_style` (Tier A, `chop_if_long`), `resharper_keep_user_linebreaks` (Tier A, `true`)
+- ⚠ status: **half closed** (the chain, at M3.1), half **open**, measured
 
 ## SK-DIV-0008 — ⚠ half closed: statement conditions are aligned, four other keys are not
 
@@ -313,12 +453,23 @@ line fidelity and 1.3 of file fidelity.
 | `align_multiline_type_argument`, `…_type_parameter` | a type argument list broken across lines | 0 lines |
 | `align_multiline_ctor_init` | `: base(\n      a)` | 0 lines |
 
+⚠ **Current, at `8cbd66d`:** `resharper_csharp_align_multiline_statement_conditions` is **Tier A**,
+so the half that was built stays built. `align_multiline_for_stmt`, `align_multiline_array_initializer`,
+`align_multiline_type_argument` and `align_multiline_ctor_init` are all still **Tier D**. The `for`
+header's residue is **5 hunks over 13 lines across 3 files** — signature: a hunk mentioning a
+`for (` header — up from the 4 lines across 2 files recorded at M3.1, and the increase is the
+signature being broader rather than the formatter regressing: the whole of `corpus/real`'s
+`ForStatement` attribution is 2 lines ([16](plan/16-risks-and-open-questions.md) § R1's table), so
+three of the three files are the same generated `DataSet` and its neighbours. The other three keys
+are still worth 0 lines: the corpus contains no instance of their shapes.
+
 The consequence [05](plan/05-csharp-formatting-rules.md) § "Alignment" claims — "with column
 alignment off, laying out line *n* never requires knowing the contents of line *n−1*" — **survives
 the change**, and that is worth stating: an alignment scope's column is the column the writer is
 already at when the scope opens, which is on the current line. The fitting pass is still linear.
 
 - options: `resharper_csharp_align_multiline_statement_conditions` (now Tier A), `resharper_csharp_align_multiline_for_stmt`, `resharper_align_multiline_array_initializer`, `resharper_align_multiline_type_argument`, `resharper_align_multiline_ctor_init`
+- ⚠ status: **half closed** (statement conditions, at M3.1), four keys still **open**, measured
 
 ## SK-DIV-0009 — `space_within_spread_pattern` is inert, and the gap it names is not governed at all
 
@@ -348,7 +499,17 @@ for into 58 lines of `corpus/real/`.
 for the same reason `trim_trailing_whitespace` is Tier D under SK-DIV-0006: an option Skala honours
 and Rider ignores is a divergence wearing a tier badge.
 
-- options: `resharper_space_within_spread_pattern`
+⚠ **Current, at `8cbd66d`: the demotion holds and the entry is resolved.**
+`resharper_space_within_spread_pattern` is **Tier D**, `defaultSource: unknown`, with no fixture —
+which is the withdrawal this entry describes, verified in the registry rather than remembered. Its
+twin `resharper_csharp_space_within_slice_pattern` is **Tier A**, which is the other half of the
+argument. `resharper_remove_spaces_on_blank_lines` remains Tier D and inert. The 58 lines this cost
+`corpus/real/` are gone: sweeping all 380 files' divergent hunks for a `..` inside brackets returns
+two lines in one file, and both are a *range* expression (`line[TerminatorPrefix.Length..]`) whose
+divergence is SK-DIV-0008's indentation, not a spread element's spacing.
+
+- options: `resharper_space_within_spread_pattern` (Tier D), `resharper_csharp_space_within_slice_pattern` (Tier A)
+- ⚠ status: **resolved at M3.1**, re-verified
 
 ## SK-DIV-0010 — the oracle has break points of last resort that Skala does not
 
@@ -376,11 +537,21 @@ breaks there anyway.
 
 ⚠ The argument for leaving them is that all three produce output the author did not write and would
 not want, and Skala's answer is a legal line that is merely too long. The counter-argument is R1:
-these are `ClassDeclaration` and `IdentifierName`, which are not rare. Measured on `corpus/real/`:
-**12 lines across 4 files**, of which 8 are one generated `DataSet` partial class and one is a
-`class` keyword left alone at the end of a line.
+these are `ClassDeclaration` and `IdentifierName`, which are not rare. It was 12 lines across 4 files
+at M3.1.
 
-- options: `resharper_wrap_before_first_method_call`, `resharper_csharp_wrap_multiple_declaration_style`
+⚠ **Current, at `8cbd66d`: the harness's *brace placement* class, which this entry dominates, is
+5 lines across 4 files** — down from 12, and the same 4 files. The narrowest signature within it —
+a hunk where the oracle left `class`/`struct`/`record`/`interface` alone at the end of a line — is
+**2 hunks over 4 lines across 2 files**. The other two shapes (a declarator's name on its own line,
+and a break at the only dot of a one-dot chain) have no signature that separates them from ordinary
+wrapping, and no shipped instrument isolates them. ⚠ Under R1 as re-stated
+([16](plan/16-risks-and-open-questions.md) § "The rule, re-stated") `ClassDeclaration` is at
+**0.07 %** attributed share and passes; this entry is no longer an R1 objection, which is a change in
+the *rule* rather than in the code and is worth saying rather than quietly dropping the sentence.
+
+- options: `resharper_csharp_wrap_before_first_method_call` (Tier A), `resharper_csharp_wrap_multiple_declaration_style`
+- ⚠ status: **open and deliberate** — a decision not to implement, measured
 
 ## SK-DIV-0011 — a lambda's expression body may leave the arrow's line, and the discriminator is unknown
 
@@ -405,9 +576,17 @@ explain it.
 ⚠ Implemented as the `=`'s rule — a break point after the arrow with `PrefersOuterBreak` — it fixes
 five files and breaks five others, and costs 0.02 points of line fidelity and 0.5 of file fidelity
 on `corpus/real/`. That is the measurement, and it is why the gap has no rule rather than the wrong
-one. Worth **45 lines across 21 files**, which makes it the second largest class after SK-DIV-0005.
+one. It was recorded at 45 lines across 21 files at M3.1.
 
-- options: `resharper_place_single_method_argument_lambda_on_same_line`
+⚠ **Current, at `8cbd66d`: 12 hunks over 40 lines across 7 files.** Signature: a hunk in which a
+line the oracle wrote ends in `=>` and Skala's does not. ⚠ **The "45 lines across 21 files" this
+entry carried was the whole *line break presence: Skala left a line the oracle joined (phase 2)*
+class, which is still 45/21 and which this entry shares with SK-DIV-0007** — so the old figure was
+the class's, not the entry's, and the entry's own signature accounts for 40 of the class's 45 lines
+but only 7 of its 21 files. It remains the second largest single class after SK-DIV-0005.
+
+- options: `resharper_place_single_method_argument_lambda_on_same_line` (Tier A, `true`, `oracle-probe`)
+- ⚠ status: **open**, measured. The discriminator is still unknown; this is not tail work either
 
 ## SK-DIV-0012 — three small shapes, each measured, each left
 
@@ -426,9 +605,27 @@ smaller than the risk.
    oracle keeps the break — and there is no `place_simple_anonymousmethod_on_single_line` key in the
    export to hang it on. Worth **0 lines** of `corpus/real/`: nobody in the corpus writes one.
 3. **A `for` header's clauses chop.** `for (init;\n     cond;\n     step)` rather than filling.
-   Worth 4 lines across 2 files, both of them the same generated `DataSet`.
+   Worth 4 lines across 2 files at M3.1, both of them the same generated `DataSet`.
 
-- options: `resharper_csharp_keep_existing_embedded_block_arrangement`, `resharper_csharp_align_multiline_for_stmt`
+⚠ **Current, at `8cbd66d`**, each measured over the 380-file dump by its own signature:
+
+| | Signature | Now | Was (M3.1) |
+|---|---|---|---|
+| 1. cast before a collection expression | a hunk with `) [` on the oracle's side and `)[` on Skala's | **1 hunk, 1 line, 1 file** | 1 line |
+| 2. single-statement anonymous function block joined | a hunk whose oracle side contains `=> { … }` on one line | **0 hunks — the corpus still contains none** | 0 lines |
+| 3. `for` header chops | a hunk mentioning a `for (` header | **5 hunks, 13 lines, 3 files** | 4 lines, 2 files |
+
+⚠ Item 2's zero is a *corpus* fact and not a quality one: nobody in 380 files writes the shape, so the
+rule is untested rather than unneeded — the same distinction
+[16](plan/16-risks-and-open-questions.md) § R3 keeps making about a rule that fires nowhere. It is
+not evidence that the divergence does not exist.
+
+`resharper_csharp_keep_existing_embedded_block_arrangement` is **Tier A** (`false`, `oracle-probe`),
+so item 2's governing key is implemented; what is missing is the placement decision it interacts
+with. `resharper_csharp_align_multiline_for_stmt` is **Tier D**.
+
+- options: `resharper_csharp_keep_existing_embedded_block_arrangement` (Tier A), `resharper_csharp_align_multiline_for_stmt` (Tier D)
+- ⚠ status: **open**, all three measured
 
 ## SK-DIV-0013 — three rewrites the export configures and the oracle will not perform
 

@@ -7,7 +7,28 @@ arrives too late.
 
 Sizes are relative (S ≈ days, M ≈ a week or two, L ≈ a month, XL ≈ longer), not dates.
 
-## M0 — Configuration and skeleton · S/M
+⚠ **What this document is for, and what it is not.** It keeps the milestone boundaries, their exit
+criteria, and the record of which criteria were met — including the ones that were not, and the ones
+that were re-stated when a measurement contradicted them. **It does not say what is built.**
+[`../overview.md`](../overview.md) does, it is checked against the code and the tests, and where the
+two disagree it wins.
+
+⚠ **The order in this document is not the order that happened, and the differences are recorded where
+they occurred rather than in a footnote:** M4 and M5 swapped (§ M4); M3 missed its bar and had it
+re-stated as two bars (§ M3); M3.1 was inserted between M5 and M4 to close the first of them
+(§ M3.1); and **M9 is postponed to last by the author's decision** (§ M9). The diagram at the end is
+the current order.
+
+⚠ **A milestone's numbers measured "over Vixen" are measurements of a test subject, not of a
+standard.** [16](16-risks-and-open-questions.md) § "The reference trees are a test subject, not a
+specification" is the instruction, and it is newer than most of the rows below. Two consequences run
+through this document: a low finding count on Vixen was never evidence that a rule is good, and any
+number measured *under Vixen's own `.editorconfig`* is a number about a file nobody chose — that file
+was built by agents as they went, 916 lines and 56 path-scoped sections, and never reviewed as a
+whole. Where such a number appears below it is kept, because it was honestly measured, and it is
+labelled.
+
+## M0 — Configuration and skeleton · S/M — ✅
 
 The repository, the build, and the thing everything else consumes.
 
@@ -25,7 +46,14 @@ The repository, the build, and the thing everything else consumes.
 file:line and tier for the real template, `skala config check` names the three contradictions this
 plan already found, and `skala config distill` round-trips.
 
-## M1 — Formatter, phase 1 · L
+⚠ **Met, and the "380" grew.** The registry holds **520 options at `8cbd66d`** — 201 Tier A, 6 Tier
+C, 313 Tier D — because M3 extended it past the C# whitespace keys it was scoped to. ⚠ **There are
+zero Tier B entries**, and [03](03-configuration-model.md) still documents B as a live tier with its
+own behaviour; the tier exists in the enum and the conformance suite has a test whose whole job is
+to guard the empty set. The four-tier model is a three-tier model in practice, and doc 03 has not
+been told.
+
+## M1 — Formatter, phase 1 · L — ✅
 
 Spaces, blank lines, braces, indentation. No wrapping. Plus the parts that never change again: the
 IR, the emitter, the safety net, the harness.
@@ -39,6 +67,16 @@ IR, the emitter, the safety net, the harness.
 
 **Done when:** line fidelity ≥ 85 % on `corpus/real/`, idempotency and token-equivalence at 100 %,
 and `skala format` has been run over Vixen with the diff reviewed and nothing semantically changed.
+
+✅ **Met** — the only milestone in the formatter sequence to clear its own bar with room. The
+historical figure is in the trajectory table in [../divergences.md](../divergences.md); it is not
+re-measurable, because the formatter it describes no longer exists.
+
+⚠ **What M1 built that is still measured every run**, at `8cbd66d`: `corpus/constructs/` (273 files)
+is **96.64 % line / 91.21 % file** and `corpus/pathological/` (52 files) is **95.60 % / 86.54 %**,
+and the property suite is 8 981 green cases. Both of those corpora are *lower* than `corpus/real/`'s
+99.70 % on purpose — they are built out of the shapes that are hard, so a number near 100 % on them
+would mean the fixtures had stopped being adversarial.
 
 ## M2 — Formatter, phase 2 · M/L ✅
 
@@ -65,6 +103,15 @@ to 2 506 and Skala's agreement with the oracle *under Vixen's own configuration*
 97.84 % of lines. ⚠ The shipped build's number is 2 552, not 2 506: the four commits after it —
 raw-literal realignment, the pattern chain's own level, the fill fix, comment trailing whitespace —
 moved it, and the pair above is a controlled A/B at one commit rather than a running total.
+
+⚠ **The 97.00 → 97.84 pair is agreement on a configuration nobody chose, and that is worth saying
+next to it rather than in a footnote.** Vixen's `.editorconfig` was built by agents as they went —
+916 lines, 56 path-scoped sections, never reviewed as a whole — so "Skala and the oracle agree under
+Vixen's own configuration" measures two tools reading the same accident the same way. It was
+honestly measured and it did establish what it was run to establish: that the fallback was the
+defect and the derived table fixes it. It is not a fidelity figure. **The fidelity figures are
+against the canonical**, and they are 99.70 % overall and 99.79 % on files with no `#if`
+([../divergences.md](../divergences.md)).
 
 ## M3 — Formatter, phase 3–4 · L/XL
 
@@ -222,6 +269,19 @@ of lines and 87.33 % of files. The remaining objection is the 12.7 % of files wh
 still move something, and that is a judgement for the person who owns the repository rather than a
 number that decides itself.
 
+⚠ **And it is a replacement, not a layering.** Vixen's existing `.editorconfig` is not a set of
+decisions to be preserved under a canonical block — it was written by agents as they went and never
+reviewed, and [16](16-risks-and-open-questions.md) § Q4's seven local overrides are **suspect by
+default** rather than precedent. `skala config sync` preserves a local block verbatim because it
+cannot tell a reasoned override from an accidental one, which is the right behaviour everywhere; for
+Vixen specifically the outcome should be that each of the seven is justified on its merits or
+dropped. Vixen conforms to the canonical. The canonical does not bend to Vixen.
+
+⚠ **Measured at `8cbd66d`, read-only:** `skala format --check` over Vixen's 4 717 source files, under
+Vixen's own configuration, reports **2 346 files would be reformatted and 2 371 left alone**, in
+**12.4–13.8 s**. That is the size of the commit that has not been made, at today's formatter and
+today's tree.
+
 **Release 0.7.**
 
 ## M4 — Arrangement · M/L — ⚠ **shipped, one bar met and one missed**
@@ -362,6 +422,7 @@ and no unexplained suppressions.
 | Load modes | ✅ all three, with a reported fallback ladder and `loadMode` in the SARIF |
 | Rules shipped | ⚠ **six analyzers** + three formatter findings, not the thirty-six of doc 08 — [08](08-rule-catalogue.md) § "What M5 actually shipped" says which were cut and why |
 | False positives | ✅ **zero**: 143 findings on `corpus/real/`, 12 on Vixen, every one reviewed; 170 fixes applied over `corpus/real/` produced **no `(file, id)` pair worse than before** |
+| ⚠ Re-measured at `8cbd66d` | `fidelity audit` over `corpus/real/` reports **SK1005 27 · SK1010 114 · SK1020 2**, identical to M5's, and **171 fixes across 65 files, 15 743 compiler errors before and 15 731 after, 0 `(file, id)` pairs worse**. The M5 rows reproduce |
 | Fixture sets | ✅ 21 positive, 36 "should not fire" — every rule's negative set is larger than its positive one |
 | SK-DIV-0004 | ✅ closed. `--define`, and symbols from a loaded compilation. Measured: 98.60 % → **98.92 %** on the 91 `#if` files, 98.86 % → **98.93 %** overall |
 | Formatter | ✅ `DifferentialTests.Fidelity_DoesNotDecrease` passes; file fidelity **improved** 71.05 % → 71.32 % from a bug the symbols revealed |
@@ -458,6 +519,7 @@ false-positive triage of a 200-finding sample is under 1 %.
 | Fix verification | ✅ 38 fixes applied across 10 Vixen files: 195 253 compiler errors before, 195 241 after, **0 `(file, id)` pairs worse than before** |
 | Duplication over Vixen | ✅ **4.8 % production, 514 clone groups**, 4 660 files, in 37 s inside a full `check` |
 | Metrics over Vixen | ✅ `SK7001` 85 · `SK7002` 768 · `SK7003` 5 · `SK7004` 13 · `SK7005` 197 · `SK7006` 2. Cognitive complexity pinned to SonarSource's published worked examples |
+| ⚠ Re-measured at `8cbd66d` | `fidelity audit` over Vixen's 4 660 source files reproduces **every one of those six exactly**, at the same 195 253 compiler errors. ⚠ It also reproduces M7's correction: with a stand-in global-usings file the tree falls to **128 490** errors and `SK3002` goes **7 → 44**, `SK8005` **0 → 25**, `SK7001` **85 → 98**. The stand-in was never committed, so M7's figures were not reproducible from the repository until this pass re-derived them |
 | `ci` gate, end to end | ✅ baseline **18.9 s** → clean run **PASS in 7.2 s, exit 0** → finding introduced **FAIL in 8.3 s, exit 1** → `--since` scoping it away **PASS in 7.3 s, exit 0** → `--since=HEAD~1` **FAIL, exit 1** |
 | `--no-new-suppressions` | ✅ all four mechanisms. Detects a `#pragma`, a `[SuppressMessage]`, an `.editorconfig` severity turned down *with its section header*, and a baseline addition. **3 m 19 s → under a second** after the audit stopped spawning one `git show` per file |
 | Tests | ✅ **5 402 green**, up from 5 366; build clean under `TreatWarningsAsErrors` |
@@ -517,6 +579,16 @@ adopted by three of the author's repositories beyond Vixen.
 | Memory policy | ✅ byte-capped LRU, ≤ 4 compilations, drop-then-exit. All three were absent |
 | Vulnerabilities | ✅ 8 → 0. `NuGetAudit` at level `low`, NU1901–NU1904 as errors, `_build` included |
 | Tests | ✅ **9 787 green**, 0 failing, up from 5 402. Build clean under `TreatWarningsAsErrors` |
+| Catalogue coverage, cumulative | ⚠ **21 of the 106 rules [08](08-rule-catalogue.md) names, 19.8 %** — three ranges shipped one rule each. Ten more are cut with a reason that survives; twelve were declared cut with no reason recorded and are outstanding. [08](08-rule-catalogue.md) § "Rule status" |
+
+⚠ **Re-measured at `8cbd66d`: `dotnet test Skala.slnx -c Release` is 9 795 passed, 0 failed, 7
+skipped, 9 802 total** — near enough to the 9 787 above, and the seven skips are the finding. Four
+are `PerformanceBudgetTests` and three are `ClientAgreesWithToolTests`; **all seven are skipped in an
+ordinary test run**, the first four behind `SKALA_PERF=1` and all seven behind "no native layout, run
+`./build.sh Native` first". So "budgets asserted in CI" is true of the job that publishes the native
+layout and sets the variable, and is not true of `dotnet test`. That is a deliberate design — a
+wall-clock assertion on a shared runner is a flaky test — but a reader of the row above would not
+guess that the assertions do not run by default, and now does not have to.
 
 ⚠ **Five things measurement contradicted, and one of them invalidates an M6 number.**
 
@@ -547,7 +619,16 @@ and installing anything in three other repositories is a change to those reposit
 started. The fuzzing job runs the property suite — 8 981 cases over the corpus under both symbol
 sets — but there is **no fuzzer**: no seeded mutation driver, no weighted grammar, no
 delta-debugging minimiser into `corpus/pathological/`. The workflow says so in its own header rather
-than implying otherwise by existing.
+than implying otherwise by existing. ⚠ Re-measured at `8cbd66d`: the conformance assembly is
+**8 981 tests, all passing**, which is exactly the figure quoted — so the property suite is the
+whole of what the nightly "fuzzing" job runs, confirmed rather than assumed.
+
+⚠ **"Adopted by three repositories beyond Vixen" is not a bar M7 could have met, and the milestone
+should not have carried it.** Installing anything in another repository is a change to that
+repository, and M6 and M7 were both run under an instruction not to write into the one reference
+tree they had. A milestone whose exit criterion is a change to somebody else's repository is a
+milestone that fails on paper whatever it builds. ⚠ Adoption is now a step of its own on the critical
+path, after M4, and the criterion belongs there — see the diagram at the end.
 
 **Release 1.0** — at which point rule IDs, option behaviour, exit codes and the SARIF shape are
 compatibility surfaces (ADR-012). The two tests that hold that line are `RuleCatalogTests`
@@ -555,29 +636,61 @@ compatibility surfaces (ADR-012). The two tests that hold that line are `RuleCat
 (`ToolDiagnosticIds_AreDeclaredOnce`, `…_AreInTheRegister`). Both now read the tree they are run
 against, which the second did not before.
 
-## M8 — Security · M
+## M8 — Security · M — ⬜ not started
 
 `SK5xxx`, the taint table, the vulnerable/safe corpus, intra-procedural flow on
-`ControlFlowGraph`. Last because a wrong security rule is worse than a missing one, and because it
-is the only category where the corpus cannot validate correctness on its own.
+`ControlFlowGraph`. Last of the rule milestones because a wrong security rule is worse than a
+missing one, and because it is the only category where the corpus cannot validate correctness on its
+own.
 
-## M9 — Web languages · XL
+**Status at `8cbd66d`:** none of `SK5001`–`SK5009` is in `rules.json`, and there is no `taint.json`
+in the tree. [08](08-rule-catalogue.md) § "Rule status" counts all nine as outstanding.
 
-[14](14-web-languages.md). Gated on M3 being stable and on the `ISkalaLanguage` seam having been
-exercised by lifting the XML sub-formatter out of the C# front end.
+## M9 — Web languages · XL — ⚠ **postponed to last, by decision**
+
+[14](14-web-languages.md). Originally gated on M3 being stable and on the `ISkalaLanguage` seam
+having been exercised by lifting the XML sub-formatter out of the C# front end.
+
+⚠ **M9 now runs after everything else, and this is a decision rather than a slip.** It was drawn on
+the critical path as a branch that could start once M3 was stable — the diagram had it hanging off
+M6 — and it no longer is. Nothing before it depends on it, and it is the largest single piece of
+work in the plan (a second and third language front end, two dialects, and a plugin contract) for
+the smallest share of the value: C# is where the code is, where the agents write, and where the
+configuration is hundreds of options deep.
+
+⚠ **Both of its gates are further off than the document implies, and one of them does not exist.**
+
+| Gate | Status at `8cbd66d` |
+|---|---|
+| Line fidelity on C# at the bar and stable | ⚠ **Not met.** 99.70 % against a 99.9 % bar, and [../divergences.md](../divergences.md) § SK-DIV-0005 says the largest remaining class is not reachable by more of the same work |
+| `ISkalaLanguage` exercised by a second implementation | ❌ **The interface does not exist.** `ISkalaLanguage` appears in documents [01](01-technology-decisions.md), [14](14-web-languages.md) and in this file, and in no C# source in the tree. Nor is there anything to lift out: [14](14-web-languages.md) describes the xmldoc sub-formatter as already built inside the C# front end and it is not — `XmlDocComments.cs` detects malformed XML and reports `SK0003` ([../divergences.md](../divergences.md) § SK-DIV-0006) |
+| Vixen's `.vxml`/`.vcss` parsers stable enough to build against | Not assessed here |
+
+So M9's prerequisite is not "lift the sub-formatter out"; it is "write the sub-formatter, then lift
+it out, then design the seam" — three pieces of work where the plan records one, and the honest place
+for that is here rather than discovered at the start of the milestone.
 
 ---
 
 ## The critical path, stated plainly
 
 ```
-M0 ─▶ M1 ─▶ M2 ─▶ M3 ─▶ M5 ─┬─▶ M3.1 (the fidelity tail, with symbols) ─▶ M4 ─▶ adoption
-   ✅     ✅     ✅    ⚠    ✅  │    ✅
+M0 ─▶ M1 ─▶ M2 ─▶ M3 ─▶ M5 ─┬─▶ M3.1 ─▶ M4 ─▶ adoption ─▶ M9
+   ✅     ✅     ✅    ⚠    ✅  │    ✅      ⬜                ⬜
                              └─▶ M6 ─▶ M7 ─▶ M8
-                                  └──▶ M9
+                                  ✅     ✅     ⬜
 
-⚠ M4 and M5 are swapped against the original order. M5 builds the compilation that M4's semantic
-half and M3's #if gap both wait on; see M4's header.
+⚠ Two departures from the original order, and both are decisions:
+
+  M4 ⇄ M5   M5 builds the compilation that M4's semantic half and M3's `#if` gap
+            both wait on, so it went first. See M4's header.
+
+  M9 last   It used to hang off M6 as a branch that could start once M3 was
+            stable. Nothing depends on it, its own two gates are not met, and
+            one of them (`ISkalaLanguage`) does not exist. See M9's header.
+
+⚠ M3's ⚠ is the ≥ 99.9 % bar, which M3.1 also did not meet — 99.70 %. It is the
+only exit criterion in the plan that has been missed twice with a measurement.
 ```
 
 M3 is the milestone everything else waits on and the one most likely to overrun, because the fitting

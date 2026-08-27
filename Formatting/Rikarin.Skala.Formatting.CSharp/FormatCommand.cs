@@ -237,7 +237,7 @@ public static class FormatCommand {
                 true,
                 false,
                 null,
-                [new SkalaDiagnostic("SK9012", SkalaSeverity.Error, exception.Message, file)]
+                [new SkalaDiagnostic(FormatDiagnosticIds.FileIoFailed, SkalaSeverity.Error, exception.Message, file)]
             );
         }
 

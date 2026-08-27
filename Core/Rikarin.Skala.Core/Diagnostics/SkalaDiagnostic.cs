@@ -63,6 +63,21 @@ public static class ConfigDiagnosticIds {
     /// <summary>A setting is on that Skala cannot honour, and that makes the IDE and the oracle disagree.</summary>
     public const string UnhonourableSetting = "SK9006";
 
+    /// <summary><c>skala.jsonc</c> is not valid JSON, so no tool configuration could be read.</summary>
+    public const string ToolConfigNotJson = "SK9007";
+
+    /// <summary>No solution or project could be found to load, so nothing was analysed.</summary>
+    public const string NothingToLoad = "SK9024";
+
+    /// <summary>No binary log was found, so the binlog load mode had nothing to read.</summary>
+    public const string NoBinlog = "SK9022";
+
+    /// <summary>The requested paths contain no C# files.</summary>
+    public const string NoSourceFiles = "SK9023";
+
+    /// <summary>The requested load mode produced no compilation, so a fallback mode was used.</summary>
+    public const string LoadModeFellBack = "SK9025";
+
     /// <summary>
     /// The managed canonical block does not hash to what its own marker says. Somebody edited it.
     /// This is the gate condition: drift is a finding, not a surprise (docs/plan/03 § "Canonical
