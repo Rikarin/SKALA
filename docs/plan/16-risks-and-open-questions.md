@@ -14,12 +14,13 @@ disagree on roughly one line in a hundred, which on a 1.35 M-line tree is 13 000
 will reformat back the moment someone opens the file. Formatting ping-pong between two tools is
 worse than either tool alone.
 
-**Mitigation:** the divergence register (`SK-DIV-*`) plus a hard rule — any construct that appears in
-the corpus more than 50 times must be at 100 %, and the tail is only allowed in constructs that are
-genuinely rare. Plus `resharper_formatter_tags_enabled` as the human escape hatch for the handful of
-places where the tools cannot agree. Plus, honestly: if a divergence is small and Skala's answer is
-better, change the Rider setting to match Skala rather than the reverse — the settings are the
-author's, and they can move.
+**Mitigation:** the divergence register (`SK-DIV-*`) plus a hard rule about where the residue is
+allowed to sit — § "The rule, re-stated" below has it, and § "The rule as originally written" has
+the version it replaces and the reason that version could never be met. Plus
+`resharper_formatter_tags_enabled` as the human escape hatch for the handful of places where the
+tools cannot agree. Plus, honestly: if a divergence is small and Skala's answer is better, change the
+Rider setting to match Skala rather than the reverse — the settings are the author's, and they can
+move.
 
 ⚠ **M3 measured it, and the shape is exactly as predicted.** `fidelity constructs` attributes every
 divergent line to the innermost node that owns it and puts that beside how often the construct
@@ -41,18 +42,110 @@ not code it moved.
 wrapped in a `#if` is disabled text for Skala and every line of it counts against whatever construct
 happens to own it, which attributes SK-DIV-0004 to `ClassDeclaration` and says nothing about either.
 
-⚠ **And R1 as written cannot be met short of 100 %, which is worth saying plainly rather than
-missing it four milestones in a row.** The report attributes every divergent line to the innermost
-node that owns it, so "at 100 %" means "no divergent line is attributed to this construct". The
-nineteen constructs that fail are `IdentifierName` (92 divergent lines), `ArgumentList` (28),
-`StringLiteralExpression` (25), `Block` (21) — and `ForStatement` (2 of 2 lines it owns),
-`OmittedTypeArgument` (2), `DefaultLiteralExpression` (1). The first four are where a wrap decision
-*lands*; the last three are constructs that own two or three lines of the whole corpus, so one
-divergence is 33 % of them. Both halves say the same thing: **every divergent line is attributed to
-something that occurs more than fifty times, because everything that occurs at all occurs more than
-fifty times.** R1 is therefore equivalent to 100 % line fidelity, and it should be re-stated for M4
-as a rule about constructs whose *attributed share* is above a threshold rather than about any
-divergence at all.
+#### The rule as originally written, and why it could not be met
+
+**The original text, preserved verbatim, because a bar that is quietly replaced is a bar that was
+never measured against:**
+
+> any construct that appears in the corpus more than 50 times must be at 100 %, and the tail is only
+> allowed in constructs that are genuinely rare
+
+⚠ **It cannot be met short of 100 % line fidelity, which is worth saying plainly rather than missing
+it four milestones in a row.** The report attributes every divergent line to the innermost node that
+owns it, so "at 100 %" means "no divergent line is attributed to this construct". Two things follow,
+and they are the two halves of why the rule is unusable:
+
+1. **The population is almost everything.** Every divergent line is attributed to *something*, and
+   almost everything that occurs in a 76 000-line corpus at all occurs more than fifty times. Of the
+   twenty-one constructs the residue touches today, twenty occur more than fifty times; the one
+   exception, `ComplexElementInitializerExpression`, occurs seventeen. So the "genuinely rare"
+   escape hatch the rule promised covers **2 of 185** attributed divergent lines. The rule is
+   therefore equivalent to 100 % line fidelity wearing a frequency test.
+2. ⚠ **The frequency test and the fidelity test count different things, and that is the deeper
+   defect.** "Appears more than 50 times" counts *occurrences of the construct*; "at 100 %" is
+   measured over *lines the construct is the innermost owner of*. Those two populations are unrelated
+   in size. `ForStatement` occurs 376 times and owns **2** lines, so a single divergence makes it
+   0.00 % — a construct that is 376-times common by the gate's own test and statistically empty by
+   the test it is then graded on. `Block` occurs 4 899 times and owns 17 923 lines, so five divergent
+   lines make it 99.97 %. A rule that selects on one number and grades on the other is measuring
+   noise at one end and nothing at the other.
+
+**What R1 is actually for, and what must survive any re-statement.** Rider and Skala must not
+reformat each other's work. A divergence class that is *systematic* — a construct Skala handles
+differently from the oracle every time it appears — produces ping-pong on every file that contains
+the construct, and no amount of overall percentage hides it. A divergence that is a *tail* — one
+line here, one there, in shapes nobody writes twice — costs a handful of lines once. The original
+rule was reaching for that distinction and picked the wrong instrument for it.
+
+#### The rule, re-stated
+
+**R1 is met when, on `corpus/real/`, both of the following hold, measured by
+`ConstructReport` with the oracle's own preprocessor symbols supplied:**
+
+| | Population | Bar |
+|---|---|---|
+| **(a) the share rule** | every construct that is the innermost owner of **≥ 100 lines** of the oracle's output | its **attributed share** — divergent lines it owns over lines it owns — is **≤ 1 %** |
+| **(b) the count rule** | every construct below that floor | it is attributed **≤ 3 divergent lines** |
+
+Three things changed and each is deliberate:
+
+1. **The population is keyed on lines owned, not on occurrences**, because lines owned is what the
+   fidelity half measures. This is the defect in point 2 above, and fixing it is most of the value:
+   `ForStatement` and `Parameter` no longer masquerade as common constructs.
+2. **The bar is a share rather than zero.** 1 % is not an arbitrary round number: it is the rate this
+   document's own opening paragraph calls unacceptable — "at 99 % they disagree on roughly one line
+   in a hundred … which Rider will reformat back". A construct at or under 1 % is inside the tail; a
+   construct above it is a systematic disagreement in a construct with real mass, which is exactly
+   what R1 exists to forbid.
+3. **Below the floor the rule switches to an absolute count**, because a share computed over eleven
+   lines is not a measurement. Three lines is small enough that a systematic defect cannot hide
+   behind a rare construct, and large enough that genuine exotica are permitted — which is the
+   "genuinely rare" allowance the original rule promised and could not deliver.
+
+⚠ **Measured at `8cbd66d`** — `dotnet run --project Testing/Rikarin.Skala.Testing -c Release -- constructs real`,
+which reports 56 constructs occurring more than 50 times and 37 at 100 % under the old rule. Under
+the re-stated rule the same table reads:
+
+| Construct | Occurrences | Lines owned | Divergent | Share | Verdict |
+|---|---:|---:|---:|---:|---|
+| `Block` | 4 899 | 17 923 | 5 | 0.03 % | ✅ (a) |
+| `ClassDeclaration` | 481 | 15 536 | 11 | 0.07 % | ✅ (a) |
+| `IdentifierName` | 78 013 | 13 566 | 64 | 0.47 % | ✅ (a) |
+| `ArgumentList` | 15 779 | 3 642 | 25 | 0.69 % | ✅ (a) |
+| `StringLiteralExpression` | 3 387 | 3 064 | 18 | 0.59 % | ✅ (a) |
+| `NumericLiteralExpression` | 8 537 | 2 937 | 14 | 0.48 % | ✅ (a) |
+| `CompilationUnit` | 380 | 687 | 4 | 0.58 % | ✅ (a) |
+| `PredefinedType` | 6 490 | 415 | 2 | 0.48 % | ✅ (a) |
+| `FalseLiteralExpression` | 396 | 331 | 2 | 0.60 % | ✅ (a) |
+| `TrueLiteralExpression` | 402 | 323 | 1 | 0.31 % | ✅ (a) |
+| `NullLiteralExpression` | 656 | 320 | 1 | 0.31 % | ✅ (a) |
+| `CollectionExpression` | 596 | 290 | 1 | 0.34 % | ✅ (a) |
+| `SingleVariableDesignation` | 725 | 182 | 1 | 0.55 % | ✅ (a) |
+| **`ParameterList`** | 3 125 | 309 | 4 | **1.29 %** | ❌ **(a)** |
+| **`EqualsValueClause`** | 5 368 | 70 | **11** | 15.71 % | ❌ **(b)** |
+| **`Parameter`** | 4 314 | 11 | **8** | 72.73 % | ❌ **(b)** |
+| `IfStatement` | 1 429 | 39 | 2 | 5.13 % | ✅ (b) |
+| `ForStatement` | 376 | 2 | 2 | 100.00 % | ✅ (b) |
+| `ComplexElementInitializerExpression` | 17 | 6 | 2 | 33.33 % | ✅ (b) |
+| `DefaultLiteralExpression` | 91 | 60 | 1 | 1.67 % | ✅ (b) |
+
+Every construct not listed owns no divergent line and passes both clauses trivially. `(file)` — the
+report's row for lines no syntax node owns, 6 of 5 598 — is not a construct and is not graded.
+
+⚠ **R1 is not met, and it now says something.** Three constructs fail rather than nineteen, and all
+three name an entry that is already in the register: `EqualsValueClause` and `Parameter` are
+[SK-DIV-0005](../divergences.md)'s `=` break and the argument-list chop of
+[SK-DIV-0007](../divergences.md); `ParameterList` at 1.29 % is the same chop seen from the enclosing
+list. **That is the property the old rule lacked: its failures are a work queue rather than a
+restatement of the overall percentage.** The old rule's nineteen failures included `Block` at
+99.97 %, which is not work anyone should do.
+
+⚠ **The harness still prints the old rule's verdict.** `ConstructReport.Render` emits
+`R1: constructs occurring more than 50 times: 56; at 100 %: 37` and the columns the re-stated rule
+needs are all in the table beneath it, so the rule above is checkable today by reading them — but
+the headline line is the superseded one. Changing what that line reports is
+`Testing/Rikarin.Skala.Testing/ConstructReport.cs`, and it is owed before M4 rather than after,
+because M4's own bar is per-span and will want the same shape.
 
 ⚠ **The tool for working it is new and it is not the ranked report.** `locate <set> <kind>` prints
 the divergent lines attributed to one construct with file and line, because the ranked report orders
