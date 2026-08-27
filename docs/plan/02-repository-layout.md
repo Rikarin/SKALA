@@ -102,6 +102,23 @@ on anything that is not `netstandard2.0` makes the analyzer package fail to load
 message that names none of those things. This is enforced by a test that walks the package's
 dependency closure, not by discipline.
 
+⚠ **Where that test lives, since this document calls it a "reference test" and that is not a
+mechanism name.** It is `ProjectGraphTests` in `Core/Rikarin.Skala.Core.Tests` — an ordinary xUnit
+class, seven facts, run by `./build.sh Test` along with everything else. It is **not** a step in
+`build/Build.cs`, and nothing outside the test run enforces the project graph. That is fine and is
+the right place for it; the phrase is worth pinning because "reference test" reads like a build
+target somebody could look for and not find. [14](14-web-languages.md) repeats the phrase.
+
+⚠ **And it passes vacuously if its path filter is wrong, which it once was.** Every absolute path
+inside an agent worktree — `<repo>/.claude/worktrees/<name>/` — contains a `.claude` segment, and
+`IsScratch` excluded any path containing one. Matched against the absolute path, that excluded
+*every* project, `LoadAll` returned nothing, and the assertions passed over an empty set. The fix
+was to match against the path relative to the repository root, and a `TheProjectGraph_IsNotEmpty`
+fact now fails when fewer than ten projects are found. It examines 31 in this worktree, which is
+every project in the solution plus the build script. Same bug and same fix as
+`ToolDiagnosticIdTests.SourceFiles` — an exclusion is only as good as the frame of reference it is
+matched in, and a test that guards a rule needs a second test that it is guarding anything.
+
 ⚠ **`Rules.Metadata` is a third MSBuild profile, and it had to be.** It is `netstandard2.0` like the
 analyzer profile — `Rikarin.Skala.Rules` references it and that assembly loads into `csc` and into
 Rider — but it is an ordinary library rather than a Roslyn component, so it is packed and has no
