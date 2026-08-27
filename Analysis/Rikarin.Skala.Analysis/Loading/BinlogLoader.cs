@@ -342,6 +342,29 @@ public static class BinlogLoader {
     /// </remarks>
     internal const int CoverageFloor = 90;
 
+    /// <summary>What share of the selected files the binlog actually covered.</summary>
+    internal static int CoveragePercent(int selected, int missing) =>
+        selected == 0 ? 100 : (int)Math.Round(100.0 * (selected - missing) / selected, MidpointRounding.AwayFromZero);
+
+    /// <summary>
+    /// The verdict on an incomplete binlog: an error the caller must refuse, or a warning.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ <b>A ratio, and only under the flag.</b> The two cases have to be told apart and the
+    /// numbers do it cleanly: a *complete* build of Vixen covers 4 642 of 4 717 files — 98 %,
+    /// the missing 75 living in a project the solution does not build, which no binlog will ever
+    /// cover. An *incremental* build's binlog covers 52 of 4 717. That is 1 %.
+    /// <para>
+    /// Refusing on any gap at all would make <c>--require-fresh-binlog</c> unsatisfiable on a
+    /// repository holding one project outside its solution — the same "gate nobody can turn green"
+    /// mistake that made docs/plan/09's <c>formatting: clean</c> unusable.
+    /// </para>
+    /// </remarks>
+    internal static SkalaSeverity CoverageSeverity(int selected, int missing, bool requireFresh) =>
+        requireFresh && CoveragePercent(selected, missing) < CoverageFloor
+            ? SkalaSeverity.Error
+            : SkalaSeverity.Warning;
+
     static void ReportStaleness(
         string binlogPath,
         ImmutableArray<CompilationUnit>.Builder units,
@@ -377,26 +400,12 @@ public static class BinlogLoader {
 
         if (missing.Count > 0) {
             var covered = selected - missing.Count;
-            var percent = selected == 0
-                ? 100
-                : (int)Math.Round(100.0 * covered / selected, MidpointRounding.AwayFromZero);
-
-            // ⚠ A ratio, and `--require-fresh-binlog` refuses below the floor rather than on any
-            // gap at all. The two cases have to be told apart and the numbers do it cleanly: a
-            // *complete* build of Vixen covers 4 642 of 4 717 files — 98 % — because 75 of them
-            // live in a project the solution does not build at all, and no binlog will ever cover
-            // those. An *incremental* build's binlog covers 52 of 4 717. That is 1 %.
-            //
-            // Refusing on any gap would make the flag unsatisfiable on a repository holding one
-            // project outside its solution, which is the same "gate nobody can turn green" mistake
-            // that made `formatting: clean` unusable. Refusing on the ratio separates "a few
-            // projects are not in the build" from "you are analysing a fiftieth of your tree".
-            var refuse = request.RequireFreshBinlog && percent < CoverageFloor;
+            var percent = CoveragePercent(selected, missing.Count);
 
             diagnostics.Add(
                 new SkalaDiagnostic(
                     RuleIds.BinlogMissingFile,
-                    refuse ? SkalaSeverity.Error : SkalaSeverity.Warning,
+                    CoverageSeverity(selected, missing.Count, request.RequireFreshBinlog),
                     $"the binary log covers {covered.ToString(CultureInfo.InvariantCulture)} of "
                     + $"{selected.ToString(CultureInfo.InvariantCulture)} selected source file(s) "
                     + $"({percent.ToString(CultureInfo.InvariantCulture)} %); "

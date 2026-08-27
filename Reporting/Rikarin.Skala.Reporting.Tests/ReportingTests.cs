@@ -214,6 +214,30 @@ public sealed class ReportingTests {
             ).Passed
         );
 
+    /// <summary>
+    /// ⚠ <b>`--no-formatting` used to satisfy a gate that names `formatting`.</b> The bit defaulted
+    /// to <c>true</c> when the run never collected formatting, so the flag that suppressed the
+    /// measurement also suppressed the check — the same "passing for the wrong reason" that
+    /// <see cref="Gate_FailsRatherThanIgnoringAConditionItCannotEvaluate"/> already forbids for an
+    /// unrecognized condition. <c>null</c> is "nobody asked", and an unasked question fails.
+    /// </summary>
+    [Fact]
+    public void Gate_RequiringCleanFormatting_FailsWhenTheRunNeverLooked() {
+        var result = Gate.Evaluate(
+            GateDefinition.Local with { RequireCleanFormatting = true },
+            Sample(),
+            formattingClean: null
+        );
+
+        Assert.False(result.Passed);
+        Assert.Contains(result.Failures, failure => failure.Contains("no-formatting", StringComparison.Ordinal));
+    }
+
+    /// <summary>A gate that does not name `formatting` does not care that nobody looked.</summary>
+    [Fact]
+    public void Gate_NotRequiringCleanFormatting_IsUnaffectedByNoFormatting() =>
+        Assert.True(Gate.Evaluate(GateDefinition.Local, Sample(Modernization()), formattingClean: null).Passed);
+
     [Fact]
     public void SkippedRules_AreInTheSarifSoTwoCleanRunsAreComparable() {
         var report = Sample() with { SkippedRules = [new SkippedRule("SK1010", "requires a semantic model")] };
