@@ -79,14 +79,11 @@ public static class DefaultsProbe {
             return [];
         }
 
-        var scratch = Path.Combine(Path.GetTempPath(), "skala-defaults.editorconfig");
-        File.WriteAllText(scratch, EmptyConfig);
-
         log.WriteLine(
             $"defaults: {candidates.Count.ToString(CultureInfo.InvariantCulture)} options over {fixtures.Count.ToString(CultureInfo.InvariantCulture)} fixtures"
         );
 
-        var baseline = FormatAll(runner, fixtures, scratch, null);
+        var baseline = FormatAll(runner, [.. fixtures.Select(static file => (file, EmptyConfig))]);
         log.WriteLine($"  baseline (root = true only): {baseline.Count.ToString(CultureInfo.InvariantCulture)} files");
 
         var rounds = candidates.Max(static option => option.Values.Count);
@@ -96,21 +93,24 @@ public static class DefaultsProbe {
         }
 
         for (var round = 0; round < rounds; round++) {
-            // ⚠ Every option that has an nth value takes it; the rest are left out of this round's
-            // configuration entirely rather than pinned to something, so that a two-valued option
-            // does not spend rounds 3..6 asserting its second value over and over.
-            var overrides = new List<KeyValuePair<string, string>>();
+            // ⚠ One copy of each fixture per option, in a directory of its own carrying an
+            // `.editorconfig` that sets that one key and nothing else. The batching is by value
+            // index — every option that has an nth value takes it — and the isolation is by
+            // directory, so a fixture is never moved by another option's assignment. A shared
+            // configuration was the first attempt and it answered nothing: 197 options, zero
+            // fixtures unchanged, because every fixture was perturbed by something else in the batch.
+            var work = new List<(CorpusFile File, string Config)>();
             var assigned = new Dictionary<string, string>(StringComparer.Ordinal);
             foreach (var option in candidates) {
                 if (round >= option.Values.Count) {
                     continue;
                 }
 
-                overrides.Add(new KeyValuePair<string, string>(option.Key, option.Values[round]));
                 assigned[option.Key] = option.Values[round];
+                work.Add((option.Fixture, EmptyConfig + "\n[*.cs]\n" + option.Key + " = " + option.Values[round] + "\n"));
             }
 
-            var results = FormatAll(runner, fixtures, scratch, overrides);
+            var results = FormatAll(runner, work);
             var agreed = 0;
             foreach (var option in candidates) {
                 if (!assigned.TryGetValue(option.Key, out var value)) {
@@ -133,7 +133,7 @@ public static class DefaultsProbe {
             }
 
             log.WriteLine(
-                $"  round {(round + 1).ToString(CultureInfo.InvariantCulture)}: {overrides.Count.ToString(CultureInfo.InvariantCulture)} options set, {agreed.ToString(CultureInfo.InvariantCulture)} fixtures unchanged"
+                $"  round {(round + 1).ToString(CultureInfo.InvariantCulture)}: {work.Count.ToString(CultureInfo.InvariantCulture)} options set, {agreed.ToString(CultureInfo.InvariantCulture)} fixtures unchanged"
             );
         }
 
@@ -172,17 +172,12 @@ public static class DefaultsProbe {
     /// One <c>cleanupcode</c> run per batch of sixty, because it holds the whole project in memory
     /// and a corpus-sized one is slow. Same batching as `./build.sh Oracle`.
     /// </summary>
-    static Dictionary<string, string> FormatAll(
-        OracleRunner runner,
-        List<CorpusFile> files,
-        string config,
-        IReadOnlyList<KeyValuePair<string, string>>? overrides
-    ) {
+    static Dictionary<string, string> FormatAll(OracleRunner runner, List<(CorpusFile File, string Config)> work) {
         var all = new Dictionary<string, string>(StringComparer.Ordinal);
         const int batch = 60;
-        for (var start = 0; start < files.Count; start += batch) {
-            var slice = files.Skip(start).Take(batch).ToArray();
-            foreach (var (path, body) in runner.Format(slice, config, overrides)) {
+        for (var start = 0; start < work.Count; start += batch) {
+            var slice = work.Skip(start).Take(batch).ToArray();
+            foreach (var (path, body) in runner.FormatIsolated(slice)) {
                 all[path] = body;
             }
         }

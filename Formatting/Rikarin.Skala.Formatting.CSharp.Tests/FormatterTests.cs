@@ -6,8 +6,19 @@ using Rikarin.Skala.Options;
 namespace Rikarin.Skala.Formatting.CSharp.Tests;
 
 /// <summary>Formats a string with the repository's own configuration, which is the Rider export.</summary>
+/// <remarks>
+/// ⚠ The repository's <c>.editorconfig</c>, resolved for real, and not
+/// <c>FormattingOptions.Defaults</c>. The two were interchangeable while every registry default was
+/// the export's own value; milestone 3 derived ReSharper's actual defaults from the oracle, and they
+/// are Allman-braced with <c>wrap_if_long</c> chains — a different formatter, correctly. These tests
+/// are about the export's behaviour, so they have to say so.
+/// </remarks>
 public static class Format {
-    public static PhaseOneOptions Options { get; } = new(FormattingOptions.Defaults);
+    public static PhaseOneOptions Options { get; } = new(
+        Rikarin.Skala.Core.Configuration.OptionResolver
+            .Resolve(Path.Combine(Rikarin.Skala.Testing.Corpus.RepositoryRoot, "Test.cs"))
+            .Options
+    );
 
     public static FormatResult Run(string source, string path = "Test.cs") =>
         CSharpFormatter.Format(path, SourceText.From(source), Options);

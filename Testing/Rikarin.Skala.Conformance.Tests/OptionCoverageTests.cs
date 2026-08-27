@@ -90,12 +90,23 @@ public sealed class OptionCoverageTests {
             var text = CSharpFormatter.Read(file.Path);
             var outputs = new Dictionary<string, string>(StringComparer.Ordinal);
             foreach (var value in values) {
-                var builder = new FormattingOptionsBuilder();
-                if (!builder.TrySet(id, value, out var error)) {
-                    Assert.Fail($"{key} = {value}: {error}");
-                }
+                // ⚠ Flipped from the *repository's* configuration, not from bare registry defaults,
+                // and the difference started to matter when M3 replaced the guessed default table
+                // with a derived one. An option is observable in the configuration its fixture was
+                // generated under; asking the question from ReSharper's own defaults asks a
+                // different one, and answers it wrongly whenever a defaulted key masks it —
+                // `wrap_after_dot_in_method_calls` cannot be seen while `wrap_chained_method_calls`
+                // is at its default of `wrap_if_long`, because nothing chops. That is a true fact
+                // about ReSharper's defaults and not a gap in the option's implementation.
+                var options = Rikarin.Skala.Core.Configuration.OptionResolver
+                    .Resolve(file.Path, [new KeyValuePair<string, string>(key, value)]);
 
-                outputs[value] = CSharpFormatter.Format(file.Path, text, new PhaseOneOptions(builder.Build())).Formatted;
+                Assert.True(
+                    options.ValueErrors.IsEmpty,
+                    $"{key} = {value}: {string.Join("; ", options.ValueErrors)}"
+                );
+
+                outputs[value] = CSharpFormatter.Format(file.Path, text, options.Options).Formatted;
             }
 
             if (outputs.Values.Distinct(StringComparer.Ordinal).Count() > 1) {

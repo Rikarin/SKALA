@@ -326,13 +326,17 @@ public sealed class OptionsGenerator : IIncrementalGenerator {
         builder.AppendLine("}");
         builder.AppendLine();
         builder.AppendLine(
-            "/// <summary>Where an option's recorded default came from. distill may only drop <see cref=\"ReSharperDocs\"/>.</summary>"
+            "/// <summary>Where an option's recorded default came from. distill may only drop a default that was checked against ReSharper.</summary>"
         );
         builder.AppendLine("public enum OptionDefaultSource {");
         builder.AppendLine(
             "    /// <summary>Verified against JetBrains' published EditorConfig property tables.</summary>"
         );
         builder.AppendLine("    ReSharperDocs,");
+        builder.AppendLine(
+            "    /// <summary>Derived by running the oracle under a configuration carrying nothing but root = true, and comparing against the fixture that exercises the option. A strong signal rather than proof, because options interact.</summary>"
+        );
+        builder.AppendLine("    OracleProbe,");
         builder.AppendLine(
             "    /// <summary>The value the Rider export holds. Rider's default for most keys, the author's choice for the rest, with nothing distinguishing the two.</summary>"
         );
@@ -414,6 +418,7 @@ public sealed class OptionsGenerator : IIncrementalGenerator {
     static string DefaultSourceMember(string value) =>
         value switch {
             "resharper-docs" => "ReSharperDocs",
+            "oracle-probe" => "OracleProbe",
             "template" => "Template",
             _ => "Unknown"
         };
