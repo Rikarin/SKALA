@@ -118,7 +118,18 @@ public sealed class CancellationTokenForwardingAnalyzer : DiagnosticAnalyzer {
             };
 
             foreach (var parameter in parameters) {
-                if (context.SemanticModel.GetDeclaredSymbol(parameter, context.CancellationToken) is not { } symbol
+                // ⚠ The name in the source before the symbol behind it, and it is worth 300 ms of
+                // the 330 this rule cost before the order was measured (docs/plan/13 § "Analysis").
+                // This runs on every invocation in the tree, and where most methods take no token,
+                // resolving every parameter to ask is the whole cost of the rule.
+                //
+                // ⚠ The symbol still decides; the text only decides whether to ask. What it costs
+                // is a method whose token parameter is written through a `using` alias, which the
+                // filter reads as some other type and the rule then never sees. That is a missed
+                // finding rather than a wrong one, and it is the direction this rule errs in
+                // everywhere else too.
+                if (!NamesCancellationToken(parameter.Type)
+                    || context.SemanticModel.GetDeclaredSymbol(parameter, context.CancellationToken) is not { } symbol
                     || !SymbolEqualityComparer.Default.Equals(symbol.Type, tokenType)) {
                     continue;
                 }
@@ -137,6 +148,19 @@ public sealed class CancellationTokenForwardingAnalyzer : DiagnosticAnalyzer {
 
         return found;
     }
+
+    /// <summary>Whether the written type could be <c>CancellationToken</c>, by its last name.</summary>
+    static bool NamesCancellationToken(TypeSyntax? type) =>
+        type switch {
+            IdentifierNameSyntax name => string.Equals(
+                name.Identifier.ValueText,
+                "CancellationToken",
+                StringComparison.Ordinal
+            ),
+            QualifiedNameSyntax qualified => NamesCancellationToken(qualified.Right),
+            AliasQualifiedNameSyntax aliased => NamesCancellationToken(aliased.Name),
+            _ => false
+        };
 
     /// <summary>An optional <c>CancellationToken</c> parameter, which a named argument can fill.</summary>
     static IParameterSymbol? Omitted(IMethodSymbol target, INamedTypeSymbol tokenType) {

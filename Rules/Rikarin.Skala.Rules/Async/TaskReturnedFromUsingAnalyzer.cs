@@ -64,16 +64,21 @@ public sealed class TaskReturnedFromUsingAnalyzer : DiagnosticAnalyzer {
         }
 
         var function = EnclosingFunction(statement);
-        if (function is null || !IsRewritable(context, function, tasks, out var returnType, out var body)) {
+        if (function is null) {
             return;
         }
 
+        // ⚠ Syntax before semantics, and it is worth 380 ms of the 400 this rule cost before the
+        // order was measured (docs/plan/13 § "Analysis"). Almost no `return` in a codebase sits
+        // inside a `using` that its expression names, and answering that question needs no symbols
+        // at all — so it is asked first, and `IsRewritable`'s body walks run on the handful left.
+        //
         // ⚠ The returned expression has to name a resource the enclosing `using`s dispose. A task
         // that never mentions the resource may still be wrong — a `using` that is a lock scope is
         // the case — but the rule cannot prove it, and guessing about ownership is how a rule comes
         // to report the correct code around the incorrect code.
-        var resource = DisposedResourceNamedIn(statement, body);
-        if (resource is null) {
+        var resource = DisposedResourceNamedIn(statement, BodyOf(function));
+        if (resource is null || !IsRewritable(context, function, tasks, out var returnType, out var body)) {
             return;
         }
 
@@ -138,6 +143,9 @@ public sealed class TaskReturnedFromUsingAnalyzer : DiagnosticAnalyzer {
         return null;
     }
 
+    static BlockSyntax? BodyOf(SyntaxNode function) =>
+        function is MethodDeclarationSyntax method ? method.Body : ((LocalFunctionStatementSyntax)function).Body;
+
     static TypeSyntax ReturnTypeOf(SyntaxNode function) =>
         function is MethodDeclarationSyntax method
             ? method.ReturnType
@@ -187,17 +195,8 @@ public sealed class TaskReturnedFromUsingAnalyzer : DiagnosticAnalyzer {
             }
         }
 
-        // An iterator cannot return a task, and a `yield` in the body means it is one.
-        foreach (var node in block.DescendantNodes(static child => child is not AnonymousFunctionExpressionSyntax
-                                                       and not LocalFunctionStatementSyntax)) {
-            if (node is YieldStatementSyntax) {
-                return false;
-            }
-        }
-
-        // ⚠ CS4012/CS4013: an async method may not take a `ref`, `out` or `in` parameter, and may
-        // not hold a byref-like local across an await. Adding `async` to either shape produces a
-        // fix that parses and does not compile, which is the one failure a fixing tool may not have.
+        // ⚠ CS4012: an async method may not take a `ref`, `out` or `in` parameter. Syntax, so it
+        // comes before anything that costs a symbol.
         foreach (var parameter in parameters.Parameters) {
             foreach (var modifier in parameter.Modifiers) {
                 switch ((SyntaxKind)modifier.RawKind) {
@@ -207,7 +206,20 @@ public sealed class TaskReturnedFromUsingAnalyzer : DiagnosticAnalyzer {
                         return false;
                 }
             }
+        }
 
+        // An iterator cannot return a task, and a `yield` in the body means it is one.
+        foreach (var node in block.DescendantNodes(static child => child is not AnonymousFunctionExpressionSyntax
+                                                       and not LocalFunctionStatementSyntax)) {
+            if (node is YieldStatementSyntax) {
+                return false;
+            }
+        }
+
+        // ⚠ CS4013: an async method may not hold a byref-like local or parameter across an await.
+        // Adding `async` to either shape produces a fix that parses and does not compile, which is
+        // the one failure a fixing tool may not have.
+        foreach (var parameter in parameters.Parameters) {
             if (context.SemanticModel.GetDeclaredSymbol(parameter, context.CancellationToken) is
                     { Type.IsRefLikeType: true }) {
                 return false;
@@ -243,7 +255,11 @@ public sealed class TaskReturnedFromUsingAnalyzer : DiagnosticAnalyzer {
     /// <summary>
     /// The name of a <c>using</c> resource the returned expression mentions, or null.
     /// </summary>
-    static string? DisposedResourceNamedIn(ReturnStatementSyntax statement, BlockSyntax body) {
+    static string? DisposedResourceNamedIn(ReturnStatementSyntax statement, BlockSyntax? body) {
+        if (body is null) {
+            return null;
+        }
+
         var mentioned = new HashSet<string>(StringComparer.Ordinal);
         foreach (var identifier in statement.Expression!.DescendantNodesAndSelf().OfType<IdentifierNameSyntax>()) {
             mentioned.Add(identifier.Identifier.ValueText);
