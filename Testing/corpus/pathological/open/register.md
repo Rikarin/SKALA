@@ -15,7 +15,7 @@ down with it. So none of these is in the measured sets. What they are instead is
 here**. That is a stronger obligation than a comment in a bug tracker:
 
 - a defect that is fixed makes this suite fail, with "SK-FUZZ-000n now passes; move its file into
-  `pathological/`, run `./build.sh Oracle --only=…`, and delete its entry";
+  `pathological/`, run `./build.sh Oracle --only …`, and delete its entry";
 - a defect that changes shape makes it fail too, because the property recorded is the property
   asserted;
 - and nothing here can be quietly forgotten, because the file is a test rather than a note.
@@ -29,6 +29,11 @@ measure.
 ⚠ A `whitespace-absorption` entry carries **two** files, because the property is a statement about a
 pair: `<name>.cs` is the mutated input and `<name>.baseline.cs` is what it was mutated from, and the
 two must differ only in whitespace. The test formats both and asserts the outputs still differ.
+
+⚠ **Retiring such a pair moves both halves**, and the pair survives the move without needing a
+bespoke test: two corpus files that differ only in whitespace acquire two `.expected.cs` fixtures,
+and those fixtures being **byte-identical** is the absorption statement, now asserted by the
+ordinary differential instead of by an entry here. SK-FUZZ-0007 was retired that way.
 
 ## SK-FUZZ-0002 — a `///` comment that starts on the brace line loses its continuation lines
 
@@ -108,33 +113,6 @@ qualified name and it converges; remove the comment between the two usings and i
 appear in real code constantly, and 391 corpus files under `ArrangementPropertyTests` do not contain
 the combination — which is the same sentence as SK-FUZZ-0004's, for the second time.
 
-## SK-FUZZ-0007 — a blank line appears because the *input* line was too wide
-
-- file: `blank-line-from-an-over-wide-input-line.cs`
-- property: `whitespace-absorption`
-- seed: `15123090416411387126`
-- found: a generated unit mutated with `widen-gap`, `tabs`, `widen-gap`, `indent`, `widen-gap`,
-  `widen-gap`; minimised from 460 characters to 176, and narrowed by hand to two files that differ
-  in **one gap**.
-
-```
-interface I {                    interface I {
-    int P { get; }                   int P { get; }
-    void M(int a);                   void M(int<…108 spaces…>a);
-}                                }
-```
-
-The left one formats to itself. The right one formats to the same four lines **plus a blank line
-between `P` and `M`** — from an input that differs only in the width of one inter-token gap, on a
-line the formatter is about to rewrite anyway.
-
-⚠ This is the fitting engine reading a measurement it should not have. The blank-line decision is a
-function of whether the member is "wide", and the width it uses is the *input's* rather than the
-output's — so a gap the formatter is about to collapse changes a decision about a different line
-entirely. docs/plan/16 § R2 argues the fitter is the only genuinely novel code in the project and
-that the property suite is what contains its risk; this is that risk, in four lines, found by the
-only mutation in the catalogue that changes a width.
-
 ## SK-FUZZ-0008 — the `indent` mutation is misclassified as absorbed on a raw interpolated string
 
 ⚠ **A defect in the fuzzer's own catalogue, not in the formatter.** `pathological/interpolated-raw-string-with-nested-braces.cs`:
@@ -182,6 +160,7 @@ that it is worth running — and an empty register would read as a fuzzer that f
 |---|---|---|
 | `SK-FUZZ-0001` | crash — `@formatter:off` running to a whitespace-only end of file threw out of `EditEmitter`, past the crash handler, out of the process | the formatter-tag pass. `EditEmitter` indexed past the output because the file-level rules shorten it *after* the writer ran; and the exit code was wrong until `EnableDefaultExceptionHandler = false`, because System.CommandLine was swallowing the exception before any handler saw it |
 | `SK-FUZZ-0005` | token equivalence — an interpolated string inside a formatter-off span | the same pass: `EmitVerbatim` was writing a node a second time inside an already-written region |
+| `SK-FUZZ-0007` | whitespace absorption — a blank line appeared because the *input* line was wider than the margin | `IsSingleLine` measured the member with `TextWidth.Measure` over its source span, which counts the gaps the author wrote between its tokens — gaps the formatter is about to collapse. It now measures the token stream and the spaces `SpaceRules` will actually emit. The leading-whitespace half of this had already been fixed once (`OutputIndentColumns`); the interior half is the same mistake one step in, and only a mutation that changes a width could reach it. Both halves of the pair are now measured fixtures whose `.expected.cs` are byte-identical |
 | `SK-FUZZ-0004` | idempotency — the closing `]` of a split array-rank specifier landed at eight columns, then four | `EmitToken` matched a piece by its start position alone. A zero-width token has no piece of its own (`SourcePieces.Split` skips it), so the omitted size of `byte[…]` arrived holding the *next* token's piece — and it shares that token's start whenever no trivia separates them. The `]` was emitted one caller early, from inside the bracket's continuation scope instead of after it closed. Matching on the piece's length as well as its start is the fix; a space before the `]` moved it off the collision, which is why the second pass was right |
 
 Their reproductions now live in `Testing/corpus/pathological/` as ordinary measured fixtures, which
