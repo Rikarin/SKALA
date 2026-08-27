@@ -78,7 +78,27 @@ it is for.**
 **Done when:** line fidelity ≥ 99.9 %, all divergences are documented `SK-DIV-*` entries, and
 Vixen's `.editorconfig` is replaced by the export with `skala format --check` clean in CI.
 
-⚠ **Measured: 98.86 %, not 99.9 %.** What landed, and what it is short of:
+⚠ **Measured: 98.86 %, not 99.9 %. The bar was unreachable as this milestone was scoped, and it was
+set before anyone knew why.** Splitting the remaining gap by whether a file contains a `#if`:
+
+| | line fidelity | divergent lines |
+|---|---:|---:|
+| Files containing `#if` (91 of 380) | 98.39 % | 263 |
+| Files without | **99.05 %** | 556 |
+
+A third of the gap is SK-DIV-0004 and cannot be closed here at all: without a project Roslyn hands
+back `#if` bodies as disabled text and Skala correctly refuses to touch them, while the oracle runs
+against a project with `DEBUG` defined and formats them. That is [07](07-analysis-host.md)'s project
+loading, which is **M5**. A further share is SK-DIV-0005, a margin constant reverse-engineered by
+sweeping the oracle, where ReSharper's actual computation is unknown and three alternatives were
+measured.
+
+**The revised bar, therefore, is two bars.** Without a compilation: **≥ 99.5 %** on the files that
+contain no `#if`, which is 99.05 % today and is ordinary tail work. With one, after M5 supplies
+symbols: the original ≥ 99.9 % overall, and [16](16-risks-and-open-questions.md) § R1's frequency
+rule with it. Neither is dropped; they are sequenced behind the thing that makes them possible.
+
+What landed, and what it is short of:
 
 | | |
 |---|---|
@@ -93,7 +113,14 @@ Vixen's `.editorconfig` is replaced by the export with `skala format --check` cl
 | 20 s whole corpus | ✅ **11.9 s** over Vixen, from 34.2 s |
 | `defaultSource` | ✅ derived from the oracle: 123 keys `oracle-probe`, `distill` drops 108 |
 | Tier A | 201 options, up from 172, each pinned by a committed fixture |
-| Vixen `.editorconfig` | prepared and measured — 2 717 files, 83 241 diff lines — **not committed** |
+| Vixen `.editorconfig` | prepared and measured — 2 717 files, 83 241 diff lines — **not committed, deliberately deferred** |
+
+⚠ **The Vixen commit is deferred until the tail is closed, and that is a decision rather than a
+delay.** At 98.86 % about one reformatted line in a hundred still disagrees with Rider, so opening
+those files in the IDE reformats them back — the formatting ping-pong that
+[16](16-risks-and-open-questions.md) § R1 names as worse than either tool alone. Committing 83 241
+lines *before* the disagreement is closed converts a one-time commit into a recurring fight. The
+diff is measured and reproducible; it is re-made when the number supports it.
 
 **This is release 0.4 and the first one anyone else could use.** ⚠ It is offered as one on the
 strength of the properties rather than the percentage: idempotency, token equivalence, parse
@@ -101,7 +128,13 @@ stability, determinism and whitespace absorption hold on every file of every cor
 4 708 files of Vixen, and the fidelity gap is eight named, measured disagreements rather than an
 unknown.
 
-## M4 — Arrangement · M/L
+## M4 — Arrangement · M/L — ⚠ **deferred; M5 runs first**
+
+**Decided after M3: M4 and M5 swap places.** M3 established the dependency inversion below — M4's
+semantic half needs a compilation, and building one is M5's work — and the same compilation is what
+closes SK-DIV-0004 and the `#if` third of M3's fidelity gap. One milestone unblocks both, so it goes
+first. M4 then runs with semantics available from the start rather than shipping a syntactic subset
+and revisiting.
 
 The `arrange_*` and body-style settings from [06](06-arrangement-and-syntax-styles.md), plus the
 syntactic subset that runs without a compilation.
@@ -196,9 +229,12 @@ exercised by lifting the XML sub-formatter out of the C# front end.
 ## The critical path, stated plainly
 
 ```
-M0 ─▶ M1 ─▶ M2 ─▶ M3 ─────────────▶ M4 ─▶ (adoption complete for formatting)
-                   └──▶ M5 ─▶ M6 ─▶ M7 ─▶ M8
-                                     └──▶ M9
+M0 ─▶ M1 ─▶ M2 ─▶ M3 ─▶ M5 ─┬─▶ M3.1 (the fidelity tail, with symbols) ─▶ M4 ─▶ adoption
+   ✅     ✅     ✅    ⚠      └─▶ M6 ─▶ M7 ─▶ M8
+                                  └──▶ M9
+
+⚠ M4 and M5 are swapped against the original order. M5 builds the compilation that M4's semantic
+half and M3's #if gap both wait on; see M4's header.
 ```
 
 M3 is the milestone everything else waits on and the one most likely to overrun, because the fitting
