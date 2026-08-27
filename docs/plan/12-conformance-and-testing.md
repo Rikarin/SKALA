@@ -109,6 +109,11 @@ Line fidelity is the headline (≥ 99.9 % is the bar from [00](00-vision-and-pri
 fidelity will be much lower for a long time and that is expected — one divergent construct spoils a
 whole file — but its *trend* is the honest progress signal.
 
+⚠ **This number sits on a floor, and the floor is 92 %.** See
+[§ The unformat differential](#-the-unformat-differential) below: the corpus inputs are already
+mostly formatted, so most of what this measures is that Skala leaves good code alone. It is a real
+requirement and it is not the requirement that retires ReSharper.
+
 The output of a differential run is not pass/fail: it is a ranked report of divergence classes by
 line count, which is the work queue. "Chained call wrapping after a conditional access: 412 lines
 across 31 files" is a day's work, findable in no other way.

@@ -147,6 +147,21 @@ public static class Unformat {
         return text.StartsWith('﻿') ? text[1..] : text;
     }
 
+    /// <summary>
+    /// Whether two texts are the same program: identical token streams under every checked symbol
+    /// set, with no new parse error.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ Public so that the committed corpus can be re-checked from its committed bytes rather than
+    /// trusted because the generator said so. A degraded input is only half of a fixture pair, and a
+    /// hand-edit to either half turns the whole measurement into a comparison of two unrelated
+    /// files.
+    /// </remarks>
+    public static bool IsSameProgram(string original, string degraded) {
+        var expected = Fingerprints(Normalise(original));
+        return expected is not null && Matches(Normalise(degraded), expected);
+    }
+
     // ── verification ─────────────────────────────────────────────────────────────────────────────
 
     static bool Matches(string degraded, IReadOnlyList<string> original) {

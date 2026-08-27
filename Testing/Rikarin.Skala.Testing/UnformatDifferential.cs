@@ -43,6 +43,28 @@ public static class UnformatDifferential {
     /// depend on which version of the tool the person running it happens to have.
     /// </remarks>
     public static ModeResult? Measure(UnformatMode mode, IReadOnlyList<string> symbols) {
+        // ⚠ Memoised. Four assertions and a report all want the same numbers, and each call formats
+        // every degraded file twice; without this the conformance suite spends minutes recomputing
+        // one answer.
+        var key = Unformat.Name(mode) + "\u0000" + string.Join(';', symbols);
+        lock (Gate) {
+            if (Cache.TryGetValue(key, out var cached)) {
+                return cached;
+            }
+        }
+
+        var measured = Compute(mode, symbols);
+        lock (Gate) {
+            Cache[key] = measured;
+        }
+
+        return measured;
+    }
+
+    static readonly Dictionary<string, ModeResult?> Cache = new(StringComparer.Ordinal);
+    static readonly Lock Gate = new();
+
+    static ModeResult? Compute(UnformatMode mode, IReadOnlyList<string> symbols) {
         var files = UnformatCorpus.Files(mode).Where(static file => file.HasFixture).ToArray();
         if (files.Length == 0) {
             return null;
