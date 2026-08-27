@@ -63,6 +63,7 @@ AI agent agree with Rider about what the code should look like.
 | 14 | [Web Languages](14-web-languages.md) | HTML, CSS, `.vxml`, `.vcss`, and the language-plugin contract |
 | 15 | [Roadmap](15-roadmap.md) | Milestones, order of work, what "done" means at each stage |
 | 16 | [Risks and Open Questions](16-risks-and-open-questions.md) | What could sink this, and what is still undecided |
+| 17 | [Inspection Parity](17-inspection-parity.md) | What ReSharper and SonarQube catch that Skala does not, measured |
 
 ## What the input actually is
 
