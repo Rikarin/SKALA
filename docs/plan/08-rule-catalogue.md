@@ -112,8 +112,15 @@ performance wins that read as style:
 
 ⚠ Several of these (`SK1022`, `SK1025`, `SK1027`, `SK1032`) are only wins in hot paths and are noise
 everywhere else. They ship at `hint`, not `suggestion`, and become `suggestion` inside paths the
-`.editorconfig` marks — `[Core/**/*.cs] dotnet_diagnostic.SK1022.severity = suggestion`. Vixen
-already segments its config by folder exactly this way; the mechanism exists and costs nothing.
+`.editorconfig` marks — `[Core/**/*.cs] dotnet_diagnostic.SK1022.severity = suggestion`.
+
+⚠ **The sentence that used to follow — "Vixen already segments its config by folder exactly this way;
+the mechanism exists and costs nothing" — is withdrawn as a justification.** The mechanism is real
+and correct and other repositories will use it. But Vixen's `.editorconfig` was not authored: it was
+built by agents as they went, 916 lines and 56 path-scoped sections, never reviewed as a whole. That
+a rule's default can be justified by how one unreviewed file happens to be laid out is the error
+[16](16-risks-and-open-questions.md) § "The reference trees are a test subject" names, and the
+`hint` default is listed under § "Decisions that rest on a reference-tree count" for it.
 
 ## SK2000 — Correctness
 
@@ -198,8 +205,10 @@ without a real `Justification` · `SK7060` commented-out code (token-density heu
 `SK8005` `Thread.Sleep` in a test · `SK8006` test that is `[Skip]`ped without a reason ·
 `SK8007` non-deterministic input (`DateTime.Now`, `Guid.NewGuid`, `Random`) in an assertion path.
 
-Scoped to test projects by convention (`*.Tests`) and by `.editorconfig` section, matching how Vixen
-already segments `[**/*.Tests/**/*.cs]`.
+Scoped to test projects by convention (`*.Tests`) and by `.editorconfig` section. ⚠ This used to read
+"matching how Vixen already segments `[**/*.Tests/**/*.cs]`", and that clause is withdrawn for the
+reason § "SK1000 — Modernization" gives: `*.Tests` is a .NET-wide convention and stands on its own,
+while Vixen's sections are an unreviewed accident and are not a specification.
 
 ## SK9000 — Tool diagnostics
 
@@ -207,6 +216,7 @@ Already referenced throughout: `SK9001` unknown config key · `SK9002` config in
 repository root · `SK9003` style key in `skala.jsonc` · `SK9004` duplicate option alias ·
 `SK9005` contradictory options · `SK9006` a setting is on that Skala cannot honour and that makes the
 IDE and the oracle disagree (`autodetect_indent_settings`, `use_indent_from_vs`) ·
+`SK9007` `skala.jsonc` is not valid JSON ·
 `SK9008` canonical block drifted · `SK9009` repository behind the canonical ·
 `SK9012` canonical version pinned in `skala.jsonc` · `SK9013` local block overrides a canonical
 option · `SK9014` `.editorconfig` carries no canonical block ·
@@ -223,6 +233,157 @@ before it merged. Two meanings behind one id is precisely what a baseline cannot
 fingerprint carries the rule id, so the collision silently un-suppresses one finding and wrongly
 suppresses the other. **Check this list before allocating**, and prefer the next free number over the
 next tidy one.
+
+⚠ **`SK9012` currently has two meanings, and the guard did not catch it.** Measured at `8cbd66d`:
+
+| Site | Meaning |
+|---|---|
+| `ConfigDiagnosticIds.CanonicalVersionInToolConfig` | a canonical version was pinned in `skala.jsonc` |
+| `Formatting/Rikarin.Skala.Formatting.CSharp/FormatCommand.cs` | an `IOException` was thrown while formatting a file |
+
+This is exactly the collision the paragraph above says was caught before it merged, and it is live.
+`ToolDiagnosticIdTests.ToolDiagnosticIds_AreDeclaredOnce` misses it because it matches
+`public const string … = "SK9012";` and the formatter passes the id as a **bare string literal** to
+the `SkalaDiagnostic` constructor. `SK9007` was missing from this register for the same reason and
+has just been added to it. **The guard reads declarations, not uses**, and until it reads uses the
+register is enforced only against the half of the code that declares a constant. Resolving the
+collision is a renumber of the formatter's use to the next free id — `SK9015` — and it is owed
+before anyone holds a baseline containing either.
+
+## Rule status
+
+⚠ **This catalogue is a plan and it has never been checked against the code.** Three artefacts agree
+with each other and are test-enforced — `rules.json`, `allocated-ids.txt` and `docs/rules/`, 32
+entries each — and none of them is ever compared to the list above. Measured at `8cbd66d` by
+intersecting the ids this document names with `rules.json`:
+
+| | | |
+|---|---:|---|
+| Rules this document names, excluding range boundaries and `SK9xxx` | **106** | `SK3499`/`SK3500` are range boundaries in § "The ranges", not rules; `SK9xxx` is a separate register with its own guard |
+| **Shipped** — present in `rules.json` | **21** | **19.8 %** |
+| **Cut** — deliberately not built, reason recorded and it survives § "Reasons that justify a cut" | **10** | |
+| **Outstanding** — planned, not built, not cut | **75** | of which **12** were declared cut in a milestone retrospective with no reason recorded against them |
+| Shipped but **not named in this catalogue at all** | **3** | `SK7003`, `SK7004`, `SK7005` — reconciled below |
+
+The distinction between the last two rows of that table is the whole reason it exists: **a rule
+counted as outstanding when it was actually cut on purpose makes the roadmap look as though it is
+failing at something it decided**, and a rule counted as cut when nobody recorded a reason is a
+decision nobody can review.
+
+### ⚠ The three metrics this catalogue did not name
+
+`SK7003` (member over the statement-count threshold), `SK7004` (type over the member-count
+threshold) and `SK7005` (member over the parameter-count threshold) ship, have `rules.json` entries,
+`docs/rules/` pages and fixtures, and fire on both reference trees. § "SK7000 — Maintainability"
+delegates to [07](07-analysis-host.md) § "Metrics" rather than naming them, so the catalogue never
+carried them. They are named here now:
+
+| ID | Rule | Scope | Default |
+|---|---|---|---|
+| `SK7001` | Cyclomatic complexity over the threshold | Semantic | hint |
+| `SK7002` | Cognitive complexity over the threshold | Syntax | suggestion |
+| `SK7003` | Member over the statement-count threshold | Syntax | hint |
+| `SK7004` | Type over the member-count threshold | Syntax | hint |
+| `SK7005` | Member takes more parameters than the threshold | Syntax | hint |
+| `SK7006` | Member nests deeper than the threshold | Syntax | hint |
+| `SK7010` | Public API without a documentation comment | Syntax | none |
+
+⚠ **`SK6001` and `SK7010` are two ids for one rule.** § "SK6000 — API and design" allocates `SK6001`
+as "public API without doc comments (opt-in, per path)"; `SK7010` is that rule, and it is the one
+that shipped. ADR-012 makes both ids permanent, so the fix is not renumbering: `SK6001` is **retired
+before it was ever built**, `SK7010` is the live id, and this note is what stops somebody
+implementing `SK6001` in three years.
+
+### Reasons that justify a cut
+
+⚠ Three, and none of them is about a reference tree —
+[16](16-risks-and-open-questions.md) § "The reference trees are a test subject, not a specification":
+
+1. **It duplicates a diagnostic the user already sees** from the compiler or a framework analyzer.
+2. **It costs something measurable for no gain** — most concretely, a compilation-scoped rule that
+   disables the warm incremental path on every run.
+3. **It cannot be implemented correctly**, or its fix cannot be made behaviour-preserving.
+
+⚠ **"It fires zero times on Vixen" is not on that list and never was a reason.** It is a fact about
+Vixen. It is a reason to say that a rule's correctness is *untested on real code*, which is
+[16](16-risks-and-open-questions.md) § R3's "measured at zero, tested at nothing" and stands
+unchanged — and it is never a reason to cut, demote or disable a rule that is right. **Where Vixen
+does not follow a rule, Vixen changes.**
+
+### Cut, with the reason
+
+| ID | Reason | Kind | Recorded at |
+|---|---|---|---|
+| `SK3006` `async` with no `await` | The compiler's `CS1998` says it, on by default in every project | 1 | M6 |
+| `SK8003` `[Fact]` with parameters | `xUnit1001`, on by default wherever `xunit.analyzers` is referenced | 1 | M7 |
+| `SK8004` `async void` test | `xUnit1049`, same | 1 | M7 |
+| `SK8002` `Assert.True(x == y)` | ⚠ see below | 3 | M7 |
+| `SK4005` `string +=` in a loop | The fix introduces a `StringBuilder` before the loop and reads it after — a dataflow proof, not an edit | 3 | M7 |
+| `SK6006` `enum` without an explicit zero | The fix inserts a member into a public API | 3 | M7 |
+| `SK6007` `struct` without `IEquatable<T>` | The fix generates an implementation | 3 | M7 |
+| `SK6002` public member exposing a mutable array/`List<T>` | No mechanical fix, large false-positive surface | 3 | M7 |
+| `SK6005` optional parameter in a public virtual method | Same | 3 | M7 |
+| `SK8001` test method with no assertion | Same, and the worst of the three: an assertion inside a helper is indistinguishable from no assertion without following the call | 3 | M7 |
+
+⚠ **`SK8002`'s recorded reason splits in two, and only one half survives.** The half that survives is
+about the rewrite: `Assert.Equal` has no overload taking a custom failure message, so rewriting any
+of the 3 401 two-argument calls *deletes* something the author wrote on purpose;
+`Assert.NotEqual(0, flags & Member)` over a `[Flags]` enum does not compile, because the `0` was an
+implicit constant conversion and the rewrite drops it, so `T` cannot be inferred; and `Assert.Equal`
+calls `Equals`, which is a **different predicate** from `operator ==` and is precisely what
+`ConventionTests` exists to assert. Those are facts about C#, xUnit and the rule, they hold in any
+repository, and they are reason 3. The half that does not survive is the conclusion drawn from them:
+*"the honest form of the rule fires zero times on a tree with twelve thousand candidates"*. **That is
+a Vixen count and it is struck.** The cut stands on the first half alone; what is *not* disposed of
+by it is a narrower or fixless `SK8002` that reports only the shapes the rewrite is valid for, and
+this note is the record that nobody has ruled that out.
+
+### ⚠ Declared cut with no recorded reason — reclassified as outstanding
+
+M7's retrospective says "twenty of the twenty-three were cut" and then gives reasons for eight of
+them. These twelve have no reason recorded anywhere in this document or in the commit that wrote it,
+so they are **outstanding**, not cut:
+
+`SK4001` LINQ in a hot path · `SK4002` closure allocation in a hot loop · `SK4003` `params` array at
+a call site that could use a span · `SK4004` boxing in a constraint-satisfiable position ·
+`SK4006` `ToList()`/`ToArray()` immediately re-enumerated once · `SK4007` large `struct` passed by
+value · `SK4008` async state machine for a synchronous method · `SK6001` (retired — see above) ·
+`SK6004` interface with one implementation · `SK6008` extension method on `object` ·
+`SK8006` `[Skip]` without a reason · `SK8007` non-deterministic input in an assertion path.
+
+Saying "no reason was recorded" is the point. Two of them look cheap and obviously right
+(`SK8006`, `SK6008`) and their absence is a gap rather than a decision.
+
+### Outstanding, with what each is waiting on
+
+The sixty-three that were never declared cut. Where a milestone recorded why it did not ship, the
+reason is kept; it is a description of remaining work, not a disposal.
+
+| Group | IDs | Waiting on |
+|---|---|---|
+| Declaration-shape rewrites | `SK1001`, `SK1002`, `SK1008` | The unsafe-fix path and an `--include` story. Each is a good rule and none is a *safe* fix (M5) |
+| Evaluation-changing rewrites | `SK1006`, `SK1012`, `SK1015` | The guard that makes each provably behaviour-preserving is most of the rule (M5) |
+| ⚠ Hot-path rules | `SK1022`, `SK1025`, `SK1027`, `SK1032` | Path-scoped configuration. **The `hint` default is suspect — see below** |
+| The rest of the modernization set | `SK1003`, `SK1004`, `SK1007`, `SK1009`, `SK1011`, `SK1013`, `SK1014`, `SK1021`, `SK1023`, `SK1024`, `SK1026`, `SK1028`, `SK1029`, `SK1031`, `SK1033`, `SK1036` | Nothing recorded. Not started |
+| Correctness | `SK2001`–`SK2012`, `SK2014`, `SK2016` | Nothing recorded beyond the shipping bar. Not started |
+| Async and lifetime | `SK3003`, `SK3005`, `SK3007`, `SK3009`, `SK3502`, `SK3503` | Nothing recorded. Not started |
+| Async and lifetime, with a recorded obstacle | `SK3004`, `SK3008`, `SK3501` | `SK3004`'s fix threads a `CancellationToken` through call sites, which is a refactor; `SK3501`'s disposal paths and `SK3008`'s `SemaphoreSlim` dataflow are each most of the rule (M6). ⚠ A fixless form of any of the three is not disposed of |
+| Security | `SK5001`–`SK5009` | **M8**, and deliberately last: a wrong security rule is worse than a missing one |
+| Maintainability, non-metric | `SK7030`, `SK7040`, `SK7050`, `SK7051`, `SK7060` | Nothing recorded. Not started |
+
+### ⚠ Decisions that rest on a reference-tree count, and are awaiting revisit
+
+Marked rather than reversed, because the record of a decision being reversed is worth more than a
+document that reads as though it were always right.
+[16](16-risks-and-open-questions.md) § "The reference trees are a test subject" is the instruction.
+
+| Decision | What it rested on | Status |
+|---|---|---|
+| **`SK8005` ships at `suggestion`**, not at the `warning` its range defaults to | 25 true findings on Vixen judged "true and not what you would change" — 14 polling back-offs, 8 tests whose subject is a real clock | ⚠ **Suspect.** Twenty-five true findings are twenty-five baseline entries and a piece of Vixen's backlog. The severity needs re-deciding against the standard, not against the tree |
+| **`SK3001` ships disabled** (`none`) | Two reasons stacked: (a) compilation-scoped, so it costs every run the warm incremental path; (b) "Vixen contains no `async void` method at all" | ⚠ **Half struck.** (a) is reason 2 and the default stands on it alone. (b) is a Vixen count and is struck; it should never have been load-bearing |
+| **Hot-path rules ship at `hint` and are promoted per path** | The mechanism, plus "Vixen already segments its config by folder exactly this way" | ⚠ **The mechanism is fine and other repositories will legitimately use it. The citation is not.** A default justified by how one repository's `.editorconfig` happens to be laid out is a default derived from that repository |
+| **Metric thresholds sit above the corpus p99**, and `SK7010` ships at `none` | `SK7010` at `warning` produces 1 868 findings on `Testing/corpus` alone | ⚠ **Suspect, and the hardest case.** A threshold has no correct value independent of *some* population, so calibration is not optional — but calibrating against the tree the rule will be run on is how a metric comes to certify the present. Each threshold needs an argument against a standard rather than against a p99 |
+| **`SK3002`'s seven Vixen findings**, triaged as "true, but none is something anyone would change" | — | ✅ **Not a decision about the rule, and never was.** Seven correct findings, seven baseline entries, and Vixen's work. The rule is unaffected and this row is here so that nobody re-reads the triage as a defect report |
 
 ## What gets built, in what order
 

@@ -1,5 +1,50 @@
 # 16 — Risks and Open Questions
 
+## ⚠ The reference trees are a test subject, not a specification
+
+**Vixen does not get a vote on what the rules are.** It is the tree the tool is measured against
+because it is the largest body of C# the author owns and the one whose formatting the author cares
+about — not because its present habits are the standard. Where Vixen does not follow a rule, **Vixen
+changes.** The rule is not removed, softened, demoted, or guarded until the tree goes quiet.
+
+The reason is that the alternative is circular. Skala exists to make eighteen repositories consistent
+and modern, and the modernization set exists because an agent trained on a decade of C# writes
+2018-era code unless something says no. A rule tuned until the largest existing codebase passes it
+cannot say no to that codebase — it certifies whatever already exists, and the tool can never move
+anything forward. The same applies to Serilog and Newtonsoft.Json in `corpus/real/`, which are there
+to be *unfamiliar* input; a rule adjusted so that vendored third-party code stops firing has been
+adjusted by a repository with no stake in this project's standards.
+
+⚠ **This does not touch the false-positive bar, and conflating the two is the failure mode this
+section is most worried about.**
+
+| | What it is | What it means for a rule |
+|---|---|---|
+| **A false positive** | The finding is **wrong**. The code does not do what the rule says it does. | The rule is defective. Fix it or do not ship it. The zero-false-positives bar in [08](08-rule-catalogue.md) is unchanged and unconditional. |
+| **A correct finding nobody wants to act on** | The finding is **right**. Somebody has decided not to change the code today. | The rule is fine. This is what `skala baseline` is for: accept the present, gate the future ([09](09-quality-gates-and-reporting.md)). |
+
+So `SK3002`'s seven true findings on Vixen are seven baseline entries and a small piece of Vixen's
+backlog. They were never evidence about the rule.
+
+⚠ **What stops being evidence of quality is a low finding count on the reference trees.** "Fires zero
+times on Vixen" is a fact about Vixen. It is a reason to be careful about a rule whose correctness is
+therefore *untested* on real code — that argument is R3's and it survives intact — and it is never a
+reason to cut, demote or disable a rule that is right. The three reasons that still justify cutting a
+rule are all about the rule:
+
+1. **It duplicates a diagnostic the user already sees** from the compiler or a framework analyzer.
+2. **It costs something measurable for no gain** — a compilation-scoped rule that disables the warm
+   incremental path for every run.
+3. **It cannot be implemented correctly**, or its fix cannot be made behaviour-preserving.
+
+[08](08-rule-catalogue.md) § "Rule status" records which decisions rest on those three and which rest
+on a Vixen count and are therefore **suspect and awaiting revisit**. They are marked rather than
+reversed in place, because the record of a decision being reversed is worth more than a document that
+reads as though it were always right.
+
+⚠ This belongs in [00](00-vision-and-principles.md) § "Non-negotiables" as well as here, and is not
+yet written there.
+
 ## The risks that could sink this
 
 ### R1 — ⚠ Rider fidelity is asymptotic, and the last 0.1 % is most of the work
@@ -298,6 +343,27 @@ behind it. `SK8002` (`Assert.True(x == y)`) was measured before it was written: 
 calls in Vixen, 90 of them in the shape the rule would fire on, and **all 90** are cases where the
 rewrite either does not compile or asserts something else. Doc 08 § "What M7 added" has the
 breakdown. A rule that would have been the loudest in the milestone is the one that never existed.
+
+⚠ **Two of this section's own conclusions do not survive § "The reference trees are a test subject",
+and they are marked rather than deleted.** Both are the same move — a true finding on Vixen read as
+evidence about the rule:
+
+- **`SK8005` ships at `suggestion` rather than at its range's `warning`** because 25 of 25 true
+  findings on Vixen were judged "true and not what you would change". That is 25 baseline entries and
+  a piece of Vixen's backlog, not a fact about the rule. The severity is **suspect and awaiting
+  revisit**; [08](08-rule-catalogue.md) § "Rule status" carries the flag.
+- **`SK3001` ships disabled** for two reasons stacked together. The first — it is compilation-scoped,
+  so enabling it costs every run the warm incremental path — is reason 2 of the three above and
+  **survives**. The second, "it buys nothing measurable: Vixen contains no `async void` method at
+  all", **does not**, and it should never have been load-bearing. The default stands on the first
+  reason alone, which is enough, and the second is struck.
+
+⚠ **`SK7010` at `none`, and the metric thresholds sitting above the corpus p99, are the same shape
+and are the harder case.** A threshold has no correct value independent of some population, so
+calibrating one is not optional — but calibrating it against the tree it will be run on is how a
+metric comes to certify the present. Flagged here rather than decided: the thresholds are
+[08](08-rule-catalogue.md)'s and the argument for each is worth making explicitly against a standard
+rather than against a p99.
 
 **Residual risk: medium**, and unchanged. Thirteen analyzers is more evidence than ten. M7 drained
 one entry from the "measured at zero" pile (`SK6003` has a corpus finding, `SK8005` has 25) and
