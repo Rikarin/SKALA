@@ -705,6 +705,11 @@ public sealed partial class CSharpDocumentBuilder {
     /// parentheses are a continuation scope of their own.
     /// </summary>
     void VisitEmbedded(SyntaxNode node) {
+        if (node is LabeledStatementSyntax labeled) {
+            VisitLabeled(labeled);
+            return;
+        }
+
         var embedded = EmbeddedStatement(node);
         var (open, close) = ConditionParentheses(node);
         var parenOpen = false;
@@ -746,6 +751,41 @@ public sealed partial class CSharpDocumentBuilder {
             EmitUpTo(close.SpanStart);
             CloseIndent(ConditionIndent);
         }
+    }
+
+    /// <summary>
+    /// <c>Finish:</c> and the statement it labels, which sit at the same level.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ Not an embedded statement, although <see cref="EmbeddedStatement"/> calls it one and every
+    /// other owner in that list really does indent its body. The oracle writes
+    /// <code>
+    /// goto Finish;
+    /// Finish:
+    /// Console.Write(matched);
+    /// </code>
+    /// with all three lines flush, and Skala put the labelled statement one level in — a
+    /// divergence that was invisible because <c>goto</c> occurs a handful of times in the corpus.
+    /// <para>
+    /// <c>outdent_statement_labels = true</c> then moves the label alone one level out, which is
+    /// the C-style <c>label:</c> convention, and is measured rather than inferred: it takes the
+    /// label from column 8 to column 4 and leaves the statement at 8.
+    /// </para>
+    /// </remarks>
+    void VisitLabeled(LabeledStatementSyntax node) {
+        var outdented = _options.OutdentStatementLabels;
+        if (outdented) {
+            OpenIndent(IndentKind.Outdent);
+        }
+
+        EmitToken(node.Identifier);
+        EmitToken(node.ColonToken);
+        if (outdented) {
+            CloseIndent(IndentKind.Outdent);
+        }
+
+        Visit(node.Statement);
+        EmitUpTo(node.Span.End);
     }
 
     /// <summary>

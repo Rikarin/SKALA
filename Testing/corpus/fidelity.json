@@ -5,14 +5,14 @@
     "Milestone": "M3.1, no symbols. With the oracle's own 18 symbols supplied it is 0.9970/0.8579; ./build.sh Fidelity reports both. The ratchet is the without-symbols number because that is what `skala format` does with no project."
   },
   "constructs": {
-    "LineFidelity": 0.9664,
-    "FileFidelity": 0.9121,
-    "Milestone": "M3.1, and a file larger than M5's 272: `align_multiline_statement_conditions` earned a fixture when it stopped being Tier D."
+    "LineFidelity": 0.9745,
+    "FileFidelity": 0.9228,
+    "Milestone": "M9, re-based a second time: the xmldoc sub-formatter added two fixtures to constructs/trivia/, taking the set from 323 files to 324. \u26a0 One of them diverges by a single line and it is NOT a regression \u2014 verified on the xmldoc branch in isolation, which produces the same output, and the source itself has no blank line there. The oracle INSERTS a blank line between a file's leading comment block and the first type declaration; Skala preserves the source. That is SK-DIV-0015, pre-existing and newly exposed rather than introduced. The previous population's numbers are the entry above this one in git history: 323 files at 0.9747/0.9257."
   },
   "pathological": {
-    "LineFidelity": 0.956,
-    "FileFidelity": 0.8654,
-    "Milestone": "M3.1. M3 was 0.9473/0.8077."
+    "LineFidelity": 0.9626,
+    "FileFidelity": 0.8846,
+    "Milestone": "M9, same population as M3.1's 52 files. M3.1 was 0.9560/0.8654; a labelled statement is no longer indented one level in, and an accessor body's braces are read out of `space_in_singleline_accessorholder`."
   },
   "preservation/keep-keep": {
     "LineFidelity": 0.9598,

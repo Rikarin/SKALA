@@ -85,12 +85,21 @@ public static class OptionResolver {
         IReadOnlyList<KeyValuePair<string, string>>? overrides = null
     ) {
         var winners = new OptionOrigin?[OptionRegistry.Count];
+
+        // ⚠ Which document in the chain the winner came from, kept only for `Expand`. Provenance
+        // already records the file by name; this is an ordinal, because a generalized key and the
+        // key it names are two different options and "which line is later" is the only question
+        // that tells them apart.
+        var winnerDocument = new int[OptionRegistry.Count];
+        Array.Fill(winnerDocument, -1);
+        var documentIndex = -1;
         var candidates = new List<OptionOrigin>?[OptionRegistry.Count];
         var unknown = ImmutableArray.CreateBuilder<UnknownKey>();
         var errors = ImmutableArray.CreateBuilder<string>();
         var builder = new FormattingOptionsBuilder();
 
         foreach (var document in chain.Documents) {
+            documentIndex++;
             var perDocument = new OptionOrigin?[OptionRegistry.Count];
             foreach (var section in document.Sections) {
                 if (!SectionMatcher.Matches(section, chain.SourcePath)) {
@@ -118,6 +127,7 @@ public static class OptionResolver {
             for (var i = 0; i < perDocument.Length; i++) {
                 if (perDocument[i] is { } origin) {
                     winners[i] = origin;
+                    winnerDocument[i] = documentIndex;
                 }
             }
         }
@@ -135,6 +145,7 @@ public static class OptionResolver {
                 );
                 var assignment = document.Sections[1].Assignments[0];
                 winners[(int)id] = new OptionOrigin(assignment, -1);
+                winnerDocument[(int)id] = int.MaxValue;
                 (candidates[(int)id] ??= []).Add(winners[(int)id]!);
             }
         }
@@ -155,6 +166,8 @@ public static class OptionResolver {
             resolved.Add(new ResolvedOption(id, value, origin, [.. candidates[i] ?? []]));
         }
 
+        Expand(winners, winnerDocument, builder);
+
         return new ResolutionResult(
             chain.SourcePath,
             chain,
@@ -163,6 +176,82 @@ public static class OptionResolver {
             unknown.ToImmutable(),
             errors.ToImmutable()
         );
+    }
+
+    /// <summary>
+    /// Writes each generalized key's value into the keys it names.
+    /// </summary>
+    /// <remarks>
+    /// docs/plan/03 § "The option registry": a generalized key is ReSharper's way of setting a
+    /// group of options with one line, and <c>Expands</c> has recorded which group since the
+    /// registry was distilled — but nothing applied it, so a configuration that set only the
+    /// generalized key left every key in the group at its default. Measured against the oracle
+    /// rather than assumed: <c>space_before_open_square_brackets = true</c> alone produces
+    /// <c>int [] data</c> and <c>data [1]</c>, and <c>space_around_ternary_operator = false</c>
+    /// produces <c>flag?a:b</c> even though this export sets all four ternary keys directly.
+    /// <para>
+    /// ⚠ Later wins, not "more specific wins". A generalized key and a key it names are two
+    /// different options, so docs/plan/03 § "Precedence" step 3 — which orders <em>spellings of one
+    /// option</em> — has nothing to say about the pair, and the oracle answers by position: the
+    /// same assignment appended after the group's members overrides them and written before them
+    /// does not. Specificity still breaks a tie, which is what makes
+    /// <c>resharper_space_after_keywords_in_control_flow_statements</c> beat its <c>csharp_</c>
+    /// twin — the one case where the two spellings really are the same ReSharper property.
+    /// </para>
+    /// <para>
+    /// ⚠ Fidelity-neutral on the Rider export, and checked rather than hoped: every generalized key
+    /// there carries the same value as every key it names.
+    /// </para>
+    /// <para>
+    /// ⚠ Values only, never provenance. <see cref="ResolutionResult.Resolved"/> and therefore
+    /// <c>skala config explain</c> keep saying what the file says, because "this option is set" and
+    /// "this option's value came from a line that named a different option" are different claims
+    /// and only the first belongs in a provenance column.
+    /// </para>
+    /// </remarks>
+    static void Expand(OptionOrigin?[] winners, int[] winnerDocument, FormattingOptionsBuilder builder) {
+        // (target, winning generalized source) — resolved before anything is written, so that two
+        // generalized keys naming one option cannot depend on the order they are visited in.
+        var chosen = new (OptionOrigin Origin, int Document)?[OptionRegistry.Count];
+        for (var i = 0; i < winners.Length; i++) {
+            if (winners[i] is not { } origin) {
+                continue;
+            }
+
+            foreach (var target in OptionRegistry.Get((OptionId)i).Expands) {
+                if (Outranks(origin, winnerDocument[i], winners[(int)target], winnerDocument[(int)target])
+                    && Outranks(
+                        origin,
+                        winnerDocument[i],
+                        chosen[(int)target]?.Origin,
+                        chosen[(int)target]?.Document ?? -1
+                    )) {
+                    chosen[(int)target] = (origin, winnerDocument[i]);
+                }
+            }
+        }
+
+        for (var i = 0; i < chosen.Length; i++) {
+            // A domain mismatch is not an error the user can act on — they never wrote the target's
+            // name. `place_attribute_on_same_line = false` names options whose domain is an enum,
+            // and silently declining is what leaves them at their own default.
+            if (chosen[i] is { } source) {
+                builder.TrySet((OptionId)i, source.Origin.Value, out _);
+            }
+        }
+    }
+
+    /// <summary>Later in the chain wins; within one document, later line; then more specific.</summary>
+    static bool Outranks(OptionOrigin origin, int document, OptionOrigin? other, int otherDocument) {
+        if (other is null) {
+            return true;
+        }
+
+        if (document != otherDocument) {
+            return document > otherDocument;
+        }
+
+        return origin.Line != other.Line ? origin.Line > other.Line : origin.Specificity <= other.Specificity;
     }
 
     /// <summary>Lower is more specific. docs/plan/03 § "Precedence" step 3.</summary>

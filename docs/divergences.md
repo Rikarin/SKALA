@@ -769,3 +769,31 @@ hidden disagreement. The condition for revisiting is in the doc and is not yet m
 is not at zero divergences either.
 
 - options: `dotnet_style_parentheses_in_arithmetic_binary_operators`, `dotnet_style_parentheses_in_other_binary_operators`
+
+## SK-DIV-0015 — the oracle inserts a blank line before the first type; Skala preserves the source
+
+A file that opens with a comment block and then declares a type, with **no blank line between them in
+the source**, comes back from `jb cleanupcode` with one inserted. Skala leaves the gap as written.
+
+```csharp
+// … the last line of a leading comment block.
+class C {          // ← the oracle puts a blank line above this; Skala does not
+```
+
+⚠ **Found by a fixture written for something else**, which is the argument for adding fixtures that
+are not about the thing you are working on. `constructs/trivia/a-malformed-doc-comment-is-left-alone.cs`
+was written to pin hazard 2 of the xmldoc work and happens to open this way; nothing in 324 other
+construct fixtures or 380 real files had the shape. It is one line and one file.
+
+The rule behind it is not established. `resharper_blank_lines_around_type = 1` would explain the
+oracle's answer if the leading comment counts as the preceding *member*, but
+`resharper_stick_comment = true` says a comment binds to what follows it, which would make the blank
+line belong *above* the comment instead — and there is nothing above it. Whether the oracle special-cases
+a file-scope comment block, or treats the compilation unit's start as a member boundary, wants a sweep
+of its own before anything is implemented.
+
+Measured: 1 line, 1 file of `constructs/` (324 files). Not observed in `corpus/real/`.
+
+- options: `resharper_blank_lines_around_type`, `resharper_stick_comment`,
+  `resharper_blank_lines_before_single_line_comment`
+- ⚠ status: **open**, pre-existing, exposed at the M9 merge

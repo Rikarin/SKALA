@@ -78,12 +78,8 @@ public static class SpaceRules {
         }
 
         if (left == SyntaxKind.OpenParenToken || right == SyntaxKind.CloseParenToken) {
-            if (left == SyntaxKind.OpenParenToken && right == SyntaxKind.CloseParenToken) {
-                return false;
-            }
-
-            var owner = left == SyntaxKind.OpenParenToken ? prev.Parent : next.Parent;
-            return owner is CastExpressionSyntax ? o.SpaceBetweenTypecastParentheses : o.SpaceWithinParentheses;
+            var empty = left == SyntaxKind.OpenParenToken && right == SyntaxKind.CloseParenToken;
+            return WithinParentheses(left == SyntaxKind.OpenParenToken ? prev.Parent : next.Parent, empty, o);
         }
 
         // ── Brackets ─────────────────────────────────────────────────────────────────────────
@@ -92,11 +88,11 @@ public static class SpaceRules {
         }
 
         if (left == SyntaxKind.OpenBracketToken) {
-            return WithinBrackets(prev.Parent, o) && right != SyntaxKind.CloseBracketToken;
+            return WithinBrackets(prev.Parent, right == SyntaxKind.CloseBracketToken, o);
         }
 
         if (right == SyntaxKind.CloseBracketToken) {
-            return WithinBrackets(next.Parent, o) && left != SyntaxKind.OpenBracketToken;
+            return WithinBrackets(next.Parent, left == SyntaxKind.OpenBracketToken, o);
         }
 
         // ── Commas and semicolons ────────────────────────────────────────────────────────────
@@ -123,9 +119,15 @@ public static class SpaceRules {
             }
 
             // `{ get; set; }` — the gap between two accessors written on one line.
-            return prev.Parent is AccessorDeclarationSyntax { Parent: AccessorListSyntax }
-                ? o.SpaceBetweenAccessorsInSinglelineProperty
-                : true;
+            if (prev.Parent is AccessorDeclarationSyntax { Parent: AccessorListSyntax }) {
+                return o.SpaceBetweenAccessorsInSinglelineProperty;
+            }
+
+            // ⚠ `get { return _n; }` — a semicolon in front of a closing brace is the brace's gap,
+            // not a semicolon's. Answering `true` here made the inside of a single-line accessor
+            // body asymmetric: the `{` side was governed and the `}` side was not, so no
+            // configuration could produce the `get {return _n;}` the oracle writes.
+            return right != SyntaxKind.CloseBraceToken || WithinBraces(next.Parent, prev, o);
         }
 
         // `using Alias = System.Text;` — the alias's own equals sign, not an assignment.
@@ -146,8 +148,13 @@ public static class SpaceRules {
         }
 
         // ── Member access ────────────────────────────────────────────────────────────────────
+        // ⚠ Two keys, not one. `space_around_member_access_operator` is the generalized name for
+        // both and the resolver still expands it, but `space_around_dot` and `space_around_arrow_op`
+        // are separately answerable by the oracle and were both being ignored.
         if (IsMemberAccessPunctuation(prev) || IsMemberAccessPunctuation(next)) {
-            return o.SpaceAroundMemberAccess;
+            var arrow = prev.IsKind(SyntaxKind.MinusGreaterThanToken)
+                || next.IsKind(SyntaxKind.MinusGreaterThanToken);
+            return arrow ? o.SpaceAroundArrowOp : o.SpaceAroundDot;
         }
 
         // ── Question marks ───────────────────────────────────────────────────────────────────
@@ -211,60 +218,6 @@ public static class SpaceRules {
                 ConditionalExpressionSyntax => o.SpaceAfterTernaryColon,
                 _ => true
             };
-        }
-
-        // ── Braces ───────────────────────────────────────────────────────────────────────────
-        if (right == SyntaxKind.OpenBraceToken) {
-            return BeforeOpenBrace(prev, next, o);
-        }
-
-        if (left == SyntaxKind.OpenBraceToken) {
-            return WithinBraces(prev.Parent, next, o);
-        }
-
-        if (right == SyntaxKind.CloseBraceToken) {
-            return WithinBraces(next.Parent, prev, o);
-        }
-
-        if (left == SyntaxKind.CloseBraceToken) {
-            return !ClingsLeft(right);
-        }
-
-        // ── Question marks ───────────────────────────────────────────────────────────────────
-        if (right == SyntaxKind.QuestionToken) {
-            return next.Parent switch {
-                ConditionalExpressionSyntax => o.SpaceBeforeTernaryQuest,
-                NullableTypeSyntax => o.SpaceBeforeNullableMark,
-                _ => false
-            };
-        }
-
-        if (left == SyntaxKind.QuestionToken) {
-            return prev.Parent switch {
-                ConditionalExpressionSyntax => o.SpaceAfterTernaryQuest,
-                NullableTypeSyntax => !ClingsLeft(right) && !IsTypeAngle(next),
-                _ => true
-            };
-        }
-
-        // ── Angles ───────────────────────────────────────────────────────────────────────────
-        if (right is SyntaxKind.LessThanToken && IsTypeAngle(next)) {
-            return next.Parent is TypeParameterListSyntax
-                ? o.SpaceBeforeTypeParameterAngle
-                : o.SpaceBeforeTypeArgumentAngle;
-        }
-
-        if (IsTypeAngle(next) || IsTypeAngle(prev)) {
-            if (IsTypeAngle(next)) {
-                return WithinAngles(next.Parent, o);
-            }
-
-            if (left == SyntaxKind.LessThanToken) {
-                return WithinAngles(prev.Parent, o);
-            }
-
-            // After the closing `>`: whatever follows decides.
-            return !ClingsLeft(right);
         }
 
         // ── Braces ───────────────────────────────────────────────────────────────────────────
@@ -419,16 +372,36 @@ public static class SpaceRules {
         }
 
         switch (prev.Kind()) {
+            // ⚠ Nine keys rather than the one generalized `space_after_keywords_in_control_flow_
+            // statements` these used to share. The oracle answers each keyword on its own —
+            // `space_before_if_parentheses = false` produces `if(n > 0)` and leaves `while (…)`
+            // alone — so the shared answer was eight keys ignored.
             case SyntaxKind.IfKeyword:
+                return o.SpaceBeforeIfParentheses;
+
             case SyntaxKind.WhileKeyword:
+                return o.SpaceBeforeWhileParentheses;
+
             case SyntaxKind.ForKeyword:
+                return o.SpaceBeforeForParentheses;
+
             case SyntaxKind.ForEachKeyword:
+                return o.SpaceBeforeForeachParentheses;
+
             case SyntaxKind.SwitchKeyword:
+                return o.SpaceBeforeSwitchParentheses;
+
             case SyntaxKind.CatchKeyword:
+                return o.SpaceBeforeCatchParentheses;
+
             case SyntaxKind.LockKeyword:
+                return o.SpaceBeforeLockParentheses;
+
             case SyntaxKind.UsingKeyword:
+                return o.SpaceBeforeUsingParentheses;
+
             case SyntaxKind.FixedKeyword:
-                return o.SpaceAfterKeywordsInControlFlow;
+                return o.SpaceBeforeFixedParentheses;
 
             case SyntaxKind.TypeOfKeyword:
                 return o.SpaceBeforeTypeofParentheses;
@@ -539,17 +512,76 @@ public static class SpaceRules {
                 // space, because the bracket is the cast's operand rather than an indexer on its
                 // result. `a[i]` and `M()[i]` still close up.
                 CollectionExpressionSyntax or ListPatternSyntax => !ClingsRight(prev.Kind()) && !IsCallSite(prev),
-                _ => o.SpaceBeforeOpenSquareBrackets
+                // ⚠ `space_before_open_square_brackets` is the generalized name for the two keys
+                // above it and is honoured by the resolver expanding it into them, so the fallback
+                // is the access-bracket key rather than a third reading of the same setting.
+                _ => o.SpaceBeforeArrayAccessBrackets
             };
 
-    static bool WithinBrackets(SyntaxNode? owner, in PhaseOneOptions o) =>
+    /// <summary>
+    /// The gap just inside a parenthesis, decided by what the parenthesis belongs to.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ Fifteen keys where <c>space_within_parentheses</c> used to answer for all of them, which
+    /// left every one of the fifteen inert. Each was asked of the oracle on its own before being
+    /// wired: <c>space_within_if_parentheses = true</c> gives <c>if ( n &gt; 0 )</c> and nothing
+    /// else moves. <c>space_within_parentheses</c> keeps the gap it really owns — a parenthesized
+    /// expression's, which is what its own fixture pins.
+    /// <para>
+    /// ⚠ <paramref name="empty"/> is a separate question rather than "no space": the oracle writes
+    /// <c>Empty( )</c> and <c>new object( )</c> when the empty-parentheses keys are set, so an empty
+    /// pair is governed rather than always closed up.
+    /// </para>
+    /// </remarks>
+    static bool WithinParentheses(SyntaxNode? owner, bool empty, in PhaseOneOptions o) =>
         owner switch {
-            AttributeListSyntax => o.SpaceWithinAttributeBrackets,
-            ListPatternSyntax => o.SpaceWithinListPatternBrackets,
-            BracketedArgumentListSyntax or ImplicitElementAccessSyntax => o.SpaceWithinArrayAccessBrackets,
+            // A call's parentheses, including an object creation's and an attribute's.
+            ArgumentListSyntax {
+                Parent: InvocationExpressionSyntax { Expression: IdentifierNameSyntax { Identifier.Text: "nameof" } }
+            } =>
+                !empty && o.SpaceWithinNameofParentheses,
+            ArgumentListSyntax or AttributeArgumentListSyntax =>
+                empty ? o.SpaceWithinEmptyMethodCallParentheses : o.SpaceWithinMethodCallParentheses,
+            ParameterListSyntax or BracketedParameterListSyntax or FunctionPointerParameterListSyntax =>
+                empty ? o.SpaceWithinEmptyMethodDeclarationParentheses : o.SpaceWithinMethodDeclarationParentheses,
+
+            // An empty pair below this line cannot occur — a statement's condition, a cast's type
+            // and a `typeof`'s operand are all non-empty by the grammar — so they answer `!empty &&`
+            // only so that a malformed tree cannot open a gap the option never asked for.
+            CastExpressionSyntax => !empty && o.SpaceBetweenTypecastParentheses,
+            IfStatementSyntax => !empty && o.SpaceWithinIfParentheses,
+            WhileStatementSyntax or DoStatementSyntax => !empty && o.SpaceWithinWhileParentheses,
+            ForStatementSyntax => !empty && o.SpaceWithinForParentheses,
+            CommonForEachStatementSyntax => !empty && o.SpaceWithinForeachParentheses,
+            SwitchStatementSyntax => !empty && o.SpaceWithinSwitchParentheses,
+            CatchDeclarationSyntax => !empty && o.SpaceWithinCatchParentheses,
+            LockStatementSyntax => !empty && o.SpaceWithinLockParentheses,
+            UsingStatementSyntax => !empty && o.SpaceWithinUsingParentheses,
+            FixedStatementSyntax => !empty && o.SpaceWithinFixedParentheses,
+            CheckedExpressionSyntax => !empty && o.SpaceWithinCheckedParentheses,
+            DefaultExpressionSyntax => !empty && o.SpaceWithinDefaultParentheses,
+            SizeOfExpressionSyntax => !empty && o.SpaceWithinSizeofParentheses,
+            TypeOfExpressionSyntax => !empty && o.SpaceWithinTypeofParentheses,
+            _ => !empty && o.SpaceWithinParentheses
+        };
+
+    /// <summary>The gap just inside a bracket, on whichever side.</summary>
+    static bool WithinBrackets(SyntaxNode? owner, bool empty, in PhaseOneOptions o) =>
+        owner switch {
+            AttributeListSyntax => !empty && o.SpaceWithinAttributeBrackets,
+            ListPatternSyntax => !empty && o.SpaceWithinListPatternBrackets,
+            BracketedArgumentListSyntax or ImplicitElementAccessSyntax =>
+                !empty && o.SpaceWithinArrayAccessBrackets,
+            // ⚠ `new[]` is the empty key's and `int[,]` is not, which is what the oracle answers:
+            // the line is "one omitted size", not "no sizes". Reading it as "every size omitted"
+            // puts `int[ , ]` under the empty key, where flipping it does nothing.
+            ArrayRankSpecifierSyntax rank =>
+                IsEmptyRank(rank) ? o.SpaceWithinArrayRankEmptyBrackets : !empty && o.SpaceWithinArrayRankBrackets,
             CollectionExpressionSyntax => o.SpaceWithinSlicePattern && false,
             _ => false
         };
+
+    static bool IsEmptyRank(ArrayRankSpecifierSyntax rank) => rank.Sizes is [OmittedArraySizeExpressionSyntax];
 
     static bool WithinAngles(SyntaxNode? owner, in PhaseOneOptions o) =>
         owner is TypeParameterListSyntax ? o.SpaceWithinTypeParameterAngles : o.SpaceWithinTypeArgumentAngles;
@@ -568,16 +600,20 @@ public static class SpaceRules {
         }
 
         return owner switch {
-            AccessorListSyntax => o.SpaceInSinglelineAccessorholder,
+            // ⚠ An accessor's *body* braces, not just the holder's. Measured: with
+            // `space_in_singleline_accessorholder = false` the oracle writes `get {return _n;}`,
+            // and with `space_in_singleline_method = false` it writes `get { return _n; }` —
+            // unchanged. Reading the body out of the method key gave Skala a setting Rider ignores
+            // and left the accessor key answering only `{ get; set; }`.
+            AccessorListSyntax or BlockSyntax { Parent: AccessorDeclarationSyntax } =>
+                o.SpaceInSinglelineAccessorholder,
             BlockSyntax {
                 Parent: AnonymousMethodExpressionSyntax
                     or SimpleLambdaExpressionSyntax
                     or ParenthesizedLambdaExpressionSyntax
             } =>
                 o.SpaceInSinglelineAnonymousMethod,
-            BlockSyntax {
-                Parent: BaseMethodDeclarationSyntax or LocalFunctionStatementSyntax or AccessorDeclarationSyntax
-            } =>
+            BlockSyntax { Parent: BaseMethodDeclarationSyntax or LocalFunctionStatementSyntax } =>
                 o.SpaceInSinglelineMethod,
             InitializerExpressionSyntax initializer =>
                 initializer.IsKind(SyntaxKind.ArrayInitializerExpression)
