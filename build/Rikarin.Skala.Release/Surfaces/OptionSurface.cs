@@ -83,14 +83,31 @@ public static class OptionSurface {
                 }
             }
 
+            // ⚠ A default or a type only breaks a promise on a key that was **honoured at the
+            // baseline**. A Tier D key does nothing, so changing what it would have meant changes
+            // nothing that ever happened, and calling it major makes the detector cry major on the
+            // ordinary work of implementing an option. Measured: `dotnet_style_require_accessibility
+            // _modifiers` moved D→A *and* changed type in the same release, and the type change was
+            // part of implementing it. An unhonoured key's change is still recorded, because it is
+            // the thing to look at first if the next release moves files unexpectedly.
             if (!string.Equals(before.Default, after.Default, StringComparison.Ordinal)) {
-                bump = BumpKind.Major;
-                details.Add($"`{key}` **default changed**: `{before.Default}` → `{after.Default}`");
+                if (Honoured(before)) {
+                    bump = BumpKind.Major;
+                    details.Add($"`{key}` **default changed**: `{before.Default}` → `{after.Default}`");
+                } else {
+                    details.Add(
+                        $"`{key}` default changed while inert: `{before.Default}` → `{after.Default}`"
+                    );
+                }
             }
 
             if (!string.Equals(before.Type, after.Type, StringComparison.Ordinal)) {
-                bump = BumpKind.Major;
-                details.Add($"`{key}` **type changed**: {before.Type} → {after.Type}");
+                if (Honoured(before)) {
+                    bump = BumpKind.Major;
+                    details.Add($"`{key}` **type changed**: {before.Type} → {after.Type}");
+                } else {
+                    details.Add($"`{key}` type changed while inert: {before.Type} → {after.Type}");
+                }
             }
         }
 

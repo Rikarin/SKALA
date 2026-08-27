@@ -112,10 +112,18 @@ and two of the four surfaces ADR-012 froze at 1.0 are what made it one.**
 | rule catalogue | minor | 15 rules added, **10 at `warning` or `error`** |
 | exit codes | **major** | `format --check` on an unformatted file exited **1** at 1.0.0 and exits **2** now; `--diff` the same; a path that does not exist went from **0** to **3** |
 | SARIF shape | — | unchanged, 53 paths |
-| option registry | **major** | 84 changes — 75 keys `D → A`, and `dotnet_style_require_accessibility_modifiers` changed type from `string` to an enum |
+| option registry | **major** | 84 changes — 77 keys `D → A`, and **6 defaults changed on keys that were already Tier A**: three `keep_existing_*` going `false → true`, `wrap_after_declaration_lpar` and `wrap_before_declaration_rpar` going `true → false`, and `wrap_extends_list_style` `chop_if_long → wrap_if_long` |
 
 The exit-code moves are the fixes `ExitCodeContractTests` was written for and they are correct. They
-are also breaking, and no plausible commit prefix would have said so: both are `fix:`.
+are also breaking, and no plausible commit prefix would have said so: both are `fix:`. The six option
+defaults are the arrangement work landing — a `feat:` — and a default is what applies to every
+repository that never wrote the key down.
+
+⚠ **The option detector was wrong on its first pass and was corrected before the number was taken.**
+It called `dotnet_style_require_accessibility_modifiers` changing type major; that key was **Tier D
+at the baseline**, doing nothing, and its type changed as part of implementing it. A default or a
+type only breaks a promise on a key that was honoured, so the detector requires that now and reports
+the rest as "changed while inert". The verdict is still `major`, for the six that are real.
 
 ⚠ **1.0.0 was never published** — zero tags, zero packages on any feed — so the jump costs nobody
 anything. The first *published* artefact is `2.0.0-alpha.N` rather than `2.0.0`: a pre-release is
