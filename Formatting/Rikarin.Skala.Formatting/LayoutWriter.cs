@@ -5,13 +5,15 @@ using System.Text;
 
 namespace Rikarin.Skala.Formatting;
 
-/// <summary>Where one input piece landed in the output. The sync points of docs/plan/04 § "Emitting minimal edits".</summary>
+/// <summary>
+///     Where one input piece landed in the output. The sync points of docs/plan/04 § "Emitting minimal edits".
+/// </summary>
 public readonly record struct AnchorPoint(SourceSpan Source, int OutputStart, int OutputEnd, int TokenId);
 
 /// <summary>The result of writing a resolved document.</summary>
 /// <param name="OwnerUnresolved">
-/// ⚠ How many <see cref="GroupMode.Owner"/> groups were reached before their owner. Zero for every
-/// document the C# front end produces; see <see cref="Fitter.OwnerUnresolved"/>.
+///     ⚠ How many <see cref="GroupMode.Owner" /> groups were reached before their owner. Zero for every
+///     document the C# front end produces; see <see cref="Fitter.OwnerUnresolved" />.
 /// </param>
 public sealed record Layout(
     string Text,
@@ -19,14 +21,14 @@ public sealed record Layout(
     IReadOnlyList<ResolvedMode>? Modes = null,
     int OwnerUnresolved = 0);
 
-/// <summary>Flags a <see cref="DocKind.Verbatim"/> node carries in <see cref="DocNode.Arg0"/>.</summary>
+/// <summary>Flags a <see cref="DocKind.Verbatim" /> node carries in <see cref="DocNode.Arg0" />.</summary>
 [Flags]
 public enum VerbatimFlags {
     None = 0,
 
     /// <summary>
-    /// The text sets its own indentation and must start at column 0.
-    /// <c>indent_preprocessor_if = no_indent</c>, and disabled <c>#if</c> text, which is never reindented.
+    ///     The text sets its own indentation and must start at column 0.
+    ///     <c>indent_preprocessor_if = no_indent</c>, and disabled <c>#if</c> text, which is never reindented.
     /// </summary>
     AtColumnZero = 1,
 
@@ -34,23 +36,23 @@ public enum VerbatimFlags {
     SelfIndented = 2,
 
     /// <summary>
-    /// A multi-line raw string literal: its interior lines and its closing delimiter move with the
-    /// opening one. <c>indent_raw_literal_string = align</c>.
+    ///     A multi-line raw string literal: its interior lines and its closing delimiter move with the
+    ///     opening one. <c>indent_raw_literal_string = align</c>.
     /// </summary>
     /// <remarks>
-    /// ⚠ The one re-indentation in the formatter that could change a string's value, and the reason
-    /// it does not is that it is a <em>uniform shift</em>. C# strips the closing delimiter's own
-    /// whitespace prefix from every line of a raw literal, so moving every interior line and the
-    /// closing delimiter by the same number of columns leaves the stripped result identical —
-    /// character for character, and the token-equivalence check would abort the file if it did not.
-    /// Re-indenting the lines independently, or moving the content without the delimiter, changes
-    /// what the program prints.
+    ///     ⚠ The one re-indentation in the formatter that could change a string's value, and the reason
+    ///     it does not is that it is a <em>uniform shift</em>. C# strips the closing delimiter's own
+    ///     whitespace prefix from every line of a raw literal, so moving every interior line and the
+    ///     closing delimiter by the same number of columns leaves the stripped result identical —
+    ///     character for character, and the token-equivalence check would abort the file if it did not.
+    ///     Re-indenting the lines independently, or moving the content without the delimiter, changes
+    ///     what the program prints.
     /// </remarks>
     Realign = 4
 }
 
 /// <summary>
-/// Walks a resolved document and produces the output text plus the anchor map.
+///     Walks a resolved document and produces the output text plus the anchor map.
 /// </summary>
 public sealed class LayoutWriter {
     readonly Document _document;
@@ -86,7 +88,7 @@ public sealed class LayoutWriter {
 
     /// <param name="width"><c>max_line_length</c>: the budget every Auto group is tested against.</param>
     /// <param name="continuousMultiplier">
-    /// <c>continuous_indent_multiplier</c>: how many indent units one continuation level is worth.
+    ///     <c>continuous_indent_multiplier</c>: how many indent units one continuation level is worth.
     /// </param>
     public static Layout Write(
         Document document,
@@ -181,21 +183,21 @@ public sealed class LayoutWriter {
     }
 
     /// <summary>
-    /// Opens an indentation scope, recording the line it opened on.
+    ///     Opens an indentation scope, recording the line it opened on.
     /// </summary>
     /// <remarks>
-    /// ⚠ The line matters. A scope contributes nothing to content that begins on its own opening
-    /// line, which is what makes
-    /// <code>
+    ///     ⚠ The line matters. A scope contributes nothing to content that begins on its own opening
+    ///     line, which is what makes
+    ///     <code>
     /// M(
     ///     arg,
     ///     new Handler(() =&gt; {
     ///         Body();      ← one level from the lambda's line, not two
     ///     })
     /// );
-    /// </code>
-    /// come out the way ReSharper writes it. A block additionally <em>fixes</em> its level rather
-    /// than adding to whatever is open, because a brace resets the continuation context.
+    ///     </code>
+    ///     come out the way ReSharper writes it. A block additionally <em>fixes</em> its level rather
+    ///     than adding to whatever is open, because a brace resets the continuation context.
     /// </remarks>
     void Push(IndentKind kind, bool unconditional) {
         // ⚠ The closing delimiter goes back to the level the scope was opened AT, not to the level
@@ -229,18 +231,18 @@ public sealed class LayoutWriter {
     }
 
     /// <summary>
-    /// Closes a scope, and remembers where the line that opened it began.
+    ///     Closes a scope, and remembers where the line that opened it began.
     /// </summary>
     /// <remarks>
-    /// ⚠ A closing delimiter takes the indentation of the line its opener was on, not of the line
-    /// the stack happens to be at:
-    /// <code>
+    ///     ⚠ A closing delimiter takes the indentation of the line its opener was on, not of the line
+    ///     the stack happens to be at:
+    ///     <code>
     /// M(
     ///     new Handler(() =&gt; {
     ///         Body();
     ///     })      ← the lambda's opening line, two scopes below where the stack now stands
     /// );          ← M's opening line
-    /// </code>
+    ///     </code>
     /// </remarks>
     void Pop(bool alignsCloser) {
         if (alignsCloser) {
@@ -251,61 +253,62 @@ public sealed class LayoutWriter {
     }
 
     /// <summary>
-    /// The level a scope opening now nests from, and the level its closing delimiter takes.
+    ///     The level a scope opening now nests from, and the level its closing delimiter takes.
     /// </summary>
     /// <remarks>
-    /// ⚠ Not <see cref="Effective"/>, and the difference is one scope. Effective answers "what
-    /// level does a line starting now take" and therefore ignores everything opened on the current
-    /// line; a scope opening now is opening <em>inside</em> those, so an unconditional one counts.
-    /// <code>
+    ///     ⚠ Not <see cref="Effective" />, and the difference is one scope. Effective answers "what
+    ///     level does a line starting now take" and therefore ignores everything opened on the current
+    ///     line; a scope opening now is opening <em>inside</em> those, so an unconditional one counts.
+    ///     <code>
     /// messages.Any(message => message.Contains(
     ///         "…"
     ///     )        ← Contains' closer, at Any's level, not at the statement's
     /// );
-    /// </code>
+    ///     </code>
     /// </remarks>
     int LevelForNested() => Level(nested: true);
 
     /// <summary>
-    /// The indent level for a line starting now.
+    ///     The indent level for a line starting now.
     /// </summary>
     /// <remarks>
-    /// ⚠ One level per opening <em>line</em>, not per scope. Two groups opened on the same line
-    /// are one indentation step:
-    /// <code>
+    ///     ⚠ One level per opening <em>line</em>, not per scope. Two groups opened on the same line
+    ///     are one indentation step:
+    ///     <code>
     /// context.Report(Diagnostic.Create(
     ///     descriptor,      ← one level, though two parentheses are open
     ///     location));
-    /// </code>
+    ///     </code>
     /// </remarks>
     int Effective() => Level(nested: false);
 
     /// <summary>
-    /// Walks the scope stack and adds up the levels that apply.
+    ///     Walks the scope stack and adds up the levels that apply.
     /// </summary>
     /// <param name="nested">
-    /// True for a scope opening now rather than a line starting now: an unconditional scope opened
-    /// earlier on <em>this</em> line is one the new scope is nesting inside.
+    ///     True for a scope opening now rather than a line starting now: an unconditional scope opened
+    ///     earlier on <em>this</em> line is one the new scope is nesting inside.
     /// </param>
     /// <remarks>
-    /// ⚠ Two rules, and the second is milestone 3's correction to the first.
-    /// <list type="number">
-    /// <item>
-    /// A <b>delimited</b> scope — a parenthesis, a bracket — always spends its level. Verified
-    /// against the oracle: an operand broken onto its own line inside <c>if ((… == …))</c> lands two
-    /// levels in, one for each parenthesis, although both opened on the same line.
-    /// </item>
-    /// <item>
-    /// An <b>undelimited continuation</b> — the level a group spends for its own break points,
-    /// docs/plan/04's second row — spends at most one level per line, and none at all on a line
-    /// where a delimited scope inside it already spent one. That second clause is what keeps
-    /// <c>using var d = Drawn(</c> with its arguments under it at one level: the <c>=</c> would
-    /// otherwise pay for a continuation the parenthesis is already paying for. Dropping either half costs 1.9 points of
-    /// line fidelity on <c>corpus/real/</c>, in opposite directions.
-    /// </item>
-    /// </list>
-    /// ⚠ The single <c>blocked</c> variable is enough because scopes are visited innermost-first and
-    /// an outer scope never opened on a later line than an inner one.
+    ///     ⚠ Two rules, and the second is milestone 3's correction to the first.
+    ///     <list type="number">
+    ///         <item>
+    ///             A <b>delimited</b> scope — a parenthesis, a bracket — always spends its level. Verified
+    ///             against the oracle: an operand broken onto its own line inside <c>if ((… == …))</c> lands two
+    ///             levels in, one for each parenthesis, although both opened on the same line.
+    ///         </item>
+    ///         <item>
+    ///             An <b>undelimited continuation</b> — the level a group spends for its own break points,
+    ///             docs/plan/04's second row — spends at most one level per line, and none at all on a line
+    ///             where a delimited scope inside it already spent one. That second clause is what keeps
+    ///             <c>using var d = Drawn(</c> with its arguments under it at one level: the <c>=</c> would
+    ///             otherwise pay for a continuation the parenthesis is already paying for. Dropping either half costs
+    ///             1.9 points of
+    ///             line fidelity on <c>corpus/real/</c>, in opposite directions.
+    ///         </item>
+    ///     </list>
+    ///     ⚠ The single <c>blocked</c> variable is enough because scopes are visited innermost-first and
+    ///     an outer scope never opened on a later line than an inner one.
     /// </remarks>
     int Level(bool nested) {
         var level = 0;
@@ -335,35 +338,35 @@ public sealed class LayoutWriter {
     }
 
     /// <param name="Unconditional">
-    /// ⚠ The scope counts even when another scope opened on the same line. One level per opening
-    /// <em>line</em> is the general rule and it is right —
-    /// <c>context.Report(Diagnostic.Create(\n    descriptor,</c> takes one level, not two, and
-    /// removing the collapse costs 1.7 points of line fidelity on <c>corpus/real/</c>. The
-    /// exception is the parenthesis of a call whose sole argument is a lambda, which
-    /// <c>place_single_method_argument_lambda_on_same_line = true</c> keeps on the call's line:
-    /// <code>
+    ///     ⚠ The scope counts even when another scope opened on the same line. One level per opening
+    ///     <em>line</em> is the general rule and it is right —
+    ///     <c>context.Report(Diagnostic.Create(\n    descriptor,</c> takes one level, not two, and
+    ///     removing the collapse costs 1.7 points of line fidelity on <c>corpus/real/</c>. The
+    ///     exception is the parenthesis of a call whose sole argument is a lambda, which
+    ///     <c>place_single_method_argument_lambda_on_same_line = true</c> keeps on the call's line:
+    ///     <code>
     /// messages.Any(message => message.Contains(
     ///         "…"          ← two levels, from `Any(` and from `Contains(`
     ///     )                ← one, back to `Contains(`'s opener
     /// );
-    /// </code>
-    /// The lambda is not a break the layout chose, so the parenthesis it hides behind still spends
-    /// its level. docs/plan/05 § "place_* and if_owner_is_single_line" records the closing half of
-    /// the same rule.
+    ///     </code>
+    ///     The lambda is not a break the layout chose, so the parenthesis it hides behind still spends
+    ///     its level. docs/plan/05 § "place_* and if_owner_is_single_line" records the closing half of
+    ///     the same rule.
     /// </param>
     /// <param name="Level">
-    /// ⚠ A <em>column</em>, not a level count, and it has been one since milestone 3.1. Alignment
-    /// puts a line at a column that is not a multiple of the indent width — the column just after a
-    /// statement's condition `(` — so a stack of levels cannot express it and a stack of columns
-    /// can express both.
+    ///     ⚠ A <em>column</em>, not a level count, and it has been one since milestone 3.1. Alignment
+    ///     puts a line at a column that is not a multiple of the indent width — the column just after a
+    ///     statement's condition `(` — so a stack of levels cannot express it and a stack of columns
+    ///     can express both.
     /// </param>
     readonly record struct Scope(bool IsBlock, int Level, int OpenLine, int CloserLevel, bool Unconditional = false);
 
-    /// <summary>Writes the indentation that reaches <paramref name="column"/>.</summary>
+    /// <summary>Writes the indentation that reaches <paramref name="column" />.</summary>
     /// <remarks>
-    /// ⚠ Whole indent units first and spaces for the remainder, which is what
-    /// `alignment_tab_fill_style = use_spaces` asks for and is also the only thing that can be right
-    /// when the unit is a tab: a column of 25 is six tabs and a space, never twenty-five tabs.
+    ///     ⚠ Whole indent units first and spaces for the remainder, which is what
+    ///     `alignment_tab_fill_style = use_spaces` asks for and is also the only thing that can be right
+    ///     when the unit is a tab: a column of 25 is six tabs and a space, never twenty-five tabs.
     /// </remarks>
     void WriteIndentTo(int column) {
         var units = column / _indentWidth;
@@ -379,13 +382,13 @@ public sealed class LayoutWriter {
     }
 
     /// <summary>
-    /// The column the next character will land on, which is what a group is measured against.
+    ///     The column the next character will land on, which is what a group is measured against.
     /// </summary>
     /// <remarks>
-    /// ⚠ At a line start the indentation has not been written yet, so <c>_column</c> is 0 and the
-    /// group would look as though it had the whole line. A group at the head of a line 24 columns
-    /// deep has 96, and measuring it against 120 is how a formatter produces a wrap that is one
-    /// level too optimistic on every nested construct in a file.
+    ///     ⚠ At a line start the indentation has not been written yet, so <c>_column</c> is 0 and the
+    ///     group would look as though it had the whole line. A group at the head of a line 24 columns
+    ///     deep has 96, and measuring it against 120 is how a formatter produces a wrap that is one
+    ///     level too optimistic on every nested construct in a file.
     /// </remarks>
     int CurrentColumn() {
         if (_atLineStart) {
@@ -396,19 +399,19 @@ public sealed class LayoutWriter {
     }
 
     /// <summary>
-    /// Shifts a multi-line raw string literal so that its closing delimiter lands at
-    /// <paramref name="column"/>.
+    ///     Shifts a multi-line raw string literal so that its closing delimiter lands at
+    ///     <paramref name="column" />.
     /// </summary>
     /// <remarks>
-    /// ⚠ <c>indent_raw_literal_string = align</c> aligns to the column of the opening quotes, which
-    /// is where this token starts. Established against the oracle, including the detail that an
-    /// interpolated opener aligns to its quotes and not to its dollar sign — the content lands one
-    /// column further right than for a plain literal in the same place.
-    /// <para>
-    /// ⚠ Whitespace-only lines are left exactly as they are. C# treats a line whose whitespace is
-    /// shorter than the closing delimiter's as empty rather than as an error, so shifting one is
-    /// both unnecessary and, when the shift is negative, impossible.
-    /// </para>
+    ///     ⚠ <c>indent_raw_literal_string = align</c> aligns to the column of the opening quotes, which
+    ///     is where this token starts. Established against the oracle, including the detail that an
+    ///     interpolated opener aligns to its quotes and not to its dollar sign — the content lands one
+    ///     column further right than for a plain literal in the same place.
+    ///     <para>
+    ///         ⚠ Whitespace-only lines are left exactly as they are. C# treats a line whose whitespace is
+    ///         shorter than the closing delimiter's as empty rather than as an error, so shifting one is
+    ///         both unnecessary and, when the shift is negative, impossible.
+    ///     </para>
     /// </remarks>
     static string Realign(string text, int column) {
         var lines = text.Split('\n');
@@ -455,22 +458,22 @@ public sealed class LayoutWriter {
     }
 
     /// <summary>
-    /// How much of the current line is still to come after this node, up to the next break.
+    ///     How much of the current line is still to come after this node, up to the next break.
     /// </summary>
     /// <remarks>
-    /// ⚠ A group's own width is not the length of the line it lands on, and milestone 3 found that
-    /// out on <c>var f = new Thing { A = 1, B = 2, C = 3 };</c> at 121 columns. The initializer's
-    /// group covers <c>{ … }</c> and stops there: it is entered at column 26, measures 94, concludes
-    /// 120 and stays flat — and then the semicolon that is not in it makes the line 121. The oracle
-    /// wraps it. Every construct that ends before its statement does has the same blind spot, so the
-    /// error is not rare: closing parentheses, semicolons, commas and closing braces are exactly what
-    /// follows the constructs that wrap.
-    /// <para>
-    /// The answer is Prettier's <c>fits(next, restCommands)</c>: measure the group plus whatever
-    /// remains of the line. The walk's own stack already holds it — every ancestor frame names the
-    /// sibling the walk will return to — so this is a read of state that exists rather than a second
-    /// traversal, and it stops at the first break point, which is normally one or two nodes away.
-    /// </para>
+    ///     ⚠ A group's own width is not the length of the line it lands on, and milestone 3 found that
+    ///     out on <c>var f = new Thing { A = 1, B = 2, C = 3 };</c> at 121 columns. The initializer's
+    ///     group covers <c>{ … }</c> and stops there: it is entered at column 26, measures 94, concludes
+    ///     120 and stays flat — and then the semicolon that is not in it makes the line 121. The oracle
+    ///     wraps it. Every construct that ends before its statement does has the same blind spot, so the
+    ///     error is not rare: closing parentheses, semicolons, commas and closing braces are exactly what
+    ///     follows the constructs that wrap.
+    ///     <para>
+    ///         The answer is Prettier's <c>fits(next, restCommands)</c>: measure the group plus whatever
+    ///         remains of the line. The walk's own stack already holds it — every ancestor frame names the
+    ///         sibling the walk will return to — so this is a read of state that exists rather than a second
+    ///         traversal, and it stops at the first break point, which is normally one or two nodes away.
+    ///     </para>
     /// </remarks>
     int TrailingWidth(Stack<(int Node, int Child)> stack) {
         var total = 0;
@@ -506,19 +509,19 @@ public sealed class LayoutWriter {
     }
 
     /// <summary>
-    /// The column a line broken at one of this group's own points would start at.
+    ///     The column a line broken at one of this group's own points would start at.
     /// </summary>
     /// <remarks>
-    /// ⚠ Not <see cref="Effective"/>. That function answers "what level does a line starting
-    /// <em>now</em> take", and it deliberately ignores a scope opened on the current line — one
-    /// level per opening line is the rule. A break inside such a scope lands on the <em>next</em>
-    /// line, where the scope does count, so the two answers differ by exactly one level on every
-    /// construct whose delimiter opened on this line, which is most of them.
-    /// <para>
-    /// The group's own continuation scope, when it has one, is not on the stack yet: the writer
-    /// resolves the group on entry and the <see cref="DocKind.Indent"/> node is its first child.
-    /// <see cref="GroupFacts.SpendsIndent"/> is how the front end says so.
-    /// </para>
+    ///     ⚠ Not <see cref="Effective" />. That function answers "what level does a line starting
+    ///     <em>now</em> take", and it deliberately ignores a scope opened on the current line — one
+    ///     level per opening line is the rule. A break inside such a scope lands on the <em>next</em>
+    ///     line, where the scope does count, so the two answers differ by exactly one level on every
+    ///     construct whose delimiter opened on this line, which is most of them.
+    ///     <para>
+    ///         The group's own continuation scope, when it has one, is not on the stack yet: the writer
+    ///         resolves the group on entry and the <see cref="DocKind.Indent" /> node is its first child.
+    ///         <see cref="GroupFacts.SpendsIndent" /> is how the front end says so.
+    ///     </para>
     /// </remarks>
     int ContinuationColumn(int group) {
         var level = 0;

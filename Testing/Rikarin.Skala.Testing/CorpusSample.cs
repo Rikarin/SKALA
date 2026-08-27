@@ -5,20 +5,20 @@ using System.Text;
 namespace Rikarin.Skala.Testing;
 
 /// <summary>
-/// Draws the <c>corpus/real/vixen/</c> sample from a tree, reproducibly.
+///     Draws the <c>corpus/real/vixen/</c> sample from a tree, reproducibly.
 /// </summary>
 /// <remarks>
-/// ⚠ Milestone 3.1 found that 167 of the 200 files in that directory had been vendored from
-/// <c>.claude/worktrees/</c> — agent scratch checkouts — rather than from the mainline tree. The
-/// content was real and the numbers stood, but the provenance was unrecorded and unrepeatable, and
-/// Vixen is over half the fidelity weight. This is the repair: a sampler that is part of the
-/// repository, so "which 200 files" has an answer that survives the person who ran it.
-/// <para>
-/// ⚠ The selection is a hash of the path rather than a seeded pseudo-random sequence. A PRNG's
-/// answer depends on the order the file system happened to enumerate in and on how many candidates
-/// were rejected before it; a hash of the path depends on nothing but the path, so the same commit
-/// and the same filters give the same 200 files on any machine, in any order, forever.
-/// </para>
+///     ⚠ Milestone 3.1 found that 167 of the 200 files in that directory had been vendored from
+///     <c>.claude/worktrees/</c> — agent scratch checkouts — rather than from the mainline tree. The
+///     content was real and the numbers stood, but the provenance was unrecorded and unrepeatable, and
+///     Vixen is over half the fidelity weight. This is the repair: a sampler that is part of the
+///     repository, so "which 200 files" has an answer that survives the person who ran it.
+///     <para>
+///         ⚠ The selection is a hash of the path rather than a seeded pseudo-random sequence. A PRNG's
+///         answer depends on the order the file system happened to enumerate in and on how many candidates
+///         were rejected before it; a hash of the path depends on nothing but the path, so the same commit
+///         and the same filters give the same 200 files on any machine, in any order, forever.
+///     </para>
 /// </remarks>
 public static class CorpusSample {
     /// <summary>The sample's seed, mixed into every path's hash.</summary>
@@ -32,7 +32,7 @@ public static class CorpusSample {
     /// <summary>A candidate file and the key it sorts by.</summary>
     public sealed record Candidate(string RelativePath, string FullPath, ulong Key, int Lines);
 
-    /// <summary>Every file of <paramref name="root"/> the sample may draw from, in key order.</summary>
+    /// <summary>Every file of <paramref name="root" /> the sample may draw from, in key order.</summary>
     public static List<Candidate> Candidates(string root, string seed = Seed) {
         var candidates = new List<Candidate>();
         foreach (var path in Directory.EnumerateFiles(root, "*.cs", SearchOption.AllDirectories)) {
@@ -58,13 +58,13 @@ public static class CorpusSample {
     }
 
     /// <summary>
-    /// What is never sampled, and why.
+    ///     What is never sampled, and why.
     /// </summary>
     /// <remarks>
-    /// ⚠ <c>.claude/</c> is first on the list and it is the whole point of this file: an agent's
-    /// worktree is a copy of the tree, so sampling it both duplicates content and records a
-    /// provenance that will not exist next week. Build output and generated sources are excluded
-    /// because a formatter's agreement with the oracle over a generated file measures the generator.
+    ///     ⚠ <c>.claude/</c> is first on the list and it is the whole point of this file: an agent's
+    ///     worktree is a copy of the tree, so sampling it both duplicates content and records a
+    ///     provenance that will not exist next week. Build output and generated sources are excluded
+    ///     because a formatter's agreement with the oracle over a generated file measures the generator.
     /// </remarks>
     static bool IsExcluded(string relative) {
         foreach (var segment in relative.Split('/')) {
@@ -93,7 +93,7 @@ public static class CorpusSample {
         return key;
     }
 
-    /// <summary>Copies the sample into <paramref name="destination"/>, mirroring the tree's layout.</summary>
+    /// <summary>Copies the sample into <paramref name="destination" />, mirroring the tree's layout.</summary>
     public static string Draw(string root, int count, string destination, TextWriter log) {
         var candidates = Candidates(root);
         var taken = candidates.Take(count).ToList();

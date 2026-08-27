@@ -115,21 +115,21 @@ public sealed class DistillTests {
     }
 
     /// <summary>
-    /// ⚠ A comment stuck to a dropped key goes with it; every other comment stays.
+    ///     ⚠ A comment stuck to a dropped key goes with it; every other comment stays.
     /// </summary>
     /// <remarks>
-    /// <para>
-    /// <c>distill</c> dropped the assignment and left the comment above it, so the output described
-    /// a key that was no longer in the file. Invisible against the real export, where every comment
-    /// is a section banner and an orphan still reads as a heading — and actively misleading in a
-    /// configuration somebody annotated, which is the only kind of file the command exists to
-    /// produce.
-    /// </para>
-    /// <para>
-    /// The semantics are <c>resharper_stick_comment</c>'s, already settled in this project for
-    /// code: a contiguous comment run belongs to the line directly beneath it, so a run followed by
-    /// a blank line, a section header or nothing is attached to no key and survives.
-    /// </para>
+    ///     <para>
+    ///         <c>distill</c> dropped the assignment and left the comment above it, so the output described
+    ///         a key that was no longer in the file. Invisible against the real export, where every comment
+    ///         is a section banner and an orphan still reads as a heading — and actively misleading in a
+    ///         configuration somebody annotated, which is the only kind of file the command exists to
+    ///         produce.
+    ///     </para>
+    ///     <para>
+    ///         The semantics are <c>resharper_stick_comment</c>'s, already settled in this project for
+    ///         code: a contiguous comment run belongs to the line directly beneath it, so a run followed by
+    ///         a blank line, a section header or nothing is attached to no key and survives.
+    ///     </para>
     /// </remarks>
     [Fact]
     public void Distilling_TakesAStuckCommentWithTheKeyItDrops_AndKeepsEveryOther() {
@@ -160,12 +160,12 @@ public sealed class DistillTests {
     }
 
     /// <summary>
-    /// ⚠ The comment rule must not change what the file means.
+    ///     ⚠ The comment rule must not change what the file means.
     /// </summary>
     /// <remarks>
-    /// Moving comment lines around a distiller that decides which assignments to keep is exactly
-    /// the sort of edit that quietly drops one, and a distilled file that resolves differently is
-    /// the failure the whole command is written to avoid.
+    ///     Moving comment lines around a distiller that decides which assignments to keep is exactly
+    ///     the sort of edit that quietly drops one, and a distilled file that resolves differently is
+    ///     the failure the whole command is written to avoid.
     /// </remarks>
     [Fact]
     public void Distilling_TheAnnotatedFixture_ResolvesIdentically() {

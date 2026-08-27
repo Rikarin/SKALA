@@ -3,16 +3,16 @@ using System.Text.RegularExpressions;
 namespace Rikarin.Skala.Core.Tests;
 
 /// <summary>
-/// The SK9000 range — the tool talking about itself — is allocated across more than one constant
-/// class, and <c>rules.json</c>'s append-only guard does not cover it.
+///     The SK9000 range — the tool talking about itself — is allocated across more than one constant
+///     class, and <c>rules.json</c>'s append-only guard does not cover it.
 /// </summary>
 /// <remarks>
-/// ⚠ This test exists because the collision it forbids actually happened. The canonical
-/// distribution work allocated <c>SK9010</c> and <c>SK9011</c>, both of which were already live in
-/// the formatter as "file did not parse" and "unbalanced preprocessor structure"; it was caught by
-/// eye during a merge, which is not a mechanism. ADR-012 makes an id permanent, and the reason is
-/// baselines: a fingerprint carries the rule id, so one number with two meanings silently
-/// un-suppresses one finding and wrongly suppresses the other in every repository holding one.
+///     ⚠ This test exists because the collision it forbids actually happened. The canonical
+///     distribution work allocated <c>SK9010</c> and <c>SK9011</c>, both of which were already live in
+///     the formatter as "file did not parse" and "unbalanced preprocessor structure"; it was caught by
+///     eye during a merge, which is not a mechanism. ADR-012 makes an id permanent, and the reason is
+///     baselines: a fingerprint carries the rule id, so one number with two meanings silently
+///     un-suppresses one finding and wrongly suppresses the other in every repository holding one.
 /// </remarks>
 public sealed class ToolDiagnosticIdTests {
     static readonly Regex Literal = new(""""  "SK\d{4}"  """".Trim(), RegexOptions.Compiled);
@@ -66,16 +66,16 @@ public sealed class ToolDiagnosticIdTests {
     }
 
     /// <summary>
-    /// ⚠ Every <c>SK####</c> in product code must come from a named constant, never a bare literal.
+    ///     ⚠ Every <c>SK####</c> in product code must come from a named constant, never a bare literal.
     /// </summary>
     /// <remarks>
-    /// ⚠ This is the hole that let a real ADR-012 violation through after the other two assertions
-    /// were already in place. <c>SK9012</c> meant two things at once — the canonical-version
-    /// diagnostic and an I/O failure — and <c>SK9007</c> was in no register at all, because both
-    /// were written as bare literals at their call sites and
-    /// <see cref="ToolDiagnosticIds_AreDeclaredOnce"/> matches <c>public const string</c>. It read
-    /// declarations; the defects were uses. A guard that only sees the well-behaved half of the
-    /// codebase reports the codebase as well-behaved.
+    ///     ⚠ This is the hole that let a real ADR-012 violation through after the other two assertions
+    ///     were already in place. <c>SK9012</c> meant two things at once — the canonical-version
+    ///     diagnostic and an I/O failure — and <c>SK9007</c> was in no register at all, because both
+    ///     were written as bare literals at their call sites and
+    ///     <see cref="ToolDiagnosticIds_AreDeclaredOnce" /> matches <c>public const string</c>. It read
+    ///     declarations; the defects were uses. A guard that only sees the well-behaved half of the
+    ///     codebase reports the codebase as well-behaved.
     /// </remarks>
     [Fact]
     public void ToolDiagnosticIds_AreNeverBareLiterals() {
@@ -125,23 +125,26 @@ public sealed class ToolDiagnosticIdTests {
     }
 
     /// <summary>
-    /// Every hand-written source file under the tree being tested.
+    ///     Every hand-written source file under the tree being tested.
     /// </summary>
     /// <remarks>
-    /// ⚠ <b>The exclusions are matched against the path <i>relative to the root</i>, and before M7
-    /// they were matched against the absolute path. In a git worktree that made this whole class
-    /// pass vacuously.</b> A worktree lives at
-    /// <c>&lt;repo&gt;/.claude/worktrees/&lt;name&gt;/</c>, so every absolute path inside one
-    /// contains <c>/worktrees/</c> — combine that with the root-finding bug below and the test
-    /// enumerated the <i>main checkout</i> and then excluded nothing, or enumerated the worktree
-    /// and excluded everything. Either way it was not reading the files under test, and it said so
-    /// by passing. Since the project is developed in worktrees, that is every run.
-    /// <para>
-    /// ADR-012 makes a rule id permanent at 1.0 because a baseline fingerprint carries it, so one
-    /// number with two meanings silently un-suppresses one finding and wrongly suppresses another
-    /// in every repository holding a baseline. A guard against that which does not read the diff is
-    /// worse than none, because it is believed.
-    /// </para>
+    ///     ⚠
+    ///     <b>
+    ///         The exclusions are matched against the path <i>relative to the root</i>, and before M7
+    ///         they were matched against the absolute path. In a git worktree that made this whole class
+    ///         pass vacuously.
+    ///     </b> A worktree lives at
+    ///     <c>&lt;repo&gt;/.claude/worktrees/&lt;name&gt;/</c>, so every absolute path inside one
+    ///     contains <c>/worktrees/</c> — combine that with the root-finding bug below and the test
+    ///     enumerated the <i>main checkout</i> and then excluded nothing, or enumerated the worktree
+    ///     and excluded everything. Either way it was not reading the files under test, and it said so
+    ///     by passing. Since the project is developed in worktrees, that is every run.
+    ///     <para>
+    ///         ADR-012 makes a rule id permanent at 1.0 because a baseline fingerprint carries it, so one
+    ///         number with two meanings silently un-suppresses one finding and wrongly suppresses another
+    ///         in every repository holding a baseline. A guard against that which does not read the diff is
+    ///         worse than none, because it is believed.
+    ///     </para>
     /// </remarks>
     /// <summary>The concept a constant names, ignoring its class and a trailing <c>Id</c>.</summary>
     static string Concept(string qualified) {
@@ -171,9 +174,9 @@ public sealed class ToolDiagnosticIdTests {
     }
 
     /// <summary>
-    /// ⚠ Asserts that the scan found the tree it was supposed to find. Every other test in this
-    /// class is a "nothing is wrong" assertion, and those pass just as happily over an empty
-    /// sequence — which is exactly how the worktree bug above stayed invisible.
+    ///     ⚠ Asserts that the scan found the tree it was supposed to find. Every other test in this
+    ///     class is a "nothing is wrong" assertion, and those pass just as happily over an empty
+    ///     sequence — which is exactly how the worktree bug above stayed invisible.
     /// </summary>
     [Fact]
     public void TheScan_ReadsTheTreeUnderTest() {
@@ -202,10 +205,10 @@ public sealed class ToolDiagnosticIdTests {
     }
 
     /// <summary>
-    /// ⚠ A file <i>or</i> a directory. In a git worktree and in a submodule <c>.git</c> is a file
-    /// containing <c>gitdir: …</c>; testing only for a directory walks straight past the worktree's
-    /// own root and lands on the parent checkout, so the test then reads a different tree than the
-    /// one it was built from. This is the third place in the repository that had this exact bug.
+    ///     ⚠ A file <i>or</i> a directory. In a git worktree and in a submodule <c>.git</c> is a file
+    ///     containing <c>gitdir: …</c>; testing only for a directory walks straight past the worktree's
+    ///     own root and lands on the parent checkout, so the test then reads a different tree than the
+    ///     one it was built from. This is the third place in the repository that had this exact bug.
     /// </summary>
     static bool IsRepository(string directory) {
         var marker = Path.Combine(directory, ".git");

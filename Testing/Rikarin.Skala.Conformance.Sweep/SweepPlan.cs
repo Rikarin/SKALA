@@ -15,32 +15,32 @@ public sealed record SweepCandidate(OptionInfo Info, IReadOnlyList<string> Value
 /// <summary>An option the sweep cannot ask about, and why not.</summary>
 public sealed record SweepExclusion(OptionInfo Info, string Reason);
 
-/// <summary>What one call to <see cref="SweepPlan.Build"/> produced.</summary>
+/// <summary>What one call to <see cref="SweepPlan.Build" /> produced.</summary>
 public sealed record SweepPlanResult(IReadOnlyList<SweepCandidate> Candidates, IReadOnlyList<SweepExclusion> Excluded);
 
 /// <summary>
-/// Chooses what the sweep asks about, from the registry as it stands when the sweep runs.
+///     Chooses what the sweep asks about, from the registry as it stands when the sweep runs.
 /// </summary>
 /// <remarks>
-/// ⚠ Nothing here holds a list of option names. Three agents are implementing <c>space_*</c>,
-/// <c>wrap_*</c> and <c>xmldoc_*</c> concurrently with this one, so the set of Tier A options moves
-/// under the harness; a baked-in list would report against a registry that no longer exists. Every
-/// question — which options, which values, which fixture, which tier — is asked of
-/// <see cref="OptionRegistry"/> at run time.
-/// <para>
-/// ⚠ The language filter reads <see cref="OptionInfo.Language"/> and never parses
-/// <c>editor_config_template</c>. The export carries C++, VB and XAML keys that no C# fixture can
-/// move, and the template is being hand-stripped of them — but ADR-001 requires the full unstripped
-/// export to keep working, so the harness must not care either way. The registry's own field is the
-/// only stable answer.
-/// </para>
+///     ⚠ Nothing here holds a list of option names. Three agents are implementing <c>space_*</c>,
+///     <c>wrap_*</c> and <c>xmldoc_*</c> concurrently with this one, so the set of Tier A options moves
+///     under the harness; a baked-in list would report against a registry that no longer exists. Every
+///     question — which options, which values, which fixture, which tier — is asked of
+///     <see cref="OptionRegistry" /> at run time.
+///     <para>
+///         ⚠ The language filter reads <see cref="OptionInfo.Language" /> and never parses
+///         <c>editor_config_template</c>. The export carries C++, VB and XAML keys that no C# fixture can
+///         move, and the template is being hand-stripped of them — but ADR-001 requires the full unstripped
+///         export to keep working, so the harness must not care either way. The registry's own field is the
+///         only stable answer.
+///     </para>
 /// </remarks>
 public static class SweepPlan {
     /// <summary>The languages a C# corpus fixture can speak to.</summary>
     /// <remarks>
-    /// ⚠ An allow-list rather than a deny-list. A key whose language is added to the registry
-    /// tomorrow is excluded and reported, which is the failure mode to prefer over silently
-    /// sweeping a C++ key against a C# fixture and reporting it unexercised.
+    ///     ⚠ An allow-list rather than a deny-list. A key whose language is added to the registry
+    ///     tomorrow is excluded and reported, which is the failure mode to prefer over silently
+    ///     sweeping a C++ key against a C# fixture and reporting it unexercised.
     /// </remarks>
     public static readonly string[] Languages = ["csharp", "xmldoc", "any"];
 
@@ -98,13 +98,13 @@ public static class SweepPlan {
     }
 
     /// <summary>
-    /// <c>--family=space</c> means the <c>space_*</c> keys, whichever prefix the export spells them
-    /// with.
+    ///     <c>--family=space</c> means the <c>space_*</c> keys, whichever prefix the export spells them
+    ///     with.
     /// </summary>
     /// <remarks>
-    /// ⚠ The same option is written <c>resharper_space_after_cast</c>, <c>csharp_space_after_cast</c>
-    /// and <c>space_after_cast</c> depending on which of the three the export chose, so a family is
-    /// matched after the vendor prefix is taken off rather than by <c>StartsWith</c> on the raw key.
+    ///     ⚠ The same option is written <c>resharper_space_after_cast</c>, <c>csharp_space_after_cast</c>
+    ///     and <c>space_after_cast</c> depending on which of the three the export chose, so a family is
+    ///     matched after the vendor prefix is taken off rather than by <c>StartsWith</c> on the raw key.
     /// </remarks>
     public static bool InFamily(string key, IReadOnlyList<string> families) {
         var bare = Strip(key);
@@ -129,16 +129,16 @@ public static class SweepPlan {
     }
 
     /// <summary>
-    /// The values one option is swept at.
+    ///     The values one option is swept at.
     /// </summary>
     /// <remarks>
-    /// ⚠ An int has no finite domain, so the sweep offers a probe set — the export's value, a value
-    /// that is definitely different, and <c>1</c> — and not the domain. An int option reported
-    /// <see cref="SweepOutcome.Unexercised"/> therefore means "this probe set could not move it",
-    /// which is weaker than the same verdict on a bool or an enum and is labelled as such in the
-    /// report. Kept deliberately identical to <c>OptionCoverageTests.LegalValues</c>, so that the
-    /// sweep and the unit floor are asking about the same values; a divergence between the two would
-    /// be a divergence in the question rather than in the answer.
+    ///     ⚠ An int has no finite domain, so the sweep offers a probe set — the export's value, a value
+    ///     that is definitely different, and <c>1</c> — and not the domain. An int option reported
+    ///     <see cref="SweepOutcome.Unexercised" /> therefore means "this probe set could not move it",
+    ///     which is weaker than the same verdict on a bool or an enum and is labelled as such in the
+    ///     report. Kept deliberately identical to <c>OptionCoverageTests.LegalValues</c>, so that the
+    ///     sweep and the unit floor are asking about the same values; a divergence between the two would
+    ///     be a divergence in the question rather than in the answer.
     /// </remarks>
     public static IEnumerable<string> LegalValues(OptionInfo info) {
         switch (info.Kind) {

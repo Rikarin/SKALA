@@ -12,18 +12,18 @@ namespace Rikarin.Skala.Testing;
 /// <summary>What a mutation is allowed to claim about its own output.</summary>
 public enum MutationClass {
     /// <summary>
-    /// Whitespace that carries no information: indentation, trailing space, the width of a gap
-    /// between two tokens on one line. ⚠ The formatter must <b>absorb</b> it —
-    /// <c>format(mutate(x)) ≡ format(x)</c>, docs/plan/12 § "Fuzzing" — and that is the strongest
-    /// property the fuzzer asserts, because the preserve-and-repair model of ADR-002 makes it
-    /// genuinely hard rather than trivially true.
+    ///     Whitespace that carries no information: indentation, trailing space, the width of a gap
+    ///     between two tokens on one line. ⚠ The formatter must <b>absorb</b> it —
+    ///     <c>format(mutate(x)) ≡ format(x)</c>, docs/plan/12 § "Fuzzing" — and that is the strongest
+    ///     property the fuzzer asserts, because the preserve-and-repair model of ADR-002 makes it
+    ///     genuinely hard rather than trivially true.
     /// </summary>
     Absorbed,
 
     /// <summary>
-    /// Parse-preserving but information-bearing: a new comment, a blank line, a moved line break, a
-    /// widened identifier, a <c>#if</c>. The output is allowed to differ from the baseline's; the
-    /// six properties still have to hold over it.
+    ///     Parse-preserving but information-bearing: a new comment, a blank line, a moved line break, a
+    ///     widened identifier, a <c>#if</c>. The output is allowed to differ from the baseline's; the
+    ///     six properties still have to hold over it.
     /// </summary>
     Structural
 }
@@ -32,22 +32,22 @@ public enum MutationClass {
 public sealed record Mutation(string Name, MutationClass Class, string Text);
 
 /// <summary>
-/// The parse-preserving text mutations of docs/plan/12 § "Fuzzing", each seeded.
+///     The parse-preserving text mutations of docs/plan/12 § "Fuzzing", each seeded.
 /// </summary>
 /// <remarks>
-/// ⚠ Every mutation here is required to keep the file parsing the way it parsed before. That is not
-/// politeness: a mutation that breaks the parse produces a file the formatter refuses to touch by
-/// policy (ADR-003 — reported, left byte-identical), so every property holds over it trivially and
-/// the case measured nothing. The driver checks the parse afterwards and counts a mutation that
-/// broke it as a *fuzzer* defect rather than a formatter one; see <see cref="Fuzzer"/>.
-/// <para>
-/// ⚠ The protections below are the same ones <c>PropertyTests.MutateIndentationOnly</c> arrived at
-/// and are the whole content of "parse-preserving" in practice: a space inside a raw string, a
-/// verbatim string, an interpolation hole, a multi-line comment or a run of disabled text is
-/// <b>data</b>, not whitespace, and moving it changes the program. The difference from that method
-/// is that this one is a stream of many mutations driven by a seed rather than one fixed transform,
-/// which is exactly the gap doc 12 § "Fuzzing" recorded.
-/// </para>
+///     ⚠ Every mutation here is required to keep the file parsing the way it parsed before. That is not
+///     politeness: a mutation that breaks the parse produces a file the formatter refuses to touch by
+///     policy (ADR-003 — reported, left byte-identical), so every property holds over it trivially and
+///     the case measured nothing. The driver checks the parse afterwards and counts a mutation that
+///     broke it as a *fuzzer* defect rather than a formatter one; see <see cref="Fuzzer" />.
+///     <para>
+///         ⚠ The protections below are the same ones <c>PropertyTests.MutateIndentationOnly</c> arrived at
+///         and are the whole content of "parse-preserving" in practice: a space inside a raw string, a
+///         verbatim string, an interpolation hole, a multi-line comment or a run of disabled text is
+///         <b>data</b>, not whitespace, and moving it changes the program. The difference from that method
+///         is that this one is a stream of many mutations driven by a seed rather than one fixed transform,
+///         which is exactly the gap doc 12 § "Fuzzing" recorded.
+///     </para>
 /// </remarks>
 public static class FuzzMutations {
     public const string Indent = "indent";
@@ -71,21 +71,21 @@ public static class FuzzMutations {
     public const string SplitLine = "split-line";
 
     /// <summary>
-    /// The whitespace-only mutations, which the absorption property is asserted over.
+    ///     The whitespace-only mutations, which the absorption property is asserted over.
     /// </summary>
     public static readonly ImmutableArray<string> AbsorbedNames = [Indent, TrailingSpace, WidenGap, CollapseGap, Tabs];
 
     /// <summary>
-    /// Every mutation, with the weight it is drawn at.
+    ///     Every mutation, with the weight it is drawn at.
     /// </summary>
     /// <remarks>
-    /// ⚠ The weights are not uniform and the shape is deliberate. The absorbed five are drawn hard
-    /// because they carry the strong property; <see cref="WidenIdentifier"/> is drawn hard because
-    /// it is the only mutation that changes a line's *width*, which is the input the fitting engine
-    /// makes its decisions from — docs/plan/16 § R2's argument that the fitter is where the risk
-    /// lives is also the argument for that weight. <see cref="Bom"/> and
-    /// <see cref="LineEndings"/> are drawn softly because they are whole-file transforms with one
-    /// bit of information in them and re-drawing them adds nothing.
+    ///     ⚠ The weights are not uniform and the shape is deliberate. The absorbed five are drawn hard
+    ///     because they carry the strong property; <see cref="WidenIdentifier" /> is drawn hard because
+    ///     it is the only mutation that changes a line's *width*, which is the input the fitting engine
+    ///     makes its decisions from — docs/plan/16 § R2's argument that the fitter is where the risk
+    ///     lives is also the argument for that weight. <see cref="Bom" /> and
+    ///     <see cref="LineEndings" /> are drawn softly because they are whole-file transforms with one
+    ///     bit of information in them and re-drawing them adds nothing.
     /// </remarks>
     public static readonly ImmutableArray<(string Name, MutationClass Class, int Weight)> Catalogue = [
         (Indent, MutationClass.Absorbed, 10),
@@ -110,13 +110,13 @@ public static class FuzzMutations {
     ];
 
     /// <summary>
-    /// Applies one mutation drawn from <paramref name="names"/>, or <c>null</c> if none applied.
+    ///     Applies one mutation drawn from <paramref name="names" />, or <c>null</c> if none applied.
     /// </summary>
     /// <remarks>
-    /// ⚠ A mutation returns <c>null</c> rather than the input when it has nowhere to act — a
-    /// twelve-line file has no blank line to remove — and the driver re-draws. Returning the input
-    /// unchanged would count a case that asserted the properties over the *original* file as a
-    /// fuzz case, which is how a fuzzer reports thousands of executions and covers one input.
+    ///     ⚠ A mutation returns <c>null</c> rather than the input when it has nowhere to act — a
+    ///     twelve-line file has no blank line to remove — and the driver re-draws. Returning the input
+    ///     unchanged would count a case that asserted the properties over the *original* file as a
+    ///     fuzz case, which is how a fuzzer reports thousands of executions and covers one input.
     /// </remarks>
     public static Mutation? Apply(
         string source,
@@ -337,11 +337,11 @@ public static class FuzzMutations {
 
     /// <summary>Wraps a run of lines in a directive pair.</summary>
     /// <remarks>
-    /// ⚠ The run may contain no preprocessor directive of its own. `#if true` inserted before an
-    /// `#endif` whose `#if` is above the run steals that `#endif` and leaves the original one
-    /// stray, which is a *parse error* rather than a parse-preserving mutation, and a file with a
-    /// parse error is one the formatter leaves byte-identical by policy — a case that asserts
-    /// nothing.
+    ///     ⚠ The run may contain no preprocessor directive of its own. `#if true` inserted before an
+    ///     `#endif` whose `#if` is above the run steals that `#endif` and leaves the original one
+    ///     stray, which is a *parse error* rather than a parse-preserving mutation, and a file with a
+    ///     parse error is one the formatter leaves byte-identical by policy — a case that asserts
+    ///     nothing.
     /// </remarks>
     static string? Wrap(SourceMap map, FuzzRandom random, string open, string close) {
         var runs = map.DirectiveFreeRuns;
@@ -390,20 +390,20 @@ public static class FuzzMutations {
     static string ToggleBom(SourceMap map) => map.Source.StartsWith('﻿') ? map.Source[1..] : "﻿" + map.Source;
 
     /// <summary>
-    /// Renames one identifier everywhere it occurs as a token, to a longer name.
+    ///     Renames one identifier everywhere it occurs as a token, to a longer name.
     /// </summary>
     /// <remarks>
-    /// ⚠ This is the mutation that reaches the fitting engine, and it is the reason the fuzzer is
-    /// worth running at all. docs/plan/16 § R2 argues that the fitter is the only genuinely novel
-    /// code in the project; every decision it makes is a function of a line's *width*, and no other
-    /// mutation in the catalogue changes a width. Widening one name by thirty characters moves a
-    /// call from fitting to not-fitting, which is the boundary M3 found two of four measures
-    /// returning zero at.
-    /// <para>
-    /// Semantic validity is not required and is not attempted — the new name may collide with
-    /// another. What the fuzzer asserts is a formatting property, the formatter is syntactic, and a
-    /// collision produces the same tokens either way.
-    /// </para>
+    ///     ⚠ This is the mutation that reaches the fitting engine, and it is the reason the fuzzer is
+    ///     worth running at all. docs/plan/16 § R2 argues that the fitter is the only genuinely novel
+    ///     code in the project; every decision it makes is a function of a line's *width*, and no other
+    ///     mutation in the catalogue changes a width. Widening one name by thirty characters moves a
+    ///     call from fitting to not-fitting, which is the boundary M3 found two of four measures
+    ///     returning zero at.
+    ///     <para>
+    ///         Semantic validity is not required and is not attempted — the new name may collide with
+    ///         another. What the fuzzer asserts is a formatting property, the formatter is syntactic, and a
+    ///         collision produces the same tokens either way.
+    ///     </para>
     /// </remarks>
     static string? Widen(SourceMap map, FuzzRandom random) {
         if (map.Identifiers.Count == 0) {
@@ -489,14 +489,14 @@ public static class FuzzMutations {
     }
 
     /// <summary>
-    /// Where a mutation is allowed to act, computed once per source.
+    ///     Where a mutation is allowed to act, computed once per source.
     /// </summary>
     /// <remarks>
-    /// ⚠ Parsed with the symbols the formatter is about to use, for the reason
-    /// <c>PropertyTests.MutateIndentationOnly</c> records: which lines are disabled text is a
-    /// function of the symbol set, so a map computed from a different set protects the wrong half of
-    /// a <c>#if</c>/<c>#else</c> and the property then fails for the fuzzer's reason rather than the
-    /// formatter's.
+    ///     ⚠ Parsed with the symbols the formatter is about to use, for the reason
+    ///     <c>PropertyTests.MutateIndentationOnly</c> records: which lines are disabled text is a
+    ///     function of the symbol set, so a map computed from a different set protects the wrong half of
+    ///     a <c>#if</c>/<c>#else</c> and the property then fails for the fuzzer's reason rather than the
+    ///     formatter's.
     /// </remarks>
     public sealed class SourceMap {
         /// <summary>Lines whose <b>start</b> is inside data — nothing may be inserted before them.</summary>
@@ -506,22 +506,22 @@ public static class FuzzMutations {
         readonly HashSet<int> tailProtected = [];
 
         /// <summary>
-        /// The extra lines and spans that are data under the <b>other</b> symbol set.
+        ///     The extra lines and spans that are data under the <b>other</b> symbol set.
         /// </summary>
         /// <remarks>
-        /// ⚠ The properties are asserted under both symbol sets, so a whitespace-only mutation has
-        /// to be whitespace under both. Which text is <see cref="SyntaxKind.DisabledTextTrivia"/> is
-        /// entirely a function of the symbol set: the <c>#if</c> branch is data with no symbols and
-        /// the <c>#else</c> branch is data with them, and a map built from one set walks straight
-        /// into the other's. It cost this fuzzer 1 639 false absorption reports in a six-minute run
-        /// — one Serilog method with a <c>#if FEATURE_SPAN</c> between its two signatures, found
-        /// over and over — before the two maps were separated.
-        /// <para>
-        /// ⚠ Only the *absorbed* mutations obey this wider protection. A structural mutation may put
-        /// a comment inside a <c>#if</c> body and should: that body is live under one of the two
-        /// sets, and it is the code path M3.1 opened up after the
-        /// <c>&gt;</c>-before-<c>(</c> defect survived four milestones inside it.
-        /// </para>
+        ///     ⚠ The properties are asserted under both symbol sets, so a whitespace-only mutation has
+        ///     to be whitespace under both. Which text is <see cref="SyntaxKind.DisabledTextTrivia" /> is
+        ///     entirely a function of the symbol set: the <c>#if</c> branch is data with no symbols and
+        ///     the <c>#else</c> branch is data with them, and a map built from one set walks straight
+        ///     into the other's. It cost this fuzzer 1 639 false absorption reports in a six-minute run
+        ///     — one Serilog method with a <c>#if FEATURE_SPAN</c> between its two signatures, found
+        ///     over and over — before the two maps were separated.
+        ///     <para>
+        ///         ⚠ Only the *absorbed* mutations obey this wider protection. A structural mutation may put
+        ///         a comment inside a <c>#if</c> body and should: that body is live under one of the two
+        ///         sets, and it is the code path M3.1 opened up after the
+        ///         <c>&gt;</c>-before-<c>(</c> defect survived four milestones inside it.
+        ///     </para>
         /// </remarks>
         readonly HashSet<int> otherHeadProtected = [];
 
@@ -549,23 +549,23 @@ public static class FuzzMutations {
         public IReadOnlyList<TextSpan> Gaps { get; private set; } = [];
 
         /// <summary>
-        /// The gaps whose width the formatter is obliged to <b>decide</b>, which is a subset.
+        ///     The gaps whose width the formatter is obliged to <b>decide</b>, which is a subset.
         /// </summary>
         /// <remarks>
-        /// ⚠ Found by this fuzzer on its first run, and it is a correction to the property rather
-        /// than to the formatter. <c>SpaceRules.Ungoverned</c> answers <c>SpaceKind.Preserve</c> for
-        /// the gap beside a <c>..</c> in a range or a spread, because no key in ReSharper's export
-        /// governs it and the oracle leaves whatever the author wrote there. Asked directly, both
-        /// tools turn <c>a[1..3]</c>, <c>a[1 .. 3]</c> and <c>a[1.. 3]</c> into three different
-        /// outputs — byte-identical to each other, and each preserving its input.
-        /// <para>
-        /// So <c>format(mutate_whitespace(x)) ≡ format(x)</c> is <b>false as stated</b> for that one
-        /// gap class, and asserting it there would be asserting that Skala should diverge from the
-        /// oracle. Excluded by token kind rather than by parent shape: <c>Preserve</c> is produced
-        /// only for a <c>..</c>, so "any gap touching a <c>..</c>" is a conservative superset that
-        /// does not have to track which parent shapes qualify — and if a *new* preserve class ever
-        /// appears, the fuzzer will find it, which is the outcome that wants a decision.
-        /// </para>
+        ///     ⚠ Found by this fuzzer on its first run, and it is a correction to the property rather
+        ///     than to the formatter. <c>SpaceRules.Ungoverned</c> answers <c>SpaceKind.Preserve</c> for
+        ///     the gap beside a <c>..</c> in a range or a spread, because no key in ReSharper's export
+        ///     governs it and the oracle leaves whatever the author wrote there. Asked directly, both
+        ///     tools turn <c>a[1..3]</c>, <c>a[1 .. 3]</c> and <c>a[1.. 3]</c> into three different
+        ///     outputs — byte-identical to each other, and each preserving its input.
+        ///     <para>
+        ///         So <c>format(mutate_whitespace(x)) ≡ format(x)</c> is <b>false as stated</b> for that one
+        ///         gap class, and asserting it there would be asserting that Skala should diverge from the
+        ///         oracle. Excluded by token kind rather than by parent shape: <c>Preserve</c> is produced
+        ///         only for a <c>..</c>, so "any gap touching a <c>..</c>" is a conservative superset that
+        ///         does not have to track which parent shapes qualify — and if a *new* preserve class ever
+        ///         appears, the fuzzer will find it, which is the outcome that wants a decision.
+        ///     </para>
         /// </remarks>
         public IReadOnlyList<TextSpan> AbsorbableGaps { get; private set; } = [];
 
@@ -592,13 +592,13 @@ public static class FuzzMutations {
         }
 
         /// <summary>
-        /// Lines a mutation may act on.
+        ///     Lines a mutation may act on.
         /// </summary>
         /// <param name="atStart">
-        /// <c>true</c> for a mutation that rewrites a line's leading whitespace, <c>false</c> for
-        /// one that appends to its end. ⚠ The two are different sets and conflating them is the
-        /// subtle way a fuzzer writes into a raw string: a token that opens on line 5 and closes on
-        /// line 8 leaves line 5's *indentation* real whitespace and line 5's *end* inside the token.
+        ///     <c>true</c> for a mutation that rewrites a line's leading whitespace, <c>false</c> for
+        ///     one that appends to its end. ⚠ The two are different sets and conflating them is the
+        ///     subtle way a fuzzer writes into a raw string: a token that opens on line 5 and closes on
+        ///     line 8 leaves line 5's *indentation* real whitespace and line 5's *end* inside the token.
         /// </param>
         public IReadOnlyList<int> SafeLines(bool atStart, bool excludeCommentEnds = false, bool absorbing = false) {
             var lines = new List<int>();
@@ -716,14 +716,14 @@ public static class FuzzMutations {
         }
 
         /// <summary>
-        /// The disabled text of the <em>complementary</em> symbol set.
+        ///     The disabled text of the <em>complementary</em> symbol set.
         /// </summary>
         /// <remarks>
-        /// ⚠ The complement is always the empty set, because the two sets the properties are
-        /// asserted under are "no symbols" and <see cref="Corpus.PropertySymbols"/>, and a region
-        /// disabled under a *superset* of symbols is disabled under the empty set too. Parsing
-        /// twice costs one parse per mutation and buys the difference between 1 639 absorption
-        /// reports and the four real findings underneath them.
+        ///     ⚠ The complement is always the empty set, because the two sets the properties are
+        ///     asserted under are "no symbols" and <see cref="Corpus.PropertySymbols" />, and a region
+        ///     disabled under a *superset* of symbols is disabled under the empty set too. Parsing
+        ///     twice costs one parse per mutation and buys the difference between 1 639 absorption
+        ///     reports and the four real findings underneath them.
         /// </remarks>
         void BuildOtherSet() {
             var other = CSharpSyntaxTree.ParseText(Text, CSharpFormatter.ParseOptions).GetRoot();

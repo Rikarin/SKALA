@@ -11,7 +11,7 @@ public sealed record EditorConfigAssignment(string Key, string Value, int Line, 
 }
 
 /// <summary>
-/// A <c>[glob]</c> section, or the preamble before the first one where <c>root = true</c> lives.
+///     A <c>[glob]</c> section, or the preamble before the first one where <c>root = true</c> lives.
 /// </summary>
 public sealed class EditorConfigSection {
     readonly List<EditorConfigAssignment> _assignments = [];
@@ -39,13 +39,13 @@ public sealed class EditorConfigSection {
 }
 
 /// <summary>
-/// One <c>.editorconfig</c>, parsed twice: once by Roslyn so that glob matching is the compiler's
-/// own, and once here so that every value can name the file and line it came from.
+///     One <c>.editorconfig</c>, parsed twice: once by Roslyn so that glob matching is the compiler's
+///     own, and once here so that every value can name the file and line it came from.
 /// </summary>
 /// <remarks>
-/// ⚠ Roslyn's <c>AnalyzerConfig</c> exposes only <c>Parse</c> publicly — its sections, its
-/// <c>root</c> flag and its properties are internal — so provenance cannot come from it.
-/// <see cref="SectionMatcher"/> is how the compiler's globbing is still the only globbing in play.
+///     ⚠ Roslyn's <c>AnalyzerConfig</c> exposes only <c>Parse</c> publicly — its sections, its
+///     <c>root</c> flag and its properties are internal — so provenance cannot come from it.
+///     <see cref="SectionMatcher" /> is how the compiler's globbing is still the only globbing in play.
 /// </remarks>
 public sealed class EditorConfigDocument {
     public const string FileName = ".editorconfig";
@@ -64,13 +64,13 @@ public sealed class EditorConfigDocument {
     public string Path { get; }
 
     /// <summary>
-    /// A process-unique stamp, handed out at construction.
+    ///     A process-unique stamp, handed out at construction.
     /// </summary>
     /// <remarks>
-    /// ⚠ It exists so that <see cref="ConfigurationCache"/> can key a resolution on the documents it
-    /// came from without hashing their text. A document that is re-read because the file changed is
-    /// a different instance with a different version, so every cached answer derived from the old
-    /// one is unreachable rather than stale.
+    ///     ⚠ It exists so that <see cref="ConfigurationCache" /> can key a resolution on the documents it
+    ///     came from without hashing their text. A document that is re-read because the file changed is
+    ///     a different instance with a different version, so every cached answer derived from the old
+    ///     one is unreachable rather than stale.
     /// </remarks>
     public int Version { get; }
 

@@ -10,14 +10,14 @@ namespace Rikarin.Skala.Formatting.CSharp;
 /// <summary>What the sub-formatter did to one file.</summary>
 /// <param name="Reflowed">Comments re-wrapped.</param>
 /// <param name="Refused">
-/// Comments left exactly as written. Malformed XML, a multi-line tag header, glue a re-wrap could
-/// not honour, or a round trip that did not come back identical.
+///     Comments left exactly as written. Malformed XML, a multi-line tag header, glue a re-wrap could
+///     not honour, or a round trip that did not come back identical.
 /// </param>
 /// <param name="Replacements">
-/// ⚠ The regions of the input that were replaced, and by how much the text after each one moved.
-/// The pipeline's anchor points (docs/plan/04 § "Emitting minimal edits") are offsets into the text
-/// this pass rewrites, so they have to be shifted by exactly this or the minimal-edit machinery
-/// starts describing edits at the wrong place.
+///     ⚠ The regions of the input that were replaced, and by how much the text after each one moved.
+///     The pipeline's anchor points (docs/plan/04 § "Emitting minimal edits") are offsets into the text
+///     this pass rewrites, so they have to be shifted by exactly this or the minimal-edit machinery
+///     starts describing edits at the wrong place.
 /// </param>
 public readonly record struct XmlDocOutcome(
     string Text,
@@ -28,9 +28,9 @@ public readonly record struct XmlDocOutcome(
 
 /// <summary>Why one comment was left exactly as written.</summary>
 /// <remarks>
-/// ⚠ Every refusal is safe, and none of them is silent. A sub-formatter with no oracle has to be
-/// able to say <em>why</em> it declined, or "it left sixteen comments alone" is indistinguishable
-/// from "it has a bug in sixteen places".
+///     ⚠ Every refusal is safe, and none of them is silent. A sub-formatter with no oracle has to be
+///     able to say <em>why</em> it declined, or "it left sixteen comments alone" is indistinguishable
+///     from "it has a bug in sixteen places".
 /// </remarks>
 public enum XmlDocRefusalReason {
     /// <summary>Not well-formed XML. Reported at hint as <c>SK0003</c>; hazard 2 of docs/plan/05.</summary>
@@ -56,39 +56,39 @@ public readonly record struct XmlDocRefusal(int Line, XmlDocRefusalReason Reason
 public readonly record struct XmlDocReplacement(TextSpan Span, int Length);
 
 /// <summary>
-/// The documentation-comment sub-formatter of docs/plan/05 § "Phase 4".
+///     The documentation-comment sub-formatter of docs/plan/05 § "Phase 4".
 /// </summary>
 /// <remarks>
-/// ⚠ <b>This is the one part of Skala with no oracle, and it is opt-in for that reason.</b>
-/// <c>jb cleanupcode</c> 2025.2.6 does not format documentation comments at all — not the missing
-/// space after <c>///</c>, not a 128-column summary, not two <c>&lt;param&gt;</c> tags on one line —
-/// with the export's whole <c>resharper_xmldoc_*</c> family in force. That is SK-DIV-0006, and it
-/// is a measurement rather than an assumption. So every other option in Skala is pinned by a
-/// committed fixture showing Rider doing the thing, and none of these can be.
-/// <para>
-/// What replaces the oracle is not "careful reading". It is a property that holds or the comment is
-/// not written: <b>the comment's content must survive the round trip</b>. The re-wrapped text is
-/// re-parsed and reduced to a signature — element names, attribute source text, prose words,
-/// verbatim regions byte-for-byte — and if that signature differs from the original's by so much as
-/// one word, the comment is put back exactly as it was. See <see cref="XmlDocSignature"/>.
-/// </para>
-/// <para>
-/// ⚠ It runs on the <em>formatted</em> text rather than inside the document builder, and that is
-/// deliberate. The width a line has to fit in depends on the code indentation, which this engine
-/// resolves at layout time (<see cref="LayoutWriter"/>); wrapping against the indentation the
-/// source happened to have would make <c>format(format(x))</c> differ from <c>format(x)</c> on
-/// every badly-indented file. Running last means the indentation is final and the pass is a fixed
-/// point. It also keeps the whole sub-formatter out of <see cref="CSharpDocumentBuilder"/>.
-/// </para>
+///     ⚠ <b>This is the one part of Skala with no oracle, and it is opt-in for that reason.</b>
+///     <c>jb cleanupcode</c> 2025.2.6 does not format documentation comments at all — not the missing
+///     space after <c>///</c>, not a 128-column summary, not two <c>&lt;param&gt;</c> tags on one line —
+///     with the export's whole <c>resharper_xmldoc_*</c> family in force. That is SK-DIV-0006, and it
+///     is a measurement rather than an assumption. So every other option in Skala is pinned by a
+///     committed fixture showing Rider doing the thing, and none of these can be.
+///     <para>
+///         What replaces the oracle is not "careful reading". It is a property that holds or the comment is
+///         not written: <b>the comment's content must survive the round trip</b>. The re-wrapped text is
+///         re-parsed and reduced to a signature — element names, attribute source text, prose words,
+///         verbatim regions byte-for-byte — and if that signature differs from the original's by so much as
+///         one word, the comment is put back exactly as it was. See <see cref="XmlDocSignature" />.
+///     </para>
+///     <para>
+///         ⚠ It runs on the <em>formatted</em> text rather than inside the document builder, and that is
+///         deliberate. The width a line has to fit in depends on the code indentation, which this engine
+///         resolves at layout time (<see cref="LayoutWriter" />); wrapping against the indentation the
+///         source happened to have would make <c>format(format(x))</c> differ from <c>format(x)</c> on
+///         every badly-indented file. Running last means the indentation is final and the pass is a fixed
+///         point. It also keeps the whole sub-formatter out of <see cref="CSharpDocumentBuilder" />.
+///     </para>
 /// </remarks>
 public static class XmlDocFormatter {
     /// <summary>Re-wraps every well-formed <c>///</c> comment in already-formatted text.</summary>
     /// <param name="tags">
-    /// ⚠ <c>@formatter:off</c>, and this pass is the sharpest of the three places it used to be
-    /// missed. It runs on the document builder's <em>output</em>, downstream of the verbatim chunk
-    /// the builder had just protected, and re-parses it — so a <c>///</c> comment between the tags
-    /// looked to it exactly like any other. The guard is computed over this pass's own tree because
-    /// that is the text whose offsets the replacements are in.
+    ///     ⚠ <c>@formatter:off</c>, and this pass is the sharpest of the three places it used to be
+    ///     missed. It runs on the document builder's <em>output</em>, downstream of the verbatim chunk
+    ///     the builder had just protected, and re-parses it — so a <c>///</c> comment between the tags
+    ///     looked to it exactly like any other. The guard is computed over this pass's own tree because
+    ///     that is the text whose offsets the replacements are in.
     /// </param>
     public static XmlDocOutcome Rewrite(
         string text,
@@ -159,14 +159,14 @@ public static class XmlDocFormatter {
     }
 
     /// <summary>
-    /// Moves the layout's anchor points to where the re-wrap left the text.
+    ///     Moves the layout's anchor points to where the re-wrap left the text.
     /// </summary>
     /// <remarks>
-    /// ⚠ An anchor inside a replaced region is dropped rather than guessed at. The pieces inside a
-    /// re-wrapped comment are exactly the ones whose output position stopped being a function of
-    /// their input position, and an anchor that lies about where a piece went produces an edit that
-    /// overwrites the wrong bytes. Dropping it costs granularity in <c>--diff</c> and costs nothing
-    /// in correctness: <see cref="EditEmitter"/> then covers the region with the surrounding gap.
+    ///     ⚠ An anchor inside a replaced region is dropped rather than guessed at. The pieces inside a
+    ///     re-wrapped comment are exactly the ones whose output position stopped being a function of
+    ///     their input position, and an anchor that lies about where a piece went produces an edit that
+    ///     overwrites the wrong bytes. Dropping it costs granularity in <c>--diff</c> and costs nothing
+    ///     in correctness: <see cref="EditEmitter" /> then covers the region with the surrounding gap.
     /// </remarks>
     public static Layout Reanchor(Layout layout, string text, ImmutableArray<XmlDocReplacement> replacements) {
         if (replacements.IsDefaultOrEmpty) {
@@ -269,7 +269,7 @@ public static class XmlDocFormatter {
     readonly record struct Attempt(TextSpan Span, string? Text, XmlDocRefusalReason? Reason);
 
     /// <summary>
-    /// The line's indentation, when the line is a <c>///</c> line and nothing else.
+    ///     The line's indentation, when the line is a <c>///</c> line and nothing else.
     /// </summary>
     static string? Indent(string line) {
         var index = 0;
@@ -288,19 +288,19 @@ public static class XmlDocFormatter {
 }
 
 /// <summary>
-/// What a documentation comment says, reduced to the parts a re-wrap may not change.
+///     What a documentation comment says, reduced to the parts a re-wrap may not change.
 /// </summary>
 /// <remarks>
-/// ⚠ The signature is what stands in for the oracle. It is deliberately asymmetric: prose is
-/// compared with its whitespace normalised, because re-flowing prose is the whole point, while a
-/// <c>&lt;code&gt;</c> or <c>&lt;c&gt;</c> body is compared byte-for-byte including its indentation,
-/// because whitespace there is the content. Tag names and the source text of every attribute are
-/// compared exactly.
-/// <para>
-/// ⚠ This is narrower than "ignore comments", and narrower on purpose. The
-/// <see cref="TokenEquivalence"/> allowance the sub-formatter needs cannot see inside a
-/// <c>&lt;code&gt;</c> block; this can, and it runs first.
-/// </para>
+///     ⚠ The signature is what stands in for the oracle. It is deliberately asymmetric: prose is
+///     compared with its whitespace normalised, because re-flowing prose is the whole point, while a
+///     <c>&lt;code&gt;</c> or <c>&lt;c&gt;</c> body is compared byte-for-byte including its indentation,
+///     because whitespace there is the content. Tag names and the source text of every attribute are
+///     compared exactly.
+///     <para>
+///         ⚠ This is narrower than "ignore comments", and narrower on purpose. The
+///         <see cref="TokenEquivalence" /> allowance the sub-formatter needs cannot see inside a
+///         <c>&lt;code&gt;</c> block; this can, and it runs first.
+///     </para>
 /// </remarks>
 public static class XmlDocSignature {
     /// <summary>Whether the re-wrapped lines still say what the original said.</summary>
@@ -313,11 +313,11 @@ public static class XmlDocSignature {
     }
 
     /// <summary>
-    /// Parses standalone <c>///</c> lines back into a documentation comment.
+    ///     Parses standalone <c>///</c> lines back into a documentation comment.
     /// </summary>
     /// <remarks>
-    /// ⚠ Attached to a declaration, because a doc comment with nothing after it is trailing trivia
-    /// on the end-of-file token and Roslyn does not give it XML structure there.
+    ///     ⚠ Attached to a declaration, because a doc comment with nothing after it is trailing trivia
+    ///     on the end-of-file token and Roslyn does not give it XML structure there.
     /// </remarks>
     static DocumentationCommentTriviaSyntax? Reparse(string lines) {
         var tree = CSharpSyntaxTree.ParseText(
@@ -338,17 +338,17 @@ public static class XmlDocSignature {
     public static string Of(DocumentationCommentTriviaSyntax comment) => Content(comment.Content);
 
     /// <summary>
-    /// The signature of a content list.
+    ///     The signature of a content list.
     /// </summary>
     /// <remarks>
-    /// ⚠ Whitespace between two things is compared only when at least one of them is prose, and
-    /// that asymmetry is the whole rule. <c>&lt;c&gt;x&lt;/c&gt;s</c> and <c>&lt;c&gt;x&lt;/c&gt; s</c>
-    /// are different sentences, so a word beside a tag is compared with its separator; whereas
-    /// <c>&lt;/summary&gt;&lt;param&gt;</c> and <c>&lt;/summary&gt;</c>-newline-<c>&lt;param&gt;</c>
-    /// are the same document, and <c>linebreak_before_elements</c> exists precisely to turn the
-    /// first into the second. Whitespace at the two ends is dropped for the same reason:
-    /// <c>spaces_inside_tags</c>, and the choice between a one-line and a three-line element, change
-    /// it and change nothing else.
+    ///     ⚠ Whitespace between two things is compared only when at least one of them is prose, and
+    ///     that asymmetry is the whole rule. <c>&lt;c&gt;x&lt;/c&gt;s</c> and <c>&lt;c&gt;x&lt;/c&gt; s</c>
+    ///     are different sentences, so a word beside a tag is compared with its separator; whereas
+    ///     <c>&lt;/summary&gt;&lt;param&gt;</c> and <c>&lt;/summary&gt;</c>-newline-<c>&lt;param&gt;</c>
+    ///     are the same document, and <c>linebreak_before_elements</c> exists precisely to turn the
+    ///     first into the second. Whitespace at the two ends is dropped for the same reason:
+    ///     <c>spaces_inside_tags</c>, and the choice between a one-line and a three-line element, change
+    ///     it and change nothing else.
     /// </remarks>
     static string Content(SyntaxList<XmlNodeSyntax> content) {
         var items = new List<(bool IsText, string Text, bool SpaceBefore)>();
@@ -426,13 +426,13 @@ public static class XmlDocSignature {
     }
 
     /// <summary>
-    /// A text run's words, whitespace-normalised, and whether it had whitespace at each end.
+    ///     A text run's words, whitespace-normalised, and whether it had whitespace at each end.
     /// </summary>
     /// <remarks>
-    /// ⚠ An entity token contributes its source spelling, so <c>&amp;lt;</c> is compared as the four
-    /// characters the author wrote rather than as the character it denotes. Resolving it would make
-    /// <c>&amp;#60;</c> and <c>&amp;lt;</c> compare equal, and the sub-formatter would then be free
-    /// to swap one for the other.
+    ///     ⚠ An entity token contributes its source spelling, so <c>&amp;lt;</c> is compared as the four
+    ///     characters the author wrote rather than as the character it denotes. Resolving it would make
+    ///     <c>&amp;#60;</c> and <c>&amp;lt;</c> compare equal, and the sub-formatter would then be free
+    ///     to swap one for the other.
     /// </remarks>
     static (string Words, bool Before, bool After) Prose(XmlTextSyntax text) {
         var raw = new StringBuilder();

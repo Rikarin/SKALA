@@ -6,12 +6,12 @@ using System.Text;
 namespace Rikarin.Skala.Options.Generator;
 
 /// <summary>
-/// The smallest JSON reader that can read <c>options.json</c>.
+///     The smallest JSON reader that can read <c>options.json</c>.
 /// </summary>
 /// <remarks>
-/// A source generator loads into <c>csc</c> and into Rider, so every assembly it drags with it is a
-/// way for the analyzer load to fail (docs/plan/02 § "The project graph"). <c>System.Text.Json</c>
-/// is not worth that risk for one file with no unusual shapes, so the reader is here.
+///     A source generator loads into <c>csc</c> and into Rider, so every assembly it drags with it is a
+///     way for the analyzer load to fail (docs/plan/02 § "The project graph"). <c>System.Text.Json</c>
+///     is not worth that risk for one file with no unusual shapes, so the reader is here.
 /// </remarks>
 internal static class Json {
     public static JsonValue Parse(string text) {

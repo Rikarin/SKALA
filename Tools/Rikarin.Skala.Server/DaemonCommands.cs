@@ -6,12 +6,12 @@ using Rikarin.Skala.Protocol;
 namespace Rikarin.Skala.Server;
 
 /// <summary>
-/// The behaviour behind <c>skala daemon</c> and <c>skala hooks</c>.
+///     The behaviour behind <c>skala daemon</c> and <c>skala hooks</c>.
 /// </summary>
 /// <remarks>
-/// ⚠ Here rather than in the CLI for the same reason <see cref="Formatting.CSharp.FormatCommand"/>
-/// is: nothing may reference <c>Rikarin.Skala.Cli</c> (docs/plan/02 § "The project graph"), and the
-/// CLI is argument parsing and rendering only.
+///     ⚠ Here rather than in the CLI for the same reason <see cref="Formatting.CSharp.FormatCommand" />
+///     is: nothing may reference <c>Rikarin.Skala.Cli</c> (docs/plan/02 § "The project graph"), and the
+///     CLI is argument parsing and rendering only.
 /// </remarks>
 public static class DaemonCommands {
     public static CommandResult Status(string repositoryRoot) {

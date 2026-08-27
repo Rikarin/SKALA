@@ -10,20 +10,20 @@ namespace Rikarin.Skala.Core.Configuration;
 public sealed record CanonicalManifest(string Version, string Sha256, int Assignments, int Sections);
 
 /// <summary>
-/// The canonical <c>.editorconfig</c> every repository shares, and the rule for composing it.
+///     The canonical <c>.editorconfig</c> every repository shares, and the rule for composing it.
 /// </summary>
 /// <remarks>
-/// ⚠ ADR-001: the canonical file <b>is</b> the Rider export. <see cref="Compose"/> is the whole of
-/// the transformation, it is two additions long, and both of them are what <see cref="Fixer"/>
-/// already does — so the workflow the ADR protects (change a setting in Rider, re-export, publish)
-/// survives intact. Nothing here reads, interprets or reorders the export's own lines.
-/// <para>
-/// The payload is carried twice: embedded in this assembly, so <c>skala config sync</c> works
-/// offline with no restore and exactly one version pin (the tool's), and as content in
-/// <c>Rikarin.Skala.Canonical</c>, so a repository can pin the canonical in
-/// <c>Directory.Packages.props</c> next to everything else it pins. Both come from one file on
-/// disk, and <c>CanonicalDistributionTests</c> asserts they agree byte for byte.
-/// </para>
+///     ⚠ ADR-001: the canonical file <b>is</b> the Rider export. <see cref="Compose" /> is the whole of
+///     the transformation, it is two additions long, and both of them are what <see cref="Fixer" />
+///     already does — so the workflow the ADR protects (change a setting in Rider, re-export, publish)
+///     survives intact. Nothing here reads, interprets or reorders the export's own lines.
+///     <para>
+///         The payload is carried twice: embedded in this assembly, so <c>skala config sync</c> works
+///         offline with no restore and exactly one version pin (the tool's), and as content in
+///         <c>Rikarin.Skala.Canonical</c>, so a repository can pin the canonical in
+///         <c>Directory.Packages.props</c> next to everything else it pins. Both come from one file on
+///         disk, and <c>CanonicalDistributionTests</c> asserts they agree byte for byte.
+///     </para>
 /// </remarks>
 public static class CanonicalEditorConfig {
     /// <summary>The name the payload has in the package and in the repository that generates it.</summary>
@@ -33,9 +33,9 @@ public static class CanonicalEditorConfig {
     public const string ManifestFileName = "canonical.json";
 
     /// <summary>
-    /// The advisory preamble. It is part of the hashed payload deliberately: it is the only thing a
-    /// reader who opens a 4 240-line managed block has to go on, and a payload whose explanation can
-    /// drift from it is a payload with two versions.
+    ///     The advisory preamble. It is part of the hashed payload deliberately: it is the only thing a
+    ///     reader who opens a 4 240-line managed block has to go on, and a payload whose explanation can
+    ///     drift from it is a payload with two versions.
     /// </summary>
     public const string Preamble = """
                                    # ==============================================================================
@@ -70,8 +70,8 @@ public static class CanonicalEditorConfig {
     public static CanonicalManifest Manifest => ManifestValue.Value;
 
     /// <summary>
-    /// The canonical payload for a Rider export. This is the entire generation step; the
-    /// <c>Canonical</c> build target is a call to it.
+    ///     The canonical payload for a Rider export. This is the entire generation step; the
+    ///     <c>Canonical</c> build target is a call to it.
     /// </summary>
     public static string Compose(string templateText) {
         var document = EditorConfigDocument.FromText(PayloadFileName, templateText);
@@ -80,12 +80,12 @@ public static class CanonicalEditorConfig {
     }
 
     /// <summary>
-    /// The identity of a payload: SHA-256 over its LF-normalised UTF-8 bytes, lowercase hex.
+    ///     The identity of a payload: SHA-256 over its LF-normalised UTF-8 bytes, lowercase hex.
     /// </summary>
     /// <remarks>
-    /// ⚠ Normalising before hashing is what lets a repository cloned with <c>core.autocrlf=true</c>
-    /// verify against the same hash a Linux CI runner computes. A hash over raw bytes would make
-    /// "this repository has drifted" mean "this repository is on Windows".
+    ///     ⚠ Normalising before hashing is what lets a repository cloned with <c>core.autocrlf=true</c>
+    ///     verify against the same hash a Linux CI runner computes. A hash over raw bytes would make
+    ///     "this repository has drifted" mean "this repository is on Windows".
     /// </remarks>
     public static string Hash(string payload) {
         var bytes = Encoding.UTF8.GetBytes(Normalize(payload));

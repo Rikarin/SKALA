@@ -5,12 +5,12 @@ using System.Text;
 namespace Rikarin.Skala.Formatting.CSharp;
 
 /// <summary>
-/// Drops a ready-made regression test when the safety net fires.
+///     Drops a ready-made regression test when the safety net fires.
 /// </summary>
 /// <remarks>
-/// docs/plan/04 § "The safety net": <c>.skala/crash/&lt;hash&gt;/{input.cs,output.cs,config.snapshot}</c>.
-/// The point is that the reproduction exists before anybody thinks to ask for it — a token-stream
-/// failure is rare, is a Skala bug, and is nearly impossible to reconstruct from a log line.
+///     docs/plan/04 § "The safety net": <c>.skala/crash/&lt;hash&gt;/{input.cs,output.cs,config.snapshot}</c>.
+///     The point is that the reproduction exists before anybody thinks to ask for it — a token-stream
+///     failure is rare, is a Skala bug, and is nearly impossible to reconstruct from a log line.
 /// </remarks>
 public static class CrashArtifacts {
     public static string? Write(string? root, string path, string input, string output, in PhaseOneOptions options) {

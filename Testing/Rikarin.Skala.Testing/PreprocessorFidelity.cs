@@ -8,14 +8,14 @@ using Rikarin.Skala.Reporting;
 namespace Rikarin.Skala.Testing;
 
 /// <summary>
-/// SK-DIV-0004, measured: what the fidelity number is once the formatter has the symbols.
+///     SK-DIV-0004, measured: what the fidelity number is once the formatter has the symbols.
 /// </summary>
 /// <remarks>
-/// ⚠ The symbol set is not a list someone typed. <see cref="OracleRunner"/> builds the fixtures in a
-/// scratch <c>net10.0</c> project under <c>Debug</c>, so what the oracle saw is exactly what the SDK
-/// defines for that project — and the only honest way to know that is to build the same project
-/// with <c>-bl</c> and read the symbols back out through the loader <c>skala check</c> uses. That
-/// makes this both the fidelity measurement and an end-to-end test of the binlog path.
+///     ⚠ The symbol set is not a list someone typed. <see cref="OracleRunner" /> builds the fixtures in a
+///     scratch <c>net10.0</c> project under <c>Debug</c>, so what the oracle saw is exactly what the SDK
+///     defines for that project — and the only honest way to know that is to build the same project
+///     with <c>-bl</c> and read the symbols back out through the loader <c>skala check</c> uses. That
+///     makes this both the fidelity measurement and an end-to-end test of the binlog path.
 /// </remarks>
 public static class PreprocessorFidelity {
     /// <summary>The project the oracle's fixtures were produced under, as MSBuild sees it.</summary>
@@ -32,7 +32,7 @@ public static class PreprocessorFidelity {
                                 """;
 
     /// <summary>
-    /// Builds a copy of the oracle's project with a binary log and reads the symbols out of it.
+    ///     Builds a copy of the oracle's project with a binary log and reads the symbols out of it.
     /// </summary>
     public static IReadOnlyList<string> OracleSymbols(TextWriter log) {
         var scratch = Directory.CreateTempSubdirectory("skala-symbols-");
@@ -107,8 +107,8 @@ public static class PreprocessorFidelity {
     }
 
     /// <summary>
-    /// The number docs/plan/15 § M5 asks for: fidelity with symbols, overall and on the
-    /// <c>#if</c> files.
+    ///     The number docs/plan/15 § M5 asks for: fidelity with symbols, overall and on the
+    ///     <c>#if</c> files.
     /// </summary>
     public static string Measure(IReadOnlyList<string> symbols, string set = Corpus.Real) {
         var files = Corpus.Files(set).Where(static file => file.HasFixture).ToArray();
@@ -179,11 +179,11 @@ public static class PreprocessorFidelity {
     }
 
     /// <summary>
-    /// Whether a file contains a conditional directive at all.
+    ///     Whether a file contains a conditional directive at all.
     /// </summary>
     /// <remarks>
-    /// ⚠ Lexical rather than through the tree, because the tree is what changes when the symbols
-    /// change and the split has to be the same population in both columns.
+    ///     ⚠ Lexical rather than through the tree, because the tree is what changes when the symbols
+    ///     change and the split has to be the same population in both columns.
     /// </remarks>
     public static bool HasConditional(string text) {
         foreach (var line in text.Split('\n')) {

@@ -3,20 +3,20 @@ using Microsoft.CodeAnalysis.Text;
 namespace Rikarin.Skala.Formatting.CSharp.Tests;
 
 /// <summary>
-/// The escape hatch, on the paths that are not the document builder's own walk.
+///     The escape hatch, on the paths that are not the document builder's own walk.
 /// </summary>
 /// <remarks>
-/// ⚠ <c>format</c> honoured <c>@formatter:off</c> from milestone 1 and
-/// <c>FormatterTests.AFormatterOffSpan_IsCopiedByteForByte</c> has pinned it since. What it pinned
-/// was one path. The tag turned out to be missed by three others — arrangement, the xmldoc
-/// sub-formatter and <c>skala fix</c> — because each of them produces edits without building a
-/// document, and the check lived inside the document builder. These are the cases that fail if any
-/// of them stops asking.
-/// <para>
-/// ⚠ Every one was verified by mutation: the guard was broken deliberately, the test was watched to
-/// fail, and the guard restored. A guard that has never been seen to fail is a guard nobody knows is
-/// connected.
-/// </para>
+///     ⚠ <c>format</c> honoured <c>@formatter:off</c> from milestone 1 and
+///     <c>FormatterTests.AFormatterOffSpan_IsCopiedByteForByte</c> has pinned it since. What it pinned
+///     was one path. The tag turned out to be missed by three others — arrangement, the xmldoc
+///     sub-formatter and <c>skala fix</c> — because each of them produces edits without building a
+///     document, and the check lived inside the document builder. These are the cases that fail if any
+///     of them stops asking.
+///     <para>
+///         ⚠ Every one was verified by mutation: the guard was broken deliberately, the test was watched to
+///         fail, and the guard restored. A guard that has never been seen to fail is a guard nobody knows is
+///         connected.
+///     </para>
 /// </remarks>
 public sealed class FormatterTagTests {
     const string Region = """
@@ -50,9 +50,9 @@ public sealed class FormatterTagTests {
     }
 
     /// <summary>
-    /// ⚠ The sub-formatter runs on the formatter's <em>output</em> and re-parses it, so the verbatim
-    /// chunk the document builder had just protected looked to it like any other <c>///</c> comment.
-    /// It re-wrapped one, inside the same process that was honouring the tag one pass earlier.
+    ///     ⚠ The sub-formatter runs on the formatter's <em>output</em> and re-parses it, so the verbatim
+    ///     chunk the document builder had just protected looked to it like any other <c>///</c> comment.
+    ///     It re-wrapped one, inside the same process that was honouring the tag one pass earlier.
     /// </summary>
     [Fact]
     public void TheXmlDocSubFormatter_LeavesADocCommentInsideTheRegionAlone() {
@@ -88,11 +88,11 @@ public sealed class FormatterTagTests {
     }
 
     /// <summary>
-    /// ⚠ SK-FUZZ-0001. An unhandled <c>IndexOutOfRangeException</c> out of
-    /// <c>EditEmitter.AddIfDifferent</c>, on 32 bytes, that escaped every handler and killed the
-    /// process. The file-level rules — the trailing-whitespace trim and the inserted final newline —
-    /// run over the output <em>after</em> the writer produced it, and an off-region that reaches the
-    /// end of the file is the only anchor that covers the bytes they remove.
+    ///     ⚠ SK-FUZZ-0001. An unhandled <c>IndexOutOfRangeException</c> out of
+    ///     <c>EditEmitter.AddIfDifferent</c>, on 32 bytes, that escaped every handler and killed the
+    ///     process. The file-level rules — the trailing-whitespace trim and the inserted final newline —
+    ///     run over the output <em>after</em> the writer produced it, and an off-region that reaches the
+    ///     end of the file is the only anchor that covers the bytes they remove.
     /// </summary>
     [Fact]
     public void AnOffRegion_ReachingAWhitespaceOnlyEndOfFile_DoesNotThrow() {
@@ -107,12 +107,12 @@ public sealed class FormatterTagTests {
     }
 
     /// <summary>
-    /// ⚠ SK-FUZZ-0005. Everything after the tag is copied byte-for-byte, so token equivalence ought
-    /// to hold there trivially. It did not: <c>EmitVerbatim</c> — the arm that writes an
-    /// interpolated string from its original span, because a moved space would change the value —
-    /// did not check that it was inside a region already written, wrote the string a second time
-    /// under a second anchor, and the emitter turned the overlap into an edit that deleted the rest
-    /// of the file. <c>SK9099</c> refused the write, so the file could not be formatted at all.
+    ///     ⚠ SK-FUZZ-0005. Everything after the tag is copied byte-for-byte, so token equivalence ought
+    ///     to hold there trivially. It did not: <c>EmitVerbatim</c> — the arm that writes an
+    ///     interpolated string from its original span, because a moved space would change the value —
+    ///     did not check that it was inside a region already written, wrote the string a second time
+    ///     under a second anchor, and the emitter turned the overlap into an edit that deleted the rest
+    ///     of the file. <c>SK9099</c> refused the write, so the file could not be formatted at all.
     /// </summary>
     [Fact]
     public void AnInterpolatedStringInsideTheRegion_DoesNotBreakTokenEquivalence() {
@@ -137,14 +137,14 @@ public sealed class FormatterTagTests {
     }
 
     /// <summary>
-    /// ⚠ The tag comment's own line is inside the region, so its indentation is the author's.
+    ///     ⚠ The tag comment's own line is inside the region, so its indentation is the author's.
     /// </summary>
     /// <remarks>
-    /// Measured on the oracle, which leaves a twelve-space <c>off</c> tag at twelve spaces inside a
-    /// class body it would otherwise indent to four. ⚠ It does <em>not</em> do the same for the
-    /// <c>on</c> tag — it normalises that line to four — and Skala deliberately keeps both, because
-    /// a person reading the two lines as the boundary of their own block expects neither to move.
-    /// That half is SK-DIV-0017's second paragraph.
+    ///     Measured on the oracle, which leaves a twelve-space <c>off</c> tag at twelve spaces inside a
+    ///     class body it would otherwise indent to four. ⚠ It does <em>not</em> do the same for the
+    ///     <c>on</c> tag — it normalises that line to four — and Skala deliberately keeps both, because
+    ///     a person reading the two lines as the boundary of their own block expects neither to move.
+    ///     That half is SK-DIV-0017's second paragraph.
     /// </remarks>
     [Fact]
     public void TheTagCommentsOwnLine_KeepsTheIndentationTheAuthorGaveIt() {
@@ -158,7 +158,7 @@ public sealed class FormatterTagTests {
     }
 
     /// <summary>
-    /// ⚠ A tag in a <em>trailing</em> comment does not reach backwards over the code on its line.
+    ///     ⚠ A tag in a <em>trailing</em> comment does not reach backwards over the code on its line.
     /// </summary>
     [Fact]
     public void ATagInATrailingComment_DoesNotProtectTheCodeBeforeIt() {
@@ -173,14 +173,14 @@ public sealed class FormatterTagTests {
     }
 
     /// <summary>
-    /// ⚠ SK-DIV-0017: a comment that <em>mentions</em> the tag is prose, not a directive.
+    ///     ⚠ SK-DIV-0017: a comment that <em>mentions</em> the tag is prose, not a directive.
     /// </summary>
     /// <remarks>
-    /// The oracle disagrees, and the disagreement is measured rather than assumed —
-    /// <c>// we support @formatter:off here</c> turns formatting off to the end of the file in
-    /// <c>jb cleanupcode</c> 2025.2.6 exactly as a bare tag does. The argument for diverging is in
-    /// <c>docs/divergences.md</c>; the short version is that it fired inside this repository, on four
-    /// files that document the directive, and nothing reported it.
+    ///     The oracle disagrees, and the disagreement is measured rather than assumed —
+    ///     <c>// we support @formatter:off here</c> turns formatting off to the end of the file in
+    ///     <c>jb cleanupcode</c> 2025.2.6 exactly as a bare tag does. The argument for diverging is in
+    ///     <c>docs/divergences.md</c>; the short version is that it fired inside this repository, on four
+    ///     files that document the directive, and nothing reported it.
     /// </remarks>
     [Theory]
     [InlineData("// we support @formatter:off here")]

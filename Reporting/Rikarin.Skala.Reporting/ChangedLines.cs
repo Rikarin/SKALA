@@ -5,21 +5,21 @@ using System.Globalization;
 namespace Rikarin.Skala.Reporting;
 
 /// <summary>
-/// The lines a git ref changed — Sonar's "new code" definition, with no server.
+///     The lines a git ref changed — Sonar's "new code" definition, with no server.
 /// </summary>
 /// <remarks>
-/// docs/plan/09 § "New-code definition". <c>skala check --since=origin/main --gate=pr</c> is a gate
-/// that only cares about what this branch touched, "which is the only gate that is adoptable on a
-/// tree with existing findings". That sentence is the whole reason this type exists: without it,
-/// adopting the analysis half of the tool on a repository with a thousand existing findings means
-/// fixing a thousand findings first, and nobody does that.
-/// <para>
-/// ⚠ Implemented by shelling out to <c>git</c> rather than by linking a git library. The ref
-/// spellings people actually type — <c>origin/main</c>, <c>HEAD~3</c>, <c>@{u}</c>, a tag, a
-/// branch that only exists as a remote-tracking ref — are all resolved by git itself for free, and
-/// a library that resolves nine of them is a library that fails on the tenth in a way the user
-/// cannot work around.
-/// </para>
+///     docs/plan/09 § "New-code definition". <c>skala check --since=origin/main --gate=pr</c> is a gate
+///     that only cares about what this branch touched, "which is the only gate that is adoptable on a
+///     tree with existing findings". That sentence is the whole reason this type exists: without it,
+///     adopting the analysis half of the tool on a repository with a thousand existing findings means
+///     fixing a thousand findings first, and nobody does that.
+///     <para>
+///         ⚠ Implemented by shelling out to <c>git</c> rather than by linking a git library. The ref
+///         spellings people actually type — <c>origin/main</c>, <c>HEAD~3</c>, <c>@{u}</c>, a tag, a
+///         branch that only exists as a remote-tracking ref — are all resolved by git itself for free, and
+///         a library that resolves nine of them is a library that fails on the tenth in a way the user
+///         cannot work around.
+///     </para>
 /// </remarks>
 public sealed class ChangedLines {
     ChangedLines(Dictionary<string, ImmutableArray<LineRange>> ranges, string reference) {
@@ -43,24 +43,24 @@ public sealed class ChangedLines {
     }
 
     /// <summary>
-    /// Computes the changed ranges between <paramref name="reference"/> and the working tree.
+    ///     Computes the changed ranges between <paramref name="reference" /> and the working tree.
     /// </summary>
     /// <remarks>
-    /// ⚠ <c>--unified=0</c> so that a hunk header names exactly the changed lines and not three
-    /// lines of unchanged context either side. With context, a finding on an untouched line three
-    /// above an edit counts as new code, and a gate built on that fails a PR for something it did
-    /// not do — the single fastest way to make people stop trusting <c>--since</c>.
-    /// <para>
-    /// ⚠ <b>Merge-base semantics against the working tree</b>, and getting there needs two commands
-    /// rather than one clever one. <c>git diff ref</c> with two dots compares the working tree to
-    /// that ref, which on a branch whose base has moved on reports every change the base picked up
-    /// — someone else's commits, attributed to this branch. <c>git diff ref...</c> with three dots
-    /// has the right base and the wrong right-hand side: three-dot syntax needs two commits, so
-    /// <c>ref...</c> means <c>ref...HEAD</c> and the working tree is <em>excluded entirely</em>.
-    /// Uncommitted work — which is most of what a developer runs this against — would be invisible,
-    /// and a <c>newIssues: 0</c> gate would pass on it. So the merge base is resolved explicitly and
-    /// then diffed with two dots, which is the only spelling that has both halves right.
-    /// </para>
+    ///     ⚠ <c>--unified=0</c> so that a hunk header names exactly the changed lines and not three
+    ///     lines of unchanged context either side. With context, a finding on an untouched line three
+    ///     above an edit counts as new code, and a gate built on that fails a PR for something it did
+    ///     not do — the single fastest way to make people stop trusting <c>--since</c>.
+    ///     <para>
+    ///         ⚠ <b>Merge-base semantics against the working tree</b>, and getting there needs two commands
+    ///         rather than one clever one. <c>git diff ref</c> with two dots compares the working tree to
+    ///         that ref, which on a branch whose base has moved on reports every change the base picked up
+    ///         — someone else's commits, attributed to this branch. <c>git diff ref...</c> with three dots
+    ///         has the right base and the wrong right-hand side: three-dot syntax needs two commits, so
+    ///         <c>ref...</c> means <c>ref...HEAD</c> and the working tree is <em>excluded entirely</em>.
+    ///         Uncommitted work — which is most of what a developer runs this against — would be invisible,
+    ///         and a <c>newIssues: 0</c> gate would pass on it. So the merge base is resolved explicitly and
+    ///         then diffed with two dots, which is the only spelling that has both halves right.
+    ///     </para>
     /// </remarks>
     public static ChangedLines Since(
         string repositoryRoot,
@@ -79,18 +79,18 @@ public sealed class ChangedLines {
     }
 
     /// <summary>
-    /// Whole files that git has never seen, every line of which is new code.
+    ///     Whole files that git has never seen, every line of which is new code.
     /// </summary>
     /// <remarks>
-    /// ⚠ <c>git diff</c> reports tracked files only, so a brand-new file produces no hunk at all and
-    /// every finding in it would fall outside the changed ranges. A PR gate that ignores the files
-    /// the PR <em>added</em> is worse than no gate: it is quiet in exactly the case it exists for,
-    /// and the quiet reads as approval. Measured while building the demo — an added file with a
-    /// deliberate <c>SK2015</c> in it passed a <c>newIssues: 0</c> gate.
-    /// <para>
-    /// <c>--exclude-standard</c> so that a file the repository's own <c>.gitignore</c> excludes —
-    /// build output, a scratch file — is not counted as somebody's new code.
-    /// </para>
+    ///     ⚠ <c>git diff</c> reports tracked files only, so a brand-new file produces no hunk at all and
+    ///     every finding in it would fall outside the changed ranges. A PR gate that ignores the files
+    ///     the PR <em>added</em> is worse than no gate: it is quiet in exactly the case it exists for,
+    ///     and the quiet reads as approval. Measured while building the demo — an added file with a
+    ///     deliberate <c>SK2015</c> in it passed a <c>newIssues: 0</c> gate.
+    ///     <para>
+    ///         <c>--exclude-standard</c> so that a file the repository's own <c>.gitignore</c> excludes —
+    ///         build output, a scratch file — is not counted as somebody's new code.
+    ///     </para>
     /// </remarks>
     static void AddUntracked(
         string repositoryRoot,
@@ -114,14 +114,14 @@ public sealed class ChangedLines {
     }
 
     /// <summary>
-    /// The commit this branch diverged from, or the ref itself when there is no shared history.
+    ///     The commit this branch diverged from, or the ref itself when there is no shared history.
     /// </summary>
     /// <remarks>
-    /// ⚠ Falling back to the ref rather than failing. A shallow clone — which is what most CI
-    /// checkouts are — can have no merge base with the ref it was told to compare against, and
-    /// refusing to run there would make <c>--since</c> unusable in exactly the place doc 09 wants
-    /// it. Comparing against the ref directly is the conservative answer: it can only ever mark
-    /// <em>more</em> lines as changed, so a gate errs towards failing rather than towards passing.
+    ///     ⚠ Falling back to the ref rather than failing. A shallow clone — which is what most CI
+    ///     checkouts are — can have no merge base with the ref it was told to compare against, and
+    ///     refusing to run there would make <c>--since</c> unusable in exactly the place doc 09 wants
+    ///     it. Comparing against the ref directly is the conservative answer: it can only ever mark
+    ///     <em>more</em> lines as changed, so a gate errs towards failing rather than towards passing.
     /// </remarks>
     static string MergeBase(string repositoryRoot, string reference, CancellationToken cancellation) {
         try {
@@ -200,12 +200,12 @@ public sealed class ChangedLines {
     }
 
     /// <summary>
-    /// <c>@@ -a,b +c,d @@</c> — the <c>+c,d</c> half, which is the post-image and the only one that
-    /// can hold a finding.
+    ///     <c>@@ -a,b +c,d @@</c> — the <c>+c,d</c> half, which is the post-image and the only one that
+    ///     can hold a finding.
     /// </summary>
     /// <remarks>
-    /// ⚠ <c>d</c> of zero is a pure deletion. It has no lines in the new file, so it contributes no
-    /// range at all; treating it as one line would mark whatever now sits at <c>c</c> as changed.
+    ///     ⚠ <c>d</c> of zero is a pure deletion. It has no lines in the new file, so it contributes no
+    ///     range at all; treating it as one line would mark whatever now sits at <c>c</c> as changed.
     /// </remarks>
     static LineRange? ParseHunk(string line) {
         var plus = line.IndexOf('+', StringComparison.Ordinal);
@@ -237,13 +237,13 @@ public sealed class ChangedLines {
     static string Normalize(string path) => Path.GetFullPath(path).Replace('\\', '/');
 
     /// <summary>
-    /// Runs git and returns its stdout.
+    ///     Runs git and returns its stdout.
     /// </summary>
     /// <remarks>
-    /// ⚠ A failure throws with git's own stderr attached. <c>--since=orgin/main</c> is a typo
-    /// somebody will make, and the useful answer is git's ("unknown revision") rather than a clean
-    /// run over zero changed lines — which would pass a <c>newIssues: 0</c> gate for the worst
-    /// possible reason.
+    ///     ⚠ A failure throws with git's own stderr attached. <c>--since=orgin/main</c> is a typo
+    ///     somebody will make, and the useful answer is git's ("unknown revision") rather than a clean
+    ///     run over zero changed lines — which would pass a <c>newIssues: 0</c> gate for the worst
+    ///     possible reason.
     /// </remarks>
     static string Git(string repositoryRoot, string[] arguments, CancellationToken cancellation) {
         var start = new ProcessStartInfo("git") {

@@ -9,38 +9,38 @@ namespace Rikarin.Skala.Analysis;
 public readonly record struct DocsPage(string Path, string Content);
 
 /// <summary>
-/// <c>skala docs site</c> — the browsable surface of <c>rules.json</c> and <c>options.json</c>.
+///     <c>skala docs site</c> — the browsable surface of <c>rules.json</c> and <c>options.json</c>.
 /// </summary>
 /// <remarks>
-/// docs/plan/15 § M7, "Documentation site generation from rules.json + options.json", and
-/// docs/plan/08 § "Documentation": <em>one source, three surfaces</em>. This is the fourth
-/// rendering of the same two registries, not a fourth copy of their text — every string on every
-/// page comes from <see cref="RuleCatalog"/> or <see cref="OptionRegistry"/>, both of which are
-/// generated from the JSON at compile time. There is nothing here to keep in sync by hand, which
-/// is the only property that makes a documentation site worth generating at all.
-/// <para>
-/// ⚠ The output is byte-identical across runs and across machines, because it is committed and
-/// diffed (the <c>CloneIndex</c> precedent: "two runs over the same tree produce byte-identical
-/// files"). That costs three specific disciplines and each one has been got wrong somewhere:
-/// </para>
-/// <list type="number">
-/// <item>
-/// Every newline is a literal <c>\n</c>. <see cref="StringBuilder.AppendLine()"/> emits
-/// <see cref="Environment.NewLine"/>, so a generator written with it produces CRLF on Windows and
-/// LF everywhere else — which is a whole-file diff for a Windows contributor who regenerates.
-/// <c>ExplainCommand</c> has this defect today; see <c>DocsSiteTests</c>.
-/// </item>
-/// <item>
-/// Every ordering is <see cref="StringComparer.Ordinal"/>. A culture-aware sort puts
-/// <c>resharper_csharp_*</c> in a different order under a Turkish locale, and the tool sets
-/// <c>InvariantGlobalization</c> only for itself, not for whoever regenerates.
-/// </item>
-/// <item>
-/// Nothing is stamped: no date, no version, no host name. A generated page that carries the
-/// moment it was generated cannot be compared with the one in the tree, so the test that keeps it
-/// honest cannot exist.
-/// </item>
-/// </list>
+///     docs/plan/15 § M7, "Documentation site generation from rules.json + options.json", and
+///     docs/plan/08 § "Documentation": <em>one source, three surfaces</em>. This is the fourth
+///     rendering of the same two registries, not a fourth copy of their text — every string on every
+///     page comes from <see cref="RuleCatalog" /> or <see cref="OptionRegistry" />, both of which are
+///     generated from the JSON at compile time. There is nothing here to keep in sync by hand, which
+///     is the only property that makes a documentation site worth generating at all.
+///     <para>
+///         ⚠ The output is byte-identical across runs and across machines, because it is committed and
+///         diffed (the <c>CloneIndex</c> precedent: "two runs over the same tree produce byte-identical
+///         files"). That costs three specific disciplines and each one has been got wrong somewhere:
+///     </para>
+///     <list type="number">
+///         <item>
+///             Every newline is a literal <c>\n</c>. <see cref="StringBuilder.AppendLine()" /> emits
+///             <see cref="Environment.NewLine" />, so a generator written with it produces CRLF on Windows and
+///             LF everywhere else — which is a whole-file diff for a Windows contributor who regenerates.
+///             <c>ExplainCommand</c> has this defect today; see <c>DocsSiteTests</c>.
+///         </item>
+///         <item>
+///             Every ordering is <see cref="StringComparer.Ordinal" />. A culture-aware sort puts
+///             <c>resharper_csharp_*</c> in a different order under a Turkish locale, and the tool sets
+///             <c>InvariantGlobalization</c> only for itself, not for whoever regenerates.
+///         </item>
+///         <item>
+///             Nothing is stamped: no date, no version, no host name. A generated page that carries the
+///             moment it was generated cannot be compared with the one in the tree, so the test that keeps it
+///             honest cannot exist.
+///         </item>
+///     </list>
 /// </remarks>
 public static class DocsSite {
     const string Banner =
@@ -85,14 +85,14 @@ public static class DocsSite {
     }
 
     /// <summary>
-    /// Writes the site into <paramref name="directory"/> and returns the number of files written.
+    ///     Writes the site into <paramref name="directory" /> and returns the number of files written.
     /// </summary>
     /// <remarks>
-    /// ⚠ It deletes generated files the render no longer produces. Without that, a construct
-    /// renamed in options.json leaves its old page behind for ever, still linked from nothing and
-    /// still describing keys that have moved — and the up-to-date test would pass, because it can
-    /// only compare the pages that exist on both sides. Only <c>.html</c> and <c>.css</c> under the
-    /// target are considered; anything else in the directory is somebody's and is left alone.
+    ///     ⚠ It deletes generated files the render no longer produces. Without that, a construct
+    ///     renamed in options.json leaves its old page behind for ever, still linked from nothing and
+    ///     still describing keys that have moved — and the up-to-date test would pass, because it can
+    ///     only compare the pages that exist on both sides. Only <c>.html</c> and <c>.css</c> under the
+    ///     target are considered; anything else in the directory is somebody's and is left alone.
     /// </remarks>
     public static int Write(string directory) {
         var pages = Render();
@@ -119,7 +119,7 @@ public static class DocsSite {
         return pages.Count;
     }
 
-    /// <summary>The site-relative path of a file under <paramref name="directory"/>, with <c>/</c>.</summary>
+    /// <summary>The site-relative path of a file under <paramref name="directory" />, with <c>/</c>.</summary>
     public static string Relative(string directory, string path) =>
         Path.GetRelativePath(directory, path).Replace(Path.DirectorySeparatorChar, '/');
 
@@ -486,14 +486,14 @@ public static class DocsSite {
     // ── Text ─────────────────────────────────────────────────────────────────────────────────────
 
     /// <summary>
-    /// HTML-escapes, and drops <c>\r</c>.
+    ///     HTML-escapes, and drops <c>\r</c>.
     /// </summary>
     /// <remarks>
-    /// ⚠ The dropped carriage return is the second half of the CRLF hazard the stylesheet's remarks
-    /// describe, and this is the choke point for it: <c>rules.json</c> and <c>options.json</c> reach
-    /// the registries as string literals emitted by a source generator from the files' own bytes, so
-    /// a CRLF checkout puts <c>\r</c> inside a rationale, and every text on every page passes
-    /// through here on its way to the output.
+    ///     ⚠ The dropped carriage return is the second half of the CRLF hazard the stylesheet's remarks
+    ///     describe, and this is the choke point for it: <c>rules.json</c> and <c>options.json</c> reach
+    ///     the registries as string literals emitted by a source generator from the files' own bytes, so
+    ///     a CRLF checkout puts <c>\r</c> inside a rationale, and every text on every page passes
+    ///     through here on its way to the output.
     /// </remarks>
     static string Esc(string text) {
         var builder = new StringBuilder(text.Length + 16);
@@ -523,13 +523,13 @@ public static class DocsSite {
     }
 
     /// <summary>
-    /// The two inline markdown spellings the two registries actually use: <c>`code`</c> and
-    /// <c>**bold**</c>.
+    ///     The two inline markdown spellings the two registries actually use: <c>`code`</c> and
+    ///     <c>**bold**</c>.
     /// </summary>
     /// <remarks>
-    /// ⚠ Escaping happens first and the markers are matched in the escaped text, which is safe only
-    /// because escaping introduces neither a backtick nor an asterisk. Reversing the two would let a
-    /// <c>&lt;</c> inside a code span reach the page as markup.
+    ///     ⚠ Escaping happens first and the markers are matched in the escaped text, which is safe only
+    ///     because escaping introduces neither a backtick nor an asterisk. Reversing the two would let a
+    ///     <c>&lt;</c> inside a code span reach the page as markup.
     /// </remarks>
     static string Inline(string text) {
         var escaped = Esc(text);
@@ -570,13 +570,13 @@ public static class DocsSite {
         return builder.ToString();
     }
 
-    /// <summary>Whether the <c>*</c> at <paramref name="i"/> opens an emphasis span.</summary>
+    /// <summary>Whether the <c>*</c> at <paramref name="i" /> opens an emphasis span.</summary>
     /// <remarks>
-    /// ⚠ The test is left-flanking rather than "is an asterisk", and the catalogue is the reason:
-    /// SK0001's configuration entry reads "Every <c>resharper_*</c> formatting key" and SK8005's
-    /// false-positive note contains <c>[**/*.Tests/**/*.cs]</c>. Naive pairing opens an emphasis at
-    /// the first of those and closes it wherever the next asterisk happens to be. An opener follows
-    /// a space and precedes a non-space; a closer does the reverse.
+    ///     ⚠ The test is left-flanking rather than "is an asterisk", and the catalogue is the reason:
+    ///     SK0001's configuration entry reads "Every <c>resharper_*</c> formatting key" and SK8005's
+    ///     false-positive note contains <c>[**/*.Tests/**/*.cs]</c>. Naive pairing opens an emphasis at
+    ///     the first of those and closes it wherever the next asterisk happens to be. An opener follows
+    ///     a space and precedes a non-space; a closer does the reverse.
     /// </remarks>
     static bool Opens(string text, int i) =>
         (i == 0 || char.IsWhiteSpace(text[i - 1]) || text[i - 1] is '(' or '—')
@@ -640,10 +640,10 @@ public static class DocsSite {
 
     /// <summary><c>ArrangementOfLINQExpressions</c> → <c>arrangement-of-linq-expressions</c>.</summary>
     /// <remarks>
-    /// ⚠ A run of capitals is one word, on the same argument <see cref="RuleInfo"/>'s snake-caser
-    /// makes: <c>LINQ</c> is <c>linq</c> and not <c>l-i-n-q</c>. The 107 constructs produce 107
-    /// distinct slugs, and <c>DocsSiteTests</c> asserts it rather than trusting it — two constructs
-    /// colliding would silently drop one page's worth of keys.
+    ///     ⚠ A run of capitals is one word, on the same argument <see cref="RuleInfo" />'s snake-caser
+    ///     makes: <c>LINQ</c> is <c>linq</c> and not <c>l-i-n-q</c>. The 107 constructs produce 107
+    ///     distinct slugs, and <c>DocsSiteTests</c> asserts it rather than trusting it — two constructs
+    ///     colliding would silently drop one page's worth of keys.
     /// </remarks>
     static string Slug(string name) {
         var builder = new StringBuilder(name.Length + 8);
@@ -684,16 +684,16 @@ public static class DocsSite {
     // ── Cross-links ──────────────────────────────────────────────────────────────────────────────
 
     /// <summary>
-    /// The two directions of the rule ↔ option edge, and the only part of the site that is inferred
-    /// rather than copied.
+    ///     The two directions of the rule ↔ option edge, and the only part of the site that is inferred
+    ///     rather than copied.
     /// </summary>
     /// <remarks>
-    /// ⚠ <c>rules.json</c>'s <c>configuration</c> is prose, not a list of keys — entries read
-    /// "<c>dotnet_code_quality.SK7001.threshold (default 25)</c>" and "Every <c>resharper_*</c>
-    /// formatting key; the finding is whatever the configured formatter does". So the edge is
-    /// recovered by scanning each entry for the longest runs of key characters and asking the
-    /// registry whether one of them is a key it knows. Anything unrecognised is left as text, which
-    /// is why an unlinked entry is a normal outcome here and not a defect.
+    ///     ⚠ <c>rules.json</c>'s <c>configuration</c> is prose, not a list of keys — entries read
+    ///     "<c>dotnet_code_quality.SK7001.threshold (default 25)</c>" and "Every <c>resharper_*</c>
+    ///     formatting key; the finding is whatever the configured formatter does". So the edge is
+    ///     recovered by scanning each entry for the longest runs of key characters and asking the
+    ///     registry whether one of them is a key it knows. Anything unrecognised is left as text, which
+    ///     is why an unlinked entry is a normal outcome here and not a defect.
     /// </remarks>
     sealed class SiteLinks {
         readonly Dictionary<string, string> _slugOf;
@@ -754,18 +754,18 @@ public static class DocsSite {
         }
 
         /// <summary>
-        /// One <c>configuration</c> entry, with every option key and every rule id it mentions
-        /// turned into a link and everything else escaped.
+        ///     One <c>configuration</c> entry, with every option key and every rule id it mentions
+        ///     turned into a link and everything else escaped.
         /// </summary>
         /// <remarks>
-        /// ⚠ A backtick span is consumed whole, before tokenisation. The entries are written in
-        /// inline markdown — SK3001's is "<c>`none` by default; set it to `warning` to enable</c>"
-        /// — and a tokeniser that walks past a backtick one character at a time never sees a pair
-        /// and puts both on the page as literal text. That is what the first version of this did.
-        /// <para>
-        /// The emphasis <see cref="Inline"/> understands is deliberately not applied here: an
-        /// asterisk in a configuration entry is <c>resharper_*</c>, a glob and never emphasis.
-        /// </para>
+        ///     ⚠ A backtick span is consumed whole, before tokenisation. The entries are written in
+        ///     inline markdown — SK3001's is "<c>`none` by default; set it to `warning` to enable</c>"
+        ///     — and a tokeniser that walks past a backtick one character at a time never sees a pair
+        ///     and puts both on the page as literal text. That is what the first version of this did.
+        ///     <para>
+        ///         The emphasis <see cref="Inline" /> understands is deliberately not applied here: an
+        ///         asterisk in a configuration entry is <c>resharper_*</c>, a glob and never emphasis.
+        ///     </para>
         /// </remarks>
         public string Linkify(string entry, string root, string? selfId) {
             var builder = new StringBuilder(entry.Length + 64);
@@ -803,10 +803,10 @@ public static class DocsSite {
 
         /// <summary>One token: an option key, a rule id, or neither.</summary>
         /// <remarks>
-        /// ⚠ <paramref name="selfId"/> suppresses the link and keeps the markup. Every rule's
-        /// configuration list opens with <c>dotnet_diagnostic.SK….severity</c>, and a page whose
-        /// first link goes to the page it is already on is how a reader learns to stop following
-        /// the links.
+        ///     ⚠ <paramref name="selfId" /> suppresses the link and keeps the markup. Every rule's
+        ///     configuration list opens with <c>dotnet_diagnostic.SK….severity</c>, and a page whose
+        ///     first link goes to the page it is already on is how a reader learns to stop following
+        ///     the links.
         /// </remarks>
         string Token(string text, string root, string? selfId, bool code) {
             if (Canonical(text) is { } key) {
@@ -830,9 +830,9 @@ public static class DocsSite {
                 : null;
 
         /// <summary>
-        /// <c>dotnet_diagnostic.SK1005.severity</c> and
-        /// <c>dotnet_code_quality.SK7001.threshold</c> both name a rule; the id is the dotted part
-        /// the catalogue knows.
+        ///     <c>dotnet_diagnostic.SK1005.severity</c> and
+        ///     <c>dotnet_code_quality.SK7001.threshold</c> both name a rule; the id is the dotted part
+        ///     the catalogue knows.
         /// </summary>
         string? RuleIdIn(string token) {
             foreach (var part in token.Split('.')) {
@@ -867,20 +867,20 @@ public static class DocsSite {
     // ── The stylesheet ───────────────────────────────────────────────────────────────────────────
 
     /// <summary>
-    /// The one stylesheet, inlined here rather than checked in beside the pages.
+    ///     The one stylesheet, inlined here rather than checked in beside the pages.
     /// </summary>
     /// <remarks>
-    /// ⚠ No external asset of any kind — no font, no script, no CDN. The site has to render from a
-    /// checkout with no network, which is the state a reader is in when they are offline on a train
-    /// with the repository and a question about SK7020.
-    /// <para>
-    /// ⚠ The <c>\r\n</c> strip is not decoration. A raw string literal carries the source file's own
-    /// line endings, and <c>.gitattributes</c> marks only the corpus and the fixtures <c>-text</c> —
-    /// so a Windows checkout under git's default <c>core.autocrlf=true</c> gives this file CRLF, and
-    /// the stylesheet would then differ by 60 lines depending on who regenerated it. Every other
-    /// newline in the site is a literal <c>\n</c> written by this class; this is the one the
-    /// compiler supplies.
-    /// </para>
+    ///     ⚠ No external asset of any kind — no font, no script, no CDN. The site has to render from a
+    ///     checkout with no network, which is the state a reader is in when they are offline on a train
+    ///     with the repository and a question about SK7020.
+    ///     <para>
+    ///         ⚠ The <c>\r\n</c> strip is not decoration. A raw string literal carries the source file's own
+    ///         line endings, and <c>.gitattributes</c> marks only the corpus and the fixtures <c>-text</c> —
+    ///         so a Windows checkout under git's default <c>core.autocrlf=true</c> gives this file CRLF, and
+    ///         the stylesheet would then differ by 60 lines depending on who regenerated it. Every other
+    ///         newline in the site is a literal <c>\n</c> written by this class; this is the one the
+    ///         compiler supplies.
+    ///     </para>
     /// </remarks>
     static string Stylesheet() => Css.Replace("\r\n", "\n", StringComparison.Ordinal);
 

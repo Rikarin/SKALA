@@ -7,27 +7,27 @@ namespace Rikarin.Skala.Testing;
 public sealed record Divergence(string File, int Line, string Expected, string Actual, string Class);
 
 /// <summary>
-/// Which lines a fidelity number is computed over.
+///     Which lines a fidelity number is computed over.
 /// </summary>
 /// <remarks>
-/// ⚠ It is a parameter and it is printed with every number, because a fidelity figure that
-/// silently excludes a category is how a measurement stops meaning anything. Skala formats
-/// documentation comments and the oracle's pinned profile does not (SK-DIV-0006), so on
-/// <c>///</c> lines the two are measuring different questions and the answer is not a fidelity at
-/// all. Every other line is still compared, and that is the number the ratchet holds.
+///     ⚠ It is a parameter and it is printed with every number, because a fidelity figure that
+///     silently excludes a category is how a measurement stops meaning anything. Skala formats
+///     documentation comments and the oracle's pinned profile does not (SK-DIV-0006), so on
+///     <c>///</c> lines the two are measuring different questions and the answer is not a fidelity at
+///     all. Every other line is still compared, and that is the number the ratchet holds.
 /// </remarks>
 public enum FidelityBasis {
     /// <summary>Every line of both texts. The number that includes the known disagreement.</summary>
     EveryLine,
 
     /// <summary>
-    /// Every line that is not a <c>///</c> line, removed from <b>both</b> sides before comparing.
+    ///     Every line that is not a <c>///</c> line, removed from <b>both</b> sides before comparing.
     /// </summary>
     /// <remarks>
-    /// ⚠ Drawn this way and not another. Excluding "the lines Skala changed" would be marking one's
-    /// own homework, and excluding "the files that have doc comments" would hide a real regression
-    /// in the code around them. What is left is every line the sub-formatter is not allowed to
-    /// touch, and it may not move at all.
+    ///     ⚠ Drawn this way and not another. Excluding "the lines Skala changed" would be marking one's
+    ///     own homework, and excluding "the files that have doc comments" would hide a real regression
+    ///     in the code around them. What is left is every line the sub-formatter is not allowed to
+    ///     touch, and it may not move at all.
     /// </remarks>
     OutsideDocComments
 }
@@ -52,19 +52,23 @@ public sealed record FidelityReport(
         basis == FidelityBasis.OutsideDocComments ? "outside doc comments" : "every line";
 
     /// <summary>
-    /// ⚠ The output of a differential run is not pass/fail. It is a ranked report of divergence
-    /// classes by line count, which is the work queue (docs/plan/12 § "Differential").
+    ///     ⚠ The output of a differential run is not pass/fail. It is a ranked report of divergence
+    ///     classes by line count, which is the work queue (docs/plan/12 § "Differential").
     /// </summary>
     public string Render(int topClasses = 20) {
         var builder = new StringBuilder();
-        builder.Append("line fidelity (").Append(BasisName).Append("): ")
+        builder.Append("line fidelity (")
+            .Append(BasisName)
+            .Append("): ")
             .Append((LineFidelity * 100).ToString("F2", CultureInfo.InvariantCulture))
             .Append("%  (")
             .Append(IdenticalLines.ToString(CultureInfo.InvariantCulture))
             .Append('/')
             .Append(Lines.ToString(CultureInfo.InvariantCulture))
             .AppendLine(" lines)");
-        builder.Append("file fidelity (").Append(BasisName).Append("): ")
+        builder.Append("file fidelity (")
+            .Append(BasisName)
+            .Append("): ")
             .Append((FileFidelity * 100).ToString("F2", CultureInfo.InvariantCulture))
             .Append("%  (")
             .Append(IdenticalFiles.ToString(CultureInfo.InvariantCulture))
@@ -100,22 +104,22 @@ public sealed record FidelityReport(
 }
 
 /// <summary>
-/// Compares Skala's output with the oracle's and groups the differences.
+///     Compares Skala's output with the oracle's and groups the differences.
 /// </summary>
 /// <remarks>
-/// ⚠ The comparison is a diff, not a positional walk. The oracle wraps lines and Skala (through
-/// milestone 2) does not, so one wrapped call desynchronises a positional comparison for the rest
-/// of the file and turns an honest 85 % into a meaningless 50 %. Line fidelity is
-/// <em>matched lines ÷ total lines</em> over the longest common subsequence, which is what
-/// docs/plan/12 § "Differential" means by "identical lines".
-/// <para>
-/// ⚠ The default basis is <see cref="FidelityBasis.OutsideDocComments"/> and the default is a
-/// decision, taken when the documentation-comment sub-formatter became the default (SK-DIV-0006).
-/// The oracle profile Skala pins does not run ReSharper's "Reformat embedded XML doc comments"
-/// task and Skala does; comparing those lines measures that, not fidelity. The other basis is one
-/// argument away and both are reported at every re-base — docs/plan/12 § "A ratchet compares
-/// numbers over the same population".
-/// </para>
+///     ⚠ The comparison is a diff, not a positional walk. The oracle wraps lines and Skala (through
+///     milestone 2) does not, so one wrapped call desynchronises a positional comparison for the rest
+///     of the file and turns an honest 85 % into a meaningless 50 %. Line fidelity is
+///     <em>matched lines ÷ total lines</em> over the longest common subsequence, which is what
+///     docs/plan/12 § "Differential" means by "identical lines".
+///     <para>
+///         ⚠ The default basis is <see cref="FidelityBasis.OutsideDocComments" /> and the default is a
+///         decision, taken when the documentation-comment sub-formatter became the default (SK-DIV-0006).
+///         The oracle profile Skala pins does not run ReSharper's "Reformat embedded XML doc comments"
+///         task and Skala does; comparing those lines measures that, not fidelity. The other basis is one
+///         argument away and both are reported at every re-base — docs/plan/12 § "A ratchet compares
+///         numbers over the same population".
+///     </para>
 /// </remarks>
 public static class Fidelity {
     public static FidelityReport Compare(
@@ -156,13 +160,13 @@ public static class Fidelity {
     }
 
     /// <summary>
-    /// The text with every <c>///</c> line removed.
+    ///     The text with every <c>///</c> line removed.
     /// </summary>
     /// <remarks>
-    /// ⚠ A <c>///</c> inside a string literal would be removed too, and it is removed from both
-    /// sides, so it cannot make the two texts agree when they do not. It could in principle make
-    /// them disagree in a place that is really identical, which would understate fidelity rather
-    /// than overstate it — the direction a measurement is allowed to be wrong in.
+    ///     ⚠ A <c>///</c> inside a string literal would be removed too, and it is removed from both
+    ///     sides, so it cannot make the two texts agree when they do not. It could in principle make
+    ///     them disagree in a place that is really identical, which would understate fidelity rather
+    ///     than overstate it — the direction a measurement is allowed to be wrong in.
     /// </remarks>
     public static string OutsideDocComments(string text) =>
         string.Join(
@@ -172,8 +176,8 @@ public static class Fidelity {
         );
 
     /// <summary>
-    /// Pairs each hunk's removed lines with its added lines so that a divergence is described as
-    /// "the oracle wrote X, Skala wrote Y" rather than as two unrelated events.
+    ///     Pairs each hunk's removed lines with its added lines so that a divergence is described as
+    ///     "the oracle wrote X, Skala wrote Y" rather than as two unrelated events.
     /// </summary>
     static void Classify(string file, IReadOnlyList<LineDiff.Entry> trace, List<Divergence> divergences) {
         var i = 0;
@@ -211,8 +215,8 @@ public static class Fidelity {
     }
 
     /// <summary>
-    /// The construct a difference occurred in, guessed from the two lines. Crude on purpose: the
-    /// classes only have to be good enough to rank the work.
+    ///     The construct a difference occurred in, guessed from the two lines. Crude on purpose: the
+    ///     classes only have to be good enough to rank the work.
     /// </summary>
     static string ClassOf(string expected, string actual, int removedCount, int addedCount) {
         var left = expected.TrimStart();

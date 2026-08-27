@@ -7,22 +7,22 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 namespace Rikarin.Skala.Rules.Async;
 
 /// <summary>
-/// The questions every <c>SK3xxx</c> rule has to answer about where an expression sits.
+///     The questions every <c>SK3xxx</c> rule has to answer about where an expression sits.
 /// </summary>
 /// <remarks>
-/// ⚠ Shared rather than duplicated because the answers have to agree. Two async rules that disagree
-/// about whether a position can hold an <c>await</c> produce two findings on one line, at most one
-/// of which has a fix that compiles.
+///     ⚠ Shared rather than duplicated because the answers have to agree. Two async rules that disagree
+///     about whether a position can hold an <c>await</c> produce two findings on one line, at most one
+///     of which has a fix that compiles.
 /// </remarks>
 internal static class AsyncContext {
     /// <summary>
-    /// The nearest enclosing thing that owns an <c>async</c> keyword, or null when the walk leaves
-    /// the body without meeting one.
+    ///     The nearest enclosing thing that owns an <c>async</c> keyword, or null when the walk leaves
+    ///     the body without meeting one.
     /// </summary>
     /// <remarks>
-    /// ⚠ Lambdas and local functions are boundaries, not transparent. A <c>.Result</c> inside a
-    /// synchronous lambda passed to <c>Select</c> is not made awaitable by the enclosing method
-    /// being <c>async</c>, and rewriting it there is CS4034.
+    ///     ⚠ Lambdas and local functions are boundaries, not transparent. A <c>.Result</c> inside a
+    ///     synchronous lambda passed to <c>Select</c> is not made awaitable by the enclosing method
+    ///     being <c>async</c>, and rewriting it there is CS4034.
     /// </remarks>
     public static SyntaxNode? NearestAsyncOwner(SyntaxNode node) {
         for (var current = node.Parent; current is not null; current = current.Parent) {
@@ -62,13 +62,13 @@ internal static class AsyncContext {
     }
 
     /// <summary>
-    /// ⚠ Positions where an <c>await</c> is illegal, wrong, or means something a rewrite cannot
-    /// preserve — so the whole finding is withheld rather than the fix alone.
+    ///     ⚠ Positions where an <c>await</c> is illegal, wrong, or means something a rewrite cannot
+    ///     preserve — so the whole finding is withheld rather than the fix alone.
     /// </summary>
     /// <remarks>
-    /// docs/plan/10: "A fixing tool that can break the build is a tool an agent will use to break
-    /// the build." A finding an agent cannot act on teaches it to ignore the tool, which costs more
-    /// than the finding was worth.
+    ///     docs/plan/10: "A fixing tool that can break the build is a tool an agent will use to break
+    ///     the build." A finding an agent cannot act on teaches it to ignore the tool, which costs more
+    ///     than the finding was worth.
     /// </remarks>
     public static bool IsUnawaitablePosition(SyntaxNode node) {
         for (var current = node; current is not null; current = current.Parent) {
@@ -122,14 +122,14 @@ internal static class AsyncContext {
     }
 
     /// <summary>
-    /// Whether this is test code, where blocking on a task is deliberate and harmless.
+    ///     Whether this is test code, where blocking on a task is deliberate and harmless.
     /// </summary>
     /// <remarks>
-    /// ⚠ By attribute rather than by file path. docs/plan/08 scopes the <c>SK8xxx</c> rules to test
-    /// projects "by convention (<c>*.Tests</c>) and by <c>.editorconfig</c> section", and that is
-    /// the right mechanism for a whole category — but a single rule staying silent needs to be
-    /// right in a repository whose tests live somewhere the convention does not name, and the
-    /// attribute is on the method either way.
+    ///     ⚠ By attribute rather than by file path. docs/plan/08 scopes the <c>SK8xxx</c> rules to test
+    ///     projects "by convention (<c>*.Tests</c>) and by <c>.editorconfig</c> section", and that is
+    ///     the right mechanism for a whole category — but a single rule staying silent needs to be
+    ///     right in a repository whose tests live somewhere the convention does not name, and the
+    ///     attribute is on the method either way.
     /// </remarks>
     public static bool IsTestMethod(SyntaxNode node) {
         for (var current = node; current is not null; current = current.Parent) {
@@ -170,12 +170,12 @@ internal static class AsyncContext {
     }
 
     /// <summary>
-    /// Whether replacing <paramref name="node"/> with a bare <c>await x</c> keeps the parse.
+    ///     Whether replacing <paramref name="node" /> with a bare <c>await x</c> keeps the parse.
     /// </summary>
     /// <remarks>
-    /// ⚠ This is the difference between a fix and a bug. <c>x.Result.Length</c> is
-    /// <c>(await x).Length</c>; written as <c>await x.Length</c> it awaits the wrong thing, and on
-    /// a type where both compile it silently changes what the expression means.
+    ///     ⚠ This is the difference between a fix and a bug. <c>x.Result.Length</c> is
+    ///     <c>(await x).Length</c>; written as <c>await x.Length</c> it awaits the wrong thing, and on
+    ///     a type where both compile it silently changes what the expression means.
     /// </remarks>
     public static bool NeedsParentheses(SyntaxNode node) =>
         node.Parent switch {

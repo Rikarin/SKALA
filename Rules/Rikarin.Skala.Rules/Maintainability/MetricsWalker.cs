@@ -8,52 +8,52 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 namespace Rikarin.Skala.Rules.Maintainability;
 
 /// <summary>
-/// The one walker. Cognitive complexity, statements, nesting depth and the syntactic cyclomatic
-/// count, from a single visit of a member.
+///     The one walker. Cognitive complexity, statements, nesting depth and the syntactic cyclomatic
+///     count, from a single visit of a member.
 /// </summary>
 /// <remarks>
-/// ⚠ docs/plan/07-analysis-host.md § "Metrics": the metrics are "computed in the same pass, from the
-/// same trees, because a second traversal of 1.35 M lines to count things is a second traversal".
-/// One walker, four counters, one visit — not one walker per metric.
-/// <para>
-/// ⚠ Cognitive complexity follows <b>Sonar's published definition</b> — "Cognitive Complexity, a new
-/// way of measuring understandability", G. Ann Campbell, version 1.7, Appendix B — because the whole
-/// value of the number is that it is comparable to SonarQube's on the same code. The specification
-/// is three lists and this class is those three lists:
-/// </para>
-/// <list type="number">
-/// <item>
-/// <b>B1, increments</b> — <c>if</c>, <c>else if</c>, <c>else</c>, ternary; <c>switch</c>;
-/// <c>for</c>, <c>foreach</c>; <c>while</c>, <c>do while</c>; <c>catch</c>; a jump to a label;
-/// each <em>sequence</em> of like binary logical operators; each method in a recursion cycle.
-/// </item>
-/// <item>
-/// <b>B2, nesting level</b> — <c>if</c>, <c>else if</c>, <c>else</c>, ternary; <c>switch</c>;
-/// loops; <c>catch</c>; and nested methods and method-like structures such as lambdas.
-/// </item>
-/// <item>
-/// <b>B3, nesting increments</b> — <c>if</c>, ternary; <c>switch</c>; loops; <c>catch</c>.
-/// ⚠ <c>else</c> and <c>else if</c> are <em>not</em> in this list: "no nesting increment is
-/// assessed for these structures because the mental cost has already been paid when reading the
-/// if". That single asymmetry is what makes an <c>if</c>/<c>else if</c> chain cost one each rather
-/// than growing, and it is the first thing a hand-rolled implementation gets wrong.
-/// </item>
-/// </list>
-/// <para>
-/// ⚠ A <c>switch</c> and all its cases cost <b>one</b>, however many cases there are — "a switch can
-/// often be taken in at a glance". A twenty-case switch scoring 1 is the headline difference from
-/// cyclomatic complexity and is pinned by a fixture.
-/// </para>
-/// <para>
-/// ⚠ <c>??</c>, <c>??=</c> and <c>?.</c> cost nothing: the paper ignores null-coalescing operators
-/// by name, "because they allow short-handing multiple lines of code into one". <c>try</c> and
-/// <c>finally</c> cost nothing either; only <c>catch</c> does.
-/// </para>
-/// <para>
-/// Where the paper and SonarSource's own C# analyzer disagree, the analyzer wins, because
-/// comparability with SonarQube is the goal and SonarQube runs the analyzer. Each such place is
-/// marked <c>⚠ SonarAnalyzer</c> below.
-/// </para>
+///     ⚠ docs/plan/07-analysis-host.md § "Metrics": the metrics are "computed in the same pass, from the
+///     same trees, because a second traversal of 1.35 M lines to count things is a second traversal".
+///     One walker, four counters, one visit — not one walker per metric.
+///     <para>
+///         ⚠ Cognitive complexity follows <b>Sonar's published definition</b> — "Cognitive Complexity, a new
+///         way of measuring understandability", G. Ann Campbell, version 1.7, Appendix B — because the whole
+///         value of the number is that it is comparable to SonarQube's on the same code. The specification
+///         is three lists and this class is those three lists:
+///     </para>
+///     <list type="number">
+///         <item>
+///             <b>B1, increments</b> — <c>if</c>, <c>else if</c>, <c>else</c>, ternary; <c>switch</c>;
+///             <c>for</c>, <c>foreach</c>; <c>while</c>, <c>do while</c>; <c>catch</c>; a jump to a label;
+///             each <em>sequence</em> of like binary logical operators; each method in a recursion cycle.
+///         </item>
+///         <item>
+///             <b>B2, nesting level</b> — <c>if</c>, <c>else if</c>, <c>else</c>, ternary; <c>switch</c>;
+///             loops; <c>catch</c>; and nested methods and method-like structures such as lambdas.
+///         </item>
+///         <item>
+///             <b>B3, nesting increments</b> — <c>if</c>, ternary; <c>switch</c>; loops; <c>catch</c>.
+///             ⚠ <c>else</c> and <c>else if</c> are <em>not</em> in this list: "no nesting increment is
+///             assessed for these structures because the mental cost has already been paid when reading the
+///             if". That single asymmetry is what makes an <c>if</c>/<c>else if</c> chain cost one each rather
+///             than growing, and it is the first thing a hand-rolled implementation gets wrong.
+///         </item>
+///     </list>
+///     <para>
+///         ⚠ A <c>switch</c> and all its cases cost <b>one</b>, however many cases there are — "a switch can
+///         often be taken in at a glance". A twenty-case switch scoring 1 is the headline difference from
+///         cyclomatic complexity and is pinned by a fixture.
+///     </para>
+///     <para>
+///         ⚠ <c>??</c>, <c>??=</c> and <c>?.</c> cost nothing: the paper ignores null-coalescing operators
+///         by name, "because they allow short-handing multiple lines of code into one". <c>try</c> and
+///         <c>finally</c> cost nothing either; only <c>catch</c> does.
+///     </para>
+///     <para>
+///         Where the paper and SonarSource's own C# analyzer disagree, the analyzer wins, because
+///         comparability with SonarQube is the goal and SonarQube runs the analyzer. Each such place is
+///         marked <c>⚠ SonarAnalyzer</c> below.
+///     </para>
 /// </remarks>
 sealed class MetricsWalker : CSharpSyntaxWalker {
     readonly CancellationToken cancellation;
@@ -263,20 +263,20 @@ sealed class MetricsWalker : CSharpSyntaxWalker {
     }
 
     /// <summary>
-    /// ⚠ The sequence rule, and it is subtler than "one per operator" or "one per expression".
+    ///     ⚠ The sequence rule, and it is subtler than "one per operator" or "one per expression".
     /// </summary>
     /// <remarks>
-    /// A chain of like operators is one increment; a change of operator starts a new one. The paper:
-    /// <code>
+    ///     A chain of like operators is one increment; a change of operator starts a new one. The paper:
+    ///     <code>
     /// if (a &amp;&amp; b &amp;&amp; c || d || e &amp;&amp; f)   // +1 for `if`, then +1 +1 +1
     /// if (a &amp;&amp; !(b &amp;&amp; c))                       // +1 for `if`, then +1 +1
-    /// </code>
-    /// The second line is why a naive flatten is wrong: <c>!</c> interrupts the sequence even though
-    /// both operators are <c>&amp;&amp;</c>. The rule that produces both numbers is a local one —
-    /// charge for this node unless its left operand is already the same operator, and remember a
-    /// same-operator right operand as paid for — which is SonarAnalyzer's, kept because it is what
-    /// SonarQube computes. Parentheses do not break a sequence; a different operator or any other
-    /// expression shape does.
+    ///     </code>
+    ///     The second line is why a naive flatten is wrong: <c>!</c> interrupts the sequence even though
+    ///     both operators are <c>&amp;&amp;</c>. The rule that produces both numbers is a local one —
+    ///     charge for this node unless its left operand is already the same operator, and remember a
+    ///     same-operator right operand as paid for — which is SonarAnalyzer's, kept because it is what
+    ///     SonarQube computes. Parentheses do not break a sequence; a different operator or any other
+    ///     expression shape does.
     /// </remarks>
     void CountLogicalSequence(SyntaxNode node, SyntaxKind kind, SyntaxNode left, SyntaxNode right) {
         if (paidLogicalOperands.Contains(node)) {
@@ -354,13 +354,13 @@ sealed class MetricsWalker : CSharpSyntaxWalker {
     }
 
     /// <summary>
-    /// The structures that add a level of block nesting. <c>SK7006</c>.
+    ///     The structures that add a level of block nesting. <c>SK7006</c>.
     /// </summary>
     /// <remarks>
-    /// ⚠ Structures, not braces. <c>if (a) Use(x);</c> nests as deep as the braced form, because the
-    /// metric has to be invariant under the formatter for the same reason SK7003 counts statements
-    /// rather than lines. An <c>else if</c> stays at its chain's level: a five-branch chain is one
-    /// decision a reader makes once, not five levels of indentation.
+    ///     ⚠ Structures, not braces. <c>if (a) Use(x);</c> nests as deep as the braced form, because the
+    ///     metric has to be invariant under the formatter for the same reason SK7003 counts statements
+    ///     rather than lines. An <c>else if</c> stays at its chain's level: a five-branch chain is one
+    ///     decision a reader makes once, not five levels of indentation.
     /// </remarks>
     static bool IntroducesBlock(SyntaxNode node) =>
         node switch {
@@ -384,25 +384,25 @@ sealed class MetricsWalker : CSharpSyntaxWalker {
         };
 
     /// <summary>
-    /// The syntactic decision points, used for cyclomatic complexity when there is no semantic model
-    /// to build a control-flow graph from.
+    ///     The syntactic decision points, used for cyclomatic complexity when there is no semantic model
+    ///     to build a control-flow graph from.
     /// </summary>
     /// <remarks>
-    /// ⚠ The set is chosen to mirror the conditional branches Roslyn's control-flow graph creates,
-    /// not the textbook keyword list, so that a <c>--load=loose</c> run and a full one report the
-    /// same number for the same member. That agreement is asserted by a test rather than assumed. It
-    /// is why <c>??</c> and <c>?.</c> are counted here and not in cognitive complexity — the compiler
-    /// branches on them even though a reader does not — and why <c>and</c>/<c>or</c> pattern
-    /// combinators are <em>not</em> counted here even though they are counted for cognitive
-    /// complexity: Roslyn's graph evaluates a pattern as one test.
-    /// <para>
-    /// ⚠ A lambda, an anonymous method and a local function are excluded, because Roslyn's graph
-    /// excludes them: each is its own control-flow graph, reachable from the parent's but not part
-    /// of it. Following the graph is what rules.json's <c>SK7001</c> promises — "counted the way the
-    /// compiler sees them rather than the way a regular expression would" — and the cost of a
-    /// complicated lambda is not lost, because cognitive complexity charges it a nesting increment
-    /// and cognitive complexity is the number the gate reads.
-    /// </para>
+    ///     ⚠ The set is chosen to mirror the conditional branches Roslyn's control-flow graph creates,
+    ///     not the textbook keyword list, so that a <c>--load=loose</c> run and a full one report the
+    ///     same number for the same member. That agreement is asserted by a test rather than assumed. It
+    ///     is why <c>??</c> and <c>?.</c> are counted here and not in cognitive complexity — the compiler
+    ///     branches on them even though a reader does not — and why <c>and</c>/<c>or</c> pattern
+    ///     combinators are <em>not</em> counted here even though they are counted for cognitive
+    ///     complexity: Roslyn's graph evaluates a pattern as one test.
+    ///     <para>
+    ///         ⚠ A lambda, an anonymous method and a local function are excluded, because Roslyn's graph
+    ///         excludes them: each is its own control-flow graph, reachable from the parent's but not part
+    ///         of it. Following the graph is what rules.json's <c>SK7001</c> promises — "counted the way the
+    ///         compiler sees them rather than the way a regular expression would" — and the cost of a
+    ///         complicated lambda is not lost, because cognitive complexity charges it a nesting increment
+    ///         and cognitive complexity is the number the gate reads.
+    ///     </para>
     /// </remarks>
     void CountDecisionPoint(SyntaxNode node) {
         if (insideNestedFunction > 0) {

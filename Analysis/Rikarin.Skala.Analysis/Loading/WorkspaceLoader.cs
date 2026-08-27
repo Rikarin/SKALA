@@ -9,14 +9,14 @@ using Rikarin.Skala.Reporting;
 namespace Rikarin.Skala.Analysis.Loading;
 
 /// <summary>
-/// The fallback (ADR-007): <c>MSBuildLocator</c> plus <c>MSBuildWorkspace</c>.
+///     The fallback (ADR-007): <c>MSBuildLocator</c> plus <c>MSBuildWorkspace</c>.
 /// </summary>
 /// <remarks>
-/// Present because "I have a solution and no binlog" is a real situation. It is slower, it is
-/// sensitive to custom targets, and — the point of the whole type —
-/// ⚠ <b>its <c>WorkspaceDiagnostics</c> are surfaced verbatim rather than swallowed</b>. A
-/// partially-loaded workspace that silently analyses half a solution produces a clean report about
-/// a third of the code, and nothing in that report says so unless this does.
+///     Present because "I have a solution and no binlog" is a real situation. It is slower, it is
+///     sensitive to custom targets, and — the point of the whole type —
+///     ⚠ <b>its <c>WorkspaceDiagnostics</c> are surfaced verbatim rather than swallowed</b>. A
+///     partially-loaded workspace that silently analyses half a solution produces a clean report about
+///     a third of the code, and nothing in that report says so unless this does.
 /// </remarks>
 public static class WorkspaceLoader {
     public static LoadedProject Load(LoadRequest request, CancellationToken cancellation) {
@@ -52,14 +52,14 @@ public static class WorkspaceLoader {
     }
 
     /// <summary>
-    /// ⚠ Isolated behind a method that is not inlined into <see cref="Load"/>.
+    ///     ⚠ Isolated behind a method that is not inlined into <see cref="Load" />.
     /// </summary>
     /// <remarks>
-    /// <c>MSBuildLocator</c> resolves MSBuild assemblies through an <c>AssemblyResolve</c> handler
-    /// installed by <c>RegisterDefaults</c>. If the JIT has already prepared a method that
-    /// references <c>MSBuildWorkspace</c>, the load happens before the handler exists and fails with
-    /// a message about a file that is obviously present. Keeping every workspace type behind a
-    /// separate frame is the documented workaround and the reason this method exists.
+    ///     <c>MSBuildLocator</c> resolves MSBuild assemblies through an <c>AssemblyResolve</c> handler
+    ///     installed by <c>RegisterDefaults</c>. If the JIT has already prepared a method that
+    ///     references <c>MSBuildWorkspace</c>, the load happens before the handler exists and fails with
+    ///     a message about a file that is obviously present. Keeping every workspace type behind a
+    ///     separate frame is the documented workaround and the reason this method exists.
     /// </remarks>
     [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
     static LoadedProject LoadCore(

@@ -6,10 +6,10 @@ namespace Rikarin.Skala.Formatting.CSharp;
 
 /// <summary>What a piece of the source is.</summary>
 /// <remarks>
-/// docs/plan/04 § "Trivia — where formatters actually break". Roslyn attaches trivia to tokens with
-/// rules that are subtle; Skala re-associates it into this explicit model before building the
-/// document, because "which token owns this comment" must be a decision Skala makes rather than one
-/// it inherits.
+///     docs/plan/04 § "Trivia — where formatters actually break". Roslyn attaches trivia to tokens with
+///     rules that are subtle; Skala re-associates it into this explicit model before building the
+///     document, because "which token owns this comment" must be a decision Skala makes rather than one
+///     it inherits.
 /// </remarks>
 public enum PieceKind {
     Token,
@@ -20,7 +20,9 @@ public enum PieceKind {
     /// <summary>A <c>/* */</c> comment. Never reflowed, never reindented past its first line.</summary>
     BlockComment,
 
-    /// <summary>One <c>///</c> line of a documentation comment. Phase 4 reformats the contents; phase 1 reindents the line.</summary>
+    /// <summary>
+    ///     One <c>///</c> line of a documentation comment. Phase 4 reformats the contents; phase 1 reindents the line.
+    /// </summary>
     DocCommentLine,
 
     /// <summary>A <c>/** */</c> documentation comment, kept whole.</summary>
@@ -29,13 +31,17 @@ public enum PieceKind {
     /// <summary><c>#if</c>, <c>#else</c>, <c>#elif</c>, <c>#endif</c>, <c>#define</c>, <c>#error</c>.</summary>
     ConditionalDirective,
 
-    /// <summary><c>#region</c> / <c>#endregion</c> — indented like code (<c>indent_preprocessor_region = usual_indent</c>).</summary>
+    /// <summary>
+    ///     <c>#region</c> / <c>#endregion</c> — indented like code (<c>indent_preprocessor_region = usual_indent</c>).
+    /// </summary>
     RegionDirective,
 
     /// <summary><c>#pragma</c>, <c>#nullable</c>, <c>#line</c> — own line, column 0, no grouping effect.</summary>
     OtherDirective,
 
-    /// <summary>⚠ The inactive branch of a <c>#if</c>. An unstructured string, emitted byte-for-byte and never reindented.</summary>
+    /// <summary>
+    ///     ⚠ The inactive branch of a <c>#if</c>. An unstructured string, emitted byte-for-byte and never reindented.
+    /// </summary>
     DisabledText,
 
     /// <summary>Tokens Roslyn could not place, and merge-conflict markers. Emitted untouched.</summary>
@@ -60,7 +66,7 @@ public readonly record struct Piece(
 }
 
 /// <summary>
-/// Splits a parsed file into an ordered piece stream, which is what the document builder walks.
+///     Splits a parsed file into an ordered piece stream, which is what the document builder walks.
 /// </summary>
 public static class SourcePieces {
     public static (Piece[] Pieces, SyntaxToken[] Tokens) Split(SyntaxNode root, SourceText text) {
@@ -207,7 +213,7 @@ public static class SourcePieces {
     static Piece Make(PieceKind kind, SyntaxTrivia trivia, SourceText text) =>
         new(kind, trivia.Span, text.ToString(trivia.Span), -1, StartsLine(text, trivia.SpanStart));
 
-    /// <summary>True when only whitespace separates <paramref name="position"/> from the line start.</summary>
+    /// <summary>True when only whitespace separates <paramref name="position" /> from the line start.</summary>
     static bool StartsLine(SourceText text, int position) {
         for (var i = position - 1; i >= 0; i--) {
             var c = text[i];

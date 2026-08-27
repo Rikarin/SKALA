@@ -6,8 +6,8 @@ using Rikarin.Skala.Options;
 namespace Rikarin.Skala.Core.Configuration;
 
 /// <summary>
-/// Two settings that mean opposite things and are not two spellings of one option, so precedence
-/// cannot be read off the key names alone.
+///     Two settings that mean opposite things and are not two spellings of one option, so precedence
+///     cannot be read off the key names alone.
 /// </summary>
 /// <param name="Generic">The standard EditorConfig key, which loses.</param>
 /// <param name="Specific">The ReSharper key, which wins for C#.</param>
@@ -19,19 +19,19 @@ public sealed record ContradictionRule(
     string Explanation);
 
 /// <summary>
-/// SK9001–SK9006 over a resolved configuration.
+///     SK9001–SK9006 over a resolved configuration.
 /// </summary>
 /// <remarks>
-/// Non-negotiable #4 (docs/plan/00): unknown configuration is a diagnostic, never a silent default.
-/// The failure mode this prevents is the config saying one thing, the tool doing another, and
-/// nothing ever telling you.
+///     Non-negotiable #4 (docs/plan/00): unknown configuration is a diagnostic, never a silent default.
+///     The failure mode this prevents is the config saying one thing, the tool doing another, and
+///     nothing ever telling you.
 /// </remarks>
 public static class ConfigurationAnalyzer {
     /// <summary>
-    /// The contradictions the plan already found in the export, plus the width one. These are not
-    /// alias disagreements — the two keys are different options that happen to describe the same
-    /// behaviour — so they cannot be detected structurally and are listed.
-    /// docs/plan/03-configuration-model.md § "Four things about that file that will bite".
+    ///     The contradictions the plan already found in the export, plus the width one. These are not
+    ///     alias disagreements — the two keys are different options that happen to describe the same
+    ///     behaviour — so they cannot be detected structurally and are listed.
+    ///     docs/plan/03-configuration-model.md § "Four things about that file that will bite".
     /// </summary>
     public static ImmutableArray<ContradictionRule> KnownContradictions { get; } = [
         new(

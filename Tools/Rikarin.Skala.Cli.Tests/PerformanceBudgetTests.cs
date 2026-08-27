@@ -5,27 +5,27 @@ using Rikarin.Skala.Testing;
 namespace Rikarin.Skala.Cli.Tests;
 
 /// <summary>
-/// docs/plan/13 § "Budgets", asserted rather than aspired to.
+///     docs/plan/13 § "Budgets", asserted rather than aspired to.
 /// </summary>
 /// <remarks>
-/// docs/plan/12 § "Performance tests": "Budgets from 13 are asserted in CI with a 20 % tolerance
-/// band; exceeding it fails the build, because performance regressions in a tool that runs in a
-/// pre-commit hook are user-visible within a day and untraceable a month later."
-/// <para>
-/// ⚠ <b>Opt-in, by <c>SKALA_PERF=1</c>.</b> Not because the numbers do not matter — they are the
-/// milestone — but because a wall-clock assertion on a shared CI runner with noisy neighbours fails
-/// for reasons that have nothing to do with the commit, and a test that cries wolf is a test people
-/// delete. It runs in a dedicated CI job on a runner doing nothing else. Locally,
-/// <c>SKALA_PERF=1 dotnet test</c>.
-/// </para>
-/// <para>
-/// ⚠ <b>Measured as a loop divided by N, never as one run.</b> This was learned the hard way in M7:
-/// a Python <c>subprocess</c> harness reports <b>38 ms</b> for an <i>empty</i> NativeAOT binary and
-/// <b>2 ms</b> for <c>/usr/bin/true</c> on the same machine — an artefact large enough to hide the
-/// entire 40 ms budget. The harness has to be cheaper than the thing it measures, and it has to be
-/// shown to be, which is why <see cref="ProcessStartFloor"/> is measured and reported alongside
-/// every result rather than assumed.
-/// </para>
+///     docs/plan/12 § "Performance tests": "Budgets from 13 are asserted in CI with a 20 % tolerance
+///     band; exceeding it fails the build, because performance regressions in a tool that runs in a
+///     pre-commit hook are user-visible within a day and untraceable a month later."
+///     <para>
+///         ⚠ <b>Opt-in, by <c>SKALA_PERF=1</c>.</b> Not because the numbers do not matter — they are the
+///         milestone — but because a wall-clock assertion on a shared CI runner with noisy neighbours fails
+///         for reasons that have nothing to do with the commit, and a test that cries wolf is a test people
+///         delete. It runs in a dedicated CI job on a runner doing nothing else. Locally,
+///         <c>SKALA_PERF=1 dotnet test</c>.
+///     </para>
+///     <para>
+///         ⚠ <b>Measured as a loop divided by N, never as one run.</b> This was learned the hard way in M7:
+///         a Python <c>subprocess</c> harness reports <b>38 ms</b> for an <i>empty</i> NativeAOT binary and
+///         <b>2 ms</b> for <c>/usr/bin/true</c> on the same machine — an artefact large enough to hide the
+///         entire 40 ms budget. The harness has to be cheaper than the thing it measures, and it has to be
+///         shown to be, which is why <see cref="ProcessStartFloor" /> is measured and reported alongside
+///         every result rather than assumed.
+///     </para>
 /// </remarks>
 [Trait("Category", "Performance")]
 public sealed class PerformanceBudgetTests {
@@ -36,9 +36,9 @@ public sealed class PerformanceBudgetTests {
         string.Equals(Environment.GetEnvironmentVariable("SKALA_PERF"), "1", StringComparison.Ordinal);
 
     /// <summary>
-    /// ⚠ The row that matters. doc 13: "`format` one 500-line file | Warm (daemon) | &lt; 40 ms |
-    /// the agent hook; includes process start". Before M7 this measured 60–70 ms and essentially all
-    /// of it was the client's own process start.
+    ///     ⚠ The row that matters. doc 13: "`format` one 500-line file | Warm (daemon) | &lt; 40 ms |
+    ///     the agent hook; includes process start". Before M7 this measured 60–70 ms and essentially all
+    ///     of it was the client's own process start.
     /// </summary>
     [Fact]
     public void WarmSingleFileFormat_IsUnderFortyMilliseconds() {
@@ -94,9 +94,9 @@ public sealed class PerformanceBudgetTests {
     }
 
     /// <summary>
-    /// doc 13: "Daemon RSS, idle after a corpus run | &lt; 1.5 GB | compilations dropped under
-    /// pressure". Asserted after a few hundred formats rather than after a whole corpus, which is
-    /// what the nightly job is for — but the bound is the same bound.
+    ///     doc 13: "Daemon RSS, idle after a corpus run | &lt; 1.5 GB | compilations dropped under
+    ///     pressure". Asserted after a few hundred formats rather than after a whole corpus, which is
+    ///     what the nightly job is for — but the bound is the same bound.
     /// </summary>
     [Fact]
     public void DaemonResidentSet_StaysUnderTheBudget() {
@@ -123,23 +123,23 @@ public sealed class PerformanceBudgetTests {
     }
 
     /// <summary>
-    /// ⚠ Reported with every result, subtracted from it, and never assumed.
+    ///     ⚠ Reported with every result, subtracted from it, and never assumed.
     /// </summary>
     /// <remarks>
-    /// ⚠ <b>This is not a rounding correction; on this harness it is half the budget.</b>
-    /// <c>Process.Start</c> from a .NET test host costs <b>~22 ms</b> to spawn <c>/usr/bin/true</c>
-    /// on the reference machine, against <b>1.9 ms</b> for the same binary from a shell loop — the
-    /// runtime forks a large process and copies its environment. Against a 40 ms budget that is not
-    /// noise, so the floor is measured every run with the same spawner and subtracted, and what is
-    /// asserted is the time attributable to Skala including <i>its own</i> process start, which is
-    /// what doc 13's row means.
-    /// <para>
-    /// For the record, the same operation measured directly — 150 runs of the published client in a
-    /// shell loop, wall time divided by N — is <b>8.65 ms</b>. The corrected figure here is larger
-    /// because the harness's overhead is not perfectly constant across binaries of different sizes.
-    /// The number to quote is the shell-loop one; the number to <i>regress against</i> is this one,
-    /// because it is the one CI can compute unattended.
-    /// </para>
+    ///     ⚠ <b>This is not a rounding correction; on this harness it is half the budget.</b>
+    ///     <c>Process.Start</c> from a .NET test host costs <b>~22 ms</b> to spawn <c>/usr/bin/true</c>
+    ///     on the reference machine, against <b>1.9 ms</b> for the same binary from a shell loop — the
+    ///     runtime forks a large process and copies its environment. Against a 40 ms budget that is not
+    ///     noise, so the floor is measured every run with the same spawner and subtracted, and what is
+    ///     asserted is the time attributable to Skala including <i>its own</i> process start, which is
+    ///     what doc 13's row means.
+    ///     <para>
+    ///         For the record, the same operation measured directly — 150 runs of the published client in a
+    ///         shell loop, wall time divided by N — is <b>8.65 ms</b>. The corrected figure here is larger
+    ///         because the harness's overhead is not perfectly constant across binaries of different sizes.
+    ///         The number to quote is the shell-loop one; the number to <i>regress against</i> is this one,
+    ///         because it is the one CI can compute unattended.
+    ///     </para>
     /// </remarks>
     static double ProcessStartFloor() {
         var probe = OperatingSystem.IsWindows()

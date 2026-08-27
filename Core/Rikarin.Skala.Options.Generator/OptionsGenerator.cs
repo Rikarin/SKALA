@@ -10,13 +10,13 @@ using Microsoft.CodeAnalysis.Text;
 namespace Rikarin.Skala.Options.Generator;
 
 /// <summary>
-/// Reads <c>options.json</c> and emits the option model: the <c>OptionId</c> enum, the option
-/// enums, the registry metadata and key parser, and <c>FormattingOptions</c>.
+///     Reads <c>options.json</c> and emits the option model: the <c>OptionId</c> enum, the option
+///     enums, the registry metadata and key parser, and <c>FormattingOptions</c>.
 /// </summary>
 /// <remarks>
-/// docs/plan/03-configuration-model.md § "The option registry". This runs as an incremental
-/// generator rather than as a checked-in codegen step so that editing options.json is a build,
-/// not a ritual.
+///     docs/plan/03-configuration-model.md § "The option registry". This runs as an incremental
+///     generator rather than as a checked-in codegen step so that editing options.json is a build,
+///     not a ritual.
 /// </remarks>
 [Generator(LanguageNames.CSharp)]
 public sealed class OptionsGenerator : IIncrementalGenerator {
@@ -709,8 +709,8 @@ public sealed class OptionsGenerator : IIncrementalGenerator {
     }
 
     /// <summary>
-    /// Microsoft's style keys are written <c>value:severity</c>. The severity configures a rule and
-    /// belongs to the rule layer; the option's value is what is left.
+    ///     Microsoft's style keys are written <c>value:severity</c>. The severity configures a rule and
+    ///     belongs to the rule layer; the option's value is what is left.
     /// </summary>
     static string StripSeverity(OptionEntry option, string text) {
         if (!option.SeveritySuffix) {

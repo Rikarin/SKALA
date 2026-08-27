@@ -9,12 +9,12 @@ namespace Rikarin.Skala.Formatting.CSharp.Tests;
 
 /// <summary>Runs the pipeline, which formats documentation comments by default.</summary>
 /// <remarks>
-/// ⚠ These fixtures assert <b>the semantics JetBrains' settings pages state</b>, not the oracle's
-/// behaviour, and the difference is the whole of SK-DIV-0006: the committed <c>.expected.cs</c>
-/// fixtures were produced by a profile that does not run ReSharper's own
-/// <c>CSharpFormatDocComments</c> task, so every one of them returns its doc comments exactly as
-/// written and none of them can pin any of this. Every other option in Skala is pinned the other
-/// way. That is why none of these keys is Tier A — not because the behaviour is optional.
+///     ⚠ These fixtures assert <b>the semantics JetBrains' settings pages state</b>, not the oracle's
+///     behaviour, and the difference is the whole of SK-DIV-0006: the committed <c>.expected.cs</c>
+///     fixtures were produced by a profile that does not run ReSharper's own
+///     <c>CSharpFormatDocComments</c> task, so every one of them returns its doc comments exactly as
+///     written and none of them can pin any of this. Every other option in Skala is pinned the other
+///     way. That is why none of these keys is Tier A — not because the behaviour is optional.
 /// </remarks>
 public static class XmlDoc {
     static FormattingOptions Resolve(params (string Key, string Value)[] overrides) =>
@@ -278,7 +278,9 @@ public sealed class XmlDocHazardTests {
         // reading that is wrong. This is what having no oracle in this area actually costs, and it
         // was found by turning the sub-formatter on over Skala's own sources — 230 files — rather
         // than by any test.
-        var source = XmlDoc.InClass("/// <summary>The <" + tag + ">///</" + tag + "> marker, named in prose.</summary>");
+        var source = XmlDoc.InClass(
+            "/// <summary>The <" + tag + ">///</" + tag + "> marker, named in prose.</summary>"
+        );
         Assert.Contains("<" + tag + ">///</" + tag + ">", XmlDoc.Text(source), StringComparison.Ordinal);
     }
 
@@ -411,15 +413,15 @@ public sealed class XmlDocPropertyTests {
     }
 
     /// <summary>
-    /// Every non-whitespace character of every <c>///</c> line, in order.
+    ///     Every non-whitespace character of every <c>///</c> line, in order.
     /// </summary>
     /// <remarks>
-    /// ⚠ Deliberately not <see cref="XmlDocSignature"/>: checking the round trip with the same
-    /// function the sub-formatter checks it with would prove only that the function agrees with
-    /// itself. This one knows nothing about XML — it cannot be fooled by a tag the model
-    /// misunderstood — and what it cannot see (whitespace) is covered by the hazard fixtures, which
-    /// assert the bytes of a <c>&lt;code&gt;</c> block and the absence of a space inside
-    /// <c>&lt;c&gt;x&lt;/c&gt;s</c>.
+    ///     ⚠ Deliberately not <see cref="XmlDocSignature" />: checking the round trip with the same
+    ///     function the sub-formatter checks it with would prove only that the function agrees with
+    ///     itself. This one knows nothing about XML — it cannot be fooled by a tag the model
+    ///     misunderstood — and what it cannot see (whitespace) is covered by the hazard fixtures, which
+    ///     assert the bytes of a <c>&lt;code&gt;</c> block and the absence of a space inside
+    ///     <c>&lt;c&gt;x&lt;/c&gt;s</c>.
     /// </remarks>
     static string Words(string source) =>
         string.Concat(
@@ -432,20 +434,20 @@ public sealed class XmlDocPropertyTests {
 
 /// <summary>The count in the milestone notes, checked against the registry rather than remembered.</summary>
 /// <remarks>
-/// ⚠ "Seventeen of twenty-seven honoured, ten refused" is a claim about this repository's option
-/// registry, and a claim like that rots the moment somebody adds a key. It is asserted here so that
-/// adding a <c>resharper_xmldoc_*</c> key to <c>options.json</c> fails the build until somebody has
-/// decided whether the sub-formatter honours it or refuses it, and has written down which.
+///     ⚠ "Seventeen of twenty-seven honoured, ten refused" is a claim about this repository's option
+///     registry, and a claim like that rots the moment somebody adds a key. It is asserted here so that
+///     adding a <c>resharper_xmldoc_*</c> key to <c>options.json</c> fails the build until somebody has
+///     decided whether the sub-formatter honours it or refuses it, and has written down which.
 /// </remarks>
 public sealed class XmlDocKeyCoverageTests {
     /// <summary>
-    /// The family the milestone counted: every <c>resharper_xmldoc_*</c> key that is not about
-    /// processing instructions.
+    ///     The family the milestone counted: every <c>resharper_xmldoc_*</c> key that is not about
+    ///     processing instructions.
     /// </summary>
     /// <remarks>
-    /// ⚠ The <c>_pi_</c> keys are out of the count rather than refused. A processing instruction in
-    /// a C# documentation comment is not a thing that occurs, and counting five keys as "refused"
-    /// that govern a construct the language does not put there would inflate both halves.
+    ///     ⚠ The <c>_pi_</c> keys are out of the count rather than refused. A processing instruction in
+    ///     a C# documentation comment is not a thing that occurs, and counting five keys as "refused"
+    ///     that govern a construct the language does not put there would inflate both halves.
     /// </remarks>
     static IEnumerable<string> Family =>
         OptionRegistry.All

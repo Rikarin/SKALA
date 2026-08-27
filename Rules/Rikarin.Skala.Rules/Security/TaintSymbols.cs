@@ -6,27 +6,30 @@ using Rikarin.Skala.Rules.Metadata;
 namespace Rikarin.Skala.Rules.Security;
 
 /// <summary>
-/// <c>taint.json</c>'s type and member names, resolved against one compilation.
+///     <c>taint.json</c>'s type and member names, resolved against one compilation.
 /// </summary>
 /// <remarks>
-/// ⚠ Names are matched against a member's containing type <em>and its base types and its
-/// interfaces</em>, which is the difference between a table that works and a table that has to
-/// name every ADO.NET provider ever written. <c>NpgsqlCommand.CommandText</c> overrides
-/// <c>DbCommand.CommandText</c> and implements <c>IDbCommand.CommandText</c>, so the two entries in
-/// the table cover Npgsql, SQLite, MySQL, SQL Server and anything else that ever ships.
-/// <para>
-/// ⚠ It is also why matching is by <em>name</em> rather than by
-/// <see cref="SymbolEqualityComparer"/> against a resolved <see cref="INamedTypeSymbol"/>. Half of
-/// the declared types — <c>Dapper.SqlMapper</c>, the EF Core extension classes — are not in the
-/// framework, so a compilation that does not reference them resolves nothing, and a compilation
-/// that does must still match a symbol Skala's own reference set has never seen.
-/// </para>
-/// <para>
-/// ⚠ <b>Unknown is untrusted-free.</b> Every question this type cannot answer resolves to "not a
-/// source, not a sink" rather than to a guess. docs/plan/08: "Where Skala cannot prove a flow, it
-/// says nothing rather than guessing" — and for a range whose default severity is <c>error</c>,
-/// that asymmetry is the whole design.
-/// </para>
+///     ⚠ Names are matched against a member's containing type
+///     <em>
+///         and its base types and its
+///         interfaces
+///     </em>, which is the difference between a table that works and a table that has to
+///     name every ADO.NET provider ever written. <c>NpgsqlCommand.CommandText</c> overrides
+///     <c>DbCommand.CommandText</c> and implements <c>IDbCommand.CommandText</c>, so the two entries in
+///     the table cover Npgsql, SQLite, MySQL, SQL Server and anything else that ever ships.
+///     <para>
+///         ⚠ It is also why matching is by <em>name</em> rather than by
+///         <see cref="SymbolEqualityComparer" /> against a resolved <see cref="INamedTypeSymbol" />. Half of
+///         the declared types — <c>Dapper.SqlMapper</c>, the EF Core extension classes — are not in the
+///         framework, so a compilation that does not reference them resolves nothing, and a compilation
+///         that does must still match a symbol Skala's own reference set has never seen.
+///     </para>
+///     <para>
+///         ⚠ <b>Unknown is untrusted-free.</b> Every question this type cannot answer resolves to "not a
+///         source, not a sink" rather than to a guess. docs/plan/08: "Where Skala cannot prove a flow, it
+///         says nothing rather than guessing" — and for a range whose default severity is <c>error</c>,
+///         that asymmetry is the whole design.
+///     </para>
 /// </remarks>
 public sealed class TaintSymbols {
     readonly Dictionary<string, HashSet<string>> _sources;
@@ -50,17 +53,17 @@ public sealed class TaintSymbols {
     public bool HasSinks => _sinks.Count > 0;
 
     /// <summary>
-    /// The table restricted to one rule's sinks, or <c>null</c> when the compilation cannot produce
-    /// a finding for it at all.
+    ///     The table restricted to one rule's sinks, or <c>null</c> when the compilation cannot produce
+    ///     a finding for it at all.
     /// </summary>
     /// <remarks>
-    /// ⚠ This is the gate that keeps the taint engine off the warm path, and it runs once per
-    /// compilation rather than once per method. Two conditions have to hold before a single
-    /// control-flow graph is built anywhere: at least one declared <em>source</em> type has to
-    /// resolve, because a compilation with no trust boundary cannot produce a tainted value; and at
-    /// least one of the rule's <em>sink</em> types has to resolve. Vixen references neither ASP.NET
-    /// Core nor any SQL client, so <c>SK5001</c> registers no actions at all there and costs the
-    /// price of two <c>GetTypeByMetadataName</c> calls for the whole 4 717-file tree.
+    ///     ⚠ This is the gate that keeps the taint engine off the warm path, and it runs once per
+    ///     compilation rather than once per method. Two conditions have to hold before a single
+    ///     control-flow graph is built anywhere: at least one declared <em>source</em> type has to
+    ///     resolve, because a compilation with no trust boundary cannot produce a tainted value; and at
+    ///     least one of the rule's <em>sink</em> types has to resolve. Vixen references neither ASP.NET
+    ///     Core nor any SQL client, so <c>SK5001</c> registers no actions at all there and costs the
+    ///     price of two <c>GetTypeByMetadataName</c> calls for the whole 4 717-file tree.
     /// </remarks>
     public static TaintSymbols? For(Compilation compilation, string ruleId) {
         var anySource = false;
@@ -160,11 +163,11 @@ public sealed class TaintSymbols {
     }
 
     /// <summary>
-    /// A type's own metadata name, then every base type's, then every interface's.
+    ///     A type's own metadata name, then every base type's, then every interface's.
     /// </summary>
     /// <remarks>
-    /// ⚠ Constructed generics are erased to their definition — <c>SqlMapper</c>'s methods are
-    /// generic and the table names the containing type, not an instantiation of it.
+    ///     ⚠ Constructed generics are erased to their definition — <c>SqlMapper</c>'s methods are
+    ///     generic and the table names the containing type, not an instantiation of it.
     /// </remarks>
     static IEnumerable<string> Hierarchy(INamedTypeSymbol? type) {
         if (type is null) {

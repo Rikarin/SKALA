@@ -32,9 +32,9 @@ public sealed record ResolvedOption(
 public sealed record UnknownKey(EditorConfigAssignment Assignment, KeyNamespace Namespace);
 
 /// <summary>
-/// What kind of key an unrecognised name is. Only <see cref="Option"/> is an SK9001: the export
-/// carries three thousand inspection severities, and a tool that warns about all of them on first
-/// run gets uninstalled on first run.
+///     What kind of key an unrecognised name is. Only <see cref="Option" /> is an SK9001: the export
+///     carries three thousand inspection severities, and a tool that warns about all of them on first
+///     run gets uninstalled on first run.
 /// </summary>
 public enum KeyNamespace {
     /// <summary>A style option Skala does not have in its registry.</summary>
@@ -62,13 +62,13 @@ public sealed record ResolutionResult(
 }
 
 /// <summary>
-/// Resolves the effective option set for a file, with provenance.
+///     Resolves the effective option set for a file, with provenance.
 /// </summary>
 /// <remarks>
-/// docs/plan/03-configuration-model.md § "Precedence": the chain nearest-last, later sections
-/// within a file winning over earlier ones, and — the part no other tool implements —
-/// <c>resharper_csharp_x</c> beating <c>resharper_x</c> beating <c>csharp_x</c> beating the generic
-/// key within one level.
+///     docs/plan/03-configuration-model.md § "Precedence": the chain nearest-last, later sections
+///     within a file winning over earlier ones, and — the part no other tool implements —
+///     <c>resharper_csharp_x</c> beating <c>resharper_x</c> beating <c>csharp_x</c> beating the generic
+///     key within one level.
 /// </remarks>
 public static class OptionResolver {
     static readonly string[] SpecificityPrefixes =
@@ -179,35 +179,38 @@ public static class OptionResolver {
     }
 
     /// <summary>
-    /// Writes each generalized key's value into the keys it names.
+    ///     Writes each generalized key's value into the keys it names.
     /// </summary>
     /// <remarks>
-    /// docs/plan/03 § "The option registry": a generalized key is ReSharper's way of setting a
-    /// group of options with one line, and <c>Expands</c> has recorded which group since the
-    /// registry was distilled — but nothing applied it, so a configuration that set only the
-    /// generalized key left every key in the group at its default. Measured against the oracle
-    /// rather than assumed: <c>space_before_open_square_brackets = true</c> alone produces
-    /// <c>int [] data</c> and <c>data [1]</c>, and <c>space_around_ternary_operator = false</c>
-    /// produces <c>flag?a:b</c> even though this export sets all four ternary keys directly.
-    /// <para>
-    /// ⚠ Later wins, not "more specific wins". A generalized key and a key it names are two
-    /// different options, so docs/plan/03 § "Precedence" step 3 — which orders <em>spellings of one
-    /// option</em> — has nothing to say about the pair, and the oracle answers by position: the
-    /// same assignment appended after the group's members overrides them and written before them
-    /// does not. Specificity still breaks a tie, which is what makes
-    /// <c>resharper_space_after_keywords_in_control_flow_statements</c> beat its <c>csharp_</c>
-    /// twin — the one case where the two spellings really are the same ReSharper property.
-    /// </para>
-    /// <para>
-    /// ⚠ Fidelity-neutral on the Rider export, and checked rather than hoped: every generalized key
-    /// there carries the same value as every key it names.
-    /// </para>
-    /// <para>
-    /// ⚠ Values only, never provenance. <see cref="ResolutionResult.Resolved"/> and therefore
-    /// <c>skala config explain</c> keep saying what the file says, because "this option is set" and
-    /// "this option's value came from a line that named a different option" are different claims
-    /// and only the first belongs in a provenance column.
-    /// </para>
+    ///     docs/plan/03 § "The option registry": a generalized key is ReSharper's way of setting a
+    ///     group of options with one line, and <c>Expands</c> has recorded which group since the
+    ///     registry was distilled — but nothing applied it, so a configuration that set only the
+    ///     generalized key left every key in the group at its default. Measured against the oracle
+    ///     rather than assumed: <c>space_before_open_square_brackets = true</c> alone produces
+    ///     <c>int [] data</c> and <c>data [1]</c>, and <c>space_around_ternary_operator = false</c>
+    ///     produces <c>flag?a:b</c> even though this export sets all four ternary keys directly.
+    ///     <para>
+    ///         ⚠ Later wins, not "more specific wins". A generalized key and a key it names are two
+    ///         different options, so docs/plan/03 § "Precedence" step 3 — which orders
+    ///         <em>
+    ///             spellings of one
+    ///             option
+    ///         </em> — has nothing to say about the pair, and the oracle answers by position: the
+    ///         same assignment appended after the group's members overrides them and written before them
+    ///         does not. Specificity still breaks a tie, which is what makes
+    ///         <c>resharper_space_after_keywords_in_control_flow_statements</c> beat its <c>csharp_</c>
+    ///         twin — the one case where the two spellings really are the same ReSharper property.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ Fidelity-neutral on the Rider export, and checked rather than hoped: every generalized key
+    ///         there carries the same value as every key it names.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ Values only, never provenance. <see cref="ResolutionResult.Resolved" /> and therefore
+    ///         <c>skala config explain</c> keep saying what the file says, because "this option is set" and
+    ///         "this option's value came from a line that named a different option" are different claims
+    ///         and only the first belongs in a provenance column.
+    ///     </para>
     /// </remarks>
     static void Expand(OptionOrigin?[] winners, int[] winnerDocument, FormattingOptionsBuilder builder) {
         // (target, winning generalized source) — resolved before anything is written, so that two

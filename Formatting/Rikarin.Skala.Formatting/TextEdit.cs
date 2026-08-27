@@ -9,16 +9,16 @@ public readonly record struct TextEdit(SourceSpan Span, string NewText) {
 }
 
 /// <summary>
-/// Turns a written layout into the smallest edit list that produces it.
+///     Turns a written layout into the smallest edit list that produces it.
 /// </summary>
 /// <remarks>
-/// docs/plan/04 § "Emitting minimal edits": walk the resolved layout and the original text in
-/// lockstep, using <see cref="AnchorPoint"/>s as sync points. For each maximal region where output
-/// bytes equal input bytes, emit nothing.
-/// <para>
-/// ⚠ The property that matters is the negative one: a region whose output bytes equal its input
-/// bytes produces no edit. That is what keeps a first run on a 1.35 M-line tree reviewable.
-/// </para>
+///     docs/plan/04 § "Emitting minimal edits": walk the resolved layout and the original text in
+///     lockstep, using <see cref="AnchorPoint" />s as sync points. For each maximal region where output
+///     bytes equal input bytes, emit nothing.
+///     <para>
+///         ⚠ The property that matters is the negative one: a region whose output bytes equal its input
+///         bytes produces no edit. That is what keeps a first run on a 1.35 M-line tree reviewable.
+///     </para>
 /// </remarks>
 public static class EditEmitter {
     public static IReadOnlyList<TextEdit> Emit(string input, Layout layout) {
@@ -108,7 +108,7 @@ public static class EditEmitter {
         );
     }
 
-    /// <summary>Applies edits to <paramref name="input"/>. Edits must be ordered and disjoint.</summary>
+    /// <summary>Applies edits to <paramref name="input" />. Edits must be ordered and disjoint.</summary>
     public static string Apply(string input, IReadOnlyList<TextEdit> edits) {
         if (edits.Count == 0) {
             return input;
@@ -127,8 +127,8 @@ public static class EditEmitter {
     }
 
     /// <summary>
-    /// <c>--range a:b</c>: the edits that intersect a range, filtered AFTER full-file fitting, which
-    /// is the only way range formatting can be consistent with whole-file formatting.
+    ///     <c>--range a:b</c>: the edits that intersect a range, filtered AFTER full-file fitting, which
+    ///     is the only way range formatting can be consistent with whole-file formatting.
     /// </summary>
     public static IReadOnlyList<TextEdit> Restrict(IReadOnlyList<TextEdit> edits, SourceSpan range) =>
         [.. edits.Where(edit => edit.Span.IntersectsWith(range))];

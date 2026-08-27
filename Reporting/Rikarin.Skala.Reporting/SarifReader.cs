@@ -6,19 +6,19 @@ using Rikarin.Skala.Core.Diagnostics;
 namespace Rikarin.Skala.Reporting;
 
 /// <summary>
-/// Reads a <see cref="RunReport"/> back out of a SARIF file.
+///     Reads a <see cref="RunReport" /> back out of a SARIF file.
 /// </summary>
 /// <remarks>
-/// ⚠ This is what makes <c>skala report</c> possible, and doc 09 is explicit about why it must
-/// exist: "<c>skala report</c> re-renders a stored SARIF without re-running anything, which is what
-/// CI uses to produce a PR comment from an artifact". A CI job that had to re-analyse in order to
-/// comment would either re-analyse a different tree or double the build's cost.
-/// <para>
-/// ⚠ It reads Skala's own SARIF, including the <c>properties</c> the writer put there. A foreign
-/// SARIF still loads — that is the value of the format — but the metrics, the gate verdict and the
-/// baseline buckets simply will not be in it, and the reader says nothing rather than inventing
-/// them.
-/// </para>
+///     ⚠ This is what makes <c>skala report</c> possible, and doc 09 is explicit about why it must
+///     exist: "<c>skala report</c> re-renders a stored SARIF without re-running anything, which is what
+///     CI uses to produce a PR comment from an artifact". A CI job that had to re-analyse in order to
+///     comment would either re-analyse a different tree or double the build's cost.
+///     <para>
+///         ⚠ It reads Skala's own SARIF, including the <c>properties</c> the writer put there. A foreign
+///         SARIF still loads — that is the value of the format — but the metrics, the gate verdict and the
+///         baseline buckets simply will not be in it, and the reader says nothing rather than inventing
+///         them.
+///     </para>
 /// </remarks>
 public static class SarifReader {
     public static RunReport Read(string path, string repositoryRoot) {

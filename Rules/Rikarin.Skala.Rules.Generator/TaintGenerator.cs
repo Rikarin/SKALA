@@ -9,21 +9,21 @@ using Rikarin.Skala.Options.Generator;
 namespace Rikarin.Skala.Rules.Generator;
 
 /// <summary>
-/// Reads <c>taint.json</c> and emits <c>TaintTable</c> — the sources, propagators, sanitizers and
-/// sinks the <c>SK5001</c>/<c>SK5002</c> analyzers match symbols against.
+///     Reads <c>taint.json</c> and emits <c>TaintTable</c> — the sources, propagators, sanitizers and
+///     sinks the <c>SK5001</c>/<c>SK5002</c> analyzers match symbols against.
 /// </summary>
 /// <remarks>
-/// docs/plan/08-rule-catalogue.md § "SK5000 — Security" asks for "a declared source/sink/sanitizer
-/// table in <c>taint.json</c>" and the word that matters is <em>declared</em>: adding a sink for a
-/// database client Skala has never heard of has to be an edit to a data file, not a change to an
-/// analyzer, or the table is not a table.
-/// <para>
-/// ⚠ A generator rather than a runtime JSON read, for the reason
-/// <see cref="RulesGenerator"/> already gives: <c>Rikarin.Skala.Rules</c> is
-/// <c>netstandard2.0</c> and loads into <c>csc</c> and into Rider, so a <c>System.Text.Json</c> in
-/// its dependency closure is an analyzer-load failure whose message names none of it
-/// (docs/plan/02 § "The project graph").
-/// </para>
+///     docs/plan/08-rule-catalogue.md § "SK5000 — Security" asks for "a declared source/sink/sanitizer
+///     table in <c>taint.json</c>" and the word that matters is <em>declared</em>: adding a sink for a
+///     database client Skala has never heard of has to be an edit to a data file, not a change to an
+///     analyzer, or the table is not a table.
+///     <para>
+///         ⚠ A generator rather than a runtime JSON read, for the reason
+///         <see cref="RulesGenerator" /> already gives: <c>Rikarin.Skala.Rules</c> is
+///         <c>netstandard2.0</c> and loads into <c>csc</c> and into Rider, so a <c>System.Text.Json</c> in
+///         its dependency closure is an analyzer-load failure whose message names none of it
+///         (docs/plan/02 § "The project graph").
+///     </para>
 /// </remarks>
 [Generator(LanguageNames.CSharp)]
 public sealed class TaintGenerator : IIncrementalGenerator {
@@ -49,8 +49,8 @@ public sealed class TaintGenerator : IIncrementalGenerator {
     );
 
     /// <summary>
-    /// ⚠ A sink whose <c>rule</c> is not an id is a sink nothing reports, and it would look like a
-    /// working entry.
+    ///     ⚠ A sink whose <c>rule</c> is not an id is a sink nothing reports, and it would look like a
+    ///     working entry.
     /// </summary>
     static readonly DiagnosticDescriptor MalformedSink = new(
         "SKR012",

@@ -3,14 +3,14 @@ using System.Collections.Immutable;
 namespace Rikarin.Skala.Reporting;
 
 /// <summary>
-/// The four ways a finding can be made to go away without being fixed.
+///     The four ways a finding can be made to go away without being fixed.
 /// </summary>
 /// <remarks>
-/// ⚠ docs/plan/09 § "Gates": <c>--no-new-suppressions</c> has to cover all of them. A grep for
-/// <c>#pragma</c> is not a constraint — it catches the one form that is visible in review and
-/// misses the three that are not. An <c>.editorconfig</c> line turning a rule down to
-/// <c>suggestion</c> for a whole directory suppresses far more than a pragma ever does, and a
-/// baseline addition suppresses a specific finding forever with no marker in the source at all.
+///     ⚠ docs/plan/09 § "Gates": <c>--no-new-suppressions</c> has to cover all of them. A grep for
+///     <c>#pragma</c> is not a constraint — it catches the one form that is visible in review and
+///     misses the three that are not. An <c>.editorconfig</c> line turning a rule down to
+///     <c>suggestion</c> for a whole directory suppresses far more than a pragma ever does, and a
+///     baseline addition suppresses a specific finding forever with no marker in the source at all.
 /// </remarks>
 public enum SuppressionSource {
     /// <summary><c>#pragma warning disable SK1010</c>, in the source.</summary>
@@ -45,12 +45,12 @@ public sealed record SuppressionEntry(SuppressionSource Source, string RuleId, s
 }
 
 /// <summary>
-/// What <c>--no-new-suppressions</c> found, comparing the working tree to a git ref.
+///     What <c>--no-new-suppressions</c> found, comparing the working tree to a git ref.
 /// </summary>
 /// <remarks>
-/// ⚠ <see cref="Enforced"/> is separate from "the list is empty". A run that did not audit and a
-/// run that audited and found nothing are different facts, and the gate must not treat the first as
-/// the second — the failure mode where the flag is misspelled and the build goes green.
+///     ⚠ <see cref="Enforced" /> is separate from "the list is empty". A run that did not audit and a
+///     run that audited and found nothing are different facts, and the gate must not treat the first as
+///     the second — the failure mode where the flag is misspelled and the build goes green.
 /// </remarks>
 public sealed record SuppressionAudit {
     public static SuppressionAudit Off { get; } = new();

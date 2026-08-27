@@ -12,23 +12,23 @@ using Rikarin.Skala.Formatting.CSharp.Arrangement;
 namespace Rikarin.Skala.Testing;
 
 /// <summary>
-/// Arrangement over an arbitrary tree, measured read-only: milestone 4's second bar.
+///     Arrangement over an arbitrary tree, measured read-only: milestone 4's second bar.
 /// </summary>
 /// <remarks>
-/// ⚠ "Arrangement over Vixen introduces zero compiler diagnostics" is a question about a tree, and
-/// milestone 3.1's <c>tree</c> command is the harness shape that asks a tree a question. This is the
-/// arrangement half of it.
-/// <para>
-/// ⚠ The diagnostic comparison here is deliberately <em>independent</em> of
-/// <see cref="ArrangementSafety"/>. The safety layer reverts any file whose re-bind found a new
-/// diagnostic, so "arrangement introduced none" is true by construction — and "by construction" is
-/// what every bug says about itself. This re-binds the text the pipeline actually produced, through
-/// its own code path, and counts what appeared. A number produced by the thing being measured is not
-/// a measurement.
-/// </para>
-/// <para>
-/// ⚠ Writes nothing. The caller supplies a scratch copy (<c>git archive</c>); this reads it.
-/// </para>
+///     ⚠ "Arrangement over Vixen introduces zero compiler diagnostics" is a question about a tree, and
+///     milestone 3.1's <c>tree</c> command is the harness shape that asks a tree a question. This is the
+///     arrangement half of it.
+///     <para>
+///         ⚠ The diagnostic comparison here is deliberately <em>independent</em> of
+///         <see cref="ArrangementSafety" />. The safety layer reverts any file whose re-bind found a new
+///         diagnostic, so "arrangement introduced none" is true by construction — and "by construction" is
+///         what every bug says about itself. This re-binds the text the pipeline actually produced, through
+///         its own code path, and counts what appeared. A number produced by the thing being measured is not
+///         a measurement.
+///     </para>
+///     <para>
+///         ⚠ Writes nothing. The caller supplies a scratch copy (<c>git archive</c>); this reads it.
+///     </para>
 /// </remarks>
 public static class ArrangeTree {
     public sealed record TreeReport(
@@ -91,13 +91,13 @@ public static class ArrangeTree {
     }
 
     /// <summary>
-    /// The arrangement of the single file whose path contains <paramref name="needle"/>, as a diff.
+    ///     The arrangement of the single file whose path contains <paramref name="needle" />, as a diff.
     /// </summary>
     /// <remarks>
-    /// ⚠ The tool for reading a revert. The ranked cause list says <em>which diagnostic</em> the
-    /// re-bind found; it cannot say which rewrite caused it, because a reverted file reports no
-    /// applied rules — it applied none. This runs the rules one at a time and prints the first that
-    /// makes the diagnostic appear, which is the question a person actually has.
+    ///     ⚠ The tool for reading a revert. The ranked cause list says <em>which diagnostic</em> the
+    ///     re-bind found; it cannot say which rewrite caused it, because a reverted file reports no
+    ///     applied rules — it applied none. This runs the rules one at a time and prints the first that
+    ///     makes the diagnostic appear, which is the question a person actually has.
     /// </remarks>
     public static string Explain(string root, string mode, string needle, TextWriter log) {
         var loaded = ProjectLoader.Load(new LoadRequest { RepositoryRoot = root, Mode = LoadModes.Parse(mode) });
@@ -300,8 +300,8 @@ public static class ArrangeTree {
     }
 
     /// <summary>
-    /// The diagnostics the rewritten text has and the original did not, in every compilation that
-    /// contains the file.
+    ///     The diagnostics the rewritten text has and the original did not, in every compilation that
+    ///     contains the file.
     /// </summary>
     static IEnumerable<string> Introduced(List<CompilationUnit> units, string file, string arranged) {
         foreach (var unit in units) {

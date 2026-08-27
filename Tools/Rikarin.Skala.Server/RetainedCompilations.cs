@@ -3,28 +3,28 @@ using System.Collections.Concurrent;
 namespace Rikarin.Skala.Server;
 
 /// <summary>
-/// At most four compilations, the oldest evicted. docs/plan/13 § "Memory".
+///     At most four compilations, the oldest evicted. docs/plan/13 § "Memory".
 /// </summary>
 /// <remarks>
-/// ⚠ <b>Four, and the number is not arbitrary.</b> "A Vixen-sized compilation with references is
-/// 200–400 MB" (doc 13), so four is 0.8–1.6 GB and five is over the daemon's whole RSS budget. The
-/// bound is on <em>count</em> rather than bytes here — unlike the tree cache, whose bound is bytes —
-/// because a compilation's retained size is dominated by metadata references that cannot be measured
-/// without walking them, and four is small enough that the worst case is still inside the budget.
-/// <para>
-/// ⚠ <b>What this is for, stated honestly.</b> doc 13's analysis section says the 5 s warm `check`
-/// budget "needs the *compilation* cached, not the diagnostics, which is a daemon that holds
-/// <c>CSharpCompilation</c> objects across invocations" — and that daemon is still unbuilt. The
-/// daemon serves <c>format</c> and nothing else, so nothing populates this store in production
-/// today. It exists now, with its bound and its eviction and its tests, because the memory policy
-/// has to be able to drop compilations before it exits, and a policy whose second step is a
-/// no-op is a policy that has never been run. When `check` moves into the daemon it gets a bound
-/// that already works instead of one written under time pressure afterwards.
-/// </para>
-/// <para>
-/// The value is <see cref="object"/> rather than <c>CSharpCompilation</c> so that this project does
-/// not acquire a Roslyn reference for a store that does not inspect what it holds.
-/// </para>
+///     ⚠ <b>Four, and the number is not arbitrary.</b> "A Vixen-sized compilation with references is
+///     200–400 MB" (doc 13), so four is 0.8–1.6 GB and five is over the daemon's whole RSS budget. The
+///     bound is on <em>count</em> rather than bytes here — unlike the tree cache, whose bound is bytes —
+///     because a compilation's retained size is dominated by metadata references that cannot be measured
+///     without walking them, and four is small enough that the worst case is still inside the budget.
+///     <para>
+///         ⚠ <b>What this is for, stated honestly.</b> doc 13's analysis section says the 5 s warm `check`
+///         budget "needs the *compilation* cached, not the diagnostics, which is a daemon that holds
+///         <c>CSharpCompilation</c> objects across invocations" — and that daemon is still unbuilt. The
+///         daemon serves <c>format</c> and nothing else, so nothing populates this store in production
+///         today. It exists now, with its bound and its eviction and its tests, because the memory policy
+///         has to be able to drop compilations before it exits, and a policy whose second step is a
+///         no-op is a policy that has never been run. When `check` moves into the daemon it gets a bound
+///         that already works instead of one written under time pressure afterwards.
+///     </para>
+///     <para>
+///         The value is <see cref="object" /> rather than <c>CSharpCompilation</c> so that this project does
+///         not acquire a Roslyn reference for a store that does not inspect what it holds.
+///     </para>
 /// </remarks>
 public sealed class RetainedCompilations {
     readonly ConcurrentDictionary<string, Entry> _entries = new(StringComparer.Ordinal);

@@ -7,13 +7,13 @@ namespace Rikarin.Skala.Conformance.Sweep.Tests;
 /// <summary>What the sweep chooses to ask about, and what it refuses to.</summary>
 public sealed class SweepPlanTests {
     /// <summary>
-    /// ⚠ Selection is by the registry's <c>language</c> field, never by parsing the export.
+    ///     ⚠ Selection is by the registry's <c>language</c> field, never by parsing the export.
     /// </summary>
     /// <remarks>
-    /// The C++/VB/XAML keys are being stripped out of <c>editor_config_template</c> by hand, so that
-    /// file is about to change — and ADR-001 requires the full unstripped export to keep working
-    /// regardless. A harness that decided what to sweep by reading the template would answer
-    /// differently before and after the strip, for no reason connected to the options.
+    ///     The C++/VB/XAML keys are being stripped out of <c>editor_config_template</c> by hand, so that
+    ///     file is about to change — and ADR-001 requires the full unstripped export to keep working
+    ///     regardless. A harness that decided what to sweep by reading the template would answer
+    ///     differently before and after the strip, for no reason connected to the options.
     /// </remarks>
     [Fact]
     public void EverySweptOption_HasALanguageTheCorpusCanSpeakTo() {
@@ -34,12 +34,12 @@ public sealed class SweepPlanTests {
     }
 
     /// <summary>
-    /// ⚠ An arrangement option is excluded rather than swept under the wrong profile.
+    ///     ⚠ An arrangement option is excluded rather than swept under the wrong profile.
     /// </summary>
     /// <remarks>
-    /// The format-only profile is <c>CSReformatCode</c> and nothing else, so its output is
-    /// byte-identical whatever an <c>arrange_*</c> key says. Sweeping them here would report every
-    /// one as <c>SPURIOUS</c> — the harness inventing divergences rather than finding any.
+    ///     The format-only profile is <c>CSReformatCode</c> and nothing else, so its output is
+    ///     byte-identical whatever an <c>arrange_*</c> key says. Sweeping them here would report every
+    ///     one as <c>SPURIOUS</c> — the harness inventing divergences rather than finding any.
     /// </remarks>
     [Fact]
     public void ArrangementOptions_AreExcludedWithTheirReasonRecorded() {
@@ -71,12 +71,12 @@ public sealed class SweepPlanTests {
         Assert.Equal(expected, SweepPlan.InFamily(key, [family]));
 
     /// <summary>
-    /// The sweep's value set is the same one the option unit floor uses.
+    ///     The sweep's value set is the same one the option unit floor uses.
     /// </summary>
     /// <remarks>
-    /// ⚠ <c>OptionCoverageTests</c> asserts Skala's output moves across these values and the sweep
-    /// asserts ReSharper's does too. If the two drew from different value sets, a disagreement
-    /// between them would be a disagreement about the question rather than about the answer.
+    ///     ⚠ <c>OptionCoverageTests</c> asserts Skala's output moves across these values and the sweep
+    ///     asserts ReSharper's does too. If the two drew from different value sets, a disagreement
+    ///     between them would be a disagreement about the question rather than about the answer.
     /// </remarks>
     [Fact]
     public void EnumOptions_AreSweptOverTheirWholeDomain() {
@@ -87,20 +87,20 @@ public sealed class SweepPlanTests {
     }
 
     /// <summary>
-    /// ⚠ The spelling the sweep appends must be the most specific one the export uses.
+    ///     ⚠ The spelling the sweep appends must be the most specific one the export uses.
     /// </summary>
     /// <remarks>
-    /// The oracle side of the sweep forces a key by appending <c>[*.cs] &lt;key&gt; = &lt;value&gt;</c>
-    /// to a copy of the export. Appending wins on order — but ReSharper also ranks *spellings*, and
-    /// <c>resharper_csharp_x</c> outranks <c>resharper_x</c> whichever comes last. So if the export
-    /// wrote a more specific spelling of an option than the canonical key the sweep appends, the
-    /// override would be silently ignored, the oracle would produce one output at every value, and
-    /// the option would be reported <c>SPURIOUS</c> — a divergence manufactured by the harness.
-    /// <para>
-    /// This holds today for every swept option, which is what makes the <c>SPURIOUS</c> rows real.
-    /// It is a fact about the export, and the export is re-generated from Rider whenever a setting
-    /// changes, so it is asserted rather than assumed.
-    /// </para>
+    ///     The oracle side of the sweep forces a key by appending <c>[*.cs] &lt;key&gt; = &lt;value&gt;</c>
+    ///     to a copy of the export. Appending wins on order — but ReSharper also ranks *spellings*, and
+    ///     <c>resharper_csharp_x</c> outranks <c>resharper_x</c> whichever comes last. So if the export
+    ///     wrote a more specific spelling of an option than the canonical key the sweep appends, the
+    ///     override would be silently ignored, the oracle would produce one output at every value, and
+    ///     the option would be reported <c>SPURIOUS</c> — a divergence manufactured by the harness.
+    ///     <para>
+    ///         This holds today for every swept option, which is what makes the <c>SPURIOUS</c> rows real.
+    ///         It is a fact about the export, and the export is re-generated from Rider whenever a setting
+    ///         changes, so it is asserted rather than assumed.
+    ///     </para>
     /// </remarks>
     [Fact]
     public void NoSweptOption_HasAMoreSpecificSpellingInTheExport() {

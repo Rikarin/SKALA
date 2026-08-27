@@ -21,16 +21,18 @@ public sealed record FixRequest {
 
     public string? BinlogPath { get; init; }
 
-    /// <summary>⚠ Only fixes the catalogue marks <c>fixIsSafe</c>. The default, and the only unqualified mode.</summary>
+    /// <summary>
+    ///     ⚠ Only fixes the catalogue marks <c>fixIsSafe</c>. The default, and the only unqualified mode.
+    /// </summary>
     public bool SafeOnly { get; init; } = true;
 
     /// <summary>
-    /// The rules an unsafe fix is applied for.
+    ///     The rules an unsafe fix is applied for.
     /// </summary>
     /// <remarks>
-    /// ⚠ docs/plan/10 § "Fixes": <c>skala fix</c> without <c>--safe</c> requires <c>--include</c>
-    /// explicitly. "An agent may do this; it must name the rules, which makes the choice visible in
-    /// its transcript."
+    ///     ⚠ docs/plan/10 § "Fixes": <c>skala fix</c> without <c>--safe</c> requires <c>--include</c>
+    ///     explicitly. "An agent may do this; it must name the rules, which makes the choice visible in
+    ///     its transcript."
     /// </remarks>
     public IReadOnlyList<string> Include { get; init; } = [];
 
@@ -40,23 +42,23 @@ public sealed record FixRequest {
 }
 
 /// <summary>
-/// Applying fixes, and verifying every one of them.
+///     Applying fixes, and verifying every one of them.
 /// </summary>
 /// <remarks>
-/// ⚠ docs/plan/10: "Every applied fix is verified: re-parse, re-bind, diagnostic delta, revert on
-/// regression. A fixing tool that can break the build is a tool an agent will use to break the
-/// build." M5 implements re-parse and the diagnostic delta on the file's own tree; the cross-file
-/// re-bind is M6's, with the compilation-wide gate that consumes it.
-/// <para>
-/// ⚠ The fixes are text edits and are applied back to front within a file, so that an earlier edit
-/// cannot move a later one's offsets. Overlapping edits from two rules on one span are dropped
-/// rather than merged — the second one's offsets are already wrong and applying it produces text
-/// nobody wrote.
-/// </para>
-/// <para>
-/// ⚠ Formatting runs after the fixes, over every file touched. A fix therefore does not have to
-/// produce formatted text, which is what keeps the rules free of a second formatter.
-/// </para>
+///     ⚠ docs/plan/10: "Every applied fix is verified: re-parse, re-bind, diagnostic delta, revert on
+///     regression. A fixing tool that can break the build is a tool an agent will use to break the
+///     build." M5 implements re-parse and the diagnostic delta on the file's own tree; the cross-file
+///     re-bind is M6's, with the compilation-wide gate that consumes it.
+///     <para>
+///         ⚠ The fixes are text edits and are applied back to front within a file, so that an earlier edit
+///         cannot move a later one's offsets. Overlapping edits from two rules on one span are dropped
+///         rather than merged — the second one's offsets are already wrong and applying it produces text
+///         nobody wrote.
+///     </para>
+///     <para>
+///         ⚠ Formatting runs after the fixes, over every file touched. A fix therefore does not have to
+///         produce formatted text, which is what keeps the rules free of a second formatter.
+///     </para>
 /// </remarks>
 public static class FixCommand {
     public static CommandResult Run(FixRequest request, CancellationToken cancellation = default) {
@@ -216,13 +218,13 @@ public static class FixCommand {
     }
 
     /// <summary>
-    /// The <c>@formatter:off</c> regions of one file on disk.
+    ///     The <c>@formatter:off</c> regions of one file on disk.
     /// </summary>
     /// <remarks>
-    /// ⚠ Resolved per file rather than once per run, because the tags are <c>.editorconfig</c> keys
-    /// and a repository may spell them differently in one subtree. <see cref="ConfigurationCache"/>
-    /// memoises the resolution on the sections that matched, so the cost is a dictionary hit for
-    /// every file after the first in a directory.
+    ///     ⚠ Resolved per file rather than once per run, because the tags are <c>.editorconfig</c> keys
+    ///     and a repository may spell them differently in one subtree. <see cref="ConfigurationCache" />
+    ///     memoises the resolution on the sections that matched, so the cost is a dictionary hit for
+    ///     every file after the first in a directory.
     /// </remarks>
     static FormatterTagGuard TagGuard(string path, string text) {
         FormattingOptions options;
@@ -248,13 +250,13 @@ public static class FixCommand {
     }
 
     /// <summary>
-    /// The file's own syntactic diagnostics, as the before/after delta.
+    ///     The file's own syntactic diagnostics, as the before/after delta.
     /// </summary>
     /// <remarks>
-    /// ⚠ Syntactic only, on purpose. A semantic re-bind needs the whole compilation rebuilt per
-    /// file, which turns a fix pass over fifty files into a minute; the syntactic delta catches
-    /// every fix that produced text that is not C#, which is the failure class a text-edit fix can
-    /// actually have. The compilation-wide re-bind is M6's, beside the gate that wants it anyway.
+    ///     ⚠ Syntactic only, on purpose. A semantic re-bind needs the whole compilation rebuilt per
+    ///     file, which turns a fix pass over fifty files into a minute; the syntactic delta catches
+    ///     every fix that produced text that is not C#, which is the failure class a text-edit fix can
+    ///     actually have. The compilation-wide re-bind is M6's, beside the gate that wants it anyway.
     /// </remarks>
     static ImmutableArray<string> Diagnostics(string text) {
         var tree = Microsoft.CodeAnalysis.CSharp.CSharpSyntaxTree.ParseText(

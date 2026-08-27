@@ -5,22 +5,22 @@ using Rikarin.Skala.Testing;
 namespace Rikarin.Skala.Conformance.Tests;
 
 /// <summary>
-/// The whole corpus, over the documentation-comment sub-formatter that now runs by default.
+///     The whole corpus, over the documentation-comment sub-formatter that now runs by default.
 /// </summary>
 /// <remarks>
-/// ⚠ <b>This file is what stands in for an oracle.</b> Every other formatter option in Skala is
-/// pinned by a committed <c>.expected.cs</c> that <c>jb cleanupcode</c> produced; the
-/// <c>resharper_xmldoc_*</c> family is not, because the profile those fixtures were generated under
-/// does not run ReSharper's own <c>CSharpFormatDocComments</c> task and so returns every doc
-/// comment exactly as written (SK-DIV-0006). What is checkable without waiting for that
-/// regeneration is that the re-wrap does not change what a comment says and does not touch anything
-/// that is not one, and that is checked here over all 716 corpus files rather than over fixtures.
-/// <para>
-/// ⚠ <see cref="TheCodeAroundTheComments_IsUntouched"/> is the one that keeps the fidelity ratchet
-/// honest, and it is now load-bearing rather than reassuring: the ratchet's basis excludes
-/// <c>///</c> lines, so this assertion is the entire reason that exclusion is not a place for
-/// regressions to hide.
-/// </para>
+///     ⚠ <b>This file is what stands in for an oracle.</b> Every other formatter option in Skala is
+///     pinned by a committed <c>.expected.cs</c> that <c>jb cleanupcode</c> produced; the
+///     <c>resharper_xmldoc_*</c> family is not, because the profile those fixtures were generated under
+///     does not run ReSharper's own <c>CSharpFormatDocComments</c> task and so returns every doc
+///     comment exactly as written (SK-DIV-0006). What is checkable without waiting for that
+///     regeneration is that the re-wrap does not change what a comment says and does not touch anything
+///     that is not one, and that is checked here over all 716 corpus files rather than over fixtures.
+///     <para>
+///         ⚠ <see cref="TheCodeAroundTheComments_IsUntouched" /> is the one that keeps the fidelity ratchet
+///         honest, and it is now load-bearing rather than reassuring: the ratchet's basis excludes
+///         <c>///</c> lines, so this assertion is the entire reason that exclusion is not a place for
+///         regressions to hide.
+///     </para>
 /// </remarks>
 public sealed class XmlDocPropertyTests {
     public static TheoryData<CorpusFile> Files {

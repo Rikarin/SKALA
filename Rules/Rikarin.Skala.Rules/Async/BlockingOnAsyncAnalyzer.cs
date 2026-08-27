@@ -11,26 +11,26 @@ using Rikarin.Skala.Rules.Modernization;
 namespace Rikarin.Skala.Rules.Async;
 
 /// <summary>
-/// <c>SK3002</c> — <c>.Result</c>, <c>.Wait()</c> and <c>GetAwaiter().GetResult()</c> on a task.
+///     <c>SK3002</c> — <c>.Result</c>, <c>.Wait()</c> and <c>GetAwaiter().GetResult()</c> on a task.
 /// </summary>
 /// <remarks>
-/// docs/plan/08-rule-catalogue.md § "SK3000 — Async, concurrency, lifetime". Blocking a thread on a
-/// task is the ASP.NET and WPF deadlock: the continuation wants the synchronization context the
-/// blocked thread is holding and neither side moves again. Where it does not deadlock it still
-/// occupies a pool thread, and it re-wraps the exception in an <c>AggregateException</c> so the
-/// <c>catch</c> a reader expects does not fire.
-/// <para>
-/// ⚠ The receiver's type is resolved, never guessed from the member name. A user type with a
-/// <c>Result</c> property is common — every <c>Result&lt;T&gt;</c> monad in every functional
-/// helper library has one — and a rule that fires on those is a rule that gets switched off in the
-/// first week.
-/// </para>
-/// <para>
-/// ⚠ A fix is offered only where the enclosing body is <em>already</em> <c>async</c>. Making a
-/// method <c>async</c> changes its signature and therefore every caller, which is a refactor and
-/// not an edit a tool may apply unreviewed (docs/plan/10). Elsewhere the finding stands with no
-/// fix, because the finding is still true.
-/// </para>
+///     docs/plan/08-rule-catalogue.md § "SK3000 — Async, concurrency, lifetime". Blocking a thread on a
+///     task is the ASP.NET and WPF deadlock: the continuation wants the synchronization context the
+///     blocked thread is holding and neither side moves again. Where it does not deadlock it still
+///     occupies a pool thread, and it re-wraps the exception in an <c>AggregateException</c> so the
+///     <c>catch</c> a reader expects does not fire.
+///     <para>
+///         ⚠ The receiver's type is resolved, never guessed from the member name. A user type with a
+///         <c>Result</c> property is common — every <c>Result&lt;T&gt;</c> monad in every functional
+///         helper library has one — and a rule that fires on those is a rule that gets switched off in the
+///         first week.
+///     </para>
+///     <para>
+///         ⚠ A fix is offered only where the enclosing body is <em>already</em> <c>async</c>. Making a
+///         method <c>async</c> changes its signature and therefore every caller, which is a refactor and
+///         not an edit a tool may apply unreviewed (docs/plan/10). Elsewhere the finding stands with no
+///         fix, because the finding is still true.
+///     </para>
 /// </remarks>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class BlockingOnAsyncAnalyzer : DiagnosticAnalyzer {
@@ -43,13 +43,16 @@ public sealed class BlockingOnAsyncAnalyzer : DiagnosticAnalyzer {
     ];
 
     /// <summary>
-    /// The awaiter types whose <c>GetResult()</c> blocks.
+    ///     The awaiter types whose <c>GetResult()</c> blocks.
     /// </summary>
     /// <remarks>
-    /// ⚠ The configured variants are included, because <c>x.ConfigureAwait(false).GetAwaiter()
-    /// .GetResult()</c> is the spelling people reach for when they have been told that
-    /// <c>ConfigureAwait</c> fixes the deadlock. It does not: it removes one of the two ways to
-    /// deadlock and leaves the blocked thread.
+    ///     ⚠ The configured variants are included, because
+    ///     <c>
+    ///x.ConfigureAwait(false).GetAwaiter()
+    /// .GetResult()
+    ///     </c> is the spelling people reach for when they have been told that
+    ///     <c>ConfigureAwait</c> fixes the deadlock. It does not: it removes one of the two ways to
+    ///     deadlock and leaves the blocked thread.
     /// </remarks>
     static readonly string[] AwaiterTypes = [
         "System.Runtime.CompilerServices.TaskAwaiter", "System.Runtime.CompilerServices.TaskAwaiter`1",
@@ -138,12 +141,12 @@ public sealed class BlockingOnAsyncAnalyzer : DiagnosticAnalyzer {
     }
 
     /// <summary>
-    /// The blocking form at this node, or null when there is none.
+    ///     The blocking form at this node, or null when there is none.
     /// </summary>
     /// <remarks>
-    /// Three shapes, each resolved through the symbol rather than the spelling: the
-    /// <c>Result</c> property of a task, the <c>Wait</c> method of a task, and the
-    /// <c>GetResult</c> method of a task awaiter.
+    ///     Three shapes, each resolved through the symbol rather than the spelling: the
+    ///     <c>Result</c> property of a task, the <c>Wait</c> method of a task, and the
+    ///     <c>GetResult</c> method of a task awaiter.
     /// </remarks>
     static (Microsoft.CodeAnalysis.Text.TextSpan Span, ExpressionSyntax Receiver, string Member, bool ProducesValue)?
         Match(
@@ -229,12 +232,12 @@ public sealed class BlockingOnAsyncAnalyzer : DiagnosticAnalyzer {
         containing is not null && types.Contains(containing.OriginalDefinition);
 
     /// <summary>
-    /// ⚠ An entry point is the one place blocking is the correct thing to do.
+    ///     ⚠ An entry point is the one place blocking is the correct thing to do.
     /// </summary>
     /// <remarks>
-    /// A synchronous <c>Main</c> that blocks on an async pipeline has nowhere to await from and no
-    /// synchronization context to deadlock against. Reporting it would be reporting the idiom the
-    /// language recommended before C# 7.1.
+    ///     A synchronous <c>Main</c> that blocks on an async pipeline has nowhere to await from and no
+    ///     synchronization context to deadlock against. Reporting it would be reporting the idiom the
+    ///     language recommended before C# 7.1.
     /// </remarks>
     static bool IsEntryPoint(SyntaxNode node) {
         for (var current = node; current is not null; current = current.Parent) {

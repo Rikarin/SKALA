@@ -1093,8 +1093,8 @@ static Rikarin.Skala.Options.FormattingOptions Resolve(string path) =>
 
 /// <summary>The memoised symbol set behind <c>Symbols()</c>.</summary>
 /// <remarks>
-/// ⚠ A holder type rather than a top-level local, because a top-level local is a local of the
-/// generated <c>Main</c> and a static local function may not capture one.
+///     ⚠ A holder type rather than a top-level local, because a top-level local is a local of the
+///     generated <c>Main</c> and a static local function may not capture one.
 /// </remarks>
 static class SymbolCache {
     public static IReadOnlyList<string>? Value { get; set; }

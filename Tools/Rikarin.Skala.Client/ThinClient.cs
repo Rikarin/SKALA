@@ -5,38 +5,38 @@ using Rikarin.Skala.Protocol;
 namespace Rikarin.Skala.Client;
 
 /// <summary>
-/// <c>skala</c>: a socket, a JSON writer, and a way to hand everything else to the real tool.
+///     <c>skala</c>: a socket, a JSON writer, and a way to hand everything else to the real tool.
 /// </summary>
 /// <remarks>
-/// docs/plan/13 § "Startup". The measurement that produced this type: <c>skala daemon status</c>,
-/// doing no work whatever, cost <b>95 ms median</b> on the reference machine, because the one
-/// <c>skala</c> executable referenced Rikarin.Skala.Analysis and so loaded Roslyn before
-/// <c>Main</c>. The budget for a warm single-file format — the agent hook, the tightest deadline in
-/// the product — is 40 ms for the entire operation. The daemon was already answering in single
-/// digits; the client was the whole cost.
-/// <para>
-/// ⚠ <b>Two rules govern every line here.</b>
-/// </para>
-/// <list type="number">
-/// <item>
-/// <b>Reference nothing.</b> Only Rikarin.Skala.Protocol, which itself has no references. Roslyn is
-/// not AOT-friendly and is not needed to write a path down a socket. Anything added here is paid for
-/// on every hook invocation, for ever.
-/// </item>
-/// <item>
-/// <b>Never be the reason a command fails.</b> Everything that is not the one hot path — and every
-/// failure on it — becomes an exec of the full tool. The client has no opinions, no error messages
-/// of its own beyond one, and no behaviour the full tool does not have. If this file ever decides
-/// something the full tool would decide differently, that is a formatting difference between two
-/// developers on one repository, which is the failure the whole product exists to prevent.
-/// </item>
-/// </list>
+///     docs/plan/13 § "Startup". The measurement that produced this type: <c>skala daemon status</c>,
+///     doing no work whatever, cost <b>95 ms median</b> on the reference machine, because the one
+///     <c>skala</c> executable referenced Rikarin.Skala.Analysis and so loaded Roslyn before
+///     <c>Main</c>. The budget for a warm single-file format — the agent hook, the tightest deadline in
+///     the product — is 40 ms for the entire operation. The daemon was already answering in single
+///     digits; the client was the whole cost.
+///     <para>
+///         ⚠ <b>Two rules govern every line here.</b>
+///     </para>
+///     <list type="number">
+///         <item>
+///             <b>Reference nothing.</b> Only Rikarin.Skala.Protocol, which itself has no references. Roslyn is
+///             not AOT-friendly and is not needed to write a path down a socket. Anything added here is paid for
+///             on every hook invocation, for ever.
+///         </item>
+///         <item>
+///             <b>Never be the reason a command fails.</b> Everything that is not the one hot path — and every
+///             failure on it — becomes an exec of the full tool. The client has no opinions, no error messages
+///             of its own beyond one, and no behaviour the full tool does not have. If this file ever decides
+///             something the full tool would decide differently, that is a formatting difference between two
+///             developers on one repository, which is the failure the whole product exists to prevent.
+///         </item>
+///     </list>
 /// </remarks>
 public static class ThinClient {
     /// <summary>
-    /// ⚠ Short. A daemon that has not answered in a quarter second is not going to make the 40 ms
-    /// budget, and every millisecond spent waiting is a millisecond added to the fallback that is
-    /// about to happen anyway.
+    ///     ⚠ Short. A daemon that has not answered in a quarter second is not going to make the 40 ms
+    ///     budget, and every millisecond spent waiting is a millisecond added to the fallback that is
+    ///     about to happen anyway.
     /// </summary>
     static readonly TimeSpan Budget = TimeSpan.FromMilliseconds(250);
 
@@ -53,18 +53,18 @@ public static class ThinClient {
     }
 
     /// <summary>
-    /// The one path the client serves itself: <c>skala format &lt;one existing file&gt;</c>, with a
-    /// daemon already listening.
+    ///     The one path the client serves itself: <c>skala format &lt;one existing file&gt;</c>, with a
+    ///     daemon already listening.
     /// </summary>
     /// <remarks>
-    /// ⚠ The disqualifiers mirror <c>DaemonUse.TryFormat</c> in the full tool exactly, and they are
-    /// deliberately conservative: <c>--staged</c> touches the git index, <c>--range</c> and
-    /// <c>--option</c> change what "format this file" means, and anything the client does not
-    /// recognise might. A flag this client has never heard of is a reason to hand the whole
-    /// invocation over, not a reason to guess — which is why the check is a whitelist of the
-    /// harmless flags rather than a blacklist of the dangerous ones. A new option added to the full
-    /// tool is therefore safe by default: the client stops serving and execs, and the only cost is
-    /// speed.
+    ///     ⚠ The disqualifiers mirror <c>DaemonUse.TryFormat</c> in the full tool exactly, and they are
+    ///     deliberately conservative: <c>--staged</c> touches the git index, <c>--range</c> and
+    ///     <c>--option</c> change what "format this file" means, and anything the client does not
+    ///     recognise might. A flag this client has never heard of is a reason to hand the whole
+    ///     invocation over, not a reason to guess — which is why the check is a whitelist of the
+    ///     harmless flags rather than a blacklist of the dangerous ones. A new option added to the full
+    ///     tool is therefore safe by default: the client stops serving and execs, and the only cost is
+    ///     speed.
     /// </remarks>
     static bool TryServe(string[] args, out int exitCode) {
         exitCode = 0;
@@ -162,14 +162,14 @@ public static class ThinClient {
     }
 
     /// <summary>
-    /// `FormatCommand`'s closing line, reproduced exactly for the one-file case.
+    ///     `FormatCommand`'s closing line, reproduced exactly for the one-file case.
     /// </summary>
     /// <remarks>
-    /// ⚠ A second implementation of the tool's rendering, which is a thing to be uncomfortable
-    /// about — but the alternative is a client whose output differs from the tool's, and a hook or a
-    /// human reading two different answers to one question is worse than a duplicated format string.
-    /// It is only ever the one-file case, so `changed` is 0 or 1 and `left alone` is its complement.
-    /// `ClientAgreesWithToolTests` compares the two byte for byte; this is why that test exists.
+    ///     ⚠ A second implementation of the tool's rendering, which is a thing to be uncomfortable
+    ///     about — but the alternative is a client whose output differs from the tool's, and a hook or a
+    ///     human reading two different answers to one question is worse than a duplicated format string.
+    ///     It is only ever the one-file case, so `changed` is 0 or 1 and `left alone` is its complement.
+    ///     `ClientAgreesWithToolTests` compares the two byte for byte; this is why that test exists.
     /// </remarks>
     static string Summary(bool changed, bool check) =>
         (changed ? "1 file " : "0 files ")
@@ -193,20 +193,20 @@ public static class ThinClient {
 /// <summary>Where the full tool is, and how to become it.</summary>
 public static class Fallback {
     /// <summary>
-    /// Runs the full tool with the same arguments and returns its exit code.
+    ///     Runs the full tool with the same arguments and returns its exit code.
     /// </summary>
     /// <remarks>
-    /// ⚠ This costs one extra process start (~5 ms) on every command that is not a warm single-file
-    /// format. That is the price doc 13 § "Startup" mitigation 2 says is accepted — "the fallback
-    /// path when no daemon can start must still be the full tool, which means shipping both" — and
-    /// it is charged against commands that already take seconds, not against the 40 ms one.
-    /// <para>
-    /// ⚠ Not <c>execve</c>, though that would save the wait: it does not exist on Windows, and a
-    /// client that behaves differently on one platform is worse than one that is uniformly 5 ms
-    /// slower. Standard streams are inherited rather than redirected, so a tool that renders colour,
-    /// reads stdin (`--stdin`, the LSP, the MCP server) or writes a progress line behaves exactly as
-    /// it does when invoked directly.
-    /// </para>
+    ///     ⚠ This costs one extra process start (~5 ms) on every command that is not a warm single-file
+    ///     format. That is the price doc 13 § "Startup" mitigation 2 says is accepted — "the fallback
+    ///     path when no daemon can start must still be the full tool, which means shipping both" — and
+    ///     it is charged against commands that already take seconds, not against the 40 ms one.
+    ///     <para>
+    ///         ⚠ Not <c>execve</c>, though that would save the wait: it does not exist on Windows, and a
+    ///         client that behaves differently on one platform is worse than one that is uniformly 5 ms
+    ///         slower. Standard streams are inherited rather than redirected, so a tool that renders colour,
+    ///         reads stdin (`--stdin`, the LSP, the MCP server) or writes a progress line behaves exactly as
+    ///         it does when invoked directly.
+    ///     </para>
     /// </remarks>
     public static int Exec(string[] args) {
         var tool = Locate();
@@ -240,10 +240,10 @@ public static class Fallback {
     }
 
     /// <summary>
-    /// ⚠ Beside this executable first, and only then <c>SKALA_TOOL</c> or the path. Two Skala
-    /// versions formatting one repository is the failure the version pinning in doc 11 exists to
-    /// prevent, and picking up whatever `skala-tool` happens to be on the PATH is exactly how that
-    /// happens.
+    ///     ⚠ Beside this executable first, and only then <c>SKALA_TOOL</c> or the path. Two Skala
+    ///     versions formatting one repository is the failure the version pinning in doc 11 exists to
+    ///     prevent, and picking up whatever `skala-tool` happens to be on the PATH is exactly how that
+    ///     happens.
     /// </summary>
     public static string? Locate() {
         var directory = Path.GetDirectoryName(Environment.ProcessPath ?? string.Empty);
@@ -262,14 +262,14 @@ public static class Fallback {
 }
 
 /// <summary>
-/// The repository root, and a path relative to it.
+///     The repository root, and a path relative to it.
 /// </summary>
 /// <remarks>
-/// ⚠ A third implementation of "where is the repository", and it has to agree with the two in the
-/// full tool exactly — the client and the tool must produce identical output for the same command.
-/// It is duplicated rather than shared because sharing it would mean referencing an assembly that
-/// carries Roslyn, which is the whole thing this project exists to avoid. The agreement is held by
-/// a test rather than by the type system: see <c>ThinClientTests</c>.
+///     ⚠ A third implementation of "where is the repository", and it has to agree with the two in the
+///     full tool exactly — the client and the tool must produce identical output for the same command.
+///     It is duplicated rather than shared because sharing it would mean referencing an assembly that
+///     carries Roslyn, which is the whole thing this project exists to avoid. The agreement is held by
+///     a test rather than by the type system: see <c>ThinClientTests</c>.
 /// </remarks>
 public static class RepositoryRoot {
     public static string? Find(string path) {

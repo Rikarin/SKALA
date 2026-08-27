@@ -6,17 +6,17 @@ using Rikarin.Skala.Options;
 namespace Rikarin.Skala.Formatting.CSharp.Arrangement;
 
 /// <summary>
-/// <c>List&lt;int&gt; x = new List&lt;int&gt;()</c> ⇒ <c>var x = new List&lt;int&gt;()</c>.
+///     <c>List&lt;int&gt; x = new List&lt;int&gt;()</c> ⇒ <c>var x = new List&lt;int&gt;()</c>.
 /// </summary>
 /// <remarks>
-/// ⚠ This rule and <see cref="ObjectCreationRule"/> both want the same declaration and only one of
-/// them may have it. docs/plan/06 § "Type inference and target typing" states the precedence as
-/// "<c>var</c> wins when the RHS names the type; target-typed <c>new</c> wins when the LHS names
-/// it", and the measurement agrees with a sharper edge than the prose: for a *local declaration with
-/// an initializer* the oracle applies <c>var</c> and then target-typed <c>new</c> has no left-hand
-/// type left to target, so it never fires. Target-typed <c>new</c> fires where <c>var</c> cannot
-/// reach — a field, a return, an argument, a property initialiser. Ordering the two rules with
-/// <c>var</c> first is therefore not a tie-break, it is the whole rule.
+///     ⚠ This rule and <see cref="ObjectCreationRule" /> both want the same declaration and only one of
+///     them may have it. docs/plan/06 § "Type inference and target typing" states the precedence as
+///     "<c>var</c> wins when the RHS names the type; target-typed <c>new</c> wins when the LHS names
+///     it", and the measurement agrees with a sharper edge than the prose: for a *local declaration with
+///     an initializer* the oracle applies <c>var</c> and then target-typed <c>new</c> has no left-hand
+///     type left to target, so it never fires. Target-typed <c>new</c> fires where <c>var</c> cannot
+///     reach — a field, a return, an argument, a property initialiser. Ordering the two rules with
+///     <c>var</c> first is therefore not a tie-break, it is the whole rule.
 /// </remarks>
 public sealed class VarRule : ArrangementRule {
     public override string Id => ArrangeIds.Var;
@@ -37,9 +37,9 @@ public sealed class VarRule : ArrangementRule {
         }
 
         /// <summary>
-        /// ⚠ Reads the *original* node, never the visited one. The visited node's children have been
-        /// rebuilt and are not in the tree the semantic model was created for, so asking the model
-        /// about them throws. Every semantic rule in this file has the same shape for that reason.
+        ///     ⚠ Reads the *original* node, never the visited one. The visited node's children have been
+        ///     rebuilt and are not in the tree the semantic model was created for, so asking the model
+        ///     about them throws. Every semantic rule in this file has the same shape for that reason.
         /// </summary>
         bool ShouldConvert(VariableDeclarationSyntax node) {
             if (node.Type.IsVar) {
@@ -175,7 +175,7 @@ public sealed class VarRule : ArrangementRule {
 }
 
 /// <summary>
-/// <c>SomeType x = new SomeType()</c> ⇒ <c>SomeType x = new()</c>, where <c>var</c> did not reach.
+///     <c>SomeType x = new SomeType()</c> ⇒ <c>SomeType x = new()</c>, where <c>var</c> did not reach.
 /// </summary>
 public sealed class ObjectCreationRule : ArrangementRule {
     public override string Id => ArrangeIds.ObjectCreation;
@@ -252,15 +252,15 @@ public sealed class ObjectCreationRule : ArrangementRule {
         }
 
         /// <summary>
-        /// The type the surrounding syntax imposes, or null when nothing does.
+        ///     The type the surrounding syntax imposes, or null when nothing does.
         /// </summary>
         /// <remarks>
-        /// ⚠ Deliberately a short, explicit list rather than
-        /// <c>GetTypeInfo(node).ConvertedType</c>. The converted type of `new Foo()` in a context
-        /// with no target is `Foo` itself, so trusting it would report "the target is Foo" for every
-        /// creation everywhere and convert expressions that have no target at all —
-        /// <c>Console.WriteLine(new Foo())</c> would become <c>Console.WriteLine(new())</c>, which
-        /// does not compile. Each case below is a place C# actually performs target typing.
+        ///     ⚠ Deliberately a short, explicit list rather than
+        ///     <c>GetTypeInfo(node).ConvertedType</c>. The converted type of `new Foo()` in a context
+        ///     with no target is `Foo` itself, so trusting it would report "the target is Foo" for every
+        ///     creation everywhere and convert expressions that have no target at all —
+        ///     <c>Console.WriteLine(new Foo())</c> would become <c>Console.WriteLine(new())</c>, which
+        ///     does not compile. Each case below is a place C# actually performs target typing.
         /// </remarks>
         ITypeSymbol? TargetTypeOf(ObjectCreationExpressionSyntax node) {
             switch (node.Parent) {
@@ -352,8 +352,8 @@ public sealed class ObjectCreationRule : ArrangementRule {
             };
 
         /// <summary>
-        /// "Evident" is ReSharper's word for "the reader can see the type without looking anywhere
-        /// else" — which, for a creation, means the left-hand side spells it out.
+        ///     "Evident" is ReSharper's word for "the reader can see the type without looking anywhere
+        ///     else" — which, for a creation, means the left-hand side spells it out.
         /// </summary>
         static bool Evident(ObjectCreationExpressionSyntax node) =>
             node.Parent is EqualsValueClauseSyntax or AssignmentExpressionSyntax;
@@ -361,7 +361,7 @@ public sealed class ObjectCreationRule : ArrangementRule {
 }
 
 /// <summary>
-/// <c>default(T)</c> ⇒ <c>default</c>, where the target type says which <c>T</c>.
+///     <c>default(T)</c> ⇒ <c>default</c>, where the target type says which <c>T</c>.
 /// </summary>
 public sealed class DefaultValueRule : ArrangementRule {
     public override string Id => ArrangeIds.DefaultValue;

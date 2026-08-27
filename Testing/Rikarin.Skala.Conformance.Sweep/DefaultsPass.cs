@@ -25,36 +25,36 @@ public enum DefaultsVerdict {
 /// <param name="Value">The value that reproduced the bare run, when exactly one did.</param>
 /// <param name="Verdict">Why it settled, or why it did not.</param>
 /// <param name="Masked">
-/// ⚠ Whether the export-base sweep saw the oracle distinguish this option's values while the bare
-/// pass could not. That combination is not "the fixture is too weak": it is a key that ReSharper's
-/// own defaults <em>mask</em>, and it is the distinction the M3 probe could not draw.
+///     ⚠ Whether the export-base sweep saw the oracle distinguish this option's values while the bare
+///     pass could not. That combination is not "the fixture is too weak": it is a key that ReSharper's
+///     own defaults <em>mask</em>, and it is the distinction the M3 probe could not draw.
 /// </param>
 public sealed record DerivedDefault(string Key, string? Value, DefaultsVerdict Verdict, bool Masked, string Detail);
 
 /// <summary>
-/// The defaults measurement, as a by-product of the same machinery.
+///     The defaults measurement, as a by-product of the same machinery.
 /// </summary>
 /// <remarks>
-/// ⚠ Nobody publishes ReSharper's defaults. JetBrains' EditorConfig property tables give each
-/// property's name, language and possible values and never its default, so <c>options.json</c>'s
-/// <c>default</c> is the <em>export's</em> value — Rider's default for most keys and the author's
-/// choice for the rest, with nothing distinguishing the two. That is why <c>skala config distill</c>
-/// may drop a key only where <c>defaultSource</c> is verified: dropping one on a guessed default
-/// silently changes formatting in whoever's repository accepted the file.
-/// <para>
-/// The method is M3's and it is unchanged, because it is correct: a <c>jb cleanupcode</c> run under
-/// a configuration carrying nothing but <c>root = true</c> <em>is</em> ReSharper-with-defaults by
-/// construction, and the value that reproduces it on the option's own fixture is the default.
-/// </para>
-/// <para>
-/// ⚠ What the sweep adds is the cross-check. The M3 probe reported <c>Insensitive</c> for every
-/// option whose fixture matched under all values, and could not say whether that meant "the fixture
-/// is too weak" or "ReSharper's defaults mask this option". The sweep answers it: an option the
-/// export-base run shows the oracle distinguishing is one the fixture <em>can</em> see, so an
-/// <c>Insensitive</c> verdict on it is a masking fact about the bare configuration and not a gap in
-/// the fixture. Those are marked <see cref="DerivedDefault.Masked"/> and are not evidence that the
-/// fixture needs replacing.
-/// </para>
+///     ⚠ Nobody publishes ReSharper's defaults. JetBrains' EditorConfig property tables give each
+///     property's name, language and possible values and never its default, so <c>options.json</c>'s
+///     <c>default</c> is the <em>export's</em> value — Rider's default for most keys and the author's
+///     choice for the rest, with nothing distinguishing the two. That is why <c>skala config distill</c>
+///     may drop a key only where <c>defaultSource</c> is verified: dropping one on a guessed default
+///     silently changes formatting in whoever's repository accepted the file.
+///     <para>
+///         The method is M3's and it is unchanged, because it is correct: a <c>jb cleanupcode</c> run under
+///         a configuration carrying nothing but <c>root = true</c> <em>is</em> ReSharper-with-defaults by
+///         construction, and the value that reproduces it on the option's own fixture is the default.
+///     </para>
+///     <para>
+///         ⚠ What the sweep adds is the cross-check. The M3 probe reported <c>Insensitive</c> for every
+///         option whose fixture matched under all values, and could not say whether that meant "the fixture
+///         is too weak" or "ReSharper's defaults mask this option". The sweep answers it: an option the
+///         export-base run shows the oracle distinguishing is one the fixture <em>can</em> see, so an
+///         <c>Insensitive</c> verdict on it is a masking fact about the bare configuration and not a gap in
+///         the fixture. Those are marked <see cref="DerivedDefault.Masked" /> and are not evidence that the
+///         fixture needs replacing.
+///     </para>
 /// </remarks>
 public sealed class DefaultsPass {
     /// <summary>The configuration that produces ReSharper-with-defaults: nothing but the terminator.</summary>
@@ -179,14 +179,14 @@ public sealed class DefaultsPass {
     }
 
     /// <summary>
-    /// ⚠ Folds the conformance run's view into the bare pass's verdicts.
+    ///     ⚠ Folds the conformance run's view into the bare pass's verdicts.
     /// </summary>
     /// <remarks>
-    /// An option the export-base sweep watched the oracle distinguish is one whose fixture can see
-    /// it. If the bare pass nevertheless found every value reproducing the baseline, the bare
-    /// defaults are masking it — a fact about the configuration, not a weak fixture — and saying so
-    /// is the difference between "replace this fixture" and "this key is unreachable from bare
-    /// defaults".
+    ///     An option the export-base sweep watched the oracle distinguish is one whose fixture can see
+    ///     it. If the bare pass nevertheless found every value reproducing the baseline, the bare
+    ///     defaults are masking it — a fact about the configuration, not a weak fixture — and saying so
+    ///     is the difference between "replace this fixture" and "this key is unreachable from bare
+    ///     defaults".
     /// </remarks>
     public static IReadOnlyList<DerivedDefault> CrossCheck(
         IReadOnlyList<DerivedDefault> probed,
@@ -210,19 +210,19 @@ public sealed class DefaultsPass {
     }
 
     /// <summary>
-    /// One <c>cleanupcode</c> invocation, a directory per fixture.
+    ///     One <c>cleanupcode</c> invocation, a directory per fixture.
     /// </summary>
     /// <remarks>
-    /// ⚠ The isolation is what makes this answer a question about one option rather than about a
-    /// configuration. A shared <c>.editorconfig</c> was the first attempt at this in M3 and it
-    /// answered nothing: 197 options, zero fixtures unchanged, because every fixture was perturbed
-    /// by something else in the batch.
+    ///     ⚠ The isolation is what makes this answer a question about one option rather than about a
+    ///     configuration. A shared <c>.editorconfig</c> was the first attempt at this in M3 and it
+    ///     answered nothing: 197 options, zero fixtures unchanged, because every fixture was perturbed
+    ///     by something else in the batch.
     /// </remarks>
     /// <summary>
-    /// ⚠ Normalised, unlike the conformance sweep's. The defaults question is "which value reproduces
-    /// the bare run", which is a question about content; the line-ending and final-newline options
-    /// are the sweep's problem and not this pass's, and comparing raw here would make every fixture's
-    /// terminator part of every option's answer.
+    ///     ⚠ Normalised, unlike the conformance sweep's. The defaults question is "which value reproduces
+    ///     the bare run", which is a question about content; the line-ending and final-newline options
+    ///     are the sweep's problem and not this pass's, and comparing raw here would make every fixture's
+    ///     terminator part of every option's answer.
     /// </summary>
     string?[] Format(IReadOnlyList<SweepCandidate> batch, Func<SweepCandidate, string> config) => [
         .. ScratchTree.Format(_runner, batch, config)

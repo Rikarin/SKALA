@@ -10,19 +10,19 @@ using Rikarin.Skala.Options.Generator;
 namespace Rikarin.Skala.Rules.Generator;
 
 /// <summary>
-/// Reads <c>rules.json</c> and emits the rule catalogue: <c>RuleIds</c>, <c>RuleInfo</c> and the
-/// <c>RuleCatalog</c> lookup the analyzers, the docs generator, <c>skala explain</c> and the SARIF
-/// <c>rules[]</c> block all read.
+///     Reads <c>rules.json</c> and emits the rule catalogue: <c>RuleIds</c>, <c>RuleInfo</c> and the
+///     <c>RuleCatalog</c> lookup the analyzers, the docs generator, <c>skala explain</c> and the SARIF
+///     <c>rules[]</c> block all read.
 /// </summary>
 /// <remarks>
-/// docs/plan/08-rule-catalogue.md § "Rule metadata": one source, four surfaces.
-/// <para>
-/// ⚠ It is a source generator rather than a runtime JSON read for the same reason the option
-/// registry is: <c>Rikarin.Skala.Rules</c> is <c>netstandard2.0</c> and loads into <c>csc</c> and
-/// into Rider, so a <c>System.Text.Json</c> in its dependency closure is a way for the analyzer
-/// load to fail with an error message that names none of it (docs/plan/02 § "The project graph").
-/// The JSON reader is the one the option generator already carries, linked rather than copied.
-/// </para>
+///     docs/plan/08-rule-catalogue.md § "Rule metadata": one source, four surfaces.
+///     <para>
+///         ⚠ It is a source generator rather than a runtime JSON read for the same reason the option
+///         registry is: <c>Rikarin.Skala.Rules</c> is <c>netstandard2.0</c> and loads into <c>csc</c> and
+///         into Rider, so a <c>System.Text.Json</c> in its dependency closure is a way for the analyzer
+///         load to fail with an error message that names none of it (docs/plan/02 § "The project graph").
+///         The JSON reader is the one the option generator already carries, linked rather than copied.
+///     </para>
 /// </remarks>
 [Generator(LanguageNames.CSharp)]
 public sealed class RulesGenerator : IIncrementalGenerator {
@@ -230,7 +230,9 @@ public sealed class RulesGenerator : IIncrementalGenerator {
             _ => "Suggestion"
         };
 
-    /// <summary>A stable C# identifier for a rule's concept slug: <c>is-null-pattern</c> → <c>IsNullPattern</c>.</summary>
+    /// <summary>
+    ///     A stable C# identifier for a rule's concept slug: <c>is-null-pattern</c> → <c>IsNullPattern</c>.
+    /// </summary>
     static string Identifier(string concept) {
         var builder = new StringBuilder(concept.Length);
         var upper = true;

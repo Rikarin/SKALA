@@ -10,30 +10,33 @@ using Rikarin.Skala.Rules.Metadata;
 namespace Rikarin.Skala.Rules.Modernization;
 
 /// <summary>
-/// <c>SK1006</c> — a <c>using</c> statement whose block runs to the end of its scope is a
-/// <c>using</c> declaration.
+///     <c>SK1006</c> — a <c>using</c> statement whose block runs to the end of its scope is a
+///     <c>using</c> declaration.
 /// </summary>
 /// <remarks>
-/// ⚠ This rule moves a <c>Dispose</c>, which is why M5 did not ship it, and the guard is the whole
-/// rule. A <c>using</c> declaration disposes when its enclosing block ends, so the rewrite is
-/// behaviour-preserving exactly when the <c>using</c> statement is the <b>last statement of its
-/// enclosing block</b>: at that point the block's closing brace and the <c>using</c> block's
-/// closing brace are the same program point, and the object is disposed at the same instant on
-/// every path out — <c>return</c>, <c>throw</c>, <c>break</c> and falling off the end alike.
-/// Anywhere else the object starts living longer, and "disposed later than it was" is not a
-/// formatting difference.
-/// <para>
-/// ⚠ The second guard is scoping, and it is the one that is easy to get subtly wrong. Removing the
-/// braces lifts the block's own declaration space one scope outwards, and C# forbids a local that
-/// shares a name with a local of an enclosing <em>or sibling-nested</em> local scope in the same
-/// member. Both of these are legal today and <c>CS0136</c> after a naive rewrite:
-/// <code>
+///     ⚠ This rule moves a <c>Dispose</c>, which is why M5 did not ship it, and the guard is the whole
+///     rule. A <c>using</c> declaration disposes when its enclosing block ends, so the rewrite is
+///     behaviour-preserving exactly when the <c>using</c> statement is the
+///     <b>
+///         last statement of its
+///         enclosing block
+///     </b>: at that point the block's closing brace and the <c>using</c> block's
+///     closing brace are the same program point, and the object is disposed at the same instant on
+///     every path out — <c>return</c>, <c>throw</c>, <c>break</c> and falling off the end alike.
+///     Anywhere else the object starts living longer, and "disposed later than it was" is not a
+///     formatting difference.
+///     <para>
+///         ⚠ The second guard is scoping, and it is the one that is easy to get subtly wrong. Removing the
+///         braces lifts the block's own declaration space one scope outwards, and C# forbids a local that
+///         shares a name with a local of an enclosing <em>or sibling-nested</em> local scope in the same
+///         member. Both of these are legal today and <c>CS0136</c> after a naive rewrite:
+///         <code>
 /// var x = 1;              foreach (var item in xs) { }
 /// using (…) { var x = 2; }   using (…) { var item = 2; }
-/// </code>
-/// The first is caught by asking what is in scope at the statement; the second is not in scope
-/// anywhere and is caught only by scanning the whole member. So the rule scans the whole member.
-/// </para>
+///         </code>
+///         The first is caught by asking what is in scope at the statement; the second is not in scope
+///         anywhere and is caught only by scanning the whole member. So the rule scans the whole member.
+///     </para>
 /// </remarks>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class UsingDeclarationAnalyzer : DiagnosticAnalyzer {
@@ -114,15 +117,15 @@ public sealed class UsingDeclarationAnalyzer : DiagnosticAnalyzer {
     }
 
     /// <summary>
-    /// Whether any name that changes scope is used by another local scope of the same member.
+    ///     Whether any name that changes scope is used by another local scope of the same member.
     /// </summary>
     /// <remarks>
-    /// ⚠ Deliberately conservative in one direction only. The set that <em>moves</em> is computed
-    /// precisely — the block's own declaration space, not the scopes nested inside it, because a
-    /// name two scopes deep stays a cousin of everything it was a cousin of. The set it is checked
-    /// <em>against</em> is every name declared anywhere else in the member, which over-bails: a
-    /// name in a scope that could never conflict still stops the rule. That asymmetry is the right
-    /// one — the cost is a finding not reported, and the alternative is a fix that does not compile.
+    ///     ⚠ Deliberately conservative in one direction only. The set that <em>moves</em> is computed
+    ///     precisely — the block's own declaration space, not the scopes nested inside it, because a
+    ///     name two scopes deep stays a cousin of everything it was a cousin of. The set it is checked
+    ///     <em>against</em> is every name declared anywhere else in the member, which over-bails: a
+    ///     name in a scope that could never conflict still stops the rule. That asymmetry is the right
+    ///     one — the cost is a finding not reported, and the alternative is a fix that does not compile.
     /// </remarks>
     static bool Collides(UsingStatementSyntax statement, BlockSyntax block, VariableDeclarationSyntax declaration) {
         var moving = new HashSet<string>(System.StringComparer.Ordinal);
@@ -148,14 +151,14 @@ public sealed class UsingDeclarationAnalyzer : DiagnosticAnalyzer {
     }
 
     /// <summary>
-    /// The names the block itself owns — the ones the rewrite moves into the enclosing block.
+    ///     The names the block itself owns — the ones the rewrite moves into the enclosing block.
     /// </summary>
     /// <remarks>
-    /// ⚠ An <c>out var</c> or a declaration pattern in a top-level statement's condition is in the
-    /// <em>block's</em> declaration space, not the embedded statement's, so
-    /// <c>if (d.TryGetValue(k, out var v)) { }</c> contributes <c>v</c> even though no
-    /// <c>LocalDeclarationStatement</c> is involved. Nested blocks are not descended into: what
-    /// they declare stays nested and cannot start conflicting with anything.
+    ///     ⚠ An <c>out var</c> or a declaration pattern in a top-level statement's condition is in the
+    ///     <em>block's</em> declaration space, not the embedded statement's, so
+    ///     <c>if (d.TryGetValue(k, out var v)) { }</c> contributes <c>v</c> even though no
+    ///     <c>LocalDeclarationStatement</c> is involved. Nested blocks are not descended into: what
+    ///     they declare stays nested and cannot start conflicting with anything.
     /// </remarks>
     static IEnumerable<string> OwnDeclarationSpace(BlockSyntax block) {
         foreach (var statement in block.Statements) {

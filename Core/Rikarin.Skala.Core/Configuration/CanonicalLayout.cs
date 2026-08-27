@@ -9,15 +9,15 @@ public sealed record CanonicalMarker(string Version, string Sha256) {
 }
 
 /// <summary>
-/// A repository's <c>.editorconfig</c> split into the managed canonical block and the local block
-/// below it.
+///     A repository's <c>.editorconfig</c> split into the managed canonical block and the local block
+///     below it.
 /// </summary>
 /// <param name="Marker">Null when the file has never been synced.</param>
 /// <param name="CanonicalText">The payload between the markers, verbatim. Empty when unmanaged.</param>
 /// <param name="LocalText">Everything below the local marker — or the whole file, when unmanaged.</param>
 /// <param name="LocalFirstLine">
-/// The 1-based line in the real file that <see cref="LocalText"/> starts on, so that a diagnostic
-/// about a local override can name a line a reader can go to.
+///     The 1-based line in the real file that <see cref="LocalText" /> starts on, so that a diagnostic
+///     about a local override can name a line a reader can go to.
 /// </param>
 public sealed record CanonicalLayoutResult(
     CanonicalMarker? Marker,
@@ -28,15 +28,15 @@ public sealed record CanonicalLayoutResult(
 }
 
 /// <summary>
-/// The two-block layout of a managed <c>.editorconfig</c>, and the marker grammar that delimits it.
+///     The two-block layout of a managed <c>.editorconfig</c>, and the marker grammar that delimits it.
 /// </summary>
 /// <remarks>
-/// ⚠ There is exactly one file, because Rider reads exactly one file per directory and it is called
-/// <c>.editorconfig</c>. Every layering scheme that puts the canonical somewhere else — a second
-/// file, an MSBuild item, a <c>.globalconfig</c> from a package — is invisible to the IDE, and an
-/// IDE formatting against a different configuration than the gate is the exact failure Skala exists
-/// to prevent. So the layering is inside the file, and it is editorconfig's own: the local block
-/// comes <em>after</em> the canonical block, and later sections win.
+///     ⚠ There is exactly one file, because Rider reads exactly one file per directory and it is called
+///     <c>.editorconfig</c>. Every layering scheme that puts the canonical somewhere else — a second
+///     file, an MSBuild item, a <c>.globalconfig</c> from a package — is invisible to the IDE, and an
+///     IDE formatting against a different configuration than the gate is the exact failure Skala exists
+///     to prevent. So the layering is inside the file, and it is editorconfig's own: the local block
+///     comes <em>after</em> the canonical block, and later sections win.
 /// </remarks>
 public static class CanonicalLayout {
     public const string BeginMarker = "# skala:canonical begin";
@@ -87,9 +87,9 @@ public static class CanonicalLayout {
     }
 
     /// <summary>
-    /// Build the file: marker, payload, marker, banner, local text. LF throughout, because the
-    /// canonical sets <c>end_of_line = lf</c> and a managed block that disagrees with itself is a
-    /// poor advertisement.
+    ///     Build the file: marker, payload, marker, banner, local text. LF throughout, because the
+    ///     canonical sets <c>end_of_line = lf</c> and a managed block that disagrees with itself is a
+    ///     poor advertisement.
     /// </summary>
     public static string Assemble(string canonicalText, string version, string localText) {
         var payload = CanonicalEditorConfig.Normalize(canonicalText);
@@ -116,13 +116,13 @@ public static class CanonicalLayout {
     }
 
     /// <summary>
-    /// Strip a <c>root</c> assignment from a would-be local block.
+    ///     Strip a <c>root</c> assignment from a would-be local block.
     /// </summary>
     /// <remarks>
-    /// The canonical block carries <c>root = true</c> in its own preamble. A second <c>root</c> in
-    /// the local block sits below a section header, where editorconfig ignores it entirely — so
-    /// leaving it in place would leave a line that looks load-bearing and is inert. It is removed,
-    /// and <c>sync</c> says so rather than doing it quietly.
+    ///     The canonical block carries <c>root = true</c> in its own preamble. A second <c>root</c> in
+    ///     the local block sits below a section header, where editorconfig ignores it entirely — so
+    ///     leaving it in place would leave a line that looks load-bearing and is inert. It is removed,
+    ///     and <c>sync</c> says so rather than doing it quietly.
     /// </remarks>
     public static string StripRoot(string localText, out bool stripped) {
         stripped = false;

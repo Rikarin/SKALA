@@ -10,30 +10,30 @@ using Rikarin.Skala.Rules.Metadata;
 namespace Rikarin.Skala.Rules.Maintainability;
 
 /// <summary>
-/// <c>SK7001</c>–<c>SK7006</c> and <c>SK7010</c> — every per-member metric, from one visit.
+///     <c>SK7001</c>–<c>SK7006</c> and <c>SK7010</c> — every per-member metric, from one visit.
 /// </summary>
 /// <remarks>
-/// ⚠ <b>One analyzer, not seven.</b> docs/plan/07-analysis-host.md § "Metrics" requires the metrics
-/// to be "computed in the same pass, from the same trees, because a second traversal of 1.35 M lines
-/// to count things is a second traversal". Seven analyzers is seven registrations on the same node
-/// kinds and therefore seven visits of every member in the repository; this one calls
-/// <see cref="MemberMetrics.Compute"/> once and reports whichever thresholds that member breached.
-/// <para>
-/// ⚠ These are not rules that can have a false positive in the sense docs/plan/16 § R3 means: a
-/// metric reports a measurement against a threshold and the measurement is either right or a bug.
-/// What it can be is <em>useless</em> — a threshold low enough to fire on ordinary code teaches
-/// people to switch the category off, which is R3's outcome by another route. So every default here
-/// is the one rules.json documents, set well above the corpus's p99 rather than at the textbook
-/// number, and every one of them is an <c>.editorconfig</c> option a repository can tighten
-/// deliberately.
-/// </para>
-/// <para>
-/// ⚠ Generated code is excluded — <see cref="GeneratedCodeAnalysisFlags.None"/>, as the neighbouring
-/// analyzers do. docs/plan/07 keeps generated code in the <em>aggregate</em> numbers, "because a
-/// generator that emits 200 000 lines of pathological code is a fact worth having"; that is a
-/// different surface, fed by <see cref="MemberMetrics"/> directly, and it is why this class is not
-/// the only caller of that type.
-/// </para>
+///     ⚠ <b>One analyzer, not seven.</b> docs/plan/07-analysis-host.md § "Metrics" requires the metrics
+///     to be "computed in the same pass, from the same trees, because a second traversal of 1.35 M lines
+///     to count things is a second traversal". Seven analyzers is seven registrations on the same node
+///     kinds and therefore seven visits of every member in the repository; this one calls
+///     <see cref="MemberMetrics.Compute" /> once and reports whichever thresholds that member breached.
+///     <para>
+///         ⚠ These are not rules that can have a false positive in the sense docs/plan/16 § R3 means: a
+///         metric reports a measurement against a threshold and the measurement is either right or a bug.
+///         What it can be is <em>useless</em> — a threshold low enough to fire on ordinary code teaches
+///         people to switch the category off, which is R3's outcome by another route. So every default here
+///         is the one rules.json documents, set well above the corpus's p99 rather than at the textbook
+///         number, and every one of them is an <c>.editorconfig</c> option a repository can tighten
+///         deliberately.
+///     </para>
+///     <para>
+///         ⚠ Generated code is excluded — <see cref="GeneratedCodeAnalysisFlags.None" />, as the neighbouring
+///         analyzers do. docs/plan/07 keeps generated code in the <em>aggregate</em> numbers, "because a
+///         generator that emits 200 000 lines of pathological code is a fact worth having"; that is a
+///         different surface, fed by <see cref="MemberMetrics" /> directly, and it is why this class is not
+///         the only caller of that type.
+///     </para>
 /// </remarks>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class MetricsAnalyzer : DiagnosticAnalyzer {
@@ -220,15 +220,15 @@ public sealed class MetricsAnalyzer : DiagnosticAnalyzer {
     }
 
     /// <summary>
-    /// <c>SK7010</c>: a publicly visible declaration with no documentation comment.
+    ///     <c>SK7010</c>: a publicly visible declaration with no documentation comment.
     /// </summary>
     /// <remarks>
-    /// ⚠ <c>defaultSeverity: none</c> in rules.json, so this produces nothing until a repository asks
-    /// for it per path. rules.json's rationale is the reason and it is worth repeating: as a
-    /// per-member warning on a repository that has never documented anything it produces thousands
-    /// of findings on day one and gets switched off by lunchtime. The <em>aggregate</em> is computed
-    /// either way, from <see cref="MemberMetrics.IsPublicApi"/> and
-    /// <see cref="MemberMetrics.HasDocumentation"/>, which is the surface the number belongs on.
+    ///     ⚠ <c>defaultSeverity: none</c> in rules.json, so this produces nothing until a repository asks
+    ///     for it per path. rules.json's rationale is the reason and it is worth repeating: as a
+    ///     per-member warning on a repository that has never documented anything it produces thousands
+    ///     of findings on day one and gets switched off by lunchtime. The <em>aggregate</em> is computed
+    ///     either way, from <see cref="MemberMetrics.IsPublicApi" /> and
+    ///     <see cref="MemberMetrics.HasDocumentation" />, which is the surface the number belongs on.
     /// </remarks>
     static void ReportUndocumented(SyntaxNodeAnalysisContext context, SyntaxNode declaration, Location location) {
         if (!MemberMetrics.IsDocumentable(declaration)
@@ -310,20 +310,20 @@ public sealed class MetricsAnalyzer : DiagnosticAnalyzer {
 }
 
 /// <summary>
-/// The thresholds for one file, from the <c>.editorconfig</c> chain that applies to it.
+///     The thresholds for one file, from the <c>.editorconfig</c> chain that applies to it.
 /// </summary>
 /// <remarks>
-/// ⚠ docs/plan/07 § "Metrics": "All thresholds are <c>.editorconfig</c> options in Skala's own
-/// namespace (<c>dotnet_code_quality.SK7002.threshold = 15</c>), which is the standard mechanism
-/// Roslyn analyzers already use for configuration and therefore needs no invention." The same key
-/// shape the CA rules use, read through the same provider, so a repository that already knows how to
-/// configure an analyzer already knows how to configure these.
-/// <para>
-/// ⚠ A missing or unparseable value falls back to the documented default <em>silently</em>. A metric
-/// rule that fails a build because someone wrote <c>threshold = fifteen</c> is a metric rule that
-/// gets switched off; the reasonable reading of a broken threshold is "they meant the default".
-/// (A key that is not a threshold at all is <c>SK9001</c>'s job, on a different surface.)
-/// </para>
+///     ⚠ docs/plan/07 § "Metrics": "All thresholds are <c>.editorconfig</c> options in Skala's own
+///     namespace (<c>dotnet_code_quality.SK7002.threshold = 15</c>), which is the standard mechanism
+///     Roslyn analyzers already use for configuration and therefore needs no invention." The same key
+///     shape the CA rules use, read through the same provider, so a repository that already knows how to
+///     configure an analyzer already knows how to configure these.
+///     <para>
+///         ⚠ A missing or unparseable value falls back to the documented default <em>silently</em>. A metric
+///         rule that fails a build because someone wrote <c>threshold = fifteen</c> is a metric rule that
+///         gets switched off; the reasonable reading of a broken threshold is "they meant the default".
+///         (A key that is not a threshold at all is <c>SK9001</c>'s job, on a different surface.)
+///     </para>
 /// </remarks>
 sealed class MetricThresholds {
     /// <summary>Defaults, exactly as rules.json documents them. Nothing here is invented.</summary>

@@ -7,11 +7,11 @@ namespace Rikarin.Skala.Formatting.CSharp.Tests;
 
 /// <summary>Formats a string with the repository's own configuration, which is the Rider export.</summary>
 /// <remarks>
-/// ⚠ The repository's <c>.editorconfig</c>, resolved for real, and not
-/// <c>FormattingOptions.Defaults</c>. The two were interchangeable while every registry default was
-/// the export's own value; milestone 3 derived ReSharper's actual defaults from the oracle, and they
-/// are Allman-braced with <c>wrap_if_long</c> chains — a different formatter, correctly. These tests
-/// are about the export's behaviour, so they have to say so.
+///     ⚠ The repository's <c>.editorconfig</c>, resolved for real, and not
+///     <c>FormattingOptions.Defaults</c>. The two were interchangeable while every registry default was
+///     the export's own value; milestone 3 derived ReSharper's actual defaults from the oracle, and they
+///     are Allman-braced with <c>wrap_if_long</c> chains — a different formatter, correctly. These tests
+///     are about the export's behaviour, so they have to say so.
 /// </remarks>
 public static class Format {
     public static PhaseOneOptions Options { get; } = new(
@@ -26,12 +26,12 @@ public static class Format {
     public static string Text(string source) => Run(source).Formatted;
 
     /// <summary>
-    /// How many owner-dependent groups the document put outside their owner.
+    ///     How many owner-dependent groups the document put outside their owner.
     /// </summary>
     /// <remarks>
-    /// ⚠ Must be zero. It is the invariant that makes docs/plan/04's "second pass" a walk order
-    /// rather than an iteration to a fixed point, and the fitter counts violations rather than
-    /// hiding them behind a guess.
+    ///     ⚠ Must be zero. It is the invariant that makes docs/plan/04's "second pass" a walk order
+    ///     rather than an iteration to a fixed point, and the fitter counts violations rather than
+    ///     hiding them behind a guess.
     /// </remarks>
     public static int OwnerUnresolved(string source) {
         var text = SourceText.From(source);
@@ -554,12 +554,12 @@ public sealed class EditTests {
 }
 
 /// <summary>
-/// Phase 2: which gaps may hold a break, and which side of a token it lands on.
+///     Phase 2: which gaps may hold a break, and which side of a token it lands on.
 /// </summary>
 /// <remarks>
-/// ⚠ Every expectation here was read off <c>jb cleanupcode</c>, not off an option name. Where the
-/// name and the behaviour disagree the behaviour wins, and the two disagree more often than the
-/// documentation admits.
+///     ⚠ Every expectation here was read off <c>jb cleanupcode</c>, not off an option name. Where the
+///     name and the behaviour disagree the behaviour wins, and the two disagree more often than the
+///     documentation admits.
 /// </remarks>
 public sealed class BreakPositionTests {
     [Fact]

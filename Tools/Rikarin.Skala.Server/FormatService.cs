@@ -8,19 +8,22 @@ using Rikarin.Skala.Formatting.CSharp;
 namespace Rikarin.Skala.Server;
 
 /// <summary>
-/// The one implementation the daemon and the LSP server both call.
+///     The one implementation the daemon and the LSP server both call.
 /// </summary>
 /// <remarks>
-/// ⚠ docs/plan/11's correctness rule: <b>every command must work identically with
-/// <c>SKALA_NO_DAEMON=1</c></b>. The way to keep that true is for the warm path to be the cold path
-/// plus a cache, and never a second implementation — so this holds results, not decisions.
-/// <para>
-/// The cache is keyed on the file's <em>content hash</em> together with the resolved configuration's
-/// identity, not on the path and not on a timestamp. A daemon never watches the filesystem
-/// (docs/plan/11: "It is asked; it does not observe"), so a path-keyed cache would serve a stale
-/// answer for as long as nobody thought to invalidate it, and file watching is exactly where daemons
-/// acquire their stale-state bugs.
-/// </para>
+///     ⚠ docs/plan/11's correctness rule:
+///     <b>
+///         every command must work identically with
+///         <c>SKALA_NO_DAEMON=1</c>
+///     </b>. The way to keep that true is for the warm path to be the cold path
+///     plus a cache, and never a second implementation — so this holds results, not decisions.
+///     <para>
+///         The cache is keyed on the file's <em>content hash</em> together with the resolved configuration's
+///         identity, not on the path and not on a timestamp. A daemon never watches the filesystem
+///         (docs/plan/11: "It is asked; it does not observe"), so a path-keyed cache would serve a stale
+///         answer for as long as nobody thought to invalidate it, and file watching is exactly where daemons
+///         acquire their stale-state bugs.
+///     </para>
 /// </remarks>
 public sealed class FormatService {
     readonly ConcurrentDictionary<string, Entry> _cache = new(StringComparer.Ordinal);
@@ -29,25 +32,25 @@ public sealed class FormatService {
     long _bytes;
 
     /// <summary>
-    /// ⚠ <b>The bound is bytes, and it used to be entries.</b> docs/plan/13 § "Memory" says
-    /// "LRU by content hash, capped at 400 MB" and this held 4 096 entries of unbounded size: over a
-    /// corpus whose tail is "a handful of 20 000-line generated files" (doc 13 § "Parallelism"),
-    /// 4 096 entries is several gigabytes, and the number that was supposed to be the memory bound
-    /// bore no relation to memory at all.
+    ///     ⚠ <b>The bound is bytes, and it used to be entries.</b> docs/plan/13 § "Memory" says
+    ///     "LRU by content hash, capped at 400 MB" and this held 4 096 entries of unbounded size: over a
+    ///     corpus whose tail is "a handful of 20 000-line generated files" (doc 13 § "Parallelism"),
+    ///     4 096 entries is several gigabytes, and the number that was supposed to be the memory bound
+    ///     bore no relation to memory at all.
     /// </summary>
     public long CapacityBytes { get; init; } = 400L * 1024 * 1024;
 
     /// <summary>
-    /// ⚠ <b>And it is an LRU, which it also used to not be.</b> The old comment argued that
-    /// "an LRU needs a lock on the hot path to be an LRU at all", so it cleared the whole dictionary
-    /// on overflow — which throws away every hot entry along with the cold ones and gives a daemon
-    /// that periodically forgets the file the developer is editing. It does not need a lock: the hit
-    /// path stamps a monotonic tick with one interlocked write, and only the miss path — which is
-    /// already doing a full format — ever sorts or evicts.
+    ///     ⚠ <b>And it is an LRU, which it also used to not be.</b> The old comment argued that
+    ///     "an LRU needs a lock on the hot path to be an LRU at all", so it cleared the whole dictionary
+    ///     on overflow — which throws away every hot entry along with the cold ones and gives a daemon
+    ///     that periodically forgets the file the developer is editing. It does not need a lock: the hit
+    ///     path stamps a monotonic tick with one interlocked write, and only the miss path — which is
+    ///     already doing a full format — ever sorts or evicts.
     /// </summary>
     public int Held => _cache.Count;
 
-    /// <summary>Approximate retained bytes. Read by <see cref="MemoryPolicy"/> and by `daemon status`.</summary>
+    /// <summary>Approximate retained bytes. Read by <see cref="MemoryPolicy" /> and by `daemon status`.</summary>
     public long Bytes => Interlocked.Read(ref _bytes);
 
     public long Hits { get; private set; }
@@ -91,13 +94,13 @@ public sealed class FormatService {
     }
 
     /// <summary>
-    /// Drops least-recently-used entries until the cache is under <paramref name="target"/>.
+    ///     Drops least-recently-used entries until the cache is under <paramref name="target" />.
     /// </summary>
     /// <remarks>
-    /// ⚠ Trims to 80 % of the target rather than to the target exactly. Evicting one entry per
-    /// insertion once the cache is full turns every subsequent miss into a full sort, and the sort
-    /// is O(n) over four thousand entries; the hysteresis makes eviction a rare batch instead of a
-    /// per-miss tax.
+    ///     ⚠ Trims to 80 % of the target rather than to the target exactly. Evicting one entry per
+    ///     insertion once the cache is full turns every subsequent miss into a full sort, and the sort
+    ///     is O(n) over four thousand entries; the hysteresis makes eviction a rare batch instead of a
+    ///     per-miss tax.
     /// </remarks>
     public void Trim(long target) {
         if (Bytes <= target) {
@@ -136,10 +139,10 @@ public sealed class FormatService {
     }
 
     /// <summary>
-    /// What one entry costs, approximately. ⚠ Approximate on purpose: an exact answer needs
-    /// <c>GC.GetAllocatedBytesForCurrentThread</c> around the format call, which measures garbage as
-    /// well as retention and would be wrong in the expensive direction. The dominant terms are the
-    /// two texts and the edit list, and two bytes per char is the CLR's string layout.
+    ///     What one entry costs, approximately. ⚠ Approximate on purpose: an exact answer needs
+    ///     <c>GC.GetAllocatedBytesForCurrentThread</c> around the format call, which measures garbage as
+    ///     well as retention and would be wrong in the expensive direction. The dominant terms are the
+    ///     two texts and the edit list, and two bytes per char is the CLR's string layout.
     /// </summary>
     static long Weigh(string key, int sourceLength, FormatResult result) =>
         (key.Length * 2L)
@@ -149,13 +152,13 @@ public sealed class FormatService {
         + 128L;
 
     /// <summary>
-    /// The identity of a formatting answer: the bytes in, and the configuration that applied.
+    ///     The identity of a formatting answer: the bytes in, and the configuration that applied.
     /// </summary>
     /// <remarks>
-    /// ⚠ The configuration's identity is every <c>.editorconfig</c> in the chain together with the
-    /// version stamp each carries, so a config edited under a running daemon changes the key rather
-    /// than needing an invalidation message. <see cref="ConfigurationCache"/> re-reads a document
-    /// whose <c>(mtime, length)</c> moved and hands out a new version with it.
+    ///     ⚠ The configuration's identity is every <c>.editorconfig</c> in the chain together with the
+    ///     version stamp each carries, so a config edited under a running daemon changes the key rather
+    ///     than needing an invalidation message. <see cref="ConfigurationCache" /> re-reads a document
+    ///     whose <c>(mtime, length)</c> moved and hands out a new version with it.
     /// </remarks>
     static string KeyOf(
         SourceText source,

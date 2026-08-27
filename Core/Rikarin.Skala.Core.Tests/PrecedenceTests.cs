@@ -6,8 +6,8 @@ namespace Rikarin.Skala.Core.Tests;
 /// <summary>docs/plan/03-configuration-model.md § "Precedence".</summary>
 public sealed class PrecedenceTests {
     /// <summary>
-    /// Documents are given outermost first and laid out one directory apart, so that document
-    /// <c>n</c> is nearer the source file than document <c>n - 1</c>.
+    ///     Documents are given outermost first and laid out one directory apart, so that document
+    ///     <c>n</c> is nearer the source file than document <c>n - 1</c>.
     /// </summary>
     static ResolutionResult Resolve(params string[] documents) {
         var directory = "/repo";

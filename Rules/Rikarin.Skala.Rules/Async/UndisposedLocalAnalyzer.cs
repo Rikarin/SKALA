@@ -12,22 +12,22 @@ using Rikarin.Skala.Rules.Metadata;
 namespace Rikarin.Skala.Rules.Async;
 
 /// <summary>
-/// <c>SK3501</c> — a disposable is constructed into a local that never leaves the method and is
-/// never disposed.
+///     <c>SK3501</c> — a disposable is constructed into a local that never leaves the method and is
+///     never disposed.
 /// </summary>
 /// <remarks>
-/// docs/plan/08-rule-catalogue.md § "SK3000 — Async, concurrency, lifetime". A handle held until a
-/// finalizer runs — or for ever, where there is none — shows up as a file that cannot be reopened,
-/// a pool that empties or a socket stuck in <c>CLOSE_WAIT</c>, always somewhere other than the
-/// method that leaked it.
-/// <para>
-/// ⚠ <b>Ownership is the whole difficulty and the rule refuses to guess at it.</b> Every way the
-/// object might outlive the method — returned, assigned, passed, captured, yielded — withdraws the
-/// finding, and so does a constructor argument that is itself disposable, because
-/// <c>new StreamReader(stream)</c> takes ownership of <c>stream</c> and a <c>using</c> on the
-/// reader would close a stream the caller still owns. That last guard is what makes the fix safe
-/// rather than merely plausible.
-/// </para>
+///     docs/plan/08-rule-catalogue.md § "SK3000 — Async, concurrency, lifetime". A handle held until a
+///     finalizer runs — or for ever, where there is none — shows up as a file that cannot be reopened,
+///     a pool that empties or a socket stuck in <c>CLOSE_WAIT</c>, always somewhere other than the
+///     method that leaked it.
+///     <para>
+///         ⚠ <b>Ownership is the whole difficulty and the rule refuses to guess at it.</b> Every way the
+///         object might outlive the method — returned, assigned, passed, captured, yielded — withdraws the
+///         finding, and so does a constructor argument that is itself disposable, because
+///         <c>new StreamReader(stream)</c> takes ownership of <c>stream</c> and a <c>using</c> on the
+///         reader would close a stream the caller still owns. That last guard is what makes the fix safe
+///         rather than merely plausible.
+///     </para>
 /// </remarks>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class UndisposedLocalAnalyzer : DiagnosticAnalyzer {
@@ -35,12 +35,12 @@ public sealed class UndisposedLocalAnalyzer : DiagnosticAnalyzer {
     static readonly DiagnosticDescriptor Descriptor = SkalaRule.Descriptor(RuleIds.DisposableNotDisposed);
 
     /// <summary>
-    /// ⚠ Disposables that nobody disposes, or that must not be disposed here.
+    ///     ⚠ Disposables that nobody disposes, or that must not be disposed here.
     /// </summary>
     /// <remarks>
-    /// A <c>Task</c> is <c>IDisposable</c> and the framework's own guidance is to leave it alone. A
-    /// timer whose local is disposed at the end of the method that started it never fires again,
-    /// so the "fix" would delete the feature.
+    ///     A <c>Task</c> is <c>IDisposable</c> and the framework's own guidance is to leave it alone. A
+    ///     timer whose local is disposed at the end of the method that started it never fires again,
+    ///     so the "fix" would delete the feature.
     /// </remarks>
     static readonly string[] Excluded = [
         "System.Threading.Tasks.Task", "System.Threading.Tasks.Task`1", "System.Threading.Timer",
@@ -131,11 +131,11 @@ public sealed class UndisposedLocalAnalyzer : DiagnosticAnalyzer {
     }
 
     /// <summary>
-    /// Whether every reference to the local is one that leaves the object where it was created.
+    ///     Whether every reference to the local is one that leaves the object where it was created.
     /// </summary>
     /// <remarks>
-    /// ⚠ The default is "no". A reference the rule does not recognise withdraws the finding, so a
-    /// language construct nobody thought about here costs a missed finding rather than a wrong one.
+    ///     ⚠ The default is "no". A reference the rule does not recognise withdraws the finding, so a
+    ///     language construct nobody thought about here costs a missed finding rather than a wrong one.
     /// </remarks>
     static bool KeepsOwnership(
         SyntaxNodeAnalysisContext context,
@@ -227,15 +227,15 @@ public sealed class UndisposedLocalAnalyzer : DiagnosticAnalyzer {
     static bool IsDisposal(string name) => name is "Dispose" or "DisposeAsync" or "Close";
 
     /// <summary>
-    /// Whether reading through the local produces another disposable.
+    ///     Whether reading through the local produces another disposable.
     /// </summary>
     /// <remarks>
-    /// ⚠ This is the outward half of the ownership question and it took a reference tree to find.
-    /// <c>var backend = new NullAudioBackend(); device = backend.OpenDevice(options);</c> never
-    /// passes the backend anywhere — and the device it handed out is stored in a field and used long
-    /// after the method returns. Disposing the backend at the end of the scope closes the device
-    /// with it. An object that produces a disposable is an owner whose lifetime that product depends
-    /// on, and the rule cannot follow the product.
+    ///     ⚠ This is the outward half of the ownership question and it took a reference tree to find.
+    ///     <c>var backend = new NullAudioBackend(); device = backend.OpenDevice(options);</c> never
+    ///     passes the backend anywhere — and the device it handed out is stored in a field and used long
+    ///     after the method returns. Disposing the backend at the end of the scope closes the device
+    ///     with it. An object that produces a disposable is an owner whose lifetime that product depends
+    ///     on, and the rule cannot follow the product.
     /// </remarks>
     static bool HandsOutADisposable(SyntaxNodeAnalysisContext context, ExpressionSyntax read) {
         var produced = read.Parent is InvocationExpressionSyntax invocation
@@ -275,7 +275,7 @@ public sealed class UndisposedLocalAnalyzer : DiagnosticAnalyzer {
     }
 
     /// <summary>
-    /// ⚠ An iterator's locals live as long as the enumerator, which is not this method's scope.
+    ///     ⚠ An iterator's locals live as long as the enumerator, which is not this method's scope.
     /// </summary>
     static bool IsIterator(SyntaxNode body) =>
         body.DescendantNodes(static child => child is not AnonymousFunctionExpressionSyntax

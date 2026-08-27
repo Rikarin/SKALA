@@ -9,27 +9,27 @@ using Rikarin.Skala.Protocol;
 namespace Rikarin.Skala.Server;
 
 /// <summary>
-/// The per-repository daemon: a unix domain socket, a format cache, and an idle timer.
+///     The per-repository daemon: a unix domain socket, a format cache, and an idle timer.
 /// </summary>
 /// <remarks>
-/// docs/plan/11 § "The daemon". Three properties it is built to keep, in the order they matter:
-/// <list type="number">
-/// <item>
-/// ⚠ <b>Every command works identically with <c>SKALA_NO_DAEMON=1</c>.</b> The daemon is only
-/// allowed to make things faster, so it holds the results of the same
-/// <see cref="CSharpFormatter"/> the CLI calls and never a second implementation of anything.
-/// </item>
-/// <item>
-/// ⚠ <b>It never watches the filesystem.</b> It is asked; it does not observe. Every answer is
-/// keyed on the content it was computed from, so there is no invalidation to get wrong and no
-/// window in which a stale answer is served.
-/// </item>
-/// <item>
-/// ⚠ <b>It exits rather than lingers.</b> Thirty minutes idle and it is gone; a version mismatch
-/// and the client kills it. A daemon that outlives its usefulness is a daemon that gets blamed for
-/// the next thing that goes wrong.
-/// </item>
-/// </list>
+///     docs/plan/11 § "The daemon". Three properties it is built to keep, in the order they matter:
+///     <list type="number">
+///         <item>
+///             ⚠ <b>Every command works identically with <c>SKALA_NO_DAEMON=1</c>.</b> The daemon is only
+///             allowed to make things faster, so it holds the results of the same
+///             <see cref="CSharpFormatter" /> the CLI calls and never a second implementation of anything.
+///         </item>
+///         <item>
+///             ⚠ <b>It never watches the filesystem.</b> It is asked; it does not observe. Every answer is
+///             keyed on the content it was computed from, so there is no invalidation to get wrong and no
+///             window in which a stale answer is served.
+///         </item>
+///         <item>
+///             ⚠ <b>It exits rather than lingers.</b> Thirty minutes idle and it is gone; a version mismatch
+///             and the client kills it. A daemon that outlives its usefulness is a daemon that gets blamed for
+///             the next thing that goes wrong.
+///         </item>
+///     </list>
 /// </remarks>
 public sealed class Daemon : IAsyncDisposable {
     readonly string _repositoryRoot;
@@ -51,12 +51,12 @@ public sealed class Daemon : IAsyncDisposable {
     public string SocketPath => _socketPath;
 
     /// <summary>
-    /// Binds the transport. ⚠ Throws if one is already bound, which is how two daemons are prevented.
+    ///     Binds the transport. ⚠ Throws if one is already bound, which is how two daemons are prevented.
     /// </summary>
     /// <remarks>
-    /// ⚠ Two transports, chosen by platform: a named pipe on Windows and a Unix domain socket
-    /// everywhere else. See <see cref="DaemonTransport"/> for why the Windows half exists now and
-    /// did not before.
+    ///     ⚠ Two transports, chosen by platform: a named pipe on Windows and a Unix domain socket
+    ///     everywhere else. See <see cref="DaemonTransport" /> for why the Windows half exists now and
+    ///     did not before.
     /// </remarks>
     public void Listen() {
         // ⚠ Creates `.skala/` *and* leaves the self-ignore marker in it. The daemon is the most

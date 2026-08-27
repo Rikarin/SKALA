@@ -4,14 +4,14 @@ using Rikarin.Skala.Rules.Metadata;
 namespace Rikarin.Skala.Rules.Tests;
 
 /// <summary>
-/// The catalogue's invariants, and the one that is a compatibility promise.
+///     The catalogue's invariants, and the one that is a compatibility promise.
 /// </summary>
 /// <remarks>
-/// ⚠ ADR-012: <c>SK1042</c> is allocated once. It may be improved, its severity may change, it may
-/// be deprecated and stop firing — it is never reused for a different concept and its meaning never
-/// widens. The reason is baselines: a baseline is a set of (rule, file, hash) tuples, and a
-/// redefined rule silently un-suppresses or wrongly suppresses findings across every repository
-/// that has one.
+///     ⚠ ADR-012: <c>SK1042</c> is allocated once. It may be improved, its severity may change, it may
+///     be deprecated and stop firing — it is never reused for a different concept and its meaning never
+///     widens. The reason is baselines: a baseline is a set of (rule, file, hash) tuples, and a
+///     redefined rule silently un-suppresses or wrongly suppresses findings across every repository
+///     that has one.
 /// </remarks>
 public sealed class RuleCatalogTests {
     static string RepositoryRoot { get; } =
@@ -31,20 +31,20 @@ public sealed class RuleCatalogTests {
         Path.Combine(RepositoryRoot, "docs", "plan", "08-rule-catalogue.md");
 
     /// <summary>
-    /// ⚠ The coverage block in doc 08 is generated, and this is what stops it going stale.
+    ///     ⚠ The coverage block in doc 08 is generated, and this is what stops it going stale.
     /// </summary>
     /// <remarks>
-    /// <para>
-    /// It went stale inside one merge: the hand-written table said "21 shipped, 19.8 %", measured
-    /// at <c>8cbd66d</c>, and M8's five <c>SK5xxx</c> landed after it was typed. Nothing compared
-    /// the number to the registry, because nothing could — the number was prose.
-    /// </para>
-    /// <para>
-    /// ⚠ This is a two-directional check, unlike
-    /// <see cref="EveryCatalogueRule_IsNamedInTheRegister"/>, and it can be: it does not demand
-    /// that the catalogue and the registry hold the same ids, only that the document's *count* of
-    /// the difference is right. A rule deliberately cut still fails nothing; it moves a row.
-    /// </para>
+    ///     <para>
+    ///         It went stale inside one merge: the hand-written table said "21 shipped, 19.8 %", measured
+    ///         at <c>8cbd66d</c>, and M8's five <c>SK5xxx</c> landed after it was typed. Nothing compared
+    ///         the number to the registry, because nothing could — the number was prose.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ This is a two-directional check, unlike
+    ///         <see cref="EveryCatalogueRule_IsNamedInTheRegister" />, and it can be: it does not demand
+    ///         that the catalogue and the registry hold the same ids, only that the document's *count* of
+    ///         the difference is right. A rule deliberately cut still fails nothing; it moves a row.
+    ///     </para>
     /// </remarks>
     [Fact]
     public void TheCoverageBlock_MatchesTheRegistry() {
@@ -110,15 +110,15 @@ public sealed class RuleCatalogTests {
     }
 
     /// <summary>
-    /// ⚠ A retired id is still allocated, and the register has to say so.
+    ///     ⚠ A retired id is still allocated, and the register has to say so.
     /// </summary>
     /// <remarks>
-    /// <c>SK6001</c> and <c>SK7010</c> are one rule under two ids; <c>SK7010</c> shipped.
-    /// <c>SK6001</c> is retired before it was ever built, and until M9 that fact lived only in doc
-    /// 08's prose — which <c>allocated-ids.txt</c> cannot read, so nothing stopped the number being
-    /// handed out again. <see cref="RuleIds_AreAppendOnly"/> demands a <c>rules.json</c> entry for
-    /// every allocated id, and a rule that was never built has none, so the register marks the
-    /// retirement inline and the append-only test skips those lines.
+    ///     <c>SK6001</c> and <c>SK7010</c> are one rule under two ids; <c>SK7010</c> shipped.
+    ///     <c>SK6001</c> is retired before it was ever built, and until M9 that fact lived only in doc
+    ///     08's prose — which <c>allocated-ids.txt</c> cannot read, so nothing stopped the number being
+    ///     handed out again. <see cref="RuleIds_AreAppendOnly" /> demands a <c>rules.json</c> entry for
+    ///     every allocated id, and a rule that was never built has none, so the register marks the
+    ///     retirement inline and the append-only test skips those lines.
     /// </remarks>
     [Fact]
     public void RetiredIds_AreRecordedInTheRegisterAndNotInTheCatalogue() {
@@ -140,8 +140,8 @@ public sealed class RuleCatalogTests {
     }
 
     /// <summary>
-    /// ⚠ The append-only test. An id in <c>allocated-ids.txt</c> must still be in the catalogue with
-    /// the same concept.
+    ///     ⚠ The append-only test. An id in <c>allocated-ids.txt</c> must still be in the catalogue with
+    ///     the same concept.
     /// </summary>
     [Fact]
     public void RuleIds_AreAppendOnly() {
@@ -204,23 +204,23 @@ public sealed class RuleCatalogTests {
     }
 
     /// <summary>
-    /// ⚠ The catalogue in <c>docs/plan/08</c> is the allocation register, and the code drifted away
-    /// from it without anything noticing.
+    ///     ⚠ The catalogue in <c>docs/plan/08</c> is the allocation register, and the code drifted away
+    ///     from it without anything noticing.
     /// </summary>
     /// <remarks>
-    /// <see cref="RuleIds_AreAppendOnly"/> and <see cref="EveryCatalogueRule_IsRecordedAsAllocated"/>
-    /// tie <c>rules.json</c> and <c>allocated-ids.txt</c> to each other, and neither of them looks at
-    /// the document that decides which numbers exist. When this test was written, <c>SK7003</c>,
-    /// <c>SK7004</c> and <c>SK7005</c> were shipping, documented and reported — and named nowhere in
-    /// doc 08, because doc 07's metrics table had grown them instead. ADR-012's whole promise is that
-    /// a number is allocated once, and the only way to keep that promise is to be able to read the
-    /// register and see every number that is taken.
-    /// <para>
-    /// ⚠ <b>One direction only, deliberately.</b> This asserts rules.json ⊆ doc 08. The reverse
-    /// would be wrong: the catalogue names many rules that were considered and <em>cut</em> — with
-    /// reasons, in this document — and demanding doc 08 ⊆ rules.json would turn every recorded
-    /// decision not to build something into a failing build.
-    /// </para>
+    ///     <see cref="RuleIds_AreAppendOnly" /> and <see cref="EveryCatalogueRule_IsRecordedAsAllocated" />
+    ///     tie <c>rules.json</c> and <c>allocated-ids.txt</c> to each other, and neither of them looks at
+    ///     the document that decides which numbers exist. When this test was written, <c>SK7003</c>,
+    ///     <c>SK7004</c> and <c>SK7005</c> were shipping, documented and reported — and named nowhere in
+    ///     doc 08, because doc 07's metrics table had grown them instead. ADR-012's whole promise is that
+    ///     a number is allocated once, and the only way to keep that promise is to be able to read the
+    ///     register and see every number that is taken.
+    ///     <para>
+    ///         ⚠ <b>One direction only, deliberately.</b> This asserts rules.json ⊆ doc 08. The reverse
+    ///         would be wrong: the catalogue names many rules that were considered and <em>cut</em> — with
+    ///         reasons, in this document — and demanding doc 08 ⊆ rules.json would turn every recorded
+    ///         decision not to build something into a failing build.
+    ///     </para>
     /// </remarks>
     [Fact]
     public void EveryCatalogueRule_IsNamedInTheRegister() {
@@ -267,9 +267,9 @@ public sealed class RuleCatalogTests {
     }
 
     /// <summary>
-    /// ⚠ docs/plan/08's shipping bar, as an invariant: a rule ships when it has a fix. The
-    /// exceptions are the ones that are reports rather than problems — the metrics and the tool's
-    /// own diagnostics — and they say so by being outside the fixable ranges.
+    ///     ⚠ docs/plan/08's shipping bar, as an invariant: a rule ships when it has a fix. The
+    ///     exceptions are the ones that are reports rather than problems — the metrics and the tool's
+    ///     own diagnostics — and they say so by being outside the fixable ranges.
     /// </summary>
     [Fact]
     public void EveryModernizationRule_HasAFix() {
@@ -286,13 +286,13 @@ public sealed class RuleCatalogTests {
     }
 
     /// <summary>
-    /// The ReSharper mapping table, which is docs/plan/16 § Q5's answer in code.
+    ///     The ReSharper mapping table, which is docs/plan/16 § Q5's answer in code.
     /// </summary>
     /// <remarks>
-    /// ⚠ Derived from the inspection id rather than stored, so the table cannot drift from the
-    /// rule. The direction that is safe is many-to-one: a ReSharper key may set the severity of
-    /// every Skala rule that maps to it, and <c>dotnet_diagnostic.SK…</c> overrides it. See doc 03
-    /// § "Severities".
+    ///     ⚠ Derived from the inspection id rather than stored, so the table cannot drift from the
+    ///     rule. The direction that is safe is many-to-one: a ReSharper key may set the severity of
+    ///     every Skala rule that maps to it, and <c>dotnet_diagnostic.SK…</c> overrides it. See doc 03
+    ///     § "Severities".
     /// </remarks>
     [Fact]
     public void EveryReSharperMapping_ProducesAWellFormedHighlightingKey() {
@@ -307,15 +307,15 @@ public sealed class RuleCatalogTests {
     }
 
     /// <summary>
-    /// ⚠ docs/plan/16 § Q5, as a build-enforced fact: a declared inspection id must be a key the
-    /// real export actually contains.
+    ///     ⚠ docs/plan/16 § Q5, as a build-enforced fact: a declared inspection id must be a key the
+    ///     real export actually contains.
     /// </summary>
     /// <remarks>
-    /// The derivation from inspection id to key is mechanical, which makes it easy to write down an
-    /// id that snake-cases into a key JetBrains never emits — <c>ConvertToFileScopedNamespace</c>
-    /// and <c>ConvertToThrowIfNull</c> both looked right and neither exists. A mapping to a key
-    /// nothing sets is a mapping that silently never applies, which is the worst kind: it looks like
-    /// a feature and behaves like a comment.
+    ///     The derivation from inspection id to key is mechanical, which makes it easy to write down an
+    ///     id that snake-cases into a key JetBrains never emits — <c>ConvertToFileScopedNamespace</c>
+    ///     and <c>ConvertToThrowIfNull</c> both looked right and neither exists. A mapping to a key
+    ///     nothing sets is a mapping that silently never applies, which is the worst kind: it looks like
+    ///     a feature and behaves like a comment.
     /// </remarks>
     [Fact]
     public void EveryDeclaredReSharperKey_ExistsInTheExport() {
@@ -338,12 +338,15 @@ public sealed class RuleCatalogTests {
     }
 
     /// <summary>
-    /// ⚠ A rule whose ReSharper key the export sets to something surprising must say so.
+    ///     ⚠ A rule whose ReSharper key the export sets to something surprising must say so.
     /// </summary>
     /// <remarks>
-    /// The measurement behind docs/plan/16 § Q5: <c>resharper_use_throw_if_null_method_highlighting
-    /// = none</c>. Any rule whose key is not simply its own default is a rule where reading the key
-    /// changes behaviour, and the note is what makes that a decision rather than a surprise.
+    ///     The measurement behind docs/plan/16 § Q5:
+    ///     <c>
+    ///resharper_use_throw_if_null_method_highlighting
+    /// = none
+    ///     </c>. Any rule whose key is not simply its own default is a rule where reading the key
+    ///     changes behaviour, and the note is what makes that a decision rather than a surprise.
     /// </remarks>
     [Fact]
     public void EveryRuleWhoseExportSeverityDiffers_CarriesANote() {
@@ -372,21 +375,21 @@ public sealed class RuleCatalogTests {
     }
 
     /// <summary>
-    /// ⚠ <c>docs/rules/</c> is generated and never hand-edited (docs/plan/08 § "Documentation").
+    ///     ⚠ <c>docs/rules/</c> is generated and never hand-edited (docs/plan/08 § "Documentation").
     /// </summary>
     /// <remarks>
-    /// One source, three surfaces: the docs page, <c>skala explain</c> and the SARIF
-    /// <c>rules[]</c> block are the same <see cref="RuleInfo"/> rendered differently. Without this
-    /// test the first two drift apart silently, and a documentation page that describes the previous
-    /// behaviour is worse than none — a reader has no way to tell which one is stale.
-    /// <para>
-    /// ⚠ It asserts <em>containment</em> rather than byte equality, because
-    /// <c>Rikarin.Skala.Rules.Tests</c> may not reference <c>Analysis</c> — that would put the whole
-    /// analysis stack in the analyzer package's test closure, which is what doc 02's reference test
-    /// exists to prevent — so the renderer itself is not callable from here. Containment still
-    /// catches the failure that matters: a <c>rules.json</c> edit with no <c>skala rules docs</c>
-    /// after it.
-    /// </para>
+    ///     One source, three surfaces: the docs page, <c>skala explain</c> and the SARIF
+    ///     <c>rules[]</c> block are the same <see cref="RuleInfo" /> rendered differently. Without this
+    ///     test the first two drift apart silently, and a documentation page that describes the previous
+    ///     behaviour is worse than none — a reader has no way to tell which one is stale.
+    ///     <para>
+    ///         ⚠ It asserts <em>containment</em> rather than byte equality, because
+    ///         <c>Rikarin.Skala.Rules.Tests</c> may not reference <c>Analysis</c> — that would put the whole
+    ///         analysis stack in the analyzer package's test closure, which is what doc 02's reference test
+    ///         exists to prevent — so the renderer itself is not callable from here. Containment still
+    ///         catches the failure that matters: a <c>rules.json</c> edit with no <c>skala rules docs</c>
+    ///         after it.
+    ///     </para>
     /// </remarks>
     [Fact]
     public void DocsPages_AreUpToDate() {

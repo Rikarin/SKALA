@@ -5,14 +5,14 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 namespace Rikarin.Skala.Formatting.CSharp.Arrangement;
 
 /// <summary>
-/// <c>Int32</c> ⇒ <c>int</c>, <c>String.Empty</c> ⇒ <c>string.Empty</c>.
+///     <c>Int32</c> ⇒ <c>int</c>, <c>String.Empty</c> ⇒ <c>string.Empty</c>.
 /// </summary>
 /// <remarks>
-/// ⚠ <c>dotnet_style_predefined_type_for_locals_parameters_members = true</c>, and
-/// <c>resharper_builtin_type_apply_to_native_integer = false</c> — so <c>nint</c> stays <c>nint</c>
-/// and is never spelled <c>IntPtr</c> or the other way round. That exception is the reason this is a
-/// rule rather than a table lookup: <c>IntPtr</c> and <c>UIntPtr</c> have predefined spellings in
-/// modern C# and the author has deliberately declined them.
+///     ⚠ <c>dotnet_style_predefined_type_for_locals_parameters_members = true</c>, and
+///     <c>resharper_builtin_type_apply_to_native_integer = false</c> — so <c>nint</c> stays <c>nint</c>
+///     and is never spelled <c>IntPtr</c> or the other way round. That exception is the reason this is a
+///     rule rather than a table lookup: <c>IntPtr</c> and <c>UIntPtr</c> have predefined spellings in
+///     modern C# and the author has deliberately declined them.
 /// </remarks>
 public sealed class PredefinedTypeRule : ArrangementRule {
     public override string Id => ArrangeIds.PredefinedType;
@@ -74,15 +74,15 @@ public sealed class PredefinedTypeRule : ArrangementRule {
         }
 
         /// <summary>
-        /// Whether the node is an argument of a <c>nameof</c>.
+        ///     Whether the node is an argument of a <c>nameof</c>.
         /// </summary>
         /// <remarks>
-        /// ⚠ Found by safety layer 2 rather than by review, which is the point of having one. The
-        /// first version of this guard looked for a <c>MemberAccessExpressionSyntax</c> parent and
-        /// so never matched <c>nameof(Int32)</c> at all — the identifier there is an
-        /// <c>ArgumentSyntax</c>, two nodes below the invocation. The rewrite produced
-        /// <c>nameof(int)</c>, the re-bind reported <c>CS1525: Invalid expression term 'int'</c>,
-        /// and the file was reverted instead of corrupted.
+        ///     ⚠ Found by safety layer 2 rather than by review, which is the point of having one. The
+        ///     first version of this guard looked for a <c>MemberAccessExpressionSyntax</c> parent and
+        ///     so never matched <c>nameof(Int32)</c> at all — the identifier there is an
+        ///     <c>ArgumentSyntax</c>, two nodes below the invocation. The rewrite produced
+        ///     <c>nameof(int)</c>, the re-bind reported <c>CS1525: Invalid expression term 'int'</c>,
+        ///     and the file was reverted instead of corrupted.
         /// </remarks>
         static bool IsInsideNameOf(SyntaxNode node) {
             for (var current = node; current is not null; current = current.Parent) {
@@ -100,12 +100,12 @@ public sealed class PredefinedTypeRule : ArrangementRule {
         }
 
         /// <summary>
-        /// The keyword spelling of a special type, or null when the type has none Skala will apply.
+        ///     The keyword spelling of a special type, or null when the type has none Skala will apply.
         /// </summary>
         /// <remarks>
-        /// ⚠ <c>System_IntPtr</c> and <c>System_UIntPtr</c> are deliberately absent:
-        /// <c>builtin_type_apply_to_native_integer = false</c>. <c>void</c> is absent because a
-        /// <c>System.Void</c> reference is never something a person wrote.
+        ///     ⚠ <c>System_IntPtr</c> and <c>System_UIntPtr</c> are deliberately absent:
+        ///     <c>builtin_type_apply_to_native_integer = false</c>. <c>void</c> is absent because a
+        ///     <c>System.Void</c> reference is never something a person wrote.
         /// </remarks>
         static SyntaxKind? Keyword(ITypeSymbol type) =>
             type.SpecialType switch {

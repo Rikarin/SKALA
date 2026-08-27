@@ -1,20 +1,20 @@
 namespace Rikarin.Skala.Formatting;
 
 /// <summary>
-/// Builds a <see cref="Document"/> into pooled buffers.
+///     Builds a <see cref="Document" /> into pooled buffers.
 /// </summary>
 /// <remarks>
-/// The builder is a stack machine rather than a tree of constructors: an <c>Open*</c> call pushes a
-/// container, the leaf methods append to whatever is open, and <see cref="Close"/> pops. That keeps
-/// the whole document in three growable arrays and never allocates a node
-/// (docs/plan/13 § "The fitting pass").
-/// <para>
-/// ⚠ The measure pass is fused into it. Every node's flat width is accumulated as the node is
-/// appended, and a container's width is the sum its children already deposited into the open frame,
-/// so the document arrives measured and the fitter never traverses it to find out
-/// (docs/plan/13 § "The fitting pass": "the measure pass is fused into the build pass where a
-/// group's contents are already known, which removes one full traversal").
-/// </para>
+///     The builder is a stack machine rather than a tree of constructors: an <c>Open*</c> call pushes a
+///     container, the leaf methods append to whatever is open, and <see cref="Close" /> pops. That keeps
+///     the whole document in three growable arrays and never allocates a node
+///     (docs/plan/13 § "The fitting pass").
+///     <para>
+///         ⚠ The measure pass is fused into it. Every node's flat width is accumulated as the node is
+///         appended, and a container's width is the sum its children already deposited into the open frame,
+///         so the document arrives measured and the fitter never traverses it to find out
+///         (docs/plan/13 § "The fitting pass": "the measure pass is fused into the build pass where a
+///         group's contents are already known, which removes one full traversal").
+///     </para>
 /// </remarks>
 public sealed class DocumentBuilder {
     readonly List<string> _strings = [];
@@ -34,22 +34,22 @@ public sealed class DocumentBuilder {
     int[] _flatWidth = new int[512];
     int[] _headWidth = new int[512];
 
-    /// <summary>Width to the first break point, optional ones included. <see cref="Document.PointWidthOf"/>.</summary>
+    /// <summary>Width to the first break point, optional ones included. <see cref="Document.PointWidthOf" />.</summary>
     int[] _pointWidth = new int[512];
 
-    /// <summary>Width from a group's own first break point to the next. <see cref="Document.AfterPointOf"/>.</summary>
+    /// <summary>Width from a group's own first break point to the next. <see cref="Document.AfterPointOf" />.</summary>
     int[] _afterPoint = new int[512];
 
     /// <summary>
-    /// The groups that own at least one break point.
+    ///     The groups that own at least one break point.
     /// </summary>
     /// <remarks>
-    /// ⚠ It gates <see cref="MeasureSegments"/>'s descent, so that the root group — which owns no
-    /// points and contains the file — is never walked and the measure stays linear in practice.
+    ///     ⚠ It gates <see cref="MeasureSegments" />'s descent, so that the root group — which owns no
+    ///     points and contains the file — is never walked and the measure stays linear in practice.
     /// </remarks>
     readonly HashSet<int> _ownPoints = [];
 
-    /// <summary>Flat width from one fill point to the next. <see cref="Document.SegmentOf"/>.</summary>
+    /// <summary>Flat width from one fill point to the next. <see cref="Document.SegmentOf" />.</summary>
     int[] _segment = new int[512];
 
     /// <summary>Whether the subtree holds a break point of any kind. Stops the two measures above.</summary>
@@ -68,26 +68,26 @@ public sealed class DocumentBuilder {
     /// <summary>The number of groups handed out so far.</summary>
     public int GroupCount => _groupCount;
 
-    /// <summary>Allocates a group id, so that <see cref="OpenIfBroken"/> can reference the group.</summary>
+    /// <summary>Allocates a group id, so that <see cref="OpenIfBroken" /> can reference the group.</summary>
     public int NextGroupId() {
         _facts.Add(new GroupFacts());
         return _groupCount++;
     }
 
     /// <summary>
-    /// Records what the fitter needs to know about a group before it meets it, which only the front
-    /// end can answer.
+    ///     Records what the fitter needs to know about a group before it meets it, which only the front
+    ///     end can answer.
     /// </summary>
     public void DescribeGroup(int groupId, GroupFacts facts) => _facts[groupId] = facts;
 
     /// <summary>
-    /// A token's text.
+    ///     A token's text.
     /// </summary>
     /// <remarks>
-    /// ⚠ A token that spans lines — a raw string literal, a verbatim string, a block comment — has
-    /// no flat width, because there is no line it can be laid flat on. <c>chop_if_long</c> reads
-    /// "chop if long <em>or multiline</em>" in ReSharper's own summary, and the oracle chops an
-    /// argument list around a multi-line string exactly as it chops one that is too wide.
+    ///     ⚠ A token that spans lines — a raw string literal, a verbatim string, a block comment — has
+    ///     no flat width, because there is no line it can be laid flat on. <c>chop_if_long</c> reads
+    ///     "chop if long <em>or multiline</em>" in ReSharper's own summary, and the oracle chops an
+    ///     argument list around a multi-line string exactly as it chops one that is too wide.
     /// </remarks>
     public void Text(string value, SourceSpan source, VerbatimFlags flags = VerbatimFlags.None) {
         var index = _pending.Count;
@@ -132,9 +132,9 @@ public sealed class DocumentBuilder {
         );
 
     /// <summary>
-    /// A line break. <paramref name="newLine"/> carries the source's own ending so that a file with
-    /// CRLF stays CRLF — <c>enforce_line_ending_style = false</c> means mixed endings are preserved
-    /// rather than normalised.
+    ///     A line break. <paramref name="newLine" /> carries the source's own ending so that a file with
+    ///     CRLF stays CRLF — <c>enforce_line_ending_style = false</c> means mixed endings are preserved
+    ///     rather than normalised.
     /// </summary>
     public void Line(LineKind kind, int blankLines = 0, string? newLine = null) =>
         Leaf(
@@ -148,15 +148,15 @@ public sealed class DocumentBuilder {
         );
 
     /// <summary>
-    /// A break point: a gap the layout may or may not break at, owned by <paramref name="group"/>.
+    ///     A break point: a gap the layout may or may not break at, owned by <paramref name="group" />.
     /// </summary>
     /// <param name="flatSpace">
-    /// What the gap renders as when the group stays flat. ⚠ Not uniform across a construct's own
-    /// points: the gap after <c>(</c> is nothing and the gap after <c>,</c> is a space.
+    ///     What the gap renders as when the group stays flat. ⚠ Not uniform across a construct's own
+    ///     points: the gap after <c>(</c> is nothing and the gap after <c>,</c> is a space.
     /// </param>
     /// <param name="fill">
-    /// The point breaks only when what follows it does not fit, rather than with its group.
-    /// <see cref="LineFlags.FillPoint"/>.
+    ///     The point breaks only when what follows it does not fit, rather than with its group.
+    ///     <see cref="LineFlags.FillPoint" />.
     /// </param>
     public void BreakPoint(int group, bool flatSpace, bool fill = false, int blankLines = 0, string? newLine = null) {
         var index = _pending.Count;
@@ -194,20 +194,20 @@ public sealed class DocumentBuilder {
     public void OpenFill() => Open(DocKind.Fill, 0, 0);
 
     /// <param name="unconditional">
-    /// The scope contributes its level even when another scope opened on the same line, which is
-    /// otherwise collapsed to one. See <see cref="LayoutWriter"/>'s Effective.
+    ///     The scope contributes its level even when another scope opened on the same line, which is
+    ///     otherwise collapsed to one. See <see cref="LayoutWriter" />'s Effective.
     /// </param>
     public void OpenIndent(IndentKind kind, bool unconditional = false) =>
         Open(DocKind.Indent, (int)kind, unconditional ? 1 : 0);
 
     public void OpenConcat() => Open(DocKind.Concat, 0, 0);
 
-    /// <summary>Opens an <see cref="DocKind.IfBroken"/> over a group; its two children are Then and Else.</summary>
+    /// <summary>Opens an <see cref="DocKind.IfBroken" /> over a group; its two children are Then and Else.</summary>
     public void OpenIfBroken(int groupId) => Open(DocKind.IfBroken, groupId, 0);
 
     /// <param name="alignsCloser">
-    /// The piece immediately after this scope is the scope's own closing delimiter, and takes the
-    /// indentation of the line its opener was on.
+    ///     The piece immediately after this scope is the scope's own closing delimiter, and takes the
+    ///     indentation of the line its opener was on.
     /// </param>
     public void Close(bool alignsCloser = false) {
         var frame = _stack[^1];
@@ -332,26 +332,26 @@ public sealed class DocumentBuilder {
     }
 
     /// <summary>
-    /// Measures the stretch after each of a group's own break points, and returns the first one.
+    ///     Measures the stretch after each of a group's own break points, and returns the first one.
     /// </summary>
     /// <remarks>
-    /// Two numbers per point, because two rules ask different questions about the same gap.
-    /// <list type="bullet">
-    /// <item>
-    /// <see cref="Document.SegmentOf"/> is the <em>flat</em> width up to the next point: what a fill
-    /// asks, because a fill decides whether the next item goes on this line whole. Verified against
-    /// the oracle on a collection initializer whose second element is a 104-column object
-    /// initializer: the oracle breaks before it, so the question is the item's whole width and not
-    /// the width of its first line.
-    /// </item>
-    /// <item>
-    /// <see cref="Document.AfterPointOf"/> is the <em>point</em> width: what the ordering rule asks,
-    /// because it wants to know where the current line would end if this group declined to break
-    /// and the construct inside it wrapped instead.
-    /// </item>
-    /// </list>
-    /// ⚠ Linear despite the nested loop: the segments partition the children, so each child is
-    /// visited by exactly one of them.
+    ///     Two numbers per point, because two rules ask different questions about the same gap.
+    ///     <list type="bullet">
+    ///         <item>
+    ///             <see cref="Document.SegmentOf" /> is the <em>flat</em> width up to the next point: what a fill
+    ///             asks, because a fill decides whether the next item goes on this line whole. Verified against
+    ///             the oracle on a collection initializer whose second element is a 104-column object
+    ///             initializer: the oracle breaks before it, so the question is the item's whole width and not
+    ///             the width of its first line.
+    ///         </item>
+    ///         <item>
+    ///             <see cref="Document.AfterPointOf" /> is the <em>point</em> width: what the ordering rule asks,
+    ///             because it wants to know where the current line would end if this group declined to break
+    ///             and the construct inside it wrapped instead.
+    ///         </item>
+    ///     </list>
+    ///     ⚠ Linear despite the nested loop: the segments partition the children, so each child is
+    ///     visited by exactly one of them.
     /// </remarks>
     int MeasureSegments(int childStart, int count, int group) {
         if (!_ownPoints.Contains(group)) {

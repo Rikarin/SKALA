@@ -13,20 +13,20 @@ public sealed record RegistryChange(string Key, string? FromDefault, string ToDe
 }
 
 /// <summary>
-/// Writes verified defaults back into <c>options.json</c>, one entry at a time.
+///     Writes verified defaults back into <c>options.json</c>, one entry at a time.
 /// </summary>
 /// <remarks>
-/// ⚠ A line-level edit rather than a parse-and-reserialise. <c>options.json</c> is written by
-/// <c>tools/import-options.py</c> and a round trip through a different serialiser reformats all
-/// 520 entries — escaping, key order, trailing whitespace — and buries five real changes in a
-/// twelve-thousand-line diff. The registry is reviewed in its diff, so the diff has to stay
-/// readable; this replaces exactly the two lines it means to and asserts it found them.
-/// <para>
-/// ⚠ Only <see cref="DefaultsVerdict.Verified"/> is written, and it is written as
-/// <c>defaultSource: "oracle-probe"</c> rather than <c>"resharper-docs"</c>. JetBrains still
-/// publishes no defaults; this one is derived, and the registry says which it is because
-/// <c>skala config distill</c> drops keys on the strength of it.
-/// </para>
+///     ⚠ A line-level edit rather than a parse-and-reserialise. <c>options.json</c> is written by
+///     <c>tools/import-options.py</c> and a round trip through a different serialiser reformats all
+///     520 entries — escaping, key order, trailing whitespace — and buries five real changes in a
+///     twelve-thousand-line diff. The registry is reviewed in its diff, so the diff has to stay
+///     readable; this replaces exactly the two lines it means to and asserts it found them.
+///     <para>
+///         ⚠ Only <see cref="DefaultsVerdict.Verified" /> is written, and it is written as
+///         <c>defaultSource: "oracle-probe"</c> rather than <c>"resharper-docs"</c>. JetBrains still
+///         publishes no defaults; this one is derived, and the registry says which it is because
+///         <c>skala config distill</c> drops keys on the strength of it.
+///     </para>
 /// </remarks>
 public static class RegistryPatch {
     const string Source = "oracle-probe";
@@ -91,12 +91,12 @@ public static class RegistryPatch {
         return builder.ToString();
     }
 
-    /// <summary>The span of the option object whose <c>"key"</c> is <paramref name="key"/>.</summary>
+    /// <summary>The span of the option object whose <c>"key"</c> is <paramref name="key" />.</summary>
     /// <remarks>
-    /// ⚠ Anchored on the <c>"key"</c> line and bounded by the next one, so the search for
-    /// <c>"default"</c> cannot wander into the neighbouring entry. The importer writes one entry per
-    /// object with <c>"key"</c> first, which is what makes this safe; the assertion in
-    /// <see cref="Replace"/> is what makes it fail loudly if that ever stops being true.
+    ///     ⚠ Anchored on the <c>"key"</c> line and bounded by the next one, so the search for
+    ///     <c>"default"</c> cannot wander into the neighbouring entry. The importer writes one entry per
+    ///     object with <c>"key"</c> first, which is what makes this safe; the assertion in
+    ///     <see cref="Replace" /> is what makes it fail loudly if that ever stops being true.
     /// </remarks>
     static Range? Locate(string text, string key) {
         var anchor = text.IndexOf("\"key\": \"" + key + "\"", StringComparison.Ordinal);

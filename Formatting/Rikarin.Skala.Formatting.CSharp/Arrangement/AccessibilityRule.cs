@@ -5,22 +5,22 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 namespace Rikarin.Skala.Formatting.CSharp.Arrangement;
 
 /// <summary>
-/// <c>private int _n;</c> ⇒ <c>int _n;</c>, under
-/// <c>dotnet_style_require_accessibility_modifiers = omit_if_default</c>.
+///     <c>private int _n;</c> ⇒ <c>int _n;</c>, under
+///     <c>dotnet_style_require_accessibility_modifiers = omit_if_default</c>.
 /// </summary>
 /// <remarks>
-/// ⚠ Not in doc 06's own catalogue prose, which lists the key in passing under "Modifiers,
-/// accessors, attributes" and then does not say what it does. Measuring the cleanup profile is what
-/// put it here: it was the single largest divergence class in the first arrangement differential —
-/// the oracle drops every redundant <c>private</c> and Skala kept them, on nearly every type in the
-/// corpus.
-/// <para>
-/// ⚠ Syntactic, and only just. "The default" is a property of the *declaration site* — a member of a
-/// class or struct defaults to <c>private</c>, a member of an interface to <c>public</c>, a
-/// top-level type to <c>internal</c>, an <c>enum</c>'s members to nothing at all — and every one of
-/// those is readable from the parent node. No symbol is consulted, which is what keeps it in the
-/// subset an agent gets on a loose file.
-/// </para>
+///     ⚠ Not in doc 06's own catalogue prose, which lists the key in passing under "Modifiers,
+///     accessors, attributes" and then does not say what it does. Measuring the cleanup profile is what
+///     put it here: it was the single largest divergence class in the first arrangement differential —
+///     the oracle drops every redundant <c>private</c> and Skala kept them, on nearly every type in the
+///     corpus.
+///     <para>
+///         ⚠ Syntactic, and only just. "The default" is a property of the *declaration site* — a member of a
+///         class or struct defaults to <c>private</c>, a member of an interface to <c>public</c>, a
+///         top-level type to <c>internal</c>, an <c>enum</c>'s members to nothing at all — and every one of
+///         those is readable from the parent node. No symbol is consulted, which is what keeps it in the
+///         subset an agent gets on a loose file.
+///     </para>
 /// </remarks>
 public sealed class AccessibilityRule : ArrangementRule {
     public override string Id => ArrangeIds.Accessibility;
@@ -97,13 +97,13 @@ public sealed class AccessibilityRule : ArrangementRule {
         }
 
         /// <summary>
-        /// Whether an omitted accessibility on this member would mean <c>private</c>.
+        ///     Whether an omitted accessibility on this member would mean <c>private</c>.
         /// </summary>
         /// <remarks>
-        /// ⚠ Only class, struct and record members. An interface member defaults to <c>public</c>, so
-        /// an explicit <c>private</c> there is load-bearing; an <c>enum</c> has no member
-        /// accessibility at all; and a member of a namespace is a type, whose default is
-        /// <c>internal</c> and whose <c>private</c> is illegal anyway.
+        ///     ⚠ Only class, struct and record members. An interface member defaults to <c>public</c>, so
+        ///     an explicit <c>private</c> there is load-bearing; an <c>enum</c> has no member
+        ///     accessibility at all; and a member of a namespace is a type, whose default is
+        ///     <c>internal</c> and whose <c>private</c> is illegal anyway.
         /// </remarks>
         static bool IsDefaultPrivate(SyntaxNode member) =>
             member.Parent is ClassDeclarationSyntax or StructDeclarationSyntax or RecordDeclarationSyntax;

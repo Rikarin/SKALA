@@ -5,30 +5,30 @@ using System.Text;
 namespace Rikarin.Skala.Testing;
 
 /// <summary>
-/// Random compilation units, from a grammar weighted toward what the formatter handles specially.
+///     Random compilation units, from a grammar weighted toward what the formatter handles specially.
 /// </summary>
 /// <remarks>
-/// ⚠ docs/plan/12 § "Fuzzing" names the weighting and it is the whole design: "generics, lambdas,
-/// patterns, initializers, attributes, raw strings". A uniform grammar spends its budget on
-/// <c>a + b</c> and never reaches a nested generic type argument list at column 118, which is where
-/// the fitting engine makes the decisions docs/plan/16 § R2 calls the project's only genuinely novel
-/// code — and where M3 found two of the fitter's four measures returning zero since the milestone
-/// they were written in.
-/// <para>
-/// ⚠ The generator is required to produce a compilation unit with <b>no parse errors</b>, and the
-/// driver checks. Semantic nonsense is fine and is not avoided — an unresolved type, an operator of
-/// the wrong arity, a <c>yield return</c> outside an iterator all produce diagnostics from the
-/// binder rather than from the parser, and the formatter is syntactic. A *parse* error is different:
-/// ADR-003 leaves such a file byte-identical, so a generator that emits one has produced a case that
-/// asserts nothing while appearing to assert everything.
-/// </para>
-/// <para>
-/// ⚠ Nothing here randomises whitespace. doc 12 asks for the trees to be "printed with random
-/// whitespace", and the driver does that by running the generated text through
-/// <see cref="FuzzMutations"/> — the same parse-preserving mutations the mutation half uses, which
-/// already know that a space inside a raw string is data. Two implementations of "where may
-/// whitespace go" is one more than the number that can be kept correct.
-/// </para>
+///     ⚠ docs/plan/12 § "Fuzzing" names the weighting and it is the whole design: "generics, lambdas,
+///     patterns, initializers, attributes, raw strings". A uniform grammar spends its budget on
+///     <c>a + b</c> and never reaches a nested generic type argument list at column 118, which is where
+///     the fitting engine makes the decisions docs/plan/16 § R2 calls the project's only genuinely novel
+///     code — and where M3 found two of the fitter's four measures returning zero since the milestone
+///     they were written in.
+///     <para>
+///         ⚠ The generator is required to produce a compilation unit with <b>no parse errors</b>, and the
+///         driver checks. Semantic nonsense is fine and is not avoided — an unresolved type, an operator of
+///         the wrong arity, a <c>yield return</c> outside an iterator all produce diagnostics from the
+///         binder rather than from the parser, and the formatter is syntactic. A *parse* error is different:
+///         ADR-003 leaves such a file byte-identical, so a generator that emits one has produced a case that
+///         asserts nothing while appearing to assert everything.
+///     </para>
+///     <para>
+///         ⚠ Nothing here randomises whitespace. doc 12 asks for the trees to be "printed with random
+///         whitespace", and the driver does that by running the generated text through
+///         <see cref="FuzzMutations" /> — the same parse-preserving mutations the mutation half uses, which
+///         already know that a space inside a raw string is data. Two implementations of "where may
+///         whitespace go" is one more than the number that can be kept correct.
+///     </para>
 /// </remarks>
 public sealed class FuzzGenerator {
     /// <summary>The type names the grammar draws from. Unresolvable on purpose; the formatter is syntactic.</summary>
@@ -395,12 +395,12 @@ public sealed class FuzzGenerator {
     }
 
     /// <summary>
-    /// A parameter list.
+    ///     A parameter list.
     /// </summary>
     /// <remarks>
-    /// ⚠ Optional parameters are placed in the tail and <c>params</c> only last, because both rules
-    /// are enforced by the *parser* — CS1737 and CS0231 — and a declaration that breaks either is a
-    /// file the formatter is required to leave byte-identical.
+    ///     ⚠ Optional parameters are placed in the tail and <c>params</c> only last, because both rules
+    ///     are enforced by the *parser* — CS1737 and CS0231 — and a declaration that breaks either is a
+    ///     file the formatter is required to leave byte-identical.
     /// </remarks>
     string ParameterList(int count, bool allowModifiers) {
         if (count == 0) {
@@ -646,17 +646,17 @@ public sealed class FuzzGenerator {
     // ── expressions ──────────────────────────────────────────────────────────────────────────────
 
     /// <summary>
-    /// The productions that may not stand as an operand without parentheses around them.
+    ///     The productions that may not stand as an operand without parentheses around them.
     /// </summary>
     /// <remarks>
-    /// ⚠ This list is the difference between a grammar that emits C# and one that emits something
-    /// that looks like C#. Every one of these productions is *greedy* — a lambda body, a query's
-    /// <c>select</c> clause, a switch expression's arm list and a conditional's <c>:</c> all extend
-    /// until the parser cannot continue — so `x => y + 1` parses as `x => (y + 1)` and
-    /// `[from a in b select c, d]` parses as one query whose `select` clause swallowed the comma.
-    /// Measured on 300 units before this list existed: <b>147 of them had a parse error</b>, and a
-    /// file that does not parse is one ADR-003 leaves byte-identical, so every property held over it
-    /// for free. Half the generative half of the fuzzer was asserting nothing.
+    ///     ⚠ This list is the difference between a grammar that emits C# and one that emits something
+    ///     that looks like C#. Every one of these productions is *greedy* — a lambda body, a query's
+    ///     <c>select</c> clause, a switch expression's arm list and a conditional's <c>:</c> all extend
+    ///     until the parser cannot continue — so `x => y + 1` parses as `x => (y + 1)` and
+    ///     `[from a in b select c, d]` parses as one query whose `select` clause swallowed the comma.
+    ///     Measured on 300 units before this list existed: <b>147 of them had a parse error</b>, and a
+    ///     file that does not parse is one ADR-003 leaves byte-identical, so every property held over it
+    ///     for free. Half the generative half of the fuzzer was asserting nothing.
     /// </remarks>
     static readonly ImmutableArray<string> NeedsParentheses = [
         "lambda", "block-lambda", "ternary", "binary", "is-pattern", "switch-expression", "cast",
@@ -667,12 +667,12 @@ public sealed class FuzzGenerator {
     string Expression(int depth, int indent) => Expression(depth, indent, out _);
 
     /// <summary>
-    /// One expression, in a position where it is an <b>operand</b> of something else.
+    ///     One expression, in a position where it is an <b>operand</b> of something else.
     /// </summary>
     /// <remarks>
-    /// ⚠ Parenthesised unless the production drawn cannot run away with what follows it. Real code
-    /// is full of these parentheses for exactly the same reason, so the output is not made
-    /// artificial by it.
+    ///     ⚠ Parenthesised unless the production drawn cannot run away with what follows it. Real code
+    ///     is full of these parentheses for exactly the same reason, so the output is not made
+    ///     artificial by it.
     /// </remarks>
     string Operand(int depth, int indent) {
         var text = Expression(depth, indent, out var free);
@@ -680,15 +680,15 @@ public sealed class FuzzGenerator {
     }
 
     /// <summary>
-    /// One expression. <paramref name="depth"/> counts down the interesting shapes.
+    ///     One expression. <paramref name="depth" /> counts down the interesting shapes.
     /// </summary>
     /// <remarks>
-    /// ⚠ The weights are doc 12's list — generics, lambdas, patterns, initializers, attributes, raw
-    /// strings — and they are the reason the grammar exists rather than an off-the-shelf one. The
-    /// depth cut-off falls through to a literal, so a generated unit terminates.
+    ///     ⚠ The weights are doc 12's list — generics, lambdas, patterns, initializers, attributes, raw
+    ///     strings — and they are the reason the grammar exists rather than an off-the-shelf one. The
+    ///     depth cut-off falls through to a literal, so a generated unit terminates.
     /// </remarks>
     /// <param name="free">
-    /// Whether the result may stand as an operand of another expression without parentheses.
+    ///     Whether the result may stand as an operand of another expression without parentheses.
     /// </param>
     string Expression(int depth, int indent, out bool free) {
         free = true;
@@ -950,14 +950,14 @@ public sealed class FuzzGenerator {
     }
 
     /// <summary>
-    /// One argument.
+    ///     One argument.
     /// </summary>
     /// <remarks>
-    /// ⚠ A bare lambda is allowed here and nowhere else that a comma can follow, and it is allowed
-    /// because a lambda passed to a method is the single most common shape in modern C# and the one
-    /// the formatter has the most rules about. It is safe here only because a lambda's *body* is an
-    /// <see cref="Operand"/>: `M(x => (from a in b select c), d)` terminates at the comma, and
-    /// `M(x => from a in b select c, d)` does not.
+    ///     ⚠ A bare lambda is allowed here and nowhere else that a comma can follow, and it is allowed
+    ///     because a lambda passed to a method is the single most common shape in modern C# and the one
+    ///     the formatter has the most rules about. It is safe here only because a lambda's *body* is an
+    ///     <see cref="Operand" />: `M(x => (from a in b select c), d)` terminates at the comma, and
+    ///     `M(x => from a in b select c, d)` does not.
     /// </remarks>
     string Argument(int depth, int indent) {
         var prefix = random.Chance(0.08) ? random.Pick(["ref ", "in "]) : string.Empty;
@@ -969,7 +969,7 @@ public sealed class FuzzGenerator {
     }
 
     /// <summary>
-    /// ⚠ Every pattern form the language has, because patterns are one of doc 12's six.
+    ///     ⚠ Every pattern form the language has, because patterns are one of doc 12's six.
     /// </summary>
     string Pattern(int depth) {
         if (depth >= 3) {
@@ -1022,14 +1022,14 @@ public sealed class FuzzGenerator {
         );
 
     /// <summary>
-    /// A raw string literal, one of doc 12's six.
+    ///     A raw string literal, one of doc 12's six.
     /// </summary>
     /// <remarks>
-    /// ⚠ The multi-line form is emitted with its content and its closing delimiter at exactly the
-    /// same indentation. A closing delimiter indented *further* than the content is CS8999 — a
-    /// **parse** error — and this grammar's contract is that it never emits one. The mutation layer
-    /// cannot break the invariant afterwards: every line a multi-line token spans except its first
-    /// is protected from re-indentation, and the closing delimiter's line is one of them.
+    ///     ⚠ The multi-line form is emitted with its content and its closing delimiter at exactly the
+    ///     same indentation. A closing delimiter indented *further* than the content is CS8999 — a
+    ///     **parse** error — and this grammar's contract is that it never emits one. The mutation layer
+    ///     cannot break the invariant afterwards: every line a multi-line token spans except its first
+    ///     is protected from re-indentation, and the closing delimiter's line is one of them.
     /// </remarks>
     string RawString(int indent) {
         if (random.Chance(0.5)) {

@@ -3,21 +3,21 @@ using System.Text.Json;
 namespace Rikarin.Skala.Cli.Tests;
 
 /// <summary>
-/// doc 12 § "Cross-platform", hazard 4: long paths.
+///     doc 12 § "Cross-platform", hazard 4: long paths.
 /// </summary>
 /// <remarks>
-/// ⚠ 260 is <c>MAX_PATH</c>, and it is not a .NET limit — .NET Core prefixes <c>\\?\</c> internally
-/// and reaches ~32 767 — but it is still the limit of every Win32 API called without that prefix,
-/// which includes anything the tool shells out to and anything a native dependency opens. A deep
-/// solution under a deep checkout directory clears 260 easily; a CI agent whose workspace is
-/// <c>D:\a\_work\1\s</c> plus a generated-source path clears it without trying.
-/// <para>
-/// ⚠ The interesting failure is not that the formatter throws. It is that the tool <i>catches</i>
-/// the <c>PathTooLongException</c>, counts the file as unreadable, and reports a clean tree — the
-/// deep files silently stop being analysed and the report says zero findings, which is the shape of
-/// failure a static analyser is least able to survive. So this asserts findings were produced for
-/// the long path, not merely that nothing threw.
-/// </para>
+///     ⚠ 260 is <c>MAX_PATH</c>, and it is not a .NET limit — .NET Core prefixes <c>\\?\</c> internally
+///     and reaches ~32 767 — but it is still the limit of every Win32 API called without that prefix,
+///     which includes anything the tool shells out to and anything a native dependency opens. A deep
+///     solution under a deep checkout directory clears 260 easily; a CI agent whose workspace is
+///     <c>D:\a\_work\1\s</c> plus a generated-source path clears it without trying.
+///     <para>
+///         ⚠ The interesting failure is not that the formatter throws. It is that the tool <i>catches</i>
+///         the <c>PathTooLongException</c>, counts the file as unreadable, and reports a clean tree — the
+///         deep files silently stop being analysed and the report says zero findings, which is the shape of
+///         failure a static analyser is least able to survive. So this asserts findings were produced for
+///         the long path, not merely that nothing threw.
+///     </para>
 /// </remarks>
 public sealed class LongPathTests : IDisposable {
     readonly CrossPlatformScratch _scratch = new("skala-long-");
@@ -30,13 +30,13 @@ public sealed class LongPathTests : IDisposable {
     public void Dispose() => _scratch.Dispose();
 
     /// <summary>
-    /// The deep relative path, or <c>null</c> when the host refuses to create it.
+    ///     The deep relative path, or <c>null</c> when the host refuses to create it.
     /// </summary>
     /// <remarks>
-    /// ⚠ A Windows machine without <c>LongPathsEnabled</c> genuinely cannot hold this file, and doc
-    /// 12's instruction is that such a test skips cleanly rather than failing. That is the only
-    /// skip here, it is decided by trying rather than by asking <c>OperatingSystem</c>, and the
-    /// assertions below are identical on the platforms that can.
+    ///     ⚠ A Windows machine without <c>LongPathsEnabled</c> genuinely cannot hold this file, and doc
+    ///     12's instruction is that such a test skips cleanly rather than failing. That is the only
+    ///     skip here, it is decided by trying rather than by asking <c>OperatingSystem</c>, and the
+    ///     assertions below are identical on the platforms that can.
     /// </remarks>
     string? Deep(string fileName) {
         var relative = Path.Combine(Enumerable.Repeat(Segment, 8).ToArray());
@@ -83,9 +83,9 @@ public sealed class LongPathTests : IDisposable {
     }
 
     /// <summary>
-    /// ⚠ And through analysis and the SARIF writer, which is where a long path meets the other
-    /// three hazards at once: it has to be found by the directory walk, analysed, made relative to
-    /// the repository root, and written with forward slashes.
+    ///     ⚠ And through analysis and the SARIF writer, which is where a long path meets the other
+    ///     three hazards at once: it has to be found by the directory walk, analysed, made relative to
+    ///     the repository root, and written with forward slashes.
     /// </summary>
     [Fact]
     public void Check_AnalysesALongPathAndWritesItRelativeIntoTheSarif() {

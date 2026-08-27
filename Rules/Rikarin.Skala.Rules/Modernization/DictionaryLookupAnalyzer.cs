@@ -9,24 +9,24 @@ using Rikarin.Skala.Rules.Metadata;
 namespace Rikarin.Skala.Rules.Modernization;
 
 /// <summary>
-/// <c>SK1033</c> — <c>ContainsKey</c> followed by the indexer, or by <c>Add</c>, is one lookup
-/// written as two.
+///     <c>SK1033</c> — <c>ContainsKey</c> followed by the indexer, or by <c>Add</c>, is one lookup
+///     written as two.
 /// </summary>
 /// <remarks>
-/// ⚠ Two shapes only, and the reason for stopping there is that they are the two the rewrite can be
-/// <em>proved</em> on. <c>if (d.ContainsKey(k)) { var v = d[k]; … }</c> becomes
-/// <c>if (d.TryGetValue(k, out var v)) { … }</c> and <c>if (!d.ContainsKey(k)) d[k] = v;</c> becomes
-/// <c>d.TryAdd(k, v);</c>; both are the same program with one hash lookup instead of two. The
-/// general form — an indexer read somewhere in a long body — needs the fix to invent a variable, place
-/// its declaration and rewrite every use, and a rule whose fix is a refactor is a rule that ships
-/// without one.
-/// <para>
-/// ⚠ The receiver is required to be <c>Dictionary&lt;K, V&gt;</c> exactly rather than
-/// <c>IDictionary&lt;K, V&gt;</c>. <c>TryAdd</c> is not on the interface — it is an extension in
-/// <c>CollectionExtensions</c> that a project may not have in scope — and on
-/// <c>ConcurrentDictionary</c> the <c>ContainsKey</c>/indexer pair is a race the rewrite would
-/// quietly change the shape of rather than a redundancy it removes.
-/// </para>
+///     ⚠ Two shapes only, and the reason for stopping there is that they are the two the rewrite can be
+///     <em>proved</em> on. <c>if (d.ContainsKey(k)) { var v = d[k]; … }</c> becomes
+///     <c>if (d.TryGetValue(k, out var v)) { … }</c> and <c>if (!d.ContainsKey(k)) d[k] = v;</c> becomes
+///     <c>d.TryAdd(k, v);</c>; both are the same program with one hash lookup instead of two. The
+///     general form — an indexer read somewhere in a long body — needs the fix to invent a variable, place
+///     its declaration and rewrite every use, and a rule whose fix is a refactor is a rule that ships
+///     without one.
+///     <para>
+///         ⚠ The receiver is required to be <c>Dictionary&lt;K, V&gt;</c> exactly rather than
+///         <c>IDictionary&lt;K, V&gt;</c>. <c>TryAdd</c> is not on the interface — it is an extension in
+///         <c>CollectionExtensions</c> that a project may not have in scope — and on
+///         <c>ConcurrentDictionary</c> the <c>ContainsKey</c>/indexer pair is a race the rewrite would
+///         quietly change the shape of rather than a redundancy it removes.
+///     </para>
 /// </remarks>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class DictionaryLookupAnalyzer : DiagnosticAnalyzer {
@@ -105,7 +105,7 @@ public sealed class DictionaryLookupAnalyzer : DiagnosticAnalyzer {
     }
 
     /// <summary>
-    /// <c>if (d.ContainsKey(k)) { var v = d[k]; … }</c> → <c>if (d.TryGetValue(k, out var v)) { … }</c>.
+    ///     <c>if (d.ContainsKey(k)) { var v = d[k]; … }</c> → <c>if (d.TryGetValue(k, out var v)) { … }</c>.
     /// </summary>
     static void ReportTryGetValue(
         SyntaxNodeAnalysisContext context,
@@ -188,7 +188,7 @@ public sealed class DictionaryLookupAnalyzer : DiagnosticAnalyzer {
     }
 
     /// <summary>
-    /// <c>if (!d.ContainsKey(k)) d[k] = v;</c> and <c>… d.Add(k, v);</c> → <c>d.TryAdd(k, v);</c>.
+    ///     <c>if (!d.ContainsKey(k)) d[k] = v;</c> and <c>… d.Add(k, v);</c> → <c>d.TryAdd(k, v);</c>.
     /// </summary>
     static void ReportTryAdd(
         SyntaxNodeAnalysisContext context,
@@ -246,7 +246,7 @@ public sealed class DictionaryLookupAnalyzer : DiagnosticAnalyzer {
     }
 
     /// <summary>
-    /// The value written by <c>d[k] = v</c> or <c>d.Add(k, v)</c> on the same receiver and key.
+    ///     The value written by <c>d[k] = v</c> or <c>d.Add(k, v)</c> on the same receiver and key.
     /// </summary>
     static ExpressionSyntax? ValueAssigned(
         ExpressionSyntax expression,
@@ -292,8 +292,8 @@ public sealed class DictionaryLookupAnalyzer : DiagnosticAnalyzer {
     }
 
     /// <summary>
-    /// ⚠ Both rewrites evaluate the receiver and the key once where the original evaluated them
-    /// twice, so both have to be expressions for which that is not observable.
+    ///     ⚠ Both rewrites evaluate the receiver and the key once where the original evaluated them
+    ///     twice, so both have to be expressions for which that is not observable.
     /// </summary>
     static bool IsStable(ExpressionSyntax expression) =>
         RewriteGuards.IsPlainNamePath(expression) || expression is LiteralExpressionSyntax;

@@ -7,18 +7,18 @@ using Rikarin.Skala.Testing;
 namespace Rikarin.Skala.Formatting.CSharp.Tests;
 
 /// <summary>
-/// The build-time half of the R5 mitigation (docs/plan/16).
+///     The build-time half of the R5 mitigation (docs/plan/16).
 /// </summary>
 /// <remarks>
-/// ⚠ <c>Testing/corpus/syntax-kinds.txt</c> is a committed inventory of every
-/// <see cref="SyntaxKind"/> in the pinned Roslyn, with the layout the document builder gives it. A
-/// package bump that adds a kind makes this test fail, which turns "silently mangles new syntax"
-/// into "fails after a package bump" — and the run-time fallback (<see cref="NodeLayout.Unknown"/>
-/// ⇒ verbatim) means that even the failing build would not have corrupted a file.
-/// <para>
-/// Regenerating the inventory is a deliberate edit with the new kind classified, never a test that
-/// rewrites it.
-/// </para>
+///     ⚠ <c>Testing/corpus/syntax-kinds.txt</c> is a committed inventory of every
+///     <see cref="SyntaxKind" /> in the pinned Roslyn, with the layout the document builder gives it. A
+///     package bump that adds a kind makes this test fail, which turns "silently mangles new syntax"
+///     into "fails after a package bump" — and the run-time fallback (<see cref="NodeLayout.Unknown" />
+///     ⇒ verbatim) means that even the failing build would not have corrupted a file.
+///     <para>
+///         Regenerating the inventory is a deliberate edit with the new kind classified, never a test that
+///         rewrites it.
+///     </para>
 /// </remarks>
 public sealed class SyntaxKindInventoryTests {
     static string InventoryPath => Path.Combine(Corpus.Root, "syntax-kinds.txt");

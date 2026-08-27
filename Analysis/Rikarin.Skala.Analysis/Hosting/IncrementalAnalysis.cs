@@ -22,26 +22,26 @@ public sealed record IncrementalOutcome(
 }
 
 /// <summary>
-/// The per-file cache in front of the analyzer driver.
+///     The per-file cache in front of the analyzer driver.
 /// </summary>
 /// <remarks>
-/// docs/plan/07 § "The incremental cache". The shape is two paths and one guard:
-/// <list type="number">
-/// <item>
-/// <b>Cold</b> — nothing cached, or a compilation-scoped rule is enabled and something changed.
-/// One <c>GetAllDiagnosticsAsync</c>, then every file's findings are written to the cache.
-/// </item>
-/// <item>
-/// <b>Warm</b> — every unchanged file's findings come from the cache; the changed ones are run
-/// through <c>GetAnalysisResultAsync(tree)</c> and <c>GetAnalysisResultAsync(semanticModel)</c>,
-/// which is what makes "changed files in under 5 s on a 4 691-file tree" reachable.
-/// </item>
-/// <item>
-/// ⚠ <b>The guard</b> — if any enabled rule is <c>Compilation</c>-scoped, the warm path is not
-/// available at all when anything changed, because such a rule's answer for <c>A.cs</c> depends on
-/// files the key for <c>A.cs</c> does not name. See <see cref="DiagnosticCache"/>.
-/// </item>
-/// </list>
+///     docs/plan/07 § "The incremental cache". The shape is two paths and one guard:
+///     <list type="number">
+///         <item>
+///             <b>Cold</b> — nothing cached, or a compilation-scoped rule is enabled and something changed.
+///             One <c>GetAllDiagnosticsAsync</c>, then every file's findings are written to the cache.
+///         </item>
+///         <item>
+///             <b>Warm</b> — every unchanged file's findings come from the cache; the changed ones are run
+///             through <c>GetAnalysisResultAsync(tree)</c> and <c>GetAnalysisResultAsync(semanticModel)</c>,
+///             which is what makes "changed files in under 5 s on a 4 691-file tree" reachable.
+///         </item>
+///         <item>
+///             ⚠ <b>The guard</b> — if any enabled rule is <c>Compilation</c>-scoped, the warm path is not
+///             available at all when anything changed, because such a rule's answer for <c>A.cs</c> depends on
+///             files the key for <c>A.cs</c> does not name. See <see cref="DiagnosticCache" />.
+///         </item>
+///     </list>
 /// </remarks>
 public static class IncrementalAnalysis {
     public static IncrementalOutcome Run(

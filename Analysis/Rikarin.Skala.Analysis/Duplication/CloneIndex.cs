@@ -9,30 +9,30 @@ using Rikarin.Skala.Reporting;
 namespace Rikarin.Skala.Analysis.Duplication;
 
 /// <summary>
-/// The persisted clone index, <c>.skala/cache/clones.idx</c>.
+///     The persisted clone index, <c>.skala/cache/clones.idx</c>.
 /// </summary>
 /// <remarks>
-/// docs/plan/09 § "Duplication": "Index is persisted in <c>.skala/cache/clones.idx</c>, keyed by file
-/// content hash, so an unchanged file's windows are not re-hashed."
-/// <para>
-/// ⚠ What is stored is the <b>normalised token stream</b>, not the window hashes, and the difference
-/// matters. Step 3 of the algorithm verifies every candidate exactly against the token stream, so the
-/// stream has to be in hand either way; an index holding hashes alone could only be trusted, which is
-/// the one thing this rule promises never to do. With the stream cached the lexer — the expensive
-/// half — is skipped and the windows are re-derived from an integer array, which is the cheap half.
-/// </para>
-/// <para>
-/// ⚠ Corruption is never a failure, exactly as in <see cref="Caching.DiagnosticCache"/>: a bad
-/// magic, an old format, a different tool version, a truncated file or a payload whose checksum does
-/// not match discards the whole index and the run goes cold. It never degrades to a partial or a
-/// wrong answer, because a stale token stream produces clone groups about code that is no longer
-/// there and that failure is invisible in the output.
-/// </para>
-/// <para>
-/// ⚠ Entries are pruned to the files of the current run on save. Unlike the per-file diagnostic
-/// cache this index is proportional to the whole corpus's token count; keeping deleted files' streams
-/// forever would make it grow without a bound anyone ever looks at.
-/// </para>
+///     docs/plan/09 § "Duplication": "Index is persisted in <c>.skala/cache/clones.idx</c>, keyed by file
+///     content hash, so an unchanged file's windows are not re-hashed."
+///     <para>
+///         ⚠ What is stored is the <b>normalised token stream</b>, not the window hashes, and the difference
+///         matters. Step 3 of the algorithm verifies every candidate exactly against the token stream, so the
+///         stream has to be in hand either way; an index holding hashes alone could only be trusted, which is
+///         the one thing this rule promises never to do. With the stream cached the lexer — the expensive
+///         half — is skipped and the windows are re-derived from an integer array, which is the cheap half.
+///     </para>
+///     <para>
+///         ⚠ Corruption is never a failure, exactly as in <see cref="Caching.DiagnosticCache" />: a bad
+///         magic, an old format, a different tool version, a truncated file or a payload whose checksum does
+///         not match discards the whole index and the run goes cold. It never degrades to a partial or a
+///         wrong answer, because a stale token stream produces clone groups about code that is no longer
+///         there and that failure is invisible in the output.
+///     </para>
+///     <para>
+///         ⚠ Entries are pruned to the files of the current run on save. Unlike the per-file diagnostic
+///         cache this index is proportional to the whole corpus's token count; keeping deleted files' streams
+///         forever would make it grow without a bound anyone ever looks at.
+///     </para>
 /// </remarks>
 internal sealed class CloneIndex {
     /// <summary>'S' 'K' 'C' 'L'.</summary>
@@ -49,17 +49,17 @@ internal sealed class CloneIndex {
 
     CloneIndex(string path) => _path = path;
 
-    /// <summary>⚠ Interlocked: the lex pass that calls <see cref="TryGet"/> is parallel.</summary>
+    /// <summary>⚠ Interlocked: the lex pass that calls <see cref="TryGet" /> is parallel.</summary>
     public int Hits => Volatile.Read(ref _hits);
 
-    /// <summary>Opens the index in <paramref name="cacheDirectory"/>, or an empty one if it cannot be read.</summary>
+    /// <summary>Opens the index in <paramref name="cacheDirectory" />, or an empty one if it cannot be read.</summary>
     public static CloneIndex Load(string cacheDirectory) {
         var index = new CloneIndex(Path.Combine(cacheDirectory, "clones.idx"));
         index.Read();
         return index;
     }
 
-    /// <summary>The cached stream for <paramref name="path"/>, if its content still hashes the same.</summary>
+    /// <summary>The cached stream for <paramref name="path" />, if its content still hashes the same.</summary>
     public TokenStream? TryGet(string path, string contentHash) {
         if (_loaded.TryGetValue(path, out var entry)
             && string.Equals(entry.ContentHash, contentHash, StringComparison.Ordinal)) {
@@ -285,7 +285,7 @@ internal sealed class CloneIndex {
         }
     }
 
-    /// <summary>A growable byte buffer. <see cref="List{T}"/> of bytes is the wrong shape at this volume.</summary>
+    /// <summary>A growable byte buffer. <see cref="List{T}" /> of bytes is the wrong shape at this volume.</summary>
     sealed class Buffer(int capacity) {
         byte[] _bytes = new byte[Math.Max(64, capacity)];
         int _at;
@@ -327,12 +327,12 @@ internal sealed class CloneIndex {
     }
 }
 
-/// <summary>The content hash a <see cref="CloneIndex"/> entry is keyed by.</summary>
+/// <summary>The content hash a <see cref="CloneIndex" /> entry is keyed by.</summary>
 internal static class ContentHash {
     /// <summary>
-    /// ⚠ Hashes the UTF-16 the file was read as, not a re-encoded copy. The bytes never leave this
-    /// process, so the encoding only has to be the same one twice, and not allocating a megabyte per
-    /// file matters more over 4 700 of them.
+    ///     ⚠ Hashes the UTF-16 the file was read as, not a re-encoded copy. The bytes never leave this
+    ///     process, so the encoding only has to be the same one twice, and not allocating a megabyte per
+    ///     file matters more over 4 700 of them.
     /// </summary>
     public static string Of(string text) =>
         Convert.ToHexStringLower(XxHash128.Hash(MemoryMarshal.AsBytes(text.AsSpan())));

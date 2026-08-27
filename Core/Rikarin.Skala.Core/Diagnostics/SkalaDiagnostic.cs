@@ -16,8 +16,8 @@ public enum SkalaSeverity {
 }
 
 /// <summary>
-/// One finding. Configuration diagnostics carry a file and line because a configuration complaint
-/// without a line is a complaint about a 4 238-line file.
+///     One finding. Configuration diagnostics carry a file and line because a configuration complaint
+///     without a line is a complaint about a 4 238-line file.
 /// </summary>
 public sealed record SkalaDiagnostic(
     string Id,
@@ -41,11 +41,13 @@ public sealed record SkalaDiagnostic(
 }
 
 /// <summary>
-/// The SK9000 range. docs/plan/08-rule-catalogue.md § "SK9000 — Tool diagnostics".
-/// ⚠ ADR-012: an id is allocated once and never redefined.
+///     The SK9000 range. docs/plan/08-rule-catalogue.md § "SK9000 — Tool diagnostics".
+///     ⚠ ADR-012: an id is allocated once and never redefined.
 /// </summary>
 public static class ConfigDiagnosticIds {
-    /// <summary>Unknown configuration key. Info by default — the export carries ~2 000 keys Skala will never implement.</summary>
+    /// <summary>
+    ///     Unknown configuration key. Info by default — the export carries ~2 000 keys Skala will never implement.
+    /// </summary>
     public const string UnknownKey = "SK9001";
 
     /// <summary>The effective configuration draws from a file above the repository root.</summary>
@@ -79,21 +81,21 @@ public static class ConfigDiagnosticIds {
     public const string LoadModeFellBack = "SK9025";
 
     /// <summary>
-    /// The managed canonical block does not hash to what its own marker says. Somebody edited it.
-    /// This is the gate condition: drift is a finding, not a surprise (docs/plan/03 § "Canonical
-    /// distribution").
+    ///     The managed canonical block does not hash to what its own marker says. Somebody edited it.
+    ///     This is the gate condition: drift is a finding, not a surprise (docs/plan/03 § "Canonical
+    ///     distribution").
     /// </summary>
     public const string CanonicalDrift = "SK9008";
 
     /// <summary>
-    /// The repository is on an older canonical than the tool carries. Info, never a failure — a
-    /// canonical bump must not turn eighteen repositories red on the day it is published.
+    ///     The repository is on an older canonical than the tool carries. Info, never a failure — a
+    ///     canonical bump must not turn eighteen repositories red on the day it is published.
     /// </summary>
     public const string CanonicalBehind = "SK9009";
 
     /// <summary>
-    /// The local block overrides an option the canonical block also sets. Info: this is the
-    /// mechanism working, and the report is the review artefact.
+    ///     The local block overrides an option the canonical block also sets. Info: this is the
+    ///     mechanism working, and the report is the review artefact.
     /// </summary>
     public const string CanonicalLocalOverride = "SK9013";
 
@@ -101,22 +103,22 @@ public static class ConfigDiagnosticIds {
     public const string CanonicalUnmanaged = "SK9014";
 
     /// <summary>
-    /// Applying the canonical changes a <c>dotnet_diagnostic</c> severity. Warning when it moves a
-    /// <em>compiler</em> diagnostic up, because under <c>TreatWarningsAsErrors</c> that is a build
-    /// failure from a commit that touches no code; info otherwise.
+    ///     Applying the canonical changes a <c>dotnet_diagnostic</c> severity. Warning when it moves a
+    ///     <em>compiler</em> diagnostic up, because under <c>TreatWarningsAsErrors</c> that is a build
+    ///     failure from a commit that touches no code; info otherwise.
     /// </summary>
     /// <remarks>
-    /// ⚠ <c>SK9013</c> reports the same thing for keys the option registry owns, and
-    /// <c>dotnet_diagnostic</c> keys deliberately are not in it — so until M9 the loudest thing the
-    /// canonical does to a repository was the one thing it did silently. See
-    /// <c>DiagnosticSeverityChange</c>.
+    ///     ⚠ <c>SK9013</c> reports the same thing for keys the option registry owns, and
+    ///     <c>dotnet_diagnostic</c> keys deliberately are not in it — so until M9 the loudest thing the
+    ///     canonical does to a repository was the one thing it did silently. See
+    ///     <c>DiagnosticSeverityChange</c>.
     /// </remarks>
     public const string CanonicalSeverityChange = "SK9016";
 
     /// <summary>
-    /// <c>skala.jsonc</c> tried to pin a canonical version. The pin lives in the
-    /// <c>.editorconfig</c> marker, beside the bytes it describes, because a version recorded away
-    /// from the thing it versions is a version that drifts.
+    ///     <c>skala.jsonc</c> tried to pin a canonical version. The pin lives in the
+    ///     <c>.editorconfig</c> marker, beside the bytes it describes, because a version recorded away
+    ///     from the thing it versions is a version that drifts.
     /// </summary>
     public const string CanonicalVersionInToolConfig = "SK9012";
 }

@@ -9,20 +9,20 @@ using Rikarin.Skala.Rules.Metadata;
 namespace Rikarin.Skala.Rules.Correctness;
 
 /// <summary>
-/// <c>SK2015</c> — <c>throw ex;</c> inside <c>catch (… ex)</c> is <c>throw;</c>.
+///     <c>SK2015</c> — <c>throw ex;</c> inside <c>catch (… ex)</c> is <c>throw;</c>.
 /// </summary>
 /// <remarks>
-/// docs/plan/08-rule-catalogue.md § "SK2000 — Correctness". The two forms look interchangeable and
-/// are not: <c>throw ex;</c> assigns the exception a fresh stack trace starting at the handler, so
-/// every frame between the fault and the <c>catch</c> is erased — which is the one piece of
-/// information the log existed to carry.
-/// <para>
-/// ⚠ Purely syntactic, and deliberately so. The question "is this identifier the one this catch
-/// clause declared" is answered by the declaration in scope, which the syntax tree already knows;
-/// asking the semantic model would make the rule need a project without making it more right. The
-/// one thing syntax cannot see — whether some other declaration shadows the name — cannot happen,
-/// because C# forbids a local that shadows the catch variable inside the same clause.
-/// </para>
+///     docs/plan/08-rule-catalogue.md § "SK2000 — Correctness". The two forms look interchangeable and
+///     are not: <c>throw ex;</c> assigns the exception a fresh stack trace starting at the handler, so
+///     every frame between the fault and the <c>catch</c> is erased — which is the one piece of
+///     information the log existed to carry.
+///     <para>
+///         ⚠ Purely syntactic, and deliberately so. The question "is this identifier the one this catch
+///         clause declared" is answered by the declaration in scope, which the syntax tree already knows;
+///         asking the semantic model would make the rule need a project without making it more right. The
+///         one thing syntax cannot see — whether some other declaration shadows the name — cannot happen,
+///         because C# forbids a local that shadows the catch variable inside the same clause.
+///     </para>
 /// </remarks>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class RethrowAnalyzer : DiagnosticAnalyzer {
@@ -94,14 +94,14 @@ public sealed class RethrowAnalyzer : DiagnosticAnalyzer {
     }
 
     /// <summary>
-    /// The catch clause this <c>throw</c> would re-throw from, or null when a bare <c>throw;</c>
-    /// would not be legal here.
+    ///     The catch clause this <c>throw</c> would re-throw from, or null when a bare <c>throw;</c>
+    ///     would not be legal here.
     /// </summary>
     /// <remarks>
-    /// ⚠ The walk stops at a lambda, a local function and an accessor, because a bare <c>throw;</c>
-    /// inside one of those is not a re-throw of the outer clause's exception — it is CS0156. A fix
-    /// that does not compile is worse than no fix (docs/plan/10), so the finding is withheld rather
-    /// than the fix alone. It also stops at a <c>finally</c> block for the same reason.
+    ///     ⚠ The walk stops at a lambda, a local function and an accessor, because a bare <c>throw;</c>
+    ///     inside one of those is not a re-throw of the outer clause's exception — it is CS0156. A fix
+    ///     that does not compile is worse than no fix (docs/plan/10), so the finding is withheld rather
+    ///     than the fix alone. It also stops at a <c>finally</c> block for the same reason.
     /// </remarks>
     static CatchClauseSyntax? EnclosingCatch(SyntaxNode node) {
         for (var current = node.Parent; current is not null; current = current.Parent) {
@@ -124,12 +124,12 @@ public sealed class RethrowAnalyzer : DiagnosticAnalyzer {
     }
 
     /// <summary>
-    /// Whether the name is read anywhere in the clause other than by a <c>throw</c> this rule
-    /// rewrites.
+    ///     Whether the name is read anywhere in the clause other than by a <c>throw</c> this rule
+    ///     rewrites.
     /// </summary>
     /// <remarks>
-    /// ⚠ <c>catch (IOException ex) when (ex.HResult != 0) { throw ex; }</c> reads the variable in
-    /// its filter, so the name has to stay. The filter is part of the clause and the walk sees it.
+    ///     ⚠ <c>catch (IOException ex) when (ex.HResult != 0) { throw ex; }</c> reads the variable in
+    ///     its filter, so the name has to stay. The filter is part of the clause and the walk sees it.
     /// </remarks>
     static bool IsReadElsewhereIn(CatchClauseSyntax clause, string name) {
         foreach (var node in clause.DescendantNodes()) {
@@ -150,7 +150,7 @@ public sealed class RethrowAnalyzer : DiagnosticAnalyzer {
     }
 
     /// <summary>
-    /// Whether this is the last <c>throw &lt;name&gt;;</c> in the clause that the rule rewrites.
+    ///     Whether this is the last <c>throw &lt;name&gt;;</c> in the clause that the rule rewrites.
     /// </summary>
     static bool IsLastRewritableThrowIn(CatchClauseSyntax clause, ThrowStatementSyntax statement) {
         ThrowStatementSyntax? last = null;

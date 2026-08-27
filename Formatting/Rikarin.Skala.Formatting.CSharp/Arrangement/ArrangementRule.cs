@@ -4,10 +4,10 @@ using Microsoft.CodeAnalysis;
 namespace Rikarin.Skala.Formatting.CSharp.Arrangement;
 
 /// <summary>
-/// The identifiers arrangement reports under. ⚠ Deliberately not <c>SK1xxx</c>: those are
-/// modernization *rules with fixes* that <c>skala check</c> reports and a person opts into
-/// (docs/plan/06 § "The modernization set"). These are cleanup settings that <c>skala arrange</c>
-/// applies, and conflating the two produces the wall of suggestions doc 06 warns about.
+///     The identifiers arrangement reports under. ⚠ Deliberately not <c>SK1xxx</c>: those are
+///     modernization *rules with fixes* that <c>skala check</c> reports and a person opts into
+///     (docs/plan/06 § "The modernization set"). These are cleanup settings that <c>skala arrange</c>
+///     applies, and conflating the two produces the wall of suggestions doc 06 warns about.
 /// </summary>
 public static class ArrangeIds {
     public const string BodyStyle = "SK2001";
@@ -48,13 +48,13 @@ public static class ArrangeIds {
 }
 
 /// <summary>
-/// What one rewriter is allowed to see, and where it records what it touched.
+///     What one rewriter is allowed to see, and where it records what it touched.
 /// </summary>
 /// <remarks>
-/// ⚠ <see cref="Model"/> is null under <see cref="ArrangementScope.Syntactic"/> and a rewriter that
-/// needs it must say so through <see cref="ArrangementRule.NeedsSemantics"/> rather than by
-/// null-checking at the point of use. docs/plan/06 § "Safety" layer 1: a rewrite that cannot prove
-/// its precondition does not run, and "the semantic model happened to be there" is not a proof.
+///     ⚠ <see cref="Model" /> is null under <see cref="ArrangementScope.Syntactic" /> and a rewriter that
+///     needs it must say so through <see cref="ArrangementRule.NeedsSemantics" /> rather than by
+///     null-checking at the point of use. docs/plan/06 § "Safety" layer 1: a rewrite that cannot prove
+///     its precondition does not run, and "the semantic model happened to be there" is not a proof.
 /// </remarks>
 public sealed class ArrangementContext {
     public ArrangementContext(
@@ -76,16 +76,16 @@ public sealed class ArrangementContext {
     public ArrangementOptions Options { get; }
 
     /// <summary>
-    /// The <c>@formatter:off</c> regions of <see cref="Root"/>. Every rewriter of the catalogue
-    /// hands this to <see cref="GuardedRewriter"/>; a rule that rebuilds nodes by hand instead —
-    /// <see cref="UsingsRule"/> — is caught by <see cref="FormatterTagGuard.PreservesAll"/> in
-    /// <see cref="Arranger"/>.
+    ///     The <c>@formatter:off</c> regions of <see cref="Root" />. Every rewriter of the catalogue
+    ///     hands this to <see cref="GuardedRewriter" />; a rule that rebuilds nodes by hand instead —
+    ///     <see cref="UsingsRule" /> — is caught by <see cref="FormatterTagGuard.PreservesAll" /> in
+    ///     <see cref="Arranger" />.
     /// </summary>
     public FormatterTagGuard Guard { get; }
 
     /// <summary>
-    /// The model, or a throw. Only a rule whose <see cref="ArrangementRule.NeedsSemantics"/> is true
-    /// ever reaches this, and the driver does not run such a rule without one.
+    ///     The model, or a throw. Only a rule whose <see cref="ArrangementRule.NeedsSemantics" /> is true
+    ///     ever reaches this, and the driver does not run such a rule without one.
     /// </summary>
     public SemanticModel Semantics =>
         Model ?? throw new InvalidOperationException("a semantic rule ran without a semantic model");
@@ -96,8 +96,8 @@ public abstract class ArrangementRule {
     public abstract string Id { get; }
 
     /// <summary>
-    /// Whether the rule needs a <see cref="SemanticModel"/>. ⚠ The syntactic subset is the one an
-    /// agent gets for free on a loose file (docs/plan/06 § "A few arrangements need no semantics").
+    ///     Whether the rule needs a <see cref="SemanticModel" />. ⚠ The syntactic subset is the one an
+    ///     agent gets for free on a loose file (docs/plan/06 § "A few arrangements need no semantics").
     /// </summary>
     public abstract bool NeedsSemantics { get; }
 
@@ -108,12 +108,12 @@ public abstract class ArrangementRule {
     public abstract bool IsEnabled(in ArrangementOptions options);
 
     /// <summary>
-    /// The rewritten root, or the same instance when there is nothing to do.
+    ///     The rewritten root, or the same instance when there is nothing to do.
     /// </summary>
     /// <remarks>
-    /// ⚠ Returning the same instance rather than an equal one is the signal the driver uses, and it
-    /// is what keeps the fixed-point loop from spinning: <see cref="object.ReferenceEquals"/> on the
-    /// root is exact and free, while comparing two trees for equality is neither.
+    ///     ⚠ Returning the same instance rather than an equal one is the signal the driver uses, and it
+    ///     is what keeps the fixed-point loop from spinning: <see cref="object.ReferenceEquals" /> on the
+    ///     root is exact and free, while comparing two trees for equality is neither.
     /// </remarks>
     public abstract SyntaxNode Apply(ArrangementContext context);
 }

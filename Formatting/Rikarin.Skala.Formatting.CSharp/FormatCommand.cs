@@ -21,19 +21,19 @@ public sealed record FormatRequest {
     /// <summary><c>a:b</c> — character offsets, filtered after full-file fitting.</summary>
     public string? Range { get; init; }
 
-    /// <summary>Format the git index; see <see cref="StagedMode"/>.</summary>
+    /// <summary>Format the git index; see <see cref="StagedMode" />.</summary>
     public StagedMode Staged { get; init; } = StagedMode.Off;
 
     public bool Quiet { get; init; }
 
     /// <summary>
-    /// ⚠ Name every file that was skipped, and why.
+    ///     ⚠ Name every file that was skipped, and why.
     /// </summary>
     /// <remarks>
-    /// docs/plan/04 § "What it does not do": generated files "are skipped by default, reported as
-    /// skipped in <c>--verbose</c>". Without it a run that formatted nothing because every file was
-    /// generated, and a run that formatted nothing because every file was already correct, print the
-    /// same line. So does a file the parser could not read.
+    ///     docs/plan/04 § "What it does not do": generated files "are skipped by default, reported as
+    ///     skipped in <c>--verbose</c>". Without it a run that formatted nothing because every file was
+    ///     generated, and a run that formatted nothing because every file was already correct, print the
+    ///     same line. So does a file the parser could not read.
     /// </remarks>
     public bool Verbose { get; init; }
 
@@ -42,52 +42,52 @@ public sealed record FormatRequest {
     public string? RepositoryRoot { get; init; }
 
     /// <summary>
-    /// <c>--jobs</c>: how many files are formatted at once. Null means <c>min(cores, 10)</c>.
+    ///     <c>--jobs</c>: how many files are formatted at once. Null means <c>min(cores, 10)</c>.
     /// </summary>
     /// <remarks>
-    /// ⚠ Formatting is embarrassingly parallel and this loop was sequential until milestone 3.
-    /// Measured on Vixen at M2: 34.3 s of wall time for 36.7 s of CPU, a speedup of 1.07× on a
-    /// ten-core machine against a 20 s budget (docs/plan/13 § "Parallelism"). The missing factor was
-    /// never the formatter.
+    ///     ⚠ Formatting is embarrassingly parallel and this loop was sequential until milestone 3.
+    ///     Measured on Vixen at M2: 34.3 s of wall time for 36.7 s of CPU, a speedup of 1.07× on a
+    ///     ten-core machine against a 20 s budget (docs/plan/13 § "Parallelism"). The missing factor was
+    ///     never the formatter.
     /// </remarks>
     public int? Jobs { get; init; }
 
     /// <summary>
-    /// <c>--define</c>: the preprocessor symbols to parse with.
+    ///     <c>--define</c>: the preprocessor symbols to parse with.
     /// </summary>
     /// <remarks>
-    /// ⚠ SK-DIV-0004, and the reason it is a formatter option rather than an analysis one. Without
-    /// symbols Roslyn hands every <c>#if DEBUG</c> body back as disabled text and Skala leaves it
-    /// byte-for-byte, so on a tree with much conditional code the conditional half is not formatted
-    /// at all. A loaded compilation knows the symbols; <c>--define</c> is how a repository with no
-    /// build says them itself.
+    ///     ⚠ SK-DIV-0004, and the reason it is a formatter option rather than an analysis one. Without
+    ///     symbols Roslyn hands every <c>#if DEBUG</c> body back as disabled text and Skala leaves it
+    ///     byte-for-byte, so on a tree with much conditional code the conditional half is not formatted
+    ///     at all. A loaded compilation knows the symbols; <c>--define</c> is how a repository with no
+    ///     build says them itself.
     /// </remarks>
     public IReadOnlyList<string> Define { get; init; } = [];
 
     /// <summary>
-    /// Re-wrap documentation comments. <b>On</b>; <c>--no-xmldoc</c> is what turns it off.
+    ///     Re-wrap documentation comments. <b>On</b>; <c>--no-xmldoc</c> is what turns it off.
     /// </summary>
     /// <remarks>
-    /// ⚠ SK-DIV-0006, and the default is the opposite of what it was. The whole
-    /// <c>resharper_xmldoc_*</c> family is set in the export, <c>jb cleanupcode</c> honours none of
-    /// it — measured, not assumed — and <b>Rider's editor honours all of it</b>. Those two facts
-    /// together mean the oracle and the editor disagree, and Skala follows the editor: not
-    /// formatting doc comments is the divergence, not formatting them.
-    /// <para>
-    /// ⚠ The escape hatch is a flag rather than <c>resharper_xmldoc_wrap_lines = false</c>, because
-    /// that key means "do not wrap long lines" and not "do not touch documentation comments" —
-    /// with it false the sub-formatter still re-indents, still collapses blank lines between tags
-    /// and still inserts the marker space, which is what Rider does with it false too. Overloading
-    /// it into a kill switch would invent a ReSharper semantic, which is the class of mistake this
-    /// default is fixing.
-    /// </para>
-    /// <para>
-    /// ⚠ It makes <c>--diff</c> and <c>--range</c> coarser around a re-wrapped comment, and only
-    /// there. The anchor points that make an edit minimal are offsets into the text the
-    /// sub-formatter rewrites, and an anchor inside a re-wrapped comment is dropped rather than
-    /// guessed at — an anchor that lies about where a piece went produces an edit that overwrites
-    /// the wrong bytes.
-    /// </para>
+    ///     ⚠ SK-DIV-0006, and the default is the opposite of what it was. The whole
+    ///     <c>resharper_xmldoc_*</c> family is set in the export, <c>jb cleanupcode</c> honours none of
+    ///     it — measured, not assumed — and <b>Rider's editor honours all of it</b>. Those two facts
+    ///     together mean the oracle and the editor disagree, and Skala follows the editor: not
+    ///     formatting doc comments is the divergence, not formatting them.
+    ///     <para>
+    ///         ⚠ The escape hatch is a flag rather than <c>resharper_xmldoc_wrap_lines = false</c>, because
+    ///         that key means "do not wrap long lines" and not "do not touch documentation comments" —
+    ///         with it false the sub-formatter still re-indents, still collapses blank lines between tags
+    ///         and still inserts the marker space, which is what Rider does with it false too. Overloading
+    ///         it into a kill switch would invent a ReSharper semantic, which is the class of mistake this
+    ///         default is fixing.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ It makes <c>--diff</c> and <c>--range</c> coarser around a re-wrapped comment, and only
+    ///         there. The anchor points that make an edit minimal are offsets into the text the
+    ///         sub-formatter rewrites, and an anchor inside a re-wrapped comment is dropped rather than
+    ///         guessed at — an anchor that lies about where a piece went produces an edit that overwrites
+    ///         the wrong bytes.
+    ///     </para>
     /// </remarks>
     public bool XmlDoc { get; init; } = true;
 }
@@ -97,9 +97,9 @@ public enum StagedMode {
     Off,
 
     /// <summary>
-    /// ⚠ Refuses to run when a staged file also has unstaged changes: formatting the worktree copy
-    /// would stage work the author did not mean to commit, and formatting the index copy would
-    /// leave the two disagreeing.
+    ///     ⚠ Refuses to run when a staged file also has unstaged changes: formatting the worktree copy
+    ///     would stage work the author did not mean to commit, and formatting the index copy would
+    ///     leave the two disagreeing.
     /// </summary>
     Strict,
 
@@ -108,18 +108,18 @@ public enum StagedMode {
 }
 
 /// <summary>
-/// The implementation behind <c>skala format</c>.
+///     The implementation behind <c>skala format</c>.
 /// </summary>
 /// <remarks>
-/// ⚠ It lives here rather than in the CLI because nothing may reference
-/// <c>Rikarin.Skala.Cli</c> (docs/plan/02 § "The project graph"): MSBuild, the daemon and MCP host
-/// the same logic and the CLI is argument parsing and rendering only.
+///     ⚠ It lives here rather than in the CLI because nothing may reference
+///     <c>Rikarin.Skala.Cli</c> (docs/plan/02 § "The project graph"): MSBuild, the daemon and MCP host
+///     the same logic and the CLI is argument parsing and rendering only.
 /// </remarks>
 /// <remarks>
-/// ⚠ The exit codes are <see cref="ExitCodes"/>'s and nothing else's. This class used to carry its
-/// own pair — <c>ChangesFound = 1</c>, <c>Failed = 2</c> — which is the documented table
-/// (docs/plan/09 § "Exit codes") read backwards, and it stood from M1 to M9 because the two
-/// definitions lived in assemblies that could not see each other.
+///     ⚠ The exit codes are <see cref="ExitCodes" />'s and nothing else's. This class used to carry its
+///     own pair — <c>ChangesFound = 1</c>, <c>Failed = 2</c> — which is the documented table
+///     (docs/plan/09 § "Exit codes") read backwards, and it stood from M1 to M9 because the two
+///     definitions lived in assemblies that could not see each other.
 /// </remarks>
 public static class FormatCommand {
     public static CommandResult Run(FormatRequest request) {
@@ -253,9 +253,9 @@ public static class FormatCommand {
 
     /// <summary>One file's result, reduced to what the ordered pass needs.</summary>
     /// <param name="Skipped">
-    /// Why the file was not formatted, or null when it was. Only <c>--verbose</c> reads it, but it
-    /// is computed always: a skip that is only recorded when somebody asks is a skip that cannot be
-    /// counted.
+    ///     Why the file was not formatted, or null when it was. Only <c>--verbose</c> reads it, but it
+    ///     is computed always: a skip that is only recorded when somebody asks is a skip that cannot be
+    ///     counted.
     /// </param>
     sealed record FileOutcome(
         bool Failed,
@@ -265,13 +265,13 @@ public static class FormatCommand {
         FormatOutcome? Skipped = null);
 
     /// <summary>
-    /// Formats every file, in parallel, into a result slot of its own.
+    ///     Formats every file, in parallel, into a result slot of its own.
     /// </summary>
     /// <remarks>
-    /// ⚠ The write happens inside the parallel body and the <em>reporting</em> does not. Writing is
-    /// per-file and independent; appending to one <see cref="StringBuilder"/> from ten threads is
-    /// neither, and sorting the pieces afterwards is not the same thing as writing them in order —
-    /// a diff whose hunks arrive interleaved is not a diff.
+    ///     ⚠ The write happens inside the parallel body and the <em>reporting</em> does not. Writing is
+    ///     per-file and independent; appending to one <see cref="StringBuilder" /> from ten threads is
+    ///     neither, and sorting the pieces afterwards is not the same thing as writing them in order —
+    ///     a diff whose hunks arrive interleaved is not a diff.
     /// </remarks>
     static FileOutcome?[] FormatAll(
         List<string> files,

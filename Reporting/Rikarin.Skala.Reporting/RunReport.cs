@@ -24,13 +24,13 @@ public sealed record SkippedRule(string RuleId, string Reason);
 public sealed record ToolExtension(string Name, string Version, int RuleCount);
 
 /// <summary>
-/// Everything one <c>skala check</c> produced. The object SARIF is written from and every renderer
-/// reads.
+///     Everything one <c>skala check</c> produced. The object SARIF is written from and every renderer
+///     reads.
 /// </summary>
 /// <remarks>
-/// ⚠ ADR-009: this is the canonical result and nothing downstream may recompute any of it. In
-/// particular no renderer decides what counts as a failure — the gate does that, once, and the
-/// answer travels here.
+///     ⚠ ADR-009: this is the canonical result and nothing downstream may recompute any of it. In
+///     particular no renderer decides what counts as a failure — the gate does that, once, and the
+///     answer travels here.
 /// </remarks>
 public sealed record RunReport {
     public required string RepositoryRoot { get; init; }
@@ -45,11 +45,11 @@ public sealed record RunReport {
     public ImmutableArray<SkippedRule> SkippedRules { get; init; } = [];
 
     /// <summary>
-    /// <c>--verbose</c>: say what did not run, one line per rule, rather than one reason for all.
+    ///     <c>--verbose</c>: say what did not run, one line per rule, rather than one reason for all.
     /// </summary>
     /// <remarks>
-    /// ⚠ A rendering flag, and it is on the report only because the renderers take nothing else.
-    /// It must never change what is in <see cref="Findings"/> or what the gate decided (ADR-009).
+    ///     ⚠ A rendering flag, and it is on the report only because the renderers take nothing else.
+    ///     It must never change what is in <see cref="Findings" /> or what the gate decided (ADR-009).
     /// </remarks>
     public bool Verbose { get; init; }
 
@@ -63,12 +63,14 @@ public sealed record RunReport {
     public int LineCount { get; init; }
 
     /// <summary>
-    /// ⚠ The hash of the effective option set and rule severities. Two reports with different
-    /// fingerprints are not comparable, and a report that does not say so invites comparing them.
+    ///     ⚠ The hash of the effective option set and rule severities. Two reports with different
+    ///     fingerprints are not comparable, and a report that does not say so invites comparing them.
     /// </summary>
     public string ConfigurationFingerprint { get; init; } = string.Empty;
 
-    /// <summary>⚠ Whether any <c>--option</c> override was active. A clean run with overrides is not a clean run.</summary>
+    /// <summary>
+    ///     ⚠ Whether any <c>--option</c> override was active. A clean run with overrides is not a clean run.
+    /// </summary>
     public bool HasOverrides { get; init; }
 
     public TimeSpan Duration { get; init; }
@@ -85,8 +87,8 @@ public sealed record RunReport {
     public MetricsSummary Metrics { get; init; } = MetricsSummary.Empty;
 
     /// <summary>
-    /// The <c>metrics.*</c> thresholds the evaluated gate carried, so a renderer can print
-    /// "duplication 1.8 % (gate 3.0 %)" without re-reading <c>skala.jsonc</c>.
+    ///     The <c>metrics.*</c> thresholds the evaluated gate carried, so a renderer can print
+    ///     "duplication 1.8 % (gate 3.0 %)" without re-reading <c>skala.jsonc</c>.
     /// </summary>
     public ImmutableDictionary<string, double> GateThresholds { get; init; } =
         ImmutableDictionary<string, double>.Empty;
@@ -98,40 +100,40 @@ public sealed record RunReport {
     public string BaselineSummary { get; init; } = string.Empty;
 
     /// <summary>
-    /// Baseline entries that no longer fire.
+    ///     Baseline entries that no longer fire.
     /// </summary>
     /// <remarks>
-    /// ⚠ Carried rather than acted on. docs/plan/09: pruning must be explicit, because "a baseline
-    /// that self-prunes lets a rule that silently stopped working look like progress".
+    ///     ⚠ Carried rather than acted on. docs/plan/09: pruning must be explicit, because "a baseline
+    ///     that self-prunes lets a rule that silently stopped working look like progress".
     /// </remarks>
     public ImmutableArray<BaselineEntry> Fixed { get; init; } = [];
 
     /// <summary>The git ref <c>--since</c> named, or null when the run was not scoped.</summary>
     public string? ChangedCodeReference { get; init; }
 
-    /// <summary>What <c>--no-new-suppressions</c> found, or <see cref="SuppressionAudit.Off"/>.</summary>
+    /// <summary>What <c>--no-new-suppressions</c> found, or <see cref="SuppressionAudit.Off" />.</summary>
     public SuppressionAudit Suppressions { get; init; } = SuppressionAudit.Off;
 
     /// <summary>The clone groups duplication detection found, for the report.</summary>
     public int CloneGroupCount => Metrics.CloneGroupCount;
 
     /// <summary>
-    /// The findings that count as new, under whichever scopings are in play.
+    ///     The findings that count as new, under whichever scopings are in play.
     /// </summary>
     /// <remarks>
-    /// ⚠ The intersection of the scopings, not the union — see <see cref="Gate"/>. With a baseline
-    /// and <c>--since</c> both active, a finding is new only if it is absent from the baseline
-    /// <em>and</em> on a line the branch touched.
+    ///     ⚠ The intersection of the scopings, not the union — see <see cref="Gate" />. With a baseline
+    ///     and <c>--since</c> both active, a finding is new only if it is absent from the baseline
+    ///     <em>and</em> on a line the branch touched.
     /// </remarks>
     public IEnumerable<Finding> New => Reportable.Where(IsNew);
 
     /// <summary>
-    /// The same test <see cref="New"/> applies, for one finding — so a renderer can scope without
-    /// re-deriving the rule.
+    ///     The same test <see cref="New" /> applies, for one finding — so a renderer can scope without
+    ///     re-deriving the rule.
     /// </summary>
     /// <remarks>
-    /// ⚠ True for everything when no scoping is in play, which is what keeps the unscoped report
-    /// identical to what it has always been.
+    ///     ⚠ True for everything when no scoping is in play, which is what keeps the unscoped report
+    ///     identical to what it has always been.
     /// </remarks>
     public bool IsNew(Finding finding) =>
         (!HasBaseline || finding.Bucket == BaselineBucket.New)
@@ -153,13 +155,13 @@ public static class SkalaVersion {
 }
 
 /// <summary>
-/// A gate's verdict. ⚠ Computed once, by the gate, and carried; never recomputed by a renderer.
+///     A gate's verdict. ⚠ Computed once, by the gate, and carried; never recomputed by a renderer.
 /// </summary>
 /// <remarks>
-/// docs/plan/09 § "Gates" describes the full condition set — baselines, <c>newIssues</c>,
-/// <c>metrics.*</c>, <c>ruleOverrides</c>. M5 implements the two that need no baseline
-/// infrastructure (<c>maxSeverity</c> and <c>formatting</c>); the rest is M6's, and a gate
-/// definition that names them is reported as unsupported rather than silently ignored.
+///     docs/plan/09 § "Gates" describes the full condition set — baselines, <c>newIssues</c>,
+///     <c>metrics.*</c>, <c>ruleOverrides</c>. M5 implements the two that need no baseline
+///     infrastructure (<c>maxSeverity</c> and <c>formatting</c>); the rest is M6's, and a gate
+///     definition that names them is reported as unsupported rather than silently ignored.
 /// </remarks>
 public sealed record GateResult(string Name, bool Passed, ImmutableArray<string> Failures) {
     public static GateResult Pass(string name) => new(name, true, []);

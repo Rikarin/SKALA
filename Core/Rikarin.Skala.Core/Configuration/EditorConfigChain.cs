@@ -3,8 +3,8 @@ using System.Collections.Immutable;
 namespace Rikarin.Skala.Core.Configuration;
 
 /// <summary>
-/// The <c>.editorconfig</c> files that apply to one path, outermost first, stopping at the first
-/// <c>root = true</c> walking upwards.
+///     The <c>.editorconfig</c> files that apply to one path, outermost first, stopping at the first
+///     <c>root = true</c> walking upwards.
 /// </summary>
 public sealed class EditorConfigChain {
     EditorConfigChain(string sourcePath, ImmutableArray<EditorConfigDocument> documents, bool stoppedAtRoot) {
@@ -53,9 +53,9 @@ public sealed class EditorConfigChain {
         new(Path.GetFullPath(sourcePath), [.. documents], documents.Any(static d => d.IsRoot));
 
     /// <summary>
-    /// The documents that live above <paramref name="repositoryRoot"/>. SK9002 exists because the
-    /// Rider export has no <c>root = true</c>, so a stray <c>.editorconfig</c> in a home directory
-    /// silently joins the configuration.
+    ///     The documents that live above <paramref name="repositoryRoot" />. SK9002 exists because the
+    ///     Rider export has no <c>root = true</c>, so a stray <c>.editorconfig</c> in a home directory
+    ///     silently joins the configuration.
     /// </summary>
     public IEnumerable<EditorConfigDocument> Above(string repositoryRoot) {
         var root = Path.GetFullPath(repositoryRoot).TrimEnd(Path.DirectorySeparatorChar);

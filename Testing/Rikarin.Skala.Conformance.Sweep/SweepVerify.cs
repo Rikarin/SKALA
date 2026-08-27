@@ -7,15 +7,15 @@ using Rikarin.Skala.Testing;
 namespace Rikarin.Skala.Conformance.Sweep;
 
 /// <summary>
-/// One option's row in the sweep table, expanded into the text both engines actually produced.
+///     One option's row in the sweep table, expanded into the text both engines actually produced.
 /// </summary>
 /// <remarks>
-/// ⚠ A verdict nobody can check is a verdict nobody should act on, and the sweep's headline output
-/// is a table of 97 rows saying which engine moved. Demoting an option out of Tier A on the strength
-/// of one of those rows means reading the row first: this runs a single option, unbatched, and
-/// prints the oracle's and Skala's output at every value beside the input, so <c>SPURIOUS</c> can be
-/// confirmed as "ReSharper genuinely ignores this key on this fixture" rather than accepted as
-/// "the harness said so".
+///     ⚠ A verdict nobody can check is a verdict nobody should act on, and the sweep's headline output
+///     is a table of 97 rows saying which engine moved. Demoting an option out of Tier A on the strength
+///     of one of those rows means reading the row first: this runs a single option, unbatched, and
+///     prints the oracle's and Skala's output at every value beside the input, so <c>SPURIOUS</c> can be
+///     confirmed as "ReSharper genuinely ignores this key on this fixture" rather than accepted as
+///     "the harness said so".
 /// </remarks>
 public static class SweepVerify {
     public static int Run(SweepPlanResult plan, string key, string baseConfigPath, TextWriter output) {

@@ -11,29 +11,37 @@ using Rikarin.Skala.Formatting.CSharp;
 namespace Rikarin.Skala.Server;
 
 /// <summary>
-/// <c>skala lsp</c> — stdio, and deliberately four capabilities wide.
+///     <c>skala lsp</c> — stdio, and deliberately four capabilities wide.
 /// </summary>
 /// <remarks>
-/// docs/plan/11 § "LSP":
-/// <list type="table">
-/// <item><term>textDocument/formatting</term><description>full-file edits</description></item>
-/// <item><term>textDocument/rangeFormatting</term><description>full-file fit, edits filtered to the range</description></item>
-/// <item><term>textDocument/diagnostic</term><description>the findings for the file (pull model)</description></item>
-/// <item><term>textDocument/codeAction</term><description>the fixes, as quickfix actions</description></item>
-/// </list>
-/// <para>
-/// ⚠ Range formatting is a <em>filter over a whole-file fit</em>, not a fit of the range. It is the
-/// only way range formatting can be consistent with whole-file formatting (docs/plan/04 § "Emitting
-/// minimal edits"): the column a construct is measured against depends on the indentation stack
-/// above it, and a fit that starts half way down a file has to guess at that stack. Guessing makes
-/// "format selection" and "format document" disagree, which is the bug every editor integration
-/// eventually reports.
-/// </para>
-/// <para>
-/// ⚠ Rider is not a consumer of this and does not need to be — it already implements this
-/// `.editorconfig`, it is where the file came from, and building a plugin for it would be solving a
-/// problem that does not exist (ADR-001). This is for VS Code, Neovim, Helix and Zed.
-/// </para>
+///     docs/plan/11 § "LSP":
+///     <list type="table">
+///         <item>
+///             <term>textDocument/formatting</term><description>full-file edits</description>
+///         </item>
+///         <item>
+///             <term>textDocument/rangeFormatting</term><description>full-file fit, edits filtered to the range</description>
+///         </item>
+///         <item>
+///             <term>textDocument/diagnostic</term><description>the findings for the file (pull model)</description>
+///         </item>
+///         <item>
+///             <term>textDocument/codeAction</term><description>the fixes, as quickfix actions</description>
+///         </item>
+///     </list>
+///     <para>
+///         ⚠ Range formatting is a <em>filter over a whole-file fit</em>, not a fit of the range. It is the
+///         only way range formatting can be consistent with whole-file formatting (docs/plan/04 § "Emitting
+///         minimal edits"): the column a construct is measured against depends on the indentation stack
+///         above it, and a fit that starts half way down a file has to guess at that stack. Guessing makes
+///         "format selection" and "format document" disagree, which is the bug every editor integration
+///         eventually reports.
+///     </para>
+///     <para>
+///         ⚠ Rider is not a consumer of this and does not need to be — it already implements this
+///         `.editorconfig`, it is where the file came from, and building a plugin for it would be solving a
+///         problem that does not exist (ADR-001). This is for VS Code, Neovim, Helix and Zed.
+///     </para>
 /// </remarks>
 public sealed class LanguageServer {
     readonly FormatService _service = new();

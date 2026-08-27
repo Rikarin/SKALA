@@ -8,22 +8,22 @@ using Rikarin.Skala.Rules.Metadata;
 namespace Rikarin.Skala.Analysis.Tests;
 
 /// <summary>
-/// docs/plan/09 § "Duplication" — token-level type-2 clone detection, and <c>SK7020</c>.
+///     docs/plan/09 § "Duplication" — token-level type-2 clone detection, and <c>SK7020</c>.
 /// </summary>
 /// <remarks>
-/// ⚠ Every assertion about a group's <c>TokenLength</c> rests on the fixture below producing blocks
-/// with exactly the token count they are asked for, which is why
-/// <see cref="Block_HasExactlyTheTokensItClaims"/> exists and runs first in the file.
+///     ⚠ Every assertion about a group's <c>TokenLength</c> rests on the fixture below producing blocks
+///     with exactly the token count they are asked for, which is why
+///     <see cref="Block_HasExactlyTheTokensItClaims" /> exists and runs first in the file.
 /// </remarks>
 public sealed class DuplicationTests {
     const int MinTokens = 100;
 
     /// <summary>
-    /// Statement shapes and the exact number of tokens each lexes to, trivia dropped.
+    ///     Statement shapes and the exact number of tokens each lexes to, trivia dropped.
     /// </summary>
     /// <remarks>
-    /// ⚠ Every count from 3 to 11 is present, so <see cref="Block"/> can always land on an exact
-    /// total: from any remainder of 3 or more there is a shape that consumes it or leaves 3 or more.
+    ///     ⚠ Every count from 3 to 11 is present, so <see cref="Block" /> can always land on an exact
+    ///     total: from any remainder of 3 or more there is a shape that consumes it or leaves 3 or more.
     /// </remarks>
     static readonly (int Tokens, string Format)[] Shapes = [
         (3, "{0}{1}++;"), (4, "{0}{1} = {0}{1};"), (5, "{0}{1} = -1;"), (6, "{0}{1} = {0}{1} + 1;"),
@@ -55,9 +55,9 @@ public sealed class DuplicationTests {
     }
 
     /// <summary>
-    /// ⚠ The type-2 property, and the reason the rule exists: an agent's copy-paste is a copy with the
-    /// variables renamed. If this test goes red the rule has silently become type-1 detection, which
-    /// finds almost nothing in real code.
+    ///     ⚠ The type-2 property, and the reason the rule exists: an agent's copy-paste is a copy with the
+    ///     variables renamed. If this test goes red the rule has silently become type-1 detection, which
+    ///     finds almost nothing in real code.
     /// </summary>
     [Fact]
     public void Detect_WhenEveryIdentifierIsRenamed_StillReportsOneGroup() {
@@ -87,8 +87,8 @@ public sealed class DuplicationTests {
     }
 
     /// <summary>
-    /// docs/plan/09 step 4, and <c>SK7020</c>'s rationale: "reporting it at every occurrence would turn
-    /// one problem into n findings and make the count meaningless".
+    ///     docs/plan/09 step 4, and <c>SK7020</c>'s rationale: "reporting it at every occurrence would turn
+    ///     one problem into n findings and make the count meaningless".
     /// </summary>
     [Fact]
     public void Detect_WhenThreeFilesShareABlock_ReportsOneGroupAndNotThree() {
@@ -110,8 +110,8 @@ public sealed class DuplicationTests {
     }
 
     /// <summary>
-    /// ⚠ A 250-token match contains 151 overlapping 100-token windows. Every one of them is a verified
-    /// clone class, and all 151 have to collapse into one maximal group.
+    ///     ⚠ A 250-token match contains 151 overlapping 100-token windows. Every one of them is a verified
+    ///     clone class, and all 151 have to collapse into one maximal group.
     /// </summary>
     [Fact]
     public void Detect_WhenTheMatchIsLongerThanTheWindow_ExtendsToOneMaximalGroup() {
@@ -125,13 +125,13 @@ public sealed class DuplicationTests {
     }
 
     /// <summary>
-    /// <c>SK7020</c>'s <c>falsePositives</c>: "the match is verified exactly rather than trusted from
-    /// the rolling hash, so a hash collision cannot produce a finding".
+    ///     <c>SK7020</c>'s <c>falsePositives</c>: "the match is verified exactly rather than trusted from
+    ///     the rolling hash, so a hash collision cannot produce a finding".
     /// </summary>
     /// <remarks>
-    /// ⚠ Collapsing every window into one bucket is a worse collision than could ever occur by
-    /// accident. Unrelated files must still report nothing, and a real clone must come out identical —
-    /// the hash may only change how fast the answer is reached, never what it is.
+    ///     ⚠ Collapsing every window into one bucket is a worse collision than could ever occur by
+    ///     accident. Unrelated files must still report nothing, and a real clone must come out identical —
+    ///     the hash may only change how fast the answer is reached, never what it is.
     /// </remarks>
     [Fact]
     public void Detect_WhenEveryWindowCollidesInOneBucket_VerificationStillDecides() {
@@ -160,8 +160,8 @@ public sealed class DuplicationTests {
     }
 
     /// <summary>
-    /// ⚠ Out of the numerator <i>and</i> the denominator. A generated file that duplicates a production
-    /// file leaves the production file alone in its group, which is no group at all.
+    ///     ⚠ Out of the numerator <i>and</i> the denominator. A generated file that duplicates a production
+    ///     file leaves the production file alone in its group, which is no group at all.
     /// </summary>
     [Fact]
     public void Detect_ExcludesGeneratedFilesFromBothHalvesOfThePercentage() {
@@ -178,13 +178,13 @@ public sealed class DuplicationTests {
     }
 
     /// <summary>
-    /// docs/plan/09: "test files are counted separately, because test duplication is often deliberate
-    /// and gating it drives people to write worse tests".
+    ///     docs/plan/09: "test files are counted separately, because test duplication is often deliberate
+    ///     and gating it drives people to write worse tests".
     /// </summary>
     /// <remarks>
-    /// ⚠ Separately also means separately <i>matched</i>. The production and the test copy of the same
-    /// block are not one group, because a group that straddles the two would have to be counted in one
-    /// bucket or the other and either answer is wrong.
+    ///     ⚠ Separately also means separately <i>matched</i>. The production and the test copy of the same
+    ///     block are not one group, because a group that straddles the two would have to be counted in one
+    ///     bucket or the other and either answer is wrong.
     /// </remarks>
     [Fact]
     public void Detect_CountsTestFilesSeparatelyFromProductionFiles() {
@@ -242,8 +242,8 @@ public sealed class DuplicationTests {
     }
 
     /// <summary>
-    /// ⚠ The invariant that keeps the percentage a percentage. A line in three groups is one
-    /// duplicated line; counted once per group it would produce a duplication of 250 %.
+    ///     ⚠ The invariant that keeps the percentage a percentage. A line in three groups is one
+    ///     duplicated line; counted once per group it would produce a duplication of 250 %.
     /// </summary>
     [Fact]
     public void Detect_WhenLinesBelongToSeveralGroups_CountsEachLineOnce() {
@@ -288,8 +288,8 @@ public sealed class DuplicationTests {
     }
 
     /// <summary>
-    /// ⚠ Three shapes of damage, one answer: a cold run. An index that half-loads is an index that
-    /// reports clones about code that is no longer in the file, and nothing downstream could tell.
+    ///     ⚠ Three shapes of damage, one answer: a cold run. An index that half-loads is an index that
+    ///     reports clones about code that is no longer in the file, and nothing downstream could tell.
     /// </summary>
     [Theory]
     [InlineData("garbage")]
@@ -380,7 +380,9 @@ public sealed class DuplicationTests {
         Assert.DoesNotContain("/repo/Editor", finding.Message, StringComparison.Ordinal);
     }
 
-    /// <summary>⚠ Test duplication is measured and reported, never gated. See <c>CloneDetector.ToFindings</c>.</summary>
+    /// <summary>
+    ///     ⚠ Test duplication is measured and reported, never gated. See <c>CloneDetector.ToFindings</c>.
+    /// </summary>
     [Fact]
     public void ToFindings_DoesNotReportTestGroups() {
         var block = Block(250);
@@ -480,13 +482,13 @@ public sealed class DuplicationTests {
     }
 
     /// <summary>
-    /// A statement block of exactly <paramref name="tokens"/> tokens.
+    ///     A statement block of exactly <paramref name="tokens" /> tokens.
     /// </summary>
     /// <remarks>
-    /// ⚠ The shape sequence is pseudo-random rather than a cycle, and that is load-bearing. A block
-    /// built by cycling through the shapes matches <i>itself</i> shifted by one cycle — a tandem
-    /// repeat — and every assertion here about a group's length and occurrence count would then be
-    /// measuring the detector's tandem-repeat handling instead of what it says it measures.
+    ///     ⚠ The shape sequence is pseudo-random rather than a cycle, and that is load-bearing. A block
+    ///     built by cycling through the shapes matches <i>itself</i> shifted by one cycle — a tandem
+    ///     repeat — and every assertion here about a group's length and occurrence count would then be
+    ///     measuring the detector's tandem-repeat handling instead of what it says it measures.
     /// </remarks>
     static string Block(
         int tokens,

@@ -9,21 +9,21 @@ using Rikarin.Skala.Formatting.CSharp.Arrangement;
 namespace Rikarin.Skala.Conformance.Tests;
 
 /// <summary>
-/// <c>@formatter:off</c> binds arrangement, and the oracle's cleanup profile says it does not.
+///     <c>@formatter:off</c> binds arrangement, and the oracle's cleanup profile says it does not.
 /// </summary>
 /// <remarks>
-/// ⚠ SK-DIV-0016, and the one divergence in this file that is a divergence *from a measurement*
-/// rather than from an absence. <c>jb cleanupcode</c>'s <c>CSReformatCode</c> honours the tags —
-/// pinned by <c>constructs/arrangement/formatter-tags/*.expected.cs</c> — and its cleanup profile
-/// ignores them completely, pinned by the <c>.arranged.expected.cs</c> beside each of those, where
-/// the region comes back with its bodies folded into expression bodies and its trailing comma gone.
-/// Skala respects them under both, because the user's expectation is the requirement and doc 00's
-/// non-negotiable 9 says the reference tool is a test subject rather than a specification.
-/// <para>
-/// ⚠ Every assertion here was verified by mutation — <c>GuardedRewriter.Visit</c> made to return
-/// <c>base.Visit(node)</c> unconditionally, and <c>Arranger</c>'s <c>PreservesAll</c> check removed
-/// — and each one was watched to fail before the guard was put back.
-/// </para>
+///     ⚠ SK-DIV-0016, and the one divergence in this file that is a divergence *from a measurement*
+///     rather than from an absence. <c>jb cleanupcode</c>'s <c>CSReformatCode</c> honours the tags —
+///     pinned by <c>constructs/arrangement/formatter-tags/*.expected.cs</c> — and its cleanup profile
+///     ignores them completely, pinned by the <c>.arranged.expected.cs</c> beside each of those, where
+///     the region comes back with its bodies folded into expression bodies and its trailing comma gone.
+///     Skala respects them under both, because the user's expectation is the requirement and doc 00's
+///     non-negotiable 9 says the reference tool is a test subject rather than a specification.
+///     <para>
+///         ⚠ Every assertion here was verified by mutation — <c>GuardedRewriter.Visit</c> made to return
+///         <c>base.Visit(node)</c> unconditionally, and <c>Arranger</c>'s <c>PreservesAll</c> check removed
+///         — and each one was watched to fail before the guard was put back.
+///     </para>
 /// </remarks>
 public sealed class ArrangementTagTests {
     static string Arrange(string source, bool tagsEnabled = true) {
@@ -79,10 +79,10 @@ public sealed class ArrangementTagTests {
     }
 
     /// <summary>
-    /// ⚠ The straddling-node decision, asserted rather than described: the signature is outside the
-    /// region and the body is inside it, and the <em>whole node</em> is skipped — <c>System.Int32</c>
-    /// is not reduced to <c>int</c> and the redundant <c>private</c> is not removed, even though both
-    /// are outside the tags.
+    ///     ⚠ The straddling-node decision, asserted rather than described: the signature is outside the
+    ///     region and the body is inside it, and the <em>whole node</em> is skipped — <c>System.Int32</c>
+    ///     is not reduced to <c>int</c> and the redundant <c>private</c> is not removed, even though both
+    ///     are outside the tags.
     /// </summary>
     [Fact]
     public void ANodeStraddlingATag_IsSkippedWhole() {
@@ -103,11 +103,11 @@ public sealed class ArrangementTagTests {
     }
 
     /// <summary>
-    /// ⚠ The case the span tests cannot see on their own. The region lies <em>inside</em> the method,
-    /// so the method neither straddles a tag nor sits within one — and body-style arrangement would
-    /// still fold the block into <c>=&gt;</c> and take both tags with it. What stops it is
-    /// <see cref="FormatterTagGuard.Preserves"/>, which asks whether the protected bytes are still
-    /// there rather than where they were.
+    ///     ⚠ The case the span tests cannot see on their own. The region lies <em>inside</em> the method,
+    ///     so the method neither straddles a tag nor sits within one — and body-style arrangement would
+    ///     still fold the block into <c>=&gt;</c> and take both tags with it. What stops it is
+    ///     <see cref="FormatterTagGuard.Preserves" />, which asks whether the protected bytes are still
+    ///     there rather than where they were.
     /// </summary>
     [Fact]
     public void AMethodWhoseWholeBodyIsInsideTheRegion_KeepsItsBlockBody() {
@@ -130,8 +130,8 @@ public sealed class ArrangementTagTests {
     }
 
     /// <summary>
-    /// ⚠ A class that <em>contains</em> a region is not frozen by it, or one tag anywhere would
-    /// freeze the class, then the namespace, then the file.
+    ///     ⚠ A class that <em>contains</em> a region is not frozen by it, or one tag anywhere would
+    ///     freeze the class, then the namespace, then the file.
     /// </summary>
     [Fact]
     public void AClassContainingARegion_IsStillArrangedOutsideIt() {
@@ -152,10 +152,10 @@ public sealed class ArrangementTagTests {
     }
 
     /// <summary>
-    /// ⚠ <see cref="UsingsRule"/> rebuilds the using block by hand instead of through a rewriter, so
-    /// it never passes through <see cref="GuardedRewriter"/> at all. It is what
-    /// <see cref="FormatterTagGuard.PreservesAll"/> exists for, and it is why that backstop is not
-    /// belt-and-braces.
+    ///     ⚠ <see cref="UsingsRule" /> rebuilds the using block by hand instead of through a rewriter, so
+    ///     it never passes through <see cref="GuardedRewriter" /> at all. It is what
+    ///     <see cref="FormatterTagGuard.PreservesAll" /> exists for, and it is why that backstop is not
+    ///     belt-and-braces.
     /// </summary>
     [Fact]
     public void TheUsingBlock_IsNotReorderedAcrossATag() {
@@ -201,8 +201,8 @@ public sealed class ArrangementTagTests {
     }
 
     /// <summary>
-    /// ⚠ Turning the tags off turns the guard off, which is what makes every assertion above a
-    /// statement about the tag rather than about arrangement declining to fire.
+    ///     ⚠ Turning the tags off turns the guard off, which is what makes every assertion above a
+    ///     statement about the tag rather than about arrangement declining to fire.
     /// </summary>
     [Fact]
     public void WithTheTagsDisabled_TheSameRegionIsArranged() {

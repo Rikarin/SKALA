@@ -9,23 +9,23 @@ using Rikarin.Skala.Rules.Metadata;
 namespace Rikarin.Skala.Rules.Modernization;
 
 /// <summary>
-/// <c>SK1034</c> — <c>items.Count()</c> and <c>items.Any()</c> where <c>items.Count</c> exists.
+///     <c>SK1034</c> — <c>items.Count()</c> and <c>items.Any()</c> where <c>items.Count</c> exists.
 /// </summary>
 /// <remarks>
-/// Two shapes with two different safety arguments.
-/// <list type="bullet">
-/// <item>
-/// <c>X.Count()</c> → <c>X.Count</c> is a same-type, same-value substitution and is safe wherever
-/// it appears.
-/// </item>
-/// <item>
-/// ⚠ <c>X.Any()</c> → <c>X.Count &gt; 0</c> changes an atom into a relational expression, so it is
-/// only reported where the surrounding syntax cannot re-bind: a condition, an operand of
-/// <c>&amp;&amp;</c>/<c>||</c>, a <c>!</c> (which becomes <c>== 0</c>), a return, or an argument.
-/// Everywhere else the rule is silent rather than parenthesising, because a fix whose output needs
-/// parentheses to stay correct is a fix one edit away from being wrong.
-/// </item>
-/// </list>
+///     Two shapes with two different safety arguments.
+///     <list type="bullet">
+///         <item>
+///             <c>X.Count()</c> → <c>X.Count</c> is a same-type, same-value substitution and is safe wherever
+///             it appears.
+///         </item>
+///         <item>
+///             ⚠ <c>X.Any()</c> → <c>X.Count &gt; 0</c> changes an atom into a relational expression, so it is
+///             only reported where the surrounding syntax cannot re-bind: a condition, an operand of
+///             <c>&amp;&amp;</c>/<c>||</c>, a <c>!</c> (which becomes <c>== 0</c>), a return, or an argument.
+///             Everywhere else the rule is silent rather than parenthesising, because a fix whose output needs
+///             parentheses to stay correct is a fix one edit away from being wrong.
+///         </item>
+///     </list>
 /// </remarks>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class CountPropertyAnalyzer : DiagnosticAnalyzer {
@@ -203,7 +203,7 @@ public sealed class CountPropertyAnalyzer : DiagnosticAnalyzer {
     }
 
     /// <summary>
-    /// ⚠ Where a relational expression may replace an atom without re-binding.
+    ///     ⚠ Where a relational expression may replace an atom without re-binding.
     /// </summary>
     static bool IsSafeBooleanPosition(InvocationExpressionSyntax invocation) =>
         invocation.Parent switch {

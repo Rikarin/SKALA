@@ -4,23 +4,23 @@ using System.Text;
 namespace Rikarin.Skala.Testing;
 
 /// <summary>
-/// Runs <c>jb cleanupcode</c> over a corpus set and writes the <c>.expected.cs</c> fixtures.
+///     Runs <c>jb cleanupcode</c> over a corpus set and writes the <c>.expected.cs</c> fixtures.
 /// </summary>
 /// <remarks>
-/// ⚠ Only <c>./build.sh Oracle</c> calls this. It is a deliberate, reviewed action: an oracle that
-/// regenerates when it disagrees is not an oracle (docs/plan/12 § "The oracle").
-/// <para>
-/// <c>cleanupcode</c> rewrites files in place and wants a project, so the harness copies the corpus
-/// into a scratch project with a copy of the repository's <c>.editorconfig</c> and a cleanup
-/// profile that enables formatting only, runs the tool, and reads the results back out.
-/// </para>
+///     ⚠ Only <c>./build.sh Oracle</c> calls this. It is a deliberate, reviewed action: an oracle that
+///     regenerates when it disagrees is not an oracle (docs/plan/12 § "The oracle").
+///     <para>
+///         <c>cleanupcode</c> rewrites files in place and wants a project, so the harness copies the corpus
+///         into a scratch project with a copy of the repository's <c>.editorconfig</c> and a cleanup
+///         profile that enables formatting only, runs the tool, and reads the results back out.
+///     </para>
 /// </remarks>
 public sealed class OracleRunner {
     /// <summary>The profile name the format-only settings file defines.</summary>
     /// <remarks>
-    /// ⚠ Kept as a constant because the committed fixture headers of milestones 1–3.1 record it, and
-    /// re-reading those headers is how a stale fixture is spotted. New code takes an
-    /// <see cref="OracleProfile"/> instead.
+    ///     ⚠ Kept as a constant because the committed fixture headers of milestones 1–3.1 record it, and
+    ///     re-reading those headers is how a stale fixture is spotted. New code takes an
+    ///     <see cref="OracleProfile" /> instead.
     /// </remarks>
     public const string Profile = "SkalaFormatOnly";
 
@@ -66,18 +66,18 @@ public sealed class OracleRunner {
     }
 
     /// <summary>
-    /// Formats a directory of <c>.cs</c> files in place and returns what changed.
+    ///     Formats a directory of <c>.cs</c> files in place and returns what changed.
     /// </summary>
     /// <param name="overrides">
-    /// Keys appended to the copied <c>.editorconfig</c>'s <c>[*.cs]</c> section, so that one fixture
-    /// set can be regenerated under a configuration other than the repository's. ⚠ Appended rather
-    /// than substituted: an .editorconfig's last assignment of a key within a section wins, so this
-    /// overrides whatever the export set without having to find it.
+    ///     Keys appended to the copied <c>.editorconfig</c>'s <c>[*.cs]</c> section, so that one fixture
+    ///     set can be regenerated under a configuration other than the repository's. ⚠ Appended rather
+    ///     than substituted: an .editorconfig's last assignment of a key within a section wins, so this
+    ///     overrides whatever the export set without having to find it.
     /// </param>
     /// <param name="profile">
-    /// Which cleanup profile to run. ⚠ The default is <see cref="OracleProfile.FormatOnly"/> so that
-    /// every milestone-3 call site keeps measuring what it measured before; arrangement passes
-    /// <see cref="OracleProfile.Cleanup"/> explicitly.
+    ///     Which cleanup profile to run. ⚠ The default is <see cref="OracleProfile.FormatOnly" /> so that
+    ///     every milestone-3 call site keeps measuring what it measured before; arrangement passes
+    ///     <see cref="OracleProfile.Cleanup" /> explicitly.
     /// </param>
     public IReadOnlyDictionary<string, string> Format(
         IReadOnlyList<CorpusFile> files,
@@ -141,16 +141,16 @@ public sealed class OracleRunner {
     }
 
     /// <summary>
-    /// Formats one batch of files where each file carries its own <c>.editorconfig</c>.
+    ///     Formats one batch of files where each file carries its own <c>.editorconfig</c>.
     /// </summary>
     /// <remarks>
-    /// ⚠ The isolation is a subdirectory per file, and that is what makes the defaults probe answer
-    /// a question about one option rather than about a configuration. Batching by value index — one
-    /// run with every option at its 1st value, one at its 2nd — is the only affordable shape,
-    /// because <c>cleanupcode</c>'s startup dominates; but with one shared configuration every
-    /// fixture is moved by whatever else is in the batch, and the first attempt at this came back
-    /// with 197 options and zero fixtures unchanged. A directory per file, each with its own
-    /// <c>root = true</c> plus one key, gives the batching for free and the isolation with it.
+    ///     ⚠ The isolation is a subdirectory per file, and that is what makes the defaults probe answer
+    ///     a question about one option rather than about a configuration. Batching by value index — one
+    ///     run with every option at its 1st value, one at its 2nd — is the only affordable shape,
+    ///     because <c>cleanupcode</c>'s startup dominates; but with one shared configuration every
+    ///     fixture is moved by whatever else is in the batch, and the first attempt at this came back
+    ///     with 197 options and zero fixtures unchanged. A directory per file, each with its own
+    ///     <c>root = true</c> plus one key, gives the batching for free and the isolation with it.
     /// </remarks>
     public IReadOnlyDictionary<string, string> FormatIsolated(IReadOnlyList<(CorpusFile File, string Config)> work) {
         var scratch = Directory.CreateTempSubdirectory("skala-isolated-");
@@ -253,14 +253,14 @@ public sealed class OracleRunner {
                                        """;
 
     /// <summary>
-    /// Runs one batch of files under a directory the caller owns, in place, and reports what moved.
+    ///     Runs one batch of files under a directory the caller owns, in place, and reports what moved.
     /// </summary>
     /// <remarks>
-    /// ⚠ The arrangement differential needs this shape rather than <see cref="Format"/>'s: a cleanup
-    /// profile removes usings, and whether a using is unused is a question about the *project*, so
-    /// flattening a tree into <c>F0.cs … F59.cs</c> beside one another in one directory answers it
-    /// differently from the tree the files came from. Here the caller lays the scratch tree out and
-    /// this only drives the tool over it.
+    ///     ⚠ The arrangement differential needs this shape rather than <see cref="Format" />'s: a cleanup
+    ///     profile removes usings, and whether a using is unused is a question about the *project*, so
+    ///     flattening a tree into <c>F0.cs … F59.cs</c> beside one another in one directory answers it
+    ///     differently from the tree the files came from. Here the caller lays the scratch tree out and
+    ///     this only drives the tool over it.
     /// </remarks>
     public IReadOnlyDictionary<string, string> FormatInPlace(
         string projectDirectory,

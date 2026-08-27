@@ -6,31 +6,31 @@ using Rikarin.Skala.Core.Diagnostics;
 namespace Rikarin.Skala.Reporting;
 
 /// <summary>
-/// The GitHub Actions surfaces: inline annotations and the step-summary table.
+///     The GitHub Actions surfaces: inline annotations and the step-summary table.
 /// </summary>
 /// <remarks>
-/// docs/plan/09 § "SARIF is the report". ⚠ The two are different jobs and the split matters: an
-/// annotation appears on the diff line and is what a reviewer sees without leaving the PR; the step
-/// summary is the run-level report and is what someone reads when the annotations are too many to
-/// scroll. Emitting one and calling it CI support leaves the other job undone.
-/// <para>
-/// ⚠ Annotations go to stdout because that is the only channel the Actions runner parses. The
-/// summary goes to the file <c>$GITHUB_STEP_SUMMARY</c> names, because writing markdown to stdout
-/// puts it in the log where nobody looks.
-/// </para>
+///     docs/plan/09 § "SARIF is the report". ⚠ The two are different jobs and the split matters: an
+///     annotation appears on the diff line and is what a reviewer sees without leaving the PR; the step
+///     summary is the run-level report and is what someone reads when the annotations are too many to
+///     scroll. Emitting one and calling it CI support leaves the other job undone.
+///     <para>
+///         ⚠ Annotations go to stdout because that is the only channel the Actions runner parses. The
+///         summary goes to the file <c>$GITHUB_STEP_SUMMARY</c> names, because writing markdown to stdout
+///         puts it in the log where nobody looks.
+///     </para>
 /// </remarks>
 public static class GithubRenderer {
     /// <summary>The environment variable the Actions runner sets to the summary file's path.</summary>
     public const string StepSummaryVariable = "GITHUB_STEP_SUMMARY";
 
     /// <summary>
-    /// Appends the run's summary table to <c>$GITHUB_STEP_SUMMARY</c>, when running under Actions.
+    ///     Appends the run's summary table to <c>$GITHUB_STEP_SUMMARY</c>, when running under Actions.
     /// </summary>
     /// <returns>Whether anything was written.</returns>
     /// <remarks>
-    /// ⚠ Silently does nothing off CI, rather than failing. The same command line has to work on a
-    /// laptop, and a check that refused to run because an environment variable was absent would be
-    /// a check nobody puts in their `ci` gate.
+    ///     ⚠ Silently does nothing off CI, rather than failing. The same command line has to work on a
+    ///     laptop, and a check that refused to run because an environment variable was absent would be
+    ///     a check nobody puts in their `ci` gate.
     /// </remarks>
     public static bool WriteStepSummary(RunReport report) {
         var path = Environment.GetEnvironmentVariable(StepSummaryVariable);
@@ -108,12 +108,12 @@ public static class GithubRenderer {
 }
 
 /// <summary>
-/// <c>skala report --format=markdown</c> — the PR comment.
+///     <c>skala report --format=markdown</c> — the PR comment.
 /// </summary>
 /// <remarks>
-/// ⚠ Bounded, for the same reason the agent renderer is: a PR comment with nine hundred rows is a
-/// PR comment nobody reads and GitHub truncates anyway. The elision says what was elided and where
-/// the rest is.
+///     ⚠ Bounded, for the same reason the agent renderer is: a PR comment with nine hundred rows is a
+///     PR comment nobody reads and GitHub truncates anyway. The elision says what was elided and where
+///     the rest is.
 /// </remarks>
 public static class MarkdownRenderer {
     public const int DefaultLimit = 50;
@@ -182,18 +182,20 @@ public static class MarkdownRenderer {
         return builder.ToString();
     }
 
-    /// <summary>⚠ A pipe in a message ends the table cell. Rule messages contain code, and code contains pipes.</summary>
+    /// <summary>
+    ///     ⚠ A pipe in a message ends the table cell. Rule messages contain code, and code contains pipes.
+    /// </summary>
     static string Escape(string text) =>
         text.Replace("|", "\\|", StringComparison.Ordinal).Replace("\n", " ", StringComparison.Ordinal);
 }
 
 /// <summary>
-/// JUnit XML, for a CI system whose only report surface is a test result.
+///     JUnit XML, for a CI system whose only report surface is a test result.
 /// </summary>
 /// <remarks>
-/// ⚠ One test case per finding, grouped into a suite per rule. The alternative — one case per file
-/// — makes a file with twelve findings look like one failure, and CI systems dedupe on the case
-/// name, so eleven of them would vanish.
+///     ⚠ One test case per finding, grouped into a suite per rule. The alternative — one case per file
+///     — makes a file with twelve findings look like one failure, and CI systems dedupe on the case
+///     name, so eleven of them would vanish.
 /// </remarks>
 public static class JUnitRenderer {
     public static string Render(RunReport report, bool includeHints) {

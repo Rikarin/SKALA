@@ -11,30 +11,30 @@ public sealed record CommandResult(int ExitCode, string Output) {
 }
 
 /// <summary>
-/// The implementations behind <c>skala config</c>.
+///     The implementations behind <c>skala config</c>.
 /// </summary>
 /// <remarks>
-/// ⚠ They live in Core, not in the CLI: nothing may reference <c>Rikarin.Skala.Cli</c>
-/// (docs/plan/02 § "The project graph"), because MSBuild and MCP need to host the same logic. The
-/// CLI is argument parsing and rendering only.
+///     ⚠ They live in Core, not in the CLI: nothing may reference <c>Rikarin.Skala.Cli</c>
+///     (docs/plan/02 § "The project graph"), because MSBuild and MCP need to host the same logic. The
+///     CLI is argument parsing and rendering only.
 /// </remarks>
 public static class ConfigCommands {
     /// <summary>Exit code for "the configuration has findings and --strict was asked for".</summary>
     public const int StrictFailure = 1;
 
     /// <summary>
-    /// Exit code for a configuration error, from the table in docs/plan/09 § "Exit codes". Canonical
-    /// drift (SK9008) reports it, which is what makes `skala config diff --canonical` usable as a
-    /// gate condition without a gate engine underneath it.
+    ///     Exit code for a configuration error, from the table in docs/plan/09 § "Exit codes". Canonical
+    ///     drift (SK9008) reports it, which is what makes `skala config diff --canonical` usable as a
+    ///     gate condition without a gate engine underneath it.
     /// </summary>
     public const int ConfigurationFailure = 3;
 
     /// <summary>
-    /// The effective option set for one file, each with its source file:line and its tier.
+    ///     The effective option set for one file, each with its source file:line and its tier.
     /// </summary>
     /// <param name="configPath">
-    /// A single <c>.editorconfig</c> to resolve against instead of the chain above
-    /// <paramref name="sourcePath"/>. This is how the export is explained before it is installed.
+    ///     A single <c>.editorconfig</c> to resolve against instead of the chain above
+    ///     <paramref name="sourcePath" />. This is how the export is explained before it is installed.
     /// </param>
     public static CommandResult Explain(
         string sourcePath,
@@ -92,8 +92,8 @@ public static class ConfigCommands {
 
     /// <summary>The tier report and every configuration finding, for the repository's own config.</summary>
     /// <param name="target">
-    /// A directory, in which case the whole <c>.editorconfig</c> chain above it is checked, or a
-    /// single <c>.editorconfig</c>-shaped file, in which case only that file is.
+    ///     A directory, in which case the whole <c>.editorconfig</c> chain above it is checked, or a
+    ///     single <c>.editorconfig</c>-shaped file, in which case only that file is.
     /// </param>
     public static CommandResult Check(string target, bool strict = false) {
         var full = Path.GetFullPath(target);
@@ -225,7 +225,7 @@ public static class ConfigCommands {
     }
 
     /// <summary>
-    /// Writes back the subset of an export that differs from ReSharper's defaults.
+    ///     Writes back the subset of an export that differs from ReSharper's defaults.
     /// </summary>
     public static CommandResult Distill(string path, string? outputPath) {
         var document = EditorConfigDocument.Load(path);
@@ -284,12 +284,12 @@ public static class ConfigCommands {
     }
 
     /// <summary>
-    /// Where this repository stands relative to the canonical, and the gate condition.
+    ///     Where this repository stands relative to the canonical, and the gate condition.
     /// </summary>
     /// <param name="showOptions">
-    /// Also price the upgrade: the semantic option-by-option difference between the block the
-    /// repository is on and the one this build of Skala carries. This is what makes a per-repository
-    /// bump a reviewable decision rather than a leap.
+    ///     Also price the upgrade: the semantic option-by-option difference between the block the
+    ///     repository is on and the one this build of Skala carries. This is what makes a per-repository
+    ///     bump a reviewable decision rather than a leap.
     /// </param>
     public static CommandResult DiffCanonical(string target, bool showOptions = false) {
         var status = CanonicalSync.Status(target);
@@ -366,18 +366,18 @@ public static class ConfigCommands {
     }
 
     /// <summary>
-    /// What applying the canonical does to the severities the compiler and the analyzers run at.
+    ///     What applying the canonical does to the severities the compiler and the analyzers run at.
     /// </summary>
     /// <remarks>
-    /// ⚠ <b>Shared by <c>sync</c> and <c>diff --canonical</c> on purpose.</b> The whole defect this
-    /// answers is that adopting the canonical moved 213 compiler severities and neither command
-    /// said a word; two renderings of the same fact would be two chances to only fix one of them.
-    /// <para>
-    /// ⚠ The compiler diagnostics are listed and the analyzer ones are counted. On a repository
-    /// that sets none of them the full list is 253 lines, and a preview nobody reads to the end is
-    /// a preview that has not warned anybody. The build-breaking ones are the headline because they
-    /// are the ones that fail before a single rule has run.
-    /// </para>
+    ///     ⚠ <b>Shared by <c>sync</c> and <c>diff --canonical</c> on purpose.</b> The whole defect this
+    ///     answers is that adopting the canonical moved 213 compiler severities and neither command
+    ///     said a word; two renderings of the same fact would be two chances to only fix one of them.
+    ///     <para>
+    ///         ⚠ The compiler diagnostics are listed and the analyzer ones are counted. On a repository
+    ///         that sets none of them the full list is 253 lines, and a preview nobody reads to the end is
+    ///         a preview that has not warned anybody. The build-breaking ones are the headline because they
+    ///         are the ones that fail before a single rule has run.
+    ///     </para>
     /// </remarks>
     static void AppendSeverityChanges(StringBuilder output, CanonicalStatus status, bool detailed) {
         if (status.SeverityChanges.IsEmpty) {
@@ -435,7 +435,7 @@ public static class ConfigCommands {
     }
 
     /// <summary>
-    /// Write the canonical block, preserving the local block below it verbatim.
+    ///     Write the canonical block, preserving the local block below it verbatim.
     /// </summary>
     public static CommandResult Sync(string target, bool apply) {
         var result = CanonicalSync.Sync(target);
@@ -484,8 +484,8 @@ public static class ConfigCommands {
     }
 
     /// <summary>
-    /// Regenerate the distributable canonical payload from a Rider export. The maintainer half of
-    /// ADR-001's workflow: change a setting in Rider, re-export, run this, publish.
+    ///     Regenerate the distributable canonical payload from a Rider export. The maintainer half of
+    ///     ADR-001's workflow: change a setting in Rider, re-export, run this, publish.
     /// </summary>
     public static CommandResult BuildCanonical(string templatePath, string outputDirectory, string version) {
         var payload = CanonicalEditorConfig.Compose(File.ReadAllText(templatePath));
@@ -549,26 +549,29 @@ public static class ConfigCommands {
     static string Describe(ResolvedOption option) => option.IsDefault ? $"(default) {option.Value}" : option.Value;
 
     /// <summary>
-    /// ⚠ What <em>this</em> configuration sets, first; the registry-wide totals after.
+    ///     ⚠ What <em>this</em> configuration sets, first; the registry-wide totals after.
     /// </summary>
     /// <remarks>
-    /// <para>
-    /// This block reported only the registry-wide tier split until M9 — "A: 221, B: 0, C: 6, D:
-    /// 293" — which is true, and is not the number a user needs. The question a person opening
-    /// <c>skala config check</c> is asking is <b>"of the keys I set, which ones does the tool
-    /// ignore?"</b>, and on the real Rider export the answer is 244. Nothing looked wrong, because
-    /// fidelity is 99.7 %: an unimplemented key whose configured value coincides with what Skala
-    /// does anyway costs no fidelity at all. The exposure is forward-looking — change one of those
-    /// settings in Rider tomorrow and Skala keeps formatting the old way, silently. That is
-    /// docs/plan/00's non-negotiable 4 satisfied to the letter and missed in substance.
-    /// </para>
-    /// <para>
-    /// ⚠ <b>Inert is not ignored, and conflating them makes the number noise.</b> An inert option
-    /// is one no input can distinguish — another rule wins by the documented ordering, or the
-    /// writer cannot produce the shape it governs. Setting one changes nothing because nothing
-    /// could change it, so it is honoured vacuously rather than dropped. docs/plan/05 records each
-    /// one with its reason and the registry carries that reason on the entry.
-    /// </para>
+    ///     <para>
+    ///         This block reported only the registry-wide tier split until M9 — "A: 221, B: 0, C: 6, D:
+    ///         293" — which is true, and is not the number a user needs. The question a person opening
+    ///         <c>skala config check</c> is asking is
+    ///         <b>
+    ///             "of the keys I set, which ones does the tool
+    ///             ignore?"
+    ///         </b>, and on the real Rider export the answer is 244. Nothing looked wrong, because
+    ///         fidelity is 99.7 %: an unimplemented key whose configured value coincides with what Skala
+    ///         does anyway costs no fidelity at all. The exposure is forward-looking — change one of those
+    ///         settings in Rider tomorrow and Skala keeps formatting the old way, silently. That is
+    ///         docs/plan/00's non-negotiable 4 satisfied to the letter and missed in substance.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ <b>Inert is not ignored, and conflating them makes the number noise.</b> An inert option
+    ///         is one no input can distinguish — another rule wins by the documented ordering, or the
+    ///         writer cannot produce the shape it governs. Setting one changes nothing because nothing
+    ///         could change it, so it is honoured vacuously rather than dropped. docs/plan/05 records each
+    ///         one with its reason and the registry carries that reason on the entry.
+    ///     </para>
     /// </remarks>
     static string Counts(ResolutionResult resolution) {
         var configured = resolution.Configured.ToList();
@@ -646,17 +649,17 @@ public static class ConfigCommands {
     }
 
     /// <summary>
-    /// The option's family, for grouping: the first meaningful segment of its key.
+    ///     The option's family, for grouping: the first meaningful segment of its key.
     /// </summary>
     /// <remarks>
-    /// ⚠ The <c>resharper_</c> and <c>resharper_csharp_</c> prefixes are stripped first, or every
-    /// family would be called "resharper" and the grouping would say nothing.
-    /// <para>
-    /// ⚠ The xmldoc options are grouped by their <em>language</em> rather than by their key,
-    /// because stripping <c>resharper_xmldoc_</c> would scatter them across <c>indent</c>,
-    /// <c>wrap</c> and the rest — and they are the one family whose gap has a single documented
-    /// cause worth stating once (SK-DIV-0006).
-    /// </para>
+    ///     ⚠ The <c>resharper_</c> and <c>resharper_csharp_</c> prefixes are stripped first, or every
+    ///     family would be called "resharper" and the grouping would say nothing.
+    ///     <para>
+    ///         ⚠ The xmldoc options are grouped by their <em>language</em> rather than by their key,
+    ///         because stripping <c>resharper_xmldoc_</c> would scatter them across <c>indent</c>,
+    ///         <c>wrap</c> and the rest — and they are the one family whose gap has a single documented
+    ///         cause worth stating once (SK-DIV-0006).
+    ///     </para>
     /// </remarks>
     internal static string Family(OptionInfo info) {
         if (string.Equals(info.Language, "xmldoc", StringComparison.Ordinal)) {

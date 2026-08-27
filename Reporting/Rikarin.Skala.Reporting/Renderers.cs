@@ -5,7 +5,7 @@ using Rikarin.Skala.Rules.Metadata;
 
 namespace Rikarin.Skala.Reporting;
 
-/// <summary>The surfaces a <see cref="RunReport"/> can be rendered to.</summary>
+/// <summary>The surfaces a <see cref="RunReport" /> can be rendered to.</summary>
 public enum ReportFormat {
     /// <summary>Default TTY output, grouped by file.</summary>
     Terminal,
@@ -30,13 +30,13 @@ public enum ReportFormat {
 }
 
 /// <summary>
-/// Every human- and machine-facing surface, rendered from the one <see cref="RunReport"/>.
+///     Every human- and machine-facing surface, rendered from the one <see cref="RunReport" />.
 /// </summary>
 /// <remarks>
-/// ⚠ docs/plan/09: <b>no renderer contains analysis logic.</b> A renderer that decides what counts
-/// as a failure is a second implementation of the gate, and the two will disagree on the day it
-/// matters. Renderers read; the gate decides, once, into <see cref="RunReport.Gate"/>. The only
-/// arithmetic here is counting and sorting.
+///     ⚠ docs/plan/09: <b>no renderer contains analysis logic.</b> A renderer that decides what counts
+///     as a failure is a second implementation of the gate, and the two will disagree on the day it
+///     matters. Renderers read; the gate decides, once, into <see cref="RunReport.Gate" />. The only
+///     arithmetic here is counting and sorting.
 /// </remarks>
 public static class Renderer {
     public static string Render(RunReport report, ReportFormat format, bool includeHints = false) =>
@@ -51,12 +51,12 @@ public static class Renderer {
         };
 
     /// <summary>
-    /// <c>--summary</c>: doc 09's last three lines and nothing else.
+    ///     <c>--summary</c>: doc 09's last three lines and nothing else.
     /// </summary>
     /// <remarks>
-    /// ⚠ Rendered from the same report by the same code as the tail of <see cref="Terminal"/>, not
-    /// re-derived. Two implementations of "the summary" is two chances for the summary to disagree
-    /// with the report it summarises.
+    ///     ⚠ Rendered from the same report by the same code as the tail of <see cref="Terminal" />, not
+    ///     re-derived. Two implementations of "the summary" is two chances for the summary to disagree
+    ///     with the report it summarises.
     /// </remarks>
     public static string Summary(RunReport report) {
         var builder = new StringBuilder();
@@ -96,17 +96,17 @@ public static class Renderer {
     }
 
     /// <summary>
-    /// ⚠ The thresholds are read back off the report's own gate result rather than re-read from
-    /// <c>skala.jsonc</c>. A renderer that re-read the configuration could render a gate line that
-    /// disagrees with the verdict beside it.
+    ///     ⚠ The thresholds are read back off the report's own gate result rather than re-read from
+    ///     <c>skala.jsonc</c>. A renderer that re-read the configuration could render a gate line that
+    ///     disagrees with the verdict beside it.
     /// </summary>
     static System.Collections.Immutable.ImmutableDictionary<string, double>? GateThresholds(RunReport report) =>
         report.GateThresholds.IsEmpty ? null : report.GateThresholds;
 
     /// <summary>
-    /// ⚠ Determinism is enforced after the fact, not during (docs/plan/07 § "Parallelism").
-    /// Analyzers run concurrently; the order they finish in may never be observable in output, so
-    /// every renderer sorts through here.
+    ///     ⚠ Determinism is enforced after the fact, not during (docs/plan/07 § "Parallelism").
+    ///     Analyzers run concurrently; the order they finish in may never be observable in output, so
+    ///     every renderer sorts through here.
     /// </summary>
     public static IEnumerable<Finding> Ordered(RunReport report, bool includeHints) =>
         report.Reportable
@@ -244,25 +244,25 @@ public static class Renderer {
 }
 
 /// <summary>
-/// The three-bucket report of docs/plan/10 § "Agent-shaped output".
+///     The three-bucket report of docs/plan/10 § "Agent-shaped output".
 /// </summary>
 /// <remarks>
-/// Every line of this is a decision from that document, and the ordering is the load-bearing one:
-/// <list type="number">
-/// <item>
-/// <b>FORMAT first</b>, because it is free and unconditional. An agent reading top-down does the
-/// cheap work first and arrives at the hard part with a clean tree.
-/// </item>
-/// <item><b>FIXABLE second</b>, because the next command is mechanical.</item>
-/// <item><b>ACTION last</b>, because it is the only part that needs the model to think.</item>
-/// </list>
-/// ⚠ The command to run is printed complete, with paths. Not "run skala format" — the exact
-/// invocation, which removes a whole class of agent error (guessing flags) at the cost of a longer
-/// line.
-/// <para>
-/// ⚠ Output is bounded. An unbounded lint dump eats the context window the agent needs in order to
-/// fix anything, so the cap is real and the elision says exactly what was elided and how to see it.
-/// </para>
+///     Every line of this is a decision from that document, and the ordering is the load-bearing one:
+///     <list type="number">
+///         <item>
+///             <b>FORMAT first</b>, because it is free and unconditional. An agent reading top-down does the
+///             cheap work first and arrives at the hard part with a clean tree.
+///         </item>
+///         <item><b>FIXABLE second</b>, because the next command is mechanical.</item>
+///         <item><b>ACTION last</b>, because it is the only part that needs the model to think.</item>
+///     </list>
+///     ⚠ The command to run is printed complete, with paths. Not "run skala format" — the exact
+///     invocation, which removes a whole class of agent error (guessing flags) at the cost of a longer
+///     line.
+///     <para>
+///         ⚠ Output is bounded. An unbounded lint dump eats the context window the agent needs in order to
+///         fix anything, so the cap is real and the elision says exactly what was elided and how to see it.
+///     </para>
 /// </remarks>
 public static class AgentRenderer {
     public const int MaxFindings = 50;

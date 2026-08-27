@@ -6,21 +6,21 @@ using Rikarin.Skala.Options;
 namespace Rikarin.Skala.Core.Configuration;
 
 /// <summary>
-/// What a repository wants done about canonical drift. Drift is an error by default: a repository
-/// whose managed block has been edited is a repository whose IDE and gate have started to disagree,
-/// which is the failure the canonical exists to prevent.
+///     What a repository wants done about canonical drift. Drift is an error by default: a repository
+///     whose managed block has been edited is a repository whose IDE and gate have started to disagree,
+///     which is the failure the canonical exists to prevent.
 /// </summary>
 public sealed record CanonicalPolicy(SkalaSeverity Drift) {
     public static CanonicalPolicy Default { get; } = new(SkalaSeverity.Error);
 }
 
 /// <summary>
-/// <c>skala.jsonc</c> — where to look and what to do about what is found.
+///     <c>skala.jsonc</c> — where to look and what to do about what is found.
 /// </summary>
 /// <remarks>
-/// ⚠ Nothing about style may live here (ADR-001). The workflow this protects is: change a setting
-/// in Rider, re-export, done. A second place to say what code should look like is a second place to
-/// keep in sync, and the first divergence reintroduces the problem the tool exists to remove.
+///     ⚠ Nothing about style may live here (ADR-001). The workflow this protects is: change a setting
+///     in Rider, re-export, done. A second place to say what code should look like is a second place to
+///     keep in sync, and the first divergence reintroduces the problem the tool exists to remove.
 /// </remarks>
 public sealed class ToolConfiguration {
     public const string FileName = "skala.jsonc";
@@ -69,13 +69,13 @@ public sealed class ToolConfiguration {
     }
 
     /// <summary>
-    /// <c>"canonical": { "drift": "error" }</c> — and nothing else.
+    ///     <c>"canonical": { "drift": "error" }</c> — and nothing else.
     /// </summary>
     /// <remarks>
-    /// ⚠ There is deliberately no <c>version</c> key. The canonical version a repository is on is
-    /// recorded in the <c>.editorconfig</c> marker, beside the bytes it describes, so that the
-    /// question "is this file what it claims to be" is answerable from the file alone. A version
-    /// recorded in a second file is a version that drifts, which is this whole feature's disease.
+    ///     ⚠ There is deliberately no <c>version</c> key. The canonical version a repository is on is
+    ///     recorded in the <c>.editorconfig</c> marker, beside the bytes it describes, so that the
+    ///     question "is this file what it claims to be" is answerable from the file alone. A version
+    ///     recorded in a second file is a version that drifts, which is this whole feature's disease.
     /// </remarks>
     static CanonicalPolicy ReadCanonical(
         JsonElement root,

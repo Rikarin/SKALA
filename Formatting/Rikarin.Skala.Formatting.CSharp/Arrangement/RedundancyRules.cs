@@ -5,17 +5,17 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 namespace Rikarin.Skala.Formatting.CSharp.Arrangement;
 
 /// <summary>
-/// <c>this.field</c> ⇒ <c>field</c>, under <c>resharper_remove_this_qualifier</c>.
+///     <c>this.field</c> ⇒ <c>field</c>, under <c>resharper_remove_this_qualifier</c>.
 /// </summary>
 public sealed class ThisQualifierRule : ArrangementRule {
     public override string Id => ArrangeIds.ThisQualifier;
 
     /// <summary>
-    /// ⚠ Semantic, and it is worth saying why, because <c>this.x</c> ⇒ <c>x</c> looks like a string
-    /// edit. Removing the qualifier changes the set of things the bare name can bind to: a local, a
-    /// parameter, a static of the same name, a using-imported extension. The rewrite is only legal
-    /// when the bare name binds to the same symbol, and that is a question only the model answers.
-    /// It is also the reason this rule is on layer 3's list in doc 06 § "Safety".
+    ///     ⚠ Semantic, and it is worth saying why, because <c>this.x</c> ⇒ <c>x</c> looks like a string
+    ///     edit. Removing the qualifier changes the set of things the bare name can bind to: a local, a
+    ///     parameter, a static of the same name, a using-imported extension. The rewrite is only legal
+    ///     when the bare name binds to the same symbol, and that is a question only the model answers.
+    ///     It is also the reason this rule is on layer 3's list in doc 06 § "Safety".
     /// </summary>
     public override bool NeedsSemantics => true;
 
@@ -51,20 +51,20 @@ public sealed class ThisQualifierRule : ArrangementRule {
 }
 
 /// <summary>
-/// <c>{ { x; } }</c> ⇒ <c>{ x; }</c>, under <c>resharper_braces_redundant</c>.
+///     <c>{ { x; } }</c> ⇒ <c>{ x; }</c>, under <c>resharper_braces_redundant</c>.
 /// </summary>
 /// <remarks>
-/// ⚠ docs/plan/06 § "Qualification and redundancy" resolves what looks like a contradiction in the
-/// export — <c>csharp_prefer_braces = true</c> (Microsoft: always use braces) beside
-/// <c>resharper_braces_redundant = true</c> (ReSharper: remove braces that add nothing). They govern
-/// different things: this rule removes a *nested block that is a statement of another block*, and
-/// never the braces of an <c>if</c>, a <c>while</c> or a <c>using</c>. Reading it the other way
-/// turns "always brace your ifs" into "unbrace them all".
-/// <para>
-/// ⚠ A block that declares anything is not redundant: hoisting its declarations into the parent
-/// changes their scope, and can collide with a name the parent already has. That is the whole
-/// precondition and it is checked syntactically, which is why this rule is in the free subset.
-/// </para>
+///     ⚠ docs/plan/06 § "Qualification and redundancy" resolves what looks like a contradiction in the
+///     export — <c>csharp_prefer_braces = true</c> (Microsoft: always use braces) beside
+///     <c>resharper_braces_redundant = true</c> (ReSharper: remove braces that add nothing). They govern
+///     different things: this rule removes a *nested block that is a statement of another block*, and
+///     never the braces of an <c>if</c>, a <c>while</c> or a <c>using</c>. Reading it the other way
+///     turns "always brace your ifs" into "unbrace them all".
+///     <para>
+///         ⚠ A block that declares anything is not redundant: hoisting its declarations into the parent
+///         changes their scope, and can collide with a name the parent already has. That is the whole
+///         precondition and it is checked syntactically, which is why this rule is in the free subset.
+///     </para>
 /// </remarks>
 public sealed class RedundantBracesRule : ArrangementRule {
     public override string Id => ArrangeIds.RedundantBraces;
@@ -124,15 +124,15 @@ public sealed class RedundantBracesRule : ArrangementRule {
 }
 
 /// <summary>
-/// <c>a + (b * c)</c> ⇒ <c>a + b * c</c>. ⚠ Gated behind <c>--aggressive</c>.
+///     <c>a + (b * c)</c> ⇒ <c>a + b * c</c>. ⚠ Gated behind <c>--aggressive</c>.
 /// </summary>
 /// <remarks>
-/// ⚠ docs/plan/06: "Parenthesis removal is the highest-risk rewrite in the whole tool […] which is
-/// correct and which people find alarming. […] Skala gates parenthesis removal behind
-/// <c>arrange --aggressive</c> for the first release regardless, and revisits when the corpus
-/// differential shows zero divergences." The oracle's cleanup profile *does* remove them, so the
-/// gate is a measured divergence rather than a hidden one — the M4 report gives its cost in changed
-/// spans, both ways.
+///     ⚠ docs/plan/06: "Parenthesis removal is the highest-risk rewrite in the whole tool […] which is
+///     correct and which people find alarming. […] Skala gates parenthesis removal behind
+///     <c>arrange --aggressive</c> for the first release regardless, and revisits when the corpus
+///     differential shows zero divergences." The oracle's cleanup profile *does* remove them, so the
+///     gate is a measured divergence rather than a hidden one — the M4 report gives its cost in changed
+///     spans, both ways.
 /// </remarks>
 public sealed class RedundantParenthesesRule : ArrangementRule {
     public override string Id => ArrangeIds.RedundantParentheses;
@@ -157,12 +157,12 @@ public sealed class RedundantParenthesesRule : ArrangementRule {
         }
 
         /// <summary>
-        /// True only for the arithmetic case doc 06 names, and only when precedence alone settles it.
+        ///     True only for the arithmetic case doc 06 names, and only when precedence alone settles it.
         /// </summary>
         /// <remarks>
-        /// ⚠ <c>dotnet_style_parentheses_in_other_binary_operators = always_for_clarity</c>, so the
-        /// relational, logical and bitwise families keep theirs — this rule is arithmetic only, and
-        /// widening it is not a small change.
+        ///     ⚠ <c>dotnet_style_parentheses_in_other_binary_operators = always_for_clarity</c>, so the
+        ///     relational, logical and bitwise families keep theirs — this rule is arithmetic only, and
+        ///     widening it is not a small change.
         /// </remarks>
         static bool IsRedundant(ParenthesizedExpressionSyntax node) {
             if (node.Expression is not BinaryExpressionSyntax inner
@@ -200,10 +200,10 @@ public sealed class RedundantParenthesesRule : ArrangementRule {
             };
 
         /// <summary>
-        /// ⚠ <c>+</c> on <c>string</c> and on floating point is not associative in the way this
-        /// rewrite needs, but the *shape* <c>(a + b) + c</c> ⇒ <c>a + b + c</c> re-associates
-        /// nothing: it is already left-to-right. Only <c>-</c> and <c>/</c> change meaning, and they
-        /// are excluded by returning false.
+        ///     ⚠ <c>+</c> on <c>string</c> and on floating point is not associative in the way this
+        ///     rewrite needs, but the *shape* <c>(a + b) + c</c> ⇒ <c>a + b + c</c> re-associates
+        ///     nothing: it is already left-to-right. Only <c>-</c> and <c>/</c> change meaning, and they
+        ///     are excluded by returning false.
         /// </summary>
         static bool IsAssociative(BinaryExpressionSyntax expression) =>
             expression.Kind() is SyntaxKind.AddExpression or SyntaxKind.MultiplyExpression;

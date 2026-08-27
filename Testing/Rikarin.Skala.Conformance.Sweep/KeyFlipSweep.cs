@@ -20,51 +20,56 @@ public sealed record SweepRun(
     string ConfigDigest);
 
 /// <summary>
-/// Every option, at every legal value, formatted by Skala and by <c>jb cleanupcode</c> under the
-/// same configuration, and compared.
+///     Every option, at every legal value, formatted by Skala and by <c>jb cleanupcode</c> under the
+///     same configuration, and compared.
 /// </summary>
 /// <remarks>
-/// <para><b>Why one configuration is not enough.</b> Every differential measurement in this project
-/// runs at the values in the Rider export. That measures the output, not the options: an option
-/// whose configured value coincides with Skala's behaviour is free, whether Skala implements it or
-/// not. This sweep flips each key instead, which is the only measurement that can distinguish
-/// "honoured" from "happens to agree".</para>
-///
-/// <para><b>Batching, and the hazard.</b> <c>cleanupcode</c>'s startup dominates — tens of seconds —
-/// so one invocation per (option, value) is not viable at ~950 configurations. The sweep batches by
-/// value index: one round sets every option to its 1st value, the next to its 2nd, and the round
-/// count is the widest option's value count rather than the total. ⚠ M3 hit the hazard in this
-/// technique and it is worth restating: with a <em>shared</em> <c>.editorconfig</c> across the batch
-/// every fixture is moved by every other option in it, and the first attempt came back "197 options
-/// set, 0 fixtures unchanged". Each fixture gets its own directory and its own <c>.editorconfig</c>,
-/// so a fixture observes only its own option.</para>
-///
-/// <para><b>The base configuration.</b> Both engines are given the repository's export with exactly
-/// one key overridden, so that no key is left to fall back on a default. That matters because Skala
-/// and ReSharper fall back <em>differently</em> — the whole reason
-/// <c>Rikarin.Skala.Testing.DefaultsProbe</c> exists — and a bare base configuration would make
-/// every option's comparison a measurement of the default table rather than of the option. ⚠ The two
-/// engines reach the same configuration by different mechanics: the oracle is handed a file that is
-/// the export plus an appended <c>[*.cs]</c> section, and Skala is handed the export's chain plus a
-/// command-line override, which <see cref="OptionResolver"/> applies last and which therefore wins
-/// the same way the appended section does. The baseline pass is the check that the two really are
-/// the same configuration: it runs both engines over every fixture with nothing overridden, and a
-/// fixture the two disagree on there is reported as such rather than blamed on the flipped key.</para>
-///
-/// <para><b>What is deliberately not swept.</b> One key at a time isolates cleanly, and that is what
-/// makes an option's verdict a statement about that option. It is also provably incomplete:
-/// docs/plan/05 § <c>keep_existing_*</c> is a four-way table across two keys, and no one-at-a-time
-/// sweep can reach three of its corners. Pairwise sweeps of the known-interacting families are a
-/// named second phase, not something this pass approximates.</para>
+///     <para>
+///         <b>Why one configuration is not enough.</b> Every differential measurement in this project
+///         runs at the values in the Rider export. That measures the output, not the options: an option
+///         whose configured value coincides with Skala's behaviour is free, whether Skala implements it or
+///         not. This sweep flips each key instead, which is the only measurement that can distinguish
+///         "honoured" from "happens to agree".
+///     </para>
+///     <para>
+///         <b>Batching, and the hazard.</b> <c>cleanupcode</c>'s startup dominates — tens of seconds —
+///         so one invocation per (option, value) is not viable at ~950 configurations. The sweep batches by
+///         value index: one round sets every option to its 1st value, the next to its 2nd, and the round
+///         count is the widest option's value count rather than the total. ⚠ M3 hit the hazard in this
+///         technique and it is worth restating: with a <em>shared</em> <c>.editorconfig</c> across the batch
+///         every fixture is moved by every other option in it, and the first attempt came back "197 options
+///         set, 0 fixtures unchanged". Each fixture gets its own directory and its own <c>.editorconfig</c>,
+///         so a fixture observes only its own option.
+///     </para>
+///     <para>
+///         <b>The base configuration.</b> Both engines are given the repository's export with exactly
+///         one key overridden, so that no key is left to fall back on a default. That matters because Skala
+///         and ReSharper fall back <em>differently</em> — the whole reason
+///         <c>Rikarin.Skala.Testing.DefaultsProbe</c> exists — and a bare base configuration would make
+///         every option's comparison a measurement of the default table rather than of the option. ⚠ The two
+///         engines reach the same configuration by different mechanics: the oracle is handed a file that is
+///         the export plus an appended <c>[*.cs]</c> section, and Skala is handed the export's chain plus a
+///         command-line override, which <see cref="OptionResolver" /> applies last and which therefore wins
+///         the same way the appended section does. The baseline pass is the check that the two really are
+///         the same configuration: it runs both engines over every fixture with nothing overridden, and a
+///         fixture the two disagree on there is reported as such rather than blamed on the flipped key.
+///     </para>
+///     <para>
+///         <b>What is deliberately not swept.</b> One key at a time isolates cleanly, and that is what
+///         makes an option's verdict a statement about that option. It is also provably incomplete:
+///         docs/plan/05 § <c>keep_existing_*</c> is a four-way table across two keys, and no one-at-a-time
+///         sweep can reach three of its corners. Pairwise sweeps of the known-interacting families are a
+///         named second phase, not something this pass approximates.
+///     </para>
 /// </remarks>
 public sealed class KeyFlipSweep {
     /// <summary>
-    /// How many fixture directories go into one <c>cleanupcode</c> invocation.
+    ///     How many fixture directories go into one <c>cleanupcode</c> invocation.
     /// </summary>
     /// <remarks>
-    /// ⚠ Sixty, the same as <c>./build.sh Oracle</c> and the defaults probe. The tool holds the whole
-    /// project in memory and a corpus-sized one is slow, so the batch trades startup cost against
-    /// working-set cost; sixty is where M1 put it and nothing here has a reason to move it.
+    ///     ⚠ Sixty, the same as <c>./build.sh Oracle</c> and the defaults probe. The tool holds the whole
+    ///     project in memory and a corpus-sized one is slow, so the batch trades startup cost against
+    ///     working-set cost; sixty is where M1 put it and nothing here has a reason to move it.
     /// </remarks>
     public const int BatchSize = 60;
 
@@ -204,12 +209,12 @@ public sealed class KeyFlipSweep {
         TextNormalisation.Normalise(File.ReadAllText(candidate.Fixture.Path));
 
     /// <summary>
-    /// Whether Skala and the oracle agree on each distinct fixture under the base configuration.
+    ///     Whether Skala and the oracle agree on each distinct fixture under the base configuration.
     /// </summary>
     /// <remarks>
-    /// ⚠ De-duplicated by fixture, not by option: <c>constructs/spaces/</c> has 63 options pointing
-    /// at 63 files but the wrapping and blank-line families share fixtures, and asking the same
-    /// question sixty times is sixty `cleanupcode` slots spent on an answer already held.
+    ///     ⚠ De-duplicated by fixture, not by option: <c>constructs/spaces/</c> has 63 options pointing
+    ///     at 63 files but the wrapping and blank-line families share fixtures, and asking the same
+    ///     question sixty times is sixty `cleanupcode` slots spent on an answer already held.
     /// </remarks>
     Dictionary<string, bool> MeasureBaseline(IReadOnlyList<SweepCandidate> candidates, ref int invocations) {
         var fixtures = candidates
@@ -321,13 +326,13 @@ public sealed class KeyFlipSweep {
     }
 
     /// <summary>
-    /// Skala's answer for one option at one value, resolved from the repository's own chain.
+    ///     Skala's answer for one option at one value, resolved from the repository's own chain.
     /// </summary>
     /// <remarks>
-    /// ⚠ Resolved from the fixture's real path and not from a copy in the scratch tree, which is
-    /// both cheaper and safer: <see cref="ConfigurationCache"/> memoises a parsed
-    /// <c>.editorconfig</c> per path with no eviction, and a fresh 294 KB copy per (option, value)
-    /// would fill it with about a thousand parses of the same document.
+    ///     ⚠ Resolved from the fixture's real path and not from a copy in the scratch tree, which is
+    ///     both cheaper and safer: <see cref="ConfigurationCache" /> memoises a parsed
+    ///     <c>.editorconfig</c> per path with no eviction, and a fresh 294 KB copy per (option, value)
+    ///     would fill it with about a thousand parses of the same document.
     /// </remarks>
     public static string FormatWithSkala(SweepCandidate candidate, string value) {
         var resolved = OptionResolver.Resolve(
@@ -349,12 +354,12 @@ public sealed class KeyFlipSweep {
     }
 
     /// <summary>
-    /// One <c>cleanupcode</c> invocation over a directory per fixture, each with its own config.
+    ///     One <c>cleanupcode</c> invocation over a directory per fixture, each with its own config.
     /// </summary>
-    /// <param name="batch">At most <see cref="BatchSize"/> candidates.</param>
+    /// <param name="batch">At most <see cref="BatchSize" /> candidates.</param>
     /// <param name="round">
-    /// Which value index to assign, or <see langword="null"/> for the base configuration with
-    /// nothing overridden.
+    ///     Which value index to assign, or <see langword="null" /> for the base configuration with
+    ///     nothing overridden.
     /// </param>
     string?[] FormatWithOracle(IReadOnlyList<SweepCandidate> batch, int? round) =>
         ScratchTree.Format(
@@ -364,14 +369,14 @@ public sealed class KeyFlipSweep {
         );
 
     /// <summary>
-    /// The export, with one key forced.
+    ///     The export, with one key forced.
     /// </summary>
     /// <remarks>
-    /// ⚠ Appended rather than substituted. An <c>.editorconfig</c>'s last matching assignment of a
-    /// key wins, so appending overrides whatever the export set without having to find it — and the
-    /// export spells the same option three ways in places, which is exactly the search this avoids.
-    /// The appended section is <c>[*.cs]</c>, which is more specific than the export's own
-    /// <c>[*]</c> and than its multi-extension section, and comes last.
+    ///     ⚠ Appended rather than substituted. An <c>.editorconfig</c>'s last matching assignment of a
+    ///     key wins, so appending overrides whatever the export set without having to find it — and the
+    ///     export spells the same option three ways in places, which is exactly the search this avoids.
+    ///     The appended section is <c>[*.cs]</c>, which is more specific than the export's own
+    ///     <c>[*]</c> and than its multi-extension section, and comes last.
     /// </remarks>
     public string ConfigFor(string key, string value) => _baseConfig + "\n[*.cs]\n" + key + " = " + value + "\n";
 

@@ -6,27 +6,27 @@ using Rikarin.Skala.Formatting.CSharp;
 namespace Rikarin.Skala.Testing;
 
 /// <summary>
-/// What the documentation-comment sub-formatter costs against an oracle profile that never moves.
+///     What the documentation-comment sub-formatter costs against an oracle profile that never moves.
 /// </summary>
 /// <remarks>
-/// ⚠ SK-DIV-0006 asserted the cost and nobody had measured it: "a Skala that re-wrapped them would
-/// diverge from the oracle on every doc comment in the corpus". This turns that sentence into a
-/// number, which is what this project does with sentences like it.
-/// <para>
-/// ⚠ What the number is <em>of</em> changed when the sub-formatter became the default. The oracle
-/// does not decline to format documentation comments — the profile Skala pins does not ask it to.
-/// <c>CSharpFormatDocComments</c> is a real <c>jb cleanupcode</c> task and
-/// <see cref="OracleProfile.FormatOnly"/> does not enable it, so these rows measure a profile gap
-/// and not a formatter defect. They are kept because the gap is real until the fixtures are
-/// regenerated, and because the fourth row is the containment claim.
-/// </para>
-/// <para>
-/// ⚠ The exclusion is drawn the only honest way: every <c>///</c> line is removed from <b>both</b>
-/// sides before the comparison. Not "the lines Skala changed" — that would be marking one's own
-/// homework — and not "the files with doc comments", which would hide a real regression in the code
-/// around them. What is left is every line of the corpus the sub-formatter is not allowed to touch,
-/// and it may not move at all.
-/// </para>
+///     ⚠ SK-DIV-0006 asserted the cost and nobody had measured it: "a Skala that re-wrapped them would
+///     diverge from the oracle on every doc comment in the corpus". This turns that sentence into a
+///     number, which is what this project does with sentences like it.
+///     <para>
+///         ⚠ What the number is <em>of</em> changed when the sub-formatter became the default. The oracle
+///         does not decline to format documentation comments — the profile Skala pins does not ask it to.
+///         <c>CSharpFormatDocComments</c> is a real <c>jb cleanupcode</c> task and
+///         <see cref="OracleProfile.FormatOnly" /> does not enable it, so these rows measure a profile gap
+///         and not a formatter defect. They are kept because the gap is real until the fixtures are
+///         regenerated, and because the fourth row is the containment claim.
+///     </para>
+///     <para>
+///         ⚠ The exclusion is drawn the only honest way: every <c>///</c> line is removed from <b>both</b>
+///         sides before the comparison. Not "the lines Skala changed" — that would be marking one's own
+///         homework — and not "the files with doc comments", which would hide a real regression in the code
+///         around them. What is left is every line of the corpus the sub-formatter is not allowed to touch,
+///         and it may not move at all.
+///     </para>
 /// </remarks>
 public static class XmlDocFidelity {
     public static string Measure(string set = Corpus.Real) {

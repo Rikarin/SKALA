@@ -168,20 +168,20 @@ public sealed class OptionRegistryTests {
     }
 
     /// <summary>
-    /// ⚠ Inert is a claim about what cannot be observed, so it needs a reason and it needs a tier.
+    ///     ⚠ Inert is a claim about what cannot be observed, so it needs a reason and it needs a tier.
     /// </summary>
     /// <remarks>
-    /// <para>
-    /// An inert option is Tier D — nothing implements it — but it is <b>not</b> a coverage gap:
-    /// no input distinguishes its values, because another rule wins by the documented ordering or
-    /// because the writer cannot produce the shape it governs. <c>skala config check</c> reports
-    /// the two separately, and that report is only worth reading if "inert" is evidence rather
-    /// than a way to make a number look better.
-    /// </para>
-    /// <para>
-    /// ⚠ An inert option that claimed Tier A would be the worse failure: it would mean a fixture
-    /// pinned behaviour that no input can produce. The registry forbids the pair.
-    /// </para>
+    ///     <para>
+    ///         An inert option is Tier D — nothing implements it — but it is <b>not</b> a coverage gap:
+    ///         no input distinguishes its values, because another rule wins by the documented ordering or
+    ///         because the writer cannot produce the shape it governs. <c>skala config check</c> reports
+    ///         the two separately, and that report is only worth reading if "inert" is evidence rather
+    ///         than a way to make a number look better.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ An inert option that claimed Tier A would be the worse failure: it would mean a fixture
+    ///         pinned behaviour that no input can produce. The registry forbids the pair.
+    ///     </para>
     /// </remarks>
     [Fact]
     public void Inert_OptionsCarryAReasonAndAreNotClaimedAsImplemented() {

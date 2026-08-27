@@ -9,11 +9,11 @@ using Rikarin.Skala.Rules.Metadata;
 namespace Rikarin.Skala.Rules.Modernization;
 
 /// <summary>
-/// <c>SK1010</c> — <c>x != null</c> is <c>x is not null</c>, on a type that defines no operator.
+///     <c>SK1010</c> — <c>x != null</c> is <c>x is not null</c>, on a type that defines no operator.
 /// </summary>
 /// <remarks>
-/// docs/plan/08-rule-catalogue.md § "Pattern matching". The guard is
-/// <see cref="NullComparison.IsRewritable"/> and it is the rule.
+///     docs/plan/08-rule-catalogue.md § "Pattern matching". The guard is
+///     <see cref="NullComparison.IsRewritable" /> and it is the rule.
 /// </remarks>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class NullPatternAnalyzer : DiagnosticAnalyzer {

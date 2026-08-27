@@ -17,12 +17,12 @@ public static class CorpusFormatter {
     static readonly Lock Gate = new();
 
     /// <summary>
-    /// A symbol set that makes a conditional body live, for the properties to be asserted under.
+    ///     A symbol set that makes a conditional body live, for the properties to be asserted under.
     /// </summary>
     /// <remarks>
-    /// ⚠ The list moved to <see cref="Corpus.PropertySymbols"/> when the fuzzer needed it, because
-    /// the fuzzer is a library and this is a test class. What <c>defined</c> means has one answer or
-    /// it drifts; this alias is what keeps every existing call site pointing at it.
+    ///     ⚠ The list moved to <see cref="Corpus.PropertySymbols" /> when the fuzzer needed it, because
+    ///     the fuzzer is a library and this is a test class. What <c>defined</c> means has one answer or
+    ///     it drifts; this alias is what keeps every existing call site pointing at it.
     /// </remarks>
     public static ImmutableArray<string> Symbols => Corpus.PropertySymbols;
 
@@ -53,24 +53,24 @@ public static class CorpusFormatter {
 }
 
 /// <summary>
-/// The properties from docs/plan/12 § "Properties — where the real bugs are".
+///     The properties from docs/plan/12 § "Properties — where the real bugs are".
 /// </summary>
 /// <remarks>
-/// ⚠ Idempotency and token equivalence are the two that catch nearly everything, both are cheap,
-/// and both run over every corpus file on every test run. They are at 100 % or the build is broken;
-/// there is no ratchet and no allowance.
+///     ⚠ Idempotency and token equivalence are the two that catch nearly everything, both are cheap,
+///     and both run over every corpus file on every test run. They are at 100 % or the build is broken;
+///     there is no ratchet and no allowance.
 /// </remarks>
 public sealed class PropertyTests {
     /// <summary>
-    /// Every corpus file, under **both** symbol sets.
+    ///     Every corpus file, under **both** symbol sets.
     /// </summary>
     /// <remarks>
-    /// ⚠ The second column is milestone 3.1's, and the reason is milestone 5's: a file wrapped in a
-    /// <c>#if</c> is disabled text for a formatter with no symbols, copied byte-for-byte, so every
-    /// property holds over it trivially and the code that formats its body is never asserted at
-    /// all. The <c>&gt;</c>-before-<c>(</c> defect survived four milestones in exactly that blind
-    /// spot. Doubling the theory doubles the cheapest tests in the suite and lights the half of the
-    /// corpus nobody was testing.
+    ///     ⚠ The second column is milestone 3.1's, and the reason is milestone 5's: a file wrapped in a
+    ///     <c>#if</c> is disabled text for a formatter with no symbols, copied byte-for-byte, so every
+    ///     property holds over it trivially and the code that formats its body is never asserted at
+    ///     all. The <c>&gt;</c>-before-<c>(</c> defect survived four milestones in exactly that blind
+    ///     spot. Doubling the theory doubles the cheapest tests in the suite and lights the half of the
+    ///     corpus nobody was testing.
     /// </remarks>
     public static TheoryData<CorpusFile, bool> AllFiles {
         get {
@@ -189,8 +189,8 @@ public sealed class PropertyTests {
     }
 
     /// <summary>
-    /// Doubles the leading whitespace of every line that is not inside a multi-line token. Only
-    /// indentation is touched, because a space inside a raw string is not whitespace, it is data.
+    ///     Doubles the leading whitespace of every line that is not inside a multi-line token. Only
+    ///     indentation is touched, because a space inside a raw string is not whitespace, it is data.
     /// </summary>
     static string MutateIndentationOnly(string source, bool defined) {
         // ⚠ Parsed with the same symbols the formatter is about to use. Which lines are disabled

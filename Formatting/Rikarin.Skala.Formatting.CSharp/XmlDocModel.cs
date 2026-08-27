@@ -8,16 +8,16 @@ namespace Rikarin.Skala.Formatting.CSharp;
 
 /// <summary>One thing inside a documentation comment, once the <c>///</c> markers are gone.</summary>
 /// <remarks>
-/// ⚠ Built from Roslyn's XML syntax rather than from an <see cref="System.Xml.XmlReader"/>, and the
-/// difference is the whole safety argument. An <c>XmlReader</c> resolves <c>&amp;lt;</c> to
-/// <c>&lt;</c> and <c>&amp;#65;</c> to <c>A</c>, so re-serialising its output is a rewrite of the
-/// author's text disguised as a parse. Roslyn's tokens carry the source spelling, so an entity is
-/// copied across as the characters the author typed.
+///     ⚠ Built from Roslyn's XML syntax rather than from an <see cref="System.Xml.XmlReader" />, and the
+///     difference is the whole safety argument. An <c>XmlReader</c> resolves <c>&amp;lt;</c> to
+///     <c>&lt;</c> and <c>&amp;#65;</c> to <c>A</c>, so re-serialising its output is a rewrite of the
+///     author's text disguised as a parse. Roslyn's tokens carry the source spelling, so an entity is
+///     copied across as the characters the author typed.
 /// </remarks>
 /// <param name="Glued">
-/// ⚠ No whitespace separated this node from the one before it, so nothing may be inserted between
-/// them. <c>&lt;c&gt;x&lt;/c&gt;s</c> is one word and <c>&lt;c&gt;x&lt;/c&gt; s</c> is two; a
-/// renderer that could not tell them apart would silently rewrite the first into the second.
+///     ⚠ No whitespace separated this node from the one before it, so nothing may be inserted between
+///     them. <c>&lt;c&gt;x&lt;/c&gt;s</c> is one word and <c>&lt;c&gt;x&lt;/c&gt; s</c> is two; a
+///     renderer that could not tell them apart would silently rewrite the first into the second.
 /// </param>
 public abstract record XmlDocNode(bool Glued);
 
@@ -28,13 +28,13 @@ public sealed record XmlDocWord(string Text, bool Glued) : XmlDocNode(Glued);
 public sealed record XmlDocBreak(int BlankLines) : XmlDocNode(false);
 
 /// <summary>
-/// A block copied out of the source unchanged: a CDATA section, a processing instruction, an XML
-/// comment.
+///     A block copied out of the source unchanged: a CDATA section, a processing instruction, an XML
+///     comment.
 /// </summary>
 /// <remarks>
-/// ⚠ Hazard 1 of docs/plan/05 § "Phase 4". Re-wrapping data changes what it says, and a code sample
-/// is the part of a doc comment a reader is most likely to copy. Verbatim means the line's bytes
-/// after the <c>///</c> marker, including its leading and trailing whitespace.
+///     ⚠ Hazard 1 of docs/plan/05 § "Phase 4". Re-wrapping data changes what it says, and a code sample
+///     is the part of a doc comment a reader is most likely to copy. Verbatim means the line's bytes
+///     after the <c>///</c> marker, including its leading and trailing whitespace.
 /// </remarks>
 public sealed record XmlDocVerbatim(ImmutableArray<string> Lines) : XmlDocNode(false);
 
@@ -42,14 +42,14 @@ public sealed record XmlDocVerbatim(ImmutableArray<string> Lines) : XmlDocNode(f
 /// <param name="Name">The tag name, for <c>linebreak_before_elements</c> and the closing tag.</param>
 /// <param name="Header">Everything from <c>&lt;</c> up to but not including <c>&gt;</c> or <c>/&gt;</c>.</param>
 /// <param name="Verbatim">
-/// ⚠ Non-null for <c>&lt;code&gt;</c> and <c>&lt;c&gt;</c>: the element's content as source lines,
-/// which are emitted unchanged rather than re-wrapped.
+///     ⚠ Non-null for <c>&lt;code&gt;</c> and <c>&lt;c&gt;</c>: the element's content as source lines,
+///     which are emitted unchanged rather than re-wrapped.
 /// </param>
 /// <param name="GluedToWord">
-/// ⚠ The thing directly before it, with no whitespace between, was <em>prose</em>. Only then is a
-/// break before this element forbidden: <c>x&lt;see/&gt;</c> is one word, while
-/// <c>&lt;/summary&gt;&lt;param&gt;</c> is two tags that <c>linebreak_before_elements</c> exists to
-/// put on separate lines.
+///     ⚠ The thing directly before it, with no whitespace between, was <em>prose</em>. Only then is a
+///     break before this element forbidden: <c>x&lt;see/&gt;</c> is one word, while
+///     <c>&lt;/summary&gt;&lt;param&gt;</c> is two tags that <c>linebreak_before_elements</c> exists to
+///     put on separate lines.
 /// </param>
 public sealed record XmlDocElement(
     string Name,
@@ -65,15 +65,15 @@ public sealed record XmlDocElement(
     public bool HasText => Children.Any(static child => child is XmlDocWord);
 }
 
-/// <summary>Turns one <see cref="DocumentationCommentTriviaSyntax"/> into <see cref="XmlDocNode"/>s.</summary>
+/// <summary>Turns one <see cref="DocumentationCommentTriviaSyntax" /> into <see cref="XmlDocNode" />s.</summary>
 public sealed class XmlDocModel {
     /// <summary>
-    /// Elements whose content is data rather than prose.
+    ///     Elements whose content is data rather than prose.
     /// </summary>
     /// <remarks>
-    /// ⚠ <c>&lt;code&gt;</c> and <c>&lt;c&gt;</c> are the two docs/plan/05 names, and the list is
-    /// deliberately not longer. Adding <c>&lt;list&gt;</c> or <c>&lt;example&gt;</c> here because
-    /// they "often contain code" would exempt the parts of a comment that most need re-wrapping.
+    ///     ⚠ <c>&lt;code&gt;</c> and <c>&lt;c&gt;</c> are the two docs/plan/05 names, and the list is
+    ///     deliberately not longer. Adding <c>&lt;list&gt;</c> or <c>&lt;example&gt;</c> here because
+    ///     they "often contain code" would exempt the parts of a comment that most need re-wrapping.
     /// </remarks>
     static readonly string[] VerbatimElements = ["code", "c"];
 
@@ -88,12 +88,12 @@ public sealed class XmlDocModel {
     public static bool IsVerbatimElement(string name) => VerbatimElements.Contains(name, StringComparer.Ordinal);
 
     /// <summary>
-    /// The comment's content, or null when it is not something the sub-formatter will touch.
+    ///     The comment's content, or null when it is not something the sub-formatter will touch.
     /// </summary>
     /// <remarks>
-    /// ⚠ Null is the safe answer and it is returned generously: a multi-line tag header, a start
-    /// tag whose name does not match its end tag, an unrecognised node kind. A doc comment left
-    /// exactly as written is never wrong; a doc comment re-wrapped on a guess can be.
+    ///     ⚠ Null is the safe answer and it is returned generously: a multi-line tag header, a start
+    ///     tag whose name does not match its end tag, an unrecognised node kind. A doc comment left
+    ///     exactly as written is never wrong; a doc comment re-wrapped on a guess can be.
     /// </remarks>
     public static ImmutableArray<XmlDocNode>? Build(DocumentationCommentTriviaSyntax comment) {
         var model = new XmlDocModel();
@@ -191,18 +191,18 @@ public sealed class XmlDocModel {
     }
 
     /// <summary>
-    /// <c>&lt;param name="x"</c>: the start tag's source text, minus the closing bracket.
+    ///     <c>&lt;param name="x"</c>: the start tag's source text, minus the closing bracket.
     /// </summary>
     /// <remarks>
-    /// ⚠ Copied, not rebuilt. A <c>cref</c> is resolved by the compiler and a <c>name</c> is matched
-    /// against a parameter; re-emitting either from a parsed model risks changing a string two other
-    /// tools read. It also settles six of the family's keys at once — see
-    /// <see cref="XmlDocIds.Refused"/> — because a header nobody rewrites has no attribute style,
-    /// no attribute indent and no spaces around its '='.
-    /// <para>
-    /// ⚠ A header that spans lines is refused outright rather than joined: joining it would be the
-    /// rewrite this method exists to avoid.
-    /// </para>
+    ///     ⚠ Copied, not rebuilt. A <c>cref</c> is resolved by the compiler and a <c>name</c> is matched
+    ///     against a parameter; re-emitting either from a parsed model risks changing a string two other
+    ///     tools read. It also settles six of the family's keys at once — see
+    ///     <see cref="XmlDocIds.Refused" /> — because a header nobody rewrites has no attribute style,
+    ///     no attribute indent and no spaces around its '='.
+    ///     <para>
+    ///         ⚠ A header that spans lines is refused outright rather than joined: joining it would be the
+    ///         rewrite this method exists to avoid.
+    ///     </para>
     /// </remarks>
     static string? Header(XmlNameSyntax name, SyntaxList<XmlAttributeSyntax> attributes) {
         var builder = new StringBuilder("<").Append(name.ToString());
@@ -220,13 +220,13 @@ public sealed class XmlDocModel {
     }
 
     /// <summary>
-    /// Splits a run of XML text into words and the author's line breaks.
+    ///     Splits a run of XML text into words and the author's line breaks.
     /// </summary>
     /// <remarks>
-    /// ⚠ An entity token joins the word around it rather than becoming one: <c>a&amp;lt;b</c> is a
-    /// single word, and breaking it would put a line break in the middle of what renders as one
-    /// character. Roslyn hands entities back as separate tokens, so this has to be done
-    /// deliberately.
+    ///     ⚠ An entity token joins the word around it rather than becoming one: <c>a&amp;lt;b</c> is a
+    ///     single word, and breaking it would put a line break in the middle of what renders as one
+    ///     character. Roslyn hands entities back as separate tokens, so this has to be done
+    ///     deliberately.
     /// </remarks>
     void AddText(ImmutableArray<XmlDocNode>.Builder builder, XmlTextSyntax text) {
         var word = new StringBuilder();
@@ -286,32 +286,32 @@ public sealed class XmlDocModel {
     }
 
     /// <summary>
-    /// The lines of a verbatim region, with each continuation line's <c>///</c> marker removed and
-    /// nothing else removed.
+    ///     The lines of a verbatim region, with each continuation line's <c>///</c> marker removed and
+    ///     nothing else removed.
     /// </summary>
     /// <remarks>
-    /// ⚠ Not <c>TrimEnd</c>. A trailing space inside a <c>&lt;code&gt;</c> block is part of the
-    /// sample, and SK-DIV-0006 already establishes that a comment's own trailing whitespace is the
-    /// author's — it is the one place in Skala's output that carries any.
+    ///     ⚠ Not <c>TrimEnd</c>. A trailing space inside a <c>&lt;code&gt;</c> block is part of the
+    ///     sample, and SK-DIV-0006 already establishes that a comment's own trailing whitespace is the
+    ///     author's — it is the one place in Skala's output that carries any.
     /// </remarks>
     /// <summary>
-    /// A node's source text, split into lines, with the <c>///</c> marker removed from each
-    /// continuation line.
+    ///     A node's source text, split into lines, with the <c>///</c> marker removed from each
+    ///     continuation line.
     /// </summary>
     /// <remarks>
-    /// ⚠ <b>The first line is never stripped, and the reason is that it is not a line.</b> What is
-    /// passed here is a node's <c>ToString()</c>, which begins immediately after that node's start
-    /// tag — in the middle of a physical source line. Only the lines <em>after</em> the first begin
-    /// at a line start and therefore carry the exterior marker.
-    /// <para>
-    /// ⚠ Stripping the first one destroyed content, silently, and this is what it looked like:
-    /// <c>&lt;c&gt;///&lt;/c&gt;</c> — a documentation comment talking about the marker, which this
-    /// repository's own sources do — came back as an empty <c>&lt;c&gt;&lt;/c&gt;</c>. The round
-    /// trip did not catch it because the signature calls this function too, so both sides agreed on
-    /// the same erasure. That is the failure mode a self-check has and an oracle does not, and it
-    /// is exactly the one <see cref="XmlDocSignature"/>'s own remarks warn about: a formatter that
-    /// only checks itself against its own reading will one day eat a sentence. It ate this one.
-    /// </para>
+    ///     ⚠ <b>The first line is never stripped, and the reason is that it is not a line.</b> What is
+    ///     passed here is a node's <c>ToString()</c>, which begins immediately after that node's start
+    ///     tag — in the middle of a physical source line. Only the lines <em>after</em> the first begin
+    ///     at a line start and therefore carry the exterior marker.
+    ///     <para>
+    ///         ⚠ Stripping the first one destroyed content, silently, and this is what it looked like:
+    ///         <c>&lt;c&gt;///&lt;/c&gt;</c> — a documentation comment talking about the marker, which this
+    ///         repository's own sources do — came back as an empty <c>&lt;c&gt;&lt;/c&gt;</c>. The round
+    ///         trip did not catch it because the signature calls this function too, so both sides agreed on
+    ///         the same erasure. That is the failure mode a self-check has and an oracle does not, and it
+    ///         is exactly the one <see cref="XmlDocSignature" />'s own remarks warn about: a formatter that
+    ///         only checks itself against its own reading will one day eat a sentence. It ate this one.
+    ///     </para>
     /// </remarks>
     public static ImmutableArray<string> SourceLines(string source) {
         var lines = ImmutableArray.CreateBuilder<string>();
@@ -325,14 +325,14 @@ public sealed class XmlDocModel {
     }
 
     /// <summary>
-    /// A verbatim region's body: its source lines, minus only the whitespace-only lines its own
-    /// tags sat on.
+    ///     A verbatim region's body: its source lines, minus only the whitespace-only lines its own
+    ///     tags sat on.
     /// </summary>
     /// <remarks>
-    /// ⚠ Deliberately not <c>Trim()</c>. The indentation of the <em>first</em> line of a code
-    /// sample is part of the sample, and a signature that trimmed it could not tell a preserved
-    /// block from a re-indented one — which is the single thing the verbatim rule exists to
-    /// guarantee.
+    ///     ⚠ Deliberately not <c>Trim()</c>. The indentation of the <em>first</em> line of a code
+    ///     sample is part of the sample, and a signature that trimmed it could not tell a preserved
+    ///     block from a re-indented one — which is the single thing the verbatim rule exists to
+    ///     guarantee.
     /// </remarks>
     public static ImmutableArray<string> VerbatimBody(string source) {
         var lines = SourceLines(source);

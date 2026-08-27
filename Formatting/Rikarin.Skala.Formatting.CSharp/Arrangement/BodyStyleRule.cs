@@ -6,33 +6,37 @@ using Rikarin.Skala.Options;
 namespace Rikarin.Skala.Formatting.CSharp.Arrangement;
 
 /// <summary>
-/// Block body ⇄ expression body, under <c>use_heuristics_for_body_style</c>.
+///     Block body ⇄ expression body, under <c>use_heuristics_for_body_style</c>.
 /// </summary>
 /// <remarks>
-/// ⚠ docs/plan/06 stated five conditions for the heuristic and one of them is wrong. Measured
-/// against <c>jb cleanupcode</c> 2025.2.6 (the sweep is in <c>docs/oracle-cleanup-profile.md</c>),
-/// the oracle converts:
-/// <list type="bullet">
-/// <item>a single-statement body whose statement is an expression statement or a <c>return</c> with
-/// a value — and <em>not</em> a <c>throw</c>, which stays a block;</item>
-/// <item>only when the body holds no comment;</item>
-/// <item>only when the body holds no <c>#if</c>;</item>
-/// <item>never for <c>async void</c>;</item>
-/// <item>⚠ <b>regardless of how long the result is.</b> A 200-column body converts and is then
-/// wrapped after the <c>=&gt;</c> by the reformat that follows. Doc 06's condition (c), "the
-/// converted form fits <c>max_line_length</c> at the member's indentation", is not a condition the
-/// oracle applies, and implementing it would refuse a conversion the oracle performs on every long
-/// one-line method in the corpus.</item>
-/// </list>
-/// The doc has been corrected; this comment is the measurement it was corrected from.
+///     ⚠ docs/plan/06 stated five conditions for the heuristic and one of them is wrong. Measured
+///     against <c>jb cleanupcode</c> 2025.2.6 (the sweep is in <c>docs/oracle-cleanup-profile.md</c>),
+///     the oracle converts:
+///     <list type="bullet">
+///         <item>
+///             a single-statement body whose statement is an expression statement or a <c>return</c> with
+///             a value — and <em>not</em> a <c>throw</c>, which stays a block;
+///         </item>
+///         <item>only when the body holds no comment;</item>
+///         <item>only when the body holds no <c>#if</c>;</item>
+///         <item>never for <c>async void</c>;</item>
+///         <item>
+///             ⚠ <b>regardless of how long the result is.</b> A 200-column body converts and is then
+///             wrapped after the <c>=&gt;</c> by the reformat that follows. Doc 06's condition (c), "the
+///             converted form fits <c>max_line_length</c> at the member's indentation", is not a condition the
+///             oracle applies, and implementing it would refuse a conversion the oracle performs on every long
+///             one-line method in the corpus.
+///         </item>
+///     </list>
+///     The doc has been corrected; this comment is the measurement it was corrected from.
 /// </remarks>
 public sealed class BodyStyleRule : ArrangementRule {
     public override string Id => ArrangeIds.BodyStyle;
 
     /// <summary>
-    /// ⚠ Syntactic. Every condition above is a question about the tree — <c>async void</c> is two
-    /// tokens, "no comment" is trivia, and a <c>return</c> with a value is a node kind. This is one
-    /// of the rewrites an agent gets on a loose file with no project.
+    ///     ⚠ Syntactic. Every condition above is a question about the tree — <c>async void</c> is two
+    ///     tokens, "no comment" is trivia, and a <c>return</c> with a value is a node kind. This is one
+    ///     of the rewrites an agent gets on a loose file with no project.
     /// </summary>
     public override bool NeedsSemantics => false;
 
@@ -147,12 +151,12 @@ public sealed class BodyStyleRule : ArrangementRule {
         }
 
         /// <summary>
-        /// ⚠ The owner rule, which is what <c>accessor_owner_body</c> actually means. Measured: a
-        /// property whose only accessor is a <c>get</c> collapses to an expression body on the
-        /// <em>property</em> (<c>public int P =&gt; _n;</c>); a property with more than one accessor
-        /// keeps its accessor list and each accessor gets an expression body
-        /// (<c>get =&gt; _n; set =&gt; _n = value;</c>). One key, two shapes, and reading it as
-        /// "expression bodies on accessors" loses the first.
+        ///     ⚠ The owner rule, which is what <c>accessor_owner_body</c> actually means. Measured: a
+        ///     property whose only accessor is a <c>get</c> collapses to an expression body on the
+        ///     <em>property</em> (<c>public int P =&gt; _n;</c>); a property with more than one accessor
+        ///     keeps its accessor list and each accessor gets an expression body
+        ///     (<c>get =&gt; _n; set =&gt; _n = value;</c>). One key, two shapes, and reading it as
+        ///     "expression bodies on accessors" loses the first.
         /// </summary>
         public override SyntaxNode? VisitPropertyDeclaration(PropertyDeclarationSyntax node) {
             var visited = (PropertyDeclarationSyntax)base.VisitPropertyDeclaration(node)!;
@@ -176,14 +180,14 @@ public sealed class BodyStyleRule : ArrangementRule {
         }
 
         /// <summary>
-        /// An accessor with a single-statement block becomes <c>get =&gt; …;</c>.
+        ///     An accessor with a single-statement block becomes <c>get =&gt; …;</c>.
         /// </summary>
         /// <remarks>
-        /// ⚠ Runs before <see cref="VisitPropertyDeclaration"/> sees the property, because
-        /// <c>base.Visit…</c> descends first. The owner collapse above therefore reads an accessor
-        /// list that may already carry expression bodies, which is why it calls
-        /// <see cref="Extract(BlockSyntax?)"/> on the block rather than on the accessor: an accessor
-        /// this method has already converted is handled by <see cref="ExtractAccessor"/>.
+        ///     ⚠ Runs before <see cref="VisitPropertyDeclaration" /> sees the property, because
+        ///     <c>base.Visit…</c> descends first. The owner collapse above therefore reads an accessor
+        ///     list that may already carry expression bodies, which is why it calls
+        ///     <see cref="Extract(BlockSyntax?)" /> on the block rather than on the accessor: an accessor
+        ///     this method has already converted is handled by <see cref="ExtractAccessor" />.
         /// </remarks>
         public override SyntaxNode? VisitAccessorDeclaration(AccessorDeclarationSyntax node) {
             var visited = (AccessorDeclarationSyntax)base.VisitAccessorDeclaration(node)!;
@@ -261,11 +265,11 @@ public sealed class BodyStyleRule : ArrangementRule {
         }
 
         /// <summary>
-        /// The expression a block body can collapse to, or null when it may not collapse at all.
+        ///     The expression a block body can collapse to, or null when it may not collapse at all.
         /// </summary>
         /// <remarks>
-        /// ⚠ Every "return null" here is docs/plan/06 § "Safety" layer 1 in miniature: a body this
-        /// method does not understand stays a block. There is no "probably fine".
+        ///     ⚠ Every "return null" here is docs/plan/06 § "Safety" layer 1 in miniature: a body this
+        ///     method does not understand stays a block. There is no "probably fine".
         /// </remarks>
         static ExpressionSyntax? Extract(
             BlockSyntax? body,
@@ -303,9 +307,9 @@ public sealed class BodyStyleRule : ArrangementRule {
         }
 
         /// <summary>
-        /// A comment or a directive inside the body blocks the conversion, because there is nowhere
-        /// for either to go: an expression body has no statement list to hold a line comment, and a
-        /// <c>#if</c> that straddles the only statement is not a single statement at all.
+        ///     A comment or a directive inside the body blocks the conversion, because there is nowhere
+        ///     for either to go: an expression body has no statement list to hold a line comment, and a
+        ///     <c>#if</c> that straddles the only statement is not a single statement at all.
         /// </summary>
         static bool HasTriviaThatBlocksConversion(SyntaxNode node) {
             foreach (var trivia in node.DescendantTrivia(descendIntoTrivia: true)) {
@@ -329,9 +333,9 @@ public sealed class BodyStyleRule : ArrangementRule {
             type is PredefinedTypeSyntax predefined && predefined.Keyword.IsKind(SyntaxKind.VoidKeyword);
 
         /// <summary>
-        /// ⚠ Arrangement emits one space and nothing else, and lets the formatter lay the result out
-        /// (docs/plan/06 § "Interaction with the formatter"). A rewriter that also formats is a
-        /// rewriter whose output disagrees with the formatter, and the pair stops being idempotent.
+        ///     ⚠ Arrangement emits one space and nothing else, and lets the formatter lay the result out
+        ///     (docs/plan/06 § "Interaction with the formatter"). A rewriter that also formats is a
+        ///     rewriter whose output disagrees with the formatter, and the pair stops being idempotent.
         /// </summary>
         static ArrowExpressionClauseSyntax Arrow(ExpressionSyntax expression) =>
             SyntaxFactory.ArrowExpressionClause(
@@ -342,20 +346,20 @@ public sealed class BodyStyleRule : ArrangementRule {
             );
 
         /// <summary>
-        /// The semicolon that replaces a closing brace — carrying whatever followed that brace on
-        /// its line, because a trailing comment belongs to the author and not to the brace.
+        ///     The semicolon that replaces a closing brace — carrying whatever followed that brace on
+        ///     its line, because a trailing comment belongs to the author and not to the brace.
         /// </summary>
         static SyntaxToken Semicolon(SyntaxToken closeBrace) =>
             SyntaxFactory.Token(SyntaxKind.SemicolonToken).WithTrailingTrivia(closeBrace.TrailingTrivia);
 
         /// <summary>
-        /// The block an expression body expands back into, for <c>body = block_body</c>.
+        ///     The block an expression body expands back into, for <c>body = block_body</c>.
         /// </summary>
         /// <remarks>
-        /// ⚠ Which statement it becomes depends on the member: a <c>void</c> method's expression is a
-        /// statement, and everything else's is a returned value. Getting this backwards produces code
-        /// that does not compile, which is exactly what safety layer 2 exists to catch — but layer 1
-        /// is supposed to mean layer 2 never fires.
+        ///     ⚠ Which statement it becomes depends on the member: a <c>void</c> method's expression is a
+        ///     statement, and everything else's is a returned value. Getting this backwards produces code
+        ///     that does not compile, which is exactly what safety layer 2 exists to catch — but layer 1
+        ///     is supposed to mean layer 2 never fires.
         /// </remarks>
         static BlockSyntax BlockFor(SyntaxNode member, ExpressionSyntax expression) {
             var bare = expression.WithoutLeadingTrivia().WithTrailingTrivia();

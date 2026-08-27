@@ -9,26 +9,26 @@ using Rikarin.Skala.Rules.Metadata;
 namespace Rikarin.Skala.Rules.Tests;
 
 /// <summary>
-/// Applies every fix and then asks the compiler and the rule what they think of the result.
+///     Applies every fix and then asks the compiler and the rule what they think of the result.
 /// </summary>
 /// <remarks>
-/// ⚠ <see cref="RuleFixtureTests.EveryFix_ProducesTextThatStillParses"/> checks that the edited text
-/// <em>parses</em>, which is a real check and is not the one that matters. A fix that turns
-/// <c>x != null</c> into a pattern inside an expression tree parses perfectly and is CS8122; a fix
-/// that lifts a declaration into a scope where the name is taken parses perfectly and is CS0136.
-/// Those are binding errors, and finding them needs the semantic model rather than the parser.
-/// <para>
-/// ⚠ The second assertion is the one that catches a fix which is <em>correct but not a fix</em>: if
-/// the rule still fires on its own output, the edit did not address the finding, and
-/// <c>skala fix</c> would either loop or leave the report unchanged after doing work. docs/plan/10:
-/// "A fixing tool that can break the build is a tool an agent will use to break the build" — and one
-/// that changes a file without changing the report is the quieter version of the same problem.
-/// </para>
-/// <para>
-/// ⚠ The analyzers are discovered by reflection rather than listed. A hand-kept list is a list that
-/// silently omits the rule someone forgot to add, and the omission looks exactly like a passing
-/// test.
-/// </para>
+///     ⚠ <see cref="RuleFixtureTests.EveryFix_ProducesTextThatStillParses" /> checks that the edited text
+///     <em>parses</em>, which is a real check and is not the one that matters. A fix that turns
+///     <c>x != null</c> into a pattern inside an expression tree parses perfectly and is CS8122; a fix
+///     that lifts a declaration into a scope where the name is taken parses perfectly and is CS0136.
+///     Those are binding errors, and finding them needs the semantic model rather than the parser.
+///     <para>
+///         ⚠ The second assertion is the one that catches a fix which is <em>correct but not a fix</em>: if
+///         the rule still fires on its own output, the edit did not address the finding, and
+///         <c>skala fix</c> would either loop or leave the report unchanged after doing work. docs/plan/10:
+///         "A fixing tool that can break the build is a tool an agent will use to break the build" — and one
+///         that changes a file without changing the report is the quieter version of the same problem.
+///     </para>
+///     <para>
+///         ⚠ The analyzers are discovered by reflection rather than listed. A hand-kept list is a list that
+///         silently omits the rule someone forgot to add, and the omission looks exactly like a passing
+///         test.
+///     </para>
 /// </remarks>
 public sealed class FixRoundTripTests {
     static ImmutableArray<DiagnosticAnalyzer> Analyzers { get; } = Discover();

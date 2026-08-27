@@ -51,28 +51,28 @@ public sealed record CheckRequest {
     public IReadOnlyList<string> Rules { get; init; } = [];
 
     /// <summary>
-    /// Whether a <c>resharper_*_highlighting</c> key may set a Skala rule's severity.
+    ///     Whether a <c>resharper_*_highlighting</c> key may set a Skala rule's severity.
     /// </summary>
     /// <remarks>
-    /// ⚠ Off by default, and docs/plan/16 § Q5 records the measurement that decided it: the author's
-    /// own export sets <c>resharper_use_throw_if_null_method_highlighting = none</c>, so reading
-    /// these keys as authoritative would switch SK1020 off in the repository the tool was built for,
-    /// without anyone deciding to. <c>dotnet_diagnostic.SK…</c> always wins over it.
+    ///     ⚠ Off by default, and docs/plan/16 § Q5 records the measurement that decided it: the author's
+    ///     own export sets <c>resharper_use_throw_if_null_method_highlighting = none</c>, so reading
+    ///     these keys as authoritative would switch SK1020 off in the repository the tool was built for,
+    ///     without anyone deciding to. <c>dotnet_diagnostic.SK…</c> always wins over it.
     /// </remarks>
     public bool ReadReSharperSeverities { get; init; }
 
     /// <summary>
-    /// A git ref: only findings on lines it changed count as new (docs/plan/09 § "New-code definition").
+    ///     A git ref: only findings on lines it changed count as new (docs/plan/09 § "New-code definition").
     /// </summary>
     public string? Since { get; init; }
 
     /// <summary>
-    /// The baseline to compare against. Empty means <c>.skala/baseline.sarif</c> if it exists.
+    ///     The baseline to compare against. Empty means <c>.skala/baseline.sarif</c> if it exists.
     /// </summary>
     /// <remarks>
-    /// ⚠ Null means "no baseline", empty string means "the default path, if there is one". The
-    /// distinction is what lets a gate name a baseline without the command line repeating it and
-    /// still lets <c>--no-baseline</c> mean something.
+    ///     ⚠ Null means "no baseline", empty string means "the default path, if there is one". The
+    ///     distinction is what lets a gate name a baseline without the command line repeating it and
+    ///     still lets <c>--no-baseline</c> mean something.
     /// </remarks>
     public string? BaselinePath { get; init; }
 
@@ -92,13 +92,13 @@ public sealed record CheckRequest {
     public bool IncludeMetrics { get; init; } = true;
 
     /// <summary>
-    /// Rank the analyzers by what they cost and print the table (docs/plan/13 § "Analysis").
+    ///     Rank the analyzers by what they cost and print the table (docs/plan/13 § "Analysis").
     /// </summary>
     /// <remarks>
-    /// ⚠ Off by default and never on in a gate. Doc 13 calls this the way "a rule that is
-    /// accidentally O(n²) in a method's statement count gets found", and says every Skala rule's
-    /// cost is reviewed against it before release. README lists its output as explicitly not a
-    /// contract: it is an instrument, and the shape of what it prints may change.
+    ///     ⚠ Off by default and never on in a gate. Doc 13 calls this the way "a rule that is
+    ///     accidentally O(n²) in a method's statement count gets found", and says every Skala rule's
+    ///     cost is reviewed against it before release. README lists its output as explicitly not a
+    ///     contract: it is an instrument, and the shape of what it prints may change.
     /// </remarks>
     public bool Profile { get; init; }
 
@@ -107,12 +107,12 @@ public sealed record CheckRequest {
 }
 
 /// <summary>
-/// The implementation behind <c>skala check</c>.
+///     The implementation behind <c>skala check</c>.
 /// </summary>
 /// <remarks>
-/// ⚠ It lives here rather than in the CLI because nothing may reference <c>Rikarin.Skala.Cli</c>
-/// (docs/plan/02 § "The project graph"): the daemon, the MCP server and MSBuild host the same logic
-/// and the CLI is argument parsing and rendering only.
+///     ⚠ It lives here rather than in the CLI because nothing may reference <c>Rikarin.Skala.Cli</c>
+///     (docs/plan/02 § "The project graph"): the daemon, the MCP server and MSBuild host the same logic
+///     and the CLI is argument parsing and rendering only.
 /// </remarks>
 public static class CheckCommand {
     public static (CommandResult Result, RunReport Report) Run(
@@ -327,17 +327,17 @@ public static class CheckCommand {
     }
 
     /// <summary>
-    /// The analyzers, ranked by what they cost, summed across every compilation in the run.
+    ///     The analyzers, ranked by what they cost, summed across every compilation in the run.
     /// </summary>
     /// <remarks>
-    /// docs/plan/13 § "Analysis". ⚠ The percentage is of the analyzer total, not of wall time:
-    /// loading the projects, the formatter pass and the duplication index are all outside it, and a
-    /// rule that is 40 % of the analyzer budget on a fast run may be 4 % of the command.
-    /// <para>
-    /// ⚠ One analyzer appears once with its costs added across compilations, because that is the
-    /// number a reader is deciding about — "is this rule expensive" is a question about the run,
-    /// not about a project.
-    /// </para>
+    ///     docs/plan/13 § "Analysis". ⚠ The percentage is of the analyzer total, not of wall time:
+    ///     loading the projects, the formatter pass and the duplication index are all outside it, and a
+    ///     rule that is 40 % of the analyzer budget on a fast run may be 4 % of the command.
+    ///     <para>
+    ///         ⚠ One analyzer appears once with its costs added across compilations, because that is the
+    ///         number a reader is deciding about — "is this rule expensive" is a question about the run,
+    ///         not about a project.
+    ///     </para>
     /// </remarks>
     static string Profile(List<AnalyzerCost> costs, TimeSpan wall) {
         if (costs.Count == 0) {
@@ -387,9 +387,9 @@ public static class CheckCommand {
 
     /// <summary>The aggregate metrics, with the duplication measurement folded in.</summary>
     /// <remarks>
-    /// ⚠ Duplication and the member metrics are separate opt-ins because they cost different things:
-    /// duplication is a whole-repository token pass, the member metrics are a syntax walk. A
-    /// <c>verify</c> that has to stay sub-second wants neither; a <c>check</c> in CI wants both.
+    ///     ⚠ Duplication and the member metrics are separate opt-ins because they cost different things:
+    ///     duplication is a whole-repository token pass, the member metrics are a syntax walk. A
+    ///     <c>verify</c> that has to stay sub-second wants neither; a <c>check</c> in CI wants both.
     /// </remarks>
     static MetricsSummary Metrics(
         LoadedProject loaded,
@@ -402,17 +402,17 @@ public static class CheckCommand {
     }
 
     /// <summary>
-    /// Applies the three composable scopings of docs/plan/09 § "New-code definition".
+    ///     Applies the three composable scopings of docs/plan/09 § "New-code definition".
     /// </summary>
     /// <remarks>
-    /// ⚠ Order matters: <c>--since</c> tags findings, then the baseline buckets them, then the
-    /// suppression audit runs against the same ref. Running the baseline first would bucket
-    /// findings the <c>--since</c> pass is about to change, and the two would disagree.
-    /// <para>
-    /// ⚠ A failure in any of them is a <em>diagnostic</em>, not a silent skip. <c>--since</c>
-    /// against a ref git cannot resolve must not quietly produce "zero changed lines", because a
-    /// <c>newIssues: 0</c> gate then passes for the worst possible reason.
-    /// </para>
+    ///     ⚠ Order matters: <c>--since</c> tags findings, then the baseline buckets them, then the
+    ///     suppression audit runs against the same ref. Running the baseline first would bucket
+    ///     findings the <c>--since</c> pass is about to change, and the two would disagree.
+    ///     <para>
+    ///         ⚠ A failure in any of them is a <em>diagnostic</em>, not a silent skip. <c>--since</c>
+    ///         against a ref git cannot resolve must not quietly produce "zero changed lines", because a
+    ///         <c>newIssues: 0</c> gate then passes for the worst possible reason.
+    ///     </para>
     /// </remarks>
     static RunReport Scope(
         RunReport report,
@@ -508,14 +508,14 @@ public static class CheckCommand {
     }
 
     /// <summary>
-    /// Which baseline this run uses, if any.
+    ///     Which baseline this run uses, if any.
     /// </summary>
     /// <remarks>
-    /// ⚠ The default path is used only when the file exists. A repository that has never run
-    /// <c>baseline create</c> gets no baseline rather than an empty one, so every finding is
-    /// <see cref="BaselineBucket.Unknown"/> rather than <see cref="BaselineBucket.New"/> — which is
-    /// what stops a <c>newIssues</c> gate from failing on a tree that simply has not been
-    /// baselined.
+    ///     ⚠ The default path is used only when the file exists. A repository that has never run
+    ///     <c>baseline create</c> gets no baseline rather than an empty one, so every finding is
+    ///     <see cref="BaselineBucket.Unknown" /> rather than <see cref="BaselineBucket.New" /> — which is
+    ///     what stops a <c>newIssues</c> gate from failing on a tree that simply has not been
+    ///     baselined.
     /// </remarks>
     static string? BaselinePathFor(string root, CheckRequest request, GateDefinition definition) {
         if (request.BaselinePath is { Length: > 0 } explicitPath) {
@@ -606,14 +606,14 @@ public static class CheckCommand {
     }
 
     /// <summary>
-    /// The files SK0001 is measured over: the compilations' reportable set, filtered by whatever the
-    /// caller asked for.
+    ///     The files SK0001 is measured over: the compilations' reportable set, filtered by whatever the
+    ///     caller asked for.
     /// </summary>
     /// <remarks>
-    /// ⚠ Derived from the load rather than from the command line. The requested path is usually a
-    /// directory, and formatting the directory's name is not a thing; and taking the argument
-    /// literally would format generated files, which the analysis half is careful not to report on.
-    /// One source of "which files does this run concern", for both halves.
+    ///     ⚠ Derived from the load rather than from the command line. The requested path is usually a
+    ///     directory, and formatting the directory's name is not a thing; and taking the argument
+    ///     literally would format generated files, which the analysis half is careful not to report on.
+    ///     One source of "which files does this run concern", for both halves.
     /// </remarks>
     static List<string> Paths(LoadedProject loaded, CheckRequest request) {
         var reportable = new List<string>();
@@ -650,12 +650,12 @@ public static class CheckCommand {
     }
 
     /// <summary>
-    /// The hash of the effective option set and rule severities.
+    ///     The hash of the effective option set and rule severities.
     /// </summary>
     /// <remarks>
-    /// ⚠ doc 09 puts it in the SARIF's <c>tool.driver</c> because two reports with different
-    /// fingerprints are not comparable, and a report that does not carry one invites comparing them
-    /// anyway.
+    ///     ⚠ doc 09 puts it in the SARIF's <c>tool.driver</c> because two reports with different
+    ///     fingerprints are not comparable, and a report that does not carry one invites comparing them
+    ///     anyway.
     /// </remarks>
     static string ConfigurationFingerprint(string root) {
         var builder = new StringBuilder();
@@ -674,13 +674,13 @@ public static class CheckCommand {
 }
 
 /// <summary>
-/// <c>supersedes</c>: one span, one finding (docs/plan/08 § "Rule metadata").
+///     <c>supersedes</c>: one span, one finding (docs/plan/08 § "Rule metadata").
 /// </summary>
 /// <remarks>
-/// ⚠ Where a hosted analyzer's rule and a Skala rule both fire on the same span, one is dropped and
-/// which one is a documented, deterministic choice: the superseding rule wins, and the superseded
-/// one stays in the report marked suppressed with the reason, so the SARIF still says the other
-/// analyzer had an opinion.
+///     ⚠ Where a hosted analyzer's rule and a Skala rule both fire on the same span, one is dropped and
+///     which one is a documented, deterministic choice: the superseding rule wins, and the superseded
+///     one stays in the report marked suppressed with the reason, so the SARIF still says the other
+///     analyzer had an opinion.
 /// </remarks>
 public static class Supersession {
     static readonly Dictionary<string, string> SupersededBy = Build();

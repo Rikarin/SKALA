@@ -10,21 +10,21 @@ using SarifSuppressionKind = Microsoft.CodeAnalysis.Sarif.SuppressionKind;
 namespace Rikarin.Skala.Reporting;
 
 /// <summary>
-/// The canonical serialisation (ADR-009): one <c>SarifLog</c> per run, everything else rendered
-/// from it.
+///     The canonical serialisation (ADR-009): one <c>SarifLog</c> per run, everything else rendered
+///     from it.
 /// </summary>
 /// <remarks>
-/// ⚠ Built with the SARIF SDK's object model rather than by hand. Writing SARIF by hand is how you
-/// produce SARIF that GitHub's code-scanning upload rejects for a reason its error message does not
-/// name, and from 1.0 the shape is a compatibility surface (docs/plan/15 § M7).
+///     ⚠ Built with the SARIF SDK's object model rather than by hand. Writing SARIF by hand is how you
+///     produce SARIF that GitHub's code-scanning upload rejects for a reason its error message does not
+///     name, and from 1.0 the shape is a compatibility surface (docs/plan/15 § M7).
 /// </remarks>
 public static class SarifWriter {
     /// <summary>
-    /// ⚠ M5's fingerprint key, kept as a constant because callers name it.
+    ///     ⚠ M5's fingerprint key, kept as a constant because callers name it.
     /// </summary>
     /// <remarks>
-    /// M6 emits <see cref="Fingerprints.Version2"/> beside it; see <see cref="Fingerprints"/> for
-    /// why adding terms is a new version rather than a redefinition.
+    ///     M6 emits <see cref="Fingerprints.Version2" /> beside it; see <see cref="Fingerprints" /> for
+    ///     why adding terms is a new version rather than a redefinition.
     /// </remarks>
     public const string FingerprintVersion = Fingerprints.Version1;
 
@@ -83,12 +83,12 @@ public static class SarifWriter {
     }
 
     /// <summary>
-    /// ⚠ Every rule that <em>could</em> fire, not every rule that did.
+    ///     ⚠ Every rule that <em>could</em> fire, not every rule that did.
     /// </summary>
     /// <remarks>
-    /// doc 09: "A report that does not say which rules could have fired is a report that cannot be
-    /// compared to another." A run with a rule switched off and a run with the rule on and clean
-    /// have the same <c>results</c> array, and they must not look identical.
+    ///     doc 09: "A report that does not say which rules could have fired is a report that cannot be
+    ///     compared to another." A run with a rule switched off and a run with the rule on and clean
+    ///     have the same <c>results</c> array, and they must not look identical.
     /// </remarks>
     static List<ReportingDescriptor> Rules(RunReport report) {
         var skipped = new Dictionary<string, string>(StringComparer.Ordinal);
@@ -263,15 +263,15 @@ public static class SarifWriter {
     }
 
     /// <summary>
-    /// docs/plan/09 § "The fingerprint", delegated to <see cref="Fingerprints"/>.
+    ///     docs/plan/09 § "The fingerprint", delegated to <see cref="Fingerprints" />.
     /// </summary>
     /// <remarks>
-    /// ⚠ Kept as a member of this type because <c>ReportingTests</c> and every caller outside the
-    /// assembly already name it, and because the SARIF writer is where a reader looks for the
-    /// meaning of <c>partialFingerprints</c>. The computation itself moved: M6 emits
-    /// <see cref="Fingerprints.Version1"/> <em>and</em> <see cref="Fingerprints.Version2"/>, and a
-    /// version pair is the whole reason a baseline written before the fingerprint gained the
-    /// enclosing symbol and the ordinal still reads.
+    ///     ⚠ Kept as a member of this type because <c>ReportingTests</c> and every caller outside the
+    ///     assembly already name it, and because the SARIF writer is where a reader looks for the
+    ///     meaning of <c>partialFingerprints</c>. The computation itself moved: M6 emits
+    ///     <see cref="Fingerprints.Version1" /> <em>and</em> <see cref="Fingerprints.Version2" />, and a
+    ///     version pair is the whole reason a baseline written before the fingerprint gained the
+    ///     enclosing symbol and the ordinal still reads.
     /// </remarks>
     public static string Fingerprint(Finding finding) => Fingerprints.V1(finding);
 
@@ -367,9 +367,9 @@ public static class SarifWriter {
     }
 
     /// <summary>
-    /// ⚠ How two paths are compared for identity, in one place. macOS's default volume and every
-    /// Windows volume are case-insensitive; Linux's are not. Getting this wrong in one direction
-    /// prints absolute paths, and in the other merges two genuinely distinct files on Linux.
+    ///     ⚠ How two paths are compared for identity, in one place. macOS's default volume and every
+    ///     Windows volume are case-insensitive; Linux's are not. Getting this wrong in one direction
+    ///     prints absolute paths, and in the other merges two genuinely distinct files on Linux.
     /// </summary>
     public static StringComparison PathComparison { get; } =
         OperatingSystem.IsLinux() ? StringComparison.Ordinal : StringComparison.OrdinalIgnoreCase;

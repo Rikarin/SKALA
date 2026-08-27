@@ -9,13 +9,13 @@ using Rikarin.Skala.Rules.Metadata;
 namespace Rikarin.Skala.Rules.Modernization;
 
 /// <summary>
-/// <c>SK1020</c> — a hand-written null guard that <c>ArgumentNullException.ThrowIfNull</c> is.
+///     <c>SK1020</c> — a hand-written null guard that <c>ArgumentNullException.ThrowIfNull</c> is.
 /// </summary>
 /// <remarks>
-/// docs/plan/08-rule-catalogue.md § "Newer BCL over older idiom". ⚠ The rule is silent unless the
-/// helper actually exists in the compilation: a project on an older target framework would
-/// otherwise be handed a fix that does not compile, which is the failure mode
-/// <c>languageVersion</c> exists to prevent one level up.
+///     docs/plan/08-rule-catalogue.md § "Newer BCL over older idiom". ⚠ The rule is silent unless the
+///     helper actually exists in the compilation: a project on an older target framework would
+///     otherwise be handed a fix that does not compile, which is the failure mode
+///     <c>languageVersion</c> exists to prevent one level up.
 /// </remarks>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class ThrowIfNullAnalyzer : DiagnosticAnalyzer {
@@ -48,12 +48,12 @@ public sealed class ThrowIfNullAnalyzer : DiagnosticAnalyzer {
     }
 
     /// <summary>
-    /// Whether this null comparison is the condition of a guard <c>SK1020</c> owns.
+    ///     Whether this null comparison is the condition of a guard <c>SK1020</c> owns.
     /// </summary>
     /// <remarks>
-    /// ⚠ Called by <see cref="NullPatternAnalyzer"/> so that one line does not produce two findings
-    /// with two fixes, the second of which goes stale the moment the first is applied. Purely
-    /// syntactic on purpose: it is a question about who reports, not about what is true.
+    ///     ⚠ Called by <see cref="NullPatternAnalyzer" /> so that one line does not produce two findings
+    ///     with two fixes, the second of which goes stale the moment the first is applied. Purely
+    ///     syntactic on purpose: it is a question about who reports, not about what is true.
     /// </remarks>
     public static bool IsArgumentNullGuard(BinaryExpressionSyntax binary) =>
         binary.Parent is IfStatementSyntax statement
@@ -135,12 +135,12 @@ public sealed class ThrowIfNullAnalyzer : DiagnosticAnalyzer {
         };
 
     /// <summary>
-    /// The <c>nameof(x)</c> argument of a lone <c>throw new ArgumentNullException(nameof(x))</c>.
+    ///     The <c>nameof(x)</c> argument of a lone <c>throw new ArgumentNullException(nameof(x))</c>.
     /// </summary>
     /// <remarks>
-    /// ⚠ Exactly one argument, and it has to be a <c>nameof</c>. A guard that passes a message, or
-    /// throws a derived exception, or logs beside the throw, is a deliberate choice; replacing it
-    /// with the helper would delete the part someone wrote on purpose.
+    ///     ⚠ Exactly one argument, and it has to be a <c>nameof</c>. A guard that passes a message, or
+    ///     throws a derived exception, or logs beside the throw, is a deliberate choice; replacing it
+    ///     with the helper would delete the part someone wrote on purpose.
     /// </remarks>
     static string? ThrownArgumentNullName(IfStatementSyntax statement) {
         if (statement.Else is not null || statement.Statement is null) {

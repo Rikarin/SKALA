@@ -9,8 +9,8 @@ public sealed record FixResult(string Text, ImmutableArray<string> Applied) {
 }
 
 /// <summary>
-/// The in-place repairs <c>skala config fix</c> offers for the two hazards the export ships with:
-/// no <c>root = true</c>, and a column limit only ReSharper can see.
+///     The in-place repairs <c>skala config fix</c> offers for the two hazards the export ships with:
+///     no <c>root = true</c>, and a column limit only ReSharper can see.
 /// </summary>
 /// <remarks>docs/plan/03-configuration-model.md § "Four things about that file that will bite".</remarks>
 public static class Fixer {

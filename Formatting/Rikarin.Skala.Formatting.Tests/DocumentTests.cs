@@ -70,7 +70,7 @@ public sealed class DocumentBuilderTests {
 }
 
 /// <summary>
-/// The three-state group model, and the fourth state <c>if_owner_is_single_line</c> needs.
+///     The three-state group model, and the fourth state <c>if_owner_is_single_line</c> needs.
 /// </summary>
 public sealed class FitterTests {
     [Fact]

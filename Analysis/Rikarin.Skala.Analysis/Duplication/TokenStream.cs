@@ -3,31 +3,31 @@ using Microsoft.CodeAnalysis.CSharp;
 namespace Rikarin.Skala.Analysis.Duplication;
 
 /// <summary>
-/// One file lexed to the normalised token stream type-2 clone detection compares.
+///     One file lexed to the normalised token stream type-2 clone detection compares.
 /// </summary>
 /// <remarks>
-/// docs/plan/09 § "Duplication", step 1: "lex every file to a token stream, dropping trivia, mapping
-/// identifiers to a canonical class (<c>ID</c>), keeping keywords and punctuation exact".
-/// <para>
-/// ⚠ The normalisation is <see cref="Microsoft.CodeAnalysis.SyntaxToken.RawKind"/> and nothing else,
-/// because Roslyn's kind <i>is</i> the equivalence class the algorithm wants: every identifier is
-/// <c>IdentifierToken</c>, every number is <c>NumericLiteralToken</c>, every string is
-/// <c>StringLiteralToken</c> — one class per literal kind — and every keyword and every piece of
-/// punctuation is its own kind already. Writing a mapping table on top of that would be a second
-/// place for the classes to be wrong.
-/// </para>
-/// <para>
-/// ⚠ Lexer tokens, not parser tokens. Two consequences, both deliberate: contextual keywords
-/// (<c>var</c>, <c>async</c>, <c>record</c>, <c>value</c>) are identifiers here and normalise away,
-/// which is right for type-2 — <c>var x</c> and <c>Foo x</c> are the same shape; and an interpolated
-/// string arrives as one <c>InterpolatedStringToken</c> rather than as its parts, so its content
-/// normalises away wholesale. That is the same decision as normalising any other literal, one level
-/// coarser.
-/// </para>
-/// <para>
-/// Trivia carries the comments, the whitespace and the disabled <c>#if</c> regions, and all of it is
-/// dropped — reformatting a file must not change its clones.
-/// </para>
+///     docs/plan/09 § "Duplication", step 1: "lex every file to a token stream, dropping trivia, mapping
+///     identifiers to a canonical class (<c>ID</c>), keeping keywords and punctuation exact".
+///     <para>
+///         ⚠ The normalisation is <see cref="Microsoft.CodeAnalysis.SyntaxToken.RawKind" /> and nothing else,
+///         because Roslyn's kind <i>is</i> the equivalence class the algorithm wants: every identifier is
+///         <c>IdentifierToken</c>, every number is <c>NumericLiteralToken</c>, every string is
+///         <c>StringLiteralToken</c> — one class per literal kind — and every keyword and every piece of
+///         punctuation is its own kind already. Writing a mapping table on top of that would be a second
+///         place for the classes to be wrong.
+///     </para>
+///     <para>
+///         ⚠ Lexer tokens, not parser tokens. Two consequences, both deliberate: contextual keywords
+///         (<c>var</c>, <c>async</c>, <c>record</c>, <c>value</c>) are identifiers here and normalise away,
+///         which is right for type-2 — <c>var x</c> and <c>Foo x</c> are the same shape; and an interpolated
+///         string arrives as one <c>InterpolatedStringToken</c> rather than as its parts, so its content
+///         normalises away wholesale. That is the same decision as normalising any other literal, one level
+///         coarser.
+///     </para>
+///     <para>
+///         Trivia carries the comments, the whitespace and the disabled <c>#if</c> regions, and all of it is
+///         dropped — reformatting a file must not change its clones.
+///     </para>
 /// </remarks>
 internal sealed class TokenStream {
     TokenStream(ushort[] codes, int[] starts, int[] ends) {
@@ -51,11 +51,11 @@ internal sealed class TokenStream {
     public static TokenStream FromArrays(ushort[] codes, int[] starts, int[] ends) => new(codes, starts, ends);
 
     /// <summary>
-    /// Lexes one file.
+    ///     Lexes one file.
     /// </summary>
     /// <remarks>
-    /// ⚠ This is the expensive half of the whole feature, which is why the index exists: everything
-    /// downstream is integer arithmetic over the arrays this produces.
+    ///     ⚠ This is the expensive half of the whole feature, which is why the index exists: everything
+    ///     downstream is integer arithmetic over the arrays this produces.
     /// </remarks>
     public static TokenStream Lex(string text) {
         // A C# token averages a little over three characters including its trivia; over-guessing

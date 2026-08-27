@@ -5,17 +5,17 @@ using Rikarin.Skala.Reporting;
 namespace Rikarin.Skala.Analysis;
 
 /// <summary>
-/// <c>skala report</c> — re-render a stored SARIF, running nothing.
+///     <c>skala report</c> — re-render a stored SARIF, running nothing.
 /// </summary>
 /// <remarks>
-/// docs/plan/09 § "The human report": "re-renders a stored SARIF without re-running anything, which
-/// is what CI uses to produce a PR comment from an artifact".
-/// <para>
-/// ⚠ The separation is the feature. The job that analyses uploads one artifact; the job that
-/// comments — which may run on a different runner, with different permissions, after the analysing
-/// job has finished — reads it. A comment step that re-analysed would analyse a different tree
-/// (the merge commit, or main having moved) and would report findings the gate never saw.
-/// </para>
+///     docs/plan/09 § "The human report": "re-renders a stored SARIF without re-running anything, which
+///     is what CI uses to produce a PR comment from an artifact".
+///     <para>
+///         ⚠ The separation is the feature. The job that analyses uploads one artifact; the job that
+///         comments — which may run on a different runner, with different permissions, after the analysing
+///         job has finished — reads it. A comment step that re-analysed would analyse a different tree
+///         (the merge commit, or main having moved) and would report findings the gate never saw.
+///     </para>
 /// </remarks>
 public static class ReportCommand {
     public static CommandResult Run(
@@ -57,11 +57,11 @@ public static class ReportCommand {
 }
 
 /// <summary>
-/// <c>skala trend</c> — <c>.skala/history.jsonl</c>, rendered.
+///     <c>skala trend</c> — <c>.skala/history.jsonl</c>, rendered.
 /// </summary>
 /// <remarks>
-/// docs/plan/09 § "History". ⚠ "The answer to 'is this getting better' is a <c>git log</c> away,
-/// which is the SonarQube dashboard's actual job, minus the server."
+///     docs/plan/09 § "History". ⚠ "The answer to 'is this getting better' is a <c>git log</c> away,
+///     which is the SonarQube dashboard's actual job, minus the server."
 /// </remarks>
 public static class TrendCommand {
     public const int DefaultLimit = 20;

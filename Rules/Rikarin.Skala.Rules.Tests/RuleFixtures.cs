@@ -16,15 +16,18 @@ public sealed record RuleFixture(string RuleId, bool ShouldFire, string Path) {
 }
 
 /// <summary>
-/// The rule unit level: run one analyzer over one file and see what it says.
+///     The rule unit level: run one analyzer over one file and see what it says.
 /// </summary>
 /// <remarks>
-/// ⚠ docs/plan/16 § R3's shipping bar is not "the rule works". It is <b>zero false positives on the
-/// reference corpus, a documented false-positive story, and a "should not fire" fixture set at
-/// least as large as the positive one</b> — because the rules most likely to over-fire are exactly
-/// the ones with the most value, and a rule that fires 400 times and is right 390 is not ready.
-/// <see cref="RuleFixtureTests.EveryRule_HasMoreNegativeFixturesThanPositive"/> is that bar as a
-/// test.
+///     ⚠ docs/plan/16 § R3's shipping bar is not "the rule works". It is
+///     <b>
+///         zero false positives on the
+///         reference corpus, a documented false-positive story, and a "should not fire" fixture set at
+///         least as large as the positive one
+///     </b> — because the rules most likely to over-fire are exactly
+///     the ones with the most value, and a rule that fires 400 times and is right 390 is not ready.
+///     <see cref="RuleFixtureTests.EveryRule_HasMoreNegativeFixturesThanPositive" /> is that bar as a
+///     test.
 /// </remarks>
 public static class RuleFixtures {
     public static string Root { get; } = Path.Combine(
@@ -61,8 +64,8 @@ public static class RuleFixtures {
     }
 
     /// <summary>
-    /// A compilation over the running framework's reference set, which is what loose mode gives a
-    /// rule and therefore the least the rule may assume.
+    ///     A compilation over the running framework's reference set, which is what loose mode gives a
+    ///     rule and therefore the least the rule may assume.
     /// </summary>
     public static CSharpCompilation Compile(
         string source,
@@ -88,14 +91,14 @@ public static class RuleFixtures {
     }
 
     /// <summary>
-    /// ⚠ The rules that ship <c>defaultSeverity: none</c>, turned on for the fixture harness.
+    ///     ⚠ The rules that ship <c>defaultSeverity: none</c>, turned on for the fixture harness.
     /// </summary>
     /// <remarks>
-    /// A rule that is disabled by default is one Roslyn's severity filter drops before the analyzer's
-    /// diagnostic reaches anybody — so without this, its positive fixtures would prove that the
-    /// filter works and nothing at all about the rule. Turning it on here is the same thing a
-    /// repository does with <c>dotnet_diagnostic.SK7010.severity</c> per path, which is how
-    /// rules.json says the rule is meant to be used.
+    ///     A rule that is disabled by default is one Roslyn's severity filter drops before the analyzer's
+    ///     diagnostic reaches anybody — so without this, its positive fixtures would prove that the
+    ///     filter works and nothing at all about the rule. Turning it on here is the same thing a
+    ///     repository does with <c>dotnet_diagnostic.SK7010.severity</c> per path, which is how
+    ///     rules.json says the rule is meant to be used.
     /// </remarks>
     static ImmutableDictionary<string, ReportDiagnostic> OptIn { get; } = BuildOptIn();
 

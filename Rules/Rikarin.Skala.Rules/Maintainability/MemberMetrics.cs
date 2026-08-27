@@ -10,26 +10,26 @@ using Microsoft.CodeAnalysis.Operations;
 namespace Rikarin.Skala.Rules.Maintainability;
 
 /// <summary>
-/// Every per-member metric docs/plan/07-analysis-host.md § "Metrics" defines, for one member.
+///     Every per-member metric docs/plan/07-analysis-host.md § "Metrics" defines, for one member.
 /// </summary>
 /// <remarks>
-/// A record rather than seven out parameters because the whole point of
-/// <see cref="MemberMetrics.Compute"/> is that these numbers come out of <em>one</em> traversal and
-/// therefore cannot disagree with each other.
+///     A record rather than seven out parameters because the whole point of
+///     <see cref="MemberMetrics.Compute" /> is that these numbers come out of <em>one</em> traversal and
+///     therefore cannot disagree with each other.
 /// </remarks>
 public sealed record MemberMetricValues {
     /// <summary>
-    /// Linearly independent paths through the member: <c>edges − blocks + 2</c> over Roslyn's
-    /// <see cref="ControlFlowGraph"/>, or the syntactic decision-point count when there was no
-    /// semantic model. <c>SK7001</c>.
+    ///     Linearly independent paths through the member: <c>edges − blocks + 2</c> over Roslyn's
+    ///     <see cref="ControlFlowGraph" />, or the syntactic decision-point count when there was no
+    ///     semantic model. <c>SK7001</c>.
     /// </summary>
     public int Cyclomatic { get; init; }
 
     /// <summary>
-    /// ⚠ Whether <see cref="Cyclomatic"/> came from the control-flow graph or from the syntactic
-    /// fallback. A consumer that aggregates the number across a run needs to know which, because a
-    /// <c>--load=loose</c> run has no semantic model and the two are not guaranteed equal on every
-    /// shape.
+    ///     ⚠ Whether <see cref="Cyclomatic" /> came from the control-flow graph or from the syntactic
+    ///     fallback. A consumer that aggregates the number across a run needs to know which, because a
+    ///     <c>--load=loose</c> run has no semantic model and the two are not guaranteed equal on every
+    ///     shape.
     /// </summary>
     public bool CyclomaticFromControlFlowGraph { get; init; }
 
@@ -47,58 +47,58 @@ public sealed record MemberMetricValues {
 }
 
 /// <summary>
-/// A type declaration's size, as docs/plan/07 § "Metrics" defines it: "members, and fields
-/// separately". <c>SK7004</c>.
+///     A type declaration's size, as docs/plan/07 § "Metrics" defines it: "members, and fields
+///     separately". <c>SK7004</c>.
 /// </summary>
 /// <remarks>
-/// ⚠ Per <em>declaration</em>, not per symbol, so a partial type is measured once per file — which
-/// is the file a person opens. rules.json's <c>SK7004</c> rationale says so explicitly.
+///     ⚠ Per <em>declaration</em>, not per symbol, so a partial type is measured once per file — which
+///     is the file a person opens. rules.json's <c>SK7004</c> rationale says so explicitly.
 /// </remarks>
 public sealed record TypeMetricValues {
     /// <summary>Everything the type declares that is not a field. The rule fires on this.</summary>
     public int Members { get; init; }
 
     /// <summary>
-    /// Field declarators, counted separately: "forty fields is a data carrier, which may be exactly
-    /// right, while forty methods is a type doing forty jobs".
+    ///     Field declarators, counted separately: "forty fields is a data carrier, which may be exactly
+    ///     right, while forty methods is a type doing forty jobs".
     /// </summary>
     public int Fields { get; init; }
 }
 
 /// <summary>
-/// One walker, every metric, one visit.
+///     One walker, every metric, one visit.
 /// </summary>
 /// <remarks>
-/// ⚠ docs/plan/07 § "Metrics": the metrics are "computed in the same pass, from the same trees,
-/// because a second traversal of 1.35 M lines to count things is a second traversal". That is the
-/// load-bearing design constraint of this file: there is exactly one
-/// <see cref="Microsoft.CodeAnalysis.CSharp.CSharpSyntaxWalker"/> and it computes cognitive
-/// complexity, statement count, nesting depth and the syntactic cyclomatic count together.
-/// <para>
-/// ⚠ It is public because <c>Analysis</c> folds the same numbers into the run's aggregates and must
-/// call exactly this. Two implementations of "how big is this method" is a way for the aggregate in
-/// the report and the number in the finding to disagree, and a reader who notices that stops
-/// believing both.
-/// </para>
+///     ⚠ docs/plan/07 § "Metrics": the metrics are "computed in the same pass, from the same trees,
+///     because a second traversal of 1.35 M lines to count things is a second traversal". That is the
+///     load-bearing design constraint of this file: there is exactly one
+///     <see cref="Microsoft.CodeAnalysis.CSharp.CSharpSyntaxWalker" /> and it computes cognitive
+///     complexity, statement count, nesting depth and the syntactic cyclomatic count together.
+///     <para>
+///         ⚠ It is public because <c>Analysis</c> folds the same numbers into the run's aggregates and must
+///         call exactly this. Two implementations of "how big is this method" is a way for the aggregate in
+///         the report and the number in the finding to disagree, and a reader who notices that stops
+///         believing both.
+///     </para>
 /// </remarks>
 public static class MemberMetrics {
     /// <summary>
-    /// The diagnostic property every <c>SK70xx</c> metric finding carries its measurement under, so
-    /// a reader can see the number without re-deriving it.
+    ///     The diagnostic property every <c>SK70xx</c> metric finding carries its measurement under, so
+    ///     a reader can see the number without re-deriving it.
     /// </summary>
     public const string ValueKey = "skala.metric.value";
 
     /// <summary>
-    /// Every metric for one member, in a single visit.
+    ///     Every metric for one member, in a single visit.
     /// </summary>
     /// <param name="member">
-    /// A member declaration, a local function, or a type declaration (for which only
-    /// <see cref="MemberMetricValues.Parameters"/> — the primary constructor's — is meaningful).
+    ///     A member declaration, a local function, or a type declaration (for which only
+    ///     <see cref="MemberMetricValues.Parameters" /> — the primary constructor's — is meaningful).
     /// </param>
     /// <param name="model">
-    /// ⚠ May be null. Cyclomatic complexity then falls back to the syntactic decision-point count
-    /// and <see cref="MemberMetricValues.CyclomaticFromControlFlowGraph"/> says so. Every other
-    /// metric here is purely syntactic and is unaffected.
+    ///     ⚠ May be null. Cyclomatic complexity then falls back to the syntactic decision-point count
+    ///     and <see cref="MemberMetricValues.CyclomaticFromControlFlowGraph" /> says so. Every other
+    ///     metric here is purely syntactic and is unaffected.
     /// </param>
     /// <param name="cancellation">Every stage takes one (docs/plan/07 § "Cancellation").</param>
     public static MemberMetricValues Compute(SyntaxNode member, SemanticModel? model, CancellationToken cancellation) {
@@ -147,8 +147,8 @@ public static class MemberMetrics {
 
     /// <summary>How many members a type declaration declares, with fields counted separately.</summary>
     /// <remarks>
-    /// ⚠ Deliberately does not descend: a nested type counts as one member of its container and is
-    /// measured again on its own declaration.
+    ///     ⚠ Deliberately does not descend: a nested type counts as one member of its container and is
+    ///     measured again on its own declaration.
     /// </remarks>
     public static TypeMetricValues ComputeTypeSize(SyntaxNode type, CancellationToken cancellation) {
         if (type is not TypeDeclarationSyntax declaration) {
@@ -175,16 +175,16 @@ public static class MemberMetrics {
     }
 
     /// <summary>
-    /// Whether a declaration is part of the publicly visible surface, through its whole containing
-    /// chain. <c>SK7010</c>.
+    ///     Whether a declaration is part of the publicly visible surface, through its whole containing
+    ///     chain. <c>SK7010</c>.
     /// </summary>
     /// <remarks>
-    /// ⚠ `public` only, and rules.json's <c>SK7010</c> false-positive note is the reason: the rule
-    /// "counts only members that are publicly visible through their whole containing chain". A
-    /// `protected` member of a public class is reachable by a derived type and not by a caller, and
-    /// including it is the difference between a metric a library author recognises and one that
-    /// fires on every template method. A repository that wants the wider surface has
-    /// <c>SK6001</c>.
+    ///     ⚠ `public` only, and rules.json's <c>SK7010</c> false-positive note is the reason: the rule
+    ///     "counts only members that are publicly visible through their whole containing chain". A
+    ///     `protected` member of a public class is reachable by a derived type and not by a caller, and
+    ///     including it is the difference between a metric a library author recognises and one that
+    ///     fires on every template method. A repository that wants the wider surface has
+    ///     <c>SK6001</c>.
     /// </remarks>
     public static bool IsPublicApi(SyntaxNode declaration) {
         for (var node = declaration; node is not null; node = node.Parent) {
@@ -209,13 +209,13 @@ public static class MemberMetrics {
     }
 
     /// <summary>
-    /// Whether <c>SK7010</c> has anything to say about this declaration at all.
+    ///     Whether <c>SK7010</c> has anything to say about this declaration at all.
     /// </summary>
     /// <remarks>
-    /// The exclusions are rules.json's, verbatim: accessors, explicit interface implementations,
-    /// operators, finalizers and <c>record</c> positional members are not things a person writes a
-    /// <c>&lt;summary&gt;</c> for. Fields are excluded too — a public constant's name is its
-    /// documentation far more often than not, and including them is how the metric becomes noise.
+    ///     The exclusions are rules.json's, verbatim: accessors, explicit interface implementations,
+    ///     operators, finalizers and <c>record</c> positional members are not things a person writes a
+    ///     <c>&lt;summary&gt;</c> for. Fields are excluded too — a public constant's name is its
+    ///     documentation far more often than not, and including them is how the metric becomes noise.
     /// </remarks>
     public static bool IsDocumentable(SyntaxNode declaration) =>
         declaration switch {
@@ -230,12 +230,12 @@ public static class MemberMetrics {
         };
 
     /// <summary>
-    /// Whether a declaration carries a documentation comment. <c>&lt;inheritdoc/&gt;</c> counts.
+    ///     Whether a declaration carries a documentation comment. <c>&lt;inheritdoc/&gt;</c> counts.
     /// </summary>
     /// <remarks>
-    /// ⚠ rules.json: "treats an <c>&lt;inheritdoc/&gt;</c> as documentation". It is a deliberate
-    /// statement that the base member's prose applies here, which is exactly what the metric is
-    /// asking for; requiring the author to repeat it would make the rule a copy-paste generator.
+    ///     ⚠ rules.json: "treats an <c>&lt;inheritdoc/&gt;</c> as documentation". It is a deliberate
+    ///     statement that the base member's prose applies here, which is exactly what the metric is
+    ///     asking for; requiring the author to repeat it would make the rule a copy-paste generator.
     /// </remarks>
     public static bool HasDocumentation(SyntaxNode declaration) {
         foreach (var trivia in declaration.GetLeadingTrivia()) {
@@ -270,10 +270,10 @@ public static class MemberMetrics {
 
     /// <summary>The declared parameters of anything that declares parameters.</summary>
     /// <remarks>
-    /// ⚠ docs/plan/07 § "Metrics" says "including primary-constructor parameters", so a
-    /// <see cref="TypeDeclarationSyntax"/> with a parameter list answers here: it is the type's
-    /// constructor whatever the syntax. An extension method's <c>this</c> parameter is in the list
-    /// and stays counted, because a caller supplies it.
+    ///     ⚠ docs/plan/07 § "Metrics" says "including primary-constructor parameters", so a
+    ///     <see cref="TypeDeclarationSyntax" /> with a parameter list answers here: it is the type's
+    ///     constructor whatever the syntax. An extension method's <c>this</c> parameter is in the list
+    ///     and stays counted, because a caller supplies it.
     /// </remarks>
     static int ParameterCount(SyntaxNode member) =>
         member switch {
@@ -286,30 +286,30 @@ public static class MemberMetrics {
         };
 
     /// <summary>
-    /// The name a direct recursive call would use, or null where Sonar does not look for one.
+    ///     The name a direct recursive call would use, or null where Sonar does not look for one.
     /// </summary>
     static string? RecursionName(SyntaxNode member) =>
         member is MethodDeclarationSyntax method ? method.Identifier.ValueText : null;
 
     /// <summary>
-    /// Cyclomatic complexity as <c>edges − blocks + 2</c> over the member's control-flow graphs.
+    ///     Cyclomatic complexity as <c>edges − blocks + 2</c> over the member's control-flow graphs.
     /// </summary>
     /// <remarks>
-    /// ⚠ docs/plan/07 § "Metrics" specifies Roslyn's <see cref="ControlFlowGraph"/> — "basic blocks
-    /// + conditional edges" — rather than a keyword count, so a <c>switch</c> expression, a
-    /// <c>when</c> clause, a conditional access chain and a <c>&amp;&amp;</c> short-circuit are each
-    /// counted the way the compiler sees them rather than the way a regular expression would.
-    /// <para>
-    /// In a well-formed graph every block but the exit has exactly one fall-through branch, so
-    /// <c>E = (N − 1) + C</c> and the classic formula reduces to "one more than the number of
-    /// conditional branches". Both are computed here; keeping the general form means an unreachable
-    /// block or a graph shape Roslyn changes later does not silently move the number.
-    /// </para>
-    /// <para>
-    /// ⚠ A member can have several bodies — a property's two accessors — and each has its own
-    /// graph. Their decision counts are summed and the +1 is applied once, so a property whose
-    /// getter and setter are both trivial scores 1 rather than 2.
-    /// </para>
+    ///     ⚠ docs/plan/07 § "Metrics" specifies Roslyn's <see cref="ControlFlowGraph" /> — "basic blocks
+    ///     + conditional edges" — rather than a keyword count, so a <c>switch</c> expression, a
+    ///     <c>when</c> clause, a conditional access chain and a <c>&amp;&amp;</c> short-circuit are each
+    ///     counted the way the compiler sees them rather than the way a regular expression would.
+    ///     <para>
+    ///         In a well-formed graph every block but the exit has exactly one fall-through branch, so
+    ///         <c>E = (N − 1) + C</c> and the classic formula reduces to "one more than the number of
+    ///         conditional branches". Both are computed here; keeping the general form means an unreachable
+    ///         block or a graph shape Roslyn changes later does not silently move the number.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ A member can have several bodies — a property's two accessors — and each has its own
+    ///         graph. Their decision counts are summed and the +1 is applied once, so a property whose
+    ///         getter and setter are both trivial scores 1 rather than 2.
+    ///     </para>
     /// </remarks>
     static bool TryCyclomaticFromControlFlowGraph(
         SyntaxNode member,
@@ -418,12 +418,12 @@ public static class MemberMetrics {
     }
 
     /// <summary>
-    /// Whether a declaration's own modifiers make it public.
+    ///     Whether a declaration's own modifiers make it public.
     /// </summary>
     /// <remarks>
-    /// ⚠ The default matters and it is not uniform: an interface member with no modifier is public,
-    /// and everything else with no modifier is not. Reading the modifier list alone and calling the
-    /// absence "not public" would make every interface's surface invisible to the metric.
+    ///     ⚠ The default matters and it is not uniform: an interface member with no modifier is public,
+    ///     and everything else with no modifier is not. Reading the modifier list alone and calling the
+    ///     absence "not public" would make every interface's surface invisible to the metric.
     /// </remarks>
     static bool IsDeclaredPublic(MemberDeclarationSyntax member) {
         var stated = false;

@@ -14,21 +14,21 @@ using Rikarin.Skala.Rules.Metadata;
 namespace Rikarin.Skala.Mcp;
 
 /// <summary>
-/// <c>skala mcp</c> — stdio, one process per repository, started by the agent host (ADR-014).
+///     <c>skala mcp</c> — stdio, one process per repository, started by the agent host (ADR-014).
 /// </summary>
 /// <remarks>
-/// ⚠ <b>The tool list is the enforcement.</b> docs/plan/10: "The MCP server exposes no tool that
-/// can disable a rule, edit <c>.editorconfig</c>, or update a baseline. Those are human operations
-/// and their absence from the tool list is the enforcement." An agent given a warning and the
-/// ability to edit will reach for <c>#pragma warning disable</c>, not out of malice but because it
-/// is a valid move toward the check passing; the answer is to make the honest path the easy one and
-/// not to offer the other one at all.
-/// <para>
-/// ⚠ <c>skala_format</c> accepts <em>content</em> as well as paths, which doc 10 calls the single
-/// highest-leverage integration in the plan: it lets an agent format a file it has not written yet
-/// — draft, format, then write the formatted text — which turns formatting from a correction into a
-/// step.
-/// </para>
+///     ⚠ <b>The tool list is the enforcement.</b> docs/plan/10: "The MCP server exposes no tool that
+///     can disable a rule, edit <c>.editorconfig</c>, or update a baseline. Those are human operations
+///     and their absence from the tool list is the enforcement." An agent given a warning and the
+///     ability to edit will reach for <c>#pragma warning disable</c>, not out of malice but because it
+///     is a valid move toward the check passing; the answer is to make the honest path the easy one and
+///     not to offer the other one at all.
+///     <para>
+///         ⚠ <c>skala_format</c> accepts <em>content</em> as well as paths, which doc 10 calls the single
+///         highest-leverage integration in the plan: it lets an agent format a file it has not written yet
+///         — draft, format, then write the formatted text — which turns formatting from a correction into a
+///         step.
+///     </para>
 /// </remarks>
 public static class McpServer {
     public static async Task RunAsync(string repositoryRoot, CancellationToken cancellation) {
@@ -64,13 +64,16 @@ public static class McpServer {
     }
 
     /// <summary>
-    /// What the agent is told about the server, once, at connect time.
+    ///     What the agent is told about the server, once, at connect time.
     /// </summary>
     /// <remarks>
-    /// It is the <c>CLAUDE.md</c> contract from docs/plan/10, said by the tool rather than by the
-    /// repository — including the last line, which matters most: the escape hatch is <em>saying
-    /// so</em>, not <em>doing something</em>. An agent with a sanctioned way to disagree does not
-    /// need an unsanctioned one.
+    ///     It is the <c>CLAUDE.md</c> contract from docs/plan/10, said by the tool rather than by the
+    ///     repository — including the last line, which matters most: the escape hatch is
+    ///     <em>
+    ///         saying
+    ///         so
+    ///     </em>, not <em>doing something</em>. An agent with a sanctioned way to disagree does not
+    ///     need an unsanctioned one.
     /// </remarks>
     const string Instructions = """
                                 Skala formats and analyses C# against this repository's .editorconfig.
@@ -91,7 +94,10 @@ public static class McpServer {
 
 /// <summary>The six tools of docs/plan/10 § "The MCP server".</summary>
 sealed class SkalaTools(string repositoryRoot) {
-    /// <summary>⚠ Bounded, like the agent renderer. An unbounded dump eats the context window the agent needs to fix things with.</summary>
+    /// <summary>
+    ///     ⚠ Bounded, like the agent renderer. An unbounded dump eats the context window the agent needs to fix things
+    ///     with.
+    /// </summary>
     const int MaxCharacters = 16000;
 
     public IEnumerable<McpServerTool> Create() {
@@ -254,12 +260,12 @@ public static class McpRuleList {
 }
 
 /// <summary>
-/// The tool list and the content path, reachable without a transport.
+///     The tool list and the content path, reachable without a transport.
 /// </summary>
 /// <remarks>
-/// ⚠ It exists so that the policy in <see cref="McpServer"/>'s remarks — no tool that can disable a
-/// rule, edit <c>.editorconfig</c> or update a baseline — is asserted by a test rather than
-/// maintained by discipline. A stdio round trip would test the SDK; this tests the decision.
+///     ⚠ It exists so that the policy in <see cref="McpServer" />'s remarks — no tool that can disable a
+///     rule, edit <c>.editorconfig</c> or update a baseline — is asserted by a test rather than
+///     maintained by discipline. A stdio round trip would test the SDK; this tests the decision.
 /// </remarks>
 public static class McpServerInspection {
     public static IReadOnlyList<McpServerTool> Tools(string repositoryRoot) =>

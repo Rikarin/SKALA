@@ -11,29 +11,32 @@ using Rikarin.Skala.Rules.Metadata;
 namespace Rikarin.Skala.Rules.Async;
 
 /// <summary>
-/// <c>SK3001</c> — an <c>async void</c> method that is not an event handler.
+///     <c>SK3001</c> — an <c>async void</c> method that is not an event handler.
 /// </summary>
 /// <remarks>
-/// docs/plan/08-rule-catalogue.md § "SK3000". An <c>async void</c> method cannot be awaited, so its
-/// caller cannot know when it finished and cannot observe its exceptions. An exception thrown after
-/// the first <c>await</c> is raised on whatever context resumed the method, which in a console or
-/// server process is an unhandled exception that ends it.
-/// <para>
-/// ⚠ <b>This rule is <see cref="RuleScope.Compilation"/>-scoped, and that is the expensive
-/// decision.</b> The one legitimate <c>async void</c> is an event handler, and whether a method is
-/// one is not visible in the file that declares it — the <c>+=</c> may be anywhere. So the rule
-/// collects every name used as a method group across the whole compilation and reports only the
-/// methods no such use names. That is what makes zero false positives reachable
-/// (docs/plan/16 § R3), and the price is that <see cref="RuleInfo.IsCacheable"/> is false for
-/// <c>SK3001</c>: a compilation with it enabled cannot use the per-file warm path
-/// (docs/plan/07 § "The incremental cache"). The trade is stated rather than hidden, and a
-/// repository that would rather have the cache turns the rule off.
-/// </para>
-/// <para>
-/// ⚠ The name-based check is deliberately over-broad: any <em>occurrence</em> of the identifier in
-/// a non-invoked position silences the rule, even one that refers to something else entirely. It
-/// errs towards silence, which is the direction doc 00's false-positive bar asks for.
-/// </para>
+///     docs/plan/08-rule-catalogue.md § "SK3000". An <c>async void</c> method cannot be awaited, so its
+///     caller cannot know when it finished and cannot observe its exceptions. An exception thrown after
+///     the first <c>await</c> is raised on whatever context resumed the method, which in a console or
+///     server process is an unhandled exception that ends it.
+///     <para>
+///         ⚠
+///         <b>
+///             This rule is <see cref="RuleScope.Compilation" />-scoped, and that is the expensive
+///             decision.
+///         </b> The one legitimate <c>async void</c> is an event handler, and whether a method is
+///         one is not visible in the file that declares it — the <c>+=</c> may be anywhere. So the rule
+///         collects every name used as a method group across the whole compilation and reports only the
+///         methods no such use names. That is what makes zero false positives reachable
+///         (docs/plan/16 § R3), and the price is that <see cref="RuleInfo.IsCacheable" /> is false for
+///         <c>SK3001</c>: a compilation with it enabled cannot use the per-file warm path
+///         (docs/plan/07 § "The incremental cache"). The trade is stated rather than hidden, and a
+///         repository that would rather have the cache turns the rule off.
+///     </para>
+///     <para>
+///         ⚠ The name-based check is deliberately over-broad: any <em>occurrence</em> of the identifier in
+///         a non-invoked position silences the rule, even one that refers to something else entirely. It
+///         errs towards silence, which is the direction doc 00's false-positive bar asks for.
+///     </para>
 /// </remarks>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class AsyncVoidAnalyzer : DiagnosticAnalyzer {
@@ -89,12 +92,12 @@ public sealed class AsyncVoidAnalyzer : DiagnosticAnalyzer {
     }
 
     /// <summary>
-    /// An <c>async void</c> method that survived every local guard, pending the name check.
+    ///     An <c>async void</c> method that survived every local guard, pending the name check.
     /// </summary>
     /// <remarks>
-    /// ⚠ A class rather than a positional record: this assembly is <c>netstandard2.0</c>
-    /// (ADR-006) and <c>init</c> accessors need an <c>IsExternalInit</c> the target framework does
-    /// not carry. Not worth a second shim for three fields.
+    ///     ⚠ A class rather than a positional record: this assembly is <c>netstandard2.0</c>
+    ///     (ADR-006) and <c>init</c> accessors need an <c>IsExternalInit</c> the target framework does
+    ///     not carry. Not worth a second shim for three fields.
     /// </remarks>
     sealed class Candidate {
         public Candidate(string name, Location location, ImmutableDictionary<string, string?> fix) {
@@ -241,15 +244,15 @@ public sealed class AsyncVoidAnalyzer : DiagnosticAnalyzer {
     }
 
     /// <summary>
-    /// Replace <c>void</c> with the task type, spelled the way it binds at this position.
+    ///     Replace <c>void</c> with the task type, spelled the way it binds at this position.
     /// </summary>
     /// <remarks>
-    /// ⚠ <c>Task</c> when the simple name resolves here, the fully qualified name when it does not.
-    /// A fix that emits <c>Task</c> into a file with no <c>using System.Threading.Tasks;</c> is
-    /// CS0246, and <c>FixCommand</c>'s post-fix check is syntactic — it re-parses and compares
-    /// syntax diagnostics — so a missing using would pass verification and break the build. The
-    /// lookup is the only thing that makes the fix safe to emit at all, which is also why the rule
-    /// declares <c>fixIsSafe: false</c>: changing a return type changes callers.
+    ///     ⚠ <c>Task</c> when the simple name resolves here, the fully qualified name when it does not.
+    ///     A fix that emits <c>Task</c> into a file with no <c>using System.Threading.Tasks;</c> is
+    ///     CS0246, and <c>FixCommand</c>'s post-fix check is syntactic — it re-parses and compares
+    ///     syntax diagnostics — so a missing using would pass verification and break the build. The
+    ///     lookup is the only thing that makes the fix safe to emit at all, which is also why the rule
+    ///     declares <c>fixIsSafe: false</c>: changing a return type changes callers.
     /// </remarks>
     static ImmutableDictionary<string, string?> Fix(SyntaxNodeAnalysisContext context, MethodDeclarationSyntax method) {
         var position = method.ReturnType.SpanStart;

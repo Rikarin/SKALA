@@ -5,7 +5,7 @@ using Rikarin.Skala.Options;
 namespace Rikarin.Skala.Core.Tests;
 
 /// <summary>
-/// docs/plan/03-configuration-model.md § "Canonical distribution across repositories" (Q4).
+///     docs/plan/03-configuration-model.md § "Canonical distribution across repositories" (Q4).
 /// </summary>
 public sealed class CanonicalDistributionTests {
     static CanonicalManifest Tool => CanonicalEditorConfig.Manifest;

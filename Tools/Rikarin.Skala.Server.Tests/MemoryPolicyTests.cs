@@ -4,12 +4,12 @@ using Rikarin.Skala.Server;
 namespace Rikarin.Skala.Server.Tests;
 
 /// <summary>
-/// docs/plan/13 § "Memory": drop trees, then compilations, then exit rather than swap.
+///     docs/plan/13 § "Memory": drop trees, then compilations, then exit rather than swap.
 /// </summary>
 /// <remarks>
-/// ⚠ The policy's decision function is pure so that this can be asserted without allocating a
-/// gigabyte. A memory policy that can only be tested by exhausting the machine is a memory policy
-/// that is tested once, by hand, before it is first shipped and never again.
+///     ⚠ The policy's decision function is pure so that this can be asserted without allocating a
+///     gigabyte. A memory policy that can only be tested by exhausting the machine is a memory policy
+///     that is tested once, by hand, before it is first shipped and never again.
 /// </remarks>
 public sealed class MemoryPolicyTests {
     static readonly MemoryPolicy Policy = new() { SoftLimitBytes = 1000, HardLimitBytes = 2000, TreeCacheBytes = 400 };
@@ -27,8 +27,8 @@ public sealed class MemoryPolicyTests {
         Assert.Equal(MemoryPolicy.Action.DroppedCompilations, Policy.Decide(1500, alreadyDroppedTrees: true));
 
     /// <summary>
-    /// ⚠ The one that matters. Exiting is always safe — every command works identically with
-    /// <c>SKALA_NO_DAEMON=1</c> — and swapping never is.
+    ///     ⚠ The one that matters. Exiting is always safe — every command works identically with
+    ///     <c>SKALA_NO_DAEMON=1</c> — and swapping never is.
     /// </summary>
     [Fact]
     public void OverTheHardLimitWithNothingLeftToDrop_TheDaemonExits() =>
@@ -63,9 +63,9 @@ public sealed class RetainedCompilationsTests {
     }
 
     /// <summary>
-    /// ⚠ Least-recently-*used*, not least-recently-added. A compilation the caller keeps asking for
-    /// is the expensive one to rebuild, and evicting it because it happens to be the oldest
-    /// insertion is the failure that makes a cache slower than no cache.
+    ///     ⚠ Least-recently-*used*, not least-recently-added. A compilation the caller keeps asking for
+    ///     is the expensive one to rebuild, and evicting it because it happens to be the oldest
+    ///     insertion is the failure that makes a cache slower than no cache.
     /// </summary>
     [Fact]
     public void TheEntryStillBeingUsed_SurvivesNewerOnes() {
@@ -98,10 +98,10 @@ public sealed class RetainedCompilationsTests {
 }
 
 /// <summary>
-/// ⚠ The kernel caps a Unix domain socket path at 104 bytes. This was a live defect: a repository
-/// nested deeper than about eighty-five characters made <c>Daemon.Listen</c> throw
-/// <see cref="ArgumentOutOfRangeException"/>, and the daemon died with an unhandled exception and
-/// exit code 0 while every later format silently took the cold path.
+///     ⚠ The kernel caps a Unix domain socket path at 104 bytes. This was a live defect: a repository
+///     nested deeper than about eighty-five characters made <c>Daemon.Listen</c> throw
+///     <see cref="ArgumentOutOfRangeException" />, and the daemon died with an unhandled exception and
+///     exit code 0 while every later format silently took the cold path.
 /// </summary>
 public sealed class SocketPathTests {
     [Fact]
@@ -143,9 +143,9 @@ public sealed class SocketPathTests {
     }
 
     /// <summary>
-    /// ⚠ doc 12 § "Cross-platform" lists the named-pipe daemon transport as a Windows hazard. Before
-    /// M7 there was nothing to test: both ends built an AF_UNIX socket unconditionally and only a
-    /// comment claimed otherwise.
+    ///     ⚠ doc 12 § "Cross-platform" lists the named-pipe daemon transport as a Windows hazard. Before
+    ///     M7 there was nothing to test: both ends built an AF_UNIX socket unconditionally and only a
+    ///     comment claimed otherwise.
     /// </summary>
     [Fact]
     public void TheTransport_IsAPipeOnWindowsAndASocketElsewhere() =>

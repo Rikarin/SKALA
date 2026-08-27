@@ -3,13 +3,13 @@ using System.Xml.Linq;
 namespace Rikarin.Skala.Core.Tests;
 
 /// <summary>
-/// The forbidden edges from docs/plan/02-repository-layout.md § "The project graph".
+///     The forbidden edges from docs/plan/02-repository-layout.md § "The project graph".
 /// </summary>
 /// <remarks>
-/// ⚠ These are written against the projects that exist today and fail loudly when a project the
-/// plan forbids referencing appears and is referenced. The plan is explicit that the graph is
-/// "enforced by a test that walks the dependency closure, not by discipline" — a forbidden edge
-/// added in Milestone 4 must break this test, not a user's analyzer load.
+///     ⚠ These are written against the projects that exist today and fail loudly when a project the
+///     plan forbids referencing appears and is referenced. The plan is explicit that the graph is
+///     "enforced by a test that walks the dependency closure, not by discipline" — a forbidden edge
+///     added in Milestone 4 must break this test, not a user's analyzer load.
 /// </remarks>
 public sealed class ProjectGraphTests {
     static IReadOnlyList<ProjectFile> Projects { get; } = ProjectFile.LoadAll(RepositoryPaths.Root);
@@ -57,10 +57,10 @@ public sealed class ProjectGraphTests {
     }
 
     /// <summary>
-    /// ⚠ The graph tests are all of the form "no project has edge X", and every one of them passes
-    /// over an empty project list. This asserts the list is not empty, so that a filter that
-    /// excludes the whole tree — which is exactly what happened from inside an agent worktree —
-    /// fails here with a comprehensible message instead of as three unrelated `Assert.Single`s.
+    ///     ⚠ The graph tests are all of the form "no project has edge X", and every one of them passes
+    ///     over an empty project list. This asserts the list is not empty, so that a filter that
+    ///     excludes the whole tree — which is exactly what happened from inside an agent worktree —
+    ///     fails here with a comprehensible message instead of as three unrelated `Assert.Single`s.
     /// </summary>
     [Fact]
     public void TheProjectGraph_IsNotEmpty() {
@@ -147,7 +147,7 @@ public sealed class ProjectGraphTests {
         }
     }
 
-    /// <summary>Every project reachable from <paramref name="project"/> by assembly references.</summary>
+    /// <summary>Every project reachable from <paramref name="project" /> by assembly references.</summary>
     static IEnumerable<ProjectFile> Closure(ProjectFile project) {
         var seen = new HashSet<string>(StringComparer.Ordinal);
         var queue = new Queue<ProjectFile>();
@@ -220,14 +220,14 @@ public sealed record ProjectFile(
     IReadOnlyList<string> PackageReferences,
     IReadOnlyList<ProjectDependency> ProjectReferences) {
     /// <summary>
-    /// Every project of the repository, from the file system.
+    ///     Every project of the repository, from the file system.
     /// </summary>
     /// <remarks>
-    /// ⚠ <c>.claude/worktrees/</c> is excluded, and it is not housekeeping. An agent worktree is a
-    /// second checkout of this repository <em>inside</em> it, so every project appears twice and
-    /// `Assert.Single` fails on a tree nobody edited — a gate that goes red because somebody else
-    /// started a task is not a gate. It is the same mistake the Vixen corpus sample made, one
-    /// directory up.
+    ///     ⚠ <c>.claude/worktrees/</c> is excluded, and it is not housekeeping. An agent worktree is a
+    ///     second checkout of this repository <em>inside</em> it, so every project appears twice and
+    ///     `Assert.Single` fails on a tree nobody edited — a gate that goes red because somebody else
+    ///     started a task is not a gate. It is the same mistake the Vixen corpus sample made, one
+    ///     directory up.
     /// </remarks>
     public static IReadOnlyList<ProjectFile> LoadAll(string root) =>
         Directory.EnumerateFiles(root, "*.csproj", SearchOption.AllDirectories)
@@ -238,13 +238,16 @@ public sealed record ProjectFile(
 
     /// <summary>Build output, and any checkout of this repository nested inside it.</summary>
     /// <remarks>
-    /// ⚠ <b>Matched against the path relative to <paramref name="root"/>, and it used to be matched
-    /// against the absolute path.</b> That worked from a normal checkout and broke completely from
-    /// inside an agent worktree, which lives at <c>&lt;repo&gt;/.claude/worktrees/&lt;name&gt;/</c> —
-    /// every absolute path under one contains <c>/.claude/</c>, so every project was excluded,
-    /// <see cref="LoadAll"/> returned nothing, and three <c>Assert.Single</c> calls failed on a tree
-    /// nobody had touched. The exclusion is right; the frame of reference was not. Same bug, and the
-    /// same fix, as <c>ToolDiagnosticIdTests.SourceFiles</c>.
+    ///     ⚠
+    ///     <b>
+    ///         Matched against the path relative to <paramref name="root" />, and it used to be matched
+    ///         against the absolute path.
+    ///     </b> That worked from a normal checkout and broke completely from
+    ///     inside an agent worktree, which lives at <c>&lt;repo&gt;/.claude/worktrees/&lt;name&gt;/</c> —
+    ///     every absolute path under one contains <c>/.claude/</c>, so every project was excluded,
+    ///     <see cref="LoadAll" /> returned nothing, and three <c>Assert.Single</c> calls failed on a tree
+    ///     nobody had touched. The exclusion is right; the frame of reference was not. Same bug, and the
+    ///     same fix, as <c>ToolDiagnosticIdTests.SourceFiles</c>.
     /// </remarks>
     internal static bool IsScratch(string root, string path) {
         var separator = System.IO.Path.DirectorySeparatorChar;

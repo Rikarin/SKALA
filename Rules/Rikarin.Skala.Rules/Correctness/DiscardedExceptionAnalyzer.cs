@@ -9,20 +9,20 @@ using Rikarin.Skala.Rules.Metadata;
 namespace Rikarin.Skala.Rules.Correctness;
 
 /// <summary>
-/// <c>SK2013</c> — <c>new SomeException(…);</c> as a statement, with the <c>throw</c> missing.
+///     <c>SK2013</c> — <c>new SomeException(…);</c> as a statement, with the <c>throw</c> missing.
 /// </summary>
 /// <remarks>
-/// docs/plan/08-rule-catalogue.md § "SK2000 — Correctness". A guard clause that constructs an
-/// exception and does not throw it is a guard clause that does nothing: the method continues down
-/// the path the author meant to abort, and the failure surfaces later somewhere with no connection
-/// to the cause.
-/// <para>
-/// ⚠ The narrowness is the rule. It fires only where the object creation <em>is</em> the whole of
-/// an expression statement — not assigned, not returned, not an argument, not added to anything —
-/// because in every one of those positions the exception object is used and the construction is
-/// deliberate. Whatever the constructor's arguments do, an exception that reaches no one is a
-/// statement with no effect a caller can observe.
-/// </para>
+///     docs/plan/08-rule-catalogue.md § "SK2000 — Correctness". A guard clause that constructs an
+///     exception and does not throw it is a guard clause that does nothing: the method continues down
+///     the path the author meant to abort, and the failure surfaces later somewhere with no connection
+///     to the cause.
+///     <para>
+///         ⚠ The narrowness is the rule. It fires only where the object creation <em>is</em> the whole of
+///         an expression statement — not assigned, not returned, not an argument, not added to anything —
+///         because in every one of those positions the exception object is used and the construction is
+///         deliberate. Whatever the constructor's arguments do, an exception that reaches no one is a
+///         statement with no effect a caller can observe.
+///     </para>
 /// </remarks>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class DiscardedExceptionAnalyzer : DiagnosticAnalyzer {

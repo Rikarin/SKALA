@@ -12,13 +12,13 @@ using Rikarin.Skala.Rules.Metadata;
 namespace Rikarin.Skala.Cli;
 
 /// <summary>
-/// The analysis half of the <c>skala</c> surface: <c>check</c>, <c>verify</c>, <c>fix</c>,
-/// <c>explain</c>, <c>rules</c>, <c>docs</c>, <c>cache</c> and <c>mcp</c>.
+///     The analysis half of the <c>skala</c> surface: <c>check</c>, <c>verify</c>, <c>fix</c>,
+///     <c>explain</c>, <c>rules</c>, <c>docs</c>, <c>cache</c> and <c>mcp</c>.
 /// </summary>
 /// <remarks>
-/// Argument parsing and rendering only, like the rest of the CLI. Every behaviour lives in
-/// <c>Rikarin.Skala.Analysis</c>, because the daemon and the MCP server host the same logic and
-/// nothing may reference this assembly (docs/plan/02 § "The project graph").
+///     Argument parsing and rendering only, like the rest of the CLI. Every behaviour lives in
+///     <c>Rikarin.Skala.Analysis</c>, because the daemon and the MCP server host the same logic and
+///     nothing may reference this assembly (docs/plan/02 § "The project graph").
 /// </remarks>
 public static partial class SkalaCommandLine {
     /// <summary><c>skala check</c> — docs/plan/09.</summary>
@@ -175,12 +175,12 @@ public static partial class SkalaCommandLine {
     }
 
     /// <summary>
-    /// <c>skala verify</c> — docs/plan/10 § "`skala verify` — the one command".
+    ///     <c>skala verify</c> — docs/plan/10 § "`skala verify` — the one command".
     /// </summary>
     /// <remarks>
-    /// ⚠ Its defaults are the contract. <c>--load=loose</c>, agent output, formatting included: it
-    /// has to work with no project, no build and no network, because the agent that runs it may have
-    /// written a file into a scratch directory thirty seconds ago.
+    ///     ⚠ Its defaults are the contract. <c>--load=loose</c>, agent output, formatting included: it
+    ///     has to work with no project, no build and no network, because the agent that runs it may have
+    ///     written a file into a scratch directory thirty seconds ago.
     /// </remarks>
     static Command CreateVerifyCommand() {
         var paths = new Argument<string[]>("paths") {
@@ -307,8 +307,8 @@ public static partial class SkalaCommandLine {
     }
 
     /// <summary>
-    /// <c>skala explain SK1010</c> and <c>skala explain csharp_indent_case_contents</c> —
-    /// docs/plan/08 § "Documentation" and docs/plan/11's <c>&lt;ruleId | optionKey&gt;</c>.
+    ///     <c>skala explain SK1010</c> and <c>skala explain csharp_indent_case_contents</c> —
+    ///     docs/plan/08 § "Documentation" and docs/plan/11's <c>&lt;ruleId | optionKey&gt;</c>.
     /// </summary>
     static Command CreateExplainCommand() {
         var ruleId = new Argument<string>("rule|option") {
@@ -359,21 +359,21 @@ public static partial class SkalaCommandLine {
     }
 
     /// <summary>
-    /// Rewrites the generated coverage block in <c>docs/plan/08-rule-catalogue.md</c>.
+    ///     Rewrites the generated coverage block in <c>docs/plan/08-rule-catalogue.md</c>.
     /// </summary>
     /// <remarks>
-    /// <para>
-    /// ⚠ The catalogue's own coverage figure used to be typed by hand and it went stale inside one
-    /// merge — "21 shipped, 19.8 %" at <c>8cbd66d</c>, with M8's five <c>SK5xxx</c> landing
-    /// afterwards. A document that misreports its own coverage is the same failure as one
-    /// describing behaviour the tool does not have.
-    /// </para>
-    /// <para>
-    /// ⚠ It is quiet when the catalogue is not there. This runs from an installed tool as well as
-    /// from the repository, and <c>skala rules docs</c> writing rule pages is useful on its own;
-    /// failing it because a plan document is absent would make the command unusable everywhere
-    /// except here.
-    /// </para>
+    ///     <para>
+    ///         ⚠ The catalogue's own coverage figure used to be typed by hand and it went stale inside one
+    ///         merge — "21 shipped, 19.8 %" at <c>8cbd66d</c>, with M8's five <c>SK5xxx</c> landing
+    ///         afterwards. A document that misreports its own coverage is the same failure as one
+    ///         describing behaviour the tool does not have.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ It is quiet when the catalogue is not there. This runs from an installed tool as well as
+    ///         from the repository, and <c>skala rules docs</c> writing rule pages is useful on its own;
+    ///         failing it because a plan document is absent would make the command unusable everywhere
+    ///         except here.
+    ///     </para>
     /// </remarks>
     static int WriteCoverageBlock() {
         var path = Path.Combine("docs", "plan", "08-rule-catalogue.md");
@@ -405,16 +405,16 @@ public static partial class SkalaCommandLine {
     }
 
     /// <summary>
-    /// <c>skala docs site</c> — docs/plan/15 § M7, "Documentation site generation from rules.json +
-    /// options.json".
+    ///     <c>skala docs site</c> — docs/plan/15 § M7, "Documentation site generation from rules.json +
+    ///     options.json".
     /// </summary>
     /// <remarks>
-    /// ⚠ Deliberately a sibling of <c>skala rules docs</c> rather than a replacement for it. The two
-    /// render the same catalogue for different readers — <c>docs/rules/*.md</c> is what GitHub shows
-    /// beside the source and what an agent reads through the MCP server; the site is browsable and
-    /// cross-linked and is the only surface where the option registry appears at all. Neither holds
-    /// a word of its own: both are <see cref="RuleCatalog"/> and <see cref="OptionRegistry"/>
-    /// rendered (docs/plan/08 § "Documentation").
+    ///     ⚠ Deliberately a sibling of <c>skala rules docs</c> rather than a replacement for it. The two
+    ///     render the same catalogue for different readers — <c>docs/rules/*.md</c> is what GitHub shows
+    ///     beside the source and what an agent reads through the MCP server; the site is browsable and
+    ///     cross-linked and is the only surface where the option registry appears at all. Neither holds
+    ///     a word of its own: both are <see cref="RuleCatalog" /> and <see cref="OptionRegistry" />
+    ///     rendered (docs/plan/08 § "Documentation").
     /// </remarks>
     static Command CreateDocsCommand() {
         var docs = new Command("docs", "The generated documentation.");
@@ -512,10 +512,10 @@ public static partial class SkalaCommandLine {
         };
 
     /// <summary>
-    /// ⚠ Ctrl-C cancels and prints what was found so far, marked partial (docs/plan/07).
+    ///     ⚠ Ctrl-C cancels and prints what was found so far, marked partial (docs/plan/07).
     /// </summary>
     /// <remarks>
-    /// Exit 130 is the documented code for it, and hooks depend on the codes being fixed.
+    ///     Exit 130 is the documented code for it, and hooks depend on the codes being fixed.
     /// </remarks>
     static int RunCancellable(Func<CancellationToken, CommandResult> command) {
         using var cancellation = new CancellationTokenSource();

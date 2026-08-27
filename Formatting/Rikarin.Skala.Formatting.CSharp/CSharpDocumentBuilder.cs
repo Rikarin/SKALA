@@ -11,19 +11,19 @@ namespace Rikarin.Skala.Formatting.CSharp;
 public sealed record BuiltDocument(Document Document, IReadOnlyList<SkalaDiagnostic> Diagnostics);
 
 /// <summary>
-/// Turns a parsed C# file into the language-agnostic document IR.
+///     Turns a parsed C# file into the language-agnostic document IR.
 /// </summary>
 /// <remarks>
-/// The walk is structural — one pass over the syntax tree — with an ordered piece stream
-/// (<see cref="SourcePieces"/>) threaded through it, so that a comment between two tokens is
-/// emitted at the nesting the tokens around it establish rather than at whichever token Roslyn
-/// happened to attach it to. That is what docs/plan/04 means by "which token owns this comment must
-/// be a decision Skala makes, not one it inherits".
-/// <para>
-/// ⚠ Milestone 1 never moves a line to fit a width. Every gap that held a line break still holds
-/// one and every gap that did not, does not — except where a brace rule joins one, which is a
-/// decision rather than a fit.
-/// </para>
+///     The walk is structural — one pass over the syntax tree — with an ordered piece stream
+///     (<see cref="SourcePieces" />) threaded through it, so that a comment between two tokens is
+///     emitted at the nesting the tokens around it establish rather than at whichever token Roslyn
+///     happened to attach it to. That is what docs/plan/04 means by "which token owns this comment must
+///     be a decision Skala makes, not one it inherits".
+///     <para>
+///         ⚠ Milestone 1 never moves a line to fit a width. Every gap that held a line break still holds
+///         one and every gap that did not, does not — except where a brace rule joins one, which is a
+///         decision rather than a fit.
+///     </para>
 /// </remarks>
 public sealed partial class CSharpDocumentBuilder {
     readonly SourceText _text;
@@ -45,7 +45,7 @@ public sealed partial class CSharpDocumentBuilder {
     int _cursor;
     int _lastPiece = -1;
 
-    /// <summary>Where <see cref="EmitLeadingGap"/> already wrote a gap, so it is not written twice.</summary>
+    /// <summary>Where <see cref="EmitLeadingGap" /> already wrote a gap, so it is not written twice.</summary>
     int _gapEmittedAt = -1;
 
     int _verbatimUntil = -1;
@@ -91,18 +91,18 @@ public sealed partial class CSharpDocumentBuilder {
     // ── The structural walk ──────────────────────────────────────────────────────────────────
 
     /// <summary>
-    /// Visits a node, opening a continuation frame for the constructs a continuation break can be
-    /// attributed to.
+    ///     Visits a node, opening a continuation frame for the constructs a continuation break can be
+    ///     attributed to.
     /// </summary>
     /// <remarks>
-    /// ⚠ The frame is what turns the one continuous indent level into a <em>scope</em> rather than a
-    /// per-line adjustment, and the difference is not cosmetic:
-    /// <code>
+    ///     ⚠ The frame is what turns the one continuous indent level into a <em>scope</em> rather than a
+    ///     per-line adjustment, and the difference is not cosmetic:
+    ///     <code>
     /// void N() =>
     ///     Q(          ← the arrow's continuation level, +1
     ///         a,      ← and the parenthesis's, +2 — which only composes if the first is a scope
     ///     );
-    /// </code>
+    ///     </code>
     /// </remarks>
     void Visit(SyntaxNode node) {
         if (!AlignsFromOwnColumn(node)) {
@@ -123,16 +123,16 @@ public sealed partial class CSharpDocumentBuilder {
 
     /// <summary>The position the alignment column is read at.</summary>
     /// <remarks>
-    /// ⚠ The construct's own first token for every kind but one, and the exception is measured. An
-    /// anonymous object's node starts at <c>new</c> and the oracle aligns it to the <c>{</c>:
-    /// <code>
+    ///     ⚠ The construct's own first token for every kind but one, and the exception is measured. An
+    ///     anonymous object's node starts at <c>new</c> and the oracle aligns it to the <c>{</c>:
+    ///     <code>
     /// var v = new {
     ///                 A = 1     ← the brace's column plus one level, not `new`'s
     ///             };
-    /// </code>
-    /// Every other braced construct here <em>is</em> its brace — an <c>InitializerExpressionSyntax</c>
-    /// and a <c>PropertyPatternClauseSyntax</c> both start at one — so the distinction only ever
-    /// shows on this node.
+    ///     </code>
+    ///     Every other braced construct here <em>is</em> its brace — an <c>InitializerExpressionSyntax</c>
+    ///     and a <c>PropertyPatternClauseSyntax</c> both start at one — so the distinction only ever
+    ///     shows on this node.
     /// </remarks>
     static int AlignAnchor(SyntaxNode node) =>
         node is AnonymousObjectCreationExpressionSyntax anonymous
@@ -140,26 +140,26 @@ public sealed partial class CSharpDocumentBuilder {
             : node.SpanStart;
 
     /// <summary>
-    /// Whether an <c>align_multiline_*</c> key anchors this construct to the column its own first
-    /// token lands on, rather than to an indent level of the line it is on.
+    ///     Whether an <c>align_multiline_*</c> key anchors this construct to the column its own first
+    ///     token lands on, rather than to an indent level of the line it is on.
     /// </summary>
     /// <remarks>
-    /// ⚠ One rule for six constructs, and the anchor is the <em>node's</em> start rather than the
-    /// opening delimiter's — which is the same token for four of them and is not for the other two.
-    /// A switch expression starts at its governing expression and an initializer starts at its
-    /// brace, and the oracle aligns each to its own node:
-    /// <code>
+    ///     ⚠ One rule for six constructs, and the anchor is the <em>node's</em> start rather than the
+    ///     opening delimiter's — which is the same token for four of them and is not for the other two.
+    ///     A switch expression starts at its governing expression and an initializer starts at its
+    ///     brace, and the oracle aligns each to its own node:
+    ///     <code>
     /// var r = v switch {              var v = new SomeType {
     ///             1 => "a",                                    A = 1,
     ///             _ => "b"                                     B = 2
     ///         };                                           };
-    /// </code>
-    /// Both columns fall out of "the construct's first token" and neither falls out of "the brace".
-    /// <para>
-    /// ⚠ Every key here is <c>false</c> in the export, so this returns false for every file the
-    /// fidelity number is measured over. That is not an argument for guessing at the shape: the
-    /// columns above are the oracle's, asked at a 70-column margin with one key flipped at a time.
-    /// </para>
+    ///     </code>
+    ///     Both columns fall out of "the construct's first token" and neither falls out of "the brace".
+    ///     <para>
+    ///         ⚠ Every key here is <c>false</c> in the export, so this returns false for every file the
+    ///         fidelity number is measured over. That is not an argument for guessing at the shape: the
+    ///         columns above are the oracle's, asked at a 70-column margin with one key flipped at a time.
+    ///     </para>
     /// </remarks>
     bool AlignsFromOwnColumn(SyntaxNode node) =>
         node switch {
@@ -251,13 +251,13 @@ public sealed partial class CSharpDocumentBuilder {
     }
 
     /// <summary>
-    /// Whether a continuation level is this group's to spend.
+    ///     Whether a continuation level is this group's to spend.
     /// </summary>
     /// <remarks>
-    /// ⚠ <c>continuous_line_indent = single</c> as docs/plan/04 § "Indentation" corrects it: a
-    /// delimited group already open supplies the level, and an undelimited continuation that is
-    /// already inside another one adds nothing. <c>M(\n a\n + b)</c> takes the parenthesis's level
-    /// and not a second one.
+    ///     ⚠ <c>continuous_line_indent = single</c> as docs/plan/04 § "Indentation" corrects it: a
+    ///     delimited group already open supplies the level, and an undelimited continuation that is
+    ///     already inside another one adds nothing. <c>M(\n a\n + b)</c> takes the parenthesis's level
+    ///     and not a second one.
     /// </remarks>
     bool CanSpendAContinuationLevel() {
         if (_continuousDepth != 0) {
@@ -275,7 +275,7 @@ public sealed partial class CSharpDocumentBuilder {
         return true;
     }
 
-    /// <summary>Emits everything before <paramref name="node"/>'s first piece, its gap included.</summary>
+    /// <summary>Emits everything before <paramref name="node" />'s first piece, its gap included.</summary>
     void EmitLeadingGap(SyntaxNode node) => EmitLeadingGapAt(node.SpanStart);
 
     /// <summary>The first element inside a braced construct, or the closing brace when it is empty.</summary>
@@ -393,32 +393,35 @@ public sealed partial class CSharpDocumentBuilder {
     }
 
     /// <summary>
-    /// The lambda that <c>place_single_method_argument_lambda_on_same_line = true</c> keeps on the
-    /// call's own line.
+    ///     The lambda that <c>place_single_method_argument_lambda_on_same_line = true</c> keeps on the
+    ///     call's own line.
     /// </summary>
     /// <remarks>
-    /// ⚠ Its body is not a continuation context of its own, and every other lambda's is. The
-    /// difference is that the call's parenthesis has already spent a level <em>on the lambda's own
-    /// line</em> — which is why <see cref="VisitDelimited"/> opens that one unconditionally — so a
-    /// second level for the body is the one-level-per-opening-line rule being paid twice:
-    /// <code>
+    ///     ⚠ Its body is not a continuation context of its own, and every other lambda's is. The
+    ///     difference is that the call's parenthesis has already spent a level
+    ///     <em>
+    ///         on the lambda's own
+    ///         line
+    ///     </em> — which is why <see cref="VisitDelimited" /> opens that one unconditionally — so a
+    ///     second level for the body is the one-level-per-opening-line rule being paid twice:
+    ///     <code>
     /// var b = new Func&lt;int, bool&gt;(x =&gt; x &gt; 0
     ///     &amp;&amp; x &lt; 10          ← one level, not the two an argument on its own line takes
     /// );
-    /// </code>
+    ///     </code>
     /// </remarks>
     bool IsSoleLambdaArgument(SyntaxNode node) =>
         _options.PlaceSingleMethodArgumentLambdaOnSameLine
         && node.Parent is ArgumentSyntax { Parent: ArgumentListSyntax { Arguments.Count: 1 } };
 
     /// <summary>
-    /// A break is attributed to the innermost statement, member or accessor, because those are the
-    /// units whose continuation lines the option is about. A block resets the count, so the frame a
-    /// break lands on is always inside the nearest brace.
+    ///     A break is attributed to the innermost statement, member or accessor, because those are the
+    ///     units whose continuation lines the option is about. A block resets the count, so the frame a
+    ///     break lands on is always inside the nearest brace.
     /// </summary>
     /// <summary>
-    /// The outermost link of a <c>a.B().C()</c> chain — the one whose level the whole chain hangs
-    /// from.
+    ///     The outermost link of a <c>a.B().C()</c> chain — the one whose level the whole chain hangs
+    ///     from.
     /// </summary>
     static bool IsChainRoot(SyntaxNode node) =>
         // ⚠ The root is the outermost link, and for `a.B().C()` that is the invocation, not the
@@ -438,13 +441,13 @@ public sealed partial class CSharpDocumentBuilder {
         node is BinaryPatternSyntax && node.Parent is not BinaryPatternSyntax;
 
     /// <summary>
-    /// The constructs a continuation level is attributed to.
+    ///     The constructs a continuation level is attributed to.
     /// </summary>
     /// <remarks>
-    /// ⚠ List elements are on this list, and they have to be. A level spent inside one arm of a
-    /// switch expression must not still be open when the next arm starts — the leak shifts every
-    /// following arm right by four and is invisible until a long file has one wrapped arm in the
-    /// middle of it.
+    ///     ⚠ List elements are on this list, and they have to be. A level spent inside one arm of a
+    ///     switch expression must not still be open when the next arm starts — the leak shifts every
+    ///     following arm right by four and is invisible until a long file has one wrapped arm in the
+    ///     middle of it.
     /// </remarks>
     static bool OwnsAContinuationFrame(SyntaxNode node) =>
         node is StatementSyntax
@@ -582,19 +585,19 @@ public sealed partial class CSharpDocumentBuilder {
     }
 
     /// <summary>
-    /// Visits a child, spending the owner's continuation level first when the child is the owner's
-    /// own body.
+    ///     Visits a child, spending the owner's continuation level first when the child is the owner's
+    ///     own body.
     /// </summary>
     /// <remarks>
-    /// ⚠ A body indents from its declaration's level, not from whatever line the brace ended up on:
-    /// <code>
+    ///     ⚠ A body indents from its declaration's level, not from whatever line the brace ended up on:
+    ///     <code>
     /// protected C(int a) :
     ///     base(a) {        ← the initializer's continuation level
     ///     Body();          ← but the body is one from the CONSTRUCTOR, not two
     /// }
-    /// </code>
-    /// The test is that the block is the frame owner's own child; a lambda's block nested inside an
-    /// expression keeps the continuation, because there the level is real.
+    ///     </code>
+    ///     The test is that the block is the frame owner's own child; a lambda's block nested inside an
+    ///     expression keeps the continuation, because there the level is real.
     /// </remarks>
     void VisitChild(SyntaxNode owner, SyntaxNode child) {
         if (child is BlockSyntax or AccessorListSyntax
@@ -790,8 +793,8 @@ public sealed partial class CSharpDocumentBuilder {
     }
 
     /// <summary>
-    /// A statement whose embedded statement indents when it is not a block, and whose condition
-    /// parentheses are a continuation scope of their own.
+    ///     A statement whose embedded statement indents when it is not a block, and whose condition
+    ///     parentheses are a continuation scope of their own.
     /// </summary>
     void VisitEmbedded(SyntaxNode node) {
         if (node is LabeledStatementSyntax labeled) {
@@ -843,23 +846,23 @@ public sealed partial class CSharpDocumentBuilder {
     }
 
     /// <summary>
-    /// <c>Finish:</c> and the statement it labels, which sit at the same level.
+    ///     <c>Finish:</c> and the statement it labels, which sit at the same level.
     /// </summary>
     /// <remarks>
-    /// ⚠ Not an embedded statement, although <see cref="EmbeddedStatement"/> calls it one and every
-    /// other owner in that list really does indent its body. The oracle writes
-    /// <code>
+    ///     ⚠ Not an embedded statement, although <see cref="EmbeddedStatement" /> calls it one and every
+    ///     other owner in that list really does indent its body. The oracle writes
+    ///     <code>
     /// goto Finish;
     /// Finish:
     /// Console.Write(matched);
-    /// </code>
-    /// with all three lines flush, and Skala put the labelled statement one level in — a
-    /// divergence that was invisible because <c>goto</c> occurs a handful of times in the corpus.
-    /// <para>
-    /// <c>outdent_statement_labels = true</c> then moves the label alone one level out, which is
-    /// the C-style <c>label:</c> convention, and is measured rather than inferred: it takes the
-    /// label from column 8 to column 4 and leaves the statement at 8.
-    /// </para>
+    ///     </code>
+    ///     with all three lines flush, and Skala put the labelled statement one level in — a
+    ///     divergence that was invisible because <c>goto</c> occurs a handful of times in the corpus.
+    ///     <para>
+    ///         <c>outdent_statement_labels = true</c> then moves the label alone one level out, which is
+    ///         the C-style <c>label:</c> convention, and is measured rather than inferred: it takes the
+    ///         label from column 8 to column 4 and leaves the statement at 8.
+    ///     </para>
     /// </remarks>
     void VisitLabeled(LabeledStatementSyntax node) {
         var outdented = _options.OutdentStatementLabels;
@@ -878,20 +881,20 @@ public sealed partial class CSharpDocumentBuilder {
     }
 
     /// <summary>
-    /// What a statement's condition parentheses open.
+    ///     What a statement's condition parentheses open.
     /// </summary>
     /// <remarks>
-    /// ⚠ <c>align_multiline_statement_conditions = true</c> — the export's value — lays the
-    /// condition out from the column just after the <c>(</c> rather than from an indent level:
-    /// <code>
+    ///     ⚠ <c>align_multiline_statement_conditions = true</c> — the export's value — lays the
+    ///     condition out from the column just after the <c>(</c> rather than from an indent level:
+    ///     <code>
     /// else if (ReflectionUtils.ImplementsGenericDefinition(
     ///              NonNullableUnderlyingType,      ← the `(`'s column plus one level
     ///              typeof(IEnumerable&lt;&gt;),
     ///              out tempCollectionType
     ///          )) {                                ← the `(`'s column
-    /// </code>
-    /// It is the one thing <see cref="IndentKind.Align"/> exists for, and SK-DIV-0008 recorded it
-    /// as unimplemented from milestone 1 until 3.1.
+    ///     </code>
+    ///     It is the one thing <see cref="IndentKind.Align" /> exists for, and SK-DIV-0008 recorded it
+    ///     as unimplemented from milestone 1 until 3.1.
     /// </remarks>
     IndentKind ConditionIndent =>
         _options.AlignMultilineStatementConditions
@@ -996,7 +999,7 @@ public sealed partial class CSharpDocumentBuilder {
     }
 
     /// <param name="alignsCloser">
-    /// The next piece is this scope's own closing delimiter and takes its opener's line level.
+    ///     The next piece is this scope's own closing delimiter and takes its opener's line level.
     /// </param>
     void CloseIndent(IndentKind kind, bool alignsCloser = false) {
         if (kind == IndentKind.Outdent) {
@@ -1173,16 +1176,16 @@ public sealed partial class CSharpDocumentBuilder {
     }
 
     /// <summary>
-    /// <c>place_comments_at_first_column = false</c> indents a comment with the code around it;
-    /// true pins it to column 0, which is a habit some trees have and Skala honours rather than
-    /// argues with.
+    ///     <c>place_comments_at_first_column = false</c> indents a comment with the code around it;
+    ///     true pins it to column 0, which is a habit some trees have and Skala honours rather than
+    ///     argues with.
     /// </summary>
     VerbatimFlags CommentFlags(Piece piece) =>
         _options.PlaceCommentsAtFirstColumn && piece.StartsLine ? VerbatimFlags.AtColumnZero : VerbatimFlags.None;
 
     /// <summary>
-    /// <c>space_after_triple_slash</c> and <c>space_before_trailing_comment_text</c>: exactly one
-    /// space after the marker, or the author's text untouched.
+    ///     <c>space_after_triple_slash</c> and <c>space_before_trailing_comment_text</c>: exactly one
+    ///     space after the marker, or the author's text untouched.
     /// </summary>
     static string SpaceAfterMarker(string text, string marker, bool required) {
         if (!text.StartsWith(marker, StringComparison.Ordinal)) {
@@ -1252,7 +1255,7 @@ public sealed partial class CSharpDocumentBuilder {
         _lastPiece = index;
     }
 
-    /// <summary>The offset of the first character of the line <paramref name="position"/> is on.</summary>
+    /// <summary>The offset of the first character of the line <paramref name="position" /> is on.</summary>
     int LineStart(int position) {
         var start = position;
         while (start > 0 && _source[start - 1] is ' ' or '\t') {
@@ -1408,13 +1411,13 @@ public sealed partial class CSharpDocumentBuilder {
         };
 
     /// <summary>
-    /// Emits a break, spending the statement's one continuous indent level if this is the break
-    /// that needs it.
+    ///     Emits a break, spending the statement's one continuous indent level if this is the break
+    ///     that needs it.
     /// </summary>
     /// <remarks>
-    /// ⚠ <c>continuous_line_indent = single</c>: one level, and only where no delimited group is
-    /// already providing one. <c>if (a &amp;&amp;\n b)</c> takes the parenthesis's level and not a
-    /// second one; <c>var y = a\n + b</c> has no parenthesis and takes the statement's.
+    ///     ⚠ <c>continuous_line_indent = single</c>: one level, and only where no delimited group is
+    ///     already providing one. <c>if (a &amp;&amp;\n b)</c> takes the parenthesis's level and not a
+    ///     second one; <c>var y = a\n + b</c> has no parenthesis and takes the statement's.
     /// </remarks>
     void Break(int nextPieceIndex, SyntaxToken nextToken, int blanks, string newLine) {
         var frame = FrameToSpend(nextPieceIndex, nextToken);
@@ -1427,17 +1430,17 @@ public sealed partial class CSharpDocumentBuilder {
     }
 
     /// <summary>
-    /// Which open frame, if any, pays for this break's continuation level.
+    ///     Which open frame, if any, pays for this break's continuation level.
     /// </summary>
     /// <remarks>
-    /// ⚠ The walk goes outward, because a chain frame answers only for a break before its own
-    /// <c>.</c>: in
-    /// <code>
+    ///     ⚠ The walk goes outward, because a chain frame answers only for a break before its own
+    ///     <c>.</c>: in
+    ///     <code>
     /// public int M() =&gt;
     ///     Helper.Compute(x);
-    /// </code>
-    /// the innermost frame at the break is the chain, and the level is the <em>member's</em> to
-    /// spend. Stopping at the innermost frame leaves the body flush with its declaration.
+    ///     </code>
+    ///     the innermost frame at the break is the chain, and the level is the <em>member's</em> to
+    ///     spend. Stopping at the innermost frame leaves the body flush with its declaration.
     /// </remarks>
     int FrameToSpend(int nextPieceIndex, SyntaxToken nextToken) {
         var beforeDot = nextToken.IsKind(SyntaxKind.DotToken)
@@ -1490,10 +1493,10 @@ public sealed partial class CSharpDocumentBuilder {
     }
 
     /// <param name="Started">
-    /// ⚠ False until the frame's own first piece is emitted. A break that lands <em>before</em> a
-    /// construct belongs to whatever encloses it, not to the construct: the break after
-    /// <c>M() =&gt;</c> is the member's to pay for even though the lambda that follows has already
-    /// been entered.
+    ///     ⚠ False until the frame's own first piece is emitted. A break that lands <em>before</em> a
+    ///     construct belongs to whatever encloses it, not to the construct: the break after
+    ///     <c>M() =&gt;</c> is the member's to pay for even though the lambda that follows has already
+    ///     been entered.
     /// </param>
     readonly record struct Frame(
         FrameKind Kind,
@@ -1504,8 +1507,8 @@ public sealed partial class CSharpDocumentBuilder {
         bool Aligned = false);
 
     /// <summary>
-    /// Whether the break continues an expression rather than starting a new statement, member or
-    /// list element.
+    ///     Whether the break continues an expression rather than starting a new statement, member or
+    ///     list element.
     /// </summary>
     bool IsContinuation(int nextPieceIndex, SyntaxToken nextToken) {
         if (nextToken.IsKind(SyntaxKind.None)) {
@@ -1527,9 +1530,9 @@ public sealed partial class CSharpDocumentBuilder {
     }
 
     /// <summary>
-    /// True when the token begins something the layout treats as its own line: a statement, a
-    /// member, a list element, a label, a clause — or a closing delimiter, which has already
-    /// outdented by the time it is written.
+    ///     True when the token begins something the layout treats as its own line: a statement, a
+    ///     member, a list element, a label, a clause — or a closing delimiter, which has already
+    ///     outdented by the time it is written.
     /// </summary>
     static bool StartsAUnit(SyntaxToken token) {
         if (token.Kind() is SyntaxKind.CloseBraceToken
@@ -1570,10 +1573,10 @@ public sealed partial class CSharpDocumentBuilder {
     }
 
     /// <summary>
-    /// ⚠ A list pattern's elements are list elements too, and leaving it out of this test is only
-    /// visible once something forces a break between them: <c>o is [\n 1,\n 2\n]</c> put the
-    /// second element one level deeper than the first, because the break before it was read as a
-    /// continuation of an expression rather than as the start of an element.
+    ///     ⚠ A list pattern's elements are list elements too, and leaving it out of this test is only
+    ///     visible once something forces a break between them: <c>o is [\n 1,\n 2\n]</c> put the
+    ///     second element one level deeper than the first, because the break before it was read as a
+    ///     continuation of an expression rather than as the start of an element.
     /// </summary>
     static bool IsListElement(SyntaxNode child) =>
         child.Parent is InitializerExpressionSyntax
@@ -1595,8 +1598,8 @@ public sealed partial class CSharpDocumentBuilder {
     }
 
     /// <summary>
-    /// The things the layout treats as starting their own line: a statement, a member, a list
-    /// element, a label, a clause.
+    ///     The things the layout treats as starting their own line: a statement, a member, a list
+    ///     element, a label, a clause.
     /// </summary>
     static bool IsUnit(SyntaxNode node) =>
         node switch {
@@ -1672,11 +1675,11 @@ public sealed partial class CSharpDocumentBuilder {
     }
 
     /// <summary>
-    /// The brace rules, the one place phase 1 removes a line break the author wrote.
+    ///     The brace rules, the one place phase 1 removes a line break the author wrote.
     /// </summary>
     /// <remarks>
-    /// ⚠ Never across a comment or a directive. Joining <c>// note</c> with the <c>{</c> below it
-    /// would put the brace inside the comment.
+    ///     ⚠ Never across a comment or a directive. Joining <c>// note</c> with the <c>{</c> below it
+    ///     would put the brace inside the comment.
     /// </remarks>
     bool ShouldJoin(Piece previous, PieceKind nextKind, SyntaxToken nextToken) {
         if (previous.Kind != PieceKind.Token || nextKind != PieceKind.Token) {
@@ -1711,7 +1714,7 @@ public sealed partial class CSharpDocumentBuilder {
     }
 
     /// <summary>
-    /// <c>allow_comment_after_lbrace = false</c>: a comment may not sit on the brace's line.
+    ///     <c>allow_comment_after_lbrace = false</c>: a comment may not sit on the brace's line.
     /// </summary>
     bool MustBreak(Piece previous, PieceKind nextKind, SyntaxToken nextToken) {
         _ = nextToken;
@@ -1813,9 +1816,9 @@ public sealed partial class CSharpDocumentBuilder {
         };
 
     /// <summary>
-    /// ⚠ <c>indent_nested_{for,foreach,while,using,lock,fixed}_stmt = false</c>: a loop directly
-    /// inside another loop of the same kind stays flush rather than stair-stepping. One of the few
-    /// places the formatter <em>removes</em> indentation the author wrote.
+    ///     ⚠ <c>indent_nested_{for,foreach,while,using,lock,fixed}_stmt = false</c>: a loop directly
+    ///     inside another loop of the same kind stays flush rather than stair-stepping. One of the few
+    ///     places the formatter <em>removes</em> indentation the author wrote.
     /// </summary>
     bool NeedsEmbeddedIndent(SyntaxNode owner, SyntaxNode embedded) {
         if (embedded is BlockSyntax) {

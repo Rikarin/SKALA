@@ -4,8 +4,8 @@ using System.Text;
 namespace Rikarin.Skala.Formatting.CSharp;
 
 /// <summary>
-/// A unified diff over the edits, for <c>--diff</c> and for the adoption step that reads what the
-/// first run would do before it does it.
+///     A unified diff over the edits, for <c>--diff</c> and for the adoption step that reads what the
+///     first run would do before it does it.
 /// </summary>
 public static class UnifiedDiff {
     const int Context = 3;
@@ -93,8 +93,8 @@ public static class UnifiedDiff {
     readonly record struct Entry(EditKind Kind, string Line);
 
     /// <summary>
-    /// Classic dynamic-programming LCS. The inputs are one file's lines and the diff is only ever
-    /// rendered for a human, so the quadratic table is the right trade against a Myers walk.
+    ///     Classic dynamic-programming LCS. The inputs are one file's lines and the diff is only ever
+    ///     rendered for a human, so the quadratic table is the right trade against a Myers walk.
     /// </summary>
     static List<Entry> LongestCommonSubsequence(string[] left, string[] right) {
         var table = new int[left.Length + 1, right.Length + 1];

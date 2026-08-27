@@ -7,17 +7,17 @@ using Rikarin.Skala.Testing;
 namespace Rikarin.Skala.Conformance.Tests;
 
 /// <summary>
-/// Level 1 of docs/plan/12: the option units, and the floor under Tier A.
+///     Level 1 of docs/plan/12: the option units, and the floor under Tier A.
 /// </summary>
 /// <remarks>
-/// ⚠ "Every entry in <c>options.json</c> requires at least one corpus file in <c>constructs/</c>
-/// that changes behaviour when the option changes." An option with no observable effect is either
-/// unimplemented or wrongly wired — both are bugs, and both are build failures here.
-/// <para>
-/// The test is scoped to the options the formatter actually reads. It is inert for the rest, which
-/// is the honest state of a milestone that implements 138 of ~380 keys, and it becomes a wider net
-/// with no change to this file as each later phase promotes its own.
-/// </para>
+///     ⚠ "Every entry in <c>options.json</c> requires at least one corpus file in <c>constructs/</c>
+///     that changes behaviour when the option changes." An option with no observable effect is either
+///     unimplemented or wrongly wired — both are bugs, and both are build failures here.
+///     <para>
+///         The test is scoped to the options the formatter actually reads. It is inert for the rest, which
+///         is the honest state of a milestone that implements 138 of ~380 keys, and it becomes a wider net
+///         with no change to this file as each later phase promotes its own.
+///     </para>
 /// </remarks>
 public sealed class OptionCoverageTests {
     public static TheoryData<string> ImplementedKeys {
@@ -32,15 +32,15 @@ public sealed class OptionCoverageTests {
     }
 
     /// <summary>
-    /// Every option Skala implements: the formatter's and the arranger's.
+    ///     Every option Skala implements: the formatter's and the arranger's.
     /// </summary>
     /// <remarks>
-    /// ⚠ Two sets, one claim. Milestone 4 added a second component that reads options, and folding
-    /// its keys into <see cref="PhaseOneOptions.Implemented"/> would have made
-    /// <see cref="EveryImplementedOption_ChangesTheOutputOfItsCorpusFile"/> unprovable for a dozen
-    /// of them — that test formats a file, and an arrangement key changes nothing about formatting.
-    /// The honest shape is to keep the sets apart and measure each against the component that
-    /// implements it, while Tier A stays one claim about the whole tool.
+    ///     ⚠ Two sets, one claim. Milestone 4 added a second component that reads options, and folding
+    ///     its keys into <see cref="PhaseOneOptions.Implemented" /> would have made
+    ///     <see cref="EveryImplementedOption_ChangesTheOutputOfItsCorpusFile" /> unprovable for a dozen
+    ///     of them — that test formats a file, and an arrangement key changes nothing about formatting.
+    ///     The honest shape is to keep the sets apart and measure each against the component that
+    ///     implements it, while Tier A stays one claim about the whole tool.
     /// </remarks>
     static HashSet<OptionId> Implemented() => [
         .. PhaseOneOptions.Implemented,
@@ -93,13 +93,13 @@ public sealed class OptionCoverageTests {
     }
 
     /// <summary>
-    /// ⚠ An arrangement option is pinned by a <b>cleanup</b> fixture, not a format-only one.
+    ///     ⚠ An arrangement option is pinned by a <b>cleanup</b> fixture, not a format-only one.
     /// </summary>
     /// <remarks>
-    /// ⚠ The distinction is the whole of why milestone 4 needed a second oracle profile. A
-    /// format-only fixture is <c>CSReformatCode</c> and nothing else, so it is byte-identical
-    /// whatever the <c>arrange_*</c> keys say; accepting one as evidence for a Tier A arrangement
-    /// claim would be accepting a measurement that cannot come out differently.
+    ///     ⚠ The distinction is the whole of why milestone 4 needed a second oracle profile. A
+    ///     format-only fixture is <c>CSReformatCode</c> and nothing else, so it is byte-identical
+    ///     whatever the <c>arrange_*</c> keys say; accepting one as evidence for a Tier A arrangement
+    ///     claim would be accepting a measurement that cannot come out differently.
     /// </remarks>
     [Theory]
     [MemberData(nameof(ArrangementKeys))]
@@ -117,13 +117,13 @@ public sealed class OptionCoverageTests {
     }
 
     /// <summary>
-    /// Setting an arrangement option to each of its values must change what the <b>arranger</b>
-    /// produces.
+    ///     Setting an arrangement option to each of its values must change what the <b>arranger</b>
+    ///     produces.
     /// </summary>
     /// <remarks>
-    /// ⚠ The formatter's own version of this test formats the file, which is exactly the wrong
-    /// question for these keys: <c>csharp_style_var_elsewhere</c> changes no whitespace at all and
-    /// would look unimplemented. Same assertion, different subject.
+    ///     ⚠ The formatter's own version of this test formats the file, which is exactly the wrong
+    ///     question for these keys: <c>csharp_style_var_elsewhere</c> changes no whitespace at all and
+    ///     would look unimplemented. Same assertion, different subject.
     /// </remarks>
     [Theory]
     [MemberData(nameof(ArrangementKeys))]
@@ -220,9 +220,9 @@ public sealed class OptionCoverageTests {
     }
 
     /// <summary>
-    /// For a bool, both values. For an enum, its whole domain. For an int, the configured value and
-    /// one that is definitely different — an int's domain is unbounded and the point of the test is
-    /// observability, not exhaustiveness.
+    ///     For a bool, both values. For an enum, its whole domain. For an int, the configured value and
+    ///     one that is definitely different — an int's domain is unbounded and the point of the test is
+    ///     observability, not exhaustiveness.
     /// </summary>
     static IEnumerable<string> LegalValues(OptionInfo info) {
         switch (info.Kind) {

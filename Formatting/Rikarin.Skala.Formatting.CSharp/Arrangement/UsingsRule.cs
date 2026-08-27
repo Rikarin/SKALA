@@ -6,31 +6,31 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 namespace Rikarin.Skala.Formatting.CSharp.Arrangement;
 
 /// <summary>
-/// Sorts using directives, and removes the ones no compilation needs.
+///     Sorts using directives, and removes the ones no compilation needs.
 /// </summary>
 /// <remarks>
-/// ⚠ docs/plan/06 § "Usings": sort alphabetically with <c>System</c> <em>not</em> hoisted
-/// (<c>dotnet_sort_system_directives_first = false</c>), no group separation, outside the namespace,
-/// one blank line after.
-/// <para>
-/// ⚠ Removal is the one rewrite that must consider more than one compilation. "Unused in this file"
-/// is not the question; "unused in <em>every</em> compilation this file participates in" is, because
-/// a using can be needed only under one target framework's <c>#if</c>, or only for an extension
-/// method that another target resolves differently. Multi-targeting is not an edge case in this
-/// ecosystem. <see cref="Unused"/> answers the per-compilation half and the driver intersects across
-/// compilations; with a single compilation the intersection is the identity, which is why a
-/// one-framework repository sees no difference and a multi-targeted one is not silently broken.
-/// </para>
+///     ⚠ docs/plan/06 § "Usings": sort alphabetically with <c>System</c> <em>not</em> hoisted
+///     (<c>dotnet_sort_system_directives_first = false</c>), no group separation, outside the namespace,
+///     one blank line after.
+///     <para>
+///         ⚠ Removal is the one rewrite that must consider more than one compilation. "Unused in this file"
+///         is not the question; "unused in <em>every</em> compilation this file participates in" is, because
+///         a using can be needed only under one target framework's <c>#if</c>, or only for an extension
+///         method that another target resolves differently. Multi-targeting is not an edge case in this
+///         ecosystem. <see cref="Unused" /> answers the per-compilation half and the driver intersects across
+///         compilations; with a single compilation the intersection is the identity, which is why a
+///         one-framework repository sees no difference and a multi-targeted one is not silently broken.
+///     </para>
 /// </remarks>
 public sealed class UsingsRule : ArrangementRule {
     /// <summary>
-    /// The directives that may be removed, computed per compilation and intersected by the caller.
+    ///     The directives that may be removed, computed per compilation and intersected by the caller.
     /// </summary>
     /// <remarks>
-    /// ⚠ Passed in rather than computed here, because the rule sees one <see cref="SemanticModel"/>
-    /// and the decision needs all of them. An empty set means "remove nothing", which is the correct
-    /// answer when only one compilation was available and it could not be trusted to speak for the
-    /// others — the syntactic scope takes exactly that path.
+    ///     ⚠ Passed in rather than computed here, because the rule sees one <see cref="SemanticModel" />
+    ///     and the decision needs all of them. An empty set means "remove nothing", which is the correct
+    ///     answer when only one compilation was available and it could not be trusted to speak for the
+    ///     others — the syntactic scope takes exactly that path.
     /// </remarks>
     readonly ImmutableHashSet<string> _removable;
 
@@ -39,9 +39,9 @@ public sealed class UsingsRule : ArrangementRule {
     public override string Id => ArrangeIds.Usings;
 
     /// <summary>
-    /// ⚠ False. Sorting needs no semantics at all, and removal takes its answer from
-    /// <see cref="_removable"/> rather than from a model — so the rule runs in the syntactic subset
-    /// and simply removes nothing there. An agent on a loose file still gets its usings sorted.
+    ///     ⚠ False. Sorting needs no semantics at all, and removal takes its answer from
+    ///     <see cref="_removable" /> rather than from a model — so the rule runs in the syntactic subset
+    ///     and simply removes nothing there. An agent on a loose file still gets its usings sorted.
     /// </summary>
     public override bool NeedsSemantics => false;
 
@@ -79,8 +79,8 @@ public sealed class UsingsRule : ArrangementRule {
         && _removable.Contains(directive.Name?.ToString() ?? string.Empty);
 
     /// <summary>
-    /// ⚠ A using with a comment on it is not removed. The comment is the author saying something
-    /// about that line, and a cleanup that deletes prose to save a using has made the file worse.
+    ///     ⚠ A using with a comment on it is not removed. The comment is the author saying something
+    ///     about that line, and a cleanup that deletes prose to save a using has made the file worse.
     /// </summary>
     static bool HasNoComment(UsingDirectiveSyntax directive) {
         foreach (var trivia in directive.DescendantTrivia(descendIntoTrivia: true)) {
@@ -95,14 +95,14 @@ public sealed class UsingsRule : ArrangementRule {
     }
 
     /// <summary>
-    /// The names a compilation does not need, for one file.
+    ///     The names a compilation does not need, for one file.
     /// </summary>
     /// <remarks>
-    /// ⚠ Roslyn already answers this, and answers it better than a hand-rolled reference walk would:
-    /// <c>CS8019</c> is the "unnecessary using directive" diagnostic the compiler itself emits, so
-    /// the set below is the compiler's own opinion about its own binding rather than Skala's model
-    /// of it. A using needed only by a disabled <c>#if</c> branch is *not* reported, which is
-    /// correct for that compilation and is exactly why the caller intersects across all of them.
+    ///     ⚠ Roslyn already answers this, and answers it better than a hand-rolled reference walk would:
+    ///     <c>CS8019</c> is the "unnecessary using directive" diagnostic the compiler itself emits, so
+    ///     the set below is the compiler's own opinion about its own binding rather than Skala's model
+    ///     of it. A using needed only by a disabled <c>#if</c> branch is *not* reported, which is
+    ///     correct for that compilation and is exactly why the caller intersects across all of them.
     /// </remarks>
     public static ImmutableHashSet<string> Unused(
         SemanticModel model,
@@ -125,9 +125,12 @@ public sealed class UsingsRule : ArrangementRule {
     }
 
     /// <summary>
-    /// ⚠ Ordinal, and <c>System</c> is not hoisted. <c>dotnet_sort_system_directives_first =
-    /// false</c> is an unusual choice and it is the author's; sorting <c>System</c> first "because
-    /// everyone does" would move every using block in the repository on the first run.
+    ///     ⚠ Ordinal, and <c>System</c> is not hoisted.
+    ///     <c>
+    ///dotnet_sort_system_directives_first =
+    /// false
+    ///     </c> is an unusual choice and it is the author's; sorting <c>System</c> first "because
+    ///     everyone does" would move every using block in the repository on the first run.
     /// </summary>
     static List<UsingDirectiveSyntax> Sort(List<UsingDirectiveSyntax> directives, in ArrangementOptions options) {
         var systemFirst = options.SystemDirectivesFirst;
@@ -168,13 +171,13 @@ public sealed class UsingsRule : ArrangementRule {
     }
 
     /// <summary>
-    /// Moves the leading trivia of the original block onto whatever is first now.
+    ///     Moves the leading trivia of the original block onto whatever is first now.
     /// </summary>
     /// <remarks>
-    /// ⚠ A file's header comment and its <c>#region</c> live on the first using's leading trivia. If
-    /// sorting moves a different directive to the front and the trivia rides along with the old one,
-    /// the licence header ends up in the middle of the block. This re-pins the block's opening trivia
-    /// to the block rather than to a directive.
+    ///     ⚠ A file's header comment and its <c>#region</c> live on the first using's leading trivia. If
+    ///     sorting moves a different directive to the front and the trivia rides along with the old one,
+    ///     the licence header ends up in the middle of the block. This re-pins the block's opening trivia
+    ///     to the block rather than to a directive.
     /// </remarks>
     static List<UsingDirectiveSyntax> Renormalise(
         List<UsingDirectiveSyntax> ordered,
@@ -200,13 +203,13 @@ public sealed class UsingsRule : ArrangementRule {
 }
 
 /// <summary>
-/// <c>string.Empty</c> ⇒ <c>""</c>, under <c>resharper_empty_string = empty_literal</c>.
+///     <c>string.Empty</c> ⇒ <c>""</c>, under <c>resharper_empty_string = empty_literal</c>.
 /// </summary>
 /// <remarks>
-/// ⚠ SK-DIV-0013 again: the oracle does not perform this one either — it normalises
-/// <c>String.Empty</c> to <c>string.Empty</c> and stops — so it is fixture-pinned rather than
-/// oracle-pinned, and excluded from the agreement number. Skala performs it because the export asks
-/// for it and doc 06 lists it.
+///     ⚠ SK-DIV-0013 again: the oracle does not perform this one either — it normalises
+///     <c>String.Empty</c> to <c>string.Empty</c> and stops — so it is fixture-pinned rather than
+///     oracle-pinned, and excluded from the agreement number. Skala performs it because the export asks
+///     for it and doc 06 lists it.
 /// </remarks>
 public sealed class EmptyStringRule : ArrangementRule {
     public override string Id => ArrangeIds.EmptyString;

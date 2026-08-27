@@ -15,19 +15,19 @@ using Task = Microsoft.Build.Logging.StructuredLogger.Task;
 namespace Rikarin.Skala.Analysis.Loading;
 
 /// <summary>
-/// ADR-007's primary path: reconstruct compilations from what the compiler was actually told.
+///     ADR-007's primary path: reconstruct compilations from what the compiler was actually told.
 /// </summary>
 /// <remarks>
-/// <code>
+///     <code>
 /// dotnet build -bl  →  BinaryLog.ReadBuild()  →  every CscTask.CommandLineArguments
 ///                   →  CSharpCommandLineParser.Default.Parse(...)
 ///                   →  sources, references, options, analyzers, editorconfigs
-/// </code>
-/// This is what the build compiled — generated sources included, conditional symbols correct,
-/// analyzer references as configured, multi-targeting expressed as one <c>Csc</c> invocation per
-/// target framework. No design-time build, no MSBuild evaluation, no SDK-version sensitivity beyond
-/// the one that already produced the binlog. ⚠ It is the only option that is <em>definitionally</em>
-/// correct, and it costs one real build, which CI is doing anyway.
+///     </code>
+///     This is what the build compiled — generated sources included, conditional symbols correct,
+///     analyzer references as configured, multi-targeting expressed as one <c>Csc</c> invocation per
+///     target framework. No design-time build, no MSBuild evaluation, no SDK-version sensitivity beyond
+///     the one that already produced the binlog. ⚠ It is the only option that is <em>definitionally</em>
+///     correct, and it costs one real build, which CI is doing anyway.
 /// </remarks>
 public static class BinlogLoader {
     /// <summary>Where a binlog is looked for when none is named.</summary>
@@ -96,8 +96,8 @@ public static class BinlogLoader {
     }
 
     /// <summary>
-    /// ⚠ Not inlined, so that <see cref="MSBuildRuntime.Ensure"/> has run before the JIT resolves
-    /// this frame's references to MSBuild's types.
+    ///     ⚠ Not inlined, so that <see cref="MSBuildRuntime.Ensure" /> has run before the JIT resolves
+    ///     this frame's references to MSBuild's types.
     /// </summary>
     [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
     static bool TryRead(
@@ -144,12 +144,12 @@ public static class BinlogLoader {
     }
 
     /// <summary>
-    /// Every <c>Csc</c> invocation in the log, with the project that ran it.
+    ///     Every <c>Csc</c> invocation in the log, with the project that ran it.
     /// </summary>
     /// <remarks>
-    /// ⚠ Recursive over <c>Children</c> rather than through the library's visitor, because the
-    /// visitor's shape has changed between StructuredLogger versions and a walk of a tree of nodes
-    /// is not the part of this worth a dependency on an API surface.
+    ///     ⚠ Recursive over <c>Children</c> rather than through the library's visitor, because the
+    ///     visitor's shape has changed between StructuredLogger versions and a walk of a tree of nodes
+    ///     is not the part of this worth a dependency on an API surface.
     /// </remarks>
     static void Walk(BaseNode node, List<(string Project, string Arguments)> found) {
         if (node is Task { Name: "Csc" } task && task.CommandLineArguments is { Length: > 0 } arguments) {
@@ -305,40 +305,43 @@ public static class BinlogLoader {
     }
 
     /// <summary>
-    /// ⚠ The three ways a binlog lies about the tree, and the second is the dangerous one.
+    ///     ⚠ The three ways a binlog lies about the tree, and the second is the dangerous one.
     /// </summary>
     /// <remarks>
-    /// A file whose content moved since the build is <c>SK9020</c> — the current text is what is
-    /// analysed, so the report is about the working tree. A file that exists and is in no
-    /// compilation is <c>SK9021</c>, because it is <em>silently unanalysed</em>: the run comes back
-    /// clean and says nothing about it, which is the worst failure this tool can have.
-    /// <para>
-    /// ⚠ <b>The third is incompleteness, and it is why <c>--require-fresh-binlog</c> was not
-    /// enough.</b> A binlog from an *incremental* build contains only the projects MSBuild actually
-    /// rebuilt, and it is not stale — its mtime is seconds old. Measured: <c>arrange --check</c>
-    /// against an incremental binlog saw <b>824</b> files to change and left <b>2 147</b> in no
-    /// compilation; against a <c>--no-incremental</c> build's binlog, <b>1 188</b> and <b>79</b>.
-    /// Every command reported success. A gate that analyses a third of the tree and comes back
-    /// green is worse than no gate, because it is believed.
-    /// </para>
-    /// <para>
-    /// Age is a timestamp comparison and cannot see this: the binlog was not stale, it was partial.
-    /// So <c>--require-fresh-binlog</c> now checks <em>coverage</em> as well — the binlog's
-    /// compilation set against the files the path filter selects — and an incomplete binlog under
-    /// that flag is an error rather than a warning somebody reads past. The headline is a ratio,
-    /// because twenty file names and an "and 2 127 more" do not read as "two thirds of your
-    /// repository was not analysed", and that is the sentence.
-    /// </para>
+    ///     A file whose content moved since the build is <c>SK9020</c> — the current text is what is
+    ///     analysed, so the report is about the working tree. A file that exists and is in no
+    ///     compilation is <c>SK9021</c>, because it is <em>silently unanalysed</em>: the run comes back
+    ///     clean and says nothing about it, which is the worst failure this tool can have.
+    ///     <para>
+    ///         ⚠
+    ///         <b>
+    ///             The third is incompleteness, and it is why <c>--require-fresh-binlog</c> was not
+    ///             enough.
+    ///         </b> A binlog from an *incremental* build contains only the projects MSBuild actually
+    ///         rebuilt, and it is not stale — its mtime is seconds old. Measured: <c>arrange --check</c>
+    ///         against an incremental binlog saw <b>824</b> files to change and left <b>2 147</b> in no
+    ///         compilation; against a <c>--no-incremental</c> build's binlog, <b>1 188</b> and <b>79</b>.
+    ///         Every command reported success. A gate that analyses a third of the tree and comes back
+    ///         green is worse than no gate, because it is believed.
+    ///     </para>
+    ///     <para>
+    ///         Age is a timestamp comparison and cannot see this: the binlog was not stale, it was partial.
+    ///         So <c>--require-fresh-binlog</c> now checks <em>coverage</em> as well — the binlog's
+    ///         compilation set against the files the path filter selects — and an incomplete binlog under
+    ///         that flag is an error rather than a warning somebody reads past. The headline is a ratio,
+    ///         because twenty file names and an "and 2 127 more" do not read as "two thirds of your
+    ///         repository was not analysed", and that is the sentence.
+    ///     </para>
     /// </remarks>
     /// <summary>
-    /// The percentage of selected source files a binlog must cover before
-    /// <c>--require-fresh-binlog</c> will accept it.
+    ///     The percentage of selected source files a binlog must cover before
+    ///     <c>--require-fresh-binlog</c> will accept it.
     /// </summary>
     /// <remarks>
-    /// ⚠ Measured, not chosen. On Vixen a complete build's binlog covers <b>98 %</b> of the tree —
-    /// the missing 2 % is one project the solution does not build — and an incremental build's
-    /// covers <b>1 %</b>. Anything in that gap separates the two; 90 leaves room for a repository
-    /// with several projects outside its solution without letting a partial build through.
+    ///     ⚠ Measured, not chosen. On Vixen a complete build's binlog covers <b>98 %</b> of the tree —
+    ///     the missing 2 % is one project the solution does not build — and an incremental build's
+    ///     covers <b>1 %</b>. Anything in that gap separates the two; 90 leaves room for a repository
+    ///     with several projects outside its solution without letting a partial build through.
     /// </remarks>
     internal const int CoverageFloor = 90;
 
@@ -347,18 +350,18 @@ public static class BinlogLoader {
         selected == 0 ? 100 : (int)Math.Round(100.0 * (selected - missing) / selected, MidpointRounding.AwayFromZero);
 
     /// <summary>
-    /// The verdict on an incomplete binlog: an error the caller must refuse, or a warning.
+    ///     The verdict on an incomplete binlog: an error the caller must refuse, or a warning.
     /// </summary>
     /// <remarks>
-    /// ⚠ <b>A ratio, and only under the flag.</b> The two cases have to be told apart and the
-    /// numbers do it cleanly: a *complete* build of Vixen covers 4 642 of 4 717 files — 98 %,
-    /// the missing 75 living in a project the solution does not build, which no binlog will ever
-    /// cover. An *incremental* build's binlog covers 52 of 4 717. That is 1 %.
-    /// <para>
-    /// Refusing on any gap at all would make <c>--require-fresh-binlog</c> unsatisfiable on a
-    /// repository holding one project outside its solution — the same "gate nobody can turn green"
-    /// mistake that made docs/plan/09's <c>formatting: clean</c> unusable.
-    /// </para>
+    ///     ⚠ <b>A ratio, and only under the flag.</b> The two cases have to be told apart and the
+    ///     numbers do it cleanly: a *complete* build of Vixen covers 4 642 of 4 717 files — 98 %,
+    ///     the missing 75 living in a project the solution does not build, which no binlog will ever
+    ///     cover. An *incremental* build's binlog covers 52 of 4 717. That is 1 %.
+    ///     <para>
+    ///         Refusing on any gap at all would make <c>--require-fresh-binlog</c> unsatisfiable on a
+    ///         repository holding one project outside its solution — the same "gate nobody can turn green"
+    ///         mistake that made docs/plan/09's <c>formatting: clean</c> unusable.
+    ///     </para>
     /// </remarks>
     internal static SkalaSeverity CoverageSeverity(int selected, int missing, bool requireFresh) =>
         requireFresh && CoveragePercent(selected, missing) < CoverageFloor
@@ -457,12 +460,12 @@ public static class BinlogLoader {
     }
 
     /// <summary>
-    /// The source files the run is about: the requested paths, or the whole repository.
+    ///     The source files the run is about: the requested paths, or the whole repository.
     /// </summary>
     /// <remarks>
-    /// ⚠ A path that names a file is itself; a path that names a directory is everything under it.
-    /// A path that is neither contributes nothing rather than throwing — the caller has already
-    /// reported an unresolvable path, and the coverage check is not the place to fail a second time.
+    ///     ⚠ A path that names a file is itself; a path that names a directory is everything under it.
+    ///     A path that is neither contributes nothing rather than throwing — the caller has already
+    ///     reported an unresolvable path, and the coverage check is not the place to fail a second time.
     /// </remarks>
     static IEnumerable<string> Selected(LoadRequest request) {
         if (request.Paths.Count == 0) {
@@ -536,13 +539,13 @@ public static class BinlogLoader {
     }
 
     /// <summary>
-    /// The target framework, read back out of the symbols the build defined.
+    ///     The target framework, read back out of the symbols the build defined.
     /// </summary>
     /// <remarks>
-    /// ⚠ The moniker itself is not on the `csc` command line — MSBuild knows it and the compiler
-    /// does not. What is there is the implicit define the SDK adds, `NET10_0` or `NETSTANDARD2_0`,
-    /// beside the `_OR_GREATER` ladder. Taking the one without the suffix recovers the moniker
-    /// exactly, and returning empty when there is none is honest rather than guessing `net10.0`.
+    ///     ⚠ The moniker itself is not on the `csc` command line — MSBuild knows it and the compiler
+    ///     does not. What is there is the implicit define the SDK adds, `NET10_0` or `NETSTANDARD2_0`,
+    ///     beside the `_OR_GREATER` ladder. Taking the one without the suffix recovers the moniker
+    ///     exactly, and returning empty when there is none is honest rather than guessing `net10.0`.
     /// </remarks>
     static string TargetFrameworkOf(CSharpCommandLineArguments parsed) {
         foreach (var symbol in parsed.ParseOptions.PreprocessorSymbolNames) {
@@ -570,13 +573,13 @@ public static class BinlogLoader {
 }
 
 /// <summary>
-/// Splitting a recorded command line the way the compiler's own driver does.
+///     Splitting a recorded command line the way the compiler's own driver does.
 /// </summary>
 /// <remarks>
-/// ⚠ The binlog records one string, and `csc` arguments contain paths with spaces, quoted response
-/// arguments and `/define:"A;B"` values. Splitting on whitespace produces arguments that parse into
-/// a compilation missing half its references — which then reports a few hundred CS0246s and looks
-/// like the user's code is broken.
+///     ⚠ The binlog records one string, and `csc` arguments contain paths with spaces, quoted response
+///     arguments and `/define:"A;B"` values. Splitting on whitespace produces arguments that parse into
+///     a compilation missing half its references — which then reports a few hundred CS0246s and looks
+///     like the user's code is broken.
 /// </remarks>
 internal static class CommandLine {
     public static List<string> Split(string line) {

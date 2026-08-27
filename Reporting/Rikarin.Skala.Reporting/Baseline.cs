@@ -5,13 +5,13 @@ using Newtonsoft.Json;
 namespace Rikarin.Skala.Reporting;
 
 /// <summary>
-/// One accepted finding, as the baseline stores it.
+///     One accepted finding, as the baseline stores it.
 /// </summary>
 /// <remarks>
-/// ⚠ The fingerprints are the identity; the rule id, path and message are carried so that the
-/// baseline's <em>diff</em> is readable. docs/plan/09: the file is "a reviewed, committed
-/// artefact — its diff in a PR is 'we suppressed these', which is exactly the conversation that
-/// should happen", and a diff of opaque hashes is not that conversation.
+///     ⚠ The fingerprints are the identity; the rule id, path and message are carried so that the
+///     baseline's <em>diff</em> is readable. docs/plan/09: the file is "a reviewed, committed
+///     artefact — its diff in a PR is 'we suppressed these', which is exactly the conversation that
+///     should happen", and a diff of opaque hashes is not that conversation.
 /// </remarks>
 public sealed record BaselineEntry(
     string RuleId,
@@ -21,18 +21,18 @@ public sealed record BaselineEntry(
     string FingerprintV1);
 
 /// <summary>
-/// <c>.skala/baseline.sarif</c> — the findings the repository has accepted for now.
+///     <c>.skala/baseline.sarif</c> — the findings the repository has accepted for now.
 /// </summary>
 /// <remarks>
-/// docs/plan/09 § "The baseline". A normal SARIF file, so every tool that reads SARIF can read it
-/// and nothing new has to be invented or documented.
-/// <para>
-/// ⚠ Matching is on <see cref="Fingerprints.Version2"/>, falling back to
-/// <see cref="Fingerprints.Version1"/> for an entry written before the fingerprint gained its last
-/// two terms. The fallback is one-directional: a v2 baseline is never matched by a v1 hash alone,
-/// because v1 is the weaker identity and letting it match would silently widen what the baseline
-/// suppresses.
-/// </para>
+///     docs/plan/09 § "The baseline". A normal SARIF file, so every tool that reads SARIF can read it
+///     and nothing new has to be invented or documented.
+///     <para>
+///         ⚠ Matching is on <see cref="Fingerprints.Version2" />, falling back to
+///         <see cref="Fingerprints.Version1" /> for an entry written before the fingerprint gained its last
+///         two terms. The fallback is one-directional: a v2 baseline is never matched by a v1 hash alone,
+///         because v1 is the weaker identity and letting it match would silently widen what the baseline
+///         suppresses.
+///     </para>
 /// </remarks>
 public sealed class Baseline {
     Baseline(ImmutableArray<BaselineEntry> entries, string path) {
@@ -65,13 +65,13 @@ public sealed class Baseline {
     public static Baseline Empty(string path) => new([], path);
 
     /// <summary>
-    /// Reads a baseline, or returns an empty one when the file is absent.
+    ///     Reads a baseline, or returns an empty one when the file is absent.
     /// </summary>
     /// <remarks>
-    /// ⚠ An absent file is empty; an unreadable one throws. The difference matters: "there is no
-    /// baseline yet" is an ordinary state on a repository that has not run <c>baseline create</c>,
-    /// and "the baseline is corrupt" must not be silently treated as "nothing was accepted", which
-    /// would turn every existing finding new and fail the gate for a reason nothing names.
+    ///     ⚠ An absent file is empty; an unreadable one throws. The difference matters: "there is no
+    ///     baseline yet" is an ordinary state on a repository that has not run <c>baseline create</c>,
+    ///     and "the baseline is corrupt" must not be silently treated as "nothing was accepted", which
+    ///     would turn every existing finding new and fail the gate for a reason nothing names.
     /// </remarks>
     public static Baseline Read(string path) {
         if (!File.Exists(path)) {
@@ -113,13 +113,13 @@ public sealed class Baseline {
         _v2.Contains(Fingerprints.V2(finding)) || _v1.Contains(Fingerprints.V1(finding));
 
     /// <summary>
-    /// Splits a run against this baseline.
+    ///     Splits a run against this baseline.
     /// </summary>
     /// <remarks>
-    /// docs/plan/09's three buckets. ⚠ <b>Fixed</b> is the one worth having and the one a naive
-    /// implementation drops: a finding the baseline holds that no longer fires is good news, and it
-    /// is also the only signal that a rule has silently stopped working. Reporting it is what makes
-    /// pruning a decision rather than a side effect.
+    ///     docs/plan/09's three buckets. ⚠ <b>Fixed</b> is the one worth having and the one a naive
+    ///     implementation drops: a finding the baseline holds that no longer fires is good news, and it
+    ///     is also the only signal that a rule has silently stopped working. Reporting it is what makes
+    ///     pruning a decision rather than a side effect.
     /// </remarks>
     public BaselineComparison Compare(IEnumerable<Finding> findings) {
         var partitioned = ImmutableArray.CreateBuilder<Finding>();
@@ -151,12 +151,12 @@ public sealed class Baseline {
     }
 
     /// <summary>
-    /// Writes a baseline holding exactly the findings given.
+    ///     Writes a baseline holding exactly the findings given.
     /// </summary>
     /// <remarks>
-    /// ⚠ Suppressed findings are written too. A baseline exists to record what the repository
-    /// accepted, and a <c>#pragma</c> is a second, less visible way of accepting something; leaving
-    /// them out means removing the pragma turns an accepted finding new.
+    ///     ⚠ Suppressed findings are written too. A baseline exists to record what the repository
+    ///     accepted, and a <c>#pragma</c> is a second, less visible way of accepting something; leaving
+    ///     them out means removing the pragma turns an accepted finding new.
     /// </remarks>
     public static void Write(string path, RunReport report, IEnumerable<Finding> findings) {
         var accepted = findings.ToArray();
@@ -172,9 +172,9 @@ public sealed class Baseline {
 /// <param name="Findings">Every finding, each tagged with the bucket it fell into.</param>
 /// <param name="NewCount">How many were not in the baseline. What <c>newIssues</c> gates on.</param>
 /// <param name="Fixed">
-/// ⚠ Baseline entries that no longer fire. Reported as good news and pruned only when asked —
-/// docs/plan/09: "a baseline that self-prunes lets a rule that silently stopped working look like
-/// progress".
+///     ⚠ Baseline entries that no longer fire. Reported as good news and pruned only when asked —
+///     docs/plan/09: "a baseline that self-prunes lets a rule that silently stopped working look like
+///     progress".
 /// </param>
 public sealed record BaselineComparison(
     ImmutableArray<Finding> Findings,

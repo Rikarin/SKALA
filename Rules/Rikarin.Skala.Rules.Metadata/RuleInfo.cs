@@ -21,23 +21,23 @@ public enum RuleSeverity {
 }
 
 /// <summary>
-/// What a rule needs in order to answer, and what the incremental cache may assume about it.
+///     What a rule needs in order to answer, and what the incremental cache may assume about it.
 /// </summary>
 /// <remarks>
-/// ⚠ The two consumers are different questions and it is worth keeping them distinct in the head.
-/// <list type="bullet">
-/// <item>
-/// <see cref="Syntax"/> versus <see cref="Semantic"/> decides whether the rule runs under
-/// <c>--load=loose</c>, where most type resolution fails (docs/plan/07 § "loose").
-/// </item>
-/// <item>
-/// <see cref="Compilation"/> decides whether the rule may be cached per file. ⚠ It may not: the
-/// cache's correctness condition is that a rule's output for a file depends only on the key's
-/// inputs, and a rule that reads every file in the compilation violates it. Getting this wrong
-/// produces stale findings, which is the failure mode that destroys trust in a cache permanently
-/// and does it silently.
-/// </item>
-/// </list>
+///     ⚠ The two consumers are different questions and it is worth keeping them distinct in the head.
+///     <list type="bullet">
+///         <item>
+///             <see cref="Syntax" /> versus <see cref="Semantic" /> decides whether the rule runs under
+///             <c>--load=loose</c>, where most type resolution fails (docs/plan/07 § "loose").
+///         </item>
+///         <item>
+///             <see cref="Compilation" /> decides whether the rule may be cached per file. ⚠ It may not: the
+///             cache's correctness condition is that a rule's output for a file depends only on the key's
+///             inputs, and a rule that reads every file in the compilation violates it. Getting this wrong
+///             produces stale findings, which is the failure mode that destroys trust in a cache permanently
+///             and does it silently.
+///         </item>
+///     </list>
 /// </remarks>
 public enum RuleScope {
     /// <summary>The syntax tree of one file answers it.</summary>
@@ -51,12 +51,12 @@ public enum RuleScope {
 }
 
 /// <summary>
-/// One rule, as <c>rules.json</c> declares it.
+///     One rule, as <c>rules.json</c> declares it.
 /// </summary>
 /// <remarks>
-/// docs/plan/08-rule-catalogue.md § "Rule metadata". The single source for the analyzer's
-/// <c>DiagnosticDescriptor</c>, the <c>docs/rules/</c> page, the <c>skala explain</c> text, the
-/// SARIF <c>rules[]</c> block and the ReSharper severity mapping.
+///     docs/plan/08-rule-catalogue.md § "Rule metadata". The single source for the analyzer's
+///     <c>DiagnosticDescriptor</c>, the <c>docs/rules/</c> page, the <c>skala explain</c> text, the
+///     SARIF <c>rules[]</c> block and the ReSharper severity mapping.
 /// </remarks>
 public sealed record RuleInfo(
     string Id,
@@ -81,14 +81,14 @@ public sealed record RuleInfo(
     IReadOnlyList<string> Configuration,
     string? ReSharperNote) {
     /// <summary>
-    /// The <c>resharper_*_highlighting</c> key this rule's severity can be read from, or null.
+    ///     The <c>resharper_*_highlighting</c> key this rule's severity can be read from, or null.
     /// </summary>
     /// <remarks>
-    /// ⚠ Derived, not stored, and the derivation is the answer to docs/plan/16 § Q5. ReSharper's
-    /// key is its inspection id in snake_case with a <c>resharper_</c> prefix and a
-    /// <c>_highlighting</c> suffix — <c>ConvertToFileScopedNamespace</c> becomes
-    /// <c>resharper_convert_to_file_scoped_namespace_highlighting</c> — so the mapping table is one
-    /// field per rule rather than a second file to keep in sync.
+    ///     ⚠ Derived, not stored, and the derivation is the answer to docs/plan/16 § Q5. ReSharper's
+    ///     key is its inspection id in snake_case with a <c>resharper_</c> prefix and a
+    ///     <c>_highlighting</c> suffix — <c>ConvertToFileScopedNamespace</c> becomes
+    ///     <c>resharper_convert_to_file_scoped_namespace_highlighting</c> — so the mapping table is one
+    ///     field per rule rather than a second file to keep in sync.
     /// </remarks>
     public string? ReSharperSeverityKey =>
         ReSharperId is null ? null : "resharper_" + SnakeCase(ReSharperId) + "_highlighting";
@@ -96,7 +96,7 @@ public sealed record RuleInfo(
     /// <summary>Whether the rule can run at all under <c>--load=loose</c>.</summary>
     public bool RunsWithoutAProject => !RequiresSemantics && Scope != RuleScope.Compilation;
 
-    /// <summary>⚠ Compilation-scoped rules are never cached per file. See <see cref="RuleScope"/>.</summary>
+    /// <summary>⚠ Compilation-scoped rules are never cached per file. See <see cref="RuleScope" />.</summary>
     public bool IsCacheable => Scope != RuleScope.Compilation;
 
     internal static string SnakeCase(string pascal) {

@@ -20,25 +20,25 @@ public sealed record HostedResult(
     ImmutableArray<SkalaDiagnostic> Diagnostics);
 
 /// <summary>
-/// Loading third-party analyzers on request, and never bundling any (ADR-008).
+///     Loading third-party analyzers on request, and never bundling any (ADR-008).
 /// </summary>
 /// <remarks>
-/// Bundling <c>SonarAnalyzer.CSharp</c>, Roslynator or Meziantou would make Skala's findings the
-/// union of four projects' opinions and Skala's false-positive budget the sum of four projects'
-/// false positives — and in Sonar's case would put an LGPL obligation on an Apache-2.0 tool.
-/// Hosting them is the answer, and the corollary is that Skala must be worth using with nothing
-/// hosted.
-/// <para>
-/// ⚠ One <see cref="AssemblyLoadContext"/> per package, and it matters: half of these bundle their
-/// own <c>Newtonsoft.Json</c> or <c>System.Collections.Immutable</c>, and two analyzers wanting
-/// different versions of one helper in a single context is a <c>TypeLoadException</c> whose message
-/// names neither analyzer.
-/// </para>
-/// <para>
-/// ⚠ Failure to load is <c>SK9031</c> and is <b>never fatal</b>. A package that is missing, is for
-/// another framework, or drags a conflicting dependency is a configuration problem to report, not a
-/// reason to produce no report at all.
-/// </para>
+///     Bundling <c>SonarAnalyzer.CSharp</c>, Roslynator or Meziantou would make Skala's findings the
+///     union of four projects' opinions and Skala's false-positive budget the sum of four projects'
+///     false positives — and in Sonar's case would put an LGPL obligation on an Apache-2.0 tool.
+///     Hosting them is the answer, and the corollary is that Skala must be worth using with nothing
+///     hosted.
+///     <para>
+///         ⚠ One <see cref="AssemblyLoadContext" /> per package, and it matters: half of these bundle their
+///         own <c>Newtonsoft.Json</c> or <c>System.Collections.Immutable</c>, and two analyzers wanting
+///         different versions of one helper in a single context is a <c>TypeLoadException</c> whose message
+///         names neither analyzer.
+///     </para>
+///     <para>
+///         ⚠ Failure to load is <c>SK9031</c> and is <b>never fatal</b>. A package that is missing, is for
+///         another framework, or drags a conflicting dependency is a configuration problem to report, not a
+///         reason to produce no report at all.
+///     </para>
 /// </remarks>
 public static class HostedAnalyzers {
     /// <summary>Where restored packages live. Tool-local, never the user's global packages folder.</summary>
@@ -49,12 +49,12 @@ public static class HostedAnalyzers {
     );
 
     /// <summary>
-    /// Whether <c>skala.jsonc</c> asks for <c>resharper_*_highlighting</c> to set rule severities.
+    ///     Whether <c>skala.jsonc</c> asks for <c>resharper_*_highlighting</c> to set rule severities.
     /// </summary>
     /// <remarks>
-    /// ⚠ Default false. docs/plan/03 § "Severities" and docs/plan/16 § Q5: the values in an export
-    /// were chosen for ReSharper's inspections, and the author's own export sets
-    /// <c>resharper_use_throw_if_null_method_highlighting = none</c>.
+    ///     ⚠ Default false. docs/plan/03 § "Severities" and docs/plan/16 § Q5: the values in an export
+    ///     were chosen for ReSharper's inspections, and the author's own export sets
+    ///     <c>resharper_use_throw_if_null_method_highlighting = none</c>.
     /// </remarks>
     public static bool ReadsReSharperSeverities(string? toolConfigPath) {
         if (toolConfigPath is null || !File.Exists(toolConfigPath)) {
@@ -116,13 +116,13 @@ public static class HostedAnalyzers {
     }
 
     /// <summary>
-    /// Loads every requested package from the tool-local folder.
+    ///     Loads every requested package from the tool-local folder.
     /// </summary>
     /// <remarks>
-    /// ⚠ It does not restore. <c>dotnet restore</c> from inside an analysis run is a network call in
-    /// the middle of a pre-commit hook, so the restore is a separate, explicit step
-    /// (<c>skala analyzers restore</c>) and this reports <c>SK9031</c> when the folder is not there.
-    /// A tool that silently reaches the network during a build is a tool that fails on an aeroplane.
+    ///     ⚠ It does not restore. <c>dotnet restore</c> from inside an analysis run is a network call in
+    ///     the middle of a pre-commit hook, so the restore is a separate, explicit step
+    ///     (<c>skala analyzers restore</c>) and this reports <c>SK9031</c> when the folder is not there.
+    ///     A tool that silently reaches the network during a build is a tool that fails on an aeroplane.
     /// </remarks>
     public static HostedResult Load(ImmutableArray<HostedPackage> packages) {
         if (packages.IsEmpty) {
@@ -234,15 +234,15 @@ public static class HostedAnalyzers {
     }
 
     /// <summary>
-    /// ⚠ One per package, so that two analyzers depending on different versions of one helper
-    /// library do not collide — which they will.
+    ///     ⚠ One per package, so that two analyzers depending on different versions of one helper
+    ///     library do not collide — which they will.
     /// </summary>
     /// <remarks>
-    /// Roslyn's own types are deliberately <em>not</em> isolated: an analyzer loaded into a private
-    /// context with its own copy of <c>Microsoft.CodeAnalysis</c> implements a
-    /// <c>DiagnosticAnalyzer</c> that is not the one the host knows, and the cast fails. The
-    /// resolver therefore returns null for anything the default context already has, which lets the
-    /// shared types unify and isolates everything else.
+    ///     Roslyn's own types are deliberately <em>not</em> isolated: an analyzer loaded into a private
+    ///     context with its own copy of <c>Microsoft.CodeAnalysis</c> implements a
+    ///     <c>DiagnosticAnalyzer</c> that is not the one the host knows, and the cast fails. The
+    ///     resolver therefore returns null for anything the default context already has, which lets the
+    ///     shared types unify and isolates everything else.
     /// </remarks>
     sealed class PackageLoadContext(string name, string directory) : AssemblyLoadContext("skala/" + name) {
         readonly AssemblyDependencyResolver _resolver = new(directory + Path.DirectorySeparatorChar);

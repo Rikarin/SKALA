@@ -7,10 +7,10 @@ namespace Rikarin.Skala.Conformance.Tests;
 
 /// <summary>The ratchet: fidelity may not decrease, and improving it is a commit.</summary>
 /// <param name="Basis">
-/// ⚠ Which lines the two numbers are over, spelled out in the file rather than remembered. It is
-/// <c>outside doc comments</c> for every set, and <see cref="Read"/> refuses any other value rather
-/// than comparing a number against a baseline drawn over a different population — which is the
-/// failure docs/plan/12 § "A ratchet compares numbers over the same population" describes.
+///     ⚠ Which lines the two numbers are over, spelled out in the file rather than remembered. It is
+///     <c>outside doc comments</c> for every set, and <see cref="Read" /> refuses any other value rather
+///     than comparing a number against a baseline drawn over a different population — which is the
+///     failure docs/plan/12 § "A ratchet compares numbers over the same population" describes.
 /// </param>
 public sealed record FidelityBaseline(double LineFidelity, double FileFidelity, string Milestone, string Basis) {
     public static string Path { get; } = System.IO.Path.Combine(Corpus.Root, "fidelity.json");
@@ -38,13 +38,13 @@ public sealed record FidelityBaseline(double LineFidelity, double FileFidelity, 
 }
 
 /// <summary>
-/// Level 2 of docs/plan/12: the number that matters.
+///     Level 2 of docs/plan/12: the number that matters.
 /// </summary>
 /// <remarks>
-/// ⚠ The output of a differential run is not pass/fail, it is a ranked report of divergence classes
-/// by line count — the work queue. What is pass/fail is the ratchet: a commit may raise the number
-/// and may not lower it. The report is written to <c>.skala/conformance.md</c> on every run so that
-/// a regression comes with its own diagnosis.
+///     ⚠ The output of a differential run is not pass/fail, it is a ranked report of divergence classes
+///     by line count — the work queue. What is pass/fail is the ratchet: a commit may raise the number
+///     and may not lower it. The report is written to <c>.skala/conformance.md</c> on every run so that
+///     a regression comes with its own diagnosis.
 /// </remarks>
 public sealed class DifferentialTests {
     static FidelityReport Measure(string set, FidelityBasis basis = FidelityBasis.OutsideDocComments) {
@@ -58,16 +58,16 @@ public sealed class DifferentialTests {
     }
 
     /// <summary>
-    /// ⚠ The ratchet is over <see cref="FidelityBasis.OutsideDocComments"/>, and that is stated in
-    /// every message it prints.
+    ///     ⚠ The ratchet is over <see cref="FidelityBasis.OutsideDocComments" />, and that is stated in
+    ///     every message it prints.
     /// </summary>
     /// <remarks>
-    /// ⚠ It was over every line until the documentation-comment sub-formatter became the default.
-    /// It cannot stay there: Skala runs ReSharper's "Reformat embedded XML doc comments" and the
-    /// pinned oracle profile does not, so a <c>///</c> line's disagreement is a fact about the
-    /// profile rather than about the formatter, and a ratchet built on it would ratchet the wrong
-    /// thing. Both numbers are recorded at the re-base in <c>fidelity.json</c>'s
-    /// <c>Milestone</c> field so that the population change is visible rather than inferred.
+    ///     ⚠ It was over every line until the documentation-comment sub-formatter became the default.
+    ///     It cannot stay there: Skala runs ReSharper's "Reformat embedded XML doc comments" and the
+    ///     pinned oracle profile does not, so a <c>///</c> line's disagreement is a fact about the
+    ///     profile rather than about the formatter, and a ratchet built on it would ratchet the wrong
+    ///     thing. Both numbers are recorded at the re-base in <c>fidelity.json</c>'s
+    ///     <c>Milestone</c> field so that the population change is visible rather than inferred.
     /// </remarks>
     [Theory]
     [InlineData(Corpus.Real)]
@@ -104,14 +104,14 @@ public sealed class DifferentialTests {
     }
 
     /// <summary>
-    /// ⚠ The number the exclusion hides, asserted rather than left to a report nobody runs.
+    ///     ⚠ The number the exclusion hides, asserted rather than left to a report nobody runs.
     /// </summary>
     /// <remarks>
-    /// ⚠ An excluded category that is never looked at again is an excluded category that can grow
-    /// without anyone noticing. This is the every-line number over the same corpus: it is expected
-    /// to be *lower* than the ratchet's, by exactly the amount ReSharper's XML doc cleanup task
-    /// would move if the pinned profile ran it, and its floor is here so that "the doc comments
-    /// diverge, as designed" can never quietly become "everything diverges".
+    ///     ⚠ An excluded category that is never looked at again is an excluded category that can grow
+    ///     without anyone noticing. This is the every-line number over the same corpus: it is expected
+    ///     to be *lower* than the ratchet's, by exactly the amount ReSharper's XML doc cleanup task
+    ///     would move if the pinned profile ran it, and its floor is here so that "the doc comments
+    ///     diverge, as designed" can never quietly become "everything diverges".
     /// </remarks>
     [Fact]
     public void TheEveryLineNumber_IsStillReported() {
