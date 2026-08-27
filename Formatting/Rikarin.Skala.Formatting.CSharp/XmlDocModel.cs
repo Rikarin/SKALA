@@ -294,10 +294,31 @@ public sealed class XmlDocModel {
     /// sample, and SK-DIV-0006 already establishes that a comment's own trailing whitespace is the
     /// author's — it is the one place in Skala's output that carries any.
     /// </remarks>
+    /// <summary>
+    /// A node's source text, split into lines, with the <c>///</c> marker removed from each
+    /// continuation line.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ <b>The first line is never stripped, and the reason is that it is not a line.</b> What is
+    /// passed here is a node's <c>ToString()</c>, which begins immediately after that node's start
+    /// tag — in the middle of a physical source line. Only the lines <em>after</em> the first begin
+    /// at a line start and therefore carry the exterior marker.
+    /// <para>
+    /// ⚠ Stripping the first one destroyed content, silently, and this is what it looked like:
+    /// <c>&lt;c&gt;///&lt;/c&gt;</c> — a documentation comment talking about the marker, which this
+    /// repository's own sources do — came back as an empty <c>&lt;c&gt;&lt;/c&gt;</c>. The round
+    /// trip did not catch it because the signature calls this function too, so both sides agreed on
+    /// the same erasure. That is the failure mode a self-check has and an oracle does not, and it
+    /// is exactly the one <see cref="XmlDocSignature"/>'s own remarks warn about: a formatter that
+    /// only checks itself against its own reading will one day eat a sentence. It ate this one.
+    /// </para>
+    /// </remarks>
     public static ImmutableArray<string> SourceLines(string source) {
         var lines = ImmutableArray.CreateBuilder<string>();
+        var first = true;
         foreach (var raw in source.Replace("\r\n", "\n", StringComparison.Ordinal).Split('\n')) {
-            lines.Add(StripMarker(raw));
+            lines.Add(first ? raw : StripMarker(raw));
+            first = false;
         }
 
         return lines.ToImmutable();

@@ -265,6 +265,26 @@ public sealed class XmlDocHazardTests {
     [Theory]
     [InlineData("code")]
     [InlineData("c")]
+    public void AMarkerInsideAVerbatimElement_Survives(string tag) {
+        // ⚠ The regression this file exists for, and the sub-formatter failed it. `<c>///</c>` — a
+        // doc comment talking about the marker, which this repository's own sources do in several
+        // places — came back as an empty `<c></c>`. `SourceLines` stripped a `///` from the *first*
+        // line of the element's body, which is not a line: it starts immediately after the start
+        // tag, in the middle of a physical source line, so it never carries the exterior marker.
+        //
+        // ⚠ The round trip did not catch it, and that is the more important half. `XmlDocSignature`
+        // calls the same function, so both sides erased the same three characters and agreed. A
+        // self-check can only catch a rewrite that disagrees with its own reading; it cannot catch a
+        // reading that is wrong. This is what having no oracle in this area actually costs, and it
+        // was found by turning the sub-formatter on over Skala's own sources — 230 files — rather
+        // than by any test.
+        var source = XmlDoc.InClass("/// <summary>The <" + tag + ">///</" + tag + "> marker, named in prose.</summary>");
+        Assert.Contains("<" + tag + ">///</" + tag + ">", XmlDoc.Text(source), StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData("code")]
+    [InlineData("c")]
     public void TextInsideCodeAndC_IsVerbatim(string tag) {
         // ⚠ Hazard 1. Re-wrapping a code sample changes what it says, and the sample is the part of
         // a doc comment a reader is most likely to copy.

@@ -19,6 +19,15 @@ without them. ⚠ Both numbers are reported because both are true of a real invo
 on a loose file has no symbols and `skala format --load=binlog` has them, and `./build.sh Fidelity`
 prints the pair.
 
+⚠ **Those two figures, and every per-class count below them, are over `every line` and predate the
+documentation-comment default.** They are kept because the classes they rank are still the work
+queue and re-deriving each one is a separate measurement. The differential's basis is now
+`outside doc comments` (SK-DIV-0006), and on that basis the same corpus at the same commit is
+**99.61 % / 85.79 %** with symbols and **99.53 % / 85.26 %** without. The gap is `///` lines leaving
+the denominator, where they had been counted as agreeing because neither side touched them — not a
+regression, and not an improvement either. ⚠ Read any unqualified percentage in this file as
+`every line` unless it says otherwise.
+
 ```
 dotnet run --project Testing/Rikarin.Skala.Testing -c Release -- fidelity
 dotnet run --project Testing/Rikarin.Skala.Testing -c Release -- preprocessor
@@ -87,7 +96,7 @@ exact count, and saying so is better than repeating a figure nobody can reproduc
 | 0003 | interpolated raw literal emitted verbatim | open | 11 raw-literal files at 99.68 % / 90.91 %, 12 divergent lines |
 | 0004 | no preprocessor symbols without a project | **closed at M5** | the six-cell table re-run and identical |
 | 0005 | the ordering rule's margin is a fitted constant | open | 63 lines, 38 files — the largest class. 21 hunks, 14 files by signature |
-| 0006 | the oracle does not format doc comments | open, deliberate | four keys confirmed Tier D; no sub-formatter in the tree |
+| 0006 | ⚠ the pinned oracle *profile* does not format doc comments; Rider does, and Skala now does too | open | 17 keys honoured and observable, 10 refused, none Tier A until the fixtures are regenerated |
 | 0007 | an argument list around a broken chain does not chop | half closed | 8 hunks, 39 lines, 6 files |
 | 0008 | alignment keys | half closed | statement conditions Tier A; `for` header 5 hunks, 13 lines, 3 files; three keys at 0 lines |
 | 0009 | `space_within_spread_pattern` is inert | **resolved at M3.1** | Tier D confirmed; 0 spread-spacing divergences |

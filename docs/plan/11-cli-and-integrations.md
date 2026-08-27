@@ -7,7 +7,7 @@ different way to reach the same code, and none of them may have behaviour the CL
 
 ```
 skala format   [paths…]  [--check] [--diff] [--range a:b] [--staged] [--since <ref>]
-                         [--arrange[=syntactic|full]] [--reflow] [--xmldoc] [--quiet]
+                         [--arrange[=syntactic|full]] [--reflow] [--no-xmldoc] [--quiet]
                          [--define A,B] [--load binlog|workspace|loose|none]      ← M5
 skala arrange  [paths…]  [--check] [--include <ids>] [--exclude <ids>]
 skala check    [paths…]  [--gate <name>] [--since <ref>] [--baseline <file>]
@@ -52,13 +52,22 @@ a full run that found little to do.
 performs it and Skala's default does not; the gate costs a measured 4.02 points of changed-span
 agreement (SK-DIV-0014), which is the price of the caution rather than a hidden disagreement.
 
-⚠ **`format --xmldoc`** is the documentation-comment sub-formatter, and it has the same shape and
-the same argument as `--aggressive`: the export configures the whole `resharper_xmldoc_*` family,
-`jb cleanupcode` honours none of it, and a Skala that re-wrapped doc comments by default would
-disagree with Rider on every doc comment in every repository (SK-DIV-0006). Measured, the flag costs
-3.59 points of line fidelity — and zero on the lines it is not allowed to touch, which is asserted
-rather than hoped. ⚠ It disqualifies the daemon: the daemon protocol carries no `--xmldoc`, and a
-daemon that quietly does *less* than the CLI makes one command mean two things.
+⚠ **`format --no-xmldoc`** switches the documentation-comment sub-formatter off, and it is the one
+flag on this page whose polarity is a correction rather than a design. It shipped as `--xmldoc`, on
+the reading that `jb cleanupcode` honours none of the `resharper_xmldoc_*` family the export
+configures — which turned out to be a fact about the profile pinned in `OracleProfile.FormatOnly`
+rather than about the tool. Rider formats doc comments; the profile does not; **not** formatting
+them was the divergence, so the default flipped and the flag inverted (SK-DIV-0006).
+
+It is a flag rather than `resharper_xmldoc_wrap_lines = false` deliberately. That key means "do not
+wrap long lines" — with it false the sub-formatter still re-indents, still collapses blank lines
+between tags and still inserts the marker space, which is what Rider does with it false too — and
+JetBrains' `.editorconfig` index does not document it at all. Overloading a ReSharper key with a
+meaning ReSharper does not give it is the class of mistake this default is undoing.
+
+⚠ It disqualifies the daemon, in the other direction now: the daemon protocol carries no xmldoc
+switch and the daemon formats with the default, so `--no-xmldoc` falls through to the CLI. A daemon
+that quietly does *more* than it was asked makes one command mean two things.
 
 ⚠ **`--verbose` is not implemented on `check`, and the way it fails is worse than not being there.**
 `check` takes `<paths>` as a variadic argument, so an unrecognised flag is bound as a *path*:

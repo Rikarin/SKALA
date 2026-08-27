@@ -14,7 +14,7 @@ configuration is 380 options deep. HTML and CSS are worth doing when three thing
    ⚠ **Correction.** This line said the sub-formatter "already exists inside the C# path" for four
    milestones while it did not; what existed was a well-formedness check. It exists now
    (`XmlDocFormatter`, `XmlDocModel`, `XmlDocRenderer`, `XmlDocOptions` in
-   `Formatting.CSharp`, opt-in behind `format --xmldoc`, SK-DIV-0006) and shares no state with the
+   `Formatting.CSharp`, on by default since the SK-DIV-0006 correction) and shares no state with the
    document builder, which is what would make lifting it out cheap. `ISkalaLanguage` still does not
    exist in any C# source, so the seam is still untested.
 3. Vixen's `.vxml`/`.vcss` parsers are stable enough to build against, or the decision is taken to

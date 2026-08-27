@@ -3,8 +3,8 @@
 // as it is and reported at hint (SK0003), never "fixed" — malformed doc comments are extremely
 // common in real code, invisible to the compiler in a NoWarn-ed build, and the first thing a
 // re-wrapping formatter would destroy. The oracle leaves them alone because it leaves every doc
-// comment alone (SK-DIV-0006); Skala leaves them alone even under `format --xmldoc`, which is the
-// one place the two agree for different reasons.
+// comment alone under the pinned profile (SK-DIV-0006); Skala leaves them alone even though it
+// formats every well-formed one, which is the one place the two agree for different reasons.
 
 class C {
     /// <summary>Not closed <b>at all.</summary>
