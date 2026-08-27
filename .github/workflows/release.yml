@@ -37,7 +37,7 @@ on:
         type: boolean
         default: false
       baseline-ref:
-        description: The release to measure against. Default: the highest `v*` tag.
+        description: The release to measure against; empty means the highest `v*` tag.
         required: false
         default: ""
   push:
