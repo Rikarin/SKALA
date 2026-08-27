@@ -45,10 +45,30 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="build/Rikarin.Skala.MSBuild.props" Pack="true" PackagePath="build/" />
-    <None Include="build/Rikarin.Skala.MSBuild.targets" Pack="true" PackagePath="build/" />
-    <None Include="buildTransitive/Rikarin.Skala.MSBuild.props" Pack="true" PackagePath="buildTransitive/" />
-    <None Include="buildTransitive/Rikarin.Skala.MSBuild.targets" Pack="true" PackagePath="buildTransitive/" />
+    <SkalaPackagedMSBuildFile Include="build/Rikarin.Skala.MSBuild.props" PackagePath="build/" />
+    <SkalaPackagedMSBuildFile Include="build/Rikarin.Skala.MSBuild.targets" PackagePath="build/" />
+    <SkalaPackagedMSBuildFile Include="buildTransitive/Rikarin.Skala.MSBuild.props" PackagePath="buildTransitive/" />
+    <SkalaPackagedMSBuildFile Include="buildTransitive/Rikarin.Skala.MSBuild.targets" PackagePath="buildTransitive/" />
+
+    <None Include="@(SkalaPackagedMSBuildFile)" Pack="true" PackagePath="%(PackagePath)" />
   </ItemGroup>
+
+  <!--
+    ⚠ These four files are copied into the package verbatim and are never parsed by this build, so
+    nothing here can be wrong until it is wrong on somebody else's machine. It happened: a double
+    hyphen inside an XML comment in the .props — legal in prose, illegal in XML — packed fine,
+    restored fine, and produced
+
+      error MSB4024: The imported project file … could not be loaded.
+      An XML comment cannot contain '- -', and '-' cannot be the last character.
+
+    on the first `dotnet build` of the first repository that referenced the package. XmlPeek fails
+    on malformed XML, so asking it for the root element is a parse; it costs milliseconds and it
+    fails here rather than there.
+  -->
+  <Target Name="SkalaValidatePackagedMSBuildFiles" BeforeTargets="Build" Inputs="@(SkalaPackagedMSBuildFile)" Outputs="$(IntermediateOutputPath)msbuild-files-parse.stamp">
+    <XmlPeek XmlInputPath="%(SkalaPackagedMSBuildFile.Identity)" Query="/Project" />
+    <Touch Files="$(IntermediateOutputPath)msbuild-files-parse.stamp" AlwaysCreate="true" />
+  </Target>
 
 </Project>

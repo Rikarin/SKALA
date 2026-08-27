@@ -72,4 +72,20 @@
     <None Include="buildTransitive/Rikarin.Skala.Sdk.targets" Pack="true" PackagePath="buildTransitive/" />
   </ItemGroup>
 
+  <!--
+    ⚠ The two .targets are copied into the package verbatim and are never parsed by this build, so
+    nothing in them can be wrong until it is wrong on somebody else's machine — which happened to the
+    MSBuild package's .props, as MSB4024 on the first build of the first repository that referenced
+    it. XmlPeek fails on malformed XML, so asking it for the root element is a parse.
+  -->
+  <ItemGroup>
+    <SkalaPackagedMSBuildFile Include="build/Rikarin.Skala.Sdk.targets" />
+    <SkalaPackagedMSBuildFile Include="buildTransitive/Rikarin.Skala.Sdk.targets" />
+  </ItemGroup>
+
+  <Target Name="SkalaValidatePackagedMSBuildFiles" BeforeTargets="Build" Inputs="@(SkalaPackagedMSBuildFile)" Outputs="$(IntermediateOutputPath)msbuild-files-parse.stamp">
+    <XmlPeek XmlInputPath="%(SkalaPackagedMSBuildFile.Identity)" Query="/Project" />
+    <Touch Files="$(IntermediateOutputPath)msbuild-files-parse.stamp" AlwaysCreate="true" />
+  </Target>
+
 </Project>

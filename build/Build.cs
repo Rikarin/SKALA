@@ -308,17 +308,35 @@ class Build : NukeBuild {
             var packages = RootDirectory / "artifacts" / "packages";
             packages.CreateOrCleanDirectory();
 
-            // ⚠ NU5128 — "no lib/ or ref/ for the framework in the dependency group" — is what an
+            // ⚠ Two properties, and the second one is the difference between a package that
+            // installs and one that cannot.
+            //
+            // NU5128 — "no lib/ or ref/ for the framework in the dependency group" — is what an
             // analyzer package *is*: the assembly ships under analyzers/dotnet/cs and nothing goes
-            // in lib/. It is a warning, TreatWarningsAsErrors makes it an error, and the two other
-            // content-only packages suppress it in their own .csproj. It is suppressed here instead
-            // for Rikarin.Skala.Rules because Rules/ is a formatting-and-rules concern and this is a
-            // packaging one; the project file has nothing else to say about packing.
+            // in lib/. It is a warning, TreatWarningsAsErrors makes it an error, and the two
+            // content-only packages suppress it in their own .csproj.
+            //
+            // ⚠ SuppressDependenciesWhenPacking, because `Rikarin.Skala.Rules` has a ProjectReference
+            // to `Rikarin.Skala.Rules.Metadata` and the reference becomes a .nuspec dependency on a
+            // package id **that is not published** — doc 02's table has five packages and that is
+            // not one of them. Measured in a fresh repository against a local feed:
+            //
+            //   error NU1101: Unable to find package Rikarin.Skala.Rules.Metadata.
+            //     No packages exist with this id in source(s): …, local-skala, nuget.org
+            //
+            // The analyzer package has been unrestorable by anybody since it was written, and
+            // nothing said so because nothing had ever installed it. The dependency is also
+            // redundant: `Rules.csproj` already packs `Rikarin.Skala.Rules.Metadata.dll` into
+            // `analyzers/dotnet/cs` beside its own, which is where Roslyn looks.
+            //
+            // Both are set here rather than in the .csproj because Rules/ is a rules concern and
+            // this is a packaging one.
             DotNetPack(settings => settings
                 .SetProject(RootDirectory / "Rules" / "Rikarin.Skala.Rules" / "Rikarin.Skala.Rules.csproj")
                 .SetConfiguration(Configuration)
                 .SetOutputDirectory(packages)
                 .SetProperty("NoWarn", "NU5128")
+                .SetProperty("SuppressDependenciesWhenPacking", "true")
                 .EnableNoBuild()
                 .EnableNoRestore());
 
