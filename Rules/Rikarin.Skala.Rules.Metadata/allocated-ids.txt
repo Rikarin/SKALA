@@ -37,3 +37,6 @@ SK9021 binlog-missing-file
 SK9030 analyzer-threw
 SK9031 analyzer-failed-to-load
 SK9099 token-stream-changed
+SK4010 where-before-linq-operator
+SK6003 abstract-type-public-constructor
+SK8005 thread-sleep-in-test

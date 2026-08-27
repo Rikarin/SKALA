@@ -35,6 +35,8 @@ public sealed class Daemon : IAsyncDisposable {
     readonly string _repositoryRoot;
     readonly string _socketPath;
     readonly FormatService _service = new();
+    readonly RetainedCompilations _compilations = new();
+    readonly MemoryPolicy _memory = new();
     readonly Stopwatch _uptime = Stopwatch.StartNew();
     readonly CancellationTokenSource _stopping = new();
     Socket? _listener;
@@ -101,6 +103,12 @@ public sealed class Daemon : IAsyncDisposable {
         using var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellation, _stopping.Token);
         var idle = IdleWatchdog(linked.Token);
 
+        // ⚠ docs/plan/13 § "Memory": drop, then drop again, then exit rather than swap. A daemon
+        // that pushes a laptop into swap is worse than no daemon, and the failure is silent and
+        // blamed on the editor. Exiting is safe because every command works identically with
+        // SKALA_NO_DAEMON=1 and the lazy start brings a fresh daemon back.
+        var memory = MemoryWatchdog(linked.Token);
+
         try {
             while (!linked.IsCancellationRequested) {
                 if (DaemonTransport.UsesNamedPipe) {
@@ -118,9 +126,20 @@ public sealed class Daemon : IAsyncDisposable {
                 _ = ServeAsync(new NetworkStream(connection, ownsSocket: true), linked.Token);
             }
         } catch (OperationCanceledException) {
-            // The idle timer or the caller asked; both are ordinary shutdowns.
+            // The idle timer, the memory policy or the caller asked; all are ordinary shutdowns.
         } finally {
             await idle.ConfigureAwait(false);
+            await memory.ConfigureAwait(false);
+        }
+    }
+
+    /// <summary>Whether the daemon stopped because it was holding too much rather than being idle.</summary>
+    public bool StoppedForMemory { get; private set; }
+
+    async Task MemoryWatchdog(CancellationToken cancellation) {
+        if (await _memory.WatchAsync(_service, _compilations, cancellation).ConfigureAwait(false)) {
+            StoppedForMemory = true;
+            await _stopping.CancelAsync().ConfigureAwait(false);
         }
     }
 
@@ -177,9 +196,16 @@ public sealed class Daemon : IAsyncDisposable {
         switch (request.Command) {
             case "status":
                 return new DaemonResponse {
+                    // ⚠ The held bytes and the working set are in here because doc 13's RSS budget
+                    // is a number somebody has to be able to read without a profiler. A daemon whose
+                    // memory can only be inspected by attaching to it is a daemon whose memory
+                    // nobody inspects.
                     Status = string.Create(
                         CultureInfo.InvariantCulture,
-                        $"up {_uptime.Elapsed.TotalSeconds:F0}s, {_service.Held} documents held, {_service.Hits} hits, {_service.Misses} misses"
+                        $"up {_uptime.Elapsed.TotalSeconds:F0}s, {_service.Held} documents held ({_service.Bytes / (1024 * 1024)} MB), "
+                        + $"{_service.Hits} hits, {_service.Misses} misses, {_service.Evictions} evicted, "
+                        + $"{_compilations.Held} compilation(s), RSS {Environment.WorkingSet / (1024 * 1024)} MB, "
+                        + $"{_memory.Drops} memory drop(s)"
                     )
                 };
 

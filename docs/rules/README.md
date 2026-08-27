@@ -2,7 +2,7 @@
 
 <!-- Generated from Rules/Rikarin.Skala.Rules.Metadata/rules.json. Do not edit. -->
 
-`SK` + four digits, allocated once and never re-purposed (ADR-012). 29 ids are allocated.
+`SK` + four digits, allocated once and never re-purposed (ADR-012). 32 ids are allocated.
 
 ## Async
 
@@ -17,6 +17,12 @@
 |---|---|---|---|---|
 | [SK2013](SK2013.md) | An exception is constructed and then discarded | warning | safe | no |
 | [SK2015](SK2015.md) | `throw ex;` resets the stack trace | warning | safe | yes |
+
+## Design
+
+| Id | Rule | Severity | Fix | Loose mode |
+|---|---|---|---|---|
+| [SK6003](SK6003.md) | An abstract type has a public constructor | suggestion | safe | yes |
 
 ## Formatting
 
@@ -49,6 +55,18 @@
 | [SK1030](SK1030.md) | Use `??=` | suggestion | safe | yes |
 | [SK1034](SK1034.md) | Use the `Count` property, not `Count()` or `Any()` | suggestion | safe | no |
 | [SK1035](SK1035.md) | Use `Enum.GetValues<T>()` | suggestion | safe | no |
+
+## Performance
+
+| Id | Rule | Severity | Fix | Loose mode |
+|---|---|---|---|---|
+| [SK4010](SK4010.md) | A `Where` the next operator could have taken as its predicate | suggestion | safe | no |
+
+## Tests
+
+| Id | Rule | Severity | Fix | Loose mode |
+|---|---|---|---|---|
+| [SK8005](SK8005.md) | `Thread.Sleep` in a test | suggestion | — | no |
 
 ## Tool
 
