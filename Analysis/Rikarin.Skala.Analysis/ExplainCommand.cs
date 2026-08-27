@@ -208,7 +208,7 @@ public static class ExplainCommand {
         builder.AppendLine();
 
         foreach (var category in RuleCatalog.All.GroupBy(static rule => rule.Category, StringComparer.Ordinal)
-            .OrderBy(static group => group.Key, StringComparer.Ordinal)) {
+                .OrderBy(static group => group.Key, StringComparer.Ordinal)) {
             builder.Append("## ").AppendLine(category.Key);
             builder.AppendLine();
             builder.AppendLine("| Id | Rule | Severity | Fix | Loose mode |");

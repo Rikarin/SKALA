@@ -311,7 +311,7 @@ static int Report(string[] sets) {
         Console.WriteLine();
 
         foreach (var origin in defined.GroupBy(static r => r.File.Split('/')[1], StringComparer.Ordinal)
-            .OrderBy(static g => g.Key, StringComparer.Ordinal)) {
+                .OrderBy(static g => g.Key, StringComparer.Ordinal)) {
             var report = Fidelity.Compare(origin);
             Console.WriteLine(
                 $"  {origin.Key,-14} line {report.LineFidelity * 100:F2}%  file {report.FileFidelity * 100:F2}%  ({report.Files} files)"
@@ -362,8 +362,8 @@ static void Sample(string label, IReadOnlyList<Divergence> entries) {
 
     Console.WriteLine(label + ":");
     foreach (var group in entries.GroupBy(static entry => entry.Class, StringComparer.Ordinal)
-        .OrderByDescending(static group => group.Count())
-        .Take(6)) {
+            .OrderByDescending(static group => group.Count())
+            .Take(6)) {
         Console.WriteLine(
             $"    {group.Count().ToString(CultureInfo.InvariantCulture),5}  {group.Key}  ({group.First().File})"
         );
@@ -394,7 +394,7 @@ static int Dump(string set, string directory) {
 static int Variants(string[] sets) {
     foreach (var set in sets) {
         foreach (var group in CorpusVariants.Pairs(set)
-            .GroupBy(static pair => pair.Variant, static pair => pair.File)) {
+                .GroupBy(static pair => pair.Variant, static pair => pair.File)) {
             var results = new List<(string File, string Expected, string Actual)>();
             foreach (var file in group) {
                 if (!group.Key.HasFixture(file)) {

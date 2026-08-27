@@ -174,12 +174,12 @@ internal static class OptionRegistryReader {
             ? "null"
             : "\""
             + value.Replace("\\", "\\\\")
-            .Replace("\"", "\\\"")
-            .Replace("\n", "\\n")
-            .Replace(
-                "\r",
-                "\\r"
-            )
+                .Replace("\"", "\\\"")
+                .Replace("\n", "\\n")
+                .Replace(
+                    "\r",
+                    "\\r"
+                )
             + "\"";
 
     public static string IntLiteral(int? value) => value?.ToString(CultureInfo.InvariantCulture) ?? "null";

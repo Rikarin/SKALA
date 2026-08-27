@@ -177,8 +177,8 @@ public static partial class SkalaCommandLine {
         var run = new Command("run", "Run the daemon in the foreground.");
         run.Arguments.Add(path);
         run.SetAction(parse => DaemonCommands.RunAsync(Root(parse.GetValue(path)!), CancellationToken.None)
-            .GetAwaiter()
-            .GetResult()
+                .GetAwaiter()
+                .GetResult()
         );
 
         daemon.Subcommands.Add(status);

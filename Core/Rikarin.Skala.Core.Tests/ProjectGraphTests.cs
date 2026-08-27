@@ -211,14 +211,14 @@ public sealed record ProjectFile(
     IReadOnlyList<ProjectDependency> ProjectReferences) {
     public static IReadOnlyList<ProjectFile> LoadAll(string root) =>
         Directory.EnumerateFiles(root, "*.csproj", SearchOption.AllDirectories)
-        .Where(static path => !path.Contains(
-                $"{System.IO.Path.DirectorySeparatorChar}obj{System.IO.Path.DirectorySeparatorChar}",
-                StringComparison.Ordinal
+            .Where(static path => !path.Contains(
+                    $"{System.IO.Path.DirectorySeparatorChar}obj{System.IO.Path.DirectorySeparatorChar}",
+                    StringComparison.Ordinal
+                )
             )
-        )
-        .Select(Load)
-        .OrderBy(static project => project.Name, StringComparer.Ordinal)
-        .ToArray();
+            .Select(Load)
+            .OrderBy(static project => project.Name, StringComparer.Ordinal)
+            .ToArray();
 
     static ProjectFile Load(string path) {
         var document = XDocument.Load(path);

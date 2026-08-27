@@ -86,7 +86,7 @@ public static class RuleAudit {
         }
 
         foreach (var group in skala.GroupBy(static finding => finding.RuleId, StringComparer.Ordinal)
-            .OrderBy(static group => group.Key, StringComparer.Ordinal)) {
+                .OrderBy(static group => group.Key, StringComparer.Ordinal)) {
             builder.Append(group.Key)
                 .Append("  ")
                 .Append(group.Count().ToString(CultureInfo.InvariantCulture))

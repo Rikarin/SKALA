@@ -130,6 +130,15 @@ public sealed class BreakPlan {
     /// <summary>The chain-wide group of a binary chain, keyed by its root node.</summary>
     readonly Dictionary<long, int> _chainOwner = [];
 
+    /// <summary>The group of a delimited list, keyed by the list node.</summary>
+    /// <remarks>
+    /// ⚠ Recorded so that a construct <em>outside</em> the list can read whether the list broke.
+    /// <c>place_expr_method_on_single_line = if_owner_is_single_line</c> asks whether the
+    /// declaration occupies one line, and a chopped parameter list is the commonest way for it not
+    /// to — which no width test on the arrow itself can see.
+    /// </remarks>
+    readonly Dictionary<long, int> _delimited = [];
+
     /// <summary>
     /// The group opened <em>inside</em> a construct's delimiters rather than around them.
     /// </summary>
@@ -606,6 +615,7 @@ public sealed class BreakPlan {
             && IsLambdaArgument(items[0]);
 
         var group = NewGroup();
+        _delimited[Key(node)] = group;
         var first = FirstToken(items[0]);
         var delimiterBroken = !soleLambda && BreaksBefore(first) || BreaksBefore(close);
 
@@ -988,7 +998,8 @@ public sealed class BreakPlan {
             _options.WrapChainedMethodCalls == WrapStyle.ChopAlways ? GroupMode.Break : GroupMode.Preserve,
             new GroupFacts(
                 SourceBroken: _options.KeepsUserBreaksBetweenItems && broken,
-                BreaksIfTooLong: _options.WrapChainedMethodCalls != WrapStyle.WrapIfLong
+                BreaksIfTooLong: _options.WrapChainedMethodCalls != WrapStyle.WrapIfLong,
+                HidesFlatWidthWhenBroken: true
             ),
             // ⚠ The chain opens its own continuation scope. Milestone 2 spent that level lazily, in
             // `Break`, at the first break landing before a `.` — and a group's break point never
@@ -998,7 +1009,18 @@ public sealed class BreakPlan {
             //     .AppendLine("…")
             // The frame machinery still serves breaks the author wrote; this serves the ones the
             // fitter adds.
-            spendsIndent: true
+            // ⚠ `ownLevel` rather than `spendsIndent`, which is the difference between "a level if
+            // no other continuation is open" and "a level, always". A chained call takes one even
+            // inside another continuation and a binary chain does not — the asymmetry
+            // CSharpDocumentBuilder.VisitInner records — and the shape that shows it is an
+            // expression-bodied member whose arrow has already broken:
+            //     static void Member(Packer packer) =>
+            //         packer.Enum(a)
+            //             .Enum(b);      ← two levels, not one
+            // The one-level-per-opening-line collapse in LayoutWriter.Level is what keeps
+            // `var x = a.B()\n    .C();` at one: there the `=`'s scope and the chain's open on the
+            // same line.
+            ownLevel: true
         );
 
         void Collect(SyntaxNode node) {
@@ -1157,6 +1179,15 @@ public sealed class BreakPlan {
         );
     }
 
+    /// <summary>The parameter list whose breaking makes an expression-bodied member multi-line.</summary>
+    static SyntaxNode? OwnerListOf(ArrowExpressionClauseSyntax node) =>
+        node.Parent switch {
+            BaseMethodDeclarationSyntax method => method.ParameterList,
+            LocalFunctionStatementSyntax function => function.ParameterList,
+            IndexerDeclarationSyntax indexer => indexer.ParameterList,
+            _ => null
+        };
+
     /// <summary>Whether this expression is the condition of an if, while, do, for or switch.</summary>
     static bool IsStatementCondition(SyntaxNode node) {
         for (var current = node; current is not null; current = current.Parent) {
@@ -1298,7 +1329,16 @@ public sealed class BreakPlan {
             group,
             GroupMode.Preserve,
             new GroupFacts(
-                SourceBroken: _options.KeepsUserBreaksBetweenItems && broken,
+                // ⚠ Not preserved when the value opens with a delimiter of its own, which in C# is
+                // the collection expression and nothing else. Asked directly, `int[] y =\n[\n 1,\n
+                // 2\n];` comes back `int[] y = [` while `= \n new[] {`, `= \n new Thing {` and
+                // `= \n Make(` all keep the break the author wrote. The `=` break and the `[`'s are
+                // alternatives rather than a pair, so leaving the decision to the ordering rule is
+                // what reproduces both halves: a bracket that fits on a continuation line still gets
+                // the `=` break, and one that has to chop does not.
+                SourceBroken: _options.KeepsUserBreaksBetweenItems && broken
+                && value is not CollectionExpressionSyntax,
+
                 // ⚠ `prefer_wrap_around_eq`, and the reason milestone 2 stopped at presence. The
                 // oracle does break after `=` on a line that is too long — but not always, and
                 // breaking whenever the line is long costs 1.18 points of line fidelity against
@@ -1354,12 +1394,26 @@ public sealed class BreakPlan {
 
         var group = NewGroup();
         Point(target, group);
+
+        // ⚠ `if_owner_is_single_line`, literally: the owner is the declaration, and the commonest
+        // way for a declaration not to occupy one line is a chopped parameter list. Measured — the
+        // oracle writes
+        //     public void RenderPassSetBindGroup(
+        //         WebGpuObject pass,
+        //         …
+        //     ) =>
+        //         SetBindGroup(pass, group, bindGroup, dynamicOffsets);
+        // and the body's own width says nothing about it: `SetBindGroup(…)` fits on the `) =>` line
+        // with sixty columns to spare. A width test on the arrow can never produce this break.
+        var ownerGroup = OwnerListOf(node) is { } list && _delimited.TryGetValue(Key(list), out var id) ? id : -1;
         Describe(
             node,
             group,
             GroupMode.Preserve,
             new GroupFacts(
                 SourceBroken: BreaksBefore(target),
+                BreaksWithOwner: ownerGroup >= 0,
+                Owner: ownerGroup,
                 // keep_existing_expr_member_arrangement = false: a break the author wrote after the
                 // arrow is removed when the declaration fits on one line, and left alone when it
                 // does not. Adding one where the author wrote none is milestone 3's.

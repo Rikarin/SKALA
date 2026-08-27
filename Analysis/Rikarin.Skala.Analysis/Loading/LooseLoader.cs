@@ -111,10 +111,10 @@ public static class LooseLoader {
             }
 
             foreach (var file in BinlogLoader.EnumerateSources(full)
-                .OrderBy(
-                    static file => file,
-                    StringComparer.Ordinal
-                )) {
+                    .OrderBy(
+                        static file => file,
+                        StringComparer.Ordinal
+                    )) {
                 if (seen.Add(file)) {
                     yield return file;
                 }

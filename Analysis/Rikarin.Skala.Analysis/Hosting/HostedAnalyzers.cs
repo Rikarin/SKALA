@@ -151,10 +151,10 @@ public static class HostedAnalyzers {
             var context = new PackageLoadContext(package.Package, directory);
             var loaded = 0;
             foreach (var assembly in Directory.EnumerateFiles(directory, "*.dll")
-                .OrderBy(
-                    static file => file,
-                    StringComparer.Ordinal
-                )) {
+                    .OrderBy(
+                        static file => file,
+                        StringComparer.Ordinal
+                    )) {
                 try {
                     foreach (var analyzer in Instantiate(context.LoadFromAssemblyPath(assembly))) {
                         analyzers.Add(analyzer);
