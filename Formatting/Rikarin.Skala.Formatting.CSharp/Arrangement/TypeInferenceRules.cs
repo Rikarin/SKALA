@@ -73,10 +73,34 @@ public sealed class VarRule : ArrangementRule {
 
             // ⚠ `var x = null` and `var x = () => …` do not compile: the initializer has no type of
             // its own to infer. So does a stackalloc in a non-`Span` context, and a method group.
-            var initialiserType = model.GetTypeInfo(initializer.Value).Type;
+            var info = model.GetTypeInfo(initializer.Value);
+            var initialiserType = info.Type;
             if (initialiserType is null
                 || initialiserType.TypeKind == TypeKind.Error
                 || initialiserType.SpecialType == SpecialType.System_Void) {
+                return false;
+            }
+
+            // ⚠ `int[] a = { 1, 2 };` is not `var a = { 1, 2 };`. A bare array initializer has no
+            // type of its own — the declared type is what gives it one — and dropping it is CS0826,
+            // "no best type found for implicitly-typed array". 24 files on Vixen.
+            if (initializer.Value is InitializerExpressionSyntax) {
+                return false;
+            }
+
+            // ⚠ The precondition that CS8600 taught, and it is the subtle one. `var` does not take
+            // the initializer's *declared* nullability, it takes its **flow state**: for
+            //
+            //     string s = MightBeNullHere();
+            //
+            // where the method's return type is `string` but the flow analysis has concluded
+            // maybe-null at this point, `var s = …` gives `s` the type `string?`, and the next place
+            // `s` is passed to something expecting `string` is a new CS8600. The declared types are
+            // identical, so the equality check below cannot see it. 567 of Vixen's 618 reverts were
+            // this one — the largest single cause, and invisible to every check that compares types
+            // rather than states.
+            if (info.Nullability.FlowState == NullableFlowState.MaybeNull
+                && node.Type is not NullableTypeSyntax) {
                 return false;
             }
 
@@ -192,6 +216,23 @@ public sealed class ObjectCreationRule : ArrangementRule {
                 return false;
             }
 
+            // ⚠ An argument that takes ITS target type from the constructor being called cannot
+            // survive the type name being dropped. `new Machine([a, b])` names the type, which is
+            // what gives `[a, b]` its own target; `new([a, b])` leaves the collection expression
+            // with nothing to be, and the compiler says so — CS8754, "there is no target type for
+            // 'new(collection expression)'". The same holds for a nested `new()` or a lambda. Seven
+            // files on Vixen, and the last cause of a re-bind revert there.
+            foreach (var argument in node.ArgumentList?.Arguments ?? default) {
+                if (argument.Expression is CollectionExpressionSyntax
+                    or ImplicitObjectCreationExpressionSyntax
+                    or ImplicitArrayCreationExpressionSyntax
+                    or InitializerExpressionSyntax
+                    or AnonymousFunctionExpressionSyntax
+                    or LiteralExpressionSyntax { RawKind: (int)SyntaxKind.DefaultLiteralExpression }) {
+                    return false;
+                }
+            }
+
             // The whole precondition: the target type must be exactly what `new T()` constructs. A
             // target that is a base class, an interface, `dynamic`, or `var` cannot carry the
             // construction — `IList<int> x = new();` does not compile.
@@ -232,7 +273,14 @@ public sealed class ObjectCreationRule : ArrangementRule {
                     return model.GetTypeInfo(property.Type).Type;
 
                 // `x = new SomeType();`
-                case AssignmentExpressionSyntax assignment when assignment.Right == node:
+                //
+                // ⚠ Simple assignment only. `x += new Vector3(…)` is an AssignmentExpression too,
+                // and its right-hand side is an operand of `operator +`, not a target-typed
+                // position: `x += new(…)` is CS8310, "operator '+=' cannot be applied to operand
+                // 'new(float, float, float)'". Nine files on Vixen.
+                case AssignmentExpressionSyntax {
+                    RawKind: (int)SyntaxKind.SimpleAssignmentExpression
+                } assignment when assignment.Right == node:
                     return model.GetTypeInfo(assignment.Left).Type;
 
                 // `SomeType M() => new SomeType();` and `return new SomeType();`
@@ -252,9 +300,17 @@ public sealed class ObjectCreationRule : ArrangementRule {
                 // ⚠ Still gated by `target == created` in the caller, which is what keeps it safe: a
                 // collection whose `Add` takes a base type reports that base as the converted type,
                 // the equality fails, and the creation is left explicit.
+                //
+                // ⚠ And only when the collection itself is EXPLICITLY typed. `new[] { new Foo() }`
+                // infers its element type *from the elements*, so target-typing them is circular:
+                // `new[] { new() }` is CS0826, "no best type found for implicitly-typed array". The
+                // same holds for a collection expression `[new Foo()]`, which is CS8754. Twelve and
+                // two files on Vixen respectively, and both were found by the re-bind rather than by
+                // reasoning about the case.
                 case InitializerExpressionSyntax {
                     RawKind: (int)SyntaxKind.CollectionInitializerExpression
-                    or (int)SyntaxKind.ArrayInitializerExpression
+                    or (int)SyntaxKind.ArrayInitializerExpression,
+                    Parent: ObjectCreationExpressionSyntax or ArrayCreationExpressionSyntax
                 }:
                     return model.GetTypeInfo(node).ConvertedType;
 

@@ -70,8 +70,13 @@ public sealed class AccessibilityRule : ArrangementRule {
 
             // ⚠ `private protected` is one accessibility spelled in two words and is not the
             // default; dropping the `private` from it widens the member to `protected`.
+            //
+            // ⚠ And a `partial` member keeps its modifier whatever the default is: a partial method
+            // with a non-void return type or an out parameter is *required* to state an
+            // accessibility (CS8796), and the two halves must state the same one. 18 files on Vixen,
+            // found by the re-bind rather than by reading the rule.
             foreach (var modifier in modifiers) {
-                if (modifier.IsKind(SyntaxKind.ProtectedKeyword)) {
+                if (modifier.IsKind(SyntaxKind.ProtectedKeyword) || modifier.IsKind(SyntaxKind.PartialKeyword)) {
                     return visited;
                 }
             }

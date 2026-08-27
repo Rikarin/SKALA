@@ -35,6 +35,18 @@ public sealed class PredefinedTypeRule : ArrangementRule {
         }
 
         SyntaxNode Replace(SyntaxNode original, SyntaxNode visited) {
+            // ⚠ `var` is an IdentifierNameSyntax, and asking the model about it returns the
+            // *inferred* type — so without this line the rule rewrites `out var value` into
+            // `out string value` and un-`var`s the entire repository, which is the exact opposite of
+            // what `csharp_style_var_* = true` asks for. It fired on 2 210 of Vixen's 4 606 files
+            // before this was found, and it was found by chasing 567 re-bind reverts (`out var
+            // value` whose flow state is maybe-null becomes `out string value`, which is CS8600)
+            // rather than by reading the rule. `dynamic` is skipped for the same reason: it is a
+            // contextual keyword parsed as an identifier, and it has no predefined spelling.
+            if (original is IdentifierNameSyntax { Identifier.ValueText: "var" or "dynamic" }) {
+                return visited;
+            }
+
             // ⚠ Only a type *reference* is rewritten. `using System;` names a namespace and
             // `nameof(Int32)` reads an identifier whose spelling is the value — neither is a place
             // `int` may be written.

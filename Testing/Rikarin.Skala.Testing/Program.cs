@@ -160,6 +160,42 @@ switch (args[0]) {
         // oracle's profile does and Skala's default deliberately does not, so running both ways
         // prices the gate rather than hiding it.
         return Arrangement(args[1..]);
+    case "arrange-tree":
+        // ⚠ M4's second bar: arrangement over a whole tree introduces zero compiler diagnostics.
+        // `arrange-tree <dir> [--load=binlog|workspace|loose] [--aggressive] [--limit=N]`.
+        // Read-only — the caller supplies a `git archive` scratch copy and this never writes.
+        if (args.Length < 2) {
+            Console.Error.WriteLine("usage: arrange-tree <directory> [--load=mode] [--aggressive] [--limit=N]");
+            return 2;
+        }
+
+        var treeMode = args.FirstOrDefault(static a => a.StartsWith("--load=", StringComparison.Ordinal))
+            ?["--load=".Length..] ?? "binlog";
+
+        // `--explain=<path fragment>`: which rule, run alone, makes the re-bind reject this file.
+        if (args.FirstOrDefault(static a => a.StartsWith("--explain=", StringComparison.Ordinal)) is { } explain) {
+            Console.WriteLine(
+                ArrangeTree.Explain(Path.GetFullPath(args[1]), treeMode, explain["--explain=".Length..], Console.Error)
+            );
+
+            return 0;
+        }
+
+        var treeLimit = args.FirstOrDefault(static a => a.StartsWith("--limit=", StringComparison.Ordinal)) is { } l
+            ? int.Parse(l["--limit=".Length..], CultureInfo.InvariantCulture)
+            : int.MaxValue;
+
+        Console.WriteLine(
+            ArrangeTree.Run(
+                Path.GetFullPath(args[1]),
+                treeMode,
+                args.Contains("--aggressive"),
+                treeLimit,
+                Console.Error
+            ).Render()
+        );
+
+        return 0;
     case "locate":
         // Where the divergent lines attributed to one construct are. `locate <set> <kind>`.
         if (args.Length < 3) {

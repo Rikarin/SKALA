@@ -45,12 +45,30 @@ resharper_use_heuristics_for_body_style  = true
 
 ⚠ `use_heuristics_for_body_style = true` is what makes this liveable and it is easy to miss. Without
 it, *every* single-statement method becomes an expression body, including ones where the result is
-120 columns of unreadable ternary. With it, ReSharper converts only when the result fits on one line
-and the body is "simple" — no `throw` in a statement position turning into `=> throw`, no multi-line
-expression, no comment inside the body. Skala's heuristic, pinned by fixtures rather than by prose:
-convert iff (a) the body is one statement that is an expression, `return`, or `throw`; (b) it has no
-comments; (c) the converted form fits `max_line_length` at the member's indentation; (d) it is not
-`async void`; (e) the member has no `#if` inside.
+120 columns of unreadable ternary.
+
+⚠ **M4 measured the heuristic against the oracle and two of the five conditions written here were
+wrong.** The sweep is `constructs/arrangement/body-style/heuristics.cs` and its cleanup fixture.
+What `jb cleanupcode` 2025.2.6 actually does, with the heuristic on:
+
+| Condition | Status |
+|---|---|
+| (a) one statement, and it is a `return` **with a value** | ✅ — but *not* "an expression, `return`, or `throw`". A `throw` stays a block, as this doc said; and a bare expression statement — a `void` method's whole body — **also** stays a block. `void Helper() { _shared = 1; }` is not converted. The exception is an **accessor**: `set { _n = value; }` does become `set => _n = value;`. |
+| (b) no comment in the body | ✅ |
+| (c) the converted form fits `max_line_length` | ❌ **not a condition.** A 190-column body converts and the reformat that follows wraps it after the `=>`. Implementing (c) would refuse a conversion the oracle performs on every long one-line method in the corpus. |
+| (d) not `async void` | ✅ |
+| (e) no `#if` inside the member | ✅ |
+
+So Skala's heuristic, as implemented and pinned: convert iff (a′) the body is one statement that is
+a `return` with a value — or, in an accessor, an expression statement; (b) it has no comments;
+(d) it is not `async void`; (e) the member has no `#if` inside. A constructor is exempt from (a′)
+because it has no return value at all, so `constructor_or_destructor_body = expression_body` would
+otherwise be a setting that could never fire.
+
+`accessor_owner_body = expression_body` has two shapes and the key names only one: a property whose
+only accessor is a `get` collapses onto the **property** (`public int P => _n;`); a property with
+more than one accessor keeps its accessor list and each accessor gets an expression body. An indexer
+is an accessor owner too.
 
 Corresponding severities in the export: `arrange_method_or_operator_body_highlighting = none`,
 `arrange_accessor_owner_body_highlighting = suggestion`, `arrange_local_function_body = none`. So the
@@ -95,9 +113,23 @@ resharper_arrange_var_keywords_in_deconstructing_declaration_highlighting = sugg
 ```
 
 `is not null` is a real semantic change when the operand's type overloads `==`. Skala checks for a
-user-defined `operator ==` on the operand type and skips the rewrite when one exists — this is a case
-where "what ReSharper does" and "what is safe" can diverge, and Skala takes the safe side and reports
-the divergence in `skala config explain`.
+user-defined `operator ==` on the operand type — **and on every base class**, because an operator
+declared on a base applies to a derived operand — and skips the rewrite when one exists. `string` is
+excluded from the check: its `==` is value equality and the pattern form matches it, so treating it
+as dangerous would refuse every string null check in the corpus. This is a case where "what ReSharper
+does" and "what is safe" can diverge, and Skala takes the safe side and reports the divergence in
+`skala config explain`.
+
+⚠ **M4 found that the divergence is not the one this section anticipated.** `jb cleanupcode` 2025.2.6
+does not perform this rewrite *at all* — nor `string.Empty` ⇒ `""`, nor redundant-brace removal —
+under any cleanup profile, with the inspections at their exported severities or raised to `warning`.
+The sweep is `docs/oracle-cleanup-profile.md`. The reading that fits is that
+`null_checking_pattern_style` and `empty_string` govern the pattern ReSharper **generates** in a
+quick-fix, not a cleanup of code that already exists. Skala performs all three because the export
+asks for them and this catalogue lists them; they are pinned by hand-written fixtures
+(`ArrangementRuleTests`) rather than by the oracle, and excluded from the changed-span agreement
+number, because measuring against an oracle that never moves would score every correct rewrite as a
+divergence. See `SK-DIV-0013`.
 
 ### Qualification and redundancy
 
@@ -136,11 +168,26 @@ resharper_blank_lines_after_using_list = 1
 ```
 
 Sort alphabetically with `System` *not* hoisted, no group separation, outside the namespace, one
-blank line after. Removing unused usings needs semantics and is the one rewrite that must consider
-the whole compilation: a using that looks unused in one file may be required by a `#if` branch, or
-by an extension method resolved only under a different target framework. Skala removes a using only
-when it is unused in **every** compilation the file participates in — multi-targeting is not an edge
-case in this ecosystem.
+blank line after. Plain usings first, then aliases, then `using static` — measured, and one swap away
+from Roslyn's own organiser, which puts `using static` before aliases. Removing unused usings needs
+semantics and is the one rewrite that must consider the whole compilation: a using that looks unused
+in one file may be required by a `#if` branch, or by an extension method resolved only under a
+different target framework. Skala removes a using only when it is unused in **every** compilation the
+file participates in — multi-targeting is not an edge case in this ecosystem.
+
+Skala's answer to "is this using unused" is the compiler's own `CS8019`, not a hand-rolled reference
+walk. A using carrying a comment is never removed: the comment is the author saying something about
+that line, and a cleanup that deletes prose to save a using has made the file worse. Aliases and
+`global using` are never removed either — a `global using` is used by files this one cannot see, so a
+per-file answer is the wrong shape.
+
+⚠ **This rule is excluded from the M4 agreement number, and the reason is about the oracle rather
+than about Skala.** "Is this using needed" is a question about the references a project has, and the
+oracle's scratch project has none but the shared framework — so `cleanupcode` deletes
+`using NUnit.Framework;` from a file full of `[Test]` attributes, because `NUnit.Framework` does not
+resolve there. Skala keeps it, correctly: an unresolvable using is `CS0246`, not `CS8019`. Scoring
+Skala against that would reward deleting usings whose packages are missing. The rule is pinned by
+`constructs/arrangement/usings/`, where every namespace resolves inside the corpus itself.
 
 ### Modifiers, accessors, attributes
 

@@ -136,6 +136,13 @@ public sealed class UsingsRule : ArrangementRule {
     }
 
     static int Rank(UsingDirectiveSyntax directive, bool systemFirst) {
+        // ⚠ A `global using` must precede every non-global one — CS8915, and it is a hard language
+        // rule rather than a style. Sorting the block ordinally puts `global using X;` wherever `X`
+        // falls and breaks the file. Two files on Vixen, found by the re-bind.
+        if (directive.GlobalKeyword.IsKind(SyntaxKind.GlobalKeyword)) {
+            return int.MinValue / 2;
+        }
+
         // ⚠ Plain, then alias, then `using static` — measured, not assumed. Roslyn's own organiser
         // puts `using static` before aliases and the oracle puts it after, so the "obvious" order is
         // the wrong one here by exactly one swap.
