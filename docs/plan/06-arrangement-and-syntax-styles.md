@@ -25,6 +25,26 @@ forever. Arrangement is the mechanical answer.
 fixes but does not apply them. ⚠ The default for `skala format` is **whitespace only**, because it
 must work with no project, in under a second, on a file an agent just wrote.
 
+### `@formatter:off` binds arrangement
+
+⚠ It did not, and that is the worst place for the escape hatch to leak. `format` moves whitespace and
+`arrange` moves the tree, and the table above says the second is reversible only by `git revert` —
+so the pass a person most needs the tag to bind is the one it did not.
+
+Every rule of the catalogue derives from `GuardedRewriter`, whose `Visit` is sealed: twelve rewriters
+each remembering to ask the guard is twelve chances to forget, and the one that forgets is the one
+that eats somebody's table. `UsingsRule` rebuilds the using block by hand rather than through a
+rewriter, so `Arranger` also checks the whole rule's output for region survival before keeping it.
+
+⚠ **The oracle's cleanup profile does not do this**, measured under `SkalaCleanup`, and Skala diverges
+on purpose — SK-DIV-0016, with the fixtures in `constructs/arrangement/formatter-tags/`. Doc 00's
+non-negotiable 9 applies: the reference tool is a test subject, not a specification, and the user's
+expectation is the requirement.
+
+The boundary cases — the straddling node, the containing node, the unterminated `off`, which comments
+count as tags — are in [04](04-formatting-engine.md) § "Formatter tags", because they are one set of
+rules serving both halves and two copies of them is one too many.
+
 ### A few arrangements need no semantics
 
 Brace insertion/removal, `default` literal, empty-string style, trailing commas, modifier order and

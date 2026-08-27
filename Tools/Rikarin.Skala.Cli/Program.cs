@@ -14,7 +14,12 @@ var parse = SkalaCommandLine.Create().Parse(args);
 
 int code;
 try {
-    code = parse.Invoke();
+    // ⚠ `EnableDefaultExceptionHandler = false` is the load-bearing half. System.CommandLine catches
+    // every unhandled exception itself, prints "Unhandled exception:" and a stack trace, and returns
+    // 1 — so a `try` around `Invoke()` alone never sees one, and SK-FUZZ-0001's crash reported "the
+    // gate failed" from inside a handler that looked like it was doing the right thing. Turning the
+    // library's handler off is what lets the catch below decide the code.
+    code = parse.Invoke(new InvocationConfiguration { EnableDefaultExceptionHandler = false });
 } catch (OperationCanceledException) {
     return ExitCodes.Cancelled;
 } catch (Exception exception) {

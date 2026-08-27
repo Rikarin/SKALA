@@ -234,8 +234,8 @@ switch (args[0]) {
 //
 // ⚠ `--profile=SkalaCleanup` asks the *arrangement* half, and it is not decoration: the two profiles
 // answer different questions and a question asked of the wrong one is worse than not asking. The
-// `@formatter:off` measurement in SK-DIV-0017 is exactly that — CSReformatCode honours the tags and
-// the cleanup profile does not, and nothing but running both would have shown it.
+// formatter-tag measurement in SK-DIV-0016 is exactly that — CSReformatCode honours the tags and the
+// cleanup profile does not, and nothing but running both would have shown it.
 //
 // ⚠ It is the tool the milestone-3 rules were established with, and it is why they are rules rather
 // than readings of an option name. `wrap_array_initializer_style = wrap_if_long` does not say what

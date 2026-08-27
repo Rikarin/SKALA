@@ -194,6 +194,20 @@ fixing it, and the pragma is the only one that reads as a suppression in review:
 "Turned down" is a comparison rather than a membership test — `warning` → `suggestion` is a downgrade
 even though neither end is `none` — and a severity turned *up* is not a suppression at all.
 
+⚠ **`@formatter:off` is deliberately not a fifth.** It is the obvious candidate — a region the tool
+refuses to touch is a region a finding could hide in — and it is not one, because **a finding inside
+an off-region is still reported**. `skala check` names the line, the SARIF carries it, the gate
+counts it, and `--no-new-suppressions` has nothing to audit because nothing was suppressed. What the
+tag forbids is the *rewrite*: `skala fix` declines to apply an edit that lands in a protected region,
+silently, the same way it declines an overlapping one.
+
+The rule, in four words: **report, never rewrite.** The alternative — swallowing the finding —
+would make the tag a suppression with no diff to review, no severity to compare, no baseline entry
+and no way to count, which is strictly worse than all four mechanisms above. And it would be a
+suppression a person could add by accident, since the tag is written for the formatter's benefit and
+says nothing about analysis. See [04](04-formatting-engine.md) § "Formatter tags" for which passes
+the refusal binds, and `Analysis.Tests/FixTagTests` for the pair of tests that pin both halves.
+
 ⚠ The audit reads each tree with **one** `git grep` rather than one `git show` per file. The obvious
 implementation measured **3 m 19 s** on a 2 705-file tree, and a gate condition that costs three
 minutes is a gate condition somebody deletes; after, it is under a second. ⚠ And the pathspec is not
