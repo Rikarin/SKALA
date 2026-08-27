@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using System.Diagnostics;
+using System.Globalization;
 using System.Text;
 using Rikarin.Skala.Analysis.Hosting;
 using Rikarin.Skala.Analysis.Loading;
@@ -89,6 +90,17 @@ public sealed record CheckRequest {
 
     /// <summary>Compute the aggregate metrics doc 07 lists. On for <c>check</c>, off for <c>verify</c>.</summary>
     public bool IncludeMetrics { get; init; } = true;
+
+    /// <summary>
+    /// Rank the analyzers by what they cost and print the table (docs/plan/13 § "Analysis").
+    /// </summary>
+    /// <remarks>
+    /// ⚠ Off by default and never on in a gate. Doc 13 calls this the way "a rule that is
+    /// accidentally O(n²) in a method's statement count gets found", and says every Skala rule's
+    /// cost is reviewed against it before release. README lists its output as explicitly not a
+    /// contract: it is an instrument, and the shape of what it prints may change.
+    /// </remarks>
+    public bool Profile { get; init; }
 }
 
 /// <summary>
@@ -156,6 +168,7 @@ public static class CheckCommand {
         diagnostics.AddRange(hosted.Diagnostics);
 
         var findings = new List<Finding>();
+        var costs = new List<AnalyzerCost>();
         var partial = false;
         var files = 0;
         var lines = 0;
@@ -185,11 +198,13 @@ public static class CheckCommand {
                 root,
                 fingerprint,
                 useCache: !request.NoCache,
-                cancellation
+                cancellation,
+                request.Profile
             );
 
             findings.AddRange(outcome.Findings);
             diagnostics.AddRange(outcome.Diagnostics);
+            costs.AddRange(outcome.Costs);
             partial |= outcome.Partial;
             files += unit.ReportablePaths.Count;
             foreach (var tree in unit.Compilation.SyntaxTrees) {
@@ -267,6 +282,10 @@ public static class CheckCommand {
             ? Renderer.Summary(report)
             : Renderer.Render(report, request.Format, request.IncludeHints);
 
+        if (request.Profile) {
+            output += Environment.NewLine + Profile(costs, stopwatch.Elapsed);
+        }
+
         var exit = !gate.Passed
             ? ExitCodes.GateFailed
             : report.Diagnostics.Any(static d => d.Id == RuleIds.TokenStreamChanged)
@@ -274,6 +293,63 @@ public static class CheckCommand {
             : ExitCodes.Ok;
 
         return (new CommandResult(exit, output), report);
+    }
+
+    /// <summary>
+    /// The analyzers, ranked by what they cost, summed across every compilation in the run.
+    /// </summary>
+    /// <remarks>
+    /// docs/plan/13 § "Analysis". ⚠ The percentage is of the analyzer total, not of wall time:
+    /// loading the projects, the formatter pass and the duplication index are all outside it, and a
+    /// rule that is 40 % of the analyzer budget on a fast run may be 4 % of the command.
+    /// <para>
+    /// ⚠ One analyzer appears once with its costs added across compilations, because that is the
+    /// number a reader is deciding about — "is this rule expensive" is a question about the run,
+    /// not about a project.
+    /// </para>
+    /// </remarks>
+    static string Profile(List<AnalyzerCost> costs, TimeSpan wall) {
+        if (costs.Count == 0) {
+            return "  no analyzer timings (nothing ran, or the run was cancelled)";
+        }
+
+        var total = TimeSpan.Zero;
+        var byAnalyzer = new Dictionary<string, (ImmutableArray<string> Rules, TimeSpan Elapsed)>(StringComparer.Ordinal);
+        foreach (var cost in costs) {
+            total += cost.Elapsed;
+            byAnalyzer[cost.Analyzer] = byAnalyzer.TryGetValue(cost.Analyzer, out var existing)
+                ? (existing.Rules, existing.Elapsed + cost.Elapsed)
+                : (cost.Rules, cost.Elapsed);
+        }
+
+        var builder = new StringBuilder();
+        builder.Append("analyzer cost — ")
+            .Append(total.TotalMilliseconds.ToString("N0", CultureInfo.InvariantCulture))
+            .Append(" ms across ")
+            .Append(byAnalyzer.Count.ToString(CultureInfo.InvariantCulture))
+            .Append(" analyzers, of ")
+            .Append(wall.TotalMilliseconds.ToString("N0", CultureInfo.InvariantCulture))
+            .AppendLine(" ms wall");
+
+        foreach (var entry in byAnalyzer
+                     .OrderByDescending(static pair => pair.Value.Elapsed)
+                     .ThenBy(static pair => pair.Key, StringComparer.Ordinal)) {
+            var share = total > TimeSpan.Zero
+                ? entry.Value.Elapsed.TotalMilliseconds / total.TotalMilliseconds * 100
+                : 0;
+
+            builder.Append("  ")
+                .Append(entry.Value.Elapsed.TotalMilliseconds.ToString("N1", CultureInfo.InvariantCulture).PadLeft(9))
+                .Append(" ms  ")
+                .Append(share.ToString("N1", CultureInfo.InvariantCulture).PadLeft(5))
+                .Append(" %  ")
+                .Append(entry.Key)
+                .Append("  [")
+                .Append(string.Join(" ", entry.Value.Rules))
+                .AppendLine("]");
+        }
+
+        return builder.ToString().TrimEnd();
     }
 
     /// <summary>The aggregate metrics, with the duplication measurement folded in.</summary>

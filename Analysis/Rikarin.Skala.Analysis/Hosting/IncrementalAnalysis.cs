@@ -15,7 +15,11 @@ public sealed record IncrementalOutcome(
     ImmutableArray<SkalaDiagnostic> Diagnostics,
     int CacheHits,
     int CacheMisses,
-    bool Partial);
+    bool Partial,
+    ImmutableArray<AnalyzerCost> Costs = default) {
+    /// <summary>⚠ A <c>default</c> ImmutableArray throws on enumeration; profiling is opt-in.</summary>
+    public ImmutableArray<AnalyzerCost> Costs { get; init; } = Costs.IsDefault ? [] : Costs;
+}
 
 /// <summary>
 /// The per-file cache in front of the analyzer driver.
@@ -48,11 +52,19 @@ public static class IncrementalAnalysis {
         string repositoryRoot,
         string editorConfigFingerprint,
         bool useCache,
-        CancellationToken cancellation
+        CancellationToken cancellation,
+        bool profile = false
     ) {
         if (!useCache) {
-            var cold = AnalyzerHost.Run(unit, options, hosted, mode, cancellation);
-            return new IncrementalOutcome(cold.Findings, cold.Diagnostics, 0, unit.ReportablePaths.Count, cold.Partial);
+            var cold = AnalyzerHost.Run(unit, options, hosted, mode, cancellation, profile);
+            return new IncrementalOutcome(
+                cold.Findings,
+                cold.Diagnostics,
+                0,
+                unit.ReportablePaths.Count,
+                cold.Partial,
+                cold.Costs
+            );
         }
 
         var cache = new DiagnosticCache(repositoryRoot, unit.Name + "." + unit.TargetFramework);
@@ -110,13 +122,13 @@ public static class IncrementalAnalysis {
         }
 
         if (hasCompilationScopedRule || misses.Count == keys.Count) {
-            var cold = AnalyzerHost.Run(unit, options, hosted, mode, cancellation);
+            var cold = AnalyzerHost.Run(unit, options, hosted, mode, cancellation, profile);
             Store(cache, keys, unit, cold.Findings);
             cache.Save();
-            return new IncrementalOutcome(cold.Findings, cold.Diagnostics, 0, keys.Count, cold.Partial);
+            return new IncrementalOutcome(cold.Findings, cold.Diagnostics, 0, keys.Count, cold.Partial, cold.Costs);
         }
 
-        var warm = AnalyzerHost.RunForTrees(unit, options, hosted, mode, misses, cancellation);
+        var warm = AnalyzerHost.RunForTrees(unit, options, hosted, mode, misses, cancellation, profile);
         Store(cache, keys.Where(pair => misses.Contains(pair.Key)), unit, warm.Findings);
         cache.Save();
 
@@ -125,7 +137,8 @@ public static class IncrementalAnalysis {
             warm.Diagnostics,
             cache.Hits,
             cache.Misses,
-            warm.Partial
+            warm.Partial,
+            warm.Costs
         );
     }
 
