@@ -241,7 +241,7 @@ collapses the table — both "reflow" corners come out identical to their "keep"
 
 The 47 `wrap_*` keys, plus the `max_*_on_line` counters, plus `csharp_max_line_length = 120`. This
 is where the fitting engine earns its existence, and it is the phase that is allowed to take a
-month. ✅ Measured: **98.86 %** line fidelity and 70.53 % file fidelity on `corpus/real/`.
+month. ✅ Measured: **98.86 %** line fidelity and 71.05 % file fidelity on `corpus/real/`.
 
 ⚠ Six rules M3 established against the oracle, none of which is readable off an option name:
 
@@ -389,7 +389,7 @@ margin — and SK-DIV-0007.
 
 ⚠ [16](16-risks-and-open-questions.md) § R1 asks a sharper question than the aggregate, and
 `fidelity constructs` answers it: of the 54 constructs occurring more than 50 times in
-`corpus/real/`, **26 are at 100 %**. That is the number to move, and it is not the same number as
+`corpus/real/`, **27 are at 100 %**. That is the number to move, and it is not the same number as
 the percentage.
 
 Percentages are lines-identical-to-oracle over `Testing/corpus/real/`, reported by

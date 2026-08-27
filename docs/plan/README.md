@@ -83,6 +83,7 @@ configuration — and the decision about which of the 4 226 keys Skala *implemen
 - ⚠ marks a decision that is easy to get wrong and expensive to reverse.
 - ✅ marks a decision that has been validated against the real corpus rather than reasoned about.
 - A "tier" always means the compatibility tier from [03](03-configuration-model.md) § "Four tiers".
-- Measurements are from `~/Projects/Vixen` (4 691 C# files, 1 348 236 lines) unless stated. That
+- Measurements are from `~/Projects/Vixen` (4 708 C# files, 1 374 580 lines at M3; the tree grows,
+  so a number quoted against 4 691 files is from an earlier milestone and says so) unless stated. That
   tree is the reference corpus: it is the largest C# body the tool must handle and the one whose
   formatting the author actually cares about.

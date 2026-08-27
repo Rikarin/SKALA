@@ -23,7 +23,7 @@ author's, and they can move.
 
 ⚠ **M3 measured it, and the shape is exactly as predicted.** `fidelity constructs` attributes every
 divergent line to the innermost node that owns it and puts that beside how often the construct
-occurs: of the 54 constructs occurring more than 50 times in `corpus/real/`, **26 are at 100 %** at
+occurs: of the 54 constructs occurring more than 50 times in `corpus/real/`, **27 are at 100 %** at
 98.86 % overall. The rule is not met. What it is short of is characterised rather than mysterious —
 the largest attributed shares are `IdentifierName`, `StringLiteralExpression` and `ArgumentList`,
 which are where a wrap decision *lands* rather than constructs mishandled in themselves, and the

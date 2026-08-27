@@ -176,10 +176,14 @@ public static class SourcePieces {
                 trimmedStart++;
             }
 
+            // ⚠ The right-hand end is deliberately *not* trimmed, and this is the one place the
+            // formatter emits trailing whitespace. `jb cleanupcode` does not format documentation
+            // comments at all (SK-DIV-0006), so `/// Gets the path of the current JSON token. `
+            // comes back with its trailing space, and re-flowing the text around it is exactly the
+            // kind of unasked-for edit that entry exists to refuse. It agrees with the export, which
+            // says `trim_trailing_whitespace = false`. Worth 70 lines across 13 files of
+            // `corpus/real/`, all of them Newtonsoft.Json's doc comments.
             var trimmedEnd = lineEnd;
-            while (trimmedEnd > trimmedStart && (content[trimmedEnd - 1] == ' ' || content[trimmedEnd - 1] == '\t')) {
-                trimmedEnd--;
-            }
 
             if (trimmedEnd > trimmedStart) {
                 pieces.Add(

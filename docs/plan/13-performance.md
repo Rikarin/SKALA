@@ -6,8 +6,8 @@ every file write and must be invisible.
 
 ## Budgets
 
-Reference machine: Apple M-series, 10 cores, 32 GB. Reference corpus: Vixen — 4 691 C# files,
-1 348 236 lines, ~48 MB of source.
+Reference machine: Apple M-series, 10 cores, 32 GB. Reference corpus: Vixen — 4 708 C# files,
+1 374 580 lines, ~48 MB of source.
 
 | Operation | Cold | Warm (daemon) | Notes |
 |---|---|---|---|
@@ -24,7 +24,7 @@ Reference machine: Apple M-series, 10 cores, 32 GB. Reference corpus: Vixen — 
 Each is a test ([12](12-conformance-and-testing.md) § "Performance tests") with a 20 % band, not an
 aspiration.
 
-⚠ M3 measures the first row at 280–320 ms cold and 60–70 ms warm, and the second at 11.0 s. The
+⚠ M3 measures the first row at 280–320 ms cold and 60–70 ms warm, and the second at 11.9 s. The
 whole-corpus budget is met; the warm single-file one is missed by the client's own process start,
 which § "Startup" predicts exactly — `skala daemon status`, doing no work at all, is the same 60 ms.
 NativeAOT for the thin client is the prescribed fix and it is not done: the client still carries the
@@ -89,7 +89,7 @@ met.** Measured on Vixen (4 708 files, 1.36 M lines, Release, warm page cache), 
 | + `ConfigurationCache`, still sequential | 30.9 s | 32.9 s |
 | + ten-way parallelism, workstation GC | 19.5 s | 69.4 s |
 | + server GC | **10.9 s** | 81.4 s |
-| M3 as it ships, with the wrapping pass | **11.0 s** | 81.4 s |
+| M3 as it ships, with the wrapping pass | **11.9 s** | 80.3 s |
 
 ⚠ The CPU number rising is not a mistake and is worth stating: ten threads each building a
 ~40 000-node document is a collector problem before it is a formatter problem, and the workstation

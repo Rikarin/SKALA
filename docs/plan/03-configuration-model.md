@@ -262,8 +262,9 @@ Measured, on those 60 files against the oracle under Vixen's configuration:
 | the ten corroborated derived values | **97.84 %** | **51.67 %** |
 | all fourteen | 96.30 % | 30.00 % |
 
-Over the whole Vixen tree, `format --check` goes from 2 700 files to 2 506. And `distill` now drops
-**108 keys** of the export's 4 239 lines, where it dropped none.
+Over the whole Vixen tree, `format --check` goes from 2 700 files to 2 506 at the commit this was
+measured at (2 552 in the shipped build, which has four more formatting changes in it). And
+`distill` now drops **108 keys** of the export's 4 239 lines, where it dropped none.
 
 A pristine-profile export is still worth having: it would settle the 54 insensitive keys, the 10
 ambiguous ones and the 4 contradicted ones without another probe. It is no longer the only way

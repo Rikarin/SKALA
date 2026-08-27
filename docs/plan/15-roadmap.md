@@ -60,8 +60,11 @@ sitting. ✅ **97.47 %**. ⚠ The Vixen diff is *not* small: 2 374 files of 4 70
 999. Roughly half of that is a configuration artefact — Vixen sets none of the phase-2 keys, and
 `options.json`'s `default` is the export's value rather than ReSharper's, so the two fall back
 differently. Repairing `defaultSource` is M3's first job and it is worth 45 % of this diff. ✅ Done:
-the derived table takes the Vixen diff from 2 700 files to 2 506 and Skala's agreement with the
-oracle *under Vixen's own configuration* from 97.00 % to 97.84 % of lines.
+measured at the commit that introduced it, the derived table takes the Vixen diff from 2 700 files
+to 2 506 and Skala's agreement with the oracle *under Vixen's own configuration* from 97.00 % to
+97.84 % of lines. ⚠ The shipped build's number is 2 552, not 2 506: the four commits after it —
+raw-literal realignment, the pattern chain's own level, the fill fix, comment trailing whitespace —
+moved it, and the pair above is a controlled A/B at one commit rather than a running total.
 
 ## M3 — Formatter, phase 3–4 · L/XL
 
@@ -79,17 +82,17 @@ Vixen's `.editorconfig` is replaced by the export with `skala format --check` cl
 
 | | |
 |---|---|
-| Line fidelity, `corpus/real/` | **98.86 %** (M2 97.47 %), file 70.53 % (M2 49.47 %) |
-| [16](16-risks-and-open-questions.md) § R1 | 26 of the 54 constructs occurring more than 50 times are at 100 % |
+| Line fidelity, `corpus/real/` | **98.86 %** (M2 97.47 %), file 71.05 % (M2 49.47 %) |
+| [16](16-risks-and-open-questions.md) § R1 | 27 of the 54 constructs occurring more than 50 times are at 100 % |
 | Divergences | eight `SK-DIV-*` entries, each with a measurement; SK-DIV-0002 is resolved |
 | Wrapping | ✅ `Fill`, the counters, the ordering rule, chains, ternaries, declarators, base lists |
 | xmldoc | ⚠ the oracle does not format doc comments (SK-DIV-0006); the well-formedness hint is done |
 | Daemon, LSP, hooks | ✅ all three, with tests |
 | 40 ms warm | ⚠ 60–70 ms, of which ~60 is the client's process start; NativeAOT is the fix |
-| 20 s whole corpus | ✅ **11.0 s** over Vixen, from 34.2 s |
-| `defaultSource` | ✅ derived from the oracle: 126 keys `oracle-probe`, `distill` drops 108 |
-| Tier A | 202 options, up from 172, each pinned by a committed fixture |
-| Vixen `.editorconfig` | prepared and measured — 2 718 files, 82 339 diff lines — **not committed** |
+| 20 s whole corpus | ✅ **11.9 s** over Vixen, from 34.2 s |
+| `defaultSource` | ✅ derived from the oracle: 123 keys `oracle-probe`, `distill` drops 108 |
+| Tier A | 201 options, up from 172, each pinned by a committed fixture |
+| Vixen `.editorconfig` | prepared and measured — 2 717 files, 83 241 diff lines — **not committed** |
 
 **This is release 0.4 and the first one anyone else could use.** ⚠ It is offered as one on the
 strength of the properties rather than the percentage: idempotency, token equivalence, parse

@@ -9,13 +9,13 @@ difference is a bug, and the harness cannot tell them apart without this file**
 Format: `## SK-DIV-nnnn — one line`, then the argument, then the option keys it touches.
 
 At milestone 3, `corpus/real/` is **98.86 %** of lines identical to the oracle over 380 files and
-76 660 lines — 876 lines that differ. Split by cause, which is the shape that says what is left:
+76 660 lines — 874 lines that differ. Split by cause, which is the shape that says what is left:
 
 | Files | Line fidelity | File fidelity | What the residue is |
 |---|---:|---:|---|
 | containing a `#if` (91) | 98.60 % | 62.64 % | SK-DIV-0001 and SK-DIV-0004 |
 | containing a raw literal (15) | 97.81 % | 53.33 % | SK-DIV-0003's remaining half |
-| neither (274) | 99.02 % | 74.09 % | SK-DIV-0005 and SK-DIV-0007, mostly |
+| neither (274) | 99.02 % | 74.82 % | SK-DIV-0005 and SK-DIV-0007, mostly |
 
 ---
 
@@ -95,7 +95,7 @@ what a user would expect, and it is the strongest argument for `skala check`'s p
 until then a repository that cares can pass the symbols explicitly once `--define` exists.
 
 Measured at M3: the 91 files of `corpus/real/` that contain a `#if` are at 98.60 % of lines against
-99.02 % for the 274 that do not, and 62.64 % of files against 74.09 %. Whole files are affected
+99.02 % for the 274 that do not, and 62.64 % of files against 74.82 %. Whole files are affected
 rather than lines: `Issue2504.cs` is wrapped in `#if (NET45 || NET5_0_OR_GREATER)`, so for Skala the
 entire body is disabled text and the file is reproduced unchanged.
 
@@ -130,7 +130,7 @@ not what ships. Measured alternatives, on `corpus/real/`:
 
 | Rule | line | file |
 |---|---:|---:|
-| margin everywhere (ships) | 98.86 % | 70.53 % |
+| margin everywhere (ships) | 98.86 % | 71.05 % |
 | margin only where the RHS opens with a brace | 98.71 % | 67.37 % |
 | no margin at all | 98.42 % | — |
 
@@ -163,7 +163,22 @@ What is implemented is the half [05](plan/05-csharp-formatting-rules.md) calls t
 needs no oracle: a doc comment that is not well-formed XML is left exactly as it is and reported at
 `hint` (`SK0003`), never "fixed".
 
-- options: `resharper_space_after_triple_slash`, `resharper_xmldoc_wrap_lines`, `resharper_xmldoc_max_line_length`, `resharper_xmldoc_linebreak_before_elements`
+⚠ "Does not format" is stricter than it sounds, and Skala was not honouring it: a comment's **own
+trailing whitespace** is part of the comment. `/// Gets the path of the current JSON token. ` comes
+back from the oracle with the trailing space, and so does `// … during and `, and so does a
+trailing tab. Skala trimmed the right-hand end of every documentation line while splitting the
+trivia into pieces, which cost 2 lines and 2 files of `corpus/real/`; it no longer does, and
+`constructs/trivia/a-comment-keeps-its-trailing-space.cs` pins it.
+
+⚠ This makes comment text the one and only thing in Skala's output that can carry trailing
+whitespace — the writer still cannot produce any of its own, which is why
+`remove_spaces_on_blank_lines` stays inert. It also settles `trim_trailing_whitespace`, whose value
+the export sets to `false`: probed at `= true` on this fixture, the oracle **returns the trailing
+space anyway**. Skala follows the oracle rather than the key, so the key is inert in both
+directions and stays Tier D — implementing it would create a ninth divergence in exchange for
+nothing anyone asked for.
+
+- options: `resharper_space_after_triple_slash`, `resharper_xmldoc_wrap_lines`, `resharper_xmldoc_max_line_length`, `resharper_xmldoc_linebreak_before_elements`, `trim_trailing_whitespace`
 
 ## SK-DIV-0007 — an argument list around a chain the author broke does not chop
 

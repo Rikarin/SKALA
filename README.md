@@ -14,13 +14,13 @@ points to wrap at.
 | | |
 |---|---|
 | **Line fidelity vs. `jb cleanupcode`** on `corpus/real/` (380 files, 76 660 lines) | **98.86 %** (M2: 97.47 %, M1: 94.28 %) |
-| File fidelity, same corpus | 70.53 % (M2: 49.47 %) |
+| File fidelity, same corpus | 71.05 % (M2: 49.47 %) |
 | … on `corpus/constructs/` (271 files) | 95.97 % line, 89.67 % file |
 | … on `corpus/pathological/` (52 files) | 94.73 % line, 80.77 % file |
 | … on `constructs/preservation/` under the four `keep_existing_*` combinations | 90.86 / 100 / 92.65 / 100 % line |
 | Idempotency, token equivalence, parse stability, determinism, range consistency | 100 % of the corpus, every test run, in every configuration — and of all 4 708 Vixen files |
 | **Tier A options** — implemented and pinned by an oracle fixture | **201 of 520** (M2: 172 of 483) |
-| Defaults derived from the oracle rather than guessed | 122 keys `oracle-probe`; `config distill` drops 108 |
+| Defaults derived from the oracle rather than guessed | 123 keys `oracle-probe`; `config distill` drops 108 |
 | Documented divergences (`SK-DIV-*`) | 8, each with a measurement |
 
 Per origin, because the three measure different things:
@@ -28,21 +28,21 @@ Per origin, because the three measure different things:
 | Origin | Line | File | What it measures |
 |---|---:|---:|---|
 | `vixen/` | 98.93 % | 68.50 % | Does Skala leave code that already conforms alone |
-| `newtonsoft/` | 98.80 % | 73.64 % | Does Skala move Allman-braced, differently-spaced code to where Rider would put it |
+| `newtonsoft/` | 98.81 % | 75.45 % | Does Skala move Allman-braced, differently-spaced code to where Rider would put it |
 | `serilog/` | 98.51 % | 71.43 % | Same, a second house style |
 
-The remaining 876 lines are eight named disagreements, not an unknown. Split by cause: the 274 files
+The remaining 874 lines are eight named disagreements, not an unknown. Split by cause: the 274 files
 with neither a `#if` nor a raw literal are at 99.02 %, the 91 with a `#if` at 98.60 %
 ([SK-DIV-0004](docs/divergences.md) — Skala parses without a project, so a `#if DEBUG` body is
 frozen), and the 15 with a raw literal at 97.81 %.
 
 ⚠ The number the project is judged on is not this one. [16 § R1](docs/plan/16-risks-and-open-questions.md)
 asks a sharper question — *any construct occurring more than 50 times must be at 100 %* — and
-`./build.sh Fidelity` answers it: **26 of 54**.
+`./build.sh Fidelity` answers it: **27 of 54**.
 
-Run over [Vixen](https://github.com/Rikarin/Vixen) — 4 708 files, 1 361 341 lines — in **11.0 s**,
+Run over [Vixen](https://github.com/Rikarin/Vixen) — 4 708 files, 1 374 580 lines — in **11.9 s**,
 down from 34.2 s at milestone 2. Replacing Vixen's own `.editorconfig` with the export and formatting
-changes 2 718 files and 82 339 lines, 6.0 % of the tree; the result is idempotent on all 4 708 files
+changes 2 717 files and 83 241 lines, 6.1 % of the tree; the result is idempotent on all 4 708 files
 and no file has a token stream that differs from the one it started with.
 
 ⚠ Part of that is a **configuration** result rather than a formatting one, and milestone 3 halved it.

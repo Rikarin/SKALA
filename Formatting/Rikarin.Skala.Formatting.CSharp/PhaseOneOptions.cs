@@ -1149,8 +1149,9 @@ public static class Ids {
     /// pass means <c>max_line_length</c> changes nothing; no tabs in the output means
     /// <c>tab_width</c> changes nothing; the removal rules win over <c>blank_lines_inside_type</c>
     /// outright; <c>end_of_line</c> is inert while <c>enforce_line_ending_style</c> is false;
-    /// <c>remove_spaces_on_blank_lines</c> is inert because the writer cannot produce trailing
-    /// whitespace at all; and <c>space_between_keyword_and_type</c> is inert because a type after a
+    /// <c>remove_spaces_on_blank_lines</c> is inert because a blank line is a break followed by a
+    /// break and the writer never puts anything between them (the one place trailing whitespace
+    /// survives is inside a comment's own text, which is never a blank line); and <c>space_between_keyword_and_type</c> is inert because a type after a
     /// keyword is always word-like, so the separation is mandatory whatever the option says.
     /// <para>
     /// They are read so the plumbing exists and so the crash snapshot can record them, and they

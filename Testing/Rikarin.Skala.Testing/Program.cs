@@ -3,7 +3,8 @@ using Rikarin.Skala.Formatting;
 using Rikarin.Skala.Formatting.CSharp;
 using Rikarin.Skala.Testing;
 
-// The harness's own entry point. ⚠ Two commands, both deliberate developer-machine actions:
+// The harness's own entry point. ⚠ Every one of these is a deliberate developer-machine action and
+// none of them is a test:
 //
 //   oracle [set…]     regenerate the committed `.expected.cs` fixtures from `jb cleanupcode`.
 //                     `./build.sh Oracle`, never a test — an oracle that regenerates when it
@@ -14,11 +15,22 @@ using Rikarin.Skala.Testing;
 //                     report can be read as a diff rather than as two sample lines.
 //   variants [set…]   the differential number for each alternative configuration a set is run
 //                     under — docs/plan/05's four-way keep_existing_* table.
+//   constructs [set]  every divergent line attributed to the construct that owns it, beside how
+//                     often that construct occurs — docs/plan/16 § R1's actual question.
+//   ask <dir>         run the oracle over a scratch directory, in place. The tool the milestone-3
+//                     wrapping rules were established with: an option name does not say what
+//                     happens to a 121-column array initializer, and asking does.
+//   defaults [out]    derive ReSharper's built-in default table from the oracle, because nobody
+//                     publishes it (docs/plan/03 § "Deriving ReSharper's defaults"). Tens of
+//                     minutes.
 //
 // It is not the `skala` tool and is never packaged.
 
 if (args.Length == 0) {
-    Console.Error.WriteLine("usage: oracle [set…] | fidelity [set…] | dump <set> <dir>");
+    Console.Error.WriteLine(
+        "usage: oracle [set…] | fidelity [set…] | constructs [set…] | dump <set> <dir>"
+        + " | ask <dir> | defaults [round…]"
+    );
     return 2;
 }
 
