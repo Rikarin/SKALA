@@ -27,6 +27,7 @@ public static partial class SkalaCommandLine {
         root.Subcommands.Add(CreateFixCommand());
         root.Subcommands.Add(CreateExplainCommand());
         root.Subcommands.Add(CreateRulesCommand());
+        root.Subcommands.Add(CreateDocsCommand());
         root.Subcommands.Add(CreateBaselineCommand());
         root.Subcommands.Add(CreateReportCommand());
         root.Subcommands.Add(CreateTrendCommand());

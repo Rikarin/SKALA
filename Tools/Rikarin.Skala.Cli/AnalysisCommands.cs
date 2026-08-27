@@ -4,6 +4,7 @@ using Rikarin.Skala.Analysis.Caching;
 using Rikarin.Skala.Analysis.Loading;
 using Rikarin.Skala.Core.Configuration;
 using Rikarin.Skala.Mcp;
+using Rikarin.Skala.Options;
 using Rikarin.Skala.Reporting;
 using Rikarin.Skala.Rules.Metadata;
 
@@ -11,7 +12,7 @@ namespace Rikarin.Skala.Cli;
 
 /// <summary>
 /// The analysis half of the <c>skala</c> surface: <c>check</c>, <c>verify</c>, <c>fix</c>,
-/// <c>explain</c>, <c>rules</c>, <c>cache</c> and <c>mcp</c>.
+/// <c>explain</c>, <c>rules</c>, <c>docs</c>, <c>cache</c> and <c>mcp</c>.
 /// </summary>
 /// <remarks>
 /// Argument parsing and rendering only, like the rest of the CLI. Every behaviour lives in
@@ -316,6 +317,43 @@ public static partial class SkalaCommandLine {
         rules.Subcommands.Add(list);
         rules.Subcommands.Add(docs);
         return rules;
+    }
+
+    /// <summary>
+    /// <c>skala docs site</c> — docs/plan/15 § M7, "Documentation site generation from rules.json +
+    /// options.json".
+    /// </summary>
+    /// <remarks>
+    /// ⚠ Deliberately a sibling of <c>skala rules docs</c> rather than a replacement for it. The two
+    /// render the same catalogue for different readers — <c>docs/rules/*.md</c> is what GitHub shows
+    /// beside the source and what an agent reads through the MCP server; the site is browsable and
+    /// cross-linked and is the only surface where the option registry appears at all. Neither holds
+    /// a word of its own: both are <see cref="RuleCatalog"/> and <see cref="OptionRegistry"/>
+    /// rendered (docs/plan/08 § "Documentation").
+    /// </remarks>
+    static Command CreateDocsCommand() {
+        var docs = new Command("docs", "The generated documentation.");
+
+        var directory = new Argument<string>("directory") {
+            Description = "Where to write the site.", DefaultValueFactory = static _ => "docs/site"
+        };
+
+        var site = new Command(
+            "site",
+            "Regenerate the static documentation site from rules.json and options.json."
+        );
+
+        site.Arguments.Add(directory);
+        site.SetAction(parse => {
+                var target = parse.GetValue(directory)!;
+                var count = DocsSite.Write(target);
+                Console.Out.WriteLine($"{count} file(s) written to {target}.");
+                return ExitCodes.Ok;
+            }
+        );
+
+        docs.Subcommands.Add(site);
+        return docs;
     }
 
     /// <summary><c>skala cache clear|stats</c> — docs/plan/07 § "The incremental cache".</summary>
