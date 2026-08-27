@@ -173,6 +173,7 @@ public readonly struct PhaseOneOptions {
         IndentPreprocessorOther = (PreprocessorIndentStyle)options.GetRaw(Ids.IndentPreprocessorOther);
         IndentPreprocessorRegion = (PreprocessorIndentStyle)options.GetRaw(Ids.IndentPreprocessorRegion);
         IndentAnonymousMethodBlock = options.GetBool(Ids.IndentAnonymousMethodBlock);
+        OutdentStatementLabels = options.GetBool(Ids.OutdentStatementLabels);
 
         // ── Blank lines ──────────────────────────────────────────────────────────────────────
         KeepBlankLinesInCode = options.GetInt(Ids.KeepBlankLinesInCode);
@@ -522,6 +523,9 @@ public readonly struct PhaseOneOptions {
     public PreprocessorIndentStyle IndentPreprocessorOther { get; }
     public PreprocessorIndentStyle IndentPreprocessorRegion { get; }
     public bool IndentAnonymousMethodBlock { get; }
+
+    /// <summary><c>outdent_statement_labels</c>: <c>Finish:</c> one level out from what it labels.</summary>
+    public bool OutdentStatementLabels { get; }
 
     public int KeepBlankLinesInCode { get; }
     public int KeepBlankLinesInDeclarations { get; }
@@ -1000,6 +1004,8 @@ public static class Ids {
 
     public static readonly OptionId IndentAnonymousMethodBlock =
         OfInert("resharper_csharp_indent_anonymous_method_block");
+
+    public static readonly OptionId OutdentStatementLabels = Of("resharper_csharp_outdent_statement_labels");
 
     public static readonly OptionId KeepBlankLinesInCode = Of("resharper_csharp_keep_blank_lines_in_code");
 
