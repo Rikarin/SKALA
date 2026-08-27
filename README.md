@@ -1,203 +1,172 @@
 # Skala
 
-One configuration, the same formatting and analysis everywhere: a C# formatter and static-analysis
-tool that reads the `.editorconfig` Rider exports, so the IDE and the gate agree by construction
-rather than by discipline. See [`docs/plan/`](docs/plan/README.md).
+**One configuration, the same formatting and analysis everywhere.**
 
-**Status: 1.0 — milestone 7 of nine** (M4 is still outstanding and M5 ran before it; see
-[15 § M4](docs/plan/15-roadmap.md)). See [Release 1.0](#release-10) for what became a compatibility
-surface at this version and what did not. The formatter does spaces, blank lines, braces, indentation,
-break presence and position, and wrapping: it fills what `wrap_if_long` fills, chops what
-`chop_if_long` chops, honours the `max_*_on_line` counters, and chooses *which* of a long line's
-several candidate points to wrap at. The analysis half loads a compilation three ways, hosts
-analyzers, writes SARIF, and answers an agent in three buckets.
+Skala is a C# formatter, linter and quality gate that reads the `.editorconfig` Rider exports — the
+real one, all 4 226 assignments of it — so the IDE, the command line, CI and an AI agent agree about
+what the code should look like by construction rather than by discipline.
+
+## What it replaces
+
+| Today | What Skala does instead |
+|---|---|
+| **ReSharper / Rider code cleanup** for formatting | Reads the same `resharper_*` keys, from the same file, and matches the output — **99.70 % of lines** on the reference corpus |
+| **`dotnet format`** | Actually wraps. Roslyn's formatter adjusts whitespace between tokens and preserves the line breaks it is given; `max_line_length = 120` with `chop_if_long` cannot be built on top of it, so Skala has its own line-fitting engine |
+| **CSharpier** | Configurable, and **preserve-and-repair** rather than print-from-scratch. The export sets `keep_user_linebreaks = true`; Prettier-lineage tools discard the author's line breaks by design |
+| **Qodana** | Hosts analyzers over a real compilation, writes SARIF, and is not a 400 MB proprietary download |
+| **SonarQube** | Metrics, duplication detection, baselines, fingerprints, `--since` scoping and gates |
+
+**The one-sentence problem it exists for:** ReSharper's own CLI is the only thing that reads
+`resharper_*` keys, and it has no machine-readable diff output — so there is currently no way to make
+a build agent, a CI job and an AI agent agree with Rider about what the code should look like.
+
+## Where it is
+
+**Milestone 7 of nine, released as 1.0.** See [`docs/overview.md`](docs/overview.md) for what is
+built, measured against the code — it is the only place with per-feature status, and every number in
+it was produced by running something.
+
+| | |
+|---|---|
+| **Line fidelity vs. `jb cleanupcode`**, `corpus/real/` (380 files, 76 375 lines) | **99.70 %** with the compilation's preprocessor symbols, 99.63 % without |
+| File fidelity, same corpus | **85.79 %** — 54 of 380 files differ at all |
+| Files containing no `#if` (289) | **99.79 %** line — milestone 3's revised ≥ 99.5 % bar, met |
+| ⚠ The ≥ 99.9 % overall bar | **Not met**, at 99.70 %, and missed with a measurement twice running |
+| Idempotency, token equivalence, parse stability, determinism, range consistency | **100 %** of all three corpora, under both symbol sets — 8 981 conformance cases |
+| Documented divergences (`SK-DIV-*`) | **12**, each with a current measurement: 3 resolved, 2 half closed, 7 open |
+| **Tier A options** — implemented and pinned by an oracle fixture | **201 of 520** |
+| Defaults derived from the oracle rather than guessed | **123** keys |
+| **Rules shipped** | **24 of the 109** the catalogue names — 13 analyzers, 8 metrics, 3 formatter findings — plus 8 tool diagnostics |
+| False positives on the reference trees | **zero**, every finding read at the milestone that shipped it |
+| Warm single-file format | **12.4 ms** against a 40 ms budget |
+| `format --check` over 4 717 files | **12.4–13.8 s** against a 20 s budget |
+| Tests | **9 795 passing**, 0 failing |
+
+⚠ **A rule ships when it has a fix, zero false positives on the reference corpus, and a "should not
+fire" fixture set at least as large as its positive one.** Twenty-four of a hundred and nine is that
+bar working, not the plan falling short — and [`docs/plan/08`](docs/plan/08-rule-catalogue.md)
+§ "Rule status" says, per rule, which are shipped, which were cut and why, and which are outstanding.
+
+⚠ **The reference trees are a test subject, not a specification.** Skala is measured against
+[Vixen](https://github.com/Rikarin/Vixen) and against vendored Serilog and Newtonsoft.Json because
+they are real code, not because their present habits are the standard. Where they do not follow a
+rule, they change. A low finding count on one of them was never evidence that a rule is good.
+
+## Installing it
+
+⚠ **Nothing is published yet.** There is no NuGet feed, no GitHub release and no publish workflow, so
+the only way in is to build from source. Three packable projects exist (`Rikarin.Skala.Cli` as a
+`dotnet tool`, `Rikarin.Skala.Rules` as analyzers, `Rikarin.Skala.Canonical` as the
+`.editorconfig` payload) and none of them is pushed anywhere.
 
 ```bash
-skala verify                 # is this acceptable? exit 0 or it is not finished
+git clone https://github.com/Rikarin/Skala && cd Skala
+./build.sh Native          # the shipping layout: an AOT `skala` beside a ReadyToRun `skala-tool`
+artifacts/native/<rid>/skala --help
+```
+
+You need the .NET SDK pinned in [`global.json`](global.json) and nothing else. `./build.sh Oracle`
+additionally wants `dotnet tool install -g JetBrains.ReSharper.GlobalTools --version 2025.2.6`, and
+nothing in the day-to-day loop does: the test run reads committed `.expected.cs` fixtures, and
+regenerating them is a reviewed commit of its own.
+
+⚠ **Two binaries, and the reason is the 40 ms budget.** `skala` is a NativeAOT thin client that
+references a socket and a JSON writer; `skala-tool` beside it is the full tool, which is also what
+the daemon runs as and what the client execs for anything that is not a warm single-file format.
+Before the split, `skala daemon status` — a command that does no work at all — cost **43 ms** before
+`Main` ran, because the one binary referenced Roslyn.
+
+## Using it
+
+```bash
+skala verify                 # is this acceptable? exit 0, or it is not finished
 skala fix --safe             # apply the fixes that are provably behaviour-preserving
 skala explain SK1010         # why the rule exists, before arguing with it
 skala mcp                    # the same six answers over the Model Context Protocol
 ```
 
-## Where it is
-
-| | |
-|---|---|
-| **Line fidelity vs. `jb cleanupcode`** on `corpus/real/` (380 files, 76 375 lines) | **99.70 %** with the oracle's symbols, **99.63 %** without (M3/M5: 98.86 %, M2: 97.47 %, M1: 94.28 %) |
-| File fidelity, same corpus | **85.79 %** / 85.26 % (M5: 71.32 %, M2: 49.47 %) |
-| … on `corpus/constructs/` (273 files) | 96.64 % line, 91.21 % file |
-| … on `corpus/pathological/` (52 files) | 95.60 % line, 86.54 % file |
-| … on `constructs/preservation/` under the four `keep_existing_*` combinations | 95.98 / 100 / 92.65 / 100 % line |
-| Idempotency, token equivalence, parse stability, determinism, range consistency | 100 % of the corpus, every test run, in every configuration — and of all 4 708 Vixen files |
-| **Tier A options** — implemented and pinned by an oracle fixture | **201 of 520** (M2: 172 of 483) |
-| Defaults derived from the oracle rather than guessed | 123 keys `oracle-probe`; `config distill` drops 108 |
-| Documented divergences (`SK-DIV-*`) | **12**, each with a measurement; SK-DIV-0004 closed at M5, SK-DIV-0008 half closed at M3.1 |
-| Files with no `#if` (289 of 380) | **99.79 %** line, 89.97 % file — milestone 3's revised ≥ 99.5 % bar, met |
-| **Rules shipped** — a fix, zero false positives, a negative fixture set at least as large | **6 analyzers** + 3 formatter findings |
-| False positives on `corpus/real/` + 4 688 Vixen files | **zero**, over 155 findings, every one reviewed |
-| `skala verify`, 5 files, no project, cold process | **0.39–0.54 s** against a 1 s budget |
-| `skala check --load=binlog` over Vixen | **58–134 s** against a 4-minute budget |
-
-Per origin, because the three measure different things:
-
-| Origin | Line | File | What it measures |
-|---|---:|---:|---|
-| `vixen/` | 99.81 % | 90.00 % | Does Skala leave code that already conforms alone |
-| `newtonsoft/` | 99.41 % | 80.91 % | Does Skala move Allman-braced, differently-spaced code to where Rider would put it |
-| `serilog/` | 99.57 % | 81.43 % | Same, a second house style |
-
-The remaining ~230 lines are twelve named disagreements, not an unknown. Split by cause: the 289
-files with no `#if` are at 99.79 %, the 91 with one at 99.36 %, and the 11 with a raw literal at
-99.68 %.
-
-⚠ **The ≥ 99.9 % bar is not met and this is the second milestone to say so with a number.** The two
-largest classes are [SK-DIV-0005](docs/divergences.md) — where ReSharper's wrap decision was swept
-over a hundred cells and turns out not to be a function of anything this formatter measures — and
-[SK-DIV-0011](docs/divergences.md), where the oracle sometimes breaks after a lambda's `=>` and
-sometimes chops the body instead, and none of the obvious discriminators separates the two.
-
-⚠ **The Vixen sample in the corpus was re-based at milestone 3.1.** 167 of its 200 files had come
-from agent scratch checkouts rather than the mainline tree; the content was real and the numbers
-stood, but "which 200 files" had no reproducible answer. It is drawn from a recorded commit by a
-committed sampler now, and the swap on its own is worth +0.08 points — a different 200 files rather
-than a better formatter.
-
-⚠ [SK-DIV-0004](docs/divergences.md) — "Skala parses without a project, so a `#if DEBUG` body is
-frozen" — **is closed**: `skala format --define`, and symbols taken from a loaded compilation. It was
-worth less than M3 estimated. A third of the gap was the guess; 0.32 points on those 91 files and
-0.07 overall is the measurement, and what remains in them turns out to be ordinary wrapping tail
-rather than frozen text. It did uncover a formatter bug that had been invisible since M1 — `>`
-followed by `(` was read as a call site, so `count > (n)` lost its space, and every corpus line that
-shows it is inside a conditional body.
-
-⚠ The number the project is judged on is not this one. [16 § R1](docs/plan/16-risks-and-open-questions.md)
-asks a sharper question — *any construct occurring more than 50 times must be at 100 %* — and
-`./build.sh Fidelity` answers it: **37 of 56**, up from 27 of 54. ⚠ Milestone 3.1 also established
-that R1 as stated is equivalent to 100 % line fidelity, because every divergent line is attributed to
-something that occurs more than fifty times; it needs re-stating as a rule about attributed *share*.
-
-⚠ `./build.sh Fidelity` runs the differential under **both symbol sets** by default and names the
-divergences that appear under one and not the other. Milestone 5's `>`-before-`(` defect survived four
-milestones inside a `#if` body, which a single-symbol-set run cannot see at all.
-
-Run over [Vixen](https://github.com/Rikarin/Vixen) — 4 711 files, 1 367 552 lines — in **14 s**.
-Replacing Vixen's own `.editorconfig` with the export and formatting changes **2 527 files and
-73 014 lines, 5.3 % of the tree** (M3: 2 717 files, 83 241 lines); a second pass is clean on all
-4 711 files, and no file has a token stream that differs from the one it started with.
-
-⚠ The number that decides whether to commit it is not that one. Measured over a 600-file sample of
-the same tree, **the oracle itself would move 302 of them** and Skala would move 299 — the diff is
-the configuration swap plus twenty years of drift, not Skala disagreeing. Skala against the oracle
-over that sample is **99.47 % of lines and 87.33 % of files**, which is the honest estimate of how
-much Rider would move back after the commit.
-
-⚠ Part of that is a **configuration** result rather than a formatting one, and milestone 3 halved it.
-`options.json`'s `default` used to be *the Rider export's value*, not ReSharper's built-in default,
-so on a repository whose `.editorconfig` leaves a key unset — which is most repositories — Skala and
-Rider fell back differently. The defaults are now derived from the oracle: a `jb cleanupcode` run
-under a configuration carrying nothing but `root = true` is ReSharper-with-defaults by construction
-(see [03](docs/plan/03-configuration-model.md) § "Deriving ReSharper's defaults"). Measured on 60
-Vixen files under Vixen's *own* configuration, against the oracle under the same, Skala goes from
-97.00 % to 97.84 % of lines and from 38.33 % to 51.67 % of files.
-
-## Running it
-
 ```bash
-skala format [paths…] [--check] [--diff] [--range a:b] [--staged] [--quiet] [--jobs n]
-skala config explain|check|diff|distill|fix
-skala daemon status|stop|run          # the per-repository format daemon
-skala lsp                             # formatting, range formatting, diagnostics, code actions
-skala hooks install [--apply]         # the pre-commit hook, unless a hook manager owns it
+skala format [paths…] [--check] [--diff] [--range a:b] [--staged] [--jobs n]
+skala check  [paths…] [--load binlog|workspace|loose] [--gate ci] [--since <ref>] [--baseline]
+skala config explain | check | diff | distill | fix | sync
+skala daemon status | stop | run       # the per-repository format daemon
+skala lsp                              # formatting, range formatting, diagnostics, code actions
+skala hooks install                    # the pre-commit hook, unless a hook manager owns it
 ```
 
-`--check` writes nothing and exits 1 when there is anything to do. `--staged` formats the git index
-and writes back to both the worktree and the index; it refuses to run when a staged file also has
+`--check` writes nothing and exits non-zero when there is anything to do. `--staged` formats the git
+index and writes back to both the worktree and the index; it refuses when a staged file also has
 unstaged changes, unless you pass `--staged=worktree`.
 
-The daemon is started lazily, exits after thirty minutes idle, and is only ever an optimisation:
+The daemon is started lazily, exits after thirty minutes idle, and is **only ever an optimisation**:
 `SKALA_NO_DAEMON=1` or `--no-daemon` produces byte-identical output, and a daemon that is absent,
-stale or of another protocol version is a silent fallback rather than an error. A warm single-file
-format is **8.65 ms** against a 40 ms budget, measured over 150 runs in a shell loop.
+stale or of another protocol version is a silent fallback rather than an error.
 
-Getting there needed the CLI split in two. `skala` is a NativeAOT thin client that starts in 4.85 ms
-and references nothing but a socket and a JSON writer; `skala-tool` beside it is the full tool, which
-is also what the daemon runs as and what the client execs for everything that is not a warm
-single-file format. Before the split the one `skala` binary referenced Roslyn, so `skala daemon
-status` — a command that does no work at all — cost 79.5 ms, twice the budget for the whole
-operation, before `Main` ran.
+⚠ **Rider needs no integration and will not get one.** Rider already implements this
+`.editorconfig` — it is where the file came from. If Rider and Skala disagree, the fix is in Skala.
 
-```bash
-./build.sh Native        # the shipping layout: AOT `skala` beside ReadyToRun `skala-tool`
-```
+## The two promises
 
-⚠ A `dotnet tool install` gets the full tool alone under the name `skala`, with the old startup
-cost: NativeAOT cannot be packed as a dotnet tool, so the client is a standalone-binary concern.
+- **It never writes a file whose token stream differs from the input's.** Every write is verified; a
+  mismatch is `SK9099`, writes nothing, and drops a reproduction under `.skala/crash/`. There is no
+  flag that turns it off.
+- **It never formats a file it could not parse.** `SK9010`, reported, left byte-identical.
 
 ## Building it
 
 ```bash
-./build.sh Test          # everything
+./build.sh Test          # everything — 9 802 tests
 ./build.sh Conformance   # the differential suite and the fidelity ratchet
 ./build.sh Fidelity      # the ranked divergence report — the work queue
+./build.sh Native        # the AOT client beside the full tool
+./build.sh Docs          # regenerate docs/rules/ and docs/site/ from the two registries
 ./build.sh Oracle        # ⚠ regenerate the committed fixtures from `jb cleanupcode`
 ```
 
-There are more, all developer-machine actions and none of them a test. `ask <dir>` runs the oracle
-over a scratch directory so a question like "what does `wrap_if_long` do to a six-element array at
-121 columns" gets an answer instead of a guess; `defaults` derives ReSharper's default table from it;
-`margin` sweeps SK-DIV-0005's constant over eleven shapes, five depths and both values of
-`wrap_before_eq`; `locate <set> <kind>` prints the divergent lines attributed to one construct, which
-is what [R1](docs/plan/16-risks-and-open-questions.md) asks and the ranked report cannot answer;
-`tree <dir> [n]` runs the oracle *and* Skala over an arbitrary repository and reports what each would
-move; and `sample <tree> <n> <dest>` redraws a corpus sample reproducibly, by a hash of each file's
-path rather than by a seeded sequence.
+⚠ **The performance budget assertions do not run under `./build.sh Test`.** They need
+`SKALA_PERF=1` and a published native layout, because a wall-clock assertion on a shared runner is a
+flaky test. CI runs them in a job of their own, on its own runner.
 
-`Oracle` needs `dotnet tool install -g JetBrains.ReSharper.GlobalTools --version 2025.2.6`. Nothing
-else does: the day-to-day test run reads the committed `.expected.cs` fixtures, and regenerating
-them is a reviewed commit of its own (ADR-011).
+Beyond the Nuke targets, `Testing/Rikarin.Skala.Testing` is a harness of developer-machine actions
+and none of them is a test: `ask <dir>` runs the oracle over a scratch directory so that "what does
+`wrap_if_long` do to a six-element array at 121 columns" gets an answer instead of a guess;
+`defaults` derives ReSharper's default table from it; `margin` sweeps the constant in
+[SK-DIV-0005](docs/sk-div-0005-margin-sweep.md); `locate <set> <kind>` prints the divergent lines
+attributed to one construct; `tree <dir> [n]` runs both tools over an arbitrary repository; and
+`sample <tree> <n> <dest>` redraws a corpus sample reproducibly, by a hash of each file's path.
 
-## Release 1.0
+## Release 1.0 — what became a contract
 
-⚠ **At 1.0 four things become compatibility surfaces (ADR-012), and the rest of the tool does not.**
-The distinction is the whole content of this release, so it is worth being exact about.
+⚠ **Four things, and the rest of the tool deliberately did not.**
 
-**What is now a contract:**
-
-| | What that means in practice |
+| | What that means |
 |---|---|
-| **Rule IDs** | `SK1010` means what it means for ever. An id is never re-purposed and its meaning never widens; a rule that is withdrawn is marked `retired`, not deleted. The reason is baselines: a fingerprint carries the rule id, so one number with two meanings silently un-suppresses one finding and wrongly suppresses another in every repository holding a baseline it was not present at |
+| **Rule IDs** | `SK1010` means what it means for ever. An id is never re-purposed; a withdrawn rule is marked `retired`, not deleted. The reason is baselines: a fingerprint carries the rule id, so one number with two meanings silently un-suppresses one finding and wrongly suppresses another in every repository holding a baseline |
 | **Option behaviour** | A key that does something keeps doing that thing. New keys may be added; an existing key's effect on an existing file does not change without a new key to ask for the change |
-| **Exit codes** | `0` nothing to do · `1` gate failed · `2` formatting needed · `3` configuration error · `4` load failure · `5` internal error · `130` cancelled. A hook and a CI job read these and nothing else |
+| **Exit codes** | `0` nothing to do · `1` gate failed · `2` formatting needed · `3` configuration error · `4` load failure · `5` internal error · `130` cancelled |
 | **The SARIF shape** | Fields present at 1.0 stay present and keep their meaning. Paths are repository-relative with forward slashes on every platform |
 
-Two tests hold that line, and both are run against the tree they are built from — which one of them
-was not before this release: `RuleCatalogTests` (`RuleIds_AreAppendOnly`,
-`EveryCatalogueRule_IsRecordedAsAllocated`, keyed on `allocated-ids.txt`) and `ToolDiagnosticIdTests`
-(`ToolDiagnosticIds_AreDeclaredOnce`, `…_AreInTheRegister`). Verified by mutation rather than by
-going green: a second `public const string … = "SK9001"` fails the build, and did not before.
+**Not a contract, and it will change:** the formatter's output (closing the last 0.3 % means files
+formatted at 1.0 are formatted differently at 1.1 — pin the version if that matters); which rules
+exist; a rule's default severity; the daemon protocol; and every `Testing/Rikarin.Skala.Testing`
+subcommand.
 
-**What is explicitly *not* a contract, and will change:**
+**Known gaps at 1.0**, because a version number is not a claim of completeness: `skala arrange` (M4)
+does not exist; `SK5xxx` security rules (M8) do not exist; the nightly job runs the property suite
+and **there is no fuzzer**; web languages (M9) are postponed to last and the language seam they are
+gated on has not been written; and **the tool is not yet adopted by any repository, including the two
+it is measured against**. [`docs/overview.md`](docs/overview.md) § "What is not built" is the full
+list, and [`docs/plan/15`](docs/plan/15-roadmap.md) is where each one sits in the order.
 
-- **The formatter's output.** Fidelity against `jb cleanupcode` is 99.70 % of lines and 85.79 % of
-  files; closing the remaining gap means files formatted at 1.0 will be formatted differently at
-  1.1. Pin the version if that matters, which is what [11](docs/plan/11-cli-and-integrations.md)
-  § "Distribution" is for.
-- **Which rules exist.** New rule ids are added freely — that is what append-only means. A rule's
-  *default severity* may also change.
-- **The daemon protocol.** Versioned by exact match with no negotiation; a client that meets a
-  daemon of another version replaces it.
-- **`--profile` output, the fidelity harness, and every `Testing/Rikarin.Skala.Testing` subcommand.**
-  Developer instruments, not interfaces.
+## The documents
 
-**Known gaps at 1.0**, stated because a version number is not a claim of completeness:
-`skala arrange` (M4) is unfinished; `SK5xxx` security rules (M8) do not exist; the nightly fuzzing
-job runs the property suite but there is no fuzzer; and the tool is not yet adopted by any
-repository beyond the two it is measured against. [15](docs/plan/15-roadmap.md) § M7 has the full
-list.
+| | |
+|---|---|
+| [`docs/overview.md`](docs/overview.md) | **What is built**, checked against the code. Start here |
+| [`docs/plan/`](docs/plan/README.md) | The design record — what Skala is meant to be, and why. Seventeen documents |
+| [`docs/divergences.md`](docs/divergences.md) | Every deliberate difference from the oracle, with a current measurement |
+| [`docs/rules/`](docs/rules/README.md) | One page per rule, generated from `rules.json` |
+| [`docs/site/`](docs/site/index.html) | The same, plus a page per option, as a static site |
 
-## The two promises
-
-- **It never writes a file whose token stream differs from the input's.** Every write is verified;
-  a mismatch is `SK9099`, writes nothing, and drops a reproduction under `.skala/crash/`. There is
-  no flag that turns it off.
-- **It never formats a file it could not parse.** `SK9010`, reported, left byte-identical.
+Where a document under `docs/plan/` and `docs/overview.md` disagree, **the overview wins** — it is
+the one that was checked.
