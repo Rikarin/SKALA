@@ -44,7 +44,8 @@ public sealed record ArrangementReport(
     int Agreed,
     ImmutableArray<ChangedSpan> Divergences,
     int NotConverged,
-    int Reverted) {
+    int Reverted,
+    IReadOnlyDictionary<int, int>? Passes = null) {
     public double Agreement => Spans == 0 ? 1 : (double)Agreed / Spans;
 
     public string Render(int classes = 8) {
@@ -58,6 +59,23 @@ public sealed record ArrangementReport(
             .Append(") over ")
             .Append(Files.ToString(CultureInfo.InvariantCulture))
             .AppendLine(" files");
+
+        // ⚠ The fixed point's cost, measured rather than assumed. Two passes is the ordinary case;
+        // three means a rewrite exposed a rewrite that was not available before it, which is the
+        // whole reason the pipeline loops. Four would mean a rule and the formatter disagree.
+        if (Passes is { Count: > 0 }) {
+            builder.Append("passes to a fixed point: ")
+                .AppendLine(
+                    string.Join(
+                        ", ",
+                        Passes.OrderBy(static pair => pair.Key)
+                            .Select(static pair =>
+                                pair.Key.ToString(CultureInfo.InvariantCulture)
+                                + "×" + pair.Value.ToString(CultureInfo.InvariantCulture)
+                            )
+                    )
+                );
+        }
 
         if (NotConverged > 0 || Reverted > 0) {
             builder.Append("⚠ did not converge: ")
@@ -102,15 +120,6 @@ public sealed record ArrangementReport(
 /// </summary>
 public static class ArrangementDifferential {
     /// <summary>
-    /// A loose compilation over a set of files, which is what gives the semantic half its model.
-    /// </summary>
-    /// <remarks>
-    /// ⚠ One compilation for the whole set rather than one per file, and it is not only for speed:
-    /// "is this using unused" is a question about a compilation, and a compilation of one file
-    /// answers it differently from a compilation of the project the file lives in. A per-file
-    /// compilation would report every cross-file using as removable.
-    /// </remarks>
-    /// <summary>
     /// ⚠ The SDK's implicit usings for a library, as an explicit tree.
     /// </summary>
     /// <remarks>
@@ -132,6 +141,15 @@ public static class ArrangementDifferential {
                                          global using global::System.Threading.Tasks;
                                          """;
 
+    /// <summary>
+    /// A loose compilation over a set of files, which is what gives the semantic half its model.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ One compilation for the whole set rather than one per file, and it is not only for speed:
+    /// "is this using unused" is a question about a compilation, and a compilation of one file
+    /// answers it differently from a compilation of the project the file lives in. A per-file
+    /// compilation would report every cross-file using as removable.
+    /// </remarks>
     public static CSharpCompilation Compile(IEnumerable<CorpusFile> files, IReadOnlyList<string>? symbols = null) {
         var options = CSharpFormatter.ParseOptionsFor(symbols);
         var trees = new List<SyntaxTree> {
@@ -219,6 +237,7 @@ public static class ArrangementDifferential {
         var notConverged = 0;
         var reverted = 0;
         var divergences = ImmutableArray.CreateBuilder<ChangedSpan>();
+        var passes = new Dictionary<int, int>();
 
         for (var i = 0; i < measured.Length; i++) {
             var file = measured[i];
@@ -231,6 +250,7 @@ public static class ArrangementDifferential {
             var original = CSharpFormatter.Read(file.Path).ToString();
             var oracle = OracleFixture.Read(file, OracleProfile.Cleanup);
             var result = Run(file, compilation, aggressive, filter);
+            passes[result.Passes] = passes.GetValueOrDefault(result.Passes) + 1;
             if (!result.Converged) {
                 notConverged++;
             }
@@ -260,7 +280,8 @@ public static class ArrangementDifferential {
             }
         }
 
-        return new ArrangementReport(measured.Length, spans, agreed, divergences.ToImmutable(), notConverged, reverted);
+        return new ArrangementReport(measured.Length, spans, agreed, divergences.ToImmutable(), notConverged, reverted,
+            passes);
     }
 
     /// <summary>
