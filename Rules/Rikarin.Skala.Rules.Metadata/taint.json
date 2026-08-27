@@ -1,0 +1,217 @@
+{
+  "$schema": "./taint.schema.json",
+  "version": 1,
+  "notes": [
+    "docs/plan/08-rule-catalogue.md § 'SK5000 — Security': the taint-tracked rules are built on",
+    "Roslyn's ControlFlowGraph with intra-procedural propagation and 'a declared source/sink/",
+    "sanitizer table in taint.json'. This is that table, and it is data on purpose: adding a sink",
+    "for a database client Skala has never heard of is an edit here, not a change to an analyzer.",
+    "",
+    "⚠ Inter-procedural taint is explicitly out of scope for v1. Where a flow leaves the method it",
+    "started in, the engine says nothing. That is the whole design: doc 00's false-positive bar",
+    "applies hardest to a range whose default severity is `error`, and a rule that guesses across a",
+    "call boundary is a rule that fails somebody's build for a flow that does not exist.",
+    "",
+    "⚠ The source list is deliberately short, and what is missing from it is the interesting part.",
+    "A source is a value that crossed a trust boundary into the process from a remote party. It is",
+    "NOT:",
+    "  - `Main(string[] args)`, `Environment.GetCommandLineArgs()` or `Console.ReadLine()`. A",
+    "    command-line tool's argv is its interface; the user typing a path and the tool opening it",
+    "    is the feature. Skala itself and 15 of Vixen's 17 `Process.Start` call sites are that",
+    "    shape, and declaring argv a source would make every developer tool in existence fail its",
+    "    own build.",
+    "  - `Environment.GetEnvironmentVariable`. The process's own configuration, set by whoever",
+    "    started it — the same party as argv.",
+    "  - `File.ReadAllText` and friends. A file the program was pointed at is at the trust level of",
+    "    whoever pointed it there.",
+    "  - An `HttpClient` response body. That is a different trust boundary and a defensible one to",
+    "    add later; adding it now would turn every API client in every tree into a finding, and a",
+    "    finding a reader disagrees with is how the analysis half gets switched off (doc 16 § R3).",
+    "",
+    "Matching. `type` is a fully-qualified metadata name and is matched against the member's",
+    "containing type *and its base types and interfaces*, so `NpgsqlCommand.CommandText` matches",
+    "the `System.Data.Common.DbCommand` entry without Npgsql being named here. Sink arguments are",
+    "matched by *parameter name*, never by index: an extension method invoked in reduced form",
+    "shifts every index by one, and a parameter name is also the thing a reader of this file can",
+    "check against the API documentation."
+  ],
+
+  "sources": [
+    {
+      "type": "Microsoft.AspNetCore.Http.HttpRequest",
+      "members": [
+        "Query", "QueryString", "Form", "Headers", "Cookies", "RouteValues", "Body", "BodyReader",
+        "ContentType", "Path", "PathBase", "Method", "Scheme", "Host", "Protocol"
+      ],
+      "note": "ASP.NET Core. Everything on the request object is attacker-controlled, including the path and the method."
+    },
+    {
+      "type": "Microsoft.AspNetCore.Http.HttpContext",
+      "members": ["Request"],
+      "note": "So that `context.Request.Query[\"id\"]` is tainted at the first hop rather than the second."
+    },
+    {
+      "type": "System.Net.HttpListenerRequest",
+      "members": [
+        "QueryString", "Headers", "Url", "RawUrl", "InputStream", "UserAgent", "Cookies",
+        "UserHostName", "ContentType"
+      ],
+      "note": "The framework's own listener, which is what a tool that embeds a server uses."
+    },
+    {
+      "type": "System.Web.HttpRequest",
+      "members": [
+        "QueryString", "Form", "Headers", "Cookies", "Params", "Url", "RawUrl", "UserAgent",
+        "ServerVariables", "Item", "InputStream", "Path", "PathInfo"
+      ],
+      "note": "ASP.NET Framework. Present in a tree only if it targets net48; resolved from the user's compilation, never assumed."
+    }
+  ],
+
+  "propagators": [
+    {
+      "type": "System.String",
+      "members": [
+        "Concat", "Join", "Format", "Substring", "Trim", "TrimStart", "TrimEnd", "ToUpper",
+        "ToLower", "ToUpperInvariant", "ToLowerInvariant", "Replace", "Insert", "PadLeft",
+        "PadRight", "Normalize", "ToString"
+      ],
+      "note": "A string operation over a tainted argument yields a tainted string. `Replace` is here rather than in `sanitizers` on purpose: escaping a quote is not parameterisation, and a rule that accepted it would be teaching the wrong fix."
+    },
+    {
+      "type": "System.Text.StringBuilder",
+      "members": ["Append", "AppendLine", "AppendFormat", "AppendJoin", "Insert", "ToString"],
+      "note": "⚠ Appending to a builder taints the builder, which is the shape most SQL concatenation actually has."
+    },
+    {
+      "type": "System.Convert",
+      "members": ["ToString"],
+      "note": "The identity conversion for this purpose."
+    },
+    {
+      "type": "System.Uri",
+      "members": ["EscapeDataString", "EscapeUriString", "UnescapeDataString"],
+      "note": "⚠ A propagator, not a sanitizer. Percent-encoding is not SQL quoting and is not shell quoting; treating it as a sanitizer is a documented way to miss a real injection."
+    }
+  ],
+
+  "sanitizers": [
+    {
+      "type": "System.Int32",
+      "members": ["Parse", "TryParse"],
+      "note": "The result is an `int`, and an `int` interpolated into SQL cannot carry a quote. This is the whole of the sanitizer story and it is deliberately small."
+    },
+    { "type": "System.Int64", "members": ["Parse", "TryParse"] },
+    { "type": "System.Int16", "members": ["Parse", "TryParse"] },
+    { "type": "System.UInt32", "members": ["Parse", "TryParse"] },
+    { "type": "System.UInt64", "members": ["Parse", "TryParse"] },
+    { "type": "System.Byte", "members": ["Parse", "TryParse"] },
+    { "type": "System.Double", "members": ["Parse", "TryParse"] },
+    { "type": "System.Single", "members": ["Parse", "TryParse"] },
+    { "type": "System.Decimal", "members": ["Parse", "TryParse"] },
+    { "type": "System.Boolean", "members": ["Parse", "TryParse"] },
+    { "type": "System.Guid", "members": ["Parse", "TryParse", "ParseExact", "TryParseExact"] },
+    { "type": "System.DateTime", "members": ["Parse", "TryParse", "ParseExact", "TryParseExact"] },
+    { "type": "System.DateTimeOffset", "members": ["Parse", "TryParse", "ParseExact", "TryParseExact"] },
+    { "type": "System.TimeSpan", "members": ["Parse", "TryParse", "ParseExact", "TryParseExact"] },
+    { "type": "System.Enum", "members": ["Parse", "TryParse"] },
+    {
+      "type": "System.Convert",
+      "members": [
+        "ToInt16", "ToInt32", "ToInt64", "ToUInt16", "ToUInt32", "ToUInt64", "ToByte", "ToSByte",
+        "ToDouble", "ToSingle", "ToDecimal", "ToBoolean", "ToDateTime"
+      ],
+      "note": "Same reasoning as `Parse`: the result is not a string. ⚠ `Convert.ToString` is a propagator, not a sanitizer."
+    }
+  ],
+
+  "sinks": [
+    {
+      "rule": "SK5001",
+      "type": "System.Data.IDbCommand",
+      "member": "CommandText",
+      "kind": "property",
+      "what": "the SQL text a command will execute",
+      "instead": "leave the text a constant and bind the value with `command.Parameters.Add(…)` / `AddWithValue(…)`"
+    },
+    {
+      "rule": "SK5001",
+      "type": "System.Data.Common.DbCommand",
+      "member": "CommandText",
+      "kind": "property",
+      "what": "the SQL text a command will execute",
+      "instead": "leave the text a constant and bind the value with `command.Parameters.Add(…)` / `AddWithValue(…)`"
+    },
+    {
+      "rule": "SK5001",
+      "type": "System.Data.Common.DbCommand",
+      "member": ".ctor",
+      "kind": "constructor",
+      "parameters": ["cmdText", "commandText"],
+      "what": "the SQL text a command will execute",
+      "instead": "leave the text a constant and bind the value with `command.Parameters.Add(…)`"
+    },
+    {
+      "rule": "SK5001",
+      "type": "Microsoft.EntityFrameworkCore.RelationalDatabaseFacadeExtensions",
+      "member": "*",
+      "kind": "method",
+      "parameters": ["sql"],
+      "what": "raw SQL Entity Framework will execute",
+      "instead": "use the `FormattableString` overload — `ExecuteSql($\"… {value}\")` parameterises the interpolation, `ExecuteSqlRaw` does not"
+    },
+    {
+      "rule": "SK5001",
+      "type": "Microsoft.EntityFrameworkCore.RelationalQueryableExtensions",
+      "member": "*",
+      "kind": "method",
+      "parameters": ["sql"],
+      "what": "raw SQL Entity Framework will execute",
+      "instead": "use `FromSql($\"… {value}\")` rather than `FromSqlRaw`; the interpolated overload emits parameters"
+    },
+    {
+      "rule": "SK5001",
+      "type": "Dapper.SqlMapper",
+      "member": "*",
+      "kind": "method",
+      "parameters": ["sql"],
+      "what": "the SQL Dapper will execute",
+      "instead": "keep `sql` constant and pass the value in the `param` object — `Query(\"… where id = @id\", new { id })`"
+    },
+
+    {
+      "rule": "SK5002",
+      "type": "System.Diagnostics.ProcessStartInfo",
+      "member": "Arguments",
+      "kind": "property",
+      "what": "the command line a child process is started with",
+      "instead": "add the value to `ArgumentList` instead — it passes each argument to the child verbatim, with no quoting for an attacker to escape"
+    },
+    {
+      "rule": "SK5002",
+      "type": "System.Diagnostics.ProcessStartInfo",
+      "member": "FileName",
+      "kind": "property",
+      "what": "which executable is started",
+      "instead": "map the value through a `switch` over the programs this code is allowed to run, and start the result"
+    },
+    {
+      "rule": "SK5002",
+      "type": "System.Diagnostics.ProcessStartInfo",
+      "member": ".ctor",
+      "kind": "constructor",
+      "parameters": ["fileName", "arguments"],
+      "what": "which executable is started, and with what command line",
+      "instead": "use the `ProcessStartInfo(string fileName)` overload and add each argument to `ArgumentList`"
+    },
+    {
+      "rule": "SK5002",
+      "type": "System.Diagnostics.Process",
+      "member": "Start",
+      "kind": "method",
+      "parameters": ["fileName", "arguments"],
+      "what": "which executable is started, and with what command line",
+      "instead": "build a `ProcessStartInfo`, keep `FileName` a constant, and add each argument to `ArgumentList`"
+    }
+  ]
+}
