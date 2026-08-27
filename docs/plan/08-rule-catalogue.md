@@ -149,7 +149,13 @@ allocation in a hot loop · `SK4003` `params` array allocated at a call site tha
 `SK4004` boxing in a generic constraint-satisfiable position · `SK4005` `string +=` in a loop ·
 `SK4006` `ToList()`/`ToArray()` materialising something immediately re-enumerated once ·
 `SK4007` `struct` larger than 64 bytes passed by value repeatedly · `SK4008` `async` state machine
-for a method that always completes synchronously (→ `ValueTask`).
+for a method that always completes synchronously (→ `ValueTask`) · `SK4010` a `Where` the next
+operator could have taken as its predicate.
+
+⚠ `SK4010` is outside the `SK4001`–`SK4008` block on purpose. Those eight ids name eight concepts
+this document allocated before any of them existed, and the register above is only a register if a
+new concept takes a new number rather than the nearest tidy one. Folding
+`xs.Where(p).First()` into `xs.First(p)` is not any of the eight.
 
 ## SK5000 — Security
 
@@ -230,6 +236,82 @@ about itself and are needed to develop everything else) → `SK0xxx`/`SK1xxx` (t
 findings and the modernization set, which is the differentiator) → `SK2xxx`/`SK3xxx` (the SonarQube
 replacement's core) → `SK7xxx` (metrics and duplication, needed for the gate) → `SK4xxx`/`SK6xxx` →
 `SK5xxx` last, because security rules that are wrong are worse than absent.
+
+### ⚠ What M7 added: three rules out of twenty-three, and one of them has no fix
+
+M7 is the `SK4xxx`/`SK6xxx`/`SK8xxx` milestone. Those three ranges list twenty-three ids and **three**
+ship. The bar did the same job it did in M5 and M6, and this time it was not the false-positive
+clause that bit — it was the reference trees having almost nothing of the shape.
+
+| Id | Scope | Default | Fix | Fixtures (+/−) | `corpus/real` (380 files) | Vixen (4 681 files) |
+|---|---|---|---|---:|---:|---:|
+| `SK4010` a `Where` the next operator could have taken | Semantic | suggestion | safe | 4 / 10 | 0 | 0 |
+| `SK6003` abstract type with a public constructor | Syntax | suggestion | safe | 3 / 9 | **1** | 0 |
+| `SK8005` `Thread.Sleep` in a test | Semantic | suggestion | ⚠ none | 3 / 8 | 0 | **25** |
+
+⚠ **`SK8005` is the one with corpus mass, and all twenty-five findings were read.** None is false —
+every one is a `Thread.Sleep` lexically inside a method carrying `[Fact]`. Sorted by what a reader
+would do about them: fourteen are a back-off inside a `while (… && elapsed < patience)` loop, where
+the sleep is the polling interval rather than the wait and the deadline is already generous; eight
+are tests where advancing a real clock *is* the subject — `Wall_time_passing_does_not_advance_the_script`,
+a frame limiter fed a 50 ms hitch, a runaway-guard watchdog whose case has to be slow, a profiler
+that has to have a duration to record; and three are the shape the rule exists for, a bare sleep
+with no deadline followed straight by an assertion. A rule whose true findings are 88 % "true and
+not what you would change" is exactly doc 16 § R3's distinction, and it is why the rule ships at
+`suggestion` rather than at the `warning` this range's row in the table above defaults to: it never
+fails a gate, and a repository that wants it to bite promotes it in the `[**/*.Tests/**/*.cs]`
+section its `.editorconfig` already has.
+
+⚠ **`SK8005` ships with `hasFix: false`, and that is not a gap.** The replacement for a sleep is a
+change to what the test synchronises on — a handle, a task, a polled predicate with a generous
+timeout — and every one of those is a different program. The range's row promises "sometimes" rather
+than always for a reason, and a fix that guessed here would be the tool breaking tests on its own
+advice.
+
+⚠ **`SK4010` fires zero times on both trees and its zero is worth reading rather than hiding.** Four
+`Where(…).<terminal>()` chains exist in Vixen. Two have a `Distinct()` or a `Select()` between the
+two calls, one is a `Count()` *inside* the predicate rather than after it — and the fourth,
+`typeArguments.Where((t, i) => …).Any()`, is the indexed `Func<T, int, bool>` overload the rule
+explicitly refuses because no consumer has a counterpart for it. So the zero is not the machinery
+missing: it is three shapes the rule correctly reads as different and one guard firing on the only
+candidate there was.
+
+⚠ **The fixes were verified against a tree that compiles rather than against the corpus.** The audit's
+usual instrument compares compiler-error counts before and after over `corpus/real`, where the
+baseline is 13 221 errors and a fix that broke something could hide in the noise. All ten positive
+fixtures were instead compiled together as one clean tree: **0 compiler errors before applying every
+`SK4010` and `SK6003` fix, 0 after.**
+
+⚠ **Twenty of the twenty-three were cut, and the reasons fall into three kinds.**
+
+- **A framework analyzer already says it.** `SK8003` (`[Fact]` with parameters) is xUnit1001 and
+  `SK8004` (`async void` test) is xUnit1049, both on by default in any project that references
+  `xunit.analyzers`. This is the same cut M6 made for `SK3006` against `CS1998`: a rule whose whole
+  content is a second copy of a warning the user already sees is noise with a rule id. Neither
+  occurs anywhere in either tree in any case — Vixen contains no `async void` at all.
+- **The fix is not safe, or there is no fix and no measurement either.** `SK4005` (`string +=` in a
+  loop) needs a `StringBuilder` introduced before the loop and read after it, which is a dataflow
+  proof, not an edit. `SK6006` (`enum` without a zero) inserts a member into a public API.
+  `SK6007` (`struct` without `IEquatable<T>`) generates an implementation. `SK6002`, `SK6005` and
+  `SK8001` have no mechanical fix and a large false-positive surface each — `SK8001`'s worst, since
+  an assertion inside a helper is indistinguishable from no assertion without following the call.
+- ⚠ **`SK8002` was cut by its own measurement, and this is the useful one.** `Assert.True(x == y)`
+  looks like the easiest rule in the range, so it was measured before it was written. Vixen has
+  **12 396** `Assert.True`/`False`/`IsTrue`/`IsFalse` calls. **3 401** of them pass a second argument
+  — a custom failure message, which xUnit's `Assert.Equal` has no overload for at all — so rewriting
+  any of those *deletes* the thing the author added on purpose, and the rule has to require the
+  single-argument form. That leaves **90** whose single argument's top-level operator is `==` or
+  `!=`, and every one of the ninety is a case the rewrite must not touch:
+  **83** are `(flags & Member) != 0` over an `[Flags]` enum, where `Assert.NotEqual(0, flags & Member)`
+  does not compile — the `0` was an implicit constant conversion to the enum and the rewrite drops
+  it, so `T` cannot be inferred; **three** are `a == b || c == d`, whose top-level operator is `||`;
+  **three** are `Vixen.Core.Mathematics.Tests/ConventionTests`, which asserts the behaviour of
+  `operator ==` on floats and vectors, and `Assert.Equal` calls `Equals` — a *different predicate*,
+  which is the whole subject of those three tests; and **one** compares a struct with a user-defined
+  `==`. `corpus/real` agrees at its own scale: 620 calls, 419 single-argument, 2 with a top-level
+  equality, and both of those are flag masks. So the honest form of the rule fires **zero** times on
+  a tree with twelve thousand candidates, and every version of it that fires is a version that
+  breaks the build or changes what a test asserts.
 
 ### ⚠ What M6 added: four rules, seven metrics and duplication
 

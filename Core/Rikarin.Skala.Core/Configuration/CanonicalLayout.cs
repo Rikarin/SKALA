@@ -5,8 +5,7 @@ namespace Rikarin.Skala.Core.Configuration;
 
 /// <summary>The machine-readable half of the begin marker.</summary>
 public sealed record CanonicalMarker(string Version, string Sha256) {
-    public override string ToString() =>
-        $"{CanonicalLayout.BeginMarker} version={Version} sha256={Sha256}";
+    public override string ToString() => $"{CanonicalLayout.BeginMarker} version={Version} sha256={Sha256}";
 }
 
 /// <summary>
@@ -45,14 +44,14 @@ public static class CanonicalLayout {
     public const string LocalMarker = "# skala:local begin";
 
     public const string LocalBanner = """
-        # ------------------------------------------------------------------------------
-        # This repository's own configuration. Skala never writes below this line.
-        #
-        # editorconfig resolves later sections over earlier ones within a file, so
-        # anything here overrides the canonical block above — which is how a legitimate
-        # local override survives a canonical version bump.
-        # ------------------------------------------------------------------------------
-        """;
+                                      # ------------------------------------------------------------------------------
+                                      # This repository's own configuration. Skala never writes below this line.
+                                      #
+                                      # editorconfig resolves later sections over earlier ones within a file, so
+                                      # anything here overrides the canonical block above — which is how a legitimate
+                                      # local override survives a canonical version bump.
+                                      # ------------------------------------------------------------------------------
+                                      """;
 
     /// <summary>Split a file into its canonical and local halves.</summary>
     public static CanonicalLayoutResult Split(string text) {
@@ -83,7 +82,8 @@ public static class CanonicalLayout {
             marker,
             CanonicalEditorConfig.Normalize(canonical),
             local.Trim().Length == 0 ? string.Empty : CanonicalEditorConfig.Normalize(local),
-            localStart + 1);
+            localStart + 1
+        );
     }
 
     /// <summary>

@@ -4,3 +4,27 @@ Testing/corpus/** -text
 
 # The Rider export and the repository's copy of it are compared byte for byte by `config diff`.
 editor_config_template -text
+
+# ⚠ …and so is the repository's own `.editorconfig`, which is the line above's file with
+# `root = true` prepended (ADR-015) — `EditorConfigIngestionTests` asserts exactly that with
+# `Assert.EndsWith(template, own)`. Only one of the two was `-text`, so a Windows checkout under
+# git's default `core.autocrlf=true` CRLF'd this one and left the export alone, and the assertion
+# failed on Windows and nowhere else. Found by adding the cross-platform matrix, which is what a
+# matrix is for.
+.editorconfig -text
+Distribution/Rikarin.Skala.Canonical/canonical.editorconfig -text
+
+# The fixtures are inputs, on the same argument as the corpus: a rule fixture is a file in the
+# exact shape a rule fires on, and an ingestion fixture is another repository's real file. Both are
+# measured rather than compiled, and normalising their bytes changes the measurement.
+Core/Rikarin.Skala.Core.Tests/Fixtures/** -text
+Rules/Rikarin.Skala.Rules.Tests/fixtures/** -text
+
+# ⚠ `docs/site/` is generated output compared byte for byte — exactly the shape of the
+# `.editorconfig` defect above, and found by reasoning from it rather than by a red Windows leg.
+# `skala docs site` writes `\n` on every platform (DocsSite's remarks say why at length, and
+# `DocsSiteTests.NoPage_CarriesACarriageReturn` asserts it), so a Windows checkout under git's
+# default `core.autocrlf=true` would CRLF all 143 files on the way out and
+# `Site_IsUpToDateWithTheSources` would fail on Windows and nowhere else. The generator is the
+# authority on these bytes; git is not.
+docs/site/** -text

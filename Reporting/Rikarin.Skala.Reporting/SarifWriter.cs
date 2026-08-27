@@ -313,9 +313,64 @@ public static class SarifWriter {
     /// <remarks>
     /// ⚠ Public because the commands outside this assembly display paths too, and a second
     /// implementation would eventually disagree about the separator on Windows.
-    /// </remarks>
-    public static string Relative(string root, string path) =>
-        Path.IsPathRooted(path) && path.StartsWith(root, StringComparison.Ordinal)
-            ? Path.GetRelativePath(root, path).Replace('\\', '/')
-            : path.Replace('\\', '/');
+    /// <para>
+    /// ⚠ <b>The obvious one-liner here was wrong three ways, and each one printed absolute paths
+    /// into an output doc 10 caps at 8 000 characters.</b> It was
+    /// <c>path.StartsWith(root, Ordinal)</c>, which:
+    /// </para>
+    /// <list type="number">
+    /// <item>
+    /// <b>Compared case-sensitively.</b> On Windows and on a case-insensitive macOS volume the
+    /// repository root arrives as <c>C:\Src\Repo</c> and the file as <c>c:\src\repo\a.cs</c>
+    /// whenever either came from a different API, and every path in the report fell back to
+    /// absolute. This is doc 12 § "Cross-platform"'s case-insensitive-path hazard, reached through
+    /// the reporting layer rather than the cache key.
+    /// </item>
+    /// <item>
+    /// <b>Had no component boundary.</b> A root of <c>/src/repo</c> and a sibling
+    /// <c>/src/repo-old/a.cs</c> passed the prefix test and rendered as <c>../repo-old/a.cs</c> —
+    /// a "repo-relative" path escaping the repository.
+    /// </item>
+    /// <item>
+    /// <b>Took a non-nullable <c>root</c> that callers reach with a nullable one.</b>
+    /// <c>RunReport.RepositoryRoot</c> is <c>string?</c>; a null root threw out of a renderer whose
+    /// job is to be the thing that never fails.
+    /// </item>
+    /// </list>
+    public static string Relative(string? root, string path) {
+        var normalised = path.Replace('\\', '/');
+        if (string.IsNullOrEmpty(root) || !Path.IsPathRooted(path)) {
+            return normalised;
+        }
+
+        // Trailing separators would otherwise make the boundary check below reject a legitimate
+        // root, and `Path.GetRelativePath` is indifferent to them.
+        var trimmed = root.Replace('\\', '/').TrimEnd('/');
+        if (trimmed.Length == 0) {
+            return normalised;
+        }
+
+        // ⚠ The comparison is ordinal-case-insensitive on the platforms whose file systems are, and
+        // ordinal where they are not — matching the same decision the cache key makes, so a path
+        // that relativises here is a path that hits the cache there.
+        if (!normalised.StartsWith(trimmed, PathComparison)) {
+            return normalised;
+        }
+
+        // The character after the root must be a separator, or the "root" is a prefix of a sibling
+        // directory's name rather than an ancestor.
+        if (normalised.Length != trimmed.Length && normalised[trimmed.Length] != '/') {
+            return normalised;
+        }
+
+        return Path.GetRelativePath(trimmed, normalised).Replace('\\', '/');
+    }
+
+    /// <summary>
+    /// ⚠ How two paths are compared for identity, in one place. macOS's default volume and every
+    /// Windows volume are case-insensitive; Linux's are not. Getting this wrong in one direction
+    /// prints absolute paths, and in the other merges two genuinely distinct files on Linux.
+    /// </summary>
+    public static StringComparison PathComparison { get; } =
+        OperatingSystem.IsLinux() ? StringComparison.Ordinal : StringComparison.OrdinalIgnoreCase;
 }

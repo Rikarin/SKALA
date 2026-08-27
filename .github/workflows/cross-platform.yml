@@ -1,0 +1,136 @@
+# docs/plan/12 § "Cross-platform" and § "The four levels", as a workflow.
+#
+# ⚠ This is a separate file from `skala.yml` on purpose, and the reason is the same fact that
+# file's header opens with: **the gate decides, once.** `skala.yml` builds one tree, runs one
+# `skala check`, and its exit code is the build's verdict; a second job in that workflow running
+# `dotnet test` on three operating systems would make the verdict a conjunction of four jobs and
+# would make "did the gate pass" unanswerable from the workflow's own result. So the gate keeps its
+# file and its single job, and the suite gets this one.
+#
+# Three facts drive the shape below:
+#
+#   1. **The suite runs on all three, or the claim is not made.** doc 12: "The full suite runs on
+#      macOS, Linux and Windows." Not a subset, not "Windows on a schedule" — `dotnet test` over
+#      the whole solution, on each. The four hazards doc 12 enumerates have tests
+#      (`LineEndingTests`, `SarifPathTests`, `LongPathTests`, `CacheKeyPathTests`) and every one of
+#      them asserts the *correct platform-specific answer* on all three rather than skipping on
+#      two, so the matrix is what turns them from three tautologies into one measurement.
+#   2. **`fail-fast: false`.** The whole value of a matrix is knowing whether a failure is
+#      everywhere or on one platform, and cancelling the other two legs at the first red destroys
+#      exactly that information.
+#   3. **The Windows leg checks out the way a Windows contributor does.** `core.autocrlf` is `true`
+#      by default on the GitHub Windows runners, so the tree arrives with CRLF endings — which is
+#      the state doc 12's first hazard is about. `.gitattributes` marks the files whose bytes are
+#      measured rather than compiled as `-text`; everything else is deliberately left to convert,
+#      because a suite that only ever sees LF has not tested Windows.
+
+name: Cross-platform
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: test (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      # ⚠ A git identity, because several tests drive real git. `FormatCommandTests` sets a
+      # repository-local one, but a runner with no global identity fails `git commit` before the
+      # local config is read in any test that does not, and the failure reads as a tool bug.
+      # ⚠ `shell: bash` on both, because the default is `pwsh` on the Windows leg and this workflow
+      # exists to test the tool on three platforms rather than to test three shells.
+      - name: Give git an identity
+        shell: bash
+        run: |
+          git config --global user.email "ci@skala.invalid"
+          git config --global user.name "Skala CI"
+
+      # Recorded rather than assumed: the line-ending state of the checkout is an input to the
+      # first hazard, and a log that does not say what it was cannot explain a Windows-only failure.
+      - name: Say how the tree was checked out
+        shell: bash
+        run: git config --get core.autocrlf || echo "core.autocrlf unset"
+
+      - name: Build
+        run: dotnet build Skala.slnx -c Release
+
+      # ⚠ `--no-build`, so this cannot silently rebuild in Debug and test something other than what
+      # the step above compiled under TreatWarningsAsErrors.
+      - name: Test
+        run: dotnet test Skala.slnx -c Release --no-build
+
+  # ADR-015 — Skala formats Skala. ⚠ `skala.yml` runs `skala check`, which is the analysis gate, and
+  # never the NUKE `Lint` target, which is `skala format --check` over the repository plus
+  # `skala config check`. They are different questions and only one of them was being asked in CI.
+  #
+  # Linux only, and that is a deliberate asymmetry rather than an oversight: `format --check` is a
+  # statement about the committed bytes, and on the Windows leg above those bytes have been
+  # converted by the checkout. Running it there would assert something about `core.autocrlf` rather
+  # than about the repository.
+  lint:
+    name: lint (format --check, config check)
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Lint
+        run: ./build.sh Lint --configuration Release
+
+  # docs/plan/12 § "Performance tests": "Budgets from 13 are asserted in CI with a 20 % tolerance
+  # band; exceeding it fails the build, because performance regressions in a tool that runs in a
+  # pre-commit hook are user-visible within a day and untraceable a month later."
+  #
+  # ⚠ Its own job, on its own runner, doing nothing else. A wall-clock budget measured beside a
+  # `dotnet test` of the whole solution measures the other job, and the flake is then blamed on the
+  # commit. The assertions are opt-in by `SKALA_PERF=1` and skip silently everywhere else, so a
+  # contributor running `dotnet test` locally never trips them.
+  #
+  # ⚠ `./build.sh Native` first, and the budget cannot be met without it: the row under test is the
+  # warm single-file path, which is served by the NativeAOT client, and a plain `dotnet build`
+  # produces no published layout for the test to find. Without it the assertions skip rather than
+  # pass — a skipped budget is visible in the log; a budget that silently measured the wrong binary
+  # is not.
+  performance:
+    name: performance (doc 13 budgets)
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Publish the native layout
+        run: ./build.sh Native --configuration Release
+
+      - name: Assert the budgets
+        env:
+          SKALA_PERF: "1"
+        run: >
+          dotnet test Tools/Rikarin.Skala.Cli.Tests/Rikarin.Skala.Cli.Tests.csproj
+          -c Release
+          --filter "FullyQualifiedName~PerformanceBudget"
+          --logger "console;verbosity=detailed"

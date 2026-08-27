@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.IO.Hashing;
 using System.Runtime.InteropServices;
 using System.Text;
+using Rikarin.Skala.Core;
 using Rikarin.Skala.Reporting;
 
 namespace Rikarin.Skala.Analysis.Duplication;
@@ -80,7 +81,7 @@ internal sealed class CloneIndex {
         }
 
         try {
-            Directory.CreateDirectory(Path.GetDirectoryName(_path)!);
+            SkalaDirectory.EnsureForFile(_path);
 
             // ⚠ Ordinal by path, so two runs over the same tree produce byte-identical files. A cache
             // whose bytes move every run is a cache that shows up in every diff and every backup.
@@ -102,8 +103,8 @@ internal sealed class CloneIndex {
             file.Write(header);
             file.Write(payload);
         } catch (Exception exception) when (exception is IOException
-            or UnauthorizedAccessException
-            or NotSupportedException) {
+                                                or UnauthorizedAccessException
+                                                or NotSupportedException) {
             // A read-only tree does not fail a check.
         }
     }
@@ -166,10 +167,10 @@ internal sealed class CloneIndex {
                 _changed = true;
             }
         } catch (Exception exception) when (exception is IOException
-            or UnauthorizedAccessException
-            or NotSupportedException
-            or InvalidDataException
-            or OutOfMemoryException) {
+                                                or UnauthorizedAccessException
+                                                or NotSupportedException
+                                                or InvalidDataException
+                                                or OutOfMemoryException) {
             _loaded.Clear();
             _changed = true;
         }

@@ -18,10 +18,12 @@ public sealed record CanonicalStatus(
     ImmutableArray<string> LocalSections,
     ImmutableArray<SkalaDiagnostic> Diagnostics) {
     /// <summary>The managed block no longer hashes to what its marker claims.</summary>
-    public bool Drifted => Layout.IsManaged && !string.Equals(Layout.Marker!.Sha256, ActualSha, StringComparison.OrdinalIgnoreCase);
+    public bool Drifted =>
+        Layout.IsManaged && !string.Equals(Layout.Marker!.Sha256, ActualSha, StringComparison.OrdinalIgnoreCase);
 
     /// <summary>The marker matches the block, but a newer canonical exists. Never a failure.</summary>
-    public bool Behind => Layout.IsManaged && !Drifted && !string.Equals(ActualSha, Tool.Sha256, StringComparison.OrdinalIgnoreCase);
+    public bool Behind =>
+        Layout.IsManaged && !Drifted && !string.Equals(ActualSha, Tool.Sha256, StringComparison.OrdinalIgnoreCase);
 
     /// <summary>Nothing to do: managed, intact, and on the canonical this build carries.</summary>
     public bool Current => Layout.IsManaged && !Drifted && !Behind;
@@ -45,7 +47,8 @@ public sealed record SyncResult(string Path, string Text, ImmutableArray<string>
 /// effective, of which the first two passed green.
 /// </remarks>
 public static class CanonicalSync {
-    public static CanonicalStatus Status(string target) => Status(target, CanonicalEditorConfig.Manifest, CanonicalEditorConfig.Text);
+    public static CanonicalStatus Status(string target) =>
+        Status(target, CanonicalEditorConfig.Manifest, CanonicalEditorConfig.Text);
 
     public static CanonicalStatus Status(string target, CanonicalManifest tool, string toolPayload) {
         var path = ResolvePath(target);
@@ -55,14 +58,21 @@ public static class CanonicalSync {
     }
 
     /// <summary>The status of a file the caller already has. Everything else is filesystem access.</summary>
-    public static CanonicalStatus Describe(string path, bool exists, string text, CanonicalManifest tool, string toolPayload) {
+    public static CanonicalStatus Describe(
+        string path,
+        bool exists,
+        string text,
+        CanonicalManifest tool,
+        string toolPayload
+    ) {
         var layout = CanonicalLayout.Split(text);
         var actual = layout.IsManaged ? CanonicalEditorConfig.Hash(layout.CanonicalText) : string.Empty;
         var diagnostics = ImmutableArray.CreateBuilder<SkalaDiagnostic>();
 
         var canonicalDocument = EditorConfigDocument.FromText(
             path,
-            layout.IsManaged ? layout.CanonicalText : toolPayload);
+            layout.IsManaged ? layout.CanonicalText : toolPayload
+        );
         var localDocument = EditorConfigDocument.FromText(path, layout.LocalText);
 
         var overrides = Overrides(canonicalDocument, localDocument, layout.LocalFirstLine);
@@ -72,50 +82,65 @@ public static class CanonicalSync {
             .ToImmutableArray();
 
         if (!exists) {
-            diagnostics.Add(new SkalaDiagnostic(
-                ConfigDiagnosticIds.CanonicalUnmanaged,
-                SkalaSeverity.Info,
-                "the repository has no .editorconfig; `skala config sync --apply` writes the canonical one",
-                path));
+            diagnostics.Add(
+                new SkalaDiagnostic(
+                    ConfigDiagnosticIds.CanonicalUnmanaged,
+                    SkalaSeverity.Info,
+                    "the repository has no .editorconfig; `skala config sync --apply` writes the canonical one",
+                    path
+                )
+            );
         } else if (!layout.IsManaged) {
-            diagnostics.Add(new SkalaDiagnostic(
-                ConfigDiagnosticIds.CanonicalUnmanaged,
-                SkalaSeverity.Info,
-                ".editorconfig carries no canonical block, so drift from the canonical cannot be detected",
-                path,
-                1,
-                "`skala config sync --apply` adopts it: the canonical goes on top, everything already in the file is preserved verbatim below the `skala:local begin` marker."));
+            diagnostics.Add(
+                new SkalaDiagnostic(
+                    ConfigDiagnosticIds.CanonicalUnmanaged,
+                    SkalaSeverity.Info,
+                    ".editorconfig carries no canonical block, so drift from the canonical cannot be detected",
+                    path,
+                    1,
+                    "`skala config sync --apply` adopts it: the canonical goes on top, everything already in the file is preserved verbatim below the `skala:local begin` marker."
+                )
+            );
         }
 
         var status = new CanonicalStatus(path, exists, layout, actual, tool, overrides, sections, []);
 
         if (status.Drifted) {
-            diagnostics.Add(new SkalaDiagnostic(
-                ConfigDiagnosticIds.CanonicalDrift,
-                SkalaSeverity.Error,
-                $"the canonical block has been edited: it hashes to {Short(actual)} and its marker says {Short(layout.Marker!.Sha256)}",
-                path,
-                1,
-                "Move the edit below `# skala:local begin`, where it survives every canonical bump, then `skala config sync --apply` to restore the block."));
+            diagnostics.Add(
+                new SkalaDiagnostic(
+                    ConfigDiagnosticIds.CanonicalDrift,
+                    SkalaSeverity.Error,
+                    $"the canonical block has been edited: it hashes to {Short(actual)} and its marker says {Short(layout.Marker!.Sha256)}",
+                    path,
+                    1,
+                    "Move the edit below `# skala:local begin`, where it survives every canonical bump, then `skala config sync --apply` to restore the block."
+                )
+            );
         }
 
         if (status.Behind) {
-            diagnostics.Add(new SkalaDiagnostic(
-                ConfigDiagnosticIds.CanonicalBehind,
-                SkalaSeverity.Info,
-                $"this repository is on canonical {layout.Marker!.Version}; {tool.Version} is available",
-                path,
-                1,
-                "Informational by design. Bumping is a reformatting commit, and eighteen repositories must not have to make it on the same day. `skala config diff --canonical --options` prices the bump."));
+            diagnostics.Add(
+                new SkalaDiagnostic(
+                    ConfigDiagnosticIds.CanonicalBehind,
+                    SkalaSeverity.Info,
+                    $"this repository is on canonical {layout.Marker!.Version}; {tool.Version} is available",
+                    path,
+                    1,
+                    "Informational by design. Bumping is a reformatting commit, and eighteen repositories must not have to make it on the same day. `skala config diff --canonical --options` prices the bump."
+                )
+            );
         }
 
         foreach (var local in overrides) {
-            diagnostics.Add(new SkalaDiagnostic(
-                ConfigDiagnosticIds.CanonicalLocalOverride,
-                SkalaSeverity.Info,
-                $"[{local.Section}] {local.Key} = {local.LocalValue} overrides the canonical's {local.CanonicalValue}",
-                path,
-                local.Line));
+            diagnostics.Add(
+                new SkalaDiagnostic(
+                    ConfigDiagnosticIds.CanonicalLocalOverride,
+                    SkalaSeverity.Info,
+                    $"[{local.Section}] {local.Key} = {local.LocalValue} overrides the canonical's {local.CanonicalValue}",
+                    path,
+                    local.Line
+                )
+            );
         }
 
         return status with { Diagnostics = diagnostics.ToImmutable() };
@@ -124,7 +149,8 @@ public static class CanonicalSync {
     /// <summary>
     /// Replace the canonical block and leave everything below the local marker exactly as it was.
     /// </summary>
-    public static SyncResult Sync(string target) => Sync(target, CanonicalEditorConfig.Manifest, CanonicalEditorConfig.Text);
+    public static SyncResult Sync(string target) =>
+        Sync(target, CanonicalEditorConfig.Manifest, CanonicalEditorConfig.Text);
 
     public static SyncResult Sync(string target, CanonicalManifest tool, string toolPayload) {
         var path = ResolvePath(target);
@@ -133,7 +159,13 @@ public static class CanonicalSync {
     }
 
     /// <summary>The whole of sync, over text the caller already has.</summary>
-    public static SyncResult SyncText(string path, bool exists, string text, CanonicalManifest tool, string toolPayload) {
+    public static SyncResult SyncText(
+        string path,
+        bool exists,
+        string text,
+        CanonicalManifest tool,
+        string toolPayload
+    ) {
         var before = Describe(path, exists, text, tool, toolPayload);
         var applied = ImmutableArray.CreateBuilder<string>();
 
@@ -150,14 +182,19 @@ public static class CanonicalSync {
         if (!before.Exists) {
             applied.Add($"wrote a new .editorconfig carrying canonical {tool.Version}");
         } else if (!before.Layout.IsManaged) {
-            applied.Add($"adopted the file: canonical {tool.Version} on top, the existing {CanonicalLayout.Number(before.LocalSections.Length)} section(s) preserved verbatim below `{CanonicalLayout.LocalMarker}`");
+            applied.Add(
+                $"adopted the file: canonical {tool.Version} on top, the existing {CanonicalLayout.Number(before.LocalSections.Length)} section(s) preserved verbatim below `{CanonicalLayout.LocalMarker}`"
+            );
         } else if (before.Drifted) {
-            applied.Add($"restored the canonical block, which had been edited away from its marker ({Short(before.Layout.Marker!.Sha256)})");
+            applied.Add(
+                $"restored the canonical block, which had been edited away from its marker ({Short(before.Layout.Marker!.Sha256)})"
+            );
         } else if (before.Behind) {
             applied.Add($"moved the canonical block from {before.Layout.Marker!.Version} to {tool.Version}");
         }
 
-        if (applied.Count == 0 && !string.Equals(CanonicalEditorConfig.Normalize(text), assembled, StringComparison.Ordinal)) {
+        if (applied.Count == 0
+            && !string.Equals(CanonicalEditorConfig.Normalize(text), assembled, StringComparison.Ordinal)) {
             applied.Add("normalised the markers and the local banner");
         }
 
@@ -184,7 +221,11 @@ public static class CanonicalSync {
     /// alone would produce some two hundred lines of per-file <c>dotnet_diagnostic</c> suppressions.
     /// </para>
     /// </remarks>
-    static ImmutableArray<LocalOverride> Overrides(EditorConfigDocument canonical, EditorConfigDocument local, int localFirstLine) {
+    static ImmutableArray<LocalOverride> Overrides(
+        EditorConfigDocument canonical,
+        EditorConfigDocument local,
+        int localFirstLine
+    ) {
         var bySection = new Dictionary<(string Section, string Key), string>();
         foreach (var section in canonical.Sections.Where(static section => section.Name is not null)) {
             foreach (var assignment in section.Assignments) {
@@ -207,12 +248,15 @@ public static class CanonicalSync {
                 continue;
             }
 
-            result.Add(new LocalOverride(
-                assignment.Key,
-                sectionName,
-                canonicalValue,
-                assignment.Value,
-                localFirstLine + assignment.Line - 1));
+            result.Add(
+                new LocalOverride(
+                    assignment.Key,
+                    sectionName,
+                    canonicalValue,
+                    assignment.Value,
+                    localFirstLine + assignment.Line - 1
+                )
+            );
         }
 
         return result.ToImmutable();

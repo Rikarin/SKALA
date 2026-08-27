@@ -198,6 +198,17 @@ Nightly, unbounded, seeded and reproducible:
   (delta-debugging on the input) and committed to `corpus/pathological/` with the bug reference. The
   corpus only grows.
 
+⚠ **M7 installed the nightly job and did not write the fuzzer, and the difference matters.**
+`.github/workflows/nightly.yml` runs the property suite — all six properties over every corpus file
+under both symbol sets, **8 981 cases** — and uploads any `.skala/crash/` artefacts. That is the
+*assertion half* of what this section describes. What does not exist: a seeded mutation driver, the
+weighted generative grammar, and the delta-debugging minimiser that turns a failure into a committed
+`corpus/pathological/` entry. The only mutation function in the tree is
+`PropertyTests.MutateIndentationOnly`, a deterministic transform applied once per file and private
+to a test class — so there is no seed to pass and nothing to reproduce from. The workflow's header
+says so rather than implying otherwise by existing, and a `--seed` flag was deliberately not
+threaded through the YAML to a parameter nothing reads.
+
 ## Testing the rules
 
 Standard Roslyn analyzer testing, with three additions that come from the false-positive bar.
@@ -252,12 +263,65 @@ macro (whole-corpus format, whole-corpus check, warm single file). Budgets from
 because performance regressions in a tool that runs in a pre-commit hook are user-visible within a
 day and untraceable a month later.
 
+✅ M7: `Tools/Rikarin.Skala.Cli.Tests/PerformanceBudgetTests.cs`, in its own CI job on its own
+runner, opt-in by `SKALA_PERF=1` so a contributor's `dotnet test` never trips them. Three rows —
+cold single file, warm single file, daemon RSS.
+
+⚠ **The harness is part of the measurement, and two harnesses lied before one told the truth.** A
+Python `subprocess` harness reports **38 ms for an empty NativeAOT binary** and 2 ms for
+`/usr/bin/true` on the same machine — an artefact larger than the entire 40 ms budget under test. A
+.NET `Process.Start` harness costs 10–22 ms per spawn, and draining its two pipes to EOF *before*
+`WaitForExit` — the obvious way to write it — waits for stderr's EOF after stdout's and charges
+another ~20 ms to the process being measured. So:
+
+- the spawn floor is **measured every run with the same spawner** and subtracted, never assumed;
+- the clock stops at process exit and the pipes are drained afterwards;
+- the numbers quoted in [13](13-performance.md) are a shell loop over N, which is the cheapest
+  spawner available and the one closest to how a hook actually invokes the tool.
+
+⚠ **And a performance test must prove it measured the thing it names.** The warm row asserts the
+daemon's hit counter moved before it believes its own number. Without that it measured **218 ms**
+and reported it as a slow warm path; the truth was that the bed was not a git repository, so there
+was no repository root, so there was no socket to look for, so the client execed the full tool every
+time. A test that cannot tell "slow" from "not running" is not a test.
+
 ## Cross-platform
 
 The full suite runs on macOS, Linux and Windows. The Windows-specific hazards are enumerated and
 each has a test: CRLF input with `end_of_line = lf`, paths in SARIF (must be repo-relative with
 forward slashes), case-insensitive path comparison in the cache key, long paths, and the named-pipe
 daemon transport.
+
+### ✅ M7: the matrix, and what writing the five tests found
+
+`.github/workflows/cross-platform.yml` — `dotnet test` over the whole solution on `ubuntu-latest`,
+`macos-latest` and `windows-latest`, `fail-fast: false`, plus a `lint` job and a `performance` job
+that CI was running nowhere. It is a separate file from `skala.yml` because that workflow's verdict
+is one `skala check` exit code and a four-job conjunction would make "did the gate pass"
+unanswerable from the workflow's result.
+
+⚠ **Three of the five hazards were real defects, not hypotheticals.**
+
+| Hazard | Test | Found |
+|---|---|---|
+| CRLF under `end_of_line = lf` | `Tools/…Cli.Tests/LineEndingTests.cs` | ⚠ **`end_of_line` is inert on its own.** The key that converts line endings is `resharper_enforce_line_ending_style`, `false` by default; `end_of_line = lf` alone leaves CRLF exactly as it found it. A test written from this document's own headline would have asserted the wrong thing |
+| SARIF paths repo-relative, forward slashes | `Tools/…Cli.Tests/SarifPathTests.cs` | ⚠ `SarifWriter.Relative` compared case-sensitively, had no component boundary, and took a non-nullable root that callers reach with a nullable one — all three printed absolute paths |
+| Case-insensitive path in the cache key | `Analysis/…Tests/CacheKeyPathTests.cs` | ⚠ **The key hashed the path's raw UTF-8**, so `C:\Src\A.cs` and `c:\src\a.cs` — one file on every Windows volume and on a default macOS volume — produced two entries. Benign in direction (a miss, never a stale hit) and therefore invisible for four milestones, but *permanent*: paths from MSBuild and paths from a directory walk never share an entry, so the warm run [13](13-performance.md) budgets at under 5 s was a cold one every time |
+| Long paths | `Tools/…Cli.Tests/LongPathTests.cs` | 403-character path. Asserts the finding *appears*, not merely that nothing threw — the dangerous failure is swallowing `PathTooLongException` and reporting a clean tree |
+| Named-pipe daemon transport | `Tools/…Server.Tests/MemoryPolicyTests.cs` § `SocketPathTests` | ⚠ **There was no named-pipe transport.** Both ends built `AddressFamily.Unix` unconditionally and only a comment in `Daemon.Restrict` claimed otherwise, so the hazard had nothing to test |
+
+⚠ A sixth, found by building the matrix rather than by the list: `.gitattributes` marked
+`editor_config_template` as `-text` but not `.editorconfig`, so under git's default
+`core.autocrlf=true` one arrived CRLF'd and the other did not, and an ingestion test comparing them
+failed **on Windows only**.
+
+⚠ And a seventh, found by running the suite from an agent worktree: **three test classes matched
+their path exclusions against absolute paths**, so from inside `<repo>/.claude/worktrees/<name>/`
+they scanned the parent checkout, or nothing at all. One was `ToolDiagnosticIdTests`, the guard
+ADR-012 rests on — it was passing without reading the files under test. All three now match relative
+to the root, and each has an "the scan found something" assertion beside it, because every other
+assertion in those classes is of the "nothing is wrong" shape and passes happily over an empty
+sequence.
 
 ## What is deliberately not tested
 

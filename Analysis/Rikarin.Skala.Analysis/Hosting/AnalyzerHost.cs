@@ -10,8 +10,11 @@ using Rikarin.Skala.Rules;
 using Rikarin.Skala.Rules.Metadata;
 using Rikarin.Skala.Rules.Async;
 using Rikarin.Skala.Rules.Correctness;
+using Rikarin.Skala.Rules.Design;
 using Rikarin.Skala.Rules.Maintainability;
 using Rikarin.Skala.Rules.Modernization;
+using Rikarin.Skala.Rules.Performance;
+using Rikarin.Skala.Rules.TestQuality;
 
 namespace Rikarin.Skala.Analysis.Hosting;
 
@@ -48,7 +51,9 @@ public static class AnalyzerHost {
         new NullCoalescingAssignmentAnalyzer(),
         new CountPropertyAnalyzer(), new EnumGetValuesAnalyzer(), new DiscardedExceptionAnalyzer(),
         new RethrowAnalyzer(),
-        new AsyncVoidAnalyzer(), new BlockingOnAsyncAnalyzer(), new MetricsAnalyzer()
+        new AsyncVoidAnalyzer(), new BlockingOnAsyncAnalyzer(), new MetricsAnalyzer(),
+        new WhereBeforeOperatorAnalyzer(), new AbstractTypeConstructorAnalyzer(),
+        new ThreadSleepInTestAnalyzer()
     ];
 
     /// <summary>

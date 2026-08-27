@@ -76,7 +76,8 @@ public sealed record MetricsSummary {
 
     /// <summary>The names <see cref="Read"/> understands, for the diagnostic on an unknown one.</summary>
     public static ImmutableArray<string> Names { get; } = [
-        "duplication", "cognitiveComplexity", "cognitiveComplexityMax", "cyclomaticComplexity", "methodLength", "nestingDepth",
+        "duplication", "cognitiveComplexity", "cognitiveComplexityMax", "cyclomaticComplexity", "methodLength",
+        "nestingDepth",
         "parameterCount", "commentDensity"
     ];
 

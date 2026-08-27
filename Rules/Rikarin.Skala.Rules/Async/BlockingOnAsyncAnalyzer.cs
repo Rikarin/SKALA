@@ -38,7 +38,8 @@ public sealed class BlockingOnAsyncAnalyzer : DiagnosticAnalyzer {
 
     /// <summary>The types whose members block. Metadata names, matched on the original definition.</summary>
     static readonly string[] TaskTypes = [
-        "System.Threading.Tasks.Task", "System.Threading.Tasks.Task`1", "System.Threading.Tasks.ValueTask", "System.Threading.Tasks.ValueTask`1"
+        "System.Threading.Tasks.Task", "System.Threading.Tasks.Task`1", "System.Threading.Tasks.ValueTask",
+        "System.Threading.Tasks.ValueTask`1"
     ];
 
     /// <summary>
@@ -51,9 +52,11 @@ public sealed class BlockingOnAsyncAnalyzer : DiagnosticAnalyzer {
     /// deadlock and leaves the blocked thread.
     /// </remarks>
     static readonly string[] AwaiterTypes = [
-        "System.Runtime.CompilerServices.TaskAwaiter", "System.Runtime.CompilerServices.TaskAwaiter`1", "System.Runtime.CompilerServices.ValueTaskAwaiter",
+        "System.Runtime.CompilerServices.TaskAwaiter", "System.Runtime.CompilerServices.TaskAwaiter`1",
+        "System.Runtime.CompilerServices.ValueTaskAwaiter",
         "System.Runtime.CompilerServices.ValueTaskAwaiter`1", "System.Runtime.CompilerServices.ConfiguredTaskAwaitable",
-        "System.Runtime.CompilerServices.ConfiguredTaskAwaitable`1", "System.Runtime.CompilerServices.ConfiguredValueTaskAwaitable",
+        "System.Runtime.CompilerServices.ConfiguredTaskAwaitable`1",
+        "System.Runtime.CompilerServices.ConfiguredValueTaskAwaitable",
         "System.Runtime.CompilerServices.ConfiguredValueTaskAwaitable`1"
     ];
 

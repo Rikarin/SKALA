@@ -20,7 +20,10 @@ public sealed class CanonicalDistributionTests {
         // and did not run `./build.sh Canonical`, and eighteen repositories are about to be given
         // a configuration that is not the one in the IDE.
         var composed = CanonicalEditorConfig.Compose(File.ReadAllText(RepositoryPaths.Template));
-        Assert.Equal(composed, File.ReadAllText(RepositoryPaths.CanonicalPayload).Replace("\r\n", "\n", StringComparison.Ordinal));
+        Assert.Equal(
+            composed,
+            File.ReadAllText(RepositoryPaths.CanonicalPayload).Replace("\r\n", "\n", StringComparison.Ordinal)
+        );
 
         var export = EditorConfigDocument.Load(RepositoryPaths.Template);
         var canonical = EditorConfigDocument.FromText("canonical.editorconfig", composed);
@@ -41,7 +44,8 @@ public sealed class CanonicalDistributionTests {
         // package is a payload with two versions.
         Assert.Equal(
             File.ReadAllText(RepositoryPaths.CanonicalPayload).Replace("\r\n", "\n", StringComparison.Ordinal),
-            Payload);
+            Payload
+        );
 
         Assert.Equal(CanonicalEditorConfig.Hash(Payload), Tool.Sha256);
         Assert.Equal(4228, Tool.Assignments);
@@ -53,7 +57,11 @@ public sealed class CanonicalDistributionTests {
         // cannot contain a double hyphen and the prose spelled out `--canonical`. Nothing in
         // `dotnet pack` checks this, so the failure surfaces in a consuming repository's build with
         // an MSB4024 that names Skala. It is cheaper to fail here.
-        foreach (var targets in Directory.EnumerateFiles(RepositoryPaths.CanonicalDirectory, "*.targets", SearchOption.AllDirectories)) {
+        foreach (var targets in Directory.EnumerateFiles(
+                     RepositoryPaths.CanonicalDirectory,
+                     "*.targets",
+                     SearchOption.AllDirectories
+                 )) {
             System.Xml.Linq.XDocument.Load(targets);
         }
     }
@@ -69,7 +77,8 @@ public sealed class CanonicalDistributionTests {
         var repository = TempRoot;
         var inPackage = EditorConfigDocument.FromText(
             Path.Combine(Path.GetTempPath(), "nuget", "rikarin.skala.canonical", "0.1.0", "content", ".editorconfig"),
-            Payload);
+            Payload
+        );
         var inRepository = EditorConfigDocument.FromText(Path.Combine(repository, ".editorconfig"), Payload);
 
         var source = Path.Combine(repository, "Core", "Thing.cs");
@@ -81,7 +90,13 @@ public sealed class CanonicalDistributionTests {
 
     [Fact]
     public void Sync_OnARepositoryWithNoEditorConfig_WritesAManagedFile() {
-        var result = CanonicalSync.SyncText(Path.Combine(TempRoot, ".editorconfig"), false, string.Empty, Tool, Payload);
+        var result = CanonicalSync.SyncText(
+            Path.Combine(TempRoot, ".editorconfig"),
+            false,
+            string.Empty,
+            Tool,
+            Payload
+        );
 
         Assert.True(result.Changed);
         var status = CanonicalSync.Describe(result.Path, true, result.Text, Tool, Payload);
@@ -109,7 +124,8 @@ public sealed class CanonicalDistributionTests {
             true,
             "root = true\n\n[*.cs]\nindent_size = 2\n",
             Tool,
-            Payload);
+            Payload
+        );
 
         Assert.Contains(result.Applied, static change => change.Contains("root = true", StringComparison.Ordinal));
         Assert.DoesNotContain("[*.cs]\nroot", result.Text, StringComparison.Ordinal);
@@ -123,7 +139,13 @@ public sealed class CanonicalDistributionTests {
 
     [Fact]
     public void EditingTheManagedBlock_IsDriftAndIsAnError() {
-        var synced = CanonicalSync.SyncText(Path.Combine(TempRoot, ".editorconfig"), false, string.Empty, Tool, Payload).Text;
+        var synced = CanonicalSync.SyncText(
+            Path.Combine(TempRoot, ".editorconfig"),
+            false,
+            string.Empty,
+            Tool,
+            Payload
+        ).Text;
         var tampered = synced.Replace("indent_size = 4", "indent_size = 2", StringComparison.Ordinal);
 
         var status = CanonicalSync.Describe(Path.Combine(TempRoot, ".editorconfig"), true, tampered, Tool, Payload);
@@ -138,7 +160,13 @@ public sealed class CanonicalDistributionTests {
     public void EditingTheLocalBlock_IsNotDrift() {
         // The whole point. A repository must be able to say something about itself without the
         // gate calling it drift.
-        var synced = CanonicalSync.SyncText(Path.Combine(TempRoot, ".editorconfig"), false, string.Empty, Tool, Payload).Text;
+        var synced = CanonicalSync.SyncText(
+            Path.Combine(TempRoot, ".editorconfig"),
+            false,
+            string.Empty,
+            Tool,
+            Payload
+        ).Text;
         var withLocal = synced + "\n[*.generated.cs]\nindent_size = 2\n";
 
         var status = CanonicalSync.Describe(Path.Combine(TempRoot, ".editorconfig"), true, withLocal, Tool, Payload);
@@ -154,7 +182,13 @@ public sealed class CanonicalDistributionTests {
         // red on the same day. Being behind is information; only an edit is a finding.
         var older = Payload.Replace("indent_size = 4", "indent_size = 8", StringComparison.Ordinal);
         var olderManifest = CanonicalEditorConfig.DescribeManifest("0.0.9", older);
-        var repository = CanonicalSync.SyncText(Path.Combine(TempRoot, ".editorconfig"), false, string.Empty, olderManifest, older).Text;
+        var repository = CanonicalSync.SyncText(
+            Path.Combine(TempRoot, ".editorconfig"),
+            false,
+            string.Empty,
+            olderManifest,
+            older
+        ).Text;
 
         var status = CanonicalSync.Describe(Path.Combine(TempRoot, ".editorconfig"), true, repository, Tool, Payload);
 
@@ -175,7 +209,14 @@ public sealed class CanonicalDistributionTests {
         Directory.CreateDirectory(directory);
         File.WriteAllText(
             Path.Combine(directory, ".editorconfig"),
-            CanonicalSync.SyncText(Path.Combine(directory, ".editorconfig"), false, string.Empty, olderManifest, older).Text);
+            CanonicalSync.SyncText(
+                Path.Combine(directory, ".editorconfig"),
+                false,
+                string.Empty,
+                olderManifest,
+                older
+            ).Text
+        );
 
         var result = ConfigCommands.DiffCanonical(directory, showOptions: true);
 
@@ -188,10 +229,17 @@ public sealed class CanonicalDistributionTests {
     public void DiffCanonical_ExitsWithTheConfigurationCodeOnDrift() {
         var directory = TempRoot;
         Directory.CreateDirectory(directory);
-        var synced = CanonicalSync.SyncText(Path.Combine(directory, ".editorconfig"), false, string.Empty, Tool, Payload).Text;
+        var synced = CanonicalSync.SyncText(
+            Path.Combine(directory, ".editorconfig"),
+            false,
+            string.Empty,
+            Tool,
+            Payload
+        ).Text;
         File.WriteAllText(
             Path.Combine(directory, ".editorconfig"),
-            synced.Replace("indent_size = 4", "indent_size = 2", StringComparison.Ordinal));
+            synced.Replace("indent_size = 4", "indent_size = 2", StringComparison.Ordinal)
+        );
 
         var result = ConfigCommands.DiffCanonical(directory);
 
@@ -206,11 +254,21 @@ public sealed class CanonicalDistributionTests {
     public void TheDriftPolicyComesFromSkalaJsonc(string policy, int expected) {
         var directory = TempRoot;
         Directory.CreateDirectory(directory);
-        var synced = CanonicalSync.SyncText(Path.Combine(directory, ".editorconfig"), false, string.Empty, Tool, Payload).Text;
+        var synced = CanonicalSync.SyncText(
+            Path.Combine(directory, ".editorconfig"),
+            false,
+            string.Empty,
+            Tool,
+            Payload
+        ).Text;
         File.WriteAllText(
             Path.Combine(directory, ".editorconfig"),
-            synced.Replace("indent_size = 4", "indent_size = 2", StringComparison.Ordinal));
-        File.WriteAllText(Path.Combine(directory, ToolConfiguration.FileName), $$"""{ "canonical": { "drift": "{{policy}}" } }""");
+            synced.Replace("indent_size = 4", "indent_size = 2", StringComparison.Ordinal)
+        );
+        File.WriteAllText(
+            Path.Combine(directory, ToolConfiguration.FileName),
+            $$"""{ "canonical": { "drift": "{{policy}}" } }"""
+        );
 
         Assert.Equal(expected, ConfigCommands.DiffCanonical(directory).ExitCode);
     }
@@ -221,7 +279,10 @@ public sealed class CanonicalDistributionTests {
         // that comes to disagree with itself.
         var config = ToolConfiguration.FromText("/repo/skala.jsonc", """{ "canonical": { "version": "0.1.0" } }""");
 
-        var diagnostic = Assert.Single(config.Diagnostics, static d => d.Id == ConfigDiagnosticIds.CanonicalVersionInToolConfig);
+        var diagnostic = Assert.Single(
+            config.Diagnostics,
+            static d => d.Id == ConfigDiagnosticIds.CanonicalVersionInToolConfig
+        );
         Assert.Equal(SkalaSeverity.Error, diagnostic.Severity);
     }
 
@@ -237,13 +298,17 @@ public sealed class CanonicalDistributionTests {
         var local = EditorConfigDocument.FromText("vixen/.editorconfig", CanonicalLayout.Split(result.Text).LocalText);
 
         Assert.Equal(56, expected.Length);
-        Assert.Equal(expected, local.Sections.Where(static s => s.Name is not null).Select(static s => s.Name!).ToArray());
+        Assert.Equal(
+            expected,
+            local.Sections.Where(static s => s.Name is not null).Select(static s => s.Name!).ToArray()
+        );
 
         // Not just the section names: every assignment Vixen had, still there, still in its section.
         foreach (var assignment in original.Assignments.Where(static a => a.Section.Name is not null)) {
             Assert.Contains(
                 local.Assignments,
-                a => a.Section.Name == assignment.Section.Name && a.Key == assignment.Key && a.Value == assignment.Value);
+                a => a.Section.Name == assignment.Section.Name && a.Key == assignment.Key && a.Value == assignment.Value
+            );
         }
     }
 
@@ -291,7 +356,13 @@ public sealed class CanonicalDistributionTests {
         // the canonical, and why" is exactly the conversation a canonical is for.
         var vixen = File.ReadAllText(RepositoryPaths.VixenEditorConfig);
         var path = Path.Combine(TempRoot, ".editorconfig");
-        var status = CanonicalSync.Describe(path, true, CanonicalSync.SyncText(path, true, vixen, Tool, Payload).Text, Tool, Payload);
+        var status = CanonicalSync.Describe(
+            path,
+            true,
+            CanonicalSync.SyncText(path, true, vixen, Tool, Payload).Text,
+            Tool,
+            Payload
+        );
 
         Assert.Contains(status.Overrides, static local => local.Key == "indent_size" && local.LocalValue == "2");
         Assert.Contains(status.Overrides, static local => local.Key == "trim_trailing_whitespace");
@@ -303,7 +374,8 @@ public sealed class CanonicalDistributionTests {
         Assert.InRange(status.Overrides.Length, 1, 20);
 
         // Info, every one of them. An override is the mechanism working.
-        var reported = status.Diagnostics.Where(static d => d.Id == ConfigDiagnosticIds.CanonicalLocalOverride).ToArray();
+        var reported = status.Diagnostics.Where(static d => d.Id == ConfigDiagnosticIds.CanonicalLocalOverride)
+            .ToArray();
         Assert.Equal(status.Overrides.Length, reported.Length);
         Assert.All(reported, static d => Assert.Equal(SkalaSeverity.Info, d.Severity));
     }

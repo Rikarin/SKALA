@@ -4,8 +4,9 @@ One configuration, the same formatting and analysis everywhere: a C# formatter a
 tool that reads the `.editorconfig` Rider exports, so the IDE and the gate agree by construction
 rather than by discipline. See [`docs/plan/`](docs/plan/README.md).
 
-**Status: milestone 5 of nine** (M4 and M5 are swapped; see
-[15 § M4](docs/plan/15-roadmap.md)). The formatter does spaces, blank lines, braces, indentation,
+**Status: 1.0 — milestone 7 of nine** (M4 is still outstanding and M5 ran before it; see
+[15 § M4](docs/plan/15-roadmap.md)). See [Release 1.0](#release-10) for what became a compatibility
+surface at this version and what did not. The formatter does spaces, blank lines, braces, indentation,
 break presence and position, and wrapping: it fills what `wrap_if_long` fills, chops what
 `chop_if_long` chops, honours the `max_*_on_line` counters, and chooses *which* of a long line's
 several candidate points to wrap at. The analysis half loads a compilation three ways, hosts
@@ -116,8 +117,21 @@ unstaged changes, unless you pass `--staged=worktree`.
 The daemon is started lazily, exits after thirty minutes idle, and is only ever an optimisation:
 `SKALA_NO_DAEMON=1` or `--no-daemon` produces byte-identical output, and a daemon that is absent,
 stale or of another protocol version is a silent fallback rather than an error. A warm single-file
-format is 60–70 ms against a 40 ms budget — essentially all of it the client's own process start,
-which is what NativeAOT for the thin client is for and is not done.
+format is **8.65 ms** against a 40 ms budget, measured over 150 runs in a shell loop.
+
+Getting there needed the CLI split in two. `skala` is a NativeAOT thin client that starts in 4.85 ms
+and references nothing but a socket and a JSON writer; `skala-tool` beside it is the full tool, which
+is also what the daemon runs as and what the client execs for everything that is not a warm
+single-file format. Before the split the one `skala` binary referenced Roslyn, so `skala daemon
+status` — a command that does no work at all — cost 79.5 ms, twice the budget for the whole
+operation, before `Main` ran.
+
+```bash
+./build.sh Native        # the shipping layout: AOT `skala` beside ReadyToRun `skala-tool`
+```
+
+⚠ A `dotnet tool install` gets the full tool alone under the name `skala`, with the old startup
+cost: NativeAOT cannot be packed as a dotnet tool, so the client is a standalone-binary concern.
 
 ## Building it
 
@@ -141,6 +155,45 @@ path rather than by a seeded sequence.
 `Oracle` needs `dotnet tool install -g JetBrains.ReSharper.GlobalTools --version 2025.2.6`. Nothing
 else does: the day-to-day test run reads the committed `.expected.cs` fixtures, and regenerating
 them is a reviewed commit of its own (ADR-011).
+
+## Release 1.0
+
+⚠ **At 1.0 four things become compatibility surfaces (ADR-012), and the rest of the tool does not.**
+The distinction is the whole content of this release, so it is worth being exact about.
+
+**What is now a contract:**
+
+| | What that means in practice |
+|---|---|
+| **Rule IDs** | `SK1010` means what it means for ever. An id is never re-purposed and its meaning never widens; a rule that is withdrawn is marked `retired`, not deleted. The reason is baselines: a fingerprint carries the rule id, so one number with two meanings silently un-suppresses one finding and wrongly suppresses another in every repository holding a baseline it was not present at |
+| **Option behaviour** | A key that does something keeps doing that thing. New keys may be added; an existing key's effect on an existing file does not change without a new key to ask for the change |
+| **Exit codes** | `0` nothing to do · `1` gate failed · `2` formatting needed · `3` configuration error · `4` load failure · `5` internal error · `130` cancelled. A hook and a CI job read these and nothing else |
+| **The SARIF shape** | Fields present at 1.0 stay present and keep their meaning. Paths are repository-relative with forward slashes on every platform |
+
+Two tests hold that line, and both are run against the tree they are built from — which one of them
+was not before this release: `RuleCatalogTests` (`RuleIds_AreAppendOnly`,
+`EveryCatalogueRule_IsRecordedAsAllocated`, keyed on `allocated-ids.txt`) and `ToolDiagnosticIdTests`
+(`ToolDiagnosticIds_AreDeclaredOnce`, `…_AreInTheRegister`). Verified by mutation rather than by
+going green: a second `public const string … = "SK9001"` fails the build, and did not before.
+
+**What is explicitly *not* a contract, and will change:**
+
+- **The formatter's output.** Fidelity against `jb cleanupcode` is 99.70 % of lines and 85.79 % of
+  files; closing the remaining gap means files formatted at 1.0 will be formatted differently at
+  1.1. Pin the version if that matters, which is what [11](docs/plan/11-cli-and-integrations.md)
+  § "Distribution" is for.
+- **Which rules exist.** New rule ids are added freely — that is what append-only means. A rule's
+  *default severity* may also change.
+- **The daemon protocol.** Versioned by exact match with no negotiation; a client that meets a
+  daemon of another version replaces it.
+- **`--profile` output, the fidelity harness, and every `Testing/Rikarin.Skala.Testing` subcommand.**
+  Developer instruments, not interfaces.
+
+**Known gaps at 1.0**, stated because a version number is not a claim of completeness:
+`skala arrange` (M4) is unfinished; `SK5xxx` security rules (M8) do not exist; the nightly fuzzing
+job runs the property suite but there is no fuzzer; and the tool is not yet adopted by any
+repository beyond the two it is measured against. [15](docs/plan/15-roadmap.md) § M7 has the full
+list.
 
 ## The two promises
 

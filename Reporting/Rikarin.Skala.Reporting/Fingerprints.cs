@@ -74,7 +74,7 @@ public static class Fingerprints {
 
     /// <summary>Both fingerprint versions for one finding, for the SARIF's <c>partialFingerprints</c>.</summary>
     public static Dictionary<string, string> For(Finding finding) =>
-        new(StringComparer.Ordinal) { [Version1] = V1(finding),[Version2] = V2(finding) };
+        new(StringComparer.Ordinal) { [Version1] = V1(finding), [Version2] = V2(finding) };
 
     /// <summary>
     /// ⚠ M5's fingerprint, unchanged, so that a baseline written before this milestone still reads.

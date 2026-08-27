@@ -258,7 +258,7 @@ public static class MemberMetrics {
 
                     case XmlTextSyntax text when !string.IsNullOrWhiteSpace(
                         text.ToString()
-                        .Replace("/", string.Empty)
+                            .Replace("/", string.Empty)
                     ):
                         return true;
                 }

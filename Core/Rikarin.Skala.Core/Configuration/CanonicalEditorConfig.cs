@@ -38,27 +38,27 @@ public static class CanonicalEditorConfig {
     /// drift from it is a payload with two versions.
     /// </summary>
     public const string Preamble = """
-        # ==============================================================================
-        # Skala canonical .editorconfig — managed block.
-        #
-        # Everything between the `skala:canonical begin` and `skala:canonical end`
-        # markers is written by `skala config sync` and verified by
-        # `skala config diff --canonical`. An edit here is drift (SK9008) and fails the
-        # gate. The edit you want almost certainly belongs below `skala:local begin`,
-        # where editorconfig's own later-section-wins rule lets it override this block.
-        #
-        # This block is the Rider export (ADR-001) verbatim, with the two additions
-        # `skala config fix` makes: `root = true`, so the chain stops at the repository
-        # instead of picking up an .editorconfig above it, and `max_line_length` beside
-        # `resharper_csharp_max_line_length`, so that tools other than ReSharper can see
-        # the column limit.
-        #
-        # To change it: change the setting in Rider, re-export over
-        # `editor_config_template` in the Skala repository, run `./build.sh Canonical`,
-        # publish `Rikarin.Skala.Canonical`, then run `skala config sync` in each
-        # repository at whatever moment that repository is ready for the reformat.
-        # ==============================================================================
-        """;
+                                   # ==============================================================================
+                                   # Skala canonical .editorconfig — managed block.
+                                   #
+                                   # Everything between the `skala:canonical begin` and `skala:canonical end`
+                                   # markers is written by `skala config sync` and verified by
+                                   # `skala config diff --canonical`. An edit here is drift (SK9008) and fails the
+                                   # gate. The edit you want almost certainly belongs below `skala:local begin`,
+                                   # where editorconfig's own later-section-wins rule lets it override this block.
+                                   #
+                                   # This block is the Rider export (ADR-001) verbatim, with the two additions
+                                   # `skala config fix` makes: `root = true`, so the chain stops at the repository
+                                   # instead of picking up an .editorconfig above it, and `max_line_length` beside
+                                   # `resharper_csharp_max_line_length`, so that tools other than ReSharper can see
+                                   # the column limit.
+                                   #
+                                   # To change it: change the setting in Rider, re-export over
+                                   # `editor_config_template` in the Skala repository, run `./build.sh Canonical`,
+                                   # publish `Rikarin.Skala.Canonical`, then run `skala config sync` in each
+                                   # repository at whatever moment that repository is ready for the reformat.
+                                   # ==============================================================================
+                                   """;
 
     static readonly Lazy<string> PayloadText = new(static () => Read(PayloadFileName));
     static readonly Lazy<CanonicalManifest> ManifestValue = new(static () => ReadManifest(Read(ManifestFileName)));
@@ -103,7 +103,8 @@ public static class CanonicalEditorConfig {
             version,
             Hash(payload),
             document.Assignments.Count(),
-            document.Sections.Count(static section => section.Name is not null));
+            document.Sections.Count(static section => section.Name is not null)
+        );
     }
 
     public static string WriteManifest(CanonicalManifest manifest) {
@@ -111,8 +112,12 @@ public static class CanonicalEditorConfig {
         builder.AppendLine("{");
         builder.Append("  \"version\": \"").Append(manifest.Version).AppendLine("\",");
         builder.Append("  \"sha256\": \"").Append(manifest.Sha256).AppendLine("\",");
-        builder.Append("  \"assignments\": ").Append(manifest.Assignments.ToString(CultureInfo.InvariantCulture)).AppendLine(",");
-        builder.Append("  \"sections\": ").Append(manifest.Sections.ToString(CultureInfo.InvariantCulture)).AppendLine(",");
+        builder.Append("  \"assignments\": ")
+            .Append(manifest.Assignments.ToString(CultureInfo.InvariantCulture))
+            .AppendLine(",");
+        builder.Append("  \"sections\": ")
+            .Append(manifest.Sections.ToString(CultureInfo.InvariantCulture))
+            .AppendLine(",");
         builder.AppendLine("  \"source\": \"editor_config_template — the Rider export (ADR-001)\",");
         builder.AppendLine("  \"generated\": \"./build.sh Canonical\"");
         builder.AppendLine("}");
@@ -120,20 +125,25 @@ public static class CanonicalEditorConfig {
     }
 
     static CanonicalManifest ReadManifest(string json) {
-        using var document = JsonDocument.Parse(json, new JsonDocumentOptions { CommentHandling = JsonCommentHandling.Skip });
+        using var document = JsonDocument.Parse(
+            json,
+            new JsonDocumentOptions { CommentHandling = JsonCommentHandling.Skip }
+        );
         var root = document.RootElement;
         return new CanonicalManifest(
             root.GetProperty("version").GetString() ?? "0.0.0",
             root.GetProperty("sha256").GetString() ?? string.Empty,
             root.GetProperty("assignments").GetInt32(),
-            root.GetProperty("sections").GetInt32());
+            root.GetProperty("sections").GetInt32()
+        );
     }
 
     static string Read(string fileName) {
         var name = $"Rikarin.Skala.Core.{fileName}";
         using var stream = typeof(CanonicalEditorConfig).GetTypeInfo().Assembly.GetManifestResourceStream(name)
             ?? throw new InvalidOperationException(
-                $"'{name}' is not embedded in Rikarin.Skala.Core. Run `./build.sh Canonical` to generate the distribution payload.");
+                $"'{name}' is not embedded in Rikarin.Skala.Core. Run `./build.sh Canonical` to generate the distribution payload."
+            );
 
         using var reader = new StreamReader(stream, Encoding.UTF8);
         return reader.ReadToEnd();

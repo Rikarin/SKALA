@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Text;
 using Rikarin.Skala.Analysis.Hosting;
 using Rikarin.Skala.Analysis.Loading;
+using Rikarin.Skala.Core;
 using Rikarin.Skala.Core.Configuration;
 using Rikarin.Skala.Core.Diagnostics;
 using Rikarin.Skala.Formatting.CSharp;
@@ -530,9 +531,9 @@ public static class CheckCommand {
             return;
         }
 
-        var path = request.Output ?? Path.Combine(report.RepositoryRoot, ".skala", "report.sarif");
+        var path = request.Output ?? SkalaDirectory.PathFor(report.RepositoryRoot, "report.sarif");
         try {
-            Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+            SkalaDirectory.EnsureForFile(path);
             File.WriteAllText(path, SarifWriter.Serialize(SarifWriter.Build(report)));
         } catch (Exception exception) when (exception is IOException or UnauthorizedAccessException) {
             // A read-only tree does not fail a check; the rendered output is already on stdout.

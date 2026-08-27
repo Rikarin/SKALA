@@ -57,6 +57,56 @@ class Build : NukeBuild {
                 )
             );
 
+    [Parameter("Runtime identifier for `Native` — defaults to the host's")]
+    readonly string Runtime = null!;
+
+    /// <summary>
+    /// The shipping layout: a NativeAOT <c>skala</c> beside a ReadyToRun <c>skala-tool</c>.
+    /// </summary>
+    /// <remarks>
+    /// docs/plan/13 § "Startup". The two halves have to be published together and land in one
+    /// directory, because that adjacency is how the client finds the tool — see
+    /// <c>Fallback.Locate</c>, which deliberately looks beside its own executable *before* it looks
+    /// at <c>SKALA_TOOL</c> or the path. Two Skala versions formatting one repository is the failure
+    /// doc 11 § "Distribution"'s version pinning exists to prevent, and picking up whichever
+    /// `skala-tool` happens to be on the PATH is exactly how it happens.
+    /// <para>
+    /// ⚠ Measured on the reference machine (M-series, 10 cores), 200 runs in a shell loop so that
+    /// the harness is not the measurement: bare process start is <b>1.68 ms</b> for
+    /// <c>/usr/bin/true</c>, <b>4.85 ms</b> for the AOT client, and <b>79.5 ms</b> for the framework
+    /// dependent tool. The client is the difference between meeting the 40 ms warm budget and
+    /// spending twice it before <c>Main</c> runs.
+    /// </para>
+    /// </remarks>
+    Target Native =>
+        definition => definition
+            .DependsOn(Compile)
+            .Executes(() => {
+                    var rid = Runtime ?? System.Runtime.InteropServices.RuntimeInformation.RuntimeIdentifier;
+
+                    var output = RootDirectory / "artifacts" / "native" / rid;
+                    output.CreateOrCleanDirectory();
+
+                    // The full tool first: the client is useless without something to fall back to.
+                    DotNetPublish(settings => settings
+                        .SetProject(RootDirectory / "Tools" / "Rikarin.Skala.Cli" / "Rikarin.Skala.Cli.csproj")
+                        .SetConfiguration(Configuration)
+                        .SetRuntime(rid)
+                        .SetSelfContained(false)
+                        .SetOutput(output)
+                    );
+
+                    DotNetPublish(settings => settings
+                        .SetProject(RootDirectory / "Tools" / "Rikarin.Skala.Client" / "Rikarin.Skala.Client.csproj")
+                        .SetConfiguration(Configuration)
+                        .SetRuntime(rid)
+                        .SetOutput(output)
+                    );
+
+                    Serilog.Log.Information("Native layout in {Output}", output);
+                }
+            );
+
     /// <summary>
     /// ADR-015 — Skala formats Skala, with the configuration gate beside it.
     /// </summary>
@@ -198,6 +248,29 @@ class Build : NukeBuild {
                 RootDirectory / "editor_config_template",
                 "--out", CanonicalDirectory,
                 "--version", CanonicalVersion);
+        });
+
+    /// <summary>
+    /// Regenerate every documentation surface the two registries define.
+    /// </summary>
+    /// <remarks>
+    /// `docs/rules/*.md` and `docs/site/` are both committed and both generated, from
+    /// `Rules/Rikarin.Skala.Rules.Metadata/rules.json` and
+    /// `Core/Rikarin.Skala.Options/options.json` (docs/plan/08 § "Documentation", docs/plan/15 § M7).
+    /// One target rather than two, because the failure this exists to prevent is regenerating one of
+    /// them and forgetting the other, and `RuleCatalogTests.DocsPages_AreUpToDate` and
+    /// `DocsSiteTests.Site_IsUpToDateWithTheSources` then fail one at a time in separate assemblies.
+    /// <para>
+    /// ⚠ Deliberately not part of `Compile` or `Lint`. A build step that rewrites tracked files
+    /// turns `dotnet build` into something that dirties the worktree, and the two tests already make
+    /// a forgotten regeneration a red build — which is the mechanism. This is how you satisfy them.
+    /// </para>
+    /// </remarks>
+    Target Docs => definition => definition
+        .DependsOn(Compile)
+        .Executes(() => {
+            Skala("rules", "docs", RootDirectory / "docs" / "rules");
+            Skala("docs", "site", RootDirectory / "docs" / "site");
         });
 
     /// <summary>The published artefacts. `Rikarin.Skala.Canonical` is the only one packable today.</summary>

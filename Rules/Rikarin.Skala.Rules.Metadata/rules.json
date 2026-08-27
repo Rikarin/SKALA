@@ -355,6 +355,58 @@
       ]
     },
     {
+      "id": "SK4010",
+      "concept": "where-before-linq-operator",
+      "title": "A `Where` the next operator could have taken as its predicate",
+      "category": "Performance",
+      "defaultSeverity": "suggestion",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": true,
+      "fixIsSafe": true,
+      "resharperId": null,
+      "supersedes": [],
+      "since": "1.0",
+      "languageVersion": null,
+      "summary": "`xs.Where(p).First()` is `xs.First(p)`: one fewer iterator object and one fewer delegate hop per element.",
+      "rationale": "`Enumerable.Where` allocates an iterator that the next operator then wraps and drives, so every element crosses two `MoveNext` frames instead of one. `First`, `FirstOrDefault`, `Last`, `LastOrDefault`, `Single`, `SingleOrDefault`, `Any`, `Count` and `LongCount` each have an overload that takes the predicate directly and does the same work in one loop with no intermediate object. LINQ defines the two forms to select the same elements in the same order for the same predicate, so this is a rewrite with no semantic content — which is why it is worth a rule rather than a review comment: the longer form reads no better and costs an indirection per element.",
+      "examples": {
+        "bad": "var first = items.Where(item => item.IsReady).First();\nvar ready = items.Where(item => item.IsReady).Count();",
+        "good": "var first = items.First(item => item.IsReady);\nvar ready = items.Count(item => item.IsReady);"
+      },
+      "falsePositives": "Both calls must resolve to `System.Linq.Enumerable`. A `Where` or a `First` on `System.Linq.Queryable` is never reported, because a provider is free to translate the one-argument overload and not the predicate one; nor is a user-defined `Where`, a user-defined operator of the same name, or either call when the symbol did not resolve. The `Where` must be the `Func<T, bool>` overload: the indexed `Func<T, int, bool>` form has no counterpart on any of the consuming operators, so it is left alone. The consuming call must pass no arguments of its own and must be one of the nine operators whose predicate overload is defined to iterate identically — `Where(p).All(q)`, `Where(p).Sum(f)` and `Where(p).Select(f)` are different shapes and are not reported. A conditional access (`xs?.Where(p).First()`) is not reported, because the rewrite has to move the member binding rather than replace a name. ⚠ The one observable difference the rewrite does make is the text of the exception on an empty sequence: `Where(p).First()` throws `InvalidOperationException(\"Sequence contains no elements\")` and `First(p)` throws `InvalidOperationException(\"Sequence contains no matching element\")`. The type is the same and the condition is the same; a test asserting on the message string would see the change.",
+      "configuration": [
+        "dotnet_diagnostic.SK4010.severity"
+      ]
+    },
+    {
+      "id": "SK6003",
+      "concept": "abstract-type-public-constructor",
+      "title": "An abstract type has a public constructor",
+      "category": "Design",
+      "defaultSeverity": "suggestion",
+      "scope": "Syntax",
+      "requiresSemantics": false,
+      "hasFix": true,
+      "fixIsSafe": true,
+      "resharperId": null,
+      "supersedes": [
+        "CA1012"
+      ],
+      "since": "1.0",
+      "languageVersion": null,
+      "summary": "Nothing outside the type hierarchy can call it, so `public` on it states something that is not true.",
+      "rationale": "An abstract class cannot be instantiated, so its constructor is reachable only from a derived constructor's initializer — which is exactly what `protected` allows. Written `public`, the modifier claims a caller that cannot exist, and a reader scanning the type for its public surface has to work out that this member is not part of it. `protected` says what the constructor is for. The edit is one keyword, it removes nothing any caller could have been using, and it is verified by the compiler.",
+      "examples": {
+        "bad": "public abstract class Importer {\n    public Importer(string name) {\n        Name = name;\n    }\n\n    public string Name { get; }\n}",
+        "good": "public abstract class Importer {\n    protected Importer(string name) {\n        Name = name;\n    }\n\n    public string Name { get; }\n}"
+      },
+      "falsePositives": "The rule is purely syntactic and fires only on a constructor declared exactly `public` inside a `class` declaration that carries the `abstract` modifier in the same file. A `protected internal`, `internal` or `private protected` constructor is left alone, because each of those is a deliberate statement about a different audience. A static constructor has no accessibility to change. Records are not reported at all: a positional record's primary constructor is a parameter list with no `ConstructorDeclarationSyntax` to edit, and a record's copy constructor has accessibility rules of its own that the compiler enforces (CS8878), so the one-keyword edit is not obviously legal there. A partial class whose `abstract` modifier sits on a different part is a miss rather than a wrong answer — the rule needs to see the modifier beside the constructor. A constructor whose `public` token carries a preprocessor directive in its trivia is skipped, because the token the fix replaces may not exist in every branch.",
+      "configuration": [
+        "dotnet_diagnostic.SK6003.severity"
+      ]
+    },
+    {
       "id": "SK7001",
       "concept": "cyclomatic-complexity",
       "title": "Cyclomatic complexity is over the threshold",
@@ -559,6 +611,31 @@
       "configuration": [
         "dotnet_diagnostic.SK7020.severity",
         "dotnet_code_quality.SK7020.minTokens (default 100)"
+      ]
+    },
+    {
+      "id": "SK8005",
+      "concept": "thread-sleep-in-test",
+      "title": "`Thread.Sleep` in a test",
+      "category": "Tests",
+      "defaultSeverity": "suggestion",
+      "scope": "Semantic",
+      "requiresSemantics": true,
+      "hasFix": false,
+      "fixIsSafe": false,
+      "resharperId": null,
+      "supersedes": [],
+      "since": "1.0",
+      "languageVersion": null,
+      "summary": "A test that waits for a duration passes or fails on how loaded the machine is.",
+      "rationale": "A sleep encodes a guess about how long the thing under test takes. On a developer's idle laptop the guess holds; on a CI agent running sixteen jobs it does not, and the test fails for a reason that has nothing to do with the code. The failure is intermittent, so it is triaged as flakiness rather than as a defect, and a suite with a few of these stops being read at all. It also costs the sleep on every run, forever, including all the runs where the wait was not needed. What the test wants is a signal — a handle, a task, a callback, a polled predicate with a generous timeout — and every one of those is both faster and deterministic. ⚠ There is no fix: the replacement is a change to what the test synchronises on, which is a design decision and not an edit.",
+      "examples": {
+        "bad": "[Fact]\npublic void PublishesTheEvent() {\n    bus.Publish(new Ping());\n    Thread.Sleep(200);\n    Assert.Single(sink.Received);\n}",
+        "good": "[Fact]\npublic void PublishesTheEvent() {\n    bus.Publish(new Ping());\n    Assert.True(sink.Delivered.Wait(TimeSpan.FromSeconds(10)));\n    Assert.Single(sink.Received);\n}"
+      },
+      "falsePositives": "The rule fires only where the semantic model resolves the call to `System.Threading.Thread.Sleep`, so a `Sleep` method on a user type of that name is never reported, and neither is anything at all when the symbol did not resolve. It is scoped by attribute rather than by path: the call must sit lexically inside a method carrying a recognised test attribute (`Fact`, `Theory`, `Test`, `TestCase`, `TestMethod`, `Benchmark`), which is the same set `SK3002` uses, so a sleep in a helper method a test calls, in a fixture's constructor, or anywhere in production code is outside the rule. ⚠ A `[Benchmark]` method counts as a test method for this rule because the shared helper says so; a deliberate sleep in a benchmark is the shape most likely to be reported and not wanted. The rule cannot tell a sleep that is a guess from a sleep that is the point of the test — a test of a frame limiter, a debounce, or a file watcher's coalescing window has to advance a real clock, and reports there are true and unwanted. That is what the default severity of `suggestion` and a baseline are for; a repository that wants the rule to bite promotes it in the `[**/*.Tests/**/*.cs]` section its `.editorconfig` already has.",
+      "configuration": [
+        "dotnet_diagnostic.SK8005.severity"
       ]
     },
     {

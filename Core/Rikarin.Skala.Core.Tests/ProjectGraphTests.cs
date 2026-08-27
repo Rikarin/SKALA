@@ -42,7 +42,7 @@ public sealed class ProjectGraphTests {
         }
 
         var sources = Directory.EnumerateFiles(RepositoryPaths.Root, "*.cs", SearchOption.AllDirectories)
-            .Where(static path => !ProjectFile.IsScratch(path))
+            .Where(static path => !ProjectFile.IsScratch(RepositoryPaths.Root, path))
             .Where(static path => !path.Contains(
                     $"{Path.DirectorySeparatorChar}Rikarin.Skala.Cli{Path.DirectorySeparatorChar}",
                     StringComparison.Ordinal
@@ -54,6 +54,23 @@ public sealed class ProjectGraphTests {
                 Assert.NotEqual("using Rikarin.Skala.Cli;", line.Trim());
             }
         }
+    }
+
+    /// <summary>
+    /// ⚠ The graph tests are all of the form "no project has edge X", and every one of them passes
+    /// over an empty project list. This asserts the list is not empty, so that a filter that
+    /// excludes the whole tree — which is exactly what happened from inside an agent worktree —
+    /// fails here with a comprehensible message instead of as three unrelated `Assert.Single`s.
+    /// </summary>
+    [Fact]
+    public void TheProjectGraph_IsNotEmpty() {
+        Assert.True(
+            Projects.Count > 10,
+            $"Only {Projects.Count} project(s) found under {RepositoryPaths.Root}. "
+            + "Every other test in this class passes vacuously when this is empty."
+        );
+
+        Assert.Contains(Projects, static project => project.Name == "Rikarin.Skala.Core");
     }
 
     [Fact]
@@ -85,7 +102,7 @@ public sealed class ProjectGraphTests {
         // hand-rolled `SyntaxKind` copy would, and it would be worse.
         var directory = System.IO.Path.GetDirectoryName(formatting.Path)!;
         foreach (var source in Directory.EnumerateFiles(directory, "*.cs", SearchOption.AllDirectories)) {
-            if (ProjectFile.IsScratch(source)) {
+            if (ProjectFile.IsScratch(RepositoryPaths.Root, source)) {
                 continue;
             }
 
@@ -214,17 +231,27 @@ public sealed record ProjectFile(
     /// </remarks>
     public static IReadOnlyList<ProjectFile> LoadAll(string root) =>
         Directory.EnumerateFiles(root, "*.csproj", SearchOption.AllDirectories)
-            .Where(static path => !IsScratch(path))
+            .Where(path => !IsScratch(root, path))
             .Select(Load)
             .OrderBy(static project => project.Name, StringComparer.Ordinal)
             .ToArray();
 
     /// <summary>Build output, and any checkout of this repository nested inside it.</summary>
-    internal static bool IsScratch(string path) {
+    /// <remarks>
+    /// ⚠ <b>Matched against the path relative to <paramref name="root"/>, and it used to be matched
+    /// against the absolute path.</b> That worked from a normal checkout and broke completely from
+    /// inside an agent worktree, which lives at <c>&lt;repo&gt;/.claude/worktrees/&lt;name&gt;/</c> —
+    /// every absolute path under one contains <c>/.claude/</c>, so every project was excluded,
+    /// <see cref="LoadAll"/> returned nothing, and three <c>Assert.Single</c> calls failed on a tree
+    /// nobody had touched. The exclusion is right; the frame of reference was not. Same bug, and the
+    /// same fix, as <c>ToolDiagnosticIdTests.SourceFiles</c>.
+    /// </remarks>
+    internal static bool IsScratch(string root, string path) {
         var separator = System.IO.Path.DirectorySeparatorChar;
-        return path.Contains($"{separator}obj{separator}", StringComparison.Ordinal)
-            || path.Contains($"{separator}bin{separator}", StringComparison.Ordinal)
-            || path.Contains($"{separator}.claude{separator}", StringComparison.Ordinal);
+        var relative = separator + System.IO.Path.GetRelativePath(root, path) + separator;
+        return relative.Contains($"{separator}obj{separator}", StringComparison.Ordinal)
+            || relative.Contains($"{separator}bin{separator}", StringComparison.Ordinal)
+            || relative.Contains($"{separator}.claude{separator}", StringComparison.Ordinal);
     }
 
     static ProjectFile Load(string path) {

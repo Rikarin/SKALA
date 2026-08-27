@@ -77,7 +77,11 @@ public sealed class ToolConfiguration {
     /// question "is this file what it claims to be" is answerable from the file alone. A version
     /// recorded in a second file is a version that drifts, which is this whole feature's disease.
     /// </remarks>
-    static CanonicalPolicy ReadCanonical(JsonElement root, string path, ImmutableArray<SkalaDiagnostic>.Builder diagnostics) {
+    static CanonicalPolicy ReadCanonical(
+        JsonElement root,
+        string path,
+        ImmutableArray<SkalaDiagnostic>.Builder diagnostics
+    ) {
         if (root.ValueKind != JsonValueKind.Object
             || !root.TryGetProperty("canonical", out var canonical)
             || canonical.ValueKind != JsonValueKind.Object) {
@@ -85,13 +89,16 @@ public sealed class ToolConfiguration {
         }
 
         if (canonical.TryGetProperty("version", out _)) {
-            diagnostics.Add(new SkalaDiagnostic(
-                ConfigDiagnosticIds.CanonicalVersionInToolConfig,
-                SkalaSeverity.Error,
-                $"'canonical.version' cannot be set in {FileName}",
-                path,
-                0,
-                "The version lives in the `# skala:canonical begin` marker in .editorconfig, beside the bytes it names. Recording it twice is how it comes to disagree with itself."));
+            diagnostics.Add(
+                new SkalaDiagnostic(
+                    ConfigDiagnosticIds.CanonicalVersionInToolConfig,
+                    SkalaSeverity.Error,
+                    $"'canonical.version' cannot be set in {FileName}",
+                    path,
+                    0,
+                    "The version lives in the `# skala:canonical begin` marker in .editorconfig, beside the bytes it names. Recording it twice is how it comes to disagree with itself."
+                )
+            );
         }
 
         if (!canonical.TryGetProperty("drift", out var drift) || drift.ValueKind != JsonValueKind.String) {
@@ -107,11 +114,14 @@ public sealed class ToolConfiguration {
     }
 
     static CanonicalPolicy Unknown(string? value, string path, ImmutableArray<SkalaDiagnostic>.Builder diagnostics) {
-        diagnostics.Add(new SkalaDiagnostic(
-            ConfigDiagnosticIds.CanonicalDrift,
-            SkalaSeverity.Warning,
-            $"'canonical.drift' is '{value}'; expected 'error', 'warning' or 'off'. Using 'error'.",
-            path));
+        diagnostics.Add(
+            new SkalaDiagnostic(
+                ConfigDiagnosticIds.CanonicalDrift,
+                SkalaSeverity.Warning,
+                $"'canonical.drift' is '{value}'; expected 'error', 'warning' or 'off'. Using 'error'.",
+                path
+            )
+        );
 
         return CanonicalPolicy.Default;
     }

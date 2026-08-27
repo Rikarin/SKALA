@@ -26,8 +26,10 @@ public sealed class DuplicationTests {
     /// total: from any remainder of 3 or more there is a shape that consumes it or leaves 3 or more.
     /// </remarks>
     static readonly (int Tokens, string Format)[] Shapes = [
-        (3, "{0}{1}++;"), (4, "{0}{1} = {0}{1};"), (5, "{0}{1} = -1;"), (6, "{0}{1} = {0}{1} + 1;"), (7, "{0}{1} = {2}({0}{1});"),
-        (8, "{0}{1} = {0}{1} * {0}{1} - 3;"), (9, "if ({0}{1} > 1) {0}{1}++;"), (10, "{0}{1} = new {3}({0}{1}, \"s\");"),
+        (3, "{0}{1}++;"), (4, "{0}{1} = {0}{1};"), (5, "{0}{1} = -1;"), (6, "{0}{1} = {0}{1} + 1;"),
+        (7, "{0}{1} = {2}({0}{1});"),
+        (8, "{0}{1} = {0}{1} * {0}{1} - 3;"), (9, "if ({0}{1} > 1) {0}{1}++;"),
+        (10, "{0}{1} = new {3}({0}{1}, \"s\");"),
         (11, "while ({0}{1} < 5) {{ {0}{1}++; }}")
     ];
 
@@ -94,7 +96,8 @@ public sealed class DuplicationTests {
 
         var result = Detect(
             [
-                Production("/repo/Alpha.cs", Alpha(block)), Production("/repo/Beta.cs", Beta(block)), Production(
+                Production("/repo/Alpha.cs", Alpha(block)), Production("/repo/Beta.cs", Beta(block)),
+                Production(
                     "/repo/Gamma.cs",
                     Gamma(block)
                 )
@@ -133,7 +136,8 @@ public sealed class DuplicationTests {
     [Fact]
     public void Detect_WhenEveryWindowCollidesInOneBucket_VerificationStillDecides() {
         var unrelated = (DuplicationInput[])[
-            Production("/repo/Alpha.cs", Alpha(Block(400, seed: 1))), Production(
+            Production("/repo/Alpha.cs", Alpha(Block(400, seed: 1))),
+            Production(
                 "/repo/Beta.cs",
                 Beta(Block(400, seed: 2))
             )
@@ -189,7 +193,8 @@ public sealed class DuplicationTests {
 
         var result = Detect(
             [
-                Production("/repo/Core/Alpha.cs", Alpha(shared)), Production("/repo/Core/Beta.cs", Beta(shared)), Test(
+                Production("/repo/Core/Alpha.cs", Alpha(shared)), Production("/repo/Core/Beta.cs", Beta(shared)),
+                Test(
                     "/repo/Core.Tests/AlphaTests.cs",
                     Alpha(testOnly)
                 ), Test("/repo/Core.Tests/BetaTests.cs", Beta(testOnly))
@@ -393,7 +398,8 @@ public sealed class DuplicationTests {
     public void Detect_IsDeterministic_WhateverOrderTheFilesArriveIn() {
         var block = Block(250);
         var files = (DuplicationInput[])[
-            Production("/repo/Gamma.cs", Gamma(block)), Production("/repo/Alpha.cs", Alpha(block)), Production(
+            Production("/repo/Gamma.cs", Gamma(block)), Production("/repo/Alpha.cs", Alpha(block)),
+            Production(
                 "/repo/Beta.cs",
                 Beta(block)
             )
@@ -425,10 +431,12 @@ public sealed class DuplicationTests {
     static DuplicationInput[] Corpus() {
         var shared = Block(250, seed: 5);
         return [
-            Production("/repo/Alpha.cs", Alpha(shared)), Production("/repo/Beta.cs", Beta(shared)), Production(
+            Production("/repo/Alpha.cs", Alpha(shared)), Production("/repo/Beta.cs", Beta(shared)),
+            Production(
                 "/repo/Gamma.cs",
                 Gamma(Block(250, seed: 6))
-            ), Test("/repo/Core.Tests/AlphaTests.cs", Alpha(Block(180, seed: 7))), Test(
+            ), Test("/repo/Core.Tests/AlphaTests.cs", Alpha(Block(180, seed: 7))),
+            Test(
                 "/repo/Core.Tests/BetaTests.cs",
                 Beta(Block(180, seed: 7))
             )
