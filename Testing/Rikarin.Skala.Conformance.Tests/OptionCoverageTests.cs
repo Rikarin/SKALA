@@ -48,7 +48,7 @@ public sealed class OptionCoverageTests {
     ];
 
     [Fact]
-    public void TierA_IsExactlyWhatSkalaReads() {
+    public void TierA_IsWhatSkalaReads_AndTheSweepSubstantiates() {
         // ⚠ Tier A means "Skala reproduces Rider's behaviour, pinned by at least one oracle
         // fixture" (docs/plan/03 § "Four tiers"). It may not rest on a default being known:
         // defaultSource is `template` or `unknown` for every entry in the registry, so the only
@@ -64,11 +64,63 @@ public sealed class OptionCoverageTests {
             .ToArray();
         Assert.True(overclaimed.Length == 0, "Tier A without an implementation: " + string.Join(", ", overclaimed));
 
+        // ⚠ "Reads the key" is a weaker claim than Tier A, and this direction used to conflate the
+        // two. Tier A is "Skala reproduces *Rider's* behaviour"; a key the formatter reads, and acts
+        // on, and acts on differently from ReSharper satisfies the first and fails the second. Only
+        // the key-flip sweep can tell them apart — it is the one measurement that flips each option
+        // and compares both engines — and on the run committed beside it, 70 options that this test
+        // would have called Tier A produced output the oracle does not produce.
+        //
+        // So an implemented option must be Tier A *unless* the committed sweep says it is not
+        // conformant. The sweep needs JetBrains and takes minutes (ADR-011), so what is read here is
+        // its committed table, exactly as the fast path reads the oracle fixtures.
         var underclaimed = implemented.Except(claimed)
+            .Except(SweepUnsubstantiated())
             .Select(static id => OptionRegistry.Get(id).Key)
             .Order(StringComparer.Ordinal)
             .ToArray();
         Assert.True(underclaimed.Length == 0, "Implemented but not Tier A: " + string.Join(", ", underclaimed));
+    }
+
+    /// <summary>
+    /// The options the last committed sweep could not substantiate, and which are therefore
+    /// deliberately not Tier A however much of them the formatter reads.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ Read from the committed sidecar rather than measured here. Re-running the sweep needs
+    /// JetBrains installed and minutes of wall clock; the committed table is the artefact the fast
+    /// path reviews in a diff, and an option that becomes conformant again is promoted by the same
+    /// diff that records the measurement.
+    /// <para>
+    /// ⚠ Missing file means "nobody has measured", not "everything is fine": it returns empty, which
+    /// puts the strict invariant back rather than relaxing it silently.
+    /// </para>
+    /// </remarks>
+    static HashSet<OptionId> SweepUnsubstantiated() {
+        var path = Path.Combine(
+            Corpus.RepositoryRoot,
+            "Testing",
+            "Rikarin.Skala.Conformance.Sweep",
+            "conformance-sweep.json"
+        );
+
+        if (!File.Exists(path)) {
+            return [];
+        }
+
+        var unsubstantiated = new HashSet<OptionId>();
+        using var document = System.Text.Json.JsonDocument.Parse(File.ReadAllText(path));
+        foreach (var row in document.RootElement.EnumerateArray()) {
+            if (string.Equals(row.GetProperty("Outcome").GetString(), "Conformant", StringComparison.Ordinal)) {
+                continue;
+            }
+
+            if (OptionRegistry.TryResolve(row.GetProperty("Key").GetString() ?? string.Empty, out var id)) {
+                unsubstantiated.Add(id);
+            }
+        }
+
+        return unsubstantiated;
     }
 
     [Fact]
