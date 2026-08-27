@@ -104,3 +104,31 @@ pass 3  unchanged
 final newline* is not the one the rest of the file converged on, and it changes once the first pass
 has rewritten the gap above it. `pathological/mixed-crlf-and-lf.cs` exists and does not catch this,
 which is the whole argument for the fuzzer: the corpus has the construct and not the shape.
+
+## SK-FUZZ-0004 — the closing `]` of a split array-rank specifier lands two levels out, then one
+
+- file: `array-rank-specifier-split-across-lines.cs`
+- property: `idempotency`
+- seed: `1391645108652186791`
+- found: mutating `real/vixen/Platform/Vixen.Vfx.Gpu.Tests/RavenKernels.cs` with `split-line`,
+  `comment-line`; minimised from 3 325 characters to 118, and narrowed by hand to 33.
+
+```
+class R {
+  byte[
+] f;
+}
+```
+
+Through the CLI, byte for byte:
+
+```
+pass 1      byte[            pass 2      byte[            pass 3  unchanged
+                ] f;                     ] f;
+```
+
+Eight columns on the first pass, four on the second. ⚠ The *converged* answer is the right one, and
+that is what makes this the shape a fixed corpus cannot see: every file in `corpus/` has already been
+through a formatter, so its `]` is already at four, the first pass agrees with it, and the property
+holds. It takes an input whose `]` starts at zero to make the first pass disagree with the second,
+and `split-line` produced one in a run of nine thousand cases.

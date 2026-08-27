@@ -555,19 +555,32 @@ public static class Fuzzer {
         }
 
         // The absorption predicate: is there a whitespace-only mutation of this candidate, derived
-        // from this case's own seed, that the formatter does not absorb? The recorded mutation is
-        // tried first and the rest after it, because a candidate that has shrunk past the recorded
-        // mutation's foothold may still not absorb a sibling — and pinning the smallest input that
-        // exhibits the *property* failure is the point, not the smallest that exhibits one mutation.
-        var order = subject.Mutations
-            .Select(static mutation => mutation.Name)
-            .Concat(FuzzMutations.AbsorbedNames)
-            .Distinct(StringComparer.Ordinal)
-            .Where(name => FuzzMutations.AbsorbedNames.Contains(name, StringComparer.Ordinal));
+        // from this case's own seed, that the formatter does not absorb?
+        //
+        // ⚠ The case's whole *sequence* first, in order, off one stream — not one mutation from a
+        // fresh one. Absorption is very often a composition: an `indent` that widens a line past the
+        // margin and a `widen-gap` that widens it further do together what neither does alone, and a
+        // predicate that replays one of them reports "no longer fails" on an input that fails.
+        // Falling back to the individual mutations afterwards keeps the reduction going once the
+        // candidate has shrunk past the sequence's foothold, because what is being pinned is the
+        // smallest input that breaks the *property*, not the one that breaks one mutation.
+        var sequence = candidate;
+        var stream = new FuzzRandom(subject.Seed);
+        foreach (var mutation in subject.Mutations) {
+            if (FuzzMutations.Apply(mutation.Name, sequence, stream, Corpus.PropertySymbols) is { } step) {
+                sequence = step;
+            }
+        }
 
-        foreach (var name in order) {
-            var mutated = FuzzMutations.Apply(name, candidate, new FuzzRandom(subject.Seed), Corpus.PropertySymbols);
-            if (mutated is null || string.Equals(mutated, candidate, StringComparison.Ordinal)) {
+        var attempts = new List<string> { sequence };
+        foreach (var name in FuzzMutations.AbsorbedNames) {
+            if (FuzzMutations.Apply(name, candidate, new FuzzRandom(subject.Seed), Corpus.PropertySymbols) is { } one) {
+                attempts.Add(one);
+            }
+        }
+
+        foreach (var mutated in attempts) {
+            if (string.Equals(mutated, candidate, StringComparison.Ordinal)) {
                 continue;
             }
 

@@ -332,6 +332,57 @@ public static class FuzzProperties {
                     break;
                 }
             }
+
+            // ⚠ Every edit spans the smallest range that differs — no shared first character, no
+            // shared last character with the text it replaces.
+            //
+            // This assertion exists because of `fuzz --mutation-test`. The three checks above are
+            // all satisfied by an edit list that has been collapsed into one whole-file edit: it
+            // intersects the range, so the count matches; it is in the list, so containment holds;
+            // there is one of it, so nothing overlaps. Range formatting would then silently be
+            // whole-file formatting and every property still passed. The `edit-merge` saboteur
+            // survived 400 cases against the earlier version of this property, which is exactly what
+            // a saboteur is for: a property nothing can trip is a property that is not asserted.
+            var original = first.Original.ToString();
+            for (var i = 0; i < first.Edits.Length; i++) {
+                var edit = first.Edits[i];
+                if (edit.Span.End > original.Length) {
+                    violations.Add(new PropertyViolation(
+                        RangeConsistency,
+                        defined,
+                        $"edit {i.ToString(CultureInfo.InvariantCulture)} runs past the end of the input"
+                    ));
+
+                    break;
+                }
+
+                var replaced = original.Substring(edit.Span.Start, edit.Span.End - edit.Span.Start);
+                if (replaced.Length == 0 || edit.NewText.Length == 0) {
+                    continue;
+                }
+
+                if (replaced[0] == edit.NewText[0] || replaced[^1] == edit.NewText[^1]) {
+                    violations.Add(new PropertyViolation(
+                        RangeConsistency,
+                        defined,
+                        $"edit {i.ToString(CultureInfo.InvariantCulture)} of "
+                        + $"{first.Edits.Length.ToString(CultureInfo.InvariantCulture)} is not trimmed to what "
+                        + $"differs: it replaces {Quote(replaced)} with {Quote(edit.NewText)}"
+                    ));
+
+                    break;
+                }
+            }
+
+            // The list, applied, must reproduce the output. Independent of the writer that produced
+            // both, which is the only form of this check worth having.
+            if (!string.Equals(EditEmitter.Apply(original, first.Edits), first.Formatted, StringComparison.Ordinal)) {
+                violations.Add(new PropertyViolation(
+                    RangeConsistency,
+                    defined,
+                    "applying the edit list to the input does not reproduce the formatted output"
+                ));
+            }
         }
 
         // 6. Whitespace absorption — `format(mutate_whitespace(x)) ≡ format(x)`.
