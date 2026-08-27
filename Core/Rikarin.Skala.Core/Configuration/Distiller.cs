@@ -82,17 +82,51 @@ public static class Distiller {
         builder.Append("# verify. Re-exporting from Rider over this file is safe and supported (ADR-001).")
             .Append(newline);
 
+        // ⚠ A comment stuck to a dropped key goes with it.
+        //
+        // Dropping the assignment and leaving the comment above it produces a file describing a key
+        // that is no longer there. In the Rider export the comments are section headers, so the
+        // damage is cosmetic; in a hand-annotated configuration it is actively misleading text, and
+        // producing a file a human can read is the entire purpose of `distill`.
+        //
+        // The semantics are `resharper_stick_comment`'s, which this project already settled for
+        // code: a contiguous run of comment lines belongs to the single line directly beneath it.
+        // So a run followed by a blank line, by a section header, or by nothing is attached to no
+        // key and stays — which is what keeps a file's header and its section banners intact.
+        var stuck = new List<string>();
+
+        void Flush() {
+            foreach (var comment in stuck) {
+                builder.Append(comment).Append(newline);
+                linesOut++;
+            }
+
+            stuck.Clear();
+        }
+
         foreach (var raw in document.Text.Split('\n')) {
             line++;
             linesIn++;
             var text = raw.TrimEnd('\r');
-            if (dropByLine.Contains(line)) {
+            var trimmed = text.TrimStart();
+            if (trimmed.StartsWith('#') || trimmed.StartsWith(';')) {
+                stuck.Add(text);
                 continue;
             }
 
+            if (dropByLine.Contains(line)) {
+                stuck.Clear();
+                continue;
+            }
+
+            Flush();
             builder.Append(text).Append(newline);
             linesOut++;
         }
+
+        // ⚠ Trailing comments are attached to nothing and are kept. A file that ends in a note
+        // about why the rest of it looks the way it does must not lose the note.
+        Flush();
 
         return new DistillResult(
             builder.ToString(),

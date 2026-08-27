@@ -369,6 +369,10 @@ public sealed class OptionsGenerator : IIncrementalGenerator {
         builder.AppendLine("    string? Docs,");
         builder.AppendLine("    int? TemplateLine,");
         builder.AppendLine("    bool SeveritySuffix,");
+        builder.AppendLine(
+            "    /// <summary>Why this option can never be observed, or null when it can. ⚠ An inert option is Tier D but is NOT a gap: no input distinguishes its values, because another rule wins by the documented ordering or because the writer cannot produce the shape it governs. docs/plan/05 records each one and the reason. Reporting these as unimplemented makes the coverage number noise; omitting them from the report entirely hides that the configuration set them.</summary>"
+        );
+        builder.AppendLine("    string? Inert,");
         builder.AppendLine("    IReadOnlyList<OptionId> Expands);");
         builder.AppendLine();
         builder.AppendLine("public static class OptionRegistry {");
@@ -420,7 +424,8 @@ public sealed class OptionsGenerator : IIncrementalGenerator {
                 + $"{OptionRegistryReader.Literal(option.Construct)}, {OptionRegistryReader.Literal(option.Summary)}, "
                 + $"{OptionRegistryReader.Literal(option.Since)}, {OptionRegistryReader.Literal(option.Oracle)}, "
                 + $"{OptionRegistryReader.Literal(option.Docs)}, {OptionRegistryReader.IntLiteral(option.TemplateLine)}, "
-                + $"{(option.SeveritySuffix ? "true" : "false")}, {expands}),"
+                + $"{(option.SeveritySuffix ? "true" : "false")}, "
+                + $"{OptionRegistryReader.Literal(option.Inert)}, {expands}),"
             );
         }
 

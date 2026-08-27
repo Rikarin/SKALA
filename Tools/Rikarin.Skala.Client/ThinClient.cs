@@ -148,12 +148,16 @@ public static class ThinClient {
             Console.Out.Write(Summary(response.Changed, check));
         }
 
-        // ⚠ 1, not 2. `FormatCommand.ChangesFound` is 1 and `FormatCommand.Failed` is 2 — the
-        // formatter's own pair, which is NOT `ExitCodes.FormattingNeeded`, also 2, used by `check`.
-        // Getting this wrong makes the client disagree with the tool about whether a hook passed,
-        // which is the one thing this class must never do: `--check` exiting 1 is the contract the
-        // README states and the pre-commit hook reads.
-        exitCode = check && response.Changed ? 1 : 0;
+        // ⚠ 2 — `ExitCodes.FormattingNeeded`, docs/plan/09 § "Exit codes". It is a literal here and
+        // nowhere else, because this assembly references neither Core nor Roslyn on purpose
+        // (docs/plan/13 § "Startup") and `ExitCodes` lives in Core. `ClientAgreesWithToolTests` runs
+        // both binaries and compares the codes, which is what holds the two halves together;
+        // getting this wrong makes the client disagree with the tool about whether a hook passed,
+        // which is the one thing this class must never do.
+        //
+        // ⚠ It read 1 until M9, matching a `FormatCommand.ChangesFound` that was itself the
+        // documented table read backwards. Both were wrong together, so the agreement test passed.
+        exitCode = check && response.Changed ? 2 : 0;
         return true;
     }
 

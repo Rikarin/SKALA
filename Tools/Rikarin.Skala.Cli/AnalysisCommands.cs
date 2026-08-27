@@ -3,6 +3,7 @@ using Rikarin.Skala.Analysis;
 using Rikarin.Skala.Analysis.Caching;
 using Rikarin.Skala.Analysis.Loading;
 using Rikarin.Skala.Core.Configuration;
+using Rikarin.Skala.Core.Diagnostics;
 using Rikarin.Skala.Mcp;
 using Rikarin.Skala.Options;
 using Rikarin.Skala.Reporting;
@@ -162,7 +163,8 @@ public static partial class SkalaCommandLine {
                     Record = parse.GetValue(record),
                     Summary = parse.GetValue(summary),
                     IncludeDuplication = parse.GetValue(duplication),
-                    Profile = parse.GetValue(profile)
+                    Profile = parse.GetValue(profile),
+                    Verbose = parse.GetValue(Verbose)
                 };
 
                 return RunCancellable(token => CheckCommand.Run(request, token).Result);
@@ -307,7 +309,7 @@ public static partial class SkalaCommandLine {
             Description = "Where to write the pages.", DefaultValueFactory = static _ => "docs/rules"
         };
 
-        var docs = new Command("docs", "Regenerate docs/rules/ from rules.json.");
+        var docs = new Command("docs", "Regenerate docs/rules/ and doc 08's coverage block from rules.json.");
         docs.Arguments.Add(directory);
         docs.SetAction(parse => {
                 var target = parse.GetValue(directory)!;
@@ -318,13 +320,59 @@ public static partial class SkalaCommandLine {
 
                 File.WriteAllText(Path.Combine(target, "README.md"), ExplainCommand.RenderIndex());
                 Console.Out.WriteLine($"{RuleCatalog.All.Count} page(s) written to {target}.");
-                return ExitCodes.Ok;
+                return WriteCoverageBlock();
             }
         );
 
         rules.Subcommands.Add(list);
         rules.Subcommands.Add(docs);
         return rules;
+    }
+
+    /// <summary>
+    /// Rewrites the generated coverage block in <c>docs/plan/08-rule-catalogue.md</c>.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// ⚠ The catalogue's own coverage figure used to be typed by hand and it went stale inside one
+    /// merge — "21 shipped, 19.8 %" at <c>8cbd66d</c>, with M8's five <c>SK5xxx</c> landing
+    /// afterwards. A document that misreports its own coverage is the same failure as one
+    /// describing behaviour the tool does not have.
+    /// </para>
+    /// <para>
+    /// ⚠ It is quiet when the catalogue is not there. This runs from an installed tool as well as
+    /// from the repository, and <c>skala rules docs</c> writing rule pages is useful on its own;
+    /// failing it because a plan document is absent would make the command unusable everywhere
+    /// except here.
+    /// </para>
+    /// </remarks>
+    static int WriteCoverageBlock() {
+        var path = Path.Combine("docs", "plan", "08-rule-catalogue.md");
+        if (!File.Exists(path)) {
+            return ExitCodes.Ok;
+        }
+
+        var catalogue = File.ReadAllText(path);
+        var coverage = RuleCoverage.Compute(catalogue, RuleCatalog.All.Select(static rule => rule.Id));
+        if (RuleCoverage.Replace(catalogue, RuleCoverage.Render(coverage)) is not { } updated) {
+            Console.Error.WriteLine(
+                $"{path} has no {RuleCoverage.BeginMarker} … {RuleCoverage.EndMarker} block; coverage not written."
+            );
+
+            return ExitCodes.ConfigurationError;
+        }
+
+        if (!string.Equals(updated, catalogue, StringComparison.Ordinal)) {
+            File.WriteAllText(path, updated);
+        }
+
+        Console.Out.WriteLine(
+            $"coverage: {coverage.Count(RuleCoverage.State.Shipped)} of {coverage.Named} shipped "
+            + $"({coverage.Percentage:0.0} %), {coverage.Count(RuleCoverage.State.Cut)} cut, "
+            + $"{coverage.Count(RuleCoverage.State.Outstanding)} outstanding → {path}"
+        );
+
+        return ExitCodes.Ok;
     }
 
     /// <summary>

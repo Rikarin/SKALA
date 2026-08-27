@@ -166,4 +166,40 @@ public sealed class OptionRegistryTests {
             Assert.Equal(OptionTier.C, OptionRegistry.Get(id).Tier);
         }
     }
+
+    /// <summary>
+    /// ⚠ Inert is a claim about what cannot be observed, so it needs a reason and it needs a tier.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// An inert option is Tier D — nothing implements it — but it is <b>not</b> a coverage gap:
+    /// no input distinguishes its values, because another rule wins by the documented ordering or
+    /// because the writer cannot produce the shape it governs. <c>skala config check</c> reports
+    /// the two separately, and that report is only worth reading if "inert" is evidence rather
+    /// than a way to make a number look better.
+    /// </para>
+    /// <para>
+    /// ⚠ An inert option that claimed Tier A would be the worse failure: it would mean a fixture
+    /// pinned behaviour that no input can produce. The registry forbids the pair.
+    /// </para>
+    /// </remarks>
+    [Fact]
+    public void Inert_OptionsCarryAReasonAndAreNotClaimedAsImplemented() {
+        var inert = OptionRegistry.All.Where(static i => i.Inert is not null).ToList();
+
+        // Anti-vacuity: docs/plan/05 records these, and a registry that lost them would otherwise
+        // pass this test by having nothing to check.
+        Assert.True(
+            inert.Count >= 10,
+            $"Only {inert.Count} inert options. docs/plan/05 § \"Phase 1\" and § \"Spaces\" record at least ten."
+        );
+
+        foreach (var info in inert) {
+            Assert.Equal(OptionTier.D, info.Tier);
+            Assert.True(
+                info.Inert is { Length: > 20 },
+                $"{info.Key} is marked inert with no usable reason. \"Inert\" without a reason is indistinguishable from \"unimplemented\", which is the distinction the mark exists to make."
+            );
+        }
+    }
 }

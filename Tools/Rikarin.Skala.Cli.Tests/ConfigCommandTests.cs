@@ -110,14 +110,97 @@ public sealed class ConfigCommandTests {
     public void Check_ReportsTheTierMatrixAndTheSeverityNamespacesSeparately() {
         var run = CliRunner.Run("config", "check", "editor_config_template");
 
-        Assert.Contains($"{OptionRegistry.Count} options known", run.StandardOutput, StringComparison.Ordinal);
+        Assert.Contains($"of {OptionRegistry.Count} known options", run.StandardOutput, StringComparison.Ordinal);
         // Milestone 1 promoted the phase-1 keys; the count is a progress bar and moves per
         // milestone, so the assertion is that it is honest rather than that it is a number.
         var implemented = OptionRegistry.All.Count(static info => info.Tier == OptionTier.A);
-        Assert.Contains($"Tiers — A (implemented): {implemented}", run.StandardOutput, StringComparison.Ordinal);
+        Assert.Contains(
+            $"Registry-wide — A (implemented): {implemented}",
+            run.StandardOutput,
+            StringComparison.Ordinal
+        );
+
         Assert.True(implemented > 0);
         Assert.Contains("InspectionSeverity", run.StandardOutput, StringComparison.Ordinal);
         Assert.Contains("Milestone 5", run.StandardOutput, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// ⚠ The number a user needs is about <em>their</em> configuration, not about the registry.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// This block reported only the registry-wide split until M9. On the real export that reads
+    /// "A: 221, D: 293" — true, and not an answer to the question being asked, which is "of the
+    /// keys I set, which ones does the tool ignore?" On the export the answer is in the hundreds,
+    /// and nothing looked wrong because fidelity is 99.7 %: an unimplemented key whose configured
+    /// value happens to match what Skala does anyway costs no fidelity. The exposure is
+    /// forward-looking — change one of those settings in Rider and Skala keeps formatting the old
+    /// way, reporting nothing.
+    /// </para>
+    /// <para>
+    /// ⚠ And the per-configuration split has to add up, or it is worse than the registry-wide one:
+    /// a number that does not reconcile invites the reader to assume the remainder is fine.
+    /// </para>
+    /// </remarks>
+    [Fact]
+    public void Check_ReportsTheTierSplitOfTheKeysTheConfigurationActuallySets() {
+        var run = CliRunner.Run("config", "check", "editor_config_template");
+        var resolution = ConfigCommands.ResolveStandalone(
+            CliRunner.Template,
+            Path.Combine(CliRunner.RepositoryRoot, "Probe.cs")
+        );
+
+        var configured = resolution.Configured.ToList();
+        var applied = configured.Count(static o => o.Info.Tier is OptionTier.A or OptionTier.B);
+        var inert = configured.Count(static o => o.Info.Inert is not null);
+        var ignored = configured.Count(static o =>
+            o.Info.Tier is OptionTier.C or OptionTier.D && o.Info.Inert is null
+        );
+
+        // The export sets hundreds of keys, and a good few of them are not implemented. If either
+        // of those stops being true this test is measuring nothing.
+        Assert.True(configured.Count > 100, $"The export set only {configured.Count} options.");
+        Assert.True(ignored > 0, "No unimplemented key is set, so the gap this report exists for is untested.");
+        Assert.Equal(configured.Count, applied + inert + ignored);
+
+        Assert.Contains(
+            $"This configuration sets {configured.Count} of {OptionRegistry.Count} known options.",
+            run.StandardOutput,
+            StringComparison.Ordinal
+        );
+
+        Assert.Contains(
+            $"{applied} applied · {ignored} not implemented · {inert} inert",
+            run.StandardOutput,
+            StringComparison.Ordinal
+        );
+
+        // ⚠ And it comes before the registry-wide totals. The order is the point: the first number
+        // a reader meets should be the one about them.
+        var mine = run.StandardOutput.IndexOf("This configuration sets", StringComparison.Ordinal);
+        var registry = run.StandardOutput.IndexOf("Registry-wide", StringComparison.Ordinal);
+        Assert.True(mine >= 0 && registry > mine, "The per-configuration split must precede the registry totals.");
+    }
+
+    /// <summary>
+    /// ⚠ Inert is reported apart from unimplemented, and the xmldoc family says why it is neither.
+    /// </summary>
+    /// <remarks>
+    /// An inert key is honoured vacuously — no input distinguishes its values — so counting it as
+    /// a gap makes the gap number noise and people stop reading it. The xmldoc family is the
+    /// opposite trap: 27 unimplemented keys with no explanation read as neglect, when the cause is
+    /// documented and permanent (SK-DIV-0006 — the oracle does not format documentation comments,
+    /// so there is nothing to verify them against).
+    /// </remarks>
+    [Fact]
+    public void Check_SeparatesInertFromUnimplemented_AndExplainsTheXmldocFamily() {
+        var run = CliRunner.Run("config", "check", "editor_config_template");
+
+        Assert.Contains("inert (honoured vacuously", run.StandardOutput, StringComparison.Ordinal);
+        Assert.Contains("largest unimplemented families:", run.StandardOutput, StringComparison.Ordinal);
+        Assert.Contains("xmldoc*", run.StandardOutput, StringComparison.Ordinal);
+        Assert.Contains("SK-DIV-0006", run.StandardOutput, StringComparison.Ordinal);
     }
 
     [Fact]

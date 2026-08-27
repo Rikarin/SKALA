@@ -12,7 +12,7 @@ namespace Rikarin.Skala.Formatting.CSharp;
 public sealed record FormatRequest {
     public IReadOnlyList<string> Paths { get; init; } = [];
 
-    /// <summary>Report, do not write. Exit 1 when there are edits.</summary>
+    /// <summary>Report, do not write. Exit 2 when there are edits (docs/plan/09 § "Exit codes").</summary>
     public bool Check { get; init; }
 
     /// <summary>Print a unified diff over the edits. ⚠ Reports; never writes.</summary>
@@ -25,6 +25,17 @@ public sealed record FormatRequest {
     public StagedMode Staged { get; init; } = StagedMode.Off;
 
     public bool Quiet { get; init; }
+
+    /// <summary>
+    /// ⚠ Name every file that was skipped, and why.
+    /// </summary>
+    /// <remarks>
+    /// docs/plan/04 § "What it does not do": generated files "are skipped by default, reported as
+    /// skipped in <c>--verbose</c>". Without it a run that formatted nothing because every file was
+    /// generated, and a run that formatted nothing because every file was already correct, print the
+    /// same line. So does a file the parser could not read.
+    /// </remarks>
+    public bool Verbose { get; init; }
 
     public IReadOnlyList<KeyValuePair<string, string>> Overrides { get; init; } = [];
 
@@ -77,10 +88,13 @@ public enum StagedMode {
 /// <c>Rikarin.Skala.Cli</c> (docs/plan/02 § "The project graph"): MSBuild, the daemon and MCP host
 /// the same logic and the CLI is argument parsing and rendering only.
 /// </remarks>
+/// <remarks>
+/// ⚠ The exit codes are <see cref="ExitCodes"/>'s and nothing else's. This class used to carry its
+/// own pair — <c>ChangesFound = 1</c>, <c>Failed = 2</c> — which is the documented table
+/// (docs/plan/09 § "Exit codes") read backwards, and it stood from M1 to M9 because the two
+/// definitions lived in assemblies that could not see each other.
+/// </remarks>
 public static class FormatCommand {
-    public const int ChangesFound = 1;
-    public const int Failed = 2;
-
     public static CommandResult Run(FormatRequest request) {
         var output = new StringBuilder();
         var root = request.RepositoryRoot ?? FindRepositoryRoot(request.Paths.Count > 0 ? request.Paths[0] : ".");
@@ -89,7 +103,10 @@ public static class FormatCommand {
         List<string> files;
         if (request.Staged != StagedMode.Off) {
             if (root is null) {
-                return new CommandResult(Failed, "skala format --staged: not inside a git repository\n");
+                return new CommandResult(
+                    ExitCodes.ConfigurationError,
+                    "skala format --staged: not inside a git repository\n"
+                );
             }
 
             var staged = GitIndex.StagedFiles(root);
@@ -104,7 +121,7 @@ public static class FormatCommand {
                     output.AppendLine();
                     output.AppendLine("Formatting the worktree copy would stage work you did not mean to commit.");
                     output.AppendLine("Pass --staged=worktree to format and stage them anyway.");
-                    return new CommandResult(Failed, output.ToString());
+                    return new CommandResult(ExitCodes.ConfigurationError, output.ToString());
                 }
             }
 
@@ -118,6 +135,7 @@ public static class FormatCommand {
 
         var changed = 0;
         var failures = 0;
+        var skipped = 0;
         var diagnostics = new List<SkalaDiagnostic>();
 
         // ⚠ The results are consumed in the order the files were collected, not the order they
@@ -133,6 +151,18 @@ public static class FormatCommand {
             diagnostics.AddRange(outcome.Diagnostics);
             if (outcome.Failed) {
                 failures++;
+                continue;
+            }
+
+            if (outcome.Skipped is { } reason) {
+                skipped++;
+                if (request.Verbose && !request.Quiet) {
+                    output.Append("skipped ")
+                        .Append(Relative(root, files[i]))
+                        .Append("  ")
+                        .AppendLine(reason == FormatOutcome.Generated ? "generated" : "could not be parsed");
+                }
+
                 continue;
             }
 
@@ -170,18 +200,42 @@ public static class FormatCommand {
                 .Append(", ")
                 .Append((files.Count - changed).ToString(CultureInfo.InvariantCulture))
                 .AppendLine(" left alone");
+
+            // ⚠ Appended only under --verbose. `ClientAgreesWithToolTests` compares the thin
+            // client's bytes against this method's for the ordinary one-file case, and the client
+            // reproduces the line above by hand; anything added unconditionally would have to be
+            // added there too.
+            if (request.Verbose && skipped > 0) {
+                output.Append("  ")
+                    .Append(skipped.ToString(CultureInfo.InvariantCulture))
+                    .AppendLine(" skipped");
+            }
         }
 
-        var exit = failures > 0 ? Failed : (request.Check || request.Diff) && changed > 0 ? ChangesFound : 0;
+        // ⚠ A failed file outranks a changed one. A run that could not format three files and would
+        // reformat ten has not established that ten is the number, so it must not exit with the code
+        // a hook reads as "auto-format and carry on".
+        var exit = failures > 0
+            ? ExitCodes.InternalError
+            : (request.Check || request.Diff) && changed > 0
+            ? ExitCodes.FormattingNeeded
+            : ExitCodes.Ok;
+
         return new CommandResult(exit, output.ToString());
     }
 
     /// <summary>One file's result, reduced to what the ordered pass needs.</summary>
+    /// <param name="Skipped">
+    /// Why the file was not formatted, or null when it was. Only <c>--verbose</c> reads it, but it
+    /// is computed always: a skip that is only recorded when somebody asks is a skip that cannot be
+    /// counted.
+    /// </param>
     sealed record FileOutcome(
         bool Failed,
         bool Changed,
         string? Diff,
-        IReadOnlyList<SkalaDiagnostic> Diagnostics);
+        IReadOnlyList<SkalaDiagnostic> Diagnostics,
+        FormatOutcome? Skipped = null);
 
     /// <summary>
     /// Formats every file, in parallel, into a result slot of its own.
@@ -243,6 +297,13 @@ public static class FormatCommand {
 
         if (result.Outcome == FormatOutcome.VerificationFailed) {
             return new FileOutcome(true, false, null, result.Diagnostics);
+        }
+
+        // ⚠ Generated and NotParseable both reach here with no edits, and so does a file that was
+        // simply already correct. They are three different answers and `--verbose` is what tells
+        // them apart.
+        if (result.Outcome is FormatOutcome.Generated or FormatOutcome.NotParseable) {
+            return new FileOutcome(false, false, null, result.Diagnostics, result.Outcome);
         }
 
         var edits = range is { } span ? EditEmitter.Restrict(result.Edits, span) : result.Edits;

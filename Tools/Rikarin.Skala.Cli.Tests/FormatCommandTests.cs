@@ -30,12 +30,14 @@ public sealed class FormatCommandTests : IDisposable {
     }
 
     [Fact]
-    public void Check_WritesNothingAndExitsOne() {
+    public void Check_WritesNothingAndExitsTwo() {
         const string source = "class C{void M(){M();}}\n";
         var path = Write("B.cs", source);
         var run = CliRunner.Run("format", "--check", path);
 
-        Assert.Equal(1, run.ExitCode);
+        // ⚠ 2, `ExitCodes.FormattingNeeded`, docs/plan/09 § "Exit codes". It asserted 1 from M1 to
+        // M9, matching a `FormatCommand.ChangesFound` that was the documented table read backwards.
+        Assert.Equal(2, run.ExitCode);
         Assert.Equal(source, File.ReadAllText(path));
         Assert.Contains("1 file would be reformatted", run.StandardOutput, StringComparison.Ordinal);
     }
@@ -58,7 +60,7 @@ public sealed class FormatCommandTests : IDisposable {
         var path = Write("D.cs", source);
         var run = CliRunner.Run("format", "--diff", path);
 
-        Assert.Equal(1, run.ExitCode);
+        Assert.Equal(2, run.ExitCode);
         Assert.Equal(source, File.ReadAllText(path));
         Assert.Contains("@@", run.StandardOutput, StringComparison.Ordinal);
         Assert.Contains("-class C{void M(){M();}}", run.StandardOutput, StringComparison.Ordinal);
@@ -107,8 +109,11 @@ public sealed class FormatCommandTests : IDisposable {
         Git("add", "H.cs");
         File.WriteAllText(path, "class C{}\nclass D{}\n");
 
+        // ⚠ 3, `ExitCodes.ConfigurationError`. A refusal to run is not "formatting changes are
+        // needed" (2) — a hook that auto-formats on 2 would treat this refusal as an instruction to
+        // do the exact thing it refused.
         var run = Run("format", "--staged", ".");
-        Assert.Equal(2, run.ExitCode);
+        Assert.Equal(3, run.ExitCode);
         Assert.Contains("unstaged changes", run.StandardOutput, StringComparison.Ordinal);
         Assert.Contains("--staged=worktree", run.StandardOutput, StringComparison.Ordinal);
         Assert.Equal("class C{}\nclass D{}\n", File.ReadAllText(path));

@@ -471,22 +471,131 @@ public static class ConfigCommands {
 
     static string Describe(ResolvedOption option) => option.IsDefault ? $"(default) {option.Value}" : option.Value;
 
+    /// <summary>
+    /// ⚠ What <em>this</em> configuration sets, first; the registry-wide totals after.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// This block reported only the registry-wide tier split until M9 — "A: 221, B: 0, C: 6, D:
+    /// 293" — which is true, and is not the number a user needs. The question a person opening
+    /// <c>skala config check</c> is asking is <b>"of the keys I set, which ones does the tool
+    /// ignore?"</b>, and on the real Rider export the answer is 244. Nothing looked wrong, because
+    /// fidelity is 99.7 %: an unimplemented key whose configured value coincides with what Skala
+    /// does anyway costs no fidelity at all. The exposure is forward-looking — change one of those
+    /// settings in Rider tomorrow and Skala keeps formatting the old way, silently. That is
+    /// docs/plan/00's non-negotiable 4 satisfied to the letter and missed in substance.
+    /// </para>
+    /// <para>
+    /// ⚠ <b>Inert is not ignored, and conflating them makes the number noise.</b> An inert option
+    /// is one no input can distinguish — another rule wins by the documented ordering, or the
+    /// writer cannot produce the shape it governs. Setting one changes nothing because nothing
+    /// could change it, so it is honoured vacuously rather than dropped. docs/plan/05 records each
+    /// one with its reason and the registry carries that reason on the entry.
+    /// </para>
+    /// </remarks>
     static string Counts(ResolutionResult resolution) {
-        var configured = resolution.Configured.Count();
-        var tiers = resolution.Resolved.GroupBy(static option => option.Info.Tier)
-            .ToDictionary(
-                static g => g.Key,
-                static g => g.Count()
-            );
+        var configured = resolution.Configured.ToList();
+        var registry = resolution.Resolved.GroupBy(static option => option.Info.Tier)
+            .ToDictionary(static g => g.Key, static g => g.Count());
 
         string Tier(OptionTier tier) =>
-            tiers.TryGetValue(tier, out var count) ? count.ToString(CultureInfo.InvariantCulture) : "0";
+            registry.TryGetValue(tier, out var count) ? count.ToString(CultureInfo.InvariantCulture) : "0";
 
-        return string.Create(
-            CultureInfo.InvariantCulture,
-            $"{OptionRegistry.Count} options known: {configured} set by the configuration, {OptionRegistry.Count - configured} at the registry default."
-            + $"{Environment.NewLine}Tiers — A (implemented): {Tier(OptionTier.A)}, B (approximated): {Tier(OptionTier.B)}, C (accepted, ignored): {Tier(OptionTier.C)}, D (not implemented): {Tier(OptionTier.D)}."
+        var applied = configured.Count(static o => o.Info.Tier is OptionTier.A or OptionTier.B);
+        var inert = configured.Where(static o => o.Info.Inert is not null).ToList();
+        var ignored = configured
+            .Where(static o => o.Info.Tier is OptionTier.C or OptionTier.D && o.Info.Inert is null)
+            .ToList();
+
+        var output = new StringBuilder();
+        output.AppendLine(
+            string.Create(
+                CultureInfo.InvariantCulture,
+                $"This configuration sets {configured.Count} of {OptionRegistry.Count} known options."
+            )
         );
+
+        output.AppendLine(
+            string.Create(
+                CultureInfo.InvariantCulture,
+                $"  {applied} applied · {ignored.Count} not implemented · {inert.Count} inert (honoured vacuously; no input can distinguish them)"
+            )
+        );
+
+        if (ignored.Count > 0) {
+            // ⚠ Grouped by prefix, because 244 individual keys is a wall nobody reads and the
+            // families are what tell you whether the gap matters to you: a repository that never
+            // touches alignment does not care that `align_*` is unimplemented.
+            var families = ignored
+                .GroupBy(static o => Family(o.Info))
+                .OrderByDescending(static g => g.Count())
+                .ThenBy(static g => g.Key, StringComparer.Ordinal)
+                .Take(6)
+                .ToList();
+
+            output.Append("  largest unimplemented families: ")
+                .AppendLine(
+                    string.Join(
+                        ", ",
+                        families.Select(static g =>
+                            string.Create(CultureInfo.InvariantCulture, $"{g.Key}* {g.Count()}")
+                        )
+                    )
+                );
+
+            // ⚠ xmldoc is a documented impossibility rather than neglect, and 27 keys sitting in a
+            // list of gaps with no explanation reads as neglect. SK-DIV-0006: `jb cleanupcode` does
+            // not format documentation comments at all, so there is no oracle to verify them
+            // against — they cannot be moved to Tier A by working harder.
+            if (families.Any(static g => g.Key == "xmldoc")) {
+                output.AppendLine(
+                    "    xmldoc*: the oracle does not format documentation comments at all (SK-DIV-0006),"
+                );
+                output.AppendLine("    so these cannot be verified against it. Not neglect.");
+            }
+
+            output.AppendLine("  `skala config explain <file>` lists every key with its tier.");
+        }
+
+        output.AppendLine();
+        output.AppendLine(
+            string.Create(
+                CultureInfo.InvariantCulture,
+                $"Registry-wide — A (implemented): {Tier(OptionTier.A)}, B (approximated): {Tier(OptionTier.B)}, C (accepted, ignored): {Tier(OptionTier.C)}, D (not implemented): {Tier(OptionTier.D)}."
+            )
+        );
+
+        return output.ToString().TrimEnd('\r', '\n');
+    }
+
+    /// <summary>
+    /// The option's family, for grouping: the first meaningful segment of its key.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ The <c>resharper_</c> and <c>resharper_csharp_</c> prefixes are stripped first, or every
+    /// family would be called "resharper" and the grouping would say nothing.
+    /// <para>
+    /// ⚠ The xmldoc options are grouped by their <em>language</em> rather than by their key,
+    /// because stripping <c>resharper_xmldoc_</c> would scatter them across <c>indent</c>,
+    /// <c>wrap</c> and the rest — and they are the one family whose gap has a single documented
+    /// cause worth stating once (SK-DIV-0006).
+    /// </para>
+    /// </remarks>
+    internal static string Family(OptionInfo info) {
+        if (string.Equals(info.Language, "xmldoc", StringComparison.Ordinal)) {
+            return "xmldoc";
+        }
+
+        var span = info.Key.AsSpan();
+        foreach (var prefix in (ReadOnlySpan<string>)["resharper_csharp_", "resharper_", "csharp_"]) {
+            if (span.StartsWith(prefix, StringComparison.Ordinal)) {
+                span = span[prefix.Length..];
+                break;
+            }
+        }
+
+        var underscore = span.IndexOf('_');
+        return underscore < 0 ? span.ToString() : span[..underscore].ToString();
     }
 
     static void AppendDiagnostics(StringBuilder output, ImmutableArray<SkalaDiagnostic> diagnostics) {

@@ -76,9 +76,9 @@ public sealed class LongPathTests : IDisposable {
 
         var run = _scratch.Run("format", "--check", path);
 
-        // ⚠ Exit 1, not 0. A tool that could not open the file would also print "0 files would be
+        // ⚠ Exit 2, not 0. A tool that could not open the file would also print "0 files would be
         // reformatted" and exit 0, and that is the answer this test exists to reject.
-        Assert.Equal(1, run.ExitCode);
+        Assert.Equal(2, run.ExitCode);
         Assert.Contains("1 file would be reformatted", run.StandardOutput, StringComparison.Ordinal);
     }
 

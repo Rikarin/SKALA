@@ -125,7 +125,12 @@ Points of substance:
 
 - **`reportSuppressedDiagnostics: true`.** Skala needs to distinguish "not found" from "found and
   suppressed by `#pragma`". A suppression audit (`skala check --show-suppressions`) is a SonarQube
-  feature worth keeping: `#pragma warning disable` with no justification comment is `SK7050`.
+  feature worth keeping. ⚠ This sentence used to end "`#pragma warning disable` with no
+  justification comment is `SK7050`", in the present tense. **`SK7050` does not exist** — no
+  analyzer, no `rules.json` entry, no allocation in `allocated-ids.txt`. It is allocated in
+  [08](08-rule-catalogue.md), whose status table correctly records it as not started;
+  this document promoted a plan to a fact. `--show-suppressions` itself is real and does what the
+  first half says.
 - **Analyzer exceptions never fail the run.** They are recorded as `SK9030` (warning) naming the
   analyzer and the rule, the analyzer is disabled for the remainder of the run, and everything else
   continues. A third-party analyzer that throws on one syntax shape must not be able to turn a CI
@@ -155,7 +160,8 @@ Four mechanisms, in precedence order, all honoured:
 
 1. `#pragma warning disable SK1042` — file/span scoped. Roslyn handles it.
 2. `[SuppressMessage("Skala", "SK1042:…", Justification = "…")]` — symbol scoped. Roslyn handles it.
-   ⚠ `Justification` missing or `"<Pending>"` ⇒ `SK7051`.
+   ⚠ `Justification` missing or `"<Pending>"` **would be** `SK7051`, which is allocated in
+   [08](08-rule-catalogue.md) and **not built**. Nothing reports it today.
 3. `dotnet_diagnostic.SK1042.severity = none` in a scoped `.editorconfig` section — the right way to
    turn a rule off for a folder, and the reason `[Testing/**]` sections exist.
 4. **Baseline** — the SonarQube replacement, and the only mechanism that is *not* in the source.

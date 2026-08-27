@@ -40,8 +40,15 @@ namespace Rikarin.Skala.Rules.Security;
 /// polls (docs/plan/16 § R3's "true and not what you would change"), this is never correct code —
 /// it is an accepted risk, and the difference matters because the accepted risk has a way of
 /// reaching production inside a <c>#if</c> that stopped being conditional. The message names the
-/// two ways to accept it deliberately, and <c>SK7050</c> already requires that a
-/// <c>#pragma warning disable</c> carry a justification.
+/// two ways to accept it deliberately.
+/// </para>
+/// <para>
+/// ⚠ This used to end "and <c>SK7050</c> already requires that a <c>#pragma warning disable</c>
+/// carry a justification". <b>It does not: <c>SK7050</c> is allocated in docs/plan/08 and has never
+/// been built.</b> Nothing today requires a justification on a suppression of this rule, so the
+/// visible half of "accept it deliberately and visibly" rests on review rather than on a
+/// mechanism — which is worth knowing when deciding whether a baseline entry or a pragma is the
+/// better disposal here. The baseline is the one with a diff somebody reads.
 /// </para>
 /// </remarks>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]

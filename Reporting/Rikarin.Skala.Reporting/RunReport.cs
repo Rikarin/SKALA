@@ -44,6 +44,15 @@ public sealed record RunReport {
 
     public ImmutableArray<SkippedRule> SkippedRules { get; init; } = [];
 
+    /// <summary>
+    /// <c>--verbose</c>: say what did not run, one line per rule, rather than one reason for all.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ A rendering flag, and it is on the report only because the renderers take nothing else.
+    /// It must never change what is in <see cref="Findings"/> or what the gate decided (ADR-009).
+    /// </remarks>
+    public bool Verbose { get; init; }
+
     public ImmutableArray<ToolExtension> Extensions { get; init; } = [];
 
     /// <summary>How many compilations were loaded, and from where.</summary>
@@ -155,29 +164,6 @@ public static class SkalaVersion {
 /// </remarks>
 public sealed record GateResult(string Name, bool Passed, ImmutableArray<string> Failures) {
     public static GateResult Pass(string name) => new(name, true, []);
-}
-
-/// <summary>docs/plan/09 § "Exit codes". Fixed, documented, and depended upon.</summary>
-public static class ExitCodes {
-    /// <summary>The gate passed. Findings may exist below it.</summary>
-    public const int Ok = 0;
-
-    /// <summary>The gate failed.</summary>
-    public const int GateFailed = 1;
-
-    /// <summary>⚠ Formatting changes are needed. Distinct from 1 so that a hook can auto-format on 2 and stop on 1.</summary>
-    public const int FormattingNeeded = 2;
-
-    /// <summary>A configuration error under <c>--strict-config</c>.</summary>
-    public const int ConfigurationError = 3;
-
-    /// <summary>No compilation could be built.</summary>
-    public const int LoadFailure = 4;
-
-    /// <summary>Internal error, including SK9099.</summary>
-    public const int InternalError = 5;
-
-    public const int Cancelled = 130;
 }
 
 /// <summary>The summary line every renderer ends with, computed once.</summary>

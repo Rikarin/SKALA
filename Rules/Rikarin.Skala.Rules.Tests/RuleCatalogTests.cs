@@ -27,6 +27,118 @@ public sealed class RuleCatalogTests {
         "allocated-ids.txt"
     );
 
+    static string CataloguePath { get; } =
+        Path.Combine(RepositoryRoot, "docs", "plan", "08-rule-catalogue.md");
+
+    /// <summary>
+    /// ⚠ The coverage block in doc 08 is generated, and this is what stops it going stale.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// It went stale inside one merge: the hand-written table said "21 shipped, 19.8 %", measured
+    /// at <c>8cbd66d</c>, and M8's five <c>SK5xxx</c> landed after it was typed. Nothing compared
+    /// the number to the registry, because nothing could — the number was prose.
+    /// </para>
+    /// <para>
+    /// ⚠ This is a two-directional check, unlike
+    /// <see cref="EveryCatalogueRule_IsNamedInTheRegister"/>, and it can be: it does not demand
+    /// that the catalogue and the registry hold the same ids, only that the document's *count* of
+    /// the difference is right. A rule deliberately cut still fails nothing; it moves a row.
+    /// </para>
+    /// </remarks>
+    [Fact]
+    public void TheCoverageBlock_MatchesTheRegistry() {
+        var catalogue = File.ReadAllText(CataloguePath);
+
+        // Anti-vacuity, the same guard as EveryCatalogueRule_IsNamedInTheRegister: every assertion
+        // below is satisfiable by an empty string.
+        Assert.True(
+            catalogue.Length > 4000 && catalogue.Contains("## SK5000 — Security", StringComparison.Ordinal),
+            $"{CataloguePath} was read but does not look like the rule catalogue ({catalogue.Length} bytes)."
+        );
+
+        var coverage = RuleCoverage.Compute(catalogue, RuleCatalog.All.Select(static rule => rule.Id));
+
+        // The catalogue names a hundred-odd rules and ships a couple of dozen. If either of those
+        // stops being roughly true, the parser has broken rather than the project.
+        Assert.True(coverage.Named > 80, $"Only {coverage.Named} rules were found in the catalogue.");
+        Assert.True(coverage.Count(RuleCoverage.State.Shipped) > 10, "Almost nothing was matched as shipped.");
+
+        // ⚠ Nothing that ships may be filtered out as a band edge or a range boundary. The filter
+        // is worth fifteen ids, so getting it slightly wrong is both easy and invisible: a shipped
+        // rule silently dropped from the denominator would make coverage read *better* than it is,
+        // which is the one direction an error here must never go.
+        //
+        // ⚠ SK9xxx is exempt and that is not a loophole. rules.json carries eight tool diagnostics
+        // — SK9001 and its neighbours — which are the tool describing itself, not rules from the
+        // plan. They have their own register and their own guard in ToolDiagnosticIdTests, and
+        // counting them here would credit the catalogue with eight rules it never planned. It is
+        // also why rules.json has 37 entries and the coverage says 29.
+        foreach (var rule in RuleCatalog.All.Where(static r => !r.Id.StartsWith("SK9", StringComparison.Ordinal))) {
+            Assert.True(
+                coverage.States.ContainsKey(rule.Id),
+                $"{rule.Id} ships and was excluded from the coverage count. "
+                + "Check RuleCoverage's band-edge filter — a shipped id is never a range boundary."
+            );
+
+            Assert.Equal(RuleCoverage.State.Shipped, coverage.States[rule.Id]);
+        }
+
+        Assert.Equal(
+            coverage.Named,
+            coverage.Count(RuleCoverage.State.Shipped)
+            + coverage.Count(RuleCoverage.State.Cut)
+            + coverage.Count(RuleCoverage.State.Retired)
+            + coverage.Count(RuleCoverage.State.Outstanding)
+        );
+
+        var expected = RuleCoverage.Render(coverage);
+        var actual = RuleCoverage.Current(catalogue);
+
+        Assert.True(
+            actual is not null,
+            $"{CataloguePath} has no generated coverage block. The markers are "
+            + $"{RuleCoverage.BeginMarker} and {RuleCoverage.EndMarker}."
+        );
+
+        Assert.True(
+            string.Equals(expected, actual, StringComparison.Ordinal),
+            "The coverage block in docs/plan/08-rule-catalogue.md disagrees with rules.json.\n"
+            + "Run `skala rules docs` to regenerate it. Expected:\n\n"
+            + expected
+        );
+    }
+
+    /// <summary>
+    /// ⚠ A retired id is still allocated, and the register has to say so.
+    /// </summary>
+    /// <remarks>
+    /// <c>SK6001</c> and <c>SK7010</c> are one rule under two ids; <c>SK7010</c> shipped.
+    /// <c>SK6001</c> is retired before it was ever built, and until M9 that fact lived only in doc
+    /// 08's prose — which <c>allocated-ids.txt</c> cannot read, so nothing stopped the number being
+    /// handed out again. <see cref="RuleIds_AreAppendOnly"/> demands a <c>rules.json</c> entry for
+    /// every allocated id, and a rule that was never built has none, so the register marks the
+    /// retirement inline and the append-only test skips those lines.
+    /// </remarks>
+    [Fact]
+    public void RetiredIds_AreRecordedInTheRegisterAndNotInTheCatalogue() {
+        var retired = File.ReadAllLines(AllocatedIdsPath)
+            .Where(static line => line.Contains("retired", StringComparison.Ordinal))
+            .Where(static line => !line.StartsWith('#'))
+            .Select(static line => line.Split(' ')[0])
+            .ToList();
+
+        Assert.Contains("SK6001", retired);
+
+        foreach (var id in retired) {
+            Assert.False(
+                RuleCatalog.All.Any(rule => string.Equals(rule.Id, id, StringComparison.Ordinal)),
+                $"{id} is marked retired in allocated-ids.txt and is also in rules.json. "
+                + "A retired id names no rule; if this one now ships, it was not retired."
+            );
+        }
+    }
+
     /// <summary>
     /// ⚠ The append-only test. An id in <c>allocated-ids.txt</c> must still be in the catalogue with
     /// the same concept.
@@ -42,6 +154,15 @@ public sealed class RuleCatalogTests {
 
             var space = trimmed.IndexOf(' ', StringComparison.Ordinal);
             Assert.True(space > 0, $"'{trimmed}' is not `<id> <concept>`.");
+
+            // ⚠ A retired id has no rules.json entry to compare against, because it was retired
+            // before it was ever built. The line stays so the number cannot be handed out twice,
+            // which is the only thing this register is for.
+            // RetiredIds_AreRecordedInTheRegisterAndNotInTheCatalogue asserts the other half.
+            if (trimmed.Contains("retired", StringComparison.Ordinal)) {
+                continue;
+            }
+
             allocated.Add((trimmed[..space], trimmed[(space + 1)..].Trim()));
         }
 

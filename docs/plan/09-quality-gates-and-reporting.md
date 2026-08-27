@@ -135,7 +135,13 @@ than in the logic around it, and a mocked git cannot have them:
    for, and the quiet reads as approval. `git ls-files --others --exclude-standard` supplies them, so
    that a `.gitignore`d build artefact is still not counted as somebody's new code.
 
-Three ways to scope, composable: `--since` (git ranges), `--baseline` (fingerprints), `--path`.
+Two ways to scope, composable: `--since` (git ranges) and `--baseline` (fingerprints).
+
+⚠ This said "three … `--path`", and there is no `--path` option on `check`. Path scoping is the
+variadic `<paths>` argument — `skala check --since=origin/main Core/` — which composes with both of
+the others and always did. The third name was never needed and, until M9, naming it produced
+`SK9023: no C# files were found` and exit 4, because `<paths>` swallowed the unknown flag as a
+directory name. That is now a configuration error that names the token.
 
 ## Gates
 
@@ -204,7 +210,7 @@ Fixed, documented, and depended upon by hooks, CI and agents:
 | 0 | gate passed (findings may exist below the gate) |
 | 1 | gate failed |
 | 2 | formatting changes needed (`format --check` only) |
-| 3 | configuration error (`SK9001`–`SK9005` under `--strict-config`) |
+| 3 | configuration error — an unrecognized option, a path that does not exist, an invocation the tool refuses, and `SK9001`–`SK9005` under `skala config check --strict` |
 | 4 | load failure — no compilation could be built |
 | 5 | internal error, including `SK9099` |
 | 130 | cancelled |
