@@ -43,21 +43,30 @@ public sealed record OracleHeader(string ReSharperVersion, string ConfigHash, st
 /// its diff is reviewed in its own commit.
 /// </remarks>
 public static class OracleFixture {
-    /// <summary>The fixture's body, with the header line removed.</summary>
-    public static string Read(CorpusFile file) {
-        var text = File.ReadAllText(file.ExpectedPath);
+    /// <summary>The format-only fixture's body, with the header line removed.</summary>
+    public static string Read(CorpusFile file) => Read(file, OracleProfile.FormatOnly);
+
+    /// <summary>One profile's fixture body, with the header line removed.</summary>
+    public static string Read(CorpusFile file, OracleProfile profile) => StripHeader(
+        File.ReadAllText(file.ExpectedPathFor(profile))
+    );
+
+    static string StripHeader(string text) {
         var newLine = text.IndexOf('\n');
         return newLine >= 0 && text.StartsWith(OracleHeader.Prefix, StringComparison.Ordinal)
             ? text[(newLine + 1)..]
             : text;
     }
 
-    public static OracleHeader? ReadHeader(CorpusFile file) {
-        if (!File.Exists(file.ExpectedPath)) {
+    public static OracleHeader? ReadHeader(CorpusFile file) => ReadHeader(file, OracleProfile.FormatOnly);
+
+    public static OracleHeader? ReadHeader(CorpusFile file, OracleProfile profile) {
+        var path = file.ExpectedPathFor(profile);
+        if (!File.Exists(path)) {
             return null;
         }
 
-        using var reader = new StreamReader(file.ExpectedPath);
+        using var reader = new StreamReader(path);
         return reader.ReadLine() is { } line ? OracleHeader.Parse(line) : null;
     }
 
@@ -73,6 +82,10 @@ public static class OracleFixture {
     /// <summary>Only <c>./build.sh Oracle</c> calls this.</summary>
     public static void Write(CorpusFile file, string body, OracleHeader header) =>
         File.WriteAllText(file.ExpectedPath, header + "\n" + body);
+
+    /// <summary>Only <c>./build.sh Oracle</c> calls this.</summary>
+    public static void Write(CorpusFile file, OracleProfile profile, string body, OracleHeader header) =>
+        File.WriteAllText(file.ExpectedPathFor(profile), header + "\n" + body);
 
     /// <summary>Only <c>./build.sh Oracle</c> calls this.</summary>
     public static void Write(CorpusFile file, CorpusVariant variant, string body, OracleHeader header) =>

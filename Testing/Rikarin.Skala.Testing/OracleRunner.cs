@@ -16,7 +16,12 @@ namespace Rikarin.Skala.Testing;
 /// </para>
 /// </remarks>
 public sealed class OracleRunner {
-    /// <summary>The profile name the settings file below defines.</summary>
+    /// <summary>The profile name the format-only settings file defines.</summary>
+    /// <remarks>
+    /// ⚠ Kept as a constant because the committed fixture headers of milestones 1–3.1 record it, and
+    /// re-reading those headers is how a stale fixture is spotted. New code takes an
+    /// <see cref="OracleProfile"/> instead.
+    /// </remarks>
     public const string Profile = "SkalaFormatOnly";
 
     readonly string _executable;
@@ -69,11 +74,18 @@ public sealed class OracleRunner {
     /// than substituted: an .editorconfig's last assignment of a key within a section wins, so this
     /// overrides whatever the export set without having to find it.
     /// </param>
+    /// <param name="profile">
+    /// Which cleanup profile to run. ⚠ The default is <see cref="OracleProfile.FormatOnly"/> so that
+    /// every milestone-3 call site keeps measuring what it measured before; arrangement passes
+    /// <see cref="OracleProfile.Cleanup"/> explicitly.
+    /// </param>
     public IReadOnlyDictionary<string, string> Format(
         IReadOnlyList<CorpusFile> files,
         string editorConfigPath,
-        IReadOnlyList<KeyValuePair<string, string>>? overrides = null
+        IReadOnlyList<KeyValuePair<string, string>>? overrides = null,
+        OracleProfile? profile = null
     ) {
+        profile ??= OracleProfile.FormatOnly;
         var scratch = Directory.CreateTempSubdirectory("skala-oracle-");
         try {
             File.Copy(editorConfigPath, Path.Combine(scratch.FullName, ".editorconfig"));
@@ -91,7 +103,7 @@ public sealed class OracleRunner {
             File.WriteAllText(Path.Combine(scratch.FullName, "Oracle.csproj"), ProjectFile);
             File.WriteAllText(Path.Combine(scratch.FullName, "Oracle.sln"), SolutionFile);
             var settings = Path.Combine(scratch.FullName, "Oracle.sln.DotSettings");
-            File.WriteAllText(settings, SettingsFile);
+            File.WriteAllText(settings, profile.SettingsFile);
 
             var names = new Dictionary<string, string>(StringComparer.Ordinal);
             for (var i = 0; i < files.Count; i++) {
@@ -104,7 +116,7 @@ public sealed class OracleRunner {
                 scratch.FullName,
                 "cleanupcode",
                 "--no-build",
-                "--profile=" + Profile,
+                "--profile=" + profile.Name,
                 "--settings=" + settings,
                 "--verbosity=WARN",
                 Path.Combine(scratch.FullName, "Oracle.sln")
@@ -146,7 +158,7 @@ public sealed class OracleRunner {
             File.WriteAllText(Path.Combine(scratch.FullName, "Oracle.csproj"), ProjectFile);
             File.WriteAllText(Path.Combine(scratch.FullName, "Oracle.sln"), SolutionFile);
             var settings = Path.Combine(scratch.FullName, "Oracle.sln.DotSettings");
-            File.WriteAllText(settings, SettingsFile);
+            File.WriteAllText(settings, OracleProfile.FormatOnly.SettingsFile);
 
             var names = new Dictionary<string, string>(StringComparer.Ordinal);
             for (var i = 0; i < work.Count; i++) {
@@ -210,7 +222,7 @@ public sealed class OracleRunner {
         return output + error;
     }
 
-    const string ProjectFile = """
+    public const string ProjectFile = """
                                <Project Sdk="Microsoft.NET.Sdk">
                                  <PropertyGroup>
                                    <TargetFramework>net10.0</TargetFramework>
@@ -225,7 +237,7 @@ public sealed class OracleRunner {
                                </Project>
                                """;
 
-    const string SolutionFile = """
+    public const string SolutionFile = """
                                 Microsoft Visual Studio Solution File, Format Version 12.00
                                 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Oracle", "Oracle.csproj", "{11111111-1111-1111-1111-111111111111}"
                                 EndProject
@@ -241,13 +253,39 @@ public sealed class OracleRunner {
                                 """;
 
     /// <summary>
-    /// A cleanup profile with the formatting half on and the arrangement half off. ⚠ The two are
-    /// compared separately (docs/plan/12): arrangement is a tree rewrite and belongs to milestone 4.
+    /// Runs one batch of files under a directory the caller owns, in place, and reports what moved.
     /// </summary>
-    static string SettingsFile { get; } =
-        """
-        <wpf:ResourceDictionary xml:space="preserve" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:s="clr-namespace:System;assembly=mscorlib" xmlns:ss="urn:shemas-jetbrains-com:settings-storage-xaml" xmlns:wpf="http://schemas.microsoft.com/winfx/2006/xaml/presentation">
-        	<s:String x:Key="/Default/CodeStyle/CodeCleanup/Profiles/=PROFILE/@EntryIndexedValue">&lt;?xml version="1.0" encoding="utf-16"?&gt;&lt;Profile name="PROFILE"&gt;&lt;CSReformatCode&gt;True&lt;/CSReformatCode&gt;&lt;CSUpdateFileHeader&gt;False&lt;/CSUpdateFileHeader&gt;&lt;/Profile&gt;</s:String>
-        </wpf:ResourceDictionary>
-        """.Replace("PROFILE", Profile, StringComparison.Ordinal);
+    /// <remarks>
+    /// ⚠ The arrangement differential needs this shape rather than <see cref="Format"/>'s: a cleanup
+    /// profile removes usings, and whether a using is unused is a question about the *project*, so
+    /// flattening a tree into <c>F0.cs … F59.cs</c> beside one another in one directory answers it
+    /// differently from the tree the files came from. Here the caller lays the scratch tree out and
+    /// this only drives the tool over it.
+    /// </remarks>
+    public IReadOnlyDictionary<string, string> FormatInPlace(
+        string projectDirectory,
+        IReadOnlyList<string> files,
+        OracleProfile profile
+    ) {
+        var settings = Path.Combine(projectDirectory, "Oracle.sln.DotSettings");
+        File.WriteAllText(settings, profile.SettingsFile);
+        Run(
+            projectDirectory,
+            "cleanupcode",
+            "--no-build",
+            "--profile=" + profile.Name,
+            "--settings=" + settings,
+            "--verbosity=WARN",
+            Path.Combine(projectDirectory, "Oracle.sln")
+        );
+
+        var results = new Dictionary<string, string>(StringComparer.Ordinal);
+        foreach (var file in files) {
+            if (File.Exists(file)) {
+                results[file] = File.ReadAllText(file);
+            }
+        }
+
+        return results;
+    }
 }
