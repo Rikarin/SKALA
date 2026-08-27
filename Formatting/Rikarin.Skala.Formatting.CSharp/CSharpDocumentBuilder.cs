@@ -538,11 +538,24 @@ public sealed partial class CSharpDocumentBuilder {
         var opened = false;
         var suppress = layout == NodeLayout.Parens && !_options.UseContinuousIndentInsideParens;
 
-        // ⚠ `place_single_method_argument_lambda_on_same_line = true` keeps a sole lambda argument
-        // on the call's line, so the parenthesis never gets a line of its own — and it still spends
-        // a continuation level, which the one-level-per-opening-line rule would otherwise collapse
-        // into whatever the lambda's own body opens. See LayoutWriter's Scope.Unconditional.
-        var soleLambdaArgument = _options.PlaceSingleMethodArgumentLambdaOnSameLine
+        // ⚠ Which delimited scopes spend their level unconditionally — that is, even when another
+        // scope opened on the same line — and which are collapsed with it. Both answers come from
+        // the oracle and neither is guessable:
+        //
+        //   if ((expr           ← two levels. A *grouping* parenthesis is a level of its own, and
+        //           == value))    the condition's parenthesis is another.
+        //   [Attr(              ← one. The bracket and the argument list's parenthesis are one step.
+        //       argument
+        //   )]
+        //   var d = Drawn(      ← one. The `=` does not pay for what the parenthesis pays for.
+        //       argument
+        //   );
+        //
+        // The sole-lambda case is the third: `place_single_method_argument_lambda_on_same_line`
+        // keeps the lambda on the call's line, so that parenthesis never gets a line of its own and
+        // would otherwise be collapsed into whatever the lambda's body opens.
+        var unconditional = node is ParenthesizedExpressionSyntax
+            || _options.PlaceSingleMethodArgumentLambdaOnSameLine
             && node is ArgumentListSyntax { Arguments: [{ Expression: AnonymousFunctionExpressionSyntax }] };
 
         // ⚠ A collection expression's elements are elements, like an initializer's: a chain broken
@@ -570,7 +583,7 @@ public sealed partial class CSharpDocumentBuilder {
                 EmitToken(token);
 
                 if (!opened && !suppress && token.SpanStart == open.SpanStart) {
-                    OpenIndent(IndentKind.Continuous, soleLambdaArgument);
+                    OpenIndent(IndentKind.Continuous, unconditional);
                     opened = true;
                     if (element) {
                         savedDepth = _continuousDepth;
@@ -619,7 +632,7 @@ public sealed partial class CSharpDocumentBuilder {
                 EmitToken(token);
 
                 if (!parenOpen && !open.IsKind(SyntaxKind.None) && token.SpanStart == open.SpanStart) {
-                    OpenIndent(IndentKind.Continuous);
+                    OpenIndent(IndentKind.Continuous, unconditional: true);
                     parenOpen = true;
                 }
 
@@ -650,7 +663,7 @@ public sealed partial class CSharpDocumentBuilder {
         EmitToken(node.SwitchKeyword);
         if (!node.OpenParenToken.IsKind(SyntaxKind.None)) {
             EmitToken(node.OpenParenToken);
-            OpenIndent(IndentKind.Continuous);
+            OpenIndent(IndentKind.Continuous, unconditional: true);
             Visit(node.Expression);
             EmitUpTo(node.CloseParenToken.SpanStart);
             CloseIndent(IndentKind.Continuous, alignsCloser: true);
@@ -845,16 +858,20 @@ public sealed partial class CSharpDocumentBuilder {
                 _doc.Verbatim(piece.Text, span, VerbatimFlags.SelfIndented);
                 break;
 
+            // ⚠ Trimmed on the right. A directive's trailing whitespace is never part of anything,
+            // the oracle removes it, and `#if HAVE_DYNAMIC` followed by twenty-eight spaces is real
+            // code in the corpus — 71 lines across 14 files of `corpus/real/` were nothing but this.
+            // The rest of a verbatim piece is still byte-for-byte.
             case PieceKind.ConditionalDirective:
-                _doc.Verbatim(piece.Text, span, DirectiveFlags(_options.IndentPreprocessorIf));
+                _doc.Verbatim(piece.Text.TrimEnd(), span, DirectiveFlags(_options.IndentPreprocessorIf));
                 break;
 
             case PieceKind.OtherDirective:
-                _doc.Verbatim(piece.Text, span, DirectiveFlags(_options.IndentPreprocessorOther));
+                _doc.Verbatim(piece.Text.TrimEnd(), span, DirectiveFlags(_options.IndentPreprocessorOther));
                 break;
 
             case PieceKind.RegionDirective:
-                _doc.Verbatim(piece.Text, span, DirectiveFlags(_options.IndentPreprocessorRegion));
+                _doc.Verbatim(piece.Text.TrimEnd(), span, DirectiveFlags(_options.IndentPreprocessorRegion));
                 break;
 
             case PieceKind.BlockComment:
@@ -874,8 +891,15 @@ public sealed partial class CSharpDocumentBuilder {
                 _doc.Text(piece.Text, span, CommentFlags(piece));
                 break;
 
+            // ⚠ Not trimmed. A comment's own text is the author's — `space_before_trailing_comment_text
+            // = false` — and the oracle leaves the trailing space on `// … during and ` exactly where
+            // it is. Only directives are trimmed; see the ConditionalDirective arm above.
             case PieceKind.LineComment:
-                _doc.Text(SpaceAfterMarker(piece.Text, "//", _options.SpaceBeforeTrailingCommentText), span, CommentFlags(piece));
+                _doc.Text(
+                    SpaceAfterMarker(piece.Text, "//", _options.SpaceBeforeTrailingCommentText),
+                    span,
+                    CommentFlags(piece)
+                );
                 break;
 
             default:

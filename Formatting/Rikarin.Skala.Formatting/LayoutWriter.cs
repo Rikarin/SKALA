@@ -239,23 +239,7 @@ public sealed class LayoutWriter {
     /// );
     /// </code>
     /// </remarks>
-    int LevelForNested() {
-        var level = 0;
-        var counted = -1;
-        for (var i = _scopes.Count - 1; i >= 0; i--) {
-            var scope = _scopes[i];
-            if (scope.IsBlock) {
-                return level + scope.Level;
-            }
-
-            if (scope.Unconditional ? scope.OpenLine <= _line : scope.OpenLine < _line && scope.OpenLine != counted) {
-                level += scope.Level;
-                counted = scope.OpenLine;
-            }
-        }
-
-        return level;
-    }
+    int LevelForNested() => Level(nested: true);
 
     /// <summary>
     /// The indent level for a line starting now.
@@ -269,18 +253,56 @@ public sealed class LayoutWriter {
     ///     location));
     /// </code>
     /// </remarks>
-    int Effective() {
+    int Effective() => Level(nested: false);
+
+    /// <summary>
+    /// Walks the scope stack and adds up the levels that apply.
+    /// </summary>
+    /// <param name="nested">
+    /// True for a scope opening now rather than a line starting now: an unconditional scope opened
+    /// earlier on <em>this</em> line is one the new scope is nesting inside.
+    /// </param>
+    /// <remarks>
+    /// ⚠ Two rules, and the second is milestone 3's correction to the first.
+    /// <list type="number">
+    /// <item>
+    /// A <b>delimited</b> scope — a parenthesis, a bracket — always spends its level. Verified
+    /// against the oracle: an operand broken onto its own line inside <c>if ((… == …))</c> lands two
+    /// levels in, one for each parenthesis, although both opened on the same line.
+    /// </item>
+    /// <item>
+    /// An <b>undelimited continuation</b> — the level a group spends for its own break points,
+    /// docs/plan/04's second row — spends at most one level per line, and none at all on a line
+    /// where a delimited scope inside it already spent one. That second clause is what keeps
+    /// <c>using var d = Drawn(</c> with its arguments under it at one level: the <c>=</c> would
+    /// otherwise pay for a continuation the parenthesis is already paying for. Dropping either half costs 1.9 points of
+    /// line fidelity on <c>corpus/real/</c>, in opposite directions.
+    /// </item>
+    /// </list>
+    /// ⚠ The single <c>blocked</c> variable is enough because scopes are visited innermost-first and
+    /// an outer scope never opened on a later line than an inner one.
+    /// </remarks>
+    int Level(bool nested) {
         var level = 0;
-        var counted = -1;
+        var blocked = -1;
         for (var i = _scopes.Count - 1; i >= 0; i--) {
             var scope = _scopes[i];
             if (scope.IsBlock) {
                 return level + scope.Level;
             }
 
-            if (scope.OpenLine < _line && (scope.Unconditional || scope.OpenLine != counted)) {
+            if (scope.Unconditional) {
+                if (nested ? scope.OpenLine <= _line : scope.OpenLine < _line) {
+                    level += scope.Level;
+                    blocked = scope.OpenLine;
+                }
+
+                continue;
+            }
+
+            if (scope.OpenLine < _line && scope.OpenLine != blocked) {
                 level += scope.Level;
-                counted = scope.OpenLine;
+                blocked = scope.OpenLine;
             }
         }
 
