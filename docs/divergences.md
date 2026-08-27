@@ -797,3 +797,106 @@ Measured: 1 line, 1 file of `constructs/` (324 files). Not observed in `corpus/r
 - options: `resharper_blank_lines_around_type`, `resharper_stick_comment`,
   `resharper_blank_lines_before_single_line_comment`
 - ⚠ status: **open**, pre-existing, exposed at the M9 merge
+
+## SK-DIV-0016 — the oracle's cleanup profile ignores `@formatter:off`; Skala honours it everywhere
+
+`resharper_formatter_tags_enabled = true`, `resharper_formatter_off_tag = @formatter:off`,
+`resharper_formatter_on_tag = @formatter:on` and `resharper_formatter_tags_accept_regexp = false` are
+all in the export, and the two `jb cleanupcode` profiles disagree about them:
+
+```
+dotnet run --project Testing/Rikarin.Skala.Testing -- ask <dir>
+dotnet run --project Testing/Rikarin.Skala.Testing -- ask <dir> --profile=SkalaCleanup
+```
+
+| profile | tasks | the region between the tags |
+|---|---|---|
+| `SkalaFormatOnly` | `CSReformatCode` | **byte-identical** |
+| `SkalaCleanup` | the arrangement half M4 built | **rewritten** |
+
+On one probe — `constructs/arrangement/formatter-tags/a-region-survives-arrangement.cs`, and the
+`.arranged.expected.cs` beside it is the oracle's committed answer — the cleanup profile reached
+inside the tags and:
+
+- dropped the trailing comma from the hand-aligned `int[,]` initializer,
+- folded `public  int  Old( )   { return 1; }` into `public  int  Old( ) => 1;`,
+- folded `{ return new List<int>(); }` into `=> new()`,
+- and rewrote `private System.Int32 Width() { return 3; }` into `int Width() => 3;` — three separate
+  rules, in a region whose author had said not to.
+
+`a-node-straddling-a-tag-is-skipped-whole.arranged.expected.cs` is worse to read: both tag comments
+end up dangling in the middle of expression bodies the profile created around them.
+
+⚠ **Skala respects the tags under both.** [00](plan/00-mandate-and-non-negotiables.md)'s
+non-negotiable 9 — the reference tool is a test subject, not a specification — is the whole argument.
+`@formatter:off` is not a formatting preference that arrangement may take a different view of; it is
+the one place in the tool where a person has said in words what they want, and the pass that ignores
+it is the pass whose output `git revert` is the only way back from
+([06](plan/06-arrangement-and-syntax-styles.md) § "The line between `format` and `arrange`").
+
+⚠ **It costs nothing measurable against the oracle's *formatting* number**, because the format-only
+profile agrees: all three fixtures in `constructs/arrangement/formatter-tags/` come back byte-identical
+from `CSReformatCode` and Skala reproduces all three exactly. What it costs is agreement on the
+*arrangement* differential over those three files, which is the point of the entry.
+
+- options: `resharper_formatter_tags_enabled`, `resharper_formatter_off_tag`,
+  `resharper_formatter_on_tag`, `resharper_formatter_tags_accept_regexp`
+- ⚠ status: **permanent**. There is no configuration under which Skala should arrange inside the tags.
+
+## SK-DIV-0017 — a comment that *mentions* the tag is prose; the oracle says it is a directive
+
+`resharper_formatter_tags_accept_regexp = false` makes the match literal. The oracle reads "literal"
+as a plain substring test over the comment's whole text — measured, not inferred, over nine shapes:
+
+| comment | oracle | Skala |
+|---|---|---|
+| `// @formatter:off` | tag | tag |
+| `//@formatter:off` | tag | tag |
+| `// @formatter:off because the table is hand-aligned` | tag | tag |
+| `void A() { } // @formatter:off` (trailing) | tag, from the next line | same |
+| `// we support @formatter:off here` | **tag** | prose |
+| `// see @formatter:off` | **tag** | prose |
+| `` // `@formatter:off` `` | **tag** | prose |
+| `/// <c>@formatter:off</c>` | **tag** | prose |
+| `/* @formatter:off */` | tag | tag |
+
+Skala's rule: **the tag must be the first thing in the comment**, after the marker and any
+whitespace. Deliberately not an equality test — a reason written after the tag is the commonest way
+anyone writes one, and refusing that would trade this footgun for a worse one.
+
+⚠ **The footgun is not hypothetical and it fired inside this repository.** Four of Skala's own source
+files carry a comment discussing the directive, and under the oracle's rule the half of each file
+below that comment was silently not being formatted; nothing reported it. The fuzzer found the same
+thing from the other end — `./build.sh Lint` refused to format `Testing/Rikarin.Skala.Testing/Fuzzer.cs`,
+because a paragraph explaining the directive switched formatting off and an interpolated string below
+it then tripped `SK9099` (SK-FUZZ-0005). A file that documents a directive should not be governed by it.
+
+Measured cost, at the commit that made the change: **zero lines.** `skala format --check` over
+`Analysis Core Distribution Formatting Reporting Tools` is clean before and after — the newly-visible
+tails were already in canonical form — and no file in `corpus/real/`, `corpus/constructs/` or
+`corpus/pathological/` contains a comment that mentions the tag without being it. So this buys the
+refusal and pays nothing for it today; what it costs is that a repository shared with Rider could
+disagree about one file, in the direction of Skala formatting more.
+
+⚠ **A second, smaller difference in the same machinery, measured at the same time and *not* changed.**
+The oracle protects the `off` comment's own line including its indentation, and re-indents the `on`
+comment's line to the surrounding level. Skala protects both. Skala therefore leaves untouched one
+line the oracle moves:
+
+```
+class C {                              class C {
+            // @formatter:off                      // @formatter:off      ← both keep this
+    void  M( ) { }                         void  M( ) { }                 ← both keep this
+            // @formatter:on                       // @formatter:on       ← oracle moves to 4
+```
+
+Skala matched the oracle on the second line and not the first before this milestone, which was the
+worst of the three possible answers; it now protects both. Protecting more than the oracle is the
+safe direction for an escape hatch, and a person reading the two tag lines as the boundary of their
+own block expects neither to move.
+
+- options: `resharper_formatter_tags_enabled`, `resharper_formatter_off_tag`,
+  `resharper_formatter_on_tag`, `resharper_formatter_tags_accept_regexp`
+- ⚠ status: **permanent**, pinned by `Formatting.CSharp.Tests/FormatterTagTests` rather than by a
+  corpus fixture — a fixture recording the oracle's answer here would lower the format-fidelity
+  ratchet to pin a divergence that costs nothing on any real file.

@@ -21,9 +21,10 @@ public sealed class PredefinedTypeRule : ArrangementRule {
 
     public override bool IsEnabled(in ArrangementOptions options) => options.PredefinedTypeForLocals;
 
-    public override SyntaxNode Apply(ArrangementContext context) => new Rewriter(context.Semantics).Visit(context.Root);
+    public override SyntaxNode Apply(ArrangementContext context) =>
+        new Rewriter(context.Guard, context.Semantics).Visit(context.Root);
 
-    sealed class Rewriter(SemanticModel model) : CSharpSyntaxRewriter {
+    sealed class Rewriter(FormatterTagGuard guard, SemanticModel model) : GuardedRewriter(guard) {
         public override SyntaxNode? VisitIdentifierName(IdentifierNameSyntax node) {
             var visited = (IdentifierNameSyntax)base.VisitIdentifierName(node)!;
             return Replace(node, visited);

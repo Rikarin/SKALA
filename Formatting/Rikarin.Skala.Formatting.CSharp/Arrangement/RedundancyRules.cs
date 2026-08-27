@@ -21,9 +21,10 @@ public sealed class ThisQualifierRule : ArrangementRule {
 
     public override bool IsEnabled(in ArrangementOptions options) => options.RemoveThisQualifier;
 
-    public override SyntaxNode Apply(ArrangementContext context) => new Rewriter(context.Semantics).Visit(context.Root);
+    public override SyntaxNode Apply(ArrangementContext context) =>
+        new Rewriter(context.Guard, context.Semantics).Visit(context.Root);
 
-    sealed class Rewriter(SemanticModel model) : CSharpSyntaxRewriter {
+    sealed class Rewriter(FormatterTagGuard guard, SemanticModel model) : GuardedRewriter(guard) {
         public override SyntaxNode? VisitMemberAccessExpression(MemberAccessExpressionSyntax node) {
             var visited = (MemberAccessExpressionSyntax)base.VisitMemberAccessExpression(node)!;
             if (node.Expression is not ThisExpressionSyntax || !node.IsKind(SyntaxKind.SimpleMemberAccessExpression)) {
@@ -72,9 +73,9 @@ public sealed class RedundantBracesRule : ArrangementRule {
 
     public override bool IsEnabled(in ArrangementOptions options) => options.BracesRedundant;
 
-    public override SyntaxNode Apply(ArrangementContext context) => new Rewriter().Visit(context.Root);
+    public override SyntaxNode Apply(ArrangementContext context) => new Rewriter(context.Guard).Visit(context.Root);
 
-    sealed class Rewriter : CSharpSyntaxRewriter {
+    sealed class Rewriter(FormatterTagGuard guard) : GuardedRewriter(guard) {
         public override SyntaxNode? VisitBlock(BlockSyntax node) {
             var visited = (BlockSyntax)base.VisitBlock(node)!;
             var statements = new List<StatementSyntax>();
@@ -142,9 +143,9 @@ public sealed class RedundantParenthesesRule : ArrangementRule {
 
     public override bool IsEnabled(in ArrangementOptions options) => options.Aggressive;
 
-    public override SyntaxNode Apply(ArrangementContext context) => new Rewriter().Visit(context.Root);
+    public override SyntaxNode Apply(ArrangementContext context) => new Rewriter(context.Guard).Visit(context.Root);
 
-    sealed class Rewriter : CSharpSyntaxRewriter {
+    sealed class Rewriter(FormatterTagGuard guard) : GuardedRewriter(guard) {
         public override SyntaxNode? VisitParenthesizedExpression(ParenthesizedExpressionSyntax node) {
             var visited = (ParenthesizedExpressionSyntax)base.VisitParenthesizedExpression(node)!;
             if (!IsRedundant(node)) {

@@ -83,19 +83,29 @@ public readonly record struct XmlDocReplacement(TextSpan Span, int Length);
 /// </remarks>
 public static class XmlDocFormatter {
     /// <summary>Re-wraps every well-formed <c>///</c> comment in already-formatted text.</summary>
+    /// <param name="tags">
+    /// ⚠ <c>@formatter:off</c>, and this pass is the sharpest of the three places it used to be
+    /// missed. It runs on the document builder's <em>output</em>, downstream of the verbatim chunk
+    /// the builder had just protected, and re-parses it — so a <c>///</c> comment between the tags
+    /// looked to it exactly like any other. The guard is computed over this pass's own tree because
+    /// that is the text whose offsets the replacements are in.
+    /// </param>
     public static XmlDocOutcome Rewrite(
         string text,
         in XmlDocOptions options,
         CSharpParseOptions parseOptions,
-        string newLine
+        string newLine,
+        FormatterTags tags = default
     ) {
         var tree = CSharpSyntaxTree.ParseText(SourceText.From(text), parseOptions);
         var source = tree.GetText();
+        var root = tree.GetRoot();
+        var guard = FormatterTagGuard.For(root, tags);
         var replacements = new List<(TextSpan Span, string Text)>();
         var refusals = ImmutableArray.CreateBuilder<XmlDocRefusal>();
         var reflowed = 0;
 
-        foreach (var trivia in tree.GetRoot().DescendantTrivia(descendIntoTrivia: false)) {
+        foreach (var trivia in root.DescendantTrivia(descendIntoTrivia: false)) {
             if (!trivia.IsKind(SyntaxKind.SingleLineDocumentationCommentTrivia)) {
                 // ⚠ `/** */` is out of scope, not pending. Its interior lines have no marker of
                 // their own, so re-wrapping one means inventing the `*` prefix convention the author
@@ -104,6 +114,14 @@ public static class XmlDocFormatter {
             }
 
             if (trivia.GetStructure() is not DocumentationCommentTriviaSyntax structure) {
+                continue;
+            }
+
+            // ⚠ Not a refusal. A refusal is the sub-formatter declining a comment it could not
+            // re-wrap safely and `--verbose` reports it as a near-miss; a tag is the author saying
+            // the question does not arise. Counting one as the other would make the refusal number —
+            // which is how the round-trip property is audited — mean two different things.
+            if (guard.Touches(trivia.FullSpan)) {
                 continue;
             }
 

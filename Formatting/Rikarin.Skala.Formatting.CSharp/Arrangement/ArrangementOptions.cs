@@ -75,6 +75,11 @@ public readonly struct ArrangementOptions {
 
         MaxLineLength = Math.Max(1, options.GetInt(Ids.MaxLineLength));
         IndentSize = Math.Max(1, options.GetInt(Ids.IndentSize));
+
+        FormatterTagsEnabled = options.GetBool(Ids.FormatterTagsEnabled);
+        FormatterOffTag = options.GetString(Ids.FormatterOffTag) ?? "@formatter:off";
+        FormatterOnTag = options.GetString(Ids.FormatterOnTag) ?? "@formatter:on";
+        FormatterTagsAcceptRegexp = options.GetBool(Ids.FormatterTagsAcceptRegexp);
     }
 
     public ArrangementScope Scope { get; }
@@ -114,6 +119,25 @@ public readonly struct ArrangementOptions {
 
     public int MaxLineLength { get; }
     public int IndentSize { get; }
+
+    /// <summary>
+    /// The escape hatch, read by <see cref="FormatterTagGuard"/>.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ Inert in the option-coverage sense and not in any other: the formatter already claims these
+    /// four keys and its fixtures pin them, so claiming them again here would make the Tier A set
+    /// ambiguous about which component proves them. What arrangement adds is a *refusal*, and a
+    /// refusal has no output to differential — it is pinned by
+    /// <c>constructs/arrangement/formatter-tags/</c> instead.
+    /// </remarks>
+    public bool FormatterTagsEnabled { get; }
+
+    public string FormatterOffTag { get; }
+    public string FormatterOnTag { get; }
+    public bool FormatterTagsAcceptRegexp { get; }
+
+    /// <summary>The four keys as <see cref="FormatterTagGuard"/> wants them.</summary>
+    public FormatterTags Tags => new(FormatterTagsEnabled, FormatterOffTag, FormatterOnTag, FormatterTagsAcceptRegexp);
 
     /// <summary>Every option the arranger reads — the arrangement half of the Tier A claim.</summary>
     public static ImmutableArray<OptionId> Implemented => Ids.All;
@@ -176,6 +200,13 @@ public readonly struct ArrangementOptions {
 
         public static readonly OptionId MaxLineLength = OfInert("max_line_length");
         public static readonly OptionId IndentSize = OfInert("indent_size");
+
+        public static readonly OptionId FormatterTagsEnabled = OfInert("resharper_formatter_tags_enabled");
+        public static readonly OptionId FormatterOffTag = OfInert("resharper_formatter_off_tag");
+        public static readonly OptionId FormatterOnTag = OfInert("resharper_formatter_on_tag");
+
+        public static readonly OptionId FormatterTagsAcceptRegexp =
+            OfInert("resharper_formatter_tags_accept_regexp");
 
         public static ImmutableArray<OptionId> All { get; } = [.. Collected.Distinct().Except(Inert).Order()];
 

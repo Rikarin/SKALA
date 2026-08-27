@@ -27,9 +27,10 @@ public sealed class VarRule : ArrangementRule {
         options.VarForBuiltInTypes || options.VarWhenTypeIsApparent || options.VarElsewhere;
 
     public override SyntaxNode Apply(ArrangementContext context) =>
-        new Rewriter(context.Semantics, context.Options).Visit(context.Root);
+        new Rewriter(context.Guard, context.Semantics, context.Options).Visit(context.Root);
 
-    sealed class Rewriter(SemanticModel model, ArrangementOptions options) : CSharpSyntaxRewriter {
+    sealed class Rewriter(FormatterTagGuard guard, SemanticModel model, ArrangementOptions options)
+        : GuardedRewriter(guard) {
         public override SyntaxNode? VisitVariableDeclaration(VariableDeclarationSyntax node) {
             var visited = (VariableDeclarationSyntax)base.VisitVariableDeclaration(node)!;
             return ShouldConvert(node) ? visited.WithType(Var(node.Type)) : visited;
@@ -186,9 +187,10 @@ public sealed class ObjectCreationRule : ArrangementRule {
         || options.ObjectCreationWhenTypeNotEvident == ObjectCreationStyle.TargetTyped;
 
     public override SyntaxNode Apply(ArrangementContext context) =>
-        new Rewriter(context.Semantics, context.Options).Visit(context.Root);
+        new Rewriter(context.Guard, context.Semantics, context.Options).Visit(context.Root);
 
-    sealed class Rewriter(SemanticModel model, ArrangementOptions options) : CSharpSyntaxRewriter {
+    sealed class Rewriter(FormatterTagGuard guard, SemanticModel model, ArrangementOptions options)
+        : GuardedRewriter(guard) {
         public override SyntaxNode? VisitObjectCreationExpression(ObjectCreationExpressionSyntax node) {
             var visited = (ObjectCreationExpressionSyntax)base.VisitObjectCreationExpression(node)!;
             if (!ShouldConvert(node)) {
@@ -371,9 +373,10 @@ public sealed class DefaultValueRule : ArrangementRule {
         || options.DefaultValueWhenTypeNotEvident == DefaultValueStyle.DefaultLiteral;
 
     public override SyntaxNode Apply(ArrangementContext context) =>
-        new Rewriter(context.Semantics, context.Options).Visit(context.Root);
+        new Rewriter(context.Guard, context.Semantics, context.Options).Visit(context.Root);
 
-    sealed class Rewriter(SemanticModel model, ArrangementOptions options) : CSharpSyntaxRewriter {
+    sealed class Rewriter(FormatterTagGuard guard, SemanticModel model, ArrangementOptions options)
+        : GuardedRewriter(guard) {
         public override SyntaxNode? VisitDefaultExpression(DefaultExpressionSyntax node) {
             var visited = (DefaultExpressionSyntax)base.VisitDefaultExpression(node)!;
             if (!ShouldConvert(node)) {

@@ -39,7 +39,8 @@ public sealed class NullCheckingPatternRule : ArrangementRule {
     public override bool IsEnabled(in ArrangementOptions options) =>
         options.NullCheckingPattern == NullCheckingPatternStyle.NotNullPattern;
 
-    public override SyntaxNode Apply(ArrangementContext context) => new Rewriter(context.Semantics).Visit(context.Root);
+    public override SyntaxNode Apply(ArrangementContext context) =>
+        new Rewriter(context.Guard, context.Semantics).Visit(context.Root);
 
     /// <summary>
     /// Whether <paramref name="type"/> declares a user-defined <c>operator ==</c>, anywhere in its
@@ -73,7 +74,7 @@ public sealed class NullCheckingPatternRule : ArrangementRule {
         return false;
     }
 
-    sealed class Rewriter(SemanticModel model) : CSharpSyntaxRewriter {
+    sealed class Rewriter(FormatterTagGuard guard, SemanticModel model) : GuardedRewriter(guard) {
         public override SyntaxNode? VisitBinaryExpression(BinaryExpressionSyntax node) {
             var visited = (BinaryExpressionSyntax)base.VisitBinaryExpression(node)!;
             if (!node.IsKind(SyntaxKind.EqualsExpression) && !node.IsKind(SyntaxKind.NotEqualsExpression)) {

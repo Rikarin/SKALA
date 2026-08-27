@@ -1042,6 +1042,18 @@ public sealed partial class CSharpDocumentBuilder {
 
     /// <summary>A whole node written from its original span: never reindented, never respaced.</summary>
     void EmitVerbatim(SyntaxNode node) {
+        // ⚠ Inside a `@formatter:off` span everything was written as one raw chunk already — the
+        // same check EmitPiece makes at the top, and for a sharper reason. The tree walk still
+        // reaches every node between the tags, and this is the one arm that writes a node's *text*
+        // instead of skipping it. An interpolated string between the tags was therefore written
+        // twice, under a second anchor covering source the emitter had already covered, and
+        // EditEmitter turned the overlap into an edit that deleted the rest of the file. The
+        // token-stream check refused the write, so nothing was ever lost on disk — but the file
+        // could not be formatted at all until the tag was taken out.
+        if (node.SpanStart < _verbatimUntil) {
+            return;
+        }
+
         EmitUpTo(node.SpanStart);
         var span = node.Span;
         if (span.Start != _gapEmittedAt) {
@@ -1208,7 +1220,15 @@ public sealed partial class CSharpDocumentBuilder {
 
     void EmitFormatterOffSpan(int index) {
         // The escape hatch. It must work on the first attempt or people stop trusting the tool.
-        var start = _pieces[index].Span.Start;
+        //
+        // ⚠ The region starts at the beginning of the tag comment's own *line*, not at the comment.
+        // Measured: `jb cleanupcode` leaves a twelve-space `// @formatter:off` at twelve spaces
+        // inside a class body it would otherwise indent to four. Starting at the comment re-indented
+        // the line the author wrote the tag on, which is the one line they can be certain they meant.
+        // A tag in a *trailing* comment does not extend backwards — the oracle formats the code
+        // before it on that line, and so does this.
+        var piece = _pieces[index];
+        var start = piece.StartsLine ? LineStart(piece.Span.Start) : piece.Span.Start;
         var end = _source.Length;
         for (var i = index + 1; i < _pieces.Length; i++) {
             if (_pieces[i].IsComment && ContainsTag(_pieces[i].Text, _options.FormatterOnTag)) {
@@ -1220,13 +1240,63 @@ public sealed partial class CSharpDocumentBuilder {
         EmitGap(index, PieceKind.LineComment, start, default);
         var span = new SourceSpan(start, end - start);
         _doc.Anchor(span, -1);
-        _doc.Verbatim(_source[start..end], span);
+
+        // The chunk now carries the tag line's own indentation, so the writer must not add its own.
+        _doc.Verbatim(
+            _source[start..end],
+            span,
+            piece.StartsLine ? VerbatimFlags.SelfIndented : VerbatimFlags.None
+        );
+
         _verbatimUntil = end;
         _lastPiece = index;
     }
 
-    bool ContainsTag(string text, string tag) =>
-        !_options.FormatterTagsAcceptRegexp && text.Contains(tag, StringComparison.Ordinal);
+    /// <summary>The offset of the first character of the line <paramref name="position"/> is on.</summary>
+    int LineStart(int position) {
+        var start = position;
+        while (start > 0 && _source[start - 1] is ' ' or '\t') {
+            start--;
+        }
+
+        // ⚠ Only whitespace is walked back over, and only to a line boundary. A tag comment that
+        // follows something other than indentation on its line is not at the start of a line, and
+        // `Piece.StartsLine` has already said so — this is the second half of the same statement.
+        return start > 0 && _source[start - 1] is not ('\n' or '\r') ? position : start;
+    }
+
+    /// <summary>
+    /// Whether a comment <em>is</em> the tag, rather than mentioning it.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ SK-DIV-0017, and the one place Skala reads the escape hatch more narrowly than the oracle
+    /// does. `resharper_formatter_tags_accept_regexp = false` makes the match literal, and the
+    /// oracle takes "literal" to mean a plain substring test over the comment's whole text: measured,
+    /// `// we support @formatter:off here` turns formatting off to the end of the file in
+    /// <c>jb cleanupcode</c> 2025.2.6 exactly as a bare tag does, and so did Skala.
+    /// <para>
+    /// That is a footgun rather than a feature, and it fired inside this repository: four of Skala's
+    /// own source files have a comment discussing the directive, and the half of each file below that
+    /// comment was silently not being formatted. Nothing reported it. The fuzzer found it the same
+    /// way — <c>./build.sh Lint</c> refused to format its source — and a file that documents a
+    /// directive should not be governed by it.
+    /// </para>
+    /// <para>
+    /// So the rule is: <b>the tag must be the first thing in the comment</b>, after the marker and
+    /// any whitespace. <c>// @formatter:off</c> and <c>// @formatter:off — the table below is
+    /// hand-aligned</c> are the tag; <c>// we support @formatter:off here</c> and
+    /// <c>// ⚠ `@formatter:off`. The finding still stands</c> are prose. Deliberately not an
+    /// equality test: a reason written after the tag is the commonest way anyone writes one, and
+    /// refusing it would trade this footgun for a worse one.
+    /// </para>
+    /// </remarks>
+    bool ContainsTag(string text, string tag) {
+        if (_options.FormatterTagsAcceptRegexp) {
+            return false;
+        }
+
+        return FormatterTagGuard.IsTag(text, tag);
+    }
 
     // ── Gaps ─────────────────────────────────────────────────────────────────────────────────
 
@@ -1263,7 +1333,8 @@ public sealed partial class CSharpDocumentBuilder {
         // the gap makes it untouchable: joining `a + // note` with `b` puts `b` inside the comment,
         // and breaking before a directive moves code across it.
         var spec = default(GapSpec);
-        var planned = previous.Kind == PieceKind.Token && nextKind == PieceKind.Token
+        var planned = previous.Kind == PieceKind.Token
+            && nextKind == PieceKind.Token
             && _plan.TryGap(nextStart, out spec);
 
         if (planned) {
@@ -1276,8 +1347,9 @@ public sealed partial class CSharpDocumentBuilder {
                         spec.Rule == GapRule.FillPoint,
                         ResolveBlankLines(previous, nextPieceIndex, nextToken, Math.Max(0, newLines - 1)),
                         newLines == 0
-                            ? DefaultNewLine()
-                            : _options.EnforceLineEndingStyle ? DefaultNewLine() : FirstNewLine(gap) ?? DefaultNewLine());
+                        ? DefaultNewLine()
+                        : _options.EnforceLineEndingStyle ? DefaultNewLine() : FirstNewLine(gap) ?? DefaultNewLine()
+                    );
                     return;
 
                 case GapRule.Flat:
@@ -1296,8 +1368,9 @@ public sealed partial class CSharpDocumentBuilder {
                         nextToken,
                         ResolveBlankLines(previous, nextPieceIndex, nextToken, Math.Max(0, newLines - 1)),
                         newLines == 0
-                            ? DefaultNewLine()
-                            : _options.EnforceLineEndingStyle ? DefaultNewLine() : FirstNewLine(gap) ?? DefaultNewLine());
+                        ? DefaultNewLine()
+                        : _options.EnforceLineEndingStyle ? DefaultNewLine() : FirstNewLine(gap) ?? DefaultNewLine()
+                    );
                     return;
             }
         }
@@ -1323,14 +1396,16 @@ public sealed partial class CSharpDocumentBuilder {
             nextPieceIndex,
             nextToken,
             ResolveBlankLines(previous, nextPieceIndex, nextToken, newLines - 1),
-            _options.EnforceLineEndingStyle ? DefaultNewLine() : FirstNewLine(gap) ?? DefaultNewLine());
+            _options.EnforceLineEndingStyle ? DefaultNewLine() : FirstNewLine(gap) ?? DefaultNewLine()
+        );
     }
 
-    string DefaultNewLine() => _options.LineEnding switch {
-        LineEnding.Crlf => "\r\n",
-        LineEnding.Cr => "\r",
-        _ => "\n"
-    };
+    string DefaultNewLine() =>
+        _options.LineEnding switch {
+            LineEnding.Crlf => "\r\n",
+            LineEnding.Cr => "\r",
+            _ => "\n"
+        };
 
     /// <summary>
     /// Emits a break, spending the statement's one continuous indent level if this is the break
@@ -1366,7 +1441,8 @@ public sealed partial class CSharpDocumentBuilder {
     /// </remarks>
     int FrameToSpend(int nextPieceIndex, SyntaxToken nextToken) {
         var beforeDot = nextToken.IsKind(SyntaxKind.DotToken)
-            || nextToken.IsKind(SyntaxKind.QuestionToken) && nextToken.Parent is ConditionalAccessExpressionSyntax;
+            || nextToken.IsKind(SyntaxKind.QuestionToken)
+            && nextToken.Parent is ConditionalAccessExpressionSyntax;
 
         for (var i = _frames.Count - 1; i >= 0; i--) {
             if (!_frames[i].Started) {
@@ -1456,8 +1532,11 @@ public sealed partial class CSharpDocumentBuilder {
     /// outdented by the time it is written.
     /// </summary>
     static bool StartsAUnit(SyntaxToken token) {
-        if (token.Kind() is SyntaxKind.CloseBraceToken or SyntaxKind.CloseParenToken
-            or SyntaxKind.CloseBracketToken or SyntaxKind.GreaterThanToken or SyntaxKind.OpenBraceToken) {
+        if (token.Kind() is SyntaxKind.CloseBraceToken
+            or SyntaxKind.CloseParenToken
+            or SyntaxKind.CloseBracketToken
+            or SyntaxKind.GreaterThanToken
+            or SyntaxKind.OpenBraceToken) {
             return true;
         }
 
@@ -1519,47 +1598,50 @@ public sealed partial class CSharpDocumentBuilder {
     /// The things the layout treats as starting their own line: a statement, a member, a list
     /// element, a label, a clause.
     /// </summary>
-    static bool IsUnit(SyntaxNode node) => node switch {
-        StatementSyntax => true,
-        MemberDeclarationSyntax => true,
-        AccessorDeclarationSyntax => true,
-        SwitchLabelSyntax => true,
-        UsingDirectiveSyntax => true,
-        ExternAliasDirectiveSyntax => true,
-        AttributeListSyntax => true,
-        ArgumentSyntax => true,
-        AttributeArgumentSyntax => true,
-        // ⚠ A parameter is a list element only in a real list. A simple lambda's single parameter
-        // is the lambda's own first token, and treating it as an element makes `M() =>\n value =>`
-        // sit flush with the member.
-        ParameterSyntax { Parent: BaseParameterListSyntax } => true,
-        TypeParameterSyntax => true,
-        BaseTypeSyntax => true,
-        TypeParameterConstraintClauseSyntax => true,
-        SwitchExpressionArmSyntax => true,
-        CatchClauseSyntax => true,
-        FinallyClauseSyntax => true,
-        ElseClauseSyntax => true,
-        // ⚠ Every query clause starts a line of its own — except the first. `item =\n from p in xs`
-        // is a continuation of the assignment and takes its level; `where` and `select` under it are
-        // siblings of that `from` and take none. Treating the leading `from` as a unit too leaves the
-        // whole query flush with the `=` and is 349 lines of the corpus's indentation divergence.
-        FromClauseSyntax { Parent: QueryExpressionSyntax query } from when query.FromClause == from => false,
-        QueryClauseSyntax => true,
-        SelectOrGroupClauseSyntax => true,
-        AnonymousObjectMemberDeclaratorSyntax => true,
-        SubpatternSyntax => true,
-        VariableDeclaratorSyntax => true,
-        InitializerExpressionSyntax => true,
-        CollectionElementSyntax => true,
-        _ => false
-    };
+    static bool IsUnit(SyntaxNode node) =>
+        node switch {
+            StatementSyntax => true,
+            MemberDeclarationSyntax => true,
+            AccessorDeclarationSyntax => true,
+            SwitchLabelSyntax => true,
+            UsingDirectiveSyntax => true,
+            ExternAliasDirectiveSyntax => true,
+            AttributeListSyntax => true,
+            ArgumentSyntax => true,
+            AttributeArgumentSyntax => true,
+            // ⚠ A parameter is a list element only in a real list. A simple lambda's single parameter
+            // is the lambda's own first token, and treating it as an element makes `M() =>\n value =>`
+            // sit flush with the member.
+            ParameterSyntax { Parent: BaseParameterListSyntax } => true,
+            TypeParameterSyntax => true,
+            BaseTypeSyntax => true,
+            TypeParameterConstraintClauseSyntax => true,
+            SwitchExpressionArmSyntax => true,
+            CatchClauseSyntax => true,
+            FinallyClauseSyntax => true,
+            ElseClauseSyntax => true,
+            // ⚠ Every query clause starts a line of its own — except the first. `item =\n from p in xs`
+            // is a continuation of the assignment and takes its level; `where` and `select` under it are
+            // siblings of that `from` and take none. Treating the leading `from` as a unit too leaves the
+            // whole query flush with the `=` and is 349 lines of the corpus's indentation divergence.
+            FromClauseSyntax { Parent: QueryExpressionSyntax query } from when query.FromClause == from => false,
+            QueryClauseSyntax => true,
+            SelectOrGroupClauseSyntax => true,
+            AnonymousObjectMemberDeclaratorSyntax => true,
+            SubpatternSyntax => true,
+            VariableDeclaratorSyntax => true,
+            InitializerExpressionSyntax => true,
+            CollectionElementSyntax => true,
+            _ => false
+        };
 
     SpaceKind GapSpace(Piece previous, PieceKind nextKind, SyntaxToken nextToken) {
         // A trailing comment gets exactly one space before it (space_before_trailing_comment), and
         // its own text is left alone (space_before_trailing_comment_text = false).
-        if (nextKind is PieceKind.LineComment or PieceKind.BlockComment
-            or PieceKind.DocCommentLine or PieceKind.BlockDocComment) {
+        if (nextKind is PieceKind.LineComment
+            or PieceKind.BlockComment
+            or PieceKind.DocCommentLine
+            or PieceKind.BlockDocComment) {
             return _options.SpaceBeforeTrailingComment ? SpaceKind.Required : SpaceKind.Forbidden;
         }
 
@@ -1642,23 +1724,30 @@ public sealed partial class CSharpDocumentBuilder {
     }
 
     static bool OpensAJoinableBody(SyntaxToken brace) =>
-        brace.Parent is BlockSyntax or AccessorListSyntax or BaseTypeDeclarationSyntax
-            or NamespaceDeclarationSyntax or SwitchStatementSyntax or InitializerExpressionSyntax
-            or AnonymousObjectCreationExpressionSyntax or SwitchExpressionSyntax or PropertyPatternClauseSyntax;
+        brace.Parent is BlockSyntax
+            or AccessorListSyntax
+            or BaseTypeDeclarationSyntax
+            or NamespaceDeclarationSyntax
+            or SwitchStatementSyntax
+            or InitializerExpressionSyntax
+            or AnonymousObjectCreationExpressionSyntax
+            or SwitchExpressionSyntax
+            or PropertyPatternClauseSyntax;
 
     // ── Structure helpers ────────────────────────────────────────────────────────────────────
 
-    static (SyntaxToken Open, SyntaxToken Close) BraceTokens(SyntaxNode node) => node switch {
-        BlockSyntax block => (block.OpenBraceToken, block.CloseBraceToken),
-        BaseTypeDeclarationSyntax type => (type.OpenBraceToken, type.CloseBraceToken),
-        NamespaceDeclarationSyntax ns => (ns.OpenBraceToken, ns.CloseBraceToken),
-        AccessorListSyntax accessors => (accessors.OpenBraceToken, accessors.CloseBraceToken),
-        InitializerExpressionSyntax initializer => (initializer.OpenBraceToken, initializer.CloseBraceToken),
-        AnonymousObjectCreationExpressionSyntax anonymous => (anonymous.OpenBraceToken, anonymous.CloseBraceToken),
-        PropertyPatternClauseSyntax pattern => (pattern.OpenBraceToken, pattern.CloseBraceToken),
-        SwitchExpressionSyntax switchExpression => (switchExpression.OpenBraceToken, switchExpression.CloseBraceToken),
-        _ => FindDelimiters(node, SyntaxKind.OpenBraceToken, SyntaxKind.CloseBraceToken)
-    };
+    static (SyntaxToken Open, SyntaxToken Close) BraceTokens(SyntaxNode node) =>
+        node switch {
+            BlockSyntax block => (block.OpenBraceToken, block.CloseBraceToken),
+            BaseTypeDeclarationSyntax type => (type.OpenBraceToken, type.CloseBraceToken),
+            NamespaceDeclarationSyntax ns => (ns.OpenBraceToken, ns.CloseBraceToken),
+            AccessorListSyntax accessors => (accessors.OpenBraceToken, accessors.CloseBraceToken),
+            InitializerExpressionSyntax initializer => (initializer.OpenBraceToken, initializer.CloseBraceToken),
+            AnonymousObjectCreationExpressionSyntax anonymous => (anonymous.OpenBraceToken, anonymous.CloseBraceToken),
+            PropertyPatternClauseSyntax pattern => (pattern.OpenBraceToken, pattern.CloseBraceToken),
+            SwitchExpressionSyntax switchExpression => (switchExpression.OpenBraceToken, switchExpression.CloseBraceToken),
+            _ => FindDelimiters(node, SyntaxKind.OpenBraceToken, SyntaxKind.CloseBraceToken)
+        };
 
     static (SyntaxToken Open, SyntaxToken Close) DelimiterTokens(SyntaxNode node, NodeLayout layout) {
         var (openKind, closeKind) = layout switch {
@@ -1670,7 +1759,11 @@ public sealed partial class CSharpDocumentBuilder {
         return FindDelimiters(node, openKind, closeKind);
     }
 
-    static (SyntaxToken Open, SyntaxToken Close) FindDelimiters(SyntaxNode node, SyntaxKind openKind, SyntaxKind closeKind) {
+    static (SyntaxToken Open, SyntaxToken Close) FindDelimiters(
+        SyntaxNode node,
+        SyntaxKind openKind,
+        SyntaxKind closeKind
+    ) {
         var open = default(SyntaxToken);
         var close = default(SyntaxToken);
         foreach (var child in node.ChildNodesAndTokens()) {
@@ -1689,33 +1782,35 @@ public sealed partial class CSharpDocumentBuilder {
         return (open, close);
     }
 
-    static StatementSyntax? EmbeddedStatement(SyntaxNode node) => node switch {
-        IfStatementSyntax statement => statement.Statement,
-        ElseClauseSyntax clause => clause.Statement,
-        WhileStatementSyntax statement => statement.Statement,
-        DoStatementSyntax statement => statement.Statement,
-        ForStatementSyntax statement => statement.Statement,
-        ForEachStatementSyntax statement => statement.Statement,
-        ForEachVariableStatementSyntax statement => statement.Statement,
-        UsingStatementSyntax statement => statement.Statement,
-        FixedStatementSyntax statement => statement.Statement,
-        LockStatementSyntax statement => statement.Statement,
-        LabeledStatementSyntax statement => statement.Statement,
-        _ => null
-    };
+    static StatementSyntax? EmbeddedStatement(SyntaxNode node) =>
+        node switch {
+            IfStatementSyntax statement => statement.Statement,
+            ElseClauseSyntax clause => clause.Statement,
+            WhileStatementSyntax statement => statement.Statement,
+            DoStatementSyntax statement => statement.Statement,
+            ForStatementSyntax statement => statement.Statement,
+            ForEachStatementSyntax statement => statement.Statement,
+            ForEachVariableStatementSyntax statement => statement.Statement,
+            UsingStatementSyntax statement => statement.Statement,
+            FixedStatementSyntax statement => statement.Statement,
+            LockStatementSyntax statement => statement.Statement,
+            LabeledStatementSyntax statement => statement.Statement,
+            _ => null
+        };
 
-    static (SyntaxToken Open, SyntaxToken Close) ConditionParentheses(SyntaxNode node) => node switch {
-        IfStatementSyntax statement => (statement.OpenParenToken, statement.CloseParenToken),
-        WhileStatementSyntax statement => (statement.OpenParenToken, statement.CloseParenToken),
-        DoStatementSyntax statement => (statement.OpenParenToken, statement.CloseParenToken),
-        ForStatementSyntax statement => (statement.OpenParenToken, statement.CloseParenToken),
-        ForEachStatementSyntax statement => (statement.OpenParenToken, statement.CloseParenToken),
-        ForEachVariableStatementSyntax statement => (statement.OpenParenToken, statement.CloseParenToken),
-        UsingStatementSyntax statement => (statement.OpenParenToken, statement.CloseParenToken),
-        FixedStatementSyntax statement => (statement.OpenParenToken, statement.CloseParenToken),
-        LockStatementSyntax statement => (statement.OpenParenToken, statement.CloseParenToken),
-        _ => (default, default)
-    };
+    static (SyntaxToken Open, SyntaxToken Close) ConditionParentheses(SyntaxNode node) =>
+        node switch {
+            IfStatementSyntax statement => (statement.OpenParenToken, statement.CloseParenToken),
+            WhileStatementSyntax statement => (statement.OpenParenToken, statement.CloseParenToken),
+            DoStatementSyntax statement => (statement.OpenParenToken, statement.CloseParenToken),
+            ForStatementSyntax statement => (statement.OpenParenToken, statement.CloseParenToken),
+            ForEachStatementSyntax statement => (statement.OpenParenToken, statement.CloseParenToken),
+            ForEachVariableStatementSyntax statement => (statement.OpenParenToken, statement.CloseParenToken),
+            UsingStatementSyntax statement => (statement.OpenParenToken, statement.CloseParenToken),
+            FixedStatementSyntax statement => (statement.OpenParenToken, statement.CloseParenToken),
+            LockStatementSyntax statement => (statement.OpenParenToken, statement.CloseParenToken),
+            _ => (default, default)
+        };
 
     /// <summary>
     /// ⚠ <c>indent_nested_{for,foreach,while,using,lock,fixed}_stmt = false</c>: a loop directly
@@ -1736,7 +1831,8 @@ public sealed partial class CSharpDocumentBuilder {
         var flush = owner switch {
             ForStatementSyntax => embedded is ForStatementSyntax && !_options.IndentNestedForStmt,
             ForEachStatementSyntax or ForEachVariableStatementSyntax =>
-                embedded is ForEachStatementSyntax or ForEachVariableStatementSyntax && !_options.IndentNestedForeachStmt,
+                embedded is ForEachStatementSyntax or ForEachVariableStatementSyntax
+                && !_options.IndentNestedForeachStmt,
             WhileStatementSyntax => embedded is WhileStatementSyntax && !_options.IndentNestedWhileStmt,
             UsingStatementSyntax => embedded is UsingStatementSyntax && !_options.IndentNestedUsingsStmt,
             LockStatementSyntax => embedded is LockStatementSyntax && !_options.IndentNestedLockStmt,

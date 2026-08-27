@@ -29,9 +29,9 @@ public sealed class AccessibilityRule : ArrangementRule {
 
     public override bool IsEnabled(in ArrangementOptions options) => options.OmitDefaultAccessibility;
 
-    public override SyntaxNode Apply(ArrangementContext context) => new Rewriter().Visit(context.Root);
+    public override SyntaxNode Apply(ArrangementContext context) => new Rewriter(context.Guard).Visit(context.Root);
 
-    sealed class Rewriter : CSharpSyntaxRewriter {
+    sealed class Rewriter(FormatterTagGuard guard) : GuardedRewriter(guard) {
         public override SyntaxNode? VisitFieldDeclaration(FieldDeclarationSyntax node) =>
             Strip((FieldDeclarationSyntax)base.VisitFieldDeclaration(node)!, node);
 

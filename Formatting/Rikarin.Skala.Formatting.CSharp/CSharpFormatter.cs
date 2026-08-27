@@ -195,7 +195,7 @@ public static class CSharpFormatter {
 
         var reflowed = 0;
         if (xmlDoc is { } xml) {
-            var outcome = XmlDocFormatter.Rewrite(output, xml, parseOptions, newLine);
+            var outcome = XmlDocFormatter.Rewrite(output, xml, parseOptions, newLine, options.Tags);
             layout = XmlDocFormatter.Reanchor(layout, outcome.Text, outcome.Replacements);
             output = outcome.Text;
             reflowed = outcome.Reflowed;

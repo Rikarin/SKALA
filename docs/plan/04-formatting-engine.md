@@ -316,9 +316,52 @@ must be a decision Skala makes, not one it inherits.
 | `#region` / `#endregion` | `resharper_indent_preprocessor_region = usual_indent` — indented like code. `blank_lines_inside_region`, `blank_lines_around_region` apply. Regions do not affect grouping. |
 | `#if` / `#else` and **disabled text** | ⚠ The dangerous one. Roslyn parses the inactive branch as `DisabledTextTrivia` — an unstructured string. Skala emits it `Verbatim`, byte-for-byte, and *never* reindents it. `resharper_indent_preprocessor_if = no_indent` puts the directives at column 0. A construct whose braces are split across a `#if` (`#if X` … `{` … `#else` … `{` …) is detected and the whole member is emitted `Verbatim` with `SK9011` (info): "not formatted, unbalanced preprocessor structure". Silently doing something clever here is how formatters destroy code. |
 | `#pragma`, `#nullable`, `#line` | Own line, no indent change, no grouping effect. Between attributes and a member they suppress attribute-placement rules for that member. |
-| Formatter tags | `resharper_formatter_tags_enabled = true`, `off_tag = @formatter:off`, `on_tag = @formatter:on`. A comment containing the off tag starts a `Verbatim` span that ends at the on tag or at end of file. `formatter_tags_accept_regexp = false` ⇒ literal match. This is the escape hatch, and it must work on the first attempt or people stop trusting the tool. |
+| Formatter tags | `resharper_formatter_tags_enabled = true`, `off_tag = @formatter:off`, `on_tag = @formatter:on`, `formatter_tags_accept_regexp = false`. A comment that **starts with** the off tag opens a `Verbatim` span running to the on tag or to end of file. This is the escape hatch, and it must work on the first attempt or people stop trusting the tool — see § "Formatter tags" below for what it binds and where the boundary falls. |
 | Raw string literals (`"""`) | ⚠ **Shifted, not re-indented.** `resharper_indent_raw_literal_string = align` moves the content to the opening quotes' column, and the transformation that cannot be got wrong is a *uniform shift*: C# strips the closing delimiter's own whitespace prefix from every line, so moving every interior line and the closing delimiter by the same number of columns leaves the stripped result identical, character for character. Re-indenting the lines independently, or moving the content without the delimiter, changes what the program prints. Tier A for the uninterpolated token; an interpolated raw string is a run of tokens with expressions between them and stays `Verbatim` (SK-DIV-0003). |
 | Blank lines | Not trivia in the IR: `Line(Blank(n))`, computed from the blank-line option set (below). |
+
+### Formatter tags
+
+⚠ **The escape hatch binds every path that rewrites source, not just `format`.** It did not, and the
+gap was not a corner: `skala arrange` ignored the tags entirely, and arrangement rewrites the *tree* —
+the thing § "The line between `format` and `arrange`" in [06](06-arrangement-and-syntax-styles.md)
+says is reversible only by `git revert`. A person who writes `@formatter:off` over a hand-aligned
+table means "nothing touches this", and the most destructive pass was the one that did not listen.
+
+| Path | Bound by |
+|---|---|
+| `format` | `CSharpDocumentBuilder.EmitFormatterOffSpan` — the region is emitted as one `Verbatim` chunk |
+| `format --xmldoc` | `XmlDocFormatter.Rewrite` skips a `///` comment the region touches. ⚠ The sharpest of the gaps: the sub-formatter runs on the builder's *output* and re-parses it, so the chunk that had just been protected looked to it like any other comment |
+| `arrange`, `format --arrange` | `GuardedRewriter`, the sealed base of all twelve rules, plus `FormatterTagGuard.PreservesAll` in `Arranger` for a rule that rebuilds nodes by hand instead of through a rewriter |
+| `fix`, `verify --fix` | `FixCommand.ApplyToFile` drops an edit whose span the region touches |
+| LSP `formatting` / `rangeFormatting` / `codeAction`, MCP `skala_format` / `skala_fix` | transitively — all four go through `CSharpFormatter.Format`, `FormatCommand.Run` or `FixCommand.Run` and add no edit production of their own |
+| `config sync`, `config fix` | ⚠ **Not applicable, and it is worth saying so.** Those commands write `.editorconfig` and never C# source, and the tag is a C# comment. There is nothing for it to protect |
+
+**Which comments are tags.** The tag must be the **first thing in the comment**, after the marker and
+any whitespace. `// @formatter:off` and `// @formatter:off — the table below is hand-aligned` are
+tags; `// we support @formatter:off here` is prose. ⚠ This is SK-DIV-0017 and it is a deliberate
+divergence: the oracle's match is a plain substring over the whole comment, measured, so a comment
+that merely mentions the tag turns formatting off to end of file in Rider. It did here too, on four
+of this repository's own files, silently.
+
+**Where the boundary falls.**
+
+- The `off` comment's **own line** is inside the region, including its indentation — the one line the
+  author certainly meant. A tag in a *trailing* comment does not reach backwards over the code on its
+  line. Both measured against the oracle.
+- An unterminated `off` runs to end of file.
+- ⚠ **A node that straddles a tag — a method whose signature is outside and whose body is inside — is
+  skipped whole**, in arrangement, even when the rewrite would only have touched the half that is
+  outside. The alternative, protecting the bytes and letting the outside half be rewritten, is more
+  precise and is the wrong contract: "nothing in here changes" is a promise a person can check, and
+  "the bytes between the tags survive, but the declaration they hang off may be rewritten" is not.
+  A node that merely *contains* a whole region is not straddling and is not frozen, or one tag would
+  freeze the class, then the namespace, then the file; that case is governed by a byte-survival test
+  instead. `FormatterTagGuard.Straddles` and `.Preserves`.
+
+**What it does not bind: analysis.** A finding inside an off-region is still reported.
+[09](09-quality-gates-and-reporting.md) § "`--no-new-suppressions`" has the argument; the short form
+is *report, never rewrite*.
 
 ### Blank lines
 
