@@ -216,6 +216,17 @@ public sealed class DictionaryLookupAnalyzer : DiagnosticAnalyzer {
             return;
         }
 
+        // ⚠ The value is the trap in this shape, and it is invisible until it is written down.
+        // `if (!d.ContainsKey(k)) d[k] = Build();` calls `Build()` only when the key is absent.
+        // `d.TryAdd(k, Build())` calls it **every time** — C# evaluates the arguments before the
+        // call — and then throws the result away when the key was present. On Vixen that is
+        // `mesh.AddPosition(…)`, which mutates the mesh, and `edited.ToMeshData(…)`, which builds
+        // one; the first is a behaviour change and the second is an allocation added to the common
+        // path. So the value has to be something already computed.
+        if (!IsStable(value)) {
+            return;
+        }
+
         if (RewriteGuards.ContainsCommentOrDirective(statement)) {
             return;
         }
