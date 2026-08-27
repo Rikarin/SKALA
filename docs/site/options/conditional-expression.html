@@ -30,7 +30,7 @@
 </section>
 <section class="option" id="resharper_indent_aligned_ternary">
 <h2><code>resharper_indent_aligned_ternary</code> <a class="self" href="#resharper_indent_aligned_ternary">#</a></h2>
-<p>Indent the arms of an aligned conditional expression.</p>
+<p>Indent the arms of an aligned conditional expression. Inert: the oracle returns a wrapped ternary unchanged at both values.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>
@@ -45,7 +45,7 @@
 </section>
 <section class="option" id="resharper_outdent_ternary_ops">
 <h2><code>resharper_outdent_ternary_ops</code> <a class="self" href="#resharper_outdent_ternary_ops">#</a></h2>
-<p>Undocumented ReSharper property; classified as C#-relevant by vocabulary.</p>
+<p>Outdent a wrapped <code>?</code> and <code>:</code>. Observed and not implemented: the oracle moves them left by two columns, which the level-based IR cannot express.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>

@@ -384,7 +384,7 @@
 </section>
 <section class="option" id="resharper_csharp_outdent_binary_ops">
 <h2><code>resharper_csharp_outdent_binary_ops</code> <a class="self" href="#resharper_csharp_outdent_binary_ops">#</a></h2>
-<p>Align multiline constructs — Outdent binary operators</p>
+<p>Align multiline constructs — Outdent binary operators. Observed and not implemented: the oracle moves a wrapped operator left by its own width plus one (12 to 10 for <code>+</code>, 12 to 9 for <code>&amp;&amp;</code>), which is a column offset. The IR expresses indentation in levels, so this needs a scope kind that does not exist yet.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>
@@ -400,7 +400,7 @@
 </section>
 <section class="option" id="resharper_csharp_outdent_binary_pattern_ops">
 <h2><code>resharper_csharp_outdent_binary_pattern_ops</code> <a class="self" href="#resharper_csharp_outdent_binary_pattern_ops">#</a></h2>
-<p>Align multiline constructs — Outdent binary patterns</p>
+<p>Align multiline constructs — Outdent binary patterns. Unverified: no input found that both wraps a binary pattern chain under this export and shows the outdent, so neither value has been observed to differ.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>
@@ -416,7 +416,7 @@
 </section>
 <section class="option" id="resharper_csharp_outdent_commas">
 <h2><code>resharper_csharp_outdent_commas</code> <a class="self" href="#resharper_csharp_outdent_commas">#</a></h2>
-<p>Align multiline constructs — Outdent commas</p>
+<p>Align multiline constructs — Outdent commas. Inert under this configuration: it changes a wrapped list only while <code>wrap_before_comma = true</code>, and this export sets that false, so the comma is trailing and there is nothing in front of a line to outdent. Measured — with both flipped the oracle moves the leading comma from column 8 to column 6.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>
@@ -432,7 +432,7 @@
 </section>
 <section class="option" id="resharper_csharp_outdent_dots">
 <h2><code>resharper_csharp_outdent_dots</code> <a class="self" href="#resharper_csharp_outdent_dots">#</a></h2>
-<p>Align multiline constructs — Outdent dots in chained method calls</p>
+<p>Align multiline constructs — Outdent dots in chained method calls. Observed and not implemented: the oracle moves a wrapped <code>.</code> left by one column, which the level-based IR cannot express.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>

@@ -15,7 +15,7 @@
 <p class="lede">7 keys.</p>
 <section class="option" id="resharper_csharp_indent_braces_inside_statement_conditions">
 <h2><code>resharper_csharp_indent_braces_inside_statement_conditions</code> <a class="self" href="#resharper_csharp_indent_braces_inside_statement_conditions">#</a></h2>
-<p>Other indents — Indent braces inside statement conditions</p>
+<p>Other indents — Indent braces inside statement conditions. Inert: the oracle returns the file unchanged at both values.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>
@@ -54,10 +54,11 @@
 <tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>
 <tr><th>Default</th><td><code>false</code></td></tr>
 <tr><th>Default known from</th><td>the Rider export, which is Rider's default for most keys and the author's choice for the rest, with nothing distinguishing the two</td></tr>
-<tr><th>Tier</th><td>D — recorded so the key is not reported unknown; nothing reads it yet</td></tr>
+<tr><th>Tier</th><td>A — the formatter reads it and a committed oracle fixture pins it</td></tr>
 <tr><th>Language</th><td>csharp</td></tr>
 <tr><th>Since</th><td>0.1</td></tr>
 <tr><th>Also spelled</th><td><code>csharp_outdent_statement_labels</code>, <code>outdent_statement_labels</code>, <code>resharper_outdent_statement_labels</code></td></tr>
+<tr><th>Oracle fixture</th><td><code>constructs/indentation/resharper_csharp_outdent_statement_labels.cs</code></td></tr>
 <tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpIndentStylePageSchema.html#resharper_csharp_outdent_statement_labels">https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpIndentStylePageSchema.html#resharper_csharp_outdent_statement_labels</a></td></tr>
 </tbody>
 </table>
@@ -98,7 +99,7 @@
 </section>
 <section class="option" id="resharper_csharp_use_indent_from_previous_element">
 <h2><code>resharper_csharp_use_indent_from_previous_element</code> <a class="self" href="#resharper_csharp_use_indent_from_previous_element">#</a></h2>
-<p>Other indents — Use previous element's indent on partial format</p>
+<p>Other indents — Use previous element's indent on partial format. Inert for a whole-file format, which is the only thing the oracle profile does; it governs a partial reformat.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>

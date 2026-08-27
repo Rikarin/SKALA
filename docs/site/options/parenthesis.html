@@ -15,7 +15,7 @@
 <p class="lede">8 keys.</p>
 <section class="option" id="resharper_csharp_indent_invocation_pars">
 <h2><code>resharper_csharp_indent_invocation_pars</code> <a class="self" href="#resharper_csharp_indent_invocation_pars">#</a></h2>
-<p>Parenthesis — Indent method calls' parenthesis</p>
+<p>Parenthesis — Indent method calls' parenthesis. Observed and not implemented: the four values put a wrapped call's closing <code>)</code> and its contents at different levels. The closing delimiter's indent belongs to the wrapping pass.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td>one of <code>inside</code>, <code>outside</code>, <code>outside_and_inside</code>, <code>none</code></td></tr>
@@ -31,7 +31,7 @@
 </section>
 <section class="option" id="resharper_csharp_indent_method_decl_pars">
 <h2><code>resharper_csharp_indent_method_decl_pars</code> <a class="self" href="#resharper_csharp_indent_method_decl_pars">#</a></h2>
-<p>Parenthesis — Indent method declarations' parenthesis</p>
+<p>Parenthesis — Indent method declarations' parenthesis. Observed and not implemented, for the same reason as <code>indent_invocation_pars</code>: <code>none</code> puts the parameters at the declaration's own level and <code>outside</code> moves the closing <code>)</code> in one level.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td>one of <code>inside</code>, <code>outside</code>, <code>outside_and_inside</code>, <code>none</code></td></tr>
@@ -47,7 +47,7 @@
 </section>
 <section class="option" id="resharper_csharp_indent_pars">
 <h2><code>resharper_csharp_indent_pars</code> <a class="self" href="#resharper_csharp_indent_pars">#</a></h2>
-<p>Parenthesis — Indent other parenthesis and brackets</p>
+<p>Parenthesis — Indent other parenthesis and brackets. Unverified: no input found under this export where a parenthesis it governs lands on a line of its own, so neither value has been observed to differ.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td>one of <code>inside</code>, <code>outside</code>, <code>outside_and_inside</code>, <code>none</code></td></tr>
@@ -63,7 +63,7 @@
 </section>
 <section class="option" id="resharper_csharp_indent_primary_constructor_decl_pars">
 <h2><code>resharper_csharp_indent_primary_constructor_decl_pars</code> <a class="self" href="#resharper_csharp_indent_primary_constructor_decl_pars">#</a></h2>
-<p>Parenthesis — Indent primary constructor declarations' parenthesis</p>
+<p>Parenthesis — Indent primary constructor declarations' parenthesis. Inert under this configuration: it moves the closing <code>)</code> only when that <code>)</code> is on a line of its own, and this export sets <code>wrap_before_primary_constructor_declaration_rpar = false</code>. Measured — with both flipped the oracle indents the <code>)</code> by one level.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td>one of <code>inside</code>, <code>outside</code>, <code>outside_and_inside</code>, <code>none</code></td></tr>
@@ -79,7 +79,7 @@
 </section>
 <section class="option" id="resharper_csharp_indent_statement_pars">
 <h2><code>resharper_csharp_indent_statement_pars</code> <a class="self" href="#resharper_csharp_indent_statement_pars">#</a></h2>
-<p>Parenthesis — Indent statement (if, while, for, etc) parenthesis</p>
+<p>Parenthesis — Indent statement (if, while, for, etc) parenthesis. Unverified: this export never puts a statement's closing <code>)</code> on a line of its own, so neither value has been observed to differ.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td>one of <code>inside</code>, <code>outside</code>, <code>outside_and_inside</code>, <code>none</code></td></tr>
@@ -95,7 +95,7 @@
 </section>
 <section class="option" id="resharper_csharp_indent_typearg_angles">
 <h2><code>resharper_csharp_indent_typearg_angles</code> <a class="self" href="#resharper_csharp_indent_typearg_angles">#</a></h2>
-<p>Parenthesis — Indent type argument's angles</p>
+<p>Parenthesis — Indent type argument's angles. Unverified: this export never breaks inside a type argument list, so neither value has been observed to differ.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td>one of <code>inside</code>, <code>outside</code>, <code>outside_and_inside</code>, <code>none</code></td></tr>
@@ -111,7 +111,7 @@
 </section>
 <section class="option" id="resharper_csharp_indent_typeparam_angles">
 <h2><code>resharper_csharp_indent_typeparam_angles</code> <a class="self" href="#resharper_csharp_indent_typeparam_angles">#</a></h2>
-<p>Parenthesis — Indent type parameter's angles</p>
+<p>Parenthesis — Indent type parameter's angles. Unverified: this export never puts a type parameter list's closing angle on a line of its own, so neither value has been observed to differ.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td>one of <code>inside</code>, <code>outside</code>, <code>outside_and_inside</code>, <code>none</code></td></tr>
