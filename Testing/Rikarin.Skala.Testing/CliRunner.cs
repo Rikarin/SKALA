@@ -29,7 +29,17 @@ public static class CliRunner {
 
     public static string Template { get; } = Path.Combine(RepositoryRoot, "editor_config_template");
 
-    public static CliRun Run(params string[] arguments) {
+    public static CliRun Run(params string[] arguments) => RunWith(null, arguments);
+
+    /// <summary>
+    /// The same run with extra environment variables, for the contracts that have no other trigger.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ One caller: the exit-code-5 row. No input trips the formatter's safety net any more — the
+    /// three that ever did are fixed and retired — so <c>SKALA_FORCE_SK9099</c> is how that row
+    /// keeps a behavioural test. See <c>CSharpFormatter.ForcedVerificationFailure</c>.
+    /// </remarks>
+    public static CliRun RunWith(IReadOnlyDictionary<string, string>? environment, params string[] arguments) {
         if (!File.Exists(Assembly)) {
             throw new InvalidOperationException(
                 $"The skala binary is not at '{Assembly}'. Build the solution (or run ./build.sh Test) before running these tests."
@@ -42,6 +52,12 @@ public static class CliRunner {
             WorkingDirectory = RepositoryRoot,
             UseShellExecute = false
         };
+
+        if (environment is not null) {
+            foreach (var (key, value) in environment) {
+                start.Environment[key] = value;
+            }
+        }
 
         start.ArgumentList.Add(Assembly);
         foreach (var argument in arguments) {

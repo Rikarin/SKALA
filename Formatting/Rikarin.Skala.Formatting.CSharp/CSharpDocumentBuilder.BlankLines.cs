@@ -406,9 +406,9 @@ public sealed partial class CSharpDocumentBuilder {
 
     void Measure(SyntaxTrivia trivia, ref int width, ref bool comments) {
         if (trivia.Kind() is not (SyntaxKind.SingleLineCommentTrivia
-            or SyntaxKind.MultiLineCommentTrivia
-            or SyntaxKind.SingleLineDocumentationCommentTrivia
-            or SyntaxKind.MultiLineDocumentationCommentTrivia)) {
+                or SyntaxKind.MultiLineCommentTrivia
+                or SyntaxKind.SingleLineDocumentationCommentTrivia
+                or SyntaxKind.MultiLineDocumentationCommentTrivia)) {
             return;
         }
 

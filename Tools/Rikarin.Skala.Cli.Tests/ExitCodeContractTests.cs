@@ -175,18 +175,32 @@ public sealed class ExitCodeContractTests : IDisposable {
     /// handler for the impossible can be: by making it happen on purpose and watching it.
     /// </para>
     /// <para>
-    /// ⚠ The file is a live open defect (a <c>///</c> run beginning on the brace line loses its
-    /// continuation lines), so if a later change fixes that, this test starts failing and wants a
-    /// different trigger rather than deleting.
+    /// ⚠ The trigger used to be a live open defect — SK-FUZZ-0002, a <c>///</c> run beginning on the
+    /// brace line — with a note here saying that fixing it should give this test a different trigger
+    /// rather than delete it. It was fixed, and this is that trigger.
+    /// </para>
+    /// <para>
+    /// ⚠ It is forced, because <b>no input trips SK9099 any more</b> and that is the good news it
+    /// looks like: all three that ever did are fixed and retired (SK-FUZZ-0001, -0005, -0002), and a
+    /// scan of all 1 520 files of <c>corpus/unformatted/</c> — the most deliberately mangled input
+    /// the project has — produces not one. <c>SKALA_FORCE_SK9099</c> makes the safety net refuse the
+    /// file it names, inside the formatter, so everything downstream of the refusal is still real:
+    /// the diagnostic's text, <c>FormatCommand</c>'s failure counting, and the code the process
+    /// returns. Faking the exit code instead would test nothing.
+    /// </para>
+    /// <para>
+    /// ⚠ If a real SK9099 case is ever found again it belongs here in place of the seam — and in
+    /// <c>pathological/open/register.md</c> first.
     /// </para>
     /// </remarks>
     [Fact]
     public void Five_WhenTheSafetyNetRefusesAFile() {
-        var path = Write(
-            "Refused.cs",
-            "interface I { /// <summary>x</summary>\n  /// <remarks>y</remarks>\n  int M();\n}\n"
+        var path = Write("Refused.cs", "class C {\n    void M() { }\n}\n");
+        var run = CliRunner.RunWith(
+            new Dictionary<string, string>(StringComparer.Ordinal) { ["SKALA_FORCE_SK9099"] = "Refused.cs" },
+            "format",
+            path
         );
-        var run = CliRunner.Run("format", path);
 
         Assert.Equal(5, run.ExitCode);
         Assert.Contains("SK9099", run.StandardOutput, StringComparison.Ordinal);

@@ -208,6 +208,28 @@ public static class CSharpFormatter {
         var formatted = EditEmitter.Apply(text.ToString(), edits);
 
         var after = SourceText.From(formatted, text.Encoding ?? System.Text.Encoding.UTF8);
+        if (ForcedVerificationFailure(path) is { } forced) {
+            diagnostics.Add(
+                new SkalaDiagnostic(
+                    FormatDiagnosticIds.TokenStreamChanged,
+                    SkalaSeverity.Error,
+                    "not written, the formatted output has a different token stream " + forced,
+                    path,
+                    0,
+                    "Forced by SKALA_FORCE_SK9099. This is the harness, not a Skala bug."
+                )
+            );
+
+            return new FormatResult(
+                path,
+                text,
+                [],
+                text.ToString(),
+                diagnostics.ToImmutable(),
+                FormatOutcome.VerificationFailed
+            );
+        }
+
         if (TokenEquivalence.Compare(text, after, parseOptions, reflowed > 0) is { } failure) {
             var artefact = CrashArtifacts.Write(crashRoot, path, text.ToString(), formatted, options);
             diagnostics.Add(
@@ -367,6 +389,37 @@ public static class CSharpFormatter {
     /// existing endings are preserved rather than normalised, so this is only consulted where the
     /// source had no break to copy.
     /// </summary>
+    /// <summary>
+    /// ⚠ A seam that makes the safety net refuse a named file, so that exit code 5 has a trigger.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ This exists because <b>no input trips SK9099 any more</b>, and that is the good news it
+    /// looks like. All three that ever did are fixed and retired — SK-FUZZ-0001, SK-FUZZ-0005 and
+    /// SK-FUZZ-0002 — and a scan of all 1 520 files of <c>corpus/unformatted/</c>, the most
+    /// deliberately mangled input the project has, produces not one.
+    /// <para>
+    /// The row still has to be tested. docs/plan/09 gives 5 to "internal error", and
+    /// <c>ExitCodeContractTests.Five_WhenTheSafetyNetRefusesAFile</c> used SK-FUZZ-0002's
+    /// reproduction as its trigger — with a note saying that fixing the defect should give the test
+    /// a new trigger rather than delete it. This is that trigger. Forcing the refusal here rather
+    /// than faking an exit code keeps the whole downstream path real: the diagnostic's text,
+    /// <c>FormatCommand</c>'s failure counting, "a failed file outranks a changed one", and the code
+    /// the process returns.
+    /// </para>
+    /// <para>
+    /// ⚠ Matched on the file name rather than on merely being set, so that a run over a tree refuses
+    /// exactly one file and the "some failed, others changed" precedence is what gets exercised. Set
+    /// by the harness and by nobody else.
+    /// </para>
+    /// </remarks>
+    static string? ForcedVerificationFailure(string path) {
+        var forced = Environment.GetEnvironmentVariable("SKALA_FORCE_SK9099");
+        return !string.IsNullOrEmpty(forced)
+            && string.Equals(System.IO.Path.GetFileName(path), forced, StringComparison.Ordinal)
+                ? "(forced at token 0: 'A' became 'B')"
+                : null;
+    }
+
     static string DefaultNewLine(SourceText text, in PhaseOneOptions options) {
         if (options.EnforceLineEndingStyle) {
             return options.LineEnding switch {
