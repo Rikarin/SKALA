@@ -335,7 +335,16 @@ public static class FuzzProperties {
         }
 
         // 6. Whitespace absorption — `format(mutate_whitespace(x)) ≡ format(x)`.
-        if (baseline is not null && !string.Equals(baseline, first.Formatted, StringComparison.Ordinal)) {
+        //
+        // ⚠ A file whose braces straddle a `#if` opts out, and the exemption is
+        // `PropertyTests.WhitespaceMutation_IsAbsorbed`'s own: such a member is copied byte-for-byte
+        // (SK9098, FormatDiagnosticIds.UnbalancedPreprocessor), so whitespace inside it is not
+        // whitespace, it is data, and absorbing it would be *losing* it. Measured before this
+        // exemption was carried across: 1 866 of the run's 1 952 absorption violations were this
+        // one file shape — a Serilog method with a `#if FEATURE_SPAN` between its two signatures.
+        if (baseline is not null
+            && !string.Equals(baseline, first.Formatted, StringComparison.Ordinal)
+            && !first.Diagnostics.Any(static d => d.Id == FormatDiagnosticIds.UnbalancedPreprocessor)) {
             violations.Add(new PropertyViolation(Absorption, defined, FirstDifference(baseline, first.Formatted)));
         }
 

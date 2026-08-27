@@ -175,7 +175,7 @@ public static class FuzzMutations {
 
     /// <summary>Scales the leading whitespace of a random selection of safe lines.</summary>
     static string? Reindent(SourceMap map, FuzzRandom random) {
-        var lines = map.SafeLines(atStart: true);
+        var lines = map.SafeLines(atStart: true, absorbing: true);
         if (lines.Count == 0) {
             return null;
         }
@@ -205,7 +205,7 @@ public static class FuzzMutations {
         // spaces *inside* a `// …` are part of the comment's text, and whether a formatter is allowed
         // to trim them is a question about comment handling rather than about whitespace absorption.
         // With an explicit suffix the mutation is structural and the exclusion does not apply.
-        var lines = map.SafeLines(atStart: false, excludeCommentEnds: suffix is null);
+        var lines = map.SafeLines(atStart: false, excludeCommentEnds: suffix is null, absorbing: suffix is null);
         if (lines.Count == 0) {
             return null;
         }
@@ -255,7 +255,7 @@ public static class FuzzMutations {
     }
 
     static string? Tabify(SourceMap map, FuzzRandom random) {
-        var lines = map.SafeLines(atStart: true);
+        var lines = map.SafeLines(atStart: true, absorbing: true);
         if (lines.Count == 0) {
             return null;
         }
@@ -500,6 +500,30 @@ public static class FuzzMutations {
         /// <summary>Lines whose <b>end</b> is inside data — nothing may be appended to them.</summary>
         readonly HashSet<int> tailProtected = [];
 
+        /// <summary>
+        /// The extra lines and spans that are data under the <b>other</b> symbol set.
+        /// </summary>
+        /// <remarks>
+        /// ⚠ The properties are asserted under both symbol sets, so a whitespace-only mutation has
+        /// to be whitespace under both. Which text is <see cref="SyntaxKind.DisabledTextTrivia"/> is
+        /// entirely a function of the symbol set: the <c>#if</c> branch is data with no symbols and
+        /// the <c>#else</c> branch is data with them, and a map built from one set walks straight
+        /// into the other's. It cost this fuzzer 1 639 false absorption reports in a six-minute run
+        /// — one Serilog method with a <c>#if FEATURE_SPAN</c> between its two signatures, found
+        /// over and over — before the two maps were separated.
+        /// <para>
+        /// ⚠ Only the *absorbed* mutations obey this wider protection. A structural mutation may put
+        /// a comment inside a <c>#if</c> body and should: that body is live under one of the two
+        /// sets, and it is the code path M3.1 opened up after the
+        /// <c>&gt;</c>-before-<c>(</c> defect survived four milestones inside it.
+        /// </para>
+        /// </remarks>
+        readonly HashSet<int> otherHeadProtected = [];
+
+        readonly HashSet<int> otherTailProtected = [];
+
+        readonly List<TextSpan> otherDataRegions = [];
+
         readonly HashSet<int> commentEndedLines = [];
         readonly List<TextSpan> verbatimRegions = [];
         readonly Dictionary<string, List<TextSpan>> identifiers = new(StringComparer.Ordinal);
@@ -571,10 +595,14 @@ public static class FuzzMutations {
         /// subtle way a fuzzer writes into a raw string: a token that opens on line 5 and closes on
         /// line 8 leaves line 5's *indentation* real whitespace and line 5's *end* inside the token.
         /// </param>
-        public IReadOnlyList<int> SafeLines(bool atStart, bool excludeCommentEnds = false) {
+        public IReadOnlyList<int> SafeLines(bool atStart, bool excludeCommentEnds = false, bool absorbing = false) {
             var lines = new List<int>();
             for (var i = 0; i < Text.Lines.Count; i++) {
                 if (atStart ? headProtected.Contains(i) : tailProtected.Contains(i)) {
+                    continue;
+                }
+
+                if (absorbing && (atStart ? otherHeadProtected.Contains(i) : otherTailProtected.Contains(i))) {
                     continue;
                 }
 
@@ -617,7 +645,18 @@ public static class FuzzMutations {
                     Protect(trivia.SpanStart, trivia.Span.End, whole: true);
                 } else if (trivia.IsKind(SyntaxKind.SingleLineCommentTrivia)
                     || trivia.IsKind(SyntaxKind.SingleLineDocumentationCommentTrivia)) {
-                    commentEndedLines.Add(Text.Lines.GetLineFromPosition(trivia.Span.End - 1).LineNumber);
+                    // ⚠ Every line the trivia spans, not just the one it ends on. A run of `///`
+                    // lines is **one** SingleLineDocumentationCommentTrivia, not one per line, so
+                    // marking only the last left every line above it open to a trailing-space
+                    // mutation — and the space landed inside an XML text token, which is the
+                    // comment's content rather than layout.
+                    var first = Text.Lines.GetLineFromPosition(trivia.SpanStart).LineNumber;
+                    var last = Text.Lines.GetLineFromPosition(Math.Max(trivia.SpanStart, trivia.Span.End - 1))
+                        .LineNumber;
+
+                    for (var line = first; line <= last; line++) {
+                        commentEndedLines.Add(line);
+                    }
                 }
             }
 
@@ -632,9 +671,37 @@ public static class FuzzMutations {
                 }
             }
 
+            BuildOtherSet();
             BuildGaps(root);
             BuildBoundaries();
             BuildIdentifiers(root);
+        }
+
+        /// <summary>
+        /// The disabled text of the <em>complementary</em> symbol set.
+        /// </summary>
+        /// <remarks>
+        /// ⚠ The complement is always the empty set, because the two sets the properties are
+        /// asserted under are "no symbols" and <see cref="Corpus.PropertySymbols"/>, and a region
+        /// disabled under a *superset* of symbols is disabled under the empty set too. Parsing
+        /// twice costs one parse per mutation and buys the difference between 1 639 absorption
+        /// reports and the four real findings underneath them.
+        /// </remarks>
+        void BuildOtherSet() {
+            var other = CSharpSyntaxTree.ParseText(Text, CSharpFormatter.ParseOptions).GetRoot();
+            foreach (var trivia in other.DescendantTrivia(descendIntoTrivia: true)) {
+                if (!trivia.IsKind(SyntaxKind.DisabledTextTrivia)) {
+                    continue;
+                }
+
+                otherDataRegions.Add(trivia.Span);
+                var first = Text.Lines.GetLineFromPosition(trivia.SpanStart).LineNumber;
+                var last = Text.Lines.GetLineFromPosition(Math.Max(trivia.SpanStart, trivia.Span.End - 1)).LineNumber;
+                for (var line = first; line <= last; line++) {
+                    otherHeadProtected.Add(line);
+                    otherTailProtected.Add(line);
+                }
+            }
         }
 
         void Protect(int start, int end, bool whole) {
@@ -679,7 +746,9 @@ public static class FuzzMutations {
                         && !InVerbatimRegion(start)) {
                         var gap = TextSpan.FromBounds(start, end);
                         gaps.Add(gap);
-                        if (!previous.IsKind(SyntaxKind.DotDotToken) && !token.IsKind(SyntaxKind.DotDotToken)) {
+                        if (!previous.IsKind(SyntaxKind.DotDotToken)
+                            && !token.IsKind(SyntaxKind.DotDotToken)
+                            && !InOtherDisabledText(start)) {
                             absorbable.Add(gap);
                         }
                     }
@@ -692,6 +761,16 @@ public static class FuzzMutations {
 
             Gaps = gaps;
             AbsorbableGaps = absorbable;
+        }
+
+        bool InOtherDisabledText(int position) {
+            foreach (var region in otherDataRegions) {
+                if (position >= region.Start && position <= region.End) {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         bool InVerbatimRegion(int position) {

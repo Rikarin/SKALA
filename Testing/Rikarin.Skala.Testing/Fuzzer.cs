@@ -352,15 +352,24 @@ public static class Fuzzer {
             cancellation
         );
 
-        var edits = Rikarin.Skala.Formatting.CSharp.CSharpFormatter.Format(
-            subject.Path,
-            Microsoft.CodeAnalysis.Text.SourceText.From(subject.Text),
-            options,
-            null,
-            []
-        ).Edits.Length;
+        // ⚠ Guarded, and it was not: the coverage number is a *measurement*, and a measurement that
+        // can take the process down with it loses the whole run's report — which is what happened
+        // the first time this fuzzer was pointed at `corpus/real/` and the formatter threw an
+        // IndexOutOfRangeException out of EditEmitter. The properties themselves already record a
+        // throw as `crash`; this call must not be the one that escapes.
+        try {
+            var edits = Rikarin.Skala.Formatting.CSharp.CSharpFormatter.Format(
+                subject.Path,
+                Microsoft.CodeAnalysis.Text.SourceText.From(subject.Text),
+                options,
+                null,
+                []
+            ).Edits.Length;
 
-        return (violations, edits);
+            return (violations, edits);
+        } catch (Exception exception) when (exception is not OperationCanceledException) {
+            return (violations, 0);
+        }
     }
 
     /// <summary>The run.</summary>
