@@ -19,3 +19,12 @@ Distribution/Rikarin.Skala.Canonical/canonical.editorconfig -text
 # measured rather than compiled, and normalising their bytes changes the measurement.
 Core/Rikarin.Skala.Core.Tests/Fixtures/** -text
 Rules/Rikarin.Skala.Rules.Tests/fixtures/** -text
+
+# ⚠ `docs/site/` is generated output compared byte for byte — exactly the shape of the
+# `.editorconfig` defect above, and found by reasoning from it rather than by a red Windows leg.
+# `skala docs site` writes `\n` on every platform (DocsSite's remarks say why at length, and
+# `DocsSiteTests.NoPage_CarriesACarriageReturn` asserts it), so a Windows checkout under git's
+# default `core.autocrlf=true` would CRLF all 143 files on the way out and
+# `Site_IsUpToDateWithTheSources` would fail on Windows and nowhere else. The generator is the
+# authority on these bytes; git is not.
+docs/site/** -text
