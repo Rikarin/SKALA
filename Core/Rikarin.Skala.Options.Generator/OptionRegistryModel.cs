@@ -37,6 +37,7 @@ internal sealed record OptionEntry(
     string? Docs,
     int? TemplateLine,
     bool SeveritySuffix,
+    string? Inert,
     IReadOnlyList<string> Expands) {
     /// <summary>The <c>OptionId</c> member name and the group path from docs/plan/02 § "Naming".</summary>
     public string MemberName => Naming.Pascal(Key);
@@ -158,6 +159,7 @@ internal static class OptionRegistryReader {
                     item["docs"].IsNull ? null : item["docs"].AsString(),
                     item["templateLine"].IsNull ? null : item["templateLine"].AsInt(),
                     item["severitySuffix"].AsBool(),
+                    item["inert"].IsNull ? null : item["inert"].AsString(),
                     item["expands"].AsStringList()
                 )
             );
