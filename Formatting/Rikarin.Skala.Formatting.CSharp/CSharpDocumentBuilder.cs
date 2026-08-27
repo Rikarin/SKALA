@@ -133,7 +133,7 @@ public sealed partial class CSharpDocumentBuilder {
         // and end at the same token — a binary chain and its outermost operator — and the outer one
         // has to be the outer group or the fitter resolves the inner first and the ordering is
         // inverted.
-        var indented = new bool[planned.Count];
+        var indented = new int[planned.Count];
         for (var i = 0; i < planned.Count; i++) {
             var plan = planned[i];
             _doc.OpenGroup(plan.Mode, plan.Id);
@@ -143,14 +143,14 @@ public sealed partial class CSharpDocumentBuilder {
             // 1 did and it is fine while the document stack holds nothing but indent scopes; a group
             // on the same stack closes before the statement that owns the frame does, and pops the
             // indent instead of itself.
-            indented[i] = plan.SpendsIndent && CanSpendAContinuationLevel();
+            indented[i] = (plan.SpendsIndent && CanSpendAContinuationLevel() ? 1 : 0) + (plan.OwnLevel ? 1 : 0);
 
             // ⚠ Whether the level is actually spent is decided here and not in the plan, and the
             // fitter needs the answer: the ordering rule asks what column a break inside this group
             // lands on, and that is one level deeper only when this group is the one paying for it.
-            _doc.DescribeGroup(plan.Id, plan.Facts with { SpendsIndent = indented[i] });
+            _doc.DescribeGroup(plan.Id, plan.Facts with { SpendsIndent = indented[i] > 0 });
 
-            if (indented[i]) {
+            for (var level = 0; level < indented[i]; level++) {
                 OpenIndent(IndentKind.Continuous);
             }
         }
@@ -163,7 +163,7 @@ public sealed partial class CSharpDocumentBuilder {
         EmitUpTo(node.Span.End);
 
         for (var i = planned.Count - 1; i >= 0; i--) {
-            if (indented[i]) {
+            for (var level = 0; level < indented[i]; level++) {
                 CloseIndent(IndentKind.Continuous);
             }
 

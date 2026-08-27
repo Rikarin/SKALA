@@ -57,12 +57,21 @@ public readonly record struct GapSpec(GapRule Rule, int Group);
 /// list under <c>wrap_before_extends_colon = true</c>, whose only break point is the colon that
 /// starts the node. Every other group's first point is at a token in its interior.
 /// </param>
+/// <param name="OwnLevel">
+/// ⚠ A second continuation level, on top of whatever the construct around it already spends. Only a
+/// binary <em>pattern</em> chain asks for it, and docs/plan/04 § "Indentation" is where the
+/// asymmetry is recorded: a binary expression chain spends no level of its own and a binary pattern
+/// chain spends one. It looks arbitrary and it is what the oracle writes —
+/// <c>return x is A\n        or B;</c> puts the operand two levels in and
+/// <c>return a\n    + b;</c> puts it one.
+/// </param>
 public readonly record struct GroupPlan(
     int Id,
     GroupMode Mode,
     GroupFacts Facts,
     bool SpendsIndent = false,
-    bool LeadingGapInside = false);
+    bool LeadingGapInside = false,
+    bool OwnLevel = false);
 
 /// <summary>
 /// Decides, before a token is emitted, which gaps of a construct may break and which may not.
@@ -1054,11 +1063,23 @@ public sealed class BreakPlan {
 
         var group = NewGroup();
         _chainOwner[Key(root)] = group;
+        var pattern = root is BinaryPatternSyntax;
         Describe(
             root,
             group,
             style == WrapStyle.ChopAlways ? GroupMode.Break : GroupMode.Preserve,
-            new GroupFacts(BreaksIfTooLong: true)
+            new GroupFacts(BreaksIfTooLong: true),
+            // ⚠ A pattern chain spends a level of its own *and* the continuation the construct
+            // around it would have spent; a binary expression chain spends only the latter. See
+            // GroupPlan.OwnLevel and docs/plan/04 § "Indentation".
+            //
+            // ⚠ Except as a statement's condition, where `align_multiline_statement_conditions` puts
+            // the continuation level and the alignment at the same column and the oracle writes one
+            // step, not two:
+            //     if (o is IDisposable
+            //         or IAsyncDisposable) {     ← one, where an argument would take two
+            spendsIndent: pattern,
+            ownLevel: pattern && !IsStatementCondition(root)
         );
     }
 
@@ -1099,11 +1120,39 @@ public sealed class BreakPlan {
             GroupMode.Preserve,
             new GroupFacts(
                 SourceBroken: _options.KeepsUserBreaksBetweenItems && broken,
+                // ⚠ Deliberately *not* HidesFlatWidthWhenBroken. An argument list around a chain the
+                // author broke does chop — `Use(a > 0\n && b > 0)` comes back with the argument on a
+                // line of its own — but hiding the flat width is not how to get it: an operator group
+                // is nested inside the next operator's group, so an unbreakable inner one makes the
+                // outer one break too, and `a && b\n || c` comes back chopped at both operators
+                // instead of unchanged. Measured: it costs `breaks/binary-operators.cs` and
+                // `wrapping/binary-chains.cs`, and buys 0.01 points. SK-DIV-0007.
                 BreaksWithOwner: true,
                 Owner: ChainOwnerOf(node)
             ),
             spendsIndent: true
         );
+    }
+
+    /// <summary>Whether this expression is the condition of an if, while, do, for or switch.</summary>
+    static bool IsStatementCondition(SyntaxNode node) {
+        for (var current = node; current is not null; current = current.Parent) {
+            switch (current.Parent) {
+                case IfStatementSyntax statement when statement.Condition == current:
+                case WhileStatementSyntax statement2 when statement2.Condition == current:
+                case DoStatementSyntax statement3 when statement3.Condition == current:
+                case SwitchStatementSyntax statement4 when statement4.Expression == current:
+                    return true;
+
+                case ExpressionSyntax:
+                    continue;
+
+                default:
+                    return false;
+            }
+        }
+
+        return false;
     }
 
     /// <summary>The chain-wide group of the chain this operator belongs to, or −1.</summary>
@@ -1567,14 +1616,15 @@ public sealed class BreakPlan {
         GroupMode mode,
         in GroupFacts facts,
         bool spendsIndent = false,
-        bool leadingGapInside = false
+        bool leadingGapInside = false,
+        bool ownLevel = false
     ) {
         var key = Key(node);
         if (!_groups.TryGetValue(key, out var plans)) {
             _groups[key] = plans = [];
         }
 
-        plans.Add(new GroupPlan(group, mode, facts, spendsIndent, leadingGapInside));
+        plans.Add(new GroupPlan(group, mode, facts, spendsIndent, leadingGapInside, ownLevel));
     }
 
     void DescribeInner(SyntaxNode node, int group, GroupMode mode, in GroupFacts facts) =>
