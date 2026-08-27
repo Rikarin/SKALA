@@ -1,0 +1,161 @@
+# docs/plan/12 § "4. Fuzzing" and § "Testing the rules" addition 2, as a workflow.
+#
+# Two jobs, both nightly, both unbounded-ish, both reproducible from what they record. Neither
+# gates a pull request: a nightly job that can block a merge is a nightly job somebody disables.
+
+name: Nightly
+
+on:
+  schedule:
+    # 03:17 UTC. ⚠ Not on the hour: GitHub's scheduler queues every `0 * * * *` job on the planet at
+    # once and a run that starts forty minutes late is a run whose "nightly" is a lie.
+    - cron: "17 3 * * *"
+  workflow_dispatch:
+    inputs:
+      seed:
+        description: "Fuzz seed. Empty means the run id, which is recorded either way."
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+
+jobs:
+  # ────────────────────────────────────────────────────────────────────────────────────────────
+  # doc 12 § "4. Fuzzing".
+  #
+  # ⚠ **Read this before believing the job name.** doc 12 asks for two things that do not exist in
+  # this repository yet, and this job runs the third:
+  #
+  #   ✗ **Mutation fuzzing**, seeded: take a corpus file, apply random parse-preserving mutations
+  #     (whitespace, comments at trivia positions, `#if` blocks, line-ending swaps, BOM injection,
+  #     identifier widening) and assert the properties — in particular the strong one,
+  #     `format(mutate_whitespace(x)) ≡ format(x)`.
+  #   ✗ **Generative fuzzing** from a grammar weighted toward generics, lambdas, patterns,
+  #     initializers, attributes and raw strings.
+  #   ✓ **The properties themselves**, which is what both of the above would assert. All six —
+  #     idempotency, token equivalence, parse stability, determinism, range consistency, whitespace
+  #     absorption — run over every corpus file under both symbol sets: 8 981 cases.
+  #
+  # `Testing/Rikarin.Skala.Testing`'s harness has fourteen subcommands (`oracle`, `fidelity`,
+  # `dump`, `variants`, `probe`, `ask`, `defaults`, `audit`, `preprocessor`, `sample`, `margin`,
+  # `tree`, `locate`, `constructs`) and **none of them is a fuzzer**. The one mutation function in
+  # the tree, `PropertyTests.MutateIndentationOnly`, is deterministic and private to a test class:
+  # it is a fixed transformation applied once per file, not a seeded stream. So there is no seed for
+  # this job to pass and no corpus-minimising delta-debugger for it to hand a failure to, and
+  # wiring an unread `--seed` through the YAML would be a claim rather than a mechanism.
+  #
+  # What is here is honest and is not nothing: it is the assertion half of the fuzzer running at
+  # nightly cadence over the whole corpus, with the crash artefacts the formatter already writes
+  # collected. What has to be built for this job to earn its name is a seeded mutation driver
+  # inside `Testing/`, and a `fuzz <seed> [minutes]` subcommand for it to be reached through.
+  # ────────────────────────────────────────────────────────────────────────────────────────────
+  fuzz:
+    name: properties over the corpus (fuzzing, minus the fuzzer)
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Record the seed
+        run: |
+          SEED="${{ inputs.seed }}"
+          echo "seed: ${SEED:-${{ github.run_id }}} (recorded; nothing reads it yet — see the header)"
+
+      - name: Build
+        run: dotnet build Skala.slnx -c Release
+
+      # ⚠ The properties, not the fidelity number. Fidelity is a measurement against a ratchet and
+      # belongs to the gate; a property is a statement that must hold for every input, which is the
+      # thing a fuzzer exists to falsify.
+      - name: The six properties, over every corpus file, under both symbol sets
+        run: ./build.sh Conformance --configuration Release
+
+      # ⚠ `if: always()`, because the artefacts matter exactly when the step above failed. The
+      # formatter writes a crash snapshot — the input, the options and the stack — under
+      # `.skala/crash/<hash>/` (`CrashArtifacts`), and doc 12 § "Corpus expansion" says any crash is
+      # minimised and committed to `Testing/corpus/pathological/`. Minimising is by hand until the
+      # delta-debugger the header asks for exists; this is what there is to minimise.
+      - name: Keep any crash snapshot
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: crash-artefacts
+          path: .skala/crash/
+          if-no-files-found: ignore
+
+  # ────────────────────────────────────────────────────────────────────────────────────────────
+  # doc 12 § "Testing the rules", addition 2: every rule over the whole reference corpus, its
+  # finding count recorded, and a rule whose count moves more than 10 % between commits flagged.
+  #
+  # ⚠ `.expected.cs` is excluded by the `find`, and it is not tidiness. The corpus holds 380 source
+  # files and 380 committed oracle outputs beside them; analysing both doubles every count, makes
+  # SK7020 report each file as a clone of its own twin, and — worst — makes `./build.sh Oracle`, a
+  # deliberate reviewed regeneration that changes no rule, register as a drift in every rule at
+  # once. Measured on the 380: 4.0 s, 291 files with findings, 576 findings from 30 rules.
+  #
+  # ⚠ `--load=loose`, so the semantic rules do not run and their counts are 0. That is recorded in
+  # the file as `"mode": "loose"` and the comparison refuses to compare across modes, because two
+  # runs under different modes differ for reasons that have nothing to do with the rules and
+  # reporting that as a regression is how a nightly job gets muted. The corpus is loose files
+  # vendored from three trees with no project to build; making the semantic half of the catalogue
+  # measurable here needs a buildable corpus, which is a separate piece of work.
+  # ────────────────────────────────────────────────────────────────────────────────────────────
+  rule-counts:
+    name: rule-count drift over the reference corpus
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Build
+        run: dotnet build Skala.slnx -c Release
+
+      - name: Run every rule over corpus/real
+        run: >
+          dotnet run --project Tools/Rikarin.Skala.Cli -c Release --no-build --
+          check
+          --load=loose --no-cache --include-hints --duplication
+          --format=plain --output .skala/rule-counts.sarif
+          $(find Testing/corpus/real -name '*.cs' ! -name '*.expected.cs' | sort)
+
+      - name: Record the counts
+        run: >
+          python3 .github/scripts/rule-counts.py record
+          .skala/rule-counts.sarif .skala/rule-counts.current.json
+          --corpus corpus/real --mode loose
+
+      # ⚠ The committed baseline is `.skala/rule-counts.json`, and it is tracked despite
+      # `.skala/.gitignore` being `*` — an ignore rule has no effect on a file git already tracks.
+      # doc 12 names that path and it is the right one: the counts are an artefact of the tool's own
+      # run, like the report and the baseline beside them.
+      #
+      # ⚠ Nothing here commits the new file. "Without an intentional change" is the whole condition,
+      # and a job that silently rewrites the baseline every night makes every change intentional and
+      # the check vacuous. A drift fails this job; the fix is a human commit that regenerates the
+      # baseline alongside the rule change that caused it, and the failure output prints that
+      # command.
+      - name: Compare against the committed baseline
+        run: >
+          python3 .github/scripts/rule-counts.py compare
+          .skala/rule-counts.json .skala/rule-counts.current.json
+          --threshold 10 --summary "$GITHUB_STEP_SUMMARY"
+
+      - name: Keep the counts and the report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rule-counts
+          path: |
+            .skala/rule-counts.current.json
+            .skala/rule-counts.sarif
