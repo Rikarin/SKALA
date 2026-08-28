@@ -708,8 +708,9 @@ so rather than claiming a verdict.
 ##### ✅ Observable under the format-only profile — 19
 
 The oracle produces different output at different values, so these are behaviour Skala does not yet
-have. **Nine of them are gated on a break point in `BreakPlan.cs`** and are marked as such — that is
-a real gap, not a dismissal.
+have. **Six of them are gated on a new break point in `BreakPlan.cs`**, a seventh on the fitting pass
+that does not exist, and three more on the polarity-aware `expands` the registry already records as
+missing. Each is marked as such — that is a real gap, not a dismissal.
 
 | key | verdict |
 |---|---|
@@ -882,8 +883,10 @@ the day it emitted a tab; the reason above does not expire.
 
 The 120-with-no-recorded-reason drops to **29**, and the honest headline is not the drop. Of the 91:
 
-- **19** are real, observable formatter behaviour — and **9 of those 19 need a break point in
-  `BreakPlan.cs`**, so the queue they represent is one file five agents are already in.
+- **19** are real, observable formatter behaviour — but only **two of the nineteen could be built
+  without opening something else first**: six need a new break point in `BreakPlan.cs`, three the
+  polarity-aware `expands`, two `IntAlign.cs`, one a fitting pass, one a preservation pass, and four
+  are masked at the export's own values. Those two are the two implemented here.
 - **19** are duplicate spellings of options that are already Tier A. They were never work.
 - **34 + 9** are unreachable or another subsystem's/nobody's.
 - **5** are the arranger's and belong to that phase's sweep.
