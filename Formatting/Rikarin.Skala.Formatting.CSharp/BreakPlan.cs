@@ -1042,9 +1042,24 @@ public sealed class BreakPlan {
     ///         <c>align_multiline_for_stmt</c>.
     ///     </para>
     ///     <para>
-    ///         ⚠ An empty clause is not a point. <c>for (;;)</c> and <c>for (; i &lt; n; i++)</c> have a
-    ///         semicolon whose next token is another semicolon or the <c>)</c>, and a break there would be
-    ///         a line holding nothing.
+    ///         ⚠ An empty clause is not a point — a break there would be a line holding nothing — but an
+    ///         empty clause beside a full one still is: <c>for (;</c> on a line of its own is what the
+    ///         oracle writes for <c>for (; cond;)</c> once the header is multiline, so the point is
+    ///         before each clause that exists rather than after each semicolon.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ "Multiline" means <em>any</em> break inside the parentheses and not only one at a
+    ///         <c>;</c>, which is the half of the rule <c>corpus/real/</c> had to supply. A header the
+    ///         author broke inside its <em>condition</em> comes back from <c>chop_if_long</c> with the
+    ///         semicolons broken as well:
+    ///         <code>
+    /// for (; ((a != b)              for (;
+    ///         &amp;&amp; (c == d));)      →         ((a != b)
+    ///                                       &amp;&amp; (c == d));)
+    ///         </code>
+    ///         and from <c>wrap_if_long</c> unchanged. A group whose flat width is measured statically
+    ///         cannot see that break — the condition's own break point is soft and its flat form is
+    ///         narrow — so the header reads the source for it.
     ///     </para>
     /// </remarks>
     void PlanForHeader(ForStatementSyntax node) {
@@ -1077,19 +1092,19 @@ public sealed class BreakPlan {
         // `pinsItemBreaks` makes for a list pattern.
         var pinsClauseBreaks = fill && _options.KeepsUserBreaksBetweenItems;
         var group = NewGroup();
-        var broken = false;
+
+        // ⚠ Any break inside the parentheses, not only one at a `;`: `chop_if_long` reads a header the
+        // author broke inside its condition as multiline and chops the semicolons too.
+        var broken = Holds('\n', node.OpenParenToken.Span.End, node.CloseParenToken.SpanStart);
 
         Flat(node.FirstSemicolonToken);
         Flat(node.SecondSemicolonToken);
         foreach (var clause in clauses) {
-            var broke = BreaksBefore(clause);
-            if (pinsClauseBreaks && broke) {
+            if (pinsClauseBreaks && BreaksBefore(clause)) {
                 Mandatory(clause);
             } else {
                 Point(clause, group, fill);
             }
-
-            broken |= broke;
         }
 
         DescribeInner(
@@ -2035,6 +2050,17 @@ public sealed class BreakPlan {
     static SyntaxToken FirstToken(SyntaxNode node) => node.GetFirstToken();
 
     static long Key(SyntaxNode node) => ((long)node.SpanStart << 32) | (uint)node.Span.End;
+
+    /// <summary>Whether the source holds <paramref name="character" /> anywhere in a span.</summary>
+    bool Holds(char character, int start, int end) {
+        for (var i = Math.Max(0, start); i < end && i < _source.Length; i++) {
+            if (_source[i] == character) {
+                return true;
+            }
+        }
+
+        return false;
+    }
 
     /// <summary>Whether the source held a line break in the gap immediately before this token.</summary>
     bool BreaksBefore(SyntaxToken token) {

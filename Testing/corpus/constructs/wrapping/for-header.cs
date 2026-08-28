@@ -31,6 +31,18 @@ public class ForHeader {
         }
     }
 
+    // ⚠ "Multiline" is any break inside the parentheses and not only one at a `;`, and the shape came
+    // out of corpus/real/ rather than out of a guess: a header the author broke inside its *condition*
+    // comes back from `chop_if_long` with the semicolons broken too, and from `wrap_if_long`
+    // untouched. It also shows that an empty initializer beside a full condition still puts `for (;`
+    // on a line of its own — the point is before each clause that exists, not after each semicolon.
+    public void ChopsOnABreakInsideAClause(System.IO.Stream s1, System.IO.Stream s2) {
+        for (; ((s1.Position != s1.Length)
+                && (s1.ReadByte() == s2.ReadByte()));) {
+            System.Console.WriteLine(s1);
+        }
+    }
+
     // ⚠ A clause that is empty is not a break point — a line holding nothing is not a layout.
     public void EmptyClauses() {
         var indexOfTheOuterLoop = 0;
