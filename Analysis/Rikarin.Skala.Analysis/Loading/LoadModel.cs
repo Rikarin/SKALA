@@ -81,6 +81,28 @@ public sealed record LoadedProject {
     /// <summary>One line for the report header: what was loaded and from where.</summary>
     public string Summary { get; init; } = string.Empty;
 
+    /// <summary>
+    ///     ⚠ <b>The loader itself could not run</b> — as distinct from running and finding nothing.
+    /// </summary>
+    /// <remarks>
+    ///     The two are opposite situations that produce the same empty <see cref="Units" />, and
+    ///     conflating them is how a gate reports green over code it never opened. "There is no binlog
+    ///     here" is a fact about the repository and falling through to the next mode is the right
+    ///     answer. "MSBuild could not be located", "the assembly holding <c>MSBuildWorkspace</c> is not
+    ///     beside the tool" and "this .csproj could not be opened" are facts about the *tool*, and no
+    ///     amount of falling through makes the answer they were supposed to produce appear.
+    ///     <para>
+    ///         ⚠ Set this only for the second kind. <see cref="ProjectLoader" /> stops the ladder on it
+    ///         when the caller asked for that mode by name, and <c>CheckCommand</c> then reports
+    ///         <c>ExitCodes.LoadFailure</c> rather than the syntactic half of an answer at exit 0. The
+    ///         defect that put it here: <c>Microsoft.CodeAnalysis.Workspaces.MSBuild</c> shipped with
+    ///         <c>ExcludeAssets=runtime</c>, so the workspace mode threw on its first line, every run
+    ///         fell through to loose, and a consumer's `check` gate passed having never built a
+    ///         compilation.
+    ///     </para>
+    /// </remarks>
+    public bool Failed { get; init; }
+
     public bool IsEmpty => Units.IsEmpty;
 }
 

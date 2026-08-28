@@ -27,6 +27,41 @@ public static class ProjectLoader {
             };
 
             attempted.AddRange(loaded.Diagnostics);
+
+            // ⚠ **The one thing the ladder may not fall through, and it is tested before `IsEmpty` on
+            // purpose.** Everything in the remarks above is about a mode that ran and found nothing,
+            // which is a fact about the repository. `Failed` is a fact about the *tool* — MSBuild is
+            // not there, an assembly is missing, the named solution would not open, every project in
+            // it failed to evaluate — and no lower rung can answer the question the caller asked.
+            //
+            // ⚠ The ordering is load-bearing rather than tidy. A failed `MSBuildWorkspace` load hands
+            // back a placeholder project with no documents, so `IsEmpty` is **false** for a load that
+            // produced not one line of code. Asking `IsEmpty` first returns that placeholder as a
+            // success, and the run reports a clean tree over a project MSBuild refused to evaluate.
+            if (loaded.Failed) {
+                // ⚠ Fatal only for the mode the caller named — which is the ladder's first rung.
+                // Workspace is also the *middle* rung of the binlog ladder, and the default
+                // `skala check` on a machine with no MSBuild must still reach loose rather than
+                // refusing to run: there the caller asked for binlog, and workspace being unavailable
+                // is not an answer to anything. Asking for a mode by name and getting the syntactic
+                // rules instead is the fail-open; being handed them after asking for binlog is the
+                // documented fallback.
+                if (mode == request.Mode || !request.AllowFallback) {
+                    return loaded with { Diagnostics = attempted.ToImmutable() };
+                }
+
+                attempted.Add(
+                    new SkalaDiagnostic(
+                        ConfigDiagnosticIds.LoadModeFellBack,
+                        SkalaSeverity.Info,
+                        $"--load={mode.ToString().ToLowerInvariant()} could not run; falling back",
+                        request.RepositoryRoot
+                    )
+                );
+
+                continue;
+            }
+
             if (!loaded.IsEmpty) {
                 return loaded with { Diagnostics = attempted.ToImmutable() };
             }

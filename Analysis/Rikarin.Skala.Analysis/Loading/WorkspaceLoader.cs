@@ -45,10 +45,43 @@ public static class WorkspaceLoader {
                 )
             );
 
-            return new LoadedProject { Mode = LoadMode.Workspace, Diagnostics = diagnostics.ToImmutable() };
+            return new LoadedProject {
+                Mode = LoadMode.Workspace, Diagnostics = diagnostics.ToImmutable(), Failed = true
+            };
         }
 
-        return LoadCore(request, target, diagnostics, cancellation);
+        try {
+            return LoadCore(request, target, diagnostics, cancellation);
+        } catch (Exception exception) when (exception is FileNotFoundException
+                                                or FileLoadException
+                                                or TypeLoadException
+                                                or BadImageFormatException) {
+            // ⚠ **The tool is broken, and this is the branch that has to say so out loud.** Every
+            // exception here is a missing or unloadable assembly, which reaches this frame rather
+            // than LoadCore's own `catch` because the JIT resolves LoadCore's MSBuildWorkspace
+            // reference while preparing the method — before its first line runs.
+            //
+            // It shipped: `Microsoft.CodeAnalysis.Workspaces.MSBuild` carried `ExcludeAssets=runtime`
+            // (it is Roslyn's assembly, not MSBuild's, so the SDK never supplied a copy), and the
+            // FileNotFoundException escaped as far as the CLI's catch-all, which called it an
+            // internal error. Under `SkalaMode=check` that is a warning and a green build.
+            //
+            // `Failed` is what stops the loose fallback from turning it back into exit 0. The
+            // reference is fixed; this exists because the next dependency to go missing must produce
+            // a load failure that names itself, not a pass.
+            diagnostics.Add(
+                new SkalaDiagnostic(
+                    ConfigDiagnosticIds.NothingToLoad,
+                    SkalaSeverity.Error,
+                    $"the workspace loader could not be initialised — a required assembly is missing from the Skala installation: {exception.Message}",
+                    target
+                )
+            );
+
+            return new LoadedProject {
+                Mode = LoadMode.Workspace, Diagnostics = diagnostics.ToImmutable(), Failed = true
+            };
+        }
     }
 
     /// <summary>
@@ -89,7 +122,12 @@ public static class WorkspaceLoader {
                 )
             );
 
-            return new LoadedProject { Mode = LoadMode.Workspace, Diagnostics = diagnostics.ToImmutable() };
+            // ⚠ A named target that will not open is a failure, not an absence: the caller pointed at
+            // a solution and it could not be read. Falling through to the syntactic loader here is
+            // what produced a clean report over a solution nobody had managed to load.
+            return new LoadedProject {
+                Mode = LoadMode.Workspace, Diagnostics = diagnostics.ToImmutable(), Failed = true
+            };
         }
 
         // ⚠ Verbatim. Every one of these is a project that did not load, or loaded without its
@@ -143,10 +181,46 @@ public static class WorkspaceLoader {
             );
         }
 
+        // ⚠ **Nothing analysable plus a failure diagnostic is a failed load, not an empty one**, and
+        // telling those two apart is this type's stated purpose applied one level up. The paragraph
+        // above surfaces the failures verbatim; surfacing them is not the same as acting on them, and
+        // until this block nothing downstream read a single one.
+        //
+        // ⚠ It counts *documents*, not projects, and that is the entire subtlety. `MSBuildWorkspace`
+        // does not throw when a project will not evaluate — an unresolvable SDK, a custom target that
+        // errors, an unrestored reference. It records the failure in `Diagnostics` and hands back a
+        // placeholder project with **no documents in it**, so a project count of 1 is not evidence
+        // that anything loaded. Measured on a .csproj naming an SDK that does not exist: one
+        // `WorkspaceDiagnosticKind.Failure` reading "Msbuild failed when processing the file", one
+        // project, zero documents, zero findings, **exit 0** — a gate reporting a clean tree over a
+        // project MSBuild had just refused to evaluate.
+        //
+        // A *partial* load — some projects in, some out — deliberately stays a warning. Refusing
+        // there would make the gate unsatisfiable on any repository holding one unbuildable project,
+        // which is the mistake BinlogLoader.CoverageSeverity documents at length. The line drawn here
+        // is the narrow one: not one line of code came back, and something failed.
+        var analysable = units.Sum(static unit => unit.ReportablePaths.Count);
+        var failedOutright = analysable == 0
+                             && workspace.Diagnostics.Any(
+                                 static diagnostic => diagnostic.Kind == WorkspaceDiagnosticKind.Failure
+                             );
+
+        if (failedOutright) {
+            diagnostics.Add(
+                new SkalaDiagnostic(
+                    ConfigDiagnosticIds.NothingToLoad,
+                    SkalaSeverity.Error,
+                    $"'{target}' yielded no analysable source; every project in it failed to load",
+                    target
+                )
+            );
+        }
+
         return new LoadedProject {
             Mode = LoadMode.Workspace,
             Units = units.ToImmutable(),
             Diagnostics = diagnostics.ToImmutable(),
+            Failed = failedOutright,
             Summary =
                 $"workspace {Path.GetFileName(target)} ({units.Count.ToString(CultureInfo.InvariantCulture)} project(s), {workspace.Diagnostics.Count.ToString(CultureInfo.InvariantCulture)} workspace diagnostic(s))"
         };

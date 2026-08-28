@@ -151,7 +151,11 @@ public static class CheckCommand {
             ? loaded.Diagnostics.Where(static d => d.Severity >= SkalaSeverity.Error).ToArray()
             : [];
 
-        if (loaded.IsEmpty || refused.Length > 0) {
+        // ⚠ `Failed` and not only `IsEmpty`, because the two are not the same test. A load that could
+        // not run is a load failure whether or not Roslyn handed back a placeholder project to make
+        // `Units` non-empty — see LoadedProject.Failed. Reading only `IsEmpty` here is the last of the
+        // three places the fail-open could have survived the loader fix.
+        if (loaded.IsEmpty || loaded.Failed || refused.Length > 0) {
             var empty = new RunReport {
                 RepositoryRoot = root,
                 Mode = loaded.Mode,
@@ -163,7 +167,7 @@ public static class CheckCommand {
             return (
                 new CommandResult(
                     ExitCodes.LoadFailure,
-                    (loaded.IsEmpty
+                    (loaded.IsEmpty || loaded.Failed
                             ? "skala check: no compilation could be built.\n"
                             : "skala check: --require-fresh-binlog refused this load.\n")
                     + string.Join("\n", diagnostics.Select(static d => "  " + d))
