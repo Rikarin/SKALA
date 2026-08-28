@@ -32,13 +32,15 @@ table; both exist on unmerged branches. This file describes `master`.
 
 ## 1.1 Commands
 
-`skala --help`, run against `artifacts/native/osx-arm64/skala`. Fifteen top-level commands, all of
-which exist and do something. ⚠ There were sixteen: `daemon` is deleted, along with the format daemon
-behind it ([`plan/11`](plan/11-cli-and-integrations.md) § "The daemon, and why it is gone").
+`skala --help`, run against `artifacts/native/osx-arm64/skala`. Sixteen top-level commands, all of
+which exist and do something. ⚠ There were seventeen: `daemon` is deleted, along with the format
+daemon behind it ([`plan/11`](plan/11-cli-and-integrations.md) § "The daemon, and why it is gone").
+⚠ `arrange` was missing from this table and is not new.
 
 | Command | What it does today | Status |
 |---|---|---|
 | `format <paths>` | Spaces, blank lines, braces, indentation, break presence and position, and wrapping. Writes, checks, diffs, or formats the git index | ✅ |
+| `arrange <paths>` | Rewrites the tree: body styles, `var`, target-typed `new`, qualifiers, usings. Needs a project for the semantic half | ✅ |
 | `check <paths>` | Loads a compilation three ways, runs the analyzers, writes SARIF, evaluates a named gate | ✅ |
 | `verify <paths>` | `format --check` + `check --gate=local` in one pass, shaped for an agent. Exit 0 means nothing to do | ✅ |
 | `fix <paths>` | Applies the fixes findings carry, re-parses to verify each, re-formats what it touched | ✅ |
