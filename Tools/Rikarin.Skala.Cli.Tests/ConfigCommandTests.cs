@@ -196,9 +196,15 @@ public sealed class ConfigCommandTests {
     /// <remarks>
     ///     An inert key is honoured vacuously — no input distinguishes its values — so counting it as
     ///     a gap makes the gap number noise and people stop reading it. The xmldoc family is the
-    ///     opposite trap: 27 unimplemented keys with no explanation read as neglect, when the cause is
-    ///     documented and permanent (SK-DIV-0006 — the oracle does not format documentation comments,
-    ///     so there is nothing to verify them against).
+    ///     opposite trap: unimplemented keys with no explanation read as neglect, when the cause is
+    ///     documented (SK-DIV-0006).
+    ///     <para>
+    ///         ⚠ The explanation this printed used to be "the oracle does not format documentation
+    ///         comments, so there is nothing to verify them against", and it was doubly wrong: the oracle
+    ///         does format them under a profile that enables <c>CSharpFormatDocComments</c>, and the
+    ///         obstacle is therefore the committed profiles rather than the tool. "Permanent" was the load
+    ///         -bearing word and it was the false one.
+    ///     </para>
     /// </remarks>
     [Fact]
     public void Check_SeparatesInertFromUnimplemented_AndExplainsTheXmldocFamily() {

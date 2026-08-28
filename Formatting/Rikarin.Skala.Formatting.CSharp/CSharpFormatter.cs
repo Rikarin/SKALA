@@ -115,7 +115,8 @@ public static class CSharpFormatter {
     /// </summary>
     /// <remarks>
     ///     ⚠ On by default, and the default changed. It was off from milestone 9 because
-    ///     <c>jb cleanupcode</c> does not format documentation comments (SK-DIV-0006) and the oracle is
+    ///     <c>jb cleanupcode</c> <em>under the committed profiles</em> does not format documentation
+    ///     comments (SK-DIV-0006 — it does under one that enables <c>CSharpFormatDocComments</c>) and the oracle is
     ///     the definition of correct under ADR-011 — so re-wrapping them by default read as a 3.59-point
     ///     fidelity regression. The premise was wrong in one specific way —
     ///     Rider formats them and

@@ -59,12 +59,24 @@ public readonly record struct XmlDocReplacement(TextSpan Span, int Length);
 ///     The documentation-comment sub-formatter of docs/plan/05 § "Phase 4".
 /// </summary>
 /// <remarks>
-///     ⚠ <b>This is the one part of Skala with no oracle, and it is opt-in for that reason.</b>
-///     <c>jb cleanupcode</c> 2025.2.6 does not format documentation comments at all — not the missing
-///     space after <c>///</c>, not a 128-column summary, not two <c>&lt;param&gt;</c> tags on one line —
-///     with the export's whole <c>resharper_xmldoc_*</c> family in force. That is SK-DIV-0006, and it
-///     is a measurement rather than an assumption. So every other option in Skala is pinned by a
-///     committed fixture showing Rider doing the thing, and none of these can be.
+///     ⚠
+///     <b>
+///         This is the one part of Skala that no committed fixture pins, and the reason is the
+///         profile rather than the tool.
+///     </b> <c>jb cleanupcode</c> 2025.2.6 formats documentation comments
+///     perfectly well — it inserts the space after <c>///</c>, wraps a 128-column summary, splits two
+///     <c>&lt;param&gt;</c> tags onto their own lines, and rewrites tag headers — but only under a
+///     cleanup profile that enables its <c>CSharpFormatDocComments</c> task, and neither
+///     <c>OracleProfile.FormatOnly</c> nor <c>OracleProfile.Cleanup</c> does. Every committed
+///     <c>.expected.cs</c> therefore returns its documentation comments exactly as written.
+///     <para>
+///         ⚠ That is SK-DIV-0006, and the sentence that used to stand here — "does not format
+///         documentation comments at all" — was the wrong inference from a correct measurement, kept
+///         alive in this file after <c>docs/divergences.md</c> had already corrected it. Every other
+///         option in Skala is pinned by a committed fixture showing Rider doing the thing; these are not
+///         pinned <em>yet</em>, and what stands between them and Tier A is one element in a profile plus
+///         a reviewed fixture regeneration.
+///     </para>
 ///     <para>
 ///         What replaces the oracle is not "careful reading". It is a property that holds or the comment is
 ///         not written: <b>the comment's content must survive the round trip</b>. The re-wrapped text is
@@ -419,9 +431,44 @@ public static class XmlDocSignature {
         return builder.ToString();
     }
 
+    /// <summary>
+    ///     Every attribute of a tag header: its name, and its quoted value byte-for-byte.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠
+    ///     <b>
+    ///         The whitespace around the <c>=</c> is the only thing dropped, and dropping it is not a
+    ///         weakening of the check.
+    ///     </b> <c>name="a"</c> and <c>name = "a"</c> are the same attribute of
+    ///     the same element in the same document — XML says so — and two keys of this family,
+    ///     <c>spaces_around_eq_in_attribute</c> and <c>space_after_last_attribute</c>, exist to change
+    ///     exactly that whitespace and nothing else. Comparing the header's raw source text would make
+    ///     the signature refuse every comment those two keys act on, which is a formatter that cannot
+    ///     honour its own options rather than a safety net.
+    ///     <para>
+    ///         ⚠ What is still compared exactly is everything that carries meaning: the attribute's name,
+    ///         its quote character, and every byte between the quotes. A <c>cref</c> is read by the
+    ///         compiler and a <c>name</c> is matched against a parameter, and neither may move by so much
+    ///         as a space. The split is taken at <c>EqualsToken</c>, so an <c>=</c> inside a value is
+    ///         value.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ An attribute that does not split — no <c>=</c> where the token says one is — contributes
+    ///         its raw text instead. The model refuses such a header outright, so the two sides agree by
+    ///         both declining to touch it.
+    ///     </para>
+    /// </remarks>
     static void Attributes(StringBuilder builder, SyntaxList<XmlAttributeSyntax> attributes) {
         foreach (var attribute in attributes) {
-            builder.Append(' ').Append(attribute.ToString());
+            var text = attribute.ToString();
+            var equals = attribute.EqualsToken.SpanStart - attribute.Span.Start;
+            builder.Append(' ');
+            if (equals <= 0 || equals >= text.Length || text[equals] != '=') {
+                builder.Append(text);
+                continue;
+            }
+
+            builder.Append(text[..equals].TrimEnd()).Append('=').Append(text[(equals + 1)..].TrimStart());
         }
     }
 

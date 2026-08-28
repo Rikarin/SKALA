@@ -432,29 +432,209 @@ public sealed class XmlDocPropertyTests {
         );
 }
 
+/// <summary>
+///     The four keys measured against <c>jb cleanupcode</c> with its doc-comment task switched on.
+/// </summary>
+/// <remarks>
+///     ⚠ <b>Every expectation in this class is the oracle's own output, copied off the bytes.</b> That
+///     makes it different in kind from the fixtures above it, which assert the semantics JetBrains'
+///     settings pages <em>state</em>. These four were measured: a scratch project, the repository's
+///     <c>.editorconfig</c>, and a cleanup profile carrying
+///     <c>&lt;CSharpFormatDocComments&gt;True&lt;/CSharpFormatDocComments&gt;</c> beside the usual
+///     <c>CSReformatCode</c>, at each value of each key.
+///     <para>
+///         ⚠ They are still not Tier A, and the reason is a fixable one rather than a fact about
+///         documentation comments: <c>CSharpFormatDocComments</c> is a real task in this build of the
+///         tool and neither committed profile enables it, so no committed <c>.expected.cs</c> can show
+///         the oracle doing any of this. Enabling it in <c>OracleProfile</c> would make all twenty-one
+///         honoured keys promotable — and would regenerate every fixture in the corpus, which is a
+///         reviewed decision in its own commit rather than a side effect of adding four keys.
+///     </para>
+///     <para>
+///         ⚠ Until then, the measurement lives here. A number copied off a tool and written into a test
+///         is worth strictly more than the same number reasoned about in a comment, which is what the
+///         old refusals for three of these four keys were.
+///     </para>
+/// </remarks>
+public sealed class XmlDocMeasuredTagHeaderTests {
+    [Fact]
+    public void SpaceAfterLastAttribute_DefaultsToNoSpace_AndAddsOneWhenAsked() {
+        var source = XmlDoc.InClass("/// <param name=\"a\" >Text.</param>");
+
+        // ⚠ The default normalises the author's stray space away rather than preserving it. That is
+        // the oracle's answer, and it is the half of this key that changes output at its default.
+        Assert.Contains("/// <param name=\"a\">Text.</param>", XmlDoc.Text(source), StringComparison.Ordinal);
+
+        Assert.Contains(
+            "/// <param name=\"a\" >Text.</param>",
+            XmlDoc.Text(source, ("resharper_xmldoc_space_after_last_attribute", "true")),
+            StringComparison.Ordinal
+        );
+    }
+
+    [Fact]
+    public void SpaceAfterLastAttribute_TouchesNeitherASelfClosingTagNorABareOne() {
+        // ⚠ Measured, because "the gap before the bracket" is one obvious reading and it is wrong on
+        // both counts: a self-closing tag's gap belongs to `space_before_self_closing` alone, and a
+        // tag with no attributes has no last attribute to follow.
+        var formatted = XmlDoc.Text(
+            XmlDoc.InClass("/// <summary>Short.</summary>", "/// <remarks><see cref=\"C\" /></remarks>"),
+            ("resharper_xmldoc_space_after_last_attribute", "true")
+        );
+
+        Assert.Contains("/// <summary>Short.</summary>", formatted, StringComparison.Ordinal);
+        Assert.Contains("<see cref=\"C\" />", formatted, StringComparison.Ordinal);
+        Assert.DoesNotContain("<summary >", formatted, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void SpacesAroundEqInAttribute_MovesOnlyTheWhitespace() {
+        var source = XmlDoc.InClass("/// <param name = \"b\">Text.</param>");
+
+        Assert.Contains("/// <param name=\"b\">Text.</param>", XmlDoc.Text(source), StringComparison.Ordinal);
+
+        Assert.Contains(
+            "/// <param name = \"b\">Text.</param>",
+            XmlDoc.Text(source, ("resharper_xmldoc_spaces_around_eq_in_attribute", "true")),
+            StringComparison.Ordinal
+        );
+    }
+
+    [Fact]
+    public void ATagHeader_IsNormalisedButItsValuesAreNot() {
+        // ⚠ The oracle collapses the runs of spaces between attributes and drops the one before
+        // `>`, and it leaves the quote character alone: `name='single'` comes back single quoted.
+        // Rebuilding a header from a parsed model is only safe because the value — quotes included —
+        // is copied rather than re-emitted, and this is the assertion that says so.
+        var formatted = XmlDoc.Text(
+            XmlDoc.InClass(
+                "/// <param name='single'>One.</param>",
+                "/// <param   name=\"double\"    other=\"x\"  >Two.</param>"
+            )
+        );
+
+        Assert.Contains("/// <param name='single'>One.</param>", formatted, StringComparison.Ordinal);
+        Assert.Contains("/// <param name=\"double\" other=\"x\">Two.</param>", formatted, StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData("123456789012", false)]
+    [InlineData("1234567890123", true)]
+    public void LinebreaksInsideTagsForElementsLongerThan_ComparesTheFlatContentStrictly(
+        string content,
+        bool opened
+    ) {
+        // ⚠ At a threshold of 12: twelve characters of content stay on the line and thirteen do not.
+        // Both halves are measured. The old refusal said "what ReSharper measures against it is not
+        // stated anywhere", which was true of the documentation and never true of the tool.
+        var formatted = XmlDoc.Text(
+            XmlDoc.InClass("/// <summary>" + content + "</summary>"),
+            ("resharper_xmldoc_linebreaks_inside_tags_for_elements_longer_than", "12")
+        );
+
+        Assert.Equal(opened, !formatted.Contains("<summary>" + content + "</summary>", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void LinebreaksInsideTagsForElementsLongerThan_ReadsZeroAsAlways() {
+        // ⚠ The registry's bounds note said 0 meant "never". It means "always": the comparison is
+        // strictly greater, so every non-empty content crosses 0. "Never" is the export's own
+        // int.MaxValue, which is exactly why this key looked like it could not be pinned.
+        var formatted = XmlDoc.Text(
+            XmlDoc.InClass("/// <summary>ab</summary>"),
+            ("resharper_xmldoc_linebreaks_inside_tags_for_elements_longer_than", "0")
+        );
+
+        Assert.DoesNotContain("<summary>ab</summary>", formatted, StringComparison.Ordinal);
+        Assert.Contains("<summary>", formatted, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     ⚠ The marker space is missing from a processing instruction's own line, and that is a
+    ///     separate, pre-existing defect rather than part of this key.
+    /// </summary>
+    /// <remarks>
+    ///     The oracle writes <c>/// &lt;?display …?&gt;</c> and Skala writes <c>///&lt;?display …?&gt;</c>.
+    ///     A processing instruction is emitted through the verbatim path, and a verbatim line
+    ///     deliberately does not get the marker space re-applied — that rule exists so a
+    ///     <c>&lt;code&gt;</c> block does not gain a column, and it is right for <c>&lt;code&gt;</c>. It
+    ///     is wrong here, and it is equally wrong for a CDATA section and an XML comment, which take
+    ///     the same path. Fixing it means giving the verbatim path an indent and a marker of its own,
+    ///     which is a change to how three constructs are emitted and not to how one key is read.
+    ///     <para>
+    ///         ⚠ Pinned as it is rather than as it should be, deliberately. A test asserting the fixed
+    ///         behaviour would fail today and say nothing about <c>blank_line_after_pi</c>; a test
+    ///         asserting today's behaviour fails the moment somebody fixes the marker, which is when this
+    ///         note wants reading.
+    ///     </para>
+    /// </remarks>
+    const string Pi = "///<?display mode=\"short\"?>";
+
+    [Fact]
+    public void BlankLineAfterPi_IsOnByDefault() {
+        // ⚠ A default-true key the sub-formatter had never performed, invisible for as long as the
+        // key coverage test excluded the processing-instruction family from its own partition.
+        var lines = XmlDoc.DocLines(
+            XmlDoc.Text(XmlDoc.InClass("/// <?display mode=\"short\"?>", "/// <summary>After.</summary>"))
+        );
+
+        Assert.Equal([Pi, "///", "/// <summary>After.</summary>"], lines);
+    }
+
+    [Fact]
+    public void BlankLineAfterPi_IsSuppressedWhenTurnedOff() {
+        var lines = XmlDoc.DocLines(
+            XmlDoc.Text(
+                XmlDoc.InClass("/// <?display mode=\"short\"?>", "/// <summary>After.</summary>"),
+                ("resharper_xmldoc_blank_line_after_pi", "false")
+            )
+        );
+
+        Assert.Equal([Pi, "/// <summary>After.</summary>"], lines);
+    }
+
+    [Fact]
+    public void ATrailingProcessingInstruction_DoesNotLeaveADanglingBlankLine() {
+        // ⚠ `Render` trims trailing blank lines, so the last thing in a comment being a processing
+        // instruction does not end it on a bare `///`. Asserted because the blank line is emitted
+        // unconditionally and this is the one place that has to take it back.
+        var lines = XmlDoc.DocLines(
+            XmlDoc.Text(XmlDoc.InClass("/// <summary>Before.</summary>", "/// <?display mode=\"short\"?>"))
+        );
+
+        Assert.Equal(["/// <summary>Before.</summary>", Pi], lines);
+    }
+}
+
 /// <summary>The count in the milestone notes, checked against the registry rather than remembered.</summary>
 /// <remarks>
-///     ⚠ "Seventeen of twenty-seven honoured, ten refused" is a claim about this repository's option
+///     ⚠ "Twenty-one of thirty-two honoured, eleven refused" is a claim about this repository's option
 ///     registry, and a claim like that rots the moment somebody adds a key. It is asserted here so that
 ///     adding a <c>resharper_xmldoc_*</c> key to <c>options.json</c> fails the build until somebody has
 ///     decided whether the sub-formatter honours it or refuses it, and has written down which.
 /// </remarks>
 public sealed class XmlDocKeyCoverageTests {
     /// <summary>
-    ///     The family the milestone counted: every <c>resharper_xmldoc_*</c> key that is not about
-    ///     processing instructions.
+    ///     The family: every <c>resharper_xmldoc_*</c> key in the registry, with nothing excluded.
     /// </summary>
     /// <remarks>
-    ///     ⚠ The <c>_pi_</c> keys are out of the count rather than refused. A processing instruction in
-    ///     a C# documentation comment is not a thing that occurs, and counting five keys as "refused"
-    ///     that govern a construct the language does not put there would inflate both halves.
+    ///     ⚠ The five processing-instruction keys used to be dropped from the count on the grounds that
+    ///     "a processing instruction in a C# documentation comment is not a thing that occurs". It is —
+    ///     Roslyn parses one, and the oracle acts on one: with <c>CSharpFormatDocComments</c> enabled,
+    ///     <c>resharper_xmldoc_blank_line_after_pi</c> puts a blank line after
+    ///     <c>&lt;?xml-stylesheet …?&gt;</c> at its default <c>true</c>, which is behaviour Skala was
+    ///     missing on the default path for as long as the exclusion stood.
+    ///     <para>
+    ///         ⚠ An exclusion is a claim, and this one hid a key. Five keys carried no decision at all
+    ///         because the partition they would have failed did not look at them; one of the five turned out
+    ///         to be implementable. The family is now the whole family, and the four that remain are in
+    ///         <c>XmlDocIds.Refused</c> with reasons like every other undone key.
+    ///     </para>
     /// </remarks>
     static IEnumerable<string> Family =>
         OptionRegistry.All
             .Select(static info => info.Key)
-            .Where(static key => key.StartsWith("resharper_xmldoc_", StringComparison.Ordinal))
-            .Where(static key => !key.Contains("_pi_", StringComparison.Ordinal))
-            .Where(static key => !key.EndsWith("_after_pi", StringComparison.Ordinal));
+            .Where(static key => key.StartsWith("resharper_xmldoc_", StringComparison.Ordinal));
 
     [Fact]
     public void HonouredAndRefused_PartitionTheFamilyExactly() {
@@ -470,9 +650,9 @@ public sealed class XmlDocKeyCoverageTests {
         Assert.Empty(family.Except(covered, StringComparer.Ordinal));
         Assert.Empty(covered.Except(family, StringComparer.Ordinal));
 
-        Assert.Equal(27, family.Count);
-        Assert.Equal(17, honoured.Count);
-        Assert.Equal(10, refused.Count);
+        Assert.Equal(32, family.Count);
+        Assert.Equal(21, honoured.Count);
+        Assert.Equal(11, refused.Count);
     }
 
     [Fact]

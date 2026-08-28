@@ -10457,7 +10457,7 @@
       "templateLine": 835,
       "expands": [],
       "min": 0,
-      "boundsBecause": "At least 0. A length in characters cannot be negative; 0 means 'never'."
+      "boundsBecause": "At least 0. Measured against jb cleanupcode 2025.2.6 with CSharpFormatDocComments enabled: the element's flat inner content is compared strictly greater than this, so 0 means 'always', not 'never'. 'Never' is the export's own int.MaxValue."
     },
     {
       "key": "resharper_xmldoc_linebreaks_inside_tags_for_elements_with_child_elements",
