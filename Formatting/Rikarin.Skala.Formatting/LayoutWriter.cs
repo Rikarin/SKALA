@@ -68,6 +68,13 @@ public sealed class LayoutWriter {
     int? _pendingCloserLevel;
     bool _atLineStart = true;
     bool _pendingSpace;
+
+    /// <summary>The pending gap's own text, when it is preserved rather than rendered as one space.</summary>
+    string? _pendingSpaceText;
+
+    /// <summary>Whether the break that ended the last line renders as a space when it does not break.</summary>
+    bool _createdLineSpace;
+
     SourceSpan _pendingAnchorSpan;
     int _pendingAnchorToken = -1;
     bool _hasPendingAnchor;
@@ -76,7 +83,25 @@ public sealed class LayoutWriter {
     readonly int _indentWidth;
     readonly int _width;
 
-    LayoutWriter(Document document, int width, string indentUnit, string defaultNewLine, int continuousMultiplier) {
+    /// <summary>
+    ///     The input, and non-null exactly when <c>disable_indenter</c> is on.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ The one thing that key needs and the writer otherwise never has. Suppressing indentation
+    ///     is not "indent to zero": a line that existed in the input keeps the leading whitespace the
+    ///     author wrote, which can only be read out of the input, and the null here is what says the
+    ///     ordinary path is in force rather than a flag beside a string nobody passed.
+    /// </remarks>
+    readonly string? _source;
+
+    LayoutWriter(
+        Document document,
+        int width,
+        string indentUnit,
+        string defaultNewLine,
+        int continuousMultiplier,
+        string? suppressedIndentSource
+    ) {
         _document = document;
         _width = width;
         _indentWidth = indentUnit == "\t" ? TextWidth.TabStop : indentUnit.Length;
@@ -84,20 +109,33 @@ public sealed class LayoutWriter {
         _indentUnit = indentUnit;
         _defaultNewLine = defaultNewLine;
         _continuousMultiplier = Math.Max(1, continuousMultiplier);
+        _source = suppressedIndentSource;
     }
 
     /// <param name="width"><c>max_line_length</c>: the budget every Auto group is tested against.</param>
     /// <param name="continuousMultiplier">
     ///     <c>continuous_indent_multiplier</c>: how many indent units one continuation level is worth.
     /// </param>
+    /// <param name="suppressedIndentSource">
+    ///     <c>disable_indenter</c>: the input text, passed only when the key is on. See
+    ///     <see cref="WriteSuppressedIndent" />.
+    /// </param>
     public static Layout Write(
         Document document,
         int width,
         string indentUnit,
         string defaultNewLine,
-        int continuousMultiplier = 1
+        int continuousMultiplier = 1,
+        string? suppressedIndentSource = null
     ) {
-        var writer = new LayoutWriter(document, width, indentUnit, defaultNewLine, continuousMultiplier);
+        var writer = new LayoutWriter(
+            document,
+            width,
+            indentUnit,
+            defaultNewLine,
+            continuousMultiplier,
+            suppressedIndentSource
+        );
         writer.Walk();
         return new Layout(
             writer._output.ToString(),
@@ -134,6 +172,10 @@ public sealed class LayoutWriter {
                     case DocKind.Space:
                         if ((SpaceKind)slot.Arg0 != SpaceKind.Forbidden) {
                             _pendingSpace = true;
+
+                            // ⚠ A payload means the gap is preserved byte for byte rather than
+                            // rendered as one space. `disable_space_changes` is the only producer.
+                            _pendingSpaceText = slot.Payload > 0 ? _document.Strings[slot.Payload] : null;
                         }
 
                         continue;
@@ -432,7 +474,7 @@ public sealed class LayoutWriter {
             return _pendingCloserLevel ?? Effective();
         }
 
-        return _column + (_pendingSpace ? 1 : 0);
+        return _column + PendingWidth;
     }
 
     /// <summary>
@@ -596,10 +638,10 @@ public sealed class LayoutWriter {
             // It breaks when the next item would not fit and stays put otherwise, which is what
             // makes `wrap_if_long` a fill rather than a chop.
             if (!flat && (flags & LineFlags.FillPoint) != 0) {
-                var space = _pendingSpace || (flags & LineFlags.FlatSpace) != 0;
+                var width = _pendingSpace ? PendingWidth : (flags & LineFlags.FlatSpace) != 0 ? 1 : 0;
                 var column = _atLineStart
                     ? _pendingCloserLevel ?? Effective()
-                    : _column + (space ? 1 : 0);
+                    : _column + width;
                 var segment = _document.SegmentOf(node);
                 flat = segment < Document.Unbounded && column + segment <= _width;
             }
@@ -614,8 +656,17 @@ public sealed class LayoutWriter {
         }
 
         // ⚠ remove_spaces_on_blank_lines = true: a pending space before a break is never written,
-        // which is also what keeps the formatter from producing trailing whitespace at all.
+        // which is also what keeps the formatter from producing trailing whitespace at all. ⚠ A gap
+        // `disable_space_changes` preserved is discarded here too, and that is exactly why such a
+        // gap is a pending space and not text: preserving a run byte for byte must not survive into
+        // a line the run no longer ends.
         _pendingSpace = false;
+        _pendingSpaceText = null;
+
+        // ⚠ …except with the indenter off, where it is not discarded but moved: the line this break
+        // creates begins with the break point's own flat rendering. See <see cref="WriteSuppressedIndent" />.
+        _createdLineSpace = kind == LineKind.Soft && ((LineFlags)slot.Flags & LineFlags.FlatSpace) != 0;
+
         var newLine = slot.Payload > 0 ? _document.Strings[slot.Payload] : _defaultNewLine;
         _output.Append(newLine);
         _line++;
@@ -628,33 +679,118 @@ public sealed class LayoutWriter {
         _column = 0;
     }
 
+    /// <summary>
+    ///     <c>disable_indenter</c>: writes the leading whitespace the author gave this piece, if any.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Two halves, and only the second makes it a suppression. A piece that began a line in the
+    ///     input keeps the run of spaces and tabs that stood in front of it, byte for byte. A piece
+    ///     that did <em>not</em> begin a line in the input is on a line the wrapping created and has
+    ///     no leading whitespace of its own anywhere — so what it gets instead is the break point's
+    ///     own flat rendering, and nothing else. Synthetic pieces, whose span is empty, are that
+    ///     second case as well.
+    ///     <para>
+    ///         ⚠ "The point's flat rendering" is measured, and the first reading of it — column zero —
+    ///         was wrong on two thirds of the shapes. Under this key <c>jb cleanupcode</c> writes a created
+    ///         line as:
+    ///         <code>
+    /// var chopped = Compute(
+    /// alpha + beta,          ← nothing: the point after `(` renders as nothing
+    ///  epsilon + zeta        ← one space: the point after `,` renders as a space
+    /// );                     ← nothing: the point before `)` renders as nothing
+    ///
+    /// var value = Compute(a)
+    ///  + Compute(b)          ← one space: the point before a binary operator renders as a space
+    ///         </code>
+    ///         which is exactly <see cref="LineFlags.FlatSpace" />, the flag the writer already carries
+    ///         for the flat case. The indenter being off does not delete the gap the break replaced; it
+    ///         deletes the indentation that would otherwise have stood in front of it.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ Only the emission is suppressed. <see cref="Effective" /> keeps answering with the
+    ///         indentation the rules <em>would</em> have written, so every group is still fitted against
+    ///         it. Which of the two columns <c>jb cleanupcode</c> measures its margin against under this
+    ///         key is unmeasured, and the alternative would be a second rule invented from the same probe.
+    ///     </para>
+    /// </remarks>
+    void WriteSuppressedIndent(SourceSpan source) {
+        _column = 0;
+        if (source.Length == 0 || source.Start > _source!.Length) {
+            CreatedLineGap();
+            return;
+        }
+
+        var start = source.Start;
+        while (start > 0 && _source[start - 1] is ' ' or '\t') {
+            start--;
+        }
+
+        if (start > 0 && _source[start - 1] is not ('\n' or '\r')) {
+            CreatedLineGap();
+            return;
+        }
+
+        for (var i = start; i < source.Start; i++) {
+            _output.Append(_source[i]);
+        }
+
+        _column = TextWidth.Advance(_source[start..source.Start], 0);
+        return;
+
+        void CreatedLineGap() {
+            if (!_createdLineSpace) {
+                return;
+            }
+
+            _output.Append(' ');
+            _column = 1;
+        }
+    }
+
+    /// <summary>The columns the pending gap will occupy, which is 1 unless it is a preserved run.</summary>
+    int PendingWidth => !_pendingSpace ? 0 : _pendingSpaceText is null ? 1 : TextWidth.Measure(_pendingSpaceText);
+
+    /// <summary>Writes the pending gap — one space, or the author's own run under `disable_space_changes`.</summary>
+    void FlushPendingSpace() {
+        if (!_pendingSpace) {
+            return;
+        }
+
+        var gap = _pendingSpaceText ?? " ";
+        _output.Append(gap);
+        _column = TextWidth.Advance(gap, _column);
+        _pendingSpace = false;
+        _pendingSpaceText = null;
+    }
+
     void WritePiece(string text, SourceSpan source, VerbatimFlags flags) {
-        if ((flags & VerbatimFlags.Realign) != 0) {
+        // ⚠ Not realigned while the indenter is off. A raw literal's interior lines move only to
+        // follow its opening quotes, and under this key the opening quotes did not move.
+        if ((flags & VerbatimFlags.Realign) != 0 && _source is null) {
             text = Realign(
                 text,
-                _atLineStart ? _pendingCloserLevel ?? Effective() : _column + (_pendingSpace ? 1 : 0)
+                _atLineStart ? _pendingCloserLevel ?? Effective() : _column + PendingWidth
             );
         }
 
         if (_atLineStart) {
             if ((flags & VerbatimFlags.AtColumnZero) == 0 && (flags & VerbatimFlags.SelfIndented) == 0) {
-                WriteIndentTo(_pendingCloserLevel ?? Effective());
+                if (_source is null) {
+                    WriteIndentTo(_pendingCloserLevel ?? Effective());
+                } else {
+                    WriteSuppressedIndent(source);
+                }
             }
 
             _atLineStart = false;
             _pendingSpace = false;
+            _pendingSpaceText = null;
             _pendingCloserLevel = null;
         } else if (_pendingCloserLevel is not null) {
             _pendingCloserLevel = null;
-            if (_pendingSpace) {
-                _output.Append(' ');
-                _column++;
-                _pendingSpace = false;
-            }
-        } else if (_pendingSpace) {
-            _output.Append(' ');
-            _column++;
-            _pendingSpace = false;
+            FlushPendingSpace();
+        } else {
+            FlushPendingSpace();
         }
 
         var start = _output.Length;

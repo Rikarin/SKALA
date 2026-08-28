@@ -132,6 +132,22 @@ public sealed class DocumentBuilder {
         );
 
     /// <summary>
+    ///     An inter-token gap preserved byte for byte rather than normalised to one space.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ <c>disable_space_changes</c> is the only thing that produces one, and it is a
+    ///     <see cref="DocKind.Space" /> rather than a <see cref="DocKind.Text" /> for one reason: a
+    ///     gap is allowed to sit immediately before a break point, and a space is the only node the
+    ///     writer discards when the break is taken. Written as text, a preserved run before a taken
+    ///     break would be trailing whitespace — which nothing else in this formatter can emit, and
+    ///     which the idempotence property would then fail on.
+    /// </remarks>
+    public void Space(string text) {
+        var width = TextWidth.Measure(text);
+        Leaf(DocKind.Space, (int)SpaceKind.Required, 0, default, AddString(text), width, width);
+    }
+
+    /// <summary>
     ///     A line break. <paramref name="newLine" /> carries the source's own ending so that a file with
     ///     CRLF stays CRLF — <c>enforce_line_ending_style = false</c> means mixed endings are preserved
     ///     rather than normalised.

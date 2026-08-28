@@ -1494,11 +1494,31 @@ therefore true and useless in the same breath. This is the case `./build.sh Pair
   unreachable. The entry is the measurement and the method; the four keys that *are* divergences have
   entries of their own below.
 
-## SK-DIV-0061 — `disable_indenter`: the oracle stops reindenting; Skala has no way to
+## SK-DIV-0061 — `disable_indenter`: the oracle stops reindenting — resolved
 
 At `true` the oracle applies spacing, blank-line and wrapping rules exactly as it would otherwise and
 leaves **line-start whitespace alone**: a line that existed in the input keeps the indentation it was
-written with, and a line the wrapping created starts at column zero.
+written with.
+
+⚠ **"A line the wrapping created starts at column zero" is refuted, and by the shape rather than by
+the key.** The original probe wrapped only at binary operators — where the created line does *not*
+start at column zero, it starts with one space — and the entry recorded the wrong half of the rule
+because one shape cannot separate the two. Re-measured on a fixture that wraps both ways, a created
+line begins with **the break point's own flat rendering**: nothing after `(` and before `)`, one
+space after `,` and before a binary operator.
+
+```
+var chopped = Compute(
+alpha + beta,           ← nothing
+ epsilon + zeta         ← one space
+);                      ← nothing
+
+var value = Compute(a)
+ + Compute(b)           ← one space
+```
+
+That is `LineFlags.FlatSpace`, which the writer already carries for the flat case: the indenter being
+off does not delete the gap the break replaced, it deletes the indentation in front of it.
 
 ```csharp
 // oracle, disable_indenter = true
@@ -1513,14 +1533,17 @@ one,                                  // a line that did not exist: column zero
 );                                    // likewise
 ```
 
-Skala cannot express this. `LayoutWriter` computes an indentation for every line it emits and has no
-access to the source's own; honouring the key means carrying the input into the writer and giving it
-a third mode — reproduce the source line's leading whitespace, or emit none for a line that did not
-exist. That is a change to the writer every other construct shares, and it was not attempted here.
+`LayoutWriter` now takes the input — only when the key is on, so the ordinary path does not
+materialise a whole-file string — and `WriteSuppressedIndent` answers the two cases. ⚠ Only the
+*emission* is suppressed: `Effective()` keeps returning the indentation the rules would have written,
+so groups are still fitted against it. Which of the two columns `jb cleanupcode` measures its margin
+against under this key is unmeasured, and the alternative would be a second rule invented from the
+same probe.
 
 - options: `resharper_disable_indenter`
-- ⚠ status: **open**, measured. Not read by Skala at all, deliberately: registering it `OfInert`
-  would put an unimplemented key inside a claim about this formatter.
+- ⚠ status: **resolved**. `verify resharper_disable_indenter` on
+  `constructs/suppression/resharper_disable_indenter.cs` — Conformant, 2 of 2 values. It stays Tier D
+  until the committed sweep reaches it; a `verify` run is not the sweep.
 
 ## SK-DIV-0062 — `disable_space_changes`: the oracle preserves every inter-token run; Skala collapses
 
@@ -1537,15 +1560,22 @@ public void Method( int one,int two ) {   // so does every gap in the header
         Alpha = sum;   // a padded trailing comment, on a line that was reindented
 ```
 
-Skala resolves a preserved gap to `Required` or `Forbidden` at document-build time —
-`CSharpDocumentBuilder.GapSpace` says so, and says why: `extra_spaces = remove_all` makes "preserve"
-a one-bit question for the one construct that needed it. This key makes it an *n*-bit question for
-every gap in the file, which is a verbatim-gap concept carried end to end through the IR and the
-writer. Not attempted here.
+The *n*-bit half is what this cost. `CSharpDocumentBuilder.PreservedRun` hands the run to a
+`DocKind.Space` node carrying its own text — a space and not a text node, because a preserved run may
+sit immediately before a break point and a space is the only node the writer discards when the break
+is taken. Written as text it would be trailing whitespace, which nothing else in this formatter can
+emit. At a break point the run is emitted *before* the point with `flatSpace` off, so it appears when
+the point stays flat and vanishes when it breaks.
+
+⚠ The gap before a trailing comment is covered too, which its narrow sibling
+`disable_space_changes_before_trailing_comment` cannot move at either of `space_before_trailing_comment`'s
+values.
 
 - options: `resharper_disable_space_changes`
-- ⚠ status: **open**, measured; supersedes the recorded inert claim, which was measured on a fixture
-  with no wrong spacing in it.
+- ⚠ status: **resolved**; supersedes the recorded inert claim, which was measured on a fixture with no
+  wrong spacing in it. `verify resharper_disable_space_changes` — Conformant, 2 of 2 values, with the
+  two-space runs around `+` and the four-space run before the trailing comment reproduced byte for
+  byte. Tier D until the sweep reaches it.
 
 ## SK-DIV-0063 — `disable_line_break_changes`: no break is added and none removed
 
@@ -1553,14 +1583,17 @@ The broadest of the break switches, and a strict superset of both SK-DIV-0064 an
 `disable_blank_line_changes`: blank runs survive, breaks the wrapping rules would introduce are not
 introduced, and breaks the author wrote are not joined. Spacing and indentation still apply.
 
-Skala's `Line` nodes carry `LineKind.Hard` wherever the rules demand a break — one statement per line
-is not negotiable in the current builder — so honouring this key means every hard break becoming
-conditional on the source, which is a different builder rather than a flag on this one.
-`GroupMode.Preserve` and `LineKind.Preserve` already exist in the IR and are the half of the shape
-that would survive; the hard breaks are the half that would not.
+"A different builder" turned out to be one branch. `CSharpDocumentBuilder.EmitGap` is the single
+funnel through which a break is added or removed, so the key is answered there and nowhere else: a
+gap the author left flat stays flat, a gap the author broke becomes a hard break with the author's own
+blank count. The break plan is never consulted, which is what stops a wrapping rule adding anything;
+`ResolveBlankLines` short-circuits to the source count, which is where the "blank runs included" half
+lives and why the key is the union of `disable_blank_line_changes` and `disable_line_break_removal`
+rather than a third rule.
 
 - options: `resharper_disable_line_break_changes`
-- ⚠ status: **open**, measured.
+- ⚠ status: **resolved**. `verify resharper_disable_line_break_changes` — Conformant, 2 of 2 values.
+  Tier D until the sweep reaches it.
 
 ## SK-DIV-0064 — `disable_line_break_removal`: one direction only
 
@@ -1571,15 +1604,23 @@ reason both entries exist: with `disable_line_break_removal = true` the three-bl
 only — the author's breaks are never joined and the cap never truncates a run — and additions are
 untouched.
 
-Skala has the near-miss already: `KeepsUserBreaksBetweenItems` is
-`keep_user_linebreaks && keep_existing_linebreaks`, and this key is a third term on it, plus dropping
-the cap in `ResolveBlankLines`, plus suppressing `CSharpDocumentBuilder.ShouldJoin`. It was not
-implemented here because the first of those three changes a value `BreakPlan`'s wrapping functions
-read, and those were another agent's subject on the day this was measured.
+Implemented in the same funnel as SK-DIV-0063 and sharing exactly one of its two branches, which is
+what "one-directional half" means in code: a gap the author broke becomes a hard break, and a gap the
+author left flat falls through to every rule below it, so the wrapping still adds breaks the author
+never wrote. `BreakPlan` is untouched — the near-miss route through `KeepsUserBreaksBetweenItems`
+would have changed a value the wrapping functions read, and does not need to be taken.
+
+The blank-line half is a clamp rather than a short-circuit: `ResolveBlankLines` resolves normally and
+the result is raised to the author's own count. Two of the three blank-line systems only ever *reduce*
+a run (the cap, the near-brace removal) and one only ever raises it, so `Math.Max` is exactly "the
+reductions are off and the requirement is not" — which is what the oracle does, and what separates
+this key from `disable_blank_line_changes` on the same file.
 
 - options: `resharper_disable_line_break_removal`
-- ⚠ status: **open**, measured. ⚠ The nearest implemented shape is `keep_user_linebreaks`, which is
-  not the same key: it governs the gaps *between items of a list*, and this governs every gap.
+- ⚠ status: **resolved**. `verify resharper_disable_line_break_removal` — Conformant, 2 of 2 values.
+  Tier D until the sweep reaches it. ⚠ The nearest *other* implemented shape is `keep_user_linebreaks`,
+  which is still not the same key: it governs the gaps between items of a list, and this governs every
+  gap.
 ## SK-DIV-0030 — a chain whose receiver ends in `?.` is not chopped at all
 
 `PlanChainedCalls` collects a chain's dots by walking the receiver side of each link. For a
