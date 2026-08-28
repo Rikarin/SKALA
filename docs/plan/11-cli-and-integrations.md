@@ -410,11 +410,16 @@ tools/net10.0/any/
 └── (78 more files)            Roslyn, MSBuild, SARIF, the build hosts
 ```
 
-One .nupkg, every platform, and `./build.sh Pack` takes no `--rids`. The package is still ~33 MB,
-because Roslyn is 22 MB of it. Two things that were in it and are not: the client's 13 MB `.dSYM`
-bundle, which `PackTool`'s publish glob collected and which nothing in a tool install can read, and
-6.6 MB of localised Roslyn resources, which `InvariantGlobalization` does not suppress on its own —
-`SatelliteResourceLanguages` does.
+One .nupkg, every platform, and `./build.sh Pack` takes no `--rids`.
+
+⚠ **It is also less than half the size: 33.4 MB → 15.2 MB**, measured on the same machine before and
+after, 89 files either way. That was not the goal and is worth stating, because it is the cost of the
+old arrangement showing up somewhere it was never accounted: the RID-specific package carried
+ReadyToRun-compiled native images of Roslyn *and* the 2.9 MB AOT binary, where the portable package
+carries IL. Two other things that were in it and are not, both removed deliberately: the client's
+13 MB `.dSYM` bundle, which `PackTool`'s publish glob collected and which nothing in a tool install
+can read, and 6.6 MB of localised Roslyn resources, which `InvariantGlobalization` does not suppress
+on its own — `SatelliteResourceLanguages` does.
 
 ⚠ One measurement from the two-binary arrangement is worth keeping, because it is the kind of thing
 that is assumed and is load-bearing: **`Environment.ProcessPath` resolves the install symlink.**

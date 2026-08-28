@@ -145,7 +145,7 @@ what MSBuild and MCP need.
 
 | Package | Kind | Contents | Size | Consumer |
 |---|---|---|---|---|
-| `Rikarin.Skala.Cli` | .NET tool (`skala`) | `tools/net10.0/any/`: the framework-dependent tool, `Runner="dotnet"`, RID-agnostic | ~33 MB | `dotnet tool install`, global or into a manifest |
+| `Rikarin.Skala.Cli` | .NET tool (`skala`) | `tools/net10.0/any/`: the framework-dependent tool, `Runner="dotnet"`, RID-agnostic | **15.2 MB** | `dotnet tool install`, global or into a manifest |
 | `Rikarin.Skala.Rules` | Analyzer | `analyzers/dotnet/cs/Rikarin.Skala.Rules.dll` + `…Rules.Metadata.dll` | 74 kB | `PackageReference` with `PrivateAssets=all` |
 | `Rikarin.Skala.MSBuild` | Build | `build/` + `buildTransitive/` props and targets | 9.8 kB | `PackageReference` in `Directory.Build.props` |
 | `Rikarin.Skala.Canonical` | Content | `content/canonical.editorconfig`, its manifest, and a check-only target | 43 kB | `PackageReference`; installed by `skala config sync` ([03](03-configuration-model.md) § "Canonical distribution") |

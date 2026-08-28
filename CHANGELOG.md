@@ -58,8 +58,15 @@ cache still pays), and `GitHooks` with `skala hooks install`, which moves from `
 ⚠ **The command is still `skala`, and the full tool takes that name back.** `skala-tool` existed only
 because the client owned `skala`; `Rikarin.Skala.Cli` is now an ordinary portable `PackAsTool`
 package — `Runner="dotnet"`, RID-agnostic, one .nupkg that installs everywhere, no `--rids` on
-`./build.sh Pack`. Verified by `dotnet tool install` from a local feed: the shim runs, `format`,
-`check`, `verify`, `explain` and `config sync` all work.
+`./build.sh Pack`. Verified by `dotnet tool install` from a local feed: the command runs, and
+`format`, `format --check`, `format --diff`, `check --load loose`, `verify`, `explain`,
+`rules list`, `config sync --apply` and `hooks install` all work. `skala daemon` and `--no-daemon`
+are rejected with a message naming them, exit 3 — the documented code for an invocation the tool
+refuses — rather than silently accepted.
+
+⚠ **The package is less than half the size: 33.4 MB → 15.2 MB**, same machine, 89 files either way.
+Not a goal, and worth recording: the RID-specific package carried ReadyToRun native images of Roslyn
+*and* the 2.9 MB AOT binary, where a portable package carries IL.
 
 **Formatter output is unchanged.** Identical stdout, exit codes and on-disk bytes against the
 pre-removal binary with a live daemon, across ten shapes: `format`, `--check`, `--diff`, `--quiet`,
