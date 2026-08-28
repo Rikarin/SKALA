@@ -48,6 +48,33 @@ public sealed class XmlDocRenderer {
     int _width;
     bool _empty = true;
 
+    /// <summary>⚠ Something has been placed on the current line, so the next unit needs a space.</summary>
+    /// <remarks>
+    ///     ⚠ This used to be <c>_width &gt; IndentWidth()</c>, which is the same question only while a
+    ///     line's measured width starts at its indent. <see cref="_carry" /> is exactly the case where
+    ///     it does not.
+    /// </remarks>
+    bool _placed;
+
+    /// <summary>
+    ///     ⚠ The column the next line's fill starts at, when its content began on a start tag's line.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ SK-DIV-0019's second half, measured. The oracle lays an element's content out starting at
+    ///     the column its start tag closes at, and moving the start tag onto a line of its own does not
+    ///     reset that — so the first content line of <c>&lt;summary&gt;</c> carries nine columns fewer
+    ///     than the ones after it, and the first content line of <c>&lt;param name="…"&gt;</c> carries
+    ///     the whole header's width fewer. Any break already emitted clears it, which is why a comment
+    ///     the author had already opened up wraps at the plain indent.
+    ///     <para>
+    ///         ⚠ Carried into the <em>fill</em> and not into <see cref="FitsOpen" />: at content 105 an
+    ///         <c>&lt;item&gt;</c> inside a <c>&lt;list&gt;</c> that carries 10 comes back flat, which it
+    ///         could not if the fit were asked from column 16. Measured, and the asymmetry is the
+    ///         oracle's.
+    ///     </para>
+    /// </remarks>
+    int _carry;
+
     /// <summary>⚠ Set when glue could not be honoured, which makes the whole comment untouchable.</summary>
     bool _glueBroken;
 
@@ -168,30 +195,15 @@ public sealed class XmlDocRenderer {
     bool IsMultiline(XmlDocElement element, string? flat) {
         // ⚠ A self-closing element has no inside to break open, and treating one as multi-line
         // rewrites `<code … />` into `<code …>` with a closing tag that was never there.
-        // Newtonsoft's `<code source="…" title="…" />` is 130 columns wide and found this.
+        // Newtonsoft's `<code source="…" title="…" />` is 130 columns wide and found this — twice.
+        // The second time it was this method losing the guard while `Structural` was split out of
+        // it, and `XmlDocSignature.RoundTrips` refused four `corpus/real/` comments rather than let
+        // it through.
         if (element.SelfClosing) {
             return false;
         }
 
-        if (element.Verbatim is null
-            && _options.LinebreaksInsideTagsForElementsWithChildElements
-            && element.HasChildElements
-            && !element.HasText) {
-            return true;
-        }
-
-        // ⚠ `linebreaks_inside_tags_for_elements_longer_than`, measured: the length compared is the
-        // element's flat inner content — no start tag, no end tag — and the comparison is strictly
-        // greater. Asked before width, like the key above it, because a threshold the content
-        // crosses opens the element up however well it would have fitted.
-        //
-        // ⚠ Verbatim elements are exempt. The oracle does apply the threshold to `<c>`; doing the
-        // same here would move a byte-for-byte code body onto a re-indented line, and that is the
-        // one thing the verbatim rule exists to prevent. A measured narrowing, not an oversight.
-        if (element.Verbatim is null
-            && _options.LinebreaksInsideTagsForElementsLongerThan != int.MaxValue
-            && FlatNodes(element.Children) is { } inner
-            && TextWidth.Measure(inner) > _options.LinebreaksInsideTagsForElementsLongerThan) {
+        if (Structural(element)) {
             return true;
         }
 
@@ -202,7 +214,43 @@ public sealed class XmlDocRenderer {
         // ⚠ `linebreaks_inside_tags_for_multiline_elements = false` means an element that does not
         // fit is left long rather than opened up, which is the same answer docs/plan/04 gives for a
         // line of code nothing can break.
-        return !FitsAlone(flat) && _options.LinebreaksInsideTagsForMultilineElements;
+        return !FitsOpen(element, flat) && _options.LinebreaksInsideTagsForMultilineElements;
+    }
+
+    /// <summary>
+    ///     Whether the element has to occupy more than one line for a reason that is not width.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Split out of <see cref="IsMultiline" /> so that <see cref="FlatNodes" /> can ask it of a
+    ///     <em>child</em> without dragging the width question — which is the parent's own — down a
+    ///     level with it. SK-DIV-0020: an element holding a child that is open cannot itself be flat,
+    ///     and its prose is hoisted along with the child.
+    /// </remarks>
+    bool Structural(XmlDocElement element) {
+        // ⚠ A self-closing element has no inside to break open, and treating one as multi-line
+        // rewrites `<code … />` into `<code …>` with a closing tag that was never there.
+        // Newtonsoft's `<code source="…" title="…" />` is 130 columns wide and found this.
+        if (element.SelfClosing || element.Verbatim is not null) {
+            // ⚠ Verbatim elements are exempt from the threshold below. The oracle does apply it to
+            // `<c>`; doing the same here would move a byte-for-byte code body onto a re-indented
+            // line, and that is the one thing the verbatim rule exists to prevent. A measured
+            // narrowing, not an oversight.
+            return false;
+        }
+
+        if (_options.LinebreaksInsideTagsForElementsWithChildElements
+            && element.HasChildElements
+            && !element.HasText) {
+            return true;
+        }
+
+        // ⚠ `linebreaks_inside_tags_for_elements_longer_than`, measured: the length compared is the
+        // element's flat inner content — no start tag, no end tag — and the comparison is strictly
+        // greater. Asked before width, like the key above it, because a threshold the content
+        // crosses opens the element up however well it would have fitted.
+        return _options.LinebreaksInsideTagsForElementsLongerThan != int.MaxValue
+            && FlatNodes(element.Children) is { } inner
+            && TextWidth.Measure(inner) > _options.LinebreaksInsideTagsForElementsLongerThan;
     }
 
     /// <summary>
@@ -240,7 +288,11 @@ public sealed class XmlDocRenderer {
     /// <summary>Writes an element across several lines: start tag, indented content, end tag.</summary>
     void Open(XmlDocElement element) {
         Push(Tag(element, ">"), glued: false, tag: true);
-        Break();
+
+        // ⚠ The start tag's closing column, kept across the break it is about to take. See `_carry`.
+        Flush();
+        var carry = _width;
+        EndLine();
 
         var outer = _level;
         _level = outer
@@ -251,7 +303,9 @@ public sealed class XmlDocRenderer {
         if (element.Verbatim is { } verbatim) {
             Lines(verbatim);
         } else {
+            _carry = carry;
             Nodes(element.Children);
+            _carry = 0;
         }
 
         Break();
@@ -307,7 +361,15 @@ public sealed class XmlDocRenderer {
                     return null;
 
                 case XmlDocElement element:
-                    if (_options.BreakBefore(element.Name) || Flat(element) is not { } flat) {
+                    // ⚠ `Structural` is the SK-DIV-0020 half. A child the structure rules open —
+                    // a `<list>` that holds only `<item>`s, an element past
+                    // `linebreaks_inside_tags_for_elements_longer_than` — cannot appear inside a flat
+                    // parent, so the parent is opened too and the prose beside the child is hoisted
+                    // with it. Skala used to apply `with_child_elements` only to an element whose
+                    // content was *nothing but* elements, which left mixed content on one line.
+                    if (_options.BreakBefore(element.Name)
+                        || Flat(element) is not { } flat
+                        || Structural(element)) {
                         return null;
                     }
 
@@ -328,13 +390,25 @@ public sealed class XmlDocRenderer {
     }
 
     /// <summary>
-    ///     Whether a token fits on a line of its own at the current level.
+    ///     Whether an element's <em>content</em> fits on the line its start tag closes on.
     /// </summary>
     /// <remarks>
-    ///     ⚠ Everything fits when <c>wrap_lines</c> is false: with no hard wrap there is no width to
-    ///     fail, so a long element is left long rather than opened up.
+    ///     ⚠ Measured, and it is the third of SK-DIV-0019's three parts. What is compared is the flat
+    ///     element minus its end tag: the oracle opens an element up when the content overflows from
+    ///     the start tag's closing column, and the <c>&lt;/item&gt;</c> that follows the last word is
+    ///     not in the comparison and rides past the margin. That is what keeps the committed
+    ///     <c>linebreak_before_multiline_elements</c> fixture's 131-column <c>&lt;item&gt;</c> on one
+    ///     line — SK-DIV-0021 attributed it to <c>linebreak_before_elements</c> not naming
+    ///     <c>item</c>, and the same <c>&lt;item&gt;</c> with longer content is opened up and wrapped,
+    ///     so that reading is measured false.
+    ///     <para>
+    ///         ⚠ Everything fits when <c>wrap_lines</c> is false: with no hard wrap there is no width to
+    ///         fail, so a long element is left long rather than opened up.
+    ///     </para>
     /// </remarks>
-    bool FitsAlone(string text) => !_options.WrapLines || TextWidth.Measure(text) + IndentWidth() <= _budget;
+    bool FitsOpen(XmlDocElement element, string flat) =>
+        !_options.WrapLines
+        || IndentWidth() + TextWidth.Measure(flat) - element.Name.Length - "</>".Length <= _budget;
 
     void Push(string text, bool glued, bool tag) {
         if (glued) {
@@ -374,13 +448,14 @@ public sealed class XmlDocRenderer {
         }
 
         Start();
-        if (!weld && _width > IndentWidth()) {
+        if (!weld && _placed) {
             _current.Append(' ');
             _width++;
         }
 
         _current.Append(text);
         _width += width;
+        _placed = true;
     }
 
     void Start() {
@@ -392,8 +467,11 @@ public sealed class XmlDocRenderer {
             _current.Append(_indentUnit);
         }
 
-        _width = IndentWidth();
+        // ⚠ The emitted text is the indent; the measured width may be more. See `_carry`.
+        _width = Math.Max(IndentWidth(), _carry);
+        _carry = 0;
         _empty = false;
+        _placed = false;
     }
 
     int IndentWidth() => _level * (_options.UseTabs ? TextWidth.TabStop : _options.IndentSize);
@@ -404,6 +482,11 @@ public sealed class XmlDocRenderer {
     }
 
     void EndLine() {
+        // ⚠ Cleared before the early return, not after it. A break the caller asked for ends the
+        // carry whether or not there was anything on the line to end — `linebreak_before_elements`
+        // breaks in front of a `<para>` that is the first thing in its parent, and the `<para>` line
+        // starts at its own indent rather than at the parent's start tag.
+        _carry = 0;
         if (_empty) {
             return;
         }
@@ -412,6 +495,7 @@ public sealed class XmlDocRenderer {
         _current.Clear();
         _width = 0;
         _empty = true;
+        _placed = false;
     }
 
     void HardBreak(XmlDocBreak hard) {

@@ -90,12 +90,31 @@ public sealed class XmlDocOracleTests {
             return;
         }
 
-        // ⚠ Tier D has two honest causes here and this assertion used to admit only one. The fixture
-        // pins the *export's* configuration; the key-flip sweep flips the key. A key can reproduce its
-        // doc-comment fixture byte for byte and still diverge at another value — every one of the six
-        // demoted at c0691cb7 does exactly that — and demanding `row.Agrees == false` of those turns a
-        // correct demotion into a test failure. What must still be caught is the stale reason: Tier D
-        // with no evidence behind it from either instrument.
+        // ⚠ Tier D has three honest causes here and this assertion used to admit one, then two. The
+        // fixture pins the *export's* configuration; the key-flip sweep flips the key. A key can
+        // reproduce its doc-comment fixture byte for byte and still diverge at another value — every
+        // one of the six demoted at c0691cb7 does exactly that — and demanding `row.Agrees == false`
+        // of those turns a correct demotion into a test failure. What must still be caught is the
+        // stale reason: Tier D with no evidence behind it from any instrument.
+        if (Unswept.Contains(row.Key)) {
+            // ⚠ The third cause, and the one this file had no room for. These keys were fixed and
+            // now reproduce their fixtures; none of them has ever been swept, so
+            // `Unsubstantiated()` cannot speak for them, and a fixture is not a Tier A claim —
+            // that is the exact mistake the six demotions above were. So they sit at D with a
+            // reason that is neither stale nor a divergence: *measured, agreeing, and not yet
+            // swept*. The sweep on master decides, and the list shrinks to nothing when it does.
+            Assert.True(
+                row.Agrees,
+                $"{row.Key} is on the awaiting-the-sweep list and its doc-comment fixture no longer "
+                + "agrees:\n"
+                + string.Join("\n", XmlDocOracle.Diff(row))
+                + "\n\nThat list means 'fixed, and waiting only to be swept'. Either the fix regressed, "
+                + "or the key belongs back with the divergences and needs a docs/divergences.md entry."
+            );
+
+            return;
+        }
+
         Assert.True(
             row.Agrees == false || SweepVerdicts.Unsubstantiated().Contains(row.Key),
             $"{row.Key} is Tier {tier}, Skala reproduces its doc-comment fixture byte for byte, and the "
@@ -107,18 +126,48 @@ public sealed class XmlDocOracleTests {
     }
 
     /// <summary>
+    ///     The keys SK-DIV-0019 … SK-DIV-0021 covered, fixed and now agreeing, and never swept.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ <b>This list may only shrink, and nothing may be added to it without a sweep row.</b> Its
+    ///     seven entries are one fix: the wrap column was measured wrong, all seven fixtures wrap, and
+    ///     five of them were SK-DIV-0019 alone. They are not promoted here because Tier A is a claim
+    ///     about the option across its domain and every instrument that could make it — the key-flip
+    ///     sweep — has no row for any of them; six <c>resharper_xmldoc_*</c> keys were once promoted on
+    ///     exactly this evidence and demoted the same afternoon.
+    ///     <para>
+    ///         ⚠ The assertion above runs in <em>both</em> directions over this list, so it cannot rot into
+    ///         a place to park a regression: a key here that stops agreeing fails, and a key here that
+    ///         earns Tier A leaves.
+    ///     </para>
+    /// </remarks>
+    static readonly HashSet<string> Unswept = new(StringComparer.Ordinal) {
+        "resharper_xmldoc_max_line_length",
+        "resharper_xmldoc_wrap_lines",
+        "resharper_xmldoc_wrap_text",
+        "resharper_xmldoc_wrap_tags_and_pi",
+        "resharper_xmldoc_linebreaks_inside_tags_for_elements_longer_than",
+        "resharper_xmldoc_linebreak_before_multiline_elements",
+        "resharper_xmldoc_linebreak_before_singleline_elements"
+    };
+
+    /// <summary>
     ///     ⚠ The headline number, asserted so that it cannot drift without a diff.
     /// </summary>
     [Fact]
-    public void TheSplit_IsThirteenAgainstNine() {
+    public void TheSplit_IsTwentyAgainstTwo() {
+        // ⚠ Raised from 13 by SK-DIV-0019's fix. The wrap column was measured wrong in one place and
+        // seven fixtures were failing on it; the two that remain are SK-DIV-0022 (`spaces_inside_tags`
+        // means "do not add", not "remove") and SK-DIV-0023's surviving half (the blank line after a
+        // processing instruction carries a trailing space).
         var rows = XmlDocOracle.Rows();
         var agreeing = rows.Count(static row => row.Agrees);
         Assert.Equal(22, rows.Count);
         Assert.True(
-            agreeing >= 13,
+            agreeing >= 20,
             $"{agreeing.ToString(CultureInfo.InvariantCulture)} of "
             + $"{rows.Count.ToString(CultureInfo.InvariantCulture)} doc-comment fixtures agree; the committed "
-            + "measurement is 13. This is a ratchet: agreement may rise, and a rise is a commit that promotes "
+            + "measurement is 20. This is a ratchet: agreement may rise, and a rise is a commit that promotes "
             + "the keys it earned."
         );
     }

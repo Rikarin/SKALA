@@ -75,14 +75,18 @@ public sealed class XmlDocSubFormatterTests {
 
     [Fact]
     public void ALongSummary_IsWrappedAtTheConfiguredWidth() {
+        // ⚠ Both halves of this used to read `TextWidth.Measure(line) <= 120` over the whole file
+        // line, and that is the reading SK-DIV-0019 records Skala having and the oracle not. The
+        // measured budget is on the line from the character after the `///`, so a doc line runs
+        // `codeIndent + 3` past the file margin by design. `XmlDocColumnTests` carries the probe.
         var text = string.Join(
             " ",
             Enumerable.Repeat("word", 60)
         );
         var formatted = XmlDoc.Text(XmlDoc.InClass("/// <summary>" + text + "</summary>"));
 
-        foreach (var line in formatted.Split('\n')) {
-            Assert.True(TextWidth.Measure(line) <= 120, $"'{line}' is {TextWidth.Measure(line)} columns.");
+        foreach (var line in XmlDoc.DocLines(formatted)) {
+            Assert.True(Inner(line) <= 120, $"'{line}' measures {Inner(line)} columns inside the marker.");
         }
 
         // Nothing was lost: every word is still there, in order.
@@ -97,12 +101,15 @@ public sealed class XmlDocSubFormatterTests {
             ("resharper_xmldoc_max_line_length", "60")
         );
 
-        Assert.All(narrow.Split('\n'), line => Assert.True(TextWidth.Measure(line) <= 60, line));
+        Assert.All(XmlDoc.DocLines(narrow), line => Assert.True(Inner(line) <= 60, line));
         Assert.True(
             XmlDoc.DocLines(narrow).Length
             > XmlDoc.DocLines(XmlDoc.Text(XmlDoc.InClass("/// <summary>" + text + "</summary>"))).Length
         );
     }
+
+    /// <summary>What the oracle measures against <c>max_line_length</c>: the line after the slashes.</summary>
+    static int Inner(string docLine) => TextWidth.Measure(docLine) - "///".Length;
 
     [Fact]
     public void WrapLinesFalse_LeavesTheLongLineLong() {
@@ -240,6 +247,152 @@ public sealed class XmlDocSubFormatterTests {
         Assert.Equal(
             ["/// <summary>One. Two.</summary>"],
             XmlDoc.DocLines(XmlDoc.Text(source, ("resharper_xmldoc_keep_user_linebreaks", "false")))
+        );
+    }
+}
+
+/// <summary>
+///     Where the wrap column actually is, measured against <c>OracleProfile.DocComments</c>.
+/// </summary>
+/// <remarks>
+///     ⚠ <b>SK-DIV-0019 was one defect and it was not the one recorded.</b> The entry read the
+///     oracle as filling "while the line is strictly under the limit and then keeping the word that
+///     crosses it", which fits the committed fixtures and fits nothing else: probed at four content
+///     indents, three code indents, four start-tag widths and two margins, the oracle's lines land
+///     on a single arithmetic with no crossing word in it.
+///     <list type="number">
+///         <item>
+///             The measured width of a documentation line <b>excludes the code indentation and the
+///             three slashes</b> and includes the marker's space. A line is inside the margin when
+///             <c>1 + indent + content &lt;= max_line_length</c> — so the same sentence wraps
+///             identically at every nesting depth, and the file's own columns run
+///             <c>codeIndent + 3</c> past the margin.
+///         </item>
+///         <item>
+///             An element's content is laid out <b>starting on the line its start tag ends on</b>,
+///             even when the start tag then takes a line of its own: the first content line's fill
+///             begins at the start tag's closing column, and only a break already emitted resets it
+///             to the content indent. That is the "first content line is one word shorter" shape
+///             SK-DIV-0019 recorded as unexplained.
+///         </item>
+///         <item>
+///             An element is opened up when <b>its content</b> overflows from that column. The end
+///             tag is not in the comparison, and rides past the margin on the last content line.
+///         </item>
+///     </list>
+///     <para>
+///         ⚠ Every number below is a probe of <c>jb cleanupcode</c> 2025.2.6 under
+///         <c>CSharpFormatDocComments</c>, not a reading of the fixtures. Single-character words are
+///         used so the fill can land on every odd column; with five-letter words the same probe
+///         cannot tell a budget of 113 from one of 118, which is how the first reading survived.
+///     </para>
+/// </remarks>
+public sealed class XmlDocColumnTests {
+    /// <summary>A run of single-character words exactly <paramref name="columns" /> wide.</summary>
+    static string Words(int columns) => string.Join(" ", Enumerable.Repeat("x", (columns + 1) / 2));
+
+    [Theory]
+    [InlineData(109, false)]
+    [InlineData(111, true)]
+    public void ASummary_StaysOnOneLineWhileItsContentFitsFromTheStartTag(int columns, bool opened) {
+        // ⚠ `<summary>` closes at column 9 and the budget is `120 - 1`, so the content fits at 110
+        // and not at 111. Measured: 109 comes back flat at 136 columns — sixteen past the margin,
+        // because neither the code indent nor the slashes are counted — and 111 is opened up.
+        var formatted = XmlDoc.Text(XmlDoc.InClass("/// <summary>" + Words(columns) + "</summary>"));
+        Assert.Equal(opened, XmlDoc.DocLines(formatted).Length > 1);
+    }
+
+    [Fact]
+    public void TheFirstContentLine_IsFilledFromTheStartTagsColumn() {
+        // ⚠ The shape SK-DIV-0019 called unexplained. `<summary>` ends at column 9, so the first
+        // content line carries 109 columns and every line after it carries 115 — the same text, one
+        // word short on the first line only, because the fill never restarted at the indent.
+        var lines = XmlDoc.DocLines(XmlDoc.Text(XmlDoc.InClass("/// <summary>" + Words(400) + "</summary>")));
+
+        Assert.Equal("/// <summary>", lines[0]);
+        Assert.Equal(109, lines[1].Length - "///     ".Length);
+        Assert.Equal(115, lines[2].Length - "///     ".Length);
+        Assert.Equal(115, lines[3].Length - "///     ".Length);
+    }
+
+    [Fact]
+    public void ABreakTheAuthorWrote_ResetsTheFillToTheIndent() {
+        // ⚠ The control that makes the rule above a rule rather than a first-line exception: with
+        // the author's own line break between `<summary>` and its content there is no start tag on
+        // the content's line, and the very first content line carries the full 115.
+        var lines = XmlDoc.DocLines(
+            XmlDoc.Text(XmlDoc.InClass("/// <summary>", "///     " + Words(400), "/// </summary>"))
+        );
+
+        Assert.Equal("/// <summary>", lines[0]);
+        Assert.Equal(115, lines[1].Length - "///     ".Length);
+    }
+
+    [Fact]
+    public void TheWrapColumn_IsTheSameAtEveryNestingDepth() {
+        // ⚠ The measurement that refutes the reading in `XmlDocOptions.MaxLineLength`'s remark. That
+        // remark rejected "a budget for the comment's own text" because it "would make the same
+        // sentence wrap differently at two nesting depths"; the oracle wraps it identically at three,
+        // and pays for it with lines that run past the margin by the code indent.
+        var comment = "/// <summary>" + Words(400) + "</summary>";
+        var shallow = XmlDoc.DocLines(XmlDoc.Text(XmlDoc.InClass(comment)));
+        var deep = XmlDoc.DocLines(
+            XmlDoc.Text("class Outer {\n    class Inner {\n        " + comment + "\n        void M() { }\n    }\n}\n")
+        );
+
+        Assert.Equal(shallow, deep);
+    }
+
+    [Theory]
+    [InlineData(105, false)]
+    [InlineData(107, true)]
+    public void AnElementIsOpened_WhenItsContentOverflows_NotItsEndTag(int columns, bool opened) {
+        // ⚠ `<item>` sits at doc indent 8 and closes at column 14, so its content fits at 105 and
+        // not at 107 — and the `</item>` that follows is not in the comparison. It is what keeps the
+        // committed `linebreak_before_multiline_elements` fixture's 131-column `<item>` on one line,
+        // which SK-DIV-0021 attributed to `linebreak_before_elements` not naming `item`. Measured
+        // false: the same `<item>` with longer content is opened up and wrapped.
+        var formatted = XmlDoc.Text(
+            XmlDoc.InClass("/// <remarks><list><item>" + Words(columns) + "</item></list></remarks>")
+        );
+
+        Assert.Equal(opened, !formatted.Contains("<item>" + Words(columns) + "</item>", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void AWideSelfClosingElement_IsNotOpenedIntoATagPairItNeverHad() {
+        // ⚠ A regression test rather than a measurement, and it earns its place: splitting the
+        // structural rules out of `IsMultiline` dropped this guard, and a 130-column
+        // `<code source="…" title="…" />` came back as `<code …>` with a `</code>` that was never
+        // written. Nothing in `constructs/` reaches it — `XmlDocSignature.RoundTrips` refused four
+        // `corpus/real/` comments, which is the sub-formatter declining to ship what it could not
+        // prove, and the refusal count is how it surfaced at all.
+        const string code =
+            "/// <example><code lang=\"cs\" source=\"..\\Src\\Newtonsoft.Json.Tests\\Documentation\\LinqToJsonTests.cs\" "
+            + "region=\"LinqToJsonCreateParse\" title=\"Parsing a JSON Object from Text\" /></example>";
+        var formatted = XmlDoc.Text(XmlDoc.InClass(code));
+
+        Assert.DoesNotContain("</code>", formatted, StringComparison.Ordinal);
+        Assert.Contains("/>", formatted, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void AnElementHoldingAMultilineChild_HoistsItsProseToo() {
+        // ⚠ SK-DIV-0020. `<list>` holds only elements, so
+        // `linebreaks_inside_tags_for_elements_with_child_elements` opens it; an element holding one
+        // that is open cannot itself be flat, and its prose goes with it.
+        Assert.Equal(
+            [
+                "/// <remarks>",
+                "///     Some leading prose.",
+                "///     <list>",
+                "///         <item>Short.</item>",
+                "///     </list>",
+                "/// </remarks>"
+            ],
+            XmlDoc.DocLines(
+                XmlDoc.Text(XmlDoc.InClass("/// <remarks>Some leading prose. <list><item>Short.</item></list></remarks>"))
+            )
         );
     }
 }

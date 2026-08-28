@@ -247,7 +247,16 @@ public static class XmlDocFormatter {
         }
 
         var marker = options.SpaceAfterTripleSlash ? " " : string.Empty;
-        var budget = options.MaxLineLength - TextWidth.Measure(indent) - 3 - marker.Length;
+
+        // ⚠ Neither the code indentation nor the three slashes are subtracted, and both used to be
+        // — SK-DIV-0019 entire. Probed at four content indents, three code indents, four start-tag
+        // widths and two margins, the oracle wraps a documentation line when
+        // `marker + indent + content` passes `max_line_length`, measuring from the character after
+        // the `///`. The consequences are the divergence's two visible halves: the same sentence
+        // wraps identically however deeply its declaration is nested, and the file's own columns run
+        // `codeIndent + 3` past the margin. `XmlDocOptions.MaxLineLength` carries the argument this
+        // replaces, and why the argument lost.
+        var budget = options.MaxLineLength - marker.Length;
         if (XmlDocRenderer.Render(nodes, options, budget) is not { } lines || lines.Length == 0) {
             return new Attempt(default, null, XmlDocRefusalReason.Glue);
         }
