@@ -1231,14 +1231,16 @@ public static class Ids {
     public static readonly OptionId AlignMultilineBinaryPatterns =
         Of("resharper_csharp_align_multiline_binary_patterns");
 
-    // ⚠ Read, implemented, and Tier D — on the evidence and not on the wiring. The oracle aligns a
-    // wrapped query's clauses to the column of its `from`, and this reads the key and opens that
-    // scope. What is missing is the wrap: Skala does not break a query expression at its clauses at
-    // all (a milestone-3 gap that has nothing to do with alignment), so the only continuation a
-    // query has in Skala's output is one inside a single clause, and a fixture pinning that column
-    // would be pinning a line the oracle does not write. Tier A when the query wraps at its
-    // clauses, and not before.
-    public static readonly OptionId AlignLinqQuery = OfInert("resharper_csharp_align_linq_query");
+    // ⚠ Was Tier D on the evidence rather than on the wiring, and the evidence has arrived. The
+    // scope this key opens was always here — AlignsFromOwnColumn has read it since M3 — and what it
+    // was waiting for is the wrap: BreakPlan.PlanQuery now breaks a query at its clause boundaries,
+    // so there is a continuation for the column to be a column *of*. Measured, and the alignment is
+    // to the `from` rather than to the `=`:
+    //
+    //     var query = from number in numbers
+    //                 where number > 0        ← the `from`'s own column
+    //
+    public static readonly OptionId AlignLinqQuery = Of("resharper_csharp_align_linq_query");
 
     // ⚠ The column of the *first base type*, two past the base list's own node, which is where
     // every other member of this family reads its column. That was recorded here as the reason the
@@ -1634,8 +1636,8 @@ public static class Ids {
     public static readonly OptionId WrapBeforePrimaryConstructorLpar =
         Of("resharper_csharp_wrap_before_primary_constructor_declaration_lpar");
 
-    // ⚠ Read, implemented, and Tier D — both of them blocked by a wrapping gap of their own rather
-    // than by anything to do with the key.
+    // ⚠ Read, implemented, and Tier D — blocked by a wrapping gap of its own rather than by
+    // anything to do with the key.
     //
     //   wrap_before_type_parameter_langle — implemented in BreakPlan and verified: with the key on,
     //     Skala's output on a type parameter list too long for its line is byte-identical to the
@@ -1643,16 +1645,19 @@ public static class Ids {
     //     at all and the oracle wraps one — after the `<` when a single parameter overflows, at the
     //     last comma that fits when several do. A fixture pinning this key would be committing that
     //     unrelated divergence to the corpus. Tier A once a type parameter list wraps.
-    //   wrap_before_linq_expression — implemented in PlanAroundEquals: with the key on, a query is
-    //     taken out of the ordering rule and breaks whenever the whole query does not fit, which is
-    //     what puts `from` on a line of its own. Blocked by the same gap as `align_linq_query`:
-    //     Skala does not break a query at its clauses, so every query long enough to make the key
-    //     matter is one Skala already lays out differently.
     public static readonly OptionId WrapBeforeTypeParameterLangle =
         OfInert("resharper_csharp_wrap_before_type_parameter_langle");
 
+    // ⚠ Implemented in PlanAroundEquals and it was `wrap_before_type_parameter_langle`'s neighbour
+    // in the note above, on the same argument: the key takes a query out of the ordering rule so
+    // that it breaks whenever the whole query does not fit, which is what puts `from` on a line of
+    // its own — and every query long enough to make that matter was one Skala laid out differently,
+    // because it had no break point at the clauses. PlanQuery is that break point, and this is now
+    // measured end to end. The half PlanAroundEquals could not supply on its own is
+    // HidesFlatWidthWhenBroken on the query's group: the key also moves a *short* query the author
+    // broke down onto its own line, and no width test on a 37-column value produces that.
     public static readonly OptionId WrapBeforeLinqExpression =
-        OfInert("resharper_csharp_wrap_before_linq_expression");
+        Of("resharper_csharp_wrap_before_linq_expression");
 
     // ⚠ The rest of the `wrap_*` family the export sets, measured the same way and Tier D.
     //
@@ -1732,14 +1737,10 @@ public static class Ids {
     public static readonly OptionId PlaceAttributeOnSameLine =
         OfGeneralized("resharper_place_attribute_on_same_line");
 
-    // ⚠ Four keys read but never observable, and Tier D with the reason rather than Tier A:
+    // ⚠ Three keys read but never observable, and Tier D with the reason rather than Tier A:
     //   max_attribute_length_for_same_line — a length threshold for a placement that never happens.
     //   place_attribute_on_same_line — the six per-owner keys cover every C# attribute target, so
     //     the generalized key never gets to decide.
-    //   new_line_between_query_expression_clauses and place_linq_into_on_new_line — measured against
-    //     the oracle: `from x in xs where p select x` on one line comes back on one line with both
-    //     set. They permit a break rather than requiring one, and permitting one is what
-    //     keep_user_linebreaks already does.
     //   wrap_before_eq — it moves the break point from one side of the `=` to the other, and
     //     milestone 2 never adds a break at either side (that ordering is prefer_wrap_around_eq's,
     //     which is M3), so no input distinguishes the values.
@@ -1773,10 +1774,24 @@ public static class Ids {
     public static readonly OptionId PlacePrimaryConstructorInitializerOnSameLine =
         Of("resharper_place_primary_constructor_initializer_on_same_line");
 
-    public static readonly OptionId PlaceLinqIntoOnNewLine = OfInert("resharper_csharp_place_linq_into_on_new_line");
+    // ⚠ Both were in the "read but never observable" note above, on a measurement that was correct
+    // and asked too little. `from x in xs where p select x` on one line does come back on one line
+    // with either flipped — but that query fits, and neither key has anything to decide about a
+    // query that does not wrap. Asked with a query too wide for its line, both are decisive:
+    //
+    //   new_line_between_query_expression_clauses is a CHOP and not a permission. At `true` a query
+    //     the author broke at one boundary comes back broken at *every* one, and a query too wide
+    //     is chopped whole; at `false` the same two inputs keep exactly the author's breaks and gain
+    //     one more only where the line runs out. That is the fill, and "permitting one is what
+    //     keep_user_linebreaks already does" was the half of it that shows on input that fits.
+    //   place_linq_into_on_new_line governs the *continuation's* `into` — `group … by … into
+    //     bucket` — and it is a break point of the query's group, so it goes with the chop. It does
+    //     not govern a `join … into matches`, which the oracle leaves on the join's line at `true`
+    //     with the query chopped around it.
+    public static readonly OptionId PlaceLinqIntoOnNewLine = Of("resharper_csharp_place_linq_into_on_new_line");
 
     public static readonly OptionId NewLineBetweenQueryExpressionClauses =
-        OfInert("csharp_new_line_between_query_expression_clauses");
+        Of("csharp_new_line_between_query_expression_clauses");
 
     // ── Wrapping (phase 3) ───────────────────────────────────────────────────────────────────
     public static readonly OptionId WrapArrayInitializerStyle = Of("resharper_csharp_wrap_array_initializer_style");

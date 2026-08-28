@@ -423,6 +423,10 @@ public sealed class BreakPlan {
                 PlanConditional(ternary);
                 return;
 
+            case QueryExpressionSyntax query:
+                PlanQuery(query);
+                return;
+
             case AssignmentExpressionSyntax assignment:
                 PlanAroundEquals(assignment, assignment.OperatorToken, assignment.Right);
                 return;
@@ -1541,6 +1545,119 @@ public sealed class BreakPlan {
             spendsIndent: true,
             leadingGapInside: true
         );
+    }
+
+    /// <summary>
+    ///     <c>new_line_between_query_expression_clauses = true</c>: a query that does not fit puts every
+    ///     one of its clauses on a line of its own.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ A query has no delimiters, so — like a base list — it opens its own continuation scope
+    ///     around its own body rather than living inside one. Measured at the export's 120-column
+    ///     margin, with the query's clauses one level in from the statement and <em>not</em> aligned to
+    ///     the <c>from</c>:
+    ///     <code>
+    /// var longQuery = from number in numbers
+    ///     where number > 0 &amp;&amp; number &lt; 100
+    ///     orderby number descending
+    ///     select number * 2;
+    ///     </code>
+    ///     Four measurements decide the shape, and none of them is readable off the option names:
+    ///     <list type="number">
+    ///         <item>
+    ///             <c>new_line_between_query_expression_clauses = true</c> is a <em>chop</em>, not a
+    ///             permission. A query the author broke at one boundary comes back broken at every one —
+    ///             <c>from n in xs where n > 0\n orderby n select n;</c> becomes four lines — and a query
+    ///             too wide for its line is chopped whole. At <c>false</c> the same two inputs come back
+    ///             with exactly the author's breaks and one more only where the line runs out, which is
+    ///             the fill.
+    ///         </item>
+    ///         <item>
+    ///             The author's breaks are kept iff <em>both</em> <c>keep_user_linebreaks</c> and
+    ///             <c>keep_existing_linebreaks</c>: with either off, a query broken one clause per line
+    ///             comes back on one line. A fill therefore pins them rather than re-flowing them, the
+    ///             same correction <see cref="PlanList" /> records for a list pattern.
+    ///         </item>
+    ///         <item>
+    ///             <c>place_linq_into_on_new_line</c> governs the <em>continuation's</em> <c>into</c>
+    ///             — <c>group … by … into bucket</c> — and not a <c>join … into matches</c>, which the
+    ///             oracle leaves on the join's line with the key at <c>true</c> and the query chopped.
+    ///             At <c>false</c> the continuation's <c>into</c> is not a point either, and the gap is
+    ///             left unplanned rather than flattened: a <c>false</c> placement key is permissive
+    ///             (docs/plan/05), and the oracle does keep a break the author put in front of it.
+    ///         </item>
+    ///         <item>
+    ///             <c>align_linq_query</c> needs nothing here. It is
+    ///             <see cref="CSharpDocumentBuilder.AlignsFromOwnColumn" />'s already, and what it was
+    ///             waiting for is this group: with the clauses breaking, the key moves them from one
+    ///             continuation level to the <c>from</c>'s own column.
+    ///         </item>
+    ///     </list>
+    ///     ⚠ <c>HidesFlatWidthWhenBroken</c>, and it is <c>wrap_before_linq_expression</c> that needs
+    ///     it. A query the author broke and which may not re-join is certain to break, and the
+    ///     <c>=</c> around it has to know: at <c>true</c> the oracle answers
+    ///     <c>var q =</c> / <c>from n in xs</c> / … on a query whose own flat width is 37 columns and
+    ///     fits with room to spare, which no width test on the value can produce. It does not cost the
+    ///     export's answer, because at <c>false</c> the <c>=</c> group is the ordering rule's
+    ///     (<c>PrefersOuterBreak</c>) and declines a break that buys nothing — the same query comes
+    ///     back with <c>from</c> still on the declaration's line.
+    /// </remarks>
+    void PlanQuery(QueryExpressionSyntax node) {
+        var group = NewGroup();
+        var fill = !_options.NewLineBetweenQueryExpressionClauses;
+        var broken = false;
+        PlanQueryBody(node.Body, group, fill, ref broken);
+
+        Describe(
+            node,
+            group,
+            GroupMode.Preserve,
+            new GroupFacts(
+                SourceBroken: _options.KeepsUserBreaksBetweenItems && broken,
+                BreaksIfTooLong: true,
+                HidesFlatWidthWhenBroken: true
+            ),
+            spendsIndent: true
+        );
+    }
+
+    /// <remarks>
+    ///     ⚠ Recursive through the continuation, and every level joins the <em>same</em> group. A
+    ///     <c>group … into bucket …</c> is two query bodies in the syntax and one construct on the page:
+    ///     the oracle chops the clauses after the <c>into</c> exactly when it chops the ones before it.
+    /// </remarks>
+    void PlanQueryBody(QueryBodySyntax body, int group, bool fill, ref bool broken) {
+        foreach (var clause in body.Clauses) {
+            broken |= PlanQueryClause(FirstToken(clause), group, fill);
+        }
+
+        broken |= PlanQueryClause(FirstToken(body.SelectOrGroup), group, fill);
+
+        if (body.Continuation is not { } continuation) {
+            return;
+        }
+
+        if (_options.PlaceLinqIntoOnNewLine) {
+            broken |= PlanQueryClause(continuation.IntoKeyword, group, fill);
+        }
+
+        PlanQueryBody(continuation.Body, group, fill, ref broken);
+    }
+
+    bool PlanQueryClause(SyntaxToken token, int group, bool fill) {
+        var broke = BreaksBefore(token);
+
+        // ⚠ A fill re-flows every gap it owns and this one must not: at
+        // `new_line_between_query_expression_clauses = false` the oracle returns a query the author
+        // broke with exactly the author's breaks, so a preserved gap becomes an ordinary required
+        // break and the rest stay fill points. The same shape PlanList uses for a list pattern.
+        if (fill && broke && _options.KeepsUserBreaksBetweenItems) {
+            Mandatory(token);
+        } else {
+            Point(token, group, fill);
+        }
+
+        return broke;
     }
 
     void PlanAroundEquals(SyntaxNode node, SyntaxToken equals, ExpressionSyntax value) {
