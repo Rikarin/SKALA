@@ -26,6 +26,23 @@ public static class ScratchTree {
         OracleRunner runner,
         IReadOnlyList<SweepCandidate> batch,
         Func<SweepCandidate, string> config
+    ) =>
+        Format(runner, [.. batch.Select(static candidate => candidate.Fixture)], i => config(batch[i]));
+
+    /// <summary>
+    ///     The same, addressed by fixture and index rather than by <see cref="SweepCandidate" />.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ The pairwise pass writes <em>two</em> overrides into a directory's <c>.editorconfig</c> and
+    ///     has no single option to name it by, so the batch it hands over is a list of fixtures and the
+    ///     configuration is a function of the slot. Both overloads share this body deliberately: the
+    ///     directory-per-fixture isolation is the property that makes any batched run answer a question
+    ///     about its own configuration, and a second copy of it is a second chance to lose it.
+    /// </remarks>
+    public static string?[] Format(
+        OracleRunner runner,
+        IReadOnlyList<CorpusFile> batch,
+        Func<int, string> config
     ) {
         var scratch = Directory.CreateTempSubdirectory("skala-sweep-");
         try {
@@ -36,9 +53,9 @@ public static class ScratchTree {
             for (var i = 0; i < batch.Count; i++) {
                 var directory = Path.Combine(scratch.FullName, "d" + i.ToString(CultureInfo.InvariantCulture));
                 Directory.CreateDirectory(directory);
-                File.WriteAllText(Path.Combine(directory, ".editorconfig"), config(batch[i]));
+                File.WriteAllText(Path.Combine(directory, ".editorconfig"), config(i));
                 produced[i] = Path.Combine(directory, "F.cs");
-                File.Copy(batch[i].Fixture.Path, produced[i]);
+                File.Copy(batch[i].Path, produced[i]);
             }
 
             // ⚠ Raw, not normalised. The caller decides — and it must, because

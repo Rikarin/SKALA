@@ -256,6 +256,27 @@ class Build : NukeBuild {
                 )
             );
 
+    /// <summary>Two keys at once, over the grid: the interaction pass docs/plan/12 names.</summary>
+    /// <remarks>
+    ///     ⚠ A nightly job like <see cref="Sweep" /> and never a commit gate (ADR-011). It answers the
+    ///     question <see cref="Sweep" /> provably cannot: that sweep holds every key but one at the
+    ///     export's value, so of a two-key grid it visits only the row and the column through the
+    ///     export's corner. A pair that is conformant alone and wrong together is reported green twice.
+    ///     ⚠ Its <c>INTERACTION</c> verdict is the finding — an ordinary <c>DIVERGENT</c> row is one the
+    ///     single sweep already owns.
+    /// </remarks>
+    Target Pairwise =>
+        definition => definition
+            .DependsOn(Compile)
+            .Executes(() => DotNetRun(settings => settings
+                        .SetProjectFile(RootDirectory / "Testing" / "Rikarin.Skala.Conformance.Sweep")
+                        .SetConfiguration(Configuration)
+                        .EnableNoBuild()
+                        .EnableNoRestore()
+                        .SetApplicationArguments("pairwise")
+                )
+            );
+
     /// <summary>The differential report without a pass/fail: the ranked work queue.</summary>
     /// <remarks>
     ///     ⚠ Two reports, because they answer different questions and only the second is the bar.

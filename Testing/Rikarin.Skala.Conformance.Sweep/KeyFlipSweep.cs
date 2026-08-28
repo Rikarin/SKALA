@@ -1,12 +1,27 @@
 using System.Diagnostics;
 using System.Globalization;
-using System.Security.Cryptography;
-using System.Text;
 using Rikarin.Skala.Core.Configuration;
 using Rikarin.Skala.Formatting.CSharp;
 using Rikarin.Skala.Testing;
 
 namespace Rikarin.Skala.Conformance.Sweep;
+
+/// <summary>
+///     A round whose canary fired, recorded so that the committed report carries it.
+/// </summary>
+/// <remarks>
+///     ⚠ Until <c>603fbd3</c> a fired canary was a line on the console and nothing else. The sweep's
+///     whole design is that the fast path reads a committed artefact rather than re-running the
+///     oracle — so a warning that lives only in the terminal of whoever ran it is a warning the next
+///     reader cannot see, and the table they read looks exactly as confident as a healthy one. It has
+///     to travel with the numbers it qualifies.
+/// </remarks>
+/// <param name="Round">The zero-based round, or <see langword="null" /> for the baseline pass.</param>
+/// <param name="Population">Options in the round, or fixtures compared at the baseline.</param>
+/// <param name="Answered">Of those, how many the oracle returned a body for.</param>
+/// <param name="Moved">Of those, how many bodies differed from the input.</param>
+/// <param name="Reason">What the count means, in the words the log used.</param>
+public sealed record BrokenRound(int? Round, int Population, int Answered, int Moved, string Reason);
 
 /// <summary>What one whole sweep produced, and what it cost.</summary>
 public sealed record SweepRun(
@@ -17,7 +32,8 @@ public sealed record SweepRun(
     TimeSpan OracleWallClock,
     TimeSpan SkalaWallClock,
     string OracleVersion,
-    string ConfigDigest);
+    string ConfigDigest,
+    IReadOnlyList<BrokenRound> BrokenRounds);
 
 /// <summary>
 ///     Every option, at every legal value, formatted by Skala and by <c>jb cleanupcode</c> under the
@@ -57,9 +73,9 @@ public sealed record SweepRun(
 ///     <para>
 ///         <b>What is deliberately not swept.</b> One key at a time isolates cleanly, and that is what
 ///         makes an option's verdict a statement about that option. It is also provably incomplete:
-///         docs/plan/05 § <c>keep_existing_*</c> is a four-way table across two keys, and no one-at-a-time
-///         sweep can reach three of its corners. Pairwise sweeps of the known-interacting families are a
-///         named second phase, not something this pass approximates.
+///         docs/plan/05 § <c>keep_existing_*</c> is a four-way table across two keys, and this sweep reaches
+///         one line of it. ⚠ <see cref="PairwiseSweep" /> is that second phase and it exists — a green row
+///         here is not evidence about any pair, and the two tables are read together.
 ///     </para>
 /// </remarks>
 public sealed class KeyFlipSweep {
@@ -106,13 +122,49 @@ public sealed class KeyFlipSweep {
     ///     </para>
     /// </remarks>
     /// <param name="population">Fixtures compared, or options in the round.</param>
-    /// <param name="observed">Of those, how many agreed, or moved.</param>
+    /// <param name="observed">Of those, how many agreed, or were answered.</param>
     public static bool IsBrokenMeasurement(int population, int observed) => population > 0 && observed == 0;
+
+    /// <summary>
+    ///     Whether a round's configurations never reached the tool: it answered, and answered the same
+    ///     thing it was given, for every option in the round.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ This is the M3 signature — "197 options set, 0 fixtures unchanged", a shared
+    ///     <c>.editorconfig</c> that meant every configuration was the same configuration — and it is a
+    ///     genuinely different question from <see cref="IsBrokenMeasurement" />. There the tool produced
+    ///     nothing; here it produced the input back.
+    ///     <para>
+    ///         ⚠ <b>Suppressed below a population of two, and that is the correction rather than a
+    ///         softening.</b> The sweep batches by value index, so a high-arity option runs alone in every
+    ///         round past the arity of every other option — <c>csharp_new_line_before_open_brace</c> has
+    ///         fifteen values and rounds 5-15 hold nothing else. In a round of one, "no option moved" and
+    ///         "this option's value legitimately reproduces its own fixture" are the same observation, and
+    ///         the canary cannot tell them apart. It fired on exactly that at <c>603fbd3</c> and the round
+    ///         was healthy. The fifteenth value is the flags domain's synthesised all-members join; both
+    ///         engines <em>parse</em> it, <c>all</c> is one of its members and dominates the rest, and the
+    ///         fixture is already written with every brace on its own line — so the oracle answered, and
+    ///         answered with the text it was given. A canary that cries wolf on every run with a
+    ///         high-arity option in it is a canary that gets skimmed, which is the failure mode both of
+    ///         these exist to avoid.
+    ///     </para>
+    /// </remarks>
+    public static bool IsUnvaryingRound(int population, int moved) => population > 1 && moved == 0;
 
     public SweepRun Run(SweepPlanResult plan) {
         var candidates = plan.Candidates;
         if (candidates.Count == 0) {
-            return new SweepRun([], plan.Excluded, 0, 0, TimeSpan.Zero, TimeSpan.Zero, _runner.Version, ConfigDigest);
+            return new SweepRun(
+                [],
+                plan.Excluded,
+                0,
+                0,
+                TimeSpan.Zero,
+                TimeSpan.Zero,
+                _runner.Version,
+                ConfigDigest,
+                []
+            );
         }
 
         var rounds = candidates.Max(static candidate => candidate.Values.Count);
@@ -129,6 +181,7 @@ public sealed class KeyFlipSweep {
         var oracleClock = TimeSpan.Zero;
         var skalaClock = TimeSpan.Zero;
         var invocations = 0;
+        var broken = new List<BrokenRound>();
 
         // ⚠ The base configuration first, with nothing overridden, because a divergence the two
         // engines already have on a fixture is not evidence about the key that was flipped on it.
@@ -145,7 +198,19 @@ public sealed class KeyFlipSweep {
         // was a shared-configuration bug; this harness's own "0/164 fixtures agree at the baseline"
         // was a normalise-one-side-only bug. Both were caught by a human reading a count. A count
         // that can only be read is a count that will eventually be skimmed.
+        //
+        // ⚠ And loud is no longer enough: each one is also recorded, because the console it was
+        // loud on belongs to whoever ran the sweep and the artefact is what everyone else reads.
         if (IsBrokenMeasurement(baseline.Count, agreeing)) {
+            broken.Add(new BrokenRound(
+                    null,
+                    baseline.Count,
+                    baseline.Count,
+                    0,
+                    "Skala and the oracle disagree on every fixture before any key is flipped. The "
+                    + "comparison is broken, so nothing below it can be read."
+                )
+            );
             _log.WriteLine(
                 "  ⚠ NOT A FINDING, A BROKEN MEASUREMENT: Skala and the oracle disagree on every fixture "
                 + "before any key is flipped. Check the comparison before reading anything below it."
@@ -184,9 +249,21 @@ public sealed class KeyFlipSweep {
                 }
             }
 
+            // ⚠ `answered` and `moved` are separate counts because the two canaries below ask
+            // separate questions, and folding them into one number is what made the canary
+            // unreadable at 603fbd3. `answered` is "did `cleanupcode` return a body at all" — a
+            // property of the instrument. `moved` is "did the body differ from the input" — a
+            // property of the finding. A round in which the tool errored and a round in which one
+            // option's value legitimately reproduces its fixture both have `moved == 0`, and only
+            // `answered` tells them apart.
+            var answered = 0;
             foreach (var candidate in work) {
-                if (oracle.TryGetValue((candidate.Key, round), out var body)
-                    && !string.Equals(
+                if (!oracle.TryGetValue((candidate.Key, round), out var body)) {
+                    continue;
+                }
+
+                answered++;
+                if (!string.Equals(
                         TextNormalisation.Normalise(body),
                         Baseline(candidate),
                         StringComparison.Ordinal
@@ -196,13 +273,36 @@ public sealed class KeyFlipSweep {
             }
 
             _log.WriteLine(
-                $"  round {Count(round + 1)}/{Count(rounds)}: {Count(work.Length)} options, {Count(moved)} oracle outputs differ from the input"
+                $"  round {Count(round + 1)}/{Count(rounds)}: {Count(work.Length)} options, {Count(answered)} answered, {Count(moved)} oracle outputs differ from the input"
             );
 
-            if (IsBrokenMeasurement(work.Length, moved)) {
+            if (IsBrokenMeasurement(work.Length, answered)) {
+                broken.Add(new BrokenRound(
+                        round,
+                        work.Length,
+                        answered,
+                        moved,
+                        "`cleanupcode` returned nothing for any option in this round. It errored, or the "
+                        + "configuration never reached it."
+                    )
+                );
                 _log.WriteLine(
-                    "  ⚠ NOT A FINDING, A BROKEN MEASUREMENT: `cleanupcode` changed nothing in this whole "
-                    + "round. It errored, or the configuration never reached it."
+                    "  ⚠ NOT A FINDING, A BROKEN MEASUREMENT: `cleanupcode` returned nothing for this "
+                    + "whole round. It errored, or the configuration never reached it."
+                );
+            } else if (IsUnvaryingRound(work.Length, moved)) {
+                broken.Add(new BrokenRound(
+                        round,
+                        work.Length,
+                        answered,
+                        moved,
+                        "`cleanupcode` answered every option in this round with the fixture it was given. "
+                        + "The configurations are reaching it but they are not varying."
+                    )
+                );
+                _log.WriteLine(
+                    "  ⚠ NOT A FINDING, A BROKEN MEASUREMENT: `cleanupcode` answered every option in this "
+                    + "round with the input it was given. The configurations are not varying."
                 );
             }
         }
@@ -224,7 +324,8 @@ public sealed class KeyFlipSweep {
             oracleClock,
             skalaClock,
             _runner.Version,
-            ConfigDigest
+            ConfigDigest,
+            broken
         );
     }
 
@@ -357,24 +458,8 @@ public sealed class KeyFlipSweep {
     ///     <c>.editorconfig</c> per path with no eviction, and a fresh 294 KB copy per (option, value)
     ///     would fill it with about a thousand parses of the same document.
     /// </remarks>
-    public static string FormatWithSkala(SweepCandidate candidate, string value) {
-        var resolved = OptionResolver.Resolve(
-            candidate.Fixture.Path,
-            [new KeyValuePair<string, string>(candidate.Key, value)]
-        );
-
-        if (!resolved.ValueErrors.IsEmpty) {
-            return "value-error: " + string.Join("; ", resolved.ValueErrors);
-        }
-
-        // ⚠ Raw, exactly as the oracle side is. `Verdict` normalises both together; normalising
-        // here and not there made `resharper_csharp_insert_final_newline` look INERT — the oracle
-        // moving and Skala not — when `skala format --option` on the same fixture writes 12 bytes
-        // at `true` and 11 at `false`. The whole point of an option's verdict is that both engines
-        // were asked the same question in the same units.
-        var text = CSharpFormatter.Read(candidate.Fixture.Path);
-        return CSharpFormatter.Format(candidate.Fixture.Path, text, resolved.Options).Formatted;
-    }
+    public static string FormatWithSkala(SweepCandidate candidate, string value) =>
+        SkalaSide.Format(candidate.Fixture.Path, candidate.Key, value);
 
     /// <summary>
     ///     One <c>cleanupcode</c> invocation over a directory per fixture, each with its own config.
@@ -403,7 +488,7 @@ public sealed class KeyFlipSweep {
     /// </remarks>
     public string ConfigFor(string key, string value) => _baseConfig + "\n[*.cs]\n" + key + " = " + value + "\n";
 
-    static string Digest(string text) => Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(text)))[..8];
+    static string Digest(string text) => SkalaSide.Digest(text);
 
     static string Count(int value) => value.ToString(CultureInfo.InvariantCulture);
 }

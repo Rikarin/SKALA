@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 using Rikarin.Skala.Testing;
 
@@ -224,6 +225,145 @@ public sealed class ProvenanceTests {
             + recorded.Groups["digest"].Value
             + "\n\nUntil it is re-run, `OptionCoverageTests` is deciding tiers from measurements of a "
             + "configuration nobody is using."
+        );
+    }
+
+    /// <summary>
+    ///     The committed key-flip sweep measured the formatter that is still on disk.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ <b>The hole this closes, and it is the twin of the one at the top of this file.</b>
+    ///     <see cref="TheCommittedSweep_WasMeasuredAgainstTheConfigurationInForce" /> checks that the
+    ///     sweep measured the <em>configuration</em> in force. Nothing checked that it measured the
+    ///     <em>formatter</em> in force — and the sweep's table is what <c>OptionCoverageTests</c> reads
+    ///     to decide which tier an option is entitled to. Between the run at <c>2a14dee</c> and the one
+    ///     at <c>603fbd3</c> the tree moved 88 commits, the digest test stayed green throughout because
+    ///     the <c>.editorconfig</c> had not changed, and every tier decision in that window rested on a
+    ///     measurement of a formatter nobody had compared them to.
+    ///     <para>
+    ///         ⚠ <b>Why this can run on every commit when the sweep cannot.</b> The oracle half needs
+    ///         JetBrains and minutes of wall clock, which ADR-011 forbids on the fast path. Skala's half is
+    ///         485 ms for the whole run, so the archive records Skala's own output at every configuration
+    ///         the sweep measured, and this re-asks it. A row that still matches means the verdict beside it
+    ///         is a verdict about this formatter. A row that does not means the verdict is about a formatter
+    ///         that no longer exists — which does not make the verdict wrong, only unowned.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ <b>The cost, stated rather than discovered.</b> This turns "I changed how a swept construct
+    ///         formats" into a red suite until the sweep is re-run, which is 3.5 minutes and a JetBrains
+    ///         install. That is deliberate and it is the same bargain
+    ///         <see cref="EveryFixture_RecordsTheConfigurationInForce" /> already strikes for the corpus. It
+    ///         is also narrow in practice: the swept fixtures are one construct each, so implementing an
+    ///         option drifts that option's own fixture and its immediate neighbours rather than the corpus.
+    ///         The failure names them.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ There is deliberately no button that re-stamps these digests without re-running the sweep.
+    ///         <c>OracleFixture.Restamp</c> exists for the configuration digest because a configuration can
+    ///         provably change without changing a byte of output; a formatter whose output has changed has,
+    ///         by construction, changed its output, and there is nothing to certify.
+    ///     </para>
+    /// </remarks>
+    [Fact]
+    public void TheCommittedSweep_MeasuredTheFormatterInForce() {
+        var json = Path.Combine(
+            Corpus.RepositoryRoot,
+            "Testing",
+            "Rikarin.Skala.Conformance.Sweep",
+            "conformance-sweep.json"
+        );
+
+        // ⚠ Missing means nobody has measured, which is the one state with nothing to catch out —
+        // the same move SweepUnsubstantiated makes, and for the same reason.
+        if (!File.Exists(json)) {
+            return;
+        }
+
+        using var document = JsonDocument.Parse(File.ReadAllText(json));
+        var rows = document.RootElement.EnumerateArray().ToArray();
+        Assert.True(rows.Length > 0, json + " holds no rows. That is a broken archive, not a clean sweep.");
+
+        var unrecorded = new List<string>();
+        var missingFixture = new List<string>();
+        var drifted = new List<string>();
+        var compared = 0;
+
+        foreach (var row in rows) {
+            var key = row.GetProperty("Key").GetString() ?? string.Empty;
+
+            if (!row.TryGetProperty("Values", out var values)
+                || values.ValueKind != JsonValueKind.Array
+                || !row.TryGetProperty("Fixture", out var recordedFixture)
+                || recordedFixture.ValueKind != JsonValueKind.String) {
+                unrecorded.Add(key);
+                continue;
+            }
+
+            var fixture = Path.Combine(
+                Corpus.Root,
+                (recordedFixture.GetString() ?? string.Empty).Replace('/', Path.DirectorySeparatorChar)
+            );
+            if (!File.Exists(fixture)) {
+                missingFixture.Add(key + " → " + recordedFixture.GetString());
+                continue;
+            }
+
+            foreach (var value in values.EnumerateArray()) {
+                var assigned = value.GetProperty("Value").GetString() ?? string.Empty;
+                var recorded = value.GetProperty("SkalaHash").GetString() ?? string.Empty;
+
+                // ⚠ `missing` is the archive's word for "this engine produced nothing here". There is
+                // no digest to compare and inventing an agreement is the defect this file exists for.
+                if (string.Equals(recorded, "missing", StringComparison.Ordinal)) {
+                    continue;
+                }
+
+                compared++;
+                var now = SkalaSide.Digest(SkalaSide.Format(fixture, key, assigned));
+                if (!string.Equals(now, recorded, StringComparison.Ordinal)) {
+                    drifted.Add(key + " = " + assigned + ": recorded " + recorded + ", now " + now);
+                }
+            }
+        }
+
+        Assert.True(
+            unrecorded.Count == 0,
+            Count(unrecorded.Count)
+            + " of "
+            + Count(rows.Length)
+            + " rows in the committed sweep record nothing about Skala's side, so whether the formatter has "
+            + "moved since cannot be asked:\n"
+            + Sample(unrecorded)
+            + "\n\nRe-run `./build.sh Sweep`, which records it. A sweep written before that field existed is "
+            + "in exactly the half-measured state this file refuses to tolerate: the tier tests believe its "
+            + "verdicts and nothing can say which formatter produced them."
+        );
+
+        Assert.True(
+            missingFixture.Count == 0,
+            Count(missingFixture.Count)
+            + " rows name a fixture the corpus no longer has, so their verdicts cannot be re-derived:\n"
+            + Sample(missingFixture)
+            + "\n\nRe-run `./build.sh Sweep`."
+        );
+
+        // ⚠ The population canary. Every assertion above is satisfied by an archive of zero comparable
+        // values, and that is the one reading which means the instrument never ran.
+        Assert.True(
+            compared > 0,
+            "the committed sweep records no comparable Skala output at all, so this test asserted nothing."
+        );
+
+        Assert.True(
+            drifted.Count == 0,
+            Count(drifted.Count)
+            + " of "
+            + Count(compared)
+            + " configurations format differently now than when the sweep measured them:\n"
+            + Sample(drifted)
+            + "\n\nThe sweep's verdicts — and the tiers `OptionCoverageTests` reads off them — describe a "
+            + "formatter that no longer exists. Re-run `./build.sh Sweep` in a commit of its own so the "
+            + "table moves where it is reviewed."
         );
     }
 

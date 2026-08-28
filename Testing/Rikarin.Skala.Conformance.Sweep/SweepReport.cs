@@ -99,6 +99,41 @@ public static class SweepReport {
         );
         builder.AppendLine();
 
+        // ⚠ Before the outcomes, not after them. A fired canary says the numbers below it may be
+        // fiction, and a caveat printed under the table it qualifies is a caveat read second.
+        if (run.BrokenRounds.Count > 0) {
+            builder.AppendLine("## ⚠ Broken measurements");
+            builder.AppendLine();
+            builder.AppendLine(
+                "**"
+                + Count(run.BrokenRounds.Count)
+                + " of this run's canaries fired.** A canary here does not say an option is wrong — it says"
+            );
+            builder.AppendLine(
+                "the instrument may not have been running, and that everything below is suspect until"
+            );
+            builder.AppendLine("somebody has looked. Confirm one with `sweep verify <key>`, which re-asks a");
+            builder.AppendLine("single option unbatched and prints both engines' output at every value.");
+            builder.AppendLine();
+            builder.AppendLine("| round | population | answered | moved | what fired |");
+            builder.AppendLine("|---|---:|---:|---:|---|");
+            foreach (var fired in run.BrokenRounds) {
+                builder.Append("| ")
+                    .Append(fired.Round is { } index ? Count(index + 1) : "baseline")
+                    .Append(" | ")
+                    .Append(Count(fired.Population))
+                    .Append(" | ")
+                    .Append(Count(fired.Answered))
+                    .Append(" | ")
+                    .Append(Count(fired.Moved))
+                    .Append(" | ")
+                    .Append(fired.Reason)
+                    .AppendLine(" |");
+            }
+
+            builder.AppendLine();
+        }
+
         builder.AppendLine("## Outcomes");
         builder.AppendLine();
         builder.AppendLine("| outcome | options | meaning |");

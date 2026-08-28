@@ -408,6 +408,8 @@ every number after it into a comparison of two unrelated files and nothing else 
 | `defaults [--family=…] [--apply]` | the bare-base pass; `--apply` writes verified defaults into `options.json` |
 | `nightly [--family=…] [--apply]` | both, in one process, so the cross-check needs no sidecar round-trip |
 | `verify <key>` | ⚠ one option, **unbatched**, both engines' output at every value printed in full |
+| `pairwise [--family=…] [--out=…]` | ⚠ two keys at once over their whole grid — the interaction pass, below |
+| `pairwise-plan [--family=…]` | what the pairwise pass would ask and what it would cost |
 
 `verify` is how a row is checked before anything is demoted on the strength of it. The batching is
 what makes a whole sweep affordable and it is also the part a suspicious verdict most wants ruled
@@ -489,26 +491,155 @@ export-base run watched the oracle distinguish is one the fixture *can* see, so 
 is a masking fact about bare defaults and not a gap in the fixture. Those are marked `masked` and are
 not evidence that a fixture needs replacing.
 
-#### What the run at `2a14dee` measured
+#### ⚠ A flags option's probe set tested no combination at all
 
-258 of the registry's 278 Tier A options, at 567 configurations, in 2.8 minutes of oracle wall clock
-— **645 ms per option**. The other 20 are arrangement keys, excluded below.
+An `int` has no finite domain, so the sweep offers a probe set rather than the domain, and an
+`UNEXERCISED` verdict on one is correspondingly weaker. A `flags` option has the opposite problem: its
+domain is the *power set* of its members, and what it is **for** is the combinations.
+
+The probe set was every member singly, then the join of them all. For
+`csharp_new_line_before_open_brace` that join is `all, none, accessors, …, types` — and `all` is one
+of its members, so both engines parse the combination and `all` dominates every other member in it.
+The probe was a second copy of the `all` singleton wearing fourteen names. Measured at `603fbd3`:
+the oracle's output at that value is byte-identical to the fixture, and it accounted for one of the
+option's three agreements out of fifteen values.
+
+⚠ **The gap it left is the real defect.** Fourteen singletons plus one value equivalent to a singleton
+means the probe set **never tested a combination**. A formatter that honours `methods`, honours
+`types`, and mishandles `methods, types` passed every probe. That is the interaction hole one key
+inwards, and it is why the probe now ends with a genuine two-member value —
+`OptionDomain.CombinationProbe`, the two last-declared members that are not the domain's "everything"
+or "nothing" spelling.
+
+⚠ **The heuristic is named as one.** `all`, `none` and `false` are the three spellings the registry's
+four flags enums use for the full and empty sets. It does **not** know about hierarchical aggregates:
+`BinaryOperationGroup` has `arithmetic`, `bitwise` and `conditional`, each subsuming several leaves,
+and nothing in `options.json` says so. Declaration order avoids them today; a fifth flags enum could
+defeat it, and the fix then is to record aggregation in the registry rather than to grow the list.
+
+⚠ `OptionDomain.EveryLegalValue` still offers the all-members join and should. Accepting it is a real
+requirement of the parser, which is a different question from whether it is worth formatting at.
+
+#### The two canaries, and why a fired one has to be committed
+
+Both of this harness's confident-wrong-table bugs had one shape — a non-empty population in which
+nothing was observed — so the check is a named predicate that a test can pin, because a healthy run
+is exactly the run in which it stays silent. There are two of them and they ask different questions:
+
+| predicate | fires when | the bug it caught |
+|---|---|---|
+| `IsBrokenMeasurement` | the oracle returned **nothing** for the whole population | "0/164 fixtures agree at the baseline" — a normalise-one-side-only bug |
+| `IsUnvaryingRound` | the oracle answered, and answered with **the input**, for every option | M3's "197 options set, 0 fixtures unchanged" — a shared `.editorconfig` |
+
+⚠ **`IsUnvaryingRound` is suppressed below a population of two, and that is a correction rather than
+a softening.** The sweep batches by value index, so the widest option runs *alone* in every round
+past every other option's arity — `csharp_new_line_before_open_brace` has fifteen values and rounds
+5–15 hold nothing else. In a round of one, "no option moved" and "this option's value legitimately
+reproduces its own fixture" are the same observation and the canary cannot tell them apart. It fired
+on exactly that at `603fbd3`, the round was healthy, and `verify` settled it. The fifteenth value is
+the flags domain's synthesised all-members join; both engines parse it, `all` is one of its members
+and dominates the rest, and the fixture is already written with every brace on its own line — so the
+oracle answered, and answered with the text it was given. A canary that cries wolf on every run containing a high-arity option is a canary that gets
+skimmed, which is the failure mode both of these exist to prevent.
+
+⚠ **A fired canary is written into `conformance-sweep.md`, above the outcomes.** Until `603fbd3` it
+was a line on the console and nothing else — so the warning reached whoever ran the sweep and nobody
+else, while the committed table the fast path reads looked exactly as confident as a healthy one.
+The caveat travels with the numbers it qualifies or it does not exist.
+
+#### The formatter the sweep measured, checked on every commit
+
+The sweep's table is not informational: `OptionCoverageTests` reads `conformance-sweep.json` and lets
+it decide which tier an option is entitled to. So a sweep measured against a formatter that has since
+changed is not a stale note — it is the evidence two live invariants rest on.
+
+Nothing checked that until `603fbd3`. `ProvenanceTests` checked that the sweep measured the
+*configuration* in force; between `2a14dee` and `603fbd3` the tree moved **88 commits**, the
+`.editorconfig` did not, and every tier decision in that window rested on a measurement no instrument
+in the repository could connect to the code that produced it.
+
+The oracle half cannot be re-asked on the fast path — JetBrains, minutes, ADR-011. **Skala's half
+runs in under half a second**, so the archive records Skala's own output digest at every
+configuration the run measured, and `ProvenanceTests.TheCommittedSweep_MeasuredTheFormatterInForce`
+re-asks it on every commit. A row that still matches is a verdict about *this* formatter. A row that
+does not is a verdict about a formatter that no longer exists — which does not make it wrong, only
+unowned.
+
+⚠ **The cost is stated rather than discovered: changing how a swept construct formats turns the suite
+red until the sweep is re-run.** That is the same bargain the corpus provenance test already strikes,
+and it is narrow in practice — the swept fixtures are one construct each, so implementing an option
+drifts that option's own fixture and its neighbours rather than the corpus. The failure names them.
+There is deliberately **no** button that re-stamps these digests without re-running the sweep:
+`OracleFixture.Restamp` exists for the configuration digest because a configuration can provably
+change without changing a byte of output, whereas a formatter whose output has changed has, by
+construction, changed its output.
+
+#### ⚠ Tier A is checked in three directions, not two
+
+`TierA_IsWhatSkalaReads_AndTheSweepSubstantiates` compared two sets and needed three. `overclaimed`
+is Tier A minus implemented; `underclaimed` is implemented minus Tier A minus the sweep's demotions.
+An option that is **claimed Tier A *and* implemented *and* unsubstantiated by the sweep** is in
+neither difference — it falls through both, and the suite goes green on a claim the committed
+measurement contradicts.
+
+The sweep's report has printed *"each is a dilution of the tier system and must be demoted"* since it
+was written, and until `603fbd3` the demoting was a person reading a markdown table and remembering
+to act on it. The run at `603fbd3` produced the first two options ever to sit in that state and both
+assertions passed on them.
+
+#### What the run at `603fbd3` measured
+
+**283 options at 636 configurations**, in 3.6 minutes of oracle wall clock — **760 ms per option**.
+The 33 not swept are arrangement keys, excluded below.
 
 | outcome | options | |
 |---|---:|---|
-| ✅ `CONFORMANT` | 188 | both engines moved and every value agrees |
-| ❌ `DIVERGENT` | 44 | both moved, at least one value disagrees |
-| ❌ `SPURIOUS` | 26 | Skala moved, the oracle did not |
+| ✅ `CONFORMANT` | 213 | both engines moved and every value agrees |
+| ❌ `DIVERGENT` | 45 | both moved, at least one value disagrees |
+| ❌ `SPURIOUS` | 25 | Skala moved, the oracle did not |
 | ❌ `INERT` | 0 | |
 | ⚠ `UNEXERCISED` | 0 | |
 | ⚠ `NO FIXTURE` | 0 | |
 
-**70 Tier A claims were unsubstantiated and all 70 were demoted**, taking the registry from 278 Tier A
-to **208** and `skala config check` on this repository's own export from 234 applied of 458 to **169**.
-⚠ The fall is the point. Every one of the 70 is a key the formatter reads *and acts on* — none is
-`UNEXERCISED`, so no fixture is too weak — and acts on differently from ReSharper. They failed the
-half of Tier A that says *reproduces Rider's behaviour*, and the test guarding the tier had only ever
-checked the half that says *Skala reads it*.
+⚠ **The unsubstantiated count was 70 before this run and 70 after, and that is a coincidence rather
+than a null result.** Two options left the set and two joined it.
+
+**The 25 options this run measured for the first time** had never been swept at all — they were Tier A
+on a fixture and nothing else, and the previous run predates them. **23 were right.** The two that
+were not, `resharper_csharp_wrap_lines` and `resharper_place_attribute_on_same_line`, are `DIVERGENT`
+at their first measurement and are now Tier D, keeping their fixtures so a later sweep can reverse it.
+
+**Two options were promoted.** `indent_size` and `resharper_csharp_indent_size` moved `DIVERGENT` →
+`CONFORMANT`: the formatter improved, and the previous run's demotion had gone stale.
+
+⚠ **Only those two verdicts moved across the 88 commits between the runs.** The third change,
+`csharp_new_line_before_open_brace` from `SPURIOUS` to `DIVERGENT`, is the *instrument* and not the
+formatter: its enum gained members at `4d518f1f`, so the probe list went from 4 values to 15 and the
+oracle that appeared not to move now moves five ways. Nothing about brace placement changed. A diff
+of the outcome column invites the opposite reading.
+
+#### What the pairwise run at `603fbd3` measured
+
+**58 pairs, 342 corners**, 1.5 minutes of oracle wall clock, over all three named families.
+
+| outcome | pairs | |
+|---|---:|---|
+| ✅ `CONFORMANT` | 15 | every corner of the grid agrees |
+| ⚠ `INTERACTION` | **0** | |
+| ❌ `DIVERGENT` | 0 | |
+| ⚠ `INHERITED` | 31 | every disagreement is one a key already owns alone |
+| ⚠ `BASELINE` | 12 | the fixture diverged before either key was set |
+
+**No interaction was found in any of the three families.** The `keep_existing_*` family — the
+documented four-way table, and the reason this phase was named — is **10 `CONFORMANT` and 3
+`BASELINE`**. Its interior agrees with the oracle, which refutes the standing worry for that family.
+
+⚠ **The `wrap_* × max_line_length` question is not answered, it is blocked.** 28 of its 37 pairs are
+`INHERITED` and only 96 of their 207 corners agree, because `max_line_length` is itself `DIVERGENT`
+and the int probe set gives it `120`, `0` and `1` — two of which are degenerate margins the two
+engines already disagree about. The interaction question for that family needs a probe set of three
+*legal* margins, which is the same defect as the flags probe above, one type over. It is not fixed
+here because the int probe set is shared with the single sweep and moving it moves that table too.
 
 ⚠ **A demotion is not an admission that the key is unimplemented.** All 70 stay read and stay
 implemented; per [03](03-configuration-model.md) a divergence is Tier D plus an `SK-DIV` entry, and
@@ -543,16 +674,73 @@ The instrument that would settle it is the one that settled Tier A: give these e
 fixtures and sweep them. That is a **third named phase**, and until it runs, the split above is the
 most that can be claimed.
 
-#### ⚠ Interactions are out of scope, and the sweep is therefore incomplete
+#### ⚠ Interactions are out of the single sweep's scope, and have their own pass
 
 One key at a time isolates cleanly, which is what makes a verdict a statement about *that option*. It
 is also **provably incomplete**: § "`keep_existing_*`" in [05](05-csharp-formatting-rules.md) is a
 four-way table across **two** keys, and no one-at-a-time sweep can reach three of its corners. A
 family whose members interact can come back all-`CONFORMANT` and still be wrong in combination.
 
-Pairwise sweeps of the known-interacting families — `keep_existing_*` × `keep_user_linebreaks`,
-`wrap_*` × `max_line_length`, `align_*` × `indent_*` — are a **named second phase**. They are not
-approximated here, and a green sweep must not be read as covering them.
+**`./build.sh Pairwise` is that second phase, and it exists.** `pairwise [--family=keep,wrap,align]`
+sweeps the whole grid of two keys' values against the oracle, over the three families named above.
+Its output is `conformance-pairwise.md` and a `.json` beside it, committed and reviewed in a diff
+exactly as the single sweep's are.
+
+⚠ **Its verdict has a fourth value the single sweep does not have, and that value is the point.**
+
+| | verdict |
+|---|---|
+| every corner of the grid agrees | ✅ `CONFORMANT` |
+| **every corner the single sweep reaches agrees, and an interior corner does not** | ⚠ **`INTERACTION`** |
+| a corner disagrees, and the single sweep could have seen it too | ❌ `DIVERGENT` — that sweep already owns it |
+| neither engine distinguished the corners | ⚠ `UNEXERCISED` — not a pass, same as there |
+| every disagreement is one a key of the pair already owns alone | ⚠ `INHERITED` — not about the pair |
+| the two engines already disagreed on the fixture before either key was set | ⚠ `BASELINE` — the grid answers nothing |
+
+⚠ **What "reachable" means is narrower than it first looks, and getting it wrong voids the pass.** The
+single sweep flips one key and leaves the rest at the export's value — which sounds like it covers the
+grid's whole cross. It does not, because that sweep measures each key **on that key's own `oracle`
+fixture**. On the primary's fixture it visits the primary's values against the secondary's export
+value and nothing else; the column is measured on the *secondary's* fixture and says nothing about
+this one. So half a bool × bool grid is interior, not a quarter of it, and
+`PairwiseSweep.ReachedBySingleSweep` turns on the **secondary alone**.
+
+⚠ The first implementation had it as "either key at the export's value". Measured cost of that error:
+58 disagreeing corners at (primary at export, secondary moved) were classified reachable and reported
+`DIVERGENT` — filed as duplicates of rows `conformance-sweep.md` already carries, when nothing had
+ever measured them. **The pass reported zero interactions on its first run and the zero was an
+artefact of that line.** It is pinned by a test now.
+
+⚠ **`INHERITED` is what stops the pass inventing findings, and the first corrected run needed it
+immediately.** That run reported **17 `INTERACTION` rows** across the `wrap_*` family — and every one
+of them disagreed *only* where `max_line_length` was `0` or `1`, which are the two values at which
+`conformance-sweep.json` records `max_line_length` disagreeing **measured alone, on its own fixture**.
+Seventeen findings, one cause, and none of it about a pair; each would have been handed to somebody as
+a subtle two-key defect. The pass now reads the single sweep's per-value agreement — recorded in the
+archive for exactly this — and excuses a corner where either key is already known to diverge at the
+value that corner gives it. ⚠ **Per corner, and every disagreement must be excused for the row to be**
+`INHERITED`: one unattributable corner keeps it a finding, or a known divergence elsewhere in the grid
+would hide a real interaction.
+
+⚠ A key the single sweep never measured at that value excuses **nothing**. "Never measured" and
+"measured and disagreed" are opposite states, and collapsing them is how a pass stops finding
+anything.
+
+⚠ **`BASELINE` exists because the first run needed it too**: 17 disagreeing corners sat at the base
+configuration itself, both keys at the export's value and nothing set. `KeyFlipSweep` meets the same
+case and handles it more weakly — it records `BaselineAgrees` and writes the caveat into the reason
+text beside a `DIVERGENT` verdict. That is tolerable in a table of 283 rows read down a column; it is
+not tolerable in a pass whose whole product is a handful of interior findings, where 43 inherited
+divergences would bury them.
+
+⚠ **It is a hypothesis list, not a search.** 283 sweepable options is 39 903 pairs. The three
+families are the ones the design already says interact, `keep_existing_*` because M2 measured its
+four-way table by hand. A fourth interacting family is a plan change, not a bigger run.
+
+⚠ **`keep_existing_linebreaks` is excluded as a primary.** [05](05-csharp-formatting-rules.md) warns
+that it "reads like one of the family and is not" — it is the per-language form of the global
+`keep_user_linebreaks`, so pairing them would measure a key against itself and report a guaranteed
+interaction meaning nothing.
 
 #### ⚠ Arrangement options are excluded, and are the other named second phase
 

@@ -24,6 +24,27 @@ public static class OptionDomain {
     /// <summary>A value guaranteed to be in no enum's domain, and to parse as no integer.</summary>
     public const string NotAValue = "sideways_and_upside_down";
 
+    /// <summary>
+    ///     Flags members that name the whole set or the empty one, and so combine with nothing.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ A name-based heuristic, and it is stated as one. These are the three spellings the registry's
+    ///     four flags enums actually use for "everything" and "nothing" — <c>all</c> and <c>none</c> in
+    ///     <c>NewLineBeforeOpenBrace</c>, <c>none</c> in <c>BinaryOperationGroup</c>, and <c>false</c> in
+    ///     <c>SpaceBetweenParentheses</c>, which spells the empty set as a bool.
+    ///     <para>
+    ///         ⚠ <b>It does not know about hierarchical aggregates and must not pretend to.</b>
+    ///         <c>BinaryOperationGroup</c> has <c>arithmetic</c>, <c>bitwise</c> and <c>conditional</c>,
+    ///         each of which subsumes several leaves, and no field in <c>options.json</c> says so. A
+    ///         combination drawn from those would be legal but degenerate, and the sweep would report it
+    ///         as an ordinary agreement rather than as a probe that could not discriminate. The
+    ///         declaration-order pick below avoids them on today's registry; a fifth flags enum could
+    ///         defeat it, and the fix then is to record aggregation in the registry rather than to grow
+    ///         this list.
+    ///     </para>
+    /// </remarks>
+    static readonly string[] Aggregates = ["all", "none", "false"];
+
     /// <summary>True when every string is a legal value, so nothing can be refused.</summary>
     public static bool IsFreeForm(OptionInfo info) => info.Kind == OptionValueKind.String;
 
@@ -56,11 +77,16 @@ public static class OptionDomain {
                 break;
 
             case OptionValueKind.Flags:
-                foreach (var value in OptionEnums.ValuesOf(info.EnumName!)) {
+                var flags = OptionEnums.ValuesOf(info.EnumName!);
+                foreach (var value in flags) {
                     yield return value;
                 }
 
-                yield return string.Join(", ", OptionEnums.ValuesOf(info.EnumName!));
+                // ⚠ One real combination, not the join of everything. See CombinationProbe.
+                if (CombinationProbe(flags) is { } combination) {
+                    yield return combination;
+                }
+
                 break;
 
             case OptionValueKind.Int:
@@ -98,6 +124,44 @@ public static class OptionDomain {
     ///     severity-suffixed key is the same case in another spelling: <c>value:warning</c> is one
     ///     value and one severity in one assignment, and the value half is the domain.
     /// </remarks>
+    /// <summary>
+    ///     One genuine multi-flag value for a flags option, or <see langword="null" /> when the domain
+    ///     has fewer than two members that can combine.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ <b>What this replaced, and why it was worth replacing.</b> The probe set used to end with the
+    ///     join of <em>every</em> member. For <c>csharp_new_line_before_open_brace</c> that is
+    ///     <c>all, none, accessors, …, types</c> — and <c>all</c> is in it, so both engines parse the
+    ///     combination and <c>all</c> dominates every other member. The probe was therefore a second copy
+    ///     of the <c>all</c> singleton wearing fourteen names, and on a fixture already written in that
+    ///     layout it scored as an agreement. Measured at <c>603fbd3</c>: the oracle's output at that value
+    ///     is byte-identical to the fixture, and one of the option's three agreements out of fifteen values
+    ///     was this.
+    ///     <para>
+    ///         ⚠ <b>The gap it left is the real defect.</b> Fourteen singletons and one value equivalent to
+    ///         a singleton means the probe set never tested a combination at all — and combinations are what
+    ///         a flags option is <em>for</em>. A formatter that honours <c>methods</c> and honours
+    ///         <c>types</c> and mishandles <c>methods, types</c> passed every probe. This is the same hole
+    ///         docs/plan/12 names across two keys, one key inwards.
+    ///     </para>
+    ///     <para>
+    ///         The two last-declared combinable members, so the value is deterministic and reviewable in a
+    ///         diff. Declaration order is JetBrains', which puts the aggregates first in every enum here.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ <see cref="EveryLegalValue" /> still emits the all-members join and should: accepting it is
+    ///         a real requirement of the parser, and that is a different question from whether it is worth
+    ///         formatting at.
+    ///     </para>
+    /// </remarks>
+    public static string? CombinationProbe(IReadOnlyList<string> members) {
+        var combinable = members
+            .Where(static member => !Aggregates.Contains(member, StringComparer.Ordinal))
+            .ToArray();
+
+        return combinable.Length < 2 ? null : string.Join(", ", combinable[^2..]);
+    }
+
     public static IEnumerable<string> EveryLegalValue(OptionInfo info) {
         foreach (var value in BareLegalValues(info)) {
             yield return value;
