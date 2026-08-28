@@ -1,3 +1,4 @@
+using System.Globalization;
 using Rikarin.Skala.Core.Configuration;
 using Rikarin.Skala.Core.Diagnostics;
 using Rikarin.Skala.Reporting;
@@ -51,8 +52,34 @@ public static class ReportCommand {
         // ⚠ The stored gate verdict decides the exit code, not a fresh evaluation. `report` is a
         // renderer over a run that already happened; re-deciding here would be a second
         // implementation of the gate, which doc 09 forbids in as many words.
-        var exit = report.Gate is { Passed: false } ? ExitCodes.GateFailed : ExitCodes.Ok;
-        return new CommandResult(exit, output);
+        if (report.Gate is not { Passed: false } failed) {
+            return new CommandResult(ExitCodes.Ok, output);
+        }
+
+        // ⚠ **On stderr, because the render goes to stdout and stdout is very often a file.**
+        // `.github/workflows/skala.yml` runs this as `report … --format=markdown > skala-report.md`,
+        // so on a failing gate the whole explanation — the rendered report, the verdict, the reasons
+        // — went into the file and the CI log got one line: `Process completed with exit code 1`. A
+        // step that fails in total silence is indistinguishable from a crash, and this one is not
+        // even a fault: it is the *stored* verdict of a gate that a previous step already failed on
+        // and already reported. Saying which is the difference between a second red X somebody has
+        // to investigate and one they can read.
+        Console.Error.WriteLine(
+            "skala report: exiting "
+            + ExitCodes.GateFailed.ToString(CultureInfo.InvariantCulture)
+            + " because the stored gate `"
+            + failed.Name
+            + "` failed in the run that wrote "
+            + sarifPath
+            + ". Nothing was re-analysed and this step found nothing new; the run that did the "
+            + "analysis is where the failure belongs. Its reasons, verbatim:"
+        );
+
+        foreach (var reason in failed.Failures) {
+            Console.Error.WriteLine("  " + reason);
+        }
+
+        return new CommandResult(ExitCodes.GateFailed, output);
     }
 }
 

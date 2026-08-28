@@ -194,6 +194,50 @@ public sealed class ReportingTests {
         Assert.DoesNotContain('\r', text);
     }
 
+    /// <summary>
+    ///     ⚠ The Actions log has to say why the gate failed, because the step summary is a different
+    ///     page and the exit code is a number.
+    /// </summary>
+    /// <remarks>
+    ///     The `github` renderer emitted findings and stopped. A failing `Check` step's log was
+    ///     therefore an unbroken run of annotations and then `Process completed with exit code 1`,
+    ///     with the verdict, its reasons, and the run's own diagnostics about itself all written
+    ///     somewhere the log could not reach. Read from the log alone, this repository's master gate
+    ///     looked like one rule family misbehaving; it was failing four conditions, and the one that
+    ///     mattered most was <c>SK9030</c> — the baseline the gate names does not exist, so every
+    ///     finding counts as new. The tool had diagnosed itself and filed the answer out of sight.
+    /// </remarks>
+    [Fact]
+    public void GithubRenderer_PutsTheVerdictAndTheRunsOwnDiagnosticsInTheLog() {
+        var report = Sample(Modernization()) with {
+            Gate = new GateResult("ci", Passed: false, ["3 new finding(s) at or above warning"]),
+            Diagnostics = [
+                new SkalaDiagnostic(
+                    "SK9030",
+                    SkalaSeverity.Warning,
+                    "the gate names a baseline at .skala/baseline.sarif and there is no such file"
+                )
+            ]
+        };
+
+        var text = Renderer.Render(report, ReportFormat.Github, includeHints: true);
+
+        Assert.Contains("::notice::SK9030: the gate names a baseline", text, StringComparison.Ordinal);
+        Assert.Contains("::error::gate `ci`: FAIL", text, StringComparison.Ordinal);
+        Assert.Contains("::error::  3 new finding(s) at or above warning", text, StringComparison.Ordinal);
+
+        // ⚠ Not a second gate. A passing gate says so and raises nothing (doc 09: the gate decides,
+        // once), so a renderer that had started deciding for itself fails here.
+        var passed = Renderer.Render(
+            report with { Gate = new GateResult("ci", Passed: true, []) },
+            ReportFormat.Github,
+            includeHints: true
+        );
+
+        Assert.Contains("::notice::gate `ci`: PASS", passed, StringComparison.Ordinal);
+        Assert.DoesNotContain("::error::gate", passed, StringComparison.Ordinal);
+    }
+
     [Fact]
     public void AgentRenderer_IsBounded() {
         var many = Enumerable.Range(0, 400).Select(i => Modernization(line: i)).ToArray();

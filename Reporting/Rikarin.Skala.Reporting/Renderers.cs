@@ -198,6 +198,35 @@ public static class Renderer {
         return builder.ToString();
     }
 
+    /// <summary>
+    ///     ⚠ The annotations, and then the verdict — because a log that ends at the annotations does not
+    ///     say what happened.
+    /// </summary>
+    /// <remarks>
+    ///     <para>
+    ///         This renderer used to emit findings and nothing else. The gate's verdict and its reasons go
+    ///         to <c>$GITHUB_STEP_SUMMARY</c>, which is a different page, so the *log* of a failing
+    ///         `Check` step was two hundred annotations followed by
+    ///         <c>
+    ///Process completed with exit code
+    ///         1
+    ///         </c> and no statement of why. Read from the log alone, this repository's own master gate
+    ///         looked like twenty-four errors in one rule family; it was in fact failing four conditions,
+    ///         of which those errors were one, and the largest was that the baseline the `ci` gate names
+    ///         did not exist.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ That last one is the reason the notifications are emitted too, and not only the gate
+    ///         failures. <c>SK9030</c> says in as many words: "the gate names a baseline at
+    ///         .skala/baseline.sarif and there is no such file, so every finding counts as new." The tool
+    ///         had diagnosed itself correctly and put the answer somewhere the log could not reach.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ It is not a second gate (doc 09 forbids that, and this file's own remarks repeat it). It
+    ///         reads <see cref="RunReport.Gate" /> — the verdict the gate already reached — and prints it.
+    ///         Nothing here decides anything.
+    ///     </para>
+    /// </remarks>
     static string Github(RunReport report, bool includeHints) {
         var builder = new StringBuilder();
         foreach (var finding in Ordered(report, includeHints)) {
@@ -219,6 +248,27 @@ public static class Renderer {
                 .Append(finding.RuleId)
                 .Append("::")
                 .Line(finding.Message.Replace("\n", "%0A", StringComparison.Ordinal));
+        }
+
+        // The run's own diagnostics about the run: a missing baseline, a binlog that covers too
+        // little, a rule that could not be loaded. They are what explains the numbers above.
+        foreach (var diagnostic in report.Diagnostics) {
+            builder.Append(diagnostic.Severity >= SkalaSeverity.Error ? "::error::" : "::notice::")
+                .Append(diagnostic.Id)
+                .Append(": ")
+                .Line(diagnostic.Message.Replace("\n", "%0A", StringComparison.Ordinal));
+        }
+
+        if (report.Gate is { } gate) {
+            builder.Append(gate.Passed ? "::notice::" : "::error::")
+                .Append("gate `")
+                .Append(gate.Name)
+                .Append("`: ")
+                .Line(gate.Passed ? "PASS" : "FAIL");
+
+            foreach (var failure in gate.Failures) {
+                builder.Append("::error::  ").Line(failure.Replace("\n", "%0A", StringComparison.Ordinal));
+            }
         }
 
         return builder.ToString();
