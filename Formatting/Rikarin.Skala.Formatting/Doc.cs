@@ -150,6 +150,39 @@ public enum IndentKind {
     Outdent,
 
     /// <summary>
+    ///     A fixed number of <em>columns</em> less, for every line but the one the scope opened on.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Not <see cref="Outdent" /> with a smaller number, and the distinction is the one
+    ///     docs/plan/05 § "Indentation" recorded as missing when it filed <c>outdent_binary_ops</c>,
+    ///     <c>outdent_dots</c> and <c>outdent_ternary_ops</c> as "observable and not implemented …
+    ///     they need a scope kind the IR does not have". <see cref="Outdent" /> is one indent level and
+    ///     is absolute — it <em>replaces</em> what is open, because it is a block. This is a relative
+    ///     shift of a column count that is not a multiple of the indent width, it composes with
+    ///     whatever alignment or continuation is already open, and it takes no part in the
+    ///     one-level-per-opening-line collapse: it is not a level.
+    ///     <para>
+    ///         ⚠ The amount is the width of the operator that starts the line plus the space written after
+    ///         it, which is exactly the offset that leaves the <em>operand</em> on the column it would have
+    ///         had without the outdent. Measured against <c>jb cleanupcode</c> 2025.2.6 at a 70-column
+    ///         margin, one key at a time, and the same arithmetic covers all of them:
+    ///         <code>
+    /// outdent_binary_ops         `+`    12 → 10      (1 + 1)
+    /// outdent_binary_ops         `&amp;&amp;`   12 →  9      (2 + 1)
+    /// outdent_binary_pattern_ops `and`  12 →  8      (3 + 1)
+    /// outdent_dots               `.`    12 → 11      (1 + 0, space_after_dot = false)
+    ///         </code>
+    ///     </para>
+    ///     <para>
+    ///         ⚠ It composes with <see cref="Align" /> rather than replacing it, which is measured rather
+    ///         than assumed: with <c>align_multiline_expression = true</c> beside
+    ///         <c>outdent_binary_ops = true</c> the oracle writes the operands on the expression's own
+    ///         column and the operators two to the left of it, 18 → 16 and 19 → 16.
+    ///     </para>
+    /// </remarks>
+    OutdentColumns,
+
+    /// <summary>
     ///     A column rather than a level: everything inside starts at the column the scope opened at.
     /// </summary>
     /// <remarks>

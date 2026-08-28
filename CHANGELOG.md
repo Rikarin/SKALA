@@ -13,6 +13,101 @@ missed it says so and by how much; three of them were, and one of those is still
 
 ## Unreleased
 
+### Added — the outdent family has the scope kind the IR was recorded as lacking, and three of its keys work
+
+⚠ **docs/plan/05 recorded `outdent_binary_ops`, `outdent_dots` and `outdent_ternary_ops` as
+"observable and **not** implemented … they need a scope kind the IR does not have", and that sentence
+had stood since M9.** It was right about the measurement and wrong about the conclusion: the scope
+kind is small, and not having it kept four keys at Tier D.
+
+`IndentKind.OutdentColumns` is a relative shift of a **column count** rather than a level. It applies
+to every line but the one it opened on, it takes no part in `LayoutWriter.Level`'s
+one-level-per-opening-line collapse — a column shift that satisfied that collapse would suppress the
+continuation level of whatever opened earlier on the same line — and it is opened *inside* an `Align`
+scope so that the two compose, because `Level` returns at the first block and an `Align` scope is
+one.
+
+One arithmetic serves the whole family, and it is measured rather than named: **the width of the
+operator that starts the wrapped line, plus the space written after it**, which is the offset that
+leaves the *operand* on the column it would have had unmoved. The space is asked of `SpaceRules`
+rather than assumed — that is why the dot moves by one and the operators by their width plus one, and
+a configuration with `space_after_dot = true` moves the dots by two.
+
+```
+outdent_binary_ops          `+`   12 → 10      `&&`  12 → 9
+outdent_binary_pattern_ops  `and` 12 →  8
+outdent_dots                `.`   12 → 11
+```
+
+- **`resharper_csharp_outdent_binary_ops`, `resharper_csharp_outdent_binary_pattern_ops` and
+  `resharper_csharp_outdent_dots` are implemented**, pinned by `constructs/alignment/outdent.cs`, and
+  `sweep verify` reports **Conformant** for each: two distinct outputs from each engine, agreeing at
+  both values.
+- **`outdent_binary_pattern_ops` was registered "unverified — no input found that both wraps a binary
+  pattern chain and shows the outdent".** The input is a pattern chain long enough to wrap. That is
+  the third key this year whose "no probe found a shape" turned out to be a statement about the
+  probes, after `align_tuple_components` and `align_multiline_type_parameter_list`.
+- **`outdent_commas` stays Tier D on a second reason as well as the first.** It is masked — it needs
+  `wrap_before_comma = true`, which the export sets false — and the scope above cannot serve it
+  either: its outdent skips the *first* item, which sits on the delimiter's own break point, and
+  `OutdentColumns` exempts only the line the scope opened on. A chain's first operand is on that
+  line; a list's first item is not.
+
+### Added — `align_multiple_declaration`, which was Tier D because every probe used `int`
+
+**`resharper_csharp_align_multiple_declaration` is implemented**, pinned by
+`constructs/alignment/align-declaration.cs`, `sweep verify` **Conformant**. It was filed under "no
+probe found a shape where they change the oracle's output" because the probes wrote
+`int first = 1, second = 2`: `int ` is four columns, so the first declarator's column and the
+continuation indent are the same number and the two layouts cannot be told apart. On a type that is
+not four columns wide they separate, and the second declarator takes the first one's column.
+
+⚠ **Local declarations only, and that is measured.** A field declaration of the identical shape does
+not move at either value, so `AlignsFromOwnColumn` excludes a `FieldDeclarationSyntax`'s declaration.
+
+**Corpus effect: none in either direction.** Every key here is `false` in the export, so no file in
+any set is formatted differently than before. `corpus/real/` stays at **99.55 % / 85.79 %** and
+`pathological/` at **95.45 % / 86.57 %**, both unmoved; `constructs/` reads **98.40 % / 94.44 %**
+over 396 files against a 98.34 % / 94.37 % baseline, and the whole of that rise is the two new
+fixtures being byte-exact. ⚠ A rise from added exact fixtures is not a repaired divergence, and
+`fidelity.json` is deliberately untouched in either direction.
+
+### Measured — the other twelve `AlignMultilineConstructs` keys, and five recorded claims refuted
+
+Every one of the sixteen unimplemented keys in that family was re-measured against `jb cleanupcode`
+2025.2.6, one key at a time. Five entries in `PhaseOneOptions` were wrong and are corrected in place:
+
+- **`align_multiline_calls_chain`'s anchor is the chain's first `.`, and the note that said so was
+  right.** It is recorded again because it was nearly overturned: at 70 columns the dots land on the
+  receiver's own column, which reads like a different anchor entirely. At 120 columns
+  `wrap_before_first_method_call = false` keeps the first call on the head line and the rest align
+  under its dot, 26 columns further right. The anchor is a function of the *layout*, and `AlignAnchor`
+  is a source position resolved before the fitter runs. An implementation built on the 70-column
+  reading agreed with the oracle on that file and disagreed by 26 columns on the fixture at this
+  repository's own margin; it was reverted rather than committed.
+- **`allow_far_alignment` has a shape after all, and it is not an int_align run.** Its recorded
+  reason — "questions with no answer while no run exists" — was re-asked with a run that drags a
+  column to 74, and the key still moves nothing. What does depend on it: at a 50-column margin the
+  oracle *abandons* a chain alignment under a long receiver and returns the plain continuation
+  layout, which is what "align even if the resulting indentation is too large" declining looks like.
+- **`alignment_tab_fill_style` is read.** It was on the "never read by the C# formatter — the
+  unprefixed spellings are the C++ and VB formatters' keys" list because every probe that asked it
+  was indented with spaces. Under `indent_style = tab` its three values are three distinct layouts,
+  and Skala writes `optimal_fill` at all three while the export asks for `use_spaces` — SK-DIV-0032.
+- **`align_multiline_comments` is observable**, and it is `true` in the export: the oracle pulls a
+  block comment's continuation asterisks onto the opening delimiter's column and Skala leaves the
+  comment as written. A divergence at the export's own values, not a missing option — SK-DIV-0033.
+- **`indent_anonymous_method_block` is observable on a lambda and not on an anonymous method**, which
+  is the opposite way round from its name.
+
+Confirmed rather than refuted: `align_multiline_array_initializer` really is never read;
+`align_multiline_for_stmt` really is masked by `align_multiline_statement_conditions`, re-measured a
+third time after SK-DIV-0008 and SK-DIV-0012 were corrected for having blamed it;
+`align_multiline_argument` and `align_multiline_parameter` really are masked by
+`wrap_after_{invocation,declaration}_lpar`; `align_first_arg_by_paren` and `align_multiline_expression`
+remain observable and unimplemented, both with the shape now recorded from a measurement rather than
+from the option's name.
+
 ### Fixed — `space_after_triple_slash` was not applied to a verbatim line, and one of them came out `///Func<int>`
 
 ⚠ **A doc-comment line with no space after the marker, in a comment whose every other line had one.**

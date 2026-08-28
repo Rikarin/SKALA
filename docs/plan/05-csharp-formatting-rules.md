@@ -165,7 +165,9 @@ column 0) but `indent_preprocessor_region = usual_indent` (regions indent with c
 `indent_case_from_switch` via `csharp_indent_switch_labels = true`, `csharp_indent_braces = false`,
 `resharper_indent_wrapped_function_names = false`, `resharper_outdent_binary_ops = false`,
 `resharper_outdent_commas = false`, `resharper_outdent_dots` — the outdent family is all off, which
-again simplifies the layout engine.
+again simplifies the layout engine. ⚠ "All off" is what made it cheap to leave unbuilt for nine
+milestones and is not an argument that it should stay so; three of the six are implemented as of T5b
+and the paragraph below records which and why.
 
 ⚠ **All off is not the same as implemented, and the outdent family was the second.** M9 asked the
 oracle for each of the six at its other value and recorded what came back, because "the export sets
@@ -175,14 +177,38 @@ it to the value that costs nothing" is a fact about this export and not about th
   tokens. Finding that also fixed a divergence — `LabeledStatementSyntax` sits on the embedded-
   statement list beside `if` and `while`, where the body genuinely is a level down, and Skala put a
   labelled statement one level in where the oracle keeps the two flush.
-- `outdent_binary_ops`, `outdent_dots` and `outdent_ternary_ops` are observable and **not**
-  implemented. Each moves the wrapped operator left by its own width plus one — 12 → 10 for `+`,
-  12 → 9 for `&&`, 12 → 11 for `.` — which is a column offset, and `Indent(Outdent)` is one level.
-  They need a scope kind the IR does not have.
-- `outdent_commas` is inert under this export and observable with `wrap_before_comma = true`, which
-  the export sets false; with a trailing comma there is nothing at the head of a line to outdent.
-- `outdent_binary_pattern_ops` is unverified: no input has yet been found that both wraps a binary
-  pattern chain under this export and shows the outdent.
+- `outdent_binary_ops` and `outdent_dots` are **implemented** as of T5b, and so is
+  `outdent_binary_pattern_ops`. The sentence they used to carry — "each moves the wrapped operator
+  left by its own width plus one, which is a column offset, and `Indent(Outdent)` is one level; they
+  need a scope kind the IR does not have" — was right about the measurement and wrong about the
+  conclusion. `IndentKind.OutdentColumns` is that scope kind: a relative shift of a column count,
+  applying to every line but the one it opened on, taking no part in the one-level-per-opening-line
+  collapse, and composing with an `Align` scope rather than replacing it. One arithmetic serves all
+  of them — the width of the operator that starts the line, plus the space `SpaceRules` says follows
+  it, which is the offset that leaves the *operand* on the column it would have had:
+
+  ```
+  outdent_binary_ops          `+`   12 → 10      `&&`  12 → 9
+  outdent_binary_pattern_ops  `and` 12 →  8
+  outdent_dots                `.`   12 → 11      (1 + 0: space_after_dot = false)
+  ```
+
+  `constructs/alignment/outdent.cs` is the fixture and `sweep verify` reports **Conformant** for all
+  three, agreeing with the oracle at both values. ⚠ `outdent_ternary_ops` is *not* among them: it is
+  the unprefixed spelling, it belongs to the ternary work, and it is only recorded here as a fourth
+  key the same mechanism should now be able to serve.
+- `outdent_binary_pattern_ops` was "unverified: no input has yet been found that both wraps a binary
+  pattern chain under this export and shows the outdent". The input is a pattern chain long enough to
+  wrap — eight subpatterns at 120 columns — and the earlier probes were simply too short. The same
+  mistake as the tuple probes, and the third time "no probe found" has turned out to be a statement
+  about the probes.
+- `outdent_commas` is masked under this export and observable with `wrap_before_comma = true`, which
+  the export sets false; with a trailing comma there is nothing at the head of a line to outdent. ⚠ It
+  is also the one member of the family the scope above **cannot** serve, and that is a second reason
+  rather than a restatement of the first: the outdent applies to the second and later items and not
+  to the first, which sits on the delimiter's own break point, and `OutdentColumns` exempts only the
+  line the scope opened on. A chain's first operand really is on that line; a list's first item is
+  not. Serving it needs a point-level outdent.
 
 The seven `indent_*_pars` and `indent_*_angles` keys divide the same way: `indent_invocation_pars`
 and `indent_method_decl_pars` are observable and place a closing delimiter, which is the wrapping
