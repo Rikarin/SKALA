@@ -126,15 +126,21 @@ public sealed class XmlDocOracleTests {
     }
 
     /// <summary>
-    ///     The keys SK-DIV-0019 … SK-DIV-0021 covered, fixed and now agreeing, and never swept.
+    ///     The nine keys SK-DIV-0019 … SK-DIV-0023 covered: fixed, now agreeing, and never swept.
     /// </summary>
     /// <remarks>
-    ///     ⚠ <b>This list may only shrink, and nothing may be added to it without a sweep row.</b> Its
-    ///     seven entries are one fix: the wrap column was measured wrong, all seven fixtures wrap, and
-    ///     five of them were SK-DIV-0019 alone. They are not promoted here because Tier A is a claim
-    ///     about the option across its domain and every instrument that could make it — the key-flip
-    ///     sweep — has no row for any of them; six <c>resharper_xmldoc_*</c> keys were once promoted on
-    ///     exactly this evidence and demoted the same afternoon.
+    ///     ⚠ <b>This list may only shrink, and nothing may be added to it without a sweep row.</b> Seven
+    ///     of the nine are one fix — the wrap column was measured wrong, every one of their fixtures
+    ///     wraps, and five were SK-DIV-0019 alone. The other two are SK-DIV-0022 (<c>spaces_inside_tags
+    ///     = false</c> means "do not add", not "remove the author's") and SK-DIV-0023's surviving half
+    ///     (every blank <c>///</c> line the oracle writes carries the marker's space).
+    ///     <para>
+    ///         ⚠ They are not promoted here. Tier A is a claim about the option across its domain, and the
+    ///         one instrument that could make it — the key-flip sweep — has no row for any of the nine;
+    ///         six <c>resharper_xmldoc_*</c> keys were once promoted on exactly this evidence and demoted
+    ///         the same afternoon, every one of them agreeing at the export's value and diverging away
+    ///         from it.
+    ///     </para>
     ///     <para>
     ///         ⚠ The assertion above runs in <em>both</em> directions over this list, so it cannot rot into
     ///         a place to park a regression: a key here that stops agreeing fails, and a key here that
@@ -148,27 +154,29 @@ public sealed class XmlDocOracleTests {
         "resharper_xmldoc_wrap_tags_and_pi",
         "resharper_xmldoc_linebreaks_inside_tags_for_elements_longer_than",
         "resharper_xmldoc_linebreak_before_multiline_elements",
-        "resharper_xmldoc_linebreak_before_singleline_elements"
+        "resharper_xmldoc_linebreak_before_singleline_elements",
+        "resharper_xmldoc_spaces_inside_tags",
+        "resharper_xmldoc_blank_line_after_pi"
     };
 
     /// <summary>
     ///     ⚠ The headline number, asserted so that it cannot drift without a diff.
     /// </summary>
     [Fact]
-    public void TheSplit_IsTwentyAgainstTwo() {
-        // ⚠ Raised from 13 by SK-DIV-0019's fix. The wrap column was measured wrong in one place and
-        // seven fixtures were failing on it; the two that remain are SK-DIV-0022 (`spaces_inside_tags`
-        // means "do not add", not "remove") and SK-DIV-0023's surviving half (the blank line after a
-        // processing instruction carries a trailing space).
+    public void TheSplit_IsTwentyTwoAgainstNone() {
+        // ⚠ Raised from 13, and it is now the whole family. Seven of the nine were SK-DIV-0019's wrap
+        // column — one arithmetic, measured wrong; the other two were SK-DIV-0022 and SK-DIV-0023's
+        // surviving half. ⚠ A full house on the fixtures is *not* a full house on the tiers: nine of
+        // the 22 are still Tier D because no sweep has reached them. See `Unswept`.
         var rows = XmlDocOracle.Rows();
         var agreeing = rows.Count(static row => row.Agrees);
         Assert.Equal(22, rows.Count);
         Assert.True(
-            agreeing >= 20,
+            agreeing >= 22,
             $"{agreeing.ToString(CultureInfo.InvariantCulture)} of "
             + $"{rows.Count.ToString(CultureInfo.InvariantCulture)} doc-comment fixtures agree; the committed "
-            + "measurement is 20. This is a ratchet: agreement may rise, and a rise is a commit that promotes "
-            + "the keys it earned."
+            + "measurement is 22. This is a ratchet and it is now at the ceiling: a fall is a regression, and "
+            + "the key that fell is named by TheRecordedTier_IsWhatTheDocCommentFixtureSays."
         );
     }
 }

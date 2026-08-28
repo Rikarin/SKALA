@@ -338,8 +338,18 @@ public sealed class XmlDocRenderer {
             return null;
         }
 
-        var pad = _options.SpacesInsideTags && inner.Length > 0 ? " " : "";
-        return start + pad + inner + pad + close;
+        // ⚠ SK-DIV-0022, measured at both values. `true` is a statement about the output — exactly one
+        // space each side, and the author's double collapses to one. `false` is a statement about what
+        // the run may *insert*: it adds nothing and the author's own gap survives, per side and
+        // verbatim. Only here, because only a flat element has an author's gap left to keep: an
+        // element the run opens up has its content re-flowed, and the oracle drops the spaces too.
+        if (inner.Length == 0) {
+            return start + close;
+        }
+
+        return _options.SpacesInsideTags
+            ? start + " " + inner + " " + close
+            : start + element.InnerLead + inner + element.InnerTrail + close;
     }
 
     string? FlatNodes(ImmutableArray<XmlDocNode> nodes) {

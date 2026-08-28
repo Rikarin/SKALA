@@ -443,12 +443,18 @@ one level down: a limitation of the *profile*, read as a limitation of the corpu
 `<CSharpFormatDocComments>True</CSharpFormatDocComments>` and nothing else, `./build.sh Oracle`
 regenerates `constructs/xmldoc/*.xmldoc.expected.cs` under it, and the family is measured. **13 of
 the 22 keys are Tier A**, pinned exactly the way every other option in the registry is. The nine
-that are not had measured shapes and entries of their own: SK-DIV-0019 through SK-DIV-0023. ⚠ **Seven
-of the nine now reproduce their fixtures** — SK-DIV-0019 was one arithmetic wearing five names,
-SK-DIV-0021 turned out to be the same arithmetic, and SK-DIV-0020 needed one structural fix beside it
-— so the split is **20 of 22 agreeing** and the two that remain are SK-DIV-0022 and SK-DIV-0023's
-surviving half. ⚠ The seven are **still Tier D**: agreement on a fixture is agreement at one value,
-and none of the seven has ever appeared in the key-flip sweep.
+that are not had measured shapes and entries of their own: SK-DIV-0019 through SK-DIV-0023. ⚠ **All
+nine now reproduce their fixtures, and the split is 22 of 22.** Seven were one arithmetic — SK-DIV-0019
+wearing five names, SK-DIV-0021 turning out to be the same arithmetic, and SK-DIV-0020 needing one
+structural fix beside it; the other two were SK-DIV-0022 and SK-DIV-0023's surviving half.
+
+⚠ **The nine are still Tier D, and the distinction is the whole point of this section.** Agreement on
+a fixture is agreement at one value of one key on one construct under one configuration; Tier A is a
+claim about the option across its domain, and the instrument that makes it is the key-flip sweep,
+which has no row for any of the nine. Six `resharper_xmldoc_*` keys were promoted on exactly this
+evidence and demoted the same afternoon — every one agreeing at the export's value and diverging away
+from it. `XmlDocOracleTests.Unswept` holds the nine, asserts in both directions that they still agree,
+and shrinks to nothing as the sweep reaches them.
 
 The three things below still pin the sub-formatter and are still worth having — the round trip in
 particular is checked on every comment of every run, which no fixture can be — but they are no
@@ -1316,9 +1322,33 @@ SK-DIV-0006 now records under `space_after_triple_slash`: on a comment the oracl
 leaving alone it changes nothing at all, and a "no change" that means "not asked" is exactly the
 reading this project has been burned by twice.
 
+⚠ **Fixed, and both values were probed rather than one inferred from the other.** "Do not add one"
+and "add exactly one" are not symmetric readings, and taking the second from the first is how a key
+gets demoted:
+
+| author wrote | at `false` | at `true` |
+|---|---|---|
+| `<summary> Text. </summary>` | `<summary> Text. </summary>` | `<summary> Text. </summary>` |
+| `<summary> Text.</summary>` | `<summary> Text.</summary>` | `<summary> Text. </summary>` |
+| `<summary>Text.</summary>` | `<summary>Text.</summary>` | `<summary> Text. </summary>` |
+| `<summary>  Text.  </summary>` | `<summary>  Text.  </summary>` | `<summary> Text. </summary>` |
+
+So `true` *is* a statement about the output — exactly one space each side, and the author's two
+collapse to one, which is what Skala already did. `false` is a statement about what the run may
+insert: nothing is added and the author's own run survives, **per side and verbatim**. The gap is
+recorded on the element (`XmlDocElement.InnerLead` / `InnerTrail`) and read only by `Flat`, because
+an element the run *opens up* has its content re-flowed and loses the spaces — measured, the oracle
+drops them there too.
+
+⚠ Single-line content only, and the reason is a defect this found: Roslyn's `XmlElementSyntax.Content`
+carries each continuation line's `///` with it, so the whitespace run at the end of a multi-line
+content is the **marker's** space and not a gap anybody wrote inside a tag. Taking it as one reflowed
+`<summary>One. Two.</summary>` with a space before its end tag.
+
 - options: `resharper_xmldoc_spaces_inside_tags`
-- ⚠ status: **open**, pinned by
-  `constructs/xmldoc/resharper_xmldoc_spaces_inside_tags.xmldoc.expected.cs`.
+- ⚠ status: **closed**, pinned by
+  `constructs/xmldoc/resharper_xmldoc_spaces_inside_tags.xmldoc.expected.cs` and by
+  `SpacesInsideTagsFalse_DoesNotAddOne_AndDoesNotRemoveTheAuthors`, which carries the table above.
 
 ## SK-DIV-0023 — the blank line after a processing instruction carries no trailing space
 
@@ -1359,17 +1389,27 @@ skala    /// <?skala-probe mode="short"?>         ← (1) fixed: the marker spac
    the author's. Repairing those properly means reverting those comments to their pre-`1aad86f8` form
    and re-formatting; guessing at it in the formatter would mean flattening a code block written under
    a marker-less convention, which is the one thing the verbatim rule exists to prevent.
-2. **The blank line the oracle writes after a processing instruction carries a trailing space.**
-   Skala's carries none, deliberately and for a reason that is stated at `XmlDocOptions.BlankLineAfterPi`
-   and holds elsewhere: an empty line's trailing whitespace is the one thing every other pass in
-   Skala strips. Unlike (1) this half is a decision, and it survived (1) being fixed.
+2. ~~**The blank line the oracle writes after a processing instruction carries a trailing space.**~~
+   **Fixed, and it was never about the processing instruction.** It was refused on this argument:
+   "Skala's carries none, deliberately and for a reason that is stated at
+   `XmlDocOptions.BlankLineAfterPi` and holds elsewhere: an empty line's trailing whitespace is the
+   one thing every other pass in Skala strips. Unlike (1) this half is a decision."
+
+   ⚠ That is a fact about Skala offered where a measurement was needed, and the measurement was one
+   probe away. Asked at `max_blank_lines_between_tags = 1`, the oracle writes `/// ` for **every**
+   blank line it keeps — the ones between two tags as well as the one after a `<?…?>`, and whether or
+   not the author's blank line had the space. So the space belongs to the marker, which is exactly
+   what half (1) concluded and then was not carried across the empty case. The condition is now
+   `Verbatim` rather than emptiness, so a blank line inside a `<code>` block still has none: those
+   columns are the sample's and this space is the option's.
 
 - options: `resharper_xmldoc_blank_line_after_pi`, `resharper_space_after_triple_slash`
-- ⚠ status: **open on (2), fixed on (1)**, pinned by
-  `constructs/xmldoc/resharper_xmldoc_blank_line_after_pi.xmldoc.expected.cs`, which still diverges —
-  on one line rather than two. ⚠ The entry names `resharper_space_after_triple_slash`, which is
-  **Tier A**: the key is reproduced everywhere its fixture exercises it, and this is a construct that
-  fixture does not reach.
+- ⚠ status: **closed on both halves**, pinned by
+  `constructs/xmldoc/resharper_xmldoc_blank_line_after_pi.xmldoc.expected.cs`, which now agrees, by
+  `MaxBlankLinesBetweenTags_IsHonoured`, which carries the generalisation, and by
+  `ABlankLineInsideAVerbatimBlock_IsNeitherACrashNorATrailingSpace`, which carries the exception.
+  ⚠ The entry names `resharper_space_after_triple_slash`, which is **Tier A**: the key is reproduced
+  everywhere its fixture exercises it, and this is a construct that fixture does not reach.
 - ⚠ **What was missing was an assertion, not a fixture.** The fix for (1) was reported as still
   failing on a multi-line verbatim body, on the grounds that no `constructs/xmldoc/` fixture reaches
   one — and that is true of the construct corpus. It was never true of `real/`: five files under

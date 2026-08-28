@@ -168,8 +168,11 @@ public sealed class XmlDocSubFormatterTests {
             XmlDoc.DocLines(XmlDoc.Text(source))
         );
 
+        // ⚠ `/// ` rather than `///`, and the trailing space is the marker's. SK-DIV-0023's surviving
+        // half generalised: probed at `max_blank_lines_between_tags = 1`, every blank `///` line the
+        // oracle writes carries the space, whether or not the author's did.
         Assert.Equal(
-            ["/// <summary>One.</summary>", "///", "/// <remarks>Two.</remarks>"],
+            ["/// <summary>One.</summary>", "/// ", "/// <remarks>Two.</remarks>"],
             XmlDoc.DocLines(XmlDoc.Text(source, ("resharper_xmldoc_max_blank_lines_between_tags", "1")))
         );
     }
@@ -228,6 +231,54 @@ public sealed class XmlDocSubFormatterTests {
         Assert.Contains(
             "<summary> Docs. </summary>",
             XmlDoc.Text(source, ("resharper_xmldoc_spaces_inside_tags", "true")),
+            StringComparison.Ordinal
+        );
+    }
+
+    [Theory]
+    [InlineData("<summary> Docs. </summary>", "<summary> Docs. </summary>")]
+    [InlineData("<summary> Docs.</summary>", "<summary> Docs.</summary>")]
+    [InlineData("<summary>Docs. </summary>", "<summary>Docs. </summary>")]
+    [InlineData("<summary>Docs.</summary>", "<summary>Docs.</summary>")]
+    [InlineData("<summary>  Docs.  </summary>", "<summary>  Docs.  </summary>")]
+    public void SpacesInsideTagsFalse_DoesNotAddOne_AndDoesNotRemoveTheAuthors(string written, string expected) {
+        // ⚠ SK-DIV-0022, and both readings are measured rather than argued. Skala read the key as a
+        // statement about the output — false means no gap, whatever the author wrote — and the oracle
+        // reads it as a statement about what it may *insert*. Each side is independent and the run is
+        // kept verbatim, a double space included; the export sets the key false, so at the standard
+        // this gap is the source's bytes and not a decision.
+        Assert.Contains(
+            expected,
+            XmlDoc.Text(XmlDoc.InClass("/// " + written + "<returns>A.</returns>")),
+            StringComparison.Ordinal
+        );
+    }
+
+    [Fact]
+    public void SpacesInsideTags_AreDroppedWhenTheElementIsOpenedUp() {
+        // ⚠ The other half, and it is why `Flat` is the only reader of the author's gap: an element
+        // the run re-flows has no gap left to keep. Measured — the oracle drops them here too.
+        var lines = XmlDoc.DocLines(
+            XmlDoc.Text(
+                XmlDoc.InClass("/// <summary> " + string.Join(" ", Enumerable.Repeat("word", 40)) + " </summary>")
+            )
+        );
+
+        Assert.Equal("/// <summary>", lines[0]);
+        Assert.StartsWith("///     word", lines[1], StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void SpacesInsideTagsTrue_CollapsesWhateverTheAuthorWroteToOne() {
+        // ⚠ At `true` the key *is* a statement about the output: exactly one space each side, and the
+        // author's two collapse to one. Measured, because "do not add" and "add exactly one" are not
+        // symmetric readings and guessing the second from the first is how a key gets demoted.
+        Assert.Contains(
+            "<summary> Docs. </summary>",
+            XmlDoc.Text(
+                XmlDoc.InClass("/// <summary>  Docs.  </summary>"),
+                ("resharper_xmldoc_spaces_inside_tags", "true")
+            ),
             StringComparison.Ordinal
         );
     }
@@ -905,7 +956,11 @@ public sealed class XmlDocMeasuredTagHeaderTests {
             XmlDoc.Text(XmlDoc.InClass("/// <?display mode=\"short\"?>", "/// <summary>After.</summary>"))
         );
 
-        Assert.Equal([Pi, "///", "/// <summary>After.</summary>"], lines);
+        // ⚠ `/// ` — the blank line carries the marker's space, which is SK-DIV-0023's second half
+        // and the last of the entry to close. It was refused on the argument that "an empty line's
+        // trailing whitespace is the one thing every other pass in Skala strips", which is a fact
+        // about Skala; the oracle writes the space, on this line and on every blank line it keeps.
+        Assert.Equal([Pi, "/// ", "/// <summary>After.</summary>"], lines);
     }
 
     [Fact]

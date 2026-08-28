@@ -164,10 +164,17 @@ public readonly struct XmlDocOptions {
     ///     <c>resharper_xmldoc_spaces_inside_tags</c>: <c>&lt;summary&gt; Text &lt;/summary&gt;</c>.
     /// </summary>
     /// <remarks>
-    ///     ⚠ SK-DIV-0022. Skala reads this as a statement about the output — false means no gap,
-    ///     whatever the author wrote. The oracle reads it as a statement about what it may
-    ///     <em>insert</em>: false means it will not add one, and a space already there survives even
-    ///     while the same run splits the elements around it. Measured, not inferred.
+    ///     ⚠ SK-DIV-0022, and the two values are not symmetric readings. <b>True</b> is a statement
+    ///     about the output: exactly one space each side, and the author's two collapse to one.
+    ///     <b>False</b> is a statement about what the run may <em>insert</em>: it adds nothing and the
+    ///     author's own gap survives, per side and verbatim, even while the same run splits the
+    ///     elements around it. Skala used to read false as "no gap, whatever the author wrote". Both
+    ///     values probed, because taking the second from the first is how a key gets demoted.
+    ///     <para>
+    ///         ⚠ Only a <em>flat</em> element has an author's gap left to keep — see
+    ///         <see cref="XmlDocElement.InnerLead" />. One the run opens up has its content re-flowed,
+    ///         and the oracle drops the spaces there too.
+    ///     </para>
     /// </remarks>
     public bool SpacesInsideTags { get; }
 
@@ -224,10 +231,15 @@ public readonly struct XmlDocOptions {
     ///     ⚠ The export leaves this at its default <c>true</c>, so a processing instruction in a doc
     ///     comment has been getting a blank line after it from Rider all along and not from Skala.
     ///     <para>
-    ///         ⚠ Skala's blank line is <c>///</c> and the oracle's is <c>///</c> plus the marker space. The
-    ///         trailing space is not reproduced, for the same reason
-    ///         <c>max_blank_lines_between_tags</c>'s blank lines do not carry one: an empty line's trailing
-    ///         whitespace is the one thing every other pass in Skala strips.
+    ///         ⚠ The blank line is <c>///</c> plus the marker space, and this remark used to say it was
+    ///         not: "the trailing space is not reproduced, for the same reason
+    ///         <c>max_blank_lines_between_tags</c>'s blank lines do not carry one: an empty line's
+    ///         trailing whitespace is the one thing every other pass in Skala strips." That is a fact
+    ///         about Skala standing where a measurement belonged, and it named its own refutation —
+    ///         probed at <c>max_blank_lines_between_tags = 1</c>, <em>those</em> blank lines carry the
+    ///         space too. The space belongs to the marker, which is what SK-DIV-0023's first half had
+    ///         already concluded for verbatim lines. A blank line inside a <c>&lt;code&gt;</c> block
+    ///         still has none: those columns are the sample's.
     ///     </para>
     /// </remarks>
     public bool BlankLineAfterPi { get; }

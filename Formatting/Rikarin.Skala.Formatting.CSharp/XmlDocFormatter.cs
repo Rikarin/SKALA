@@ -273,11 +273,21 @@ public static class XmlDocFormatter {
             // `<code>` body; `XmlDocModel.SourceLines` takes that same space off on the way in, so the
             // sample's own columns are what is left in `Text` and what comes back out here.
             //
-            // ⚠ Skipping an empty line is not a special case for verbatim — it is the rule the prose
-            // branch has always had, and it is why a blank line inside a `<code>` block does not
-            // acquire the trailing space every other pass in Skala strips.
+            // ⚠ A blank line the *renderer* wrote gets the marker space too, and that is SK-DIV-0023's
+            // second half closed. It used to be skipped on the argument that "an empty line's trailing
+            // whitespace is the one thing every other pass in Skala strips" — an argument about Skala
+            // rather than a measurement of the oracle. Probed: every blank `///` line the oracle
+            // writes carries the space, the one after a processing instruction and the ones
+            // `max_blank_lines_between_tags` keeps alike, whether or not the author's did. So the
+            // marker's space belongs to the marker, exactly as the first half of that entry concluded
+            // for verbatim lines.
+            //
+            // ⚠ A blank line inside a `<code>` block still does not, and that is why the test is on
+            // `Verbatim` rather than on emptiness. Those columns are the sample's, this space is the
+            // option's, and `ABlankLineInsideAVerbatimBlock_IsNeitherACrashNorATrailingSpace` pins the
+            // difference.
             rendered.Append(indent).Append("///");
-            if (lines[i].Text.Length > 0) {
+            if (lines[i].Text.Length > 0 || !lines[i].Verbatim) {
                 rendered.Append(marker).Append(lines[i].Text);
             }
         }
