@@ -74,9 +74,7 @@ public sealed class WorkspaceLoadingTests {
     /// </remarks>
     [Fact]
     public void TheWorkspaceAssemblyShipsBesideTheTool() {
-        var exception = Record.Exception(
-            static () => Assembly.Load("Microsoft.CodeAnalysis.Workspaces.MSBuild")
-        );
+        var exception = Record.Exception(static () => Assembly.Load("Microsoft.CodeAnalysis.Workspaces.MSBuild"));
 
         Assert.True(
             exception is null,
@@ -163,9 +161,7 @@ public sealed class WorkspaceLoadingTests {
         var project = scratch.Write("Scratch.csproj", UnloadableProject);
 
         var loaded = ProjectLoader.Load(
-            new LoadRequest {
-                RepositoryRoot = scratch.Root, Mode = LoadMode.Workspace, ProjectPath = project
-            },
+            new LoadRequest { RepositoryRoot = scratch.Root, Mode = LoadMode.Workspace, ProjectPath = project },
             TestContext.Current.CancellationToken
         );
 
