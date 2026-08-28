@@ -60,10 +60,28 @@ public static class DaemonCommands {
         // inherits that process's pipes: by the time it says anything else, the other end may be
         // gone. A banner is not worth a dead daemon.
         try {
-            Console.WriteLine($"skala daemon {DaemonProtocol.Version} on {daemon.SocketPath}");
+            // ⚠ The build fingerprint is on the banner as well as in `daemon status`, because the
+            // banner is the only record left of a daemon that has already exited. See `BuildIdentity`.
+            Console.WriteLine(
+                $"skala daemon {DaemonProtocol.Version} build {BuildIdentity.Current.Loaded} on {daemon.SocketPath}"
+            );
         } catch (IOException) { }
 
         await daemon.RunAsync(cancellation).ConfigureAwait(false);
+
+        if (daemon.StoppedForStaleBuild) {
+            try {
+                await Console.Error.WriteLineAsync(
+                    "skala daemon: Skala was rebuilt underneath this daemon; it stopped rather than "
+                    + "serve the old build's output. The next command starts a fresh one."
+                )
+                    .ConfigureAwait(false);
+            } catch (IOException) {
+                // A lazily started daemon outlives the process that started it and inherits its
+                // pipes. A note is not worth an exception on the way out.
+            }
+        }
+
         return 0;
     }
 

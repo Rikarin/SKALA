@@ -127,6 +127,27 @@ it is 70 ms. The start is skipped entirely unless the running executable is `ska
   0600.
 - Protocol: private, length-prefixed JSON, versioned by exact match. A client that meets a daemon of
   a different version kills it and starts its own. No negotiation, no compatibility window.
+- ⚠ **The protocol version is a *wire* version, and for a long time it was the only check there
+  was.** The wire shape almost never moves; the formatter moves constantly. Rebuild Skala, leave the
+  daemon up, and every `skala format` kept answering with the old build's bytes — for ever, because
+  the 30-minute idle timer is refreshed by every request — with `--no-daemon` the only way to see
+  it. Measured cost of that: two agents, about forty minutes each, on one day. So the daemon also
+  checks **its own build**: `BuildIdentity` fingerprints the module MVIDs of the assemblies in its
+  install, gated by a length-and-mtime stamp so that the steady-state cost is 0.072 ms a request
+  (0.10 ms on a whole warm round trip, 0.25 % of the 40 ms budget) and the MVIDs are only read after
+  files have actually been rewritten. Mtimes alone would be cheaper and wrong — a copy of identical
+  bytes bumps them, and a daemon that exits on that throws its warm cache away after every no-op
+  build. The check is daemon-side only: the thin client is a different binary that does not load
+  Roslyn and cannot compute a formatter identity to put on the wire, so nothing about the request or
+  the response changed and the client pays nothing.
+- ⚠ On a changed build the daemon **refuses the format and stops** — it does not answer, and it does
+  not linger and refuse for the next thirty minutes. Refusing is already a fallback everywhere it
+  lands, so the caller does the work itself out of its own build and the *next* command lazily
+  starts a fresh daemon: no hard error in a pre-commit hook, and one cold format is the whole cost.
+  It unlinks its socket before answering, so the replacement is not blocked by the file it left.
+- ⚠ `daemon status` names the build it is serving and says `STALE` when the install has moved under
+  it, and it never stops the daemon it is reporting on — the one command a person runs to see the
+  problem must not be the one command that hides it.
 - Correctness rule: **every command must work identically with `SKALA_NO_DAEMON=1`.** The daemon is
   only allowed to make things faster. It holds the results of the same `CSharpFormatter` the CLI
   calls and never a second implementation of anything, and the suite compares the two answers byte

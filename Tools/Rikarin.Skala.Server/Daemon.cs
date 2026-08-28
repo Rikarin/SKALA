@@ -26,8 +26,9 @@ namespace Rikarin.Skala.Server;
 ///         </item>
 ///         <item>
 ///             ⚠ <b>It exits rather than lingers.</b> Thirty minutes idle and it is gone; a version mismatch
-///             and the client kills it. A daemon that outlives its usefulness is a daemon that gets blamed for
-///             the next thing that goes wrong.
+///             and the client kills it; and — since <see cref="BuildIdentity" /> — a rebuild underneath it and
+///             it stops rather than serve the old formatter's bytes. A daemon that outlives its usefulness is
+///             a daemon that gets blamed for the next thing that goes wrong.
 ///         </item>
 ///     </list>
 /// </remarks>
@@ -37,15 +38,23 @@ public sealed class Daemon : IAsyncDisposable {
     readonly FormatService _service = new();
     readonly RetainedCompilations _compilations = new();
     readonly MemoryPolicy _memory = new();
+    readonly BuildIdentity _build;
     readonly Stopwatch _uptime = Stopwatch.StartNew();
     readonly CancellationTokenSource _stopping = new();
     Socket? _listener;
     NamedPipeServerStream? _pipe;
     DateTime _lastRequest = DateTime.UtcNow;
+    int _unlinked;
 
-    public Daemon(string repositoryRoot) {
+    /// <summary>
+    ///     ⚠ <paramref name="build" /> is injectable for one reason: the regression test has to be able
+    ///     to change the build under a running daemon, and it cannot rewrite the assemblies the test host
+    ///     itself has loaded. Production always passes null and gets <see cref="BuildIdentity.Current" />.
+    /// </summary>
+    public Daemon(string repositoryRoot, BuildIdentity? build = null) {
         _repositoryRoot = Path.GetFullPath(repositoryRoot);
         _socketPath = DaemonProtocol.SocketPath(_repositoryRoot);
+        _build = build ?? BuildIdentity.Current;
     }
 
     public string SocketPath => _socketPath;
@@ -136,6 +145,12 @@ public sealed class Daemon : IAsyncDisposable {
     /// <summary>Whether the daemon stopped because it was holding too much rather than being idle.</summary>
     public bool StoppedForMemory { get; private set; }
 
+    /// <summary>
+    ///     Whether the daemon stopped because Skala was rebuilt underneath it. See
+    ///     <see cref="BuildIdentity" />.
+    /// </summary>
+    public bool StoppedForStaleBuild { get; private set; }
+
     async Task MemoryWatchdog(CancellationToken cancellation) {
         if (await _memory.WatchAsync(_service, _compilations, cancellation).ConfigureAwait(false)) {
             StoppedForMemory = true;
@@ -173,7 +188,11 @@ public sealed class Daemon : IAsyncDisposable {
                 var response = Handle(request);
                 await DaemonProtocol.WriteAsync(stream, response, cancellation).ConfigureAwait(false);
 
-                if (string.Equals(request.Command, "stop", StringComparison.Ordinal)) {
+                // ⚠ The stale-build stop is here and not in `Handle`, for the same reason `stop` is:
+                // the answer has to reach the client before the daemon starts tearing itself down, or
+                // the client sees a closed socket instead of the refusal and cannot tell a rebuilt
+                // formatter from a crashed daemon.
+                if (StoppedForStaleBuild || string.Equals(request.Command, "stop", StringComparison.Ordinal)) {
                     await _stopping.CancelAsync().ConfigureAwait(false);
                     return;
                 }
@@ -196,6 +215,31 @@ public sealed class Daemon : IAsyncDisposable {
             };
         }
 
+        // ⚠ The protocol version above is a *wire* version and says nothing about the build. A daemon
+        // whose formatter has been rebuilt underneath it answers every `format` with the old build's
+        // bytes for ever — the idle timer is thirty minutes but each request refreshes it — and the
+        // only symptom is output that disagrees with `--no-daemon`. See `BuildIdentity`.
+        //
+        // ⚠ It gates `format` and nothing else. `status` has to be able to *report* a stale daemon
+        // without being the thing that kills it, and `stop` must always work.
+        if (string.Equals(request.Command, "format", StringComparison.Ordinal) && _build.HasChanged()) {
+            var current = _build.OnDisk();
+            StoppedForStaleBuild = true;
+
+            // ⚠ Unlinked before the answer is written, not in DisposeAsync afterwards. The client's
+            // reaction to this refusal is to start a fresh daemon (`DaemonClient.StartInBackground`),
+            // and that one probes for a socket file before binding: leave the file in place for the
+            // few milliseconds this one takes to shut down and the replacement refuses to start.
+            Unlink();
+
+            return new DaemonResponse {
+                Ok = false,
+                Error = $"stale daemon: it is serving build {_build.Loaded} and {current} is on disk. "
+                    + "It has stopped rather than answer with a formatter that no longer exists; "
+                    + "the next command starts a fresh one."
+            };
+        }
+
         switch (request.Command) {
             case "status":
                 return new DaemonResponse {
@@ -208,7 +252,7 @@ public sealed class Daemon : IAsyncDisposable {
                         $"up {_uptime.Elapsed.TotalSeconds:F0}s, {_service.Held} documents held ({_service.Bytes / (1024 * 1024)} MB), "
                         + $"{_service.Hits} hits, {_service.Misses} misses, {_service.Evictions} evicted, "
                         + $"{_compilations.Held} compilation(s), RSS {Environment.WorkingSet / (1024 * 1024)} MB, "
-                        + $"{_memory.Drops} memory drop(s)"
+                        + $"{_memory.Drops} memory drop(s), {BuildLine()}"
                     )
                 };
 
@@ -243,6 +287,55 @@ public sealed class Daemon : IAsyncDisposable {
         }
     }
 
+    /// <summary>
+    ///     The build half of <c>daemon status</c>: what this daemon is serving, and whether that is
+    ///     still what is installed.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Appended to the status line rather than added to <see cref="DaemonResponse" />, so that
+    ///     <see cref="DaemonProtocol.Version" /> does not move: nothing about the wire shape changes,
+    ///     the thin client needs no new code, and an older client talking to a newer daemon still works.
+    ///     <para>
+    ///         ⚠ This is the half of the fix a person uses. The automatic detection makes the wrong answer
+    ///         impossible; this makes the <i>diagnosis</i> possible, which is what the forty minutes twice
+    ///         over actually went on — nothing in <c>daemon status</c> identified the build, so "the daemon
+    ///         is old" was never a hypothesis anyone could check.
+    ///     </para>
+    /// </remarks>
+    string BuildLine() {
+        if (!_build.Known) {
+            return "build unknown";
+        }
+
+        var current = _build.OnDisk();
+        return string.Equals(current, _build.Loaded, StringComparison.Ordinal)
+            ? "build " + _build.Loaded
+            : "build " + _build.Loaded + " (STALE, " + current + " is on disk)";
+    }
+
+    /// <summary>
+    ///     Removes the socket file, at most once.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ At most once, and that is the whole point of the guard. The stale-build path unlinks early
+    ///     so its replacement can bind; if <see cref="DisposeAsync" /> then unlinked again it would
+    ///     delete the <i>replacement's</i> socket — a live daemon with no name, unreachable for ever,
+    ///     which is a worse failure than the one being fixed.
+    /// </remarks>
+    void Unlink() {
+        if (DaemonTransport.UsesNamedPipe || Interlocked.Exchange(ref _unlinked, 1) != 0) {
+            return;
+        }
+
+        try {
+            if (File.Exists(_socketPath)) {
+                File.Delete(_socketPath);
+            }
+        } catch (IOException) {
+            // Leaving a stale socket file behind is recoverable; Listen() probes before unlinking.
+        } catch (UnauthorizedAccessException) { }
+    }
+
     static void Restrict(string path) {
         // ⚠ Windows never reaches here: it binds a named pipe with PipeOptions.CurrentUserOnly,
         // which is the ACL, and there is no socket file to chmod. Everywhere else, 0600 — the
@@ -270,17 +363,8 @@ public sealed class Daemon : IAsyncDisposable {
         _stopping.Dispose();
 
         // ⚠ A pipe leaves nothing on disk to unlink; the OS reclaims the name when the last handle
-        // closes. Only the socket transport has a file to clean up.
-        if (DaemonTransport.UsesNamedPipe) {
-            return;
-        }
-
-        try {
-            if (File.Exists(_socketPath)) {
-                File.Delete(_socketPath);
-            }
-        } catch (IOException) {
-            // Leaving a stale socket file behind is recoverable; Listen() probes before unlinking.
-        }
+        // closes. Only the socket transport has a file to clean up — and only if the stale-build path
+        // has not already done it.
+        Unlink();
     }
 }
