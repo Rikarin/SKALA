@@ -157,7 +157,8 @@ public sealed class UndisposedLocalAnalyzer : DiagnosticAnalyzer {
                 continue;
             }
 
-            for (var current = identifier.Parent; current is not null && !ReferenceEquals(current, body);
+            for (var current = identifier.Parent;
+                 current is not null && !ReferenceEquals(current, body);
                  current = current.Parent) {
                 switch (current) {
                     // ⚠ A reference inside a lambda or a local function may run after the method

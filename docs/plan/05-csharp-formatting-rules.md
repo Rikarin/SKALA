@@ -526,9 +526,12 @@ alignment scope's column is the column the writer is already at when the scope o
 the current line. The quadratic worst case alignment is supposed to bring does not exist here, and
 the fitting pass is still linear.
 
-⚠ What is still unimplemented is `align_multiline_for_stmt` — a `for` header whose clauses chop
-rather than fill, worth 4 lines and 2 files — and the four keys whose constructs never occur broken
-in the corpus. SK-DIV-0008 has the table.
+⚠ What is still unimplemented is `align_multiline_for_stmt` and the four keys whose constructs never
+occur broken in the corpus. SK-DIV-0008 has the table. ⚠ The `for` header's residue that used to be
+listed against `align_multiline_for_stmt` — 4 lines and 2 files — was **not** that key's: it is
+masked by `align_multiline_statement_conditions` and returns the same file at either value. The gap
+was a missing break point at the header's `;`, which `wrap_for_stmt_header_style` governs and which
+milestone 3.2 built.
 
 ## Phase 4 — comments and xmldoc
 

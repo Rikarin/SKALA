@@ -174,7 +174,9 @@ public sealed class TaintSymbols {
             yield break;
         }
 
-        for (var current = type.OriginalDefinition; current is not null; current =
+        for (var current = type.OriginalDefinition;
+             current is not null;
+             current =
              current.BaseType?.OriginalDefinition) {
             yield return Name(current);
         }
