@@ -20,12 +20,22 @@
     <PackageReference Include="System.IO.Hashing" />
 
     <!--
-      ⚠ ExcludeAssets=runtime, and it is not an optimisation. MSBuildLocator's whole job is to make
-      the *SDK's* MSBuild win; shipping our own copies beside it is the documented way to get an
-      assembly-load failure that names a file which is obviously present.
+      ⚠ ExcludeAssets=runtime on the Microsoft.Build.* four, and it is not an optimisation.
+      MSBuildLocator's whole job is to make the *SDK's* MSBuild win; shipping our own copies beside
+      it is the documented way to get an assembly-load failure that names a file which is obviously
+      present.
+
+      ⚠ **`Microsoft.CodeAnalysis.Workspaces.MSBuild` is not one of them, and treating it as one
+      broke the workspace load mode outright.** It is Roslyn's, not MSBuild's; the SDK does not ship
+      it, so MSBuildLocator's resolver has nothing to hand back and nothing else ever puts it beside
+      the tool. Excluding it produced exactly the failure the exclusion above exists to prevent, one
+      package too far over: `MSBuildWorkspace.Create()` threw
+      "Could not load file or assembly 'Microsoft.CodeAnalysis.Workspaces.MSBuild'" for every
+      `skala check` run in workspace mode that has ever shipped. The rule is the assembly's
+      *publisher*, not its name: MSBuild's own assemblies come from the SDK, Roslyn's come from us.
     -->
     <PackageReference Include="Microsoft.Build.Locator" />
-    <PackageReference Include="Microsoft.CodeAnalysis.Workspaces.MSBuild" ExcludeAssets="runtime" />
+    <PackageReference Include="Microsoft.CodeAnalysis.Workspaces.MSBuild" />
     <PackageReference Include="Microsoft.Build" ExcludeAssets="runtime" PrivateAssets="all" />
     <PackageReference Include="Microsoft.Build.Framework" ExcludeAssets="runtime" PrivateAssets="all" />
     <PackageReference Include="Microsoft.Build.Utilities.Core" ExcludeAssets="runtime" PrivateAssets="all" />
