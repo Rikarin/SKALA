@@ -595,11 +595,12 @@ public sealed partial class CSharpDocumentBuilder {
                 }
 
                 EmitToken(filter.OpenParenToken);
-                OpenIndent(ConditionIndent, unconditional: true);
+                var filterScopes = OpenConditionScopes();
                 Visit(filter.FilterExpression);
                 EmitUpTo(filter.CloseParenToken.SpanStart);
-                CloseIndent(ConditionIndent, alignsCloser: true);
+                var filterPending = CloseConditionScopesBeforeRparen(filterScopes);
                 EmitToken(filter.CloseParenToken);
+                CloseConditionScopesAfterRparen(filterPending);
                 return;
 
             case NodeLayout.SwitchSection:
@@ -961,7 +962,7 @@ public sealed partial class CSharpDocumentBuilder {
             return;
         }
 
-        var opened = false;
+        var opened = 0;
         // ⚠ And an aligned construct spends no level of its own either — the same rule VisitPlanned
         // applies to a group's own indent, for the same reason: the Align scope is an absolute
         // column and its contents start there, so the delimiter's level would put them one indent
@@ -1007,11 +1008,20 @@ public sealed partial class CSharpDocumentBuilder {
         // ⚠ A collection expression's elements are elements, like an initializer's: a chain broken
         // inside one takes its own continuation level rather than living off the bracket's.
         var element = node is CollectionExpressionSyntax or ListPatternSyntax;
+
+        // ⚠ The `indent_*_pars` family, and it is two numbers rather than one. An aligned construct
+        // keeps the single scope it always had — the Align scope is an absolute column, and a second
+        // one of those is not a deeper indent but the same column twice.
+        var (inside, closer) = innerIndent == IndentKind.Align || suppress
+            ? (suppress ? 0 : 1, 0)
+            : DelimiterLevels(ParenthesesStyleFor(node));
+
         var savedDepth = _continuousDepth;
+        var pending = 0;
         foreach (var child in node.ChildNodesAndTokens()) {
             if (child.IsToken) {
                 var token = child.AsToken();
-                if (opened && token.SpanStart == close.SpanStart) {
+                if (opened > 0 && token.SpanStart == close.SpanStart) {
                     EmitUpTo(close.SpanStart);
                     if (element) {
                         if (_frames[^1].Activated) {
@@ -1022,15 +1032,40 @@ public sealed partial class CSharpDocumentBuilder {
                         _continuousDepth = savedDepth;
                     }
 
-                    CloseIndent(innerIndent, alignsCloser: true);
-                    opened = false;
+                    // ⚠ The scopes the closing delimiter itself is inside stay open across it, and
+                    // that is the whole of what `outside` means. `alignsCloser` is the `inside` and
+                    // `none` shape — the closer takes the level of the line its opener was on — and
+                    // it is exactly wrong for the other two, where the closer takes one more.
+                    for (var i = opened; i > closer; i--) {
+                        CloseIndent(innerIndent, alignsCloser: closer == 0 && i == closer + 1);
+                    }
+
+                    pending = closer;
+                    opened = 0;
                 }
 
                 EmitToken(token);
 
-                if (!opened && !suppress && token.SpanStart == open.SpanStart) {
-                    OpenIndent(innerIndent, unconditional);
-                    opened = true;
+                for (var i = 0; i < pending; i++) {
+                    CloseIndent(innerIndent);
+                }
+
+                pending = 0;
+
+                if (opened == 0 && inside > 0 && token.SpanStart == open.SpanStart) {
+                    for (var i = 0; i < inside; i++) {
+                        // ⚠ Both scopes are unconditional when there are two, and it has to be both.
+                        // `outside_and_inside` means "the contents take two levels" and both open on
+                        // the opener's own line, where the writer's one-level-per-opening-line rule
+                        // collapses them into one — and marking only the inner one unconditional
+                        // does not help, because it then *blocks* the outer one at the same line.
+                        // Measured: the oracle's `outside_and_inside` puts a chopped call's
+                        // arguments eight columns in and its `)` four, and Skala wrote four and four
+                        // under both of the other spellings.
+                        OpenIndent(innerIndent, unconditional || inside > 1);
+                    }
+
+                    opened = inside;
                     if (element) {
                         savedDepth = _continuousDepth;
                         _continuousDepth = 0;
@@ -1042,7 +1077,7 @@ public sealed partial class CSharpDocumentBuilder {
             }
         }
 
-        if (opened) {
+        if (opened > 0) {
             EmitUpTo(close.SpanStart);
             if (element) {
                 if (_frames[^1].Activated) {
@@ -1053,9 +1088,45 @@ public sealed partial class CSharpDocumentBuilder {
                 _continuousDepth = savedDepth;
             }
 
-            CloseIndent(innerIndent);
+            for (var i = 0; i < opened; i++) {
+                CloseIndent(innerIndent);
+            }
         }
     }
+
+    /// <summary>
+    ///     How many levels a delimited construct's contents take, and how many its closing delimiter
+    ///     takes, from the line its opening delimiter is on.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured, one key at a time, on a chopped call and a chopped parameter list whose closing
+    ///     delimiter this export's wrap keys put on a line of its own. See
+    ///     <see cref="PhaseOneOptions.IndentInvocationPars" /> for the table and for why three of the
+    ///     seven keys were recorded inert and are not.
+    /// </remarks>
+    static (int Inside, int Closer) DelimiterLevels(ParenthesesIndentStyle style) =>
+        style switch {
+            ParenthesesIndentStyle.None => (0, 0),
+            ParenthesesIndentStyle.Outside => (1, 1),
+            ParenthesesIndentStyle.OutsideAndInside => (2, 1),
+            _ => (1, 0)
+        };
+
+    /// <summary>Which of the family's keys governs this construct's delimiters.</summary>
+    /// <remarks>
+    ///     ⚠ A record's or class's parameter list is the primary constructor's and has a key of its
+    ///     own, so the test is the parent and not the node. `indent_pars` is the default arm — every
+    ///     bracket, every grouping and tuple parenthesis, every pattern and attribute list.
+    /// </remarks>
+    ParenthesesIndentStyle ParenthesesStyleFor(SyntaxNode node) =>
+        node switch {
+            TypeArgumentListSyntax => _options.IndentTypeargAngles,
+            TypeParameterListSyntax => _options.IndentTypeparamAngles,
+            ArgumentListSyntax => _options.IndentInvocationPars,
+            ParameterListSyntax { Parent: TypeDeclarationSyntax } => _options.IndentPrimaryConstructorDeclPars,
+            ParameterListSyntax => _options.IndentMethodDeclPars,
+            _ => _options.IndentPars
+        };
 
     /// <summary>
     ///     A statement whose embedded statement indents when it is not a block, and whose condition
@@ -1069,7 +1140,8 @@ public sealed partial class CSharpDocumentBuilder {
 
         var embedded = EmbeddedStatement(node);
         var (open, close) = ConditionParentheses(node);
-        var parenOpen = false;
+        var parenScopes = 0;
+        var parenPending = 0;
 
         // ⚠ A group opened *inside* the parentheses, at the column the header's clauses land on. The
         // one construct that asks for it is a `for` header under `wrap_for_stmt_header_style`, and it
@@ -1081,22 +1153,23 @@ public sealed partial class CSharpDocumentBuilder {
         foreach (var child in node.ChildNodesAndTokens()) {
             if (child.IsToken) {
                 var token = child.AsToken();
-                if (parenOpen && token.SpanStart == close.SpanStart) {
+                if (parenScopes > 0 && token.SpanStart == close.SpanStart) {
                     EmitUpTo(close.SpanStart);
                     if (headerOpen) {
                         _doc.Close();
                         headerOpen = false;
                     }
 
-                    CloseIndent(ConditionIndent, alignsCloser: true);
-                    parenOpen = false;
+                    parenPending = CloseConditionScopesBeforeRparen(parenScopes);
+                    parenScopes = 0;
                 }
 
                 EmitToken(token);
+                CloseConditionScopesAfterRparen(parenPending);
+                parenPending = 0;
 
-                if (!parenOpen && !open.IsKind(SyntaxKind.None) && token.SpanStart == open.SpanStart) {
-                    OpenIndent(ConditionIndent, unconditional: true);
-                    parenOpen = true;
+                if (parenScopes == 0 && !open.IsKind(SyntaxKind.None) && token.SpanStart == open.SpanStart) {
+                    parenScopes = OpenConditionScopes();
 
                     if (hasHeader) {
                         // ⚠ The gap after the `(` is emitted before the group opens, the same order
@@ -1126,13 +1199,15 @@ public sealed partial class CSharpDocumentBuilder {
             VisitChild(node, inner);
         }
 
-        if (parenOpen) {
+        if (parenScopes > 0) {
             EmitUpTo(close.SpanStart);
             if (headerOpen) {
                 _doc.Close();
             }
 
-            CloseIndent(ConditionIndent);
+            for (var i = 0; i < parenScopes; i++) {
+                CloseIndent(ConditionIndent);
+            }
         }
     }
 
@@ -1192,15 +1267,58 @@ public sealed partial class CSharpDocumentBuilder {
             ? IndentKind.Align
             : IndentKind.Continuous;
 
+    /// <summary>
+    ///     A statement condition's parenthesis levels: <c>indent_statement_pars</c>, unless alignment
+    ///     owns the column.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ This is the whole of why <c>indent_statement_pars</c> is inert under this export, and it
+    ///     is a mask rather than a gap. <c>align_multiline_statement_conditions = true</c> makes the
+    ///     scope an <see cref="IndentKind.Align" /> one — an absolute column — and a level count has
+    ///     nothing to say about a column. Measured: all four values return the same file while that key
+    ///     is on. Turn it off and the family's table applies here like anywhere else.
+    /// </remarks>
+    (int Inside, int Closer) ConditionLevels =>
+        ConditionIndent == IndentKind.Align ? (1, 0) : DelimiterLevels(_options.IndentStatementPars);
+
+    int OpenConditionScopes() {
+        var (inside, _) = ConditionLevels;
+        for (var i = 0; i < inside; i++) {
+            OpenIndent(ConditionIndent, unconditional: true);
+        }
+
+        return inside;
+    }
+
+    /// <summary>
+    ///     Closes the scopes the closing <c>)</c> is <em>not</em> inside, and returns how many it is —
+    ///     those close after the token.
+    /// </summary>
+    int CloseConditionScopesBeforeRparen(int opened) {
+        var (_, closer) = ConditionLevels;
+        for (var i = opened; i > closer; i--) {
+            CloseIndent(ConditionIndent, alignsCloser: closer == 0 && i == closer + 1);
+        }
+
+        return Math.Min(opened, closer);
+    }
+
+    void CloseConditionScopesAfterRparen(int pending) {
+        for (var i = 0; i < pending; i++) {
+            CloseIndent(ConditionIndent);
+        }
+    }
+
     void VisitSwitch(SwitchStatementSyntax node) {
         EmitToken(node.SwitchKeyword);
         if (!node.OpenParenToken.IsKind(SyntaxKind.None)) {
             EmitToken(node.OpenParenToken);
-            OpenIndent(ConditionIndent, unconditional: true);
+            var scopes = OpenConditionScopes();
             Visit(node.Expression);
             EmitUpTo(node.CloseParenToken.SpanStart);
-            CloseIndent(ConditionIndent, alignsCloser: true);
+            var pending = CloseConditionScopesBeforeRparen(scopes);
             EmitToken(node.CloseParenToken);
+            CloseConditionScopesAfterRparen(pending);
         } else {
             Visit(node.Expression);
         }

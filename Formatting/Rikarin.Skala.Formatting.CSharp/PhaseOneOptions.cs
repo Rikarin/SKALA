@@ -224,6 +224,14 @@ public readonly struct PhaseOneOptions {
         IndentPreprocessorRegion = (PreprocessorIndentStyle)options.GetRaw(Ids.IndentPreprocessorRegion);
         IndentAnonymousMethodBlock = options.GetBool(Ids.IndentAnonymousMethodBlock);
         OutdentStatementLabels = options.GetBool(Ids.OutdentStatementLabels);
+        IndentInvocationPars = (ParenthesesIndentStyle)options.GetRaw(Ids.IndentInvocationPars);
+        IndentMethodDeclPars = (ParenthesesIndentStyle)options.GetRaw(Ids.IndentMethodDeclPars);
+        IndentPrimaryConstructorDeclPars =
+            (ParenthesesIndentStyle)options.GetRaw(Ids.IndentPrimaryConstructorDeclPars);
+        IndentStatementPars = (ParenthesesIndentStyle)options.GetRaw(Ids.IndentStatementPars);
+        IndentTypeargAngles = (ParenthesesIndentStyle)options.GetRaw(Ids.IndentTypeargAngles);
+        IndentTypeparamAngles = (ParenthesesIndentStyle)options.GetRaw(Ids.IndentTypeparamAngles);
+        IndentPars = (ParenthesesIndentStyle)options.GetRaw(Ids.IndentPars);
 
         // ── Blank lines ──────────────────────────────────────────────────────────────────────
         KeepBlankLinesInCode = options.GetInt(Ids.KeepBlankLinesInCode);
@@ -691,6 +699,70 @@ public readonly struct PhaseOneOptions {
 
     /// <summary><c>outdent_statement_labels</c>: <c>Finish:</c> one level out from what it labels.</summary>
     public bool OutdentStatementLabels { get; }
+
+    /// <summary>
+    ///     The <c>indent_*_pars</c> and <c>indent_*_angles</c> family: how many levels a delimited
+    ///     construct's <em>contents</em> take, and how many its <em>closing delimiter</em> takes.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Two numbers and not one, which is what the four values actually say and what the names do
+    ///     not. Measured one key at a time against <c>jb cleanupcode</c> under this export, on a chopped
+    ///     call whose <c>)</c> the wrap keys put on a line of its own — contents / closer, in levels
+    ///     from the line the opener is on:
+    ///     <code>
+    /// none                0 / 0     Consume(
+    ///                               a,
+    ///                               b
+    ///                               );
+    /// inside  (export)    1 / 0     Consume(
+    ///                                   a,
+    ///                                   b
+    ///                               );
+    /// outside             1 / 1         …the closer moves in with the contents
+    /// outside_and_inside  2 / 1         …the contents move one further, the closer does not
+    ///     </code>
+    ///     ⚠ <see cref="IndentPars" />, <see cref="IndentTypeargAngles" /> and
+    ///     <see cref="IndentTypeparamAngles" /> were each recorded as measured-inert — "the oracle
+    ///     returns the file unchanged at every value". They are not: the probes that said so had no
+    ///     input where the delimiter those keys govern lands on a line of its own, because nothing in
+    ///     this export's wrapping puts one there. <c>keep_user_linebreaks = true</c> does: a <c>]</c>,
+    ///     <c>&gt;</c> or <c>)</c> the <em>author</em> left on its own line is kept there, and then all
+    ///     three move it. That is a fact about the probe and not about the key.
+    /// </remarks>
+    public ParenthesesIndentStyle IndentInvocationPars { get; }
+
+    /// <inheritdoc cref="IndentInvocationPars" />
+    public ParenthesesIndentStyle IndentMethodDeclPars { get; }
+
+    /// <inheritdoc cref="IndentInvocationPars" />
+    /// <remarks>
+    ///     ⚠ Masked at the export's own values in the one direction the names suggest: the closing
+    ///     <c>)</c> of a primary constructor's parameter list never reaches a line of its own, because
+    ///     <c>wrap_before_primary_constructor_declaration_rpar = false</c> keeps it on the last
+    ///     parameter's. The <em>contents</em> half is observable regardless, and <c>none</c> puts a
+    ///     record's parameters at the declaration's own column.
+    /// </remarks>
+    public ParenthesesIndentStyle IndentPrimaryConstructorDeclPars { get; }
+
+    /// <inheritdoc cref="IndentInvocationPars" />
+    /// <remarks>
+    ///     ⚠ Read and inert under this export, and the reason is another key rather than the wiring:
+    ///     <c>align_multiline_statement_conditions = true</c> anchors a statement's condition — and the
+    ///     <c>)</c> after it — to the column after the <c>(</c>, which is an absolute column and not a
+    ///     level. All four values return the same file while that key is on. Recorded because a masked
+    ///     key and an unread key look identical from the outside and are not the same finding.
+    /// </remarks>
+    public ParenthesesIndentStyle IndentStatementPars { get; }
+
+    /// <inheritdoc cref="IndentInvocationPars" />
+    public ParenthesesIndentStyle IndentTypeargAngles { get; }
+
+    /// <inheritdoc cref="IndentInvocationPars" />
+    public ParenthesesIndentStyle IndentTypeparamAngles { get; }
+
+    /// <inheritdoc cref="IndentInvocationPars" />
+    /// <remarks>⚠ The default arm: every delimited construct the six named keys do not claim.</remarks>
+    public ParenthesesIndentStyle IndentPars { get; }
 
     public int KeepBlankLinesInCode { get; }
     public int KeepBlankLinesInDeclarations { get; }
@@ -1523,6 +1595,28 @@ public static class Ids {
         OfInert("resharper_csharp_indent_anonymous_method_block");
 
     public static readonly OptionId OutdentStatementLabels = Of("resharper_csharp_outdent_statement_labels");
+
+    // ── indent_*_pars / indent_*_angles ──────────────────────────────────────────────────────
+    // ⚠ The registry summaries of the seven say the family "places a closing delimiter, which is
+    // the wrapping pass's" and that four of them are inert. Both halves were measured again on a
+    // file where the delimiter reaches a line of its own — for `indent_invocation_pars` and
+    // `indent_method_decl_pars` because this export's wrap keys put it there, and for the rest
+    // because `keep_user_linebreaks = true` keeps an author's break before it. The family sets two
+    // numbers, contents and closer; see PhaseOneOptions.IndentInvocationPars for the table.
+    public static readonly OptionId IndentInvocationPars = Of("resharper_csharp_indent_invocation_pars");
+    public static readonly OptionId IndentMethodDeclPars = Of("resharper_csharp_indent_method_decl_pars");
+
+    public static readonly OptionId IndentPrimaryConstructorDeclPars =
+        Of("resharper_csharp_indent_primary_constructor_decl_pars");
+
+    // ⚠ Read — ConditionLevels consults it — and inert under this export, which is a mask and not a
+    // gap: `align_multiline_statement_conditions = true` makes a statement condition's scope an
+    // absolute column, and a level count has nothing to say about a column. All four values return
+    // the same file while that key is on; turn it off and the family's table applies here too.
+    public static readonly OptionId IndentStatementPars = OfInert("resharper_csharp_indent_statement_pars");
+    public static readonly OptionId IndentTypeargAngles = Of("resharper_csharp_indent_typearg_angles");
+    public static readonly OptionId IndentTypeparamAngles = Of("resharper_csharp_indent_typeparam_angles");
+    public static readonly OptionId IndentPars = Of("resharper_csharp_indent_pars");
 
     public static readonly OptionId KeepBlankLinesInCode = Of("resharper_csharp_keep_blank_lines_in_code");
 
