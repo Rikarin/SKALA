@@ -34,10 +34,13 @@ class DelimiterIndent {
     // fixture named for a family must not pin a divergence the family is inert under.
 }
 
-// ⚠ A type parameter list's `>` on a line of its own is deliberately not here either, and for a
-// different reason from the tuple's: the oracle keeps the author's break before it and Skala rejoins
-// it, so the shape never survives to the point where `indent_typeparam_angles` could move it. That
-// is a break-preservation disagreement in PlanTypeParameters, not an indentation one — SK-DIV-0042.
+// ⚠ A type parameter list's `>` on a line of its own is deliberately not here, and for a different
+// reason from the tuple's: the oracle keeps the author's break before it and Skala rejoins it, so
+// the shape never survives to the point where `indent_typeparam_angles` could move the `>`. That is
+// a break-preservation disagreement in PlanTypeParameters, not an indentation one — SK-DIV-0042.
+// The key's *contents* half is reachable, and `constructs/breaks/type-parameter-list.cs` is where it
+// already lives — a list wide enough that the oracle fills it at its own commas — so that is the
+// fixture the key's `oracle` glob names rather than a second copy here.
 
 class PrimaryConstructorParameters(int firstParameterNameHere, int secondParameterNameHere, int thirdParameterNames, int fourthParameterNames) {
 }
