@@ -395,11 +395,30 @@ taken rather than about a width:
   not the same as a statement that *is* a block. An `if … else { }`, a `switch { }` and a
   `try … catch { }` all take the blank line, and none of their closing braces hangs from a
   `BlockSyntax` whose parent is a statement. ⚠ Not before a `case`, which is a label.
-- **A chain of ternaries is a list rather than a staircase.** `align_ternary = align_not_nested` and
-  `nested_ternary_style = autodetect` between them put `cond ? a` / `: cond ? b` / `: c` at one
-  column. ⚠ A break the *formatter* chooses lands **after** the `:` although
-  `wrap_before_ternary_opsigns = true`; every occurrence in the corpus is a chain the author had
-  already broken, so the preserved position is the one that is measured.
+- **A chain of ternaries is a list rather than a staircase, and it is a different construct from a
+  single ternary.** A conditional whose tail is not another conditional wraps at its own `?` and
+  `:`, sized by `wrap_ternary_expr_style`; a chain of them wraps **after each `:`**, one member per
+  line, and neither `wrap_ternary_expr_style` nor `wrap_before_ternary_opsigns` moves any of it —
+  flipping either returns every chain in `constructs/wrapping/ternary-chains.cs` byte-identical
+  while it moves the single conditional beside them. ⚠ Recorded through M10 as "the preserved
+  position is the one that is measured", because every occurrence in `corpus/real/` is a chain the
+  author had already broken. Now measured on a chain the formatter wraps itself, which is where the
+  two keys turn out not to apply.
+  - The chain runs through `WhenFalse` and does not see through parentheses: `a ? (b ? x : y) : z`
+    and `a ? x : (b ? y : z)` are both single conditionals to the oracle.
+  - The innermost member is not a break point. A chain the formatter re-wraps ends
+    `cond ? "third" : "d";` however wide that line is — measured on a chain whose members are each
+    wider than the margin.
+  - A break the author put before the *final else* is kept, which is the one place a chain and a
+    single ternary disagree about the same gap: `cond ? a :\n b` is re-joined for a single ternary
+    and kept for a chain.
+  - `nested_ternary_style` is what governs the layout, and all four of its values are distinct on a
+    flat chain — `autodetect` chops if long, `compact` chops always, `expanded` writes the
+    staircase, `simple_wrap` fills at the signs. Skala writes `autodetect`, which is the export's
+    value; the other three are Tier D and measured rather than guessed.
+  - `keep_user_linebreaks` and not the style key is what preserves a chain the author wrote at the
+    signs: at `keep_user_linebreaks = false` the oracle rewrites the leading-`:` layout *and* the
+    staircase into the one-member-per-line layout.
 - **A named attribute argument's `=` is an `=`.** `[LoggerMessage(Message = "…" + "…")]` — it is
   neither an assignment nor an equals-value clause, and it had no plan at all.
 

@@ -11,10 +11,10 @@ namespace Skala.Corpus.Alignment;
 // a second key. A run needs one construct per line, and a shape that only chops when some other
 // option is flipped is a shape the per-option unit — which flips exactly one key — can never reach.
 //
-// ⚠ The family's two conditional-chain members are deliberately absent. `int_align_nested_ternary`
-// and `int_align_binary_expressions` both pad a chain the oracle writes as `cond ? a :` with one
-// member per line, and Skala does not write that layout — see PhaseOneOptions.IntAlignNestedTernary.
-// A fixture holding it would be pinning a shape Skala never produces.
+// ⚠ The family's two conditional-chain members live in int-align-ternary.cs beside this file, and
+// not in it. `int_align_nested_ternary` and `int_align_binary_expressions` both pad a chain the
+// oracle writes as `cond ? a :` with one member per line; Skala did not write that layout until the
+// chain got a break plan of its own, which is why they were absent here for nine milestones.
 public class IntAlignLists {
     // int_align_parameters: the parameter names pad out to a column past the widest type.
     public void ASignatureLongEnoughToChopUnderTheExportsOwnMargin(

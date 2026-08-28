@@ -1285,6 +1285,11 @@ public static class Ids {
     //   align_multiline_implements_list, align_multiline_type_argument, align_multiline_type_parameter,
     //   align_multiline_type_parameter_constraints, align_multiline_type_parameter_list,
     //   align_ternary, alignment_tab_fill_style.
+    //   ⚠ `align_ternary` re-measured at the ternary-chain work, on the shape it is named for and
+    //     that no earlier probe could reach: a nested conditional chain the oracle chops one member
+    //     per line. `align_all` and `none` both return constructs/wrapping/ternary-chains.cs
+    //     byte-identical, single conditional and chain alike. The claim holds on the shape that was
+    //     most likely to break it.
     //
     // Masked by another key at the export's own values, so the per-option unit — which flips one key
     // from the repository's configuration — cannot reach them:
@@ -1355,25 +1360,42 @@ public static class Ids {
     public static readonly OptionId IntAlignPropertyPatterns =
         Of("resharper_csharp_int_align_property_patterns");
 
-    // ⚠ Implemented, measured, and Tier D — on Skala's own wrapping and not on this pass. Both keys
-    // pad a conditional chain the oracle lays out with one member per line and the `?` on its
-    // condition's own line:
+    // ⚠ No longer inert, and the reason they were is worth keeping. Both keys pad a conditional
+    // chain the oracle lays out with one member per line and the `?` on its condition's own line:
     //
     //     var chain = flag > 10 ? "the first branch here" :
     //         flag > 5 ? "the second branch here" :
     //         flag > 1 ? "third" : "d";
     //
-    // Skala does not write that layout. Asked with the chain on one source line it produces one
+    // Skala did not write that layout. Asked with the chain on one source line it produced one
     // break and a flat tail — `flag > 10\n ? "…"\n : flag > 5 ? "…" : flag > 1 ? "third" : "d"` —
-    // and asked with the oracle's own output as input it rewrites it into the same shape, so
-    // `keep_user_linebreaks` does not reach it either. There is therefore no document Skala emits
-    // that either key can pad, and a fixture would be pinning a shape Skala never produces.
+    // and asked with the oracle's own output as input it rewrote it into the same shape, so
+    // `keep_user_linebreaks` did not reach it either. There was no document Skala emitted that
+    // either key could pad, and CollectConditionalChains — which was correct against the oracle's
+    // shape throughout — had nothing to collect.
     //
-    // CollectConditionalChains is correct against the oracle's shape and stays: promotion is these
-    // two lines becoming `Of`, plus a corpus file, once the chain wraps the way ReSharper wraps it.
-    public static readonly OptionId IntAlignNestedTernary =
-        OfInert("resharper_csharp_int_align_nested_ternary");
+    // BreakPlan.PlanTernaryChain now writes the layout: a chain is one group over the whole chain
+    // whose break points are the gaps after the `:`, which is a different construct from a single
+    // conditional wrapping at its own signs. constructs/alignment/int-align-ternary.cs is the
+    // fixture and it fails against the code that preceded the chain plan.
+    public static readonly OptionId IntAlignNestedTernary = Of("resharper_csharp_int_align_nested_ternary");
 
+    // ⚠ `int_align_binary_expressions` stays Tier D, and NOT for the reason above any more. With the
+    // chain layout written, the per-option unit reaches it — and it disagrees, because the key is
+    // broader than the chain. Measured on int-align-ternary.cs one key at a time: the oracle also
+    // pads adjacent local variable *declarations* whose initializers are binary, at every operator
+    // of the chain, and Skala leaves them alone:
+    //
+    //     var first      = flag      > 1      && other > 2;
+    //     var secondName = flag > 100000 && other > 2;   ← `>` and `&&` both padded to a column
+    //
+    // ⚠ That does not overturn the narrowness recorded above — adjacent *assignments* with binary
+    // right-hand sides still do not move, and neither do a chopped binary chain, adjacent `if`
+    // conditions, arguments, initializer elements or switch-expression arm results. It says the
+    // population is "the conditional chain, and adjacent declarations", which is one run kind more
+    // than CollectConditionalChains collects. Promotion is that second run, plus a fixture holding
+    // both; the fixture already holds the shape, under NotACandidate, which is now misnamed and
+    // says so.
     public static readonly OptionId IntAlignBinaryExpressions =
         OfInert("resharper_csharp_int_align_binary_expressions");
 

@@ -227,10 +227,14 @@ diverges on real code immediately.
 - **A chained method call takes its level even inside another continuation.** M3 gated it on "is any
   other continuation open", which is right for an undelimited one and wrong here, so an
   expression-bodied member whose arrow had broken came out with its chain flush against its receiver.
-- **A chain of ternaries takes none.** `align_ternary = align_not_nested` and `nested_ternary_style =
-  autodetect` between them make `cond ? a : cond ? b : c` a flat list of lines rather than a
-  staircase, and it is the shape people write. A ternary that is *not* part of a chain still takes
-  its level.
+- **A chain of ternaries is a flat list of lines rather than a staircase**, and it is the shape
+  people write. A ternary that is *not* part of a chain wraps at its own `?` and `:` instead.
+  ⚠ Recorded here through M10 as "a chain takes no level", which was a statement about the only
+  chains Skala could then produce — ones the author had already broken, where the level came from
+  whatever enclosed them. Re-measured at the chain break plan: the chain takes exactly one
+  continuation level and takes it under the ordinary rule, so a chain as a bare initializer or a
+  `return` lands at `statement + 4` and a chain inside a chopped argument list lands on the
+  argument's own column, because the parenthesis has already paid.
 - **A lambda body is a continuation context of its own**, which is a different thing from a level: it
   resets "is a continuation already open" so that a chain or a binary chain inside it may take one,
   and the level itself still obeys the one-per-opening-line rule. ⚠ The reset is deferred to the

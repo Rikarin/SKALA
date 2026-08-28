@@ -420,7 +420,7 @@ public sealed class BreakPlan {
                 return;
 
             case ConditionalExpressionSyntax ternary:
-                PlanTernary(ternary);
+                PlanConditional(ternary);
                 return;
 
             case AssignmentExpressionSyntax assignment:
@@ -1320,6 +1320,148 @@ public sealed class BreakPlan {
         };
 
     /// <summary>
+    ///     Every conditional of a chain, outermost first: <c>a ? x : b ? y : z</c> is two members.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ The chain runs through <see cref="ConditionalExpressionSyntax.WhenFalse" /> and nowhere
+    ///     else, and it does not see through parentheses. Both halves are measured:
+    ///     <c>a ? (b ? x : y) : z</c> nests on the <em>true</em> side and the oracle lays it out as a
+    ///     single conditional — <c>a\n ? b ? x : y\n : z</c> — and so does
+    ///     <c>a ? x : (b ? y : z)</c>, whose tail is a parenthesised expression rather than a
+    ///     conditional. This has to agree with <c>IntAlign.CollectConditionalChains</c>, which pads the
+    ///     rows this produces; the two walking different chains is how the padding would land on a
+    ///     shape the writer never wrote.
+    /// </remarks>
+    static IEnumerable<ConditionalExpressionSyntax> TernaryChain(ConditionalExpressionSyntax root) {
+        for (ConditionalExpressionSyntax? member = root;
+             member is not null;
+             member = member.WhenFalse as ConditionalExpressionSyntax) {
+            yield return member;
+        }
+    }
+
+    /// <summary>Whether this conditional is the tail of another — planned by the chain's root.</summary>
+    static bool IsTernaryChainTail(ConditionalExpressionSyntax node) =>
+        node.Parent is ConditionalExpressionSyntax parent && parent.WhenFalse == node;
+
+    /// <summary>
+    ///     Which of the two conditional layouts this node takes, and who plans it.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Two layouts, not one, and which one applies is a property of the <em>shape</em> rather than
+    ///     of a key. Measured against <c>jb cleanupcode</c> 2025.2.6 at a 120-column margin:
+    ///     <list type="bullet">
+    ///         <item>
+    ///             A conditional whose tail is <em>not</em> another conditional wraps at its signs —
+    ///             <c>wrap_before_ternary_opsigns</c>'s layout, sized by
+    ///             <c>wrap_ternary_expr_style</c>. <see cref="PlanTernary" />.
+    ///         </item>
+    ///         <item>
+    ///             A chain of them wraps <em>after each <c>:</c></em>, one member per line, and the two
+    ///             keys above move none of it: flipping <c>wrap_ternary_expr_style</c> to
+    ///             <c>chop_always</c> or <c>wrap_if_long</c>, or <c>wrap_before_ternary_opsigns</c> to
+    ///             <c>false</c>, returns every chain in the probe byte-identical while it moves the
+    ///             single conditional beside them. <see cref="PlanTernaryChain" />.
+    ///         </item>
+    ///     </list>
+    ///     ⚠ The author's own breaks at the signs win, and that is <c>keep_user_linebreaks</c> rather
+    ///     than an autodetecting chain rule: at <c>keep_user_linebreaks = false</c> the oracle rewrites
+    ///     a chain written <c>cond ? x\n : cond ? y\n : z</c> — and one written as a staircase — into
+    ///     the one-member-per-line layout. So a chain the author broke at a <c>?</c> or a <c>:</c> is
+    ///     planned member by member, exactly as before, and every other chain takes the chain layout.
+    /// </remarks>
+    void PlanConditional(ConditionalExpressionSyntax node) {
+        var root = node;
+        while (IsTernaryChainTail(root)) {
+            root = (ConditionalExpressionSyntax)root.Parent!;
+        }
+
+        if (root.WhenFalse is not ConditionalExpressionSyntax || BreaksAtTernarySigns(root)) {
+            PlanTernary(node);
+            return;
+        }
+
+        if (root == node) {
+            PlanTernaryChain(root);
+        }
+    }
+
+    /// <summary>Whether the author put a break before any <c>?</c> or <c>:</c> of the chain.</summary>
+    bool BreaksAtTernarySigns(ConditionalExpressionSyntax root) {
+        if (!_options.KeepsUserBreaksBetweenItems || !_options.WrapBeforeTernaryOpsigns) {
+            return false;
+        }
+
+        foreach (var member in TernaryChain(root)) {
+            if (BreaksBefore(member.QuestionToken) || BreaksBefore(member.ColonToken)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    ///     The layout the oracle gives a nested conditional chain: one member per line, the <c>:</c>
+    ///     trailing.
+    /// </summary>
+    /// <remarks>
+    ///     <code>
+    /// var chain = flag &gt; 10 ? "the first branch here" :
+    ///     flag &gt; 5 ? "the second branch here" :
+    ///     flag &gt; 1 ? "third" : "d";
+    ///     </code>
+    ///     ⚠ One group over the whole chain rather than one per link, because the oracle breaks every
+    ///     link at once or none of them: a three-member chain one column too wide comes back with two
+    ///     breaks, not with the one that would make it fit. The innermost link is not a point — its
+    ///     <c>? … : …</c> stays on the last line whatever its width, which is measured on a chain whose
+    ///     members are each wider than the margin and which the oracle still breaks only at the links.
+    ///     <para>
+    ///         ⚠ The <em>last</em> link — the gap before the final else — is not a point and is not
+    ///         flat either. The oracle never adds a break there: a chain it re-wraps ends
+    ///         <c>flag &gt; 1 ? "third" : "d";</c> however wide that line is. It does keep one the
+    ///         author wrote, which a single conditional does not — <c>cond ?\n x :\n y</c> is re-joined
+    ///         where a chain's <c>… ? "b" :\n "c"</c> is not — so the gap is pinned to the source
+    ///         rather than planned.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ <c>spendsIndent: true</c>, and the builder decides whether the level is there to
+    ///         spend. The members sit one continuation level from the statement — as a bare
+    ///         initializer at <c>statement + 4</c>, and as a chopped call's argument or an array
+    ///         initializer's element on the argument's own column, because
+    ///         <c>CanSpendAContinuationLevel</c> has already given that level to the delimiter.
+    ///     </para>
+    /// </remarks>
+    void PlanTernaryChain(ConditionalExpressionSyntax root) {
+        var group = NewGroup();
+        var broken = false;
+        foreach (var member in TernaryChain(root)) {
+            Flat(member.QuestionToken);
+            Flat(member.ColonToken);
+            Flat(FirstToken(member.WhenTrue));
+            var link = FirstToken(member.WhenFalse);
+            if (member.WhenFalse is not ConditionalExpressionSyntax) {
+                Pin(link, _options.KeepsUserBreaksBetweenItems && BreaksBefore(link));
+                continue;
+            }
+
+            Point(link, group);
+            broken |= BreaksBefore(link);
+        }
+
+        Describe(
+            root,
+            group,
+            GroupMode.Preserve,
+            new GroupFacts(
+                SourceBroken: _options.KeepsUserBreaksBetweenItems && broken,
+                BreaksIfTooLong: true
+            ),
+            spendsIndent: true
+        );
+    }
+
+    /// <summary>
     ///     <c>wrap_before_ternary_opsigns = true</c>: <c>?</c> and <c>:</c> start their lines.
     /// </summary>
     void PlanTernary(ConditionalExpressionSyntax node) {
@@ -1327,9 +1469,7 @@ public sealed class BreakPlan {
         bool broken;
 
         // ⚠ A ternary keeps the author's breaks one point at a time rather than chopping at both.
-        // `align_ternary = align_not_nested` and `nested_ternary_style = autodetect` between them
-        // make a chain of conditionals a flat list of `cond ? value :` lines, and the shape the
-        // oracle preserves is exactly the one people write:
+        // The shape the oracle preserves is exactly the one people write:
         //     OperatingSystem.IsWindows() ? "win"
         //     : OperatingSystem.IsMacOS() ? "osx"
         //     : "linux";
