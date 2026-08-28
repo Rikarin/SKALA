@@ -42,13 +42,29 @@ public sealed class ArgumentStyleRule : ArrangementRule {
     public override SyntaxNode Apply(ArrangementContext context) =>
         new Rewriter(context.Guard, context.Semantics, context.Options).Visit(context.Root);
 
-    /// <summary>Which of the four keys governs an argument, by the shape of its expression.</summary>
+    /// <summary>Which of the five keys governs an argument, by the shape of its expression.</summary>
+    /// <remarks>
+    ///     ⚠ <c>arguments_named</c> is the fifth and it is a <em>partition</em> of what used to fall to
+    ///     <c>arguments_other</c>, not a refinement of it. Measured both ways round: with
+    ///     <c>arguments_named = named</c> the oracle names an identifier and a member access and nothing
+    ///     else, and with <c>arguments_other = named</c> instead it names the complement — an
+    ///     invocation, a binary expression, a cast, an element access, <c>typeof</c>, <c>nameof</c>,
+    ///     <c>default</c>, <c>new</c>, a conditional. Folding the two together would make one of them
+    ///     unobservable, which is the same mistake the four-key note above records.
+    ///     <para>
+    ///         ⚠ A parenthesised name is a name. The oracle names <c>(local)</c> as a named expression, which
+    ///         is not a special case here: <c>RemoveRedundantParentheses</c> runs first in the cleanup profile
+    ///         and this rule sees the bare identifier. <see cref="ArrangementPipeline" /> orders Skala's
+    ///         rules the same way.
+    ///     </para>
+    /// </remarks>
     internal static ArgumentStyle StyleFor(ExpressionSyntax expression, in ArrangementOptions options) =>
         expression switch {
             LiteralExpressionSyntax { RawKind: (int)SyntaxKind.StringLiteralExpression }
                 or InterpolatedStringExpressionSyntax => options.ArgumentsStringLiteral,
             LiteralExpressionSyntax => options.ArgumentsLiteral,
             AnonymousFunctionExpressionSyntax => options.ArgumentsAnonymousFunction,
+            SimpleNameSyntax or MemberAccessExpressionSyntax => options.ArgumentsNamed,
             _ => options.ArgumentsOther
         };
 
@@ -56,6 +72,14 @@ public sealed class ArgumentStyleRule : ArrangementRule {
         : GuardedRewriter(guard) {
         public override SyntaxNode? VisitArgumentList(ArgumentListSyntax node) {
             var visited = (ArgumentListSyntax)base.VisitArgumentList(node)!;
+
+            // resharper_arguments_skip_single: a one-argument call is left exactly as written.
+            // ⚠ Checked here and not per argument. The key gates the *call*, which is what makes it
+            // observable at all: a per-argument reading would exempt the last argument of every call
+            // and change every list of two or more, which is not what the oracle does.
+            if (options.ArgumentsSkipSingle && visited.Arguments.Count == 1) {
+                return visited;
+            }
 
             // ⚠ `params`, `__arglist` and an unresolved call all make the positional mapping a guess.
             // The rule declines rather than guesses.
