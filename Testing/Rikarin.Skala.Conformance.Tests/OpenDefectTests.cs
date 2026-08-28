@@ -9,8 +9,9 @@ namespace Rikarin.Skala.Conformance.Tests;
 /// <remarks>
 ///     ⚠ A suite that asserts a bug is still a bug reads backwards until you ask what the alternative
 ///     is. docs/plan/12 § "Corpus expansion" requires a minimised failure to be committed and the corpus
-///     only to grow; the formatter cannot process two of these three files at all, so committing them to
-///     a measured set would take the fidelity number and the differential report down with them. The
+///     only to grow; the formatter cannot process some of these files at all and does not reach a fixed
+///     point on the others, so committing them to a measured set would take the fidelity number and the
+///     differential report down with them. The
 ///     choice is therefore between a comment in a bug tracker and a test — and a test is the one that
 ///     cannot rot: when someone fixes <c>EditEmitter</c>, this suite fails, names the entry, and says
 ///     where the file goes next.

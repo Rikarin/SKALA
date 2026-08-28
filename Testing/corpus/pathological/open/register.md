@@ -41,11 +41,104 @@ the same pass and went straight to the table below without ever being entries. S
 found by the very next fuzz run after those fixes landed, which is the argument for the nightly in
 one line.
 
+⚠ **Nightly 33195187043 returned three findings and only two of them were new.** The third was
+SK-FUZZ-0016 again, from a different seed on a different origin file — recorded in that entry rather
+than as a fourth. A register that counted it twice would report the queue growing when what actually
+happened is that one open defect is common enough for the fuzzer to keep walking into it.
+
 ⚠ SK-FUZZ-0008 carries no `file:` line, so it is **not** one of the entries `OpenDefectTests`
 asserts over: its defect is in the fuzzer's own mutation catalogue rather than in the formatter and
 its fixture lives in the measured corpus. That is a gap in this register's own accounting and is
 written down rather than tidied away — an entry nothing tests is a note, and this directory exists
 because a note is not enough.
+
+## SK-FUZZ-0018 — a `using` inside a wrapped file-scoped namespace is hoisted, then removed
+
+- file: `using-inside-a-wrapped-file-scoped-namespace.cs`
+- property: `arrangement-idempotency`
+- seed: `10305983846149543162`
+- found: mutating `pathological/wrapped-file-scoped-namespace-name.cs` with `join-line`; minimised
+  from 158 characters to 114.
+
+```csharp
+namespace Serilog
+  .Configuration;
+using System;
+public class Foo {
+  void M() {
+  Console.WriteLine(Bar);
+  }
+}
+```
+
+The pipeline converges, and then a second pipeline pass over its own output still wants one edit:
+
+```
+arrangement-idempotency [no symbols]: the second pipeline pass still wants 1 edit(s);
+rules applied on the first: SK2010
+```
+
+⚠ **The first pass moves the directive; the second pass deletes it.** `using System;` is written
+*after* a file-scoped namespace declaration, which puts it inside the namespace.
+`csharp_using_directive_placement = outside_namespace` hoists it above `namespace Serilog
+.Configuration;`, and that is the SK2010 the message names. On the *hoisted* text the compiler
+answers `CS8019` — the fuzzer's compilation carries the implicit `global using System;` from
+`ArrangementDifferential.ImplicitUsings`, so an explicit `using System;` at compilation-unit level is
+redundant — and the second pass removes what the first had only relocated. Two passes, two different
+answers about the same directive, from two different questions asked of two different texts.
+
+⚠ **This is SK-FUZZ-0013's shape in a place its fix did not reach.** That entry records the
+removable-usings set being computed once, before the pipeline, against a text the pipeline is about
+to rewrite; its fix made both sides key on the name with whitespace dropped, which is the *key* half
+of the problem. This is the *timing* half: the key is now stable and the set is still an answer about
+the input rather than about the output, so a rule that moves a directive across the boundary that
+decides its own removability makes the set stale in one pass.
+
+⚠ **Not reproducible through the CLI on a loose file**, and that is diagnostic rather than an
+inconvenience: `skala arrange` on this file with no compilation runs the syntactic subset, where
+`_removable` is empty by construction and the hoist is all that happens — `arrange` then reports a
+fixed point on its own output. The defect needs the semantic half, which is why it took a fuzz run
+with `--arrange-every` to find it. Reproduce it with `FuzzProperties.Check(…, arrangement: true)`, as
+`OpenDefectTests` does.
+
+- ⚠ status: **open**, reproduced and minimised, cause established, **not fixed**. The fix is not the
+  one-line kind: either the removable set is recomputed per pass — which costs a compilation per
+  pass and changes what `ArrangementPipeline` is allowed to cache — or `UsingsRule` refuses to move a
+  directive across the namespace boundary in the same pass that could remove it. Both are decisions
+  about the pipeline's contract rather than repairs, and the loader that feeds it is being worked on
+  in parallel. It wants its own commit.
+
+## SK-FUZZ-0017 — a generated nested switch loses 51 characters on the second pass
+
+- file: `trailing-space-in-a-generated-nested-switch.cs`
+- property: `idempotency`
+- seed: `5423343295399047858`
+- found: generative fuzzing, mutated with `trailing-space`; minimised from 7 402 characters to 825.
+
+`format(format(x)) ≠ format(x)`. The second pass wants one edit and it is a pure deletion:
+
+```
+idempotency [no symbols]: the second pass still wants 1 edit(s): [1112..1163) ->
+```
+
+⚠ **The mutation is `trailing-space`, which is declared `MutationClass.Absorbed`** — whitespace-only,
+and therefore under the strongest property the suite has. Absorption itself holds here; what fails is
+idempotency, so the first pass is not absorbing the added whitespace so much as converting it into
+something the second pass then removes.
+
+⚠ **It does not reproduce under the CLI's default options**, only under `Fuzzer.OptionsFor`. Two
+passes of `skala format` on this file with the shipped defaults converge byte for byte, so the
+non-convergence belongs to a key the corpus sets rather than to the formatter's default behaviour.
+Which key is **not yet established** — that is the next step and it is written down as undone rather
+than guessed at, because the deleted range sits in a deeply nested `switch` whose arms carry a
+collection expression, a `switch` expression and a raw string, and any of those could own it.
+
+- ⚠ status: **open**, reproduced through the property harness and minimised; **cause not
+  established**. Unlike SK-FUZZ-0015 and SK-FUZZ-0016 there is no probe here yet — the entry records
+  a real, replayable non-convergence and stops short of claiming to know why.
+- ⚠ Determinism is the property this product exists to provide, so this entry should not sit here
+  long: an idempotence violation means the same file formats two ways depending on how many times the
+  tool has already run.
 
 ## SK-FUZZ-0016 — a `#region` inside disabled text stops being a directive
 
@@ -82,6 +175,22 @@ and every property holds — because Roslyn does *not* keep a `#pragma` as a dir
 text, and it does keep a region. Put the same region in an **enabled** branch, or in no branch at
 all, and both hold. So the rule the splitter needs is not "disabled text is opaque" but "disabled
 text is opaque except for the directives Roslyn still reports inside it".
+
+⚠ **Found again, by a different seed on a different origin, and this is what an open entry costs.**
+Nightly 33195187043 reported `token-equivalence` on seed `13694834950078302995`, mutating
+`constructs/blank-lines/a-preprocessor-else-between-members.cs` with `comment-line`, `region`,
+`widen-gap`, `trailing-comment` — a `#region` the `region` mutation dropped into the inactive arm of
+an `#if DEBUG`. Reduced to `class C { #if DEBUG / #region fuzz / #endregion / int _a; #else … }` it
+gives the same message this entry already records, at token 4 instead of token 1, and the `#pragma`
+control above still formats cleanly. Same defect, not a second one.
+
+⚠ **The expedition has no notion of a known open defect, so this reds the nightly on its own.**
+`OpenDefectTests` pins the *fixture*; it does not stop the fuzzer rediscovering the defect from a new
+seed, and `nightly.yml` fails the job on any finding. So while this entry stands, a nightly can go
+red for a defect that is already registered, and the only way to tell that from a genuine regression
+is to replay the seed and compare it with this section. That is an argument for fixing it rather than
+for teaching the fuzzer to skip it: a suppression list keyed on the defect the fuzzer is *for* would
+hide the next variant too.
 
 - ⚠ status: **open**, reproduced through the CLI, minimised, and the shape established. Not
   diagnosed to the line, and not fixed: `#region` inside `#if` is ordinary in real code —
