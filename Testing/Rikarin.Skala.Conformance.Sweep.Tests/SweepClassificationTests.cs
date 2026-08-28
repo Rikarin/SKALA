@@ -112,6 +112,37 @@ public sealed class SweepClassificationTests {
         Assert.False(KeyFlipSweep.IsBrokenMeasurement(population: 0, observed: 0));
     }
 
+    /// <summary>
+    ///     ⚠ The unvarying-round canary, and the population of one it must not fire on.
+    /// </summary>
+    /// <remarks>
+    ///     This is the M3 shape — the tool answered, and answered with the input, for every option in
+    ///     the round — and it is a different question from <see cref="KeyFlipSweep.IsBrokenMeasurement" />,
+    ///     which asks whether the tool answered at all. Splitting them is what the run at <c>603fbd3</c>
+    ///     forced: the sweep batches by value index, so the widest option runs alone in every round past
+    ///     every other option's arity, and in a round of one "nothing moved" and "this value reproduces
+    ///     its own fixture" are the same observation.
+    /// </remarks>
+    [Fact]
+    public void TheUnvaryingRoundCanary_IsSilentInARoundOfOne() {
+        // The shape that has actually happened: every option set, no fixture moved.
+        Assert.True(KeyFlipSweep.IsUnvaryingRound(population: 197, moved: 0));
+        Assert.True(KeyFlipSweep.IsUnvaryingRound(population: 2, moved: 0));
+
+        // ⚠ Round 15 at 603fbd3: `csharp_new_line_before_open_brace` alone, at the flags domain's
+        // synthesised all-members value. Both engines parse it — `all` is a member and dominates the
+        // join — and the fixture is already braces-on-their-own-line, so the oracle answered with the
+        // text it was given. The old canary called that a broken measurement; it was a healthy round.
+        Assert.False(KeyFlipSweep.IsUnvaryingRound(population: 1, moved: 0));
+
+        // A round in which anything moved is a round that varied.
+        Assert.False(KeyFlipSweep.IsUnvaryingRound(population: 283, moved: 196));
+        Assert.False(KeyFlipSweep.IsUnvaryingRound(population: 283, moved: 1));
+
+        // Nothing to measure is not a defect, exactly as above.
+        Assert.False(KeyFlipSweep.IsUnvaryingRound(population: 0, moved: 0));
+    }
+
     static OptionSweep Sample(SweepOutcome outcome) =>
         new(
             "resharper_sample",

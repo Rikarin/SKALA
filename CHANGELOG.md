@@ -13,6 +13,102 @@ missed it says so and by how much; three of them were, and one of those is still
 
 ## Unreleased
 
+### Fixed — the tier system rested on a measurement nothing could connect to the code
+
+⚠ **Between the sweep at `2a14dee` and the one at `603fbd3` the tree moved 88 commits, and every tier
+decision in that window rested on a measurement of a formatter no instrument could identify.**
+`OptionCoverageTests` reads `conformance-sweep.json` to decide which tier an option is entitled to;
+`ProvenanceTests` checked that the sweep measured the *configuration* in force and nothing checked
+that it measured the *formatter* in force. The `.editorconfig` had not changed, so the suite was
+green throughout.
+
+- **The archive now records Skala's own output digest at every configuration the sweep measured**, and
+  `TheCommittedSweep_MeasuredTheFormatterInForce` re-asks it on every commit. The oracle half needs
+  JetBrains and minutes; Skala's half is under half a second, so this runs on the fast path.
+  ⚠ Changing how a swept construct formats now turns the suite red until `./build.sh Sweep` is re-run.
+  That is the bargain the corpus provenance test already strikes, and there is deliberately no button
+  that re-stamps the digests: unlike a configuration, a formatter whose output changed has by
+  construction changed its output.
+
+- **Tier A is checked in three directions, not two.** `overclaimed` is Tier A minus implemented,
+  `underclaimed` is implemented minus Tier A minus the sweep's demotions — and an option that is
+  claimed *and* implemented *and* unsubstantiated fell through both. The sweep's report has printed
+  "each is a dilution of the tier system and must be demoted" since it was written, and the demoting
+  was a person reading a markdown table. The `603fbd3` run produced the first two options ever to sit
+  in that state and both assertions passed on them.
+
+- **A fired canary is written into the report.** It was a line on the console, so it reached whoever
+  ran the sweep and nobody else, while the committed table looked exactly as confident as a healthy
+  one.
+
+- **The broken-measurement canary was asking the wrong question.** It counted whether anything
+  *moved* when the question is whether `cleanupcode` *answered*. Rounds past the widest option's arity
+  hold one option, and there "nothing moved" and "this value reproduces its own fixture" are the same
+  observation — it cried wolf on a healthy round at `603fbd3`. Split into `IsBrokenMeasurement`
+  (answered at all) and `IsUnvaryingRound` (answered with the input, population > 1); both historical
+  catches still fire.
+
+### Changed — four tiers moved, on the first measurement 25 options had ever had
+
+| option | | |
+|---|---|---|
+| `indent_size` | D → **A** | the formatter improved; the old demotion was stale |
+| `resharper_csharp_indent_size` | D → **A** | the same |
+| `resharper_csharp_wrap_lines` | A → **D** | `DIVERGENT` at its first measurement |
+| `resharper_place_attribute_on_same_line` | A → **D** | `DIVERGENT` at its first measurement |
+
+The sweep now covers **283 options at 636 configurations** against 258 at 567. The 25 newly covered
+had been Tier A on a fixture alone; 23 were right. ⚠ The unsubstantiated count is 70 before and 70
+after and that is a coincidence — two left the set and two joined it. Both demotions keep their
+`oracle` fixture so a later sweep can reverse them.
+
+### Added — `./build.sh Pairwise`, and the interaction question answered for `keep_existing_*`
+
+⚠ **The key-flip sweep measures each key on that key's own fixture with every other key at the
+export's value, so of a two-key grid it sees one line.** docs/plan/05's `keep_existing_*` section is a
+four-way table across two keys; three of its corners had never been measured by any committed run.
+
+`pairwise [--family=keep,wrap,align]` sweeps the whole grid of two keys' values against the oracle and
+writes `conformance-pairwise.md` and its `.json`. **58 pairs, 342 corners, 1.5 minutes.**
+
+**No interaction was found in any of the three families**, and `keep_existing_*` — the family the
+design named — is 10 `CONFORMANT` and 3 `BASELINE`. Its interior agrees with the oracle.
+
+⚠ **Three verdicts exist because the pass reported false findings without them**, each caught by its
+own output rather than by review:
+
+- `ReachedBySingleSweep` first read "either key at the export's value". The column of the grid is
+  measured on the *secondary's* fixture and says nothing about the primary's, so **58 never-measured
+  corners were filed as duplicates of existing rows and the pass reported zero interactions as an
+  artefact of that line.**
+- `BASELINE`: 17 corners disagreed at the base configuration itself, blaming pairs for divergences
+  their fixtures already had.
+- `INHERITED`: the corrected run then reported **17 interactions across `wrap_*`, every one
+  disagreeing only at `max_line_length = 0` and `= 1`** — the two values where the single sweep
+  records `max_line_length` diverging *alone, on its own fixture*. Seventeen findings, one cause,
+  none about a pair. The pass now reads the single sweep's per-value agreement and excuses such a
+  corner; one unattributable corner still keeps the row a finding.
+
+⚠ **`wrap_* × max_line_length` is blocked rather than clean.** 28 of its 37 pairs are `INHERITED`
+because the int probe set offers `120`, `0` and `1`, and two of those are degenerate margins the
+engines already disagree about. Answering it needs three legal margins — the same defect as the flags
+probe below, one type over, and not fixed here because the int probe set is shared with the single
+sweep.
+
+### Fixed — a flags option's probe set tested no combination at all
+
+The probe set was every member singly, then the join of them all. For
+`csharp_new_line_before_open_brace` that join contains `all`, which dominates every other member — so
+the probe was a second copy of the `all` singleton wearing fourteen names, and on a fixture already in
+that layout it scored as an agreement.
+
+⚠ **The gap it left is the defect: the probe set never tested a combination**, which is what a flags
+option is for. A formatter honouring `methods` and `types` and mishandling `methods, types` passed
+every probe. It now ends with a genuine two-member value, and on the `603fbd3` run that value
+**disagrees** where the join it replaced agreed. `EveryLegalValue` still offers the join, because
+accepting it is a real requirement of the parser.
+
+
 ### Fixed — `skala.jsonc` can say which files are not source code, and CI can go green
 
 ⚠ **Every push to `master` had failed CI for eleven consecutive commits, and three faults were

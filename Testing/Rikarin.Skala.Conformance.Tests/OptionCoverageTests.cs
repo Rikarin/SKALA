@@ -63,6 +63,33 @@ public sealed class OptionCoverageTests {
             .ToArray();
         Assert.True(overclaimed.Length == 0, "Tier A without an implementation: " + string.Join(", ", overclaimed));
 
+        // ⚠ The third direction, and the one this test did not have until 603fbd3. `overclaimed` is
+        // Tier A minus implemented; `underclaimed` below is implemented minus Tier A minus the
+        // sweep's demotions. An option that is claimed Tier A *and* implemented *and* one the sweep
+        // could not substantiate is in neither difference — it falls straight through both, and the
+        // suite goes green on a claim the committed measurement contradicts.
+        //
+        // It was not hypothetical for long. The sweep's own report has printed "each is a dilution
+        // of the tier system and must be demoted" since it was written, and until this assertion the
+        // demoting was a person reading a markdown table and remembering to act on it. The run at
+        // 603fbd3 produced the first two options ever to sit in that state —
+        // `resharper_csharp_wrap_lines` and `resharper_place_attribute_on_same_line`, both Tier A on
+        // a fixture alone and both DIVERGENT the first time anything flipped them — and both
+        // assertions around this one passed on them.
+        var diluted = claimed.Intersect(SweepUnsubstantiated())
+            .Select(static id => OptionRegistry.Get(id).Key)
+            .Order(StringComparer.Ordinal)
+            .ToArray();
+        Assert.True(
+            diluted.Length == 0,
+            "Tier A, but the committed sweep could not substantiate it: "
+            + string.Join(", ", diluted)
+            + ".\n\nTier A means Skala reproduces Rider's behaviour, and the one measurement that can "
+            + "check that says otherwise. Demote each to Tier D in options.json, keeping its `oracle` "
+            + "fixture so the next sweep can reach it and reverse this — or re-run `./build.sh Sweep` if "
+            + "the divergence has since been fixed."
+        );
+
         // ⚠ "Reads the key" is a weaker claim than Tier A, and this direction used to conflate the
         // two. Tier A is "Skala reproduces *Rider's* behaviour"; a key the formatter reads, and acts
         // on, and acts on differently from ReSharper satisfies the first and fails the second. Only
