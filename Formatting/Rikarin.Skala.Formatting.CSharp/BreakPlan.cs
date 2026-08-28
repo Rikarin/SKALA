@@ -2025,8 +2025,55 @@ public sealed class BreakPlan {
                 SourceBroken: _options.KeepsUserBreaksBetweenItems && broken,
                 BreaksIfTooLong: _options.WrapTernaryExprStyle != WrapStyle.WrapIfLong
             ),
-            spendsIndent: true
+            spendsIndent: true,
+            // ⚠ The staircase: a nested conditional's signs sit one continuation level deeper than
+            // its parent's, and the oracle *produces* it rather than preserving it — a chain written
+            // flat at one level comes back stepped, and a four-member chain steps 4, 8, 12. It needs
+            // `ownLevel` rather than `spendsIndent`, which is the difference between "a level if no
+            // other continuation is open" and "a level, always": the enclosing member's continuation
+            // is always open here, so `spendsIndent` alone collapses every depth onto one column.
+            //
+            // ⚠ Gated on a break before a `?`, and the gate is the whole difference between the two
+            // shapes people write. Measured on both:
+            //     a ? "win"            ← no `?` starts a line: stays flat, at any length
+            //     : b ? "osx"
+            //     : "linux";
+            //     a                    ← a `?` starts a line: every depth steps
+            //         ? "win"
+            //         : b
+            //             ? "osx"
+            //             : "linux";
+            // Stepping the first shape as well is what an ungated `IsTernaryChainTail` does, and it
+            // costs file fidelity on both corpora — `constructs` 94.37 % → 94.06 %, `corpus/real/`
+            // 85.78 % → 85.53 % — because the colon-only chain is the commoner of the two in real
+            // code.
+            ownLevel: IsTernaryChainTail(node) && BreaksAtTernaryQuestion(node)
         );
+    }
+
+    /// <summary>Whether the author put a break before any <c>?</c> of the chain this member is in.</summary>
+    /// <remarks>
+    ///     ⚠ Asked of the whole chain rather than of the member, because the layout is the chain's:
+    ///     the oracle steps every depth or none of them, and a chain broken before its first <c>?</c>
+    ///     only still comes back fully stepped.
+    /// </remarks>
+    bool BreaksAtTernaryQuestion(ConditionalExpressionSyntax node) {
+        if (!_options.KeepsUserBreaksBetweenItems || !_options.WrapBeforeTernaryOpsigns) {
+            return false;
+        }
+
+        var root = node;
+        while (IsTernaryChainTail(root)) {
+            root = (ConditionalExpressionSyntax)root.Parent!;
+        }
+
+        foreach (var member in TernaryChain(root)) {
+            if (BreaksBefore(member.QuestionToken)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /// <summary>
