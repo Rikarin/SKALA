@@ -387,11 +387,20 @@ would still leave the comment re-indented and its marker respaced, and it is not
 ReSharper key at all — `wrap_lines` appears nowhere in JetBrains' `.editorconfig` index, for any
 language, though the export writes it.
 
-⚠ **`resharper_space_after_triple_slash` stays demoted, and its reason is gone.** The 79 lines it
-cost were `jb cleanupcode` under a profile that declines to insert the space, charged to Skala. The
-space is inserted again. The key cannot return to Tier A, but not for the old reason: Tier A means
-"pinned by an oracle fixture" and the fixtures were all generated under the profile that does not
-move. That is a fact about the fixtures, and it expires when they are regenerated.
+⚠ **`resharper_space_after_triple_slash` is Tier A again.** This paragraph used to end "the key
+cannot return to Tier A … That is a fact about the fixtures, and it expires when they are
+regenerated." It has expired. `constructs/xmldoc/resharper_space_after_triple_slash.cs` carries the
+fixture, generated under `OracleProfile.DocComments`, and Skala reproduces it byte for byte.
+
+⚠ The fixture is narrower than it looks, and the narrowing is a measured shape rather than a
+caveat. **The oracle does not rewrite a `///` marker on a comment it is otherwise leaving alone.**
+The first cut of that fixture was a single short `///<summary>Docs.</summary>`, which needs no
+wrapping, no element split and no blank-line removal — and it came back from
+`CSharpFormatDocComments` byte-identical, marker included. The fixture that measures the key is two
+crammed elements on one line, which the oracle has to rebuild, and the marker space appears with
+the rebuild. So the 79 lines M3 charged to Skala are *still* not fully re-explained: `corpus/real/`'s
+fixtures are generated under a profile that rebuilds nothing, and on a comment that needs no other
+change the oracle and Skala genuinely differ about the marker.
 
 What is implemented is the half [05](plan/05-csharp-formatting-rules.md) calls the hazard and that
 needs no oracle: a doc comment that is not well-formed XML is left exactly as it is and reported at
@@ -412,8 +421,9 @@ space anyway**. Skala follows the oracle rather than the key, so the key is iner
 directions and stays Tier D — implementing it would create a divergence in exchange for nothing
 anyone asked for.
 
-⚠ **Registry state.** `resharper_space_after_triple_slash` is **Tier D**,
-`resharper_xmldoc_wrap_lines` is **Tier D**, `trim_trailing_whitespace` is **Tier D** with
+⚠ **Registry state.** `resharper_space_after_triple_slash` is **Tier A** (see above),
+`resharper_xmldoc_wrap_lines` is **Tier D** for the measured reason in SK-DIV-0019 rather than for
+want of a fixture, `trim_trailing_whitespace` is **Tier D** with
 `defaultSource: oracle-probe` — the probe that established it is recorded in the registry entry
 itself — and `resharper_remove_spaces_on_blank_lines` is **Tier D**, inert as this entry says.
 
@@ -423,12 +433,24 @@ itself — and `resharper_remove_spaces_on_blank_lines` is **Tier D**, inert as 
 the daemon and the MCP server. `--no-xmldoc` is the only thing that turns it off, and the only thing
 that still reproduces the pinned oracle profile's answer.
 
-⚠ **These keys are pinned differently from every other formatter option in the project, and the
-difference is stated rather than hidden.** Tier A means "Skala reproduces Rider's behaviour, pinned
-by at least one oracle fixture", and no committed fixture shows Rider doing any of this — because
-every one of them was generated under a profile that switches it off. So every id the sub-formatter
-reads is registered through `Ids.OfUnoracled`: read, honoured, never entering
-`PhaseOneOptions.Implemented`, never claiming Tier A.
+⚠ **RETRACTED, and this is the second retraction in the same entry.** What follows in this section
+was written when the corpus had no fixture that could show the oracle formatting a documentation
+comment, and it concluded that no fixture ever could. That conclusion was the original mistake at
+one level down: a limitation of the *profile*, read as a limitation of the corpus.
+`OracleProfile.DocComments` is `OracleProfile.FormatOnly` plus
+`<CSharpFormatDocComments>True</CSharpFormatDocComments>` and nothing else, `./build.sh Oracle`
+regenerates `constructs/xmldoc/*.xmldoc.expected.cs` under it, and the family is measured. **13 of
+the 22 keys are Tier A**, pinned exactly the way every other option in the registry is. The nine
+that are not have measured shapes and entries of their own: SK-DIV-0019 through SK-DIV-0023.
+
+The three things below still pin the sub-formatter and are still worth having — the round trip in
+particular is checked on every comment of every run, which no fixture can be — but they are no
+longer *instead of* an oracle fixture.
+
+⚠ **`OfUnoracled` survives, with a narrower meaning.** It used to mean "the oracle cannot be asked".
+For the nine keys that keep it, it now means "the oracle was asked and said something else", which
+is a stronger statement and a checkable one: `XmlDocOracleTests` asserts that a Tier D key in this
+family still fails its fixture, so a divergence that gets fixed cannot quietly stay Tier D.
 
 ⚠ **`OfUnoracled` is a third mark and it had to be added.** These ids were `OfInert` — "read, and
 unable to change anything" — which was true only while nothing ran them, and
@@ -1083,3 +1105,153 @@ therefore never held. The three lines it loses are this divergence and nothing e
 
 - options: `resharper_enforce_line_ending_style`, `end_of_line`, `insert_final_newline`
 - ⚠ status: **permanent**, pinned by the fixture above.
+
+## SK-DIV-0019 — the oracle keeps the word that crosses `max_line_length`; Skala breaks before it
+
+The first divergence the doc-comment oracle profile made visible, and the largest: **five** of the
+nine keys that stayed Tier D are this one disagreement wearing five names, because every one of
+them is measured on a comment that has to wrap.
+
+Skala fills a documentation line while the *whole line* — code indent, `///`, marker space, content
+indent and text — stays within `resharper_xmldoc_max_line_length`. The oracle fills while the line
+is **strictly under** the limit and then keeps the word that crosses it, breaking after it. So the
+oracle's lines routinely run one word past the margin and Skala's never do:
+
+```
+                                                                                          120 ↓
+oracle   ///     A summary written … inside the configured column limit, so that the       (122)
+skala    ///     A summary written … inside the configured column limit, so that           (118)
+```
+
+`constructs/xmldoc/resharper_xmldoc_max_line_length.xmldoc.expected.cs` carries 122 columns,
+`…_wrap_lines` 122, `…_wrap_text` 122, `…_wrap_tags_and_pi` 121 and
+`…_linebreaks_inside_tags_for_elements_longer_than` 122, all under `max_line_length = 120`. The
+model was checked against every wrapping fixture in the subtree: greedy fill, break *after* the
+crossing word, and the crossing word admitted only while the line before it was under 120.
+
+⚠ **One part of the shape is measured and not explained.** Probed at three nesting depths with a
+`<summary>` of sixty identical five-letter words, the oracle produced content lines of 125, 129 and
+133 columns — a constant 113 columns of *content*, which is `120 − 3 − 4` — but the **first**
+content line of each was one word shorter than the rest, at every depth. The greedy model fits every
+later line and misses that one. The first-line reservation is unexplained; it is recorded here
+rather than guessed at.
+
+Skala's reading is not obviously the wrong one — a hard wrap exists to keep lines inside a margin,
+and a wrap that overshoots by a word is a wrap that did not do its job — but it is a disagreement
+either way, and until it is settled these five keys cannot claim to reproduce Rider.
+
+- options: `resharper_xmldoc_max_line_length`, `resharper_xmldoc_wrap_lines`,
+  `resharper_xmldoc_wrap_text`, `resharper_xmldoc_wrap_tags_and_pi`,
+  `resharper_xmldoc_linebreaks_inside_tags_for_elements_longer_than`
+- ⚠ status: **open**, pinned by the five fixtures above and by
+  `Conformance.Tests/XmlDocOracleTests`, which asserts that each of them still fails.
+
+## SK-DIV-0020 — the oracle opens an element that holds text *and* children; Skala opens one that holds only children
+
+`resharper_xmldoc_linebreaks_inside_tags_for_elements_with_child_elements = true` puts an element's
+children on lines of their own. Skala applies it to an element whose content is *only* elements, and
+leaves mixed content — prose with an element inside it — on one line while it fits. The oracle
+applies it to mixed content too, and hoists the prose onto its own line as it goes:
+
+```
+input    /// <remarks>Some leading prose. <list><item>Short.</item></list></remarks>
+
+oracle   /// <remarks>
+         ///     Some leading prose.
+         ///     <list>
+         ///         <item>Short.</item>
+         ///     </list>
+         /// </remarks>
+
+skala    /// <remarks>Some leading prose. <list><item>Short.</item></list></remarks>
+```
+
+The pure-children case agrees exactly — `constructs/xmldoc/…_with_child_elements` is Tier A — so the
+key itself is honoured and the disagreement is about what counts as "an element with child
+elements". Fixing it is a change to `XmlDocRenderer`'s notion of mixed content and is not attempted
+here.
+
+- options: `resharper_xmldoc_linebreak_before_singleline_elements`
+- ⚠ status: **open**, pinned by
+  `constructs/xmldoc/resharper_xmldoc_linebreak_before_singleline_elements.xmldoc.expected.cs`.
+
+## SK-DIV-0021 — the oracle leaves an unlisted element's content on one line however long; Skala wraps it
+
+The mirror of SK-DIV-0020, on the same construct with a longer item, and it goes the other way.
+`resharper_xmldoc_linebreak_before_elements` names eight elements — `summary`, `remarks`, `example`,
+`returns`, `param`, `typeparam`, `value`, `para` — and `item` is not one of them. Asked to format a
+`<list>` whose single `<item>` runs to 131 columns, the oracle **leaves it at 131 columns**:
+
+```
+oracle   ///         <item>An item written at enough length that … cannot fit on any single line of its own.</item>
+skala    ///         <item>
+         ///             An item written at enough length that … cannot fit on any single line of
+         ///             its own.
+         ///         </item>
+```
+
+⚠ The reading this suggests — that the oracle wraps *inside* an element only when
+`linebreak_before_elements` names it — is consistent with every fixture in the subtree, `<summary>`
+included, but it is a reading of five files rather than a probe of the rule, and it is written down
+as such. Note that it also overshoots the margin, which is SK-DIV-0019 again; the two are separable
+because this line is 11 columns over and no single word explains that.
+
+- options: `resharper_xmldoc_linebreak_before_multiline_elements`
+- ⚠ status: **open**, pinned by
+  `constructs/xmldoc/resharper_xmldoc_linebreak_before_multiline_elements.xmldoc.expected.cs`.
+
+## SK-DIV-0022 — `spaces_inside_tags = false` means "do not add one", not "remove the author's"
+
+Skala reads `resharper_xmldoc_spaces_inside_tags` as a statement about the output: false means the
+gap between a tag and its content is empty, whatever the author wrote. The oracle reads it as a
+statement about what it may *insert*: false means it will not add a space, and a space already there
+survives — even while the same run is rebuilding the comment's line structure around it.
+
+```
+input    /// <summary> Text … </summary><returns> A value. </returns>
+
+oracle   /// <summary> Text … </summary>          ← spaces kept, elements still split
+         /// <returns> A value. </returns>
+
+skala    /// <summary>Text …</summary>            ← spaces removed
+         /// <returns>A value.</returns>
+```
+
+⚠ The fixture is deliberately two crammed elements rather than one tidy line, for the reason
+SK-DIV-0006 now records under `space_after_triple_slash`: on a comment the oracle is otherwise
+leaving alone it changes nothing at all, and a "no change" that means "not asked" is exactly the
+reading this project has been burned by twice.
+
+- options: `resharper_xmldoc_spaces_inside_tags`
+- ⚠ status: **open**, pinned by
+  `constructs/xmldoc/resharper_xmldoc_spaces_inside_tags.xmldoc.expected.cs`.
+
+## SK-DIV-0023 — a processing instruction's line keeps its marker unspaced, and the blank line after it differs
+
+Two shapes on one construct, both visible in one fixture.
+
+```
+oracle   /// <?skala-probe mode="short"?>
+         /// ␠                                    ← marker, space, nothing
+         /// <summary>A summary that follows a processing instruction.</summary>
+
+skala    ///<?skala-probe mode="short"?>          ← no marker space
+         ///                                      ← no trailing space
+         /// <summary>A summary that follows a processing instruction.</summary>
+```
+
+1. **The marker space is not applied to a processing-instruction line.** Skala emits a processing
+   instruction verbatim — that is the refusal reason `resharper_xmldoc_pi_attribute_style` and its
+   three siblings carry — and "verbatim" has swallowed the `///` marker along with the instruction.
+   That is a defect rather than a decision: `resharper_space_after_triple_slash` is Tier A on every
+   other line of the same comment.
+2. **The blank line the oracle writes after a processing instruction carries a trailing space.**
+   Skala's carries none, deliberately and for a reason that is stated at `XmlDocOptions.BlankLineAfterPi`
+   and holds elsewhere: an empty line's trailing whitespace is the one thing every other pass in
+   Skala strips. Unlike (1) this half is a decision, and it would survive (1) being fixed.
+
+- options: `resharper_xmldoc_blank_line_after_pi`, `resharper_space_after_triple_slash`
+- ⚠ status: **open**, pinned by
+  `constructs/xmldoc/resharper_xmldoc_blank_line_after_pi.xmldoc.expected.cs`. ⚠ The entry names
+  `resharper_space_after_triple_slash`, which is **Tier A**: the key is reproduced everywhere its
+  fixture exercises it, and this is a construct that fixture does not reach.

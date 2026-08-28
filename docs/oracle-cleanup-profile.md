@@ -195,16 +195,43 @@ the marker, so it is the `.editorconfig` driving it rather than a built-in style
 
 Neither explains SK-DIV-0006 — the profile does — but either would have produced the same reading.
 
-### What this costs, and what it buys
+### ⚠ Re-measured, with the negative control, before anything was built on it
 
-The fix is one element in `OracleProfile.FormatOnly`, and it invalidates every committed
-`.expected.cs` in the corpus: 716 fixtures whose doc comments were generated under a profile that
-does not touch them. Regenerating them is `./build.sh Oracle`, and it retires the
-`outside doc comments` fidelity basis introduced with the default flip — the exclusion exists only
-because the fixtures answer a question the formatter no longer asks. It was **not** done in the
-commit that flipped the default, because a corpus-wide fixture rewrite and a default change in one
-diff is not a reviewable diff, and because two other measurements were in flight against the same
-baseline.
+The table above was a remembered probe by the time the doc-comment profile was added, so it was run
+again from scratch on `jb` 2025.2.6 against this repository's `.editorconfig`, on a comment carrying
+a crammed `<summary>` past the margin, two `<param>`s sharing a line and two blank `///` lines:
+
+| Profile | Doc comment |
+|---|---|
+| `<CSReformatCode>True</CSReformatCode><CSUpdateFileHeader>False</CSUpdateFileHeader>` | byte-identical |
+| the same, plus `<CSharpFormatDocComments>True</CSharpFormatDocComments>` | **rewrapped at 120, markers spaced, `<param>`s split, blank lines gone** |
+| the same, with the element renamed `ZZNotARealDocTask` | byte-identical |
+
+The claim reproduces. Every sentence downstream of it — SK-DIV-0006's retraction, the third oracle
+profile, the 13 Tier A promotions — rests on that middle row and on the third row being what makes
+it mean something.
+
+### What this cost, and what it bought
+
+Two routes were available and the cheaper one was taken.
+
+**Not done: adding the element to `OracleProfile.FormatOnly`.** That invalidates every committed
+`.expected.cs` in the corpus — 716 fixtures whose doc comments were generated under a profile that
+does not touch them — and retires the `outside doc comments` fidelity basis with them. It is the
+right end state and it is a reviewed commit of its own, because a corpus-wide fixture rewrite mixed
+into anything else is not a reviewable diff.
+
+**Done: a third profile, `OracleProfile.DocComments`, over a new subtree.** `FormatOnly` plus the
+one element and nothing else, so a difference between the two fixtures beside a file is a difference
+that task made. It regenerates under `./build.sh Oracle` into `*.xmldoc.expected.cs` — a suffix that
+still ends `.expected.cs`, which is what keeps `Corpus.Files` from enumerating it as an input — and
+it covers `constructs/xmldoc/` only: 22 files, one per key, plus the format-only fixture each of
+them also carries. `corpus/real/` is deliberately not in it.
+
+That bought the whole point of the exercise: 13 of the 22 keys are Tier A, pinned by a committed
+fixture like every other option in the registry, and the nine that are not have measured shapes
+(SK-DIV-0019 … SK-DIV-0023) instead of a shared excuse. What it did **not** buy is the
+`outside doc comments` retirement, which still waits on the corpus-wide regeneration.
 
 ## Reproducing
 

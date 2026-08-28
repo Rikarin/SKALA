@@ -13,6 +13,47 @@ missed it says so and by how much; three of them were, and one of those is still
 
 ## Unreleased
 
+### Changed — the documentation-comment family is measurable, and 13 of its 22 keys are Tier A
+
+⚠ **22 option keys sat at Tier D because of a sentence, and the sentence was wrong.** SK-DIV-0006
+recorded that every committed `.expected.cs` returns its documentation comments exactly as written,
+and concluded that the oracle "declines to format documentation comments" — so 21
+`resharper_xmldoc_*` keys plus `resharper_space_after_triple_slash` were registered `OfUnoracled`:
+honoured, and unprovable. `CSharpFormatDocComments` is a real `jb cleanupcode` task, and
+`OracleProfile.FormatOnly` is byte-for-byte `Built-in: Reformat Code`, the one built-in profile that
+switches it off. Re-measured with the negative control the sweep's method demands — the same element
+under a name the tool does not know, which changes nothing — before a line of this was built on it.
+
+- **A third oracle profile.** `OracleProfile.DocComments` is `FormatOnly` plus that one element, so a
+  difference between the two fixtures beside a file is a difference that task made. `./build.sh
+  Oracle` regenerates it into `*.xmldoc.expected.cs` — a suffix that still ends `.expected.cs`,
+  because `Corpus.Files` refuses to enumerate such a file as an input and a fixture the corpus reads
+  as source is a fixture that gets formatted against itself and counted twice.
+- **A corpus subtree**, `constructs/xmldoc/`: 22 files, one per key, each carrying the shape its key
+  governs and as little else as possible. Five of the first cut came back byte-identical from the
+  oracle and were reshaped, because a fixture that cannot come out differently is not evidence.
+- **13 keys promoted to Tier A**, pinned by a committed fixture exactly like every other option in
+  the registry. `resharper_space_after_triple_slash` is among them; it has now been Tier A, then
+  inert, then unoracled, and Tier A again.
+- **9 keys stay Tier D, and Tier D changed meaning for them.** It no longer says "the oracle cannot
+  be asked"; it says "the oracle was asked and said something else". SK-DIV-0019 … SK-DIV-0023 carry
+  the measured shapes, and five of the nine are one wrapping disagreement wearing five names — the
+  oracle keeps the word that crosses `max_line_length` on the line and breaks after it, so its output
+  runs to 121 and 122 columns under a limit of 120, and Skala breaks before it.
+  `XmlDocOracleTests` asserts *both* directions, so a divergence that gets fixed cannot quietly stay
+  Tier D.
+- **`docs/plan/04`'s "17 of the 27 `resharper_xmldoc_*` keys honoured" is corrected to 21 of 32.**
+  The family has always been 32 keys in `options.json`; 27 was the sum of the then-honoured and the
+  then-refused lists mistaken for the whole, and 17 went stale when four refusals were withdrawn.
+  `XmlDocFormatterTests.HonouredAndRefused_PartitionTheFamilyExactly` has asserted 32 = 21 + 11 all
+  along; only the prose disagreed.
+
+⚠ **No formatter output changed.** This is a measurement and a registry commit: the full conformance
+suite, the fidelity ratchets and the committed key-flip sweep are all green against it unmodified.
+The 11 genuinely unimplemented `resharper_xmldoc_*` keys are untouched and still carry their reasons
+in `XmlDocIds.Refused`, and `corpus/real/` still has no doc-comment fixture, which is what the
+`outside doc comments` fidelity basis is still waiting on.
+
 ### Fixed — `skala.jsonc` can say which files are not source code, and CI can go green
 
 ⚠ **Every push to `master` had failed CI for eleven consecutive commits, and three faults were

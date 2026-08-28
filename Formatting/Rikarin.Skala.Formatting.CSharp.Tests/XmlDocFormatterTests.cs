@@ -9,12 +9,18 @@ namespace Rikarin.Skala.Formatting.CSharp.Tests;
 
 /// <summary>Runs the pipeline, which formats documentation comments by default.</summary>
 /// <remarks>
-///     ⚠ These fixtures assert <b>the semantics JetBrains' settings pages state</b>, not the oracle's
-///     behaviour, and the difference is the whole of SK-DIV-0006: the committed <c>.expected.cs</c>
-///     fixtures were produced by a profile that does not run ReSharper's own
-///     <c>CSharpFormatDocComments</c> task, so every one of them returns its doc comments exactly as
-///     written and none of them can pin any of this. Every other option in Skala is pinned the other
-///     way. That is why none of these keys is Tier A — not because the behaviour is optional.
+///     ⚠ These fixtures assert <b>the semantics JetBrains' settings pages state</b> rather than the
+///     oracle's behaviour, and they were once the only evidence these keys had. They are not any
+///     more: <c>OracleProfile.DocComments</c> enables ReSharper's own <c>CSharpFormatDocComments</c>
+///     task, <c>constructs/xmldoc/</c> carries a corpus file per key with the oracle's answer beside
+///     it, and 13 of the 22 keys are Tier A on that evidence like every other option in Skala.
+///     <para>
+///         ⚠ These stay, and they are not redundant. A corpus fixture measures one configuration — the
+///         repository's — and these measure the key at both values with the shape isolated, which is what
+///         says <em>why</em> a fixture came out the way it did. For the nine keys that disagree with the
+///         oracle (SK-DIV-0019 … SK-DIV-0023) they are also the only statement of what Skala does mean by
+///         the key.
+///     </para>
 /// </remarks>
 public static class XmlDoc {
     static FormattingOptions Resolve(params (string Key, string Value)[] overrides) =>

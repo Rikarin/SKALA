@@ -504,7 +504,7 @@ in the corpus. SK-DIV-0008 has the table.
 
 ## Phase 4 — comments and xmldoc
 
-`resharper_xmldoc_*` — 12 keys — reads like a small formatter in its own right: parse the doc comment
+`resharper_xmldoc_*` — 32 keys in the registry, 21 honoured — reads like a small formatter in its own right: parse the doc comment
 as XML, re-wrap text to `xmldoc_max_line_length = 120`, break before
 `summary,remarks,example,returns,param,typeparam,value,para`, `xmldoc_max_blank_lines_between_tags = 0`,
 `xmldoc_indent_child_elements`/`attribute_indent = single_indent`,
@@ -517,9 +517,15 @@ directly, with the whole family in force, it returns `///<summary>…`, a 128-co
 of them exactly as written. That is the profile, not the tool: `CSharpFormatDocComments` is a
 cleanup task, `Built-in: Reformat Code` sets it false, `Full Cleanup` sets it true, and
 `FormatOnly` is the former. Rider formats doc comments, so Skala does. SK-DIV-0006 records the
-correction; the keys stay Tier D only because every committed fixture was generated under that
-profile, and `resharper_space_after_triple_slash` stays demoted with its reason withdrawn — the 79
-lines it cost across 15 files were the profile declining to insert the space.
+correction.
+
+⚠ **And then the correction's own tail was wrong for one more milestone.** This paragraph used to
+end "the keys stay Tier D only because every committed fixture was generated under that profile, and
+`resharper_space_after_triple_slash` stays demoted". That is a fact about which fixtures happened to
+exist, stated as though it were permanent. `OracleProfile.DocComments` is `FormatOnly` plus the one
+element, `constructs/xmldoc/` carries a fixture per key under it, and the family splits **13 Tier A /
+9 measured-and-disagreeing** — `space_after_triple_slash` among the promoted. The nine are
+SK-DIV-0019 through SK-DIV-0023, and five of them are one wrapping disagreement under five names.
 
 ⚠ The hazard half is implemented, because it needs no oracle. A doc comment that is not well-formed
 XML — extremely common in real code — is left exactly as it is and reported at `hint` (`SK0003`),

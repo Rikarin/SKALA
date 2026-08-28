@@ -93,10 +93,16 @@ public sealed class OptionObservabilityTests {
     ///     The <c>resharper_xmldoc_*</c> family was <c>OfInert</c> while the sub-formatter was behind a
     ///     flag: read, and unable to change anything, because nothing ran it. The sub-formatter is the
     ///     default now, so the honest claim inverted — every one of these must change output, or it is
-    ///     an unimplemented key wearing a reason. Tier A is still closed to them (no oracle fixture can
-    ///     pin a documentation comment under the pinned profile, SK-DIV-0006), which is exactly the
-    ///     combination <c>OfUnoracled</c> marks: honoured, observable, and unprovable against the
-    ///     oracle.
+    ///     an unimplemented key wearing a reason.
+    ///     <para>
+    ///         ⚠ This remark used to continue "Tier A is still closed to them, because no oracle fixture
+    ///         can pin a documentation comment under the pinned profile". That is withdrawn:
+    ///         <c>OracleProfile.DocComments</c> pins them and 13 of the 22 are Tier A. What remains here
+    ///         is the nine the oracle contradicts (SK-DIV-0019 … SK-DIV-0023), and for those
+    ///         <c>OfUnoracled</c> now means "asked, and answered differently" rather than "unaskable" —
+    ///         still honoured, still observable, and still barred from Tier A, which is what the
+    ///         assertion below checks.
+    ///     </para>
     ///     <para>
     ///         ⚠ Not scoped to <see cref="InFamily" />, and not measured on <c>constructs/</c>. Nine of the
     ///         seventeen are unobservable there, and the reason is the corpus rather than the keys: the

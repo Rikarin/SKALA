@@ -21,6 +21,14 @@ namespace Rikarin.Skala.Testing;
 ///         regenerated, and because the fourth row is the containment claim.
 ///     </para>
 ///     <para>
+///         ⚠ <b>This is no longer the only doc-comment measurement, and it is no longer the interesting
+///         one.</b> <c>harness xmldoc --oracle</c> (<see cref="XmlDocOracle" />) compares Skala against
+///         <see cref="OracleProfile.DocComments" />, which does ask the question, over the
+///         <c>constructs/xmldoc/</c> subtree. What is still only measurable <em>here</em> is
+///         <c>corpus/real/</c>, because that set has no doc-comment fixture yet — so these four rows stay
+///         until it does, and the gap they measure stays a gap in the fixtures rather than in the tool.
+///     </para>
+///     <para>
 ///         ⚠ The exclusion is drawn the only honest way: every <c>///</c> line is removed from <b>both</b>
 ///         sides before the comparison. Not "the lines Skala changed" — that would be marking one's own
 ///         homework — and not "the files with doc comments", which would hide a real regression in the code

@@ -1884,7 +1884,7 @@ public static class Ids {
     // keeps `oracle: null` in the registry — a Tier D entry with a fixture glob would have to be a
     // key the *sweep* demoted, and the sweep has never swept these.
     //
-    // ⚠ SK-DIV-0018: the wrap column. Five of the nine are one disagreement — the oracle keeps the
+    // ⚠ SK-DIV-0019: the wrap column. Five of the nine are one disagreement — the oracle keeps the
     // word that crosses `max_line_length` on the line and breaks after it, Skala breaks before it —
     // and they diverge together because every one of them is measured on a comment that wraps.
     public static readonly OptionId XmlDocWrapLines = OfUnoracled("resharper_xmldoc_wrap_lines");
@@ -1895,20 +1895,20 @@ public static class Ids {
     public static readonly OptionId XmlDocLinebreaksInsideTagsForElementsLongerThan =
         OfUnoracled("resharper_xmldoc_linebreaks_inside_tags_for_elements_longer_than");
 
-    // ⚠ SK-DIV-0019: mixed content. The oracle opens an element that holds text *and* children;
+    // ⚠ SK-DIV-0020: mixed content. The oracle opens an element that holds text *and* children;
     // Skala opens one that holds only children.
     public static readonly OptionId XmlDocLinebreakBeforeSinglelineElements =
         OfUnoracled("resharper_xmldoc_linebreak_before_singleline_elements");
 
-    // ⚠ SK-DIV-0020: the oracle leaves the content of an element that `linebreak_before_elements`
+    // ⚠ SK-DIV-0021: the oracle leaves the content of an element that `linebreak_before_elements`
     // does not name on one line however long it is; Skala wraps it.
     public static readonly OptionId XmlDocLinebreakBeforeMultilineElements =
         OfUnoracled("resharper_xmldoc_linebreak_before_multiline_elements");
 
-    // ⚠ SK-DIV-0021: `false` means "do not add a space inside the tags", not "remove the author's".
+    // ⚠ SK-DIV-0022: `false` means "do not add a space inside the tags", not "remove the author's".
     public static readonly OptionId XmlDocSpacesInsideTags = OfUnoracled("resharper_xmldoc_spaces_inside_tags");
 
-    // ⚠ SK-DIV-0022: the marker space is not applied to a processing-instruction line, and the
+    // ⚠ SK-DIV-0023: the marker space is not applied to a processing-instruction line, and the
     // blank line the oracle writes after one carries a trailing space Skala deliberately omits.
     public static readonly OptionId XmlDocBlankLineAfterPi = OfUnoracled("resharper_xmldoc_blank_line_after_pi");
 
@@ -2007,20 +2007,28 @@ public static class Ids {
     public static ImmutableArray<OptionId> ReadButInert { get; } = [.. Inert.Distinct().Order()];
 
     /// <summary>
-    ///     The ids phase 1 reads and honours, and that no oracle fixture can pin.
+    ///     The ids phase 1 reads and honours, and that no oracle fixture <em>agrees with</em>.
     /// </summary>
     /// <remarks>
     ///     ⚠ The third shape, and it exists because the second one stopped being true. Until the
     ///     documentation-comment sub-formatter became the default these were <see cref="OfInert" /> —
     ///     "read, and unable to change anything" — which was accurate only because nothing ran them.
-    ///     They run on every file now, so "inert" would be a lie, and Tier A would be a different lie:
-    ///     Tier A means "pinned by at least one oracle fixture" and <c>jb cleanupcode</c> returns every
-    ///     documentation comment exactly as written, so no fixture can ever show it agreeing or
-    ///     disagreeing (SK-DIV-0006).
+    ///     They run on every file now, so "inert" would be a lie.
     ///     <para>
-    ///         So they stay Tier D and out of <see cref="All" />, and what is checked instead is the
-    ///         opposite of the inert claim: an unoracled key must be <em>observable</em>, or it is an
-    ///         unimplemented key hiding behind a reason. <c>OptionObservabilityTests</c> asserts it.
+    ///         ⚠ <b>The reason attached to this mark has changed, and the summary line changed with it.</b>
+    ///         It read "that no oracle fixture can pin", on the argument that <c>jb cleanupcode</c> returns
+    ///         every documentation comment exactly as written. It does not — the profile the fixtures were
+    ///         generated under does. <c>OracleProfile.DocComments</c> asks the question, and 13 of the 22
+    ///         keys that carried this mark are Tier A on the answer. What is left here is the nine the
+    ///         oracle contradicts, so the mark now says "asked, and answered differently"; a key that
+    ///         genuinely cannot be asked would be a fourth shape, and there are none.
+    ///     </para>
+    ///     <para>
+    ///         They stay Tier D and out of <see cref="All" />, and what is checked is the opposite of the
+    ///         inert claim: an unoracled key must be <em>observable</em>, or it is an unimplemented key
+    ///         hiding behind a reason. <c>OptionObservabilityTests</c> asserts that, and
+    ///         <c>XmlDocOracleTests</c> asserts the other half — that the disagreement it is named for is
+    ///         still there.
     ///     </para>
     /// </remarks>
     public static ImmutableArray<OptionId> ReadButUnoracled { get; } = [.. Unoracled.Distinct().Order()];
@@ -2051,9 +2059,15 @@ public static class Ids {
     /// </summary>
     /// <remarks>
     ///     ⚠ See <see cref="ReadButUnoracled" />. It is not a softer <see cref="Of" />: it is the mark
-    ///     that says the evidence for this key is hand-written fixtures and a round-trip property
-    ///     rather than a committed <c>.expected.cs</c>, and it keeps the key out of the Tier A claim so
-    ///     that "Tier A" keeps meaning one thing.
+    ///     that says a committed <c>.expected.cs</c> does not support this key, and it keeps the key out
+    ///     of the Tier A claim so that "Tier A" keeps meaning one thing.
+    ///     <para>
+    ///         ⚠ It used to mean "the oracle cannot be asked about this key", and that reading is retired:
+    ///         it turned out to be true of one profile rather than of the tool, and it kept 22 keys at
+    ///         Tier D for six milestones. Every id carrying the mark today has been asked and has
+    ///         disagreed, with a divergence entry naming the shape. A new <c>OfUnoracled</c> without one
+    ///         is a reason nobody measured.
+    ///     </para>
     /// </remarks>
     static OptionId OfUnoracled(string key) {
         var id = Of(key);
