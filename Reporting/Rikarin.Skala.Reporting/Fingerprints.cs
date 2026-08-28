@@ -63,7 +63,7 @@ public static class Fingerprints {
         var assigned = new Finding[findings.Length];
 
         foreach (var (finding, index) in order) {
-            var key = (finding.RuleId, finding.EnclosingSymbol, finding.Snippet);
+            var key = (finding.RuleId, finding.EnclosingSymbol, Identity(finding));
             counters.TryGetValue(key, out var ordinal);
             counters[key] = ordinal + 1;
             assigned[index] = finding with { OrdinalWithinSymbol = ordinal };
@@ -91,11 +91,28 @@ public static class Fingerprints {
     public static string V2(Finding finding) {
         var builder = new StringBuilder();
         builder.Append(finding.RuleId).Append('');
-        Collapse(builder, finding.Snippet.Length > 0 ? finding.Snippet : finding.Message);
+        builder.Append(Identity(finding));
         builder.Append('').Append(finding.EnclosingSymbol).Append('');
         builder.Append(finding.OrdinalWithinSymbol.ToString(CultureInfo.InvariantCulture));
         return Hash(builder);
     }
+
+    /// <summary>
+    ///     The text <see cref="V2" /> hashes to tell one finding from another: the snippet, or the
+    ///     message when a rule reports without one.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ It exists so that <see cref="Assign" /> and <see cref="V2" /> cannot disagree about what
+    ///     makes two findings the same, and they did disagree: the counter keyed on <c>Snippet</c> while
+    ///     the hash fell back to <c>Message</c>. Every rule that reports without a snippet — <c>SK7020</c>
+    ///     is one — therefore had a group key whose third term was the empty string for all of its
+    ///     findings, so the ordinal counted the rule's findings across the whole run instead of counting
+    ///     repeats of one finding. One duplication appearing or disappearing above another then shifted
+    ///     every later ordinal and rewrote every later fingerprint, which is a baseline that expires on
+    ///     an unrelated edit.
+    /// </remarks>
+    static string Identity(Finding finding) =>
+        Normalize(finding.Snippet.Length > 0 ? finding.Snippet : finding.Message);
 
     /// <summary>
     ///     Whitespace collapsed, identifiers preserved (docs/plan/09).

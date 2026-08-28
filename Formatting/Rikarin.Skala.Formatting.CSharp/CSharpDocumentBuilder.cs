@@ -1065,15 +1065,21 @@ public sealed partial class CSharpDocumentBuilder {
         }
     }
 
-    /// <summary>A <c>( )</c>, <c>[ ]</c> or <c>&lt; &gt;</c> group: one continuous indent inside.</summary>
-    void VisitDelimited(SyntaxNode node, NodeLayout layout) {
-        var (open, close) = DelimiterTokens(node, layout);
-        if (open.IsKind(SyntaxKind.None) || close.IsKind(SyntaxKind.None)) {
-            VisitChildren(node);
-            return;
-        }
-
-        var opened = 0;
+    /// <summary>
+    ///     Everything a delimited group decides before it writes a token: which indent its contents
+    ///     take, whether the scope is spent unconditionally, whether its children are elements, and the
+    ///     two <c>indent_*_pars</c> numbers.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Extracted from <see cref="VisitDelimited" /> and nothing more: five pure functions of the
+    ///     node, the layout and the options, none of which reads or writes the emitter's state. The
+    ///     token loop below is where the state lives, and keeping the decisions out of it is what lets
+    ///     each one be read against the measurement that produced it.
+    /// </remarks>
+    (IndentKind Inner, bool Unconditional, bool Element, int Inside, int Closer) PlanDelimited(
+        SyntaxNode node,
+        NodeLayout layout
+    ) {
         // ⚠ And an aligned construct spends no level of its own either — the same rule VisitPlanned
         // applies to a group's own indent, for the same reason: the Align scope is an absolute
         // column and its contents start there, so the delimiter's level would put them one indent
@@ -1090,9 +1096,9 @@ public sealed partial class CSharpDocumentBuilder {
         //     var tuple = (FirstComponentName: a, SecondComponentName: b,
         //                  ThirdOne: c);          ← the `(`'s column plus one, not plus an indent
         //
-        // The scope opens here, after the `(` has been written, so `CurrentColumn` is already the
-        // first component's. Opening it around the node — the way `Visit` does — would read the
-        // `(`'s own column and land one to the left.
+        // The scope opens after the `(` has been written, so `CurrentColumn` is already the first
+        // component's. Opening it around the node — the way `Visit` does — would read the `(`'s own
+        // column and land one to the left.
         var innerIndent = node is TupleExpressionSyntax && _options.AlignTupleComponents
             ? IndentKind.Align
             : IndentKind.Continuous;
@@ -1127,6 +1133,20 @@ public sealed partial class CSharpDocumentBuilder {
         var (inside, closer) = innerIndent == IndentKind.Align || suppress
             ? (suppress ? 0 : 1, 0)
             : DelimiterLevels(ParenthesesStyleFor(node));
+
+        return (innerIndent, unconditional, element, inside, closer);
+    }
+
+    /// <summary>A <c>( )</c>, <c>[ ]</c> or <c>&lt; &gt;</c> group: one continuous indent inside.</summary>
+    void VisitDelimited(SyntaxNode node, NodeLayout layout) {
+        var (open, close) = DelimiterTokens(node, layout);
+        if (open.IsKind(SyntaxKind.None) || close.IsKind(SyntaxKind.None)) {
+            VisitChildren(node);
+            return;
+        }
+
+        var opened = 0;
+        var (innerIndent, unconditional, element, inside, closer) = PlanDelimited(node, layout);
 
         var savedDepth = _continuousDepth;
         var pending = 0;

@@ -99,6 +99,68 @@ public sealed class LifecycleTests {
     }
 
     /// <summary>
+    ///     ⚠ A finding with no snippet is still its own finding, and its identity is its message.
+    /// </summary>
+    /// <remarks>
+    ///     <para>
+    ///         <see cref="Fingerprints.V2" /> hashes <c>Snippet</c> when there is one and <c>Message</c>
+    ///         when there is not, but <see cref="Fingerprints.Assign" /> keyed its counter on
+    ///         <c>Snippet</c> alone — so for every rule that reports without a snippet the third term of
+    ///         the key was the empty string for all of them, they landed in one group, and the "ordinal
+    ///         within symbol" became each finding's index in the run's whole path-ordered list of that
+    ///         rule. <c>SK7020</c> is such a rule, and on this repository its 53 findings held the
+    ///         ordinals 0 to 52 with no repeats: proof that the group had collapsed, because two
+    ///         genuinely identical findings are what an ordinal is for.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ The consequence is the one doc 09 calls the silent failure. Insert or remove one
+    ///         duplication anywhere above another in path order and every later ordinal shifts by one,
+    ///         so every later fingerprint changes: the baseline stops matching findings it already
+    ///         accepted, <c>prune</c> reads them as fixed and deletes them, and the same findings come
+    ///         back as new on the next run. That is the whole of the 36-finding self-gate failure —
+    ///         35 <c>SK7020</c> and one <c>SK7001</c>, none of them new code.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ <see cref="Fingerprints.Assign" />'s own summary states the invariant this broke: "the
+    ///         group key is everything the fingerprint uses <em>except</em> the ordinal". It was a true
+    ///         sentence about a key that did not implement it.
+    ///     </para>
+    /// </remarks>
+    [Fact]
+    public void FingerprintV2_OfASnippetlessFindingSurvivesAnotherAppearingAboveIt() {
+        var subject = Finding(ruleId: "SK7020", file: "Zed/Last.cs", start: 900) with {
+            Snippet = string.Empty, Message = "duplicated block of 131 tokens (102 lines), also at A.cs:12-32"
+        };
+
+        var unrelated = Finding(ruleId: "SK7020", file: "Aaa/First.cs", start: 100) with {
+            Snippet = string.Empty, Message = "duplicated block of 9 tokens (2 lines), also at B.cs:1-2"
+        };
+
+        var alone = Report(subject).Findings.Single();
+        var crowded = Report(unrelated, subject).Findings.Single(finding => finding.Start == 900);
+
+        // Two different findings, so each is the first of its own kind — not 0 and 1.
+        Assert.Equal(0, crowded.OrdinalWithinSymbol);
+        Assert.Equal(Fingerprints.V2(alone), Fingerprints.V2(crowded));
+    }
+
+    /// <summary>
+    ///     ⚠ And the ordinal still does its job: two findings that really are identical stay apart.
+    /// </summary>
+    [Fact]
+    public void Ordinal_StillSeparatesTwoIdenticalSnippetlessFindings() {
+        var one = Finding(ruleId: "SK7020", file: "Core/Foo.cs", start: 100) with {
+            Snippet = string.Empty, Message = "duplicated block of 9 tokens (2 lines), also at B.cs:1-2"
+        };
+
+        var two = one with { Start = 200 };
+        var report = Report(one, two);
+
+        Assert.Equal([0, 1], report.Findings.Select(static f => f.OrdinalWithinSymbol).Order());
+        Assert.NotEqual(Fingerprints.V2(report.Findings[0]), Fingerprints.V2(report.Findings[1]));
+    }
+
+    /// <summary>
     ///     ⚠ The ordinal is assigned by position, not by the order the analyzers happened to finish in.
     /// </summary>
     /// <remarks>

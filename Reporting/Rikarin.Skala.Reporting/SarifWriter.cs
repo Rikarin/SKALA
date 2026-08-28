@@ -53,6 +53,14 @@ public static class SarifWriter {
         return new SarifLog { Runs = [run] };
     }
 
+    /// <summary>
+    ///     ⚠ <c>NewLine</c> is set, and must stay set. <see cref="Formatting.Indented" /> breaks lines
+    ///     through the <see cref="TextWriter" /> it was handed, whose <c>NewLine</c> defaults to
+    ///     <see cref="Environment.NewLine" /> — so <c>--format=json</c> emitted CRLF on Windows, and so
+    ///     did every <c>.skala/baseline.sarif</c> written there, which is a committed file that would
+    ///     re-diff whole on the first Windows <c>baseline update</c>. Same defect as
+    ///     <c>Renderers.Lines</c>, reached through a writer instead of a <c>StringBuilder</c>.
+    /// </summary>
     public static string Serialize(SarifLog log) {
         var serializer = JsonSerializer.Create(
             new JsonSerializerSettings {
@@ -62,7 +70,7 @@ public static class SarifWriter {
             }
         );
 
-        using var writer = new StringWriter(CultureInfo.InvariantCulture);
+        using var writer = new StringWriter(CultureInfo.InvariantCulture) { NewLine = "\n" };
         serializer.Serialize(writer, log);
         return writer.ToString();
     }

@@ -171,14 +171,18 @@ public sealed class ReportingTests {
     ///         question directly, of every format, and fails on the platform that has the defect *and* on
     ///         the ones that do not, the moment a renderer reaches for <c>AppendLine</c> again.
     ///     </para>
+    ///     <para>
+    ///         ⚠ The cases come from <see cref="Enum.GetValues{TEnum}" />, and hand-written
+    ///         <c>InlineData</c> is what they replace. The list used to name six of the seven formats;
+    ///         the missing one was <see cref="ReportFormat.Json" />, and it had the bug — SARIF is
+    ///         serialised through a <see cref="System.IO.TextWriter" /> rather than a
+    ///         <c>StringBuilder</c>, so the sweep that fixed the <c>AppendLine</c> renderers never
+    ///         reached it and the theory that should have caught it never asked. A list of formats
+    ///         maintained by hand beside an enum drifts from the enum; enumerating it cannot.
+    ///     </para>
     /// </remarks>
     [Theory]
-    [InlineData(ReportFormat.Terminal)]
-    [InlineData(ReportFormat.Plain)]
-    [InlineData(ReportFormat.Github)]
-    [InlineData(ReportFormat.Agent)]
-    [InlineData(ReportFormat.Markdown)]
-    [InlineData(ReportFormat.JUnit)]
+    [MemberData(nameof(EveryFormat))]
     public void NoRenderer_EmitsACarriageReturn(ReportFormat format) {
         var report = Sample(
             Modernization(),
@@ -192,6 +196,15 @@ public sealed class ReportingTests {
         // Anti-vacuity: a renderer that returned nothing would pass the assertion below trivially.
         Assert.NotEmpty(text);
         Assert.DoesNotContain('\r', text);
+    }
+
+    public static TheoryData<ReportFormat> EveryFormat() {
+        var data = new TheoryData<ReportFormat>();
+        foreach (var format in Enum.GetValues<ReportFormat>()) {
+            data.Add(format);
+        }
+
+        return data;
     }
 
     /// <summary>

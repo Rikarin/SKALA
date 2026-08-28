@@ -200,7 +200,12 @@ public static class MarkdownRenderer {
 public static class JUnitRenderer {
     public static string Render(RunReport report, bool includeHints) {
         var findings = Renderer.Ordered(report, includeHints).ToList();
-        var settings = new XmlWriterSettings { Indent = true, OmitXmlDeclaration = false };
+
+        // ⚠ `NewLineChars` is not decoration. It defaults to `Environment.NewLine`, so an indenting
+        // `XmlWriter` emits CRLF on Windows and LF everywhere else — the same defect `Lines` in
+        // Renderers.cs was written to kill, arriving through the one renderer that builds no
+        // `StringBuilder` and so was missed by the sweep that fixed the other six.
+        var settings = new XmlWriterSettings { Indent = true, OmitXmlDeclaration = false, NewLineChars = "\n" };
 
         using var stream = new StringWriter(CultureInfo.InvariantCulture);
         using (var writer = XmlWriter.Create(stream, settings)) {
