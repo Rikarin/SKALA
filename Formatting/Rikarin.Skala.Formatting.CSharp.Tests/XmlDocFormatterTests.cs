@@ -340,6 +340,57 @@ public sealed class XmlDocHazardTests {
         Assert.Contains("///     item in items select null) };", lines);
     }
 
+    [Theory]
+    [InlineData("c")]
+    [InlineData("code")]
+    public void AVerbatimBodyOfThreeLines_KeepsTheMarkerSpaceOnAllOfThem(string tag) {
+        // ⚠ The same shape one line longer, and it is a separate fixture because "multi-line" was the
+        // gap: the corpus reaches a one-line verbatim body and nothing reached a body that has to stay
+        // several lines. The first line is the one that never carried a marker; the rest carry one and
+        // must not gain a second.
+        var source = XmlDoc.InClass(
+            "/// <remarks>",
+            "///     Found by the fuzzer: <" + tag + ">var q = from item in items",
+            "///     where item.Enabled",
+            "///     select item.Name;</" + tag + "> makes the binder throw.",
+            "/// </remarks>"
+        );
+
+        var lines = XmlDoc.DocLines(XmlDoc.Text(source));
+        Assert.Contains("/// var q = from item in items", lines);
+        Assert.Contains("///     where item.Enabled", lines);
+        Assert.Contains("///     select item.Name;", lines);
+        Assert.DoesNotContain(lines, static line => Marks(line));
+    }
+
+    [Fact]
+    public void TheProseAroundAnInlineVerbatimElement_DoesNotChangeTheAnswer() {
+        // ⚠ Reported as a shape that still failed, at prose long enough that the element cannot stay on
+        // the line it started on. It is the same construct, and it is pinned because the report was
+        // specific: the wrap that moves `<c>` onto a line of its own is a different code path
+        // (`Flush`/`EndLine`) from the one that opens it, and "it works at one prose length" is not an
+        // answer about the other.
+        var source = XmlDoc.InClass(
+            "/// <remarks>",
+            "///     Some prose that runs on and on and eventually mentions <c>Func&lt;int&gt; v = new () { P = (from",
+            "///     item in items select null) };</c> and then keeps going for a while afterwards too.",
+            "/// </remarks>"
+        );
+
+        var lines = XmlDoc.DocLines(XmlDoc.Text(source));
+        Assert.Contains("/// Func&lt;int&gt; v = new () { P = (from", lines);
+        Assert.Contains("///     item in items select null) };", lines);
+        Assert.DoesNotContain(lines, static line => Marks(line));
+    }
+
+    /// <summary>Whether the line is a <c>///</c> line whose marker is followed by something else.</summary>
+    /// <remarks>
+    ///     ⚠ <c>////</c> is not a documentation comment — Roslyn does not classify one and neither does
+    ///     <c>XmlDocFormatter.Indent</c> — so it is excluded rather than counted.
+    /// </remarks>
+    static bool Marks(string line) =>
+        line.StartsWith("///", StringComparison.Ordinal) && line.Length > 3 && line[3] is not (' ' or '/');
+
     [Fact]
     public void AVerbatimBlockUnderAMarkerlessConvention_ShiftsWholeRatherThanFlattening() {
         // ⚠ The hazard in giving the verbatim path a marker space, and the reason `SourceLines`
@@ -360,6 +411,29 @@ public sealed class XmlDocHazardTests {
         Assert.Contains("/// if (x) {", lines);
         Assert.Contains("///  y();", lines);
         Assert.Contains("/// }", lines);
+    }
+
+    [Fact]
+    public void AnInlineMarkerlessBlockThatMustOpen_StillShiftsWholeRatherThanFlattening() {
+        // ⚠ The other direction of the multi-line case, and the one that says the fix did not buy the
+        // marker space by giving up the columns. This is the ambiguous shape: the region's first body
+        // line begins on the start tag and carries no marker, exactly as a line the old defect damaged
+        // does — and its second line's single space is the sample's own indentation rather than the
+        // marker's. The two are indistinguishable, so nothing may be taken off either, and the whole
+        // region moves by one column together. Relative indentation is the invariant, not absolute.
+        var source = XmlDoc.InClass(
+            "/// <summary>",
+            "///     Guard: <code>if (x) {",
+            "/// y();",
+            "///}</code> is the shape.",
+            "/// </summary>"
+        );
+
+        var lines = XmlDoc.DocLines(XmlDoc.Text(source));
+        Assert.Contains("/// if (x) {", lines);
+        Assert.Contains("///  y();", lines);
+        Assert.Contains("/// }", lines);
+        Assert.DoesNotContain(lines, static line => Marks(line));
     }
 
     [Fact]

@@ -1297,6 +1297,18 @@ skala    /// <?skala-probe mode="short"?>         ← (1) fixed: the marker spac
   on one line rather than two. ⚠ The entry names `resharper_space_after_triple_slash`, which is
   **Tier A**: the key is reproduced everywhere its fixture exercises it, and this is a construct that
   fixture does not reach.
+- ⚠ **What was missing was an assertion, not a fixture.** The fix for (1) was reported as still
+  failing on a multi-line verbatim body, on the grounds that no `constructs/xmldoc/` fixture reaches
+  one — and that is true of the construct corpus. It was never true of `real/`: five files under
+  `real/vixen/` carry the shape, and `XmlDocPropertyTests.TheMarkerSpace_IsOnEveryLineTheSubFormatterWrote`
+  fails on all five plus the processing-instruction fixture when run against the pre-fix formatter.
+  The property is a comparison rather than a scan — a comment the sub-formatter *refused* may carry
+  anything its author wrote; what it may not do is introduce a marker without the option's space —
+  and it is the check that found the defect in the first place (`git diff | grep '^+\s*///[^ /]'`
+  over this repository's own sources), moved out of a review and into the suite. ⚠ A re-report of the
+  same shape against a **daemon** started before the fix will still reproduce it: nothing in
+  `DaemonProtocol.Version` encodes the formatter build, so a daemon serves the code it was launched
+  with until it is stopped. `--no-daemon` is the check.
 ## SK-DIV-0024 — a type parameter list wraps when the list overflows, not when the declaration does
 
 T5a gave a type parameter list its first break points: at `wrap_before_type_parameter_langle = false`
