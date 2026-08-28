@@ -2461,10 +2461,11 @@ public sealed class BreakPlan {
     /// </summary>
     /// <remarks>
     ///     ⚠ The same predicate <see cref="CSharpDocumentBuilder" /> uses to decide which node spends the
-    ///     chain's continuation level; the two must agree, or the group and the indent scope are opened
-    ///     around different nodes.
+    ///     chain's continuation level, and the same one it uses to decide which node opens
+    ///     <c>outdent_dots</c>' column scope; all three must agree, or the group and the indent scopes
+    ///     are opened around different nodes.
     /// </remarks>
-    static bool IsChainRoot(SyntaxNode node) =>
+    internal static bool IsChainRoot(SyntaxNode node) =>
         node is InvocationExpressionSyntax { Expression: MemberAccessExpressionSyntax or MemberBindingExpressionSyntax }
             or ConditionalAccessExpressionSyntax
         && node.Parent is not (InvocationExpressionSyntax

@@ -1580,3 +1580,124 @@ read, and those were another agent's subject on the day this was measured.
 - options: `resharper_disable_line_break_removal`
 - ⚠ status: **open**, measured. ⚠ The nearest implemented shape is `keep_user_linebreaks`, which is
   not the same key: it governs the gaps *between items of a list*, and this governs every gap.
+## SK-DIV-0030 — a chain whose receiver ends in `?.` is not chopped at all
+
+`PlanChainedCalls` collects a chain's dots by walking the receiver side of each link. For a
+`ConditionalAccessExpressionSyntax` it walks `conditional.Expression` and stops, on the argument —
+correct where the conditional access is reached *from* an enclosing invocation — that "the `?.` is
+the binding's dot, already added by the invocation above". When the conditional access is itself the
+chain root that is not true: the whole chain hangs off `WhenNotNull`, which is never walked, so
+`dots` comes back empty, no group is planned, and the chain has no break points.
+
+```csharp
+// the oracle, at 120 columns
+var result = someCollectionOfThingsHere?.Where(item => item.IsEnabled)
+    .Select(item => item.Name)
+    .ToList();
+
+// Skala: no chain group, so the argument list of the last call takes the break instead
+var result = someCollectionOfThingsHere?.Where(item => item.IsEnabled).Select(item => item.Name).OrderBy(n => n
+).ToList();
+```
+
+Found while building `constructs/alignment/outdent.cs`, which wanted a mixed-width chain — `?.` is
+two columns and the dots after it are one — as the shape that tests whether one chain-wide outdent
+amount is enough. The shape is out of that fixture and out of `align-declaration.cs`, because a
+fixture carrying it would pin this defect rather than the options those files exist for.
+
+It is a break-point defect and not an option's: no key in the `align_multiline_*` or `outdent_*`
+family changes it at either value, and the outdent family's three implemented keys are conformant on
+every chain that *is* chopped.
+
+- options: none — `resharper_wrap_chained_method_calls` and `resharper_wrap_before_first_method_call`
+  are read correctly and have no chain to apply to
+- ⚠ status: **open**, measured, unfixed. The fix is one arm of `PlanChainedCalls.Collect`; it was
+  left out of T5b because a chain-planner change is a wrapping change and this branch's subject is
+  the alignment options.
+
+## SK-DIV-0031 — a field with several declarators wraps after the type; Skala wraps at the commas
+
+The oracle breaks a too-long multi-declarator *field* between its type and its first declarator and
+then leaves the declarators alone; Skala keeps the first declarator on the type's line and chops at
+every comma.
+
+```csharp
+// the oracle
+System.Collections.Generic.List<int>?
+    alphaFieldNameHere = null, betaFieldNameHere = null, gammaFieldNameHere = null;
+
+// Skala
+System.Collections.Generic.List<int>? alphaFieldNameHere = null,
+    betaFieldNameHere = null,
+    gammaFieldNameHere = null;
+```
+
+⚠ **A local declaration of the same shape agrees**, which is what makes this a field rule rather than
+a declarator rule: `System.Int32 a = 1, b = 2, …` comes back identical from both engines, and it is
+the fixture `constructs/alignment/align-declaration.cs` pins. The asymmetry is also why
+`CSharpDocumentBuilder.AlignsFromOwnColumn` excludes a `FieldDeclarationSyntax`'s declaration from
+`align_multiple_declaration` — the oracle does not move a field's declarators at either value of that
+key, so the exclusion is measured and not a consequence of this divergence.
+
+Found while building that fixture, and kept out of it for the same reason as SK-DIV-0030.
+
+- options: `resharper_csharp_align_multiple_declaration`, `resharper_csharp_wrap_multiple_declaration_style`
+- ⚠ status: **open**, measured, unfixed
+
+## SK-DIV-0032 — `alignment_tab_fill_style` has three layouts and Skala writes one of them, under the wrong name
+
+`LayoutWriter.WriteIndentTo` writes whole indent units and then spaces for the remainder, and its
+remarks say that is "what `alignment_tab_fill_style = use_spaces` asks for". It is not. Asked under
+`indent_style = tab`, the oracle gives three distinct layouts of the same alignment column, and the
+one Skala writes is `optimal_fill`:
+
+| value | column 12, block at 8 | chain aligned at 21 |
+|---|---|---|
+| `use_spaces` (the export) | 2 tabs + 4 spaces | 2 tabs + 13 spaces |
+| `use_tabs_only` | 3 tabs | 5 tabs — column 20, short of the anchor |
+| `optimal_fill` | 3 tabs | 5 tabs + 1 space |
+| Skala, at every value | 3 tabs | 5 tabs + 1 space |
+
+`use_spaces` indents in tabs only as far as the *enclosing block's* level and spells the alignment
+remainder in spaces, which is what makes it "look aligned on any tab size"; `optimal_fill` divides
+the whole column by the tab width. The two coincide whenever the block level and the alignment column
+fall on the same side of a tab stop, which is why nothing caught it.
+
+⚠ **Not reachable under this repository's configuration**, which sets `indent_style = space`; all
+three values then produce identical output and the key reads as inert. That is why it sat on the
+"never read by the C# formatter" list — every probe that asked it was indented with spaces. It is a
+real divergence on a tab-indented configuration and it is Skala's to fix, not an option to implement:
+the export's own value is the one Skala gets wrong.
+
+- options: `resharper_csharp_alignment_tab_fill_style`, `indent_style`
+- ⚠ status: **open**, measured, unfixed. The fix is a value on `LayoutWriter` and three cases in
+  `WriteIndentTo`; it needs a fixture under a tab configuration, and the corpus has no mechanism for
+  a per-directory `.editorconfig`, so it wants that first.
+
+## SK-DIV-0033 — the oracle realigns a block comment's asterisks; Skala leaves the comment as written
+
+`align_multiline_comments` is **`true`** in the export — one of very few keys in the
+`AlignMultilineConstructs` family that is — and it moves each continuation line of a `/* … */`
+comment whose lines begin with `*` onto the opening delimiter's column plus one.
+
+```csharp
+/*
+ * A starred block comment.
+   * A line whose asterisk is out of place.      // the oracle pulls both of these to ` * `
+* Another one.
+ */
+```
+
+At `false` the oracle returns the comment exactly as written, which is what Skala does at every
+value. A block comment with no leading asterisks is untouched at either value, by both engines.
+
+Recorded in `PhaseOneOptions` until now as "no probe found a shape where it changes the oracle's
+output"; the probes were passing comments whose asterisks were already aligned.
+
+Unimplemented rather than wrong-by-choice: it rewrites the *interior* of a comment token, which no
+other key in this family does and which the formatter has no trivia rewriter for. It is the only
+member of the family whose export value is the one Skala fails to honour, so it is a divergence at
+the export's own values and not merely an unimplemented option.
+
+- options: `resharper_csharp_align_multiline_comments`
+- ⚠ status: **open**, measured, unfixed
