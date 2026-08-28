@@ -141,7 +141,6 @@ jobs:
           echo "::error::  dotnet run --project Testing/Rikarin.Skala.Testing -- fuzz --replay=<seed>"
           echo "::error::and is committed to Testing/corpus/pathological/open/ with a register entry."
           exit 1
-          if-no-files-found: ignore
 
   # ────────────────────────────────────────────────────────────────────────────────────────────
   # doc 12 § "Testing the rules", addition 2: every rule over the whole reference corpus, its

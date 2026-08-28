@@ -21,19 +21,6 @@ namespace Rikarin.Skala.Conformance.Tests;
 ///     </para>
 /// </remarks>
 public sealed class OpenDefectTests {
-    public static TheoryData<string> Entries {
-        get {
-            var data = new TheoryData<string>();
-            foreach (var entry in OpenDefects.Register) {
-                data.Add(entry.Id);
-            }
-
-            return data;
-        }
-    }
-
-    static OpenDefect Find(string id) =>
-        OpenDefects.Register.First(entry => string.Equals(entry.Id, id, StringComparison.Ordinal));
 
     [Fact]
     public void TheRegister_AccountsForEveryFileAndEveryFileForAnEntry() {
@@ -62,10 +49,27 @@ public sealed class OpenDefectTests {
         );
     }
 
-    [Theory]
-    [MemberData(nameof(Entries))]
-    public void EachOpenDefect_StillFailsTheWayTheRegisterSaysItDoes(string id) {
-        var entry = Find(id);
+    /// <summary>
+    ///     ⚠ A <c>[Fact]</c> over the register rather than a <c>[Theory]</c> per entry, and the reason
+    ///     is that the register is allowed to be <b>empty</b>.
+    /// </summary>
+    /// <remarks>
+    ///     An empty queue is the goal this directory is aiming at, and xUnit fails a theory whose data
+    ///     source yields nothing — "No data found" — so the shape that reads best when there are four
+    ///     entries reports a red suite at the moment the last one is fixed. That is precisely the wrong
+    ///     signal: it makes retiring the final defect look like breaking something. The loop below
+    ///     names the entry it is asserting in every message, which is what the per-entry test name was
+    ///     buying.
+    /// </remarks>
+    [Fact]
+    public void EachOpenDefect_StillFailsTheWayTheRegisterSaysItDoes() {
+        foreach (var entry in OpenDefects.Register) {
+            Check(entry);
+        }
+    }
+
+    static void Check(OpenDefect entry) {
+        var id = entry.Id;
         Assert.True(File.Exists(entry.Path), $"{entry}: the register names a file that is not there.");
 
         // ⚠ Read as bytes and never through a line-normalising helper. Several entries are *about* a

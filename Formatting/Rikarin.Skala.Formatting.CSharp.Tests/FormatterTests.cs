@@ -314,6 +314,48 @@ public sealed class BlankLineTests {
             Format.Text("using System;\nclass C {\n}\n"),
             StringComparison.Ordinal
         );
+
+    /// <summary>
+    ///     ⚠ SK-FUZZ-0010. A member's trailing comment shares its line, so it is part of its width.
+    /// </summary>
+    /// <remarks>
+    ///     "Single line" is a property of the <em>output</em>, and the width that decides it has to be
+    ///     the width the fitter will see. <c>OutputWidth</c> measured the gaps *between* a member's
+    ///     tokens and there is no gap after the last one, so the trailing comment was missing from the
+    ///     comparison: the second member below is 108 columns on its own and 123 with its comment. It
+    ///     was therefore called single-line, <c>blank_lines_around_single_line_invocable = 0</c>
+    ///     declined the blank line above it — and then the fitter, which does count the comment,
+    ///     chopped the member across three lines. The second pass read a multi-line member, asked
+    ///     <c>blank_lines_around_invocable = 1</c> instead, and inserted the blank line the first pass
+    ///     had refused.
+    ///     <para>
+    ///         ⚠ The widths above are the whole test, so the assertion below pins them: a member that
+    ///         fits without its comment and does not fit with it. Both are asserted, because a fixture
+    ///         that drifted to the wrong side of the margin would pass this test while asserting nothing.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ Asserted as idempotency rather than as "there is a blank line here". Which of the two
+    ///         answers is right is a question for the oracle; that the two passes must give the *same* one
+    ///         is not.
+    ///     </para>
+    /// </remarks>
+    [Fact]
+    public void AMemberWideOnlyBecauseOfItsTrailingComment_ConvergesInOnePass() {
+        const string wide =
+            "    internal IEnumerable<TimeSpan> M97<T95, T96>(out decimal p98) => [(static x => 3_000_000L), items[1..]];";
+
+        const string comment = " // over the margin";
+        Assert.True(wide.Length <= Format.Options.MaxLineLength, $"the member alone is {wide.Length} columns");
+        Assert.True(
+            wide.Length + comment.Length > Format.Options.MaxLineLength,
+            $"the member and its comment are {wide.Length + comment.Length} columns"
+        );
+
+        var source = "class T {\n    public static byte M21() {\n    }" + comment + "\n" + wide + comment + "\n}\n";
+        var once = Format.Text(source);
+        var twice = Format.Text(once);
+        Assert.Equal(once, twice);
+    }
 }
 
 public sealed class TriviaTests {
@@ -428,6 +470,39 @@ public sealed class SafetyTests {
 
         var result = Format.Run(source);
         Assert.Contains(result.Diagnostics, static d => d.Id == FormatDiagnosticIds.UnbalancedPreprocessor);
+    }
+
+    /// <summary>
+    ///     ⚠ SK-FUZZ-0009. C# ends a line at a lone <c>\r</c>, and so must the formatter's own count.
+    /// </summary>
+    /// <remarks>
+    ///     <c>CSharpDocumentBuilder.CountNewLines</c> counted <c>'\n'</c> and nothing else, so the gap
+    ///     <c>}   &lt;CR&gt;#endif</c> reported zero newlines; <c>EmitGap</c> then reasoned about the
+    ///     brace and the directive as though they shared a line and joined them, a <c>#</c> that is not
+    ///     first on its line is not a directive to Roslyn, and the <c>#endif</c> became a *skipped
+    ///     token*. The safety net caught it — <c>SK9099</c>, nothing written — which means the visible
+    ///     symptom was not corruption but a file the tool could not format at all.
+    ///     <para>
+    ///         ⚠ The assertion is <c>Formatted</c>, not the absence of a diagnostic. A future regression
+    ///         that produced a *different* wrong output would still trip <c>SK9099</c> and would still be
+    ///         wrong; what this pins is that the directive survives as a directive.
+    ///     </para>
+    /// </remarks>
+    [Fact]
+    public void ADirectiveAfterALoneCarriageReturn_StaysADirective() {
+        const string source = "class C { // fuzz\r\n#if true\n} \r#endif";
+        var result = Format.Run(source);
+
+        Assert.NotEqual(FormatOutcome.VerificationFailed, result.Outcome);
+        Assert.DoesNotContain(result.Diagnostics, static d => d.Id == FormatDiagnosticIds.TokenStreamChanged);
+
+        // The `#endif` must still begin a line of its own in the output, whichever terminator ends
+        // the line above it.
+        var lines = result.Formatted.Replace("\r\n", "\n", StringComparison.Ordinal)
+            .Replace('\r', '\n')
+            .Split('\n');
+
+        Assert.Contains(lines, static line => line.TrimStart().StartsWith("#endif", StringComparison.Ordinal));
     }
 
     [Fact]

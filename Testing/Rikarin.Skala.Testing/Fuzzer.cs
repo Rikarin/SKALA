@@ -68,7 +68,8 @@ public sealed record FuzzCase(
     string Baseline,
     string Text,
     ImmutableArray<Mutation> Mutations,
-    bool AbsorbedOnly);
+    bool AbsorbedOnly,
+    ImmutableArray<string> Rejected);
 
 /// <summary>One property that did not hold, with the input that broke it.</summary>
 public sealed record FuzzFinding(
@@ -94,6 +95,7 @@ public sealed record FuzzReport(
     long GeneratedUnits,
     long ArrangementChecks,
     IReadOnlyDictionary<string, long> MutationsApplied,
+    IReadOnlyDictionary<string, long> MutationsRejected,
     IReadOnlyDictionary<string, long> Violations,
     IReadOnlyList<string> CorpusFilesTouched,
     long ParseLost,
@@ -141,12 +143,38 @@ public sealed record FuzzReport(
                     : " (e.g. " + string.Join(", ", ParseLostSeeds.Select(FuzzRandom.Format)) + ")")
         );
 
+        // ⚠ The rejections are the *other* half of the parse-lost number and are what makes it
+        // readable. A rejected mutation is one the case builder refused because it did not preserve
+        // the parse, which is a defect in the catalogue: without this row the guard silently absorbs
+        // the problem and the fuzzer reports a clean run over a catalogue that is still wrong.
+        var rejections = MutationsRejected.Values.Sum();
+        report.AppendLine(
+            $"- {rejections.ToString("N0", CultureInfo.InvariantCulture)} mutations were refused for "
+            + "breaking the parse; each would have been a case that asserted nothing"
+        );
+
         report.AppendLine();
-        report.AppendLine("| mutation | applied |");
-        report.AppendLine("|---|---:|");
+        report.AppendLine("| mutation | applied | refused, not parse-preserving |");
+        report.AppendLine("|---|---:|---:|");
         foreach (var entry in MutationsApplied.OrderByDescending(static e => e.Value)
                      .ThenBy(static e => e.Key, StringComparer.Ordinal)) {
-            report.AppendLine($"| `{entry.Key}` | {entry.Value.ToString("N0", CultureInfo.InvariantCulture)} |");
+            report.AppendLine(
+                $"| `{entry.Key}` | {entry.Value.ToString("N0", CultureInfo.InvariantCulture)} | "
+                + (MutationsRejected.TryGetValue(entry.Key, out var refused)
+                    ? refused.ToString("N0", CultureInfo.InvariantCulture)
+                    : "—")
+                + " |"
+            );
+        }
+
+        // The print-time mutations of a generated unit are not drawn from the same loop and so are
+        // not in the applied histogram; a refusal of one still belongs in the table.
+        foreach (var entry in MutationsRejected.Where(entry => !MutationsApplied.ContainsKey(entry.Key))
+                     .OrderByDescending(static e => e.Value)
+                     .ThenBy(static e => e.Key, StringComparer.Ordinal)) {
+            report.AppendLine(
+                $"| `{entry.Key}` | — | {entry.Value.ToString("N0", CultureInfo.InvariantCulture)} |"
+            );
         }
 
         report.AppendLine();
@@ -180,8 +208,17 @@ public sealed record FuzzReport(
                 report.AppendLine($"- as found: {finding.Violation}");
                 report.AppendLine($"- minimised: {finding.MinimisedDetail}");
 
+                // ⚠ `--origin` is printed for a mutate finding and is not decoration. The seed alone
+                // picks the corpus file by *index*, so it re-points as soon as the corpus grows —
+                // and "the corpus only grows" is the policy. Naming the file pins the half of the
+                // case the seed cannot.
                 report.AppendLine(
-                    $"- replay: `dotnet run --project Testing/Rikarin.Skala.Testing -- fuzz --replay={FuzzRandom.Format(finding.Seed)}`"
+                    "- replay: `dotnet run --project Testing/Rikarin.Skala.Testing -- fuzz "
+                    + $"--replay={FuzzRandom.Format(finding.Seed)}"
+                    + (string.Equals(finding.Origin, "generated", StringComparison.Ordinal)
+                        ? string.Empty
+                        : $" --origin={finding.Origin}")
+                    + "`"
                 );
                 report.AppendLine();
                 report.AppendLine("```csharp");
@@ -255,25 +292,98 @@ public static class Fuzzer {
 
     static readonly ConcurrentDictionary<string, FormattingOptions> OptionCache = new(StringComparer.Ordinal);
 
-    /// <summary>Reconstructs a case from its seed. ⚠ This is what makes a nightly failure actionable.</summary>
-    public static FuzzCase Build(ulong seed, FuzzMode mode, IReadOnlyList<CorpusFile> corpus) {
+    /// <summary>
+    ///     The index the corpus-redraw sub-stream is derived at. ⚠ Far outside any case index, so a
+    ///     redraw can never collide with the stream of a case.
+    /// </summary>
+    const long RedrawStream = long.MaxValue - 1;
+
+    /// <summary>
+    ///     Reconstructs a case from its seed. ⚠ This is what makes a nightly failure actionable.
+    /// </summary>
+    /// <param name="origin">
+    ///     The corpus file to mutate, as <c>set/relative/path.cs</c>, instead of the one the seed draws.
+    /// </param>
+    /// <remarks>
+    ///     ⚠ <paramref name="origin" /> exists because the seed alone is <b>not</b> enough for a
+    ///     mutate-mode case, and this file and the nightly workflow both claimed it was — "a seed
+    ///     recorded in a nightly log six months ago rebuilds the same bytes today". It does not: the
+    ///     file is <c>corpus[random.Next(corpus.Count)]</c>, so every mutate seed re-points the moment
+    ///     the corpus grows, and the corpus grows by policy ("the corpus only grows"). Measured: run
+    ///     33 148 756 015 reported a <c>token-equivalence</c> finding on
+    ///     <c>pathological/mixed-line-endings-after-a-trailing-comment.cs</c>; twenty-three corpus files
+    ///     later the same seed replays <c>pathological/very-long-line.cs</c> and finds nothing. The
+    ///     finding that could not be reproduced from its seed was real, and was reproduced from the
+    ///     artefact instead.
+    ///     <para>
+    ///         ⚠ The stream is unaffected by the override, and that is what makes the pair
+    ///         <c>(seed, origin)</c> an exact reconstruction rather than an approximate one: the draw
+    ///         below always consumes the same number of values whichever file it lands on, so the
+    ///         mutation sequence begins at the same offset. Substituting the file afterwards changes the
+    ///         input and nothing else. A finding therefore replays with
+    ///         <c>--replay=&lt;seed&gt; --origin=&lt;origin&gt;</c>, and the report prints both.
+    ///     </para>
+    /// </remarks>
+    public static FuzzCase Build(
+        ulong seed,
+        FuzzMode mode,
+        IReadOnlyList<CorpusFile> corpus,
+        string? origin = null
+    ) {
         var random = new FuzzRandom(seed);
         var kind = mode is FuzzMode.Both
             ? random.Chance(0.65) ? FuzzMode.Mutate : FuzzMode.Generate
             : mode;
 
-        string origin;
+        string from;
         string path;
         string baseline;
 
+        // ⚠ Counted and reported rather than dropped quietly. A mutation the guard below refuses is
+        // a mutation whose implementation is not parse-preserving, which is a defect in the
+        // catalogue and not a fact about the input; a run that silently discards them reports a
+        // healthy fuzzer and a smaller one.
+        var rejected = ImmutableArray.CreateBuilder<string>();
+
         if (kind is FuzzMode.Mutate && corpus.Count > 0) {
+            // ⚠ Redrawn when the file drawn does not parse. Two corpus files are unparseable on
+            // purpose — `pathological/does-not-parse.cs` is ADR-003's own fixture and
+            // `interpolated-raw-string-with-nested-braces.cs` is SK-FUZZ-0008's — and a case built on
+            // one of them cannot assert anything at all: the formatter leaves such a file
+            // byte-identical, so all seven properties hold over it for free. They are legitimate
+            // corpus files and this is not a defect in them; it is a draw the fuzzer should not
+            // spend a case on.
+            //
+            // ⚠ The redraws come off a *derived* stream rather than this one, so the main stream
+            // consumes exactly one value here whether or not the first file was taken. Two things
+            // depend on that: existing seeds keep drawing the file they always drew, and the
+            // mutation sequence begins at an offset that does not depend on which corpus files
+            // happen to parse — without which `--origin` below would rebuild a different case from
+            // the same seed, which is the one thing it exists to prevent.
+            //
+            // ⚠ `Parses` is cached per path, so this costs no parse after the first case to meet a
+            // file.
             var file = corpus[random.Next(corpus.Count)];
-            origin = file.ToString();
+            if (!Parses(file)) {
+                var redraw = new FuzzRandom(FuzzRandom.Derive(seed, RedrawStream));
+                for (var attempt = 0; attempt < 4 && !Parses(file); attempt++) {
+                    file = corpus[redraw.Next(corpus.Count)];
+                }
+            }
+
+            if (origin is { Length: > 0 }) {
+                file = corpus.FirstOrDefault(
+                           entry => string.Equals(entry.ToString(), origin, StringComparison.Ordinal)
+                       )
+                       ?? throw new ArgumentException($"no corpus file is named {origin}", nameof(origin));
+            }
+
+            from = file.ToString();
             path = file.Path;
             baseline = File.ReadAllText(file.Path);
         } else {
             kind = FuzzMode.Generate;
-            origin = "generated";
+            from = "generated";
             path = GeneratedPath;
 
             // ⚠ doc 12: "print them with random whitespace". The printing is the same
@@ -284,8 +394,14 @@ public static class Fuzzer {
             var prints = random.Next(1, 5);
             for (var i = 0; i < prints; i++) {
                 var printed = FuzzMutations.Apply(baseline, random, Corpus.PropertySymbols, PrintNames);
-                if (printed is not null) {
+                if (printed is null) {
+                    continue;
+                }
+
+                if (ParsePreserving(baseline, printed.Text)) {
                     baseline = printed.Text;
+                } else {
+                    rejected.Add("print:" + printed.Name);
                 }
             }
         }
@@ -304,12 +420,104 @@ public static class Fuzzer {
                 continue;
             }
 
+            // ⚠ Dropped rather than applied when it breaks the parse, and this is the fuzzer's own
+            // contract being enforced instead of assumed. The catalogue is documented as
+            // parse-preserving; nothing checked, and a mutation that broke the parse produced a file
+            // ADR-003 leaves byte-identical, so all seven properties held over it for free. The case
+            // ran, cost a case's worth of time, asserted nothing, and was counted — and a case that
+            // asserts nothing is indistinguishable from a case that passed, which is the one failure
+            // mode this whole suite exists to prevent.
+            //
+            // ⚠ "Preserves" and not "parses", because the mutate half draws from a corpus that
+            // contains `pathological/does-not-parse.cs` on purpose. What must not change is the set
+            // of errors, not its emptiness.
+            if (!ParsePreserving(text, mutation.Text)) {
+                rejected.Add(mutation.Name);
+                continue;
+            }
+
             mutations.Add(mutation);
             text = mutation.Text;
         }
 
-        return new FuzzCase(seed, kind, origin, path, baseline, text, mutations.ToImmutable(), absorbedOnly);
+        return new FuzzCase(
+            seed,
+            kind,
+            from,
+            path,
+            baseline,
+            text,
+            mutations.ToImmutable(),
+            absorbedOnly,
+            rejected.ToImmutable()
+        );
     }
+
+    /// <summary>
+    ///     Does <paramref name="after" /> report the same parse errors <paramref name="before" /> did?
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Both symbol sets, because that is what the properties are asserted under and a mutation
+    ///     can break exactly one of them: text inside a <c>#if</c> is disabled — and unparsed — for the
+    ///     empty symbol set and is code for the other.
+    ///     <para>
+    ///         ⚠ The common answer is "no errors either side", and the cheap half of that is checked
+    ///         first: <paramref name="before" /> is only parsed at all when <paramref name="after" /> has
+    ///         errors to explain. A parse is a small fraction of the eight-or-more formats a case runs,
+    ///         and the alternative — a case that silently asserts nothing — costs the whole case.
+    ///     </para>
+    /// </remarks>
+    static bool ParsePreserving(string before, string after) {
+        foreach (var symbols in (ReadOnlySpan<bool>)[false, true]) {
+            var options = Rikarin.Skala.Formatting.CSharp.CSharpFormatter.ParseOptionsFor(
+                symbols ? Corpus.PropertySymbols : []
+            );
+
+            var errors = ParseErrors(after, options);
+            if (errors.Length == 0) {
+                continue;
+            }
+
+            if (!errors.SequenceEqual(ParseErrors(before, options), StringComparer.Ordinal)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    static readonly ConcurrentDictionary<string, bool> ParseCache = new(StringComparer.Ordinal);
+
+    /// <summary>Does this corpus file parse under both symbol sets? ⚠ Cached per path for the run.</summary>
+    static bool Parses(CorpusFile file) =>
+        ParseCache.GetOrAdd(
+            file.Path,
+            static path => {
+                var text = File.ReadAllText(path);
+                foreach (var symbols in (ReadOnlySpan<bool>)[false, true]) {
+                    var options = Rikarin.Skala.Formatting.CSharp.CSharpFormatter.ParseOptionsFor(
+                        symbols ? Corpus.PropertySymbols : []
+                    );
+
+                    if (ParseErrors(text, options).Length > 0) {
+                        return false;
+                    }
+                }
+
+                return true;
+            }
+        );
+
+    static string[] ParseErrors(string text, Microsoft.CodeAnalysis.CSharp.CSharpParseOptions options) => [
+        .. Microsoft.CodeAnalysis.CSharp.CSharpSyntaxTree
+            .ParseText(Microsoft.CodeAnalysis.Text.SourceText.From(text), options)
+            .GetDiagnostics()
+            .Where(static diagnostic =>
+                diagnostic.Severity == Microsoft.CodeAnalysis.DiagnosticSeverity.Error
+            )
+            .Select(static diagnostic => diagnostic.Id)
+            .Order(StringComparer.Ordinal)
+    ];
 
     /// <summary>The mutations a generated unit is "printed" with.</summary>
     static readonly ImmutableArray<string> PrintNames = [
@@ -393,6 +601,7 @@ public static class Fuzzer {
         var corpus = Corpus.All();
         var clock = Stopwatch.StartNew();
         var mutations = new ConcurrentDictionary<string, long>(StringComparer.Ordinal);
+        var refused = new ConcurrentDictionary<string, long>(StringComparer.Ordinal);
         var violations = new ConcurrentDictionary<string, long>(StringComparer.Ordinal);
         var touched = new ConcurrentDictionary<string, byte>(StringComparer.Ordinal);
         var findings = new ConcurrentBag<(long Index, FuzzFinding Finding)>();
@@ -449,6 +658,10 @@ public static class Fuzzer {
                         mutations.AddOrUpdate(mutation.Name, 1, static (_, value) => value + 1);
                     }
 
+                    foreach (var name in subject.Rejected) {
+                        refused.AddOrUpdate(name, 1, static (_, value) => value + 1);
+                    }
+
                     var arrangement = options.ArrangeEvery > 0 && index % options.ArrangeEvery == 0;
                     if (arrangement) {
                         Interlocked.Increment(ref arranged);
@@ -476,7 +689,7 @@ public static class Fuzzer {
                         }
 
                         log.WriteLine($"  ✗ {violation.Property} at seed {FuzzRandom.Format(seed)} ({subject.Origin})");
-                        findings.Add((index, Report(subject, violation, options)));
+                        findings.Add((index, Report(subject, violation, options, arrangement)));
                     }
                 }
             );
@@ -493,6 +706,7 @@ public static class Fuzzer {
             generated,
             arranged,
             mutations.ToDictionary(static e => e.Key, static e => e.Value, StringComparer.Ordinal),
+            refused.ToDictionary(static e => e.Key, static e => e.Value, StringComparer.Ordinal),
             violations.ToDictionary(static e => e.Key, static e => e.Value, StringComparer.Ordinal),
             [.. touched.Keys.Order(StringComparer.Ordinal)],
             parseLost,
@@ -502,7 +716,15 @@ public static class Fuzzer {
     }
 
     /// <summary>Minimises a failure and, if asked, writes it out.</summary>
-    static FuzzFinding Report(FuzzCase subject, PropertyViolation violation, FuzzOptions options) {
+    /// <param name="arrangement">
+    ///     Whether the case that found this violation ran the arrange-and-format pair.
+    /// </param>
+    static FuzzFinding Report(
+        FuzzCase subject,
+        PropertyViolation violation,
+        FuzzOptions options,
+        bool arrangement
+    ) {
         // ⚠ Absorption minimises the *pre-mutation* text, every other property the mutated text, and
         // the asymmetry is the property's own shape. "format(mutate_whitespace(x)) ≡ format(x)" is a
         // statement about a pair, and there is no single string that carries it — so the artefact is
@@ -513,7 +735,7 @@ public static class Fuzzer {
             var budget = new MinimiseBudget(6000);
             minimised = FuzzMinimiser.Minimise(
                 artefact,
-                candidate => Fails(subject, candidate, violation.Property),
+                candidate => Fails(subject, candidate, violation.Property, arrangement),
                 budget
             );
         }
@@ -522,7 +744,7 @@ public static class Fuzzer {
         // found it. A detail like "the second pass still wants 1 edit: [2990..2990) -> \r" names an
         // offset in a 2 494-character file that no longer exists, which is a fact about the run
         // rather than about the bug; the same sentence over the 38-character reduction is the bug.
-        var minimisedDetail = Describe(subject, minimised, violation.Property);
+        var minimisedDetail = Describe(subject, minimised, violation.Property, arrangement);
 
         var finding = new FuzzFinding(
             subject.Seed,
@@ -548,6 +770,13 @@ public static class Fuzzer {
                 $"seed {FuzzRandom.Format(subject.Seed)}\norigin {subject.Origin}\n"
                 + $"mutations {string.Join(", ", subject.Mutations.Select(static m => m.Name))}\n"
                 + $"as found: {violation}\nminimised: {minimisedDetail}\n"
+                // ⚠ `--origin` for a mutate case: the seed draws the file by index into a corpus
+                // that grows, so the seed on its own stops rebuilding this case the next time a
+                // file is committed. See Build's remarks.
+                + "replay: dotnet run --project Testing/Rikarin.Skala.Testing -- fuzz "
+                + $"--replay={FuzzRandom.Format(subject.Seed)}"
+                + (subject.Kind is FuzzMode.Generate ? string.Empty : $" --origin={subject.Origin}")
+                + "\n"
             );
         }
 
@@ -555,23 +784,40 @@ public static class Fuzzer {
     }
 
     /// <summary>How the property fails on one particular input, in the words the report prints.</summary>
-    static string Describe(FuzzCase subject, string candidate, string property) =>
-        Violations(subject, candidate, property).FirstOrDefault()?.ToString()
+    static string Describe(FuzzCase subject, string candidate, string property, bool arrangement) =>
+        Violations(subject, candidate, property, arrangement).FirstOrDefault()?.ToString()
         ?? "⚠ the minimised input no longer exhibits the failure; the reduction is not trustworthy";
 
     /// <summary>Does <paramref name="candidate" /> still break <paramref name="property" />?</summary>
-    static bool Fails(FuzzCase subject, string candidate, string property) =>
-        Violations(subject, candidate, property).Any();
+    static bool Fails(FuzzCase subject, string candidate, string property, bool arrangement) =>
+        Violations(subject, candidate, property, arrangement).Any();
 
-    static IEnumerable<PropertyViolation> Violations(FuzzCase subject, string candidate, string property) {
+    /// <param name="arranged">
+    ///     Whether the case that produced the finding ran the arrange-and-format pair.
+    /// </param>
+    static IEnumerable<PropertyViolation> Violations(
+        FuzzCase subject,
+        string candidate,
+        string property,
+        bool arranged
+    ) {
         var options = OptionsFor(subject.Path);
         if (property != FuzzProperties.Absorption) {
             // ⚠ The arrangement half is off by default and has to be asked for, or the predicate
             // for an arrangement finding never runs the pipeline that produced it and answers "no
             // longer fails" on every candidate — including the unreduced original.
-            var arrangement = property
-                is FuzzProperties.ArrangementIdempotency
-                    or FuzzProperties.ArrangementConvergence;
+            //
+            // ⚠ And the property's *name* is not enough to decide, which cost this minimiser its
+            // first crash finding. `crash` is not an arrangement property and is raised by whichever
+            // check threw — including the pipeline, whose violation reads "in the arrangement
+            // pipeline: …". Deciding by name alone made the predicate re-run a case with the
+            // arranger switched off, so the crash could not happen, `Minimise` returned at its first
+            // line and the report said both "minimised from 3 808 to 3 808 characters" and "the
+            // minimised input no longer exhibits the failure". The two sentences together are the
+            // signature of a predicate that is not asking the question the case asked, so what the
+            // driver actually ran is carried in rather than guessed at.
+            var arrangement = arranged
+                || property is FuzzProperties.ArrangementIdempotency or FuzzProperties.ArrangementConvergence;
 
             return FuzzProperties
                 .Check(subject.Path, candidate, options, Corpus.PropertySymbols, arrangement: arrangement)
@@ -636,12 +882,31 @@ public static class Fuzzer {
     ///     *passes* every property, and a grammar that is 40 % broken looks exactly like a grammar that
     ///     is 0 % broken from the outside. The histogram below names the diagnostic and shows the line,
     ///     which is what turns "the generator is broken" into "the generator parenthesises nothing".
+    ///     <para>
+    ///         ⚠ It draws the way a <b>run</b> draws — <see cref="Build" /> in
+    ///         <see cref="FuzzMode.Both" />, reading the case's own baseline — and it did not, which is
+    ///         why it reported <c>0 of 20 000</c> against a generator that was emitting
+    ///         <c>return await (state * []);</c> in the nightly. <c>Compile(new FuzzRandom(Derive(seed,
+    ///         i)))</c> hands the generator a <em>fresh</em> stream, while a case hands it one that the
+    ///         mode draw has already consumed a value from; the two explore different generator states,
+    ///         and a check that samples a distribution the run does not have is a check that can pass
+    ///         while the thing it checks is broken. Mutate-mode draws are skipped rather than counted:
+    ///         a corpus file is not the grammar's output.
+    ///     </para>
     /// </remarks>
     public static string GrammarCheck(ulong seed, int count) {
         var errors = new Dictionary<string, (int Count, string Sample)>(StringComparer.Ordinal);
+        var corpus = Corpus.All();
         var broken = 0;
+        var generated = 0;
         for (var i = 0; i < count; i++) {
-            var source = FuzzGenerator.Compile(new FuzzRandom(FuzzRandom.Derive(seed, i)));
+            var subject = Build(FuzzRandom.Derive(seed, i), FuzzMode.Both, corpus);
+            if (subject.Kind is not FuzzMode.Generate) {
+                continue;
+            }
+
+            generated++;
+            var source = subject.Baseline;
             var tree = Microsoft.CodeAnalysis.CSharp.CSharpSyntaxTree.ParseText(
                 Microsoft.CodeAnalysis.Text.SourceText.From(source),
                 Rikarin.Skala.Formatting.CSharp.CSharpFormatter.ParseOptions
@@ -669,8 +934,8 @@ public static class Fuzzer {
 
         var report = new StringBuilder();
         report.AppendLine(
-            $"{broken.ToString(CultureInfo.InvariantCulture)} of {count.ToString(CultureInfo.InvariantCulture)} "
-            + "generated units have a parse error."
+            $"{broken.ToString(CultureInfo.InvariantCulture)} of {generated.ToString(CultureInfo.InvariantCulture)} "
+            + $"generated units have a parse error, over {count.ToString(CultureInfo.InvariantCulture)} cases drawn."
         );
 
         report.AppendLine();

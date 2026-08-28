@@ -115,36 +115,139 @@ public sealed class FuzzerTests {
     ///     ⚠ A mutation that breaks the parse is a case that asserted nothing.
     /// </summary>
     /// <remarks>
-    ///     A small allowance rather than zero, because "parse-preserving" is a property of nineteen text
-    ///     transforms over arbitrary C# and the last fraction of a percent is not worth the coverage it
-    ///     would cost to buy. What the bound stops is a *regression* — a new mutation, or a widened
-    ///     existing one, that quietly starts throwing away one case in five. The measured rate over
-    ///     15 624 cases of `corpus/` is 0.3 % of property checks.
+    ///     ⚠ <b>Zero, and it used to be "at most 5 %".</b> The allowance was the honest reading of
+    ///     "parse-preserving is a property of nineteen text transforms over arbitrary C#" — and an
+    ///     allowance is exactly the shape of hole this suite exists to close, because the cases inside
+    ///     it are the ones that *look* like passes. The nightly of run 33 148 756 015 lost 360 property
+    ///     checks that way and reported them as its own defect in its own words.
+    ///     <para>
+    ///         It is zero now because <c>Fuzzer.Build</c> no longer assumes the contract, it checks it: a
+    ///         mutation whose result reports a parse error the input did not is dropped and counted, under
+    ///         both symbol sets. So this test is no longer a bound on how often the catalogue is wrong; it
+    ///         is an assertion that the guard is in place.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ The refusals are asserted to be zero as well, which is the stronger half. A guard that
+    ///         quietly discards a tenth of the mutations it is handed would satisfy the first assertion
+    ///         perfectly while halving the fuzzer.
+    ///     </para>
     /// </remarks>
     [Fact]
     public void TheMutations_KeepTheFileParsing() {
         var corpus = Corpus.All();
-        var lost = 0;
-        var total = 0;
+        var lost = new List<string>();
+        var refused = new List<string>();
         for (var index = 0; index < 300; index++) {
-            var subject = Fuzzer.Build(FuzzRandom.Derive(23, index), FuzzMode.Mutate, corpus);
+            var seed = FuzzRandom.Derive(23, index);
+            var subject = Fuzzer.Build(seed, FuzzMode.Both, corpus);
+            refused.AddRange(subject.Rejected.Select(name => FuzzRandom.Format(seed) + ": " + name));
             if (subject.Mutations.IsEmpty) {
                 continue;
             }
 
-            total++;
-            var before = Errors(subject.Baseline);
-            var after = Errors(subject.Text);
-            if (after > before) {
-                lost++;
+            if (Errors(subject.Text) > Errors(subject.Baseline)) {
+                lost.Add(FuzzRandom.Format(seed) + ": " + string.Join(", ", subject.Mutations.Select(m => m.Name)));
             }
         }
 
         Assert.True(
-            lost * 100 <= total * 5,
-            $"{lost.ToString(CultureInfo.InvariantCulture)} of {total.ToString(CultureInfo.InvariantCulture)} "
-            + "mutated cases stopped parsing; the bound is 5 %."
+            lost.Count == 0,
+            $"{lost.Count.ToString(CultureInfo.InvariantCulture)} of 300 cases stopped parsing, so they "
+            + "asserted nothing:\n" + string.Join("\n", lost.Take(5))
         );
+
+        Assert.True(
+            refused.Count == 0,
+            $"{refused.Count.ToString(CultureInfo.InvariantCulture)} mutations were refused for not "
+            + "preserving the parse. The guard caught them, so no case was wasted — but a mutation in "
+            + "the catalogue is not parse-preserving and should be fixed rather than filtered:\n"
+            + string.Join("\n", refused.Take(5))
+        );
+    }
+
+    /// <summary>
+    ///     ⚠ A contextual keyword is an <c>IdentifierToken</c> and is not an identifier.
+    /// </summary>
+    /// <remarks>
+    ///     Its meaning is its spelling. <c>var</c> is the one that matters, because the generator emits
+    ///     it constantly and <c>foreach (var (k, w) in items)</c> renamed to
+    ///     <c>foreach (var_wwww (k, w) in items)</c> is not a wider deconstruction — it is
+    ///     <c>CS0230</c>, ADR-003 leaves the file byte-identical, and every property then holds over it
+    ///     for free. Two of the three parse-lost seeds the nightly printed were this.
+    ///     <para>
+    ///         ⚠ Asserted on the mutation rather than on a sampled rate. A rate over 300 cases does not see
+    ///         a defect that costs one case in six hundred, which is exactly how this one survived: the
+    ///         bound above it was 5 % and the truth was 0.2 %, so nothing was ever red.
+    ///     </para>
+    /// </remarks>
+    [Fact]
+    public void WidenIdentifier_NeverRenamesAContextualKeyword() {
+        const string source = """
+                              class C {
+                                  void M() {
+                                      foreach (var (k, w) in items) {
+                                          var value = k;
+                                      }
+                                  }
+                              }
+                              """;
+
+        for (var index = 0; index < 200; index++) {
+            var mutated = FuzzMutations.Apply(
+                FuzzMutations.WidenIdentifier,
+                source,
+                new FuzzRandom(FuzzRandom.Derive(37, index)),
+                []
+            );
+
+            if (mutated is null) {
+                continue;
+            }
+
+            Assert.DoesNotContain("var_", mutated, StringComparison.Ordinal);
+            Assert.Equal(0, Errors(mutated));
+        }
+    }
+
+    /// <summary>
+    ///     ⚠ A mutate case is a function of its seed <b>and its origin</b>, and the seed alone is not
+    ///     enough.
+    /// </summary>
+    /// <remarks>
+    ///     The file is <c>corpus[random.Next(corpus.Count)]</c>, so every mutate seed re-points the
+    ///     moment the corpus grows — and "the corpus only grows" is this project's own policy. Measured:
+    ///     the nightly reported a <c>token-equivalence</c> finding on
+    ///     <c>pathological/mixed-line-endings-after-a-trailing-comment.cs</c> at seed
+    ///     <c>10527204340983520508</c>; twenty-three corpus files later that seed replays
+    ///     <c>pathological/very-long-line.cs</c>. The finding was real and had to be reproduced from its
+    ///     artefact, because the seed had quietly stopped naming it.
+    ///     <para>
+    ///         ⚠ The second half is what makes the pair exact: the mutation sequence must be the one the
+    ///         seed drew, unchanged by the substitution. A shorter corpus and a longer one must give the
+    ///         same case for the same <c>(seed, origin)</c>, which is what the two builds below compare.
+    ///     </para>
+    /// </remarks>
+    [Fact]
+    public void AMutateCase_IsAFunctionOfItsSeedAndItsOrigin() {
+        var corpus = Corpus.All();
+        var pinned = corpus.First(static file => file.RelativePath.EndsWith(".cs", StringComparison.Ordinal));
+
+        // A corpus of a different size, standing in for the corpus this seed will meet next month.
+        var grown = corpus.Concat(corpus.Take(7)).ToList();
+
+        for (var index = 0; index < 30; index++) {
+            var seed = FuzzRandom.Derive(31, index);
+            var here = Fuzzer.Build(seed, FuzzMode.Mutate, corpus, pinned.ToString());
+            var later = Fuzzer.Build(seed, FuzzMode.Mutate, grown, pinned.ToString());
+
+            Assert.Equal(pinned.ToString(), here.Origin);
+            Assert.Equal(here.Origin, later.Origin);
+            Assert.Equal(here.Text, later.Text);
+            Assert.Equal(
+                here.Mutations.Select(static mutation => mutation.Name),
+                later.Mutations.Select(static mutation => mutation.Name)
+            );
+        }
     }
 
     /// <summary>

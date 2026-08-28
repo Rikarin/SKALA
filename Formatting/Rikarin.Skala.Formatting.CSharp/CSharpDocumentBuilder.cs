@@ -2113,11 +2113,33 @@ public sealed partial class CSharpDocumentBuilder {
         return !flush;
     }
 
+    /// <summary>
+    ///     How many lines a gap ends, counting the line terminators C# actually recognises.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ A lone <c>\r</c> ends a line, and this counted only <c>\n</c> until SK-FUZZ-0009. The
+    ///     consequence was not a cosmetic one: <c>}   &lt;CR&gt;#endif</c> reported zero newlines, so
+    ///     <see cref="EmitGap" /> reasoned about the brace and the directive as though they shared a
+    ///     line and joined them — and a <c>#</c> that is no longer first on its line is not a
+    ///     directive to Roslyn, so the <c>#endif</c> became a skipped token, token equivalence failed
+    ///     and the file could not be formatted at all (SK9099). <see cref="FirstNewLine" /> beside it
+    ///     had always read a lone <c>\r</c> correctly, which is what made the disagreement invisible:
+    ///     the *style* of the break was right, there just was not one.
+    ///     <para>
+    ///         ⚠ <c>\r\n</c> is one line ending, not two. Counting the <c>\r</c> and the <c>\n</c>
+    ///         separately would report one blank line between every pair of lines in a CRLF file.
+    ///     </para>
+    /// </remarks>
     internal static int CountNewLines(string gap) {
         var count = 0;
-        foreach (var c in gap) {
-            if (c == '\n') {
+        for (var i = 0; i < gap.Length; i++) {
+            if (gap[i] == '\n') {
                 count++;
+            } else if (gap[i] == '\r') {
+                count++;
+                if (i + 1 < gap.Length && gap[i + 1] == '\n') {
+                    i++;
+                }
             }
         }
 

@@ -35,6 +35,119 @@ bespoke test: two corpus files that differ only in whitespace acquire two `.expe
 and those fixtures being **byte-identical** is the absorption statement, now asserted by the
 ordinary differential instead of by an entry here. SK-FUZZ-0007 was retired that way.
 
+⚠ **The nightly-33148756015 harvest emptied this queue, and it did not stay empty for one run.**
+SK-FUZZ-0009 and SK-FUZZ-0010 were retired out of it; SK-FUZZ-0012 and SK-FUZZ-0013 were fixed in
+the same pass and went straight to the table below without ever being entries. SK-FUZZ-0015 was then
+found by the very next fuzz run after those fixes landed, which is the argument for the nightly in
+one line.
+
+⚠ SK-FUZZ-0008 carries no `file:` line, so it is **not** one of the entries `OpenDefectTests`
+asserts over: its defect is in the fuzzer's own mutation catalogue rather than in the formatter and
+its fixture lives in the measured corpus. That is a gap in this register's own accounting and is
+written down rather than tidied away — an entry nothing tests is a note, and this directory exists
+because a note is not enough.
+
+## SK-FUZZ-0016 — a `#region` inside disabled text stops being a directive
+
+- file: `region-directive-inside-disabled-text.cs`
+- property: `token-equivalence`
+- seed: `13502335049781382213`
+- found: mutating `real/newtonsoft/Newtonsoft.Json/Utilities/Base64Encoder.cs` with `join-line`,
+  `region`, `tabs`, `tabs`; minimised from 1 149 characters to 45.
+
+```
+#if HAVE_ASYNC
+#region fuzz
+#endregion
+#endif
+```
+
+`skala format` reports **SK9099** and refuses to write:
+
+```
+error SK9099: not written, the formatted output has a different token stream
+(at token 1: 'P:#region fuzz' became 'D:\n')
+```
+
+⚠ A **P**reprocessor directive became **D**isabled text — the mirror image of SK-FUZZ-0009, where a
+directive became a *skipped token*. Under no symbols `HAVE_ASYNC` is undefined, so the branch is
+inactive; Skala's piece splitter treats everything inside it as one run of `DisabledTextTrivia` and
+re-emits it as text, while Roslyn keeps `#region` and `#endregion` as **directive** trivia even
+there. The file therefore cannot be formatted at all under the empty symbol set, and formats
+correctly under one that defines `HAVE_ASYNC`.
+
+⚠ **Three probes say it is `#region` specifically and not "a directive inside disabled text".**
+Replace the `#region`/`#endregion` pair with `#pragma warning disable 1` in the same inactive branch
+and every property holds — because Roslyn does *not* keep a `#pragma` as a directive inside disabled
+text, and it does keep a region. Put the same region in an **enabled** branch, or in no branch at
+all, and both hold. So the rule the splitter needs is not "disabled text is opaque" but "disabled
+text is opaque except for the directives Roslyn still reports inside it".
+
+- ⚠ status: **open**, reproduced through the CLI, minimised, and the shape established. Not
+  diagnosed to the line, and not fixed: `#region` inside `#if` is ordinary in real code —
+  Newtonsoft.Json is where the fuzzer found it — so the fix is worth its own commit with the
+  differential run to price it.
+
+## SK-FUZZ-0015 — a `///` run takes its line ending from the first newline in the *input*
+
+- file: `doc-comment-run-under-a-leading-crlf.cs`
+- property: `idempotency`
+- seed: `7489454592082333649`
+- found: mutating `real/serilog/Serilog/Events/LogEventLevel.cs` with `blank-lines`, `blank-lines`,
+  `comment-inline`, `line-endings`; minimised from 1 588 characters to 84.
+
+```
+<CR>
+// Copyright 2013-2015 Serilog Contributors
+{<CR>
+  /// <summary><CR>
+  /// </summary>
+}
+```
+
+`format(format(x)) ≠ format(x)` by one line ending, inside the `///` run:
+
+```
+pass 1:   /// <summary><CR><LF>       /// </summary><LF>
+pass 2:   /// <summary><LF>           /// </summary><LF>
+```
+
+⚠ **The cause is established rather than guessed, by three probes.** Delete the file's leading
+`<CR><LF>` and it converges; make the gap between the two `///` lines an `<LF>` and it still fails,
+so the gap's own ending is not what is read; replace `///` with `//` and it converges.
+
+`CSharpFormatter.DefaultNewLine` answers with **the first newline in the input**, and that value is
+handed to `XmlDocFormatter.Rewrite`, which uses it between the lines of a run it reflows. The first
+pass deletes the leading blank line — so the first newline of pass 2's input is a different newline,
+in a file whose endings are mixed, and the same run is re-emitted with the other one.
+
+⚠ **This is SK-FUZZ-0003's defect in a place its fix did not reach.** That entry records exactly
+this sentence about `insert_final_newline` — "`DefaultNewLine` […] answers with the first newline in
+the *input*, and the first pass can move, rewrite or delete the text above that newline, so the
+second pass asks a different question" — and fixed `FinalNewLine` to read the ending of the last
+break in the **output**. The same unstable value is still passed to the doc-comment sub-formatter
+one line below the call that was fixed.
+
+⚠ **A second reproduction, on a different file, from the next run.** Seed `12780975215320227180`
+mutates `pathological/doc-comment-starting-on-the-brace-line.cs` — SK-FUZZ-0002's own retired
+fixture — with `line-endings`, `tabs`, `join-line`, and lands on the same instability:
+
+```
+pass 1:   /// <summary>x</summary><CR><LF>   /// <remarks>y</remarks><CR><LF>
+pass 2:   /// <summary>x</summary><LF>       /// <remarks>y</remarks><CR><LF>
+```
+
+⚠ Note what pass 2 did *not* do: it rewrote the first gap of the run and left the second. Two passes
+are the bound the property checks, so a case that needs three is a case this property reports as
+"still wants one edit" without saying it would want another. Not investigated further.
+
+- ⚠ status: **open**, reproduced through the CLI byte for byte, minimised, and **cause established**.
+- ⚠ Not fixed here deliberately. The fix is small — derive the sub-formatter's newline from the
+  output the way `FinalNewLine` already does — and its blast radius is not: it moves a line ending
+  inside every reflowed doc comment in every CRLF file, and docs/plan/04's own note says the
+  doc-comment area is "the one area of the formatter with no differential safety net at all". It
+  wants its own measured commit rather than a rider on a fuzz-triage branch.
+
 ## SK-FUZZ-0008 — the `indent` mutation is misclassified as absorbed on a raw interpolated string
 
 ⚠ **A defect in the fuzzer's own catalogue, not in the formatter.** `pathological/interpolated-raw-string-with-nested-braces.cs`:
@@ -110,62 +223,6 @@ what the original entry describes, and it is the rarer of the two.
 - ⚠ ⚠ This is the *only* entry here whose defect is in the test harness rather than the tool. When it
   is fixed the exclusion goes, not the fixture.
 
-## SK-FUZZ-0009 — a `#endif` after a lone `\r` stops being a directive
-
-- file: `preprocessor-directive-after-a-lone-cr.cs`
-- property: `token-equivalence`
-- seed: `16325283595831279955`
-- found: mutating `pathological/mixed-line-endings-after-a-trailing-comment.cs` with `trailing-space`,
-  `if-true`, `blank-lines`, `widen-identifier`; minimised from 71 characters to 42.
-
-```
-#if true
-class C_ww { // fuzz<CR><LF>
-}   <CR>#endif
-```
-
-`skala format` reports **SK9099** and refuses to write:
-
-```
-error SK9099: not written, the formatted output has a different token stream
-(at token 6: 'P:#endif' became 'S:#endif')
-```
-
-⚠ A **P**reprocessor directive became a **S**kipped token. C# ends a line at a lone `\r` as well as
-at `\n`, so `}   <CR>#endif` puts the `#endif` at the start of its own line and it is a directive;
-the formatter joins it onto the line above, where a `#` is no longer the first thing on the line and
-Roslyn stops treating it as one. The safety net does its job and nothing is written, but the file
-cannot be formatted at all.
-
-⚠ Suspect `CountNewLines` and `FirstNewLine` in `CSharpDocumentBuilder`: a gap whose only line
-terminator is a lone `\r` looks like a gap with no newline in it, and the brace and directive rules
-then reason about it as though the two tokens shared a line. That is a guess and is written here as
-one — the cause is not established.
-
-⚠ **Found on the file SK-FUZZ-0003 had just retired into the measured corpus**, which is the
-"corpus only grows" argument paying for itself inside one session: retiring a reproduction hands the
-mutator a seed file with a shape nothing else in the corpus has, and it found a second defect in it
-within twelve minutes.
-
-## SK-FUZZ-0010 — a wrapped signature and a trailing comment need two passes for one blank line
-
-- file: `blank-line-after-a-trailing-comment.cs`
-- property: `idempotency`
-- seed: `15479240576151154023`
-- found: a generated unit mutated with `widen-gap`, `trailing-comment`, `trailing-comment`; minimised
-  from 4 779 characters to 330.
-
-`format(format(x)) ≠ format(x)`: the second pass inserts one blank line and the third is stable.
-Reproduced through the CLI byte for byte — pass 1 and pass 2 differ by a single added line, pass 2
-and pass 3 are identical.
-
-⚠ **Hand-narrowing failed, and that is the useful part of this entry.** The obvious reduction —
-a method whose body ends in `}`, a trailing comment on it, a field below with another — converges in
-one pass, and so does either half of it alone. The trigger needs the *wide* method signature that
-the fitter chops, which points at the same place SK-FUZZ-0007 did: a blank-line decision that reads
-a width, taken before the pass that changes it. The 330-character delta-debugged case is therefore
-the entry rather than a prettier four-line one, because the prettier one does not reproduce.
-
 ---
 
 ## Retired
@@ -175,6 +232,10 @@ that it is worth running — and an empty register would read as a fuzzer that f
 
 | | property | fixed by |
 |---|---|---|
+| `SK-FUZZ-0009` | token equivalence — a `#endif` after a lone `\r` stopped being a directive (SK9099, the file unformattable) | ⚠ **the entry's own guess, and it was right for once.** `CSharpDocumentBuilder.CountNewLines` counted `'\n'` and nothing else, so the gap `}   <CR>#endif` reported zero newlines and `EmitGap` reasoned about the brace and the directive as though they shared a line — it joined them, a `#` that is not first on its line is not a directive to Roslyn, and the `#endif` became a skipped token. `FirstNewLine` beside it had always read a lone `\r` correctly, which is what made the disagreement invisible: the *style* of the break was right, there just was not one. It now counts the terminators C# recognises, `\r\n` as one |
+| `SK-FUZZ-0010` | idempotency — a wrapped signature and a trailing comment needed two passes for one blank line | SK-FUZZ-0007's mistake one step further out, exactly where the entry pointed. `OutputWidth` measures the gaps *between* a member's tokens and there is no gap after the last one, so the trailing comment that will share the member's line was not in the width `IsSingleLine` compares to the margin: 116 columns without `// fuzz`, 124 with it. The member was called single-line, `blank_lines_around_single_line_invocable = 0` declined the blank line — and then the fitter, which does count the comment, chopped the member onto three lines, so pass 2 read a multi-line member, asked `blank_lines_around_invocable = 1` instead, and inserted the blank line pass 1 had refused. ⚠ The register said the trigger "needs the *wide* method signature that the fitter chops"; the width it was missing was the comment's |
+| `SK-FUZZ-0012` | crash — a target-typed `new` whose target is a **delegate** type, carrying a LINQ query in its object initializer, threw `IndexOutOfRangeException` out of the *arrangement pipeline* and took the process with it | ⚠ **the throw is Roslyn's and the defect is ours.** `Func<int> v = new () { P = (from item in items select null) };` makes `MemberSemanticModel.GetLowerBoundNode` index an empty bound-node list, out of a plain `SemanticModel.GetSymbolInfo` on a node of the model's own tree — `PredefinedTypeRule` calls it, and there is no version of that call that can know in advance which node will do it. Two guards, because the first was not enough: a rule that throws is now skipped and reported as `SK9095` (the sibling of `SK9030` "analyzer threw"), and `ArrangementSafety.Check` — the layer whose whole job is to stop a bad rewrite reaching disk, and which was itself the thing taking the process down — now answers **revert** when its re-bind throws, because an unanswered safety question is not a safe one |
+| `SK-FUZZ-0013` | arrangement idempotency — which rules fire depended on how the author had spaced a dotted `using` name | the removable-usings set is Roslyn's `CS8019` keyed by `Name.ToString()`, which carries the trivia *between* a qualified name's tokens: `using  System .Threading. Tasks;` keyed as `"System .Threading. Tasks"`, the set is computed once before the pipeline, and the formatter rewrites exactly that spacing on its first pass. So pass 1 offered the removal, pass 2 could no longer match its own key, and the *next* pipeline run — which recomputes the set — removed a using the first had left. Both sides now key on the name with whitespace dropped. ⚠ **What that was masking is worth more than the bug.** With the key fixed, `NamespaceBodyRule` (SK2013) and the removal (SK2010) fire together on this file and the re-bind reports `CS1027: #endif directive expected`, so safety layer 2 reverts the arrangement whole — while either rule *alone* is safe on it. The file is now stable and arranged **less than it should be**, which is layer 2 behaving as designed and is also why "the file converged" is not the same as "the file was arranged". Not diagnosed further; the reproduction is `pathological/unused-using-whose-name-carries-spaces.cs` |
 | `SK-FUZZ-0001` | crash — `@formatter:off` running to a whitespace-only end of file threw out of `EditEmitter`, past the crash handler, out of the process | the formatter-tag pass. `EditEmitter` indexed past the output because the file-level rules shorten it *after* the writer ran; and the exit code was wrong until `EnableDefaultExceptionHandler = false`, because System.CommandLine was swallowing the exception before any handler saw it |
 | `SK-FUZZ-0005` | token equivalence — an interpolated string inside a formatter-off span | the same pass: `EmitVerbatim` was writing a node a second time inside an already-written region |
 | `SK-FUZZ-0003` | idempotency — mixed line endings converged in two passes, not one | `insert_final_newline` chose its ending with `DefaultNewLine`, which answers with the first newline in the **input** — and the first pass can move, rewrite or delete the text above that newline, so the second pass asks a different question. It now reads the ending of the last break in the **output**, which is stable by construction and still keeps a CRLF file ending CRLF. ⚠ Committing the reproduction lowered `pathological`'s ratchet to 0.9589; its three lines are SK-DIV-0018, the oracle normalising a mixed-ending file where Skala preserves each gap |
