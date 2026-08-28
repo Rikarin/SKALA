@@ -748,3 +748,17 @@ Milestone 1 lands, and it is the obvious dogfooding test.
 
 Everything in it is about *where to look* and *what to do about what is found*. Nothing in it is
 about what code should look like. That line is the whole point of ADR-001, and `SK9003` enforces it.
+
+⚠ **What of that block is real, as of M10:** `canonical.drift`, `gates`, and `exclude`. The rest —
+`include`, `generated`, `analysis`, `duplication` — is design and is read by nothing; a key from that
+half is inert rather than diagnosed, which is a hole this document should stop hiding.
+
+`exclude` is a list of `.editorconfig` section globs anchored at this file's directory, matched by
+Roslyn's own matcher so there is no second glob dialect to learn (`SectionMatcher`). It answers "is
+this `.cs` file source code this repository wants looked at", and **every whole-tree walk in the tool
+reads the same answer** — `format`, `arrange`, `check`, `fix`, and the coverage denominator behind
+doc 07's `--require-fresh-binlog`. ⚠ It had to exist because a repository can hold `.cs` files that
+are deliberately in no compilation and nothing outside MSBuild can see that: Skala's own tree holds
+1 924, the coverage ratio read 13 % against a complete binlog, and every push to `master` exited 4.
+The built-in exclusions — `obj`, `bin`, `.git`, `.claude`, `artifacts`, `.skala` — are not
+configurable and cannot be put back, because nothing in them is anybody's source.

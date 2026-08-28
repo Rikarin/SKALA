@@ -13,6 +13,51 @@ missed it says so and by how much; three of them were, and one of those is still
 
 ## Unreleased
 
+### Fixed — `skala.jsonc` can say which files are not source code, and CI can go green
+
+⚠ **Every push to `master` had failed CI for eleven consecutive commits, and three faults were
+stacked on top of each other.**
+
+- **The coverage denominator counted files no compilation could ever contain.**
+  `--require-fresh-binlog` refuses a binlog covering under 90 % of the selected source files, and
+  the selection was a filesystem walk. This repository holds **1 924** `.cs` files that are
+  deliberately in no compilation — `Testing/corpus/`, `Rules/Rikarin.Skala.Rules.Tests/fixtures/`
+  and that project's `corpus/` — each declared as data by a `<Compile Remove>` nothing outside
+  MSBuild can see. The ratio read **294 of 2 220 (13 %)** against a complete binlog and `check`
+  exited 4 before an analyzer ran. Neither the floor nor the exit code was wrong.
+
+  `skala.jsonc` now honours the `"exclude"` key docs/plan/03 has always specified, and **every walk
+  in the tool reads one predicate** (`SourceExclusions`) rather than the four hard-coded lists that
+  had already stopped agreeing with one another — `FormatCommand` knew about `.claude/` and not
+  `.skala/`, `BinlogLoader` the reverse, and it tested the *absolute* path, which is the shape of the
+  bug that once rewrote 2 796 files inside another agent's worktree. The globs are Roslyn's
+  `.editorconfig` matcher, not a dialect of our own.
+
+  The payoff beyond CI: `./build.sh Lint` named projects one at a time under `Testing/` and `Rules/`
+  to work around this, which is why a new project under either was invisible to the format check
+  until somebody remembered to add it — exactly how `Distribution` went unchecked until M8 and
+  `build/` until M10. It now names nine top-level directories and nothing else.
+
+- **A merge had reverted `build/Build.cs` to a stale copy.** `ReleasePlan` and `ReleaseDryRun`
+  (docs/plan/18), their six parameters, and `build` in the `Lint` area list were dropped by the
+  merge resolution in `12922b14`; `.nuke/build.schema.json` lost the same. The release workflow had
+  been failing on `Target with name 'ReleasePlan' does not exist` ever since. Restored, keeping the
+  `Only` parameter the same merge added.
+
+- **One crashed step failed three times.** The SARIF upload and the report render carried
+  `if: always()` and so failed *on the absence of a file* whenever the check step died before
+  writing one, naming the report rather than the load. They are now `always() && hashFiles(…) != ''`.
+  Writing a well-formed empty SARIF instead was rejected: code scanning reads an empty result set
+  under a category as "this analysis found nothing" and resolves every alert the last good run
+  raised, so a crash would silently clear the surface it crashed before measuring.
+
+- Node 20 is deprecated on the runners: `actions/checkout` v4 → v7, `actions/setup-dotnet` v4 → v6,
+  `actions/upload-artifact` and `actions/download-artifact` v4 → v7,
+  `github/codeql-action/upload-sarif` v3 → v4. All are Node-24 and ESM moves; the two behaviour
+  changes in the range are `download-artifact` v5's path fix for downloads *by ID* (not used here)
+  and `checkout` v6 persisting credentials to a separate file, which only the gated publish job
+  relies on and which cannot be exercised without arming it.
+
 ### Added — `SK9017`, and the 83 options that validated nothing
 
 ⚠ **An out-of-domain value was a silent default**, which is docs/plan/00's non-negotiable #4 satisfied

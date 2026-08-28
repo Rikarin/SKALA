@@ -5,6 +5,33 @@
   // docs/plan/09 § "Gates". ⚠ A gate is a set of conditions and failing any of them fails the run.
   // A condition this build does not understand fails the gate loudly rather than being ignored — a
   // gate that silently drops the condition someone relies on passes for the wrong reason.
+
+  // docs/plan/03 § "What lives in `skala.jsonc`": where to look. ⚠ These three directories hold
+  // 1 924 `.cs` files that are **data, not code**, and each of them is already declared as such by a
+  // `<Compile Remove>` in the project that owns it — `Testing/corpus` is the oracle fixtures and the
+  // deliberately-degraded inputs beside them, and the two under `Rules.Tests` are the rule fixtures
+  // (half of them written in the shape a rule fires on) and the SK5xxx security corpus (half of it
+  // deliberately vulnerable). Nothing outside MSBuild could see that, and three things were reading
+  // the tree instead of the project graph:
+  //
+  //   1. `--require-fresh-binlog` counts "selected source files" as the coverage denominator, so it
+  //      measured 294 of 2 220 — **13 %** — against a binlog that had in fact compiled everything
+  //      there was to compile, and failed every push to `master` with exit 4. That is the failure
+  //      this block exists to fix; the flag and its 90 % floor are both correct.
+  //   2. `./build.sh Lint` worked around it by naming projects one at a time under `Testing/` and
+  //      `Rules/`, which is why a new project under either was invisible to the format check until
+  //      somebody remembered to add it.
+  //   3. `skala format <repo root>` would have reformatted the corpus, which destroys the
+  //      measurement it exists to make. It has cost this project hours, twice.
+  //
+  // The globs are the compiler's (Roslyn's `.editorconfig` section matcher), not a dialect of our
+  // own, and they are anchored at this file's directory.
+  "exclude": [
+    "Testing/corpus/**",
+    "Rules/Rikarin.Skala.Rules.Tests/fixtures/**",
+    "Rules/Rikarin.Skala.Rules.Tests/corpus/**"
+  ],
+
   "gates": {
     // What a developer runs, and what the pre-commit hook runs. Errors stop you; nothing else does.
     "local": {

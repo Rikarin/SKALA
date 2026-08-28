@@ -396,6 +396,11 @@ public static class FormatCommand {
                 continue;
             }
 
+            // ⚠ Anchored at the repository the walk root belongs to, not at the walk root: a pattern
+            // `skala.jsonc` writes as `Testing/corpus/**` means that path under the repository, and
+            // `skala format Testing` must honour it exactly as `skala format .` does.
+            var exclusions = SourceExclusions.For(FindRepositoryRoot(full));
+
             foreach (var file in Directory.EnumerateFiles(full, "*.cs", SearchOption.AllDirectories)
                          .OrderBy(
                              static f => f,
@@ -408,7 +413,7 @@ public static class FormatCommand {
                 // every absolute path inside one contains `.claude` — an absolute test would refuse
                 // to format anything at all while working in a worktree, and refuse it *silently*,
                 // which is a worse failure than the one the exclusion is for.
-                if (IsExcluded(Path.GetRelativePath(full, file)) || !seen.Add(file)) {
+                if (exclusions.Excludes(Path.GetRelativePath(full, file), file) || !seen.Add(file)) {
                     continue;
                 }
 
@@ -418,10 +423,12 @@ public static class FormatCommand {
     }
 
     /// <summary>
-    ///     The directories a recursive walk must not descend into.
+    ///     The directories a recursive walk must not descend into. ⚠ The list itself now lives on
+    ///     <see cref="SourceExclusions" />, which is also what reads <c>skala.jsonc</c>'s
+    ///     <c>"exclude"</c>: four copies of this list existed and they had already stopped agreeing.
     /// </summary>
     /// <remarks>
-    ///     ⚠ <c>.claude/</c> is here because
+    ///     ⚠ <c>.claude/</c> is there because
     ///     <b>
     ///         an agent worktree is a second checkout of this
     ///         repository inside it
@@ -446,15 +453,13 @@ public static class FormatCommand {
     /// <param name="relative">
     ///     ⚠ The path <b>below the root the caller named</b>, not the absolute one. See the call site.
     /// </param>
-    static bool IsExcluded(string relative) {
-        var separator = Path.DirectorySeparatorChar;
-        var path = separator + relative;
-        return path.Contains($"{separator}obj{separator}", StringComparison.Ordinal)
-            || path.Contains($"{separator}bin{separator}", StringComparison.Ordinal)
-            || path.Contains($"{separator}.git{separator}", StringComparison.Ordinal)
-            || path.Contains($"{separator}.claude{separator}", StringComparison.Ordinal)
-            || path.Contains($"{separator}artifacts{separator}", StringComparison.Ordinal);
-    }
+    /// <param name="full">The absolute path, which is what a declared pattern is matched against.</param>
+    /// <param name="repositoryRoot">
+    ///     The repository the declared patterns are anchored to; <c>null</c> to consult only the built-in
+    ///     directories.
+    /// </param>
+    internal static bool IsExcluded(string relative, string full, string? repositoryRoot) =>
+        SourceExclusions.For(repositoryRoot).Excludes(relative, full);
 
     static string Relative(string? root, string file) =>
         root is null ? file : Path.GetRelativePath(root, file).Replace('\\', '/');

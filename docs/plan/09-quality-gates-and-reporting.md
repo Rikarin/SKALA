@@ -296,7 +296,11 @@ get it wrong are not obvious:
   in reports every file as a perfect clone of itself and takes the percentage to 100.
 - Deliberate near-duplicate corpora — this repository's own rule fixtures, `Testing/corpus` — take
   Skala's tree from 3.8 % to **70.9 %** if they are included. Whatever set is handed to the detector
-  has to exclude them, or the metric is noise.
+  has to exclude them, or the metric is noise. ⚠ They were excluded here only *by accident*: the
+  detector runs over the compilation units, and those files are in no compilation. Nothing said so,
+  so nothing would have caught it if they ever were — and the same fact, read by the coverage ratio
+  in doc 07, failed every push to `master` with exit 4. `skala.jsonc`'s `"exclude"` is now where the
+  repository says it, once, and every walk in the tool reads it.
 - ⚠ Test detection cannot rely on the assembly name alone. Under `--load=loose` there are no projects,
   so every file arrives in one synthetic unit and an entire test suite lands in the production
   numerator: measured on Vixen, that is the difference between **6.1 %** and **4.8 %**. The path

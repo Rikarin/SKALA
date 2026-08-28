@@ -31,7 +31,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           # ⚠ Full history, not the default shallow clone. `--since` resolves a merge base, and a
           # shallow clone often has none with `origin/master` — Skala falls back to comparing against
@@ -39,7 +39,7 @@ jobs:
           # the gate for someone else's commits.
           fetch-depth: 0
 
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/setup-dotnet@v6
         with:
           global-json-file: global.json
 
@@ -78,23 +78,36 @@ jobs:
 
       # ⚠ `if: always()` on everything below. A failing gate is exactly when the report matters, and
       # a workflow that only publishes its findings when there are none is a workflow nobody reads.
+      #
+      # ⚠ **`always()` is not `hashFiles(…) != ''`, and the difference is a crashed check step.**
+      # `always()` alone made both of the steps below fail *on the absence of a file* when the check
+      # never got far enough to write one: `Path does not exist: .skala/report.sarif` and a second
+      # red X at exit 3. Three failures for one fault, and the two extra ones name the report rather
+      # than the load, so the run's own summary pointed away from the cause.
+      #
+      # ⚠ The alternative — write a well-formed empty SARIF so the steps always have something to
+      # read — was rejected, and not on tidiness. An empty SARIF uploaded under this category is not
+      # "no data"; code scanning reads it as "this analysis ran and found nothing" and **resolves
+      # every alert the last good run raised**. A crash would then silently clear the security
+      # surface it crashed before measuring, which is strictly worse than a skipped step. A report
+      # that does not exist is reported by the step that failed to produce it.
       - name: Upload SARIF to code scanning
-        if: always()
-        uses: github/codeql-action/upload-sarif@v3
+        if: always() && hashFiles('.skala/report.sarif') != ''
+        uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: .skala/report.sarif
           category: skala
 
       - name: Keep the report as an artifact
-        if: always()
-        uses: actions/upload-artifact@v4
+        if: always() && hashFiles('.skala/report.sarif') != ''
+        uses: actions/upload-artifact@v7
         with:
           name: skala-report
           path: .skala/report.sarif
 
       # The PR comment, rendered from the stored SARIF. Runs no analysis — see fact 2 above.
       - name: Render the report
-        if: always()
+        if: always() && hashFiles('.skala/report.sarif') != ''
         run: >
           dotnet run --project Tools/Rikarin.Skala.Cli -c Release --no-build --
           report .skala/report.sarif --format=markdown > skala-report.md

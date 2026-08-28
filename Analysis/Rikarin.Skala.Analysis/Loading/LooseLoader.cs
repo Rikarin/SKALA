@@ -113,7 +113,7 @@ public static class LooseLoader {
                 continue;
             }
 
-            foreach (var file in BinlogLoader.EnumerateSources(full)
+            foreach (var file in BinlogLoader.EnumerateSources(full, request.RepositoryRoot)
                          .OrderBy(
                              static file => file,
                              StringComparer.Ordinal

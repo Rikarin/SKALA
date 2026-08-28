@@ -73,12 +73,12 @@ jobs:
       # ⚠ Full history and every tag. `fetch-depth: 0` is what makes `git describe`, the tag list
       # and `git archive <tag>` work; the default shallow clone has no tags and the baseline
       # detector would silently become "first release" on every run.
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
           fetch-tags: true
 
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/setup-dotnet@v6
         with:
           global-json-file: global.json
 
@@ -149,7 +149,7 @@ jobs:
         shell: bash
         run: cat artifacts/release/release-notes.md >> "$GITHUB_STEP_SUMMARY"
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: release-notes
           path: |
@@ -176,9 +176,9 @@ jobs:
             rid: win-x64
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/setup-dotnet@v6
         with:
           global-json-file: global.json
 
@@ -211,7 +211,7 @@ jobs:
         shell: bash
         run: .github/scripts/install-smoke-test.sh "$(pwd)/artifacts/packages"
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: packages-${{ matrix.rid }}
           path: artifacts/packages/*.nupkg
@@ -227,12 +227,12 @@ jobs:
     needs: [measure, pack]
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
           fetch-tags: true
 
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v7
         with:
           name: packages-linux-x64
           path: packages
@@ -240,7 +240,7 @@ jobs:
       - name: Drop the RID-specific tool package
         run: rm -f packages/Rikarin.Skala.Cli.*.nupkg
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: packages-portable
           path: packages/*.nupkg
@@ -306,22 +306,22 @@ jobs:
       contents: write
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
           fetch-tags: true
 
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/setup-dotnet@v6
         with:
           global-json-file: global.json
 
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v7
         with:
           pattern: packages-*
           path: packages
           merge-multiple: false
 
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v7
         with:
           name: release-notes
           path: notes
@@ -329,6 +329,14 @@ jobs:
       # ⚠ The tag first, and it is what makes the next measurement possible. A published package
       # whose tag was never pushed leaves the following release with no baseline, and doc 18's
       # detectors then report "unmeasured" on a release that changed everything.
+      #
+      # ⚠ **Unverified, and this is the one step in the repository where the checkout bump could
+      # bite.** `actions/checkout` moved from v4 to v7 for the Node 20 deprecation, and v6's one
+      # behaviour change is that it persists the credential to a *separate file* rather than into
+      # `.git/config`. Every other use of checkout here only reads. This one pushes, on the
+      # credential checkout left behind, and it cannot be exercised without arming `SKALA_PUBLISH`
+      # — so the first real publish is also the first test of it. If it fails to authenticate,
+      # that is why.
       - name: Push the tag
         run: |
           git tag -a "${{ needs.measure.outputs.tag }}" \
