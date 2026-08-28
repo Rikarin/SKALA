@@ -324,16 +324,26 @@ public static class IntAlign {
     ///     </code>
     ///     and <c>nested_ternary</c> pads the same rows out to the <c>?</c> instead.
     ///     <para>
-    ///         ⚠ <em>This</em> shape and not every binary expression in the file, which is measured rather
-    ///         than inferred from the key's name. With <c>int_align_binary_expressions = true</c> the oracle
-    ///         moves nothing in adjacent assignments with binary right-hand sides, in a binary chain chopped
-    ///         one operand per line, in adjacent <c>if</c> conditions, or in binary expressions used as
-    ///         arguments, as initializer elements, or as switch-expression arm results.
+    ///         ⚠ Not every binary expression in the file, which is measured rather than inferred from the
+    ///         key's name. With <c>int_align_binary_expressions = true</c> the oracle moves nothing in
+    ///         adjacent assignments with binary right-hand sides, in a binary chain chopped one operand per
+    ///         line, in adjacent <c>if</c> conditions, or in binary expressions used as arguments, as
+    ///         initializer elements, or as switch-expression arm results.
     ///     </para>
     ///     <para>
-    ///         ⚠ A member joins only while its <c>?</c> is on its condition's own line. That is what keeps the
-    ///         other conditional layout — <c>wrap_before_ternary_opsigns</c>'s, with the <c>?</c> and <c>:</c>
-    ///         each starting a line — out of the run, and the oracle leaves that shape alone at both keys.
+    ///         ⚠ It is <em>wider</em> than this walk in exactly one place, and that is why
+    ///         <c>int_align_binary_expressions</c> is Tier D where <c>int_align_nested_ternary</c> is Tier A.
+    ///         Adjacent local variable <em>declarations</em> whose initializers are binary are also a run,
+    ///         padded at every operator: <c>var first = flag &gt; 1 &amp;&amp; other &gt; 2;</c> beside
+    ///         <c>var secondName = flag &gt; 100000 &amp;&amp; other &gt; 2;</c> comes back with both the
+    ///         <c>&gt;</c> and the <c>&amp;&amp;</c> in a column. Pinned unimplemented in
+    ///         <c>constructs/alignment/int-align-ternary.cs</c> under <c>Declarations</c>.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ A member joins only while its <c>?</c> is on its condition's own line, which is a weaker
+    ///         condition than "the chain is laid out with a trailing colon": the leading-colon layout —
+    ///         <c>: cond ? value</c> per line — satisfies it too, and the oracle pads that one as well at
+    ///         both keys. What the test excludes is the staircase, where the <c>?</c> is on a line of its own.
     ///     </para>
     /// </remarks>
     static void CollectConditionalChains(

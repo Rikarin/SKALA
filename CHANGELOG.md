@@ -108,6 +108,38 @@ every probe. It now ends with a genuine two-member value, and on the `603fbd3` r
 **disagrees** where the join it replaced agreed. `EveryLegalValue` still offers the join, because
 accepting it is a real requirement of the parser.
 
+### Fixed — a nested ternary chain wraps the way ReSharper wraps it
+
+⚠ **A formatting output change.** `a ? x : b ? y : z` is a different construct from `a ? x : y`, and
+Skala had only the second. Asked with a chain too wide for the margin it broke the outermost
+conditional at its `?` and `:` and left the tail flat; asked with the oracle's own layout as input it
+rewrote it into that same shape, so `keep_user_linebreaks` did not protect it either.
+
+`BreakPlan.PlanTernaryChain` gives the chain a group of its own whose break points are the gaps
+**after** each `:`, one member per line. Measured against `jb cleanupcode` 2025.2.6: neither
+`wrap_ternary_expr_style` nor `wrap_before_ternary_opsigns` moves a chain — flipping either returns
+every chain in the new fixture byte-identical while it moves the single conditional beside them — so
+the two layouts are separate rules and not two settings of one. The chain runs through `WhenFalse`
+only and does not see through parentheses; the innermost member is never broken; a break the author
+put before the final else is kept, which a single ternary's is not.
+
+**Corpus effect: none, in either direction.** `corpus/real/` holds one nested chain and it fits on
+its line, so `real` stays at 99.53 % / 85.26 % and `constructs` rises only by the two new fixtures.
+The absence is the finding — the shape was unreachable from the committed corpus, which is why it
+survived to M11.
+
+- **`resharper_csharp_int_align_nested_ternary` is Tier A**, pinned by
+  `constructs/alignment/int-align-ternary.cs`. Its column pass was written and correct for nine
+  milestones with no document to pad.
+- **`resharper_csharp_int_align_binary_expressions` stays Tier D and its reason changed.** With the
+  chain layout written the per-option unit reaches it, and it disagrees on a second shape: the
+  oracle also pads adjacent local variable *declarations* whose initializers are binary, at every
+  operator. Pinned unimplemented in the same fixture.
+- **`resharper_align_ternary` and `resharper_indent_aligned_ternary` stay Tier D**, re-measured on
+  the chain — the shape most likely to overturn them — and both still return it byte-identical.
+  `resharper_outdent_ternary_ops` is read by the C# formatter and moves only the at-the-signs layout.
+- **`resharper_csharp_nested_ternary_style` stays Tier D and is now measured rather than unknown:**
+  all four values are distinct layouts, recorded in the registry.
 
 ### Fixed — `skala.jsonc` can say which files are not source code, and CI can go green
 

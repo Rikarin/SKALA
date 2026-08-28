@@ -32,7 +32,7 @@
 </section>
 <section class="option" id="resharper_csharp_int_align_binary_expressions">
 <h2><code>resharper_csharp_int_align_binary_expressions</code> <a class="self" href="#resharper_csharp_int_align_binary_expressions">#</a></h2>
-<p>Align similar code in columns — Binary expressions</p>
+<p>Align similar code in columns — Binary expressions. Implemented for the conditional chain and not for the rest of the key: with it on, the oracle also pads adjacent local variable <em>declarations</em> whose initializers are binary, at every operator of the chain — <code>var first = flag &gt; 1 &amp;&amp; other &gt; 2;</code> beside <code>var secondName = flag &gt; 100000 &amp;&amp; other &gt; 2;</code> comes back with both the <code>&gt;</code> and the <code>&amp;&amp;</code> in a column. Measured at the ternary-chain work on constructs/alignment/int-align-ternary.cs, and it is what keeps this key at Tier D now that the chain layout no longer does. ⚠ Adjacent <em>assignments</em> with binary right-hand sides do not move, so 'declarations' is the measured population and not a guess.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>
@@ -138,10 +138,11 @@
 <tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>
 <tr><th>Default</th><td><code>false</code></td></tr>
 <tr><th>Default known from</th><td>the Rider export, which is Rider's default for most keys and the author's choice for the rest, with nothing distinguishing the two</td></tr>
-<tr><th>Tier</th><td>D — recorded so the key is not reported unknown; nothing reads it yet</td></tr>
+<tr><th>Tier</th><td>A — the formatter reads it and a committed oracle fixture pins it</td></tr>
 <tr><th>Language</th><td>csharp</td></tr>
 <tr><th>Since</th><td>0.1</td></tr>
 <tr><th>Also spelled</th><td><code>csharp_int_align_nested_ternary</code>, <code>int_align_nested_ternary</code>, <code>resharper_int_align_nested_ternary</code></td></tr>
+<tr><th>Oracle fixture</th><td><code>constructs/alignment/int-align-ternary.cs</code></td></tr>
 <tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpIndentStylePageSchema.html#resharper_csharp_int_align_nested_ternary">https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpIndentStylePageSchema.html#resharper_csharp_int_align_nested_ternary</a></td></tr>
 </tbody>
 </table>

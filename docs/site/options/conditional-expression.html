@@ -45,7 +45,7 @@
 </section>
 <section class="option" id="resharper_outdent_ternary_ops">
 <h2><code>resharper_outdent_ternary_ops</code> <a class="self" href="#resharper_outdent_ternary_ops">#</a></h2>
-<p>Outdent a wrapped <code>?</code> and <code>:</code>. Observed and not implemented: the oracle moves them left by two columns, which the level-based IR cannot express.</p>
+<p>Outdent a wrapped <code>?</code> and <code>:</code>. Observed and not implemented: the oracle moves them left by two columns, which the level-based IR cannot express. ⚠ Re-measured at the ternary-chain work: it moves only the layout that wraps <em>at</em> the signs, and leaves a nested chain — which wraps after each <code>:</code> — exactly where it was. So it is the C# formatter that reads this unprefixed spelling, unlike <code>align_ternary</code> beside it.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>
