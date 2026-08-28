@@ -36,6 +36,11 @@ public readonly struct PhaseOneOptions {
         SpaceAroundDot = options.GetBool(Ids.SpaceAroundDot);
         SpaceAroundArrowOp = options.GetBool(Ids.SpaceAroundArrowOp);
         SpaceAfterUnaryOperator = options.GetBool(Ids.SpaceAfterUnaryOperator);
+        SpaceAfterLogicalNotOp = options.GetBool(Ids.SpaceAfterLogicalNotOp);
+        SpaceAfterUnaryMinusOp = options.GetBool(Ids.SpaceAfterUnaryMinusOp);
+        SpaceAfterUnaryPlusOp = options.GetBool(Ids.SpaceAfterUnaryPlusOp);
+        SpaceAfterAmpersandOp = options.GetBool(Ids.SpaceAfterAmpersandOp);
+        SpaceAfterAsterikOp = options.GetBool(Ids.SpaceAfterAsterikOp);
         SpaceNearPostfixAndPrefixOp = options.GetBool(Ids.SpaceNearPostfixAndPrefixOp);
         SpaceAroundAssignmentOp = options.GetBool(Ids.SpaceAroundAssignmentOp);
         SpaceAroundLambdaArrow = options.GetBool(Ids.SpaceAroundLambdaArrow);
@@ -376,6 +381,21 @@ public readonly struct PhaseOneOptions {
     public bool SpaceAroundArrowOp { get; }
 
     public bool SpaceAfterUnaryOperator { get; }
+
+    /// <summary>
+    ///     The five per-operator keys <c>space_after_unary_operator</c> generalizes.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Read as well as the generalized key, not instead of it. <c>~</c> and the prefix
+    ///     <c>++</c>/<c>--</c> have no key of their own, so they keep reading the generalized one; see
+    ///     <c>SpaceRules.AfterPrefixOperator</c>.
+    /// </remarks>
+    public bool SpaceAfterLogicalNotOp { get; }
+
+    public bool SpaceAfterUnaryMinusOp { get; }
+    public bool SpaceAfterUnaryPlusOp { get; }
+    public bool SpaceAfterAmpersandOp { get; }
+    public bool SpaceAfterAsterikOp { get; }
     public bool SpaceNearPostfixAndPrefixOp { get; }
     public bool SpaceAroundAssignmentOp { get; }
     public bool SpaceAroundLambdaArrow { get; }
@@ -817,6 +837,16 @@ public static class Ids {
     public static readonly OptionId SpaceAroundArrowOp = Of("resharper_csharp_space_around_arrow_op");
 
     public static readonly OptionId SpaceAfterUnaryOperator = Of("resharper_csharp_space_after_unary_operator");
+
+    // ⚠ The five keys `space_after_unary_operator` names, read on their own because the oracle
+    // answers them on their own: `space_after_logical_not_op = true` alone writes `! b` and leaves
+    // `-a`, `+a`, `&a` and `*p` where they were. Declared after the generalized key they belong to
+    // so that `OfGeneralized`'s "at least one target is implemented" check can see them.
+    public static readonly OptionId SpaceAfterLogicalNotOp = Of("resharper_csharp_space_after_logical_not_op");
+    public static readonly OptionId SpaceAfterUnaryMinusOp = Of("resharper_csharp_space_after_unary_minus_op");
+    public static readonly OptionId SpaceAfterUnaryPlusOp = Of("resharper_csharp_space_after_unary_plus_op");
+    public static readonly OptionId SpaceAfterAmpersandOp = Of("resharper_csharp_space_after_ampersand_op");
+    public static readonly OptionId SpaceAfterAsterikOp = Of("resharper_csharp_space_after_asterik_op");
 
     public static readonly OptionId SpaceNearPostfixAndPrefixOp =
         Of("resharper_csharp_space_near_postfix_and_prefix_op");
@@ -1665,6 +1695,45 @@ public static class Ids {
 
     public static readonly OptionId GeneralizedIndentSize = OfGeneralized("indent_size");
     public static readonly OptionId GeneralizedIndentStyle = OfGeneralized("indent_style");
+
+    /// <summary>
+    ///     ⚠ A space <em>inside</em> the parentheses of all nine control-flow keywords at once, and
+    ///     the one entry here that was on record as inert.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Its <c>expands</c> list was empty and the registry said "the oracle ignores it at both
+    ///     values, while each of the nine <c>space_within_&lt;keyword&gt;_parentheses</c> keys it names
+    ///     answers on its own". Asked again it answers on every one of the nine —
+    ///     <c>if ( b )</c>, <c>while ( b )</c>, <c>for ( … )</c>, <c>foreach ( … )</c>,
+    ///     <c>switch ( b )</c>, <c>catch ( … )</c>, <c>lock ( o )</c>, <c>using ( … )</c>,
+    ///     <c>fixed ( … )</c> — and a <c>space_within_if_parentheses = false</c> written after it takes
+    ///     the <c>if</c> back on its own, which is the expansion model and not a coincidence. An empty
+    ///     <c>expands</c> is the shape a wrong "inert" verdict takes: nothing honours the key, so
+    ///     nothing can disprove the verdict either.
+    /// </remarks>
+    public static readonly OptionId SpaceBetweenParenthesesOfControlFlowStatements =
+        OfGeneralized("resharper_space_between_parentheses_of_control_flow_statements");
+
+    // ── Microsoft-compatible spellings of the generalized keys ───────────────────────────────
+    // ⚠ Separate registry entries rather than aliases, because they are separate lines in the
+    // export and the oracle reads them as two assignments to one ReSharper property: whichever is
+    // written later wins. `OptionResolver.Expand` orders them the same way — by position — so the
+    // pair agrees under this export, where the `csharp_` spellings sit at lines 27–43 and the
+    // `resharper_` ones at 890–978 carrying the same values.
+    public static readonly OptionId MsSpaceAfterKeywordsInControlFlowStatements =
+        OfGeneralized("csharp_space_after_keywords_in_control_flow_statements");
+
+    public static readonly OptionId MsSpaceBeforeOpenSquareBrackets =
+        OfGeneralized("csharp_space_before_open_square_brackets");
+
+    public static readonly OptionId MsSpaceBetweenSquareBrackets =
+        OfGeneralized("csharp_space_between_square_brackets");
+
+    public static readonly OptionId MsSpaceBetweenMethodCallNameAndOpeningParenthesis =
+        OfGeneralized("csharp_space_between_method_call_name_and_opening_parenthesis");
+
+    public static readonly OptionId MsSpaceBetweenMethodDeclarationNameAndOpenParenthesis =
+        OfGeneralized("csharp_space_between_method_declaration_name_and_open_parenthesis");
 
     /// <summary>Every id above that phase 1 can actually be observed to honour.</summary>
     /// <remarks>
