@@ -47,6 +47,47 @@ its fixture lives in the measured corpus. That is a gap in this register's own a
 written down rather than tidied away — an entry nothing tests is a note, and this directory exists
 because a note is not enough.
 
+## SK-FUZZ-0016 — a `#region` inside disabled text stops being a directive
+
+- file: `region-directive-inside-disabled-text.cs`
+- property: `token-equivalence`
+- seed: `13502335049781382213`
+- found: mutating `real/newtonsoft/Newtonsoft.Json/Utilities/Base64Encoder.cs` with `join-line`,
+  `region`, `tabs`, `tabs`; minimised from 1 149 characters to 45.
+
+```
+#if HAVE_ASYNC
+#region fuzz
+#endregion
+#endif
+```
+
+`skala format` reports **SK9099** and refuses to write:
+
+```
+error SK9099: not written, the formatted output has a different token stream
+(at token 1: 'P:#region fuzz' became 'D:\n')
+```
+
+⚠ A **P**reprocessor directive became **D**isabled text — the mirror image of SK-FUZZ-0009, where a
+directive became a *skipped token*. Under no symbols `HAVE_ASYNC` is undefined, so the branch is
+inactive; Skala's piece splitter treats everything inside it as one run of `DisabledTextTrivia` and
+re-emits it as text, while Roslyn keeps `#region` and `#endregion` as **directive** trivia even
+there. The file therefore cannot be formatted at all under the empty symbol set, and formats
+correctly under one that defines `HAVE_ASYNC`.
+
+⚠ **Three probes say it is `#region` specifically and not "a directive inside disabled text".**
+Replace the `#region`/`#endregion` pair with `#pragma warning disable 1` in the same inactive branch
+and every property holds — because Roslyn does *not* keep a `#pragma` as a directive inside disabled
+text, and it does keep a region. Put the same region in an **enabled** branch, or in no branch at
+all, and both hold. So the rule the splitter needs is not "disabled text is opaque" but "disabled
+text is opaque except for the directives Roslyn still reports inside it".
+
+- ⚠ status: **open**, reproduced through the CLI, minimised, and the shape established. Not
+  diagnosed to the line, and not fixed: `#region` inside `#if` is ordinary in real code —
+  Newtonsoft.Json is where the fuzzer found it — so the fix is worth its own commit with the
+  differential run to price it.
+
 ## SK-FUZZ-0015 — a `///` run takes its line ending from the first newline in the *input*
 
 - file: `doc-comment-run-under-a-leading-crlf.cs`
@@ -86,6 +127,19 @@ the *input*, and the first pass can move, rewrite or delete the text above that 
 second pass asks a different question" — and fixed `FinalNewLine` to read the ending of the last
 break in the **output**. The same unstable value is still passed to the doc-comment sub-formatter
 one line below the call that was fixed.
+
+⚠ **A second reproduction, on a different file, from the next run.** Seed `12780975215320227180`
+mutates `pathological/doc-comment-starting-on-the-brace-line.cs` — SK-FUZZ-0002's own retired
+fixture — with `line-endings`, `tabs`, `join-line`, and lands on the same instability:
+
+```
+pass 1:   /// <summary>x</summary><CR><LF>   /// <remarks>y</remarks><CR><LF>
+pass 2:   /// <summary>x</summary><LF>       /// <remarks>y</remarks><CR><LF>
+```
+
+⚠ Note what pass 2 did *not* do: it rewrote the first gap of the run and left the second. Two passes
+are the bound the property checks, so a case that needs three is a case this property reports as
+"still wants one edit" without saying it would want another. Not investigated further.
 
 - ⚠ status: **open**, reproduced through the CLI byte for byte, minimised, and **cause established**.
 - ⚠ Not fixed here deliberately. The fix is small — derive the sub-formatter's newline from the
