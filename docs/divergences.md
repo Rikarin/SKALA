@@ -1329,3 +1329,162 @@ reason.
 
 - options: `resharper_csharp_wrap_before_type_parameter_langle`, `resharper_align_multiline_type_parameter_list`, `resharper_csharp_wrap_parameters_style`
 - ⚠ status: **open**, measured; the first half is the ordering rule's and belongs with SK-DIV-0002.
+
+## SK-DIV-0060 — the nine `disable_*` switches, measured; five of them are not divergences at all
+
+ReSharper ships nine keys that **suppress a class of edit** rather than choosing between two
+renderings, and they are the only options in this registry with that shape. It makes them unusually
+testable — a suppressed class must come back byte-identical to the input in that respect — and it
+makes the one-key-at-a-time sweep unusually bad at reaching them, because a switch over a family the
+export has already switched off is inert until a *second* key moves. Three of the nine were on
+record as "inert: the oracle returns the file unchanged at both values"; one of those three is
+refuted below, and the fixture, not the key, was the reason.
+
+Every row was measured against `jb cleanupcode` under `OracleProfile.FormatOnly` with this
+repository's own `.editorconfig` and the key appended, on a subject wrong in spacing, indentation,
+blank lines and wrapping **at once** — the negative control is the same file at the export's value,
+which comes back reformatted in all four.
+
+```csharp
+public int Alpha ;                //   spacing
+                                  //   three blank lines, past the cap
+public void Method( int one,int two ) {
+        var sum=one+two;          //   indentation
+    if(sum>0){                    //   a break the rules introduce
+    Alpha = sum;   // a trailing comment the author padded
+    }
+Call(one,                         //   a wrap the rules would rewrite
+    two);
+```
+
+| key | what the oracle does with it at `true` | state |
+|---|---|---|
+| `disable_formatter` | returns the file **byte for byte** — not "formats less" | **implemented** |
+| `disable_blank_line_changes` | every blank run survives; other line breaks still move | **implemented** |
+| `disable_indenter` | spacing, blanks and wrapping still apply; line-start whitespace does not move | SK-DIV-0061 |
+| `disable_space_changes` | every inter-token run survives; indentation and wrapping still apply | SK-DIV-0062 |
+| `disable_line_break_changes` | no break added, none removed, blank runs included | SK-DIV-0063 |
+| `disable_line_break_removal` | none removed; additions still happen | SK-DIV-0064 |
+| `disable_int_align` | nothing — until `int_align = true` is supplied alongside | masked |
+| `disable_space_changes_before_trailing_comment` | nothing, at either value of the rule it could gate | unreachable |
+| `ignore_space_preservation` | nothing, on four shapes and three pairings | unreachable |
+
+**The two implemented ones are not divergences and are recorded here for the method.** Both are
+`Conformant` on `sweep verify` — two distinct outputs from each engine, agreeing at both values — on
+`constructs/file/resharper_disable_formatter.cs` and
+`constructs/blank-lines/resharper_disable_blank_line_changes.cs`. ⚠ They are left at Tier D
+deliberately: a fixture pins one configuration and Tier A is a claim about the option, so the
+promotion belongs to the key-flip sweep on master and not to the commit that added the fixture.
+
+**`disable_int_align` is masked, and the recorded probe holds.** Re-measured rather than inherited:
+on three adjacent declarations `int_align = true` alone pads them to a column, and `int_align = true`
+plus `disable_int_align = true` produces output byte-identical to the export's own configuration. It
+is decisive one key away from the export and inert at it — which is the shape the whole family has,
+and the reason the rest were probed with a second key rather than alone.
+
+**Two are unreachable, which is a different finding from "not done yet".**
+`disable_space_changes_before_trailing_comment` has exactly one rule it could gate:
+`space_before_trailing_comment` normalises the gap to one space at `true` and to none at `false`, and
+it does both **identically with this key on**. Its broad sibling `disable_space_changes` preserves
+that same gap, so the gap is governed and it is the narrow key the C# formatter does not consult.
+`ignore_space_preservation` moved nothing on four subjects and three pairings, including the three
+places the formatter demonstrably *does* preserve spaces — a disabled `#if` branch, an
+`@formatter:off` region, and an int-aligned run under `int_align = true`.
+
+⚠ **The interaction hole is the finding, not an aside.** Six of these nine cannot be reached by any
+one-key flip from the export's corner, and the committed sweep's "inert" verdict on three of them was
+therefore true and useless in the same breath. This is the case `./build.sh Pairwise` was built for;
+`disable_*` × `int_align`, `disable_*` × `space_before_trailing_comment` and
+`disable_*` × `keep_blank_lines_*` are the pairs that pay.
+
+- options: `resharper_disable_formatter`, `resharper_disable_blank_line_changes`, `resharper_disable_int_align`, `resharper_disable_space_changes_before_trailing_comment`, `resharper_ignore_space_preservation`
+- ⚠ status: **not a divergence** on any of the five — two implemented and conformant, one masked, two
+  unreachable. The entry is the measurement and the method; the four keys that *are* divergences have
+  entries of their own below.
+
+## SK-DIV-0061 — `disable_indenter`: the oracle stops reindenting; Skala has no way to
+
+At `true` the oracle applies spacing, blank-line and wrapping rules exactly as it would otherwise and
+leaves **line-start whitespace alone**: a line that existed in the input keeps the indentation it was
+written with, and a line the wrapping created starts at column zero.
+
+```csharp
+// oracle, disable_indenter = true
+public void Method(int one, int two) {
+        var sum = one + two;          // kept its eight
+    if (sum > 0) {
+    Alpha = sum;                      // kept its four
+    }
+    Call(
+one,                                  // a line that did not exist: column zero
+            two
+);                                    // likewise
+```
+
+Skala cannot express this. `LayoutWriter` computes an indentation for every line it emits and has no
+access to the source's own; honouring the key means carrying the input into the writer and giving it
+a third mode — reproduce the source line's leading whitespace, or emit none for a line that did not
+exist. That is a change to the writer every other construct shares, and it was not attempted here.
+
+- options: `resharper_disable_indenter`
+- ⚠ status: **open**, measured. Not read by Skala at all, deliberately: registering it `OfInert`
+  would put an unimplemented key inside a claim about this formatter.
+
+## SK-DIV-0062 — `disable_space_changes`: the oracle preserves every inter-token run; Skala collapses
+
+⚠ **This key was on record as "inert: the oracle returns the file unchanged at both values", and that
+is refuted.** The fixture was the reason and not the key: asked on a file whose spacing is actually
+wrong, the oracle preserves every horizontal run between two tokens **byte for byte** while still
+reindenting and rewrapping.
+
+```csharp
+// oracle, disable_space_changes = true
+public int Alpha ;                        // the space before `;` survives
+public void Method( int one,int two ) {   // so does every gap in the header
+    var sum=one+two;                      // and the missing ones
+        Alpha = sum;   // a padded trailing comment, on a line that was reindented
+```
+
+Skala resolves a preserved gap to `Required` or `Forbidden` at document-build time —
+`CSharpDocumentBuilder.GapSpace` says so, and says why: `extra_spaces = remove_all` makes "preserve"
+a one-bit question for the one construct that needed it. This key makes it an *n*-bit question for
+every gap in the file, which is a verbatim-gap concept carried end to end through the IR and the
+writer. Not attempted here.
+
+- options: `resharper_disable_space_changes`
+- ⚠ status: **open**, measured; supersedes the recorded inert claim, which was measured on a fixture
+  with no wrong spacing in it.
+
+## SK-DIV-0063 — `disable_line_break_changes`: no break is added and none removed
+
+The broadest of the break switches, and a strict superset of both SK-DIV-0064 and
+`disable_blank_line_changes`: blank runs survive, breaks the wrapping rules would introduce are not
+introduced, and breaks the author wrote are not joined. Spacing and indentation still apply.
+
+Skala's `Line` nodes carry `LineKind.Hard` wherever the rules demand a break — one statement per line
+is not negotiable in the current builder — so honouring this key means every hard break becoming
+conditional on the source, which is a different builder rather than a flag on this one.
+`GroupMode.Preserve` and `LineKind.Preserve` already exist in the IR and are the half of the shape
+that would survive; the hard breaks are the half that would not.
+
+- options: `resharper_disable_line_break_changes`
+- ⚠ status: **open**, measured.
+
+## SK-DIV-0064 — `disable_line_break_removal`: one direction only
+
+Measured apart from SK-DIV-0063 on the same file, and the two came out different, which is the whole
+reason both entries exist: with `disable_line_break_removal = true` the three-blank run survived
+**and** `blank_lines_around_invocable` still inserted its blank after the closing brace, while
+`disable_blank_line_changes` on the same file suppressed the insertion too. So this key is removals
+only — the author's breaks are never joined and the cap never truncates a run — and additions are
+untouched.
+
+Skala has the near-miss already: `KeepsUserBreaksBetweenItems` is
+`keep_user_linebreaks && keep_existing_linebreaks`, and this key is a third term on it, plus dropping
+the cap in `ResolveBlankLines`, plus suppressing `CSharpDocumentBuilder.ShouldJoin`. It was not
+implemented here because the first of those three changes a value `BreakPlan`'s wrapping functions
+read, and those were another agent's subject on the day this was measured.
+
+- options: `resharper_disable_line_break_removal`
+- ⚠ status: **open**, measured. ⚠ The nearest implemented shape is `keep_user_linebreaks`, which is
+  not the same key: it governs the gaps *between items of a list*, and this governs every gap.

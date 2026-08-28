@@ -19,6 +19,20 @@ namespace Rikarin.Skala.Formatting.CSharp;
 /// </remarks>
 public sealed partial class CSharpDocumentBuilder {
     int ResolveBlankLines(Piece previous, int nextPieceIndex, SyntaxToken nextToken, int sourceBlanks) {
+        // ⚠ `disable_blank_line_changes = true` short-circuits all three systems at once, which is
+        // the whole reason this method is the one funnel: caps, requirements and removals are the
+        // only three things in the formatter that can change a blank-line count, so returning the
+        // author's own count here is the complete implementation rather than the first of several
+        // sites. Measured — the oracle neither truncates a run past the cap nor inserts a required
+        // blank, and still adds and removes line breaks that are not blank lines (SK-DIV-0060).
+        //
+        // ⚠ It also subsumes the documentation-comment guard below rather than skipping it: a `///`
+        // run's own count is what comes back, so the 0 → 1 split that guard exists to prevent cannot
+        // happen on this path either.
+        if (_options.DisableBlankLineChanges) {
+            return sourceBlanks;
+        }
+
         var declaration = nextToken.IsKind(SyntaxKind.None) || InDeclarationContext(nextToken);
 
         // 1. Caps. The author's runs are truncated, never extended.

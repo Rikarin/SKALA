@@ -184,6 +184,24 @@ public static class CSharpFormatter {
             );
         }
 
+        // ⚠ `disable_formatter = true` and the pass is over. Placed *after* the two gates above and
+        // not before them, so that a file that does not parse is still reported under ADR-003 and a
+        // generated file still reports as generated: switching the formatter off is a statement about
+        // whitespace, not a reason to stop looking at the file. Everything below this line — the
+        // document build, the layout, the xmldoc sub-formatter, int-align, `insert_final_newline` —
+        // is skipped, because the oracle's answer to this key is the input byte for byte and not a
+        // gentler formatting (SK-DIV-0060).
+        if (options.DisableFormatter) {
+            return new FormatResult(
+                path,
+                text,
+                [],
+                text.ToString(),
+                diagnostics.ToImmutable(),
+                FormatOutcome.Formatted
+            );
+        }
+
         var root = tree.GetRoot();
         XmlDocComments.Report(path, text, root, diagnostics);
 
