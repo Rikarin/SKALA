@@ -8091,11 +8091,11 @@
       "type": "bool",
       "default": "true",
       "defaultSource": "unknown",
-      "tier": "D",
+      "tier": "A",
       "construct": "Wrapping",
       "summary": "Undocumented ReSharper property; classified as C#-relevant by vocabulary.",
       "since": "0.1",
-      "oracle": null,
+      "oracle": "constructs/wrapping/base-list.cs",
       "docs": null,
       "templateLine": 713,
       "expands": []

@@ -20,7 +20,21 @@ public readonly struct PhaseOneOptions {
         IndentSize = Math.Max(1, options.GetInt(Ids.IndentSize));
         TabWidth = Math.Max(1, options.GetInt(Ids.TabWidth));
         UseTabs = options.GetRaw(Ids.IndentStyle) == (int)IndentStyle.Tab;
-        MaxLineLength = options.GetInt(Ids.MaxLineLength) is var w and > 0 ? w : 120;
+        // ⚠ `wrap_lines = false` is exactly an unbounded margin, and that is measured rather than
+        // reasoned. Asked with `wrap_lines = false` and asked with
+        // `max_line_length = 2147483647`, `jb cleanupcode` returns byte-identical output — on source
+        // written flat and on source already wrapped, over two files covering twenty constructs. It
+        // is not "do not wrap": a construct that breaks for a reason other than width still breaks,
+        // and the same measurement shows it. A `chop_if_long` argument list whose source is
+        // multiline stays chopped at both settings, a LINQ query keeps the author's breaks, and a
+        // hard break is a hard break — all of which Fits already expresses, because a subtree
+        // holding a break has an Unbounded flat width and never fits at any margin.
+        WrapLines = options.GetBool(Ids.WrapLines);
+        MaxLineLength = !WrapLines
+            ? Document.Unbounded
+            : options.GetInt(Ids.MaxLineLength) is var w and > 0
+            ? w
+            : 120;
         InsertFinalNewline = options.GetBool(Ids.InsertFinalNewline);
         RemoveSpacesOnBlankLines = options.GetBool(Ids.RemoveSpacesOnBlankLines);
         EnforceLineEndingStyle = options.GetBool(Ids.EnforceLineEndingStyle);
@@ -353,7 +367,24 @@ public readonly struct PhaseOneOptions {
     public int IndentSize { get; }
     public int TabWidth { get; }
     public bool UseTabs { get; }
+
+    /// <summary>
+    ///     The column limit, or <see cref="Document.Unbounded" /> when <see cref="WrapLines" /> is off.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ One number and not two, because the oracle answers them with one. Everything that reads a
+    ///     margin therefore honours <c>wrap_lines</c> without knowing about it: the fitter, the fill
+    ///     points in the layout writer, the single-line tests the blank-line rules run, and SK0002 —
+    ///     which is right to go quiet, since with wrapping off an over-long line is what was asked for
+    ///     rather than a line nothing could break.
+    /// </remarks>
     public int MaxLineLength { get; }
+
+    /// <summary>
+    ///     <c>resharper_csharp_wrap_lines</c>: whether the formatter may break a line for width at all.
+    /// </summary>
+    public bool WrapLines { get; }
+
     public bool InsertFinalNewline { get; }
     public bool RemoveSpacesOnBlankLines { get; }
     public bool EnforceLineEndingStyle { get; }
@@ -815,6 +846,14 @@ public static class Ids {
     // Tier D for that reason (docs/plan/05 § "Phase 1"). Milestone 3 is the phase where the column
     // limit is the whole point, and constructs/wrapping/initializers.cs pins it.
     public static readonly OptionId MaxLineLength = Of("resharper_csharp_max_line_length");
+
+    // ⚠ Beside MaxLineLength because it *is* MaxLineLength: at `false` the margin is unbounded, and
+    // `jb cleanupcode` produces byte-identical output for `wrap_lines = false` and
+    // `max_line_length = 2147483647` on every input tried. Recorded below as a "master switch with
+    // nothing behind it" — "csharp_wrap_lines = false leaves an over-long line wrapped exactly as
+    // before" — which was measured on input that was already wrapped, where most of what stays put
+    // stays put under `keep_user_linebreaks` rather than under this key.
+    public static readonly OptionId WrapLines = Of("resharper_csharp_wrap_lines");
     public static readonly OptionId InsertFinalNewline = Of("resharper_csharp_insert_final_newline");
     public static readonly OptionId RemoveSpacesOnBlankLines = OfInert("resharper_remove_spaces_on_blank_lines");
     public static readonly OptionId EnforceLineEndingStyle = Of("resharper_enforce_line_ending_style");
@@ -1521,9 +1560,11 @@ public static class Ids {
     // wrap_before_declaration_lpar changes. A lambda's parameter list is governed by the method
     // declaration keys; the five keys named for it are not read.
     //
-    // Master switches with nothing behind them: csharp_wrap_lines = false leaves an over-long line
-    // wrapped exactly as before, enable_wrapping = true changes nothing, and keep_user_wrapping
-    // has no observable effect in this export (BreakPlan records the same, from M2).
+    // Master switches with nothing behind them: enable_wrapping = true changes nothing, and
+    // keep_user_wrapping has no observable effect in this export (BreakPlan records the same, from
+    // M2). ⚠ csharp_wrap_lines was in this list and is not any more — it is implemented above, as
+    // the margin itself. The measurement that put it here was taken on already-wrapped input, where
+    // what stays put stays put under keep_user_linebreaks; on flat input it joins the file.
     //
     // Not reached by any probe: wrap_before_first_type_parameter_constraint and
     // wrap_multiple_type_parameter_constraints_style — the export forces every `where` onto its own
