@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:bd9791d3a6e6a087 profile=SkalaCleanup generated=2026-08-27
+// skala-oracle: resharper=2025.2.6 config=sha256:381a31a28c5ea94d profile=SkalaCleanup generated=2026-08-28
 namespace Skala.Corpus.Arrangement;
 
 // Every declaration here is one `var` must NOT take. The negative set is the measurement: a rule
