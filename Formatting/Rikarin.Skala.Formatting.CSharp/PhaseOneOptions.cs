@@ -233,6 +233,17 @@ public readonly struct PhaseOneOptions {
         BlankLinesBeforeSingleLineComment = options.GetInt(Ids.BlankLinesBeforeSingleLineComment);
         BlankLinesAfterCase = options.GetInt(Ids.BlankLinesAfterCase);
         BlankLinesBeforeCase = options.GetInt(Ids.BlankLinesBeforeCase);
+        BlankLinesAfterStartComment = options.GetInt(Ids.BlankLinesAfterStartComment);
+
+        BlankLinesBeforeControlTransferStatements =
+            options.GetInt(Ids.BlankLinesBeforeControlTransferStatements);
+
+        BlankLinesAfterControlTransferStatements = options.GetInt(Ids.BlankLinesAfterControlTransferStatements);
+        BlankLinesBeforeMultilineStatements = options.GetInt(Ids.BlankLinesBeforeMultilineStatements);
+        BlankLinesAfterMultilineStatements = options.GetInt(Ids.BlankLinesAfterMultilineStatements);
+        BlankLinesBeforeBlockStatements = options.GetInt(Ids.BlankLinesBeforeBlockStatements);
+        BlankLinesAroundBlockCaseSection = options.GetInt(Ids.BlankLinesAroundBlockCaseSection);
+        BlankLinesAroundMultilineCaseSection = options.GetInt(Ids.BlankLinesAroundMultilineCaseSection);
 
         // ── Break presence and position (phase 2) ────────────────────────────────────────────
         KeepUserLinebreaks = options.GetBool(Ids.KeepUserLinebreaks);
@@ -654,6 +665,30 @@ public readonly struct PhaseOneOptions {
     public int BlankLinesBeforeSingleLineComment { get; }
     public int BlankLinesAfterCase { get; }
     public int BlankLinesBeforeCase { get; }
+
+    /// <summary>The gap under the comment block a file opens with.</summary>
+    /// <remarks>
+    ///     ⚠ Not "any comment at the top of a member". Measured: a <c>///</c> run at position 0 is not a
+    ///     start comment — it belongs to the type below it — and neither is a <c>//</c> that follows a
+    ///     <c>#nullable</c>, because the directive has already started the file. Two <c>//</c> blocks
+    ///     separated by a blank line are <em>one</em> start comment and the gap is the one under the
+    ///     second.
+    /// </remarks>
+    public int BlankLinesAfterStartComment { get; }
+
+    /// <summary>The six statement-level blank-line requirements.</summary>
+    /// <remarks>
+    ///     ⚠ Every boundary here was measured rather than read off the option name; see
+    ///     <c>CSharpDocumentBuilder.BlankLines</c>, where each rule carries the shape that establishes it.
+    /// </remarks>
+    public int BlankLinesBeforeControlTransferStatements { get; }
+
+    public int BlankLinesAfterControlTransferStatements { get; }
+    public int BlankLinesBeforeMultilineStatements { get; }
+    public int BlankLinesAfterMultilineStatements { get; }
+    public int BlankLinesBeforeBlockStatements { get; }
+    public int BlankLinesAroundBlockCaseSection { get; }
+    public int BlankLinesAroundMultilineCaseSection { get; }
 
     public bool KeepUserLinebreaks { get; }
     public bool KeepUserWrapping { get; }
@@ -1329,6 +1364,30 @@ public static class Ids {
 
     public static readonly OptionId BlankLinesAfterCase = Of("resharper_csharp_blank_lines_after_case");
     public static readonly OptionId BlankLinesBeforeCase = Of("resharper_csharp_blank_lines_before_case");
+
+    public static readonly OptionId BlankLinesAfterStartComment =
+        Of("resharper_csharp_blank_lines_after_start_comment");
+
+    public static readonly OptionId BlankLinesBeforeControlTransferStatements =
+        Of("resharper_csharp_blank_lines_before_control_transfer_statements");
+
+    public static readonly OptionId BlankLinesAfterControlTransferStatements =
+        Of("resharper_csharp_blank_lines_after_control_transfer_statements");
+
+    public static readonly OptionId BlankLinesBeforeMultilineStatements =
+        Of("resharper_csharp_blank_lines_before_multiline_statements");
+
+    public static readonly OptionId BlankLinesAfterMultilineStatements =
+        Of("resharper_csharp_blank_lines_after_multiline_statements");
+
+    public static readonly OptionId BlankLinesBeforeBlockStatements =
+        Of("resharper_csharp_blank_lines_before_block_statements");
+
+    public static readonly OptionId BlankLinesAroundBlockCaseSection =
+        Of("resharper_csharp_blank_lines_around_block_case_section");
+
+    public static readonly OptionId BlankLinesAroundMultilineCaseSection =
+        Of("resharper_csharp_blank_lines_around_multiline_case_section");
 
     // ── Break presence and position (phase 2) ────────────────────────────────────────────────
     public static readonly OptionId KeepUserLinebreaks = Of("resharper_keep_user_linebreaks");
