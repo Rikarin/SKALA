@@ -1247,35 +1247,56 @@ reading this project has been burned by twice.
 - ⚠ status: **open**, pinned by
   `constructs/xmldoc/resharper_xmldoc_spaces_inside_tags.xmldoc.expected.cs`.
 
-## SK-DIV-0023 — a processing instruction's line keeps its marker unspaced, and the blank line after it differs
+## SK-DIV-0023 — the blank line after a processing instruction carries no trailing space
 
-Two shapes on one construct, both visible in one fixture.
+Two shapes on one construct, both visible in one fixture. **The first is now fixed** and is kept here
+because it is the record of what the marker exemption cost.
 
 ```
 oracle   /// <?skala-probe mode="short"?>
          /// ␠                                    ← marker, space, nothing
          /// <summary>A summary that follows a processing instruction.</summary>
 
-skala    ///<?skala-probe mode="short"?>          ← no marker space
-         ///                                      ← no trailing space
+skala    /// <?skala-probe mode="short"?>         ← (1) fixed: the marker space is applied
+         ///                                      ← (2) open: no trailing space
          /// <summary>A summary that follows a processing instruction.</summary>
 ```
 
-1. **The marker space is not applied to a processing-instruction line.** Skala emits a processing
-   instruction verbatim — that is the refusal reason `resharper_xmldoc_pi_attribute_style` and its
-   three siblings carry — and "verbatim" has swallowed the `///` marker along with the instruction.
-   That is a defect rather than a decision: `resharper_space_after_triple_slash` is Tier A on every
-   other line of the same comment.
+1. ~~**The marker space is not applied to a processing-instruction line.**~~ **Fixed.** Skala emitted
+   a processing instruction verbatim — that is the refusal reason `resharper_xmldoc_pi_attribute_style`
+   and its three siblings carry — and "verbatim" had swallowed the `///` marker along with the
+   instruction, on a key that is Tier A on every other line of the same comment.
+
+   ⚠ It was never only the processing instruction. The same exemption governs a `<code>` and a `<c>`
+   body, and there it produced output no fixture reached: a `<c>` whose content starts on its start
+   tag's line has one body line that never carried a marker, so opening the element up wrote it as
+   `///Func&lt;int&gt;` — no space at all — in a comment whose every other line had one. That is what
+   `skala format` did to two of this repository's own files, and it is why the fix is a change to how a
+   verbatim line is *captured* rather than to how one is written: `XmlDocModel.SourceLines` removes the
+   marker's space on the way in, all-or-nothing across the region, and `XmlDocFormatter` writes it back
+   on the way out. A sample's own columns are what is left in between, the round trip still compares
+   them to the byte, and a region that is not uniformly marker-spaced is shifted whole rather than
+   flattened.
+
+   ⚠ **The damage the old behaviour committed does not fully repair itself**, and that is worth
+   knowing before the next `skala format` of this tree. On the text an author wrote the fix produces
+   the right answer; on text the defect has already written — `1aad86f8` put `///if (…)` above
+   `/// throw new …` in seventeen files — the column that told the two lines apart is gone, so the pair
+   comes back as `/// if (…)` above `///  throw new …`. Faithful, idempotent, and one column wider than
+   the author's. Repairing those properly means reverting those comments to their pre-`1aad86f8` form
+   and re-formatting; guessing at it in the formatter would mean flattening a code block written under
+   a marker-less convention, which is the one thing the verbatim rule exists to prevent.
 2. **The blank line the oracle writes after a processing instruction carries a trailing space.**
    Skala's carries none, deliberately and for a reason that is stated at `XmlDocOptions.BlankLineAfterPi`
    and holds elsewhere: an empty line's trailing whitespace is the one thing every other pass in
-   Skala strips. Unlike (1) this half is a decision, and it would survive (1) being fixed.
+   Skala strips. Unlike (1) this half is a decision, and it survived (1) being fixed.
 
 - options: `resharper_xmldoc_blank_line_after_pi`, `resharper_space_after_triple_slash`
-- ⚠ status: **open**, pinned by
-  `constructs/xmldoc/resharper_xmldoc_blank_line_after_pi.xmldoc.expected.cs`. ⚠ The entry names
-  `resharper_space_after_triple_slash`, which is **Tier A**: the key is reproduced everywhere its
-  fixture exercises it, and this is a construct that fixture does not reach.
+- ⚠ status: **open on (2), fixed on (1)**, pinned by
+  `constructs/xmldoc/resharper_xmldoc_blank_line_after_pi.xmldoc.expected.cs`, which still diverges —
+  on one line rather than two. ⚠ The entry names `resharper_space_after_triple_slash`, which is
+  **Tier A**: the key is reproduced everywhere its fixture exercises it, and this is a construct that
+  fixture does not reach.
 ## SK-DIV-0024 — a type parameter list wraps when the list overflows, not when the declaration does
 
 T5a gave a type parameter list its first break points: at `wrap_before_type_parameter_langle = false`

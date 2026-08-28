@@ -114,6 +114,9 @@ public sealed class XmlDocModel {
     /// <summary>Whether the last thing emitted at this level was prose rather than markup.</summary>
     bool _afterWord;
 
+    /// <summary>⚠ <c>space_after_triple_slash</c>, which decides how a verbatim line is captured.</summary>
+    bool _markerSpace;
+
     XmlDocModel() { }
 
     public static bool IsVerbatimElement(string name) => VerbatimElements.Contains(name, StringComparer.Ordinal);
@@ -126,8 +129,13 @@ public sealed class XmlDocModel {
     ///     tag whose name does not match its end tag, an unrecognised node kind. A doc comment left
     ///     exactly as written is never wrong; a doc comment re-wrapped on a guess can be.
     /// </remarks>
-    public static ImmutableArray<XmlDocNode>? Build(DocumentationCommentTriviaSyntax comment) {
-        var model = new XmlDocModel();
+    /// <param name="markerSpace">
+    ///     ⚠ <c>space_after_triple_slash</c>. It reaches the model because a verbatim region's captured
+    ///     body is what the marker space is taken off — see <see cref="SourceLines" /> — and taking off
+    ///     a space the writer will not put back is how a code sample loses a column.
+    /// </param>
+    public static ImmutableArray<XmlDocNode>? Build(DocumentationCommentTriviaSyntax comment, bool markerSpace) {
+        var model = new XmlDocModel { _markerSpace = markerSpace };
         var builder = ImmutableArray.CreateBuilder<XmlDocNode>();
         return model.Add(builder, comment.Content) ? builder.ToImmutable() : null;
     }
@@ -172,14 +180,14 @@ public sealed class XmlDocModel {
                     break;
 
                 case XmlProcessingInstructionSyntax:
-                    builder.Add(new XmlDocVerbatim(SourceLines(node.ToString()), ProcessingInstruction: true));
+                    builder.Add(new XmlDocVerbatim(SourceLines(node.ToString(), _markerSpace), ProcessingInstruction: true));
                     _separated = true;
                     _afterWord = false;
                     break;
 
                 case XmlCDataSectionSyntax:
                 case XmlCommentSyntax:
-                    builder.Add(new XmlDocVerbatim(SourceLines(node.ToString())));
+                    builder.Add(new XmlDocVerbatim(SourceLines(node.ToString(), _markerSpace)));
                     _separated = true;
                     _afterWord = false;
                     break;
@@ -212,7 +220,7 @@ public sealed class XmlDocModel {
                 attributes,
                 false,
                 [],
-                VerbatimBody(element.Content.ToString()),
+                VerbatimBody(element.Content.ToString(), _markerSpace),
                 glued,
                 gluedToWord
             );
@@ -374,16 +382,66 @@ public sealed class XmlDocModel {
     ///         is exactly the one <see cref="XmlDocSignature" />'s own remarks warn about: a formatter that
     ///         only checks itself against its own reading will one day eat a sentence. It ate this one.
     ///     </para>
+    ///     <para>
+    ///         ⚠ The single space <c>space_after_triple_slash</c> writes is removed with the marker, and
+    ///         only when <em>every</em> continuation line of the region carries one. That space belongs to
+    ///         the marker rather than to the sample — <see cref="XmlDocFormatter" /> writes it back on the
+    ///         way out — and taking it off here is what lets a verbatim region be moved onto lines of its
+    ///         own without the first of them coming out as <c>///Func</c>, which is SK-DIV-0023.
+    ///         <b>The all-or-nothing test is the whole safety of it.</b> Removing a leading space line by
+    ///         line would flatten <c>///if</c> / <c>/// y();</c> / <c>///}</c> — a sample written under a
+    ///         marker-less convention, whose one column of indentation is content — into three lines at
+    ///         column zero, and the signature could not see it because it calls this function too. When
+    ///         the region is not uniform nothing is removed, the marker space is added to every line, and
+    ///         the round trip then fails and refuses the comment.
+    ///     </para>
     /// </remarks>
-    public static ImmutableArray<string> SourceLines(string source) {
-        var lines = ImmutableArray.CreateBuilder<string>();
-        var first = true;
-        foreach (var raw in source.Replace("\r\n", "\n", StringComparison.Ordinal).Split('\n')) {
-            lines.Add(first ? raw : StripMarker(raw));
-            first = false;
+    public static ImmutableArray<string> SourceLines(string source, bool markerSpace = true) {
+        var raw = source.Replace("\r\n", "\n", StringComparison.Ordinal).Split('\n');
+        var lines = ImmutableArray.CreateBuilder<string>(raw.Length);
+        for (var i = 0; i < raw.Length; i++) {
+            lines.Add(i == 0 ? raw[i] : StripMarker(raw[i]));
+        }
+
+        if (!markerSpace || !MarkerSpaced(lines)) {
+            return lines.ToImmutable();
+        }
+
+        // ⚠ An empty line has no space to take, and taking one anyway is an `ArgumentOutOfRangeException`
+        // out of the model — which is what a bare `///` inside a `<code>` block did on the first run of
+        // this over Skala's own sources. It is exempt from the test above for the same reason.
+        for (var i = 1; i < lines.Count; i++) {
+            if (lines[i].Length > 0) {
+                lines[i] = lines[i][1..];
+            }
         }
 
         return lines.ToImmutable();
+    }
+
+    /// <summary>
+    ///     Whether every continuation line of the region begins with the marker's space.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ An empty continuation line is exempt and does not veto: a blank line inside a
+    ///     <c>&lt;code&gt;</c> block is written <c>///</c> with nothing after it by every convention,
+    ///     including the one that spaces every other line, and Skala emits it that way itself.
+    /// </remarks>
+    static bool MarkerSpaced(ImmutableArray<string>.Builder lines) {
+        var any = false;
+        for (var i = 1; i < lines.Count; i++) {
+            if (lines[i].Length == 0) {
+                continue;
+            }
+
+            if (lines[i][0] != ' ') {
+                return false;
+            }
+
+            any = true;
+        }
+
+        return any;
     }
 
     /// <summary>
@@ -396,8 +454,8 @@ public sealed class XmlDocModel {
     ///     block from a re-indented one — which is the single thing the verbatim rule exists to
     ///     guarantee.
     /// </remarks>
-    public static ImmutableArray<string> VerbatimBody(string source) {
-        var lines = SourceLines(source);
+    public static ImmutableArray<string> VerbatimBody(string source, bool markerSpace = true) {
+        var lines = SourceLines(source, markerSpace);
         var start = 0;
         var end = lines.Length;
         if (start < end && lines[start].Trim().Length == 0) {

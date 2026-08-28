@@ -311,6 +311,105 @@ public sealed class XmlDocHazardTests {
         Assert.Contains("///     if (x) {", formatted, StringComparison.Ordinal);
     }
 
+    [Theory]
+    [InlineData("code")]
+    [InlineData("c")]
+    public void AVerbatimElementOpenedOntoItsOwnLines_KeepsTheMarkerSpace(string tag) {
+        // ⚠ The defect this pair of tests exists for, found by running `skala format` over this
+        // repository's own sources: `///Func&lt;int&gt;` — a `///` line with no space after the
+        // marker, in a comment whose every other line has one.
+        //
+        // ⚠ The shape is an inline verbatim element that runs over a line break. Its body's *first*
+        // line began immediately after the start tag, so it is the one line of the region that never
+        // carried the marker; opening the element up moves it to a line start, and the verbatim path
+        // used to hand it to the writer exactly as captured. `space_after_triple_slash` is Tier A and
+        // this is a `///` line like any other, so the space belongs there.
+        var source = XmlDoc.InClass(
+            "/// <remarks>",
+            "///     Found by the fuzzer: <" + tag + ">Func&lt;int&gt; v = new () { P = (from",
+            "///     item in items select null) };</" + tag + "> makes the binder throw.",
+            "/// </remarks>"
+        );
+
+        var lines = XmlDoc.DocLines(XmlDoc.Text(source));
+        Assert.DoesNotContain(lines, static line => line.StartsWith("///F", StringComparison.Ordinal));
+        Assert.Contains("/// Func&lt;int&gt; v = new () { P = (from", lines);
+
+        // ⚠ And the body's own columns are untouched: the second line kept the four spaces it had
+        // relative to the marker. That is the half a naive fix loses — see `XmlDocModel.SourceLines`.
+        Assert.Contains("///     item in items select null) };", lines);
+    }
+
+    [Fact]
+    public void AVerbatimBlockUnderAMarkerlessConvention_ShiftsWholeRatherThanFlattening() {
+        // ⚠ The hazard in giving the verbatim path a marker space, and the reason `SourceLines`
+        // removes the old one all-or-nothing. Here the author wrote no space after `///`, so the one
+        // column `y();` carries *is* the sample's indentation. Removing a leading space line by line
+        // would have taken it, and the signature could not have noticed: it calls the same function.
+        var source = XmlDoc.InClass(
+            "/// <summary>",
+            "/// <code>",
+            "///if (x) {",
+            "/// y();",
+            "///}",
+            "/// </code>",
+            "/// </summary>"
+        );
+
+        var lines = XmlDoc.DocLines(XmlDoc.Text(source));
+        Assert.Contains("/// if (x) {", lines);
+        Assert.Contains("///  y();", lines);
+        Assert.Contains("/// }", lines);
+    }
+
+    [Fact]
+    public void ABlankLineInsideAVerbatimBlock_IsNeitherACrashNorATrailingSpace() {
+        // ⚠ Found by running the fix over this repository's own sources before committing it, and it
+        // was a crash rather than bad output: a bare `///` inside a `<code>` block has no marker space
+        // to take off, and taking one anyway threw out of `XmlDocModel.SourceLines`. It is also the
+        // line that would gain a trailing space if the writer applied the marker unconditionally.
+        var source = XmlDoc.InClass(
+            "/// <summary>",
+            "/// <code>",
+            "///     var x = 1;",
+            "///",
+            "///     var y = 2;",
+            "/// </code>",
+            "/// </summary>"
+        );
+
+        var lines = XmlDoc.DocLines(XmlDoc.Text(source));
+        Assert.Contains("///     var x = 1;", lines);
+        Assert.Contains("///", lines);
+        Assert.Contains("///     var y = 2;", lines);
+        Assert.DoesNotContain("/// ", lines);
+    }
+
+    [Fact]
+    public void AVerbatimBlockUnderNoMarkerSpace_KeepsItsColumnsExactly() {
+        // ⚠ The mirror, and the reason `space_after_triple_slash` is carried into the model and into
+        // the signature rather than assumed true. With the key off nothing is added on the way out, so
+        // nothing may be taken off on the way in — a capture that always removed a column would make
+        // every one of these comments fail its own round trip and be refused for a reason reserved
+        // for defects.
+        var source = XmlDoc.InClass(
+            "/// <summary>",
+            "/// <code>",
+            "///     var x = 1;",
+            "///     var y = 2;",
+            "/// </code>",
+            "/// </summary>"
+        );
+
+        var formatted = XmlDoc.Text(source, ("resharper_space_after_triple_slash", "false"));
+        var lines = XmlDoc.DocLines(formatted);
+        Assert.Contains("///     var x = 1;", lines);
+        Assert.Contains("///     var y = 2;", lines);
+
+        // Re-flowed, not refused: the key is off, so the marker of every other line lost its space.
+        Assert.Contains("///<summary>", lines);
+    }
+
     [Fact]
     public void ALongLineInsideCode_IsNotWrapped() {
         var line = "///     " + string.Join(" ", Enumerable.Repeat("token", 40)) + ";";
@@ -556,25 +655,20 @@ public sealed class XmlDocMeasuredTagHeaderTests {
     }
 
     /// <summary>
-    ///     ⚠ The marker space is missing from a processing instruction's own line, and that is a
-    ///     separate, pre-existing defect rather than part of this key.
+    ///     ⚠ The marker space <em>is</em> on a processing instruction's own line, and it was not.
     /// </summary>
     /// <remarks>
-    ///     The oracle writes <c>/// &lt;?display …?&gt;</c> and Skala writes <c>///&lt;?display …?&gt;</c>.
-    ///     A processing instruction is emitted through the verbatim path, and a verbatim line
-    ///     deliberately does not get the marker space re-applied — that rule exists so a
-    ///     <c>&lt;code&gt;</c> block does not gain a column, and it is right for <c>&lt;code&gt;</c>. It
-    ///     is wrong here, and it is equally wrong for a CDATA section and an XML comment, which take
-    ///     the same path. Fixing it means giving the verbatim path an indent and a marker of its own,
-    ///     which is a change to how three constructs are emitted and not to how one key is read.
-    ///     <para>
-    ///         ⚠ Pinned as it is rather than as it should be, deliberately. A test asserting the fixed
-    ///         behaviour would fail today and say nothing about <c>blank_line_after_pi</c>; a test
-    ///         asserting today's behaviour fails the moment somebody fixes the marker, which is when this
-    ///         note wants reading.
-    ///     </para>
+    ///     This constant used to read <c>///&lt;?display …?&gt;</c> and carried a note saying so: the
+    ///     verbatim path did not re-apply the marker space, which was right for a <c>&lt;code&gt;</c>
+    ///     block's columns and wrong for the marker, and the note asked to be read the moment somebody
+    ///     fixed it. That is SK-DIV-0023's first half, and it is fixed —
+    ///     <c>XmlDocModel.SourceLines</c> takes the marker space off on the way in, so
+    ///     <c>XmlDocFormatter</c> can write it back on every line without a code block gaining a column.
+    ///     The oracle's own <c>constructs/xmldoc/resharper_xmldoc_blank_line_after_pi</c> fixture is what
+    ///     says <c>/// &lt;?…?&gt;</c> is the right answer; what still diverges there is the trailing
+    ///     space on the blank line after it, which is the entry's second half and a decision.
     /// </remarks>
-    const string Pi = "///<?display mode=\"short\"?>";
+    const string Pi = "/// <?display mode=\"short\"?>";
 
     [Fact]
     public void BlankLineAfterPi_IsOnByDefault() {

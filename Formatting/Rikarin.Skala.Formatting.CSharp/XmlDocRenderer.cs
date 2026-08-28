@@ -5,10 +5,18 @@ namespace Rikarin.Skala.Formatting.CSharp;
 
 /// <summary>One line of a re-wrapped documentation comment, minus the <c>///</c> marker.</summary>
 /// <param name="Verbatim">
-///     ⚠ The line already carries whatever followed the marker in the source, so the marker space is
-///     <em>not</em> re-applied to it. Applying it would add a column to every line of every
-///     <c>&lt;code&gt;</c> block, which is the "re-wrapping changes what it says" hazard in its
-///     quietest form.
+///     ⚠ The line is a region reproduced byte for byte — a <c>&lt;code&gt;</c> body, a processing
+///     instruction, a CDATA section — so nothing here re-flows it, re-indents it, or measures it
+///     against the margin.
+///     <para>
+///         ⚠ It used to mean one thing more, and that was the defect: the marker space was not applied
+///         to it either. <c>space_after_triple_slash</c> governs the marker of every <c>///</c> line, so
+///         the exemption produced <c>///&lt;?skala-probe …?&gt;</c> against an oracle that writes
+///         <c>/// &lt;?skala-probe …?&gt;</c> (SK-DIV-0023), and a <c>&lt;c&gt;</c> whose content starts on
+///         its start tag's line came out as <c>///Func&lt;int&gt;</c> the moment the element had to be
+///         opened up. What keeps a code block's columns intact is not skipping the space on the way out
+///         but taking it off on the way in — see <c>XmlDocModel.SourceLines</c>.
+///     </para>
 /// </param>
 public readonly record struct XmlDocLine(string Text, bool Verbatim);
 
