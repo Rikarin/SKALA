@@ -183,11 +183,23 @@ body. A single-symbol-set run cannot see that class at all.
 
 | Tier | Count | Meaning |
 |---|---:|---|
-| **A** — implemented, pinned by an oracle fixture | **201** | |
+| **A** — implemented, pinned by an oracle fixture | **284** | |
 | **B** — approximated | **0** | ⚠ see below |
 | **C** — accepted and deliberately ignored | **6** | `apply_auto_detected_rules`, `autodetect_indent_settings`, `csharp_old_engine`, `show_autodetect_configure_formatting_tip`, `use_indent_from_vs`, `use_old_engine` |
-| **D** — known to the registry, not implemented | **313** | |
+| **D** — known to the registry, not implemented | **230** | ⚠ **"not implemented" is not what this tier means** — see below |
 | **Total** | **520** | |
+
+⚠ This table said **201 / 313** until it was re-counted against `options.json`, which is what the row
+above claims to be doing. Count it again before quoting it.
+
+⚠ **Tier D does not mean "remaining work", and reading it that way overstates the gap by a factor of
+three.** [`tier-d-split.md`](tier-d-split.md) splits all 230 with the evidence per key: **58 already
+agree with the oracle at the value the export sets** — they are Tier D because they diverge at a
+value the export never uses — and 104 more are duplicate spellings, masked keys, unreachable keys or
+another subsystem's. **63 are real, reachable, unimplemented behaviour**, and 5 are unresolved. So
+**12 % of the export is genuinely unenforced, not 45 %**. ⚠ None of that is a Tier A claim and the
+split changes no tier: Tier A is a statement about an option across its domain, and agreement at one
+value is not one.
 
 ⚠ **Tier B has no members, and it is not a tier.** [`plan/03`](plan/03-configuration-model.md)
 documents it as live with its own behaviour row; the conformance suite contains a test
