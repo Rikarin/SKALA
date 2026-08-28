@@ -178,8 +178,8 @@ public sealed class ThisQualifierRule : ArrangementRule {
             }
 
             for (var symbol = model.GetEnclosingSymbol(node.SpanStart);
-                symbol is not null;
-                symbol = symbol.ContainingSymbol) {
+                 symbol is not null;
+                 symbol = symbol.ContainingSymbol) {
                 if (symbol is ITypeSymbol or INamespaceSymbol) {
                     return false;
                 }

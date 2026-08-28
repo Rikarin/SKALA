@@ -251,8 +251,11 @@ public sealed class UsingsRule : ArrangementRule {
     ///     Whether the alias merely renames a type to the name it already has.
     /// </summary>
     /// <remarks>
-    ///     ⚠ "Trivial" is measured rather than guessed at: <c>using Regex =
-    ///     System.Text.RegularExpressions.Regex;</c> is trivial and <c>using Trivial = System.String;</c>
+    ///     ⚠ "Trivial" is measured rather than guessed at:
+    ///     <c>
+    /// using Regex =
+    ///     System.Text.RegularExpressions.Regex;
+    ///     </c> is trivial and <c>using Trivial = System.String;</c>
     ///     is not, so it is the *identifier* comparison and not "the target is short" or "the target is a
     ///     predefined type". A generic target is never trivial — <c>Map = Dictionary&lt;string, int&gt;</c>
     ///     survives even when the names match, because the alias is carrying the type arguments.

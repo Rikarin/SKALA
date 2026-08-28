@@ -364,20 +364,20 @@ public sealed partial class CSharpDocumentBuilder {
         switch (node) {
             case BinaryExpressionSyntax binary
                 when _options.OutdentBinaryOps
-                    && _options.WrapBeforeBinaryOpsign
-                    && BreakPlan.IsChainRootOperator(binary):
+                && _options.WrapBeforeBinaryOpsign
+                && BreakPlan.IsChainRootOperator(binary):
                 return binary.OperatorToken;
 
             case BinaryPatternSyntax pattern
                 when _options.OutdentBinaryPatternOps
-                    && _options.WrapBeforeBinaryPatternOp
-                    && BreakPlan.IsChainRootOperator(pattern):
+                && _options.WrapBeforeBinaryPatternOp
+                && BreakPlan.IsChainRootOperator(pattern):
                 return pattern.OperatorToken;
 
             case InvocationExpressionSyntax or ConditionalAccessExpressionSyntax
                 when _options.OutdentDots
-                    && !_options.WrapAfterDotInMethodCalls
-                    && BreakPlan.IsChainRoot(node):
+                && !_options.WrapAfterDotInMethodCalls
+                && BreakPlan.IsChainRoot(node):
                 return node switch {
                     InvocationExpressionSyntax { Expression: MemberAccessExpressionSyntax access } =>
                         access.OperatorToken,

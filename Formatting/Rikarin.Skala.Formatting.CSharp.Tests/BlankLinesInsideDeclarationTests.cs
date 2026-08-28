@@ -109,10 +109,13 @@ public class BlankLinesInsideDeclarationTests {
         Assert.StartsWith("class C {\n\n\n\n\n\n    int a;", cap, StringComparison.Ordinal);
     }
 
-    /// <summary>The export sets both to 0, so honouring them moves nothing at this repository's own configuration.</summary>
+    /// <summary>
+    ///     The export sets both to 0, so honouring them moves nothing at this repository's own configuration.
+    /// </summary>
     [Fact]
     public void AtTheExportsOwnValuesNothingMoves() {
-        const string source = "namespace N {\n    class C {\n        int a;\n    }\n\n    enum E {\n        A\n    }\n}\n";
+        const string source =
+            "namespace N {\n    class C {\n        int a;\n    }\n\n    enum E {\n        A\n    }\n}\n";
         Assert.Equal(source, Format(source));
     }
 }

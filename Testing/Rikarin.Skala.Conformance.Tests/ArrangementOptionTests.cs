@@ -98,7 +98,11 @@ public sealed class ArrangementOptionTests {
     /// <summary>⚠ The export's value, and the direction the committed fixture pins.</summary>
     [Fact]
     public void Qualification_RemovesThisAtTheExportsValue() =>
-        Assert.DoesNotContain("this.", Arrange(Members.Replace("_value = 1;", "this._value = 1;", StringComparison.Ordinal)), StringComparison.Ordinal);
+        Assert.DoesNotContain(
+            "this.",
+            Arrange(Members.Replace("_value = 1;", "this._value = 1;", StringComparison.Ordinal)),
+            StringComparison.Ordinal
+        );
 
     /// <summary>
     ///     ⚠ A static body has no <c>this</c>, so the adding direction must decline it. Without this the
@@ -253,7 +257,11 @@ public sealed class ArrangementOptionTests {
     [Fact]
     public void SeparateImportGroups_WritesOneBlankLineBetweenFirstSegments() {
         var output = Arrange(Groups, ("dotnet_separate_import_directive_groups", "true"));
-        Assert.Contains("using System.Text;\n\nusing Zeta.Support;", output.Replace("\r\n", "\n", StringComparison.Ordinal), StringComparison.Ordinal);
+        Assert.Contains(
+            "using System.Text;\n\nusing Zeta.Support;",
+            output.Replace("\r\n", "\n", StringComparison.Ordinal),
+            StringComparison.Ordinal
+        );
     }
 
     /// <summary>
@@ -264,8 +272,10 @@ public sealed class ArrangementOptionTests {
     /// </summary>
     [Fact]
     public void SeparateImportGroups_RemovesABlankLineAtTheExportsValue() {
-        var output = Arrange(Groups.Replace("using Zeta.Support;\n", "using Zeta.Support;\n\n", StringComparison.Ordinal))
-            .Replace("\r\n", "\n", StringComparison.Ordinal);
+        var output = Arrange(
+            Groups.Replace("using Zeta.Support;\n", "using Zeta.Support;\n\n", StringComparison.Ordinal)
+        )
+                .Replace("\r\n", "\n", StringComparison.Ordinal);
 
         Assert.Contains("using System.Text;\nusing Zeta.Support;", output, StringComparison.Ordinal);
     }
