@@ -74,6 +74,33 @@ public readonly record struct GroupPlan(
     bool OwnLevel = false);
 
 /// <summary>
+///     The groups a run of sibling <c>where</c> clauses needs, and where the builder opens each.
+/// </summary>
+/// <param name="Outer">
+///     Opened before the gap that precedes the first <c>where</c>, so it is entered at the column the
+///     declaration has reached. It answers <em>does the whole constraint list fit on this line</em>, and
+///     it owns the break before the first clause when
+///     <c>wrap_before_first_type_parameter_constraint</c> says the first clause is part of that answer.
+/// </param>
+/// <param name="Inner">
+///     Opened <em>after</em> that gap, so it is entered at the column the first clause actually lands
+///     on — one continuation level in and a line down when <paramref name="OwnsLeadingGap" /> broke.
+///     It answers the second question, <em>do the clauses fit on the line the first one is on</em>, and
+///     owns the breaks before every clause after the first.
+///     <para>
+///         ⚠ Two groups rather than one, and it is the oracle's shape rather than a convenience. Given a
+///         declaration whose constraints overflow, ReSharper breaks before the first <c>where</c> and then
+///         stops if that alone made them fit — a single chop group would have chopped every clause, and a
+///         single fill would have filled the ones a <c>chop_if_long</c> list must not fill.
+///     </para>
+/// </param>
+/// <param name="OwnsLeadingGap">
+///     Whether <paramref name="Outer" /> holds the break before the first <c>where</c>, which is what
+///     tells the builder to write that gap between the two groups rather than before both.
+/// </param>
+public readonly record struct ConstraintRun(GroupPlan Outer, GroupPlan Inner, bool OwnsLeadingGap);
+
+/// <summary>
 ///     Decides, before a token is emitted, which gaps of a construct may break and which may not.
 /// </summary>
 /// <remarks>
@@ -151,6 +178,18 @@ public sealed class BreakPlan {
     /// </remarks>
     readonly Dictionary<long, GroupPlan> _inner = [];
 
+    /// <summary>
+    ///     The two groups a run of sibling <c>where</c> clauses needs, keyed by the declaration.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Not one of <see cref="_groups" />, and the reason is the one <see cref="_inner" /> already
+    ///     gives for braced elements: a group opened around a node is entered at the column that node
+    ///     starts at, and a constraint list is not a node. Its clauses are siblings of the parameter list
+    ///     and of the body, with nothing in the tree spanning them, so a group over the run has to be
+    ///     opened by the builder as it walks the declaration's children.
+    /// </remarks>
+    readonly Dictionary<long, ConstraintRun> _constraints = [];
+
     readonly string _source;
     readonly PhaseOneOptions _options;
     int[] _forced = [];
@@ -181,6 +220,10 @@ public sealed class BreakPlan {
     /// <summary>The group the builder opens just inside <paramref name="node" />'s delimiters, if any.</summary>
     public bool TryInnerGroup(SyntaxNode node, out GroupPlan plan) => _inner.TryGetValue(Key(node), out plan);
 
+    /// <summary>The two groups the builder opens around this declaration's <c>where</c> clauses.</summary>
+    public bool TryConstraintRun(SyntaxNode node, out ConstraintRun run) =>
+        _constraints.TryGetValue(Key(node), out run);
+
     /// <summary>Every group the plan created, so the builder can describe them to the document.</summary>
     public IEnumerable<GroupPlan> Groups {
         get {
@@ -192,6 +235,11 @@ public sealed class BreakPlan {
 
             foreach (var plan in _inner.Values) {
                 yield return plan;
+            }
+
+            foreach (var run in _constraints.Values) {
+                yield return run.Outer;
+                yield return run.Inner;
             }
         }
     }
@@ -260,6 +308,7 @@ public sealed class BreakPlan {
         PlanAttributes(node);
         PlanEmbeddedStatement(node, EmbeddedStatementOf(node));
         PlanOnePerLine(node);
+        PlanConstraints(node);
 
         switch (node) {
             case EnumDeclarationSyntax enumeration:
@@ -460,11 +509,19 @@ public sealed class BreakPlan {
                 PlanCaseStatements(section);
                 return;
 
-            // ⚠ Planned only when the key is on, and the guard is not a micro-optimisation: a type
-            // parameter list has no group otherwise, and giving it one unconditionally would change
-            // where a long generic declaration wraps at the export's own values.
-            case TypeParameterListSyntax typeParameters when _options.WrapBeforeTypeParameterLangle:
-                PlanBreakBefore(typeParameters, typeParameters.LessThanToken);
+            // ⚠ Two shapes and not a guard. Until T5a this arm ran only under
+            // `wrap_before_type_parameter_langle`, with the note that giving a type parameter list a
+            // group unconditionally "would change where a long generic declaration wraps at the
+            // export's own values" — which was true, and was the divergence rather than the reason
+            // to keep it. At the export's `false` the oracle wraps the list itself; see
+            // PlanTypeParameters.
+            case TypeParameterListSyntax typeParameters:
+                if (_options.WrapBeforeTypeParameterLangle) {
+                    PlanBreakBefore(typeParameters, typeParameters.LessThanToken);
+                } else {
+                    PlanTypeParameters(typeParameters);
+                }
+
                 return;
 
             case TypeParameterConstraintClauseSyntax constraint when !_options.PlaceTypeConstraintsOnSameLine:
@@ -1121,6 +1178,177 @@ public sealed class BreakPlan {
             )
         );
     }
+
+    /// <summary>
+    ///     A type parameter list at <c>wrap_before_type_parameter_langle = false</c>: a fill inside the
+    ///     angle brackets.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ A fill and not a chop, and no key selects between them — there is no
+    ///     <c>wrap_type_parameters_style</c> in the export or in ReSharper. The shape is the oracle's,
+    ///     asked at 120 columns on a list wider than the margin:
+    ///     <code>
+    /// public void WiderThanTheMargin&lt;TFirstParameterName, TSecondParameterName, TThirdParameterName,
+    ///     TFourthParameterName&gt;() { }                          ← at the last comma that fits
+    ///     </code>
+    ///     The gap after the <c>&lt;</c> is a fill point like every gap between parameters: it breaks
+    ///     when what follows it does not fit and not merely because the list is being wrapped, which is
+    ///     what keeps the first parameter on the declaration's line above and what puts it on its own
+    ///     line when one parameter alone runs past the margin. The closing <c>&gt;</c> is
+    ///     <see cref="GapRule.Flat" /> — the oracle never gives it a line of its own.
+    ///     <para>
+    ///         ⚠ It spends no continuation level, and that is deliberate rather than an omission: the level
+    ///         is the angle brackets', opened by <see cref="CSharpDocumentBuilder.VisitDelimited" /> inside
+    ///         the <c>&lt;</c>.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ Armed by the <em>list's</em> own width, so it wraps a list that runs past the margin and not
+    ///         a declaration that does. ReSharper wraps both — given
+    ///         <c>void ManyParams&lt;T1, …, T5&gt;(int a) { }</c> whose list ends at column 116 and whose
+    ///         line ends at 131, the oracle moves <c>T5</c> down rather than chopping <c>(int a)</c> — and
+    ///         Skala chops the parameter list instead. Arming it by the declaration's head, which is the
+    ///         obvious fix and was measured, reproduces that shape and loses a worse one: ReSharper does
+    ///         <em>not</em> wrap <c>&lt;T0, T1, T2&gt;</c> when what overflows is a four-parameter list after
+    ///         it, and Skala then does. Over <c>corpus/real/</c> that trade is −0.14 points of line fidelity
+    ///         (99.53 % → 99.39 %; adding <see cref="GroupFacts.PrefersOuterBreak" /> recovers it only to
+    ///         99.50 %), against 0.00 for arming by the list. Which of two constructs on one declaration
+    ///         ReSharper wraps is the ordering rule's question and no fact this fitter has answers it; the
+    ///         narrower arming is the one that costs nothing while the answer is unknown.
+    ///     </para>
+    /// </remarks>
+    void PlanTypeParameters(TypeParameterListSyntax node) {
+        if (node.Parameters.Count == 0) {
+            return;
+        }
+
+        var group = NewGroup();
+        var first = FirstToken(node.Parameters[0]);
+        Point(first, group, fill: true);
+        var broken = BreaksBefore(first);
+
+        foreach (var comma in node.Parameters.GetSeparators()) {
+            var next = comma.GetNextToken();
+            if (next.IsKind(SyntaxKind.None) || next.SpanStart >= node.GreaterThanToken.SpanStart) {
+                continue;
+            }
+
+            var gap = _options.WrapBeforeComma ? comma : next;
+            Point(gap, group, fill: true);
+            Flat(_options.WrapBeforeComma ? next : comma);
+            broken |= BreaksBefore(gap);
+        }
+
+        Flat(node.GreaterThanToken);
+
+        Describe(
+            node,
+            group,
+            GroupMode.Preserve,
+            new GroupFacts(
+                SourceBroken: _options.KeepsUserBreaksBetweenItems && broken,
+                BreaksIfTooLong: true,
+                MeasuresHead: true
+            )
+        );
+    }
+
+    /// <summary>
+    ///     The <c>where</c> clauses of a generic declaration:
+    ///     <c>wrap_before_first_type_parameter_constraint</c> and
+    ///     <c>wrap_multiple_type_parameter_constraints_style</c>.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Planned from the <em>declaration</em> and not from the clause, because the construct being
+    ///     laid out is the whole run and a clause cannot see its siblings. The two groups and why there
+    ///     are two are in <see cref="ConstraintRun" />; what is decided here is which gap belongs to
+    ///     which of them.
+    ///     <para>
+    ///         ⚠ At <c>wrap_before_first_type_parameter_constraint = false</c> the first <c>where</c> is
+    ///         still a break point — it is simply one measured against the first clause alone rather than
+    ///         against the whole list. The oracle does move it when the declaration and its first clause do
+    ///         not fit together, so reading <c>false</c> as "never break there" loses a break ReSharper
+    ///         takes; and <c>chop_always</c> at <c>false</c> leaves the first clause on the declaration's
+    ///         line while giving every other clause one of its own, which is the shape that reaches the key.
+    ///     </para>
+    /// </remarks>
+    void PlanConstraints(SyntaxNode node) {
+        var clauses = ConstraintsOf(node);
+
+        // place_type_constraints_on_same_line = false makes every `where` a mandatory break, and the
+        // arm below plans that. Two rules over one gap is one rule too many.
+        if (clauses.Count == 0 || !_options.PlaceTypeConstraintsOnSameLine) {
+            return;
+        }
+
+        var style = _options.WrapMultipleTypeParameterConstraintsStyle;
+        var fill = style == WrapStyle.WrapIfLong;
+        var wrapsBeforeFirst = _options.WrapBeforeFirstTypeParameterConstraint;
+        var firstWhere = clauses[0].WhereKeyword;
+
+        var outer = NewGroup();
+        if (wrapsBeforeFirst) {
+            Point(firstWhere, outer);
+        }
+
+        var inner = NewGroup();
+        var innerBroken = false;
+        for (var i = 1; i < clauses.Count; i++) {
+            var where = clauses[i].WhereKeyword;
+            Point(where, inner, fill);
+            innerBroken |= BreaksBefore(where);
+        }
+
+        // ⚠ `indent_type_constraints` and not an unconditional level. The clause's own
+        // NodeLayout.Continuation arm is what spends it everywhere else, and the run takes the gaps
+        // before the `where`s away from that arm — so if the run spent the level unconditionally the
+        // key would stop being observable on exactly the shape its fixture pins.
+        var indents = _options.IndentTypeConstraints;
+        var firstBroken = _options.KeepsUserBreaksBetweenItems && BreaksBefore(firstWhere);
+        _constraints[Key(node)] = new ConstraintRun(
+            new GroupPlan(
+                outer,
+                style == WrapStyle.ChopAlways && wrapsBeforeFirst ? GroupMode.Break : GroupMode.Preserve,
+                new GroupFacts(SourceBroken: wrapsBeforeFirst && firstBroken, BreaksIfTooLong: true),
+                SpendsIndent: indents
+            ),
+            new GroupPlan(
+                inner,
+                style == WrapStyle.ChopAlways ? GroupMode.Break : GroupMode.Preserve,
+                new GroupFacts(
+                    SourceBroken: _options.KeepsUserBreaksBetweenItems && innerBroken,
+                    BreaksIfTooLong: true
+                ),
+                SpendsIndent: indents
+            ),
+            wrapsBeforeFirst
+        );
+
+        // ⚠ The first clause's own group, and only when the run's outer group did not take that gap.
+        // It spans one clause, so it is entered at the column the declaration reached and measured
+        // against that clause alone — which is exactly the question `false` asks.
+        if (!wrapsBeforeFirst) {
+            var head = NewGroup();
+            Point(firstWhere, head);
+            Describe(
+                clauses[0],
+                head,
+                GroupMode.Preserve,
+                new GroupFacts(SourceBroken: firstBroken, BreaksIfTooLong: true),
+                spendsIndent: indents,
+                leadingGapInside: true
+            );
+        }
+    }
+
+    /// <summary>A declaration's <c>where</c> clauses, whichever of the four kinds it is.</summary>
+    static SyntaxList<TypeParameterConstraintClauseSyntax> ConstraintsOf(SyntaxNode? node) =>
+        node switch {
+            TypeDeclarationSyntax type => type.ConstraintClauses,
+            MethodDeclarationSyntax method => method.ConstraintClauses,
+            DelegateDeclarationSyntax declaration => declaration.ConstraintClauses,
+            LocalFunctionStatementSyntax function => function.ConstraintClauses,
+            _ => default
+        };
 
     /// <summary>
     ///     <c>wrap_multiple_declaration_style = chop_if_long</c>: <c>int a = 1, b = 2, c = 3;</c> puts

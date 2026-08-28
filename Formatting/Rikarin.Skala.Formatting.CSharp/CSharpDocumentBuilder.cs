@@ -152,6 +152,13 @@ public sealed partial class CSharpDocumentBuilder {
             // EmitLeadingGapAt writes the `:` and the gap after it before the scope opens, so the
             // column the scope reads is the one the first base type lands on.
             BaseListSyntax { Types: [{ } first, ..] } => first.SpanStart,
+
+            // ⚠ And the first type parameter, one column past the list's own node, which is the `<`.
+            // `align_multiline_type_parameter_list = true`:
+            //
+            //     public void ManyParams<TFirstParameterName, TSecondParameterName,
+            //                            TThirdParameterName>(int a) { }
+            TypeParameterListSyntax { Parameters: [{ } parameter, ..] } => parameter.SpanStart,
             _ => node.SpanStart
         };
 
@@ -189,6 +196,13 @@ public sealed partial class CSharpDocumentBuilder {
                 _options.AlignMultilineBinaryExpressionsChain && BreakPlan.IsChainRootOperator(node),
             BinaryPatternSyntax => _options.AlignMultilineBinaryPatterns && BreakPlan.IsChainRootOperator(node),
             BaseListSyntax { Types.Count: > 0 } => _options.AlignMultilineExtendsList,
+
+            // ⚠ Only where the list wraps at its own parameters. Under
+            // `wrap_before_type_parameter_langle` the break is the gap before the `<` and the list
+            // has no interior point to align, so an Align scope there would anchor a column nothing
+            // ever lands on.
+            TypeParameterListSyntax { Parameters.Count: > 0 } =>
+                _options.AlignMultilineTypeParameterList && !_options.WrapBeforeTypeParameterLangle,
             _ => false
         };
 
@@ -641,14 +655,123 @@ public sealed partial class CSharpDocumentBuilder {
         }
     }
 
+    /// <remarks>
+    ///     ⚠ The one construct whose group is opened here rather than around a node is a run of
+    ///     <c>where</c> clauses: they are siblings with nothing in the tree spanning them, and the two
+    ///     questions ReSharper asks about them — see <see cref="ConstraintRun" /> — are asked at two
+    ///     different columns, one before the break that precedes the first clause and one after it. So
+    ///     the outer group opens, the gap is written, the inner group opens, and both close after the
+    ///     last clause and before the body.
+    /// </remarks>
     void VisitChildren(SyntaxNode node) {
+        var run = BeginConstraintRun(node);
+
         foreach (var child in node.ChildNodesAndTokens()) {
             if (child.IsToken) {
                 EmitToken(child.AsToken());
-            } else if (child.AsNode() is { } inner) {
-                VisitChild(node, inner);
+                continue;
+            }
+
+            if (child.AsNode() is { } inner) {
+                VisitConstrainedChild(node, inner, ref run);
             }
         }
+    }
+
+    /// <summary>What a constraint run needs while the declaration's children are being written.</summary>
+    struct ConstraintRunState {
+        public SyntaxNode? Last;
+        public ConstraintRun Run;
+        public bool Open;
+        public int IndentedOuter;
+        public int IndentedInner;
+    }
+
+    ConstraintRunState BeginConstraintRun(SyntaxNode node) =>
+        _plan.TryConstraintRun(node, out var run)
+            ? new ConstraintRunState { Last = LastConstraintClause(node), Run = run }
+            : default;
+
+    /// <summary>
+    ///     Writes one child of a declaration, opening and closing the constraint run around the
+    ///     <c>where</c> clauses it contains.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Both walks over a declaration's children need this — a method's is
+    ///     <see cref="VisitChildren" /> and a type's is <see cref="VisitBraced" /> — and the run must
+    ///     close before the body's <c>{</c>, which is why it closes at the last clause rather than at the
+    ///     end of the walk.
+    /// </remarks>
+    void VisitConstrainedChild(SyntaxNode owner, SyntaxNode inner, ref ConstraintRunState state) {
+        if (state.Last is not null && inner is TypeParameterConstraintClauseSyntax) {
+            if (!state.Open) {
+                state.Open = true;
+                state.IndentedOuter = OpenRunGroup(state.Run.Outer);
+                if (state.Run.OwnsLeadingGap) {
+                    EmitLeadingGapAt(inner.SpanStart);
+                }
+
+                state.IndentedInner = OpenRunGroup(state.Run.Inner);
+            } else {
+                // ⚠ Here rather than inside the clause, and that is the whole of where the
+                // indentation comes from. A clause is a NodeLayout.Continuation, so it opens a level
+                // of its own around its children; the gap before its `where` is written by that arm,
+                // which puts the break *inside* the level and lands the second clause one step past
+                // the first. The gap belongs to the run.
+                EmitLeadingGapAt(inner.SpanStart);
+            }
+        }
+
+        VisitChild(owner, inner);
+
+        if (state.Open && inner == state.Last) {
+            EmitUpTo(inner.Span.End);
+            CloseRunGroup(state.IndentedInner);
+            CloseRunGroup(state.IndentedOuter);
+            state.Open = false;
+            state.Last = null;
+        }
+    }
+
+    /// <summary>
+    ///     Opens one of a constraint run's groups, spending a continuation level for it if it is the
+    ///     one paying.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Both groups ask for the level and at most one of them gets it, which is
+    ///     <see cref="CanSpendAContinuationLevel" />'s answer rather than a rule of this construct's.
+    ///     Whichever opens first while nothing else is spending takes it, and the breaks of the other
+    ///     land inside it — it is the same level either way, and asking for it twice would put a
+    ///     wrapped clause two indents in.
+    /// </remarks>
+    int OpenRunGroup(GroupPlan plan) {
+        _doc.OpenGroup(plan.Mode, plan.Id);
+        var spends = plan.SpendsIndent && CanSpendAContinuationLevel();
+        _doc.DescribeGroup(plan.Id, plan.Facts with { SpendsIndent = spends });
+        if (spends) {
+            OpenIndent(IndentKind.Continuous);
+        }
+
+        return spends ? 1 : 0;
+    }
+
+    void CloseRunGroup(int indented) {
+        for (var level = 0; level < indented; level++) {
+            CloseIndent(IndentKind.Continuous);
+        }
+
+        _doc.Close();
+    }
+
+    static SyntaxNode? LastConstraintClause(SyntaxNode node) {
+        SyntaxNode? last = null;
+        foreach (var child in node.ChildNodes()) {
+            if (child is TypeParameterConstraintClauseSyntax) {
+                last = child;
+            }
+        }
+
+        return last;
     }
 
     /// <summary>
@@ -701,6 +824,11 @@ public sealed partial class CSharpDocumentBuilder {
             && !_options.UseContinuousIndentInsideInitializerBraces) {
             suppress = true;
         }
+
+        // ⚠ A generic type's `where` clauses come before its `{`, so the run belongs to this walk as
+        // much as to VisitChildren's. Without it a constrained class declaration has the plan and no
+        // group to hang it on, and its constraints stay on a 200-column line.
+        var run = BeginConstraintRun(node);
 
         foreach (var child in node.ChildNodesAndTokens()) {
             if (child.IsToken) {
@@ -761,7 +889,7 @@ public sealed partial class CSharpDocumentBuilder {
 
                 EmitToken(token);
             } else if (child.AsNode() is { } inner) {
-                VisitChild(node, inner);
+                VisitConstrainedChild(node, inner, ref run);
             }
         }
 
@@ -784,7 +912,13 @@ public sealed partial class CSharpDocumentBuilder {
         }
 
         var opened = false;
-        var suppress = layout == NodeLayout.Parens && !_options.UseContinuousIndentInsideParens;
+        // ⚠ And an aligned construct spends no level of its own either — the same rule VisitPlanned
+        // applies to a group's own indent, for the same reason: the Align scope is an absolute
+        // column and its contents start there, so the delimiter's level would put them one indent
+        // past the column the oracle writes. The one delimited construct that aligns is a type
+        // parameter list under `align_multiline_type_parameter_list`.
+        var suppress = layout == NodeLayout.Parens && !_options.UseContinuousIndentInsideParens
+            || AlignsFromOwnColumn(node);
 
         // ⚠ `align_tuple_components = true`: the column *after* the tuple's `(`, which is a
         // different anchor from every key AlignsFromOwnColumn answers and needs a different place

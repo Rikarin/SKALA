@@ -1276,3 +1276,35 @@ skala    ///<?skala-probe mode="short"?>          ← no marker space
   `constructs/xmldoc/resharper_xmldoc_blank_line_after_pi.xmldoc.expected.cs`. ⚠ The entry names
   `resharper_space_after_triple_slash`, which is **Tier A**: the key is reproduced everywhere its
   fixture exercises it, and this is a construct that fixture does not reach.
+## SK-DIV-0024 — a type parameter list wraps when the list overflows, not when the declaration does
+
+T5a gave a type parameter list its first break points: at `wrap_before_type_parameter_langle = false`
+— the export's value — the oracle wraps the list itself, as a fill, and Skala now does the same. What
+it does not reproduce is *which* of a generic declaration's two lists ReSharper chooses to wrap when
+only the declaration as a whole is over the margin.
+
+```csharp
+// the oracle moves T5 down; Skala chops `(int a)` instead
+public void ManyParams<T1, T2, T3, T4, T5>(int a) { }        // list ends at 116, line at 131
+
+// the oracle chops the parameter list; arming the fill by the declaration makes Skala wrap <T0,T1,T2>
+public void Information<T0, T1, T2>(string messageTemplate, T0 v0, T1 v1, T2 v2) { }
+```
+
+Both are the same question — two constructs on one line, one break needed, which one gives — and the
+ordering rule (`GroupFacts.PrefersOuterBreak`) answers it for `=` and `=>` and has no fact that
+answers it here. The two available readings were measured on `corpus/real/` rather than argued:
+arming the fill by the *list's* own width costs **0.00** points of line fidelity, arming it by the
+*declaration's* head costs **0.14** (99.53 % → 99.39 %), and adding `PrefersOuterBreak` to the second
+recovers only half of that (99.50 %). Skala takes the first: a type parameter list wraps when the
+list itself runs past the margin.
+
+⚠ A second, smaller shape is left with it. Under `align_multiline_type_parameter_list = true` a
+*single* type parameter wider than the margin is not wrapped at all, because the alignment column is
+read after the anchor's gap has been written and here that gap is the break — so the group the break
+belongs to is not open when the break is emitted, and the writer renders it flat.
+`constructs/breaks/type-parameter-single.cs` is that shape, kept out of the aligned fixture for that
+reason.
+
+- options: `resharper_csharp_wrap_before_type_parameter_langle`, `resharper_align_multiline_type_parameter_list`, `resharper_csharp_wrap_parameters_style`
+- ⚠ status: **open**, measured; the first half is the ordering rule's and belongs with SK-DIV-0002.

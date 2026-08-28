@@ -183,6 +183,7 @@ public readonly struct PhaseOneOptions {
         AlignMultilineBinaryPatterns = options.GetBool(Ids.AlignMultilineBinaryPatterns);
         AlignLinqQuery = options.GetBool(Ids.AlignLinqQuery);
         AlignMultilineExtendsList = options.GetBool(Ids.AlignMultilineExtendsList);
+        AlignMultilineTypeParameterList = options.GetBool(Ids.AlignMultilineTypeParameterList);
         AlignTupleComponents = options.GetBool(Ids.AlignTupleComponents);
 
         IntAlignFields = options.GetBool(Ids.IntAlignFields);
@@ -350,6 +351,9 @@ public readonly struct PhaseOneOptions {
         WrapMultipleDeclarationStyle = (WrapStyle)options.GetRaw(Ids.WrapMultipleDeclarationStyle);
         WrapExtendsListStyle = (WrapStyle)options.GetRaw(Ids.WrapExtendsListStyle);
         WrapForStmtHeaderStyle = (WrapStyle)options.GetRaw(Ids.WrapForStmtHeaderStyle);
+        WrapMultipleTypeParameterConstraintsStyle =
+            (WrapStyle)options.GetRaw(Ids.WrapMultipleTypeParameterConstraintsStyle);
+        WrapBeforeFirstTypeParameterConstraint = options.GetBool(Ids.WrapBeforeFirstTypeParameterConstraint);
         WrapBeforeExtendsColon = options.GetBool(Ids.WrapBeforeExtendsColon);
         WrapBeforeCommaInBaseClause = options.GetBool(Ids.WrapBeforeCommaInBaseClause);
         WrapPropertyPattern = (WrapStyle)options.GetRaw(Ids.WrapPropertyPattern);
@@ -618,6 +622,7 @@ public readonly struct PhaseOneOptions {
     public bool AlignMultilineBinaryPatterns { get; }
     public bool AlignLinqQuery { get; }
     public bool AlignMultilineExtendsList { get; }
+    public bool AlignMultilineTypeParameterList { get; }
     public bool AlignTupleComponents { get; }
 
     public bool IntAlignFields { get; }
@@ -849,6 +854,8 @@ public readonly struct PhaseOneOptions {
     /// </remarks>
     public WrapStyle WrapForStmtHeaderStyle { get; }
 
+    public WrapStyle WrapMultipleTypeParameterConstraintsStyle { get; }
+    public bool WrapBeforeFirstTypeParameterConstraint { get; }
     public bool WrapBeforeExtendsColon { get; }
     public bool WrapBeforeCommaInBaseClause { get; }
     public WrapStyle WrapPropertyPattern { get; }
@@ -1278,6 +1285,17 @@ public static class Ids {
     public static readonly OptionId AlignMultilineExtendsList =
         Of("resharper_csharp_align_multiline_extends_list");
 
+    // ⚠ The same anchor rule for the same reason, and the same correction: the column of the *first
+    // type parameter*, one past the list's own node, which is the `<`. Recorded until T5a as one of
+    // nine unprefixed spellings "never read by the C# formatter"; it is read, and the measurement
+    // that said otherwise was taken on a file whose type parameter list did not wrap because nothing
+    // in this repository could make one wrap. On one that does:
+    //
+    //     public void ManyParams<TFirstParameterName, TSecondParameterName, TThirdParameterName,
+    //                            TFourthParameterName>(int a) { }   ← the first parameter's column
+    public static readonly OptionId AlignMultilineTypeParameterList =
+        Of("resharper_align_multiline_type_parameter_list");
+
     // ⚠ The anchor is the column *after* the `(`, re-measured rather than assumed, and it is a
     // different anchor from every key AlignsFromOwnColumn answers — so VisitDelimited opens the
     // scope for it after the `(` has been written:
@@ -1308,7 +1326,6 @@ public static class Ids {
     // byte-identical oracle output, while the construct's real key changes it:
     //   align_multiline_array_initializer, align_multiline_ctor_init, align_multiline_expression_braces,
     //   align_multiline_implements_list, align_multiline_type_argument, align_multiline_type_parameter,
-    //   align_multiline_type_parameter_constraints, align_multiline_type_parameter_list,
     //   align_ternary, alignment_tab_fill_style.
     //   ⚠ `align_ternary` re-measured at the ternary-chain work, on the shape it is named for and
     //     that no earlier probe could reach: a nested conditional chain the oracle chops one member
@@ -1316,12 +1333,31 @@ public static class Ids {
     //     byte-identical, single conditional and chain alike. The claim holds on the shape that was
     //     most likely to break it.
     //
+    // ⚠ Two names left that list in T5a, and the reason they were on it was a *missing wrap*, not a
+    // missing key. The claim above was established on files that "wrap the construct it names" — and
+    // until T5a nothing in this repository could produce a wrapped type parameter list or a wrapped
+    // constraint list to ask the question on, because ReSharper only wraps them past the margin and
+    // the probes never got one past it. Re-asked on a 120-column file that does wrap:
+    //   align_multiline_type_parameter_list — read, and Tier A. With it on, the second line of a
+    //     wrapped `<T1, T2, …>` lands on the *first* type parameter's column rather than one
+    //     continuation level in. See AlignsFromOwnColumn.
+    //   align_multiline_type_parameter_constraints — read, and Tier D for the reason below rather
+    //     than for the one above: with `wrap_before_first_type_parameter_constraint = false` as well,
+    //     a second `where` lands on the first `where`'s column. It is masked at the export's values,
+    //     which set that key to true and so give the first `where` a line of its own.
+    //   align_multiline_type_parameter stays on the list, and it is now measured on its own rather
+    //     than as one of nine: on the same wrapping file, at both values, the oracle's output does
+    //     not move, while `align_multiline_type_parameter_list` beside it does.
+    //
     // Masked by another key at the export's own values, so the per-option unit — which flips one key
     // from the repository's configuration — cannot reach them:
     //   align_multiline_argument, align_multiline_parameter — the export sets
     //     wrap_after_{invocation,declaration}_lpar = true, which gives the first item a line of its
     //     own, and there is then no first item on the delimiter's line to align the rest to. With
     //     the lpar key off as well, both change the output.
+    //   align_multiline_type_parameter_constraints — see above. The export's
+    //     wrap_before_first_type_parameter_constraint = true breaks before the first `where`, and
+    //     there is then no first clause on the declaration's line to align the rest to.
     //   align_multiline_for_stmt — align_multiline_statement_conditions = true already aligns a
     //     `for` header by its `(`. Either key alone is enough and the export has the other one on.
     //     ⚠ Re-measured in milestone 3.2, once the header had a break point for a column to govern,
@@ -1666,17 +1702,18 @@ public static class Ids {
     public static readonly OptionId WrapBeforePrimaryConstructorLpar =
         Of("resharper_csharp_wrap_before_primary_constructor_declaration_lpar");
 
+    // ⚠ Tier A since T5a, and it was Tier D for a wrapping gap rather than for anything to do with
+    // the key: with the key *on*, Skala's output on an over-long type parameter list was already
+    // byte-identical to the oracle's, and with it off the two disagreed because Skala gave a type
+    // parameter list no group at all. T5a closed that half — see BreakPlan.PlanTypeParameters, which
+    // is the oracle's own shape: a fill, breaking after the `<` when a single parameter overflows
+    // and at the last comma that fits when several do.
+    public static readonly OptionId WrapBeforeTypeParameterLangle =
+        Of("resharper_csharp_wrap_before_type_parameter_langle");
+
     // ⚠ Read, implemented, and Tier D — blocked by a wrapping gap of its own rather than by
     // anything to do with the key.
     //
-    //   wrap_before_type_parameter_langle — implemented in BreakPlan and verified: with the key on,
-    //     Skala's output on a type parameter list too long for its line is byte-identical to the
-    //     oracle's. With it off the two disagree, because Skala gives a type parameter list no group
-    //     at all and the oracle wraps one — after the `<` when a single parameter overflows, at the
-    //     last comma that fits when several do. A fixture pinning this key would be committing that
-    //     unrelated divergence to the corpus. Tier A once a type parameter list wraps.
-    public static readonly OptionId WrapBeforeTypeParameterLangle =
-        OfInert("resharper_csharp_wrap_before_type_parameter_langle");
 
     // ⚠ Implemented in PlanAroundEquals and it was `wrap_before_type_parameter_langle`'s neighbour
     // in the note above, on the same argument: the key takes a query out of the ordering rule so
@@ -1712,16 +1749,13 @@ public static class Ids {
     // the margin itself. The measurement that put it here was taken on already-wrapped input, where
     // what stays put stays put under keep_user_linebreaks; on flat input it joins the file.
     //
-    // Not reached by any probe: wrap_before_first_type_parameter_constraint — no shape tried put
-    // two constraint clauses in a position where it could decide anything.
-    //
-    // ⚠ wrap_multiple_type_parameter_constraints_style was beside it and is not any more: it is
-    // reached, and the shape that reaches it is a declaration with four constraint clauses on one
-    // source line. At `wrap_if_long` the oracle fills them two to a line and at `chop_always` it
-    // gives a two-clause method one `where` per line, both against the export's `chop_if_long`. Not
-    // implemented, and not for want of the key: Skala has no break point before a `where` at all —
-    // asked with the same declaration it leaves the constraints on a 200-column line rather than
-    // choosing between the three styles. Tier A once the constraint list wraps.
+    // ⚠ wrap_multiple_type_parameter_constraints_style and
+    // wrap_before_first_type_parameter_constraint were both on this list — the first as "reached and
+    // not implemented", the second as "not reached by any probe" — and both are Tier A since T5a.
+    // The shape that reaches them is a declaration whose constraint clauses do not fit on one line,
+    // and the probe that missed the second needed one more turn of the handle: it decides nothing
+    // while the first `where` has to break anyway, and it decides everything when the declaration
+    // and its first clause do fit. See PlanConstraints, and the two keys below.
     //
     // ⚠ wrap_for_stmt_header_style was in this list and is not any more. The shape was right — a
     // `for` whose three clauses do not fit, where `wrap_if_long` keeps the initializer and the
@@ -1733,6 +1767,29 @@ public static class Ids {
     // wrap_verbatim_interpolated_strings is observable — chop_if_long breaks the oracle's output
     // *inside* the interpolation holes of a verbatim string — and is not implemented: Skala emits an
     // interpolated string as one piece and has no break point inside one.
+
+    // ⚠ The two halves of a constraint list's layout, and they are two questions rather than one —
+    // which is why one group is not enough. Measured against `jb cleanupcode` at 120 columns:
+    //
+    //   wrap_before_first_type_parameter_constraint asks whether the *whole* constraint list has to
+    //     fit on the declaration's line. At `true` — the export's value — a declaration whose
+    //     constraints overflow puts every clause on the next line even when the first one would
+    //     have fitted; at `false` the first clause stays put and only what does not fit moves.
+    //   wrap_multiple_type_parameter_constraints_style then decides what happens to the clauses
+    //     *after* the first, on the line they land on. `chop_if_long` gives each its own line as
+    //     soon as they do not fit together, `wrap_if_long` fills them, and `chop_always` gives each
+    //     its own line whatever the width.
+    //
+    // The second question is asked at the column the first clause lands on and not at the
+    // declaration's, and that is the whole of why the oracle writes
+    //     public void M<T1, T2>(T1 a)
+    //         where T1 : class where T2 : struct, IComparable, ICloneable, IEquatable<T2> { }
+    // rather than a line per clause: the first break already made the constraints fit.
+    public static readonly OptionId WrapMultipleTypeParameterConstraintsStyle =
+        Of("resharper_csharp_wrap_multiple_type_parameter_constraints_style");
+
+    public static readonly OptionId WrapBeforeFirstTypeParameterConstraint =
+        Of("resharper_csharp_wrap_before_first_type_parameter_constraint");
 
     public static readonly OptionId WrapBeforeArrowWithExpressions =
         Of("resharper_csharp_wrap_before_arrow_with_expressions");
