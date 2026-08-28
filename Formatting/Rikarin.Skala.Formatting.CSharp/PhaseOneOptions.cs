@@ -1625,6 +1625,23 @@ public static class Ids {
     // keep_user_linebreaks = true, setting keep_user_wrapping to false changes nothing on any shape
     // tried — broken argument lists, ternaries, binary chains and call chains all keep their breaks.
     // keep_user_linebreaks is the key that governs. See the M2 report.
+    //
+    // ⚠ T6 re-asked it as the four-way table docs/plan/05 § keep_existing_* documents, rather than
+    // as one flip, because "it is inert" and "it is inert at the export's other key's value" are
+    // different claims and M2 only measured the second. One file holding an author-broken query, an
+    // author-broken argument list, an author-broken binary chain and an author-broken short call,
+    // asked at every corner:
+    //
+    //   keep_user_linebreaks = true,  keep_user_wrapping = false   ── identical to the export
+    //   keep_user_linebreaks = false, keep_user_wrapping = true    ── every break re-joined
+    //   keep_user_linebreaks = false, keep_user_wrapping = false   ── byte-identical to the row above
+    //   keep_user_wrapping = false at a 60-column margin           ── identical to the margin alone
+    //   keep_user_wrapping = false with wrap_lines = false         ── identical to wrap_lines alone
+    //
+    // The second and third rows are the table's whole content: keep_user_linebreaks decides, and
+    // keep_user_wrapping does not appear in the answer at either of its values, at either margin, or
+    // at the unbounded one. constructs/wrapping/lambda-arrow.cs pins the negative with ten other
+    // keys beside it.
     public static readonly OptionId KeepUserWrapping = OfInert("resharper_keep_user_wrapping");
 
     public static readonly OptionId KeepExistingInvocationParensArrangement =
@@ -1736,18 +1753,64 @@ public static class Ids {
     // (wrap_array_initializer_style), wrap_ctor_initializer_style, wrap_enumeration_style
     // (wrap_enum_declaration), wrap_before_colon, wrap_comments.
     //
-    // ⚠ The four lambda keys belong here too, and the measurement is the interesting one: with
-    // wrap_{before,after}_lambda_and_anonymous_function_declaration_{lpar,rpar} and
-    // wrap_lambda_and_anonymous_function_parameters_style at any value, the oracle's layout of a
+    // ⚠ Two of those were re-asked in T6 with their C# key in the same batch, because the comment
+    // near line 1279 saying the unprefixed forms belong to the C++/VB formatters has been refuted
+    // twice this year and an inherited claim is not a measurement:
+    //   wrap_arguments = chop_always            ── no change; csharp_wrap_arguments_style =
+    //                                              chop_always in the same run chops every argument
+    //                                              list in the file, the ctor initializer included.
+    //   wrap_before_colon = true                ── no change, in either spelling;
+    //                                              wrap_before_extends_colon = true in the same run
+    //                                              moves the base list's `:` onto its own line.
+    // So for these two the claim holds and now has its control.
+    //
+    // ⚠ The five lambda keys belong here too, and the measurement is the interesting one: with
+    // wrap_{before,after}_lambda_and_anonymous_function_declaration_{lpar,rpar},
+    // wrap_lambda_and_anonymous_function_parameters_style and
+    // max_lambda_and_anonymous_function_parameters_on_line at any value, the oracle's layout of a
     // lambda's parameter list does not move — and it *does* move when
     // wrap_before_declaration_lpar changes. A lambda's parameter list is governed by the method
     // declaration keys; the five keys named for it are not read.
     //
-    // Master switches with nothing behind them: enable_wrapping = true changes nothing, and
+    // ⚠ T6 re-asked all five with the controls beside them rather than inheriting the note above,
+    // because the family they are named after — lpar / rpar / style / max_on_line — *is* implemented
+    // for declarations and invocations, and "the fifth call into existing machinery" was the
+    // expected answer. It is not: on a file holding a parenthesized lambda and a `delegate(…)`,
+    // asked at 120 columns and again at 60, each of the five at its other value returns output
+    // byte-identical to the margin's own, while in the same batch
+    // csharp_max_formal_parameters_on_line = 1 and csharp_wrap_parameters_style = chop_always both
+    // chop the lambda's parameter list and wrap_before_declaration_lpar moves the `delegate`
+    // keyword's parenthesis. Ten runs, five keys, two margins, four controls.
+    //
+    // Master switches with nothing behind them: enable_wrapping changes nothing, and
     // keep_user_wrapping has no observable effect in this export (BreakPlan records the same, from
     // M2). ⚠ csharp_wrap_lines was in this list and is not any more — it is implemented above, as
     // the margin itself. The measurement that put it here was taken on already-wrapped input, where
     // what stays put stays put under keep_user_linebreaks; on flat input it joins the file.
+    //
+    // ⚠ enable_wrapping is worth its own line, because the obvious reading of a key called that is
+    // "wrapping is off" and the export sets it to **false** while wrapping visibly happens. T6 asked
+    // whether it is a narrower gate instead, on a file that genuinely wraps — a chopped argument
+    // list, a wrapped call chain, a chopped base list, a wrapped constraint list — at 120 columns,
+    // at 60, and with wrap_lines = false. Its two values are byte-identical at all three. It is not
+    // csharp_wrap_lines under another name, it is not a gate on any subset measured, and unlike
+    // wrap_lines it is not the margin either: the distinction wrap_lines cost real work to establish
+    // does not transfer, because this key has no effect to have a reading of.
+    //
+    // ⚠ indent_wrapped_function_names and prefer_line_break_after_multiline_lparen are the two of
+    // this group that were hunted rather than sampled, since each names a shape a probe can miss.
+    //   indent_wrapped_function_names — a wrapped call chain, a wrapped qualified name, and a
+    //     declaration whose return type and name split across lines; then the same three under
+    //     wrap_after_dot_in_method_calls, align_multiline_calls_chain, outdent_dots and
+    //     continuous_line_indent = double. Every pairing returns exactly what the control alone
+    //     returns, so the key contributes nothing to any of them. ⚠ The unprefixed-spelling excuse
+    //     was not inherited: resharper_csharp_indent_wrapped_function_names was asked too, and is
+    //     equally inert.
+    //   prefer_line_break_after_multiline_lparen — a call whose argument is a two-statement lambda,
+    //     one whose argument is a wide object initializer, and a nested call, at 120 and at 80, with
+    //     and without place_single_method_argument_lambda_on_same_line and with
+    //     wrap_arguments_style = chop_always. Inert at every one; the C#-prefixed spelling too.
+    // Both are recorded as "reached and not read" rather than "not reached".
     //
     // ⚠ wrap_multiple_type_parameter_constraints_style and
     // wrap_before_first_type_parameter_constraint were both on this list — the first as "reached and

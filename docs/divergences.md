@@ -1329,3 +1329,84 @@ reason.
 
 - options: `resharper_csharp_wrap_before_type_parameter_langle`, `resharper_align_multiline_type_parameter_list`, `resharper_csharp_wrap_parameters_style`
 - ⚠ status: **open**, measured; the first half is the ordering rule's and belongs with SK-DIV-0002.
+
+## SK-DIV-0050 — a lambda's `=>` is a break point of the oracle's and not of Skala's
+
+`BreakPlan` gives an *expression-bodied member*'s arrow a group (`PlanExpressionBody`,
+`ArrowExpressionClauseSyntax`) and gives a **lambda**'s arrow nothing. Roslyn spells the two
+differently — a member gets an `ArrowExpressionClauseSyntax` with the token on it, a lambda carries
+`ArrowToken` directly on `LambdaExpressionSyntax` — so the gap after `=>` is not a break point of any
+group, and a long lambda breaks at whatever point it does have: its parameter list, its body's
+argument list, its body's binary chain, or the `=` above it. The oracle prefers the arrow to all
+four. Measured at the margins named:
+
+```csharp
+// 100 columns — the oracle takes the arrow; Skala chops the lambda's parameter list
+C2((SomeVeryLongParameterTypeName firstParameterName, AnotherLongTypeName secondName) =>
+    firstParameterName
+);
+
+// 100 columns — over the body's own argument list, which Skala chops instead
+Action g = () =>
+    DoSomethingWithAVeryLongMethodNameHere(firstArgument, secondArgument, third);
+
+// 80 columns — over the body's binary chain, which Skala breaks at the `+` instead
+Func<int, string> f = value =>
+    value.ToString() + "a suffix long enough to force a wrap ok";
+
+// 50 columns — over the `=`, which Skala takes instead: `f =\n    value => value.ToString()`
+Func<int, string> f = value =>
+    value.ToString()
+    + "a suffix long enough to force a wrap ok";
+```
+
+The last of those is the shape reported as a pre-existing divergence — "breaks after the `=` where
+the oracle breaks after the `=>`" — and it is confirmed here as one instance of the missing point
+rather than a fault of `PlanAroundEquals`.
+
+Two facts about the gap are settled and are what a fix starts from.
+`wrap_before_arrow_with_expressions` governs which side of the arrow the break lands on for a lambda
+exactly as it does for a member — at `true` the oracle writes `B((first, second)\n    => first.…` —
+and **preservation is `keep_user_linebreaks`'s, not `keep_existing_expr_member_arrangement`'s**,
+which is the guess `PlanExpressionBody` invites. Four lambdas the author had already broken after the
+arrow come back broken at the export's values, come back broken with the expression-member key
+flipped, and re-join under `keep_user_linebreaks = false` and `keep_existing_linebreaks = false`
+alike. Skala already preserves those, through the ordinary source-break gap, so no preservation is
+lost by the missing group — only the width-driven break is.
+
+⚠ **What is not settled is when the oracle takes it, and that is why the point is not implemented.**
+The obvious plan — a `Preserve` group on the body owning the leading gap, with
+`GroupFacts.PrefersOuterBreak` — was written, measured and withdrawn. It reproduces every row above
+and it costs `corpus/real/` a file (file fidelity 85.78 % → 85.53 %, five files better and five
+worse, line fidelity flat). Restricting it to lambdas that are not the sole argument of a call
+removes every regression *and* every improvement: the corpus does not move at all, 380 files
+byte-identical either way. So `corpus/real/` cannot arbitrate this and the deciding evidence has to
+be direct measurement — which produces a contradiction no ordering rule in `Fitter` can hold:
+
+```csharp
+// 120 columns, both 12 columns over, both `() =>` with a chop-able call body.
+// The oracle breaks the arrow on one and chops the argument list on the other.
+Action a2 = value => DoSomethingWithARatherLongNam(firstArgument, secondArgument, thirdArgument, fourthArg);
+Action a4 = () => DoSomethingWithARatherLongName(firstArgument, secondArgument, thirdArgument, fourthArgumentNameIsLonger);
+```
+
+`Worth`'s first question ("does this break alone finish the job?") fires for both; its second ("does
+the line end here anyway?") declines both. `Fitter.OuterBreakMargin` cannot separate them either:
+the first needs a slack of at most 13 to break and the second needs more than 17 to decline, and a
+third shape at 120 needs the arrow taken where any slack above 3 refuses it. That is the same
+finding the margin's own remarks already record for the `=` — "no affine function of the numbers
+this fitter has reproduces that curve" — arriving at a second construct.
+
+This is SK-DIV-0024's sibling: two constructs on one line, one break needed, which one gives, and no
+fact in `GroupFacts` that answers it. Both belong with SK-DIV-0002.
+
+`constructs/wrapping/lambda-arrow.cs` is the fixture, and it deliberately holds the shapes where the
+two agree — the call-bodied lambda whose arrow the oracle declines, the author's own break, the
+sole-argument lambda, the parameter list laid out by the declaration keys — so that the agreement is
+pinned while the disagreement is described here. The divergent shapes are kept out of it for the
+reason SK-DIV-0024 keeps `type-parameter-single.cs` out of the aligned fixture: a fixture that
+diverges takes the `constructs` file ratchet down with it, and one non-exact file cannot be diluted
+by any reasonable number of exact ones.
+
+- options: `resharper_csharp_wrap_before_arrow_with_expressions`, `resharper_keep_user_linebreaks`, `resharper_csharp_keep_existing_linebreaks`, `resharper_place_single_method_argument_lambda_on_same_line`, `resharper_csharp_wrap_parameters_style`
+- ⚠ status: **open**, measured; the break point is missing and the rule that would arm it is not known.
