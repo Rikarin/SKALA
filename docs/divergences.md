@@ -1701,3 +1701,139 @@ the export's own values and not merely an unimplemented option.
 
 - options: `resharper_csharp_align_multiline_comments`
 - ⚠ status: **open**, measured, unfixed
+## SK-DIV-0070 — the oracle reads the four Roslyn qualification keys for `this.`, and not `resharper_remove_this_qualifier`
+
+`resharper_remove_this_qualifier = true` is in the export and the key is **Tier A**, pinned by
+`constructs/arrangement/redundancy/qualifiers-and-parentheses.arranged.expected.cs`. That fixture is
+a file in which every `this.` is removed — and it is satisfied by an implementation that reads the
+key and by one that ignores it, because `dotnet_style_qualification_for_field`, `…_property`,
+`…_method` and `…_event` are all `false` in the same export and each of them removes `this.` on its
+own.
+
+Probed against `jb cleanupcode` 2025.2.6 under `OracleProfile.Cleanup`, on a file carrying a bare and
+a `this.`-qualified reference to each of the four member kinds:
+
+| Override | Result |
+|---|---|
+| none (the export) | every `this.` removed |
+| `resharper_remove_this_qualifier = false` | **byte-identical** — still removed |
+| `dotnet_style_qualification_for_field = true` | `this._field` written, other three kinds untouched |
+| `…_for_property` / `…_for_method` / `…_for_event = true` | the same, one kind each |
+
+So the ReSharper key is dominated on this repository's configuration: it is read, if at all, only
+where the four Roslyn keys leave the question open, and the export leaves it open nowhere.
+
+**Skala keeps reading it, as a gate on the removing direction only.** At `remove_this_qualifier =
+false` with the four Roslyn keys at `false`, Skala keeps an existing `this.` and the oracle removes
+it — that is the divergence, and it is deliberate. Dropping the key instead would make a Tier A
+option unobservable and leave its committed fixture proving nothing, which is a bigger claim to make
+than this one. The tier is the maintainer's call; the measurement is here so it can be made.
+
+- options: `resharper_remove_this_qualifier`, `dotnet_style_qualification_for_field`, `dotnet_style_qualification_for_property`, `dotnet_style_qualification_for_method`, `dotnet_style_qualification_for_event`
+- ⚠ status: **open**, measured; the divergence is only reachable by flipping `resharper_remove_this_qualifier` away from the export's value.
+
+## SK-DIV-0071 — `resharper_remove_unused_only_aliases` is a Visual Basic option, not a second spelling of the C# one
+
+The export carries both `resharper_remove_only_unused_aliases = true` and
+`resharper_remove_unused_only_aliases = false`, four characters apart, and the registry classified
+both `csharp` "by vocabulary". The obvious reading is one option under two spellings — the shape
+`SK9004` exists for — and it is wrong.
+
+The setting names are recoverable the way `docs/oracle-cleanup-profile.md` recovers task names:
+
+```
+grep -rl RemoveUnusedOnlyAliases $JB --include=*.dll   # JetBrains.ReSharper.Psi.VB.dll, Features.Altering.dll
+grep -rl RemoveOnlyUnusedAliases $JB --include=*.dll   # JetBrains.ReSharper.Psi.CSharp.dll, Feature.Services.dll, Features.Altering.dll
+```
+
+`RemoveUnusedOnlyAliases` is declared in the **VB** language module; `RemoveOnlyUnusedAliases` is the
+C# one. Confirmed by measurement rather than left at the name: probed at `true` under the cleanup
+profile over a file carrying a used and an unused instance of a trivial and a non-trivial alias, the
+output is byte-identical to the export's value, while flipping the C# key on the same file removes or
+keeps two directives.
+
+It is therefore **inert for C#** with a recorded reason, and the C# key is Tier A.
+
+- options: `resharper_remove_unused_only_aliases`, `resharper_remove_only_unused_aliases`
+- ⚠ status: **closed**; recorded as `inert` in the registry.
+
+## SK-DIV-0072 — ⚠ RETRACTED. `resharper_csharp_keep_nontrivial_alias` was recorded inert on a probe that could not distinguish it
+
+The registry carried:
+
+> The oracle returns `using Map = System.Collections.Generic.Dictionary<string, int>;` beside a
+> trivial `using Simple = System.String;` unchanged at both values, under the format-only profile and
+> under the cleanup profile.
+
+That is true and it is not evidence. Both aliases in that probe were **in use**, and a using that is
+in use is not removable at any value of any key — the observation could not have come out otherwise.
+It is the same failure as SK-DIV-0006's: a fixture that agrees for a reason unrelated to the option.
+
+With the aliases unused the key separates cleanly, measured over all four combinations with
+`resharper_remove_only_unused_aliases`:
+
+| `keep_nontrivial_alias` | `remove_only_unused_aliases` | unused **trivial** alias | unused **non-trivial** alias |
+|---|---|---|---|
+| `false` | `true` — the export | removed | **removed** |
+| `true` | `true` | removed | kept |
+| `false` | `false` | removed | kept |
+| `true` | `false` | removed | kept |
+
+"Trivial" is the alias identifier equalling the aliased type's own name — `using Regex =
+System.Text.RegularExpressions.Regex;` is trivial and `using Trivial = System.String;` is not — which
+is measured, not read off the word. The two keys AND, so each moves the output on its own from the
+export's pair, and both are now implemented and Tier A.
+
+- options: `resharper_csharp_keep_nontrivial_alias`, `resharper_remove_only_unused_aliases`
+- ⚠ status: **closed**; the `inert` mark is removed and `constructs/arrangement/usings/aliases.cs` pins both.
+
+## SK-DIV-0073 — the oracle shortens a qualified reference; Skala has no rule that does
+
+`resharper_csharp_prefer_qualified_reference = false` is in the export, and it is **not** inert. Under
+the cleanup profile, on a file writing `new System.Text.StringBuilder()` and
+`global::System.Console.WriteLine(…)` beside their short forms:
+
+- at the export's `false` the oracle **shortens** both to `StringBuilder` and `Console`, keeping the
+  usings that make the short forms legal;
+- at `true` it goes the other way and fully qualifies every simple name, dropping the usings that
+  become redundant.
+
+Skala does neither. It has no reference-shortening rule at all, so on this key it is unreachable
+rather than unread, and it stays Tier D with no `oracle` glob. The cost is not zero: the corpus
+fixture `constructs/arrangement/usings/placement.cs` was written with a `using Collections =
+System.Collections.Generic;` alias at nested scope and had to lose it, because the oracle replaced
+`Collections.List<int>` with `List<int>` — `System.Collections.Generic` is an implicit using — and
+removed the alias, which is the shortening rewrite arriving by another door.
+
+The three neighbouring keys of the same family are a different matter and are inert rather than
+unimplemented: `resharper_csharp_allow_alias`, `resharper_csharp_can_use_global_alias` and
+`resharper_csharp_qualified_using_at_nested_scope` govern what ReSharper **writes** when it imports a
+name — a completion, a paste, a quick-fix — and cleanup imports nothing. Each was probed at its
+flipped value under the cleanup profile *and* under a profile with `CSShortenReferences` added, on a
+file built to need it (a `global::` prefix disambiguating a locally-shadowed `Console`; a using at
+nested scope), and each came back byte-identical. Same shape as SK-DIV-0013's three code-generation
+settings.
+
+- options: `resharper_csharp_prefer_qualified_reference`, `resharper_csharp_allow_alias`, `resharper_csharp_can_use_global_alias`, `resharper_csharp_qualified_using_at_nested_scope`
+- ⚠ status: **open** on the first, **closed** (inert, recorded) on the other three.
+
+## SK-DIV-0074 — `dotnet_separate_import_directive_groups` is a formatting key in the oracle and an arrangement key in Skala
+
+At `true` the oracle writes one blank line between using directives whose first namespace segment
+differs, and at the export's `false` it takes every blank line inside the using block back out. Both
+directions were measured under the cleanup profile, and the second one **also happens under
+`CSReformatCode` alone** — the format-only profile strips the blank line too.
+
+Skala's formatter does not read the key. Only the arranger does, so `skala format` on a file with a
+blank line inside its using block keeps it where the oracle removes it, and `skala arrange` removes
+it. Moving the key into the formatter is the right end state and it is not this change: the formatter
+is a different component with its own fixture set, and a key that two components both act on is worse
+than a key one of them acts on late.
+
+The consequence for the corpus is recorded in the fixture itself:
+`constructs/arrangement/usings/import-groups.cs` deliberately has **no** blank line in its source,
+because one would make its format-only fixture measure this gap rather than the option. The removal
+direction is pinned by `ArrangementOptionTests` instead.
+
+- options: `dotnet_separate_import_directive_groups`
+- ⚠ status: **open**, and narrow: it is only reachable on a source file that already has a blank line inside its using block, formatted without arranging.

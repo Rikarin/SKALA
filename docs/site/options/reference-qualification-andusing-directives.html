@@ -47,7 +47,7 @@
 </section>
 <section class="option" id="resharper_csharp_prefer_qualified_reference">
 <h2><code>resharper_csharp_prefer_qualified_reference</code> <a class="self" href="#resharper_csharp_prefer_qualified_reference">#</a></h2>
-<p>Reference qualification and 'using' directives — Prefer fully qualified references</p>
+<p>Reference qualification and 'using' directives — Prefer fully qualified references. ⚠ Not inert and not implemented. At <code>true</code> the oracle rewrites every simple name to its fully qualified form and drops the usings that become redundant; at the export's <code>false</code> it <em>shortens</em> an already-qualified reference — <code>System.Text.StringBuilder</code> becomes <code>StringBuilder</code> — which Skala does not do either. Skala has no reference-shortening rule, so the key is unreachable rather than unread. See SK-DIV-0073.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>

@@ -6,8 +6,26 @@ using Rikarin.Skala.Options;
 namespace Rikarin.Skala.Formatting.CSharp.Arrangement;
 
 /// <summary>
-///     <c>this.field</c> ⇒ <c>field</c>, under <c>resharper_remove_this_qualifier</c>.
+///     <c>this.field</c> ⇔ <c>field</c>, under the four <c>dotnet_style_qualification_for_*</c> keys and
+///     <c>resharper_remove_this_qualifier</c>.
 /// </summary>
+/// <remarks>
+///     ⚠ The rule runs in both directions and the direction is chosen per member kind, because that is
+///     what the oracle does. Measured against <c>jb cleanupcode</c> 2025.2.6 under the cleanup profile,
+///     one key at a time over a probe carrying a bare and a <c>this.</c>-qualified reference to a field,
+///     a property, a method and an event: <c>dotnet_style_qualification_for_field = true</c> writes
+///     <c>this._field</c> and touches nothing else, and the other three behave the same for their own
+///     kind. The export writes <c>false</c> for all four, which is why only the removing direction is
+///     visible in the committed fixtures.
+///     <para>
+///         ⚠ <c>resharper_remove_this_qualifier</c> is not the key the oracle reads. The same probe with it
+///         at <c>false</c> comes back byte-identical — the qualifier is still removed — so on this
+///         repository's configuration it is dominated by the four Roslyn keys. It is kept here as a gate on
+///         the removing direction, because it is a Tier A option whose own committed fixture has to keep
+///         distinguishing it; the disagreement is recorded as SK-DIV-0070 rather than resolved by
+///         quietly dropping a key another fixture claims.
+///     </para>
+/// </remarks>
 public sealed class ThisQualifierRule : ArrangementRule {
     public override string Id => ArrangeIds.ThisQualifier;
 
@@ -20,12 +38,42 @@ public sealed class ThisQualifierRule : ArrangementRule {
     /// </summary>
     public override bool NeedsSemantics => true;
 
-    public override bool IsEnabled(in ArrangementOptions options) => options.RemoveThisQualifier;
+    public override bool IsEnabled(in ArrangementOptions options) =>
+        options.RemoveThisQualifier
+        || options.QualifyField
+        || options.QualifyProperty
+        || options.QualifyMethod
+        || options.QualifyEvent;
 
     public override SyntaxNode Apply(ArrangementContext context) =>
-        new Rewriter(context.Guard, context.Semantics).Visit(context.Root);
+        new Rewriter(context.Guard, context.Semantics, context.Options).Visit(context.Root);
 
-    sealed class Rewriter(FormatterTagGuard guard, SemanticModel model) : GuardedRewriter(guard) {
+    /// <summary>Whether the configured keys want a <c>this.</c> in front of this member.</summary>
+    internal static bool WantsQualifier(in ArrangementOptions options, ISymbol symbol) =>
+        symbol switch {
+            IFieldSymbol => options.QualifyField,
+            IPropertySymbol => options.QualifyProperty,
+            IEventSymbol => options.QualifyEvent,
+            IMethodSymbol => options.QualifyMethod,
+            _ => false
+        };
+
+    /// <summary>
+    ///     ⚠ Whether this member kind has a key at all. A local, a parameter and a type are not members
+    ///     and never acquire a qualifier; without this the adding direction would try <c>this.</c> on
+    ///     every identifier in the file and be stopped only by the symbol test, one binder call at a
+    ///     time.
+    /// </summary>
+    internal static bool IsQualifiableMember(ISymbol symbol) =>
+        symbol is IFieldSymbol or IPropertySymbol or IEventSymbol or IMethodSymbol;
+
+    sealed class Rewriter(FormatterTagGuard guard, SemanticModel model, ArrangementOptions options)
+        : GuardedRewriter(guard) {
+        readonly bool _adds = options.QualifyField
+            || options.QualifyProperty
+            || options.QualifyMethod
+            || options.QualifyEvent;
+
         public override SyntaxNode? VisitMemberAccessExpression(MemberAccessExpressionSyntax node) {
             var visited = (MemberAccessExpressionSyntax)base.VisitMemberAccessExpression(node)!;
             if (node.Expression is not ThisExpressionSyntax || !node.IsKind(SyntaxKind.SimpleMemberAccessExpression)) {
@@ -33,6 +81,13 @@ public sealed class ThisQualifierRule : ArrangementRule {
             }
 
             if (model.GetSymbolInfo(node).Symbol is not { } qualified) {
+                return visited;
+            }
+
+            // ⚠ The key for *this member's kind* decides, not one switch for the whole file. A file
+            // with `qualification_for_field = true` and `_for_property = false` keeps `this._field`
+            // and loses `this.Property`, which is the oracle's own per-kind behaviour.
+            if (!options.RemoveThisQualifier || WantsQualifier(options, qualified)) {
                 return visited;
             }
 
@@ -47,6 +102,99 @@ public sealed class ThisQualifierRule : ArrangementRule {
 
             return visited.Name.WithLeadingTrivia(visited.GetLeadingTrivia())
                 .WithTrailingTrivia(visited.GetTrailingTrivia());
+        }
+
+        public override SyntaxNode? VisitIdentifierName(IdentifierNameSyntax node) {
+            var visited = (IdentifierNameSyntax)base.VisitIdentifierName(node)!;
+            if (!_adds) {
+                return visited;
+            }
+
+            // The right-hand side of a member access is already qualified, and a declaration's own
+            // name is not a reference to it. `nameof(Member)` and an attribute argument read a name
+            // rather than evaluate it, and `this.` inside `nameof` is not even legal there.
+            if (node.Parent is MemberAccessExpressionSyntax { Name: var name } && name == node) {
+                return visited;
+            }
+
+            if (node.Parent is MemberBindingExpressionSyntax
+                or QualifiedNameSyntax
+                or NameColonSyntax
+                or NameEqualsSyntax) {
+                return visited;
+            }
+
+            // ⚠ `ContainingSymbol is INamedTypeSymbol` rather than `ContainingType is not null`, and
+            // the difference is a local function: it is an `IMethodSymbol` whose `ContainingType` is
+            // the enclosing type, so the looser test writes `this.Local()` — which does not compile.
+            if (model.GetSymbolInfo(node).Symbol is not { IsStatic: false } member
+                || !IsQualifiableMember(member)
+                || member.ContainingSymbol is not INamedTypeSymbol
+                || !WantsQualifier(options, member)) {
+                return visited;
+            }
+
+            // ⚠ `this` only exists in an instance body. A field initialiser, a static method, an
+            // attribute argument and a constant context all bind the bare name perfectly well and
+            // none of them may write `this`.
+            if (!IsInInstanceBody(node)) {
+                return visited;
+            }
+
+            return SyntaxFactory.MemberAccessExpression(
+                SyntaxKind.SimpleMemberAccessExpression,
+                SyntaxFactory.ThisExpression(),
+                visited.WithoutTrivia()
+            )
+                .WithLeadingTrivia(visited.GetLeadingTrivia())
+                .WithTrailingTrivia(visited.GetTrailingTrivia());
+        }
+
+        /// <summary>
+        ///     Whether <c>this</c> is even a legal word at this position.
+        /// </summary>
+        /// <remarks>
+        ///     ⚠ Three positions bind the bare name perfectly well and reject <c>this</c> outright, and
+        ///     all three occur in ordinary code: a field or property <em>initialiser</em>
+        ///     (<c>int b = a;</c> — CS0027), a <em>constructor initialiser</em>
+        ///     (<c>: base(field)</c> — the object does not exist yet), and an <em>attribute</em>
+        ///     argument. The enclosing symbol answers the first — an initialiser's enclosing symbol is
+        ///     the field or property itself rather than a method — and the other two are syntax.
+        ///     <para>
+        ///         ⚠ The walk is over enclosing <em>symbols</em> rather than syntax because a lambda inside an
+        ///         instance method is still an instance body while a lambda inside a static one is not, and
+        ///         the syntax of the two is identical.
+        ///     </para>
+        /// </remarks>
+        bool IsInInstanceBody(SyntaxNode node) {
+            for (var current = node; current is not null; current = current.Parent) {
+                if (current is ConstructorInitializerSyntax or AttributeSyntax) {
+                    return false;
+                }
+
+                if (current is MemberDeclarationSyntax) {
+                    break;
+                }
+            }
+
+            for (var symbol = model.GetEnclosingSymbol(node.SpanStart);
+                symbol is not null;
+                symbol = symbol.ContainingSymbol) {
+                if (symbol is ITypeSymbol or INamespaceSymbol) {
+                    return false;
+                }
+
+                if (symbol is IMethodSymbol method) {
+                    return !method.IsStatic && method.MethodKind != MethodKind.StaticConstructor;
+                }
+
+                // A field, property or event as the *enclosing* symbol means an initialiser.
+                if (symbol is IFieldSymbol or IPropertySymbol or IEventSymbol) {
+                    return false;
+                }
+            }
+
+            return false;
         }
     }
 }
@@ -164,12 +312,13 @@ public sealed class RedundantParenthesesRule : ArrangementRule {
         options.ParenthesesRedundancy == ParenthesesRedundancyStyle.RemoveIfNotClarifiesPrecedence
         && (ParenthesesRedundancy.RemovalIsDefault || options.Aggressive);
 
-    public override SyntaxNode Apply(ArrangementContext context) => new Rewriter(context.Guard).Visit(context.Root);
+    public override SyntaxNode Apply(ArrangementContext context) =>
+        new Rewriter(context.Guard, context.Options).Visit(context.Root);
 
-    sealed class Rewriter(FormatterTagGuard guard) : GuardedRewriter(guard) {
+    sealed class Rewriter(FormatterTagGuard guard, ArrangementOptions options) : GuardedRewriter(guard) {
         public override SyntaxNode? VisitParenthesizedExpression(ParenthesizedExpressionSyntax node) {
             var visited = (ParenthesizedExpressionSyntax)base.VisitParenthesizedExpression(node)!;
-            if (!ParenthesesRedundancy.MayRemove(node)) {
+            if (!ParenthesesRedundancy.MayRemove(node, options)) {
                 return visited;
             }
 
@@ -205,16 +354,24 @@ public static class ParenthesesRedundancy {
     ///     Whether the export is willing to lose these parentheses at all — the policy question.
     /// </summary>
     /// <remarks>
-    ///     ⚠ The kept families are the *inner* expression's, measured against the oracle. Shift and the
-    ///     bitwise family are <c>resharper_parentheses_non_obvious_operations</c>; <c>&amp;&amp;</c>,
-    ///     <c>||</c> and <c>??</c> are
-    ///     <c>
-    /// dotnet_style_parentheses_in_other_binary_operators =
-    ///  always_for_clarity
-    ///     </c>. Assignment and the conditional operator are kept because
-    ///     <c>x = (y = 2)</c> and <c>(a ? b : c)</c> read as deliberate in every corpus instance.
+    ///     ⚠ Shift and the bitwise family are <c>resharper_parentheses_non_obvious_operations</c> and are
+    ///     unconditional. The three <c>dotnet_style_parentheses_in_*_binary_operators</c> keys decide the
+    ///     rest, and they decide it on the <em>pair</em>: a parenthesised binary expression keeps its
+    ///     parentheses only when its parent is also a binary expression of the same precedence kind and
+    ///     that kind's key says <c>always_for_clarity</c>. Assignment and the conditional operator are
+    ///     kept because <c>x = (y = 2)</c> and <c>(a ? b : c)</c> read as deliberate in every corpus
+    ///     instance.
+    ///     <para>
+    ///         ⚠ The pair test is measured rather than inferred, and the first version of this rule did not
+    ///         have it: keying on the inner expression alone keeps <c>return (a &amp;&amp; b);</c> and
+    ///         <c>M((a &amp;&amp; b))</c>, and the oracle removes both — the export's
+    ///         <c>other_binary_operators = always_for_clarity</c> only ever holds an operand of another
+    ///         <c>&amp;&amp;</c>, <c>||</c> or <c>??</c>. Ten cases were probed at all four interesting
+    ///         combinations of the three keys, and <c>(a + b) &gt; c</c> — arithmetic inside relational —
+    ///         is removed at every one of them.
+    ///     </para>
     /// </remarks>
-    public static bool MayRemove(ParenthesizedExpressionSyntax node) {
+    public static bool MayRemove(ParenthesizedExpressionSyntax node, in ArrangementOptions options) {
         // ⚠ An interpolation's braces are not an expression context in the way the proof below
         // assumes: `$"{(a, b)}"` and a `:` inside an interpolation are format specifiers, so
         // re-parsing the expression alone answers a question that was not asked.
@@ -242,7 +399,7 @@ public static class ParenthesesRedundancy {
 
         return node.Expression switch {
             // The always_for_clarity families, and the non-obvious operations.
-            BinaryExpressionSyntax binary => !IsKept(binary.Kind()),
+            BinaryExpressionSyntax binary => !IsKept(binary.Kind(), node.Parent, options),
 
             // `(x = 1)` inside a larger expression is doing work that the reader is being shown.
             AssignmentExpressionSyntax or ConditionalExpressionSyntax => false,
@@ -321,16 +478,68 @@ public static class ParenthesesRedundancy {
             or SyntaxKind.ExclusiveOrExpression;
 
     /// <summary>
-    ///     The binary families whose parentheses the export keeps wherever they appear.
+    ///     The binary families whose parentheses the configuration keeps in this position.
     /// </summary>
-    static bool IsKept(SyntaxKind kind) =>
-        kind is SyntaxKind.LeftShiftExpression
-            or SyntaxKind.RightShiftExpression
-            or SyntaxKind.UnsignedRightShiftExpression
-            or SyntaxKind.BitwiseAndExpression
-            or SyntaxKind.BitwiseOrExpression
-            or SyntaxKind.ExclusiveOrExpression
-            or SyntaxKind.LogicalAndExpression
-            or SyntaxKind.LogicalOrExpression
-            or SyntaxKind.CoalesceExpression;
+    static bool IsKept(SyntaxKind kind, SyntaxNode? parent, in ArrangementOptions options) {
+        // ⚠ `resharper_parentheses_non_obvious_operations`, and it is unconditional: an operand of a
+        // shift or a bitwise operator keeps its parentheses wherever it stands. Measured to survive
+        // all eight combinations of the three Roslyn keys.
+        if (IsNonObvious(kind)) {
+            return true;
+        }
+
+        // The three keys only speak about a binary operand of a binary operator of the same kind.
+        // `return (a + b);` and `(a + b) > c` have no key and lose their parentheses.
+        if (parent is not BinaryExpressionSyntax binaryParent
+            || PrecedenceKindOf(kind) is not { } inner
+            || PrecedenceKindOf(binaryParent.Kind()) != inner) {
+            return false;
+        }
+
+        return Preference(inner, options) == ParenthesesPreference.AlwaysForClarity;
+    }
+
+    static ParenthesesPreference Preference(PrecedenceKind kind, in ArrangementOptions options) =>
+        kind switch {
+            PrecedenceKind.Arithmetic => options.ParenthesesInArithmetic,
+            PrecedenceKind.Relational => options.ParenthesesInRelational,
+            _ => options.ParenthesesInOther
+        };
+
+    /// <summary>
+    ///     Roslyn's three precedence kinds, which are what the three keys are named after.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Shift and the bitwise family belong to <see cref="PrecedenceKind.Arithmetic" /> in Roslyn's
+    ///     own grouping, and they are deliberately absent here: on this repository's configuration they
+    ///     are answered earlier and unconditionally by <see cref="IsNonObvious" />, and folding them into
+    ///     the arithmetic key would make <c>a + (b &lt;&lt; c)</c> lose its parentheses at
+    ///     <c>never_if_unnecessary</c> where the oracle keeps them.
+    /// </remarks>
+    static PrecedenceKind? PrecedenceKindOf(SyntaxKind kind) =>
+        kind switch {
+            SyntaxKind.MultiplyExpression
+                or SyntaxKind.DivideExpression
+                or SyntaxKind.ModuloExpression
+                or SyntaxKind.AddExpression
+                or SyntaxKind.SubtractExpression => PrecedenceKind.Arithmetic,
+            SyntaxKind.LessThanExpression
+                or SyntaxKind.GreaterThanExpression
+                or SyntaxKind.LessThanOrEqualExpression
+                or SyntaxKind.GreaterThanOrEqualExpression
+                or SyntaxKind.EqualsExpression
+                or SyntaxKind.NotEqualsExpression
+                or SyntaxKind.IsExpression
+                or SyntaxKind.AsExpression => PrecedenceKind.Relational,
+            SyntaxKind.LogicalAndExpression
+                or SyntaxKind.LogicalOrExpression
+                or SyntaxKind.CoalesceExpression => PrecedenceKind.Other,
+            _ => null
+        };
+
+    enum PrecedenceKind {
+        Arithmetic,
+        Relational,
+        Other
+    }
 }

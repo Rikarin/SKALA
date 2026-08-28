@@ -30,48 +30,51 @@
 </section>
 <section class="option" id="dotnet_style_parentheses_in_arithmetic_binary_operators">
 <h2><code>dotnet_style_parentheses_in_arithmetic_binary_operators</code> <a class="self" href="#dotnet_style_parentheses_in_arithmetic_binary_operators">#</a></h2>
-<p>Parentheses in arithmetic expressions.</p>
+<p>Parentheses around an arithmetic operand of an arithmetic operator. ⚠ Governs the <em>pair</em>: the parenthesised expression and its parent must both be arithmetic, so <code>(a + b) &gt; c</code> has no key and goes at either value. Shift and the bitwise family are <code>resharper_parentheses_non_obvious_operations</code> instead.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td>one of <code>always_for_clarity</code>, <code>never_if_unnecessary</code></td></tr>
 <tr><th>Default</th><td><code>never_if_unnecessary:none</code></td></tr>
 <tr><th>Default known from</th><td>nothing beyond the export</td></tr>
-<tr><th>Tier</th><td>D — recorded so the key is not reported unknown; nothing reads it yet</td></tr>
+<tr><th>Tier</th><td>A — the formatter reads it and a committed oracle fixture pins it</td></tr>
 <tr><th>Language</th><td>csharp</td></tr>
 <tr><th>Since</th><td>0.1</td></tr>
 <tr><th>Severity suffix</th><td>accepted — <code>key = value:suggestion</code></td></tr>
+<tr><th>Oracle fixture</th><td><code>constructs/arrangement/redundancy/parentheses-categories.cs</code></td></tr>
 <tr><th>Documented at</th><td><a href="https://learn.microsoft.com/dotnet/fundamentals/code-analysis/code-style-rule-options">https://learn.microsoft.com/dotnet/fundamentals/code-analysis/code-style-rule-options</a></td></tr>
 </tbody>
 </table>
 </section>
 <section class="option" id="dotnet_style_parentheses_in_other_binary_operators">
 <h2><code>dotnet_style_parentheses_in_other_binary_operators</code> <a class="self" href="#dotnet_style_parentheses_in_other_binary_operators">#</a></h2>
-<p>Parentheses in other binary expressions.</p>
+<p>Parentheses around a <code>&amp;&amp;</code>, <code>||</code> or <code>??</code> operand of a <code>&amp;&amp;</code>, <code>||</code> or <code>??</code> operator.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td>one of <code>always_for_clarity</code>, <code>never_if_unnecessary</code></td></tr>
 <tr><th>Default</th><td><code>always_for_clarity:none</code></td></tr>
 <tr><th>Default known from</th><td>nothing beyond the export</td></tr>
-<tr><th>Tier</th><td>D — recorded so the key is not reported unknown; nothing reads it yet</td></tr>
+<tr><th>Tier</th><td>A — the formatter reads it and a committed oracle fixture pins it</td></tr>
 <tr><th>Language</th><td>csharp</td></tr>
 <tr><th>Since</th><td>0.1</td></tr>
 <tr><th>Severity suffix</th><td>accepted — <code>key = value:suggestion</code></td></tr>
+<tr><th>Oracle fixture</th><td><code>constructs/arrangement/redundancy/parentheses-categories.cs</code></td></tr>
 <tr><th>Documented at</th><td><a href="https://learn.microsoft.com/dotnet/fundamentals/code-analysis/code-style-rule-options">https://learn.microsoft.com/dotnet/fundamentals/code-analysis/code-style-rule-options</a></td></tr>
 </tbody>
 </table>
 </section>
 <section class="option" id="dotnet_style_parentheses_in_relational_binary_operators">
 <h2><code>dotnet_style_parentheses_in_relational_binary_operators</code> <a class="self" href="#dotnet_style_parentheses_in_relational_binary_operators">#</a></h2>
-<p>Parentheses in relational expressions.</p>
+<p>Parentheses around a relational or equality operand of a relational or equality operator.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td>one of <code>always_for_clarity</code>, <code>never_if_unnecessary</code></td></tr>
 <tr><th>Default</th><td><code>never_if_unnecessary:none</code></td></tr>
 <tr><th>Default known from</th><td>nothing beyond the export</td></tr>
-<tr><th>Tier</th><td>D — recorded so the key is not reported unknown; nothing reads it yet</td></tr>
+<tr><th>Tier</th><td>A — the formatter reads it and a committed oracle fixture pins it</td></tr>
 <tr><th>Language</th><td>csharp</td></tr>
 <tr><th>Since</th><td>0.1</td></tr>
 <tr><th>Severity suffix</th><td>accepted — <code>key = value:suggestion</code></td></tr>
+<tr><th>Oracle fixture</th><td><code>constructs/arrangement/redundancy/parentheses-categories.cs</code></td></tr>
 <tr><th>Documented at</th><td><a href="https://learn.microsoft.com/dotnet/fundamentals/code-analysis/code-style-rule-options">https://learn.microsoft.com/dotnet/fundamentals/code-analysis/code-style-rule-options</a></td></tr>
 </tbody>
 </table>
