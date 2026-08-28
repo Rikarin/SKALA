@@ -5,6 +5,7 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Text;
 using Rikarin.Skala.Core;
+using Rikarin.Skala.Core.Configuration;
 using Rikarin.Skala.Core.Diagnostics;
 using Rikarin.Skala.Reporting;
 using Rikarin.Skala.Rules.Metadata;
@@ -469,7 +470,7 @@ public static class BinlogLoader {
     /// </remarks>
     static IEnumerable<string> Selected(LoadRequest request) {
         if (request.Paths.Count == 0) {
-            return EnumerateSources(request.RepositoryRoot);
+            return EnumerateSources(request.RepositoryRoot, request.RepositoryRoot);
         }
 
         var files = new HashSet<string>(StringComparer.Ordinal);
@@ -491,7 +492,7 @@ public static class BinlogLoader {
                     files.Add(full);
                 }
             } else if (Directory.Exists(full)) {
-                foreach (var file in EnumerateSources(full)) {
+                foreach (var file in EnumerateSources(full, request.RepositoryRoot)) {
                     files.Add(file);
                 }
             }
@@ -500,25 +501,44 @@ public static class BinlogLoader {
         return files;
     }
 
-    internal static IEnumerable<string> EnumerateSources(string root) {
-        foreach (var file in Directory.EnumerateFiles(root, "*.cs", SearchOption.AllDirectories)) {
-            var separator = Path.DirectorySeparatorChar;
+    /// <summary>
+    ///     Every <c>.cs</c> file under <paramref name="root" /> that is source code the repository wants
+    ///     looked at.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠
+    ///     <b>
+    ///         This walk decides the denominator of the coverage ratio, so what it counts is what
+    ///         <c>--require-fresh-binlog</c> refuses on.
+    ///     </b> It used to be a hard-coded list of four
+    ///     directory names tested against the <em>absolute</em> path — a second copy of
+    ///     <c>FormatCommand.IsExcluded</c>, already disagreeing with it about <c>.claude/</c>, and no
+    ///     way at all for a repository to say that a directory holds inputs rather than code. Skala's
+    ///     own tree holds 1 924 such files and the ratio read <b>13 %</b> against a complete binlog, so
+    ///     every push to <c>master</c> exited 4. Both facts now come from
+    ///     <see cref="SourceExclusions" />, which is one list and reads <c>skala.jsonc</c>.
+    /// </remarks>
+    /// <param name="repositoryRoot">
+    ///     What a declared pattern is anchored to. <c>null</c> consults only the built-in directories,
+    ///     which is the right answer for a caller that has no repository rather than a reason to skip
+    ///     the configuration.
+    /// </param>
+    internal static IEnumerable<string> EnumerateSources(string root, string? repositoryRoot = null) {
+        var exclusions = SourceExclusions.For(repositoryRoot);
+        var full = Path.GetFullPath(root);
 
+        foreach (var file in Directory.EnumerateFiles(root, "*.cs", SearchOption.AllDirectories)) {
             // ⚠ `.expected.cs` is an oracle fixture: the *output* of a conformance run, committed
             // beside its input. Analysing one means analysing the same code twice and reporting
-            // findings against a file nobody edits.
+            // findings against a file nobody edits. It stays here rather than moving into
+            // `skala.jsonc` because it is a property of the file's name and not of any repository's
+            // layout — every tree that runs the conformance harness has them, wherever they live.
             if (file.EndsWith(".expected.cs", StringComparison.Ordinal)) {
                 continue;
             }
 
-            // ⚠ `.skala/` holds crash reproductions — `crash/<hash>/input.cs` and `output.cs` —
-            // which are Skala's own evidence, not the user's code. Analysing them reports findings
-            // against files nobody wrote. See SkalaDirectory.Contains.
-            if (file.Contains($"{separator}obj{separator}", StringComparison.Ordinal)
-                || file.Contains($"{separator}bin{separator}", StringComparison.Ordinal)
-                || file.Contains($"{separator}.git{separator}", StringComparison.Ordinal)
-                || file.Contains($"{separator}artifacts{separator}", StringComparison.Ordinal)
-                || SkalaDirectory.Contains(file)) {
+            // ⚠ Relative to the root being walked, never absolute — see SourceExclusions.Excludes.
+            if (exclusions.Excludes(Path.GetRelativePath(full, file), file)) {
                 continue;
             }
 

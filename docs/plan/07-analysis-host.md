@@ -94,6 +94,25 @@ Details that matter:
   green" mistake that made doc 09's `formatting: clean` unusable. The per-file `SK9021` lines stay
   warnings; the ratio is the verdict.
 
+  ⚠ **The denominator is a filesystem walk, and that is how this failed on Skala's own repository
+  for eleven consecutive pushes.** A repository can hold `.cs` files that are deliberately in no
+  compilation — Skala's tree holds **1 924** of them across `Testing/corpus/`,
+  `Rules/Rikarin.Skala.Rules.Tests/fixtures/` and that project's `corpus/`, each declared as data by
+  a `<Compile Remove>` in the project that owns it. Nothing outside MSBuild can see that
+  declaration, so the walk counted them, the ratio read **294 of 2 220 — 13 %** against a binlog
+  that had compiled everything there was to compile, and `check` exited 4 before an analyzer ran.
+  The floor was not wrong and neither was the exit code; the denominator was.
+
+  So the walk honours `skala.jsonc`'s `"exclude"` (doc 03 § "What lives in `skala.jsonc`"), which is
+  where "where to look" was always specified. Every walk in the tool reads the same predicate —
+  `SourceExclusions` — so `format`, `arrange`, `check` and `fix` agree about what the repository's
+  source code is, and a repository declares it once rather than being named directory by directory
+  on four command lines. The built-in exclusions (`obj`, `bin`, `.git`, `.claude`, `artifacts`,
+  `.skala`) are not configurable and are matched against the path *below the root being walked*, so
+  a sweep from above never descends into an agent worktree while a run *inside* one still works; a
+  declared pattern is anchored to the repository root, so `skala check Testing/` honours
+  `Testing/corpus/**` exactly as `skala check .` does.
+
 ⚠ **`--require-fresh-binlog` did not fail anything until M9.** It raised a diagnostic's severity, and
 nothing downstream reads a load diagnostic's severity — the gate reads *findings*. So the flag CI
 sets in order to refuse a bad load produced an error-coloured line and **exit 0**. A load the caller

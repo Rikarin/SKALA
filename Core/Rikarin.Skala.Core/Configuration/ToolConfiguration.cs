@@ -25,9 +25,15 @@ public sealed record CanonicalPolicy(SkalaSeverity Drift) {
 public sealed class ToolConfiguration {
     public const string FileName = "skala.jsonc";
 
-    ToolConfiguration(string path, CanonicalPolicy canonical, ImmutableArray<SkalaDiagnostic> diagnostics) {
+    ToolConfiguration(
+        string path,
+        CanonicalPolicy canonical,
+        ImmutableArray<string> exclude,
+        ImmutableArray<SkalaDiagnostic> diagnostics
+    ) {
         Path = path;
         Canonical = canonical;
+        Exclude = exclude;
         Diagnostics = diagnostics;
     }
 
@@ -35,6 +41,11 @@ public sealed class ToolConfiguration {
 
     /// <summary>What this repository wants done about canonical drift.</summary>
     public CanonicalPolicy Canonical { get; }
+
+    /// <summary>
+    ///     The path globs this repository says are not its source code. See <see cref="SourceExclusions" />.
+    /// </summary>
+    public ImmutableArray<string> Exclude { get; }
 
     public ImmutableArray<SkalaDiagnostic> Diagnostics { get; }
 
@@ -49,11 +60,13 @@ public sealed class ToolConfiguration {
             CommentHandling = JsonCommentHandling.Skip, AllowTrailingCommas = true
         };
         var canonical = CanonicalPolicy.Default;
+        var exclude = ImmutableArray<string>.Empty;
 
         try {
             using var document = JsonDocument.Parse(text, options);
             Walk(document.RootElement, path, diagnostics);
             canonical = ReadCanonical(document.RootElement, path, diagnostics);
+            exclude = SourceExclusions.ReadPatterns(document.RootElement);
         } catch (JsonException exception) {
             diagnostics.Add(
                 new SkalaDiagnostic(
@@ -65,7 +78,7 @@ public sealed class ToolConfiguration {
             );
         }
 
-        return new ToolConfiguration(path, canonical, diagnostics.ToImmutable());
+        return new ToolConfiguration(path, canonical, exclude, diagnostics.ToImmutable());
     }
 
     /// <summary>
