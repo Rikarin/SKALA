@@ -96,7 +96,7 @@ exact count, and saying so is better than repeating a figure nobody can reproduc
 | 0003 | interpolated raw literal emitted verbatim | open | 11 raw-literal files at 99.68 % / 90.91 %, 12 divergent lines |
 | 0004 | no preprocessor symbols without a project | **closed at M5** | the six-cell table re-run and identical |
 | 0005 | the ordering rule's margin is a fitted constant | open | 63 lines, 38 files — the largest class. 21 hunks, 14 files by signature |
-| 0006 | ⚠ the pinned oracle *profile* does not format doc comments; Rider does, and Skala now does too | open | 17 keys honoured and observable, 10 refused, none Tier A until the fixtures are regenerated |
+| 0006 | ⚠ the pinned oracle *profile* does not format doc comments; Rider does, and Skala now does too | open | 21 keys honoured and observable, 11 refused, none Tier A until the fixtures are regenerated |
 | 0007 | an argument list around a broken chain does not chop | half closed | 8 hunks, 39 lines, 6 files |
 | 0008 | alignment keys | half closed | statement conditions Tier A; `for` header 5 hunks, 13 lines, 3 files; three keys at 0 lines |
 | 0009 | `space_within_spread_pattern` is inert | **resolved at M3.1** | Tier D confirmed; 0 spread-spacing divergences |
@@ -502,37 +502,85 @@ latter would have to be widened again for `space_before_self_closing` and again 
 `spaces_inside_tags`. The signature is *tighter* than a word sequence where it counts: a `<code>`
 body is compared byte-for-byte, which it was not before.
 
-**Seventeen of the twenty-seven `resharper_xmldoc_*` keys are honoured** and ten are refused. Each
-of the seventeen is asserted observable by `AnUnoracledKey_IsObservable`, against a hand-written
+**Twenty-one of the thirty-two `resharper_xmldoc_*` keys are honoured** and eleven are refused. Each
+of the twenty-one is asserted observable by `AnUnoracledKey_IsObservable`, against a hand-written
 probe rather than against `constructs/` — nine of them cannot be seen there, because the constructs
-fixtures carry short, already-tidy doc comments written when nothing read them. The refusals are
-reasons, not a backlog, and each one is in `XmlDocIds.Refused`:
+fixtures carry short, already-tidy doc comments written when nothing read them.
 
-- `attribute_indent`, `attribute_style`, `space_after_last_attribute`, `spaces_around_eq_in_attribute`,
-  `alignment_tab_fill_style`, `allow_far_alignment` — **Skala emits a tag header byte-for-byte and
-  never breaks inside one.** One rule settles all six. A `cref=` or `name=` is read by the compiler
-  and by the doc build, and Skala will not edit inside one for a whitespace preference; nothing is
-  ever wrapped inside a header, so nothing is ever aligned or indented there either. ⚠ These six
-  are unaffected by the profile finding: they were never refused for want of an oracle.
-- `linebreaks_inside_tags_for_elements_longer_than` — the export sets `int.MaxValue`, "never", and
-  **JetBrains' own reference page does not say what is measured against it.** The UI label is "when
-  element is longer than" and the value is documented only as "an integer"; nothing states whether
-  the threshold counts characters, columns or lines, or whether the element's tags are included.
-  ⚠ The reason has *changed*: it used to be "a threshold never crossed cannot be pinned by a
-  fixture", which is no longer a reason for anything here. What refuses it now is that the semantics
-  are undocumented, which no amount of oracle access fixes.
-- `wrap_around_elements` — ⚠ **the old reason was wrong and is withdrawn.** It said the key is
-  "indistinguishable from `wrap_tags_and_pi` without an oracle". JetBrains documents them
-  distinctly and in different sections: `wrap_tags_and_pi` is "Wrap tags and processing
-  instructions" under *Line wrapping*, `wrap_around_elements` is "Wrap before and after elements"
-  under *Tag content*. The refusal now rests on something narrower and true — the docs describe each
-  separately and never describe how the two interact, so Skala honours the one whose scope it can
-  state and refuses the one whose scope only exists relative to it. **This is the one refusal that
-  is now a backlog item rather than a reason.**
+⚠ **The counts were 17 of 27 and 10, and the arithmetic moved for two reasons that are both worth
+reading.** Four keys were promoted out of the refusal list after being measured; and the family
+itself grew by five, because the five processing-instruction keys had been *excluded from the
+count* on the grounds that "a processing instruction in a C# documentation comment is not a thing
+that occurs". It is — Roslyn parses one, and `blank_line_after_pi` acts on one at its default
+`true`. The exclusion meant five keys carried no decision at all, because the partition test that
+would have demanded one did not look at them. One of the five turned out to be implementable, and
+had been silently missing from Skala's default output the whole time.
+
+### ⚠ Four refusals that were the same mistake one level down
+
+**`XmlDocIds.Refused` said "no oracle can settle this" about eight keys when what was true is that
+the profile the oracle runs under never asked.** Run `jb cleanupcode` 2025.2.6 with
+`<CSharpFormatDocComments>True</CSharpFormatDocComments>` and it rewrites tag headers freely. All of
+the following are measured, not read off a settings page:
+
+| Probe input | Oracle output |
+|---|---|
+| `<param name="a" >` | `<param name="a">` |
+| `<param name = "b">` | `<param name="b">` |
+| `<param   name="d"    other="x"  >` | `<param name="d" other="x">` |
+| `<param name='single'>` | `<param name='single'>` — quote character kept |
+| `<customElement a="1" … e="5">` past the margin | wrapped, last attribute on a continuation line at one indent |
+| `<?xml-stylesheet …?>` | followed by a blank `///` line |
+
+So `space_after_last_attribute` and `spaces_around_eq_in_attribute` were refused for a reason that
+described Skala's implementation — "Skala emits a tag header byte-for-byte" — dressed as a property
+of the key. Both are implemented now: the renderer re-emits the header from a name/value split taken
+at Roslyn's `EqualsToken`, so an attribute's **value, quote character included, is still the source
+bytes** and only the whitespace around the `=` is chosen.
+
+`linebreaks_inside_tags_for_elements_longer_than` was refused because "JetBrains' own reference page
+does not say what is measured against it". True, and it did not need to: **the tool says.** The
+element's *flat inner content* — its text and its child markup, neither tag — is compared **strictly
+greater** than the threshold. At 12, twelve characters stay inline and thirteen do not. ⚠ `0`
+therefore means "always", not "never"; `options.json` asserted the opposite in its `boundsBecause`,
+and that is corrected.
+
+`blank_line_after_pi` was never refused, considered, or counted.
+
+### The refusals that stand
+
+- `attribute_indent`, `attribute_style`, `alignment_tab_fill_style`, `allow_far_alignment` —
+  **pending, not refused.** All four describe a wrapped tag header's continuation line, and Skala
+  never breaks inside a header. The oracle does, so the subject exists; the prerequisite is a
+  renderer that can wrap a header, and until then the reason is Skala's shape and says nothing about
+  the keys.
+- `pi_attribute_style`, `pi_attributes_indent`, `space_after_last_pi_attribute`,
+  `spaces_around_eq_in_pi_attribute` — pending on the same prerequisite one construct over: a
+  processing instruction is emitted verbatim, so its header has no attributes to space out. The
+  export leaves `pi_attribute_style` at `do_not_touch`, which is what the oracle was measured doing
+  to `<?pi first = "1" second="2" ?>` — it left it alone.
+- `wrap_around_elements` — ⚠ **refused, and now for a measured reason.** With the doc-comment task
+  enabled, at both values, over prose containing inline `<see/>`, `<c>` and `<b>` elements both long
+  enough to wrap and short enough not to, the oracle's output is **byte-identical**. Either it is
+  subsumed by `wrap_tags_and_pi` in this build or its subject is a construct no C# doc comment
+  produces. The previous two reasons for this key were both guesses about documentation; this one is
+  a diff.
 - `tab_width` — it only changes how wide a tab is when measuring, and the only tab a re-wrap can
   meet is inside a `<code>` block, which is verbatim and never measured.
 - `insert_final_newline` — a `///` comment has no file end to put a newline at, and JetBrains' key
   index does not list XMLDOC among the languages that accept the key at all.
+
+⚠ **One deliberate narrowing against the oracle, recorded rather than hidden.** The threshold key
+applies to `<c>` in the oracle's output; Skala exempts verbatim elements from it, because breaking
+one open would move a byte-for-byte code body onto a re-indented line, which is the single thing the
+verbatim rule exists to prevent.
+
+⚠ **One defect found while measuring and left alone, because it is not one of these keys.** A
+processing instruction is emitted through the verbatim path, and a verbatim line deliberately does
+not get the `///` marker space re-applied — a rule that is right for `<code>` and wrong here. Skala
+writes `///<?pi?>` where the oracle writes `/// <?pi?>`. The same applies to a CDATA section and an
+XML comment. Fixing it means giving the verbatim path an indent and a marker of its own, which is a
+change to how three constructs are emitted rather than to how one key is read.
 
 ⚠ Two readings the sub-formatter had to choose and no oracle settles, recorded because they are
 choices: `linebreak_before_elements` is read as "this element owns its own line", a break before it

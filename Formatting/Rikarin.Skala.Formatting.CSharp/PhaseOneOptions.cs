@@ -1593,12 +1593,14 @@ public static class Ids {
 
     // ── The xmldoc sub-formatter's subset ────────────────────────────────────────────────────
     // ⚠ Every one of these governs real output on the default path and every one of them stays
-    // Tier D, which is a combination no other key in the registry has. `jb cleanupcode` does not
-    // format documentation comments at all, so there is no fixture that can show the oracle
-    // honouring any of them — and Rider's editor does format them, so leaving them off would be
-    // the divergence rather than turning them on (SK-DIV-0006). What pins them is hand-written
-    // fixtures plus the round-trip property in XmlDocFormatter. See XmlDocOptions for the full
-    // argument, and `OfUnoracled` for what the mark means.
+    // Tier D, which is a combination no other key in the registry has. No *committed* fixture can
+    // show the oracle honouring any of them, because every fixture was generated under a profile
+    // that leaves `CSharpFormatDocComments` off — not because `jb cleanupcode` cannot format a
+    // documentation comment, which it does, and which four of these keys were measured against.
+    // Rider's editor formats them too, so leaving them off would be the divergence rather than
+    // turning them on (SK-DIV-0006). What pins them meanwhile is hand-written fixtures plus the
+    // round-trip property in XmlDocFormatter. See XmlDocOptions for the full argument, and
+    // `OfUnoracled` for what the mark means.
     public static readonly OptionId XmlDocWrapLines = OfUnoracled("resharper_xmldoc_wrap_lines");
     public static readonly OptionId XmlDocMaxLineLength = OfUnoracled("resharper_xmldoc_max_line_length");
     public static readonly OptionId XmlDocWrapText = OfUnoracled("resharper_xmldoc_wrap_text");
@@ -1633,6 +1635,20 @@ public static class Ids {
 
     public static readonly OptionId XmlDocLinebreakBeforeElements =
         OfUnoracled("resharper_xmldoc_linebreak_before_elements");
+
+    // ⚠ These four were in `XmlDocIds.Refused` until the tag-header behaviour was measured with
+    // `CSharpFormatDocComments` switched on. The refusals were the SK-DIV-0006 mistake repeated at
+    // option granularity: a profile that never asked the question, read as an answer.
+    public static readonly OptionId XmlDocSpaceAfterLastAttribute =
+        OfUnoracled("resharper_xmldoc_space_after_last_attribute");
+
+    public static readonly OptionId XmlDocSpacesAroundEqInAttribute =
+        OfUnoracled("resharper_xmldoc_spaces_around_eq_in_attribute");
+
+    public static readonly OptionId XmlDocBlankLineAfterPi = OfUnoracled("resharper_xmldoc_blank_line_after_pi");
+
+    public static readonly OptionId XmlDocLinebreaksInsideTagsForElementsLongerThan =
+        OfUnoracled("resharper_xmldoc_linebreaks_inside_tags_for_elements_longer_than");
 
     // ── Generalized keys ─────────────────────────────────────────────────────────────────────
     // ⚠ These are not read by the formatter and never will be. A generalized key is a way of

@@ -53,6 +53,13 @@ public readonly struct XmlDocOptions {
         SpacesInsideTags = options.GetBool(XmlDocIds.SpacesInsideTags);
         SpaceBeforeSelfClosing = options.GetBool(XmlDocIds.SpaceBeforeSelfClosing);
         SpaceAfterTripleSlash = options.GetBool(XmlDocIds.SpaceAfterTripleSlash);
+        SpaceAfterLastAttribute = options.GetBool(XmlDocIds.SpaceAfterLastAttribute);
+        SpacesAroundEqInAttribute = options.GetBool(XmlDocIds.SpacesAroundEqInAttribute);
+        BlankLineAfterPi = options.GetBool(XmlDocIds.BlankLineAfterPi);
+        LinebreaksInsideTagsForElementsLongerThan =
+            options.GetInt(XmlDocIds.LinebreaksInsideTagsForElementsLongerThan) is var threshold and >= 0
+                ? threshold
+                : int.MaxValue;
 
         IndentSize = Math.Max(1, options.GetInt(XmlDocIds.IndentSize));
         UseTabs = options.GetRaw(XmlDocIds.IndentStyle) == (int)IndentStyle.Tab;
@@ -149,6 +156,66 @@ public readonly struct XmlDocOptions {
     /// </remarks>
     public bool SpaceAfterTripleSlash { get; }
 
+    /// <summary>
+    ///     <c>resharper_xmldoc_space_after_last_attribute</c>: <c>&lt;param name="a" &gt;</c>.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Start tags only. A self-closing tag's gap is <c>space_before_self_closing</c>'s, and the
+    ///     oracle leaves <c>&lt;see cref="C" /&gt;</c> alone when this key is on — measured, because the
+    ///     two keys reading the same gap would have been the obvious guess.
+    ///     <para>⚠ And only when there is a last attribute: <c>&lt;summary&gt;</c> never grows a space.</para>
+    /// </remarks>
+    public bool SpaceAfterLastAttribute { get; }
+
+    /// <summary>
+    ///     <c>resharper_xmldoc_spaces_around_eq_in_attribute</c>: <c>name = "a"</c> or <c>name="a"</c>.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Whitespace around the <c>=</c> only. The attribute's name and its quoted value are the
+    ///     source bytes either way, quote character included — the oracle keeps <c>name='x'</c> single
+    ///     quoted, and so does this.
+    /// </remarks>
+    public bool SpacesAroundEqInAttribute { get; }
+
+    /// <summary>
+    ///     <c>resharper_xmldoc_blank_line_after_pi</c>: a blank <c>///</c> line after a
+    ///     <c>&lt;?…?&gt;</c>.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ The export leaves this at its default <c>true</c>, so a processing instruction in a doc
+    ///     comment has been getting a blank line after it from Rider all along and not from Skala.
+    ///     <para>
+    ///         ⚠ Skala's blank line is <c>///</c> and the oracle's is <c>///</c> plus the marker space. The
+    ///         trailing space is not reproduced, for the same reason
+    ///         <c>max_blank_lines_between_tags</c>'s blank lines do not carry one: an empty line's trailing
+    ///         whitespace is the one thing every other pass in Skala strips.
+    ///     </para>
+    /// </remarks>
+    public bool BlankLineAfterPi { get; }
+
+    /// <summary>
+    ///     <c>resharper_xmldoc_linebreaks_inside_tags_for_elements_longer_than</c>: open an element up
+    ///     once its content is longer than this, however well it would have fitted.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured rather than guessed, and both halves of the guess were wrong. What is compared is
+    ///     the element's <em>flat inner content</em> — its text and its child markup, not the start tag
+    ///     and not the end tag — and the comparison is strictly greater: at 12, a twelve-character
+    ///     content stays on the line and a thirteen-character one does not.
+    ///     <para>
+    ///         ⚠ <c>0</c> therefore means "always", not "never"; the registry's bounds note said the
+    ///         opposite. "Never" is the export's own <c>int.MaxValue</c>, which is why the key looked
+    ///         unpinnable.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ Narrower than the oracle by one deliberate step: the oracle applies the threshold to
+    ///         <c>&lt;c&gt;</c> too, and breaking a verbatim element open would put Skala's byte-for-byte
+    ///         code body on a re-indented line. Recorded as a measured narrowing rather than left as an
+    ///         unmeasured guess.
+    ///     </para>
+    /// </remarks>
+    public int LinebreaksInsideTagsForElementsLongerThan { get; }
+
     /// <summary><c>resharper_xmldoc_indent_size</c>: the indent unit inside the comment.</summary>
     public int IndentSize { get; }
 
@@ -224,8 +291,14 @@ public static class XmlDocIds {
     public static readonly OptionId IndentSize = Ids.XmlDocIndentSize;
     public static readonly OptionId IndentStyle = Ids.XmlDocIndentStyle;
     public static readonly OptionId LinebreakBeforeElements = Ids.XmlDocLinebreakBeforeElements;
+    public static readonly OptionId SpaceAfterLastAttribute = Ids.XmlDocSpaceAfterLastAttribute;
+    public static readonly OptionId SpacesAroundEqInAttribute = Ids.XmlDocSpacesAroundEqInAttribute;
+    public static readonly OptionId BlankLineAfterPi = Ids.XmlDocBlankLineAfterPi;
 
-    /// <summary>The seventeen <c>resharper_xmldoc_*</c> keys the sub-formatter honours.</summary>
+    public static readonly OptionId LinebreaksInsideTagsForElementsLongerThan =
+        Ids.XmlDocLinebreaksInsideTagsForElementsLongerThan;
+
+    /// <summary>The twenty-one <c>resharper_xmldoc_*</c> keys the sub-formatter honours.</summary>
     public static ImmutableArray<OptionId> Honoured => [
         WrapLines,
         MaxLineLength,
@@ -237,57 +310,68 @@ public static class XmlDocIds {
         IndentText,
         LinebreaksInsideTagsForElementsWithChildElements,
         LinebreaksInsideTagsForMultilineElements,
+        LinebreaksInsideTagsForElementsLongerThan,
         LinebreakBeforeMultilineElements,
         LinebreakBeforeSinglelineElements,
         SpacesInsideTags,
         SpaceBeforeSelfClosing,
+        SpaceAfterLastAttribute,
+        SpacesAroundEqInAttribute,
+        BlankLineAfterPi,
         IndentSize,
         IndentStyle,
         LinebreakBeforeElements
     ];
 
     /// <summary>
-    ///     The ten keys of the family the sub-formatter refuses, and why each one.
+    ///     The keys of the family the sub-formatter does not honour, and why each one.
     /// </summary>
     /// <remarks>
-    ///     ⚠ Refused, not pending. Each of these needs a fact the project does not have and cannot get:
-    ///     six of them describe rewriting the inside of a tag header, which Skala does not do at all;
-    ///     three describe a behaviour that only becomes observable at a value the export does not set,
-    ///     so choosing one would be inventing it; and one has no meaning for a <c>///</c> comment.
+    ///     ⚠ <b>This list was four-fifths wrong, and every wrong entry was wrong the same way.</b> Each
+    ///     said "no oracle can settle this" when what was true is that the profile the oracle runs under
+    ///     never asked it. <c>CSharpFormatDocComments</c> is a real cleanup task in
+    ///     <c>jb cleanupcode</c> 2025.2.6 and neither profile in <c>OracleProfile</c> enables it, so every
+    ///     probe of every one of these keys came back "unchanged" — and eight of them were written up as
+    ///     properties of the key. Turn the task on and the oracle rewrites tag headers freely: it
+    ///     collapses the spaces between attributes, drops the space before <c>&gt;</c>, moves the
+    ///     whitespace around <c>=</c>, and wraps a header that does not fit onto a continuation line.
+    ///     That is SK-DIV-0006's exact shape, one level down, six milestones later.
+    ///     <para>
+    ///         ⚠ Four of the eight are now implemented and have left this list. What remains is split into
+    ///         two honest kinds, and only the second kind is a property of the key.
+    ///     </para>
     /// </remarks>
     public static ImmutableArray<KeyValuePair<string, string>> Refused => [
+        // ── Measured, real, and not implemented: header wrapping ─────────────────────────────
+        // ⚠ These four are pending rather than refused, and they share one prerequisite: Skala
+        // never breaks a line inside a tag header, and the oracle does. Until the renderer can
+        // wrap a header, none of the four has a subject in Skala's output — but each of them
+        // plainly has one in the oracle's, so the reason is Skala's shape and says nothing
+        // about the key.
         new(
             "resharper_xmldoc_attribute_indent",
-            "Skala emits a tag header byte-for-byte and never breaks inside one, so attributes are never indented."
+            "Pending, not refused. It chooses how a wrapped tag header's continuation line is indented, and Skala does not yet wrap a tag header. The oracle does: a five-attribute header past the margin comes back with its last attribute on a continuation line at one indent."
         ),
         new(
             "resharper_xmldoc_attribute_style",
-            "Same: the header is copied from the source, so there is no arrangement to choose."
-        ),
-        new(
-            "resharper_xmldoc_space_after_last_attribute",
-            "Same. A space before the closing '>' would be a rewrite of the header."
-        ),
-        new(
-            "resharper_xmldoc_spaces_around_eq_in_attribute",
-            "Same, and this one is load-bearing: a cref= or name= attribute is read by the compiler and by the doc build, and Skala will not edit inside it for a whitespace preference."
+            "Pending, not refused. It arranges the attributes of a header Skala does not yet wrap. The export leaves it at do_not_touch, so the default costs nothing today."
         ),
         new(
             "resharper_xmldoc_alignment_tab_fill_style",
-            "Alignment applies to a wrapped tag header, which never happens."
+            "Pending on the same prerequisite: it fills the alignment of a wrapped header's continuation line, and nothing is wrapped yet."
         ),
         new(
             "resharper_xmldoc_allow_far_alignment",
-            "Same: nothing is ever aligned, so 'too large' has no subject."
+            "Pending on the same prerequisite: no header is aligned yet, so 'too large' still has no subject."
         ),
-        new(
-            "resharper_xmldoc_linebreaks_inside_tags_for_elements_longer_than",
-            "The export sets int.MaxValue — 'never' — and what ReSharper measures against it (the flat element, its text, its child count) is not stated anywhere. A threshold that is never crossed cannot be pinned by a fixture and cannot be guessed from behaviour."
-        ),
+
+        // ── Measured, and genuinely not distinguishable ──────────────────────────────────────
         new(
             "resharper_xmldoc_wrap_around_elements",
-            "Indistinguishable from resharper_xmldoc_wrap_tags_and_pi without an oracle. Honouring both would mean inventing a difference between them and then pinning the invention."
+            "Measured with the doc-comment task enabled and at both values over prose containing inline elements, long and short: the oracle's output is byte-identical. Either it is subsumed by resharper_xmldoc_wrap_tags_and_pi in this build or its subject is a construct no C# doc comment produces. Refused, and now for a measured reason rather than a supposed one."
         ),
+
+        // ── Properties of the key, unchanged ─────────────────────────────────────────────────
         new(
             "resharper_xmldoc_tab_width",
             "It only changes how wide a tab is when measuring a line, and the only tab a re-wrap can meet is inside a <code> block, which is emitted verbatim and never measured."
@@ -295,6 +379,28 @@ public static class XmlDocIds {
         new(
             "resharper_xmldoc_insert_final_newline",
             "A '///' comment has no file end to put a newline at."
+        ),
+
+        // ── The processing-instruction header family ─────────────────────────────────────────
+        // ⚠ Same prerequisite as the tag-header four, one construct over: Skala emits a
+        // processing instruction verbatim, so its header has no attributes to space out. The
+        // export leaves pi_attribute_style at do_not_touch, which is what the oracle was
+        // observed to do to `<?pi first = "1" second="2" ?>` — it left it alone.
+        new(
+            "resharper_xmldoc_pi_attribute_style",
+            "Pending. A processing instruction is emitted verbatim, so there is no arrangement to choose. The export's do_not_touch is what the oracle was measured doing."
+        ),
+        new(
+            "resharper_xmldoc_pi_attributes_indent",
+            "Pending on the same prerequisite: a verbatim processing instruction is never wrapped, so its attributes are never indented."
+        ),
+        new(
+            "resharper_xmldoc_space_after_last_pi_attribute",
+            "Pending on the same prerequisite: the '?>' is copied from the source with whatever precedes it."
+        ),
+        new(
+            "resharper_xmldoc_spaces_around_eq_in_pi_attribute",
+            "Pending on the same prerequisite: the instruction's bytes are copied, '=' included."
         )
     ];
 }

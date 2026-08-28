@@ -138,9 +138,19 @@ public sealed class OptionObservabilityTests {
     ///     (linebreak_before_singleline_elements) and a multi-line one
     ///     (linebreak_before_multiline_elements). It must stay well-formed XML — a malformed comment is
     ///     left exactly as written (SK0003), which would make every key here look unobservable at once.
+    ///     <para>
+    ///         ⚠ Widened with a processing instruction and a multi-attribute tag header, which is what the
+    ///         failure message above asks for when a key's shape is missing rather than its wiring. Four
+    ///         keys had no shape here to be observed on: <c>blank_line_after_pi</c> had no
+    ///         <c>&lt;?…?&gt;</c>, and <c>space_after_last_attribute</c>,
+    ///         <c>spaces_around_eq_in_attribute</c> and
+    ///         <c>linebreaks_inside_tags_for_elements_longer_than</c> had only single-attribute headers
+    ///         and short contents to work on.
+    ///     </para>
     /// </remarks>
     const string Probe = """
                          class Probe {
+                             /// <?skala-probe mode="short" width="80"?>
                              /// <summary>A summary written long enough that it cannot fit inside the configured column limit and has to be broken somewhere.</summary>
                              /// <remarks>
                              /// A first line the author chose to break here,

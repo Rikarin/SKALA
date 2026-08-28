@@ -85,6 +85,15 @@ public sealed class XmlDocRenderer {
 
                 case XmlDocVerbatim verbatim:
                     Lines(verbatim.Lines);
+
+                    // ⚠ `blank_line_after_pi` is on by default and Skala had never done it, because
+                    // the oracle profile never enabled the doc-comment task that would have shown
+                    // it. The blank line is dropped again by `Render`'s trailing-blank trim when the
+                    // instruction is the last thing in the comment, which is the right answer.
+                    if (verbatim.ProcessingInstruction && _options.BlankLineAfterPi) {
+                        _lines.Add(new XmlDocLine(string.Empty, false));
+                    }
+
                     break;
 
                 case XmlDocElement element:
@@ -163,6 +172,21 @@ public sealed class XmlDocRenderer {
             return true;
         }
 
+        // ⚠ `linebreaks_inside_tags_for_elements_longer_than`, measured: the length compared is the
+        // element's flat inner content — no start tag, no end tag — and the comparison is strictly
+        // greater. Asked before width, like the key above it, because a threshold the content
+        // crosses opens the element up however well it would have fitted.
+        //
+        // ⚠ Verbatim elements are exempt. The oracle does apply the threshold to `<c>`; doing the
+        // same here would move a byte-for-byte code body onto a re-indented line, and that is the
+        // one thing the verbatim rule exists to prevent. A measured narrowing, not an oversight.
+        if (element.Verbatim is null
+            && _options.LinebreaksInsideTagsForElementsLongerThan != int.MaxValue
+            && FlatNodes(element.Children) is { } inner
+            && TextWidth.Measure(inner) > _options.LinebreaksInsideTagsForElementsLongerThan) {
+            return true;
+        }
+
         if (flat is null) {
             return true;
         }
@@ -173,9 +197,41 @@ public sealed class XmlDocRenderer {
         return !FitsAlone(flat) && _options.LinebreaksInsideTagsForMultilineElements;
     }
 
+    /// <summary>
+    ///     The element's start tag, from its name and its attributes.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Re-emitted rather than copied, which is what gives
+    ///     <c>spaces_around_eq_in_attribute</c> and <c>space_after_last_attribute</c> a subject. Each
+    ///     attribute's name and its quoted value are the source bytes; the separators are the only
+    ///     thing chosen here, and the run of spaces between two attributes is normalised to one, as
+    ///     the oracle does.
+    /// </remarks>
+    /// <param name="close">
+    ///     What follows the last attribute: <c>&gt;</c> for a start tag, <c>/&gt;</c> for a
+    ///     self-closing one. ⚠ <c>space_after_last_attribute</c> applies only to the first — measured;
+    ///     a self-closing tag's gap belongs to <c>space_before_self_closing</c> alone.
+    /// </param>
+    string Tag(XmlDocElement element, string close) {
+        var builder = new StringBuilder(element.Header);
+        var equals = _options.SpacesAroundEqInAttribute ? " = " : "=";
+        foreach (var attribute in element.Attributes) {
+            builder.Append(' ').Append(attribute.Name).Append(equals).Append(attribute.Value);
+        }
+
+        if (close == ">" && _options.SpaceAfterLastAttribute && element.Attributes.Length > 0) {
+            builder.Append(' ');
+        }
+
+        return builder.Append(close).ToString();
+    }
+
+    /// <summary>The element's self-closing tag.</summary>
+    string SelfClosingTag(XmlDocElement element) => Tag(element, _options.SpaceBeforeSelfClosing ? " />" : "/>");
+
     /// <summary>Writes an element across several lines: start tag, indented content, end tag.</summary>
     void Open(XmlDocElement element) {
-        Push(element.Header + ">", glued: false, tag: true);
+        Push(Tag(element, ">"), glued: false, tag: true);
         Break();
 
         var outer = _level;
@@ -206,13 +262,14 @@ public sealed class XmlDocRenderer {
     /// </remarks>
     string? Flat(XmlDocElement element) {
         if (element.SelfClosing) {
-            return element.Header + (_options.SpaceBeforeSelfClosing ? " /" : "/") + ">";
+            return SelfClosingTag(element);
         }
 
+        var start = Tag(element, ">");
         var close = "</" + element.Name + ">";
         if (element.Verbatim is { } verbatim) {
             // ⚠ No `spaces_inside_tags` here. A space inside `<c>` is part of the code.
-            return verbatim.Length == 1 ? element.Header + ">" + verbatim[0] + close : null;
+            return verbatim.Length == 1 ? start + verbatim[0] + close : null;
         }
 
         if (FlatNodes(element.Children) is not { } inner) {
@@ -220,7 +277,7 @@ public sealed class XmlDocRenderer {
         }
 
         var pad = _options.SpacesInsideTags && inner.Length > 0 ? " " : "";
-        return element.Header + ">" + pad + inner + pad + close;
+        return start + pad + inner + pad + close;
     }
 
     string? FlatNodes(ImmutableArray<XmlDocNode> nodes) {

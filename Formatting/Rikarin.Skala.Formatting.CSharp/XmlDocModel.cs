@@ -36,11 +36,41 @@ public sealed record XmlDocBreak(int BlankLines) : XmlDocNode(false);
 ///     is the part of a doc comment a reader is most likely to copy. Verbatim means the line's bytes
 ///     after the <c>///</c> marker, including its leading and trailing whitespace.
 /// </remarks>
-public sealed record XmlDocVerbatim(ImmutableArray<string> Lines) : XmlDocNode(false);
+/// <param name="ProcessingInstruction">
+///     ⚠ A <c>&lt;?…?&gt;</c> rather than a CDATA section or an XML comment. The three are emitted
+///     identically and only <c>resharper_xmldoc_blank_line_after_pi</c> tells them apart, so the flag
+///     exists for that key alone.
+/// </param>
+public sealed record XmlDocVerbatim(ImmutableArray<string> Lines, bool ProcessingInstruction = false)
+    : XmlDocNode(false);
 
-/// <summary>An element, with its start tag copied from the source byte-for-byte.</summary>
+/// <summary>
+///     One attribute of a tag header, split at its <c>=</c>.
+/// </summary>
+/// <remarks>
+///     ⚠ <paramref name="Value" /> carries its own quotes and every byte between them, and it is never
+///     reinterpreted. A <c>cref</c> is resolved by the compiler and a <c>name</c> is matched against a
+///     parameter; the only thing this split exists to make configurable is the whitespace <em>around</em>
+///     the <c>=</c>, which is whitespace in the XML sense and carries nothing.
+/// </remarks>
+/// <param name="Name">The attribute name, exactly as written.</param>
+/// <param name="Value">The quoted value, exactly as written, quote characters included.</param>
+public readonly record struct XmlDocNameValue(string Name, string Value);
+
+/// <summary>An element, with the pieces of its start tag taken from the source unchanged.</summary>
 /// <param name="Name">The tag name, for <c>linebreak_before_elements</c> and the closing tag.</param>
-/// <param name="Header">Everything from <c>&lt;</c> up to but not including <c>&gt;</c> or <c>/&gt;</c>.</param>
+/// <param name="Header">
+///     <c>&lt;</c> plus the tag name, and nothing else. ⚠ It held the whole header — attributes
+///     included — until the tag-header keys were measured; see <see cref="XmlDocElement.Attributes" />.
+/// </param>
+/// <param name="Attributes">
+///     ⚠ The header's attributes, in source order. The renderer re-emits the header from these rather
+///     than copying it, which is what makes <c>spaces_around_eq_in_attribute</c> and
+///     <c>space_after_last_attribute</c> mean anything. It also normalises the whitespace
+///     <em>between</em> attributes to one space, which is what the oracle does with the doc-comment
+///     task on: <c>&lt;param   name="a"    other="x"  &gt;</c> comes back
+///     <c>&lt;param name="a" other="x"&gt;</c>.
+/// </param>
 /// <param name="Verbatim">
 ///     ⚠ Non-null for <c>&lt;code&gt;</c> and <c>&lt;c&gt;</c>: the element's content as source lines,
 ///     which are emitted unchanged rather than re-wrapped.
@@ -54,6 +84,7 @@ public sealed record XmlDocVerbatim(ImmutableArray<string> Lines) : XmlDocNode(f
 public sealed record XmlDocElement(
     string Name,
     string Header,
+    ImmutableArray<XmlDocNameValue> Attributes,
     bool SelfClosing,
     ImmutableArray<XmlDocNode> Children,
     ImmutableArray<string>? Verbatim,
@@ -119,14 +150,15 @@ public sealed class XmlDocModel {
                     break;
 
                 case XmlEmptyElementSyntax empty:
-                    if (Header(empty.Name, empty.Attributes) is not { } header) {
+                    if (Attributes(empty.Attributes) is not { } emptyAttributes) {
                         return false;
                     }
 
                     builder.Add(
                         new XmlDocElement(
                             empty.Name.ToString(),
-                            header,
+                            "<" + empty.Name,
+                            emptyAttributes,
                             true,
                             [],
                             null,
@@ -139,8 +171,13 @@ public sealed class XmlDocModel {
                     _afterWord = false;
                     break;
 
-                case XmlCDataSectionSyntax:
                 case XmlProcessingInstructionSyntax:
+                    builder.Add(new XmlDocVerbatim(SourceLines(node.ToString()), ProcessingInstruction: true));
+                    _separated = true;
+                    _afterWord = false;
+                    break;
+
+                case XmlCDataSectionSyntax:
                 case XmlCommentSyntax:
                     builder.Add(new XmlDocVerbatim(SourceLines(node.ToString())));
                     _separated = true;
@@ -161,16 +198,18 @@ public sealed class XmlDocModel {
             return null;
         }
 
-        if (Header(element.StartTag.Name, element.StartTag.Attributes) is not { } header) {
+        if (Attributes(element.StartTag.Attributes) is not { } attributes) {
             return null;
         }
 
+        var header = "<" + name;
         var glued = !_separated;
         var gluedToWord = glued && _afterWord;
         if (IsVerbatimElement(name)) {
             return new XmlDocElement(
                 name,
                 header,
+                attributes,
                 false,
                 [],
                 VerbatimBody(element.Content.ToString()),
@@ -186,37 +225,60 @@ public sealed class XmlDocModel {
         _afterWord = false;
         var children = ImmutableArray.CreateBuilder<XmlDocNode>();
         return Add(children, element.Content)
-            ? new XmlDocElement(name, header, false, children.ToImmutable(), null, glued, gluedToWord)
+            ? new XmlDocElement(name, header, attributes, false, children.ToImmutable(), null, glued, gluedToWord)
             : null;
     }
 
     /// <summary>
-    ///     <c>&lt;param name="x"</c>: the start tag's source text, minus the closing bracket.
+    ///     A start tag's attributes, each split into its name and its quoted value.
     /// </summary>
     /// <remarks>
-    ///     ⚠ Copied, not rebuilt. A <c>cref</c> is resolved by the compiler and a <c>name</c> is matched
-    ///     against a parameter; re-emitting either from a parsed model risks changing a string two other
-    ///     tools read. It also settles six of the family's keys at once — see
-    ///     <see cref="XmlDocIds.Refused" /> — because a header nobody rewrites has no attribute style,
-    ///     no attribute indent and no spaces around its '='.
+    ///     ⚠ <b>Split, not parsed.</b> The value is the source bytes from the opening quote to the
+    ///     closing one and is never reinterpreted — a <c>cref</c> is resolved by the compiler and a
+    ///     <c>name</c> is matched against a parameter, so the one thing that may move is the whitespace
+    ///     around the <c>=</c>, which is whitespace in the XML sense and denotes nothing. The split is
+    ///     taken at <c>EqualsToken</c>'s own position rather than at the first <c>=</c> in the text,
+    ///     because an <c>=</c> inside a value would otherwise cut the attribute in the wrong place.
     ///     <para>
-    ///         ⚠ A header that spans lines is refused outright rather than joined: joining it would be the
-    ///         rewrite this method exists to avoid.
+    ///         ⚠ This replaces a byte-for-byte header copy, and the copy is what
+    ///         <see cref="XmlDocIds.Refused" /> used to cite when it refused the four tag-header keys.
+    ///         The refusal was a statement about Skala rather than about the keys: with
+    ///         <c>CSharpFormatDocComments</c> enabled the oracle rewrites a header freely, collapsing runs
+    ///         of spaces between attributes and dropping the space before <c>&gt;</c>.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ A header that spans lines is still refused outright rather than joined, and an attribute
+    ///         whose shape does not yield a name and a value is refused with it. A doc comment left exactly
+    ///         as written is never wrong.
     ///     </para>
     /// </remarks>
-    static string? Header(XmlNameSyntax name, SyntaxList<XmlAttributeSyntax> attributes) {
-        var builder = new StringBuilder("<").Append(name.ToString());
+    static ImmutableArray<XmlDocNameValue>? Attributes(SyntaxList<XmlAttributeSyntax> attributes) {
+        if (attributes.Count == 0) {
+            return ImmutableArray<XmlDocNameValue>.Empty;
+        }
+
+        var builder = ImmutableArray.CreateBuilder<XmlDocNameValue>(attributes.Count);
         foreach (var attribute in attributes) {
-            var text = attribute.ToFullString();
-            if (text.Contains('\n', StringComparison.Ordinal)) {
+            if (attribute.ToFullString().Contains('\n', StringComparison.Ordinal)) {
                 return null;
             }
 
-            builder.Append(' ').Append(attribute.ToString());
+            var text = attribute.ToString();
+            var equals = attribute.EqualsToken.SpanStart - attribute.Span.Start;
+            if (equals <= 0 || equals >= text.Length || text[equals] != '=') {
+                return null;
+            }
+
+            var name = text[..equals].TrimEnd();
+            var value = text[(equals + 1)..].TrimStart();
+            if (name.Length == 0 || value.Length == 0) {
+                return null;
+            }
+
+            builder.Add(new XmlDocNameValue(name, value));
         }
 
-        var header = builder.ToString();
-        return header.Contains('\n', StringComparison.Ordinal) ? null : header;
+        return builder.MoveToImmutable();
     }
 
     /// <summary>
