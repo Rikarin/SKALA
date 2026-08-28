@@ -158,7 +158,10 @@ public sealed class Daemon : IAsyncDisposable {
     }
 
     async Task ServeAsync(Stream connection, CancellationToken cancellation) {
-        using var stream = connection;
+        // ⚠ `await using`, not `using`. A `NamedPipeServerStream` or a `NetworkStream` disposed
+        // synchronously flushes on the calling thread; in an async method that is the thread pool
+        // thread this connection was serving on. SK3503 is Skala's own rule, on Skala's own daemon.
+        await using var stream = connection;
         try {
             while (!cancellation.IsCancellationRequested) {
                 var request = await DaemonProtocol.ReadRequestAsync(stream, cancellation).ConfigureAwait(false);
