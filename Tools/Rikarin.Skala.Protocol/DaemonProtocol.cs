@@ -76,7 +76,25 @@ public sealed partial class DaemonJson : JsonSerializerContext;
 ///     which is the failure the whole tool exists to prevent.
 /// </remarks>
 public static class DaemonProtocol {
-    /// <summary>Bumped whenever <see cref="DaemonRequest" /> or <see cref="DaemonResponse" /> changes.</summary>
+    /// <summary>
+    ///     Bumped whenever <see cref="DaemonRequest" /> or <see cref="DaemonResponse" /> changes.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ <b>This is a wire version and it says nothing about the build.</b> It was for a long time
+    ///     the only compatibility check a daemon made, and the wire shape is the half that almost never
+    ///     moves: rebuild the formatter, leave the daemon up, and every <c>skala format</c> kept
+    ///     answering with the old build's bytes while this string still matched. The argument in this
+    ///     type's own remarks — an older protocol "is a source of formatting differences between two
+    ///     developers on one repository" — applies with more force to a stale build, so the build is
+    ///     checked too, by <c>Rikarin.Skala.Server.BuildIdentity</c>.
+    ///     <para>
+    ///         ⚠ That check is deliberately <em>not</em> on the wire. The thin client is a different binary
+    ///         from the formatter and does not load Roslyn, so it cannot compute a formatter identity to
+    ///         put in a request; the daemon can, from its own directory, at 0.072 ms a request — 0.10 ms
+    ///         on the whole round trip. Nothing here had to change, which is why this constant still reads
+    ///         <c>skala/2</c>.
+    ///     </para>
+    /// </remarks>
     public const string Version = "skala/2";
 
     /// <summary>The socket lives beside the crash artefacts, under the repository root.</summary>

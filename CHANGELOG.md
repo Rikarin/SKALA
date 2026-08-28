@@ -13,6 +13,74 @@ missed it says so and by how much; three of them were, and one of those is still
 
 ## Unreleased
 
+### Fixed — a running daemon served the build it was launched with, for ever, and nothing said so
+
+`skala format` routes through the daemon by default, and the only compatibility check the daemon
+made was `DaemonProtocol.Version` — a **wire** version, "bumped whenever `DaemonRequest` or
+`DaemonResponse` changes". The wire shape almost never moves; the formatter moves constantly. So a
+rebuild under a live daemon produced a daemon answering with the old build's bytes, indefinitely:
+`DaemonProtocol.IdleTimeout` is thirty minutes but every request refreshes it, so an actively used
+stale daemon never dies.
+
+⚠ **Reproduced before anything was changed.** Live daemon, one edit to `CSharpFormatter`'s indent
+unit, `dotnet build`, and then, from one binary in one second:
+
+```
+skala format --diff A.cs                 →  four-space indentation   (the old build)
+SKALA_NO_DAEMON=1 skala format --diff A.cs  →  seven-space indentation (the new one)
+```
+
+⚠ **It is not hypothetical and it is expensive.** Twice in one day an agent lost roughly forty
+minutes to it — one "fixed" a defect, measured it still reproducing and reported the fix incomplete
+when the fix was fine and the daemon was old; the other concluded a correct implementation was dead
+code. Both recovered by trying `--no-daemon` on a hunch. `DaemonProtocol`'s own remarks already made
+the argument, about protocol drift: an older protocol "is a source of formatting differences between
+two developers on one repository — which is the failure the whole tool exists to prevent".
+
+**The daemon now checks its own build.** `BuildIdentity` fingerprints the module MVIDs of the Skala
+assemblies in the daemon's install directory, and a `format` request that arrives after that
+fingerprint has moved is refused rather than answered.
+
+| identity | cost, 12 assemblies / 2.6 MB | reliable? |
+| --- | --- | --- |
+| enumerate + length and mtime | **0.072 ms** | ✗ — a copy of identical bytes bumps the mtime |
+| module MVID | 0.40 ms | ✓ — deterministic compilation, so unchanged sources keep it |
+| SHA-256 of each file | 1.71 ms | ✓, and slower than the MVID for no gain — refuted |
+
+So the stamp is the gate and the MVID is the verdict: **0.072 ms on every request**, and the 0.35 ms
+MVID pass only after files have actually been rewritten. On a whole warm round trip over the socket
+that is **0.12 ms → 0.22 ms**, medians of 400 — **0.25 %** of doc 13's 40 ms warm budget and 1.2 % of
+the 8.65 ms the warm operation measures end to end.
+
+⚠ **The thin client pays nothing and did not change.** `Tools/Rikarin.Skala.Client` is a different
+binary from the formatter and deliberately does not load Roslyn, so it cannot compute a formatter
+identity to put in a request — and hashing the one file it *can* see (`skala-tool`) would have missed
+this defect entirely, because the reproduction moved `Rikarin.Skala.Formatting.CSharp.dll` and left
+the entry point alone. The daemon knows its own install; the check lives there. No request or
+response field moved, so `DaemonProtocol.Version` is still `skala/2`.
+
+⚠ **Refuse and stop, not refuse and linger.** A refusal is already a fallback on every path that can
+reach it, so the caller does the work itself out of its own build and the next command lazily starts
+a fresh daemon — one cold format is the whole cost, and a pre-commit hook never sees an error. The
+socket is unlinked before the refusal is written, so the replacement is not blocked by the file the
+old daemon left. Lingering would have been worse than the defect in a different way: every format
+cold, for thirty minutes, silently.
+
+⚠ **`daemon status` now names the build**, and says `STALE` with the on-disk fingerprint when the
+install has moved — without stopping the daemon it is reporting on. That is the half a person uses:
+nothing in `daemon status` identified the build before, so "this daemon is old" was never a
+hypothesis anybody could check.
+
+Two regression tests, both of which fail against the code before the fix. `StaleDaemonTests` in
+Rikarin.Skala.Cli.Tests is the end-to-end one — a real daemon process over a copied install, one
+assembly rewritten underneath it, and `skala format` asked again; before the fix `daemon status`
+still read `up 1s, … 1 hits, …`, the daemon having just served a request out of a formatter that no
+longer existed. `StaleBuildTests` in Rikarin.Skala.Server.Tests covers the mechanism in process,
+including the case a timestamp check gets wrong: a build that is touched but unchanged must **not**
+stop the daemon.
+
+Formatter output is unchanged; nothing in the corpus moves.
+
 ### Added — the `indent_*_pars` family is two numbers, and three of the seven were not inert
 
 The seven `indent_*_pars` / `indent_*_angles` keys set **how many levels a delimited construct's
