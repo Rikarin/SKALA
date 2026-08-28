@@ -470,6 +470,53 @@
     ]
   },
   {
+    "Primary": "resharper_csharp_align_multiple_declaration",
+    "Secondary": "resharper_csharp_indent_size",
+    "Fixture": "constructs/alignment/align-declaration.cs",
+    "Outcome": "Conformant",
+    "OracleDistinct": 3,
+    "SkalaDistinct": 3,
+    "BaselineAgrees": true,
+    "Corners": [
+      {
+        "PrimaryValue": "true",
+        "SecondaryValue": "4",
+        "OracleHash": "f5ddb1a8",
+        "SkalaHash": "f5ddb1a8",
+        "Agree": true,
+        "ReachedBySingleSweep": true,
+        "AttributableToOneKey": false
+      },
+      {
+        "PrimaryValue": "true",
+        "SecondaryValue": "1",
+        "OracleHash": "181070dd",
+        "SkalaHash": "181070dd",
+        "Agree": true,
+        "ReachedBySingleSweep": false,
+        "AttributableToOneKey": false
+      },
+      {
+        "PrimaryValue": "false",
+        "SecondaryValue": "4",
+        "OracleHash": "6b49621f",
+        "SkalaHash": "6b49621f",
+        "Agree": true,
+        "ReachedBySingleSweep": true,
+        "AttributableToOneKey": false
+      },
+      {
+        "PrimaryValue": "false",
+        "SecondaryValue": "1",
+        "OracleHash": "181070dd",
+        "SkalaHash": "181070dd",
+        "Agree": true,
+        "ReachedBySingleSweep": false,
+        "AttributableToOneKey": false
+      }
+    ]
+  },
+  {
     "Primary": "resharper_csharp_align_tuple_components",
     "Secondary": "resharper_csharp_indent_size",
     "Fixture": "constructs/wrapping/tuple-components.cs",

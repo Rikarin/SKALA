@@ -25,18 +25,18 @@ in `docs/divergences.md`, not here.
 | ReSharper | 2025.2.6 |
 | base configuration | the repository export, sha256 `381a31a28c5ea94d` |
 | families | all |
-| pairs swept | 66 |
-| corners | 390 |
+| pairs swept | 67 |
+| corners | 394 |
 | rounds | 9 (batched by corner index) |
 | `cleanupcode` invocations | 14 |
-| oracle wall clock | 2.1 min |
-| Skala wall clock | 0.7 s |
+| oracle wall clock | 2.4 min |
+| Skala wall clock | 0.8 s |
 
 ## Outcomes
 
 | outcome | pairs | meaning |
 |---|---:|---|
-| ✅ CONFORMANT | 17 | every corner of the grid agrees |
+| ✅ CONFORMANT | 18 | every corner of the grid agrees |
 | ⚠ INTERACTION | 1 | **every corner the single sweep reaches agrees, and an interior corner does not** |
 | ❌ DIVERGENT | 0 | a corner disagrees, and the single sweep could have seen it too |
 | ⚠ UNEXERCISED | 0 | **neither engine distinguished the corners.** Not a pass |
@@ -116,6 +116,7 @@ that cross is an interaction and nothing else in the repository can see it.
 | `resharper_csharp_align_multiline_property_pattern` | `resharper_csharp_indent_size` | ⚠ INHERITED | 4 | 2 | 2 | 4 | 4 | = | `constructs/wrapping/alignment.cs` |
 | `resharper_csharp_align_multiline_statement_conditions` | `resharper_csharp_indent_size` | ⚠ INHERITED | 4 | 2 | 2 | 4 | 4 | = | `constructs/indentation/resharper_csharp_align_multiline_statement_conditions.cs` |
 | `resharper_csharp_align_multiline_switch_expression` | `resharper_csharp_indent_size` | ✅ CONFORMANT | 4 | 4 | 2 | 4 | 4 | = | `constructs/wrapping/alignment.cs` |
+| `resharper_csharp_align_multiple_declaration` | `resharper_csharp_indent_size` | ✅ CONFORMANT | 4 | 4 | 2 | 3 | 3 | = | `constructs/alignment/align-declaration.cs` |
 | `resharper_csharp_align_tuple_components` | `resharper_csharp_indent_size` | ⚠ INTERACTION | 4 | 3 | 2 | 4 | 4 | = | `constructs/wrapping/tuple-components.cs` |
 | `resharper_csharp_keep_existing_attribute_arrangement` | `resharper_keep_user_linebreaks` | ✅ CONFORMANT | 4 | 4 | 2 | 2 | 2 | = | `constructs/preservation/attributes.cs` |
 | `resharper_csharp_keep_existing_declaration_block_arrangement` | `resharper_keep_user_linebreaks` | ✅ CONFORMANT | 4 | 4 | 2 | 2 | 2 | = | `constructs/preservation/declaration-blocks.cs` |
@@ -177,6 +178,6 @@ that cross is an interaction and nothing else in the repository can see it.
 
 | pairs | reason |
 |---:|---|
-| 35 | no `oracle` fixture in the registry |
+| 34 | no `oracle` fixture in the registry |
 | 1 | excluded by name: keep |
 
