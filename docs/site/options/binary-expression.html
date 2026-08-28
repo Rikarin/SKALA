@@ -15,7 +15,7 @@
 <p class="lede">8 keys.</p>
 <section class="option" id="csharp_space_around_binary_operators">
 <h2><code>csharp_space_around_binary_operators</code> <a class="self" href="#csharp_space_around_binary_operators">#</a></h2>
-<p>Spacing around binary operators. Observed and not implemented: at <code>none</code> the oracle closes up assignment, additive, multiplicative, relational, shift, bitwise and logical operators at once. It is a generalized key whose expansion set the registry does not record, and whose domain (<code>before_and_after</code>/<code>none</code>/<code>ignore</code>) is not the bool domain of the keys it would name, so honouring it needs a value mapping as well as an <code>expands</code> list.</p>
+<p>Spacing around binary operators. Observed and not implemented: at <code>none</code> the oracle closes up assignment, additive, multiplicative, relational, shift, bitwise and logical operators at once — <code>var t=q+r;</code>, <code>var v=q&lt;r ? 1 : 0;</code>, <code>var z=p&amp;&amp;q&gt;0;</code>. <code>ignore</code> is indistinguishable from <code>before_and_after</code> on every input tried, so only one of the three values is observable. ⚠ Blocked on the one mechanism the registry does not have: <code>expands</code> propagates a generalized key's value TEXT into the keys it names, so it can only reach targets whose domain — and whose polarity — is its own. Three keys need the same missing piece and none of them is a coverage gap: this one, <code>csharp_space_between_parentheses</code> and <code>csharp_new_line_before_members_in_object_initializers</code>.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td>one of <code>before_and_after</code>, <code>none</code>, <code>ignore</code></td></tr>

@@ -15,7 +15,7 @@
 <p class="lede">4 keys.</p>
 <section class="option" id="resharper_csharp_force_attribute_style">
 <h2><code>resharper_csharp_force_attribute_style</code> <a class="self" href="#resharper_csharp_force_attribute_style">#</a></h2>
-<p>Attributes — Join or separate attributes in section</p>
+<p>Attributes — Join or separate attributes in section. Observed and not implemented, and the profile is the point: it moves nothing under <code>CSReformatCode</code>, and under the cleanup profile <code>separate</code> against <code>join</code> turns <code>[Obsolete]</code> <code>[CLSCompliant(true)]</code> into <code>[Obsolete, CLSCompliant(true)]</code>. So it belongs to the arranger and not to the formatter, which means an <code>.arranged.expected.cs</code> fixture and <code>ArrangementOptions.Implemented</code> rather than <code>PhaseOneOptions</code>. ⚠ The oracle's join leaves a trailing space after the section on the first member it rewrites and not on the others; whatever that is, a fixture would pin it.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td>one of <code>join</code>, <code>separate</code></td></tr>

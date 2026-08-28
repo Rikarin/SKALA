@@ -254,7 +254,7 @@ public static class SpaceRules {
         }
 
         if (IsPrefixOperator(prev) || left == SyntaxKind.TildeToken && prev.Parent is DestructorDeclarationSyntax) {
-            return o.SpaceAfterUnaryOperator;
+            return AfterPrefixOperator(prev, o);
         }
 
         if (IsPrefixOperator(next)) {
@@ -371,7 +371,7 @@ public static class SpaceRules {
         // `!(value is T x)` — a prefix operator binds to its operand whatever the operand is, and
         // the operand being parenthesised does not change that.
         if (IsPrefixOperator(prev)) {
-            return o.SpaceAfterUnaryOperator;
+            return AfterPrefixOperator(prev, o);
         }
 
         switch (prev.Kind()) {
@@ -638,6 +638,35 @@ public static class SpaceRules {
             or TypeParameterListSyntax
             or FunctionPointerParameterListSyntax
             or FunctionPointerUnmanagedCallingConventionListSyntax;
+
+    /// <summary>
+    ///     The gap behind a prefix operator, which ReSharper spells one key per operator.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ <c>space_after_unary_operator</c> is the <em>generalized</em> key, and the export writes
+    ///     all six lines. Reading only the generalized one answered every operator with one value,
+    ///     which is right at this export's defaults — all six are <c>false</c> — and wrong the moment
+    ///     one of them is not. Measured: <c>space_after_logical_not_op = true</c> alone produces
+    ///     <c>! b</c> and leaves <c>-a</c>, <c>+a</c>, <c>&amp;a</c> and <c>*p</c> untouched, and the
+    ///     other four are the same story one operator over.
+    ///     <para>
+    ///         ⚠ <c>~</c> and the prefix <c>++</c>/<c>--</c> keep reading the generalized key, because
+    ///         ReSharper has no per-operator key for them: asked at both values,
+    ///         <c>space_after_unary_operator</c> moves <c>!</c> and <c>-</c> and returns <c>~a</c>,
+    ///         <c>++a</c> and <c>--a</c> unchanged. That is a divergence Skala has always had and this
+    ///         change neither introduces nor repairs; it is recorded rather than smuggled into a
+    ///         spacing refactor.
+    ///     </para>
+    /// </remarks>
+    static bool AfterPrefixOperator(SyntaxToken op, in PhaseOneOptions o) =>
+        op.Kind() switch {
+            SyntaxKind.ExclamationToken => o.SpaceAfterLogicalNotOp,
+            SyntaxKind.MinusToken => o.SpaceAfterUnaryMinusOp,
+            SyntaxKind.PlusToken => o.SpaceAfterUnaryPlusOp,
+            SyntaxKind.AmpersandToken => o.SpaceAfterAmpersandOp,
+            SyntaxKind.AsteriskToken => o.SpaceAfterAsterikOp,
+            _ => o.SpaceAfterUnaryOperator
+        };
 
     static bool IsPrefixOperator(SyntaxToken token) =>
         token.Parent is PrefixUnaryExpressionSyntax prefix && prefix.OperatorToken == token;

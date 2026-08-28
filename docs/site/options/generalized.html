@@ -15,80 +15,85 @@
 <p class="lede">21 keys.</p>
 <section class="option" id="csharp_space_after_keywords_in_control_flow_statements">
 <h2><code>csharp_space_after_keywords_in_control_flow_statements</code> <a class="self" href="#csharp_space_after_keywords_in_control_flow_statements">#</a></h2>
-<p>Generalized ReSharper property; sets every option it expands to at once. Inert: measured against the oracle, <code>csharp_space_after_keywords_in_control_flow_statements = false</code> written after <code>resharper_space_after_keywords_in_control_flow_statements = true</code> changes nothing — ReSharper takes the <code>resharper_</code> spelling of the property. Both are in this export.</p>
+<p>Generalized ReSharper property; sets every option it expands to at once. Measured: at <code>false</code> the oracle closes up all nine control-flow keywords at once — <code>if(b)</code>, <code>while(b)</code>, <code>for(…)</code>, <code>foreach(…)</code>, <code>switch(b)</code>, <code>catch(…)</code>, <code>lock(o)</code>, <code>using(…)</code>, <code>fixed(…)</code>. ⚠ The <code>resharper_</code> spelling of the same ReSharper property is also in this export, and the pair is two registry entries naming one group rather than two spellings of one option — so <code>OptionResolver.Expand</code> settles the overlap by position and the oracle does the same. The earlier claim that the more specific spelling takes it was never true of <code>Expand</code>, whose specificity tie-break is only reachable for two assignments on one line.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>
 <tr><th>Default</th><td><code>true</code></td></tr>
 <tr><th>Default known from</th><td>the Rider export, which is Rider's default for most keys and the author's choice for the rest, with nothing distinguishing the two</td></tr>
-<tr><th>Tier</th><td>D — recorded so the key is not reported unknown; nothing reads it yet</td></tr>
+<tr><th>Tier</th><td>A — the formatter reads it and a committed oracle fixture pins it</td></tr>
 <tr><th>Language</th><td>any</td></tr>
 <tr><th>Since</th><td>0.1</td></tr>
 <tr><th>Expands to</th><td><a href="../options/before-parentheses-in-statements.html#resharper_csharp_space_before_catch_parentheses"><code>resharper_csharp_space_before_catch_parentheses</code></a>, <a href="../options/before-parentheses-in-statements.html#resharper_csharp_space_before_fixed_parentheses"><code>resharper_csharp_space_before_fixed_parentheses</code></a>, <a href="../options/before-parentheses-in-statements.html#resharper_csharp_space_before_for_parentheses"><code>resharper_csharp_space_before_for_parentheses</code></a>, <a href="../options/before-parentheses-in-statements.html#resharper_csharp_space_before_foreach_parentheses"><code>resharper_csharp_space_before_foreach_parentheses</code></a>, <a href="../options/before-parentheses-in-statements.html#resharper_csharp_space_before_if_parentheses"><code>resharper_csharp_space_before_if_parentheses</code></a>, <a href="../options/before-parentheses-in-statements.html#resharper_csharp_space_before_lock_parentheses"><code>resharper_csharp_space_before_lock_parentheses</code></a>, <a href="../options/before-parentheses-in-statements.html#resharper_csharp_space_before_switch_parentheses"><code>resharper_csharp_space_before_switch_parentheses</code></a>, <a href="../options/before-parentheses-in-statements.html#resharper_csharp_space_before_using_parentheses"><code>resharper_csharp_space_before_using_parentheses</code></a>, <a href="../options/before-parentheses-in-statements.html#resharper_csharp_space_before_while_parentheses"><code>resharper_csharp_space_before_while_parentheses</code></a></td></tr>
+<tr><th>Oracle fixture</th><td><code>constructs/spaces/csharp_space_after_keywords_in_control_flow_statements.cs</code></td></tr>
 <tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_Generalized.html">https://www.jetbrains.com/help/resharper/EditorConfig_Generalized.html</a></td></tr>
 </tbody>
 </table>
 </section>
 <section class="option" id="csharp_space_before_open_square_brackets">
 <h2><code>csharp_space_before_open_square_brackets</code> <a class="self" href="#csharp_space_before_open_square_brackets">#</a></h2>
-<p>Generalized ReSharper property; sets every option it expands to at once. Tier D, not because the oracle ignores it — it does not — but because this export also writes the <code>resharper_</code> spelling of the same property, and the resolver's expansion gives that one the overlap. The two carry the same value here, so nothing diverges; a configuration that wrote only this spelling would be answered, and one that wrote both with different values would take the <code>resharper_</code> one where the oracle takes whichever is written later.</p>
+<p>Generalized ReSharper property; sets every option it expands to at once. Measured: at <code>true</code> the oracle writes <code>int [] xs</code> and <code>xs [i]</code>, and leaves <code>new int[3]</code> alone. ⚠ The <code>resharper_</code> spelling of the same ReSharper property is also in this export, and the pair is two registry entries naming one group rather than two spellings of one option — so <code>OptionResolver.Expand</code> settles the overlap by position and the oracle does the same. The earlier claim that the more specific spelling takes it was never true of <code>Expand</code>, whose specificity tie-break is only reachable for two assignments on one line.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>
 <tr><th>Default</th><td><code>false</code></td></tr>
 <tr><th>Default known from</th><td>the Rider export, which is Rider's default for most keys and the author's choice for the rest, with nothing distinguishing the two</td></tr>
-<tr><th>Tier</th><td>D — recorded so the key is not reported unknown; nothing reads it yet</td></tr>
+<tr><th>Tier</th><td>A — the formatter reads it and a committed oracle fixture pins it</td></tr>
 <tr><th>Language</th><td>any</td></tr>
 <tr><th>Since</th><td>0.1</td></tr>
 <tr><th>Expands to</th><td><a href="../options/around-array-brackets.html#resharper_csharp_space_before_array_access_brackets"><code>resharper_csharp_space_before_array_access_brackets</code></a>, <a href="../options/around-array-brackets.html#resharper_csharp_space_before_array_rank_brackets"><code>resharper_csharp_space_before_array_rank_brackets</code></a></td></tr>
+<tr><th>Oracle fixture</th><td><code>constructs/spaces/csharp_space_before_open_square_brackets.cs</code></td></tr>
 <tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_Generalized.html">https://www.jetbrains.com/help/resharper/EditorConfig_Generalized.html</a></td></tr>
 </tbody>
 </table>
 </section>
 <section class="option" id="csharp_space_between_method_call_name_and_opening_parenthesis">
 <h2><code>csharp_space_between_method_call_name_and_opening_parenthesis</code> <a class="self" href="#csharp_space_between_method_call_name_and_opening_parenthesis">#</a></h2>
-<p>Generalized ReSharper property; sets every option it expands to at once. Tier D, not because the oracle ignores it — it does not — but because this export also writes the <code>resharper_</code> spelling of the same property, and the resolver's expansion gives that one the overlap. The two carry the same value here, so nothing diverges; a configuration that wrote only this spelling would be answered, and one that wrote both with different values would take the <code>resharper_</code> one where the oracle takes whichever is written later.</p>
+<p>Generalized ReSharper property; sets every option it expands to at once. Measured: at <code>true</code> the oracle writes <code>M (a)</code> at the call site and leaves the declaration alone. ⚠ The <code>resharper_</code> spelling of the same ReSharper property is also in this export, and the pair is two registry entries naming one group rather than two spellings of one option — so <code>OptionResolver.Expand</code> settles the overlap by position and the oracle does the same. The earlier claim that the more specific spelling takes it was never true of <code>Expand</code>, whose specificity tie-break is only reachable for two assignments on one line.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>
 <tr><th>Default</th><td><code>false</code></td></tr>
 <tr><th>Default known from</th><td>the Rider export, which is Rider's default for most keys and the author's choice for the rest, with nothing distinguishing the two</td></tr>
-<tr><th>Tier</th><td>D — recorded so the key is not reported unknown; nothing reads it yet</td></tr>
+<tr><th>Tier</th><td>A — the formatter reads it and a committed oracle fixture pins it</td></tr>
 <tr><th>Language</th><td>any</td></tr>
 <tr><th>Since</th><td>0.1</td></tr>
 <tr><th>Expands to</th><td><a href="../options/before-other-parentheses.html#resharper_csharp_space_before_empty_method_call_parentheses"><code>resharper_csharp_space_before_empty_method_call_parentheses</code></a>, <a href="../options/before-other-parentheses.html#resharper_csharp_space_before_method_call_parentheses"><code>resharper_csharp_space_before_method_call_parentheses</code></a></td></tr>
+<tr><th>Oracle fixture</th><td><code>constructs/spaces/csharp_space_between_method_call_name_and_opening_parenthesis.cs</code></td></tr>
 <tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_Generalized.html">https://www.jetbrains.com/help/resharper/EditorConfig_Generalized.html</a></td></tr>
 </tbody>
 </table>
 </section>
 <section class="option" id="csharp_space_between_method_declaration_name_and_open_parenthesis">
 <h2><code>csharp_space_between_method_declaration_name_and_open_parenthesis</code> <a class="self" href="#csharp_space_between_method_declaration_name_and_open_parenthesis">#</a></h2>
-<p>Generalized ReSharper property; sets every option it expands to at once. Tier D, not because the oracle ignores it — it does not — but because this export also writes the <code>resharper_</code> spelling of the same property, and the resolver's expansion gives that one the overlap. The two carry the same value here, so nothing diverges; a configuration that wrote only this spelling would be answered, and one that wrote both with different values would take the <code>resharper_</code> one where the oracle takes whichever is written later.</p>
+<p>Generalized ReSharper property; sets every option it expands to at once. Measured: at <code>true</code> the oracle writes <code>void M (int a)</code> at the declaration and leaves the call alone. ⚠ The <code>resharper_</code> spelling of the same ReSharper property is also in this export, and the pair is two registry entries naming one group rather than two spellings of one option — so <code>OptionResolver.Expand</code> settles the overlap by position and the oracle does the same. The earlier claim that the more specific spelling takes it was never true of <code>Expand</code>, whose specificity tie-break is only reachable for two assignments on one line.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>
 <tr><th>Default</th><td><code>false</code></td></tr>
 <tr><th>Default known from</th><td>the Rider export, which is Rider's default for most keys and the author's choice for the rest, with nothing distinguishing the two</td></tr>
-<tr><th>Tier</th><td>D — recorded so the key is not reported unknown; nothing reads it yet</td></tr>
+<tr><th>Tier</th><td>A — the formatter reads it and a committed oracle fixture pins it</td></tr>
 <tr><th>Language</th><td>any</td></tr>
 <tr><th>Since</th><td>0.1</td></tr>
 <tr><th>Expands to</th><td><a href="../options/before-other-parentheses.html#resharper_csharp_space_before_empty_method_parentheses"><code>resharper_csharp_space_before_empty_method_parentheses</code></a>, <a href="../options/before-other-parentheses.html#resharper_csharp_space_before_method_parentheses"><code>resharper_csharp_space_before_method_parentheses</code></a></td></tr>
+<tr><th>Oracle fixture</th><td><code>constructs/spaces/csharp_space_between_method_declaration_name_and_open_parenthesis.cs</code></td></tr>
 <tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_Generalized.html">https://www.jetbrains.com/help/resharper/EditorConfig_Generalized.html</a></td></tr>
 </tbody>
 </table>
 </section>
 <section class="option" id="csharp_space_between_square_brackets">
 <h2><code>csharp_space_between_square_brackets</code> <a class="self" href="#csharp_space_between_square_brackets">#</a></h2>
-<p>Generalized ReSharper property; sets every option it expands to at once. Tier D, not because the oracle ignores it — it does not — but because this export also writes the <code>resharper_</code> spelling of the same property, and the resolver's expansion gives that one the overlap. The two carry the same value here, so nothing diverges; a configuration that wrote only this spelling would be answered, and one that wrote both with different values would take the <code>resharper_</code> one where the oracle takes whichever is written later.</p>
+<p>Generalized ReSharper property; sets every option it expands to at once. Measured: at <code>true</code> the oracle writes <code>xs[ i ]</code>. ⚠ The <code>resharper_</code> spelling of the same ReSharper property is also in this export, and the pair is two registry entries naming one group rather than two spellings of one option — so <code>OptionResolver.Expand</code> settles the overlap by position and the oracle does the same. The earlier claim that the more specific spelling takes it was never true of <code>Expand</code>, whose specificity tie-break is only reachable for two assignments on one line.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>
 <tr><th>Default</th><td><code>false</code></td></tr>
 <tr><th>Default known from</th><td>the Rider export, which is Rider's default for most keys and the author's choice for the rest, with nothing distinguishing the two</td></tr>
-<tr><th>Tier</th><td>D — recorded so the key is not reported unknown; nothing reads it yet</td></tr>
+<tr><th>Tier</th><td>A — the formatter reads it and a committed oracle fixture pins it</td></tr>
 <tr><th>Language</th><td>any</td></tr>
 <tr><th>Since</th><td>0.1</td></tr>
 <tr><th>Expands to</th><td><a href="../options/around-array-brackets.html#resharper_csharp_space_within_array_access_brackets"><code>resharper_csharp_space_within_array_access_brackets</code></a>, <a href="../options/around-array-brackets.html#resharper_csharp_space_within_array_rank_brackets"><code>resharper_csharp_space_within_array_rank_brackets</code></a>, <a href="../options/attributes.html#resharper_csharp_space_within_attribute_brackets"><code>resharper_csharp_space_within_attribute_brackets</code></a>, <a href="../options/around-array-brackets.html#resharper_csharp_space_within_list_pattern_brackets"><code>resharper_csharp_space_within_list_pattern_brackets</code></a></td></tr>
+<tr><th>Oracle fixture</th><td><code>constructs/spaces/csharp_space_between_square_brackets.cs</code></td></tr>
 <tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_Generalized.html">https://www.jetbrains.com/help/resharper/EditorConfig_Generalized.html</a></td></tr>
 </tbody>
 </table>
@@ -314,15 +319,17 @@
 </section>
 <section class="option" id="resharper_space_between_parentheses_of_control_flow_statements">
 <h2><code>resharper_space_between_parentheses_of_control_flow_statements</code> <a class="self" href="#resharper_space_between_parentheses_of_control_flow_statements">#</a></h2>
-<p>Inert: the oracle ignores it at both values, while each of the nine <code>space_within_&lt;keyword&gt;_parentheses</code> keys it names answers on its own. Its <code>expands</code> list is empty for that reason — honouring it would add spaces Rider does not.</p>
+<p>Generalized ReSharper property; a space inside the parentheses of each of the nine control-flow keywords at once. ⚠ Recorded as inert until M11 asked the oracle again, and it is not: at <code>true</code> it writes <code>if ( b )</code>, <code>while ( b )</code>, <code>for ( … )</code>, <code>foreach ( … )</code>, <code>switch ( b )</code>, <code>catch ( … )</code>, <code>lock ( o )</code>, <code>using ( … )</code> and <code>fixed ( … )</code>, and a <code>space_within_if_parentheses = false</code> written after it takes the <code>if</code> back on its own — which is the expansion model exactly. The <code>expands</code> list was empty for the same wrong reason, so nothing honoured it either.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>
 <tr><th>Default</th><td><code>false</code></td></tr>
 <tr><th>Default known from</th><td>the Rider export, which is Rider's default for most keys and the author's choice for the rest, with nothing distinguishing the two</td></tr>
-<tr><th>Tier</th><td>D — recorded so the key is not reported unknown; nothing reads it yet</td></tr>
+<tr><th>Tier</th><td>A — the formatter reads it and a committed oracle fixture pins it</td></tr>
 <tr><th>Language</th><td>any</td></tr>
 <tr><th>Since</th><td>0.1</td></tr>
+<tr><th>Expands to</th><td><a href="../options/within-parentheses-in-statements.html#resharper_csharp_space_within_catch_parentheses"><code>resharper_csharp_space_within_catch_parentheses</code></a>, <a href="../options/within-parentheses-in-statements.html#resharper_csharp_space_within_fixed_parentheses"><code>resharper_csharp_space_within_fixed_parentheses</code></a>, <a href="../options/within-parentheses-in-statements.html#resharper_csharp_space_within_for_parentheses"><code>resharper_csharp_space_within_for_parentheses</code></a>, <a href="../options/within-parentheses-in-statements.html#resharper_csharp_space_within_foreach_parentheses"><code>resharper_csharp_space_within_foreach_parentheses</code></a>, <a href="../options/within-parentheses-in-statements.html#resharper_csharp_space_within_if_parentheses"><code>resharper_csharp_space_within_if_parentheses</code></a>, <a href="../options/within-parentheses-in-statements.html#resharper_csharp_space_within_lock_parentheses"><code>resharper_csharp_space_within_lock_parentheses</code></a>, <a href="../options/within-parentheses-in-statements.html#resharper_csharp_space_within_switch_parentheses"><code>resharper_csharp_space_within_switch_parentheses</code></a>, <a href="../options/within-parentheses-in-statements.html#resharper_csharp_space_within_using_parentheses"><code>resharper_csharp_space_within_using_parentheses</code></a>, <a href="../options/within-parentheses-in-statements.html#resharper_csharp_space_within_while_parentheses"><code>resharper_csharp_space_within_while_parentheses</code></a></td></tr>
+<tr><th>Oracle fixture</th><td><code>constructs/spaces/resharper_space_between_parentheses_of_control_flow_statements.cs</code></td></tr>
 <tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_Generalized.html">https://www.jetbrains.com/help/resharper/EditorConfig_Generalized.html</a></td></tr>
 </tbody>
 </table>

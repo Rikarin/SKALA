@@ -49,48 +49,51 @@
 </section>
 <section class="option" id="resharper_csharp_blank_lines_after_control_transfer_statements">
 <h2><code>resharper_csharp_blank_lines_after_control_transfer_statements</code> <a class="self" href="#resharper_csharp_blank_lines_after_control_transfer_statements">#</a></h2>
-<p>Blank lines in code — After statements with control transfer</p>
+<p>Blank lines in code — After statements with control transfer. Same subject as its <code>before</code> twin, on the other side of the statement; only reachable where something follows the transfer, which is a <code>yield return</code>, a <code>goto</code> before its label, or unreachable code.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td>integer</td></tr>
 <tr><th>Default</th><td><code>0</code></td></tr>
 <tr><th>Default known from</th><td>the Rider export, which is Rider's default for most keys and the author's choice for the rest, with nothing distinguishing the two</td></tr>
-<tr><th>Tier</th><td>D — recorded so the key is not reported unknown; nothing reads it yet</td></tr>
+<tr><th>Tier</th><td>A — the formatter reads it and a committed oracle fixture pins it</td></tr>
 <tr><th>Language</th><td>csharp</td></tr>
 <tr><th>Since</th><td>0.1</td></tr>
 <tr><th>Also spelled</th><td><code>blank_lines_after_control_transfer_statements</code>, <code>csharp_blank_lines_after_control_transfer_statements</code>, <code>resharper_blank_lines_after_control_transfer_statements</code></td></tr>
+<tr><th>Oracle fixture</th><td><code>constructs/blank-lines/resharper_csharp_blank_lines_after_control_transfer_statements.cs</code></td></tr>
 <tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_BlankLinesPageScheme.html#resharper_csharp_blank_lines_after_control_transfer_statements">https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_BlankLinesPageScheme.html#resharper_csharp_blank_lines_after_control_transfer_statements</a></td></tr>
 </tbody>
 </table>
 </section>
 <section class="option" id="resharper_csharp_blank_lines_after_multiline_statements">
 <h2><code>resharper_csharp_blank_lines_after_multiline_statements</code> <a class="self" href="#resharper_csharp_blank_lines_after_multiline_statements">#</a></h2>
-<p>Blank lines in code — After multiline statements</p>
+<p>Blank lines in code — After multiline statements. The same subject as its <code>before</code> twin, and the requirement is attributed outward: the last statement of an <code>else</code> ends where the whole <code>if</code> does, and the oracle spends the multiline <code>if</code>'s requirement there rather than the single-line statement's.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td>integer</td></tr>
 <tr><th>Default</th><td><code>0</code></td></tr>
 <tr><th>Default known from</th><td>the Rider export, which is Rider's default for most keys and the author's choice for the rest, with nothing distinguishing the two</td></tr>
-<tr><th>Tier</th><td>D — recorded so the key is not reported unknown; nothing reads it yet</td></tr>
+<tr><th>Tier</th><td>A — the formatter reads it and a committed oracle fixture pins it</td></tr>
 <tr><th>Language</th><td>csharp</td></tr>
 <tr><th>Since</th><td>0.1</td></tr>
 <tr><th>Also spelled</th><td><code>blank_lines_after_multiline_statements</code>, <code>csharp_blank_lines_after_multiline_statements</code>, <code>resharper_blank_lines_after_multiline_statements</code></td></tr>
+<tr><th>Oracle fixture</th><td><code>constructs/blank-lines/resharper_csharp_blank_lines_after_multiline_statements.cs</code></td></tr>
 <tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_BlankLinesPageScheme.html#resharper_csharp_blank_lines_after_multiline_statements">https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_BlankLinesPageScheme.html#resharper_csharp_blank_lines_after_multiline_statements</a></td></tr>
 </tbody>
 </table>
 </section>
 <section class="option" id="resharper_csharp_blank_lines_around_block_case_section">
 <h2><code>resharper_csharp_blank_lines_around_block_case_section</code> <a class="self" href="#resharper_csharp_blank_lines_around_block_case_section">#</a></h2>
-<p>Blank lines in code — Around 'case' section with a block in switch statement</p>
+<p>Blank lines in code — Around 'case' section with a block in switch statement. Measured: a block section is one whose whole body is a single braced block, not one that merely contains one, and &quot;around&quot; asks both neighbours — the gap takes the requirement when the section above it or the section below it qualifies.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td>integer</td></tr>
 <tr><th>Default</th><td><code>0</code></td></tr>
 <tr><th>Default known from</th><td>the Rider export, which is Rider's default for most keys and the author's choice for the rest, with nothing distinguishing the two</td></tr>
-<tr><th>Tier</th><td>D — recorded so the key is not reported unknown; nothing reads it yet</td></tr>
+<tr><th>Tier</th><td>A — the formatter reads it and a committed oracle fixture pins it</td></tr>
 <tr><th>Language</th><td>csharp</td></tr>
 <tr><th>Since</th><td>0.1</td></tr>
 <tr><th>Also spelled</th><td><code>blank_lines_around_block_case_section</code>, <code>csharp_blank_lines_around_block_case_section</code>, <code>resharper_blank_lines_around_block_case_section</code></td></tr>
+<tr><th>Oracle fixture</th><td><code>constructs/blank-lines/resharper_csharp_blank_lines_around_block_case_section.cs</code></td></tr>
 <tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_BlankLinesPageScheme.html#resharper_csharp_blank_lines_around_block_case_section">https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_BlankLinesPageScheme.html#resharper_csharp_blank_lines_around_block_case_section</a></td></tr>
 </tbody>
 </table>
@@ -114,16 +117,17 @@
 </section>
 <section class="option" id="resharper_csharp_blank_lines_around_multiline_case_section">
 <h2><code>resharper_csharp_blank_lines_around_multiline_case_section</code> <a class="self" href="#resharper_csharp_blank_lines_around_multiline_case_section">#</a></h2>
-<p>Blank lines in code — Around multiline 'case' section in switch statement</p>
+<p>Blank lines in code — Around multiline 'case' section in switch statement. Same shape as its block twin, with the section's line count as the test instead of its braces.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td>integer</td></tr>
 <tr><th>Default</th><td><code>0</code></td></tr>
 <tr><th>Default known from</th><td>the Rider export, which is Rider's default for most keys and the author's choice for the rest, with nothing distinguishing the two</td></tr>
-<tr><th>Tier</th><td>D — recorded so the key is not reported unknown; nothing reads it yet</td></tr>
+<tr><th>Tier</th><td>A — the formatter reads it and a committed oracle fixture pins it</td></tr>
 <tr><th>Language</th><td>csharp</td></tr>
 <tr><th>Since</th><td>0.1</td></tr>
 <tr><th>Also spelled</th><td><code>blank_lines_around_multiline_case_section</code>, <code>csharp_blank_lines_around_multiline_case_section</code>, <code>resharper_blank_lines_around_multiline_case_section</code></td></tr>
+<tr><th>Oracle fixture</th><td><code>constructs/blank-lines/resharper_csharp_blank_lines_around_multiline_case_section.cs</code></td></tr>
 <tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_BlankLinesPageScheme.html#resharper_csharp_blank_lines_around_multiline_case_section">https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_BlankLinesPageScheme.html#resharper_csharp_blank_lines_around_multiline_case_section</a></td></tr>
 </tbody>
 </table>
@@ -147,16 +151,17 @@
 </section>
 <section class="option" id="resharper_csharp_blank_lines_before_block_statements">
 <h2><code>resharper_csharp_blank_lines_before_block_statements</code> <a class="self" href="#resharper_csharp_blank_lines_before_block_statements">#</a></h2>
-<p>Blank lines in code — Before statements with child blocks</p>
+<p>Blank lines in code — Before statements with child blocks. Measured, and it is not the reading of the name: a bare <code>{ … }</code> is NOT one — it is a block, not a statement with a block — and neither is a local function, while <code>switch</code> is one although its braces hold sections rather than a block. <code>if</code>, <code>while</code>, <code>for</code>, <code>foreach</code>, <code>do</code>, <code>try</code>, <code>using</code>, <code>lock</code>, <code>fixed</code>, <code>checked</code> and <code>unsafe</code> are, whenever a brace is actually present.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td>integer</td></tr>
 <tr><th>Default</th><td><code>0</code></td></tr>
 <tr><th>Default known from</th><td>the Rider export, which is Rider's default for most keys and the author's choice for the rest, with nothing distinguishing the two</td></tr>
-<tr><th>Tier</th><td>D — recorded so the key is not reported unknown; nothing reads it yet</td></tr>
+<tr><th>Tier</th><td>A — the formatter reads it and a committed oracle fixture pins it</td></tr>
 <tr><th>Language</th><td>csharp</td></tr>
 <tr><th>Since</th><td>0.1</td></tr>
 <tr><th>Also spelled</th><td><code>blank_lines_before_block_statements</code>, <code>csharp_blank_lines_before_block_statements</code>, <code>resharper_blank_lines_before_block_statements</code></td></tr>
+<tr><th>Oracle fixture</th><td><code>constructs/blank-lines/resharper_csharp_blank_lines_before_block_statements.cs</code></td></tr>
 <tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_BlankLinesPageScheme.html#resharper_csharp_blank_lines_before_block_statements">https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_BlankLinesPageScheme.html#resharper_csharp_blank_lines_before_block_statements</a></td></tr>
 </tbody>
 </table>
@@ -180,32 +185,34 @@
 </section>
 <section class="option" id="resharper_csharp_blank_lines_before_control_transfer_statements">
 <h2><code>resharper_csharp_blank_lines_before_control_transfer_statements</code> <a class="self" href="#resharper_csharp_blank_lines_before_control_transfer_statements">#</a></h2>
-<p>Blank lines in code — Before statements with control transfer</p>
+<p>Blank lines in code — Before statements with control transfer. Measured: <code>return</code>, <code>break</code>, <code>continue</code>, <code>goto</code>, <code>throw</code> and both <code>yield</code> forms, and an <code>if</code> that embeds one of them without braces — <code>if (a) return 1;</code> takes the blank above the <code>if</code> and <code>if (a) { return 1; }</code> takes none. The first statement of a <code>case</code> section is not a subject; that gap is <code>blank_lines_after_case</code>'s.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td>integer</td></tr>
 <tr><th>Default</th><td><code>0</code></td></tr>
 <tr><th>Default known from</th><td>the Rider export, which is Rider's default for most keys and the author's choice for the rest, with nothing distinguishing the two</td></tr>
-<tr><th>Tier</th><td>D — recorded so the key is not reported unknown; nothing reads it yet</td></tr>
+<tr><th>Tier</th><td>A — the formatter reads it and a committed oracle fixture pins it</td></tr>
 <tr><th>Language</th><td>csharp</td></tr>
 <tr><th>Since</th><td>0.1</td></tr>
 <tr><th>Also spelled</th><td><code>blank_lines_before_control_transfer_statements</code>, <code>csharp_blank_lines_before_control_transfer_statements</code>, <code>resharper_blank_lines_before_control_transfer_statements</code></td></tr>
+<tr><th>Oracle fixture</th><td><code>constructs/blank-lines/resharper_csharp_blank_lines_before_control_transfer_statements.cs</code></td></tr>
 <tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_BlankLinesPageScheme.html#resharper_csharp_blank_lines_before_control_transfer_statements">https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_BlankLinesPageScheme.html#resharper_csharp_blank_lines_before_control_transfer_statements</a></td></tr>
 </tbody>
 </table>
 </section>
 <section class="option" id="resharper_csharp_blank_lines_before_multiline_statements">
 <h2><code>resharper_csharp_blank_lines_before_multiline_statements</code> <a class="self" href="#resharper_csharp_blank_lines_before_multiline_statements">#</a></h2>
-<p>Blank lines in code — Before multiline statements</p>
+<p>Blank lines in code — Before multiline statements. Measured: multiline is a property of the OUTPUT, so <code>new[] { 1, 2, 3 }</code> written over five lines is a single-line statement here — <code>place_simple_initializer_on_single_line</code> joins it — while <code>if (a) return 1; else p++;</code> is multiline although no brace is involved.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td>integer</td></tr>
 <tr><th>Default</th><td><code>0</code></td></tr>
 <tr><th>Default known from</th><td>the Rider export, which is Rider's default for most keys and the author's choice for the rest, with nothing distinguishing the two</td></tr>
-<tr><th>Tier</th><td>D — recorded so the key is not reported unknown; nothing reads it yet</td></tr>
+<tr><th>Tier</th><td>A — the formatter reads it and a committed oracle fixture pins it</td></tr>
 <tr><th>Language</th><td>csharp</td></tr>
 <tr><th>Since</th><td>0.1</td></tr>
 <tr><th>Also spelled</th><td><code>blank_lines_before_multiline_statements</code>, <code>csharp_blank_lines_before_multiline_statements</code>, <code>resharper_blank_lines_before_multiline_statements</code></td></tr>
+<tr><th>Oracle fixture</th><td><code>constructs/blank-lines/resharper_csharp_blank_lines_before_multiline_statements.cs</code></td></tr>
 <tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_BlankLinesPageScheme.html#resharper_csharp_blank_lines_before_multiline_statements">https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_BlankLinesPageScheme.html#resharper_csharp_blank_lines_before_multiline_statements</a></td></tr>
 </tbody>
 </table>

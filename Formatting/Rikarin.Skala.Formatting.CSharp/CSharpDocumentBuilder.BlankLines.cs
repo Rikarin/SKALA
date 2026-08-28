@@ -118,6 +118,17 @@ public sealed partial class CSharpDocumentBuilder {
             return required;
         }
 
+        // ⚠ blank_lines_after_start_comment, and it has to be asked *above* the stick_comment return
+        // rather than below it. A file header comment is a comment directly above a declaration, so
+        // stick_comment's rule — "the gap below the comment is inside the member and takes none of
+        // its requirement" — is exactly right about the member's own requirement and exactly wrong
+        // about this one, which is a requirement about the comment. Asked below the return it never
+        // fires: `constructs/blank-lines/a-file-header-comment*.cs` are the two fixtures that say so,
+        // and both were failing before this rule existed.
+        if (IsStartComment(previous)) {
+            required = Math.Max(required, _options.BlankLinesAfterStartComment);
+        }
+
         // ⚠ stick_comment = true: a comment directly above a declaration is part of it, so the gap
         // BELOW the comment is inside the member and takes none of the member's requirement. The
         // requirement was already spent on the gap above the comment, which is the whole point of
@@ -148,14 +159,41 @@ public sealed partial class CSharpDocumentBuilder {
             if (previousToken.Parent is SwitchLabelSyntax) {
                 required = Math.Max(required, _options.BlankLinesAfterCase);
             }
+
+            // The two "after" statement requirements, attributed to the statement that ends here.
+            if (StatementEndingAt(previousToken) is { } statementAbove) {
+                if (IsControlTransfer(statementAbove)) {
+                    required = Math.Max(required, _options.BlankLinesAfterControlTransferStatements);
+                }
+
+                if (SpansLines(statementAbove)) {
+                    required = Math.Max(required, _options.BlankLinesAfterMultilineStatements);
+                }
+            }
+        }
+
+        if (StatementStartingAt(nextToken) is { } statementBelow) {
+            if (IsControlTransfer(statementBelow)) {
+                required = Math.Max(required, _options.BlankLinesBeforeControlTransferStatements);
+            }
+
+            if (SpansLines(statementBelow)) {
+                required = Math.Max(required, _options.BlankLinesBeforeMultilineStatements);
+            }
+
+            if (HasChildBlock(statementBelow)) {
+                required = Math.Max(required, _options.BlankLinesBeforeBlockStatements);
+            }
         }
 
         if (!nextToken.IsKind(SyntaxKind.None)
             && nextToken.Parent is SwitchLabelSyntax
             && nextToken.Parent.Parent is SwitchSectionSyntax section
             && section.Parent is SwitchStatementSyntax owner
-            && owner.Sections.IndexOf(section) > 0) {
+            && owner.Sections.IndexOf(section) is var index and > 0) {
             required = Math.Max(required, _options.BlankLinesBeforeCase);
+            required = Math.Max(required, SectionRequirement(section));
+            required = Math.Max(required, SectionRequirement(owner.Sections[index - 1]));
         }
 
         if (nextPieceIndex >= 0
@@ -233,6 +271,354 @@ public sealed partial class CSharpDocumentBuilder {
             && _pieces[nextPieceIndex].Text.StartsWith("#endregion", StringComparison.Ordinal);
 
         return opensBefore || closesAfter ? _options.BlankLinesInsideRegion : _options.BlankLinesAroundRegion;
+    }
+
+    /// <summary>
+    ///     Whether a statement will occupy more than one line of the <b>output</b>.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Not <see cref="IsSingleLine" /> negated, and the difference is the whole of why this
+    ///     exists. That test opens by asking whether the member spans more than one source line,
+    ///     which is a fair approximation for a member and a wrong answer for a statement:
+    ///     <code>
+    /// var z = new[] {
+    ///     1, 2, 3
+    /// };
+    ///     </code>
+    ///     is three source lines and one output line — <c>place_simple_initializer_on_single_line</c>
+    ///     joins it — and reading the source there made
+    ///     <c>blank_lines_after_multiline_statements = 1</c> write a blank the oracle does not.
+    ///     <para>
+    ///         ⚠ So the question is asked of the plan instead, in the same terms the emitter asks it:
+    ///         a source break survives unless its gap is <see cref="GapRule.Flat" /> or belongs to a group
+    ///         the plan already fixed at <see cref="GroupMode.Flat" />. A gap the plan does not govern —
+    ///         one with a comment in it — always survives, because the emitter never joins across a
+    ///         comment.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ <see cref="GroupMode.Auto" /> is counted as breaking, which is the one guess here. The
+    ///         fitter has not run, so nobody can know; the width test below is the same question asked
+    ///         crudely, and an Auto group that fits is one this returns true for and the oracle may not.
+    ///         No shape probed reaches it — <c>Auto</c> groups in this export are the wrapping styles, whose
+    ///         own keys are another agent's — and it is recorded rather than hidden.
+    ///     </para>
+    /// </remarks>
+    bool SpansLines(SyntaxNode node) {
+        var previous = default(SyntaxToken);
+        foreach (var token in node.DescendantTokens()) {
+            if (token.Span.Length == 0) {
+                continue;
+            }
+
+            // A verbatim or raw string is a single token that is itself several lines.
+            if (token.Text.Contains('\n', StringComparison.Ordinal)) {
+                return true;
+            }
+
+            if (!previous.IsKind(SyntaxKind.None) && GapBreaks(previous, token)) {
+                return true;
+            }
+
+            previous = token;
+        }
+
+        return _plan.HasForcedBreakIn(node.Span.Start + 1, node.Span.End)
+            || OutputIndentColumns(node) + OutputWidth(node) > _options.MaxLineLength;
+    }
+
+    /// <summary>Whether the gap between two adjacent tokens will hold a line break.</summary>
+    bool GapBreaks(SyntaxToken previous, SyntaxToken next) {
+        var newLine = false;
+        var comment = false;
+        for (var i = previous.Span.End; i < next.SpanStart; i++) {
+            if (_source[i] == '\n') {
+                newLine = true;
+            } else if (!char.IsWhiteSpace(_source[i])) {
+                comment = true;
+            }
+        }
+
+        if (!newLine) {
+            return false;
+        }
+
+        if (comment || !_plan.TryGap(next.SpanStart, out var spec)) {
+            return true;
+        }
+
+        return spec.Rule switch {
+            GapRule.Flat => false,
+            GapRule.Mandatory => true,
+            _ => GroupBreaks(spec.Group)
+        };
+    }
+
+    /// <summary>Whether a group the plan created will hold its break points broken.</summary>
+    /// <remarks>
+    ///     ⚠ <see cref="GroupMode.Preserve" /> is the case that matters and the one that cannot be read
+    ///     off the mode alone. A preserved group keeps the author's break — unless it is one of the
+    ///     five the export lets join when it fits, and <c>place_simple_initializer_on_single_line</c>
+    ///     is exactly that: <c>new[] { 1, 2, 3 }</c> written over five lines comes back as one, so a
+    ///     rule that read `Preserve` as "broken" called the statement multi-line and wrote a blank the
+    ///     oracle does not.
+    ///     <para>
+    ///         ⚠ <see cref="GroupMode.Auto" /> and <see cref="GroupMode.Owner" /> are answered "flat" and
+    ///         left to the width test in <see cref="SpansLines" />, which asks the same question crudely.
+    ///         An unknown id is answered "broken", because a group the plan did not describe is one this
+    ///         code does not understand.
+    ///     </para>
+    /// </remarks>
+    bool GroupBreaks(int group) {
+        if (_groupPlans is null) {
+            _groupPlans = new Dictionary<int, GroupPlan>();
+            foreach (var plan in _plan.Groups) {
+                _groupPlans[plan.Id] = plan;
+            }
+        }
+
+        if (!_groupPlans.TryGetValue(group, out var found)) {
+            return true;
+        }
+
+        return found.Mode switch {
+            GroupMode.Flat => false,
+            GroupMode.Break => true,
+            GroupMode.Auto or GroupMode.Owner => false,
+            _ => found.Facts.SourceBroken && !found.Facts.JoinsIfFits
+        };
+    }
+
+    /// <summary>
+    ///     Whether this piece is the last line of the comment block the file opens with.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Three boundaries, each measured against the oracle at
+    ///     <c>blank_lines_after_start_comment = 0</c> and <c>= 2</c> rather than assumed:
+    ///     <list type="bullet">
+    ///         <item>
+    ///             A <c>///</c> or <c>/** */</c> run at position 0 is <b>not</b> a start comment. It is the
+    ///             documentation of the type below it, and the oracle returns the file unchanged at both
+    ///             values.
+    ///         </item>
+    ///         <item>
+    ///             A comment that follows a directive is not a start comment either —
+    ///             <c>#nullable enable</c> on line 1 and a <c>//</c> on line 2 is unchanged at both values.
+    ///             The file has already started.
+    ///         </item>
+    ///         <item>
+    ///             ⚠ Two <c>//</c> blocks separated by a blank line are <b>one</b> start comment, and the
+    ///             gap the requirement lands in is the one under the <em>second</em>. So this is a property
+    ///             of the run and not of the first piece.
+    ///         </item>
+    ///     </list>
+    /// </remarks>
+    bool IsStartComment(Piece previous) {
+        if (previous.Kind is not (PieceKind.LineComment or PieceKind.BlockComment)) {
+            return false;
+        }
+
+        for (var i = 0; i < _pieces.Length; i++) {
+            if (_pieces[i].Kind is not (PieceKind.LineComment or PieceKind.BlockComment)) {
+                return false;
+            }
+
+            if (_pieces[i].Span.End == previous.Span.End) {
+                // The last piece of the run is the one whose successor is not a plain comment.
+                return i + 1 >= _pieces.Length
+                    || _pieces[i + 1].Kind is not (PieceKind.LineComment or PieceKind.BlockComment);
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    ///     The requirement a switch section states about the gaps on either side of it.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ "Around", and both neighbours are asked. Measured on a switch whose first and fourth
+    ///     sections are braced: at <c>blank_lines_around_block_case_section = 1</c> the oracle writes a
+    ///     blank after the first, before the fourth and after the fourth, and nothing between the two
+    ///     unbraced sections in between — which is "either side of the gap qualifies", not "the section
+    ///     below does".
+    ///     <para>
+    ///         ⚠ A block section is one whose whole body is a single braced block, not one that merely
+    ///         contains one. <c>case 3: var y = 3; y++; return y;</c> has three statements and is not a
+    ///         block section, and the oracle leaves its gaps to the multiline key.
+    ///     </para>
+    /// </remarks>
+    int SectionRequirement(SwitchSectionSyntax section) {
+        var required = 0;
+        if (section.Statements is [BlockSyntax]) {
+            required = Math.Max(required, _options.BlankLinesAroundBlockCaseSection);
+        }
+
+        if (SpansLines(section)) {
+            required = Math.Max(required, _options.BlankLinesAroundMultilineCaseSection);
+        }
+
+        return required;
+    }
+
+    /// <summary>
+    ///     The statement whose last token this is, when it is an element of a statement list.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ The list membership is the same guard <see cref="EndsAStatementInAList" /> carries and for
+    ///     the same reason: a method body is a <see cref="BlockSyntax" />, which is a
+    ///     <see cref="StatementSyntax" />, so without it every member's closing brace would answer
+    ///     <c>blank_lines_after_multiline_statements</c> and take the gap the member rules own.
+    ///     <para>
+    ///         ⚠ Outward rather than innermost. An <c>else</c>'s last statement ends where the whole
+    ///         <c>if</c> does, and the oracle spends the requirement on the <c>if</c>: at
+    ///         <c>blank_lines_after_multiline_statements = 1</c> it writes one blank under
+    ///         <c>if (a) return 1; else p++;</c>, which is the multi-line <c>if</c>'s and not the
+    ///         single-line <c>p++;</c>'s.
+    ///     </para>
+    /// </remarks>
+    static StatementSyntax? StatementEndingAt(SyntaxToken token) {
+        for (var node = token.Parent; node is not null; node = node.Parent) {
+            if (node.Span.End != token.Span.End) {
+                return null;
+            }
+
+            if (node is StatementSyntax statement && IsStatementListElement(statement)) {
+                return statement;
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    ///     The statement that begins at this token, when the gap above it is the statement's own.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ A statement an enclosing statement owns as its <em>embedded</em> statement is not a
+    ///     subject, and this is the one boundary that cannot be guessed. Measured: at
+    ///     <c>blank_lines_before_control_transfer_statements = 1</c> the oracle puts the blank above
+    ///     <c>if (a &gt; 0)</c> and none above the <c>return 1;</c> on the line under it — the
+    ///     requirement is spent once, on the statement the block's list holds. Reading it off the
+    ///     <c>return</c> instead writes two blanks where the oracle writes one.
+    ///     <para>
+    ///         ⚠ A label is not such an owner, which is why <see cref="IsStatementListElement" /> admits
+    ///         <see cref="LabeledStatementSyntax" />. ReSharper's tree keeps a label and the statement under
+    ///         it as siblings where Roslyn nests them, and the oracle writes the blank between
+    ///         <c>End:</c> and <c>return 2;</c> rather than above <c>End:</c>. Taking the outermost
+    ///         statement that <em>starts at this token</em> reproduces that: the labelled statement starts
+    ///         at <c>End</c>, so the subject at <c>return</c> is the return.
+    ///     </para>
+    /// </remarks>
+    static StatementSyntax? StatementStartingAt(SyntaxToken token) {
+        if (token.IsKind(SyntaxKind.None)) {
+            return null;
+        }
+
+        StatementSyntax? found = null;
+        for (var node = token.Parent; node is not null; node = node.Parent) {
+            if (node.Span.Start != token.Span.Start) {
+                break;
+            }
+
+            if (node is StatementSyntax statement) {
+                found = statement;
+            }
+        }
+
+        if (found is null || !IsStatementListElement(found)) {
+            return null;
+        }
+
+        // ⚠ The first statement of a switch section is not a subject. That gap belongs to the label
+        // above it — `blank_lines_after_case` owns it — and the oracle spends nothing else there:
+        // at `blank_lines_before_control_transfer_statements = 1` it writes no blank between
+        // `case 2:` and the `return 2;` under it, while writing one before the third statement of a
+        // section that has three. Without this the same key writes a blank under every `case` label
+        // whose section starts with a `return` or a `break`, which is most of them.
+        return found.Parent is SwitchSectionSyntax owner && owner.Statements.FirstOrDefault() == found
+            ? null
+            : found;
+    }
+
+    static bool IsStatementListElement(StatementSyntax statement) =>
+        statement.Parent is BlockSyntax
+            or SwitchSectionSyntax
+            or GlobalStatementSyntax
+            or LabeledStatementSyntax;
+
+    /// <summary>
+    ///     Whether a statement transfers control, counting the one it embeds.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ <c>if (a) return 1;</c> counts and <c>if (a) { return 1; }</c> does not, which is measured
+    ///     and not a distinction anyone would invent: the braced form puts the <c>return</c> inside a
+    ///     block of its own, and the oracle writes no blank above such an <c>if</c> at
+    ///     <c>blank_lines_before_control_transfer_statements = 1</c> while writing one above the
+    ///     unbraced form. <see cref="BlockSyntax" /> therefore stops the recursion rather than
+    ///     descending into it.
+    /// </remarks>
+    static bool IsControlTransfer(StatementSyntax statement) =>
+        statement switch {
+            ReturnStatementSyntax
+                or BreakStatementSyntax
+                or ContinueStatementSyntax
+                or GotoStatementSyntax
+                or ThrowStatementSyntax
+                or YieldStatementSyntax => true,
+            BlockSyntax => false,
+            IfStatementSyntax owner => IsControlTransfer(owner.Statement)
+                || owner.Else is { } clause
+                && IsControlTransfer(clause.Statement),
+            WhileStatementSyntax owner => IsControlTransfer(owner.Statement),
+            ForStatementSyntax owner => IsControlTransfer(owner.Statement),
+            CommonForEachStatementSyntax owner => IsControlTransfer(owner.Statement),
+            DoStatementSyntax owner => IsControlTransfer(owner.Statement),
+            UsingStatementSyntax owner => IsControlTransfer(owner.Statement),
+            LockStatementSyntax owner => IsControlTransfer(owner.Statement),
+            FixedStatementSyntax owner => IsControlTransfer(owner.Statement),
+            _ => false
+        };
+
+    /// <summary>
+    ///     Whether a statement owns a braced body — ReSharper's "statement with child blocks".
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Three measured edges. A bare <c>{ … }</c> block is <b>not</b> one, which is the reading of
+    ///     the option's name nobody would pick: it is a block, not a statement <em>with</em> a block. A
+    ///     <c>switch</c> <b>is</b> one although its braces hold sections rather than a
+    ///     <see cref="BlockSyntax" />. And a local function is not one — with
+    ///     <c>blank_lines_around_local_method</c> turned off so it could be seen, the oracle writes no
+    ///     blank above <c>void Local() { … }</c> at <c>blank_lines_before_block_statements = 1</c>,
+    ///     while it does write one above every <c>if</c>, <c>lock</c>, <c>do</c>, <c>using</c>,
+    ///     <c>checked</c>, <c>unsafe</c>, <c>fixed</c> and <c>try</c>.
+    ///     <para>
+    ///         ⚠ Direct children only. <c>Action f = () =&gt; { … };</c> holds a block two levels down and
+    ///         is not a block statement.
+    ///     </para>
+    /// </remarks>
+    static bool HasChildBlock(StatementSyntax statement) {
+        if (statement is BlockSyntax or LocalFunctionStatementSyntax) {
+            return false;
+        }
+
+        if (statement is SwitchStatementSyntax) {
+            return true;
+        }
+
+        foreach (var child in statement.ChildNodes()) {
+            if (child is BlockSyntax) {
+                return true;
+            }
+
+            // `else`, `catch` and `finally` hold their block one node down, and an `if` whose only
+            // braces are the else's is still a statement with a child block.
+            if (child is ElseClauseSyntax or CatchClauseSyntax or FinallyClauseSyntax
+                && child.ChildNodes().Any(static grandchild => grandchild is BlockSyntax)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     static bool EndsFileScopedNamespaceDirective(SyntaxToken token) =>

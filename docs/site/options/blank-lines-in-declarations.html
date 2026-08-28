@@ -32,16 +32,17 @@
 </section>
 <section class="option" id="resharper_csharp_blank_lines_after_start_comment">
 <h2><code>resharper_csharp_blank_lines_after_start_comment</code> <a class="self" href="#resharper_csharp_blank_lines_after_start_comment">#</a></h2>
-<p>Blank lines in declarations — After file header comment</p>
+<p>Blank lines in declarations — After file header comment. Measured: the subject is the run of plain comments the file opens with, and only that. A <code>///</code> run at position 0 is not one — it belongs to the type under it and the oracle returns the file unchanged at both values — nor is a <code>//</code> that follows a <code>#nullable</code>, because the file has already started. Two <code>//</code> blocks separated by a blank line are one start comment and the gap is the one under the second. ⚠ The export sets it to 1, so this is one of the few blank-line keys whose value is not the no-op: <code>a-file-header-comment.cs</code> and <code>a-file-header-comment-with-no-blank-after-it.cs</code> both disagreed with their committed fixtures until the formatter read it.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td>integer</td></tr>
 <tr><th>Default</th><td><code>1</code></td></tr>
 <tr><th>Default known from</th><td>the Rider export, which is Rider's default for most keys and the author's choice for the rest, with nothing distinguishing the two</td></tr>
-<tr><th>Tier</th><td>D — recorded so the key is not reported unknown; nothing reads it yet</td></tr>
+<tr><th>Tier</th><td>A — the formatter reads it and a committed oracle fixture pins it</td></tr>
 <tr><th>Language</th><td>csharp</td></tr>
 <tr><th>Since</th><td>0.1</td></tr>
 <tr><th>Also spelled</th><td><code>blank_lines_after_start_comment</code>, <code>csharp_blank_lines_after_start_comment</code>, <code>resharper_blank_lines_after_start_comment</code></td></tr>
+<tr><th>Oracle fixture</th><td><code>constructs/blank-lines/resharper_csharp_blank_lines_after_start_comment.cs</code></td></tr>
 <tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_BlankLinesPageScheme.html#resharper_csharp_blank_lines_after_start_comment">https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_BlankLinesPageScheme.html#resharper_csharp_blank_lines_after_start_comment</a></td></tr>
 </tbody>
 </table>

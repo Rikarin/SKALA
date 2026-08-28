@@ -51,6 +51,9 @@ public sealed partial class CSharpDocumentBuilder {
     int _verbatimUntil = -1;
     int _continuousDepth;
 
+    /// <summary>Group id to the plan that created it, built on first use by <c>SpansLines</c>.</summary>
+    Dictionary<int, GroupPlan>? _groupPlans;
+
     CSharpDocumentBuilder(string path, SourceText text, SyntaxNode root, in PhaseOneOptions options) {
         _path = path;
         _text = text;
