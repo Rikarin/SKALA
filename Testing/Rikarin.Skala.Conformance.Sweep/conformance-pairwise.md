@@ -29,7 +29,7 @@ in `docs/divergences.md`, not here.
 | corners | 390 |
 | rounds | 9 (batched by corner index) |
 | `cleanupcode` invocations | 14 |
-| oracle wall clock | 2.0 min |
+| oracle wall clock | 2.1 min |
 | Skala wall clock | 0.7 s |
 
 ## Outcomes

@@ -6291,6 +6291,52 @@
     ]
   },
   {
+    "Key": "resharper_disable_blank_line_changes",
+    "Tier": "D",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true,
+    "Fixture": "constructs/blank-lines/resharper_disable_blank_line_changes.cs",
+    "Values": [
+      {
+        "Value": "true",
+        "OracleHash": "ae938df7",
+        "SkalaHash": "ae938df7",
+        "Agree": true
+      },
+      {
+        "Value": "false",
+        "OracleHash": "c9582986",
+        "SkalaHash": "c9582986",
+        "Agree": true
+      }
+    ]
+  },
+  {
+    "Key": "resharper_disable_formatter",
+    "Tier": "D",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true,
+    "Fixture": "constructs/file/resharper_disable_formatter.cs",
+    "Values": [
+      {
+        "Value": "true",
+        "OracleHash": "69917b0e",
+        "SkalaHash": "69917b0e",
+        "Agree": true
+      },
+      {
+        "Value": "false",
+        "OracleHash": "8f4fd5a4",
+        "SkalaHash": "8f4fd5a4",
+        "Agree": true
+      }
+    ]
+  },
+  {
     "Key": "resharper_enforce_line_ending_style",
     "Tier": "A",
     "Outcome": "Conformant",

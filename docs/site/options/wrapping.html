@@ -30,7 +30,7 @@
 </section>
 <section class="option" id="resharper_enable_wrapping">
 <h2><code>resharper_enable_wrapping</code> <a class="self" href="#resharper_enable_wrapping">#</a></h2>
-<p>Whether the wrapping engine runs at all.</p>
+<p>Named as though it were the master switch for wrapping, and measured not to be one. The export sets it <code>false</code> and wrapping happens; both values are byte-identical on a file that wraps four ways, at 120 columns, at 60, and with <code>wrap_lines = false</code>.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>
@@ -45,7 +45,7 @@
 </section>
 <section class="option" id="resharper_indent_wrapped_function_names">
 <h2><code>resharper_indent_wrapped_function_names</code> <a class="self" href="#resharper_indent_wrapped_function_names">#</a></h2>
-<p>Indent a wrapped function name. Inert: the oracle returns the file unchanged at both values.</p>
+<p>Indent a wrapped function name. Inert: the oracle returns the file unchanged at both values — on a wrapped call chain, a wrapped qualified name and a split declaration, alone and paired with <code>wrap_after_dot_in_method_calls</code>, <code>align_multiline_calls_chain</code>, <code>outdent_dots</code> and <code>continuous_line_indent</code>. The C#-prefixed spelling is equally inert.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>
@@ -60,7 +60,7 @@
 </section>
 <section class="option" id="resharper_keep_user_wrapping">
 <h2><code>resharper_keep_user_wrapping</code> <a class="self" href="#resharper_keep_user_wrapping">#</a></h2>
-<p>Undocumented ReSharper property; classified as C#-relevant by vocabulary.</p>
+<p>Inert. Measured over all four corners of the <code>keep_user_linebreaks</code> table and at three margins: <code>keep_user_linebreaks</code> decides whether the author's breaks survive and this key never appears in the answer.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>
@@ -74,7 +74,7 @@
 </section>
 <section class="option" id="resharper_prefer_line_break_after_multiline_lparen">
 <h2><code>resharper_prefer_line_break_after_multiline_lparen</code> <a class="self" href="#resharper_prefer_line_break_after_multiline_lparen">#</a></h2>
-<p>Undocumented ReSharper property; classified as C#-relevant by vocabulary.</p>
+<p>Whether a break follows a <code>(</code> whose contents span lines. Inert at both values and in both spellings, on a multi-statement lambda argument, a wide initializer argument and a nested call, at 120 and at 80 columns.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>
@@ -88,7 +88,7 @@
 </section>
 <section class="option" id="resharper_wrap_arguments">
 <h2><code>resharper_wrap_arguments</code> <a class="self" href="#resharper_wrap_arguments">#</a></h2>
-<p>The language-generic argument wrap style the export writes alongside the C# one.</p>
+<p>The language-generic argument wrap style the export writes alongside the C# one. Inert: <code>chop_always</code> changes nothing, while <code>csharp_wrap_arguments_style = chop_always</code> in the same run chops every argument list in the file.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td>one of <code>wrap_if_long</code>, <code>chop_if_long</code>, <code>chop_always</code></td></tr>
@@ -103,7 +103,7 @@
 </section>
 <section class="option" id="resharper_wrap_before_colon">
 <h2><code>resharper_wrap_before_colon</code> <a class="self" href="#resharper_wrap_before_colon">#</a></h2>
-<p>A break around a <code>:</code> lands before it.</p>
+<p>A break around a <code>:</code> lands before it. Inert in both spellings, while <code>wrap_before_extends_colon = true</code> in the same run moves a base list's <code>:</code> onto its own line.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>
