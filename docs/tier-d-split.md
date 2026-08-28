@@ -1,6 +1,6 @@
 # The Tier D split
 
-`Core/Rikarin.Skala.Options/options.json` carries **520** options: **284 Tier A, 6 Tier C, 230 Tier D**.
+`Core/Rikarin.Skala.Options/options.json` carries **520** options: **287 Tier A, 6 Tier C, 227 Tier D** (284/6/230 when this document was written; the `force_chop_compound_*` triple was implemented and promoted on 2026-08-28).
 “Tier D” has only ever meant *not Tier A* — and Tier A is a narrow claim: the formatter reads the option
 **and** a committed oracle fixture pins it. Quoting the 230 as remaining work turns that narrow claim into
 a coverage number it was never making, which is where “45 % of the standard is unenforced” comes from.
@@ -14,6 +14,46 @@ files move. **Re-derive the counts before quoting them**; § “Re-deriving the 
 document” says how, and it is a few lines. A number in prose beside a number in a generated file is a
 number that will drift, and this repository has been bitten by exactly that before
 ([03](plan/03-configuration-model.md) § “The tier matrix is published”).
+
+## ⚠ Correction, 2026-08-28 — the “export value” column is wrong in 9 rows
+
+**This document's per-row value column is the registry `default`, not the value the `.editorconfig`
+export actually sets.** For most rows the two coincide; for **9 of the 63 implementable rows they do
+not**, and where they differ the verdict can flip — because "implementable" here means *diverges at
+the value the standard sets*, and a row measured at the wrong value answers a different question.
+
+Five were confirmed three ways (`skala config explain` with source file:line, the committed sweep's
+per-value hashes, and a live `verify` run) and **are not defects** — they agree at the export's value
+and diverge only at values the export never uses:
+
+| key | this document said | the export actually sets | Skala there |
+|---|---|---|---|
+| `resharper_csharp_wrap_after_invocation_lpar` | `false` | **`true`** (`.editorconfig:394`) | agrees |
+| `resharper_csharp_wrap_before_invocation_rpar` | `false` | **`true`** (`.editorconfig:399`) | agrees |
+| `resharper_csharp_wrap_chained_method_calls` | `wrap_if_long` | **`chop_if_long`** (`:830`, via alias) | agrees |
+| `resharper_csharp_wrap_chained_binary_expressions` | `wrap_if_long` | **`chop_if_long`** (`:828`) | agrees |
+| `resharper_csharp_wrap_chained_binary_patterns` | `wrap_if_long` | **`chop_if_long`** (`:829`) | agrees |
+
+Four more carry the same column defect without a changed verdict — they disagree at *every* value and
+have `BaselineAgrees = false` regardless: `resharper_csharp_keep_existing_property_patterns_arrangement`,
+`resharper_csharp_wrap_after_declaration_lpar`, `resharper_csharp_wrap_before_declaration_rpar`,
+`resharper_csharp_wrap_extends_list_style`.
+
+⚠ **Read the export, not this column, before acting on any row.** The rest of the table has not been
+re-checked key by key.
+
+### Where the count stands after this correction
+
+- **−5** rows move to *enforced at the export's own value* (58 → 63).
+- **−3** implemented on 2026-08-28: the `force_chop_compound_{if,do,while}_expression` triple, now
+  Tier A, Conformant at both values against `jb cleanupcode` 2025.2.6.
+- **`resharper_csharp_wrap_lines` is blocked, and provably not its own defect.** At the export's
+  values it and `resharper_csharp_wrap_extends_list_style` produce byte-identical hashes on both
+  sides — one defect (a single-base-type base list that overflows and Skala will not wrap) surfacing
+  under two keys.
+
+**So the finish line is ~55, not 63.** The headline table below is left as first written, so the
+correction is visible as a correction.
 
 ## Headline
 
