@@ -8,21 +8,24 @@ using Rikarin.Skala.Formatting.CSharp;
 namespace Rikarin.Skala.Server;
 
 /// <summary>
-///     The one implementation the daemon and the LSP server both call.
+///     The formatting cache behind the LSP server.
 /// </summary>
 /// <remarks>
-///     ⚠ docs/plan/11's correctness rule:
-///     <b>
-///         every command must work identically with
-///         <c>SKALA_NO_DAEMON=1</c>
-///     </b>. The way to keep that true is for the warm path to be the cold path
-///     plus a cache, and never a second implementation — so this holds results, not decisions.
+///     ⚠ docs/plan/11's correctness rule: <b>the LSP server may not have behaviour the CLI does not.</b>
+///     The way to keep that true is for the warm path to be the cold path plus a cache, and never a
+///     second implementation — so this holds results, not decisions.
 ///     <para>
 ///         The cache is keyed on the file's <em>content hash</em> together with the resolved configuration's
-///         identity, not on the path and not on a timestamp. A daemon never watches the filesystem
+///         identity, not on the path and not on a timestamp. The server never watches the filesystem
 ///         (docs/plan/11: "It is asked; it does not observe"), so a path-keyed cache would serve a stale
-///         answer for as long as nobody thought to invalidate it, and file watching is exactly where daemons
-///         acquire their stale-state bugs.
+///         answer for as long as nobody thought to invalidate it, and file watching is exactly where warm
+///         processes acquire their stale-state bugs.
+///     </para>
+///     <para>
+///         ⚠ This was shared with the format daemon until the daemon was deleted. The bounds below were
+///         written for a process that lived for thirty minutes across many repositories; an LSP session is
+///         one editor over one tree, so they are now generous rather than tight, which is the right
+///         direction for a bound to be wrong in.
 ///     </para>
 /// </remarks>
 public sealed class FormatService {
@@ -43,14 +46,14 @@ public sealed class FormatService {
     /// <summary>
     ///     ⚠ <b>And it is an LRU, which it also used to not be.</b> The old comment argued that
     ///     "an LRU needs a lock on the hot path to be an LRU at all", so it cleared the whole dictionary
-    ///     on overflow — which throws away every hot entry along with the cold ones and gives a daemon
+    ///     on overflow — which throws away every hot entry along with the cold ones and gives a server
     ///     that periodically forgets the file the developer is editing. It does not need a lock: the hit
     ///     path stamps a monotonic tick with one interlocked write, and only the miss path — which is
     ///     already doing a full format — ever sorts or evicts.
     /// </summary>
     public int Held => _cache.Count;
 
-    /// <summary>Approximate retained bytes. Read by <see cref="MemoryPolicy" /> and by `daemon status`.</summary>
+    /// <summary>Approximate retained bytes, against <see cref="CapacityBytes" />.</summary>
     public long Bytes => Interlocked.Read(ref _bytes);
 
     public long Hits { get; private set; }
@@ -156,7 +159,7 @@ public sealed class FormatService {
     /// </summary>
     /// <remarks>
     ///     ⚠ The configuration's identity is every <c>.editorconfig</c> in the chain together with the
-    ///     version stamp each carries, so a config edited under a running daemon changes the key rather
+    ///     version stamp each carries, so a config edited under a running server changes the key rather
     ///     than needing an invalidation message. <see cref="ConfigurationCache" /> re-reads a document
     ///     whose <c>(mtime, length)</c> moved and hands out a new version with it.
     /// </remarks>

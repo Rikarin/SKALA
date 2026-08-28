@@ -1,37 +1,39 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <!--
-    The `skala` tool. Argument parsing and rendering only: every command's logic lives in
-    Rikarin.Skala.Core so that MSBuild, MCP and the server can host it (docs/plan/02 § project graph).
+    The `skala` tool, and the `Rikarin.Skala.Cli` package. Argument parsing and rendering only:
+    every command's logic lives in Rikarin.Skala.Core so that MSBuild, MCP and the LSP server can
+    host it (docs/plan/02 § project graph).
   -->
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <RootNamespace>Rikarin.Skala.Cli</RootNamespace>
     <!--
-      ⚠ `skala-tool`, not `skala`, since M7. The NativeAOT thin client
-      (Tools/Rikarin.Skala.Client) is what a hook, an editor and a person invoke, and it publishes
-      as `skala`; this is what it falls back to and what the daemon runs as. The two must be able to
-      sit in one directory, so they need two names — before the rename the client's `skala.dll`
-      silently overwrote this project's in the published layout, and the tool's apphost then failed
-      to start.
+      ⚠ `skala`, and it is the tool package's command.
 
-      ⚠ **This project is no longer the tool package; it is the payload inside it.** Until this
-      milestone the comment here read "NativeAOT cannot be packed as a dotnet tool, so the client is
-      a standalone-binary concern … a global-tool install therefore has the old startup cost and the
-      old behaviour, which is correct — it has no client beside it to find." The first clause stopped
-      being true in .NET 10, which supports `Runner="executable"` for a RID-specific tool package
-      (measured on SDK 10.0.400), and the second was only ever correct *because* of the first: a
-      global install with the old 79.5 ms startup is not "correct", it is the budget doc 13 spent a
-      milestone meeting being thrown away by the distribution channel most people use.
+      It was `skala-tool` from M7 until the daemon was deleted: a NativeAOT thin client
+      (Tools/Rikarin.Skala.Client) published as `skala`, this published beside it as the payload it
+      fell back to, and the two needed two names because they had to sit in one directory. The
+      client existed for one number — a warm single-file format inside 40 ms, which needed the
+      79.5 ms framework-dependent start to be paid once instead of per invocation. With no
+      format-on-save consumer and no interactive latency requirement, nothing was buying that
+      number, and the client, the daemon and the protocol went together.
 
-      `Rikarin.Skala.Cli` is now produced by Tools/Rikarin.Skala.Client — the tool command has to be
-      the AOT binary, and only the project that builds a binary can declare it as an entry point.
-      This project is published into that package as `skala-tool`, beside the client, which is the
-      adjacency `Fallback.Locate` looks for. See the Client .csproj for the whole arrangement.
+      ⚠ So the package is an ordinary portable `PackAsTool` again — `Runner="dotnet"`,
+      RID-agnostic, one .nupkg that installs everywhere — rather than the RID-specific
+      `Runner="executable"` shape the AOT command forced. Simpler, and it installs on RIDs nobody
+      built for.
     -->
-    <AssemblyName>skala-tool</AssemblyName>
-    <IsPackable>false</IsPackable>
+    <AssemblyName>skala</AssemblyName>
+
+    <!-- Directory.Build.props defaults every project to unpackable; this is one of the five that is. -->
+    <IsPackable>true</IsPackable>
+    <PackageId>Rikarin.Skala.Cli</PackageId>
+    <PackAsTool>true</PackAsTool>
+    <ToolCommandName>skala</ToolCommandName>
+    <Description>The `skala` tool: one configuration, the same formatting and analysis from the CLI, MSBuild, an editor and CI.</Description>
+    <PackageTags>formatting;analyzers;editorconfig;dotnet-tool;skala</PackageTags>
 
     <!--
       Measured, not assumed. `format check` over Vixen (4 708 files) with the workstation GC and
@@ -44,12 +46,11 @@
     <ConcurrentGarbageCollection>true</ConcurrentGarbageCollection>
 
     <!--
-      ⚠ ReadyToRun — docs/plan/13 § "Startup", mitigation 3. Precompiled native code for the
-      framework-dependent tool, which is what the daemon runs as and what the thin client falls
-      back to. It cuts the JIT cost on the first analysis; it does not make the tool small, and it
-      is not a substitute for mitigation 2 (the AOT client), which is what actually meets the 40 ms
-      budget. Only meaningful with a RuntimeIdentifier, so it is conditioned on one rather than set
-      unconditionally — `dotnet build` with no RID would otherwise warn on every build.
+      ⚠ ReadyToRun. Precompiled native code for the framework-dependent tool: it cuts the JIT cost
+      on the first analysis, and it does not make the tool small. Only meaningful with a
+      RuntimeIdentifier, so it is conditioned on one rather than set unconditionally — `dotnet
+      build` with no RID would otherwise warn on every build, and the tool package is RID-agnostic
+      and does not get it at all.
     -->
     <PublishReadyToRun Condition="'$(RuntimeIdentifier)' != ''">true</PublishReadyToRun>
     <PublishReadyToRunComposite Condition="'$(RuntimeIdentifier)' != ''">false</PublishReadyToRunComposite>
@@ -57,8 +58,8 @@
     <!--
       ⚠ English only, which is not a decision about users: `InvariantGlobalization` is already true
       above, so the localised Roslyn and System.CommandLine resources are 6.6 MB of assemblies this
-      process will never load. Measured on the tool package: 148 files and 38 256 614 bytes before,
-      79 files and 32 929 798 bytes after — this and dropping the client's `.dSYM` together.
+      process will never load. Measured on the tool package when it still shipped the AOT client:
+      148 files and 38 256 614 bytes before, 79 files and 32 929 798 bytes after.
     -->
     <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
   </PropertyGroup>

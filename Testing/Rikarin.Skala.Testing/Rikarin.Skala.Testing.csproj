@@ -36,13 +36,13 @@
   <ItemGroup>
     <AssemblyMetadata Include="SkalaRepositoryRoot" Value="$(SkalaRepositoryRoot)" />
     <!--
-      ⚠ `skala-tool.dll` since M7, not `skala.dll`. The NativeAOT thin client
-      (Tools/Rikarin.Skala.Client) publishes as `skala` and the full tool became `skala-tool`, so
-      that both can sit in one directory — see the comment in Rikarin.Skala.Cli.csproj. These tests
-      drive the full tool, which is the one with the commands in it.
+      ⚠ `skala.dll` again. It was `skala-tool.dll` from M7 until the daemon was deleted, because a
+      NativeAOT thin client published as `skala` had to sit in the same directory as the full tool
+      and two binaries need two names. The client is gone, so there is one binary and it has the
+      obvious name — see the comment in Rikarin.Skala.Cli.csproj.
     -->
     <AssemblyMetadata Include="SkalaCliAssembly"
-                      Value="$(SkalaRepositoryRoot)Tools/Rikarin.Skala.Cli/bin/$(Configuration)/net10.0/skala-tool.dll" />
+                      Value="$(SkalaRepositoryRoot)Tools/Rikarin.Skala.Cli/bin/$(Configuration)/net10.0/skala.dll" />
   </ItemGroup>
 
 </Project>

@@ -61,22 +61,16 @@ class Build : NukeBuild {
     readonly string Runtime = null!;
 
     /// <summary>
-    ///     The shipping layout: a NativeAOT <c>skala</c> beside a ReadyToRun <c>skala-tool</c>.
+    ///     The shipping layout: a ReadyToRun <c>skala</c> for one RID.
     /// </summary>
     /// <remarks>
-    ///     docs/plan/13 § "Startup". The two halves have to be published together and land in one
-    ///     directory, because that adjacency is how the client finds the tool — see
-    ///     <c>Fallback.Locate</c>, which deliberately looks beside its own executable *before* it looks
-    ///     at <c>SKALA_TOOL</c> or the path. Two Skala versions formatting one repository is the failure
-    ///     doc 11 § "Distribution"'s version pinning exists to prevent, and picking up whichever
-    ///     `skala-tool` happens to be on the PATH is exactly how it happens.
-    ///     <para>
-    ///         ⚠ Measured on the reference machine (M-series, 10 cores), 200 runs in a shell loop so that
-    ///         the harness is not the measurement: bare process start is <b>1.68 ms</b> for
-    ///         <c>/usr/bin/true</c>, <b>4.85 ms</b> for the AOT client, and <b>79.5 ms</b> for the framework
-    ///         dependent tool. The client is the difference between meeting the 40 ms warm budget and
-    ///         spending twice it before <c>Main</c> runs.
-    ///     </para>
+    ///     ⚠ This used to publish two binaries — a NativeAOT thin client named <c>skala</c> and this
+    ///     tool beside it as <c>skala-tool</c> — because a warm single-file format had a 40 ms budget
+    ///     and the framework-dependent start alone was <b>79.5 ms</b> (measured on the reference
+    ///     machine, 200 runs in a shell loop; the AOT client was 4.85 ms and <c>/usr/bin/true</c> was
+    ///     1.68 ms). Skala runs ahead of test suites that take twenty minutes and has no
+    ///     format-on-save consumer, so nothing was buying that number, and the client, the daemon and
+    ///     the protocol were deleted together. One binary, one name.
     /// </remarks>
     Target Native =>
         definition => definition
@@ -87,21 +81,11 @@ class Build : NukeBuild {
                     var output = RootDirectory / "artifacts" / "native" / rid;
                     output.CreateOrCleanDirectory();
 
-                    // The full tool first: the client is useless without something to fall back to.
                     DotNetPublish(settings => settings
                             .SetProject(RootDirectory / "Tools" / "Rikarin.Skala.Cli" / "Rikarin.Skala.Cli.csproj")
                             .SetConfiguration(Configuration)
                             .SetRuntime(rid)
                             .SetSelfContained(false)
-                            .SetOutput(output)
-                    );
-
-                    DotNetPublish(settings => settings
-                            .SetProject(
-                                RootDirectory / "Tools" / "Rikarin.Skala.Client" / "Rikarin.Skala.Client.csproj"
-                            )
-                            .SetConfiguration(Configuration)
-                            .SetRuntime(rid)
                             .SetOutput(output)
                     );
 
@@ -379,29 +363,16 @@ class Build : NukeBuild {
     ///     The five published artefacts of docs/plan/02 § "Package boundaries".
     /// </summary>
     /// <remarks>
-    ///     `Rikarin.Skala.Rules`, `Rikarin.Skala.Canonical`, `Rikarin.Skala.MSBuild` and
-    ///     `Rikarin.Skala.Sdk` are ordinary packs. `Rikarin.Skala.Cli` is not, and the shape of this
-    ///     target is that difference.
+    ///     All five are ordinary packs. `Rikarin.Skala.Rules` is the only one that needs properties
+    ///     set from here, and the reason is a packaging concern rather than a rules one.
     ///     <para>
-    ///         ⚠ The tool package is <b>RID-specific</b>, because its command is a NativeAOT binary. .NET 10
-    ///         packs that as <c>tools/any/&lt;rid&gt;/</c> with <c>Runner="executable"</c> in
-    ///         <c>DotnetToolSettings.xml</c>; <c>Runner="dotnet"</c> — the only option before — can only
-    ///         name a managed assembly, which would put the 79.5 ms framework-dependent tool back on the
-    ///         hook path for everyone who installs from NuGet.
-    ///     </para>
-    ///     <para>
-    ///         ⚠ The two publishes happen <b>here</b> and in this order, rather than inside the .csproj:
-    ///         the full tool first, because the client is useless without something to fall back to, and
-    ///         both into one staging directory, because that adjacency is how <c>Fallback.Locate</c> finds
-    ///         the tool. A nested publish inside pack is a second evaluation of the project graph in the
-    ///         middle of the first; pack is then only a copy.
-    ///     </para>
-    ///     <para>
-    ///         ⚠ Packing more than one RID also produces a RID-agnostic wrapper package of the same id whose
-    ///         <c>DotnetToolSettings.xml</c> lists the per-RID package ids. Publishing the wrapper without
-    ///         every package it names produces an install that fails on the platform whose package is
-    ///         missing, so the default is the host RID alone and the full matrix is an explicit
-    ///         <c>--rids</c>.
+    ///         ⚠ <b>The tool package used to be RID-specific and is not any more.</b> Its command was a
+    ///         NativeAOT thin client, which .NET 10 packs as <c>tools/any/&lt;rid&gt;/</c> with
+    ///         <c>Runner="executable"</c>: one .nupkg per RID, a RID-agnostic wrapper package naming
+    ///         them all, a staged payload publish feeding into pack, and an install that fails on any
+    ///         platform whose package was not built. That whole shape existed to keep an 8.65 ms warm
+    ///         single-file format, and the daemon that number depended on has been deleted. The package
+    ///         is <c>Runner="dotnet"</c> and portable again — one .nupkg, every platform.
     ///     </para>
     /// </remarks>
     Target Pack =>
@@ -447,7 +418,8 @@ class Build : NukeBuild {
                     foreach (var project in new[] {
                                  CanonicalDirectory / "Rikarin.Skala.Canonical.csproj",
                                  RootDirectory / "Tools" / "Rikarin.Skala.MSBuild" / "Rikarin.Skala.MSBuild.csproj",
-                                 RootDirectory / "Distribution" / "Rikarin.Skala.Sdk" / "Rikarin.Skala.Sdk.csproj"
+                                 RootDirectory / "Distribution" / "Rikarin.Skala.Sdk" / "Rikarin.Skala.Sdk.csproj",
+                                 RootDirectory / "Tools" / "Rikarin.Skala.Cli" / "Rikarin.Skala.Cli.csproj"
                              }) {
                         DotNetPack(settings => settings
                                 .SetProject(project)
@@ -455,30 +427,6 @@ class Build : NukeBuild {
                                 .SetOutputDirectory(packages)
                                 .EnableNoBuild()
                                 .EnableNoRestore()
-                        );
-                    }
-
-                    foreach (var rid in ToolRuntimes) {
-                        var payload = RootDirectory / "artifacts" / "tool-payload" / rid;
-                        payload.CreateOrCleanDirectory();
-
-                        DotNetPublish(settings => settings
-                                .SetProject(RootDirectory / "Tools" / "Rikarin.Skala.Cli" / "Rikarin.Skala.Cli.csproj")
-                                .SetConfiguration(Configuration)
-                                .SetRuntime(rid)
-                                .SetSelfContained(false)
-                                .SetOutput(payload)
-                        );
-
-                        DotNetPack(settings => settings
-                                .SetProject(
-                                    RootDirectory / "Tools" / "Rikarin.Skala.Client" / "Rikarin.Skala.Client.csproj"
-                                )
-                                .SetConfiguration(Configuration)
-                                .SetRuntime(rid)
-                                .SetOutputDirectory(packages)
-                                .SetProperty("IsPackable", "true")
-                                .SetProperty("SkalaToolPayload", payload)
                         );
                     }
 
@@ -491,17 +439,6 @@ class Build : NukeBuild {
                     }
                 }
             );
-
-    /// <summary>
-    ///     The RIDs the tool package is built for. The host's alone by default — see <see cref="Pack" />
-    ///     for why a wrapper without all of its per-RID packages is worse than none.
-    /// </summary>
-    [Parameter("Semicolon-separated RIDs for the tool package — defaults to the host's")]
-    readonly string Rids = null!;
-
-    string[] ToolRuntimes =>
-        Rids?.Split(';', System.StringSplitOptions.RemoveEmptyEntries)
-        ?? [System.Runtime.InteropServices.RuntimeInformation.RuntimeIdentifier];
 
     AbsolutePath CanonicalDirectory => RootDirectory / "Distribution" / "Rikarin.Skala.Canonical";
 
@@ -534,7 +471,7 @@ class Build : NukeBuild {
     [Parameter("A directory holding the previous release, already built")]
     readonly string BaselineDirectory = null!;
 
-    [Parameter("The previous release's built skala-tool.dll")]
+    [Parameter("The previous release's built skala.dll")]
     readonly string BaselineToolPath = null!;
 
     /// <summary>
@@ -726,7 +663,7 @@ class Build : NukeBuild {
         RootDirectory / "build" / "Rikarin.Skala.Release" / "bin" / Configuration / "net10.0" / "skala-release.dll";
 
     static AbsolutePath ToolAssembly(AbsolutePath root) =>
-        root / "Tools" / "Rikarin.Skala.Cli" / "bin" / "Release" / "net10.0" / "skala-tool.dll";
+        root / "Tools" / "Rikarin.Skala.Cli" / "bin" / "Release" / "net10.0" / "skala.dll";
 
     /// <summary>
     ///     The previous release's tree, extracted beside this one and built.
