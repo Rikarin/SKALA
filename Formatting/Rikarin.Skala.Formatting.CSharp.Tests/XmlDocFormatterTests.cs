@@ -693,11 +693,20 @@ public sealed class XmlDocKeyCoverageTests {
     public void TheSubFormattersKeys_SplitIntoTheTiersTheOracleMeasured() {
         var implemented = PhaseOneOptions.Implemented.ToHashSet();
         var unoracled = Ids.ReadButUnoracled.ToHashSet();
+        var unsubstantiated = Rikarin.Skala.Testing.SweepVerdicts.Unsubstantiated();
 
         foreach (var id in XmlDocIds.Honoured.Add(XmlDocIds.SpaceAfterTripleSlash)) {
             var info = OptionRegistry.Get(id);
             if (implemented.Contains(id)) {
-                Assert.Equal(OptionTier.A, info.Tier);
+                // ⚠ Implemented is a weaker claim than Tier A, and this test conflated them. A key the
+                // sub-formatter reads, whose doc-comment fixture it reproduces, can still diverge at a
+                // value the fixture does not reach — six of these did, and the sweep found them. That is
+                // the same correction OptionCoverageTests already carries for the C# family.
+                Assert.Equal(
+                    unsubstantiated.Contains(info.Key) ? OptionTier.D : OptionTier.A,
+                    info.Tier
+                );
+
                 Assert.False(
                     unoracled.Contains(id),
                     info.Key + " is both implemented and unoracled, which are the two halves of a partition."
@@ -705,7 +714,8 @@ public sealed class XmlDocKeyCoverageTests {
 
                 Assert.True(
                     info.Oracle is { Length: > 0 },
-                    info.Key + " is Tier A and carries no `oracle` glob; Tier A rests on fixture evidence."
+                    info.Key
+                    + " is implemented and carries no `oracle` glob; both tiers here rest on fixture evidence."
                 );
 
                 continue;
@@ -715,11 +725,22 @@ public sealed class XmlDocKeyCoverageTests {
             Assert.Contains(id, unoracled);
         }
 
+        // ⚠ The split the oracle measured: 13 of the 22 reproduce their doc-comment fixture and 9 do
+        // not. That is a statement about the fixtures and it has not changed. What the sweep changed is
+        // how many of the 13 may *claim Tier A* — six of them diverge at a value the fixture does not
+        // reach — so the tier count is asserted separately and against the sweep rather than baked in.
         Assert.Equal(
             13,
             XmlDocIds.Honoured.Add(XmlDocIds.SpaceAfterTripleSlash).Count(implemented.Contains)
         );
 
         Assert.Equal(9, XmlDocIds.Honoured.Count(unoracled.Contains));
+
+        Assert.Equal(
+            XmlDocIds.Honoured.Add(XmlDocIds.SpaceAfterTripleSlash)
+                .Count(id => implemented.Contains(id) && !unsubstantiated.Contains(OptionRegistry.Get(id).Key)),
+            XmlDocIds.Honoured.Add(XmlDocIds.SpaceAfterTripleSlash)
+                .Count(id => OptionRegistry.Get(id).Tier == OptionTier.A)
+        );
     }
 }

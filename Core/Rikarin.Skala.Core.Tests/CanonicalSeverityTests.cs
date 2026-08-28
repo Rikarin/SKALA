@@ -185,12 +185,30 @@ public sealed class CanonicalSeverityTests {
     }
 
     /// <summary>
-    ///     The real payload against a repository that carries none of it — the case that broke Vixen.
-    ///     ⚠ Asserted against the shipped canonical rather than a fixture, because the number of
-    ///     <c>cs*</c> lines in it is the whole reason this report exists.
+    ///     The real payload against a repository that carries none of it: nothing build-breaking moves.
     /// </summary>
+    /// <remarks>
+    ///     ⚠ <b>This assertion was inverted deliberately, and the inversion is the record of a product
+    ///     decision.</b> It read <c>csharp &gt; 200</c> — "the export carries 213" — and its summary called
+    ///     the shipped payload "the case that broke Vixen", because a repository taking the canonical
+    ///     inherited 213 <c>cs*</c> compiler severities and its build changed underneath it.
+    ///     <para>
+    ///         The export no longer sets any of them. Jiu rewrote <c>editor_config_template</c> to drop all
+    ///         240 <c>dotnet_diagnostic.*</c> assignments — 213 <c>cs*</c>, 23 VB <c>bc*</c>, four
+    ///         <c>ca*</c>/<c>wme</c>/<c>syslib</c> — so **Skala no longer ships compiler severities at all**
+    ///         and adopting the canonical can no longer break a build on severity grounds.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ The assertion is <em>zero</em> rather than deleted, and that matters: a deleted test would
+    ///         let the severities return unnoticed in a future export, which is exactly the regression that
+    ///         made this file necessary. The reporting machinery it used to exercise is still covered —
+    ///         the synthetic payloads above drive <c>Introduced</c>, <c>Raised</c> and the rest, including
+    ///         <c>CS9209</c> — so what is retired here is the claim about the shipped payload, not the
+    ///         instrument.
+    ///     </para>
+    /// </remarks>
     [Fact]
-    public void TheShippedCanonical_MovesManyCompilerSeverities() {
+    public void TheShippedCanonical_MovesNoCompilerSeverities() {
         var status = CanonicalSync.Describe(
             Path,
             exists: true,
@@ -199,9 +217,16 @@ public sealed class CanonicalSeverityTests {
             CanonicalEditorConfig.Text
         );
 
-        var csharp = status.BuildBreaking.Count(static change => change.IsCSharp);
+        var csharp = status.BuildBreaking.Where(static change => change.IsCSharp).ToArray();
 
-        Assert.True(csharp > 200, $"Only {csharp} C# compiler severities move; the export carries 213.");
-        Assert.Contains(status.BuildBreaking, static change => change.Diagnostic == "CS9209");
+        Assert.True(
+            csharp.Length == 0,
+            csharp.Length
+            + " C# compiler severities move, and the export is supposed to carry none: "
+            + string.Join(", ", csharp.Take(10).Select(static change => change.Diagnostic))
+            + ".\n\nEither a `dotnet_diagnostic.*` assignment has come back into editor_config_template, "
+            + "or the canonical was regenerated from an older export. Adopting the canonical must not "
+            + "change a downstream build's diagnostics."
+        );
     }
 }

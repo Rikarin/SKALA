@@ -90,13 +90,19 @@ public sealed class XmlDocOracleTests {
             return;
         }
 
+        // ⚠ Tier D has two honest causes here and this assertion used to admit only one. The fixture
+        // pins the *export's* configuration; the key-flip sweep flips the key. A key can reproduce its
+        // doc-comment fixture byte for byte and still diverge at another value — every one of the six
+        // demoted at c0691cb7 does exactly that — and demanding `row.Agrees == false` of those turns a
+        // correct demotion into a test failure. What must still be caught is the stale reason: Tier D
+        // with no evidence behind it from either instrument.
         Assert.True(
-            row.Agrees == false,
-            $"{row.Key} is Tier {tier} and Skala now reproduces its doc-comment fixture byte for byte. "
-            + "Tier D in this family means 'measured against the oracle, and disagreeing' — a divergence that "
-            + "has been fixed must be promoted to A in the same commit that fixes it, and its "
-            + "docs/divergences.md entry retired. Leaving it at D is a stale reason, which is the failure "
-            + "this assertion exists to catch."
+            row.Agrees == false || SweepVerdicts.Unsubstantiated().Contains(row.Key),
+            $"{row.Key} is Tier {tier}, Skala reproduces its doc-comment fixture byte for byte, and the "
+            + "committed key-flip sweep does not contradict it either. Tier D in this family means "
+            + "'measured against the oracle, and disagreeing' — by the fixture, or by the sweep at a value "
+            + "the fixture does not reach. With neither saying so the reason is stale: promote it to A in "
+            + "the same commit that fixes it and retire its docs/divergences.md entry."
         );
     }
 

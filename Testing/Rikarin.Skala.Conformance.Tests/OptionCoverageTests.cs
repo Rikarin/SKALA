@@ -168,25 +168,13 @@ public sealed class OptionCoverageTests {
     ///     </para>
     /// </remarks>
     static HashSet<OptionId> SweepUnsubstantiated() {
-        var path = Path.Combine(
-            Corpus.RepositoryRoot,
-            "Testing",
-            "Rikarin.Skala.Conformance.Sweep",
-            "conformance-sweep.json"
-        );
-
-        if (!File.Exists(path)) {
-            return [];
-        }
-
+        // ⚠ Through the shared reader. This logic existed here alone until XmlDocOracleTests and
+        // XmlDocFormatterTests turned out to need the same answer and each asserted its own version of
+        // "the fixture agrees, so the key is Tier A" instead — the one-configuration fallacy the sweep
+        // exists to refute, restated in a newer test. One implementation, three callers.
         var unsubstantiated = new HashSet<OptionId>();
-        using var document = System.Text.Json.JsonDocument.Parse(File.ReadAllText(path));
-        foreach (var row in document.RootElement.EnumerateArray()) {
-            if (string.Equals(row.GetProperty("Outcome").GetString(), "Conformant", StringComparison.Ordinal)) {
-                continue;
-            }
-
-            if (OptionRegistry.TryResolve(row.GetProperty("Key").GetString() ?? string.Empty, out var id)) {
+        foreach (var key in SweepVerdicts.Unsubstantiated()) {
+            if (OptionRegistry.TryResolve(key, out var id)) {
                 unsubstantiated.Add(id);
             }
         }
