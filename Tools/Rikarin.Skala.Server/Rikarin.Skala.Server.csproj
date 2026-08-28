@@ -1,8 +1,15 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <!--
-    The daemon and the LSP server. Two transports over one implementation, and neither of them may
-    have behaviour the CLI does not (docs/plan/11 § "The daemon", § "LSP").
+    The LSP server and the git-hook installer. Neither may have behaviour the CLI does not
+    (docs/plan/11 § "LSP", § "Git hooks").
+
+    ⚠ There was a format daemon here too, with a thin NativeAOT client and a JSON protocol beside it
+    (Tools/Rikarin.Skala.Client, Tools/Rikarin.Skala.Protocol). It is gone. Skala runs ahead of test
+    suites that take twenty minutes; there is no format-on-save consumer and no interactive latency
+    requirement, so a warm-process optimisation was buying nothing and costing a second
+    implementation of formatting, reporting and exit codes that had to be kept in step with the
+    CLI's — and twice was not.
   -->
 
   <PropertyGroup>
@@ -12,7 +19,6 @@
   <ItemGroup>
     <ProjectReference Include="../../Core/Rikarin.Skala.Core/Rikarin.Skala.Core.csproj" />
     <ProjectReference Include="../../Formatting/Rikarin.Skala.Formatting.CSharp/Rikarin.Skala.Formatting.CSharp.csproj" />
-    <ProjectReference Include="../Rikarin.Skala.Protocol/Rikarin.Skala.Protocol.csproj" />
   </ItemGroup>
 
 </Project>

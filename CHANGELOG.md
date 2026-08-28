@@ -13,7 +13,71 @@ missed it says so and by how much; three of them were, and one of those is still
 
 ## Unreleased
 
+### Removed — the daemon, the thin client, and the performance budget
+
+⚠ **Breaking, for anyone who typed `skala daemon`, `--no-daemon` or `SKALA_NO_DAEMON=1`.** All three
+are removed rather than accepted-and-ignored: nothing in this repository passed them, no version has
+been tagged, and a flag that is silently a no-op lies to the next person who reads a script
+containing it.
+
+Deleted: `Tools/Rikarin.Skala.Client` (the NativeAOT thin client), `Tools/Rikarin.Skala.Protocol`
+(the wire format), and from `Tools/Rikarin.Skala.Server` the `Daemon`, `DaemonClient`, `DaemonUse`,
+`BuildIdentity`, `MemoryPolicy` and `RetainedCompilations` types. With them go
+`PerformanceBudgetTests`, `ClientAgreesWithToolTests`, `StaleDaemonTests`, `StaleBuildTests`,
+`MemoryPolicyTests`, the daemon half of `ServerTests`, and the `performance` CI job.
+
+**Why.** The daemon existed for one number: doc 13's 40 ms warm single-file format, which existed for
+a post-edit agent hook firing on every file write. There is no such consumer. Skala runs ahead of
+test suites that take about twenty minutes, and a formatter that costs 200 ms instead of 9 ms is not
+noticed by anything. The budget is withdrawn in doc 13 § "Budgets" and doc 12 § "Performance tests"
+rather than left standing with nothing measuring it.
+
+**What it was costing**, which is the part worth recording:
+
+- `DaemonUse.TryFormat` was a **second implementation** of the reporting, the file writing and the
+  exit codes for one command shape (a single named file, no `--staged`, no `--range`, no overrides).
+  Two implementations of what `format --check` prints is one more than the number that can be right.
+- The protocol carried no xmldoc switch, so the daemon **could not serve `--no-xmldoc`** and refused
+  it. Correct, and still a shape the CLI accepted and the daemon did not.
+- Two binaries — the client owned the name `skala`, so the tool was `skala-tool` — that had to ship
+  in one directory because adjacency was how the client found the tool, in a **RID-specific** tool
+  package, because a native command cannot be `Runner="dotnet"`.
+
+⚠ **The stale-daemon build check goes out with it, three commits after it went in.** `BuildIdentity`
+and its two regression tests landed in the entry below, and they were the right fix: a daemon serving
+the build it was launched with cost two agents about forty minutes each in one day. Deleting them is
+not a regression — the defect they guarded is a property of holding a process open across a rebuild,
+and nothing holds a process open any more. It is recorded here rather than left to vanish because a
+guard disappearing silently is how the thing it guarded comes back.
+
+**Kept**, because they never belonged to the daemon: `LanguageServer` and the `FormatService` cache
+behind it (`skala lsp` — an editor asking for the same document repeatedly is a case where a warm
+cache still pays), and `GitHooks` with `skala hooks install`, which moves from `DaemonCommands` to
+`HooksCommands`.
+
+⚠ **The command is still `skala`, and the full tool takes that name back.** `skala-tool` existed only
+because the client owned `skala`; `Rikarin.Skala.Cli` is now an ordinary portable `PackAsTool`
+package — `Runner="dotnet"`, RID-agnostic, one .nupkg that installs everywhere, no `--rids` on
+`./build.sh Pack`. Verified by `dotnet tool install` from a local feed: the command runs, and
+`format`, `format --check`, `format --diff`, `check --load loose`, `verify`, `explain`,
+`rules list`, `config sync --apply` and `hooks install` all work. `skala daemon` and `--no-daemon`
+are rejected with a message naming them, exit 3 — the documented code for an invocation the tool
+refuses — rather than silently accepted.
+
+⚠ **The package is less than half the size: 33.4 MB → 15.2 MB**, same machine, 89 files either way.
+Not a goal, and worth recording: the RID-specific package carried ReadyToRun native images of Roslyn
+*and* the 2.9 MB AOT binary, where a portable package carries IL.
+
+**Formatter output is unchanged.** Identical stdout, exit codes and on-disk bytes against the
+pre-removal binary with a live daemon, across ten shapes: `format`, `--check`, `--diff`, `--quiet`,
+`--check --quiet` and `--no-xmldoc`, each on a file that changes and a file that does not. No corpus
+file, sweep artefact or fidelity number moves.
+
 ### Fixed — a running daemon served the build it was launched with, for ever, and nothing said so
+
+> ⚠ **Superseded by the entry above: the daemon this fixes is deleted.** The entry is kept whole
+> because the measurement in it is real and the reasoning is reusable — an identity check that a
+> timestamp would have got wrong, and a stamp-then-verify gate that made it cost 0.072 ms.
 
 `skala format` routes through the daemon by default, and the only compatibility check the daemon
 made was `DaemonProtocol.Version` — a **wire** version, "bumped whenever `DaemonRequest` or

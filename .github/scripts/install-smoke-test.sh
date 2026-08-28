@@ -9,11 +9,13 @@
 # each of them invisible from inside it. So this runs outside the checkout, in a directory created
 # by `mktemp`, against a `git init` that has never seen Skala.
 #
-# ⚠ The deep-path case is deliberate and is not padding. doc 13 § "Startup": a Unix domain socket
-# path caps at 104 bytes (macOS) or 108 (Linux), `<repo>/.skala/daemon.sock` exceeds that past about
-# eighty-five characters, and before M7 the daemon died there of an unhandled exception **with exit
-# code 0** while every later format silently took the cold path. CI workspaces, nested monorepos,
-# paths under ~/Library and git worktrees all reach it.
+# ⚠ The deep-path case is deliberate and is not padding. It was written for the format daemon — a
+# Unix domain socket path caps at 104 bytes (macOS) or 108 (Linux), `<repo>/.skala/daemon.sock`
+# exceeded that past about eighty-five characters, and the daemon died there of an unhandled
+# exception **with exit code 0** while every later format silently took the cold path. The daemon is
+# gone and that particular hazard with it, but CI workspaces, nested monorepos, paths under
+# ~/Library and git worktrees all still reach depths where path handling goes wrong, and the case
+# costs one `mkdir -p`.
 #
 # Usage: install-smoke-test.sh <feed-directory>
 
@@ -50,11 +52,6 @@ WORK="$(mktemp -d)"
 FAILURES=0
 
 cleanup() {
-  # ⚠ Stop the daemons this test started before uninstalling the binary they are running from.
-  for repository in "$SHALLOW" "$DEEP"; do
-    [ -n "${repository:-}" ] && [ -d "${repository:-}" ] && (cd "$repository" && "$SKALA" daemon stop >/dev/null 2>&1 || true)
-  done
-
   dotnet tool uninstall --global Rikarin.Skala.Cli >/dev/null 2>&1 || true
   rm -rf "$WORK"
 }
@@ -87,7 +84,7 @@ assert() {
 # ── the two repositories ───────────────────────────────────────────────────────
 SHALLOW="$WORK/shallow"
 
-# ⚠ 100+ characters of nesting before `.skala/daemon.sock` is appended. `mktemp -d` already
+# ⚠ 100+ characters of nesting before anything under `.skala/` is appended. `mktemp -d` already
 # contributes a fair amount on macOS ($TMPDIR is /var/folders/xx/…/T/), which is the point.
 DEEP="$WORK/deep/organisation-monorepo/services-and-libraries/backend-platform-core/checkout-experience"
 
@@ -161,15 +158,6 @@ dotnet tool install --global --add-source "$FEED" Rikarin.Skala.Cli --version "$
 assert "$([ -e "$SKALA" ] && echo true || echo false)" "the shim exists at $SKALA"
 "$SKALA" --version
 
-# ⚠ The shim is a symlink into the package store and the fallback looks *beside the real binary*.
-# If `Environment.ProcessPath` reported the symlink, `skala-tool` would not be beside it and every
-# command that is not a warm single-file format would exit 5.
-if [ "$WINDOWS" = "0" ]; then
-  STORE="$(dirname "$(cd "$(dirname "$SKALA")" && readlink "$SKALA")")"
-  assert "$([ -e "$HOME/.dotnet/tools/$STORE/skala-tool" ] && echo true || echo false)" \
-    "skala-tool ships beside the command"
-fi
-
 # ── the commands ───────────────────────────────────────────────────────────────
 step "the commands, in the shallow repository"
 cd "$SHALLOW"
@@ -183,46 +171,13 @@ run 0 "skala check --load loose"      -- "$SKALA" check --load loose
 run 0 "skala verify"                  -- "$SKALA" verify
 run 0 "skala explain SK1010"          -- "$SKALA" explain SK1010
 
-# ── the daemon, warm ───────────────────────────────────────────────────────────
-step "the daemon, shallow"
-warm_runs() {
-  # ⚠ Two warm-up runs, not one, and the second is the one that matters. The first single-file
-  # format finds no socket, does the work itself and *leaves a daemon behind* — doc 11's lazy start
-  # — so it asks nobody. The second is the daemon's first request and is a cache miss, because the
-  # daemon holds no documents yet. Only from the third onwards is a run a hit. Sampling before the
-  # second gives "0 hits to 4" for five runs and reads like a defect.
-  "$SKALA" format --check --quiet src/Widget.cs >/dev/null
-  sleep 2
-  "$SKALA" format --check --quiet src/Widget.cs >/dev/null
-  "$SKALA" daemon status
-
-  local before after
-  before="$(daemon_hits)"
-  for _ in 1 2 3 4 5; do "$SKALA" format --check --quiet src/Widget.cs >/dev/null; done
-  after="$(daemon_hits)"
-
-  assert "$([ "$after" -ge $((before + 5)) ] && echo true || echo false)" \
-    "the daemon served all five warm runs ($1: $before hits to $after)"
-}
-
-daemon_hits() { "$SKALA" daemon status | sed -E 's/.*, ([0-9]+) hits.*/\1/'; }
-
-warm_runs shallow
-
-# ⚠ The case that used to kill the daemon with exit code 0. On Windows the transport is a named
-# pipe, which has no path length to exceed, so the assertion about where the socket went is Unix
-# only — but the commands run everywhere, because a deep path has other ways to go wrong.
-step "the daemon, ${#DEEP} characters deep"
+# ── the same commands, deep ────────────────────────────────────────────────────
+step "the commands, ${#DEEP} characters deep"
 cd "$DEEP"
-run 0 "skala config sync --apply"  -- "$SKALA" config sync --apply
-run 0 "skala format"               -- "$SKALA" format
-warm_runs "${#DEEP} characters deep"
-
-if [ "$WINDOWS" = "0" ]; then
-  assert "$([ ! -e "$DEEP/.skala/daemon.sock" ] && echo true || echo false)" \
-    "the socket is not in the repository, where its path would not fit in 104 bytes"
-  run 0 "skala daemon status names the relocated socket" -- "$SKALA" daemon status
-fi
+run 0 "skala config sync --apply"     -- "$SKALA" config sync --apply
+run 0 "skala format"                  -- "$SKALA" format
+run 0 "skala format --check (clean)"  -- "$SKALA" format --check --quiet src/Widget.cs
+run 0 "skala check --load loose"      -- "$SKALA" check --load loose
 
 # ── the other four packages ────────────────────────────────────────────────────
 # ⚠ One PackageReference on the meta package, which is the claim doc 02 makes for it. If the
@@ -260,8 +215,6 @@ assert "$(grep -q 'Skala: ' "$BUILD" && echo false || echo true)" "no Skala diag
 # ── uninstall ──────────────────────────────────────────────────────────────────
 step "dotnet tool uninstall"
 cd "$WORK"
-(cd "$SHALLOW" && "$SKALA" daemon stop >/dev/null 2>&1 || true)
-(cd "$DEEP" && "$SKALA" daemon stop >/dev/null 2>&1 || true)
 dotnet tool uninstall --global Rikarin.Skala.Cli
 assert "$([ ! -e "$SKALA" ] && echo true || echo false)" "the shim is gone"
 assert "$([ ! -d "$HOME/.dotnet/tools/.store/rikarin.skala.cli" ] && echo true || echo false)" \

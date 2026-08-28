@@ -13,8 +13,8 @@ namespace Rikarin.Skala.Server;
 ///     than for the one it deleted today.
 ///     <para>
 ///         The hook is deliberately two lines and deliberately not clever. It calls the same CLI a person
-///         calls; there is no second code path to keep in step, which is the same rule the daemon and the
-///         LSP server are held to.
+///         calls; there is no second code path to keep in step, which is the same rule the LSP server is
+///         held to.
 ///     </para>
 /// </remarks>
 public static class GitHooks {

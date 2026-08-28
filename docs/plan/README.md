@@ -57,7 +57,7 @@ AI agent agree with Rider about what the code should look like.
 | 08 | [Rule Catalogue](08-rule-catalogue.md) | The `SK####` rules, their ranges, the modernization set, ID stability |
 | 09 | [Quality Gates and Reporting](09-quality-gates-and-reporting.md) | SARIF, baselines, gates, metrics, duplication, CI surfaces |
 | 10 | [AI Agent Integration](10-ai-agent-integration.md) | The MCP server, agent-shaped output, hooks, the verify loop |
-| 11 | [CLI and Integrations](11-cli-and-integrations.md) | Command surface, daemon, LSP, MSBuild, git hooks, NUKE |
+| 11 | [CLI and Integrations](11-cli-and-integrations.md) | Command surface, LSP, MSBuild, git hooks, NUKE |
 | 12 | [Conformance and Testing](12-conformance-and-testing.md) | The Rider oracle, idempotency, the corpus, the key-flip sweep, fuzzing, golden files |
 | 13 | [Performance](13-performance.md) | Budgets, measurements, parallelism, the cache, what is allowed to be slow |
 | 14 | [Web Languages](14-web-languages.md) | HTML, CSS, `.vxml`, `.vcss`, and the language-plugin contract |

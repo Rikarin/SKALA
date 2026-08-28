@@ -430,7 +430,7 @@ itself — and `resharper_remove_spaces_on_blank_lines` is **Tier D**, inert as 
 ### The sub-formatter is the default
 
 `XmlDocFormatter` re-wraps documentation comments on every run of `skala format`, `skala arrange`,
-the daemon and the MCP server. `--no-xmldoc` is the only thing that turns it off, and the only thing
+the LSP server and the MCP server. `--no-xmldoc` is the only thing that turns it off, and the only thing
 that still reproduces the pinned oracle profile's answer.
 
 ⚠ **RETRACTED, and this is the second retraction in the same entry.** What follows in this section
@@ -1306,9 +1306,9 @@ skala    /// <?skala-probe mode="short"?>         ← (1) fixed: the marker spac
   anything its author wrote; what it may not do is introduce a marker without the option's space —
   and it is the check that found the defect in the first place (`git diff | grep '^+\s*///[^ /]'`
   over this repository's own sources), moved out of a review and into the suite. ⚠ A re-report of the
-  same shape against a **daemon** started before the fix will still reproduce it: nothing in
-  `DaemonProtocol.Version` encodes the formatter build, so a daemon serves the code it was launched
-  with until it is stopped. `--no-daemon` is the check.
+  same shape against a **daemon** started before the fix would still reproduce it: nothing in
+  `DaemonProtocol.Version` encoded the formatter build, so a daemon served the code it was launched
+  with until it was stopped. ⚠ Historical — the daemon is deleted and this hazard with it.
 ## SK-DIV-0024 — a type parameter list wraps when the list overflows, not when the declaration does
 
 T5a gave a type parameter list its first break points: at `wrap_before_type_parameter_langle = false`

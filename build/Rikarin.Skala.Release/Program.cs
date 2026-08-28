@@ -16,7 +16,7 @@ if (args.Length == 0 || args[0] is "-h" or "--help") {
         usage: skala-release plan [options]
 
           --candidate <dir>        the tree being released. Default: the repository this was built from.
-          --candidate-tool <path>  its built `skala-tool.dll` or native `skala`.
+          --candidate-tool <path>  its built `skala.dll` or published `skala`.
           --baseline <dir>         a checkout of the previous release. Omit for the first release.
           --baseline-tool <path>   the previous release's built tool. Omit for the first release.
           --baseline-version <v>   the version the previous release published. Omit for the first release.
@@ -47,7 +47,7 @@ bool Flag(string name) => Array.IndexOf(args, "--" + name) >= 0;
 
 var candidateRoot = Path.GetFullPath(Option("candidate") ?? Rikarin.Skala.Testing.Corpus.RepositoryRoot);
 var candidateTool = Option("candidate-tool")
-    ?? Path.Combine(candidateRoot, "Tools", "Rikarin.Skala.Cli", "bin", "Release", "net10.0", "skala-tool.dll");
+    ?? Path.Combine(candidateRoot, "Tools", "Rikarin.Skala.Cli", "bin", "Release", "net10.0", "skala.dll");
 
 var baselineRoot = Option("baseline") is { Length: > 0 } baseline ? Path.GetFullPath(baseline) : null;
 var baselineToolPath = Option("baseline-tool");

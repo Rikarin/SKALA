@@ -52,11 +52,9 @@ Skala/
 │   ├── Rikarin.Skala.Canonical/             # the canonical .editorconfig, packed and embedded
 │   └── Rikarin.Skala.Sdk/                   # the meta package: three dependencies + starters
 ├── Tools/
-│   ├── Rikarin.Skala.Cli/                   # `skala-tool`, the full tool — payload, not the package
+│   ├── Rikarin.Skala.Cli/                   # `skala`, the tool and the `Rikarin.Skala.Cli` package
 │   ├── Rikarin.Skala.Cli.Tests/
-│   ├── Rikarin.Skala.Client/                # `skala`, NativeAOT — and the `Rikarin.Skala.Cli` package
-│   ├── Rikarin.Skala.Protocol/              # the daemon wire format, references nothing
-│   ├── Rikarin.Skala.Server/                # daemon + LSP        ← exists from M3
+│   ├── Rikarin.Skala.Server/                # LSP + git hooks     ← exists from M3
 │   ├── Rikarin.Skala.Server.Tests/
 │   ├── Rikarin.Skala.Mcp/
 │   ├── Rikarin.Skala.Mcp.Tests/
@@ -147,7 +145,7 @@ what MSBuild and MCP need.
 
 | Package | Kind | Contents | Size | Consumer |
 |---|---|---|---|---|
-| `Rikarin.Skala.Cli` | .NET tool (`skala`) | `tools/any/<rid>/`: the NativeAOT client as the command, the full `skala-tool` beside it | 32.9 MB | `dotnet tool install`, global or into a manifest |
+| `Rikarin.Skala.Cli` | .NET tool (`skala`) | `tools/net10.0/any/`: the framework-dependent tool, `Runner="dotnet"`, RID-agnostic | **15.2 MB** | `dotnet tool install`, global or into a manifest |
 | `Rikarin.Skala.Rules` | Analyzer | `analyzers/dotnet/cs/Rikarin.Skala.Rules.dll` + `…Rules.Metadata.dll` | 74 kB | `PackageReference` with `PrivateAssets=all` |
 | `Rikarin.Skala.MSBuild` | Build | `build/` + `buildTransitive/` props and targets | 9.8 kB | `PackageReference` in `Directory.Build.props` |
 | `Rikarin.Skala.Canonical` | Content | `content/canonical.editorconfig`, its manifest, and a check-only target | 43 kB | `PackageReference`; installed by `skala config sync` ([03](03-configuration-model.md) § "Canonical distribution") |
@@ -182,15 +180,18 @@ once. Everything it would do is start `skala` and read an exit code, which `Exec
 [11](11-cli-and-integrations.md)'s first line says the CLI is the contract and nothing may have
 behaviour it does not.
 
-⚠ **`Rikarin.Skala.Cli` is produced by `Tools/Rikarin.Skala.Client`, not by `Tools/Rikarin.Skala.Cli`.**
-A .NET tool's command *is* its entry point, and since M7 the thing that must be on the hook path is
-the NativeAOT client. .NET 10 packs an AOT project with a `RuntimeIdentifier` as
-`tools/any/<rid>/` with `Runner="executable"`; before that, a tool command could only be a managed
-assembly run through the muxer, which is why the CLI's own `.csproj` used to state that a global
-install "correctly" has the old 79.5 ms startup. It is RID-specific for the same reason, so the
-matrix is `./build.sh Pack --rids …` and the default is the host's alone — a multi-RID pack also
-emits a RID-agnostic wrapper package naming per-RID package ids, and publishing that wrapper without
-every package it names is an install that fails on whichever platform is missing.
+⚠ **`Rikarin.Skala.Cli` was produced by `Tools/Rikarin.Skala.Client` and is produced by
+`Tools/Rikarin.Skala.Cli` again.** A .NET tool's command *is* its entry point; from M7 the thing that
+had to be on the hook path was the NativeAOT thin client, so the package was built by the project
+that built that binary, was RID-specific (`tools/any/<rid>/`, `Runner="executable"` — new in .NET 10),
+carried the full `skala-tool` beside the command as payload, and a multi-RID pack emitted a
+RID-agnostic wrapper package naming per-RID package ids. Publishing that wrapper without every
+package it names is an install that fails on whichever platform is missing, so `./build.sh Pack`
+defaulted to the host RID and took `--rids` for a matrix.
+
+All of that served an 8.65 ms warm single-file format, for a format-on-save consumer that does not
+exist. With the daemon and the client deleted the package is an ordinary portable `PackAsTool` again:
+one .nupkg, `Runner="dotnet"`, every platform, no `--rids`.
 
 ⚠ **`Rikarin.Skala.MSBuild`, `Rikarin.Skala.Sdk` and `Rikarin.Skala.Canonical` target
 `netstandard2.0`.** None of the three has an assembly in its package; the framework is a

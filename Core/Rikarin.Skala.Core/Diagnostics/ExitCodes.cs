@@ -13,9 +13,10 @@ namespace Rikarin.Skala.Core.Diagnostics;
 ///     contract — and the disagreement survived from M1 to M9 because nothing compared them. A contract
 ///     two assemblies must agree on belongs in the assembly they both reference.
 ///     <para>
-///         ⚠ <see cref="Rikarin.Skala.Client" /> is the one exception and stays a literal, because it
-///         references neither Core nor Roslyn on purpose (docs/plan/13 § "Startup"). Its agreement is held
-///         by <c>ClientAgreesWithToolTests</c>, which runs both binaries and compares the codes.
+///         ⚠ There used to be an exception: the NativeAOT thin client repeated these numbers as literals,
+///         because it referenced neither Core nor Roslyn on purpose, and <c>ClientAgreesWithToolTests</c>
+///         ran both binaries and compared the codes to hold the copy in step. The client is gone with the
+///         daemon, so there is no copy left and there is nothing to compare.
 ///     </para>
 /// </remarks>
 public static class ExitCodes {

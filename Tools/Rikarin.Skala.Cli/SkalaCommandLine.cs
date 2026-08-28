@@ -17,8 +17,8 @@ namespace Rikarin.Skala.Cli;
 /// </summary>
 /// <remarks>
 ///     Argument parsing and rendering only. Every command's behaviour lives in
-///     <see cref="ConfigCommands" /> in Core, because the daemon, MSBuild and MCP host the same logic
-///     and nothing may reference this assembly (docs/plan/02 § "The project graph").
+///     <see cref="ConfigCommands" /> in Core, because MSBuild, MCP and the LSP server host the same
+///     logic and nothing may reference this assembly (docs/plan/02 § "The project graph").
 /// </remarks>
 public static partial class SkalaCommandLine {
     /// <summary>
@@ -61,7 +61,6 @@ public static partial class SkalaCommandLine {
         root.Subcommands.Add(CreateTrendCommand());
         root.Subcommands.Add(CreateCacheCommand());
         root.Subcommands.Add(CreateConfigCommand());
-        root.Subcommands.Add(CreateDaemonCommand());
         root.Subcommands.Add(CreateLspCommand());
         root.Subcommands.Add(CreateMcpCommand());
         root.Subcommands.Add(CreateHooksCommand());
@@ -194,10 +193,6 @@ public static partial class SkalaCommandLine {
             Description = "Re-read and re-resolve every .editorconfig per file instead of memoising it."
         };
 
-        var noDaemon = new Option<bool>("--no-daemon") {
-            Description = "Do everything in this process. The daemon is only ever an optimisation."
-        };
-
         // ⚠ SK-DIV-0006, inverted. Documentation comments are formatted by default because Rider's
         // editor formats them; `jb cleanupcode` does not, which makes this the one place the oracle
         // and the editor are known to disagree and Skala sides with the editor. `--no-xmldoc` is
@@ -247,7 +242,6 @@ public static partial class SkalaCommandLine {
         command.Options.Add(option);
         command.Options.Add(jobs);
         command.Options.Add(noCache);
-        command.Options.Add(noDaemon);
         command.Options.Add(define);
         command.Options.Add(load);
         command.Options.Add(noXmlDoc);
@@ -317,15 +311,6 @@ public static partial class SkalaCommandLine {
                     Jobs = parse.GetValue(jobs),
                     XmlDoc = !parse.GetValue(noXmlDoc)
                 };
-
-                // ⚠ The daemon is tried first and its failure is never an error. docs/plan/11's
-                // correctness rule is that every command works identically with SKALA_NO_DAEMON=1, so a
-                // daemon that is absent, stale or of another version has to fall through silently to the
-                // same code the daemon itself would have run.
-                if (!parse.GetValue(noDaemon) && DaemonUse.TryFormat(request) is { } served) {
-                    return Run(() => served);
-                }
-
                 return Run(() => FormatCommand.Run(request));
             }
         );
@@ -490,42 +475,6 @@ public static partial class SkalaCommandLine {
         }
     }
 
-    /// <summary>
-    ///     <c>skala daemon status|stop|run</c> — docs/plan/11 § "The daemon".
-    /// </summary>
-    /// <remarks>
-    ///     ⚠ There is no `start`. The daemon is started lazily by whatever needs it and exits after
-    ///     thirty minutes idle; a `start` verb invites a person to run one by hand and then wonder why
-    ///     their editor is using a different one. `run` is the foreground form, for a supervisor and for
-    ///     the tests.
-    /// </remarks>
-    static Command CreateDaemonCommand() {
-        var daemon = new Command("daemon", "The per-repository format daemon.");
-        var path = new Argument<string>("path") {
-            Description = "Any path inside the repository.", DefaultValueFactory = static _ => "."
-        };
-
-        var status = new Command("status", "Whether a daemon is running, and what it is holding.");
-        status.Arguments.Add(path);
-        status.SetAction(parse => Run(() => DaemonCommands.Status(Root(parse.GetValue(path)!))));
-
-        var stop = new Command("stop", "Ask the daemon to exit.");
-        stop.Arguments.Add(path);
-        stop.SetAction(parse => Run(() => DaemonCommands.Stop(Root(parse.GetValue(path)!))));
-
-        var run = new Command("run", "Run the daemon in the foreground.");
-        run.Arguments.Add(path);
-        run.SetAction(parse => DaemonCommands.RunAsync(Root(parse.GetValue(path)!), CancellationToken.None)
-                .GetAwaiter()
-                .GetResult()
-        );
-
-        daemon.Subcommands.Add(status);
-        daemon.Subcommands.Add(stop);
-        daemon.Subcommands.Add(run);
-        return daemon;
-    }
-
     /// <summary><c>skala lsp</c> — stdio, four capabilities (docs/plan/11 § "LSP").</summary>
     static Command CreateLspCommand() {
         var command = new Command("lsp", "Speak the Language Server Protocol over stdio.");
@@ -553,7 +502,7 @@ public static partial class SkalaCommandLine {
         var install = new Command("install", "Write .git/hooks/pre-commit, unless a hook manager owns it.");
         install.Arguments.Add(path);
         install.Options.Add(apply);
-        install.SetAction(parse => Run(() => DaemonCommands.InstallHooks(
+        install.SetAction(parse => Run(() => HooksCommands.InstallHooks(
                     Root(parse.GetValue(path)!),
                     parse.GetValue(apply)
                 )
@@ -848,7 +797,7 @@ public static partial class SkalaCommandLine {
     ///     <see cref="FormatCommand.FindRepositoryRoot" /> that had drifted: it tested only
     ///     <c>Directory.Exists(".git")</c>, so in a git <b>worktree</b> or a <b>submodule</b> — where
     ///     <c>.git</c> is a file containing <c>gitdir: …</c> and not a directory — it walked past the
-    ///     root, returned null, and every path the daemon commands printed came out absolute. Two
+    ///     root, returned null, and every path <c>skala hooks</c> printed came out absolute. Two
     ///     implementations of "where is the repository" is one more than the number that can be right.
     /// </remarks>
     public static string? FindRepositoryRoot(string path) => FormatCommand.FindRepositoryRoot(path);

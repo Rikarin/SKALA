@@ -39,7 +39,6 @@ it was produced by running something.
 | Defaults derived from the oracle rather than guessed | **123** keys |
 | **Rules shipped** | **24 of the 109** the catalogue names — 13 analyzers, 8 metrics, 3 formatter findings — plus 8 tool diagnostics |
 | False positives on the reference trees | **zero**, every finding read at the milestone that shipped it |
-| Warm single-file format | **12.4 ms** against a 40 ms budget |
 | `format --check` over 4 717 files | **12.4–13.8 s** against a 20 s budget |
 | Tests | **9 795 passing**, 0 failing |
 
@@ -62,7 +61,7 @@ the only way in is to build from source. Three packable projects exist (`Rikarin
 
 ```bash
 git clone https://github.com/Rikarin/Skala && cd Skala
-./build.sh Native          # the shipping layout: an AOT `skala` beside a ReadyToRun `skala-tool`
+./build.sh Native          # the shipping layout: a ReadyToRun `skala` for one RID
 artifacts/native/<rid>/skala --help
 ```
 
@@ -71,11 +70,12 @@ additionally wants `dotnet tool install -g JetBrains.ReSharper.GlobalTools --ver
 nothing in the day-to-day loop does: the test run reads committed `.expected.cs` fixtures, and
 regenerating them is a reviewed commit of its own.
 
-⚠ **Two binaries, and the reason is the 40 ms budget.** `skala` is a NativeAOT thin client that
-references a socket and a JSON writer; `skala-tool` beside it is the full tool, which is also what
-the daemon runs as and what the client execs for anything that is not a warm single-file format.
-Before the split, `skala daemon status` — a command that does no work at all — cost **43 ms** before
-`Main` ran, because the one binary referenced Roslyn.
+⚠ **One binary, named `skala`.** There were two — a NativeAOT thin client called `skala` in front
+of a per-repository format daemon, with the full tool beside it as `skala-tool` — because a warm
+single-file format had a 40 ms budget and the framework-dependent start alone was 79.5 ms. Skala
+runs ahead of test suites that take twenty minutes and nothing formats on save, so nothing was
+buying that number; the client, the daemon and the protocol were deleted together and the tool took
+its name back.
 
 ## Using it
 
@@ -90,7 +90,6 @@ skala mcp                    # the same six answers over the Model Context Proto
 skala format [paths…] [--check] [--diff] [--range a:b] [--staged] [--jobs n]
 skala check  [paths…] [--load binlog|workspace|loose] [--gate ci] [--since <ref>] [--baseline]
 skala config explain | check | diff | distill | fix | sync
-skala daemon status | stop | run       # the per-repository format daemon
 skala lsp                              # formatting, range formatting, diagnostics, code actions
 skala hooks install                    # the pre-commit hook, unless a hook manager owns it
 ```
@@ -98,10 +97,6 @@ skala hooks install                    # the pre-commit hook, unless a hook mana
 `--check` writes nothing and exits non-zero when there is anything to do. `--staged` formats the git
 index and writes back to both the worktree and the index; it refuses when a staged file also has
 unstaged changes, unless you pass `--staged=worktree`.
-
-The daemon is started lazily, exits after thirty minutes idle, and is **only ever an optimisation**:
-`SKALA_NO_DAEMON=1` or `--no-daemon` produces byte-identical output, and a daemon that is absent,
-stale or of another protocol version is a silent fallback rather than an error.
 
 ⚠ **Rider needs no integration and will not get one.** Rider already implements this
 `.editorconfig` — it is where the file came from. If Rider and Skala disagree, the fix is in Skala.
@@ -119,14 +114,15 @@ stale or of another protocol version is a silent fallback rather than an error.
 ./build.sh Test          # everything — 9 802 tests
 ./build.sh Conformance   # the differential suite and the fidelity ratchet
 ./build.sh Fidelity      # the ranked divergence report — the work queue
-./build.sh Native        # the AOT client beside the full tool
+./build.sh Native        # a ReadyToRun `skala` for one RID
 ./build.sh Docs          # regenerate docs/rules/ and docs/site/ from the two registries
 ./build.sh Oracle        # ⚠ regenerate the committed fixtures from `jb cleanupcode`
 ```
 
-⚠ **The performance budget assertions do not run under `./build.sh Test`.** They need
-`SKALA_PERF=1` and a published native layout, because a wall-clock assertion on a shared runner is a
-flaky test. CI runs them in a job of their own, on its own runner.
+⚠ **There is no performance budget suite.** There was one — three wall-clock assertions behind
+`SKALA_PERF=1`, in a CI job of their own — and it went with the daemon. The budgets it asserted were
+written for a format-on-save workflow this tool does not have. `format --check` over a large tree is
+still measured, in [`docs/plan/13`](docs/plan/13-performance.md), by running it.
 
 Beyond the Nuke targets, `Testing/Rikarin.Skala.Testing` is a harness of developer-machine actions
 and none of them is a test: `ask <dir>` runs the oracle over a scratch directory so that "what does
@@ -149,7 +145,7 @@ attributed to one construct; `tree <dir> [n]` runs both tools over an arbitrary 
 
 **Not a contract, and it will change:** the formatter's output (closing the last 0.3 % means files
 formatted at 1.0 are formatted differently at 1.1 — pin the version if that matters); which rules
-exist; a rule's default severity; the daemon protocol; and every `Testing/Rikarin.Skala.Testing`
+exist; a rule's default severity; and every `Testing/Rikarin.Skala.Testing`
 subcommand.
 
 **Known gaps at 1.0**, because a version number is not a claim of completeness: `skala arrange` (M4)

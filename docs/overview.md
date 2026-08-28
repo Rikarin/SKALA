@@ -32,12 +32,15 @@ table; both exist on unmerged branches. This file describes `master`.
 
 ## 1.1 Commands
 
-`skala --help`, run against `artifacts/native/osx-arm64/skala-tool`. Sixteen top-level commands, all
-of which exist and do something.
+`skala --help`, run against `artifacts/native/osx-arm64/skala`. Sixteen top-level commands, all of
+which exist and do something. ⚠ There were seventeen: `daemon` is deleted, along with the format
+daemon behind it ([`plan/11`](plan/11-cli-and-integrations.md) § "The daemon, and why it is gone").
+⚠ `arrange` was missing from this table and is not new.
 
 | Command | What it does today | Status |
 |---|---|---|
 | `format <paths>` | Spaces, blank lines, braces, indentation, break presence and position, and wrapping. Writes, checks, diffs, or formats the git index | ✅ |
+| `arrange <paths>` | Rewrites the tree: body styles, `var`, target-typed `new`, qualifiers, usings. Needs a project for the semantic half | ✅ |
 | `check <paths>` | Loads a compilation three ways, runs the analyzers, writes SARIF, evaluates a named gate | ✅ |
 | `verify <paths>` | `format --check` + `check --gate=local` in one pass, shaped for an agent. Exit 0 means nothing to do | ✅ |
 | `fix <paths>` | Applies the fixes findings carry, re-parses to verify each, re-formats what it touched | ✅ |
@@ -49,7 +52,6 @@ of which exist and do something.
 | `trend <path>` | The recorded history from `.skala/history.jsonl` | ✅ |
 | `cache clear` · `stats` | The incremental analysis cache | ✅ |
 | `config explain` · `check` · `diff` · `distill` · `fix` · `sync` · `canonical` | Everything that reads or reshapes the `.editorconfig` | ✅ |
-| `daemon status` · `stop` · `run` | The per-repository format daemon. ⚠ No `start` — it is started lazily and a `start` verb invites a second one | ✅ |
 | `lsp` | LSP over stdio: formatting, range formatting, pull diagnostics, code actions | ✅ |
 | `mcp <path>` | MCP over stdio, six tools | ✅ |
 | `hooks install` | Writes `.git/hooks/pre-commit` unless a hook manager owns it | ✅ |
@@ -73,7 +75,6 @@ and this one is the parser's.** Taken from `skala <command> --help` for all sixt
 | `--quiet` | ✅ | | | | | |
 | `--option k=v` | ✅ | | | | | Repeatable. For debugging and the conformance harness |
 | `-j, --jobs <n>` | ✅ | | | | | ⚠ **`format` only.** Default `min(cores, 10)` |
-| `--no-daemon` | ✅ | | | | | ⚠ **`format` only** |
 | `--no-cache` | ✅ | ✅ | ✅ | | | ⚠ **Two different caches.** On `format` it is the `.editorconfig` memo; on `check`/`verify` it is the incremental analysis cache |
 | `-d, --define` | ✅ | ✅ | ✅ | ✅ | | Preprocessor symbols, repeatable and comma-separated |
 | `--load` | ✅ | ✅ | ✅ | ✅ | | ⚠ Three different defaults: `none` on `format`, `binlog` on `check`, `loose` on `verify` and `fix` |
@@ -402,52 +403,46 @@ a loop of N invocations divided by N, which is the shape [`plan/13`](plan/13-per
 § "Startup" requires: a .NET `Process.Start` harness costs 10–22 ms per spawn on its own, so a 40 ms
 budget cannot be asserted without measuring the spawn floor with the same spawner.
 
-| Operation | Budget | Measured | N | |
+> ⚠ **The `Budget` column is withdrawn.** Every budget in [`plan/13`](plan/13-performance.md) was
+> written for a post-edit agent hook firing on every file write; there is no such consumer, Skala runs
+> ahead of test suites that take about twenty minutes, and the tests that asserted these rows are
+> deleted with the daemon. The measurements are kept as measurements. Nothing checks them.
+
+| Operation | ~~Budget~~ | Measured | N | |
 |---|---:|---:|---:|---|
 | `/usr/bin/true` — process-start floor | — | **2.65–3.31 ms** | 150–200 | What any process costs here |
-| `format --check`, one 456-line file, **warm, AOT client** | < 40 ms | **12.38 ms** | 150 | ✅ the agent hook |
-| `format --check`, same file, warm, **full tool** | < 40 ms | **69.48 ms** | 40 | ❌ — and the reason the CLI was split in two |
-| full tool, bare (`daemon status`, no work) | — | **43.10 ms** | 40 | This is what the split removed from the warm path |
-| `format --check`, one file, cold (`SKALA_NO_DAEMON=1`) | 250 ms | **202.22 ms** | 20 | ✅ |
-| `format --check`, whole Vixen source tree (4 717 files) | < 20 s | **12.36–13.80 s** | 2 | ✅ |
-| `verify`, 5 files, `--load=loose`, cold cache | 900 ms | **0.651 s** median | 7 | ✅ |
-| `verify`, 5 files, `--load=loose`, warm cache | < 300 ms | **0.406 s** median | 7 | ❌ over the warm budget, under the cold one |
-| Daemon RSS after a single-file session | < 1.5 GB | **166 MB** | — | ✅ |
+| ~~`format --check`, one 456-line file, warm, AOT client~~ | ~~< 40 ms~~ | ~~**12.38 ms**~~ | 150 | withdrawn — there is no AOT client and no daemon |
+| `format --check`, same file, **cold** | ~~< 40 ms~~ | **69.48 ms** | 40 | this is what one single-file format costs now, warm page cache |
+| full tool, bare (no work) | — | **43.10 ms** | 40 | process start before `Main`, because the tool references Roslyn |
+| `format --check`, one file, cold | ~~250 ms~~ | **202.22 ms** | 20 | cold page cache |
+| `format --check`, whole Vixen source tree (4 717 files) | ~~< 20 s~~ | **12.36–13.80 s** | 2 | the row that still matters |
+| `verify`, 5 files, `--load=loose`, cold cache | ~~900 ms~~ | **0.651 s** median | 7 | |
+| `verify`, 5 files, `--load=loose`, warm cache | ~~< 300 ms~~ | **0.406 s** median | 7 | |
+| ~~Daemon RSS after a single-file session~~ | ~~< 1.5 GB~~ | ~~**166 MB**~~ | — | withdrawn — there is no daemon |
 
-⚠ **The warm number is 12.38 ms here and [`plan/13`](plan/13-performance.md) records 8.65 ms.** Both
-are under the 40 ms budget and neither is wrong: a different harness (a Python `subprocess` loop
-against a shell one) and a different machine state. **The budget is met; the exact figure is not a
-constant of the tool**, and a document that quotes one to three significant figures is quoting its
-own harness.
-
-⚠ **The daemon is only ever an optimisation.** `SKALA_NO_DAEMON=1` or `--no-daemon` produces
-byte-identical output — the cold row above is that path — and a daemon that is absent, stale or of
-another protocol version is a silent fallback rather than an error.
-
-⚠ **The 43.10 ms full-tool bare start is the whole argument for the split.** `skala daemon status`
-does no work at all and costs more than the entire warm budget before `Main` runs, because the
-framework-dependent tool references Roslyn. The NativeAOT client references a socket and a JSON
-writer.
+⚠ **The 43.10 ms bare start is what the whole two-binary arrangement existed to remove**, and it is
+now simply paid. `skala --version` does no work at all and costs that much before `Main` runs,
+because the framework-dependent tool references Roslyn. Against a twenty-minute test suite it does
+not signify.
 
 ## 4.2 ⚠ Windows is unverified
 
 **Every number in § 4.1 was taken on macOS/arm64.** The cross-platform CI matrix names macOS, Linux
 and Windows with `fail-fast: false` and runs the whole suite on each, so *correctness* is exercised
 on Windows — and two real Windows bugs were found that way, a cache key that hashed the path's raw
-bytes and a named-pipe transport that did not exist. **The performance budgets are not:** the
-`performance` job runs on one runner, the assertions carry a 20 % band tuned against it, and nobody
-has measured a Windows warm single-file format. Named-pipe round-trip cost against a Unix domain
-socket is the specific unknown.
+bytes and a named-pipe transport that did not exist. **Performance on Windows is unmeasured**, and
+now unmeasured everywhere: see § 4.3.
 
-## 4.3 ⚠ The budget assertions do not run by default
+## 4.3 ⚠ Nothing asserts a performance budget
 
-`PerformanceBudgetTests` has four tests and `ClientAgreesWithToolTests` has three. **All seven are
-skipped by a plain `dotnet test`** — the first four behind `SKALA_PERF=1`, all seven behind "no
-native layout, run `./build.sh Native` first". Run with both, three pass in 44 s.
+`PerformanceBudgetTests` and `ClientAgreesWithToolTests` are **deleted**, along with the
+`performance` CI job that ran them behind `SKALA_PERF=1` and a published native layout.
 
-That is a correct design — a wall-clock assertion on a shared runner is a flaky test — but "the
-budgets are asserted in CI" is true of the job that publishes the native layout and sets the
-variable, and is not true of the command a developer runs.
+They asserted the budgets in [`plan/13`](plan/13-performance.md), and those budgets were written for
+a format-on-save workflow Skala does not have. Rather than leave a table asserting numbers nothing
+measures, the tests and the budgets were withdrawn together — doc 13 § "Budgets" carries the reason.
+
+What is left is measurement by running it: the § 4.1 table is a record of a run, not a gate.
 
 ---
 
@@ -545,12 +540,9 @@ Every row was produced by running the named command at `8cbd66d`.
 | Vixen compiler errors, loose | **195 253**; **128 490** with a global-usings stand-in | same |
 | Tests | **9 795 passed · 0 failed · 7 skipped · 9 802 total** | `dotnet test Skala.slnx -c Release` |
 | Conformance cases | **8 981** green | same |
-| ⚠ Skipped tests | 4 performance budgets + 3 client-agreement, all needing `SKALA_PERF=1` and `./build.sh Native` | same |
-| Warm single-file format | **12.38 ms** against 40 ms | shell loop, N = 150, AOT client |
-| Cold single-file format | **202 ms** against 250 ms | N = 20, `SKALA_NO_DAEMON=1` |
-| `format --check`, whole Vixen tree | **12.4–13.8 s** against 20 s | 4 717 files |
+| Single-file format | **202 ms** cold, 69 ms warm page cache | N = 20; ⚠ no budget — see § 4.3 |
+| `format --check`, whole Vixen tree | **12.4–13.8 s** | 4 717 files |
 | …files it would reformat | **2 346** reformatted, 2 371 left alone | same, under Vixen's own `.editorconfig` |
-| Daemon RSS | **166 MB** against 1.5 GB | `skala daemon status` |
 | Vixen `.editorconfig` | 916 lines, 56 path-scoped sections | `wc -l` |
 
 ## ⚠ Numbers this file does not carry

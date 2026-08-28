@@ -16,16 +16,19 @@
 # variable a person sets. Pushing to NuGet is irreversible and a formatting change downstream is a
 # repository-wide commit; a workflow that could do it by accident has made "release" an accident.
 #
-# Three facts drive the pack shape below, unchanged from the workflow this replaces.
+# Two facts drive the pack shape below.
 #
-#   1. **The tool package is RID-specific and there is one job per RID.** Its command is a NativeAOT
-#      binary, which can only be produced on the platform it targets.
+#   1. **Every package is portable.** ⚠ The tool package used to be RID-specific, with one pack job
+#      per RID, because its command was a NativeAOT binary that can only be produced on the platform
+#      it targets. That binary was the thin client in front of the format daemon; both are deleted,
+#      the command is an ordinary `Runner="dotnet"` entry point again, and one .nupkg installs
+#      everywhere. The matrix below is now about *where the smoke test runs*, not about what it
+#      builds — three OSes install the same bytes.
 #   2. **A package that installs and cannot format a file is the thing this exists to catch.** Every
 #      leg installs what it just built, into a scratch directory outside the checkout, and runs the
-#      commands. The deep-path case is deliberate: doc 13 § "Startup" records a daemon that died
-#      with **exit code 0** in any repository nested past about eighty-five characters.
-#   3. **The RID-agnostic packages are built once.** Building them three times would produce three
-#      artefacts that have to be identical and would eventually not be.
+#      commands. The deep-path case is kept: it no longer exercises a socket path against the
+#      kernel's 104-byte cap, but a deeply nested repository has other ways to go wrong and the case
+#      costs one `mkdir -p`.
 
 name: Release
 
@@ -159,7 +162,7 @@ jobs:
           if-no-files-found: error
 
   pack:
-    name: pack (${{ matrix.rid }})
+    name: pack and install (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     needs: measure
 
@@ -167,13 +170,7 @@ jobs:
       # ⚠ The whole value of a matrix is knowing whether a failure is everywhere or on one platform.
       fail-fast: false
       matrix:
-        include:
-          - os: ubuntu-latest
-            rid: linux-x64
-          - os: macos-latest
-            rid: osx-arm64
-          - os: windows-latest
-            rid: win-x64
+        os: [ubuntu-latest, macos-latest, windows-latest]
 
     steps:
       - uses: actions/checkout@v7
@@ -193,7 +190,7 @@ jobs:
       - name: Pack
         shell: bash
         run: |
-          ./build.sh Pack --configuration Release --rids ${{ matrix.rid }} \
+          ./build.sh Pack --configuration Release \
             -- -p:Version=${{ needs.measure.outputs.version }}
 
       # The contents, listed. ⚠ Not decoration: three packaging faults in this repository's history
@@ -213,16 +210,17 @@ jobs:
 
       - uses: actions/upload-artifact@v7
         with:
-          name: packages-${{ matrix.rid }}
+          name: packages-${{ matrix.os }}
           path: artifacts/packages/*.nupkg
           if-no-files-found: error
 
-  # ⚠ A separate job, and it uploads only the four RID-agnostic packages, because the three legs
-  # above each produce a `Rikarin.Skala.Cli.<version>.nupkg` with different bytes and identical
-  # names. Downloading all three artifacts into one directory would silently keep whichever landed
-  # last. The per-RID tool packages stay in their own artifacts, named by RID.
+  # ⚠ A separate job, and it takes **one** leg's artifact rather than merging all three. Every
+  # package is portable now, so the three legs produce the same five packages; downloading all three
+  # into one directory would silently keep whichever landed last, which is a coin toss dressed up as
+  # a build step. One leg is picked, on purpose, and the other two exist to prove the install works
+  # on their platform.
   collect:
-    name: collect the portable packages, and tag
+    name: collect the packages, and tag
     runs-on: ubuntu-latest
     needs: [measure, pack]
 
@@ -234,11 +232,8 @@ jobs:
 
       - uses: actions/download-artifact@v7
         with:
-          name: packages-linux-x64
+          name: packages-ubuntu-latest
           path: packages
-
-      - name: Drop the RID-specific tool package
-        run: rm -f packages/Rikarin.Skala.Cli.*.nupkg
 
       - uses: actions/upload-artifact@v7
         with:
