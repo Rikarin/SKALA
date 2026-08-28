@@ -1183,14 +1183,19 @@ public static class Ids {
 
     public static readonly OptionId SpaceBeforeTrailingComment = Of("resharper_csharp_space_before_trailing_comment");
     public static readonly OptionId SpaceBeforeTrailingCommentText = Of("resharper_space_before_trailing_comment_text");
-    // ⚠ Unoracled, not inert, and it has now been both. Milestone 1 had it Tier A; milestone 3
-    // demoted it to inert because the oracle does not insert the space and doing it anyway cost 79
-    // lines across 15 files of `corpus/real/`. That demotion rested on `jb cleanupcode` being the
-    // definition of correct, and SK-DIV-0006 no longer says it is: Rider's editor formats
-    // documentation comments and cleanup does not, so the 79 lines were the oracle's divergence
-    // being charged to Skala. The space is inserted again, by the sub-formatter, on every
-    // well-formed comment — and the key still cannot be Tier A, because no fixture can pin it.
-    public static readonly OptionId SpaceAfterTripleSlash = OfUnoracled("resharper_space_after_triple_slash");
+    // ⚠ Tier A again, and it has now been all three. Milestone 1 had it Tier A; milestone 3 demoted
+    // it to inert because the oracle did not insert the space and doing it anyway cost 79 lines
+    // across 15 files of `corpus/real/`; the sub-formatter's default flip made it unoracled, on the
+    // reading that no fixture could ever pin it. All of that rested on a profile rather than on the
+    // tool: `OracleProfile.DocComments` inserts the space, and
+    // `constructs/xmldoc/resharper_space_after_triple_slash.cs` is the fixture that shows it.
+    //
+    // ⚠ The 79 lines are not thereby re-explained, and the fixture is narrower than it looks. The
+    // oracle does not rewrite a `///` marker on a comment it is otherwise leaving alone — the first
+    // cut of that fixture was a single short `///<summary>…</summary>` and it came back
+    // byte-identical. The marker space appears only where the comment is being rebuilt anyway, and
+    // `corpus/real/`'s fixtures are still generated under a profile that rebuilds nothing.
+    public static readonly OptionId SpaceAfterTripleSlash = Of("resharper_space_after_triple_slash");
     public static readonly OptionId StickComment = Of("resharper_csharp_stick_comment");
     public static readonly OptionId PlaceCommentsAtFirstColumn = Of("resharper_csharp_place_comments_at_first_column");
 
@@ -1871,63 +1876,78 @@ public static class Ids {
     public static readonly OptionId FormatterTagsAcceptRegexp = Of("resharper_formatter_tags_accept_regexp");
 
     // ── The xmldoc sub-formatter's subset ────────────────────────────────────────────────────
-    // ⚠ Every one of these governs real output on the default path and every one of them stays
-    // Tier D, which is a combination no other key in the registry has. No *committed* fixture can
-    // show the oracle honouring any of them, because every fixture was generated under a profile
-    // that leaves `CSharpFormatDocComments` off — not because `jb cleanupcode` cannot format a
-    // documentation comment, which it does, and which four of these keys were measured against.
-    // Rider's editor formats them too, so leaving them off would be the divergence rather than
-    // turning them on (SK-DIV-0006). What pins them meanwhile is hand-written fixtures plus the
-    // round-trip property in XmlDocFormatter. See XmlDocOptions for the full argument, and
-    // `OfUnoracled` for what the mark means.
+    // ⚠ This block used to be 22 keys registered `OfUnoracled` under one shared reason: "no
+    // committed fixture can show the oracle honouring any of them". That reason has been withdrawn,
+    // and it was wrong in the way this project is most often wrong — a limitation of the oracle
+    // *profile* read as a limitation of the tool. `CSharpFormatDocComments` is a real cleanup task;
+    // `OracleProfile.FormatOnly` is byte-for-byte ReSharper's `Built-in: Reformat Code`, the one
+    // built-in profile that switches it off; and `OracleProfile.DocComments` switches it on. It was
+    // re-measured with a negative control before this block was touched (see the remarks on
+    // `OracleProfile.DocComments`), and the corpus now carries `constructs/xmldoc/` — one file per
+    // key, with a committed `.xmldoc.expected.cs` beside it.
+    //
+    // ⚠ The measurement split the family 13 / 9, and the split is not a tidy one: three of the nine
+    // are the same wrapping disagreement wearing three names. Every key below carries the fixture
+    // that placed it where it is, and the nine that stayed carry a divergence id.
+    //
+    // ── Agreed with the oracle byte for byte, and promoted ───────────────────────────────────
+    public static readonly OptionId XmlDocKeepUserLinebreaks = Of("resharper_xmldoc_keep_user_linebreaks");
+
+    public static readonly OptionId XmlDocMaxBlankLinesBetweenTags =
+        Of("resharper_xmldoc_max_blank_lines_between_tags");
+
+    public static readonly OptionId XmlDocIndentChildElements = Of("resharper_xmldoc_indent_child_elements");
+    public static readonly OptionId XmlDocIndentText = Of("resharper_xmldoc_indent_text");
+
+    public static readonly OptionId XmlDocLinebreaksInsideTagsForElementsWithChildElements =
+        Of("resharper_xmldoc_linebreaks_inside_tags_for_elements_with_child_elements");
+
+    public static readonly OptionId XmlDocLinebreaksInsideTagsForMultilineElements =
+        Of("resharper_xmldoc_linebreaks_inside_tags_for_multiline_elements");
+
+    public static readonly OptionId XmlDocSpaceBeforeSelfClosing = Of("resharper_xmldoc_space_before_self_closing");
+    public static readonly OptionId XmlDocIndentSize = Of("resharper_xmldoc_indent_size");
+    public static readonly OptionId XmlDocIndentStyle = Of("resharper_xmldoc_indent_style");
+    public static readonly OptionId XmlDocLinebreakBeforeElements = Of("resharper_xmldoc_linebreak_before_elements");
+    public static readonly OptionId XmlDocSpaceAfterLastAttribute = Of("resharper_xmldoc_space_after_last_attribute");
+
+    public static readonly OptionId XmlDocSpacesAroundEqInAttribute =
+        Of("resharper_xmldoc_spaces_around_eq_in_attribute");
+
+    // ── Measured against the oracle, and disagreeing ─────────────────────────────────────────
+    // ⚠ These stay Tier D and stay `OfUnoracled`, and the mark now means something narrower and
+    // more useful than it did: not "the oracle cannot be asked" but "the oracle was asked and said
+    // something else". Each carries the divergence entry that records the measured shape, and each
+    // keeps `oracle: null` in the registry — a Tier D entry with a fixture glob would have to be a
+    // key the *sweep* demoted, and the sweep has never swept these.
+    //
+    // ⚠ SK-DIV-0019: the wrap column. Five of the nine are one disagreement — the oracle keeps the
+    // word that crosses `max_line_length` on the line and breaks after it, Skala breaks before it —
+    // and they diverge together because every one of them is measured on a comment that wraps.
     public static readonly OptionId XmlDocWrapLines = OfUnoracled("resharper_xmldoc_wrap_lines");
     public static readonly OptionId XmlDocMaxLineLength = OfUnoracled("resharper_xmldoc_max_line_length");
     public static readonly OptionId XmlDocWrapText = OfUnoracled("resharper_xmldoc_wrap_text");
     public static readonly OptionId XmlDocWrapTagsAndPi = OfUnoracled("resharper_xmldoc_wrap_tags_and_pi");
-    public static readonly OptionId XmlDocKeepUserLinebreaks = OfUnoracled("resharper_xmldoc_keep_user_linebreaks");
-
-    public static readonly OptionId XmlDocMaxBlankLinesBetweenTags =
-        OfUnoracled("resharper_xmldoc_max_blank_lines_between_tags");
-
-    public static readonly OptionId XmlDocIndentChildElements = OfUnoracled("resharper_xmldoc_indent_child_elements");
-    public static readonly OptionId XmlDocIndentText = OfUnoracled("resharper_xmldoc_indent_text");
-
-    public static readonly OptionId XmlDocLinebreaksInsideTagsForElementsWithChildElements =
-        OfUnoracled("resharper_xmldoc_linebreaks_inside_tags_for_elements_with_child_elements");
-
-    public static readonly OptionId XmlDocLinebreaksInsideTagsForMultilineElements =
-        OfUnoracled("resharper_xmldoc_linebreaks_inside_tags_for_multiline_elements");
-
-    public static readonly OptionId XmlDocLinebreakBeforeMultilineElements =
-        OfUnoracled("resharper_xmldoc_linebreak_before_multiline_elements");
-
-    public static readonly OptionId XmlDocLinebreakBeforeSinglelineElements =
-        OfUnoracled("resharper_xmldoc_linebreak_before_singleline_elements");
-
-    public static readonly OptionId XmlDocSpacesInsideTags = OfUnoracled("resharper_xmldoc_spaces_inside_tags");
-
-    public static readonly OptionId XmlDocSpaceBeforeSelfClosing =
-        OfUnoracled("resharper_xmldoc_space_before_self_closing");
-
-    public static readonly OptionId XmlDocIndentSize = OfUnoracled("resharper_xmldoc_indent_size");
-    public static readonly OptionId XmlDocIndentStyle = OfUnoracled("resharper_xmldoc_indent_style");
-
-    public static readonly OptionId XmlDocLinebreakBeforeElements =
-        OfUnoracled("resharper_xmldoc_linebreak_before_elements");
-
-    // ⚠ These four were in `XmlDocIds.Refused` until the tag-header behaviour was measured with
-    // `CSharpFormatDocComments` switched on. The refusals were the SK-DIV-0006 mistake repeated at
-    // option granularity: a profile that never asked the question, read as an answer.
-    public static readonly OptionId XmlDocSpaceAfterLastAttribute =
-        OfUnoracled("resharper_xmldoc_space_after_last_attribute");
-
-    public static readonly OptionId XmlDocSpacesAroundEqInAttribute =
-        OfUnoracled("resharper_xmldoc_spaces_around_eq_in_attribute");
-
-    public static readonly OptionId XmlDocBlankLineAfterPi = OfUnoracled("resharper_xmldoc_blank_line_after_pi");
 
     public static readonly OptionId XmlDocLinebreaksInsideTagsForElementsLongerThan =
         OfUnoracled("resharper_xmldoc_linebreaks_inside_tags_for_elements_longer_than");
+
+    // ⚠ SK-DIV-0020: mixed content. The oracle opens an element that holds text *and* children;
+    // Skala opens one that holds only children.
+    public static readonly OptionId XmlDocLinebreakBeforeSinglelineElements =
+        OfUnoracled("resharper_xmldoc_linebreak_before_singleline_elements");
+
+    // ⚠ SK-DIV-0021: the oracle leaves the content of an element that `linebreak_before_elements`
+    // does not name on one line however long it is; Skala wraps it.
+    public static readonly OptionId XmlDocLinebreakBeforeMultilineElements =
+        OfUnoracled("resharper_xmldoc_linebreak_before_multiline_elements");
+
+    // ⚠ SK-DIV-0022: `false` means "do not add a space inside the tags", not "remove the author's".
+    public static readonly OptionId XmlDocSpacesInsideTags = OfUnoracled("resharper_xmldoc_spaces_inside_tags");
+
+    // ⚠ SK-DIV-0023: the marker space is not applied to a processing-instruction line, and the
+    // blank line the oracle writes after one carries a trailing space Skala deliberately omits.
+    public static readonly OptionId XmlDocBlankLineAfterPi = OfUnoracled("resharper_xmldoc_blank_line_after_pi");
 
     // ── Generalized keys ─────────────────────────────────────────────────────────────────────
     // ⚠ These are not read by the formatter and never will be. A generalized key is a way of
@@ -2024,20 +2044,28 @@ public static class Ids {
     public static ImmutableArray<OptionId> ReadButInert { get; } = [.. Inert.Distinct().Order()];
 
     /// <summary>
-    ///     The ids phase 1 reads and honours, and that no oracle fixture can pin.
+    ///     The ids phase 1 reads and honours, and that no oracle fixture <em>agrees with</em>.
     /// </summary>
     /// <remarks>
     ///     ⚠ The third shape, and it exists because the second one stopped being true. Until the
     ///     documentation-comment sub-formatter became the default these were <see cref="OfInert" /> —
     ///     "read, and unable to change anything" — which was accurate only because nothing ran them.
-    ///     They run on every file now, so "inert" would be a lie, and Tier A would be a different lie:
-    ///     Tier A means "pinned by at least one oracle fixture" and <c>jb cleanupcode</c> returns every
-    ///     documentation comment exactly as written, so no fixture can ever show it agreeing or
-    ///     disagreeing (SK-DIV-0006).
+    ///     They run on every file now, so "inert" would be a lie.
     ///     <para>
-    ///         So they stay Tier D and out of <see cref="All" />, and what is checked instead is the
-    ///         opposite of the inert claim: an unoracled key must be <em>observable</em>, or it is an
-    ///         unimplemented key hiding behind a reason. <c>OptionObservabilityTests</c> asserts it.
+    ///         ⚠ <b>The reason attached to this mark has changed, and the summary line changed with it.</b>
+    ///         It read "that no oracle fixture can pin", on the argument that <c>jb cleanupcode</c> returns
+    ///         every documentation comment exactly as written. It does not — the profile the fixtures were
+    ///         generated under does. <c>OracleProfile.DocComments</c> asks the question, and 13 of the 22
+    ///         keys that carried this mark are Tier A on the answer. What is left here is the nine the
+    ///         oracle contradicts, so the mark now says "asked, and answered differently"; a key that
+    ///         genuinely cannot be asked would be a fourth shape, and there are none.
+    ///     </para>
+    ///     <para>
+    ///         They stay Tier D and out of <see cref="All" />, and what is checked is the opposite of the
+    ///         inert claim: an unoracled key must be <em>observable</em>, or it is an unimplemented key
+    ///         hiding behind a reason. <c>OptionObservabilityTests</c> asserts that, and
+    ///         <c>XmlDocOracleTests</c> asserts the other half — that the disagreement it is named for is
+    ///         still there.
     ///     </para>
     /// </remarks>
     public static ImmutableArray<OptionId> ReadButUnoracled { get; } = [.. Unoracled.Distinct().Order()];
@@ -2068,9 +2096,15 @@ public static class Ids {
     /// </summary>
     /// <remarks>
     ///     ⚠ See <see cref="ReadButUnoracled" />. It is not a softer <see cref="Of" />: it is the mark
-    ///     that says the evidence for this key is hand-written fixtures and a round-trip property
-    ///     rather than a committed <c>.expected.cs</c>, and it keeps the key out of the Tier A claim so
-    ///     that "Tier A" keeps meaning one thing.
+    ///     that says a committed <c>.expected.cs</c> does not support this key, and it keeps the key out
+    ///     of the Tier A claim so that "Tier A" keeps meaning one thing.
+    ///     <para>
+    ///         ⚠ It used to mean "the oracle cannot be asked about this key", and that reading is retired:
+    ///         it turned out to be true of one profile rather than of the tool, and it kept 22 keys at
+    ///         Tier D for six milestones. Every id carrying the mark today has been asked and has
+    ///         disagreed, with a divergence entry naming the shape. A new <c>OfUnoracled</c> without one
+    ///         is a reason nobody measured.
+    ///     </para>
     /// </remarks>
     static OptionId OfUnoracled(string key) {
         var id = Of(key);

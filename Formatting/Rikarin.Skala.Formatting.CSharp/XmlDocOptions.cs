@@ -7,27 +7,34 @@ namespace Rikarin.Skala.Formatting.CSharp;
 ///     The <c>resharper_xmldoc_*</c> subset the documentation-comment sub-formatter reads.
 /// </summary>
 /// <remarks>
-///     ⚠ These keys are pinned differently from every other formatter option in Skala, and the
-///     difference is the fixtures rather than the oracle. Every other option is Tier A because a
-///     committed <c>.expected.cs</c> produced by <c>jb cleanupcode</c> shows the oracle doing the thing
-///     the option names. Every committed fixture was generated under
-///     <see cref="OracleProfile.FormatOnly" />, which does not enable ReSharper's own
-///     <c>CSharpFormatDocComments</c> task, so every one of them returns its documentation comments
-///     exactly as written and none of them can show any of this (SK-DIV-0006).
+///     ⚠ These keys used to be pinned differently from every other formatter option in Skala, and
+///     the paragraph that said so has been withdrawn. It ran: every committed fixture was generated
+///     under <see cref="OracleProfile.FormatOnly" />, which does not enable
+///     <c>CSharpFormatDocComments</c>, so no fixture can ever show the oracle doing any of this
+///     (SK-DIV-0006). The first half is true and the conclusion does not follow — it is a fact about
+///     which fixtures happen to exist, not about what a fixture can be.
 ///     <para>
-///         ⚠ That was read for six milestones as "the oracle declines to format documentation comments",
-///         and it was the wrong conclusion from a correct measurement: Rider formats them and the pinned
-///         profile does not. Where the two disagree, ADR-011's oracle is not the specification — Rider is.
-///         So the sub-formatter runs by default, these keys govern real output, and the only way to
-///         switch them off wholesale is <c>skala format --no-xmldoc</c>.
+///         ⚠ That was the original SK-DIV-0006 mistake repeated one level down: a limitation of the
+///         oracle <em>profile</em>, read as a limitation of the corpus.
+///         <see cref="OracleProfile.DocComments" /> is <see cref="OracleProfile.FormatOnly" /> plus that
+///         one element, <c>constructs/xmldoc/</c> carries a corpus file per key with its answer beside
+///         it, and the family splits <b>13 Tier A / 9 measured-and-disagreeing</b>.
 ///     </para>
 ///     <para>
-///         The ids are registered <c>OfUnoracled</c> rather than <c>OfInert</c>: read, honoured, and never
-///         claiming Tier A, because Tier A is fixture evidence and there is none to be had. What pins them
-///         instead is two things that need no oracle: hand-written fixtures asserting the semantics
-///         JetBrains' own settings pages state, and the round-trip property in
-///         <see cref="XmlDocFormatter" />, which is checked on every comment of every run rather than on a
-///         fixture.
+///         ⚠ Rider formats documentation comments and the pinned cleanup profile does not; where the two
+///         disagree, ADR-011's oracle is not the specification — Rider is. So the sub-formatter runs by
+///         default, these keys govern real output, and the only way to switch them off wholesale is
+///         <c>skala format --no-xmldoc</c>.
+///     </para>
+///     <para>
+///         The nine that stay are still registered <c>OfUnoracled</c>, and the mark now means something
+///         narrower and more useful: not "the oracle cannot be asked" but "the oracle was asked and said
+///         something else". SK-DIV-0019 … SK-DIV-0023 carry the shapes, and
+///         <c>XmlDocOracleTests</c> asserts that each of them still fails, so a divergence that gets
+///         fixed cannot quietly stay Tier D. What pins all 22 besides the fixtures is unchanged:
+///         hand-written cases asserting the semantics JetBrains' own settings pages state, and the
+///         round-trip property in <see cref="XmlDocFormatter" />, which is checked on every comment of
+///         every run rather than on a fixture.
 ///     </para>
 ///     <para>
 ///         ⚠ The ten keys of the family that are <em>not</em> here are refused rather than pending, and
@@ -76,6 +83,16 @@ public readonly struct XmlDocOptions {
     ///     marker. The alternative reading — a budget for the comment's own text — would make the same
     ///     sentence wrap differently at two nesting depths and produce lines past the margin, which is
     ///     the one thing a hard wrap exists to prevent.
+    ///     <para>
+    ///         ⚠ <b>The oracle does not agree, and this is SK-DIV-0019.</b> It fills while the line is
+    ///         strictly <em>under</em> the limit and then keeps the word that crosses it, so its output
+    ///         runs one word past the margin —
+    ///         <c>constructs/xmldoc/resharper_xmldoc_max_line_length.xmldoc.expected.cs</c> is 122
+    ///         columns under a limit of 120. Skala breaks before that word. Five keys diverge on this one
+    ///         rule because five fixtures have to wrap; the argument above is why Skala's reading is
+    ///         kept, and it is an argument rather than a measurement, which is what makes it a
+    ///         divergence rather than a defect.
+    ///     </para>
     /// </remarks>
     public int MaxLineLength { get; }
 
@@ -138,6 +155,12 @@ public readonly struct XmlDocOptions {
     /// <summary>
     ///     <c>resharper_xmldoc_spaces_inside_tags</c>: <c>&lt;summary&gt; Text &lt;/summary&gt;</c>.
     /// </summary>
+    /// <remarks>
+    ///     ⚠ SK-DIV-0022. Skala reads this as a statement about the output — false means no gap,
+    ///     whatever the author wrote. The oracle reads it as a statement about what it may
+    ///     <em>insert</em>: false means it will not add one, and a space already there survives even
+    ///     while the same run splits the elements around it. Measured, not inferred.
+    /// </remarks>
     public bool SpacesInsideTags { get; }
 
     /// <summary><c>resharper_xmldoc_space_before_self_closing</c>: <c>&lt;br/&gt;</c> or <c>&lt;br /&gt;</c>.</summary>
@@ -147,12 +170,20 @@ public readonly struct XmlDocOptions {
     ///     <c>resharper_space_after_triple_slash</c>, live only inside the sub-formatter.
     /// </summary>
     /// <remarks>
-    ///     ⚠ Demoted from Tier A in milestone 3 because the oracle does not insert the space and doing
-    ///     it anyway cost 79 lines across 15 files of <c>corpus/real/</c> (SK-DIV-0006). The demotion
-    ///     stands and its reason does not: those 79 lines were <c>jb cleanupcode</c> declining to do
-    ///     what Rider does, charged to Skala. The space is inserted again — by the sub-formatter, on
-    ///     every well-formed comment, which is every comment whose marker is being rewritten anyway —
-    ///     and the key is Tier D for ever, because no fixture can pin it.
+    ///     ⚠ Tier A, then inert, then unoracled, and Tier A again — no other key in the registry has
+    ///     that history and each step was a correction of the one before. Milestone 3 demoted it
+    ///     because the oracle did not insert the space and doing it anyway cost 79 lines across 15
+    ///     files of <c>corpus/real/</c>; the default flip made it unoracled on the reading that no
+    ///     fixture could ever pin it; <c>constructs/xmldoc/resharper_space_after_triple_slash.cs</c>
+    ///     is that fixture (SK-DIV-0006).
+    ///     <para>
+    ///         ⚠ The 79 lines are still not fully re-explained, and the reason is a measured shape. The
+    ///         oracle does not rewrite a <c>///</c> marker on a comment it is otherwise leaving alone: a
+    ///         lone short <c>///&lt;summary&gt;Docs.&lt;/summary&gt;</c> comes back byte-identical even
+    ///         with <c>CSharpFormatDocComments</c> on. Skala inserts the space on every well-formed
+    ///         comment. On a comment that needs no other change the two genuinely differ, and
+    ///         <c>corpus/real/</c>'s fixtures are all of that kind.
+    ///     </para>
     /// </remarks>
     public bool SpaceAfterTripleSlash { get; }
 

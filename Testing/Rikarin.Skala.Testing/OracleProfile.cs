@@ -87,8 +87,58 @@ public sealed record OracleProfile(string Name, string Suffix, string Tasks) {
         + " />"
     );
 
-    /// <summary>Both profiles, in the order <c>./build.sh Oracle</c> regenerates them.</summary>
-    public static IReadOnlyList<OracleProfile> All { get; } = [FormatOnly, Cleanup];
+    /// <summary>
+    ///     Format-only, plus ReSharper's own documentation-comment task. The only profile that can be
+    ///     asked what the oracle does to a <c>///</c> comment.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ This profile exists because a whole family of options was Tier D for a reason that turned
+    ///     out to be a property of the *profile* and not of the tool. SK-DIV-0006 read "every committed
+    ///     fixture returns its documentation comments exactly as written" as "the oracle declines to
+    ///     format documentation comments", and 22 keys — 21 <c>resharper_xmldoc_*</c> plus
+    ///     <c>resharper_space_after_triple_slash</c> — were registered <c>OfUnoracled</c> on the strength
+    ///     of it. <c>CSharpFormatDocComments</c> is a real <c>CodeCleanupTask_</c>, and
+    ///     <see cref="FormatOnly" /> is byte-for-byte <c>Built-in: Reformat Code</c>, which is the one
+    ///     built-in profile that switches it off.
+    ///     <para>
+    ///         ⚠ Re-measured before this profile was added, on a scratch solution carrying this
+    ///         repository's <c>.editorconfig</c>, with the negative control the sweep's method demands:
+    ///         <list type="bullet">
+    ///             <item><c>&lt;CSReformatCode&gt;</c> alone — the doc comment came back byte-identical.</item>
+    ///             <item>
+    ///                 the same plus <c>&lt;CSharpFormatDocComments&gt;True&lt;/CSharpFormatDocComments&gt;</c>
+    ///                 — the comment was rewrapped at <c>max_line_length</c>, the <c>///</c> markers grew
+    ///                 their space, two crammed <c>&lt;param&gt;</c>s split onto their own lines, and the
+    ///                 blank <c>///</c> lines went away.
+    ///             </item>
+    ///             <item>
+    ///                 the same with the element renamed <c>ZZNotARealDocTask</c> — byte-identical, so the
+    ///                 tool silently ignores an unknown task and the row above is not measuring a
+    ///                 typo.
+    ///             </item>
+    ///         </list>
+    ///     </para>
+    ///     <para>
+    ///         ⚠ The suffix obeys the rule above: it ends <c>.expected.cs</c>, so the corpus still refuses
+    ///         to enumerate it as an input.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ <c>CSUpdateFileHeader</c> is off for the same reason it is off in <see cref="FormatOnly" />,
+    ///         and the profile is otherwise <see cref="FormatOnly" /> exactly: one element apart, so a
+    ///         difference between the two fixtures is a difference the doc-comment task made and nothing
+    ///         else.
+    ///     </para>
+    /// </remarks>
+    public static OracleProfile DocComments { get; } = new(
+        "SkalaDocComments",
+        ".xmldoc.expected.cs",
+        "<CSReformatCode>True</CSReformatCode>"
+        + "<CSUpdateFileHeader>False</CSUpdateFileHeader>"
+        + "<CSharpFormatDocComments>True</CSharpFormatDocComments>"
+    );
+
+    /// <summary>All three profiles, in the order <c>./build.sh Oracle</c> regenerates them.</summary>
+    public static IReadOnlyList<OracleProfile> All { get; } = [FormatOnly, Cleanup, DocComments];
 
     public static OracleProfile? ByName(string name) =>
         All.FirstOrDefault(profile => string.Equals(profile.Name, name, StringComparison.OrdinalIgnoreCase));

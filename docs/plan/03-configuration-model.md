@@ -199,9 +199,14 @@ in the registry, so those are not "parsed, validated and deliberately not implem
 the tier.
 
 **The tier matrix is published** — into `docs/site/options/` by `skala docs site`, not into
-`docs/options/` by the generator. The headline number is **Tier A: 221 of 520**.
+`docs/options/` by the generator. The headline number is **Tier A: 259 of 520**.
 
-⚠ **The number that matters is not that one.** 221 of 520 is a fact about the registry; what a user
+⚠ This paragraph said **221** until it was checked against the artefact it describes; the generated
+`docs/site/index.html` said 246 at the same moment, and 259 after the documentation-comment family
+was measured. A number in prose beside a number in a generated file is a number that will drift, and
+this one had. The site is the one to read.
+
+⚠ **The number that matters is not that one.** 259 of 520 is a fact about the registry; what a user
 needs is *of the keys I set, how many are honoured*, and on this repository's own export that is
 **205 applied of 458 set**, with 243 not implemented and 10 inert. `skala config check` reports the
 per-configuration split first and the registry-wide totals after, for that reason.

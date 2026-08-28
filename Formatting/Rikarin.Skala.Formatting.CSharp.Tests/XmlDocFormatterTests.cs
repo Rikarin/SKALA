@@ -9,12 +9,18 @@ namespace Rikarin.Skala.Formatting.CSharp.Tests;
 
 /// <summary>Runs the pipeline, which formats documentation comments by default.</summary>
 /// <remarks>
-///     ⚠ These fixtures assert <b>the semantics JetBrains' settings pages state</b>, not the oracle's
-///     behaviour, and the difference is the whole of SK-DIV-0006: the committed <c>.expected.cs</c>
-///     fixtures were produced by a profile that does not run ReSharper's own
-///     <c>CSharpFormatDocComments</c> task, so every one of them returns its doc comments exactly as
-///     written and none of them can pin any of this. Every other option in Skala is pinned the other
-///     way. That is why none of these keys is Tier A — not because the behaviour is optional.
+///     ⚠ These fixtures assert <b>the semantics JetBrains' settings pages state</b> rather than the
+///     oracle's behaviour, and they were once the only evidence these keys had. They are not any
+///     more: <c>OracleProfile.DocComments</c> enables ReSharper's own <c>CSharpFormatDocComments</c>
+///     task, <c>constructs/xmldoc/</c> carries a corpus file per key with the oracle's answer beside
+///     it, and 13 of the 22 keys are Tier A on that evidence like every other option in Skala.
+///     <para>
+///         ⚠ These stay, and they are not redundant. A corpus fixture measures one configuration — the
+///         repository's — and these measure the key at both values with the shape isolated, which is what
+///         says <em>why</em> a fixture came out the way it did. For the nine keys that disagree with the
+///         oracle (SK-DIV-0019 … SK-DIV-0023) they are also the only statement of what Skala does mean by
+///         the key.
+///     </para>
 /// </remarks>
 public static class XmlDoc {
     static FormattingOptions Resolve(params (string Key, string Value)[] overrides) =>
@@ -666,19 +672,54 @@ public sealed class XmlDocKeyCoverageTests {
         );
     }
 
+    /// <summary>
+    ///     ⚠ This assertion used to say the opposite, and the opposite was wrong.
+    /// </summary>
+    /// <remarks>
+    ///     It was <c>NothingTheSubFormatterReads_ClaimsTierA</c>: every key the sub-formatter honours
+    ///     had to be Tier D and out of <see cref="PhaseOneOptions.Implemented" />, "because the oracle
+    ///     has nothing to say about any of these". The oracle has plenty to say —
+    ///     <c>OracleProfile.DocComments</c> asks it — and <c>constructs/xmldoc/</c> is what it said. The
+    ///     family splits 13 / 9, and both halves are asserted here so that neither can drift silently:
+    ///     a promoted key that stops agreeing fails <c>XmlDocOracleTests</c>, and a promoted key that
+    ///     loses its <c>Of</c> registration fails this.
+    ///     <para>
+    ///         ⚠ <c>space_after_triple_slash</c> is checked alongside them even though it is not a
+    ///         <c>resharper_xmldoc_*</c> key. It is the one that has been Tier A, then inert, then
+    ///         unoracled, and now Tier A again; a key with that history is the one worth pinning by name.
+    ///     </para>
+    /// </remarks>
     [Fact]
-    public void NothingTheSubFormatterReads_ClaimsTierA() {
-        // The whole argument of SK-DIV-0006 in one assertion. Tier A means "pinned by an oracle
-        // fixture", the oracle has nothing to say about any of these, and so any of them appearing
-        // in PhaseOneOptions.Implemented would be a claim the corpus cannot support.
+    public void TheSubFormattersKeys_SplitIntoTheTiersTheOracleMeasured() {
         var implemented = PhaseOneOptions.Implemented.ToHashSet();
+        var unoracled = Ids.ReadButUnoracled.ToHashSet();
 
-        // ⚠ `space_after_triple_slash` is checked alongside the seventeen even though it is not one
-        // of them. It is the key milestone 3 *demoted* from Tier A after measuring what inserting
-        // the space cost, and a milestone that gives it a use is exactly when it would creep back.
         foreach (var id in XmlDocIds.Honoured.Add(XmlDocIds.SpaceAfterTripleSlash)) {
-            Assert.DoesNotContain(id, implemented);
-            Assert.Equal(OptionTier.D, OptionRegistry.Get(id).Tier);
+            var info = OptionRegistry.Get(id);
+            if (implemented.Contains(id)) {
+                Assert.Equal(OptionTier.A, info.Tier);
+                Assert.False(
+                    unoracled.Contains(id),
+                    info.Key + " is both implemented and unoracled, which are the two halves of a partition."
+                );
+
+                Assert.True(
+                    info.Oracle is { Length: > 0 },
+                    info.Key + " is Tier A and carries no `oracle` glob; Tier A rests on fixture evidence."
+                );
+
+                continue;
+            }
+
+            Assert.Equal(OptionTier.D, info.Tier);
+            Assert.Contains(id, unoracled);
         }
+
+        Assert.Equal(
+            13,
+            XmlDocIds.Honoured.Add(XmlDocIds.SpaceAfterTripleSlash).Count(implemented.Contains)
+        );
+
+        Assert.Equal(9, XmlDocIds.Honoured.Count(unoracled.Contains));
     }
 }
