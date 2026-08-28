@@ -1119,6 +1119,20 @@ public sealed partial class CSharpDocumentBuilder {
         }
 
         EmitUpTo(node.SpanStart);
+
+        // ⚠ And again, because `EmitUpTo` is what opens the span. The tag comment sits in this
+        // node's *leading trivia*, so the piece that calls `EmitFormatterOffSpan` is emitted by the
+        // line above — after the check at the top of this method has already passed. `_verbatimUntil`
+        // was -1 on entry and covers the rest of the file on return, so the one check could never
+        // see it and the node was written a second time over source the tag had already covered.
+        // SK-FUZZ-0011: a member marked verbatim by PreprocessorGuard whose leading trivia carries
+        // `@formatter:off` — `#if` … `// @formatter:off` … `void M() {` … `#endif`. Both halves are
+        // needed: without the unbalanced `#if` this node is never emitted verbatim, and without the
+        // tag `_verbatimUntil` never moves.
+        if (node.SpanStart < _verbatimUntil) {
+            return;
+        }
+
         var span = node.Span;
         if (span.Start != _gapEmittedAt) {
             EmitGap(_cursor, PieceKind.Token, span.Start, node.GetFirstToken());

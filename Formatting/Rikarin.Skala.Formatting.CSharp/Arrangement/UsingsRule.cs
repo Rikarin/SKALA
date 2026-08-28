@@ -178,6 +178,20 @@ public sealed class UsingsRule : ArrangementRule {
     ///     sorting moves a different directive to the front and the trivia rides along with the old one,
     ///     the licence header ends up in the middle of the block. This re-pins the block's opening trivia
     ///     to the block rather than to a directive.
+    ///     <para>
+    ///         ⚠ SK-FUZZ-0011: every <em>other</em> directive keeps its own leading trivia, and the line
+    ///         that blanked it was silent code deletion rather than a layout nicety. `using System.Text;`
+    ///         / `// keep me` / `using System.Collections;` sorts to two lines with the comment gone — no
+    ///         removal involved, both usings live, an ordinary file. With `#if X` / `#endif` in that
+    ///         position it deleted a preprocessor directive, which changes what compiles.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ And it is what made arrangement stop being a fixed point. <see cref="HasNoComment" />
+    ///         keeps a using that carries a comment or a directive; blanking that trivia on the first pass
+    ///         makes the same directive removable on the second, so the pipeline deleted the comment, then
+    ///         the using, then converged on a file that had lost both. The idempotency violation was the
+    ///         symptom and the trivia loss was the defect.
+    ///     </para>
     /// </remarks>
     static List<UsingDirectiveSyntax> Renormalise(
         List<UsingDirectiveSyntax> ordered,
@@ -187,15 +201,18 @@ public sealed class UsingsRule : ArrangementRule {
             return ordered;
         }
 
+        // The block's opening trivia belongs to the block. It rides to whatever is first now, and the
+        // directive it came from surrenders it — otherwise a header whose directive merely moved down
+        // would be emitted twice.
         var header = original[0].GetLeadingTrivia();
         var result = new List<UsingDirectiveSyntax>(ordered.Count);
         for (var i = 0; i < ordered.Count; i++) {
             var directive = ordered[i];
-            result.Add(
-                i == 0
-                    ? directive.WithLeadingTrivia(header)
-                    : directive.WithLeadingTrivia(SyntaxFactory.TriviaList())
-            );
+            var own = ReferenceEquals(directive, original[0])
+                ? SyntaxFactory.TriviaList()
+                : directive.GetLeadingTrivia();
+
+            result.Add(directive.WithLeadingTrivia(i == 0 ? header.AddRange(own) : own));
         }
 
         return result;

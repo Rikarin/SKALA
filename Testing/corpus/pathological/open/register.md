@@ -35,29 +35,6 @@ bespoke test: two corpus files that differ only in whitespace acquire two `.expe
 and those fixtures being **byte-identical** is the absorption statement, now asserted by the
 ordinary differential instead of by an entry here. SK-FUZZ-0007 was retired that way.
 
-## SK-FUZZ-0006 — a comment between two usings, and arrangement stops being a fixed point
-
-- file: `comment-between-usings-with-inner-whitespace.cs`
-- property: `arrangement-idempotency`
-- seed: `11809147520796568340`
-- found: a generated unit printed with `widen-gap`, `comment-line`, `tabs`, `region`; minimised from
-  388 characters to 67 in 27 evaluations, and narrowed by hand to 45.
-
-```
-using System;
-// c
-using   System.  Collections ;
-```
-
-`pipeline(pipeline(x)) ≠ pipeline(x)`: the first pass applies **SK2010** and the second still wants
-one edit. M4's own bar, from doc 12 § "Properties" — *"Formatting is idempotent on its own and
-arrangement is idempotent on its own, and neither fact implies the pair is."*
-
-⚠ Both ingredients are needed and neither is exotic. Remove the interior whitespace from the
-qualified name and it converges; remove the comment between the two usings and it converges. Both
-appear in real code constantly, and 391 corpus files under `ArrangementPropertyTests` do not contain
-the combination — which is the same sentence as SK-FUZZ-0004's, for the second time.
-
 ## SK-FUZZ-0008 — the `indent` mutation is misclassified as absorbed on a raw interpolated string
 
 ⚠ **A defect in the fuzzer's own catalogue, not in the formatter.** `pathological/interpolated-raw-string-with-nested-braces.cs`:
@@ -203,6 +180,8 @@ that it is worth running — and an empty register would read as a fuzzer that f
 | `SK-FUZZ-0003` | idempotency — mixed line endings converged in two passes, not one | `insert_final_newline` chose its ending with `DefaultNewLine`, which answers with the first newline in the **input** — and the first pass can move, rewrite or delete the text above that newline, so the second pass asks a different question. It now reads the ending of the last break in the **output**, which is stable by construction and still keeps a CRLF file ending CRLF. ⚠ Committing the reproduction lowered `pathological`'s ratchet to 0.9589; its three lines are SK-DIV-0018, the oracle normalising a mixed-ending file where Skala preserves each gap |
 | `SK-FUZZ-0002` | token equivalence — a `///` run beginning on the `{` line lost its continuation lines (SK9099, the file unformattable) | nothing was ever lost: both `///` lines were emitted, and a **blank line was inserted between them**. Roslyn ends a documentation comment at a blank line, so that split one trivia into two and the token stream changed. `stick_comment`'s early return spends a member's requirement above its comment rather than below it, but asks `previous.StartsLine` first — and the first `///` of a run that starts on the brace line does not start a line, so `blank_lines_around_invocable` landed inside the run. `ResolveBlankLines` now treats the gap between two `///` lines as structure that none of the three systems votes on: 0 → 1 splits a trivia and 1 → 0 fuses two |
 | `SK-FUZZ-0007` | whitespace absorption — a blank line appeared because the *input* line was wider than the margin | `IsSingleLine` measured the member with `TextWidth.Measure` over its source span, which counts the gaps the author wrote between its tokens — gaps the formatter is about to collapse. It now measures the token stream and the spaces `SpaceRules` will actually emit. The leading-whitespace half of this had already been fixed once (`OutputIndentColumns`); the interior half is the same mistake one step in, and only a mutation that changes a width could reach it. Both halves of the pair are now measured fixtures whose `.expected.cs` are byte-identical |
+| `SK-FUZZ-0006` | arrangement idempotency — a comment between two usings, and arrangement stops being a fixed point | ⚠ **the entry's cause was the symptom, and the defect was silent code deletion.** `UsingsRule.Renormalise` re-pins the block's opening trivia to whatever sorts first — and blanked the leading trivia of *every other* directive to do it. So sorting `using System.Text;` / `// keep me` / `using System.Collections;` deleted the comment, with no removal in play, both usings bound, on a file nothing about this register would have flagged; with `#if` / `#endif` in that position it deleted a preprocessor directive, which changes what compiles. The idempotency violation was downstream of that: `HasNoComment` keeps a using that carries a comment or a directive, so blanking the trivia on pass 1 made the same directive *removable* on pass 2 — the pipeline deleted the comment, then the using, then converged on a file that had lost both. Each directive now keeps its own leading trivia and only `original[0]` surrenders its own to the front, so the header still cannot be emitted twice |
+| `SK-FUZZ-0011` | token equivalence — `@formatter:off` in the leading trivia of a member an unbalanced `#if` made verbatim (SK9099, the file unformattable) | SK-FUZZ-0005's guard, evaluated one call too early. `EmitVerbatim` checks `_verbatimUntil` at the top, but the tag comment is in the node's *leading trivia*, so the piece that opens the region is emitted by the `EmitUpTo` on the line below — traced: `-1` on entry, end-of-file on return. The node was then written a second time over source the tag had already covered, exactly as in SK-FUZZ-0005. Re-checked after `EmitUpTo`. ⚠ Both halves are needed: the unbalanced `#if` is what makes `PreprocessorGuard` emit the member verbatim at all, and without the tag `_verbatimUntil` never moves |
 | `SK-FUZZ-0004` | idempotency — the closing `]` of a split array-rank specifier landed at eight columns, then four | `EmitToken` matched a piece by its start position alone. A zero-width token has no piece of its own (`SourcePieces.Split` skips it), so the omitted size of `byte[…]` arrived holding the *next* token's piece — and it shares that token's start whenever no trivia separates them. The `]` was emitted one caller early, from inside the bracket's continuation scope instead of after it closed. Matching on the piece's length as well as its start is the fix; a space before the `]` moved it off the collision, which is why the second pass was right |
 
 Their reproductions now live in `Testing/corpus/pathological/` as ordinary measured fixtures, which
