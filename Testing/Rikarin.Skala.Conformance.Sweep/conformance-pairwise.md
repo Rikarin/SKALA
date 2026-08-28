@@ -23,25 +23,25 @@ in `docs/divergences.md`, not here.
 | | |
 |---|---|
 | ReSharper | 2025.2.6 |
-| base configuration | the repository export, sha256 `bd9791d3a6e6a087` |
+| base configuration | the repository export, sha256 `381a31a28c5ea94d` |
 | families | all |
-| pairs swept | 62 |
-| corners | 365 |
+| pairs swept | 66 |
+| corners | 390 |
 | rounds | 9 (batched by corner index) |
 | `cleanupcode` invocations | 14 |
-| oracle wall clock | 2.2 min |
+| oracle wall clock | 2.0 min |
 | Skala wall clock | 0.7 s |
 
 ## Outcomes
 
 | outcome | pairs | meaning |
 |---|---:|---|
-| ✅ CONFORMANT | 16 | every corner of the grid agrees |
+| ✅ CONFORMANT | 17 | every corner of the grid agrees |
 | ⚠ INTERACTION | 1 | **every corner the single sweep reaches agrees, and an interior corner does not** |
 | ❌ DIVERGENT | 0 | a corner disagrees, and the single sweep could have seen it too |
 | ⚠ UNEXERCISED | 0 | **neither engine distinguished the corners.** Not a pass |
 | ⚠ BASELINE | 12 | ⚠ the two engines already disagreed on this fixture before either key was set, so the grid cannot report on the pair |
-| ⚠ INHERITED | 33 | ⚠ every disagreement is one the single sweep already records for one of the two keys, measured alone — not a finding about the pair |
+| ⚠ INHERITED | 36 | ⚠ every disagreement is one the single sweep already records for one of the two keys, measured alone — not a finding about the pair |
 | ⚠ NO FIXTURE | 0 | the pair names no fixture the corpus has |
 
 ## Findings
@@ -64,18 +64,21 @@ in `docs/divergences.md`, not here.
 | `resharper_csharp_wrap_before_declaration_lpar` × `resharper_csharp_max_line_length` | ⚠ INHERITED | 6 | 4 | `true` × `1`, `false` × `1` |
 | `resharper_csharp_wrap_before_eq` × `resharper_csharp_max_line_length` | ⚠ INHERITED | 6 | 2 | `true` × `0`, `true` × `1`, `false` × `0`, `false` × `1` |
 | `resharper_csharp_wrap_before_first_method_call` × `resharper_csharp_max_line_length` | ⚠ INHERITED | 6 | 2 | `true` × `0`, `true` × `1`, `false` × `0`, `false` × `1` |
+| `resharper_csharp_wrap_before_first_type_parameter_constraint` × `resharper_csharp_max_line_length` | ⚠ INHERITED | 6 | 2 | `true` × `0`, `true` × `1`, `false` × `0`, `false` × `1` |
 | `resharper_csharp_wrap_before_invocation_lpar` × `resharper_csharp_max_line_length` | ⚠ INHERITED | 6 | 4 | `true` × `1`, `false` × `1` |
 | `resharper_csharp_wrap_before_invocation_rpar` × `resharper_csharp_max_line_length` | ⚠ INHERITED | 6 | 2 | `true` × `1`, `false` × `120`, `false` × `0`, `false` × `1` |
 | `resharper_csharp_wrap_before_linq_expression` × `resharper_csharp_max_line_length` | ⚠ INHERITED | 6 | 2 | `true` × `0`, `true` × `1`, `false` × `0`, `false` × `1` |
 | `resharper_csharp_wrap_before_primary_constructor_declaration_lpar` × `resharper_csharp_max_line_length` | ⚠ INHERITED | 6 | 4 | `true` × `1`, `false` × `1` |
 | `resharper_csharp_wrap_before_primary_constructor_declaration_rpar` × `resharper_csharp_max_line_length` | ⚠ INHERITED | 6 | 4 | `true` × `1`, `false` × `1` |
 | `resharper_csharp_wrap_before_ternary_opsigns` × `resharper_csharp_max_line_length` | ⚠ INHERITED | 6 | 4 | `true` × `1`, `false` × `1` |
+| `resharper_csharp_wrap_before_type_parameter_langle` × `resharper_csharp_max_line_length` | ⚠ INHERITED | 6 | 2 | `true` × `0`, `true` × `1`, `false` × `0`, `false` × `1` |
 | `resharper_csharp_wrap_chained_binary_expressions` × `resharper_csharp_max_line_length` | ⚠ INHERITED | 6 | 1 | `wrap_if_long` × `120`, `wrap_if_long` × `0`, `wrap_if_long` × `1`, `chop_if_long` × `0` |
 | `resharper_csharp_wrap_chained_binary_patterns` × `resharper_csharp_max_line_length` | ⚠ INHERITED | 6 | 1 | `wrap_if_long` × `120`, `wrap_if_long` × `0`, `wrap_if_long` × `1`, `chop_if_long` × `0` |
 | `resharper_csharp_wrap_chained_method_calls` × `resharper_csharp_max_line_length` | ⚠ INHERITED | 9 | 4 | `wrap_if_long` × `120`, `wrap_if_long` × `1`, `chop_if_long` × `0`, `chop_if_long` × `1` |
 | `resharper_csharp_wrap_enum_declaration` × `resharper_csharp_max_line_length` | ⚠ INHERITED | 9 | 2 | `wrap_if_long` × `120`, `wrap_if_long` × `0`, `wrap_if_long` × `1`, `chop_if_long` × `120` |
 | `resharper_csharp_wrap_for_stmt_header_style` × `resharper_csharp_max_line_length` | ⚠ INHERITED | 9 | 3 | `wrap_if_long` × `120`, `wrap_if_long` × `0`, `wrap_if_long` × `1`, `chop_if_long` × `0` |
 | `resharper_csharp_wrap_multiple_declaration_style` × `resharper_csharp_max_line_length` | ⚠ INHERITED | 9 | 6 | `wrap_if_long` × `1`, `chop_if_long` × `1`, `chop_always` × `1` |
+| `resharper_csharp_wrap_multiple_type_parameter_constraints_style` × `resharper_csharp_max_line_length` | ⚠ INHERITED | 9 | 4 | `wrap_if_long` × `0`, `wrap_if_long` × `1`, `chop_if_long` × `0`, `chop_if_long` × `1` |
 | `resharper_csharp_wrap_parameters_style` × `resharper_csharp_max_line_length` | ⚠ INHERITED | 9 | 6 | `wrap_if_long` × `1`, `chop_if_long` × `1`, `chop_always` × `1` |
 | `resharper_csharp_wrap_primary_constructor_parameters_style` × `resharper_csharp_max_line_length` | ⚠ INHERITED | 9 | 6 | `wrap_if_long` × `1`, `chop_if_long` × `1`, `chop_always` × `1` |
 | `resharper_csharp_wrap_switch_expression` × `resharper_csharp_max_line_length` | ⚠ INHERITED | 9 | 2 | `wrap_if_long` × `120`, `wrap_if_long` × `0`, `wrap_if_long` × `1`, `chop_if_long` × `120` |
@@ -103,6 +106,7 @@ that cross is an interaction and nothing else in the repository can see it.
 
 | primary | secondary | outcome | corners | agree | reach | oracle | skala | base | fixture |
 |---|---|---|---:|---:|---:|---:|---:|---|---|
+| `resharper_align_multiline_type_parameter_list` | `resharper_csharp_indent_size` | ✅ CONFORMANT | 4 | 4 | 2 | 4 | 4 | = | `constructs/breaks/type-parameter-list.cs` |
 | `resharper_csharp_align_linq_query` | `resharper_csharp_indent_size` | ✅ CONFORMANT | 4 | 4 | 2 | 4 | 4 | = | `constructs/wrapping/linq-query-alignment.cs` |
 | `resharper_csharp_align_multiline_array_and_object_initializer` | `resharper_csharp_indent_size` | ✅ CONFORMANT | 4 | 4 | 2 | 3 | 3 | = | `constructs/wrapping/alignment.cs` |
 | `resharper_csharp_align_multiline_binary_expressions_chain` | `resharper_csharp_indent_size` | ✅ CONFORMANT | 4 | 4 | 2 | 3 | 3 | = | `constructs/wrapping/alignment.cs` |
@@ -141,12 +145,14 @@ that cross is an interaction and nothing else in the repository can see it.
 | `resharper_csharp_wrap_before_eq` | `resharper_csharp_max_line_length` | ⚠ INHERITED | 6 | 2 | 2 | 5 | 4 | = | `constructs/wrapping/around-eq.cs` |
 | `resharper_csharp_wrap_before_extends_colon` | `resharper_csharp_max_line_length` | ⚠ BASELINE | 6 | 0 | 2 | 5 | 3 | ⚠ | `constructs/wrapping/base-list.cs` |
 | `resharper_csharp_wrap_before_first_method_call` | `resharper_csharp_max_line_length` | ⚠ INHERITED | 6 | 2 | 2 | 4 | 4 | = | `constructs/wrapping/chained-calls.cs` |
+| `resharper_csharp_wrap_before_first_type_parameter_constraint` | `resharper_csharp_max_line_length` | ⚠ INHERITED | 6 | 2 | 2 | 4 | 3 | = | `constructs/breaks/type-parameter-constraints.cs` |
 | `resharper_csharp_wrap_before_invocation_lpar` | `resharper_csharp_max_line_length` | ⚠ INHERITED | 6 | 4 | 2 | 4 | 2 | = | `constructs/wrapping/paren-placement.cs` |
 | `resharper_csharp_wrap_before_invocation_rpar` | `resharper_csharp_max_line_length` | ⚠ INHERITED | 6 | 2 | 2 | 4 | 4 | = | `constructs/breaks/invocation-lpar-rpar.cs` |
 | `resharper_csharp_wrap_before_linq_expression` | `resharper_csharp_max_line_length` | ⚠ INHERITED | 6 | 2 | 2 | 5 | 3 | = | `constructs/wrapping/linq-query.cs` |
 | `resharper_csharp_wrap_before_primary_constructor_declaration_lpar` | `resharper_csharp_max_line_length` | ⚠ INHERITED | 6 | 4 | 2 | 4 | 2 | = | `constructs/wrapping/paren-placement.cs` |
 | `resharper_csharp_wrap_before_primary_constructor_declaration_rpar` | `resharper_csharp_max_line_length` | ⚠ INHERITED | 6 | 4 | 2 | 4 | 4 | = | `constructs/preservation/primary-constructor-parens.cs` |
 | `resharper_csharp_wrap_before_ternary_opsigns` | `resharper_csharp_max_line_length` | ⚠ INHERITED | 6 | 4 | 2 | 4 | 4 | = | `constructs/breaks/ternary.cs` |
+| `resharper_csharp_wrap_before_type_parameter_langle` | `resharper_csharp_max_line_length` | ⚠ INHERITED | 6 | 2 | 2 | 5 | 4 | = | `constructs/breaks/type-parameter-list.cs` |
 | `resharper_csharp_wrap_chained_binary_expressions` | `resharper_csharp_max_line_length` | ⚠ INHERITED | 6 | 1 | 2 | 4 | 4 | = | `constructs/wrapping/binary-chains.cs` |
 | `resharper_csharp_wrap_chained_binary_patterns` | `resharper_csharp_max_line_length` | ⚠ INHERITED | 6 | 1 | 2 | 4 | 4 | = | `constructs/wrapping/binary-chains.cs` |
 | `resharper_csharp_wrap_chained_method_calls` | `resharper_csharp_max_line_length` | ⚠ INHERITED | 9 | 4 | 3 | 5 | 5 | = | `constructs/wrapping/chained-calls.cs` |
@@ -156,6 +162,7 @@ that cross is an interaction and nothing else in the repository can see it.
 | `resharper_csharp_wrap_lines` | `resharper_csharp_max_line_length` | ⚠ BASELINE | 6 | 1 | 2 | 3 | 2 | ⚠ | `constructs/wrapping/base-list.cs` |
 | `resharper_csharp_wrap_list_pattern` | `resharper_csharp_max_line_length` | ⚠ BASELINE | 9 | 0 | 3 | 2 | 3 | ⚠ | `constructs/wrapping/patterns.cs` |
 | `resharper_csharp_wrap_multiple_declaration_style` | `resharper_csharp_max_line_length` | ⚠ INHERITED | 9 | 6 | 3 | 3 | 4 | = | `constructs/wrapping/declarators.cs` |
+| `resharper_csharp_wrap_multiple_type_parameter_constraints_style` | `resharper_csharp_max_line_length` | ⚠ INHERITED | 9 | 4 | 3 | 5 | 4 | = | `constructs/breaks/type-parameter-constraints.cs` |
 | `resharper_csharp_wrap_parameters_style` | `resharper_csharp_max_line_length` | ⚠ INHERITED | 9 | 6 | 3 | 3 | 3 | = | `constructs/blank-lines/after-a-block-statement.cs` |
 | `resharper_csharp_wrap_primary_constructor_parameters_style` | `resharper_csharp_max_line_length` | ⚠ INHERITED | 9 | 6 | 3 | 3 | 3 | = | `constructs/breaks/constructor-initializer.cs` |
 | `resharper_csharp_wrap_property_pattern` | `resharper_csharp_max_line_length` | ⚠ BASELINE | 9 | 0 | 3 | 3 | 3 | ⚠ | `constructs/wrapping/patterns.cs` |
@@ -170,6 +177,6 @@ that cross is an interaction and nothing else in the repository can see it.
 
 | pairs | reason |
 |---:|---|
-| 39 | no `oracle` fixture in the registry |
+| 35 | no `oracle` fixture in the registry |
 | 1 | excluded by name: keep |
 

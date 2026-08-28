@@ -308,6 +308,29 @@
     ]
   },
   {
+    "Key": "resharper_align_multiline_type_parameter_list",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true,
+    "Fixture": "constructs/breaks/type-parameter-list.cs",
+    "Values": [
+      {
+        "Value": "true",
+        "OracleHash": "fcb694c6",
+        "SkalaHash": "fcb694c6",
+        "Agree": true
+      },
+      {
+        "Value": "false",
+        "OracleHash": "0a7c705f",
+        "SkalaHash": "0a7c705f",
+        "Agree": true
+      }
+    ]
+  },
+  {
     "Key": "resharper_csharp_align_linq_query",
     "Tier": "A",
     "Outcome": "Conformant",
@@ -434,7 +457,7 @@
       {
         "Value": "true",
         "OracleHash": "a010150a",
-        "SkalaHash": "f8693c43",
+        "SkalaHash": "19818a7a",
         "Agree": false
       },
       {
@@ -5667,6 +5690,29 @@
     ]
   },
   {
+    "Key": "resharper_csharp_wrap_before_first_type_parameter_constraint",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true,
+    "Fixture": "constructs/breaks/type-parameter-constraints.cs",
+    "Values": [
+      {
+        "Value": "true",
+        "OracleHash": "f902a896",
+        "SkalaHash": "f902a896",
+        "Agree": true
+      },
+      {
+        "Value": "false",
+        "OracleHash": "bef8834c",
+        "SkalaHash": "bef8834c",
+        "Agree": true
+      }
+    ]
+  },
+  {
     "Key": "resharper_csharp_wrap_before_invocation_lpar",
     "Tier": "A",
     "Outcome": "Conformant",
@@ -5800,6 +5846,29 @@
         "Value": "false",
         "OracleHash": "4a5f4e3a",
         "SkalaHash": "4a5f4e3a",
+        "Agree": true
+      }
+    ]
+  },
+  {
+    "Key": "resharper_csharp_wrap_before_type_parameter_langle",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true,
+    "Fixture": "constructs/breaks/type-parameter-list.cs",
+    "Values": [
+      {
+        "Value": "true",
+        "OracleHash": "c5675637",
+        "SkalaHash": "c5675637",
+        "Agree": true
+      },
+      {
+        "Value": "false",
+        "OracleHash": "0a7c705f",
+        "SkalaHash": "0a7c705f",
         "Agree": true
       }
     ]
@@ -5939,7 +6008,7 @@
   },
   {
     "Key": "resharper_csharp_wrap_for_stmt_header_style",
-    "Tier": "A",
+    "Tier": "D",
     "Outcome": "Divergent",
     "OracleDistinct": 3,
     "SkalaDistinct": 3,
@@ -6043,6 +6112,35 @@
         "Value": "chop_always",
         "OracleHash": "733e0cee",
         "SkalaHash": "733e0cee",
+        "Agree": true
+      }
+    ]
+  },
+  {
+    "Key": "resharper_csharp_wrap_multiple_type_parameter_constraints_style",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 3,
+    "SkalaDistinct": 3,
+    "BaselineAgrees": true,
+    "Fixture": "constructs/breaks/type-parameter-constraints.cs",
+    "Values": [
+      {
+        "Value": "wrap_if_long",
+        "OracleHash": "02f21b38",
+        "SkalaHash": "02f21b38",
+        "Agree": true
+      },
+      {
+        "Value": "chop_if_long",
+        "OracleHash": "f902a896",
+        "SkalaHash": "f902a896",
+        "Agree": true
+      },
+      {
+        "Value": "chop_always",
+        "OracleHash": "f4dc6765",
+        "SkalaHash": "f4dc6765",
         "Agree": true
       }
     ]
@@ -7155,7 +7253,7 @@
   },
   {
     "Key": "resharper_xmldoc_indent_size",
-    "Tier": "A",
+    "Tier": "D",
     "Outcome": "Spurious",
     "OracleDistinct": 1,
     "SkalaDistinct": 2,
@@ -7178,7 +7276,7 @@
   },
   {
     "Key": "resharper_xmldoc_indent_style",
-    "Tier": "A",
+    "Tier": "D",
     "Outcome": "Spurious",
     "OracleDistinct": 1,
     "SkalaDistinct": 2,
@@ -7259,7 +7357,7 @@
   },
   {
     "Key": "resharper_xmldoc_linebreak_before_elements",
-    "Tier": "A",
+    "Tier": "D",
     "Outcome": "Spurious",
     "OracleDistinct": 1,
     "SkalaDistinct": 2,
@@ -7282,7 +7380,7 @@
   },
   {
     "Key": "resharper_xmldoc_linebreaks_inside_tags_for_elements_with_child_elements",
-    "Tier": "A",
+    "Tier": "D",
     "Outcome": "Divergent",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
@@ -7305,7 +7403,7 @@
   },
   {
     "Key": "resharper_xmldoc_linebreaks_inside_tags_for_multiline_elements",
-    "Tier": "A",
+    "Tier": "D",
     "Outcome": "Divergent",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
@@ -7328,7 +7426,7 @@
   },
   {
     "Key": "resharper_xmldoc_max_blank_lines_between_tags",
-    "Tier": "A",
+    "Tier": "D",
     "Outcome": "Divergent",
     "OracleDistinct": 3,
     "SkalaDistinct": 3,

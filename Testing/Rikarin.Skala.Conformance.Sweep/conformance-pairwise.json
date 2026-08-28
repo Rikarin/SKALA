@@ -1,5 +1,52 @@
 [
   {
+    "Primary": "resharper_align_multiline_type_parameter_list",
+    "Secondary": "resharper_csharp_indent_size",
+    "Fixture": "constructs/breaks/type-parameter-list.cs",
+    "Outcome": "Conformant",
+    "OracleDistinct": 4,
+    "SkalaDistinct": 4,
+    "BaselineAgrees": true,
+    "Corners": [
+      {
+        "PrimaryValue": "true",
+        "SecondaryValue": "4",
+        "OracleHash": "fcb694c6",
+        "SkalaHash": "fcb694c6",
+        "Agree": true,
+        "ReachedBySingleSweep": true,
+        "AttributableToOneKey": false
+      },
+      {
+        "PrimaryValue": "true",
+        "SecondaryValue": "1",
+        "OracleHash": "c2a303cb",
+        "SkalaHash": "c2a303cb",
+        "Agree": true,
+        "ReachedBySingleSweep": false,
+        "AttributableToOneKey": false
+      },
+      {
+        "PrimaryValue": "false",
+        "SecondaryValue": "4",
+        "OracleHash": "0a7c705f",
+        "SkalaHash": "0a7c705f",
+        "Agree": true,
+        "ReachedBySingleSweep": true,
+        "AttributableToOneKey": false
+      },
+      {
+        "PrimaryValue": "false",
+        "SecondaryValue": "1",
+        "OracleHash": "49d24f85",
+        "SkalaHash": "49d24f85",
+        "Agree": true,
+        "ReachedBySingleSweep": false,
+        "AttributableToOneKey": false
+      }
+    ]
+  },
+  {
     "Primary": "resharper_csharp_align_linq_query",
     "Secondary": "resharper_csharp_indent_size",
     "Fixture": "constructs/wrapping/linq-query-alignment.cs",
@@ -247,7 +294,7 @@
         "PrimaryValue": "true",
         "SecondaryValue": "4",
         "OracleHash": "a010150a",
-        "SkalaHash": "f8693c43",
+        "SkalaHash": "19818a7a",
         "Agree": false,
         "ReachedBySingleSweep": true,
         "AttributableToOneKey": true
@@ -256,7 +303,7 @@
         "PrimaryValue": "true",
         "SecondaryValue": "1",
         "OracleHash": "4ee4866e",
-        "SkalaHash": "cc9d6dfb",
+        "SkalaHash": "d04daa97",
         "Agree": false,
         "ReachedBySingleSweep": false,
         "AttributableToOneKey": true
@@ -2128,6 +2175,71 @@
     ]
   },
   {
+    "Primary": "resharper_csharp_wrap_before_first_type_parameter_constraint",
+    "Secondary": "resharper_csharp_max_line_length",
+    "Fixture": "constructs/breaks/type-parameter-constraints.cs",
+    "Outcome": "Inherited",
+    "OracleDistinct": 4,
+    "SkalaDistinct": 3,
+    "BaselineAgrees": true,
+    "Corners": [
+      {
+        "PrimaryValue": "true",
+        "SecondaryValue": "120",
+        "OracleHash": "f902a896",
+        "SkalaHash": "f902a896",
+        "Agree": true,
+        "ReachedBySingleSweep": true,
+        "AttributableToOneKey": false
+      },
+      {
+        "PrimaryValue": "true",
+        "SecondaryValue": "0",
+        "OracleHash": "98c490a3",
+        "SkalaHash": "f902a896",
+        "Agree": false,
+        "ReachedBySingleSweep": false,
+        "AttributableToOneKey": true
+      },
+      {
+        "PrimaryValue": "true",
+        "SecondaryValue": "1",
+        "OracleHash": "13a9b1a0",
+        "SkalaHash": "543a016d",
+        "Agree": false,
+        "ReachedBySingleSweep": false,
+        "AttributableToOneKey": true
+      },
+      {
+        "PrimaryValue": "false",
+        "SecondaryValue": "120",
+        "OracleHash": "bef8834c",
+        "SkalaHash": "bef8834c",
+        "Agree": true,
+        "ReachedBySingleSweep": true,
+        "AttributableToOneKey": false
+      },
+      {
+        "PrimaryValue": "false",
+        "SecondaryValue": "0",
+        "OracleHash": "98c490a3",
+        "SkalaHash": "bef8834c",
+        "Agree": false,
+        "ReachedBySingleSweep": false,
+        "AttributableToOneKey": true
+      },
+      {
+        "PrimaryValue": "false",
+        "SecondaryValue": "1",
+        "OracleHash": "13a9b1a0",
+        "SkalaHash": "543a016d",
+        "Agree": false,
+        "ReachedBySingleSweep": false,
+        "AttributableToOneKey": true
+      }
+    ]
+  },
+  {
     "Primary": "resharper_csharp_wrap_before_invocation_lpar",
     "Secondary": "resharper_csharp_max_line_length",
     "Fixture": "constructs/wrapping/paren-placement.cs",
@@ -2511,6 +2623,71 @@
         "SecondaryValue": "1",
         "OracleHash": "abc160f7",
         "SkalaHash": "763b162a",
+        "Agree": false,
+        "ReachedBySingleSweep": false,
+        "AttributableToOneKey": true
+      }
+    ]
+  },
+  {
+    "Primary": "resharper_csharp_wrap_before_type_parameter_langle",
+    "Secondary": "resharper_csharp_max_line_length",
+    "Fixture": "constructs/breaks/type-parameter-list.cs",
+    "Outcome": "Inherited",
+    "OracleDistinct": 5,
+    "SkalaDistinct": 4,
+    "BaselineAgrees": true,
+    "Corners": [
+      {
+        "PrimaryValue": "true",
+        "SecondaryValue": "120",
+        "OracleHash": "c5675637",
+        "SkalaHash": "c5675637",
+        "Agree": true,
+        "ReachedBySingleSweep": true,
+        "AttributableToOneKey": false
+      },
+      {
+        "PrimaryValue": "true",
+        "SecondaryValue": "0",
+        "OracleHash": "e8ad2f76",
+        "SkalaHash": "c5675637",
+        "Agree": false,
+        "ReachedBySingleSweep": false,
+        "AttributableToOneKey": true
+      },
+      {
+        "PrimaryValue": "true",
+        "SecondaryValue": "1",
+        "OracleHash": "f5f0ce07",
+        "SkalaHash": "973222c7",
+        "Agree": false,
+        "ReachedBySingleSweep": false,
+        "AttributableToOneKey": true
+      },
+      {
+        "PrimaryValue": "false",
+        "SecondaryValue": "120",
+        "OracleHash": "0a7c705f",
+        "SkalaHash": "0a7c705f",
+        "Agree": true,
+        "ReachedBySingleSweep": true,
+        "AttributableToOneKey": false
+      },
+      {
+        "PrimaryValue": "false",
+        "SecondaryValue": "0",
+        "OracleHash": "e8ad2f76",
+        "SkalaHash": "0a7c705f",
+        "Agree": false,
+        "ReachedBySingleSweep": false,
+        "AttributableToOneKey": true
+      },
+      {
+        "PrimaryValue": "false",
+        "SecondaryValue": "1",
+        "OracleHash": "a8c25c62",
+        "SkalaHash": "ce262c5f",
         "Agree": false,
         "ReachedBySingleSweep": false,
         "AttributableToOneKey": true
@@ -3258,6 +3435,98 @@
         "SecondaryValue": "1",
         "OracleHash": "ae56cf09",
         "SkalaHash": "683f2278",
+        "Agree": false,
+        "ReachedBySingleSweep": false,
+        "AttributableToOneKey": true
+      }
+    ]
+  },
+  {
+    "Primary": "resharper_csharp_wrap_multiple_type_parameter_constraints_style",
+    "Secondary": "resharper_csharp_max_line_length",
+    "Fixture": "constructs/breaks/type-parameter-constraints.cs",
+    "Outcome": "Inherited",
+    "OracleDistinct": 5,
+    "SkalaDistinct": 4,
+    "BaselineAgrees": true,
+    "Corners": [
+      {
+        "PrimaryValue": "wrap_if_long",
+        "SecondaryValue": "120",
+        "OracleHash": "02f21b38",
+        "SkalaHash": "02f21b38",
+        "Agree": true,
+        "ReachedBySingleSweep": true,
+        "AttributableToOneKey": false
+      },
+      {
+        "PrimaryValue": "wrap_if_long",
+        "SecondaryValue": "0",
+        "OracleHash": "98c490a3",
+        "SkalaHash": "02f21b38",
+        "Agree": false,
+        "ReachedBySingleSweep": false,
+        "AttributableToOneKey": true
+      },
+      {
+        "PrimaryValue": "wrap_if_long",
+        "SecondaryValue": "1",
+        "OracleHash": "13a9b1a0",
+        "SkalaHash": "543a016d",
+        "Agree": false,
+        "ReachedBySingleSweep": false,
+        "AttributableToOneKey": true
+      },
+      {
+        "PrimaryValue": "chop_if_long",
+        "SecondaryValue": "120",
+        "OracleHash": "f902a896",
+        "SkalaHash": "f902a896",
+        "Agree": true,
+        "ReachedBySingleSweep": true,
+        "AttributableToOneKey": false
+      },
+      {
+        "PrimaryValue": "chop_if_long",
+        "SecondaryValue": "0",
+        "OracleHash": "98c490a3",
+        "SkalaHash": "f902a896",
+        "Agree": false,
+        "ReachedBySingleSweep": false,
+        "AttributableToOneKey": true
+      },
+      {
+        "PrimaryValue": "chop_if_long",
+        "SecondaryValue": "1",
+        "OracleHash": "13a9b1a0",
+        "SkalaHash": "543a016d",
+        "Agree": false,
+        "ReachedBySingleSweep": false,
+        "AttributableToOneKey": true
+      },
+      {
+        "PrimaryValue": "chop_always",
+        "SecondaryValue": "120",
+        "OracleHash": "f4dc6765",
+        "SkalaHash": "f4dc6765",
+        "Agree": true,
+        "ReachedBySingleSweep": true,
+        "AttributableToOneKey": false
+      },
+      {
+        "PrimaryValue": "chop_always",
+        "SecondaryValue": "0",
+        "OracleHash": "f4dc6765",
+        "SkalaHash": "f4dc6765",
+        "Agree": true,
+        "ReachedBySingleSweep": false,
+        "AttributableToOneKey": true
+      },
+      {
+        "PrimaryValue": "chop_always",
+        "SecondaryValue": "1",
+        "OracleHash": "13a9b1a0",
+        "SkalaHash": "543a016d",
         "Agree": false,
         "ReachedBySingleSweep": false,
         "AttributableToOneKey": true
