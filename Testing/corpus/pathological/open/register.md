@@ -35,9 +35,11 @@ bespoke test: two corpus files that differ only in whitespace acquire two `.expe
 and those fixtures being **byte-identical** is the absorption statement, now asserted by the
 ordinary differential instead of by an entry here. SK-FUZZ-0007 was retired that way.
 
-⚠ **The four entries the nightly-33148756015 harvest retired left this queue empty, and it did not
-stay empty for one run.** SK-FUZZ-0015 below was found by the very next fuzz run after those fixes
-landed, which is the argument for the nightly in one line.
+⚠ **The nightly-33148756015 harvest emptied this queue, and it did not stay empty for one run.**
+SK-FUZZ-0009 and SK-FUZZ-0010 were retired out of it; SK-FUZZ-0012 and SK-FUZZ-0013 were fixed in
+the same pass and went straight to the table below without ever being entries. SK-FUZZ-0015 was then
+found by the very next fuzz run after those fixes landed, which is the argument for the nightly in
+one line.
 
 ⚠ SK-FUZZ-0008 carries no `file:` line, so it is **not** one of the entries `OpenDefectTests`
 asserts over: its defect is in the fuzzer's own mutation catalogue rather than in the formatter and
