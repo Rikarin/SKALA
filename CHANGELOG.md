@@ -13,6 +13,67 @@ missed it says so and by how much; three of them were, and one of those is still
 
 ## Unreleased
 
+### Added — the `indent_*_pars` family is two numbers, and three of the seven were not inert
+
+The seven `indent_*_pars` / `indent_*_angles` keys set **how many levels a delimited construct's
+contents take and how many its closing delimiter takes**, from the line its opener is on. Measured
+one key at a time against `jb cleanupcode`, on a chopped call whose `)` this export's wrap keys put
+on a line of its own:
+
+```
+none                0 / 0     inside (export)     1 / 0
+outside             1 / 1     outside_and_inside  2 / 1
+```
+
+⚠ **`indent_pars`, `indent_typearg_angles` and `indent_typeparam_angles` each carried a measured-
+inert note — "the oracle returns the file unchanged at every value" — and all three are withdrawn.**
+The probes behind them had no input where the delimiter the key governs lands on a line of its own,
+because nothing in this export's *wrapping* puts one there. That is a fact about the probe.
+`keep_user_linebreaks = true` keeps a `]`, `>` or `)` the **author** left on its own line, and on
+that shape all three move it. `indent_primary_constructor_decl_pars` loses its note too: its closer
+half really is masked by `wrap_before_primary_constructor_declaration_rpar = false`, but `none` puts
+a record's parameters at the declaration's own column.
+
+`indent_statement_pars` is the one that is genuinely inert, and it is a **mask rather than a gap**:
+`align_multiline_statement_conditions = true` lays a condition and its `)` out from an absolute
+column, and a level count has nothing to say about a column. It is `OfInert` with that reason, and
+`ConditionLevels` reads it so that turning the alignment off applies the table there too.
+
+Verified corner by corner on `constructs/indentation/delimiter-indent.cs`, both engines at every
+value: **25 of 28 agree**. The three that do not are recorded, not papered over — `indent_pars` and
+`indent_typearg_angles` at `none` (SK-DIV-0041's shape) and SK-DIV-0043 at `outside_and_inside`.
+
+Nothing moves at the export's own values, by construction: `inside` is one scope opened after the
+opener and closed with `alignsCloser`, which is what `VisitDelimited` already did.
+
+### Fixed — a binary chain that *is* an initializer's element took one continuation level too many
+
+SK-DIV-0040. A binary expression chain has no continuation level of its own; it lands on the one the
+construct around it opened. Inside braces that was invisible: `VisitBraced` opens a block scope,
+which resets the continuation depth, so a chain that *is* an element believed it was the first
+continuation on the line and took a second one.
+
+```
+var flags = new[] {
+    FirstCondition
+    && SecondCondition     ← the oracle's 12; Skala wrote 16
+};
+```
+
+⚠ **Invisible to the whole committed corpus** — 19 000 conformance tests and `corpus/real/` do not
+move by a line — which is why the new fixture is the finding rather than the fix. Against the
+pre-change code it fails 19 lines at +4 columns and takes `constructs/indentation/` from 98.10 % to
+93.11 %.
+
+Measured across the families that share the position, because the rule is about binary chains and
+not about the position: an assignment element, a ternary element, an `or` pattern element and a call
+chain element all take the extra level and all four still do.
+
+### Corpus
+
+`constructs/` 98.34 / 94.37 → 98.42 / 94.40 on this branch alone; `real/` 99.55 / 85.79 and
+`pathological/` 95.45 / 86.57 unchanged in both directions.
+
 ### Added — the outdent family has the scope kind the IR was recorded as lacking, and three of its keys work
 
 ⚠ **docs/plan/05 recorded `outdent_binary_ops`, `outdent_dots` and `outdent_ternary_ops` as
