@@ -539,7 +539,7 @@
   },
   {
     "Key": "resharper_csharp_align_multiple_declaration",
-    "Tier": "D",
+    "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
@@ -1399,6 +1399,35 @@
     ]
   },
   {
+    "Key": "resharper_csharp_blank_lines_inside_namespace",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 3,
+    "SkalaDistinct": 3,
+    "BaselineAgrees": true,
+    "Fixture": "constructs/blank-lines/resharper_csharp_blank_lines_inside_namespace.cs",
+    "Values": [
+      {
+        "Value": "0",
+        "OracleHash": "c0f2805b",
+        "SkalaHash": "c0f2805b",
+        "Agree": true
+      },
+      {
+        "Value": "3",
+        "OracleHash": "1fbb3cd1",
+        "SkalaHash": "1fbb3cd1",
+        "Agree": true
+      },
+      {
+        "Value": "1",
+        "OracleHash": "f20fc280",
+        "SkalaHash": "f20fc280",
+        "Agree": true
+      }
+    ]
+  },
+  {
     "Key": "resharper_csharp_blank_lines_inside_region",
     "Tier": "A",
     "Outcome": "Conformant",
@@ -1417,6 +1446,35 @@
         "Value": "2",
         "OracleHash": "ff70e5c7",
         "SkalaHash": "ff70e5c7",
+        "Agree": true
+      }
+    ]
+  },
+  {
+    "Key": "resharper_csharp_blank_lines_inside_type",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 3,
+    "SkalaDistinct": 3,
+    "BaselineAgrees": true,
+    "Fixture": "constructs/blank-lines/resharper_csharp_blank_lines_inside_type.cs",
+    "Values": [
+      {
+        "Value": "0",
+        "OracleHash": "465bbd91",
+        "SkalaHash": "465bbd91",
+        "Agree": true
+      },
+      {
+        "Value": "3",
+        "OracleHash": "278cca46",
+        "SkalaHash": "278cca46",
+        "Agree": true
+      },
+      {
+        "Value": "1",
+        "OracleHash": "681e5ff4",
+        "SkalaHash": "681e5ff4",
         "Agree": true
       }
     ]
@@ -2715,7 +2773,7 @@
   },
   {
     "Key": "resharper_csharp_outdent_binary_ops",
-    "Tier": "D",
+    "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
@@ -2738,7 +2796,7 @@
   },
   {
     "Key": "resharper_csharp_outdent_binary_pattern_ops",
-    "Tier": "D",
+    "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
@@ -2761,7 +2819,7 @@
   },
   {
     "Key": "resharper_csharp_outdent_dots",
-    "Tier": "D",
+    "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
