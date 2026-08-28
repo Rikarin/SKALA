@@ -157,6 +157,19 @@ public sealed class BreakPlan {
     /// <summary>The chain-wide group of a binary chain, keyed by its root node.</summary>
     readonly Dictionary<long, int> _chainOwner = [];
 
+    /// <summary>
+    ///     The operator tokens a <c>force_chop_compound_*</c> key requires a break at, by position.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Positions rather than a group, and the reason is that the forced chop runs along a
+    ///     <em>finer</em> chain than <see cref="SameChain" />. That test puts <c>&amp;&amp;</c> and
+    ///     <c>||</c> at one precedence on purpose, because <c>wrap_chained_binary_expressions</c> chops
+    ///     <c>a &amp;&amp; b || c</c> at both operators; the forced chop takes only the root operator's
+    ///     own kind, so <c>a.P &amp;&amp; b.P || c.P</c> comes back broken at the <c>||</c> and whole at
+    ///     the <c>&amp;&amp;</c>. Reusing the chain-wide group would break both.
+    /// </remarks>
+    readonly HashSet<int> _forcedChop = [];
+
     /// <summary>The group of a delimited list, keyed by the list node.</summary>
     /// <remarks>
     ///     ⚠ Recorded so that a construct <em>outside</em> the list can read whether the list broke.
@@ -309,6 +322,10 @@ public sealed class BreakPlan {
         PlanEmbeddedStatement(node, EmbeddedStatementOf(node));
         PlanOnePerLine(node);
         PlanConstraints(node);
+
+        // ⚠ Before the switch and before the condition's own operators are walked. The walk is
+        // pre-order, so the statement is planned first and `PlanOperator` reads what this recorded.
+        PlanForcedChopCondition(node);
 
         switch (node) {
             case EnumDeclarationSyntax enumeration:
@@ -1541,6 +1558,17 @@ public sealed class BreakPlan {
             return;
         }
 
+        // ⚠ A force-chopped condition has no use for the chain-wide group, and leaving it in place
+        // gets the answer wrong. The group asks "does the whole chain fit on one line"; a
+        // GroupMode.Break point inside it hides the flat width (DocumentBuilder), so the answer is
+        // always no, and every operator then breaks through BreaksWithOwner — including the ones the
+        // forced chop deliberately left alone. Measured: the oracle writes
+        // `if (a.Flag && b.Flag\n    || c.Flag)`, and with the group still in place Skala wrote the
+        // `&&` broken too. The forced chop has already decided this chain, so the question is moot.
+        if (root is BinaryExpressionSyntax chain && _forcedChop.Contains(chain.OperatorToken.SpanStart)) {
+            return;
+        }
+
         var group = NewGroup();
         _chainOwner[Key(root)] = group;
         var pattern = root is BinaryPatternSyntax;
@@ -1574,6 +1602,98 @@ public sealed class BreakPlan {
     ///     which is what <c>chop_if_long</c> does <em>once the chain is being re-wrapped</em> — and
     ///     choosing to re-wrap it is milestone 3's.
     /// </remarks>
+    /// <summary>
+    ///     <c>force_chop_compound_{if,while,do}_expression = true</c>: a compound statement condition is
+    ///     chopped at every operator of its root chain, however well it fits on one line.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ "Compound" is much narrower than the name, and every clause below is measured against
+    ///     <c>jb cleanupcode</c> 2025.2.6 at the repository's margin, one key at a time, on conditions
+    ///     that all fit comfortably — so nothing here is the fitter's doing.
+    ///     <list type="number">
+    ///         <item>
+    ///             Only <c>&amp;&amp;</c> and <c>||</c>. <c>if (a.Count &gt; b.Count)</c>,
+    ///             <c>if (a.Name == b.Name)</c> and <c>if (a.Flag &amp; b.Flag)</c> do not move — a
+    ///             relational root and the single-<c>&amp;</c> bitwise root are both left alone — and
+    ///             neither does the pattern combinator in <c>if (a.Inner is string or int)</c>.
+    ///         </item>
+    ///         <item>
+    ///             Only the <em>root operator's own kind</em>, which is why this cannot ride on the
+    ///             chain-wide group: <c>if (a.P &amp;&amp; b.P || c.P)</c> comes back as
+    ///             <c>a.P &amp;&amp; b.P</c> / <c>|| c.P</c>, broken at the <c>||</c> and whole at the
+    ///             <c>&amp;&amp;</c>. Same for the <c>&amp;&amp;</c> nested inside an argument:
+    ///             <c>if (Take(a.P &amp;&amp; b.P) &amp;&amp; c.P)</c> breaks at the outer operator only.
+    ///         </item>
+    ///         <item>
+    ///             ⚠ A two-operand chain is chopped <em>only if neither operand is a single token</em>,
+    ///             and this is the clause no reading of the option name produces. <c>if (a &amp;&amp; b)</c>,
+    ///             <c>if (a &amp;&amp; b.P)</c>, <c>if (a &gt; 0 &amp;&amp; b)</c>, <c>if (F() &amp;&amp; b)</c>
+    ///             and <c>if (a &amp;&amp; true)</c> all stay on one line, because one side is a bare name
+    ///             or literal; <c>if (a.P &amp;&amp; b.P)</c>, <c>if (F() &amp;&amp; G())</c>,
+    ///             <c>if (!a &amp;&amp; !b)</c>, <c>if (a[0] &amp;&amp; b[0])</c>,
+    ///             <c>if ((bool)a &amp;&amp; (bool)b)</c>, <c>if ((a) &amp;&amp; (b))</c> and
+    ///             <c>if (a is string &amp;&amp; b is string)</c> all chop. It is not a width rule:
+    ///             <c>a &gt; 0 &amp;&amp; b</c> and <c>F() &amp;&amp; G()</c> are the same ten columns and
+    ///             go opposite ways, and two very long identifiers still do not chop.
+    ///         </item>
+    ///         <item>Three or more operands always chop, whatever the operands are.</item>
+    ///     </list>
+    ///     ⚠ The continuation column is not this rule's business: <c>align_multiline_statement_conditions</c>
+    ///     already puts it after the <c>(</c>, which is what the oracle writes for all three statements
+    ///     — including <c>} else if (</c> and <c>} while (</c>, whose openers sit further right.
+    /// </remarks>
+    void PlanForcedChopCondition(SyntaxNode node) {
+        var condition = node switch {
+            IfStatementSyntax statement when _options.ForceChopCompoundIfExpression => statement.Condition,
+            WhileStatementSyntax statement when _options.ForceChopCompoundWhileExpression => statement.Condition,
+            DoStatementSyntax statement when _options.ForceChopCompoundDoExpression => statement.Condition,
+            _ => null
+        };
+
+        if (condition is not BinaryExpressionSyntax root
+            || !root.OperatorToken.IsKind(SyntaxKind.AmpersandAmpersandToken)
+            && !root.OperatorToken.IsKind(SyntaxKind.BarBarToken)) {
+            return;
+        }
+
+        // The run of the root operator's own kind, down the left spine. `a || b || c` is one run of
+        // three operands; `a && b || c` is a run of two, whose left operand is the whole `a && b`.
+        var kind = root.OperatorToken.Kind();
+        var operators = new List<SyntaxToken>();
+        var operands = new List<ExpressionSyntax>();
+        var current = root;
+        while (true) {
+            operators.Add(current.OperatorToken);
+            operands.Add(current.Right);
+            if (current.Left is BinaryExpressionSyntax next && next.OperatorToken.IsKind(kind)) {
+                current = next;
+                continue;
+            }
+
+            operands.Add(current.Left);
+            break;
+        }
+
+        if (operands.Count == 2 && (IsSingleToken(operands[0]) || IsSingleToken(operands[1]))) {
+            return;
+        }
+
+        foreach (var operatorToken in operators) {
+            _forcedChop.Add(operatorToken.SpanStart);
+        }
+    }
+
+    /// <summary>Whether an expression is one token — a bare name or a literal.</summary>
+    /// <remarks>
+    ///     ⚠ Counted rather than matched on node kind, because the measurement is about token count and
+    ///     not about which syntax node Roslyn produced: <c>(a)</c> is a parenthesised name and chops,
+    ///     <c>a</c> does not, and a list of "simple" node kinds is a second place for that to drift.
+    /// </remarks>
+    static bool IsSingleToken(SyntaxNode node) {
+        using var tokens = node.DescendantTokens().GetEnumerator();
+        return tokens.MoveNext() && !tokens.MoveNext();
+    }
+
     void PlanOperator(SyntaxNode node, SyntaxToken operatorToken, SyntaxNode right, bool wrapBefore) {
         if (operatorToken.IsKind(SyntaxKind.None)) {
             return;
@@ -1597,7 +1717,11 @@ public sealed class BreakPlan {
         Describe(
             node,
             group,
-            GroupMode.Preserve,
+            // ⚠ Break rather than Preserve, and it outranks everything below: a forced chop is not
+            // "break if too long" but "break", which is the whole content of the three
+            // `force_chop_compound_*` keys. The facts stay as they are, so the group behaves exactly
+            // as it did when the keys are off — which is the export's own configuration.
+            _forcedChop.Contains(operatorToken.SpanStart) ? GroupMode.Break : GroupMode.Preserve,
             new GroupFacts(
                 SourceBroken: _options.KeepsUserBreaksBetweenItems && broken,
                 // ⚠ Deliberately *not* HidesFlatWidthWhenBroken. An argument list around a chain the
@@ -1607,6 +1731,9 @@ public sealed class BreakPlan {
                 // outer one break too, and `a && b\n || c` comes back chopped at both operators
                 // instead of unchanged. Measured: it costs `breaks/binary-operators.cs` and
                 // `wrapping/binary-chains.cs`, and buys 0.01 points. SK-DIV-0007.
+                //
+                // ⚠ Read together with the mode above: when the forced chop set this group to Break,
+                // the owner is irrelevant — Fitter.Decide answers Broken before it looks at any fact.
                 BreaksWithOwner: true,
                 Owner: ChainOwnerOf(node)
             ),
