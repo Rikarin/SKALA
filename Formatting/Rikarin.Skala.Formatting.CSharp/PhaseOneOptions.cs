@@ -848,6 +848,7 @@ public readonly struct PhaseOneOptions {
     ///     the same two values mean for a delimited list.
     /// </remarks>
     public WrapStyle WrapForStmtHeaderStyle { get; }
+
     public bool WrapBeforeExtendsColon { get; }
     public bool WrapBeforeCommaInBaseClause { get; }
     public WrapStyle WrapPropertyPattern { get; }

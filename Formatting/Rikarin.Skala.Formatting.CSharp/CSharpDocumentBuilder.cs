@@ -1880,7 +1880,8 @@ public sealed partial class CSharpDocumentBuilder {
             InitializerExpressionSyntax initializer => (initializer.OpenBraceToken, initializer.CloseBraceToken),
             AnonymousObjectCreationExpressionSyntax anonymous => (anonymous.OpenBraceToken, anonymous.CloseBraceToken),
             PropertyPatternClauseSyntax pattern => (pattern.OpenBraceToken, pattern.CloseBraceToken),
-            SwitchExpressionSyntax switchExpression => (switchExpression.OpenBraceToken, switchExpression.CloseBraceToken),
+            SwitchExpressionSyntax switchExpression => (switchExpression.OpenBraceToken,
+                switchExpression.CloseBraceToken),
             _ => FindDelimiters(node, SyntaxKind.OpenBraceToken, SyntaxKind.CloseBraceToken)
         };
 
