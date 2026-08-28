@@ -1808,7 +1808,8 @@
       "oracle": null,
       "docs": "https://www.jetbrains.com/help/resharper/EditorConfig_Index.html",
       "templateLine": 655,
-      "expands": []
+      "expands": [],
+      "inert": "The oracle returns wrapped arguments, wrapped parameters, a binary chain, a ternary and a call chain at the same columns under `single` and under `double`. Re-measured at M11 on a file that wraps a call, a declaration's parameter list, an `if` condition, a binary chain, a ternary, a `delegate { }` block and a two-argument generic type, with a comment inside the body — the shapes all six of these keys are named for."
     },
     {
       "key": "resharper_csharp_accessor_owner_body",
@@ -3394,7 +3395,8 @@
       "oracle": null,
       "docs": "https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpIndentStylePageSchema.html#resharper_csharp_indent_anonymous_method_block",
       "templateLine": 773,
-      "expands": []
+      "expands": [],
+      "inert": "The oracle returns a `delegate { … }` body at the same columns at both values. Re-measured at M11 on a file that wraps a call, a declaration's parameter list, an `if` condition, a binary chain, a ternary, a `delegate { }` block and a two-argument generic type, with a comment inside the body — the shapes all six of these keys are named for."
     },
     {
       "key": "resharper_csharp_indent_braces_inside_statement_conditions",
@@ -3414,7 +3416,8 @@
       "oracle": null,
       "docs": "https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpIndentStylePageSchema.html#resharper_csharp_indent_braces_inside_statement_conditions",
       "templateLine": 774,
-      "expands": []
+      "expands": [],
+      "inert": "The oracle returns the file unchanged at both values, a wrapped `if` condition included. Re-measured at M11 on a file that wraps a call, a declaration's parameter list, an `if` condition, a binary chain, a ternary, a `delegate { }` block and a two-argument generic type, with a comment inside the body — the shapes all six of these keys are named for."
     },
     {
       "key": "resharper_csharp_indent_inside_namespace",
@@ -3614,7 +3617,8 @@
       "oracle": null,
       "docs": "https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpIndentStylePageSchema.html#resharper_csharp_indent_pars",
       "templateLine": 793,
-      "expands": []
+      "expands": [],
+      "inert": "The oracle returns the file unchanged at `inside`, `none` and `outside_and_inside`. ⚠ Upgraded from \"unverified\" to measured: the M11 probe file wraps a call, a parameter list, an `if` condition and a generic type argument list, and none of the parentheses this key governs lands on a line of its own under this export — so it is the writer that cannot produce the shape, not the key that is ignored."
     },
     {
       "key": "resharper_csharp_indent_preprocessor_if",
@@ -3694,7 +3698,8 @@
       "oracle": null,
       "docs": "https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpIndentStylePageSchema.html#resharper_csharp_indent_primary_constructor_decl_pars",
       "templateLine": 798,
-      "expands": []
+      "expands": [],
+      "inert": "It moves the closing `)` only when that `)` is on a line of its own, and this export sets `wrap_before_primary_constructor_declaration_rpar = false`. Measured both ways — with both flipped the oracle indents the `)` by one level, and under this export's own values `inside` and `outside` are the same file."
     },
     {
       "key": "resharper_csharp_indent_raw_literal_string",
@@ -3754,7 +3759,8 @@
       "oracle": null,
       "docs": "https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpIndentStylePageSchema.html#resharper_csharp_indent_statement_pars",
       "templateLine": 800,
-      "expands": []
+      "expands": [],
+      "inert": "The oracle returns the file unchanged at `inside`, `none` and `outside_and_inside`, including with `wrap_before_invocation_rpar` flipped. ⚠ Upgraded from \"unverified\": this export never puts a statement's closing `)` on a line of its own, so the shape the key governs does not occur."
     },
     {
       "key": "resharper_csharp_indent_style",
@@ -3812,7 +3818,8 @@
       "oracle": null,
       "docs": "https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpIndentStylePageSchema.html#resharper_csharp_indent_typearg_angles",
       "templateLine": 802,
-      "expands": []
+      "expands": [],
+      "inert": "The oracle returns the file unchanged at `inside` and `outside_and_inside`, on a file whose generic type is long enough to wrap. ⚠ Upgraded from \"unverified\": this export never breaks inside a type argument list, so the shape the key governs does not occur."
     },
     {
       "key": "resharper_csharp_indent_typeparam_angles",
@@ -3832,7 +3839,8 @@
       "oracle": null,
       "docs": "https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpIndentStylePageSchema.html#resharper_csharp_indent_typeparam_angles",
       "templateLine": 803,
-      "expands": []
+      "expands": [],
+      "inert": "The oracle returns the file unchanged at `inside`, `none` and `outside_and_inside`, on a declaration with two type parameters and two constraints. ⚠ Upgraded from \"unverified\": this export never puts a type parameter list's closing angle on a line of its own."
     },
     {
       "key": "resharper_csharp_insert_final_newline",
@@ -6621,7 +6629,8 @@
       "oracle": null,
       "docs": "https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_SpacesPageSchema.html#resharper_csharp_space_between_keyword_and_type",
       "templateLine": 1047,
-      "expands": []
+      "expands": [],
+      "inert": "A type after a keyword is always word-like, so the separation is mandatory whatever the option says: the oracle returns `new int[3]`, `typeof(int)` and the rest unchanged at both values. The formatter reads it — see `PhaseOneOptions.Ids` — and cannot act on it."
     },
     {
       "key": "resharper_csharp_space_between_typecast_parentheses",
@@ -7045,7 +7054,8 @@
       "oracle": null,
       "docs": "https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_SpacesPageSchema.html#resharper_csharp_space_within_new_parentheses",
       "templateLine": 1079,
-      "expands": []
+      "expands": [],
+      "inert": "Asked at both values with `new List<int>(4)` and `new object()`, the oracle returns the argument list exactly as `space_between_method_call_parameter_list_parentheses` and its empty twin decide; nothing distinguishes the two values. `space_before_new_parentheses` — the gap in FRONT of the parenthesis — is the one `new` really owns, and it is Tier A."
     },
     {
       "key": "resharper_csharp_space_within_parentheses",
@@ -8671,7 +8681,8 @@
       "oracle": null,
       "docs": "https://www.jetbrains.com/help/resharper/EditorConfig_Index.html",
       "templateLine": 772,
-      "expands": []
+      "expands": [],
+      "inert": "The oracle returns a wrapped ternary at the same columns at both values. Re-measured at M11 on a file that wraps a call, a declaration's parameter list, an `if` condition, a binary chain, a ternary, a `delegate { }` block and a two-argument generic type, with a comment inside the body — the shapes all six of these keys are named for."
     },
     {
       "key": "resharper_indent_break_from_case",
@@ -8703,7 +8714,8 @@
       "oracle": null,
       "docs": "https://www.jetbrains.com/help/resharper/EditorConfig_Index.html",
       "templateLine": 779,
-      "expands": []
+      "expands": [],
+      "inert": "The oracle returns a comment inside a method body at the same column at both values. Re-measured at M11 on a file that wraps a call, a declaration's parameter list, an `if` condition, a binary chain, a ternary, a `delegate { }` block and a two-argument generic type, with a comment inside the body — the shapes all six of these keys are named for."
     },
     {
       "key": "resharper_indent_switch_labels",
@@ -8738,7 +8750,8 @@
       "oracle": null,
       "docs": "https://www.jetbrains.com/help/resharper/EditorConfig_Index.html",
       "templateLine": 805,
-      "expands": []
+      "expands": [],
+      "inert": "The oracle returns the file unchanged at both values. Re-measured at M11 on a file that wraps a call, a declaration's parameter list, an `if` condition, a binary chain, a ternary, a `delegate { }` block and a two-argument generic type, with a comment inside the body — the shapes all six of these keys are named for."
     },
     {
       "key": "resharper_int_align",
@@ -8884,7 +8897,8 @@
       "oracle": null,
       "docs": null,
       "templateLine": 832,
-      "expands": []
+      "expands": [],
+      "inert": "The oracle returns a wrapped call, a wrapped declaration, a binary chain, a collection initializer and an enum unchanged at both values. ⚠ The inertness is a claim about the ORACLE and not only about Skala. `keep_user_linebreaks` is the key ADR-002's three-state groups are built on and the one the four `preservation/` corpus runs vary; this one is read into a field that nothing consults, which is honest exactly while no input distinguishes its values."
     },
     {
       "key": "resharper_labeled_statement_style",
