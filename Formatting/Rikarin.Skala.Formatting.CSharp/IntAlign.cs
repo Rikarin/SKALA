@@ -46,7 +46,17 @@ public static class IntAlign {
     ///     hole, because a hole makes the column of the slots after it depend on which members happened
     ///     to be missing, which is not a rule anybody can predict from the option name.
     /// </remarks>
-    readonly record struct Row(int LineStart, ImmutableArray<int> Slots);
+    /// <param name="Signature">
+    ///     What a neighbour has to match to join this row's run, or <c>null</c> when membership is
+    ///     decided by adjacency alone.
+    /// </param>
+    /// <remarks>
+    ///     ⚠ Only <see cref="Kind.Invocations" /> uses it, and it is the key's own wording — "invocations
+    ///     of the same method" — rather than a refinement of it. Measured: three <c>Take(…)</c> calls
+    ///     with an <c>Other2(…)</c> in the middle come back from the oracle unpadded, so the different
+    ///     callee ends the run rather than being skipped over.
+    /// </remarks>
+    readonly record struct Row(int LineStart, ImmutableArray<int> Slots, string? Signature = null);
 
     public static string Apply(string text, in PhaseOneOptions options, CSharpParseOptions parseOptions) {
         if (!options.IntAlignAnything || text.Length == 0) {
@@ -96,6 +106,26 @@ public static class IntAlign {
             Collect(root, lines, runs, Kind.SwitchSections);
         }
 
+        if (options.IntAlignParameters) {
+            Collect(root, lines, runs, Kind.Parameters);
+        }
+
+        if (options.IntAlignInvocations) {
+            Collect(root, lines, runs, Kind.Invocations);
+        }
+
+        if (options.IntAlignPropertyPatterns) {
+            Collect(root, lines, runs, Kind.PropertyPatterns);
+        }
+
+        if (options.IntAlignNestedTernary) {
+            CollectConditionalChains(root, lines, runs, questions: true);
+        }
+
+        if (options.IntAlignBinaryExpressions) {
+            CollectConditionalChains(root, lines, runs, questions: false);
+        }
+
         if (options.IntAlignComments) {
             CollectComments(root, lines, runs);
         }
@@ -110,7 +140,10 @@ public static class IntAlign {
         Properties,
         Methods,
         SwitchExpressions,
-        SwitchSections
+        SwitchSections,
+        Parameters,
+        Invocations,
+        PropertyPatterns
     }
 
     /// <summary>
@@ -133,7 +166,14 @@ public static class IntAlign {
             foreach (var child in children) {
                 var row = RowOf(child, lines, kind);
                 var line = row is { } present ? lines.GetLineFromPosition(present.LineStart).LineNumber : -1;
-                if (row is null || line != previousLine + 1) {
+
+                // ⚠ Three ways a run ends, and the third is the one this family's list-shaped
+                // members needed: the row is not alignable at all, it is not on the next line, or
+                // it does not match what the run is aligning — a call to a different method, or to
+                // the same one with a different number of arguments.
+                if (row is null
+                    || line != previousLine + 1
+                    || run.Count > 0 && !Joins(run[^1], row.Value)) {
                     Flush(runs, run);
                 }
 
@@ -146,6 +186,16 @@ public static class IntAlign {
             Flush(runs, run);
         }
     }
+
+    /// <summary>Whether two adjacent rows are aligning the same thing.</summary>
+    /// <remarks>
+    ///     ⚠ The arity check is not decoration. <see cref="Pad" /> reads the slot count off the run's
+    ///     first row, so a run whose rows disagree about how many slots they have is an index out of
+    ///     range rather than a wrong column.
+    /// </remarks>
+    static bool Joins(in Row previous, in Row next) =>
+        previous.Slots.Length == next.Slots.Length
+        && string.Equals(previous.Signature, next.Signature, StringComparison.Ordinal);
 
     static void Flush(List<List<Row>> runs, List<Row> run) {
         if (run.Count > 1) {
@@ -171,6 +221,13 @@ public static class IntAlign {
             },
             Kind.SwitchExpressions => node is SwitchExpressionSyntax arms ? arms.Arms : null,
             Kind.SwitchSections => node is SwitchStatementSyntax sections ? sections.Sections : null,
+            Kind.Parameters => node is ParameterListSyntax parameters ? parameters.Parameters : null,
+            Kind.Invocations => node switch {
+                BlockSyntax block => block.Statements,
+                SwitchSectionSyntax section => section.Statements,
+                _ => null
+            },
+            Kind.PropertyPatterns => node is PropertyPatternClauseSyntax pattern ? pattern.Subpatterns : null,
             _ => null
         };
 
@@ -216,10 +273,112 @@ public static class IntAlign {
                 node is SwitchExpressionArmSyntax arm ? One(arm.EqualsGreaterThanToken.SpanStart) : default,
             Kind.SwitchSections =>
                 node is SwitchSectionSyntax { Statements: [{ } first] } ? One(first.SpanStart) : default,
+
+            // ⚠ The parameter's *name*, so the widest type pads out to a column and the names line
+            // up. A parameter with no identifier — a function pointer's — has nothing to align and
+            // ends the run.
+            Kind.Parameters =>
+                node is ParameterSyntax parameter && !parameter.Identifier.IsKind(SyntaxKind.None)
+                    ? One(parameter.Identifier.SpanStart)
+                    : default,
+            Kind.Invocations =>
+                node is ExpressionStatementSyntax { Expression: InvocationExpressionSyntax invocation }
+                    ? [.. invocation.ArgumentList.Arguments.Select(static argument => argument.SpanStart)]
+                    : default,
+
+            // ⚠ The `:` and not the subpattern's start. `ExpressionColon` rather than `NameColon`
+            // because an extended property pattern — `{ A.B: 1 }` — has the second and not the
+            // first, and its colon is the same column the oracle pads to.
+            Kind.PropertyPatterns =>
+                node is SubpatternSyntax { ExpressionColon: { } colon } ? One(colon.ColonToken.SpanStart) : default,
             _ => default
         };
 
-        return slots.IsDefaultOrEmpty ? null : new Row(line.Start, slots);
+        return slots.IsDefaultOrEmpty
+            ? null
+            : new Row(line.Start, slots, kind == Kind.Invocations ? Callee(node) : null);
+    }
+
+    /// <summary>The invoked method's text, as written, which is what a run of invocations shares.</summary>
+    /// <remarks>
+    ///     ⚠ Text and not a symbol. This pass runs over the formatter's <em>output</em> with no
+    ///     compilation behind it (see the class remarks), so there is nothing to bind against; and text
+    ///     is the stricter answer anyway, because two spellings of one method are two columns on the
+    ///     page whatever they resolve to.
+    /// </remarks>
+    static string Callee(SyntaxNode node) =>
+        node is ExpressionStatementSyntax { Expression: InvocationExpressionSyntax invocation }
+            ? invocation.Expression.ToString()
+            : string.Empty;
+
+    /// <summary>
+    ///     <c>int_align_nested_ternary</c> and <c>int_align_binary_expressions</c>: one run per nested
+    ///     conditional chain laid out with one arm per line.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Two keys and one walk, because the oracle aligns two tokens of the same rows:
+    ///     <code>
+    /// var t = flag > 10 ? "a" :        var t = flag &gt; 10 ? "a" :
+    ///     flag > 5 ? "bb" :        →       flag     &gt; 5 ? "bb" :     ← binary_expressions
+    ///     flag > 1 ? "ccc" : "d";          flag     &gt; 1 ? "ccc" : "d";
+    ///     </code>
+    ///     and <c>nested_ternary</c> pads the same rows out to the <c>?</c> instead.
+    ///     <para>
+    ///         ⚠ <em>This</em> shape and not every binary expression in the file, which is measured rather
+    ///         than inferred from the key's name. With <c>int_align_binary_expressions = true</c> the oracle
+    ///         moves nothing in adjacent assignments with binary right-hand sides, in a binary chain chopped
+    ///         one operand per line, in adjacent <c>if</c> conditions, or in binary expressions used as
+    ///         arguments, as initializer elements, or as switch-expression arm results.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ A member joins only while its <c>?</c> is on its condition's own line. That is what keeps the
+    ///         other conditional layout — <c>wrap_before_ternary_opsigns</c>'s, with the <c>?</c> and <c>:</c>
+    ///         each starting a line — out of the run, and the oracle leaves that shape alone at both keys.
+    ///     </para>
+    /// </remarks>
+    static void CollectConditionalChains(
+        SyntaxNode root,
+        TextLineCollection lines,
+        List<List<Row>> runs,
+        bool questions
+    ) {
+        foreach (var node in root.DescendantNodesAndSelf()) {
+            // ⚠ Started from the chain's root only. Every conditional in a chain is also a
+            // descendant of the one above it, so walking from each would collect the same run once
+            // per member and pad it that many times over.
+            if (node is not ConditionalExpressionSyntax chain
+                || node.Parent is ConditionalExpressionSyntax parent
+                && parent.WhenFalse == node) {
+                continue;
+            }
+
+            var run = new List<Row>();
+            var previousLine = -2;
+            for (ConditionalExpressionSyntax? member = chain;
+                 member is not null;
+                 member = member.WhenFalse as ConditionalExpressionSyntax) {
+                var start = member.Condition.SpanStart;
+                var line = lines.GetLineFromPosition(start);
+                var slot = questions
+                    ? member.QuestionToken.SpanStart
+                    : member.Condition is BinaryExpressionSyntax binary
+                    ? binary.OperatorToken.SpanStart
+                    : -1;
+
+                if (slot < 0 || slot > line.End || line.LineNumber != previousLine + 1 && run.Count > 0) {
+                    Flush(runs, run);
+                    if (slot < 0 || slot > line.End) {
+                        previousLine = -2;
+                        continue;
+                    }
+                }
+
+                run.Add(new Row(line.Start, One(slot)));
+                previousLine = line.LineNumber;
+            }
+
+            Flush(runs, run);
+        }
     }
 
     static ImmutableArray<int> One(int a) => [a];

@@ -172,6 +172,11 @@ public readonly struct PhaseOneOptions {
         IntAlignComments = options.GetBool(Ids.IntAlignComments);
         IntAlignSwitchExpressions = options.GetBool(Ids.IntAlignSwitchExpressions);
         IntAlignSwitchSections = options.GetBool(Ids.IntAlignSwitchSections);
+        IntAlignParameters = options.GetBool(Ids.IntAlignParameters);
+        IntAlignInvocations = options.GetBool(Ids.IntAlignInvocations);
+        IntAlignNestedTernary = options.GetBool(Ids.IntAlignNestedTernary);
+        IntAlignBinaryExpressions = options.GetBool(Ids.IntAlignBinaryExpressions);
+        IntAlignPropertyPatterns = options.GetBool(Ids.IntAlignPropertyPatterns);
         DisableIntAlign = options.GetBool(Ids.DisableIntAlign);
         IntAlignFixInAdjacent = options.GetBool(Ids.IntAlignFixInAdjacent);
         AllowFarAlignment = options.GetBool(Ids.AllowFarAlignment);
@@ -556,6 +561,11 @@ public readonly struct PhaseOneOptions {
     public bool IntAlignComments { get; }
     public bool IntAlignSwitchExpressions { get; }
     public bool IntAlignSwitchSections { get; }
+    public bool IntAlignParameters { get; }
+    public bool IntAlignInvocations { get; }
+    public bool IntAlignNestedTernary { get; }
+    public bool IntAlignBinaryExpressions { get; }
+    public bool IntAlignPropertyPatterns { get; }
     public bool DisableIntAlign { get; }
     public bool IntAlignFixInAdjacent { get; }
     public bool AllowFarAlignment { get; }
@@ -582,7 +592,12 @@ public readonly struct PhaseOneOptions {
             || IntAlignMethods
             || IntAlignComments
             || IntAlignSwitchExpressions
-            || IntAlignSwitchSections);
+            || IntAlignSwitchSections
+            || IntAlignParameters
+            || IntAlignInvocations
+            || IntAlignNestedTernary
+            || IntAlignBinaryExpressions
+            || IntAlignPropertyPatterns);
 
     public bool IndentSwitchLabels { get; }
     public bool IndentBreakFromCase { get; }
@@ -1172,6 +1187,53 @@ public static class Ids {
         Of("resharper_csharp_int_align_switch_expressions");
 
     public static readonly OptionId IntAlignSwitchSections = Of("resharper_csharp_int_align_switch_sections");
+
+    // ⚠ The five list-shaped members of the family, each measured one key at a time against
+    // `jb cleanupcode` 2025.2.6 at config sha256:bd9791d3a6e6a087. The slot each pads is the
+    // oracle's, not a guess from the option's name:
+    //   int_align_parameters      — the parameter *name* of a chopped signature, so the types pad
+    //                               out to a column: `int    first,` / `string secondName,`.
+    //   int_align_invocations     — every argument of adjacent single-line calls *of the same
+    //                               method*. `Take(1, 2, 3)` beside `Take(1000, 2000, 3000)` pads
+    //                               both argument columns; an `Other2(…)` between two `Take(…)`
+    //                               ends the run rather than joining it.
+    //   int_align_nested_ternary  — the `?` of each member of a nested conditional chain.
+    //   int_align_binary_expressions — the *operator* of each of those same conditions.
+    //   int_align_property_patterns — the `:` of a chopped property pattern's subpatterns.
+    //
+    // ⚠ `int_align_binary_expressions` is narrower than its name, and the narrowness is measured
+    // rather than assumed. Asked with the key on, the oracle moves nothing in: adjacent assignment
+    // statements whose right-hand sides are binary; a binary chain chopped one operand per line;
+    // adjacent `if` conditions; binary expressions as arguments, as initializer elements, or as
+    // switch-expression arm results. The one shape that moves is the conditional chain, which is
+    // why it is collected from the chain here and not from every binary expression in the file.
+    public static readonly OptionId IntAlignParameters = Of("resharper_csharp_int_align_parameters");
+    public static readonly OptionId IntAlignInvocations = Of("resharper_csharp_int_align_invocations");
+
+    public static readonly OptionId IntAlignPropertyPatterns =
+        Of("resharper_csharp_int_align_property_patterns");
+
+    // ⚠ Implemented, measured, and Tier D — on Skala's own wrapping and not on this pass. Both keys
+    // pad a conditional chain the oracle lays out with one member per line and the `?` on its
+    // condition's own line:
+    //
+    //     var chain = flag > 10 ? "the first branch here" :
+    //         flag > 5 ? "the second branch here" :
+    //         flag > 1 ? "third" : "d";
+    //
+    // Skala does not write that layout. Asked with the chain on one source line it produces one
+    // break and a flat tail — `flag > 10\n ? "…"\n : flag > 5 ? "…" : flag > 1 ? "third" : "d"` —
+    // and asked with the oracle's own output as input it rewrites it into the same shape, so
+    // `keep_user_linebreaks` does not reach it either. There is therefore no document Skala emits
+    // that either key can pad, and a fixture would be pinning a shape Skala never produces.
+    //
+    // CollectConditionalChains is correct against the oracle's shape and stays: promotion is these
+    // two lines becoming `Of`, plus a corpus file, once the chain wraps the way ReSharper wraps it.
+    public static readonly OptionId IntAlignNestedTernary =
+        OfInert("resharper_csharp_int_align_nested_ternary");
+
+    public static readonly OptionId IntAlignBinaryExpressions =
+        OfInert("resharper_csharp_int_align_binary_expressions");
 
     // ⚠ Read and Tier D, all three for the same reason and none of them for a missing
     // implementation: they refine an alignment that the export never asks for. `disable_int_align`
