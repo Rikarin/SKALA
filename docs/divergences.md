@@ -689,6 +689,18 @@ signature being broader rather than the formatter regressing: the whole of `corp
 three of the three files are the same generated `DataSet` and its neighbours. The other three keys
 are still worth 0 lines: the corpus contains no instance of their shapes.
 
+⚠ **The `for` row's attribution was wrong, and milestone 3.2 measured it.** The residue was never
+`align_multiline_for_stmt`'s: that key is **masked** by `align_multiline_statement_conditions = true`,
+which the export sets, and both of its values return the same file byte for byte. What was missing
+was a **break point at the header's `;`** — Skala broke inside the incrementor expression instead,
+producing `i +=\n 1` where the oracle chops the clauses. `wrap_for_stmt_header_style` is the key that
+governs it, it is now implemented and **Tier A**
+(`constructs/wrapping/for-header.cs`), and the residue by the same signature is **2 hunks in 1 file**.
+What is left there is not a `for` rule: the initializer's own `=` continuation lands on the align
+column where the oracle puts it one level further in, which reproduces on the pre-change formatter
+and belongs to `PlanAroundEquals`. `align_multiline_for_stmt` stays **Tier D**, now for the reason it
+always had rather than for this one — reaching it takes two flips and the per-option unit makes one.
+
 The consequence [05](plan/05-csharp-formatting-rules.md) § "Alignment" claims — "with column
 alignment off, laying out line *n* never requires knowing the contents of line *n−1*" — **survives
 the change**, and that is worth stating: an alignment scope's column is the column the writer is
@@ -850,8 +862,17 @@ not evidence that the divergence does not exist.
 so item 2's governing key is implemented; what is missing is the placement decision it interacts
 with. `resharper_csharp_align_multiline_for_stmt` is **Tier D**.
 
-- options: `resharper_csharp_keep_existing_embedded_block_arrangement` (Tier A), `resharper_csharp_align_multiline_for_stmt` (Tier D)
-- ⚠ status: **open**, all three measured
+⚠ **Item 3 is closed at milestone 3.2, and it was filed against the wrong key.** It is not
+`align_multiline_for_stmt` — that key is masked by `align_multiline_statement_conditions = true` and
+returns the same file at either value. Skala had **no break point at the header's `;`** and broke
+inside the incrementor expression instead. `resharper_csharp_wrap_for_stmt_header_style` is the key
+that governs it, it is now implemented and **Tier A**, and the signature is down from 5 hunks over 13
+lines across 3 files to **2 hunks in 1 file** — neither of which is a `for` rule any more: the
+initializer's own `=` continuation lands on the align column where the oracle puts it one level
+further in, unchanged by that branch and owned by `PlanAroundEquals`.
+
+- options: `resharper_csharp_keep_existing_embedded_block_arrangement` (Tier A), `resharper_csharp_wrap_for_stmt_header_style` (Tier A, item 3, at M3.2), `resharper_csharp_align_multiline_for_stmt` (Tier D, and never the cause of item 3)
+- ⚠ status: **items 1 and 2 open**, item 3 **closed** at M3.2, all three measured
 
 ## SK-DIV-0013 — three rewrites the export configures and the oracle will not perform
 
