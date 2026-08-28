@@ -1566,10 +1566,22 @@ public static class Ids {
     // the margin itself. The measurement that put it here was taken on already-wrapped input, where
     // what stays put stays put under keep_user_linebreaks; on flat input it joins the file.
     //
-    // Not reached by any probe: wrap_before_first_type_parameter_constraint and
-    // wrap_multiple_type_parameter_constraints_style — the export forces every `where` onto its own
-    // line with place_type_constraints_on_same_line = false, and no shape tried put two constraint
-    // clauses in a position where either key could decide anything.
+    // Not reached by any probe: wrap_before_first_type_parameter_constraint — no shape tried put
+    // two constraint clauses in a position where it could decide anything.
+    //
+    // ⚠ wrap_multiple_type_parameter_constraints_style was beside it and is not any more: it is
+    // reached, and the shape that reaches it is a declaration with four constraint clauses on one
+    // source line. At `wrap_if_long` the oracle fills them two to a line and at `chop_always` it
+    // gives a two-clause method one `where` per line, both against the export's `chop_if_long`. Not
+    // implemented, and not for want of the key: Skala has no break point before a `where` at all —
+    // asked with the same declaration it leaves the constraints on a 200-column line rather than
+    // choosing between the three styles. Tier A once the constraint list wraps.
+    //
+    // ⚠ wrap_for_stmt_header_style is reached too, on a `for` whose three clauses do not fit: at
+    // `wrap_if_long` the oracle keeps the initializer and the condition together and wraps only the
+    // incrementor, against the export's `chop_if_long`, which gives each clause a line. Not
+    // implemented for the same reason — Skala has no break point at the header's `;`, and breaks
+    // inside the incrementor expression instead.
     //
     // wrap_verbatim_interpolated_strings is observable — chop_if_long breaks the oracle's output
     // *inside* the interpolation holes of a verbatim string — and is not implemented: Skala emits an
