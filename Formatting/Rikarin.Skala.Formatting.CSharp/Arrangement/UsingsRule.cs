@@ -76,7 +76,7 @@ public sealed class UsingsRule : ArrangementRule {
         && !directive.GlobalKeyword.IsKind(SyntaxKind.GlobalKeyword)
         && directive.StaticKeyword == default
         && HasNoComment(directive)
-        && _removable.Contains(directive.Name?.ToString() ?? string.Empty);
+        && _removable.Contains(Key(directive.Name));
 
     /// <summary>
     ///     ⚠ A using with a comment on it is not removed. The comment is the author saying something
@@ -117,11 +117,45 @@ public sealed class UsingsRule : ArrangementRule {
 
             var node = tree.GetRoot(cancellation).FindNode(diagnostic.Location.SourceSpan);
             if (node.FirstAncestorOrSelf<UsingDirectiveSyntax>() is { Name: { } name }) {
-                names.Add(name.ToString());
+                names.Add(Key(name));
             }
         }
 
         return names.ToImmutable()!;
+    }
+
+    /// <summary>
+    ///     A using's name as a key: the identifiers and the dots, with the author's spacing dropped.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ <c>ToString()</c> on its own carries the trivia <em>between</em> a qualified name's tokens,
+    ///     so <c>using System .Threading. Tasks;</c> keys as <c>"System .Threading. Tasks"</c> — and this
+    ///     set is computed once, before the pipeline, while the formatter rewrites exactly that spacing
+    ///     on its first pass. The removal then fired or did not fire depending on how the author had
+    ///     spaced a dotted name, which is a whitespace-dependence in *which rules run*: SK-FUZZ-0013,
+    ///     found as an arrangement non-idempotency, where pass 1 tried the removal, was reverted for an
+    ///     unrelated reason, and pass 2 could no longer match its own key — so the second pipeline run
+    ///     removed a using the first had left. Nothing between the dots of a namespace name is
+    ///     significant, so the key drops all of it.
+    /// </remarks>
+    static string Key(NameSyntax? name) {
+        if (name is null) {
+            return string.Empty;
+        }
+
+        var text = name.ToString();
+        if (!text.Any(char.IsWhiteSpace)) {
+            return text;
+        }
+
+        var key = new System.Text.StringBuilder(text.Length);
+        foreach (var character in text) {
+            if (!char.IsWhiteSpace(character)) {
+                key.Append(character);
+            }
+        }
+
+        return key.ToString();
     }
 
     /// <summary>

@@ -832,7 +832,20 @@ public sealed class FuzzGenerator {
 
                 var operators = new List<string>();
                 for (var i = 1; i < operands; i++) {
-                    operators.Add(random.Pick(["+", "&&", "||", "??", "*", "-", "|", "&"]));
+                    // ⚠ `*` is excluded in front of an operand that opens with `[`, and the exclusion
+                    // is a parse question rather than a taste one. `x * []` is not a multiplication
+                    // to the C# parser: `x*[]` is the *type* "array of pointer to x", so
+                    // `return await (state * []);` parses as a parenthesised type followed by `;` and
+                    // reports `CS1525: Invalid expression term ';'`. ADR-003 then leaves the file
+                    // byte-identical, every property holds over it for free, and the case is counted
+                    // having asserted nothing. The generator's contract is "no parse errors, semantic
+                    // nonsense welcome", and this is the one production that broke it.
+                    var right = parts[i];
+                    operators.Add(
+                        right.StartsWith('[')
+                            ? random.Pick(["+", "&&", "||", "??", "-", "|", "&"])
+                            : random.Pick(["+", "&&", "||", "??", "*", "-", "|", "&"])
+                    );
                 }
 
                 var joined = new StringBuilder(parts[0]);

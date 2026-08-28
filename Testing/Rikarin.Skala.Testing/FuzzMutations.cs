@@ -896,6 +896,18 @@ public static class FuzzMutations {
                     continue;
                 }
 
+                // ⚠ A contextual keyword is an IdentifierToken and is not an identifier: its meaning
+                // is its spelling. `var` is the one that matters — the generator emits it constantly
+                // — and `foreach (var (k, w) in …)` renamed to `foreach (var_wwww (k, w) in …)` is
+                // not a wider deconstruction, it is `CS0230: Type and identifier are both required
+                // in a foreach statement`. ADR-003 then leaves the file byte-identical and every
+                // property holds over it for free, so the case executed, asserted nothing, and was
+                // counted. Measured before this line: `widen-identifier` was one of the two
+                // mutations behind the run's parse-lost cases.
+                if (SyntaxFacts.GetContextualKeywordKind(name) != SyntaxKind.None) {
+                    continue;
+                }
+
                 if (!identifiers.TryGetValue(name, out var spans)) {
                     identifiers[name] = spans = [];
                 }

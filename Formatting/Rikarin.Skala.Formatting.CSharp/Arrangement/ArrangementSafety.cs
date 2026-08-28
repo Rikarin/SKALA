@@ -25,6 +25,17 @@ public static class ArrangementSafety {
     ///     Re-binds the rewritten document and returns the diagnostic that says it must be reverted, or
     ///     null when it is safe.
     /// </summary>
+    /// <remarks>
+    ///     ⚠ A layer that cannot answer answers "revert", and it must never answer by throwing.
+    ///     Everything below re-binds the document, and binding is where Roslyn's own defects live: a
+    ///     target-typed <c>new</c> whose target is a delegate type, carrying a LINQ query in its
+    ///     initializer, makes <c>GetSymbolInfo</c> throw <c>IndexOutOfRangeException</c> out of the
+    ///     binder (SK-FUZZ-0012). The check that exists to stop a bad rewrite reaching disk was then
+    ///     the thing that took the process down instead — with the rewrite neither applied nor
+    ///     refused. So a throw here is <b>not safe</b>, by definition: the question "did this
+    ///     document's meaning change?" went unanswered, and an unanswered safety question is a
+    ///     revert.
+    /// </remarks>
     public static SkalaDiagnostic? Check(
         string path,
         CSharpCompilation compilation,
@@ -36,6 +47,45 @@ public static class ArrangementSafety {
         in ArrangementOptions options,
         string originalText,
         CancellationToken cancellation = default
+    ) {
+        try {
+            return Evaluate(
+                path,
+                compilation,
+                original,
+                originalRoot,
+                arranged,
+                beforeModel,
+                crashRoot,
+                originalText,
+                cancellation
+            );
+        } catch (Exception exception) when (exception is not OperationCanceledException) {
+            var artefact = CrashArtifacts.Write(crashRoot, path, originalText, arranged, new PhaseOneOptions());
+            return new SkalaDiagnostic(
+                ArrangeIds.Reverted,
+                SkalaSeverity.Error,
+                "not arranged, the safety re-bind threw and could not answer whether the rewrite was "
+                + $"safe: {exception.GetType().Name}: {exception.Message}",
+                path,
+                0,
+                artefact is null
+                    ? "This is a Skala bug; the file was left untouched."
+                    : $"A reproduction is in {artefact}. This is a Skala bug; the file was left untouched."
+            );
+        }
+    }
+
+    static SkalaDiagnostic? Evaluate(
+        string path,
+        CSharpCompilation compilation,
+        SyntaxTree original,
+        SyntaxNode originalRoot,
+        string arranged,
+        SemanticModel beforeModel,
+        string? crashRoot,
+        string originalText,
+        CancellationToken cancellation
     ) {
         var rewritten = CSharpSyntaxTree.ParseText(
             SourceText.From(arranged),

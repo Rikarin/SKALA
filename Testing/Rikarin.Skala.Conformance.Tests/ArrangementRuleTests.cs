@@ -28,7 +28,18 @@ namespace Rikarin.Skala.Conformance.Tests;
 ///     </para>
 /// </remarks>
 public sealed class ArrangementRuleTests {
-    static string Arrange(string source, bool aggressive = false, string? only = null) {
+    /// <param name="removeUnused">
+    ///     ⚠ Supply the removable-usings set the product computes, instead of nothing. Removal takes
+    ///     its answer from that set rather than from a model, so a helper that always passes
+    ///     <c>null</c> exercises sorting and never removal — and a test written against it would pass
+    ///     whatever the removal did.
+    /// </param>
+    static string Arrange(
+        string source,
+        bool aggressive = false,
+        string? only = null,
+        bool removeUnused = false
+    ) {
         const string path = "/arrangement/Probe.cs";
         var text = SourceText.From(source);
         var tree = CSharpSyntaxTree.ParseText(text, CSharpFormatter.ParseOptions, path);
@@ -52,7 +63,7 @@ public sealed class ArrangementRuleTests {
             text,
             new ArrangementOptions(options, ArrangementScope.Full, aggressive),
             compilation,
-            null,
+            removeUnused ? UsingsRule.Unused(compilation.GetSemanticModel(tree), tree) : null,
             null,
             only is null ? ArrangementFilter.All : new ArrangementFilter([only], [])
         );
@@ -501,6 +512,117 @@ public sealed class ArrangementRuleTests {
             1,
             arranged.Split("// Copyright the author.", StringSplitOptions.None).Length - 1
         );
+    }
+
+    /// <summary>
+    ///     ⚠ SK-FUZZ-0013. Which rules fire may not depend on how the author spaced a dotted name.
+    /// </summary>
+    /// <remarks>
+    ///     The removable-usings set is Roslyn's <c>CS8019</c> keyed by <c>Name.ToString()</c>, and that
+    ///     carries the trivia <em>between</em> a qualified name's tokens — so
+    ///     <c>using  System .Text;</c> keyed as <c>"System .Text"</c>. The set is computed once, before
+    ///     the pipeline, and the formatter rewrites exactly that spacing on its first pass: the removal
+    ///     was offered on pass 1, could no longer match its own key on pass 2, and the *next* pipeline
+    ///     run — which recomputes the set — removed a using the first had left. That is
+    ///     <c>pipeline(pipeline(x)) ≠ pipeline(x)</c> decided by whitespace.
+    ///     <para>
+    ///         ⚠ Both spellings are asserted, not just the spaced one. A key that normalised only on the
+    ///         way in, or only on the way out, would pass one of these two and fail the other.
+    ///     </para>
+    /// </remarks>
+    [Theory]
+    [InlineData("using System.Threading.Tasks;")]
+    [InlineData("using  System .Threading. Tasks;")]
+    public void AnUnusedUsing_IsRemovedWhateverTheAuthorPutBetweenItsDots(string directive) {
+        // ⚠ The minimised reproduction, and the odd shape is load-bearing rather than incidental.
+        // A tidier case does not fail: the pipeline's first pass removes the using, the spelling
+        // never gets a chance to change, and the stale key is never consulted. What is needed is a
+        // first pass that *tries* the removal and is thrown away — here `NamespaceBodyRule` and the
+        // removal together make the re-bind report `CS1027: #endif directive expected`, so safety
+        // layer 2 reverts the whole arrangement — after which the formatter rewrites the name's
+        // spacing and pass 2 can no longer match the set computed before pass 1.
+        //
+        // ⚠ Committed as `pathological/unused-using-whose-name-carries-spaces.cs` too, but that set
+        // is not in `Corpus.Arrangeable()`, so the corpus copy documents the case and this asserts
+        // it.
+        var source = directive
+                     + "\n   namespace  Fuzz . N1 {\n#if true\n   public sealed  readonly struct T10 {  \n   }\n   }\n#endif";
+
+        // ⚠ Through the *pipeline*, twice, and not through one `Arranger.Arrange`. A single arrange
+        // computes the removable set and consumes it against the same tree, so the two spellings
+        // agree by construction and the defect is invisible.
+        var first = Pipeline(source);
+        var second = Pipeline(first.Text);
+        Assert.True(
+            second.Edits.IsEmpty,
+            "arrange-and-format is not a fixed point of itself; the second pass still wants "
+            + $"{second.Edits.Length} edit(s): {string.Join(", ", second.Edits.Take(3))}"
+        );
+    }
+
+    /// <summary>One arrange-and-format pipeline run over a loose source string.</summary>
+    static PipelineResult Pipeline(string source) {
+        const string path = "/arrangement/Probe.cs";
+        var text = SourceText.From(source);
+        var tree = CSharpSyntaxTree.ParseText(text, CSharpFormatter.ParseOptions, path);
+        var compilation = CSharpCompilation.Create(
+            "probe",
+            [tree],
+            SharedFrameworkReferences.Value,
+            new CSharpCompilationOptions(
+                OutputKind.DynamicallyLinkedLibrary,
+                allowUnsafe: true,
+                nullableContextOptions: NullableContextOptions.Enable
+            )
+        );
+
+        var options = OptionResolver.Resolve(
+            Path.Combine(Rikarin.Skala.Testing.Corpus.RepositoryRoot, "Probe.cs")
+        ).Options;
+
+        return ArrangementPipeline.Run(
+            path,
+            text,
+            new PhaseOneOptions(options),
+            new ArrangementOptions(options),
+            compilation,
+            UsingsRule.Unused(compilation.GetSemanticModel(tree), tree)
+        );
+    }
+
+    /// <summary>
+    ///     ⚠ SK-FUZZ-0012. A rule that throws costs its own rewrite, not the process.
+    /// </summary>
+    /// <remarks>
+    ///     <c>Func&lt;int&gt; v = new () { … }</c> — a target-typed <c>new</c> whose target is a
+    ///     <b>delegate</b> type — with a LINQ query in its object initializer makes Roslyn's own binder
+    ///     throw <c>IndexOutOfRangeException</c> out of <c>SemanticModel.GetSymbolInfo</c>, on a node of
+    ///     the model's own tree. <c>PredefinedTypeRule</c> makes that call and there is no version of it
+    ///     that can know in advance which node will do it, so the tool's obligation is not to avoid the
+    ///     throw but to survive it: the exception used to leave <c>Arranger.Arrange</c>, the pipeline
+    ///     and the caller, which for <c>skala arrange</c> is the process and for the nightly fuzz run
+    ///     was the whole run's report.
+    ///     <para>
+    ///         ⚠ Asserted as "returns", not as "arranges correctly". What the file should become is a
+    ///         question about semantically invalid code and has no interesting answer; that the tool
+    ///         answers at all is the property.
+    ///     </para>
+    /// </remarks>
+    [Fact]
+    public void ARuleThatThrows_CostsItsOwnRewriteAndNotTheProcess() {
+        const string source = """
+                              using System;
+                              using System.Linq;
+
+                              class C {
+                                  void M() {
+                                      Func<int> v = new () { P = (from item in items select null) };
+                                  }
+                              }
+                              """;
+
+        var arranged = Arrange(source);
+        Assert.NotNull(arranged);
     }
 
     static int CountBareBlocks(string text) {

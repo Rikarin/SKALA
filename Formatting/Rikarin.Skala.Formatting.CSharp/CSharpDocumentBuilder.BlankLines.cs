@@ -763,6 +763,41 @@ public sealed partial class CSharpDocumentBuilder {
             }
         }
 
+        return width + TrailingCommentWidth(previous);
+    }
+
+    /// <summary>
+    ///     The comment that will share the member's last line, after its last token.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ <see cref="GapWidth" /> measures every comment <em>between</em> two of a member's tokens
+    ///     and there is no gap after the last one, so without this the width the caller compares to the
+    ///     margin is not the width of the line the fitter will lay out. That is a non-idempotency
+    ///     rather than a rounding error, because the two disagree in exactly one direction:
+    ///     <c>internal … M97(out decimal p98) => [(static x =&gt; 3_000_000L), items[1..]]; // fuzz</c>
+    ///     measures 116 columns without the comment and 124 with it, so
+    ///     <see cref="IsSingleLine" /> called it single-line and declined the blank line that
+    ///     <c>blank_lines_around_single_line_invocable = 0</c> governs — and then the fitter, which
+    ///     does count the comment, chopped the member onto three lines. The second pass reads a
+    ///     three-line member, asks <c>blank_lines_around_invocable = 1</c> instead, and inserts the
+    ///     blank line the first pass had refused. SK-FUZZ-0010, and SK-FUZZ-0007's mistake one step
+    ///     further out: every width this decision reads has to be a width of the <em>output</em>.
+    ///     <para>
+    ///         ⚠ Stops at the first end-of-line. Roslyn hangs a token's trailing trivia through the newline
+    ///         that ends its line, so anything past that terminator is on a line this member does not own.
+    ///     </para>
+    /// </remarks>
+    int TrailingCommentWidth(SyntaxToken last) {
+        var width = 0;
+        var comments = false;
+        foreach (var trivia in last.TrailingTrivia) {
+            if (trivia.IsKind(SyntaxKind.EndOfLineTrivia)) {
+                break;
+            }
+
+            Measure(trivia, ref width, ref comments);
+        }
+
         return width;
     }
 

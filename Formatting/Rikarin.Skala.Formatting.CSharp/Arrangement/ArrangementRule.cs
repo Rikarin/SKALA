@@ -34,6 +34,26 @@ public static class ArrangeIds {
     /// <summary>⚠ A rewrite was reverted because an identifier in it resolved to a different symbol.</summary>
     public const string SymbolChanged = "SK9096";
 
+    /// <summary>
+    ///     ⚠ One arrangement rule threw and was skipped. The rest of the catalogue still ran.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ The sibling of <c>SK9030</c> "analyzer threw", and it exists for the same reason: a rule
+    ///     that throws must cost its own rewrite and nothing else. Before this, an exception out of a
+    ///     rewriter left <see cref="Arranger.Arrange" /> and took the caller with it — which for a
+    ///     nightly fuzz run means the whole run's report, and for <c>skala arrange</c> means the
+    ///     process. Found by the fuzzer as a <c>crash</c>: <c>Func&lt;int&gt; v = new () { P = (from
+    ///     item in items select null) };</c> makes Roslyn's own binder throw
+    ///     <c>IndexOutOfRangeException</c> out of <c>GetSymbolInfo</c>, which is a legitimate call on a
+    ///     node of the model's own tree.
+    ///     <para>
+    ///         ⚠ A warning rather than a silent skip. "The tool declined to do something and did not say
+    ///         so" is the failure mode the whole safety-layer design exists to avoid, and a rule that
+    ///         throws is a Skala bug even when the throw comes from a dependency.
+    ///     </para>
+    /// </remarks>
+    public const string RuleThrew = "SK9095";
+
     public static string NameOf(string id) =>
         id switch {
             BodyStyle => "body style",

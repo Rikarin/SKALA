@@ -169,7 +169,43 @@ public static class Arranger {
                 }
             }
 
-            var rewritten = rule.Apply(new ArrangementContext(current, model, options, guard));
+            // ⚠ Layer 0: a rule that throws costs its own rewrite and nothing else.
+            //
+            // Every layer below this one asks "is the rewrite safe?", and all three of them assume
+            // the rewrite *finished*. A rewriter that throws answers none of them — it leaves this
+            // method, the pipeline, and the caller, which for `skala arrange` is the process and for
+            // the nightly fuzz run is the whole run's report. `current` is untouched when `Apply`
+            // throws, so dropping the one rule is the smallest honest recovery: the other sixteen
+            // still run and the safety layers still check what they produce.
+            //
+            // ⚠ Reported, never silent, and reported as a **Skala bug** even when the throw comes
+            // out of a dependency. Found by the fuzzer: `Func<int> v = new () { P = (from item in
+            // items select null) };` — a target-typed `new` whose target is a delegate type, with a
+            // query in its initializer — makes Roslyn's binder throw `IndexOutOfRangeException` out
+            // of `SemanticModel.GetSymbolInfo`, which `PredefinedTypeRule` calls on a node of the
+            // model's own tree. There is nothing wrong with the call; there is no version of this
+            // loop that can know in advance which node will do it. See
+            // `pathological/open/register.md`, SK-FUZZ-0012.
+            SyntaxNode rewritten;
+            try {
+                rewritten = rule.Apply(new ArrangementContext(current, model, options, guard));
+            } catch (Exception exception) when (exception is not OperationCanceledException) {
+                diagnostics.Add(
+                    new SkalaDiagnostic(
+                        ArrangeIds.RuleThrew,
+                        SkalaSeverity.Warning,
+                        $"the {ArrangeIds.NameOf(rule.Id)} rule ({rule.Id}) threw and was skipped; "
+                        + "the file is arranged by the other rules. This is a Skala bug: "
+                        + exception.GetType().Name
+                        + ": "
+                        + exception.Message,
+                        path
+                    )
+                );
+
+                continue;
+            }
+
             if (ReferenceEquals(rewritten, current)) {
                 continue;
             }

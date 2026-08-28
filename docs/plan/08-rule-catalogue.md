@@ -238,7 +238,12 @@ export carries ~2 000 keys Skala will never implement and the user wrote nothing
 nobody chose. The message names the key, the value, the domain and **what is in force instead** ·
 `SK9010` file did not parse · `SK9011` unbalanced preprocessor
 structure, not formatted · `SK9007` `skala.jsonc` is not valid JSON · `SK9020` binlog stale for a file · `SK9021` binlog missing a file · `SK9022` no binary log found · `SK9023` no C# files under the requested paths · `SK9024` no solution or project to load · `SK9025` load mode produced no compilation, fell back · `SK9015` a file could not be read or written ·
-`SK9030` analyzer threw · `SK9031` analyzer failed to load · `SK9096` arrangement reverted, a touched identifier now resolves to a different symbol ·
+`SK9030` analyzer threw · `SK9031` analyzer failed to load ·
+`SK9095` an arrangement rule threw and was skipped; the rest of the catalogue still ran — ⚠ the
+sibling of `SK9030`, and allocated for the same reason: a rule that throws must cost its own rewrite
+and nothing else. Warning, and it is a **Skala bug** even when the throw comes out of a dependency —
+`SK-FUZZ-0012` is Roslyn's binder throwing out of a legitimate `GetSymbolInfo` ·
+`SK9096` arrangement reverted, a touched identifier now resolves to a different symbol ·
 `SK9097` the format-and-arrange pipeline did not reach a fixed point · `SK9098` arrangement reverted, new
 diagnostics · `SK9099` **formatter output was not token-equivalent** — the one that means "stop and
 file a bug".

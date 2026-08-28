@@ -68,6 +68,10 @@ using Rikarin.Skala.Testing;
 //                       --out=DIR         write minimised findings there. Default `.skala/fuzz/`.
 //                       --no-minimise     report the raw failing input instead of shrinking it.
 //                       --replay=SEED     re-execute one case and print it.
+//                       --origin=PATH     ⚠ with `--replay`, the corpus file to mutate, as
+//                                         `set/relative/path.cs`. A mutate case draws its file by
+//                                         index, so the seed alone re-points as the corpus grows;
+//                                         the pair (seed, origin) is the exact reconstruction.
 //                       --mutation-test   break the formatter deliberately, per property, and
 //                                         report which property caught it and after how many cases.
 //   unformat […]      the differential over *degraded* input, with the null hypothesis beside every
@@ -415,11 +419,18 @@ static int Fuzz(string[] args) {
         OutputDirectory = Flag("out") ?? Path.Combine(Corpus.RepositoryRoot, ".skala", "fuzz")
     };
 
-    // ⚠ `--replay=<seed>` reconstructs one case from its seed and nothing else. This is the whole
-    // point of the SplitMix64 stream in FuzzRandom: a seed recorded in a nightly log six months ago
-    // rebuilds the same bytes today, on any runtime, on any platform.
+    // ⚠ `--replay=<seed>` reconstructs one case from the SplitMix64 stream `FuzzRandom` pins, so a
+    // seed recorded in a nightly log six months ago rebuilds the same bytes today, on any runtime,
+    // on any platform.
+    //
+    // ⚠ `--origin=<set/path.cs>` supplies the half of a *mutate* case the seed cannot carry. The
+    // file is drawn as an index into the corpus, the corpus grows by policy, and every mutate seed
+    // therefore re-points the next time a file is committed — measured on the nightly's own
+    // `token-equivalence` finding, whose seed replayed a different file twenty-three corpus
+    // additions later and found nothing. The finding was real; the seed had stopped naming it. The
+    // report and each `.txt` beside a minimised artefact print the flag for exactly this reason.
     if (Flag("replay") is { } replay) {
-        var subject = Fuzzer.Build(FuzzRandom.Parse(replay), options.Mode, Corpus.All());
+        var subject = Fuzzer.Build(FuzzRandom.Parse(replay), options.Mode, Corpus.All(), Flag("origin"));
         Console.WriteLine(
             $"seed {FuzzRandom.Format(subject.Seed)} — {subject.Kind.ToString().ToLowerInvariant()} of {subject.Origin}"
         );
@@ -510,7 +521,16 @@ static int Fuzz(string[] args) {
             + $"{budget.Used.ToString(CultureInfo.InvariantCulture)} evaluations"
         );
 
-        foreach (var violation in FuzzProperties.Check(full, reduced, resolved, Corpus.PropertySymbols)) {
+        // ⚠ The same question the predicate asked, arrangement included. Re-checking the reduction
+        // without the arranger reports "nothing" for every finding the arranger produced — the
+        // reduction then looks untrustworthy when it is the report that is wrong.
+        foreach (var violation in FuzzProperties.Check(
+                     full,
+                     reduced,
+                     resolved,
+                     Corpus.PropertySymbols,
+                     arrangement: options.ArrangeEvery > 0
+                 )) {
             Console.Error.WriteLine("  ✗ " + violation);
         }
 
