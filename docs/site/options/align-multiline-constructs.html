@@ -130,7 +130,7 @@
 </section>
 <section class="option" id="resharper_csharp_align_multiline_calls_chain">
 <h2><code>resharper_csharp_align_multiline_calls_chain</code> <a class="self" href="#resharper_csharp_align_multiline_calls_chain">#</a></h2>
-<p>Align multiline constructs — Chained method calls</p>
+<p>Align multiline constructs — Chained method calls. Observed and not implementable as the alignment machinery stands: the anchor is the column the chain's first <code>.</code> lands on, and that is a function of the layout rather than a source position. At 120 columns <code>wrap_before_first_method_call = false</code> keeps the first call on the head line and the rest align under its dot; at 70 the layout breaks before that dot too and the anchor becomes the receiver's own column. At 50 the oracle abandons the alignment for a long receiver, which is the one shape on which <code>allow_far_alignment</code> has been seen to matter.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>
@@ -295,16 +295,17 @@
 </section>
 <section class="option" id="resharper_csharp_align_multiple_declaration">
 <h2><code>resharper_csharp_align_multiple_declaration</code> <a class="self" href="#resharper_csharp_align_multiple_declaration">#</a></h2>
-<p>Align multiline constructs — Multiple declarations</p>
+<p>Align multiline constructs — Multiple declarations. The second and later declarators of a <em>local</em> declaration take the first declarator's column; a field's do not move at either value. Earlier probes missed it because they used <code>int x = 1, y = 2</code>, where the first declarator's column and the continuation indent are both 4 past the statement.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>
 <tr><th>Default</th><td><code>false</code></td></tr>
 <tr><th>Default known from</th><td>the Rider export, which is Rider's default for most keys and the author's choice for the rest, with nothing distinguishing the two</td></tr>
-<tr><th>Tier</th><td>D — recorded so the key is not reported unknown; nothing reads it yet</td></tr>
+<tr><th>Tier</th><td>A — the formatter reads it and a committed oracle fixture pins it</td></tr>
 <tr><th>Language</th><td>csharp</td></tr>
 <tr><th>Since</th><td>0.1</td></tr>
 <tr><th>Also spelled</th><td><code>align_multiple_declaration</code>, <code>csharp_align_multiple_declaration</code>, <code>resharper_align_multiple_declaration</code></td></tr>
+<tr><th>Oracle fixture</th><td><code>constructs/alignment/align-declaration.cs</code></td></tr>
 <tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpIndentStylePageSchema.html#resharper_csharp_align_multiple_declaration">https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpIndentStylePageSchema.html#resharper_csharp_align_multiple_declaration</a></td></tr>
 </tbody>
 </table>
@@ -393,39 +394,41 @@
 </section>
 <section class="option" id="resharper_csharp_outdent_binary_ops">
 <h2><code>resharper_csharp_outdent_binary_ops</code> <a class="self" href="#resharper_csharp_outdent_binary_ops">#</a></h2>
-<p>Align multiline constructs — Outdent binary operators. Observed and not implemented: the oracle moves a wrapped operator left by its own width plus one (12 to 10 for <code>+</code>, 12 to 9 for <code>&amp;&amp;</code>), which is a column offset. The IR expresses indentation in levels, so this needs a scope kind that does not exist yet.</p>
+<p>Align multiline constructs — Outdent binary operators. A wrapped operator moves left by its own width plus the space written after it — <code>+</code> from column 12 to 10, <code>&amp;&amp;</code> from 12 to 9 — so that the operand behind it keeps the column it would have had. Implemented by the IndentKind.OutdentColumns scope the earlier note said the IR did not have.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>
 <tr><th>Default</th><td><code>false</code></td></tr>
 <tr><th>Default known from</th><td>the Rider export, which is Rider's default for most keys and the author's choice for the rest, with nothing distinguishing the two</td></tr>
-<tr><th>Tier</th><td>D — recorded so the key is not reported unknown; nothing reads it yet</td></tr>
+<tr><th>Tier</th><td>A — the formatter reads it and a committed oracle fixture pins it</td></tr>
 <tr><th>Language</th><td>csharp</td></tr>
 <tr><th>Since</th><td>0.1</td></tr>
 <tr><th>Also spelled</th><td><code>csharp_outdent_binary_ops</code>, <code>outdent_binary_ops</code>, <code>resharper_outdent_binary_ops</code></td></tr>
+<tr><th>Oracle fixture</th><td><code>constructs/alignment/outdent.cs</code></td></tr>
 <tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpIndentStylePageSchema.html#resharper_csharp_outdent_binary_ops">https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpIndentStylePageSchema.html#resharper_csharp_outdent_binary_ops</a></td></tr>
 </tbody>
 </table>
 </section>
 <section class="option" id="resharper_csharp_outdent_binary_pattern_ops">
 <h2><code>resharper_csharp_outdent_binary_pattern_ops</code> <a class="self" href="#resharper_csharp_outdent_binary_pattern_ops">#</a></h2>
-<p>Align multiline constructs — Outdent binary patterns. Unverified: no input found that both wraps a binary pattern chain under this export and shows the outdent, so neither value has been observed to differ.</p>
+<p>Align multiline constructs — Outdent binary patterns. Verified, and the input the earlier note could not find is a pattern chain long enough to wrap: <code>and</code> moves a wrapped line from column 12 to 8, its own width plus one, the same arithmetic as the binary operators.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>
 <tr><th>Default</th><td><code>false</code></td></tr>
 <tr><th>Default known from</th><td>the Rider export, which is Rider's default for most keys and the author's choice for the rest, with nothing distinguishing the two</td></tr>
-<tr><th>Tier</th><td>D — recorded so the key is not reported unknown; nothing reads it yet</td></tr>
+<tr><th>Tier</th><td>A — the formatter reads it and a committed oracle fixture pins it</td></tr>
 <tr><th>Language</th><td>csharp</td></tr>
 <tr><th>Since</th><td>0.1</td></tr>
 <tr><th>Also spelled</th><td><code>csharp_outdent_binary_pattern_ops</code>, <code>outdent_binary_pattern_ops</code>, <code>resharper_outdent_binary_pattern_ops</code></td></tr>
+<tr><th>Oracle fixture</th><td><code>constructs/alignment/outdent.cs</code></td></tr>
 <tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpIndentStylePageSchema.html#resharper_csharp_outdent_binary_pattern_ops">https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpIndentStylePageSchema.html#resharper_csharp_outdent_binary_pattern_ops</a></td></tr>
 </tbody>
 </table>
 </section>
 <section class="option" id="resharper_csharp_outdent_commas">
 <h2><code>resharper_csharp_outdent_commas</code> <a class="self" href="#resharper_csharp_outdent_commas">#</a></h2>
-<p>Align multiline constructs — Outdent commas. Inert under this configuration: it changes a wrapped list only while <code>wrap_before_comma = true</code>, and this export sets that false, so the comma is trailing and there is nothing in front of a line to outdent. Measured — with both flipped the oracle moves the leading comma from column 8 to column 6.</p>
+<p>Align multiline constructs — Outdent commas. Masked under this configuration: it changes a wrapped list only while <code>wrap_before_comma = true</code>, and this export sets that false, so the comma is trailing and there is nothing in front of a line to outdent. Measured — with both flipped the oracle moves the leading comma from column 8 to column 6. Not implemented alongside the rest of the family: the outdent skips the <em>first</em> item, which the scope-shaped IndentKind.OutdentColumns cannot express because it exempts only the line the scope opened on.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>
@@ -441,16 +444,17 @@
 </section>
 <section class="option" id="resharper_csharp_outdent_dots">
 <h2><code>resharper_csharp_outdent_dots</code> <a class="self" href="#resharper_csharp_outdent_dots">#</a></h2>
-<p>Align multiline constructs — Outdent dots in chained method calls. Observed and not implemented: the oracle moves a wrapped <code>.</code> left by one column, which the level-based IR cannot express.</p>
+<p>Align multiline constructs — Outdent dots in chained method calls. A wrapped <code>.</code> moves from column 12 to 11 — one column and not two, because <code>space_after_dot = false</code> leaves the dot no space to account for. Implemented by IndentKind.OutdentColumns, which asks SpaceRules for that space rather than assuming it.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>
 <tr><th>Default</th><td><code>false</code></td></tr>
 <tr><th>Default known from</th><td>the Rider export, which is Rider's default for most keys and the author's choice for the rest, with nothing distinguishing the two</td></tr>
-<tr><th>Tier</th><td>D — recorded so the key is not reported unknown; nothing reads it yet</td></tr>
+<tr><th>Tier</th><td>A — the formatter reads it and a committed oracle fixture pins it</td></tr>
 <tr><th>Language</th><td>csharp</td></tr>
 <tr><th>Since</th><td>0.1</td></tr>
 <tr><th>Also spelled</th><td><code>csharp_outdent_dots</code>, <code>outdent_dots</code>, <code>resharper_outdent_dots</code></td></tr>
+<tr><th>Oracle fixture</th><td><code>constructs/alignment/outdent.cs</code></td></tr>
 <tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpIndentStylePageSchema.html#resharper_csharp_outdent_dots">https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpIndentStylePageSchema.html#resharper_csharp_outdent_dots</a></td></tr>
 </tbody>
 </table>

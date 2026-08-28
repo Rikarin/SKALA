@@ -538,6 +538,29 @@
     ]
   },
   {
+    "Key": "resharper_csharp_align_multiple_declaration",
+    "Tier": "D",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true,
+    "Fixture": "constructs/alignment/align-declaration.cs",
+    "Values": [
+      {
+        "Value": "true",
+        "OracleHash": "f5ddb1a8",
+        "SkalaHash": "f5ddb1a8",
+        "Agree": true
+      },
+      {
+        "Value": "false",
+        "OracleHash": "6b49621f",
+        "SkalaHash": "6b49621f",
+        "Agree": true
+      }
+    ]
+  },
+  {
     "Key": "resharper_csharp_align_tuple_components",
     "Tier": "A",
     "Outcome": "Conformant",
@@ -2686,6 +2709,75 @@
         "Value": "false",
         "OracleHash": "3683cd84",
         "SkalaHash": "3683cd84",
+        "Agree": true
+      }
+    ]
+  },
+  {
+    "Key": "resharper_csharp_outdent_binary_ops",
+    "Tier": "D",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true,
+    "Fixture": "constructs/alignment/outdent.cs",
+    "Values": [
+      {
+        "Value": "true",
+        "OracleHash": "37332357",
+        "SkalaHash": "37332357",
+        "Agree": true
+      },
+      {
+        "Value": "false",
+        "OracleHash": "c5e43790",
+        "SkalaHash": "c5e43790",
+        "Agree": true
+      }
+    ]
+  },
+  {
+    "Key": "resharper_csharp_outdent_binary_pattern_ops",
+    "Tier": "D",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true,
+    "Fixture": "constructs/alignment/outdent.cs",
+    "Values": [
+      {
+        "Value": "true",
+        "OracleHash": "8ce24ba1",
+        "SkalaHash": "8ce24ba1",
+        "Agree": true
+      },
+      {
+        "Value": "false",
+        "OracleHash": "c5e43790",
+        "SkalaHash": "c5e43790",
+        "Agree": true
+      }
+    ]
+  },
+  {
+    "Key": "resharper_csharp_outdent_dots",
+    "Tier": "D",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true,
+    "Fixture": "constructs/alignment/outdent.cs",
+    "Values": [
+      {
+        "Value": "true",
+        "OracleHash": "35f78f07",
+        "SkalaHash": "35f78f07",
+        "Agree": true
+      },
+      {
+        "Value": "false",
+        "OracleHash": "c5e43790",
+        "SkalaHash": "c5e43790",
         "Agree": true
       }
     ]
@@ -6292,7 +6384,7 @@
   },
   {
     "Key": "resharper_disable_blank_line_changes",
-    "Tier": "D",
+    "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
@@ -6315,7 +6407,7 @@
   },
   {
     "Key": "resharper_disable_formatter",
-    "Tier": "D",
+    "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
