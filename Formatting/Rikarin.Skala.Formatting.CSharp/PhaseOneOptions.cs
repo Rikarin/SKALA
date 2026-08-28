@@ -20,7 +20,21 @@ public readonly struct PhaseOneOptions {
         IndentSize = Math.Max(1, options.GetInt(Ids.IndentSize));
         TabWidth = Math.Max(1, options.GetInt(Ids.TabWidth));
         UseTabs = options.GetRaw(Ids.IndentStyle) == (int)IndentStyle.Tab;
-        MaxLineLength = options.GetInt(Ids.MaxLineLength) is var w and > 0 ? w : 120;
+        // ⚠ `wrap_lines = false` is exactly an unbounded margin, and that is measured rather than
+        // reasoned. Asked with `wrap_lines = false` and asked with
+        // `max_line_length = 2147483647`, `jb cleanupcode` returns byte-identical output — on source
+        // written flat and on source already wrapped, over two files covering twenty constructs. It
+        // is not "do not wrap": a construct that breaks for a reason other than width still breaks,
+        // and the same measurement shows it. A `chop_if_long` argument list whose source is
+        // multiline stays chopped at both settings, a LINQ query keeps the author's breaks, and a
+        // hard break is a hard break — all of which Fits already expresses, because a subtree
+        // holding a break has an Unbounded flat width and never fits at any margin.
+        WrapLines = options.GetBool(Ids.WrapLines);
+        MaxLineLength = !WrapLines
+            ? Document.Unbounded
+            : options.GetInt(Ids.MaxLineLength) is var w and > 0
+            ? w
+            : 120;
         InsertFinalNewline = options.GetBool(Ids.InsertFinalNewline);
         RemoveSpacesOnBlankLines = options.GetBool(Ids.RemoveSpacesOnBlankLines);
         EnforceLineEndingStyle = options.GetBool(Ids.EnforceLineEndingStyle);
@@ -163,6 +177,8 @@ public readonly struct PhaseOneOptions {
         AlignMultilineBinaryExpressionsChain = options.GetBool(Ids.AlignMultilineBinaryExpressionsChain);
         AlignMultilineBinaryPatterns = options.GetBool(Ids.AlignMultilineBinaryPatterns);
         AlignLinqQuery = options.GetBool(Ids.AlignLinqQuery);
+        AlignMultilineExtendsList = options.GetBool(Ids.AlignMultilineExtendsList);
+        AlignTupleComponents = options.GetBool(Ids.AlignTupleComponents);
 
         IntAlignFields = options.GetBool(Ids.IntAlignFields);
         IntAlignVariables = options.GetBool(Ids.IntAlignVariables);
@@ -172,6 +188,11 @@ public readonly struct PhaseOneOptions {
         IntAlignComments = options.GetBool(Ids.IntAlignComments);
         IntAlignSwitchExpressions = options.GetBool(Ids.IntAlignSwitchExpressions);
         IntAlignSwitchSections = options.GetBool(Ids.IntAlignSwitchSections);
+        IntAlignParameters = options.GetBool(Ids.IntAlignParameters);
+        IntAlignInvocations = options.GetBool(Ids.IntAlignInvocations);
+        IntAlignNestedTernary = options.GetBool(Ids.IntAlignNestedTernary);
+        IntAlignBinaryExpressions = options.GetBool(Ids.IntAlignBinaryExpressions);
+        IntAlignPropertyPatterns = options.GetBool(Ids.IntAlignPropertyPatterns);
         DisableIntAlign = options.GetBool(Ids.DisableIntAlign);
         IntAlignFixInAdjacent = options.GetBool(Ids.IntAlignFixInAdjacent);
         AllowFarAlignment = options.GetBool(Ids.AllowFarAlignment);
@@ -346,7 +367,24 @@ public readonly struct PhaseOneOptions {
     public int IndentSize { get; }
     public int TabWidth { get; }
     public bool UseTabs { get; }
+
+    /// <summary>
+    ///     The column limit, or <see cref="Document.Unbounded" /> when <see cref="WrapLines" /> is off.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ One number and not two, because the oracle answers them with one. Everything that reads a
+    ///     margin therefore honours <c>wrap_lines</c> without knowing about it: the fitter, the fill
+    ///     points in the layout writer, the single-line tests the blank-line rules run, and SK0002 —
+    ///     which is right to go quiet, since with wrapping off an over-long line is what was asked for
+    ///     rather than a line nothing could break.
+    /// </remarks>
     public int MaxLineLength { get; }
+
+    /// <summary>
+    ///     <c>resharper_csharp_wrap_lines</c>: whether the formatter may break a line for width at all.
+    /// </summary>
+    public bool WrapLines { get; }
+
     public bool InsertFinalNewline { get; }
     public bool RemoveSpacesOnBlankLines { get; }
     public bool EnforceLineEndingStyle { get; }
@@ -547,6 +585,8 @@ public readonly struct PhaseOneOptions {
     public bool AlignMultilineBinaryExpressionsChain { get; }
     public bool AlignMultilineBinaryPatterns { get; }
     public bool AlignLinqQuery { get; }
+    public bool AlignMultilineExtendsList { get; }
+    public bool AlignTupleComponents { get; }
 
     public bool IntAlignFields { get; }
     public bool IntAlignVariables { get; }
@@ -556,6 +596,11 @@ public readonly struct PhaseOneOptions {
     public bool IntAlignComments { get; }
     public bool IntAlignSwitchExpressions { get; }
     public bool IntAlignSwitchSections { get; }
+    public bool IntAlignParameters { get; }
+    public bool IntAlignInvocations { get; }
+    public bool IntAlignNestedTernary { get; }
+    public bool IntAlignBinaryExpressions { get; }
+    public bool IntAlignPropertyPatterns { get; }
     public bool DisableIntAlign { get; }
     public bool IntAlignFixInAdjacent { get; }
     public bool AllowFarAlignment { get; }
@@ -582,7 +627,12 @@ public readonly struct PhaseOneOptions {
             || IntAlignMethods
             || IntAlignComments
             || IntAlignSwitchExpressions
-            || IntAlignSwitchSections);
+            || IntAlignSwitchSections
+            || IntAlignParameters
+            || IntAlignInvocations
+            || IntAlignNestedTernary
+            || IntAlignBinaryExpressions
+            || IntAlignPropertyPatterns);
 
     public bool IndentSwitchLabels { get; }
     public bool IndentBreakFromCase { get; }
@@ -796,6 +846,14 @@ public static class Ids {
     // Tier D for that reason (docs/plan/05 § "Phase 1"). Milestone 3 is the phase where the column
     // limit is the whole point, and constructs/wrapping/initializers.cs pins it.
     public static readonly OptionId MaxLineLength = Of("resharper_csharp_max_line_length");
+
+    // ⚠ Beside MaxLineLength because it *is* MaxLineLength: at `false` the margin is unbounded, and
+    // `jb cleanupcode` produces byte-identical output for `wrap_lines = false` and
+    // `max_line_length = 2147483647` on every input tried. Recorded below as a "master switch with
+    // nothing behind it" — "csharp_wrap_lines = false leaves an over-long line wrapped exactly as
+    // before" — which was measured on input that was already wrapped, where most of what stays put
+    // stays put under `keep_user_linebreaks` rather than under this key.
+    public static readonly OptionId WrapLines = Of("resharper_csharp_wrap_lines");
     public static readonly OptionId InsertFinalNewline = Of("resharper_csharp_insert_final_newline");
     public static readonly OptionId RemoveSpacesOnBlankLines = OfInert("resharper_remove_spaces_on_blank_lines");
     public static readonly OptionId EnforceLineEndingStyle = Of("resharper_enforce_line_ending_style");
@@ -1117,6 +1175,39 @@ public static class Ids {
     // clauses, and not before.
     public static readonly OptionId AlignLinqQuery = OfInert("resharper_csharp_align_linq_query");
 
+    // ⚠ The column of the *first base type*, two past the base list's own node, which is where
+    // every other member of this family reads its column. That was recorded here as the reason the
+    // key could not be implemented, and it is a reason to move the anchor rather than to stop:
+    // AlignAnchor takes a position and not a node, so pointing it at `Types[0]` is enough. The `:`
+    // and the gap after it are written by EmitLeadingGapAt before the scope opens, so the column
+    // the scope reads is the one the first base type lands on. Measured:
+    //
+    //     public class Alpha : System.Collections.Generic.IReadOnlyCollection<int>,
+    //                          System.IDisposable,        ← the first base type's column
+    public static readonly OptionId AlignMultilineExtendsList =
+        Of("resharper_csharp_align_multiline_extends_list");
+
+    // ⚠ Implemented, measured, and Tier D — on Skala's own wrapping and not on the alignment. The
+    // oracle puts a wrapped tuple's components on the column *after* the `(`:
+    //
+    //     var tuple = (FirstComponentName: a, SecondComponentName: b,
+    //                  AThirdComponentName: c);
+    //
+    // which is a different anchor from every key AlignsFromOwnColumn answers, and VisitDelimited
+    // opens the scope for it after the `(` has been written. What is missing is the break. Skala
+    // has no break point *between* a tuple's components at all: asked with a tuple too wide for its
+    // line it breaks after the `=` instead and leaves the components flat, and asked with one too
+    // wide even for the continuation line it leaves the line over-long. The only break Skala
+    // produces inside a tuple is one inside a single component, which is not the line this key
+    // governs, so a fixture would pin a column the oracle never writes.
+    //
+    // ⚠ Recorded as *unmeasured* — "no probe found a shape where it changes the oracle's output" —
+    // until now. It does: the probes that missed it used tuples that fit. Tier A once a tuple wraps
+    // at its components, at which point this line becomes `Of` and the corpus file is a tuple long
+    // enough to chop.
+    public static readonly OptionId AlignTupleComponents =
+        OfInert("resharper_csharp_align_tuple_components");
+
     // ⚠ The rest of the `align_*` family, read so the crash snapshot records them, and Tier D each
     // for a reason the oracle gave rather than for a gap in the wiring. All measured one key at a
     // time at a 70-column margin against `jb cleanupcode`.
@@ -1146,15 +1237,16 @@ public static class Ids {
     //   align_multiline_calls_chain — the anchor is the chain's first `.`, and a chain's
     //     continuation level is spent lazily at the first break, by which time the writer has
     //     written past that dot.
-    //   align_multiline_extends_list — the anchor is the first base type, two columns past the base
-    //     list's own node, which is where every other member of this family reads its column.
     //   align_multiline_expression — the union of four specific keys, except for binary patterns:
     //     it aligns a pattern chain one level from the *enclosing* expression where
     //     align_multiline_binary_patterns aligns it on the pattern's own column, one further right.
     //     An Align scope reads the column where it opens and cannot see the enclosing expression.
-    //   align_multiple_declaration, align_tuple_components, align_multiline_comments — no probe
-    //     found a shape where they change the oracle's output, which is weaker evidence than the
-    //     rest of this list: they are unmeasured rather than measured inert.
+    //   align_multiple_declaration, align_multiline_comments — no probe found a shape where they
+    //     change the oracle's output, which is weaker evidence than the rest of this list: they are
+    //     unmeasured rather than measured inert. ⚠ `align_tuple_components` was in this group and
+    //     is not any more: the probes that missed it used tuples that fit, and a tuple long enough
+    //     to wrap moves the oracle's output at both values. Read the same warning into what is left
+    //     of the group — "no probe found" is a statement about the probes.
 
     // ── Column alignment of adjacent constructs (int_align_*) ────────────────────────────────
     // ⚠ Every one of these is `false` in the export and every one of them is read here, so the
@@ -1172,6 +1264,53 @@ public static class Ids {
         Of("resharper_csharp_int_align_switch_expressions");
 
     public static readonly OptionId IntAlignSwitchSections = Of("resharper_csharp_int_align_switch_sections");
+
+    // ⚠ The five list-shaped members of the family, each measured one key at a time against
+    // `jb cleanupcode` 2025.2.6 at config sha256:bd9791d3a6e6a087. The slot each pads is the
+    // oracle's, not a guess from the option's name:
+    //   int_align_parameters      — the parameter *name* of a chopped signature, so the types pad
+    //                               out to a column: `int    first,` / `string secondName,`.
+    //   int_align_invocations     — every argument of adjacent single-line calls *of the same
+    //                               method*. `Take(1, 2, 3)` beside `Take(1000, 2000, 3000)` pads
+    //                               both argument columns; an `Other2(…)` between two `Take(…)`
+    //                               ends the run rather than joining it.
+    //   int_align_nested_ternary  — the `?` of each member of a nested conditional chain.
+    //   int_align_binary_expressions — the *operator* of each of those same conditions.
+    //   int_align_property_patterns — the `:` of a chopped property pattern's subpatterns.
+    //
+    // ⚠ `int_align_binary_expressions` is narrower than its name, and the narrowness is measured
+    // rather than assumed. Asked with the key on, the oracle moves nothing in: adjacent assignment
+    // statements whose right-hand sides are binary; a binary chain chopped one operand per line;
+    // adjacent `if` conditions; binary expressions as arguments, as initializer elements, or as
+    // switch-expression arm results. The one shape that moves is the conditional chain, which is
+    // why it is collected from the chain here and not from every binary expression in the file.
+    public static readonly OptionId IntAlignParameters = Of("resharper_csharp_int_align_parameters");
+    public static readonly OptionId IntAlignInvocations = Of("resharper_csharp_int_align_invocations");
+
+    public static readonly OptionId IntAlignPropertyPatterns =
+        Of("resharper_csharp_int_align_property_patterns");
+
+    // ⚠ Implemented, measured, and Tier D — on Skala's own wrapping and not on this pass. Both keys
+    // pad a conditional chain the oracle lays out with one member per line and the `?` on its
+    // condition's own line:
+    //
+    //     var chain = flag > 10 ? "the first branch here" :
+    //         flag > 5 ? "the second branch here" :
+    //         flag > 1 ? "third" : "d";
+    //
+    // Skala does not write that layout. Asked with the chain on one source line it produces one
+    // break and a flat tail — `flag > 10\n ? "…"\n : flag > 5 ? "…" : flag > 1 ? "third" : "d"` —
+    // and asked with the oracle's own output as input it rewrites it into the same shape, so
+    // `keep_user_linebreaks` does not reach it either. There is therefore no document Skala emits
+    // that either key can pad, and a fixture would be pinning a shape Skala never produces.
+    //
+    // CollectConditionalChains is correct against the oracle's shape and stays: promotion is these
+    // two lines becoming `Of`, plus a corpus file, once the chain wraps the way ReSharper wraps it.
+    public static readonly OptionId IntAlignNestedTernary =
+        OfInert("resharper_csharp_int_align_nested_ternary");
+
+    public static readonly OptionId IntAlignBinaryExpressions =
+        OfInert("resharper_csharp_int_align_binary_expressions");
 
     // ⚠ Read and Tier D, all three for the same reason and none of them for a missing
     // implementation: they refine an alignment that the export never asks for. `disable_int_align`
@@ -1421,14 +1560,28 @@ public static class Ids {
     // wrap_before_declaration_lpar changes. A lambda's parameter list is governed by the method
     // declaration keys; the five keys named for it are not read.
     //
-    // Master switches with nothing behind them: csharp_wrap_lines = false leaves an over-long line
-    // wrapped exactly as before, enable_wrapping = true changes nothing, and keep_user_wrapping
-    // has no observable effect in this export (BreakPlan records the same, from M2).
+    // Master switches with nothing behind them: enable_wrapping = true changes nothing, and
+    // keep_user_wrapping has no observable effect in this export (BreakPlan records the same, from
+    // M2). ⚠ csharp_wrap_lines was in this list and is not any more — it is implemented above, as
+    // the margin itself. The measurement that put it here was taken on already-wrapped input, where
+    // what stays put stays put under keep_user_linebreaks; on flat input it joins the file.
     //
-    // Not reached by any probe: wrap_before_first_type_parameter_constraint and
-    // wrap_multiple_type_parameter_constraints_style — the export forces every `where` onto its own
-    // line with place_type_constraints_on_same_line = false, and no shape tried put two constraint
-    // clauses in a position where either key could decide anything.
+    // Not reached by any probe: wrap_before_first_type_parameter_constraint — no shape tried put
+    // two constraint clauses in a position where it could decide anything.
+    //
+    // ⚠ wrap_multiple_type_parameter_constraints_style was beside it and is not any more: it is
+    // reached, and the shape that reaches it is a declaration with four constraint clauses on one
+    // source line. At `wrap_if_long` the oracle fills them two to a line and at `chop_always` it
+    // gives a two-clause method one `where` per line, both against the export's `chop_if_long`. Not
+    // implemented, and not for want of the key: Skala has no break point before a `where` at all —
+    // asked with the same declaration it leaves the constraints on a 200-column line rather than
+    // choosing between the three styles. Tier A once the constraint list wraps.
+    //
+    // ⚠ wrap_for_stmt_header_style is reached too, on a `for` whose three clauses do not fit: at
+    // `wrap_if_long` the oracle keeps the initializer and the condition together and wraps only the
+    // incrementor, against the export's `chop_if_long`, which gives each clause a line. Not
+    // implemented for the same reason — Skala has no break point at the header's `;`, and breaks
+    // inside the incrementor expression instead.
     //
     // wrap_verbatim_interpolated_strings is observable — chop_if_long breaks the oracle's output
     // *inside* the interpolation holes of a verbatim string — and is not implemented: Skala emits an

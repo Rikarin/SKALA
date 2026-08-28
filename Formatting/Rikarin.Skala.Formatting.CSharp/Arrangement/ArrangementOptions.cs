@@ -82,7 +82,9 @@ public readonly struct ArrangementOptions {
         ArgumentsLiteral = (ArgumentStyle)options.GetRaw(Ids.ArgumentsLiteral);
         ArgumentsStringLiteral = (ArgumentStyle)options.GetRaw(Ids.ArgumentsStringLiteral);
         ArgumentsAnonymousFunction = (ArgumentStyle)options.GetRaw(Ids.ArgumentsAnonymousFunction);
+        ArgumentsNamed = (ArgumentStyle)options.GetRaw(Ids.ArgumentsNamed);
         ArgumentsOther = (ArgumentStyle)options.GetRaw(Ids.ArgumentsOther);
+        ArgumentsSkipSingle = options.GetBool(Ids.ArgumentsSkipSingle);
 
         SortUsings = options.GetBool(Ids.SortUsings);
         SystemDirectivesFirst = options.GetBool(Ids.SystemDirectivesFirst);
@@ -148,7 +150,35 @@ public readonly struct ArrangementOptions {
     public ArgumentStyle ArgumentsLiteral { get; }
     public ArgumentStyle ArgumentsStringLiteral { get; }
     public ArgumentStyle ArgumentsAnonymousFunction { get; }
+
+    /// <summary>
+    ///     <c>resharper_arguments_named</c>: an argument that <em>refers to</em> something by name.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ A simple name or a member access, and nothing else, which is measured rather than read off
+    ///     the key's wording. Asked with this key at <c>named</c> and the other four left alone, the
+    ///     oracle names <c>local</c>, <c>Property</c>, <c>Field</c>, <c>Static</c> and
+    ///     <c>holder.Value</c>; asked with <c>arguments_other</c> at <c>named</c> instead it names the
+    ///     complement — an invocation, a binary expression, a cast, an element access, <c>typeof</c>,
+    ///     <c>nameof</c>, <c>default</c>, <c>new</c> and a conditional. The two sets partition the
+    ///     arguments that are not literals, strings or lambdas, with no overlap and nothing left over.
+    /// </remarks>
+    public ArgumentStyle ArgumentsNamed { get; }
+
     public ArgumentStyle ArgumentsOther { get; }
+
+    /// <summary>
+    ///     <c>resharper_arguments_skip_single</c>: leave a one-argument call alone whatever the four
+    ///     style keys say.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured in the removal direction — with the export's <c>positional</c> everywhere and this
+    ///     key on, <c>One(number: local)</c> and <c>One(number: 1)</c> keep names that a two-argument
+    ///     call loses. It gates the argument list rather than one argument: "skip single arguments" is a
+    ///     property of the call, and applying it per argument would exempt the last argument of every
+    ///     call instead.
+    /// </remarks>
+    public bool ArgumentsSkipSingle { get; }
 
     public bool SortUsings { get; }
     public bool SystemDirectivesFirst { get; }
@@ -269,7 +299,9 @@ public readonly struct ArrangementOptions {
         public static readonly OptionId ArgumentsAnonymousFunction =
             Of("resharper_csharp_arguments_anonymous_function");
 
+        public static readonly OptionId ArgumentsNamed = Of("resharper_csharp_arguments_named");
         public static readonly OptionId ArgumentsOther = Of("resharper_csharp_arguments_other");
+        public static readonly OptionId ArgumentsSkipSingle = Of("resharper_csharp_arguments_skip_single");
 
         public static readonly OptionId SortUsings = Of("resharper_sort_usings");
         public static readonly OptionId SystemDirectivesFirst = Of("dotnet_sort_system_directives_first");
