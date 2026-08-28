@@ -50,6 +50,25 @@ public static class Corpus {
     public const string ArrangementPrefix = "arrangement/";
 
     /// <summary>
+    ///     The subtree of <see cref="Constructs" /> that the documentation-comment sub-formatter owns,
+    ///     and the only part of the corpus that carries a <see cref="OracleProfile.DocComments" />
+    ///     fixture.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Same economics as <see cref="ArrangementPrefix" />, and the same reason for the boundary. A
+    ///     doc-comment fixture beside a file with no <c>///</c> in it is byte-identical to the
+    ///     format-only fixture beside it by construction, which measures nothing and costs an oracle run
+    ///     to commit.
+    ///     <para>
+    ///         ⚠ <see cref="Real" /> is deliberately <em>not</em> in here yet, and that is a scope
+    ///         decision rather than a claim that it would say nothing — it would say a great deal, and
+    ///         it is what would finally retire the <c>outside doc comments</c> fidelity basis. It is a
+    ///         separate reviewed commit of ~700 rewritten fixtures.
+    ///     </para>
+    /// </remarks>
+    public const string XmlDocPrefix = "xmldoc/";
+
+    /// <summary>
     ///     A symbol set that makes a conditional body live, for the properties to be asserted under.
     /// </summary>
     /// <remarks>
@@ -165,6 +184,19 @@ public static class Corpus {
         .. Files(Constructs)
             .Where(static file => file.RelativePath.StartsWith(ArrangementPrefix, StringComparison.Ordinal)),
         .. Files(Real)
+    ];
+
+    /// <summary>
+    ///     The files a documentation-comment fixture is expected for: <c>constructs/xmldoc/</c>.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ This is the set <c>./build.sh Oracle</c> regenerates under
+    ///     <see cref="OracleProfile.DocComments" />, and the set <c>XmlDocOracleTests</c> compares Skala
+    ///     against. It is what makes the <c>resharper_xmldoc_*</c> family measurable at all.
+    /// </remarks>
+    public static IReadOnlyList<CorpusFile> DocCommented() => [
+        .. Files(Constructs)
+            .Where(static file => file.RelativePath.StartsWith(XmlDocPrefix, StringComparison.Ordinal))
     ];
 
     /// <summary>xUnit theory data: one row per file in a set.</summary>
