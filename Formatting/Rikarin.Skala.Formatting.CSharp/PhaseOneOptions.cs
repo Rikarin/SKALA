@@ -225,6 +225,10 @@ public readonly struct PhaseOneOptions {
         IndentAnonymousMethodBlock = options.GetBool(Ids.IndentAnonymousMethodBlock);
         OutdentStatementLabels = options.GetBool(Ids.OutdentStatementLabels);
 
+        // ── The formatter's own off switches ─────────────────────────────────────────────────
+        DisableFormatter = options.GetBool(Ids.DisableFormatter);
+        DisableBlankLineChanges = options.GetBool(Ids.DisableBlankLineChanges);
+
         // ── Blank lines ──────────────────────────────────────────────────────────────────────
         KeepBlankLinesInCode = options.GetInt(Ids.KeepBlankLinesInCode);
         KeepBlankLinesInDeclarations = options.GetInt(Ids.KeepBlankLinesInDeclarations);
@@ -691,6 +695,39 @@ public readonly struct PhaseOneOptions {
 
     /// <summary><c>outdent_statement_labels</c>: <c>Finish:</c> one level out from what it labels.</summary>
     public bool OutdentStatementLabels { get; }
+
+    /// <summary>
+    ///     <c>disable_formatter</c>: the whole pass is off and the file comes back byte-identical.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured, not inferred. Asked with nothing but this key flipped on a file wrong in every
+    ///     dimension at once — spacing, indentation, blank lines and wrapping — <c>jb cleanupcode</c>
+    ///     under <c>CSReformatCode</c> returned the input <b>byte for byte</b>. "Formats nothing at all"
+    ///     rather than "formats less"; the negative control is the same file at <c>false</c>, which comes
+    ///     back reformatted in all four. SK-DIV-0060.
+    ///     <para>
+    ///         ⚠ Scoped to the formatter. This does not gate <see cref="Arrangement.ArrangementOptions" />:
+    ///         the probe ran under the format-only profile, so what the key does to a <em>cleanup</em> is
+    ///         unmeasured, and switching the arranger off on an unmeasured guess is how a key acquires a
+    ///         meaning ReSharper does not give it.
+    ///     </para>
+    /// </remarks>
+    public bool DisableFormatter { get; }
+
+    /// <summary>
+    ///     <c>disable_blank_line_changes</c>: every run of blank lines survives exactly as written.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Both directions, which is what separates it from <c>disable_line_break_removal</c>. On one
+    ///     probe the export's cap truncated a three-blank run to two and
+    ///     <c>blank_lines_around_invocable</c> inserted a blank after a <c>}</c>; with this key on,
+    ///     neither happened — the three survived and the blank was not inserted. <c>line_break_removal</c>
+    ///     on the same file kept the three and still inserted the blank, so the two keys are a superset
+    ///     and a subset in the *removal* direction only. Line breaks that are not blank lines are still
+    ///     added and removed under this key: the probe's <c>if(sum&gt;0){</c> still gained its break.
+    ///     SK-DIV-0060.
+    /// </remarks>
+    public bool DisableBlankLineChanges { get; }
 
     public int KeepBlankLinesInCode { get; }
     public int KeepBlankLinesInDeclarations { get; }
@@ -1475,9 +1512,53 @@ public static class Ids {
     // `int_align = true` supplied alongside, `disable_int_align` turns the whole family off again
     // and the other two change nothing on any shape tried. The per-option unit flips one key from
     // the repository's configuration, so none of the three can be demonstrated there.
+    //
+    // ⚠ Re-measured rather than inherited, and the recorded probe holds. On a file with three
+    // adjacent declarations, `int_align = true` alone pads them to a column; `int_align = true`
+    // plus `disable_int_align = true` produces output byte-identical to the export's own
+    // configuration. It is decisive one key away from the export and inert at it, which is the
+    // shape the whole `disable_*` family turned out to have — see the block below. SK-DIV-0060.
     public static readonly OptionId DisableIntAlign = OfInert("resharper_disable_int_align");
     public static readonly OptionId IntAlignFixInAdjacent = OfInert("resharper_csharp_int_align_fix_in_adjacent");
     public static readonly OptionId AllowFarAlignment = OfInert("resharper_csharp_allow_far_alignment");
+
+    // ── The formatter's own off switches ─────────────────────────────────────────────────────
+    //
+    // ⚠ Nine keys of a shape nothing else in this registry has: each *suppresses* a class of edit
+    // instead of choosing between two renderings. That makes the family unusually testable — a
+    // suppressed class must come back byte-identical to the input in that respect — and it makes the
+    // one-key-at-a-time sweep unusually bad at it, because a switch over a family the export already
+    // has switched off is inert until a second key moves. `disable_int_align` above is exactly that
+    // and is why the rest were measured with the second key supplied rather than alone.
+    //
+    // Measured on `jb cleanupcode` under `OracleProfile.FormatOnly` with the repository's own
+    // .editorconfig, one key flipped, against a file wrong in spacing, indentation, blank lines and
+    // wrapping at once. Six of the nine are decisive there; two are not decisive at any pairing
+    // tried. What each one does is recorded at its property or in docs/divergences.md, never here
+    // twice.
+    //
+    //   disable_formatter          the file comes back byte for byte. Implemented.
+    //   disable_blank_line_changes every blank run survives. Implemented.
+    //   disable_int_align          masked by the export; decisive one key away.
+    //   disable_indenter           SK-DIV-0061, read by the oracle, not read here.
+    //   disable_space_changes      SK-DIV-0062,   "        "        "        "
+    //   disable_line_break_changes SK-DIV-0063,   "        "        "        "
+    //   disable_line_break_removal SK-DIV-0064,   "        "        "        "
+    //
+    // The three that are not divergences at all — the two implemented and `disable_int_align` — plus
+    // the two unreachable ones are recorded together in SK-DIV-0060, which carries the method.
+    //
+    // ⚠ Four of them are deliberately *not* registered below. `Of` and `OfInert` both assert
+    // something about this formatter — "honoured" and "read, and unable to move anything" — and
+    // neither is true of a key nothing consults. Registering them to hold the measurement would put
+    // four unimplemented keys inside a claim, which is the failure OfInert's own remark warns about.
+    // The measurement lives in the divergence register, where an unimplemented behaviour belongs.
+    //
+    // ⚠ Two of the nine are not reachable at all and are recorded as such rather than as "not done
+    // yet": `disable_space_changes_before_trailing_comment` and `ignore_space_preservation`, both
+    // under SK-DIV-0060.
+    public static readonly OptionId DisableFormatter = Of("resharper_disable_formatter");
+    public static readonly OptionId DisableBlankLineChanges = Of("resharper_disable_blank_line_changes");
 
     // ⚠ Read and Tier D on the measurement: the C# formatter does not consult the unprefixed
     // spellings at all. Asked directly with each set to true on a file that exercises it, the oracle
