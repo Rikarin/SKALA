@@ -97,13 +97,16 @@ public sealed class ReportingTests {
         Assert.NotEqual(baseline, SarifWriter.Fingerprint(Modernization() with { Message = "something else" }));
     }
 
+    /// <summary>
+    ///     ⚠ The <c>ReplaceLineEndings("\n")</c> this assertion used to make first is gone, and its
+    ///     absence is the assertion. Normalising before comparing meant the one thing this test could
+    ///     not detect was the renderer emitting the wrong line ending, which it did on Windows for as
+    ///     long as the test existed. See <see cref="NoRenderer_EmitsACarriageReturn" />.
+    /// </summary>
     [Fact]
     public void PlainRenderer_IsTheFormatEveryEditorsErrorParserUnderstands() {
         var text = Renderer.Render(Sample(Modernization()), ReportFormat.Plain);
-        Assert.Equal(
-            "Core/Foo.cs:12:9: suggestion SK1010: Use `is not null` instead of `!= null`\n",
-            text.ReplaceLineEndings("\n")
-        );
+        Assert.Equal("Core/Foo.cs:12:9: suggestion SK1010: Use `is not null` instead of `!= null`\n", text);
     }
 
     /// <summary>
@@ -148,6 +151,48 @@ public sealed class ReportingTests {
     [Fact]
     public void AgentRenderer_SaysNothingToDoWhenThereIsNothingToDo() =>
         Assert.Equal("OK  nothing to do.\n", Renderer.Render(Sample(), ReportFormat.Agent));
+
+    /// <summary>
+    ///     ⚠ Every surface, on every platform, ends its lines with <c>\n</c>.
+    /// </summary>
+    /// <remarks>
+    ///     <para>
+    ///         <c>Renderers.cs</c> built all seven with <c>StringBuilder.AppendLine</c>, which appends
+    ///         <see cref="Environment.NewLine" />. On Windows that is CRLF, so the tool's output changed
+    ///         shape with the platform it ran on — and <c>plain</c> is doc 09's greppable, editor-parsed
+    ///         format while <c>agent</c> is doc 10's machine report, so this is an output contract and not
+    ///         a preference.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ The reason it survived is the shape of the test that caught it:
+    ///         <see cref="AgentRenderer_SaysNothingToDoWhenThereIsNothingToDo" /> is the only assertion
+    ///         that compared a whole rendered string to a literal, so it failed on Windows and nowhere
+    ///         else — a platform leg had to exist and be read before anybody knew. This one asks the
+    ///         question directly, of every format, and fails on the platform that has the defect *and* on
+    ///         the ones that do not, the moment a renderer reaches for <c>AppendLine</c> again.
+    ///     </para>
+    /// </remarks>
+    [Theory]
+    [InlineData(ReportFormat.Terminal)]
+    [InlineData(ReportFormat.Plain)]
+    [InlineData(ReportFormat.Github)]
+    [InlineData(ReportFormat.Agent)]
+    [InlineData(ReportFormat.Markdown)]
+    [InlineData(ReportFormat.JUnit)]
+    public void NoRenderer_EmitsACarriageReturn(ReportFormat format) {
+        var report = Sample(
+            Modernization(),
+            Modernization("SK2001", fix: false) with {
+                Severity = SkalaSeverity.Warning, Message = "Comparison is always true"
+            }
+        );
+
+        var text = Renderer.Render(report, format, includeHints: true);
+
+        // Anti-vacuity: a renderer that returned nothing would pass the assertion below trivially.
+        Assert.NotEmpty(text);
+        Assert.DoesNotContain('\r', text);
+    }
 
     [Fact]
     public void AgentRenderer_IsBounded() {

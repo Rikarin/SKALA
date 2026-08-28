@@ -10,7 +10,38 @@ namespace Rikarin.Skala.Cli.Tests;
 public sealed class FormatCommandTests : IDisposable {
     readonly string _directory = Directory.CreateTempSubdirectory("skala-format-").FullName;
 
-    public void Dispose() => Directory.Delete(_directory, recursive: true);
+    /// <summary>
+    ///     ⚠ Two of these tests <c>git init</c> inside the scratch directory, and that is what makes the
+    ///     teardown a Windows problem.
+    /// </summary>
+    /// <remarks>
+    ///     <para>
+    ///         Git writes loose objects read-only, on purpose — they are content-addressed and must never
+    ///         be edited in place. <see cref="Directory.Delete(string, bool)" /> on Windows refuses a
+    ///         read-only file, so <c>Staged_RefusesWhenAStagedFileAlsoHasUnstagedChanges</c> and
+    ///         <c>StagedWorktree_FormatsAndStagesAnyway</c> both *passed* and were then both reported as
+    ///         failures, with an <c>UnauthorizedAccessException</c> naming a 40-character object id and a
+    ///         stack in <c>Dispose</c>. A test that fails in teardown reports the wrong defect, and this
+    ///         one sent a reader looking at the staged-format path, which was fine.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ The attributes are cleared rather than the exception swallowed. <c>CrossPlatformScratch</c>
+    ///         and <c>DaemonBed</c> swallow, for a different reason that genuinely cannot be fixed here — a
+    ///         long-path tree and a daemon that may still hold a handle. This one is only read-only bits,
+    ///         which are ours to clear, and swallowing would leave a scratch git repository behind on every
+    ///         Windows run of the suite.
+    ///     </para>
+    /// </remarks>
+    public void Dispose() {
+        foreach (var file in Directory.EnumerateFiles(_directory, "*", SearchOption.AllDirectories)) {
+            var attributes = File.GetAttributes(file);
+            if ((attributes & FileAttributes.ReadOnly) != 0) {
+                File.SetAttributes(file, attributes & ~FileAttributes.ReadOnly);
+            }
+        }
+
+        Directory.Delete(_directory, recursive: true);
+    }
 
     string Write(string name, string content) {
         var path = Path.Combine(_directory, name);
