@@ -1297,6 +1297,18 @@ skala    /// <?skala-probe mode="short"?>         ← (1) fixed: the marker spac
   on one line rather than two. ⚠ The entry names `resharper_space_after_triple_slash`, which is
   **Tier A**: the key is reproduced everywhere its fixture exercises it, and this is a construct that
   fixture does not reach.
+- ⚠ **What was missing was an assertion, not a fixture.** The fix for (1) was reported as still
+  failing on a multi-line verbatim body, on the grounds that no `constructs/xmldoc/` fixture reaches
+  one — and that is true of the construct corpus. It was never true of `real/`: five files under
+  `real/vixen/` carry the shape, and `XmlDocPropertyTests.TheMarkerSpace_IsOnEveryLineTheSubFormatterWrote`
+  fails on all five plus the processing-instruction fixture when run against the pre-fix formatter.
+  The property is a comparison rather than a scan — a comment the sub-formatter *refused* may carry
+  anything its author wrote; what it may not do is introduce a marker without the option's space —
+  and it is the check that found the defect in the first place (`git diff | grep '^+\s*///[^ /]'`
+  over this repository's own sources), moved out of a review and into the suite. ⚠ A re-report of the
+  same shape against a **daemon** started before the fix will still reproduce it: nothing in
+  `DaemonProtocol.Version` encodes the formatter build, so a daemon serves the code it was launched
+  with until it is stopped. `--no-daemon` is the check.
 ## SK-DIV-0024 — a type parameter list wraps when the list overflows, not when the declaration does
 
 T5a gave a type parameter list its first break points: at `wrap_before_type_parameter_langle = false`
@@ -1329,3 +1341,499 @@ reason.
 
 - options: `resharper_csharp_wrap_before_type_parameter_langle`, `resharper_align_multiline_type_parameter_list`, `resharper_csharp_wrap_parameters_style`
 - ⚠ status: **open**, measured; the first half is the ordering rule's and belongs with SK-DIV-0002.
+
+## SK-DIV-0050 — a lambda's `=>` is a break point of the oracle's and not of Skala's
+
+`BreakPlan` gives an *expression-bodied member*'s arrow a group (`PlanExpressionBody`,
+`ArrowExpressionClauseSyntax`) and gives a **lambda**'s arrow nothing. Roslyn spells the two
+differently — a member gets an `ArrowExpressionClauseSyntax` with the token on it, a lambda carries
+`ArrowToken` directly on `LambdaExpressionSyntax` — so the gap after `=>` is not a break point of any
+group, and a long lambda breaks at whatever point it does have: its parameter list, its body's
+argument list, its body's binary chain, or the `=` above it. The oracle prefers the arrow to all
+four. Measured at the margins named:
+
+```csharp
+// 100 columns — the oracle takes the arrow; Skala chops the lambda's parameter list
+C2((SomeVeryLongParameterTypeName firstParameterName, AnotherLongTypeName secondName) =>
+    firstParameterName
+);
+
+// 100 columns — over the body's own argument list, which Skala chops instead
+Action g = () =>
+    DoSomethingWithAVeryLongMethodNameHere(firstArgument, secondArgument, third);
+
+// 80 columns — over the body's binary chain, which Skala breaks at the `+` instead
+Func<int, string> f = value =>
+    value.ToString() + "a suffix long enough to force a wrap ok";
+
+// 50 columns — over the `=`, which Skala takes instead: `f =\n    value => value.ToString()`
+Func<int, string> f = value =>
+    value.ToString()
+    + "a suffix long enough to force a wrap ok";
+```
+
+The last of those is the shape reported as a pre-existing divergence — "breaks after the `=` where
+the oracle breaks after the `=>`" — and it is confirmed here as one instance of the missing point
+rather than a fault of `PlanAroundEquals`.
+
+Two facts about the gap are settled and are what a fix starts from.
+`wrap_before_arrow_with_expressions` governs which side of the arrow the break lands on for a lambda
+exactly as it does for a member — at `true` the oracle writes `B((first, second)\n    => first.…` —
+and **preservation is `keep_user_linebreaks`'s, not `keep_existing_expr_member_arrangement`'s**,
+which is the guess `PlanExpressionBody` invites. Four lambdas the author had already broken after the
+arrow come back broken at the export's values, come back broken with the expression-member key
+flipped, and re-join under `keep_user_linebreaks = false` and `keep_existing_linebreaks = false`
+alike. Skala already preserves those, through the ordinary source-break gap, so no preservation is
+lost by the missing group — only the width-driven break is.
+
+⚠ **What is not settled is when the oracle takes it, and that is why the point is not implemented.**
+The obvious plan — a `Preserve` group on the body owning the leading gap, with
+`GroupFacts.PrefersOuterBreak` — was written, measured and withdrawn. It reproduces every row above
+and it costs `corpus/real/` a file (file fidelity 85.78 % → 85.53 %, five files better and five
+worse, line fidelity flat). Restricting it to lambdas that are not the sole argument of a call
+removes every regression *and* every improvement: the corpus does not move at all, 380 files
+byte-identical either way. So `corpus/real/` cannot arbitrate this and the deciding evidence has to
+be direct measurement — which produces a contradiction no ordering rule in `Fitter` can hold:
+
+```csharp
+// 120 columns, both 12 columns over, both `() =>` with a chop-able call body.
+// The oracle breaks the arrow on one and chops the argument list on the other.
+Action a2 = value => DoSomethingWithARatherLongNam(firstArgument, secondArgument, thirdArgument, fourthArg);
+Action a4 = () => DoSomethingWithARatherLongName(firstArgument, secondArgument, thirdArgument, fourthArgumentNameIsLonger);
+```
+
+`Worth`'s first question ("does this break alone finish the job?") fires for both; its second ("does
+the line end here anyway?") declines both. `Fitter.OuterBreakMargin` cannot separate them either:
+the first needs a slack of at most 13 to break and the second needs more than 17 to decline, and a
+third shape at 120 needs the arrow taken where any slack above 3 refuses it. That is the same
+finding the margin's own remarks already record for the `=` — "no affine function of the numbers
+this fitter has reproduces that curve" — arriving at a second construct.
+
+This is SK-DIV-0024's sibling: two constructs on one line, one break needed, which one gives, and no
+fact in `GroupFacts` that answers it. Both belong with SK-DIV-0002.
+
+`constructs/wrapping/lambda-arrow.cs` is the fixture, and it deliberately holds the shapes where the
+two agree — the call-bodied lambda whose arrow the oracle declines, the author's own break, the
+sole-argument lambda, the parameter list laid out by the declaration keys — so that the agreement is
+pinned while the disagreement is described here. The divergent shapes are kept out of it for the
+reason SK-DIV-0024 keeps `type-parameter-single.cs` out of the aligned fixture: a fixture that
+diverges takes the `constructs` file ratchet down with it, and one non-exact file cannot be diluted
+by any reasonable number of exact ones.
+
+- options: `resharper_csharp_wrap_before_arrow_with_expressions`, `resharper_keep_user_linebreaks`, `resharper_csharp_keep_existing_linebreaks`, `resharper_place_single_method_argument_lambda_on_same_line`, `resharper_csharp_wrap_parameters_style`
+- ⚠ status: **open**, measured; the break point is missing and the rule that would arm it is not known.
+## SK-DIV-0060 — the nine `disable_*` switches, measured; five of them are not divergences at all
+
+ReSharper ships nine keys that **suppress a class of edit** rather than choosing between two
+renderings, and they are the only options in this registry with that shape. It makes them unusually
+testable — a suppressed class must come back byte-identical to the input in that respect — and it
+makes the one-key-at-a-time sweep unusually bad at reaching them, because a switch over a family the
+export has already switched off is inert until a *second* key moves. Three of the nine were on
+record as "inert: the oracle returns the file unchanged at both values"; one of those three is
+refuted below, and the fixture, not the key, was the reason.
+
+Every row was measured against `jb cleanupcode` under `OracleProfile.FormatOnly` with this
+repository's own `.editorconfig` and the key appended, on a subject wrong in spacing, indentation,
+blank lines and wrapping **at once** — the negative control is the same file at the export's value,
+which comes back reformatted in all four.
+
+```csharp
+public int Alpha ;                //   spacing
+                                  //   three blank lines, past the cap
+public void Method( int one,int two ) {
+        var sum=one+two;          //   indentation
+    if(sum>0){                    //   a break the rules introduce
+    Alpha = sum;   // a trailing comment the author padded
+    }
+Call(one,                         //   a wrap the rules would rewrite
+    two);
+```
+
+| key | what the oracle does with it at `true` | state |
+|---|---|---|
+| `disable_formatter` | returns the file **byte for byte** — not "formats less" | **implemented** |
+| `disable_blank_line_changes` | every blank run survives; other line breaks still move | **implemented** |
+| `disable_indenter` | spacing, blanks and wrapping still apply; line-start whitespace does not move | SK-DIV-0061 |
+| `disable_space_changes` | every inter-token run survives; indentation and wrapping still apply | SK-DIV-0062 |
+| `disable_line_break_changes` | no break added, none removed, blank runs included | SK-DIV-0063 |
+| `disable_line_break_removal` | none removed; additions still happen | SK-DIV-0064 |
+| `disable_int_align` | nothing — until `int_align = true` is supplied alongside | masked |
+| `disable_space_changes_before_trailing_comment` | nothing, at either value of the rule it could gate | unreachable |
+| `ignore_space_preservation` | nothing, on four shapes and three pairings | unreachable |
+
+**The two implemented ones are not divergences and are recorded here for the method.** Both are
+`Conformant` on `sweep verify` — two distinct outputs from each engine, agreeing at both values — on
+`constructs/file/resharper_disable_formatter.cs` and
+`constructs/blank-lines/resharper_disable_blank_line_changes.cs`. ⚠ They are left at Tier D
+deliberately: a fixture pins one configuration and Tier A is a claim about the option, so the
+promotion belongs to the key-flip sweep on master and not to the commit that added the fixture.
+
+**`disable_int_align` is masked, and the recorded probe holds.** Re-measured rather than inherited:
+on three adjacent declarations `int_align = true` alone pads them to a column, and `int_align = true`
+plus `disable_int_align = true` produces output byte-identical to the export's own configuration. It
+is decisive one key away from the export and inert at it — which is the shape the whole family has,
+and the reason the rest were probed with a second key rather than alone.
+
+**Two are unreachable, which is a different finding from "not done yet".**
+`disable_space_changes_before_trailing_comment` has exactly one rule it could gate:
+`space_before_trailing_comment` normalises the gap to one space at `true` and to none at `false`, and
+it does both **identically with this key on**. Its broad sibling `disable_space_changes` preserves
+that same gap, so the gap is governed and it is the narrow key the C# formatter does not consult.
+`ignore_space_preservation` moved nothing on four subjects and three pairings, including the three
+places the formatter demonstrably *does* preserve spaces — a disabled `#if` branch, an
+`@formatter:off` region, and an int-aligned run under `int_align = true`.
+
+⚠ **The interaction hole is the finding, not an aside.** Six of these nine cannot be reached by any
+one-key flip from the export's corner, and the committed sweep's "inert" verdict on three of them was
+therefore true and useless in the same breath. This is the case `./build.sh Pairwise` was built for;
+`disable_*` × `int_align`, `disable_*` × `space_before_trailing_comment` and
+`disable_*` × `keep_blank_lines_*` are the pairs that pay.
+
+- options: `resharper_disable_formatter`, `resharper_disable_blank_line_changes`, `resharper_disable_int_align`, `resharper_disable_space_changes_before_trailing_comment`, `resharper_ignore_space_preservation`
+- ⚠ status: **not a divergence** on any of the five — two implemented and conformant, one masked, two
+  unreachable. The entry is the measurement and the method; the four keys that *are* divergences have
+  entries of their own below.
+
+## SK-DIV-0061 — `disable_indenter`: the oracle stops reindenting; Skala has no way to
+
+At `true` the oracle applies spacing, blank-line and wrapping rules exactly as it would otherwise and
+leaves **line-start whitespace alone**: a line that existed in the input keeps the indentation it was
+written with, and a line the wrapping created starts at column zero.
+
+```csharp
+// oracle, disable_indenter = true
+public void Method(int one, int two) {
+        var sum = one + two;          // kept its eight
+    if (sum > 0) {
+    Alpha = sum;                      // kept its four
+    }
+    Call(
+one,                                  // a line that did not exist: column zero
+            two
+);                                    // likewise
+```
+
+Skala cannot express this. `LayoutWriter` computes an indentation for every line it emits and has no
+access to the source's own; honouring the key means carrying the input into the writer and giving it
+a third mode — reproduce the source line's leading whitespace, or emit none for a line that did not
+exist. That is a change to the writer every other construct shares, and it was not attempted here.
+
+- options: `resharper_disable_indenter`
+- ⚠ status: **open**, measured. Not read by Skala at all, deliberately: registering it `OfInert`
+  would put an unimplemented key inside a claim about this formatter.
+
+## SK-DIV-0062 — `disable_space_changes`: the oracle preserves every inter-token run; Skala collapses
+
+⚠ **This key was on record as "inert: the oracle returns the file unchanged at both values", and that
+is refuted.** The fixture was the reason and not the key: asked on a file whose spacing is actually
+wrong, the oracle preserves every horizontal run between two tokens **byte for byte** while still
+reindenting and rewrapping.
+
+```csharp
+// oracle, disable_space_changes = true
+public int Alpha ;                        // the space before `;` survives
+public void Method( int one,int two ) {   // so does every gap in the header
+    var sum=one+two;                      // and the missing ones
+        Alpha = sum;   // a padded trailing comment, on a line that was reindented
+```
+
+Skala resolves a preserved gap to `Required` or `Forbidden` at document-build time —
+`CSharpDocumentBuilder.GapSpace` says so, and says why: `extra_spaces = remove_all` makes "preserve"
+a one-bit question for the one construct that needed it. This key makes it an *n*-bit question for
+every gap in the file, which is a verbatim-gap concept carried end to end through the IR and the
+writer. Not attempted here.
+
+- options: `resharper_disable_space_changes`
+- ⚠ status: **open**, measured; supersedes the recorded inert claim, which was measured on a fixture
+  with no wrong spacing in it.
+
+## SK-DIV-0063 — `disable_line_break_changes`: no break is added and none removed
+
+The broadest of the break switches, and a strict superset of both SK-DIV-0064 and
+`disable_blank_line_changes`: blank runs survive, breaks the wrapping rules would introduce are not
+introduced, and breaks the author wrote are not joined. Spacing and indentation still apply.
+
+Skala's `Line` nodes carry `LineKind.Hard` wherever the rules demand a break — one statement per line
+is not negotiable in the current builder — so honouring this key means every hard break becoming
+conditional on the source, which is a different builder rather than a flag on this one.
+`GroupMode.Preserve` and `LineKind.Preserve` already exist in the IR and are the half of the shape
+that would survive; the hard breaks are the half that would not.
+
+- options: `resharper_disable_line_break_changes`
+- ⚠ status: **open**, measured.
+
+## SK-DIV-0064 — `disable_line_break_removal`: one direction only
+
+Measured apart from SK-DIV-0063 on the same file, and the two came out different, which is the whole
+reason both entries exist: with `disable_line_break_removal = true` the three-blank run survived
+**and** `blank_lines_around_invocable` still inserted its blank after the closing brace, while
+`disable_blank_line_changes` on the same file suppressed the insertion too. So this key is removals
+only — the author's breaks are never joined and the cap never truncates a run — and additions are
+untouched.
+
+Skala has the near-miss already: `KeepsUserBreaksBetweenItems` is
+`keep_user_linebreaks && keep_existing_linebreaks`, and this key is a third term on it, plus dropping
+the cap in `ResolveBlankLines`, plus suppressing `CSharpDocumentBuilder.ShouldJoin`. It was not
+implemented here because the first of those three changes a value `BreakPlan`'s wrapping functions
+read, and those were another agent's subject on the day this was measured.
+
+- options: `resharper_disable_line_break_removal`
+- ⚠ status: **open**, measured. ⚠ The nearest implemented shape is `keep_user_linebreaks`, which is
+  not the same key: it governs the gaps *between items of a list*, and this governs every gap.
+## SK-DIV-0030 — a chain whose receiver ends in `?.` is not chopped at all
+
+`PlanChainedCalls` collects a chain's dots by walking the receiver side of each link. For a
+`ConditionalAccessExpressionSyntax` it walks `conditional.Expression` and stops, on the argument —
+correct where the conditional access is reached *from* an enclosing invocation — that "the `?.` is
+the binding's dot, already added by the invocation above". When the conditional access is itself the
+chain root that is not true: the whole chain hangs off `WhenNotNull`, which is never walked, so
+`dots` comes back empty, no group is planned, and the chain has no break points.
+
+```csharp
+// the oracle, at 120 columns
+var result = someCollectionOfThingsHere?.Where(item => item.IsEnabled)
+    .Select(item => item.Name)
+    .ToList();
+
+// Skala: no chain group, so the argument list of the last call takes the break instead
+var result = someCollectionOfThingsHere?.Where(item => item.IsEnabled).Select(item => item.Name).OrderBy(n => n
+).ToList();
+```
+
+Found while building `constructs/alignment/outdent.cs`, which wanted a mixed-width chain — `?.` is
+two columns and the dots after it are one — as the shape that tests whether one chain-wide outdent
+amount is enough. The shape is out of that fixture and out of `align-declaration.cs`, because a
+fixture carrying it would pin this defect rather than the options those files exist for.
+
+It is a break-point defect and not an option's: no key in the `align_multiline_*` or `outdent_*`
+family changes it at either value, and the outdent family's three implemented keys are conformant on
+every chain that *is* chopped.
+
+- options: none — `resharper_wrap_chained_method_calls` and `resharper_wrap_before_first_method_call`
+  are read correctly and have no chain to apply to
+- ⚠ status: **open**, measured, unfixed. The fix is one arm of `PlanChainedCalls.Collect`; it was
+  left out of T5b because a chain-planner change is a wrapping change and this branch's subject is
+  the alignment options.
+
+## SK-DIV-0031 — a field with several declarators wraps after the type; Skala wraps at the commas
+
+The oracle breaks a too-long multi-declarator *field* between its type and its first declarator and
+then leaves the declarators alone; Skala keeps the first declarator on the type's line and chops at
+every comma.
+
+```csharp
+// the oracle
+System.Collections.Generic.List<int>?
+    alphaFieldNameHere = null, betaFieldNameHere = null, gammaFieldNameHere = null;
+
+// Skala
+System.Collections.Generic.List<int>? alphaFieldNameHere = null,
+    betaFieldNameHere = null,
+    gammaFieldNameHere = null;
+```
+
+⚠ **A local declaration of the same shape agrees**, which is what makes this a field rule rather than
+a declarator rule: `System.Int32 a = 1, b = 2, …` comes back identical from both engines, and it is
+the fixture `constructs/alignment/align-declaration.cs` pins. The asymmetry is also why
+`CSharpDocumentBuilder.AlignsFromOwnColumn` excludes a `FieldDeclarationSyntax`'s declaration from
+`align_multiple_declaration` — the oracle does not move a field's declarators at either value of that
+key, so the exclusion is measured and not a consequence of this divergence.
+
+Found while building that fixture, and kept out of it for the same reason as SK-DIV-0030.
+
+- options: `resharper_csharp_align_multiple_declaration`, `resharper_csharp_wrap_multiple_declaration_style`
+- ⚠ status: **open**, measured, unfixed
+
+## SK-DIV-0032 — `alignment_tab_fill_style` has three layouts and Skala writes one of them, under the wrong name
+
+`LayoutWriter.WriteIndentTo` writes whole indent units and then spaces for the remainder, and its
+remarks say that is "what `alignment_tab_fill_style = use_spaces` asks for". It is not. Asked under
+`indent_style = tab`, the oracle gives three distinct layouts of the same alignment column, and the
+one Skala writes is `optimal_fill`:
+
+| value | column 12, block at 8 | chain aligned at 21 |
+|---|---|---|
+| `use_spaces` (the export) | 2 tabs + 4 spaces | 2 tabs + 13 spaces |
+| `use_tabs_only` | 3 tabs | 5 tabs — column 20, short of the anchor |
+| `optimal_fill` | 3 tabs | 5 tabs + 1 space |
+| Skala, at every value | 3 tabs | 5 tabs + 1 space |
+
+`use_spaces` indents in tabs only as far as the *enclosing block's* level and spells the alignment
+remainder in spaces, which is what makes it "look aligned on any tab size"; `optimal_fill` divides
+the whole column by the tab width. The two coincide whenever the block level and the alignment column
+fall on the same side of a tab stop, which is why nothing caught it.
+
+⚠ **Not reachable under this repository's configuration**, which sets `indent_style = space`; all
+three values then produce identical output and the key reads as inert. That is why it sat on the
+"never read by the C# formatter" list — every probe that asked it was indented with spaces. It is a
+real divergence on a tab-indented configuration and it is Skala's to fix, not an option to implement:
+the export's own value is the one Skala gets wrong.
+
+- options: `resharper_csharp_alignment_tab_fill_style`, `indent_style`
+- ⚠ status: **open**, measured, unfixed. The fix is a value on `LayoutWriter` and three cases in
+  `WriteIndentTo`; it needs a fixture under a tab configuration, and the corpus has no mechanism for
+  a per-directory `.editorconfig`, so it wants that first.
+
+## SK-DIV-0033 — the oracle realigns a block comment's asterisks; Skala leaves the comment as written
+
+`align_multiline_comments` is **`true`** in the export — one of very few keys in the
+`AlignMultilineConstructs` family that is — and it moves each continuation line of a `/* … */`
+comment whose lines begin with `*` onto the opening delimiter's column plus one.
+
+```csharp
+/*
+ * A starred block comment.
+   * A line whose asterisk is out of place.      // the oracle pulls both of these to ` * `
+* Another one.
+ */
+```
+
+At `false` the oracle returns the comment exactly as written, which is what Skala does at every
+value. A block comment with no leading asterisks is untouched at either value, by both engines.
+
+Recorded in `PhaseOneOptions` until now as "no probe found a shape where it changes the oracle's
+output"; the probes were passing comments whose asterisks were already aligned.
+
+Unimplemented rather than wrong-by-choice: it rewrites the *interior* of a comment token, which no
+other key in this family does and which the formatter has no trivia rewriter for. It is the only
+member of the family whose export value is the one Skala fails to honour, so it is a divergence at
+the export's own values and not merely an unimplemented option.
+
+- options: `resharper_csharp_align_multiline_comments`
+- ⚠ status: **open**, measured, unfixed
+## SK-DIV-0070 — the oracle reads the four Roslyn qualification keys for `this.`, and not `resharper_remove_this_qualifier`
+
+`resharper_remove_this_qualifier = true` is in the export and the key is **Tier A**, pinned by
+`constructs/arrangement/redundancy/qualifiers-and-parentheses.arranged.expected.cs`. That fixture is
+a file in which every `this.` is removed — and it is satisfied by an implementation that reads the
+key and by one that ignores it, because `dotnet_style_qualification_for_field`, `…_property`,
+`…_method` and `…_event` are all `false` in the same export and each of them removes `this.` on its
+own.
+
+Probed against `jb cleanupcode` 2025.2.6 under `OracleProfile.Cleanup`, on a file carrying a bare and
+a `this.`-qualified reference to each of the four member kinds:
+
+| Override | Result |
+|---|---|
+| none (the export) | every `this.` removed |
+| `resharper_remove_this_qualifier = false` | **byte-identical** — still removed |
+| `dotnet_style_qualification_for_field = true` | `this._field` written, other three kinds untouched |
+| `…_for_property` / `…_for_method` / `…_for_event = true` | the same, one kind each |
+
+So the ReSharper key is dominated on this repository's configuration: it is read, if at all, only
+where the four Roslyn keys leave the question open, and the export leaves it open nowhere.
+
+**Skala keeps reading it, as a gate on the removing direction only.** At `remove_this_qualifier =
+false` with the four Roslyn keys at `false`, Skala keeps an existing `this.` and the oracle removes
+it — that is the divergence, and it is deliberate. Dropping the key instead would make a Tier A
+option unobservable and leave its committed fixture proving nothing, which is a bigger claim to make
+than this one. The tier is the maintainer's call; the measurement is here so it can be made.
+
+- options: `resharper_remove_this_qualifier`, `dotnet_style_qualification_for_field`, `dotnet_style_qualification_for_property`, `dotnet_style_qualification_for_method`, `dotnet_style_qualification_for_event`
+- ⚠ status: **open**, measured; the divergence is only reachable by flipping `resharper_remove_this_qualifier` away from the export's value.
+
+## SK-DIV-0071 — `resharper_remove_unused_only_aliases` is a Visual Basic option, not a second spelling of the C# one
+
+The export carries both `resharper_remove_only_unused_aliases = true` and
+`resharper_remove_unused_only_aliases = false`, four characters apart, and the registry classified
+both `csharp` "by vocabulary". The obvious reading is one option under two spellings — the shape
+`SK9004` exists for — and it is wrong.
+
+The setting names are recoverable the way `docs/oracle-cleanup-profile.md` recovers task names:
+
+```
+grep -rl RemoveUnusedOnlyAliases $JB --include=*.dll   # JetBrains.ReSharper.Psi.VB.dll, Features.Altering.dll
+grep -rl RemoveOnlyUnusedAliases $JB --include=*.dll   # JetBrains.ReSharper.Psi.CSharp.dll, Feature.Services.dll, Features.Altering.dll
+```
+
+`RemoveUnusedOnlyAliases` is declared in the **VB** language module; `RemoveOnlyUnusedAliases` is the
+C# one. Confirmed by measurement rather than left at the name: probed at `true` under the cleanup
+profile over a file carrying a used and an unused instance of a trivial and a non-trivial alias, the
+output is byte-identical to the export's value, while flipping the C# key on the same file removes or
+keeps two directives.
+
+It is therefore **inert for C#** with a recorded reason, and the C# key is Tier A.
+
+- options: `resharper_remove_unused_only_aliases`, `resharper_remove_only_unused_aliases`
+- ⚠ status: **closed**; recorded as `inert` in the registry.
+
+## SK-DIV-0072 — ⚠ RETRACTED. `resharper_csharp_keep_nontrivial_alias` was recorded inert on a probe that could not distinguish it
+
+The registry carried:
+
+> The oracle returns `using Map = System.Collections.Generic.Dictionary<string, int>;` beside a
+> trivial `using Simple = System.String;` unchanged at both values, under the format-only profile and
+> under the cleanup profile.
+
+That is true and it is not evidence. Both aliases in that probe were **in use**, and a using that is
+in use is not removable at any value of any key — the observation could not have come out otherwise.
+It is the same failure as SK-DIV-0006's: a fixture that agrees for a reason unrelated to the option.
+
+With the aliases unused the key separates cleanly, measured over all four combinations with
+`resharper_remove_only_unused_aliases`:
+
+| `keep_nontrivial_alias` | `remove_only_unused_aliases` | unused **trivial** alias | unused **non-trivial** alias |
+|---|---|---|---|
+| `false` | `true` — the export | removed | **removed** |
+| `true` | `true` | removed | kept |
+| `false` | `false` | removed | kept |
+| `true` | `false` | removed | kept |
+
+"Trivial" is the alias identifier equalling the aliased type's own name — `using Regex =
+System.Text.RegularExpressions.Regex;` is trivial and `using Trivial = System.String;` is not — which
+is measured, not read off the word. The two keys AND, so each moves the output on its own from the
+export's pair, and both are now implemented and Tier A.
+
+- options: `resharper_csharp_keep_nontrivial_alias`, `resharper_remove_only_unused_aliases`
+- ⚠ status: **closed**; the `inert` mark is removed and `constructs/arrangement/usings/aliases.cs` pins both.
+
+## SK-DIV-0073 — the oracle shortens a qualified reference; Skala has no rule that does
+
+`resharper_csharp_prefer_qualified_reference = false` is in the export, and it is **not** inert. Under
+the cleanup profile, on a file writing `new System.Text.StringBuilder()` and
+`global::System.Console.WriteLine(…)` beside their short forms:
+
+- at the export's `false` the oracle **shortens** both to `StringBuilder` and `Console`, keeping the
+  usings that make the short forms legal;
+- at `true` it goes the other way and fully qualifies every simple name, dropping the usings that
+  become redundant.
+
+Skala does neither. It has no reference-shortening rule at all, so on this key it is unreachable
+rather than unread, and it stays Tier D with no `oracle` glob. The cost is not zero: the corpus
+fixture `constructs/arrangement/usings/placement.cs` was written with a `using Collections =
+System.Collections.Generic;` alias at nested scope and had to lose it, because the oracle replaced
+`Collections.List<int>` with `List<int>` — `System.Collections.Generic` is an implicit using — and
+removed the alias, which is the shortening rewrite arriving by another door.
+
+The three neighbouring keys of the same family are a different matter and are inert rather than
+unimplemented: `resharper_csharp_allow_alias`, `resharper_csharp_can_use_global_alias` and
+`resharper_csharp_qualified_using_at_nested_scope` govern what ReSharper **writes** when it imports a
+name — a completion, a paste, a quick-fix — and cleanup imports nothing. Each was probed at its
+flipped value under the cleanup profile *and* under a profile with `CSShortenReferences` added, on a
+file built to need it (a `global::` prefix disambiguating a locally-shadowed `Console`; a using at
+nested scope), and each came back byte-identical. Same shape as SK-DIV-0013's three code-generation
+settings.
+
+- options: `resharper_csharp_prefer_qualified_reference`, `resharper_csharp_allow_alias`, `resharper_csharp_can_use_global_alias`, `resharper_csharp_qualified_using_at_nested_scope`
+- ⚠ status: **open** on the first, **closed** (inert, recorded) on the other three.
+
+## SK-DIV-0074 — `dotnet_separate_import_directive_groups` is a formatting key in the oracle and an arrangement key in Skala
+
+At `true` the oracle writes one blank line between using directives whose first namespace segment
+differs, and at the export's `false` it takes every blank line inside the using block back out. Both
+directions were measured under the cleanup profile, and the second one **also happens under
+`CSReformatCode` alone** — the format-only profile strips the blank line too.
+
+Skala's formatter does not read the key. Only the arranger does, so `skala format` on a file with a
+blank line inside its using block keeps it where the oracle removes it, and `skala arrange` removes
+it. Moving the key into the formatter is the right end state and it is not this change: the formatter
+is a different component with its own fixture set, and a key that two components both act on is worse
+than a key one of them acts on late.
+
+The consequence for the corpus is recorded in the fixture itself:
+`constructs/arrangement/usings/import-groups.cs` deliberately has **no** blank line in its source,
+because one would make its format-only fixture measure this gap rather than the option. The removal
+direction is pinned by `ArrangementOptionTests` instead.
+
+- options: `dotnet_separate_import_directive_groups`
+- ⚠ status: **open**, and narrow: it is only reachable on a source file that already has a blank line inside its using block, formatted without arranging.

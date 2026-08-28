@@ -287,32 +287,34 @@
 </section>
 <section class="option" id="resharper_csharp_blank_lines_inside_namespace">
 <h2><code>resharper_csharp_blank_lines_inside_namespace</code> <a class="self" href="#resharper_csharp_blank_lines_inside_namespace">#</a></h2>
-<p>Blank lines in declarations — Inside namespace</p>
+<p>Blank lines in declarations — Inside namespace. Implemented at M9.1, on the same measurement as <code>blank_lines_inside_type</code>: the oracle pads a block-bodied namespace's braces and the requirement outranks <code>remove_blank_lines_near_braces_in_declarations</code>. ⚠ A file-scoped <code>namespace N;</code> gets nothing — it has no braces to be inside of, and the probe at <code>2</code> returned it byte-identical.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td>integer</td></tr>
 <tr><th>Default</th><td><code>0</code></td></tr>
 <tr><th>Default known from</th><td>the Rider export, which is Rider's default for most keys and the author's choice for the rest, with nothing distinguishing the two</td></tr>
-<tr><th>Tier</th><td>D — recorded so the key is not reported unknown; nothing reads it yet</td></tr>
+<tr><th>Tier</th><td>A — the formatter reads it and a committed oracle fixture pins it</td></tr>
 <tr><th>Language</th><td>csharp</td></tr>
 <tr><th>Since</th><td>0.1</td></tr>
 <tr><th>Also spelled</th><td><code>blank_lines_inside_namespace</code>, <code>csharp_blank_lines_inside_namespace</code>, <code>resharper_blank_lines_inside_namespace</code></td></tr>
+<tr><th>Oracle fixture</th><td><code>constructs/blank-lines/resharper_csharp_blank_lines_inside_namespace.cs</code></td></tr>
 <tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_BlankLinesPageScheme.html#resharper_csharp_blank_lines_inside_namespace">https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_BlankLinesPageScheme.html#resharper_csharp_blank_lines_inside_namespace</a></td></tr>
 </tbody>
 </table>
 </section>
 <section class="option" id="resharper_csharp_blank_lines_inside_type">
 <h2><code>resharper_csharp_blank_lines_inside_type</code> <a class="self" href="#resharper_csharp_blank_lines_inside_type">#</a></h2>
-<p>Blank lines in declarations — Inside type</p>
+<p>Blank lines in declarations — Inside type. Implemented at M9.1. ⚠ The <code>inert</code> reason it carried — &quot;remove_blank_lines_near_braces wins over it by the documented ordering&quot; — was true of Skala and false of the oracle: under this repository's own .editorconfig, which sets <code>remove_blank_lines_near_braces_in_declarations = true</code> and <code>keep_blank_lines_in_declarations = 2</code>, <code>jb cleanupcode</code> 2025.2.6 pads a class, struct, interface, record and enum body with three blank lines at <code>3</code> and five at <code>5</code>. It does not pad a method body, an accessor list or an <code>if</code> block. The requirement outranks both the removal and the cap.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td>integer</td></tr>
 <tr><th>Default</th><td><code>0</code></td></tr>
 <tr><th>Default known from</th><td>the Rider export, which is Rider's default for most keys and the author's choice for the rest, with nothing distinguishing the two</td></tr>
-<tr><th>Tier</th><td>D — recorded so the key is not reported unknown; nothing reads it yet</td></tr>
+<tr><th>Tier</th><td>A — the formatter reads it and a committed oracle fixture pins it</td></tr>
 <tr><th>Language</th><td>csharp</td></tr>
 <tr><th>Since</th><td>0.1</td></tr>
 <tr><th>Also spelled</th><td><code>blank_lines_inside_type</code>, <code>csharp_blank_lines_inside_type</code>, <code>resharper_blank_lines_inside_type</code></td></tr>
+<tr><th>Oracle fixture</th><td><code>constructs/blank-lines/resharper_csharp_blank_lines_inside_type.cs</code></td></tr>
 <tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_BlankLinesPageScheme.html#resharper_csharp_blank_lines_inside_type">https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_BlankLinesPageScheme.html#resharper_csharp_blank_lines_inside_type</a></td></tr>
 </tbody>
 </table>

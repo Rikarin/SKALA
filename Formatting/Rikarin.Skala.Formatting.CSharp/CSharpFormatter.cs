@@ -184,6 +184,24 @@ public static class CSharpFormatter {
             );
         }
 
+        // ⚠ `disable_formatter = true` and the pass is over. Placed *after* the two gates above and
+        // not before them, so that a file that does not parse is still reported under ADR-003 and a
+        // generated file still reports as generated: switching the formatter off is a statement about
+        // whitespace, not a reason to stop looking at the file. Everything below this line — the
+        // document build, the layout, the xmldoc sub-formatter, int-align, `insert_final_newline` —
+        // is skipped, because the oracle's answer to this key is the input byte for byte and not a
+        // gentler formatting (SK-DIV-0060).
+        if (options.DisableFormatter) {
+            return new FormatResult(
+                path,
+                text,
+                [],
+                text.ToString(),
+                diagnostics.ToImmutable(),
+                FormatOutcome.Formatted
+            );
+        }
+
         var root = tree.GetRoot();
         XmlDocComments.Report(path, text, root, diagnostics);
 
@@ -348,8 +366,8 @@ public static class CSharpFormatter {
     /// <remarks>
     ///     ⚠ <c>resharper_csharp_insert_final_newline = true</c> wins over
     ///     <c>
-    ///[*] insert_final_newline
-    /// = false
+    /// [*] insert_final_newline
+    ///  = false
     ///     </c> by language specificity (docs/plan/03, hazard 3). The BOM is preserved exactly:
     ///     it lives in <see cref="SourceText.Encoding" /> and never in the text, so nothing here can add
     ///     or remove one.

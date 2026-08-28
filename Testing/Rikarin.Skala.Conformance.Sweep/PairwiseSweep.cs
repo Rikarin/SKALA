@@ -26,8 +26,11 @@ public sealed record PairwiseRun(
 ///         export's corner and none of the interior — so a pair of options that are each conformant alone
 ///         and wrong together comes back green twice, from an instrument working exactly as designed.
 ///         docs/plan/12 § "Interactions are out of scope" says so in as many words and names this pass as
-///         the second phase; docs/plan/05 § <c>keep_existing_*</c> is a <b>four-way table across two
-///         keys</b>, three of whose corners no one-at-a-time sweep can reach.
+///         the second phase; docs/plan/05 § <c>keep_existing_*</c> is a
+///         <b>
+///             four-way table across two
+///             keys
+///         </b>, three of whose corners no one-at-a-time sweep can reach.
 ///     </para>
 ///     <para>
 ///         ⚠ <b>The verdict that matters is <see cref="PairOutcome.InteractionOnly" />.</b> A disagreement
@@ -81,11 +84,17 @@ public sealed class PairwiseSweep {
     ///     Whether the one-at-a-time sweep visits this corner <b>on this fixture</b>.
     /// </summary>
     /// <remarks>
-    ///     ⚠ <b>It depends on the secondary alone, and the first version of this predicate got that
-    ///     wrong.</b> The tempting reading is "reachable when either key is at the export's value",
+    ///     ⚠
+    ///     <b>
+    ///         It depends on the secondary alone, and the first version of this predicate got that
+    ///         wrong.
+    ///     </b> The tempting reading is "reachable when either key is at the export's value",
     ///     because <c>KeyFlipSweep</c> flips one key and leaves the rest at the export's — so the grid's
-    ///     whole cross looks covered. It is not, because that sweep measures each key on <em>that key's
-    ///     own</em> <c>oracle</c> fixture. The column — primary at the export's value, secondary moved —
+    ///     whole cross looks covered. It is not, because that sweep measures each key on
+    ///     <em>
+    ///         that key's
+    ///         own
+    ///     </em> <c>oracle</c> fixture. The column — primary at the export's value, secondary moved —
     ///     is measured on the <em>secondary's</em> fixture and says nothing about this one.
     ///     <para>
     ///         ⚠ What that error cost, measured: the first run classified 58 disagreeing corners at
@@ -148,7 +157,8 @@ public sealed class PairwiseSweep {
         );
 
         if (KeyFlipSweep.IsBrokenMeasurement(baseline.Count, agreeing)) {
-            broken.Add(new BrokenRound(
+            broken.Add(
+                new BrokenRound(
                     null,
                     baseline.Count,
                     baseline.Count,
@@ -220,7 +230,8 @@ public sealed class PairwiseSweep {
             );
 
             if (KeyFlipSweep.IsBrokenMeasurement(work.Length, answered)) {
-                broken.Add(new BrokenRound(
+                broken.Add(
+                    new BrokenRound(
                         round,
                         work.Length,
                         answered,
@@ -231,7 +242,8 @@ public sealed class PairwiseSweep {
                 );
                 _log.WriteLine("  ⚠ NOT A FINDING, A BROKEN MEASUREMENT: `cleanupcode` returned nothing this round.");
             } else if (KeyFlipSweep.IsUnvaryingRound(work.Length, moved)) {
-                broken.Add(new BrokenRound(
+                broken.Add(
+                    new BrokenRound(
                         round,
                         work.Length,
                         answered,

@@ -199,7 +199,9 @@ public static class PairwiseReport {
         builder.AppendLine("column through the export's own values. A pair whose only disagreements are outside");
         builder.AppendLine("that cross is an interaction and nothing else in the repository can see it.");
         builder.AppendLine();
-        builder.AppendLine("| primary | secondary | outcome | corners | agree | reach | oracle | skala | base | fixture |");
+        builder.AppendLine(
+            "| primary | secondary | outcome | corners | agree | reach | oracle | skala | base | fixture |"
+        );
         builder.AppendLine("|---|---|---|---:|---:|---:|---:|---:|---|---|");
         foreach (var pair in run.Pairs.OrderBy(static pair => pair.PrimaryKey, StringComparer.Ordinal)) {
             builder.AppendLine(

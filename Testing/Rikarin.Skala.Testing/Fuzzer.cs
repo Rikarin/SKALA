@@ -161,8 +161,8 @@ public sealed record FuzzReport(
             report.AppendLine(
                 $"| `{entry.Key}` | {entry.Value.ToString("N0", CultureInfo.InvariantCulture)} | "
                 + (MutationsRejected.TryGetValue(entry.Key, out var refused)
-                    ? refused.ToString("N0", CultureInfo.InvariantCulture)
-                    : "—")
+                        ? refused.ToString("N0", CultureInfo.InvariantCulture)
+                        : "—")
                 + " |"
             );
         }
@@ -172,9 +172,7 @@ public sealed record FuzzReport(
         foreach (var entry in MutationsRejected.Where(entry => !MutationsApplied.ContainsKey(entry.Key))
                      .OrderByDescending(static e => e.Value)
                      .ThenBy(static e => e.Key, StringComparer.Ordinal)) {
-            report.AppendLine(
-                $"| `{entry.Key}` | — | {entry.Value.ToString("N0", CultureInfo.InvariantCulture)} |"
-            );
+            report.AppendLine($"| `{entry.Key}` | — | {entry.Value.ToString("N0", CultureInfo.InvariantCulture)} |");
         }
 
         report.AppendLine();
@@ -216,8 +214,8 @@ public sealed record FuzzReport(
                     "- replay: `dotnet run --project Testing/Rikarin.Skala.Testing -- fuzz "
                     + $"--replay={FuzzRandom.Format(finding.Seed)}"
                     + (string.Equals(finding.Origin, "generated", StringComparison.Ordinal)
-                        ? string.Empty
-                        : $" --origin={finding.Origin}")
+                            ? string.Empty
+                            : $" --origin={finding.Origin}")
                     + "`"
                 );
                 report.AppendLine();
@@ -372,10 +370,8 @@ public static class Fuzzer {
             }
 
             if (origin is { Length: > 0 }) {
-                file = corpus.FirstOrDefault(
-                           entry => string.Equals(entry.ToString(), origin, StringComparison.Ordinal)
-                       )
-                       ?? throw new ArgumentException($"no corpus file is named {origin}", nameof(origin));
+                file = corpus.FirstOrDefault(entry => string.Equals(entry.ToString(), origin, StringComparison.Ordinal))
+                    ?? throw new ArgumentException($"no corpus file is named {origin}", nameof(origin));
             }
 
             from = file.ToString();
@@ -886,8 +882,11 @@ public static class Fuzzer {
     ///         ⚠ It draws the way a <b>run</b> draws — <see cref="Build" /> in
     ///         <see cref="FuzzMode.Both" />, reading the case's own baseline — and it did not, which is
     ///         why it reported <c>0 of 20 000</c> against a generator that was emitting
-    ///         <c>return await (state * []);</c> in the nightly. <c>Compile(new FuzzRandom(Derive(seed,
-    ///         i)))</c> hands the generator a <em>fresh</em> stream, while a case hands it one that the
+    ///         <c>return await (state * []);</c> in the nightly.
+    ///         <c>
+    /// Compile(new FuzzRandom(Derive(seed,
+    ///         i)))
+    ///         </c> hands the generator a <em>fresh</em> stream, while a case hands it one that the
     ///         mode draw has already consumed a value from; the two explore different generator states,
     ///         and a check that samples a distribution the run does not have is a check that can pass
     ///         while the thing it checks is broken. Mutate-mode draws are skipped rather than counted:

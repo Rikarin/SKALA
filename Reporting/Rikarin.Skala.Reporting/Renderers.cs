@@ -208,8 +208,8 @@ public static class Renderer {
     ///         to <c>$GITHUB_STEP_SUMMARY</c>, which is a different page, so the *log* of a failing
     ///         `Check` step was two hundred annotations followed by
     ///         <c>
-    ///Process completed with exit code
-    ///         1
+    /// Process completed with exit code
+    ///          1
     ///         </c> and no statement of why. Read from the log alone, this repository's own master gate
     ///         looked like twenty-four errors in one rule family; it was in fact failing four conditions,
     ///         of which those errors were one, and the largest was that the baseline the `ci` gate names

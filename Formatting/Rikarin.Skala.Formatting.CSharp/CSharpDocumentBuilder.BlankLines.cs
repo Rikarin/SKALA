@@ -19,6 +19,20 @@ namespace Rikarin.Skala.Formatting.CSharp;
 /// </remarks>
 public sealed partial class CSharpDocumentBuilder {
     int ResolveBlankLines(Piece previous, int nextPieceIndex, SyntaxToken nextToken, int sourceBlanks) {
+        // ⚠ `disable_blank_line_changes = true` short-circuits all three systems at once, which is
+        // the whole reason this method is the one funnel: caps, requirements and removals are the
+        // only three things in the formatter that can change a blank-line count, so returning the
+        // author's own count here is the complete implementation rather than the first of several
+        // sites. Measured — the oracle neither truncates a run past the cap nor inserts a required
+        // blank, and still adds and removes line breaks that are not blank lines (SK-DIV-0060).
+        //
+        // ⚠ It also subsumes the documentation-comment guard below rather than skipping it: a `///`
+        // run's own count is what comes back, so the 0 → 1 split that guard exists to prevent cannot
+        // happen on this path either.
+        if (_options.DisableBlankLineChanges) {
+            return sourceBlanks;
+        }
+
         var declaration = nextToken.IsKind(SyntaxKind.None) || InDeclarationContext(nextToken);
 
         // 1. Caps. The author's runs are truncated, never extended.
@@ -61,7 +75,58 @@ public sealed partial class CSharpDocumentBuilder {
             blanks = 0;
         }
 
-        return blanks;
+        // 4. ⚠ One requirement outranks the removal, and outranks the cap as well.
+        // `blank_lines_inside_type` and `blank_lines_inside_namespace` are requirements about the
+        // *brace* rather than about the member below it, so the gap they govern is exactly the gap
+        // `remove_blank_lines_near_braces_in_declarations` empties. Ordered like the others they
+        // could never be observed at all, and that is why both keys were `OfInert` with a reason
+        // that only held at the export's own `0`.
+        //
+        // Measured rather than assumed, at `jb cleanupcode` 2025.2.6 under this repository's
+        // .editorconfig — which sets `remove_blank_lines_near_braces_in_declarations = true` and
+        // `keep_blank_lines_in_declarations = 2`:
+        //
+        //     blank_lines_inside_type = 3   →  three blank lines after `{` and before `}`
+        //     blank_lines_inside_type = 5   →  five, so the cap of 2 does not bind either
+        //
+        // Both keys are `0` in the export, so at this repository's configuration `Math.Max` with
+        // zero is the identity and nothing moves.
+        return Math.Max(blanks, InsideDeclarationBraces(previous, nextToken));
+    }
+
+    /// <summary>
+    ///     <c>blank_lines_inside_type</c> and <c>blank_lines_inside_namespace</c>: the gap directly
+    ///     after a declaration's <c>{</c> and directly before its <c>}</c>.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Which bodies have an "inside" was measured, not read off the option's name. The oracle
+    ///     pads a <c>class</c>, <c>struct</c>, <c>interface</c>, <c>record</c> and <c>enum</c> body —
+    ///     <see cref="BaseTypeDeclarationSyntax" />, so an enum counts and the name "type" is honest —
+    ///     and pads a nested type's braces as well as a top-level one's. It does <em>not</em> pad a
+    ///     method body, an accessor list or an <c>if</c> block, all of which sit inside a type and none
+    ///     of which is the type's own brace.
+    ///     <para>
+    ///         ⚠ A file-scoped namespace gets nothing, and that is the tool's answer rather than an
+    ///         omission here: <c>namespace Fs;</c> has no braces, so it has no inside to pad, and the
+    ///         probe at <c>blank_lines_inside_namespace = 2</c> returned it byte-identical.
+    ///     </para>
+    /// </remarks>
+    int InsideDeclarationBraces(Piece previous, SyntaxToken nextToken) {
+        if (previous.Kind == PieceKind.Token) {
+            var open = _tokens[previous.TokenIndex];
+            if (open.IsKind(SyntaxKind.OpenBraceToken) && Requirement(open) is { } after) {
+                return after;
+            }
+        }
+
+        return nextToken.IsKind(SyntaxKind.CloseBraceToken) && Requirement(nextToken) is { } before ? before : 0;
+
+        int? Requirement(SyntaxToken brace) =>
+            brace.Parent switch {
+                BaseTypeDeclarationSyntax => _options.BlankLinesInsideType,
+                NamespaceDeclarationSyntax => _options.BlankLinesInsideNamespace,
+                _ => null
+            };
     }
 
     /// <summary>
@@ -723,8 +788,8 @@ public sealed partial class CSharpDocumentBuilder {
     ///     is the whole point: the caller is deciding a blank line, and a decision that reads whitespace
     ///     the formatter is about to rewrite is not absorbed by
     ///     <c>
-    ///format(mutate_whitespace(x)) ≡
-    /// format(x)
+    /// format(mutate_whitespace(x)) ≡
+    ///  format(x)
     ///     </c>.
     ///     <para>
     ///         The one place the source is still consulted is <see cref="SpaceKind.Preserve" />, and there it

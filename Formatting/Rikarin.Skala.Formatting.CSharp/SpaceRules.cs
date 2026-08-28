@@ -10,8 +10,8 @@ namespace Rikarin.Skala.Formatting.CSharp;
 /// <remarks>
 ///     docs/plan/05 § "Spaces": ninety keys, each of which resolves one gap.
 ///     <c>
-///extra_spaces =
-/// remove_all
+/// extra_spaces =
+///  remove_all
 ///     </c> is the global backstop — any run of spaces not required by a rule collapses to
 ///     one or to none — which is why this function is total: there is no "leave it alone" answer.
 ///     <para>

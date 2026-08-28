@@ -95,8 +95,7 @@ public static class PairwisePlan {
                     continue;
                 }
 
-                if (family.Skip.Any(skip => SweepPlan.Strip(primary.Key).StartsWith(skip, StringComparison.Ordinal)
-                    )) {
+                if (family.Skip.Any(skip => SweepPlan.Strip(primary.Key).StartsWith(skip, StringComparison.Ordinal))) {
                     excluded.Add(new PairExclusion(primary.Key, secondary.Key, "excluded by name: " + family.Name));
                     continue;
                 }

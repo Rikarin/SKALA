@@ -15,60 +15,64 @@
 <p class="lede">6 keys.</p>
 <section class="option" id="csharp_using_directive_placement">
 <h2><code>csharp_using_directive_placement</code> <a class="self" href="#csharp_using_directive_placement">#</a></h2>
-<p>Usings inside or outside the namespace. IDE0065 documents <code>outside_namespace</code> and <code>inside_namespace</code>.</p>
+<p>Usings inside or outside the namespace. IDE0065 documents <code>outside_namespace</code> and <code>inside_namespace</code>. ⚠ The oracle performs the move under <code>CSOptimizeUsings</code>, and leaves an alias directive at nested scope where it stands.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td>one of <code>outside_namespace</code>, <code>inside_namespace</code></td></tr>
 <tr><th>Default</th><td><code>outside_namespace:silent</code></td></tr>
 <tr><th>Default known from</th><td>nothing beyond the export</td></tr>
-<tr><th>Tier</th><td>D — recorded so the key is not reported unknown; nothing reads it yet</td></tr>
+<tr><th>Tier</th><td>A — the formatter reads it and a committed oracle fixture pins it</td></tr>
 <tr><th>Language</th><td>csharp</td></tr>
 <tr><th>Since</th><td>0.1</td></tr>
 <tr><th>Severity suffix</th><td>accepted — <code>key = value:suggestion</code></td></tr>
+<tr><th>Oracle fixture</th><td><code>constructs/arrangement/usings/placement.cs</code></td></tr>
 <tr><th>Documented at</th><td><a href="https://learn.microsoft.com/dotnet/fundamentals/code-analysis/code-style-rule-options">https://learn.microsoft.com/dotnet/fundamentals/code-analysis/code-style-rule-options</a></td></tr>
 </tbody>
 </table>
 </section>
 <section class="option" id="dotnet_separate_import_directive_groups">
 <h2><code>dotnet_separate_import_directive_groups</code> <a class="self" href="#dotnet_separate_import_directive_groups">#</a></h2>
-<p>Blank line between using groups.</p>
+<p>A blank line between using groups, grouped by first namespace segment. ⚠ Both directions: at <code>false</code> the oracle removes blank lines inside the block as well.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>
 <tr><th>Default</th><td><code>false</code></td></tr>
 <tr><th>Default known from</th><td>nothing beyond the export</td></tr>
-<tr><th>Tier</th><td>D — recorded so the key is not reported unknown; nothing reads it yet</td></tr>
+<tr><th>Tier</th><td>A — the formatter reads it and a committed oracle fixture pins it</td></tr>
 <tr><th>Language</th><td>csharp</td></tr>
 <tr><th>Since</th><td>0.1</td></tr>
+<tr><th>Oracle fixture</th><td><code>constructs/arrangement/usings/import-groups.cs</code></td></tr>
 <tr><th>Documented at</th><td><a href="https://learn.microsoft.com/dotnet/fundamentals/code-analysis/code-style-rule-options">https://learn.microsoft.com/dotnet/fundamentals/code-analysis/code-style-rule-options</a></td></tr>
 </tbody>
 </table>
 </section>
 <section class="option" id="resharper_csharp_keep_nontrivial_alias">
 <h2><code>resharper_csharp_keep_nontrivial_alias</code> <a class="self" href="#resharper_csharp_keep_nontrivial_alias">#</a></h2>
-<p>Undocumented ReSharper property; classified as C#-relevant by vocabulary.</p>
+<p>Keep an unused <code>using</code> alias whose name is not the aliased type's own name. ⚠ Recorded inert until M12 re-probed it with the aliases <em>unused</em>; the earlier probe had them in use, where nothing removes them at either value. See SK-DIV-0072.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>
 <tr><th>Default</th><td><code>false</code></td></tr>
 <tr><th>Default known from</th><td>nothing beyond the export</td></tr>
-<tr><th>Tier</th><td>D — recorded so the key is not reported unknown; nothing reads it yet</td></tr>
+<tr><th>Tier</th><td>A — the formatter reads it and a committed oracle fixture pins it</td></tr>
 <tr><th>Language</th><td>csharp</td></tr>
 <tr><th>Since</th><td>0.1</td></tr>
+<tr><th>Oracle fixture</th><td><code>constructs/arrangement/usings/aliases.cs</code></td></tr>
 </tbody>
 </table>
 </section>
 <section class="option" id="resharper_remove_only_unused_aliases">
 <h2><code>resharper_remove_only_unused_aliases</code> <a class="self" href="#resharper_remove_only_unused_aliases">#</a></h2>
-<p>Undocumented ReSharper property; classified as C#-relevant by vocabulary.</p>
+<p>Remove an unused <code>using</code> alias. ⚠ ANDs with <code>resharper_csharp_keep_nontrivial_alias</code>: an unused non-trivial alias goes only when this is true and that is false, which is the export's pair and the only one of the four that removes it.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>
 <tr><th>Default</th><td><code>true</code></td></tr>
 <tr><th>Default known from</th><td>nothing beyond the export</td></tr>
-<tr><th>Tier</th><td>D — recorded so the key is not reported unknown; nothing reads it yet</td></tr>
+<tr><th>Tier</th><td>A — the formatter reads it and a committed oracle fixture pins it</td></tr>
 <tr><th>Language</th><td>csharp</td></tr>
 <tr><th>Since</th><td>0.1</td></tr>
+<tr><th>Oracle fixture</th><td><code>constructs/arrangement/usings/aliases.cs</code></td></tr>
 </tbody>
 </table>
 </section>

@@ -42,8 +42,11 @@ public static class ArrangeIds {
     ///     that throws must cost its own rewrite and nothing else. Before this, an exception out of a
     ///     rewriter left <see cref="Arranger.Arrange" /> and took the caller with it — which for a
     ///     nightly fuzz run means the whole run's report, and for <c>skala arrange</c> means the
-    ///     process. Found by the fuzzer as a <c>crash</c>: <c>Func&lt;int&gt; v = new () { P = (from
-    ///     item in items select null) };</c> makes Roslyn's own binder throw
+    ///     process. Found by the fuzzer as a <c>crash</c>:
+    ///     <c>
+    /// Func&lt;int&gt; v = new () { P = (from
+    ///     item in items select null) };
+    ///     </c> makes Roslyn's own binder throw
     ///     <c>IndexOutOfRangeException</c> out of <c>GetSymbolInfo</c>, which is a legitimate call on a
     ///     node of the model's own tree.
     ///     <para>

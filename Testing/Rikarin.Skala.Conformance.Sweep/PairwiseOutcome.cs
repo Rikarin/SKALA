@@ -46,8 +46,11 @@ public enum PairOutcome {
     ///     ⚠ <b>The verdict that stops this pass inventing findings.</b> The corrected first run reported
     ///     17 <see cref="InteractionOnly" /> rows across the <c>wrap_*</c> family, and every one of them
     ///     disagreed only where <c>max_line_length</c> was <c>0</c> or <c>1</c> — the two values at which
-    ///     <c>conformance-sweep.json</c> records <c>max_line_length</c> disagreeing <em>measured alone, on
-    ///     its own fixture</em>. Seventeen findings with one cause, none of it about a pair, and each
+    ///     <c>conformance-sweep.json</c> records <c>max_line_length</c> disagreeing
+    ///     <em>
+    ///         measured alone, on
+    ///         its own fixture
+    ///     </em>. Seventeen findings with one cause, none of it about a pair, and each
     ///     would have been sent to somebody to investigate as a subtle two-key defect.
     ///     <para>
     ///         The rule: a disagreeing corner is evidence about the <em>pair</em> only when both keys are

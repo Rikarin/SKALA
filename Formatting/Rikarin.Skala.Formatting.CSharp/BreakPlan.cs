@@ -658,8 +658,8 @@ public sealed class BreakPlan {
     ///     <c>max_initializer_elements_on_line = 4</c> although it is 41 columns wide, while
     ///     <c>new[] { 1, 2, 3, 4, 5 }</c> — governed by
     ///     <c>
-    ///max_array_initializer_elements_on_line =
-    /// 10000
+    /// max_array_initializer_elements_on_line =
+    ///  10000
     ///     </c> — does not move. The counter is not a width and does not consult one.
     /// </param>
     /// <param name="placeOnSingleLine">
@@ -883,8 +883,8 @@ public sealed class BreakPlan {
     ///         ⚠ The inner group is a <em>fill</em> for an array initializer and a chop for an object or
     ///         collection one, and that distinction is real:
     ///         <c>
-    ///new[] { six, long, string, literals, here,
-    /// again }
+    /// new[] { six, long, string, literals, here,
+    ///  again }
     ///         </c> comes back with five on one line and one on the next, while
     ///         <c>new List&lt;string&gt; { four, long, string, literals }</c> comes back with one per line
     ///         even though two of them would have shared. It matches the two counters —
@@ -2257,8 +2257,8 @@ public sealed class BreakPlan {
     /// <summary>
     ///     <c>place_simple_case_statement_on_same_line = if_owner_is_single_line</c>:
     ///     <c>
-    ///case 1: F();
-    /// break;
+    /// case 1: F();
+    ///  break;
     ///     </c> stays on the label's line exactly when the whole section fits on one.
     /// </summary>
     void PlanCaseStatements(SwitchSectionSyntax node) {
@@ -2461,10 +2461,11 @@ public sealed class BreakPlan {
     /// </summary>
     /// <remarks>
     ///     ⚠ The same predicate <see cref="CSharpDocumentBuilder" /> uses to decide which node spends the
-    ///     chain's continuation level; the two must agree, or the group and the indent scope are opened
-    ///     around different nodes.
+    ///     chain's continuation level, and the same one it uses to decide which node opens
+    ///     <c>outdent_dots</c>' column scope; all three must agree, or the group and the indent scopes
+    ///     are opened around different nodes.
     /// </remarks>
-    static bool IsChainRoot(SyntaxNode node) =>
+    internal static bool IsChainRoot(SyntaxNode node) =>
         node is InvocationExpressionSyntax { Expression: MemberAccessExpressionSyntax or MemberBindingExpressionSyntax }
             or ConditionalAccessExpressionSyntax
         && node.Parent is not (InvocationExpressionSyntax

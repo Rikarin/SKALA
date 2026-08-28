@@ -109,9 +109,7 @@ public static class SweepReport {
                 + Count(run.BrokenRounds.Count)
                 + " of this run's canaries fired.** A canary here does not say an option is wrong — it says"
             );
-            builder.AppendLine(
-                "the instrument may not have been running, and that everything below is suspect until"
-            );
+            builder.AppendLine("the instrument may not have been running, and that everything below is suspect until");
             builder.AppendLine("somebody has looked. Confirm one with `sweep verify <key>`, which re-asks a");
             builder.AppendLine("single option unbatched and prints both engines' output at every value.");
             builder.AppendLine();

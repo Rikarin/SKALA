@@ -30,7 +30,7 @@
 </section>
 <section class="option" id="resharper_max_lambda_and_anonymous_function_parameters_on_line">
 <h2><code>resharper_max_lambda_and_anonymous_function_parameters_on_line</code> <a class="self" href="#resharper_max_lambda_and_anonymous_function_parameters_on_line">#</a></h2>
-<p>Undocumented ReSharper property; classified as C#-relevant by vocabulary.</p>
+<p>The cap on a lambda's parameters per line. Inert: measured at 120 and at 60 columns on a parenthesized lambda and a <code>delegate(…)</code>, both values return identical output, while <code>csharp_max_formal_parameters_on_line</code> in the same batch chops the lambda's list.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td>integer</td></tr>
@@ -59,7 +59,7 @@
 </section>
 <section class="option" id="resharper_wrap_after_lambda_and_anonymous_function_declaration_lpar">
 <h2><code>resharper_wrap_after_lambda_and_anonymous_function_declaration_lpar</code> <a class="self" href="#resharper_wrap_after_lambda_and_anonymous_function_declaration_lpar">#</a></h2>
-<p>Undocumented ReSharper property; classified as C#-relevant by vocabulary.</p>
+<p>Whether a lambda's first parameter gets a line of its own. Inert at both values, at 120 and at 60 columns; the declaration keys lay a lambda's parameter list out.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>
@@ -73,7 +73,7 @@
 </section>
 <section class="option" id="resharper_wrap_before_lambda_and_anonymous_function_declaration_lpar">
 <h2><code>resharper_wrap_before_lambda_and_anonymous_function_declaration_lpar</code> <a class="self" href="#resharper_wrap_before_lambda_and_anonymous_function_declaration_lpar">#</a></h2>
-<p>Undocumented ReSharper property; classified as C#-relevant by vocabulary.</p>
+<p>Whether a lambda's <code>(</code> gets a line of its own. Inert at both values, at 120 and at 60 columns; <code>csharp_wrap_before_declaration_lpar</code> is the key that moves a <code>delegate(…)</code>'s parenthesis.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>
@@ -87,7 +87,7 @@
 </section>
 <section class="option" id="resharper_wrap_before_lambda_and_anonymous_function_declaration_rpar">
 <h2><code>resharper_wrap_before_lambda_and_anonymous_function_declaration_rpar</code> <a class="self" href="#resharper_wrap_before_lambda_and_anonymous_function_declaration_rpar">#</a></h2>
-<p>Undocumented ReSharper property; classified as C#-relevant by vocabulary.</p>
+<p>Whether a lambda's <code>)</code> gets a line of its own. Inert at both values, at 120 and at 60 columns; the declaration keys govern.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>
@@ -101,7 +101,7 @@
 </section>
 <section class="option" id="resharper_wrap_lambda_and_anonymous_function_parameters_style">
 <h2><code>resharper_wrap_lambda_and_anonymous_function_parameters_style</code> <a class="self" href="#resharper_wrap_lambda_and_anonymous_function_parameters_style">#</a></h2>
-<p>Undocumented ReSharper property; classified as C#-relevant by vocabulary.</p>
+<p>The wrap style of a lambda's parameter list. Inert at both values, at 120 and at 60 columns, while <code>csharp_wrap_parameters_style</code> in the same batch chops that very list.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td>one of <code>wrap_if_long</code>, <code>chop_if_long</code></td></tr>

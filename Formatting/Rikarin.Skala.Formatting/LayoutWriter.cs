@@ -143,7 +143,7 @@ public sealed class LayoutWriter {
                         continue;
 
                     case DocKind.Indent:
-                        Push((IndentKind)slot.Arg0, slot.Arg1 != 0);
+                        Push((IndentKind)slot.Arg0, slot.Arg1 != 0, slot.Arg2);
                         break;
 
                     case DocKind.Group:
@@ -199,7 +199,7 @@ public sealed class LayoutWriter {
     ///     come out the way ReSharper writes it. A block additionally <em>fixes</em> its level rather
     ///     than adding to whatever is open, because a brace resets the continuation context.
     /// </remarks>
-    void Push(IndentKind kind, bool unconditional) {
+    void Push(IndentKind kind, bool unconditional, int columns = -1) {
         // ⚠ The closing delimiter goes back to the level the scope was opened AT, not to the level
         // of the physical line the opener happened to land on. The two differ whenever a condition
         // or an initializer pushed the opener rightwards:
@@ -225,6 +225,13 @@ public sealed class LayoutWriter {
                 // already means; the only thing alignment adds is that the number is not a multiple
                 // of the indent width.
                 IndentKind.Align => new Scope(true, CurrentColumn(), _line, outer, unconditional),
+
+                // ⚠ Columns, not a level, and it carries them in a field of its own rather than in
+                // `Level` so that the collapse in `Level(bool)` never sees them. `Level` is 0 here:
+                // an outdent scope adds nothing and subtracts a column count, which is a different
+                // question from "how many levels does this line take".
+                IndentKind.OutdentColumns =>
+                    new Scope(false, 0, _line, outer, unconditional, Math.Max(0, columns)),
                 _ => new Scope(false, 0, int.MaxValue, outer, unconditional)
             }
         );
@@ -315,8 +322,23 @@ public sealed class LayoutWriter {
         var blocked = -1;
         for (var i = _scopes.Count - 1; i >= 0; i--) {
             var scope = _scopes[i];
+
+            // ⚠ Before the block check and before `blocked` is touched, and both are deliberate. A
+            // column outdent is not a level: it never satisfies an enclosing scope's collapse, and
+            // it applies inside a block as readily as inside a continuation — a chained call whose
+            // dots are outdented is outdented from whatever column the block put it on, so the
+            // subtraction has to survive the early return below. Its own opening line is exempt,
+            // which is what leaves the first operand of a chain where it was.
+            if (scope.ColumnOutdent != 0) {
+                if (scope.OpenLine < _line) {
+                    level -= scope.ColumnOutdent;
+                }
+
+                continue;
+            }
+
             if (scope.IsBlock) {
-                return level + scope.Level;
+                return Math.Max(0, level + scope.Level);
             }
 
             if (scope.Unconditional) {
@@ -334,7 +356,9 @@ public sealed class LayoutWriter {
             }
         }
 
-        return level;
+        // ⚠ Clamped, because a column outdent is the one contribution that can be negative and the
+        // file's outermost construct has no level to spend it against.
+        return Math.Max(0, level);
     }
 
     /// <param name="Unconditional">
@@ -360,7 +384,20 @@ public sealed class LayoutWriter {
     ///     statement's condition `(` — so a stack of levels cannot express it and a stack of columns
     ///     can express both.
     /// </param>
-    readonly record struct Scope(bool IsBlock, int Level, int OpenLine, int CloserLevel, bool Unconditional = false);
+    /// <param name="ColumnOutdent">
+    ///     ⚠ <see cref="IndentKind.OutdentColumns" />' column count, and zero for every other kind. It is
+    ///     a separate field rather than a negative <paramref name="Level" /> because the two are read by
+    ///     different rules: a level takes part in the one-level-per-opening-line collapse and a column
+    ///     shift must not, or an outdent scope opened mid-line would suppress the continuation level of
+    ///     whatever opened earlier on the same line.
+    /// </param>
+    readonly record struct Scope(
+        bool IsBlock,
+        int Level,
+        int OpenLine,
+        int CloserLevel,
+        bool Unconditional = false,
+        int ColumnOutdent = 0);
 
     /// <summary>Writes the indentation that reaches <paramref name="column" />.</summary>
     /// <remarks>

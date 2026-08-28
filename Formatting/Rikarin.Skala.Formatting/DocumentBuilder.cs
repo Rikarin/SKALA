@@ -197,8 +197,12 @@ public sealed class DocumentBuilder {
     ///     The scope contributes its level even when another scope opened on the same line, which is
     ///     otherwise collapsed to one. See <see cref="LayoutWriter" />'s Effective.
     /// </param>
-    public void OpenIndent(IndentKind kind, bool unconditional = false) =>
-        Open(DocKind.Indent, (int)kind, unconditional ? 1 : 0);
+    /// <param name="columns">
+    ///     ⚠ <see cref="IndentKind.OutdentColumns" /> only: how many columns to the left every line but
+    ///     the scope's opening one moves. Ignored by every other kind, which measure in levels.
+    /// </param>
+    public void OpenIndent(IndentKind kind, bool unconditional = false, int columns = 0) =>
+        Open(DocKind.Indent, (int)kind, unconditional ? 1 : 0, columns);
 
     public void OpenConcat() => Open(DocKind.Concat, 0, 0);
 
@@ -300,7 +304,7 @@ public sealed class DocumentBuilder {
         _afterPoint[index] = frame.Kind == DocKind.Group ? MeasureSegments(childStart, count, frame.Arg1) : 0;
         _nodes[index].Count = count;
         _nodes[index].Flags = alignsCloser ? 1 : 0;
-        _nodes[index].Arg2 = frame.Kind == DocKind.Group ? _facts[frame.Arg1].Owner : -1;
+        _nodes[index].Arg2 = frame.Kind == DocKind.Group ? _facts[frame.Arg1].Owner : frame.Arg2;
 
         if (_stack.Count == 0) {
             _root = index;
@@ -439,7 +443,8 @@ public sealed class DocumentBuilder {
         return node.Kind == DocKind.Line && (LineKind)node.Arg0 == LineKind.Soft && node.Arg2 == group;
     }
 
-    void Open(DocKind kind, int arg0, int arg1) => _stack.Add(new Frame(kind, arg0, arg1, _pending.Count));
+    void Open(DocKind kind, int arg0, int arg1, int arg2 = -1) =>
+        _stack.Add(new Frame(kind, arg0, arg1, _pending.Count, arg2));
 
     void Leaf(DocKind kind, int arg0, int arg1, SourceSpan source, int payload, int width, int head) =>
         _pending.Add(Allocate(kind, arg0, arg1, source, payload, width, head));
@@ -504,5 +509,10 @@ public sealed class DocumentBuilder {
         return false;
     }
 
-    readonly record struct Frame(DocKind Kind, int Arg0, int Arg1, int ChildStart);
+    /// <param name="Arg2">
+    ///     The node's <see cref="DocNode.Arg2" /> for kinds that carry one of their own. A group
+    ///     overwrites it with its owner in <see cref="Close" />; an <see cref="DocKind.Indent" /> keeps
+    ///     what was opened with, which is <see cref="IndentKind.OutdentColumns" />' column count.
+    /// </param>
+    readonly record struct Frame(DocKind Kind, int Arg0, int Arg1, int ChildStart, int Arg2 = -1);
 }

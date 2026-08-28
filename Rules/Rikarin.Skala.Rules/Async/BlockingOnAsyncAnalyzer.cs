@@ -48,8 +48,8 @@ public sealed class BlockingOnAsyncAnalyzer : DiagnosticAnalyzer {
     /// <remarks>
     ///     ⚠ The configured variants are included, because
     ///     <c>
-    ///x.ConfigureAwait(false).GetAwaiter()
-    /// .GetResult()
+    /// x.ConfigureAwait(false).GetAwaiter()
+    ///  .GetResult()
     ///     </c> is the spelling people reach for when they have been told that
     ///     <c>ConfigureAwait</c> fixes the deadlock. It does not: it removes one of the two ways to
     ///     deadlock and leaves the blocked thread.

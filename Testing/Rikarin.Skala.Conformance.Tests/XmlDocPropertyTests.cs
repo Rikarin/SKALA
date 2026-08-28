@@ -103,6 +103,59 @@ public sealed class XmlDocPropertyTests {
         Assert.Equal(NonDocLines(without.Formatted), NonDocLines(with.Formatted));
     }
 
+    [Theory]
+    [MemberData(nameof(Files))]
+    public void TheMarkerSpace_IsOnEveryLineTheSubFormatterWrote(CorpusFile file) {
+        // ⚠ `resharper_space_after_triple_slash` as a property over the corpus rather than as one
+        // fixture's line, and it is here because the fixture could not reach the shape that broke it.
+        // A verbatim region — a `<code>` or `<c>` body, a processing instruction, a CDATA section —
+        // is the only thing in a doc comment written by a path that does not compose the line out of
+        // an indent and a marker, and twice now that path has emitted `///` with the option's space
+        // missing: on a processing instruction (SK-DIV-0023) and on the one body line of an inline
+        // element whose content starts on its start tag's line, which came out `///Func&lt;int&gt;`.
+        //
+        // ⚠ The assertion is over lines the sub-formatter *wrote*, which is why it is a comparison
+        // rather than a scan. A comment it refused is returned exactly as written and may carry
+        // anything the author put there, `////` and a bare `///` included; what it may not do is
+        // *introduce* a marker without the option's space. That is exactly the check that caught the
+        // second occurrence — `git diff | grep '^+\s*///[^ /]'` over this repository's own sources —
+        // and running it here means the next occurrence fails a test instead of a review.
+        if (!new XmlDocOptions(CorpusFormatter.OptionsFor(file.Path)).SpaceAfterTripleSlash) {
+            return;
+        }
+
+        var result = Format(file);
+        if (result.Outcome is not FormatOutcome.Formatted) {
+            return;
+        }
+
+        var before = Unspaced(result.Original.ToString());
+        var after = Unspaced(result.Formatted);
+        Assert.True(
+            after.Count <= before.Count,
+            $"{file}: the sub-formatter introduced a `///` line with no space after the marker.\n"
+            + $"  before: {before.Count}\n  after:  {after.Count}\n"
+            + string.Join("\n", after.Except(before).Take(5).Select(static line => "  + " + line))
+        );
+    }
+
+    /// <summary>Every <c>///</c> line whose marker is followed by something other than a space.</summary>
+    /// <remarks>
+    ///     ⚠ <c>////</c> is excluded, and not as a convenience. Roslyn does not classify it as a
+    ///     documentation comment and neither does <c>XmlDocFormatter.Indent</c>, so a run of four
+    ///     slashes is a line comment this pass never touches and counting one would make the property
+    ///     fail on a file the sub-formatter did not write a line of.
+    /// </remarks>
+    static List<string> Unspaced(string text) => [
+        .. TextNormalisation.Lines(text)
+            .Select(static line => line.TrimStart())
+            .Where(static line =>
+                line.StartsWith("///", StringComparison.Ordinal)
+                && line.Length > 3
+                && line[3] is not (' ' or '/')
+            )
+    ];
+
     static string NonDocLines(string text) =>
         string.Join(
             '\n',

@@ -232,6 +232,14 @@ public readonly struct PhaseOneOptions {
         IndentTypeargAngles = (ParenthesesIndentStyle)options.GetRaw(Ids.IndentTypeargAngles);
         IndentTypeparamAngles = (ParenthesesIndentStyle)options.GetRaw(Ids.IndentTypeparamAngles);
         IndentPars = (ParenthesesIndentStyle)options.GetRaw(Ids.IndentPars);
+        OutdentBinaryOps = options.GetBool(Ids.OutdentBinaryOps);
+        OutdentBinaryPatternOps = options.GetBool(Ids.OutdentBinaryPatternOps);
+        OutdentDots = options.GetBool(Ids.OutdentDots);
+        AlignMultipleDeclaration = options.GetBool(Ids.AlignMultipleDeclaration);
+
+        // ── The formatter's own off switches ─────────────────────────────────────────────────
+        DisableFormatter = options.GetBool(Ids.DisableFormatter);
+        DisableBlankLineChanges = options.GetBool(Ids.DisableBlankLineChanges);
 
         // ── Blank lines ──────────────────────────────────────────────────────────────────────
         KeepBlankLinesInCode = options.GetInt(Ids.KeepBlankLinesInCode);
@@ -763,6 +771,63 @@ public readonly struct PhaseOneOptions {
     /// <inheritdoc cref="IndentInvocationPars" />
     /// <remarks>⚠ The default arm: every delimited construct the six named keys do not claim.</remarks>
     public ParenthesesIndentStyle IndentPars { get; }
+
+    /// <summary>
+    ///     <c>disable_formatter</c>: the whole pass is off and the file comes back byte-identical.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured, not inferred. Asked with nothing but this key flipped on a file wrong in every
+    ///     dimension at once — spacing, indentation, blank lines and wrapping — <c>jb cleanupcode</c>
+    ///     under <c>CSReformatCode</c> returned the input <b>byte for byte</b>. "Formats nothing at all"
+    ///     rather than "formats less"; the negative control is the same file at <c>false</c>, which comes
+    ///     back reformatted in all four. SK-DIV-0060.
+    ///     <para>
+    ///         ⚠ Scoped to the formatter. This does not gate <see cref="Arrangement.ArrangementOptions" />:
+    ///         the probe ran under the format-only profile, so what the key does to a <em>cleanup</em> is
+    ///         unmeasured, and switching the arranger off on an unmeasured guess is how a key acquires a
+    ///         meaning ReSharper does not give it.
+    ///     </para>
+    /// </remarks>
+    public bool DisableFormatter { get; }
+
+    /// <summary>
+    ///     <c>disable_blank_line_changes</c>: every run of blank lines survives exactly as written.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Both directions, which is what separates it from <c>disable_line_break_removal</c>. On one
+    ///     probe the export's cap truncated a three-blank run to two and
+    ///     <c>blank_lines_around_invocable</c> inserted a blank after a <c>}</c>; with this key on,
+    ///     neither happened — the three survived and the blank was not inserted. <c>line_break_removal</c>
+    ///     on the same file kept the three and still inserted the blank, so the two keys are a superset
+    ///     and a subset in the *removal* direction only. Line breaks that are not blank lines are still
+    ///     added and removed under this key: the probe's <c>if(sum&gt;0){</c> still gained its break.
+    ///     SK-DIV-0060.
+    /// </remarks>
+    public bool DisableBlankLineChanges { get; }
+
+    /// <summary>
+    ///     The three members of the outdent family that move a wrapped <em>operator</em> left by its own
+    ///     width, so that the operand after it keeps the column it would otherwise have had.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ One rule, three keys, and the amount is not a level.
+    ///     <see cref="IndentKind.OutdentColumns" /> is where the arithmetic and its measurement live.
+    ///     Each is <c>false</c> in the export and each moves the oracle on its own, so all three are
+    ///     reachable by the one-key-flip sweep.
+    /// </remarks>
+    public bool OutdentBinaryOps { get; }
+
+    /// <inheritdoc cref="OutdentBinaryOps" />
+    public bool OutdentBinaryPatternOps { get; }
+
+    /// <inheritdoc cref="OutdentBinaryOps" />
+    public bool OutdentDots { get; }
+
+    /// <summary>
+    ///     <c>align_multiple_declaration</c>: the second and later declarators of one declaration take
+    ///     the first declarator's column rather than a continuation level.
+    /// </summary>
+    public bool AlignMultipleDeclaration { get; }
 
     public int KeepBlankLinesInCode { get; }
     public int KeepBlankLinesInDeclarations { get; }
@@ -1388,6 +1453,22 @@ public static class Ids {
     // name, `bool AThird, double\n    FourthName` — so TupleTypeSyntax is deliberately not planned.
     public static readonly OptionId AlignTupleComponents = Of("resharper_csharp_align_tuple_components");
 
+    // ⚠ Filed under "no probe found a shape where they change the oracle's output", with the warning
+    // beside it that this is "a statement about the probes". It was: the probes used
+    // `int first = 1, second = 2`, and `int ` is four columns wide, so the first declarator's column
+    // and the continuation indent are the same number and the two layouts are indistinguishable. On a
+    // declaration whose type is not four columns wide they separate:
+    //
+    //     System.Int32 firstVariableName = 1,
+    //                  secondVariableName = 2,      ← the first declarator's column, 21
+    //
+    // ⚠ Local declarations only, measured. The field declaration in the same file does not move at
+    // either value — a wrapped field's declarators stay on the continuation indent — so the anchor is
+    // registered for a variable declaration inside a statement and not for one inside a
+    // FieldDeclarationSyntax.
+    public static readonly OptionId AlignMultipleDeclaration =
+        Of("resharper_csharp_align_multiple_declaration");
+
     // ⚠ The rest of the `align_*` family, read so the crash snapshot records them, and Tier D each
     // for a reason the oracle gave rather than for a gap in the wiring. All measured one key at a
     // time at a 70-column margin against `jb cleanupcode`.
@@ -1398,7 +1479,12 @@ public static class Ids {
     // byte-identical oracle output, while the construct's real key changes it:
     //   align_multiline_array_initializer, align_multiline_ctor_init, align_multiline_expression_braces,
     //   align_multiline_implements_list, align_multiline_type_argument, align_multiline_type_parameter,
-    //   align_ternary, alignment_tab_fill_style.
+    //   align_ternary.
+    //   ⚠ `align_multiline_array_initializer` re-measured on an initializer that wraps at 60 columns:
+    //     `false` returns it byte-identical while `align_multiline_array_and_object_initializer = true`
+    //     beside it moves the elements to the brace's column. The claim holds for this one.
+    //   ⚠ `alignment_tab_fill_style` **left this list** — see below. It is read; it was on the list
+    //     because every probe that asked it was indented with spaces.
     //   ⚠ `align_ternary` re-measured at the ternary-chain work, on the shape it is named for and
     //     that no earlier probe could reach: a nested conditional chain the oracle chops one member
     //     per line. `align_all` and `none` both return constructs/wrapping/ternary-chains.cs
@@ -1438,25 +1524,68 @@ public static class Ids {
     //     `for (var i = 0;\n     i < xs.Count;` — the `(`'s column — and with
     //     align_multiline_statement_conditions = false as well, the two values separate, `false`
     //     taking one continuation indent and `true` the `(`'s column. Two flips, so the per-option
-    //     unit still cannot reach it and it stays Tier D.
+    //     unit still cannot reach it and it stays Tier D. ⚠ Re-measured a third time in T5b, because
+    //     SK-DIV-0008 and SK-DIV-0012 had blamed this key for a residue that was the missing `for`-
+    //     header `;` break point. The blame was wrong and the masking verdict was right: with only
+    //     this key flipped the oracle returns constructs/wrapping/for-header.cs byte-identical.
+    //   alignment_tab_fill_style — masked by `indent_style = space`, and it took a probe under tabs
+    //     to see it. All three values are distinct layouts of the *same* alignment column, and they
+    //     differ only in how the whitespace reaching it is spelled. On `if (a\n && b` at column 12
+    //     inside a block at 8, with a 4-column tab:
+    //         use_spaces     `\t\t` + 4 spaces   — tabs to the enclosing block, spaces for the rest
+    //         use_tabs_only  `\t\t\t`           — the column rounded *down* to a tab stop
+    //         optimal_fill   `\t\t\t`           — floor(column / tab) tabs, then the remainder
+    //     `optimal_fill` and `use_tabs_only` separate where the column is not a multiple of the tab
+    //     width: a chain aligned at column 21 is 5 tabs under `use_tabs_only` (column 20, short of
+    //     the anchor) and 5 tabs and a space under `optimal_fill`. ⚠ LayoutWriter.WriteIndentTo
+    //     implements `optimal_fill` and its remarks name it `use_spaces`; SK-DIV-0032.
     //
     // Observable and not implemented, with the shape recorded so the next attempt starts from it:
     //   align_first_arg_by_paren — puts the arguments on the `(`'s column plus one and the closing
-    //     parenthesis one column *left* of them. The writer's scope stack has one column per scope
-    //     and no expression for "the closer is the column minus one".
-    //   align_multiline_calls_chain — the anchor is the chain's first `.`, and a chain's
-    //     continuation level is spent lazily at the first break, by which time the writer has
-    //     written past that dot.
+    //     parenthesis on the `(`'s own column, one *left* of them:
+    //         Target(
+    //                firstArgumentValue,     ← 15, the `(` is at 14
+    //               );                       ← 14
+    //     ⚠ The recorded reason — "the writer's scope stack has one column per scope and no
+    //     expression for 'the closer is the column minus one'" — is wrong on its own terms:
+    //     LayoutWriter.Scope carries CloserLevel separately from Level and has since milestone 3, so
+    //     the closer's column is already independent of the contents'. What is missing is a caller:
+    //     the scope would have to be opened by VisitDelimited with a CloserLevel of its own, which is
+    //     a second parameter on the Align path and not a new model. Left for a measured attempt
+    //     rather than taken here on top of five other keys.
+    //   align_multiline_calls_chain — the anchor is the column the chain's **first `.`** lands on,
+    //     and the earlier note that said so was right. It is recorded again here because it was
+    //     nearly overturned by a measurement taken at one margin, and the second margin is what makes
+    //     the key unimplementable rather than merely unimplemented:
+    //         120 columns  `wrap_before_first_method_call = false` keeps `.Where(…)` on the head line
+    //                      and the rest align under that dot, 26 columns past the receiver's start.
+    //         70 columns   the first call no longer fits, the layout breaks before that dot as well,
+    //                      and the anchor becomes the receiver's own column.
+    //     The anchor is therefore a function of the *layout*, and AlignAnchor is a source position
+    //     resolved before the fitter runs. A one-key implementation on the 70-column reading was
+    //     built, agreed with the oracle on that file, and disagreed by 26 columns on the fixture at
+    //     the repository's own margin; it was reverted rather than committed. ⚠ A third margin says
+    //     there is a further rule underneath: at 50 columns the oracle *abandons* the alignment for a
+    //     long receiver and returns the plain continuation layout, which is what
+    //     `allow_far_alignment = false` should mean and is the first shape on which that key has been
+    //     seen to matter at all.
     //   align_multiline_expression — the union of four specific keys, except for binary patterns:
     //     it aligns a pattern chain one level from the *enclosing* expression where
     //     align_multiline_binary_patterns aligns it on the pattern's own column, one further right.
     //     An Align scope reads the column where it opens and cannot see the enclosing expression.
-    //   align_multiple_declaration, align_multiline_comments — no probe found a shape where they
-    //     change the oracle's output, which is weaker evidence than the rest of this list: they are
-    //     unmeasured rather than measured inert. ⚠ `align_tuple_components` was in this group and
-    //     is not any more: the probes that missed it used tuples that fit, and a tuple long enough
-    //     to wrap moves the oracle's output at both values. Read the same warning into what is left
-    //     of the group — "no probe found" is a statement about the probes.
+    //     ⚠ Measured, and the union is narrower than the name: on a binary expression chain it is
+    //     byte-identical to align_multiline_binary_expressions_chain (both put the operands on the
+    //     expression's own column); on a *pattern* chain it lands at the `is` operand's column plus
+    //     one indent, four columns left of align_multiline_binary_patterns; and on a chained call or
+    //     on an argument list it returns the file byte-identical, so it covers neither.
+    //   align_multiline_comments — `true` in the export, and it is not "unmeasured" any more. With
+    //     it `false` the oracle leaves a block comment's continuation asterisks exactly where the
+    //     author put them; with it `true` — the export's value — it pulls each ` * ` line onto the
+    //     opening `/*`'s column plus one. A comment with no asterisks is untouched at either value.
+    //     Not implemented: it rewrites the interior of a comment token, which every other key in this
+    //     family declines to do, and the trivia rewriter that would own it does not exist. ⚠ It is
+    //     also the only key here that is *on* in the export, so Skala's leaving comments alone is a
+    //     divergence at the export's own values rather than a missing option — SK-DIV-0033.
 
     // ── Column alignment of adjacent constructs (int_align_*) ────────────────────────────────
     // ⚠ Every one of these is `false` in the export and every one of them is read here, so the
@@ -1547,9 +1676,72 @@ public static class Ids {
     // `int_align = true` supplied alongside, `disable_int_align` turns the whole family off again
     // and the other two change nothing on any shape tried. The per-option unit flips one key from
     // the repository's configuration, so none of the three can be demonstrated there.
+    //
+    // ⚠ Re-measured rather than inherited, and the recorded probe holds. On a file with three
+    // adjacent declarations, `int_align = true` alone pads them to a column; `int_align = true`
+    // plus `disable_int_align = true` produces output byte-identical to the export's own
+    // configuration. It is decisive one key away from the export and inert at it, which is the
+    // shape the whole `disable_*` family turned out to have — see the block below. SK-DIV-0060.
+    //
+    // ⚠ "No answer while no run exists" was the reason and it is no longer available for
+    // `allow_far_alignment`, so the key was re-asked in T5b with a run that unambiguously exists and
+    // is unambiguously far. `int_align_variables = true` and `int_align_fields = true` beside a local
+    // whose name is 68 columns wide drag both runs' `=` out to column 74; flipping
+    // `allow_far_alignment` on top of that returns the file byte-identical, on locals and on fields
+    // alike. It stays Tier D on a stronger measurement than the one it had: the run is there, it is
+    // as far as anything in a 120-column file can be, and the key still moves nothing. ⚠ Note also
+    // that `resharper_int_align = true` alone produces *no* alignment from the oracle — the run above
+    // needed the two specific keys — which is a fact about the generalized spelling and not about
+    // this one.
+    //
+    // ⚠ And a lead the int_align family does not supply. `allow_far_alignment` is filed with
+    // int_align because of where it sits in the settings page, and the one shape on which anything
+    // has been seen to depend on it is not an int_align run at all: at a 50-column margin, with
+    // `align_multiline_calls_chain = true`, the oracle aligns a chain under a short receiver and
+    // *abandons* the alignment under a long one, returning the plain continuation layout. That is
+    // exactly "align even if the resulting indentation is too large" declining, and it is where a
+    // future measurement of this key should start rather than on another int_align run.
     public static readonly OptionId DisableIntAlign = OfInert("resharper_disable_int_align");
     public static readonly OptionId IntAlignFixInAdjacent = OfInert("resharper_csharp_int_align_fix_in_adjacent");
     public static readonly OptionId AllowFarAlignment = OfInert("resharper_csharp_allow_far_alignment");
+
+    // ── The formatter's own off switches ─────────────────────────────────────────────────────
+    //
+    // ⚠ Nine keys of a shape nothing else in this registry has: each *suppresses* a class of edit
+    // instead of choosing between two renderings. That makes the family unusually testable — a
+    // suppressed class must come back byte-identical to the input in that respect — and it makes the
+    // one-key-at-a-time sweep unusually bad at it, because a switch over a family the export already
+    // has switched off is inert until a second key moves. `disable_int_align` above is exactly that
+    // and is why the rest were measured with the second key supplied rather than alone.
+    //
+    // Measured on `jb cleanupcode` under `OracleProfile.FormatOnly` with the repository's own
+    // .editorconfig, one key flipped, against a file wrong in spacing, indentation, blank lines and
+    // wrapping at once. Six of the nine are decisive there; two are not decisive at any pairing
+    // tried. What each one does is recorded at its property or in docs/divergences.md, never here
+    // twice.
+    //
+    //   disable_formatter          the file comes back byte for byte. Implemented.
+    //   disable_blank_line_changes every blank run survives. Implemented.
+    //   disable_int_align          masked by the export; decisive one key away.
+    //   disable_indenter           SK-DIV-0061, read by the oracle, not read here.
+    //   disable_space_changes      SK-DIV-0062,   "        "        "        "
+    //   disable_line_break_changes SK-DIV-0063,   "        "        "        "
+    //   disable_line_break_removal SK-DIV-0064,   "        "        "        "
+    //
+    // The three that are not divergences at all — the two implemented and `disable_int_align` — plus
+    // the two unreachable ones are recorded together in SK-DIV-0060, which carries the method.
+    //
+    // ⚠ Four of them are deliberately *not* registered below. `Of` and `OfInert` both assert
+    // something about this formatter — "honoured" and "read, and unable to move anything" — and
+    // neither is true of a key nothing consults. Registering them to hold the measurement would put
+    // four unimplemented keys inside a claim, which is the failure OfInert's own remark warns about.
+    // The measurement lives in the divergence register, where an unimplemented behaviour belongs.
+    //
+    // ⚠ Two of the nine are not reachable at all and are recorded as such rather than as "not done
+    // yet": `disable_space_changes_before_trailing_comment` and `ignore_space_preservation`, both
+    // under SK-DIV-0060.
+    public static readonly OptionId DisableFormatter = Of("resharper_disable_formatter");
+    public static readonly OptionId DisableBlankLineChanges = Of("resharper_disable_blank_line_changes");
 
     // ⚠ Read and Tier D on the measurement: the C# formatter does not consult the unprefixed
     // spellings at all. Asked directly with each set to true on a file that exercises it, the oracle
@@ -1591,6 +1783,22 @@ public static class Ids {
     public static readonly OptionId IndentPreprocessorOther = Of("resharper_csharp_indent_preprocessor_other");
     public static readonly OptionId IndentPreprocessorRegion = Of("resharper_csharp_indent_preprocessor_region");
 
+    // ⚠ Read and Tier D, and the reason is measured rather than "no probe found a shape". The shape
+    // exists and is narrow: it is the *lambda* whose braced body ReSharper keeps on the call's line,
+    // and it aligns that body from the lambda's own parameter column instead of from the call's
+    // continuation indent.
+    //
+    //     Register(value => {                 Register(value => {
+    //             Console.WriteLine(v);                        Console.WriteLine(v);   ← 21, not 16
+    //         }                                            }                           ← 17, not 12
+    //     );                                  );
+    //
+    // ⚠ `delegate(int value) { … }` does *not* move at either value — both the one passed alone and
+    // the one passed after another argument come back byte-identical — although the key is named for
+    // the anonymous method and not for the lambda. Left unimplemented: the column is the lambda's own
+    // and the level inside it is a block, so it is an Align scope wrapping a Block one, which is a
+    // shape AlignsFromOwnColumn has no case for and which interacts with
+    // place_single_method_argument_lambda_on_same_line — the key that puts the lambda there at all.
     public static readonly OptionId IndentAnonymousMethodBlock =
         OfInert("resharper_csharp_indent_anonymous_method_block");
 
@@ -1622,15 +1830,64 @@ public static class Ids {
     // own line the level of its opener's line and Skala leaves it on the ambient continuation, which
     // needs a zero-level scope kind the IR does not have. The other three values agree.
     public static readonly OptionId IndentTypeargAngles = Of("resharper_csharp_indent_typearg_angles");
+
     // ⚠ Its *closer* half is out of reach under this export: the shape is a `>` on a line of its
     // own, and SK-DIV-0042 is that Skala rejoins the author's break before one where the oracle
     // keeps it. Its *contents* half is not — a type parameter list wide enough to wrap puts its
     // continuation at a level the four values move.
     public static readonly OptionId IndentTypeparamAngles = Of("resharper_csharp_indent_typeparam_angles");
+
     // ⚠ SK-DIV-0041's shape at one value too, for the same reason as IndentTypeargAngles: `none`
     // puts a stray `]` on the ambient continuation where the oracle puts it at its opener's line
     // level. The other three values agree.
     public static readonly OptionId IndentPars = Of("resharper_csharp_indent_pars");
+
+    // ⚠ The outdent family, and the sentence that kept it at Tier D for six milestones is retired.
+    // docs/plan/05 § "Indentation" recorded these as "observable and **not** implemented … Each moves
+    // the wrapped operator left by its own width plus one, which is a column offset, and
+    // `Indent(Outdent)` is one level. They need a scope kind the IR does not have." Both halves were
+    // right; the conclusion was that the scope kind could not be added, and it could.
+    // IndentKind.OutdentColumns is that scope kind, and the arithmetic behind it is one rule for all
+    // three: the line moves left by the width of the operator that starts it plus the space written
+    // after it, which leaves the *operand* on the column it would have had unmoved. The space is
+    // asked of SpaceRules rather than assumed, so `space_after_dot = true` moves the dots by two.
+    //
+    // ⚠ Re-measured against `jb cleanupcode` 2025.2.6 at a 70-column margin, one key at a time, on a
+    // file that wraps the construct each names:
+    //
+    //     outdent_binary_ops          `+`   12 → 10     `&&`  12 → 9
+    //     outdent_binary_pattern_ops  `and` 12 →  8
+    //     outdent_dots                `.`   12 → 11
+    //
+    // ⚠ `outdent_binary_pattern_ops` was registered "unverified: no input found that both wraps a
+    // binary pattern chain under this export and shows the outdent". It is verified, and what the
+    // earlier probes were missing is the same thing the tuple probes were missing — a chain long
+    // enough to wrap. `value is > 100 and < 20000 and not 5000 …` at 60 columns wraps and moves.
+    public static readonly OptionId OutdentBinaryOps = Of("resharper_csharp_outdent_binary_ops");
+
+    public static readonly OptionId OutdentBinaryPatternOps =
+        Of("resharper_csharp_outdent_binary_pattern_ops");
+
+    public static readonly OptionId OutdentDots = Of("resharper_csharp_outdent_dots");
+
+    // ⚠ `outdent_commas` is the fourth member and is deliberately *not* declared here, because the
+    // mechanism above is built and this key still cannot use it. Two facts, both measured:
+    //   1. It is masked. `wrap_before_comma = false` in the export puts the comma at the end of the
+    //      line, and a trailing comma is not something a line can be outdented by. With
+    //      `wrap_before_comma = true` as well the oracle moves the leading comma from column 8 to 6
+    //      — the same width-plus-one — so the per-option unit cannot reach it either way.
+    //   2. Its shape is not a scope's. The outdent applies to the second and later items and not to
+    //      the first, which sits on the delimiter's own break point:
+    //
+    //          public void Target(
+    //              int firstParameterName        ← column 8, not outdented
+    //            , int secondParameterName       ← column 6
+    //
+    //      IndentKind.OutdentColumns exempts the line the scope *opened* on, and the scope would have
+    //      to open after the first item rather than around the list to exempt that one. That is a
+    //      point-level outdent rather than a scope-level one, and the three keys above do not need it
+    //      because a chain's first operand really is on the scope's opening line. Recorded so that
+    //      the next attempt starts from the shape rather than from the name.
 
     public static readonly OptionId KeepBlankLinesInCode = Of("resharper_csharp_keep_blank_lines_in_code");
 
@@ -1683,10 +1940,27 @@ public static class Ids {
     public static readonly OptionId BlankLinesAroundNamespace = Of("resharper_csharp_blank_lines_around_namespace");
     public static readonly OptionId BlankLinesAroundRegion = Of("resharper_csharp_blank_lines_around_region");
     public static readonly OptionId BlankLinesInsideRegion = Of("resharper_csharp_blank_lines_inside_region");
-    public static readonly OptionId BlankLinesInsideType = OfInert("resharper_csharp_blank_lines_inside_type");
+    // ⚠ No longer inert, and the reason they were is the reason to record. Both were `OfInert` on
+    // "the removal rules win over blank_lines_inside_type outright" — which was true of Skala and
+    // not of the oracle. Asked at `jb cleanupcode` 2025.2.6 under this repository's own
+    // .editorconfig, which sets `remove_blank_lines_near_braces_in_declarations = true`, the tool
+    // still pads the braces:
+    //
+    //     class C {                blank_lines_inside_type = 3      class C {
+    //         int a;                       ────────────►                (three blank lines)
+    //     }                                                                int a;
+    //                                                                  (three blank lines)
+    //                                                                 }
+    //
+    // and at `5` it pads five, so `keep_blank_lines_in_declarations = 2` does not bind either. The
+    // requirement outranks both, and `CSharpDocumentBuilder.InsideDeclarationBraces` is where that
+    // ordering lives. The export sets both keys to `0`, so honouring them costs nothing here — an
+    // unimplemented key whose configured value coincides with the behaviour is exactly the shape
+    // docs/plan/12 § "The key-flip sweep" exists to find.
+    public static readonly OptionId BlankLinesInsideType = Of("resharper_csharp_blank_lines_inside_type");
 
     public static readonly OptionId BlankLinesInsideNamespace =
-        OfInert("resharper_csharp_blank_lines_inside_namespace");
+        Of("resharper_csharp_blank_lines_inside_namespace");
 
     public static readonly OptionId BlankLinesAfterUsingList = Of("resharper_csharp_blank_lines_after_using_list");
 
@@ -1733,6 +2007,23 @@ public static class Ids {
     // keep_user_linebreaks = true, setting keep_user_wrapping to false changes nothing on any shape
     // tried — broken argument lists, ternaries, binary chains and call chains all keep their breaks.
     // keep_user_linebreaks is the key that governs. See the M2 report.
+    //
+    // ⚠ T6 re-asked it as the four-way table docs/plan/05 § keep_existing_* documents, rather than
+    // as one flip, because "it is inert" and "it is inert at the export's other key's value" are
+    // different claims and M2 only measured the second. One file holding an author-broken query, an
+    // author-broken argument list, an author-broken binary chain and an author-broken short call,
+    // asked at every corner:
+    //
+    //   keep_user_linebreaks = true,  keep_user_wrapping = false   ── identical to the export
+    //   keep_user_linebreaks = false, keep_user_wrapping = true    ── every break re-joined
+    //   keep_user_linebreaks = false, keep_user_wrapping = false   ── byte-identical to the row above
+    //   keep_user_wrapping = false at a 60-column margin           ── identical to the margin alone
+    //   keep_user_wrapping = false with wrap_lines = false         ── identical to wrap_lines alone
+    //
+    // The second and third rows are the table's whole content: keep_user_linebreaks decides, and
+    // keep_user_wrapping does not appear in the answer at either of its values, at either margin, or
+    // at the unbounded one. constructs/wrapping/lambda-arrow.cs pins the negative with ten other
+    // keys beside it.
     public static readonly OptionId KeepUserWrapping = OfInert("resharper_keep_user_wrapping");
 
     public static readonly OptionId KeepExistingInvocationParensArrangement =
@@ -1844,18 +2135,64 @@ public static class Ids {
     // (wrap_array_initializer_style), wrap_ctor_initializer_style, wrap_enumeration_style
     // (wrap_enum_declaration), wrap_before_colon, wrap_comments.
     //
-    // ⚠ The four lambda keys belong here too, and the measurement is the interesting one: with
-    // wrap_{before,after}_lambda_and_anonymous_function_declaration_{lpar,rpar} and
-    // wrap_lambda_and_anonymous_function_parameters_style at any value, the oracle's layout of a
+    // ⚠ Two of those were re-asked in T6 with their C# key in the same batch, because the comment
+    // near line 1279 saying the unprefixed forms belong to the C++/VB formatters has been refuted
+    // twice this year and an inherited claim is not a measurement:
+    //   wrap_arguments = chop_always            ── no change; csharp_wrap_arguments_style =
+    //                                              chop_always in the same run chops every argument
+    //                                              list in the file, the ctor initializer included.
+    //   wrap_before_colon = true                ── no change, in either spelling;
+    //                                              wrap_before_extends_colon = true in the same run
+    //                                              moves the base list's `:` onto its own line.
+    // So for these two the claim holds and now has its control.
+    //
+    // ⚠ The five lambda keys belong here too, and the measurement is the interesting one: with
+    // wrap_{before,after}_lambda_and_anonymous_function_declaration_{lpar,rpar},
+    // wrap_lambda_and_anonymous_function_parameters_style and
+    // max_lambda_and_anonymous_function_parameters_on_line at any value, the oracle's layout of a
     // lambda's parameter list does not move — and it *does* move when
     // wrap_before_declaration_lpar changes. A lambda's parameter list is governed by the method
     // declaration keys; the five keys named for it are not read.
     //
-    // Master switches with nothing behind them: enable_wrapping = true changes nothing, and
+    // ⚠ T6 re-asked all five with the controls beside them rather than inheriting the note above,
+    // because the family they are named after — lpar / rpar / style / max_on_line — *is* implemented
+    // for declarations and invocations, and "the fifth call into existing machinery" was the
+    // expected answer. It is not: on a file holding a parenthesized lambda and a `delegate(…)`,
+    // asked at 120 columns and again at 60, each of the five at its other value returns output
+    // byte-identical to the margin's own, while in the same batch
+    // csharp_max_formal_parameters_on_line = 1 and csharp_wrap_parameters_style = chop_always both
+    // chop the lambda's parameter list and wrap_before_declaration_lpar moves the `delegate`
+    // keyword's parenthesis. Ten runs, five keys, two margins, four controls.
+    //
+    // Master switches with nothing behind them: enable_wrapping changes nothing, and
     // keep_user_wrapping has no observable effect in this export (BreakPlan records the same, from
     // M2). ⚠ csharp_wrap_lines was in this list and is not any more — it is implemented above, as
     // the margin itself. The measurement that put it here was taken on already-wrapped input, where
     // what stays put stays put under keep_user_linebreaks; on flat input it joins the file.
+    //
+    // ⚠ enable_wrapping is worth its own line, because the obvious reading of a key called that is
+    // "wrapping is off" and the export sets it to **false** while wrapping visibly happens. T6 asked
+    // whether it is a narrower gate instead, on a file that genuinely wraps — a chopped argument
+    // list, a wrapped call chain, a chopped base list, a wrapped constraint list — at 120 columns,
+    // at 60, and with wrap_lines = false. Its two values are byte-identical at all three. It is not
+    // csharp_wrap_lines under another name, it is not a gate on any subset measured, and unlike
+    // wrap_lines it is not the margin either: the distinction wrap_lines cost real work to establish
+    // does not transfer, because this key has no effect to have a reading of.
+    //
+    // ⚠ indent_wrapped_function_names and prefer_line_break_after_multiline_lparen are the two of
+    // this group that were hunted rather than sampled, since each names a shape a probe can miss.
+    //   indent_wrapped_function_names — a wrapped call chain, a wrapped qualified name, and a
+    //     declaration whose return type and name split across lines; then the same three under
+    //     wrap_after_dot_in_method_calls, align_multiline_calls_chain, outdent_dots and
+    //     continuous_line_indent = double. Every pairing returns exactly what the control alone
+    //     returns, so the key contributes nothing to any of them. ⚠ The unprefixed-spelling excuse
+    //     was not inherited: resharper_csharp_indent_wrapped_function_names was asked too, and is
+    //     equally inert.
+    //   prefer_line_break_after_multiline_lparen — a call whose argument is a two-statement lambda,
+    //     one whose argument is a wide object initializer, and a nested call, at 120 and at 80, with
+    //     and without place_single_method_argument_lambda_on_same_line and with
+    //     wrap_arguments_style = chop_always. Inert at every one; the C#-prefixed spelling too.
+    // Both are recorded as "reached and not read" rather than "not reached".
     //
     // ⚠ wrap_multiple_type_parameter_constraints_style and
     // wrap_before_first_type_parameter_constraint were both on this list — the first as "reached and
@@ -2272,8 +2609,11 @@ public static class Ids {
     /// <summary>
     ///     ⚠ An option phase 1 reads but whose value it cannot yet make a difference to. No fitting
     ///     pass means <c>max_line_length</c> changes nothing; no tabs in the output means
-    ///     <c>tab_width</c> changes nothing; the removal rules win over <c>blank_lines_inside_type</c>
-    ///     outright; <c>end_of_line</c> is inert while <c>enforce_line_ending_style</c> is false;
+    ///     <c>tab_width</c> changes nothing — measured, and not merely because Skala emits spaces:
+    ///     asked of <c>jb cleanupcode</c> on a tab-indented fixture with <c>indent_style = tab</c>,
+    ///     <c>tab_width = 2</c> and <c>tab_width = 8</c> returned the same bytes, because a tab width is
+    ///     a display width and one indent level is one tab either way;
+    ///     <c>end_of_line</c> is inert while <c>enforce_line_ending_style</c> is false;
     ///     <c>remove_spaces_on_blank_lines</c> is inert because a blank line is a break followed by a
     ///     break and the writer never puts anything between them (the one place trailing whitespace
     ///     survives is inside a comment's own text, which is never a blank line); and

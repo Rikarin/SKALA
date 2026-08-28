@@ -21,7 +21,6 @@ namespace Rikarin.Skala.Conformance.Tests;
 ///     </para>
 /// </remarks>
 public sealed class OpenDefectTests {
-
     [Fact]
     public void TheRegister_AccountsForEveryFileAndEveryFileForAnEntry() {
         var registered = OpenDefects.Register.Select(static entry => entry.File).Order(StringComparer.Ordinal);

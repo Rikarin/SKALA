@@ -135,8 +135,11 @@ public sealed class KeyFlipSweep {
     ///     genuinely different question from <see cref="IsBrokenMeasurement" />. There the tool produced
     ///     nothing; here it produced the input back.
     ///     <para>
-    ///         ⚠ <b>Suppressed below a population of two, and that is the correction rather than a
-    ///         softening.</b> The sweep batches by value index, so a high-arity option runs alone in every
+    ///         ⚠
+    ///         <b>
+    ///             Suppressed below a population of two, and that is the correction rather than a
+    ///             softening.
+    ///         </b> The sweep batches by value index, so a high-arity option runs alone in every
     ///         round past the arity of every other option — <c>csharp_new_line_before_open_brace</c> has
     ///         fifteen values and rounds 5-15 hold nothing else. In a round of one, "no option moved" and
     ///         "this option's value legitimately reproduces its own fixture" are the same observation, and
@@ -202,7 +205,8 @@ public sealed class KeyFlipSweep {
         // ⚠ And loud is no longer enough: each one is also recorded, because the console it was
         // loud on belongs to whoever ran the sweep and the artefact is what everyone else reads.
         if (IsBrokenMeasurement(baseline.Count, agreeing)) {
-            broken.Add(new BrokenRound(
+            broken.Add(
+                new BrokenRound(
                     null,
                     baseline.Count,
                     baseline.Count,
@@ -253,7 +257,7 @@ public sealed class KeyFlipSweep {
                             oracle[(batch[i].Key, round)] = body;
                         }
                     }
-            }
+                }
             }
 
             // ⚠ `answered` and `moved` are separate counts because the two canaries below ask
@@ -284,7 +288,8 @@ public sealed class KeyFlipSweep {
             );
 
             if (IsBrokenMeasurement(work.Length, answered)) {
-                broken.Add(new BrokenRound(
+                broken.Add(
+                    new BrokenRound(
                         round,
                         work.Length,
                         answered,
@@ -298,7 +303,8 @@ public sealed class KeyFlipSweep {
                     + "whole round. It errored, or the configuration never reached it."
                 );
             } else if (IsUnvaryingRound(work.Length, moved)) {
-                broken.Add(new BrokenRound(
+                broken.Add(
+                    new BrokenRound(
                         round,
                         work.Length,
                         answered,
@@ -375,7 +381,7 @@ public sealed class KeyFlipSweep {
                     agreement[path] = produced[i] is { } oracle
                         && string.Equals(TextNormalisation.Normalise(oracle), skala, StringComparison.Ordinal);
                 }
-        }
+            }
         }
 
         return agreement;

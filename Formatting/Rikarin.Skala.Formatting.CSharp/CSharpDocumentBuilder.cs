@@ -159,6 +159,10 @@ public sealed partial class CSharpDocumentBuilder {
             //     public void ManyParams<TFirstParameterName, TSecondParameterName,
             //                            TThirdParameterName>(int a) { }
             TypeParameterListSyntax { Parameters: [{ } parameter, ..] } => parameter.SpanStart,
+
+            // ⚠ The first declarator, past the type. A VariableDeclarationSyntax starts at its type
+            // and the oracle aligns the second declarator under the first one's name.
+            VariableDeclarationSyntax { Variables: [{ } declarator, ..] } => declarator.SpanStart,
             _ => node.SpanStart
         };
 
@@ -196,6 +200,23 @@ public sealed partial class CSharpDocumentBuilder {
                 _options.AlignMultilineBinaryExpressionsChain && BreakPlan.IsChainRootOperator(node),
             BinaryPatternSyntax => _options.AlignMultilineBinaryPatterns && BreakPlan.IsChainRootOperator(node),
             BaseListSyntax { Types.Count: > 0 } => _options.AlignMultilineExtendsList,
+
+            // ⚠ `align_multiline_calls_chain` is deliberately absent, and the reason is a *layout*
+            // dependency rather than a missing scope. Its anchor is the column the chain's first `.`
+            // lands on, which is not a position in the source: at 120 columns
+            // `wrap_before_first_method_call = false` keeps `.Where(…)` on the head line and the rest
+            // align under that dot, 26 columns past the receiver's start; at 70 the first call no
+            // longer fits, the layout breaks before that dot too, and the anchor becomes the
+            // receiver's own column. AlignAnchor is a source position resolved before the fitter
+            // runs, so it can produce one of those two answers and never the other. Measured on both
+            // margins, and the first reading of it — "the anchor is the chain's own first token" —
+            // was a 70-column measurement mistaken for the rule. See PhaseOneOptions.
+            //
+            // ⚠ A local declaration's declarators, and not a field's. The oracle moves
+            // `System.Int32 a = 1,\n             b = 2` to the first declarator's column and leaves
+            // the identical field declaration on its continuation indent, at both values.
+            VariableDeclarationSyntax { Variables.Count: > 1, Parent: not FieldDeclarationSyntax } =>
+                _options.AlignMultipleDeclaration,
 
             // ⚠ Only where the list wraps at its own parameters. Under
             // `wrap_before_type_parameter_langle` the break is the gap before the `<` and the list
@@ -269,8 +290,23 @@ public sealed partial class CSharpDocumentBuilder {
             EmitLeadingGap(node);
         }
 
+        // ⚠ Innermost of everything this node opens, and that is load-bearing rather than tidy.
+        // LayoutWriter.Level walks the stack innermost-first and returns at the first block, and an
+        // Align scope is a block — so an outdent opened *outside* one would never be reached. Inside
+        // it, the two compose, which is what the oracle does: with `align_multiline_expression` and
+        // `outdent_binary_ops` both on, the operands take the expression's own column and the
+        // operators sit two to the left of it.
+        var outdent = OutdentColumnsFor(node);
+        if (outdent > 0) {
+            OpenIndent(IndentKind.OutdentColumns, columns: outdent);
+        }
+
         VisitInner(node);
         EmitUpTo(node.Span.End);
+
+        if (outdent > 0) {
+            CloseIndent(IndentKind.OutdentColumns);
+        }
 
         for (var i = planned.Count - 1; i >= 0; i--) {
             for (var level = 0; level < indented[i]; level++) {
@@ -278,6 +314,81 @@ public sealed partial class CSharpDocumentBuilder {
             }
 
             _doc.Close();
+        }
+    }
+
+    /// <summary>
+    ///     How many columns left the <c>outdent_*</c> family moves every wrapped line of this
+    ///     construct, or zero.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ One arithmetic for three keys: the width of the operator that starts a wrapped line, plus
+    ///     the space written after it. That is the offset which leaves the <em>operand</em> on the
+    ///     column it would have taken unmoved, and it is what the oracle writes at a 70-column margin
+    ///     with one key flipped at a time — <c>+</c> 12 → 10, <c>&amp;&amp;</c> 12 → 9, <c>and</c>
+    ///     12 → 8, <c>.</c> 12 → 11.
+    ///     <para>
+    ///         ⚠ The space is asked of <see cref="SpaceRules" /> rather than assumed. It is the whole of why
+    ///         the dot moves by one and the operators by their width plus one:
+    ///         <c>space_after_dot = false</c> in this export, and a configuration that sets it true moves
+    ///         the dots by two. Hard-coding "width plus one" would be right three times out of four and
+    ///         silently wrong on the fourth.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ Guarded on the key that decides which side of the operator the break lands on.
+    ///         <c>wrap_before_binary_opsign = false</c> leaves the operator at the end of the previous line
+    ///         and there is then nothing at the head of a line to outdent; the oracle agrees, and returns
+    ///         such a file byte-identical at both values.
+    ///     </para>
+    /// </remarks>
+    int OutdentColumnsFor(SyntaxNode node) {
+        var op = OutdentToken(node);
+        if (op.IsKind(SyntaxKind.None)) {
+            return 0;
+        }
+
+        return op.Text.Length
+            + (SpaceRules.Decide(op, op.GetNextToken(), _options) == SpaceKind.Required ? 1 : 0);
+    }
+
+    /// <summary>The operator a wrapped line of this construct starts with, or <c>default</c>.</summary>
+    /// <remarks>
+    ///     ⚠ One token for the whole scope, and the assumption that makes that sound is that a chain's
+    ///     links are the same width. C# has no two same-precedence binary operators of different widths
+    ///     — a relational chain does not type-check, and <c>and</c>/<c>or</c> are different precedences
+    ///     and so are different chains — so a chain-wide amount is a chain-wide fact. The exception the
+    ///     grammar does allow is a mixed <c>a?.B().C()</c>, whose first dot is two columns and whose
+    ///     rest are one; the chain root's own dot is what is taken, which is the outermost link.
+    /// </remarks>
+    SyntaxToken OutdentToken(SyntaxNode node) {
+        switch (node) {
+            case BinaryExpressionSyntax binary
+                when _options.OutdentBinaryOps
+                    && _options.WrapBeforeBinaryOpsign
+                    && BreakPlan.IsChainRootOperator(binary):
+                return binary.OperatorToken;
+
+            case BinaryPatternSyntax pattern
+                when _options.OutdentBinaryPatternOps
+                    && _options.WrapBeforeBinaryPatternOp
+                    && BreakPlan.IsChainRootOperator(pattern):
+                return pattern.OperatorToken;
+
+            case InvocationExpressionSyntax or ConditionalAccessExpressionSyntax
+                when _options.OutdentDots
+                    && !_options.WrapAfterDotInMethodCalls
+                    && BreakPlan.IsChainRoot(node):
+                return node switch {
+                    InvocationExpressionSyntax { Expression: MemberAccessExpressionSyntax access } =>
+                        access.OperatorToken,
+                    InvocationExpressionSyntax { Expression: MemberBindingExpressionSyntax binding } =>
+                        binding.OperatorToken,
+                    ConditionalAccessExpressionSyntax conditional => conditional.OperatorToken,
+                    _ => default
+                };
+
+            default:
+                return default;
         }
     }
 
@@ -968,7 +1079,8 @@ public sealed partial class CSharpDocumentBuilder {
         // column and its contents start there, so the delimiter's level would put them one indent
         // past the column the oracle writes. The one delimited construct that aligns is a type
         // parameter list under `align_multiline_type_parameter_list`.
-        var suppress = layout == NodeLayout.Parens && !_options.UseContinuousIndentInsideParens
+        var suppress = layout == NodeLayout.Parens
+            && !_options.UseContinuousIndentInsideParens
             || AlignsFromOwnColumn(node);
 
         // ⚠ `align_tuple_components = true`: the column *after* the tuple's `(`, which is a
@@ -1387,9 +1499,13 @@ public sealed partial class CSharpDocumentBuilder {
 
     // ── Indent scopes ────────────────────────────────────────────────────────────────────────
 
-    void OpenIndent(IndentKind kind, bool unconditional = false) {
-        _doc.OpenIndent(kind, unconditional);
-        if (kind == IndentKind.Outdent) {
+    void OpenIndent(IndentKind kind, bool unconditional = false, int columns = 0) {
+        _doc.OpenIndent(kind, unconditional, columns);
+
+        // ⚠ Neither an outdent kind is a continuation and neither is a block, so neither touches the
+        // frame machinery. `OutdentColumns` shifts a column and spends no level at all, which is the
+        // whole of what distinguishes it from the continuation scopes below.
+        if (kind is IndentKind.Outdent or IndentKind.OutdentColumns) {
             return;
         }
 
@@ -1411,7 +1527,7 @@ public sealed partial class CSharpDocumentBuilder {
     ///     The next piece is this scope's own closing delimiter and takes its opener's line level.
     /// </param>
     void CloseIndent(IndentKind kind, bool alignsCloser = false) {
-        if (kind == IndentKind.Outdent) {
+        if (kind is IndentKind.Outdent or IndentKind.OutdentColumns) {
             _doc.Close(alignsCloser);
             return;
         }
@@ -1703,29 +1819,32 @@ public sealed partial class CSharpDocumentBuilder {
     }
 
     /// <summary>
-    /// Whether a comment <em>is</em> the tag, rather than mentioning it.
+    ///     Whether a comment <em>is</em> the tag, rather than mentioning it.
     /// </summary>
     /// <remarks>
-    /// ⚠ SK-DIV-0017, and the one place Skala reads the escape hatch more narrowly than the oracle
-    /// does. `resharper_formatter_tags_accept_regexp = false` makes the match literal, and the
-    /// oracle takes "literal" to mean a plain substring test over the comment's whole text: measured,
-    /// `// we support @formatter:off here` turns formatting off to the end of the file in
-    /// <c>jb cleanupcode</c> 2025.2.6 exactly as a bare tag does, and so did Skala.
-    /// <para>
-    /// That is a footgun rather than a feature, and it fired inside this repository: four of Skala's
-    /// own source files have a comment discussing the directive, and the half of each file below that
-    /// comment was silently not being formatted. Nothing reported it. The fuzzer found it the same
-    /// way — <c>./build.sh Lint</c> refused to format its source — and a file that documents a
-    /// directive should not be governed by it.
-    /// </para>
-    /// <para>
-    /// So the rule is: <b>the tag must be the first thing in the comment</b>, after the marker and
-    /// any whitespace. <c>// @formatter:off</c> and <c>// @formatter:off — the table below is
-    /// hand-aligned</c> are the tag; <c>// we support @formatter:off here</c> and
-    /// <c>// ⚠ `@formatter:off`. The finding still stands</c> are prose. Deliberately not an
-    /// equality test: a reason written after the tag is the commonest way anyone writes one, and
-    /// refusing it would trade this footgun for a worse one.
-    /// </para>
+    ///     ⚠ SK-DIV-0017, and the one place Skala reads the escape hatch more narrowly than the oracle
+    ///     does. `resharper_formatter_tags_accept_regexp = false` makes the match literal, and the
+    ///     oracle takes "literal" to mean a plain substring test over the comment's whole text: measured,
+    ///     `// we support @formatter:off here` turns formatting off to the end of the file in
+    ///     <c>jb cleanupcode</c> 2025.2.6 exactly as a bare tag does, and so did Skala.
+    ///     <para>
+    ///         That is a footgun rather than a feature, and it fired inside this repository: four of Skala's
+    ///         own source files have a comment discussing the directive, and the half of each file below that
+    ///         comment was silently not being formatted. Nothing reported it. The fuzzer found it the same
+    ///         way — <c>./build.sh Lint</c> refused to format its source — and a file that documents a
+    ///         directive should not be governed by it.
+    ///     </para>
+    ///     <para>
+    ///         So the rule is: <b>the tag must be the first thing in the comment</b>, after the marker and
+    ///         any whitespace. <c>// @formatter:off</c> and
+    ///         <c>
+    /// // @formatter:off — the table below is
+    /// hand-aligned
+    ///         </c> are the tag; <c>// we support @formatter:off here</c> and
+    ///         <c>// ⚠ `@formatter:off`. The finding still stands</c> are prose. Deliberately not an
+    ///         equality test: a reason written after the tag is the commonest way anyone writes one, and
+    ///         refusing it would trade this footgun for a worse one.
+    ///     </para>
     /// </remarks>
     bool ContainsTag(string text, string tag) {
         if (_options.FormatterTagsAcceptRegexp) {
