@@ -363,6 +363,9 @@ public readonly struct PhaseOneOptions {
 
         WrapChainedBinaryExpressions = (WrapStyle)options.GetRaw(Ids.WrapChainedBinaryExpressions);
         WrapChainedBinaryPatterns = (WrapStyle)options.GetRaw(Ids.WrapChainedBinaryPatterns);
+        ForceChopCompoundIfExpression = options.GetBool(Ids.ForceChopCompoundIfExpression);
+        ForceChopCompoundWhileExpression = options.GetBool(Ids.ForceChopCompoundWhileExpression);
+        ForceChopCompoundDoExpression = options.GetBool(Ids.ForceChopCompoundDoExpression);
         WrapTernaryExprStyle = (WrapStyle)options.GetRaw(Ids.WrapTernaryExprStyle);
         WrapMultipleDeclarationStyle = (WrapStyle)options.GetRaw(Ids.WrapMultipleDeclarationStyle);
         WrapExtendsListStyle = (WrapStyle)options.GetRaw(Ids.WrapExtendsListStyle);
@@ -970,6 +973,22 @@ public readonly struct PhaseOneOptions {
 
     public WrapStyle WrapChainedBinaryExpressions { get; }
     public WrapStyle WrapChainedBinaryPatterns { get; }
+
+    /// <summary>
+    ///     <c>force_chop_compound_if_expression</c>: chop a compound <c>if</c> condition at every
+    ///     operator of its root <c>&amp;&amp;</c>/<c>||</c> chain, however well it fits.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Three keys, one break point, and each governs exactly its own statement kind — measured by
+    ///     flipping one at a time: with only the <c>if</c> key on, a <c>while</c> and a <c>do</c> with
+    ///     the same condition do not move, and neither does a <c>for</c> header, a <c>return</c> or an
+    ///     assignment. See <see cref="BreakPlan.PlanForcedChopCondition" /> for what "compound" turned
+    ///     out to mean, which is narrower than the name suggests.
+    /// </remarks>
+    public bool ForceChopCompoundIfExpression { get; }
+
+    public bool ForceChopCompoundWhileExpression { get; }
+    public bool ForceChopCompoundDoExpression { get; }
     public WrapStyle WrapTernaryExprStyle { get; }
     public WrapStyle WrapMultipleDeclarationStyle { get; }
     public WrapStyle WrapExtendsListStyle { get; }
@@ -2350,6 +2369,16 @@ public static class Ids {
         Of("resharper_csharp_wrap_chained_binary_expressions");
 
     public static readonly OptionId WrapChainedBinaryPatterns = Of("resharper_csharp_wrap_chained_binary_patterns");
+
+    public static readonly OptionId ForceChopCompoundIfExpression =
+        Of("resharper_csharp_force_chop_compound_if_expression");
+
+    public static readonly OptionId ForceChopCompoundWhileExpression =
+        Of("resharper_csharp_force_chop_compound_while_expression");
+
+    public static readonly OptionId ForceChopCompoundDoExpression =
+        Of("resharper_csharp_force_chop_compound_do_expression");
+
     public static readonly OptionId WrapTernaryExprStyle = Of("resharper_csharp_wrap_ternary_expr_style");
 
     public static readonly OptionId WrapMultipleDeclarationStyle =
