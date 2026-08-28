@@ -338,6 +338,14 @@ public sealed class BreakPlan {
                 );
                 return;
 
+            case TupleExpressionSyntax tuple:
+                PlanTuple(tuple);
+                return;
+
+            case ForStatementSyntax forStatement:
+                PlanForHeader(forStatement);
+                return;
+
             case InitializerExpressionSyntax initializer:
                 PlanInitializer(initializer);
                 return;
@@ -955,6 +963,143 @@ public sealed class BreakPlan {
             ),
             spendsIndent: true,
             leadingGapInside: _options.WrapBeforeExtendsColon
+        );
+    }
+
+    /// <summary>
+    ///     A tuple's components: <c>(A: 1, B: 2,\n C: 3)</c>.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ The one delimited construct in this file with no wrap-style key of its own, and that is
+    ///     measured rather than assumed. The oracle <em>fills</em> a tuple that does not fit — the
+    ///     components run to the margin and the rest go to the next line — and
+    ///     <c>wrap_arguments_style = chop_always</c> does not change it, so the style is
+    ///     <see cref="WrapStyle.WrapIfLong" /> unconditionally rather than borrowed from the argument
+    ///     list's key:
+    ///     <code>
+    /// var tuple = (FirstComponentName: 1, SecondComponentName: 2, AThirdComponentName: 3, FourthName: 4,
+    ///     FifthComponentName: 5);
+    ///     </code>
+    ///     ⚠ Neither delimiter is a break point either: a tuple too wide even for the continuation line
+    ///     keeps <c>(</c> on the first line and <c>)</c> on the last. <c>wrap_before_comma</c> does apply
+    ///     — at <c>true</c> the oracle writes <c>…: 3\n, FourthName: 4</c> — which is why the gap is
+    ///     chosen by the same key here as everywhere else.
+    ///     <para>
+    ///         <c>align_tuple_components</c> then decides which column the continuation lands on;
+    ///         <see cref="CSharpDocumentBuilder.VisitDelimited" /> opens that scope. Until this plan existed
+    ///         there was no break for it to govern.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ A tuple <em>type</em> is not planned. Asked with one too wide for its line the oracle does
+    ///         not break it at its commas at either value of the alignment key — it breaks between an
+    ///         element's type and its name — so a plan here would pin a line the oracle does not write.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ It fills like a list pattern rather than like an array initializer, which is the
+    ///         <c>keepExisting</c> argument and is measured. The two differ on what happens to a break the
+    ///         author already wrote: the oracle re-fills an array initializer's and leaves a tuple's where
+    ///         it is, even when the whole tuple would fit on one line. It still fills the <em>tail</em> —
+    ///         a tuple broken once by hand whose remainder runs past the margin gains a second break — so
+    ///         "kept" is per gap and not per construct, which is exactly what
+    ///         <c>pinsItemBreaks</c> expresses. There is no <c>keep_existing_*</c> key for a tuple to read
+    ///         it off; the argument is the oracle's answer written down.
+    ///     </para>
+    /// </remarks>
+    void PlanTuple(TupleExpressionSyntax node) =>
+        PlanList(
+            node,
+            node.OpenParenToken,
+            node.CloseParenToken,
+            node.Arguments,
+            node.Arguments.GetSeparators(),
+            true,
+            WrapStyle.WrapIfLong,
+            wrapAfterOpen: false,
+            wrapBeforeClose: false
+        );
+
+    /// <summary>
+    ///     <c>wrap_for_stmt_header_style = chop_if_long</c>: a <c>for</c> header that does not fit puts
+    ///     the initializer, the condition and the incrementor each on a line of its own.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ The break is after the <c>;</c> and there is no key that moves it to the other side — the
+    ///     <c>wrap_before_comma</c> family has no member for a semicolon. Measured at the export's
+    ///     120-column margin, one key flipped at a time:
+    ///     <code>
+    /// chop_if_long                              wrap_if_long
+    /// for (var i = 0;                           for (var i = 0; i &lt; xs.Count;
+    ///      i &lt; xs.Count;                             i += 1) {
+    ///      i += 1) {
+    ///     </code>
+    ///     <para>
+    ///         ⚠ The group is an <em>inner</em> one, opened inside the header's parentheses rather than
+    ///         around the statement. A group around the statement is the whole <c>for</c>, body included,
+    ///         so its flat width is unbounded and it would break every time however short the header is.
+    ///         See <see cref="_inner" />; <see cref="CSharpDocumentBuilder.VisitEmbedded" /> opens it, just
+    ///         inside the scope <c>align_multiline_statement_conditions</c> already puts on the <c>(</c>'s
+    ///         column — which is the column the oracle writes the clauses on, at both values of
+    ///         <c>align_multiline_for_stmt</c>.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ An empty clause is not a point. <c>for (;;)</c> and <c>for (; i &lt; n; i++)</c> have a
+    ///         semicolon whose next token is another semicolon or the <c>)</c>, and a break there would be
+    ///         a line holding nothing.
+    ///     </para>
+    /// </remarks>
+    void PlanForHeader(ForStatementSyntax node) {
+        if (node.OpenParenToken.IsKind(SyntaxKind.None) || node.CloseParenToken.IsKind(SyntaxKind.None)) {
+            return;
+        }
+
+        var clauses = new List<SyntaxToken>(2);
+        if (node.Condition is { } condition) {
+            clauses.Add(FirstToken(condition));
+        }
+
+        if (node.Incrementors.Count > 0) {
+            clauses.Add(FirstToken(node.Incrementors[0]));
+        }
+
+        if (clauses.Count == 0) {
+            return;
+        }
+
+        var style = _options.WrapForStmtHeaderStyle;
+        var fill = style == WrapStyle.WrapIfLong;
+
+        // ⚠ A fill keeps the author's own breaks gap by gap; a chop takes all of them together. Both
+        // halves are the oracle's, on one header the author broke at a single `;` and that fits:
+        //   wrap_if_long   for (var i = 0;\n     i < 10; i++)    ← only the gap the author broke
+        //   chop_if_long   for (var i = 0;\n     i < 10;\n     i++)
+        // "Chop if long *or multiline*" is what the value means, and it is why a fill's preserved
+        // gaps become ordinary required breaks rather than points — the same correction PlanList's
+        // `pinsItemBreaks` makes for a list pattern.
+        var pinsClauseBreaks = fill && _options.KeepsUserBreaksBetweenItems;
+        var group = NewGroup();
+        var broken = false;
+
+        Flat(node.FirstSemicolonToken);
+        Flat(node.SecondSemicolonToken);
+        foreach (var clause in clauses) {
+            var broke = BreaksBefore(clause);
+            if (pinsClauseBreaks && broke) {
+                Mandatory(clause);
+            } else {
+                Point(clause, group, fill);
+            }
+
+            broken |= broke;
+        }
+
+        DescribeInner(
+            node,
+            group,
+            style == WrapStyle.ChopAlways ? GroupMode.Break : GroupMode.Preserve,
+            new GroupFacts(
+                SourceBroken: _options.KeepsUserBreaksBetweenItems && broken,
+                BreaksIfTooLong: true
+            )
         );
     }
 

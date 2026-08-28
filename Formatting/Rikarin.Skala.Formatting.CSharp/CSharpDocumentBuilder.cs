@@ -887,11 +887,23 @@ public sealed partial class CSharpDocumentBuilder {
         var (open, close) = ConditionParentheses(node);
         var parenOpen = false;
 
+        // ⚠ A group opened *inside* the parentheses, at the column the header's clauses land on. The
+        // one construct that asks for it is a `for` header under `wrap_for_stmt_header_style`, and it
+        // has to be an inner group for the reason BreakPlan.PlanForHeader records: a group around the
+        // statement spans the body too, so its flat width is unbounded and it would break every time.
+        var hasHeader = _plan.TryInnerGroup(node, out var header);
+        var headerOpen = false;
+
         foreach (var child in node.ChildNodesAndTokens()) {
             if (child.IsToken) {
                 var token = child.AsToken();
                 if (parenOpen && token.SpanStart == close.SpanStart) {
                     EmitUpTo(close.SpanStart);
+                    if (headerOpen) {
+                        _doc.Close();
+                        headerOpen = false;
+                    }
+
                     CloseIndent(ConditionIndent, alignsCloser: true);
                     parenOpen = false;
                 }
@@ -901,6 +913,16 @@ public sealed partial class CSharpDocumentBuilder {
                 if (!parenOpen && !open.IsKind(SyntaxKind.None) && token.SpanStart == open.SpanStart) {
                     OpenIndent(ConditionIndent, unconditional: true);
                     parenOpen = true;
+
+                    if (hasHeader) {
+                        // ⚠ The gap after the `(` is emitted before the group opens, the same order
+                        // VisitBraced uses at the `{`: that gap belongs to whatever encloses the
+                        // header, and a group that swallows it can never be flat.
+                        EmitUpTo(open.GetNextToken().SpanStart);
+                        _doc.DescribeGroup(header.Id, header.Facts);
+                        _doc.OpenGroup(header.Mode, header.Id);
+                        headerOpen = true;
+                    }
                 }
 
                 continue;
@@ -922,6 +944,10 @@ public sealed partial class CSharpDocumentBuilder {
 
         if (parenOpen) {
             EmitUpTo(close.SpanStart);
+            if (headerOpen) {
+                _doc.Close();
+            }
+
             CloseIndent(ConditionIndent);
         }
     }

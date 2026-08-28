@@ -349,6 +349,7 @@ public readonly struct PhaseOneOptions {
         WrapTernaryExprStyle = (WrapStyle)options.GetRaw(Ids.WrapTernaryExprStyle);
         WrapMultipleDeclarationStyle = (WrapStyle)options.GetRaw(Ids.WrapMultipleDeclarationStyle);
         WrapExtendsListStyle = (WrapStyle)options.GetRaw(Ids.WrapExtendsListStyle);
+        WrapForStmtHeaderStyle = (WrapStyle)options.GetRaw(Ids.WrapForStmtHeaderStyle);
         WrapBeforeExtendsColon = options.GetBool(Ids.WrapBeforeExtendsColon);
         WrapBeforeCommaInBaseClause = options.GetBool(Ids.WrapBeforeCommaInBaseClause);
         WrapPropertyPattern = (WrapStyle)options.GetRaw(Ids.WrapPropertyPattern);
@@ -830,6 +831,23 @@ public readonly struct PhaseOneOptions {
     public WrapStyle WrapTernaryExprStyle { get; }
     public WrapStyle WrapMultipleDeclarationStyle { get; }
     public WrapStyle WrapExtendsListStyle { get; }
+
+    /// <summary>
+    ///     <c>wrap_for_stmt_header_style</c>: what happens to a <c>for</c> header that does not fit.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ The break is <em>after</em> each <c>;</c>, and the two styles differ on which of them break.
+    ///     Measured at the export's 120-column margin on one header, one key flipped:
+    ///     <code>
+    /// chop_if_long                              wrap_if_long
+    /// for (var i = 0;                           for (var i = 0; i &lt; xs.Count;
+    ///      i &lt; xs.Count;                             i += 1) {
+    ///      i += 1) {
+    ///     </code>
+    ///     So <c>chop_if_long</c> gives every clause a line and <c>wrap_if_long</c> is a fill, exactly as
+    ///     the same two values mean for a delimited list.
+    /// </remarks>
+    public WrapStyle WrapForStmtHeaderStyle { get; }
     public bool WrapBeforeExtendsColon { get; }
     public bool WrapBeforeCommaInBaseClause { get; }
     public WrapStyle WrapPropertyPattern { get; }
@@ -1252,26 +1270,25 @@ public static class Ids {
     public static readonly OptionId AlignMultilineExtendsList =
         Of("resharper_csharp_align_multiline_extends_list");
 
-    // ⚠ Implemented, measured, and Tier D — on Skala's own wrapping and not on the alignment. The
-    // oracle puts a wrapped tuple's components on the column *after* the `(`:
+    // ⚠ The anchor is the column *after* the `(`, re-measured rather than assumed, and it is a
+    // different anchor from every key AlignsFromOwnColumn answers — so VisitDelimited opens the
+    // scope for it after the `(` has been written:
     //
     //     var tuple = (FirstComponentName: a, SecondComponentName: b,
     //                  AThirdComponentName: c);
     //
-    // which is a different anchor from every key AlignsFromOwnColumn answers, and VisitDelimited
-    // opens the scope for it after the `(` has been written. What is missing is the break. Skala
-    // has no break point *between* a tuple's components at all: asked with a tuple too wide for its
-    // line it breaks after the `=` instead and leaves the components flat, and asked with one too
-    // wide even for the continuation line it leaves the line over-long. The only break Skala
-    // produces inside a tuple is one inside a single component, which is not the line this key
-    // governs, so a fixture would pin a column the oracle never writes.
+    // ⚠ Inert until milestone 3.2, and twice wrongly so. The alignment was implemented and the
+    // *break* was missing: Skala had no break point between a tuple's components at all, so a tuple
+    // too wide for its line came back broken after the `=` with the components flat, and one too
+    // wide even for the continuation line came back over-long. Before that it was filed as
+    // "unmeasured — no probe found a shape where it changes the oracle's output", which was wrong
+    // for a third reason: the probes used tuples that fit. BreakPlan.PlanTuple owns the gap at each
+    // comma now and constructs/wrapping/tuple-alignment.cs pins the column.
     //
-    // ⚠ Recorded as *unmeasured* — "no probe found a shape where it changes the oracle's output" —
-    // until now. It does: the probes that missed it used tuples that fit. Tier A once a tuple wraps
-    // at its components, at which point this line becomes `Of` and the corpus file is a tuple long
-    // enough to chop.
-    public static readonly OptionId AlignTupleComponents =
-        OfInert("resharper_csharp_align_tuple_components");
+    // ⚠ TupleExpression only, measured. A tuple *type* too wide for its line is not broken at its
+    // commas by the oracle at either value of this key — it breaks between an element's type and its
+    // name, `bool AThird, double\n    FourthName` — so TupleTypeSyntax is deliberately not planned.
+    public static readonly OptionId AlignTupleComponents = Of("resharper_csharp_align_tuple_components");
 
     // ⚠ The rest of the `align_*` family, read so the crash snapshot records them, and Tier D each
     // for a reason the oracle gave rather than for a gap in the wiring. All measured one key at a
@@ -1294,6 +1311,13 @@ public static class Ids {
     //     the lpar key off as well, both change the output.
     //   align_multiline_for_stmt — align_multiline_statement_conditions = true already aligns a
     //     `for` header by its `(`. Either key alone is enough and the export has the other one on.
+    //     ⚠ Re-measured in milestone 3.2, once the header had a break point for a column to govern,
+    //     because "masked" and "unreachable because nothing wraps" are easy to confuse and only one
+    //     of them is still true. It is masked: at the export's values both `false` and `true` give
+    //     `for (var i = 0;\n     i < xs.Count;` — the `(`'s column — and with
+    //     align_multiline_statement_conditions = false as well, the two values separate, `false`
+    //     taking one continuation indent and `true` the `(`'s column. Two flips, so the per-option
+    //     unit still cannot reach it and it stays Tier D.
     //
     // Observable and not implemented, with the shape recorded so the next attempt starts from it:
     //   align_first_arg_by_paren — puts the arguments on the `(`'s column plus one and the closing
@@ -1666,11 +1690,12 @@ public static class Ids {
     // asked with the same declaration it leaves the constraints on a 200-column line rather than
     // choosing between the three styles. Tier A once the constraint list wraps.
     //
-    // ⚠ wrap_for_stmt_header_style is reached too, on a `for` whose three clauses do not fit: at
-    // `wrap_if_long` the oracle keeps the initializer and the condition together and wraps only the
-    // incrementor, against the export's `chop_if_long`, which gives each clause a line. Not
-    // implemented for the same reason — Skala has no break point at the header's `;`, and breaks
-    // inside the incrementor expression instead.
+    // ⚠ wrap_for_stmt_header_style was in this list and is not any more. The shape was right — a
+    // `for` whose three clauses do not fit, where `wrap_if_long` keeps the initializer and the
+    // condition together and the export's `chop_if_long` gives each clause a line — and so was the
+    // reason it could not be implemented: Skala had no break point at the header's `;` and broke
+    // inside the incrementor expression instead. That is a gap to fill, not a wall; see
+    // WrapForStmtHeaderStyle and BreakPlan.PlanForHeader.
     //
     // wrap_verbatim_interpolated_strings is observable — chop_if_long breaks the oracle's output
     // *inside* the interpolation holes of a verbatim string — and is not implemented: Skala emits an
@@ -1786,6 +1811,13 @@ public static class Ids {
         Of("resharper_csharp_wrap_multiple_declaration_style");
 
     public static readonly OptionId WrapExtendsListStyle = Of("resharper_csharp_wrap_extends_list_style");
+
+    // ⚠ No longer in the "reached and not implemented" list above. The reason recorded there was
+    // right — Skala had no break point at the header's `;` and broke inside the incrementor
+    // expression instead — and it was a reason to add the break rather than to stop. BreakPlan
+    // .PlanForHeader now owns the two gaps after the semicolons; the alignment column the oracle
+    // writes them on was already there, from align_multiline_statement_conditions.
+    public static readonly OptionId WrapForStmtHeaderStyle = Of("resharper_csharp_wrap_for_stmt_header_style");
     public static readonly OptionId WrapBeforeExtendsColon = Of("resharper_wrap_before_extends_colon");
     public static readonly OptionId WrapBeforeCommaInBaseClause = Of("resharper_wrap_before_comma_in_base_clause");
     public static readonly OptionId WrapPropertyPattern = Of("resharper_csharp_wrap_property_pattern");
