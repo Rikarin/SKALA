@@ -35,13 +35,62 @@ bespoke test: two corpus files that differ only in whitespace acquire two `.expe
 and those fixtures being **byte-identical** is the absorption statement, now asserted by the
 ordinary differential instead of by an entry here. SK-FUZZ-0007 was retired that way.
 
-⚠ **The queue is currently empty of tool defects.** Every entry that named a `.cs` file here has
-been retired into `pathological/` with an oracle fixture, so `OpenDefects.Files()` holds nothing but
-this register. What is left below is SK-FUZZ-0008, whose defect is in the fuzzer's own mutation
-catalogue rather than in the formatter and whose fixture therefore lives in the measured corpus — it
-carries no `file:` line and so is not one of the entries `OpenDefectTests` asserts over. That is a
-gap in this register's own accounting and is written down rather than tidied away: an entry nothing
-tests is a note, and this directory exists because a note is not enough.
+⚠ **The four entries the nightly-33148756015 harvest retired left this queue empty, and it did not
+stay empty for one run.** SK-FUZZ-0015 below was found by the very next fuzz run after those fixes
+landed, which is the argument for the nightly in one line.
+
+⚠ SK-FUZZ-0008 carries no `file:` line, so it is **not** one of the entries `OpenDefectTests`
+asserts over: its defect is in the fuzzer's own mutation catalogue rather than in the formatter and
+its fixture lives in the measured corpus. That is a gap in this register's own accounting and is
+written down rather than tidied away — an entry nothing tests is a note, and this directory exists
+because a note is not enough.
+
+## SK-FUZZ-0015 — a `///` run takes its line ending from the first newline in the *input*
+
+- file: `doc-comment-run-under-a-leading-crlf.cs`
+- property: `idempotency`
+- seed: `7489454592082333649`
+- found: mutating `real/serilog/Serilog/Events/LogEventLevel.cs` with `blank-lines`, `blank-lines`,
+  `comment-inline`, `line-endings`; minimised from 1 588 characters to 84.
+
+```
+<CR>
+// Copyright 2013-2015 Serilog Contributors
+{<CR>
+  /// <summary><CR>
+  /// </summary>
+}
+```
+
+`format(format(x)) ≠ format(x)` by one line ending, inside the `///` run:
+
+```
+pass 1:   /// <summary><CR><LF>       /// </summary><LF>
+pass 2:   /// <summary><LF>           /// </summary><LF>
+```
+
+⚠ **The cause is established rather than guessed, by three probes.** Delete the file's leading
+`<CR><LF>` and it converges; make the gap between the two `///` lines an `<LF>` and it still fails,
+so the gap's own ending is not what is read; replace `///` with `//` and it converges.
+
+`CSharpFormatter.DefaultNewLine` answers with **the first newline in the input**, and that value is
+handed to `XmlDocFormatter.Rewrite`, which uses it between the lines of a run it reflows. The first
+pass deletes the leading blank line — so the first newline of pass 2's input is a different newline,
+in a file whose endings are mixed, and the same run is re-emitted with the other one.
+
+⚠ **This is SK-FUZZ-0003's defect in a place its fix did not reach.** That entry records exactly
+this sentence about `insert_final_newline` — "`DefaultNewLine` […] answers with the first newline in
+the *input*, and the first pass can move, rewrite or delete the text above that newline, so the
+second pass asks a different question" — and fixed `FinalNewLine` to read the ending of the last
+break in the **output**. The same unstable value is still passed to the doc-comment sub-formatter
+one line below the call that was fixed.
+
+- ⚠ status: **open**, reproduced through the CLI byte for byte, minimised, and **cause established**.
+- ⚠ Not fixed here deliberately. The fix is small — derive the sub-formatter's newline from the
+  output the way `FinalNewLine` already does — and its blast radius is not: it moves a line ending
+  inside every reflowed doc comment in every CRLF file, and docs/plan/04's own note says the
+  doc-comment area is "the one area of the formatter with no differential safety net at all". It
+  wants its own measured commit rather than a rider on a fuzz-triage branch.
 
 ## SK-FUZZ-0008 — the `indent` mutation is misclassified as absorbed on a raw interpolated string
 
