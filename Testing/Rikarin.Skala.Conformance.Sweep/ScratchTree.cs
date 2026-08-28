@@ -22,6 +22,39 @@ namespace Rikarin.Skala.Conformance.Sweep;
 ///     </para>
 /// </remarks>
 public static class ScratchTree {
+    /// <summary>
+    ///     Which <c>cleanupcode</c> profile can move this fixture at all.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ <b>Measured, on master, the day the doc-comment profile landed.</b> The sweep ran one profile
+    ///     — <c>CSReformatCode</c> — and that profile switches <c>CSharpFormatDocComments</c> off, so on a
+    ///     doc-comment fixture the oracle <em>cannot</em> move whatever key is flipped. Skala formats doc
+    ///     comments by default, so it does move, and the verdict for every such option is
+    ///     <c>SPURIOUS</c>: "Skala reacts where ReSharper does not". All 13 doc-comment keys promoted to
+    ///     Tier A came back <c>SPURIOUS</c> on the first sweep after the merge, and
+    ///     <c>OptionCoverageTests</c> then demanded they be demoted.
+    ///     <para>
+    ///         ⚠ That demotion would have been the wrong fix, and the failure message asked for it. The
+    ///         options were measured correctly under the profile that can see them; the sweep was asking
+    ///         the wrong question. A verdict is only about an option when the oracle was given a profile
+    ///         that lets it answer.
+    ///     </para>
+    /// </remarks>
+    public static OracleProfile ProfileFor(CorpusFile fixture) =>
+        fixture.RelativePath.StartsWith(Corpus.XmlDocPrefix, StringComparison.Ordinal)
+            ? OracleProfile.DocComments
+            : OracleProfile.FormatOnly;
+
+    /// <summary>
+    ///     ⚠ Every fixture in one batch must want the same profile: a batch is one <c>cleanupcode</c>
+    ///     invocation and an invocation carries one profile. Callers partition by this before batching.
+    /// </summary>
+    public static IEnumerable<IGrouping<OracleProfile, T>> ByProfile<T>(
+        IEnumerable<T> items,
+        Func<T, CorpusFile> fixture
+    ) =>
+        items.GroupBy(item => ProfileFor(fixture(item)));
+
     public static string?[] Format(
         OracleRunner runner,
         IReadOnlyList<SweepCandidate> batch,
@@ -61,7 +94,27 @@ public static class ScratchTree {
             // ⚠ Raw, not normalised. The caller decides — and it must, because
             // `resharper_enforce_line_ending_style` and `resharper_csharp_insert_final_newline`
             // change nothing that survives normalisation.
-            var bodies = runner.FormatInPlace(scratch.FullName, produced, OracleProfile.FormatOnly);
+            // ⚠ One profile per invocation, chosen from the batch rather than hard-coded. Every
+            // member of a batch is asserted to want the same one, because a batch mixing profiles
+            // would silently measure half of it under the wrong question — see ProfileFor.
+            var profile = ProfileFor(batch[0]);
+            for (var i = 1; i < batch.Count; i++) {
+                if (ProfileFor(batch[i]) != profile) {
+                    throw new InvalidOperationException(
+                        "a batch mixes oracle profiles: "
+                        + batch[0]
+                        + " wants "
+                        + profile.Name
+                        + " and "
+                        + batch[i]
+                        + " wants "
+                        + ProfileFor(batch[i]).Name
+                        + ". Partition with ScratchTree.ByProfile before batching."
+                    );
+                }
+            }
+
+            var bodies = runner.FormatInPlace(scratch.FullName, produced, profile);
             var results = new string?[batch.Count];
             for (var i = 0; i < batch.Count; i++) {
                 results[i] = bodies.GetValueOrDefault(produced[i]);

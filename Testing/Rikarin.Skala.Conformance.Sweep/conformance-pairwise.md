@@ -25,23 +25,23 @@ in `docs/divergences.md`, not here.
 | ReSharper | 2025.2.6 |
 | base configuration | the repository export, sha256 `bd9791d3a6e6a087` |
 | families | all |
-| pairs swept | 58 |
-| corners | 342 |
+| pairs swept | 60 |
+| corners | 352 |
 | rounds | 9 (batched by corner index) |
 | `cleanupcode` invocations | 10 |
-| oracle wall clock | 83.5 s |
-| Skala wall clock | 0.6 s |
+| oracle wall clock | 1.5 min |
+| Skala wall clock | 0.7 s |
 
 ## Outcomes
 
 | outcome | pairs | meaning |
 |---|---:|---|
-| ✅ CONFORMANT | 15 | every corner of the grid agrees |
+| ✅ CONFORMANT | 16 | every corner of the grid agrees |
 | ⚠ INTERACTION | 0 | **every corner the single sweep reaches agrees, and an interior corner does not** |
 | ❌ DIVERGENT | 0 | a corner disagrees, and the single sweep could have seen it too |
 | ⚠ UNEXERCISED | 0 | **neither engine distinguished the corners.** Not a pass |
 | ⚠ BASELINE | 12 | ⚠ the two engines already disagreed on this fixture before either key was set, so the grid cannot report on the pair |
-| ⚠ INHERITED | 31 | ⚠ every disagreement is one the single sweep already records for one of the two keys, measured alone — not a finding about the pair |
+| ⚠ INHERITED | 32 | ⚠ every disagreement is one the single sweep already records for one of the two keys, measured alone — not a finding about the pair |
 | ⚠ NO FIXTURE | 0 | the pair names no fixture the corpus has |
 
 ## Findings
@@ -65,6 +65,7 @@ in `docs/divergences.md`, not here.
 | `resharper_csharp_wrap_before_first_method_call` × `resharper_csharp_max_line_length` | ⚠ INHERITED | 6 | 2 | `true` × `0`, `true` × `1`, `false` × `0`, `false` × `1` |
 | `resharper_csharp_wrap_before_invocation_lpar` × `resharper_csharp_max_line_length` | ⚠ INHERITED | 6 | 4 | `true` × `1`, `false` × `1` |
 | `resharper_csharp_wrap_before_invocation_rpar` × `resharper_csharp_max_line_length` | ⚠ INHERITED | 6 | 2 | `true` × `1`, `false` × `120`, `false` × `0`, `false` × `1` |
+| `resharper_csharp_wrap_before_linq_expression` × `resharper_csharp_max_line_length` | ⚠ INHERITED | 6 | 2 | `true` × `0`, `true` × `1`, `false` × `0`, `false` × `1` |
 | `resharper_csharp_wrap_before_primary_constructor_declaration_lpar` × `resharper_csharp_max_line_length` | ⚠ INHERITED | 6 | 4 | `true` × `1`, `false` × `1` |
 | `resharper_csharp_wrap_before_primary_constructor_declaration_rpar` × `resharper_csharp_max_line_length` | ⚠ INHERITED | 6 | 4 | `true` × `1`, `false` × `1` |
 | `resharper_csharp_wrap_before_ternary_opsigns` × `resharper_csharp_max_line_length` | ⚠ INHERITED | 6 | 4 | `true` × `1`, `false` × `1` |
@@ -100,6 +101,7 @@ that cross is an interaction and nothing else in the repository can see it.
 
 | primary | secondary | outcome | corners | agree | reach | oracle | skala | base | fixture |
 |---|---|---|---:|---:|---:|---:|---:|---|---|
+| `resharper_csharp_align_linq_query` | `resharper_csharp_indent_size` | ✅ CONFORMANT | 4 | 4 | 2 | 4 | 4 | = | `constructs/wrapping/linq-query-alignment.cs` |
 | `resharper_csharp_align_multiline_array_and_object_initializer` | `resharper_csharp_indent_size` | ✅ CONFORMANT | 4 | 4 | 2 | 3 | 3 | = | `constructs/wrapping/alignment.cs` |
 | `resharper_csharp_align_multiline_binary_expressions_chain` | `resharper_csharp_indent_size` | ✅ CONFORMANT | 4 | 4 | 2 | 3 | 3 | = | `constructs/wrapping/alignment.cs` |
 | `resharper_csharp_align_multiline_binary_patterns` | `resharper_csharp_indent_size` | ✅ CONFORMANT | 4 | 4 | 2 | 4 | 4 | = | `constructs/wrapping/alignment.cs` |
@@ -138,6 +140,7 @@ that cross is an interaction and nothing else in the repository can see it.
 | `resharper_csharp_wrap_before_first_method_call` | `resharper_csharp_max_line_length` | ⚠ INHERITED | 6 | 2 | 2 | 4 | 4 | = | `constructs/wrapping/chained-calls.cs` |
 | `resharper_csharp_wrap_before_invocation_lpar` | `resharper_csharp_max_line_length` | ⚠ INHERITED | 6 | 4 | 2 | 4 | 2 | = | `constructs/wrapping/paren-placement.cs` |
 | `resharper_csharp_wrap_before_invocation_rpar` | `resharper_csharp_max_line_length` | ⚠ INHERITED | 6 | 2 | 2 | 4 | 4 | = | `constructs/breaks/invocation-lpar-rpar.cs` |
+| `resharper_csharp_wrap_before_linq_expression` | `resharper_csharp_max_line_length` | ⚠ INHERITED | 6 | 2 | 2 | 5 | 3 | = | `constructs/wrapping/linq-query.cs` |
 | `resharper_csharp_wrap_before_primary_constructor_declaration_lpar` | `resharper_csharp_max_line_length` | ⚠ INHERITED | 6 | 4 | 2 | 4 | 2 | = | `constructs/wrapping/paren-placement.cs` |
 | `resharper_csharp_wrap_before_primary_constructor_declaration_rpar` | `resharper_csharp_max_line_length` | ⚠ INHERITED | 6 | 4 | 2 | 4 | 4 | = | `constructs/preservation/primary-constructor-parens.cs` |
 | `resharper_csharp_wrap_before_ternary_opsigns` | `resharper_csharp_max_line_length` | ⚠ INHERITED | 6 | 4 | 2 | 4 | 4 | = | `constructs/breaks/ternary.cs` |
@@ -163,6 +166,6 @@ that cross is an interaction and nothing else in the repository can see it.
 
 | pairs | reason |
 |---:|---|
-| 43 | no `oracle` fixture in the registry |
+| 41 | no `oracle` fixture in the registry |
 | 1 | excluded by name: keep |
 

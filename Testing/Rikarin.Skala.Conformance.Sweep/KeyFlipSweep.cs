@@ -221,32 +221,39 @@ public sealed class KeyFlipSweep {
             var work = candidates.Where(candidate => round < candidate.Values.Count).ToArray();
             var moved = 0;
 
-            for (var start = 0; start < work.Length; start += BatchSize) {
-                var batch = work.Skip(start).Take(BatchSize).ToArray();
+            // ⚠ Partitioned by oracle profile before batching. A batch is one `cleanupcode`
+            // invocation and an invocation carries one profile, so a round holding both C# and
+            // doc-comment fixtures has to become two invocations rather than one — see
+            // ScratchTree.ProfileFor for what mixing them cost.
+            foreach (var partition in ScratchTree.ByProfile(work, static candidate => candidate.Fixture)) {
+                var members = partition.ToArray();
+                for (var start = 0; start < members.Length; start += BatchSize) {
+                    var batch = members.Skip(start).Take(BatchSize).ToArray();
 
-                var skalaStart = Stopwatch.GetTimestamp();
-                foreach (var candidate in batch) {
-                    skala[(candidate.Key, round)] = FormatWithSkala(candidate, candidate.Values[round]);
-                }
-
-                skalaClock += Stopwatch.GetElapsedTime(skalaStart);
-
-                var oracleStart = Stopwatch.GetTimestamp();
-                var produced = FormatWithOracle(batch, round);
-                var elapsed = Stopwatch.GetElapsedTime(oracleStart);
-                oracleClock += elapsed;
-                invocations++;
-
-                // The batch's wall clock is one `cleanupcode` startup shared between its members,
-                // so the honest per-option figure is the share and not a stopwatch around a call
-                // that was never made on its own.
-                var share = elapsed / batch.Length;
-                for (var i = 0; i < batch.Length; i++) {
-                    cost[batch[i].Key] += share;
-                    if (produced[i] is { } body) {
-                        oracle[(batch[i].Key, round)] = body;
+                    var skalaStart = Stopwatch.GetTimestamp();
+                    foreach (var candidate in batch) {
+                        skala[(candidate.Key, round)] = FormatWithSkala(candidate, candidate.Values[round]);
                     }
-                }
+
+                    skalaClock += Stopwatch.GetElapsedTime(skalaStart);
+
+                    var oracleStart = Stopwatch.GetTimestamp();
+                    var produced = FormatWithOracle(batch, round);
+                    var elapsed = Stopwatch.GetElapsedTime(oracleStart);
+                    oracleClock += elapsed;
+                    invocations++;
+
+                    // The batch's wall clock is one `cleanupcode` startup shared between its members,
+                    // so the honest per-option figure is the share and not a stopwatch around a call
+                    // that was never made on its own.
+                    var share = elapsed / batch.Length;
+                    for (var i = 0; i < batch.Length; i++) {
+                        cost[batch[i].Key] += share;
+                        if (produced[i] is { } body) {
+                            oracle[(batch[i].Key, round)] = body;
+                        }
+                    }
+            }
             }
 
             // ⚠ `answered` and `moved` are separate counts because the two canaries below ask
@@ -346,25 +353,29 @@ public sealed class KeyFlipSweep {
             .ToArray();
         var agreement = new Dictionary<string, bool>(StringComparer.Ordinal);
 
-        for (var start = 0; start < fixtures.Length; start += BatchSize) {
-            var batch = fixtures.Skip(start).Take(BatchSize).ToArray();
-            var produced = FormatWithOracle(batch, round: null);
-            invocations++;
+        // ⚠ Partitioned by profile, exactly as the rounds are.
+        foreach (var partition in ScratchTree.ByProfile(fixtures, static candidate => candidate.Fixture)) {
+            var members = partition.ToArray();
+            for (var start = 0; start < members.Length; start += BatchSize) {
+                var batch = members.Skip(start).Take(BatchSize).ToArray();
+                var produced = FormatWithOracle(batch, round: null);
+                invocations++;
 
-            for (var i = 0; i < batch.Length; i++) {
-                var path = batch[i].Fixture.Path;
-                var skala = TextNormalisation.Normalise(
-                    CSharpFormatter.Format(path, CSharpFormatter.Read(path), OptionResolver.Resolve(path).Options)
-                        .Formatted
-                );
+                for (var i = 0; i < batch.Length; i++) {
+                    var path = batch[i].Fixture.Path;
+                    var skala = TextNormalisation.Normalise(
+                        CSharpFormatter.Format(path, CSharpFormatter.Read(path), OptionResolver.Resolve(path).Options)
+                            .Formatted
+                    );
 
-                // ⚠ Both sides normalised. `FormatWithOracle` hands back exactly what the tool
-                // wrote, because the line-ending and final-newline options need it to; normalising
-                // one side and not the other made every one of 164 fixtures disagree at the
-                // baseline, which is the shape a comparison bug takes when it looks like a finding.
-                agreement[path] = produced[i] is { } oracle
-                    && string.Equals(TextNormalisation.Normalise(oracle), skala, StringComparison.Ordinal);
-            }
+                    // ⚠ Both sides normalised. `FormatWithOracle` hands back exactly what the tool
+                    // wrote, because the line-ending and final-newline options need it to; normalising
+                    // one side and not the other made every one of 164 fixtures disagree at the
+                    // baseline, which is the shape a comparison bug takes when it looks like a finding.
+                    agreement[path] = produced[i] is { } oracle
+                        && string.Equals(TextNormalisation.Normalise(oracle), skala, StringComparison.Ordinal);
+                }
+        }
         }
 
         return agreement;
