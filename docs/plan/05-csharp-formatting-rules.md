@@ -237,10 +237,19 @@ option names:
   and `place_constructor_initializer_on_same_line` at `true` do not *join* a `where` clause or a
   `: base(…)` the author put on its own line; they only decline to force a break. Their `false` value
   is what is observable, and that is what pins them.
-- **`csharp_new_line_between_query_expression_clauses` and `place_linq_into_on_new_line` are inert.**
-  `from x in xs where p select x` on one line comes back on one line with both set to `true`. They
-  permit a break rather than requiring one, which is what `keep_user_linebreaks` already does. Tier D
-  with the reason, not Tier A.
+- ⚠ **`csharp_new_line_between_query_expression_clauses` and `place_linq_into_on_new_line` were
+  recorded here as inert, and the measurement behind it asked too little.** `from x in xs where p
+  select x` on one line does come back on one line with both set to `true` — but that query *fits*,
+  and neither key has anything to decide about a query that does not wrap. Asked with a query too
+  wide for its line, `new_line_between_query_expression_clauses` is a **chop**: at `true` a query the
+  author broke at one boundary comes back broken at *every* one, and a query too wide is chopped
+  whole; at `false` the same two inputs keep exactly the author's breaks and gain one more only where
+  the line runs out. `place_linq_into_on_new_line` decides the *continuation's* `into`
+  (`group … by … into bucket`) and goes with that chop — it does not govern a `join … into matches`,
+  which the oracle leaves on the join's line at `true` with the query chopped around it. Both are
+  Tier A, pinned by `constructs/wrapping/linq-query.cs`; so are `align_linq_query` and
+  `wrap_before_linq_expression`, which were Tier D behind the missing break point rather than behind
+  anything to do with the keys. `BreakPlan.PlanQuery` is the break point.
 
 ### `place_*` and `if_owner_is_single_line`
 
