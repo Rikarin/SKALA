@@ -253,7 +253,7 @@ public sealed partial class CSharpDocumentBuilder {
             // puts its operands on the pattern's own column and not one indent past it.
             indented[i] = aligned
                 ? 0
-                : (plan.SpendsIndent && CanSpendAContinuationLevel() ? 1 : 0) + (plan.OwnLevel ? 1 : 0);
+                : (plan.SpendsIndent && CanSpendAContinuationLevel(node) ? 1 : 0) + (plan.OwnLevel ? 1 : 0);
 
             // ⚠ Whether the level is actually spent is decided here and not in the plan, and the
             // fitter needs the answer: the ordering rule asks what column a break inside this group
@@ -290,7 +290,11 @@ public sealed partial class CSharpDocumentBuilder {
     ///     already inside another one adds nothing. <c>M(\n a\n + b)</c> takes the parenthesis's level
     ///     and not a second one.
     /// </remarks>
-    bool CanSpendAContinuationLevel() {
+    bool CanSpendAContinuationLevel(SyntaxNode? node = null) {
+        if (node is not null && IsBinaryChainElement(node)) {
+            return false;
+        }
+
         if (_continuousDepth != 0) {
             return false;
         }
@@ -304,6 +308,52 @@ public sealed partial class CSharpDocumentBuilder {
         }
 
         return true;
+    }
+
+    /// <summary>
+    ///     A binary chain that <em>is</em> a braced initializer's or a collection expression's element.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ SK-DIV-0040. A binary expression chain has no continuation level of its own — it lands on
+    ///     the one the construct around it opened, which is what <c>PlanChainWide</c>'s
+    ///     <c>spendsIndent: pattern</c> says and what <see cref="CanSpendAContinuationLevel" /> normally
+    ///     enforces through <c>_continuousDepth</c>. Inside braces that test cannot see it:
+    ///     <see cref="VisitBraced" /> opens an <see cref="IndentKind.Block" /> scope, which resets the
+    ///     depth, so a chain that <em>is</em> an element believes it is the first continuation on the
+    ///     line and takes a second one. Measured against the oracle, with the element already at 12:
+    ///     <code>
+    /// var flags = new[] {
+    ///     FirstCondition
+    ///     &amp;&amp; SecondCondition     ← 12, and Skala wrote 16
+    /// };
+    ///     </code>
+    ///     ⚠ The test is the chain's <em>root</em>, not the operator node. Refusing only the outermost
+    ///     operator hands the level to the next one down, which puts every operator but the last at 16.
+    ///     <para>
+    ///         ⚠ Elements only. A chain the element merely contains — <c>Name = a &amp;&amp; b</c>,
+    ///         <c>1 =&gt; a &amp;&amp; b</c> — does take a level, because there the element's own column is
+    ///         not where the chain begins; and a call chain or a pattern chain in the same position takes
+    ///         one too, which is why this is a test on <see cref="BinaryExpressionSyntax" /> and not on the
+    ///         position alone.
+    ///     </para>
+    /// </remarks>
+    static bool IsBinaryChainElement(SyntaxNode node) {
+        // ⚠ A collection expression's element has the same span as the expression inside it, and
+        // groups are keyed by span — so the chain's own groups are reached through both nodes and
+        // the test has to answer alike for the two. Reached through the element and answered `false`,
+        // the level is spent there and the chain never gets the chance to decline it.
+        var expression = node is ExpressionElementSyntax element ? element.Expression : node;
+        if (expression is not BinaryExpressionSyntax) {
+            return false;
+        }
+
+        var root = expression;
+        while (!BreakPlan.IsChainRootOperator(root) && root.Parent is not null) {
+            root = root.Parent;
+        }
+
+        SyntaxNode? owner = root.Parent is CollectionElementSyntax outer ? outer.Parent : root.Parent;
+        return owner is InitializerExpressionSyntax or CollectionExpressionSyntax;
     }
 
     /// <summary>Emits everything before <paramref name="node" />'s first piece, its gap included.</summary>
