@@ -880,7 +880,7 @@
       "defaultSource": "unknown",
       "tier": "D",
       "construct": "ObjectInitializer",
-      "summary": "Put each member of an object initializer on its own line.",
+      "summary": "Put each member of an object initializer on its own line. ⚠ Observable, and masked rather than inert: this export sets `place_simple_initializer_on_single_line = true`, which joins a short initializer whatever this key says. Lift that and it answers — and it answers with the polarity reversed and over two targets at once. At `false` the oracle writes `new Thing { A = 1, B = 2, C = 3 }` even under `place_simple_initializer_on_single_line = false` AND `wrap_object_and_collection_initializer_style = chop_always`, so `false` here overrides both. ⚠ Blocked on the one mechanism the registry does not have: `expands` propagates a generalized key's value TEXT into the keys it names, so it can only reach targets whose domain — and whose polarity — is its own. Three keys need the same missing piece and none of them is a coverage gap: this one, `csharp_space_between_parentheses` and `csharp_new_line_before_members_in_object_initializers`.",
       "since": "0.1",
       "oracle": null,
       "docs": "https://learn.microsoft.com/dotnet/fundamentals/code-analysis/code-style-rule-options",
@@ -990,7 +990,8 @@
       "docs": "https://learn.microsoft.com/dotnet/fundamentals/code-analysis/code-style-rule-options",
       "templateLine": 25,
       "severitySuffix": false,
-      "expands": []
+      "expands": [],
+      "inert": "The oracle returns the file unchanged at both values. `space_around_dot` is the key that governs the gap, and it is Tier A."
     },
     {
       "key": "csharp_space_after_keywords_in_control_flow_statements",
@@ -1027,7 +1028,7 @@
       "defaultSource": "unknown",
       "tier": "D",
       "construct": "BinaryExpression",
-      "summary": "Spacing around binary operators. Observed and not implemented: at `none` the oracle closes up assignment, additive, multiplicative, relational, shift, bitwise and logical operators at once. It is a generalized key whose expansion set the registry does not record, and whose domain (`before_and_after`/`none`/`ignore`) is not the bool domain of the keys it would name, so honouring it needs a value mapping as well as an `expands` list.",
+      "summary": "Spacing around binary operators. Observed and not implemented: at `none` the oracle closes up assignment, additive, multiplicative, relational, shift, bitwise and logical operators at once — `var t=q+r;`, `var v=q<r ? 1 : 0;`, `var z=p&&q>0;`. `ignore` is indistinguishable from `before_and_after` on every input tried, so only one of the three values is observable. ⚠ Blocked on the one mechanism the registry does not have: `expands` propagates a generalized key's value TEXT into the keys it names, so it can only reach targets whose domain — and whose polarity — is its own. Three keys need the same missing piece and none of them is a coverage gap: this one, `csharp_space_between_parentheses` and `csharp_new_line_before_members_in_object_initializers`.",
       "since": "0.1",
       "oracle": null,
       "docs": "https://learn.microsoft.com/dotnet/fundamentals/code-analysis/code-style-rule-options",
@@ -1050,7 +1051,8 @@
       "docs": "https://learn.microsoft.com/dotnet/fundamentals/code-analysis/code-style-rule-options",
       "templateLine": 31,
       "severitySuffix": false,
-      "expands": []
+      "expands": [],
+      "inert": "The oracle returns the file unchanged at both values. `space_around_dot` is the key that governs the gap, and it is Tier A."
     },
     {
       "key": "csharp_space_before_open_square_brackets",
@@ -1118,7 +1120,7 @@
       "defaultSource": "unknown",
       "tier": "D",
       "construct": "Parentheses",
-      "summary": "Spacing inside parentheses. Inert: the oracle returns the file unchanged at `control_flow_statements`, so this MS-compat spelling reaches nothing.",
+      "summary": "Spacing inside parentheses. ⚠ Recorded as inert — \"the oracle returns the file unchanged at `control_flow_statements`, so this MS-compat spelling reaches nothing\" — and that is wrong. Measured at `false` against `control_flow_statements`, the oracle writes `if ( a > 0 )`, `while ( … )`, `for ( … )`, `foreach ( … )` and `catch ( … )`, exactly as `resharper_space_between_parentheses_of_control_flow_statements` does. It is observable and unimplemented, which is a different thing from inert. ⚠ Blocked on the one mechanism the registry does not have: `expands` propagates a generalized key's value TEXT into the keys it names, so it can only reach targets whose domain — and whose polarity — is its own. Three keys need the same missing piece and none of them is a coverage gap: this one, `csharp_space_between_parentheses` and `csharp_new_line_before_members_in_object_initializers`.",
       "since": "0.1",
       "oracle": null,
       "docs": "https://learn.microsoft.com/dotnet/fundamentals/code-analysis/code-style-rule-options",
@@ -1773,7 +1775,8 @@
       "templateLine": 613,
       "expands": [],
       "min": 0,
-      "boundsBecause": "At least 0. A count of blank lines cannot be negative."
+      "boundsBecause": "At least 0. A count of blank lines cannot be negative.",
+      "inert": "The oracle returns an assembly-level attribute list unchanged at 0, 1 and 2, on three shapes: one between a `using` list and a file-scoped namespace, one between a `using` and a type, and two adjacent attribute lists. Tried with `blank_lines_after_using_list = 0` so that requirement could not already be paying for the gap, and with `keep_blank_lines_in_declarations` raised so no cap could be truncating it. Nothing distinguishes the values."
     },
     {
       "key": "resharper_configure_await_analysis_mode",
@@ -3306,7 +3309,7 @@
       "defaultSource": "template",
       "tier": "D",
       "construct": "Attributes",
-      "summary": "Attributes — Join or separate attributes in section",
+      "summary": "Attributes — Join or separate attributes in section. Observed and not implemented, and the profile is the point: it moves nothing under `CSReformatCode`, and under the cleanup profile `separate` against `join` turns `[Obsolete]` `[CLSCompliant(true)]` into `[Obsolete, CLSCompliant(true)]`. So it belongs to the arranger and not to the formatter, which means an `.arranged.expected.cs` fixture and `ArrangementOptions.Implemented` rather than `PhaseOneOptions`. ⚠ The oracle's join leaves a trailing space after the section on the first member it rewrites and not on the others; whatever that is, a fixture would pin it.",
       "since": "0.1",
       "oracle": null,
       "docs": "https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpCodeStylePageImplSchema.html#resharper_csharp_force_attribute_style",
@@ -3326,7 +3329,7 @@
       "defaultSource": "template",
       "tier": "D",
       "construct": "ArrangementOfBinaryExpressions",
-      "summary": "Arrangement of binary expressions — Force chop compound condition in 'do' statement",
+      "summary": "Arrangement of binary expressions — Force chop compound condition in 'do' statement. Observed and not implemented: at `true` the oracle chops the condition onto one operand per line, the operator leading each continuation, and it does so whether the operators are all `&&`, all `||` or mixed. Left alone deliberately — the change belongs in the binary-expression group planning that the `wrap_*` keys own, and a second agent was editing that planning in parallel.",
       "since": "0.1",
       "oracle": null,
       "docs": "https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_LineBreaksPageSchema.html#resharper_csharp_force_chop_compound_do_expression",
@@ -3346,7 +3349,7 @@
       "defaultSource": "template",
       "tier": "D",
       "construct": "ArrangementOfBinaryExpressions",
-      "summary": "Arrangement of binary expressions — Force chop compound condition in 'if' statement",
+      "summary": "Arrangement of binary expressions — Force chop compound condition in 'if' statement. Observed and not implemented: at `true` the oracle chops the condition onto one operand per line, the operator leading each continuation, and it does so whether the operators are all `&&`, all `||` or mixed. Left alone deliberately — the change belongs in the binary-expression group planning that the `wrap_*` keys own, and a second agent was editing that planning in parallel.",
       "since": "0.1",
       "oracle": null,
       "docs": "https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_LineBreaksPageSchema.html#resharper_csharp_force_chop_compound_if_expression",
@@ -3366,7 +3369,7 @@
       "defaultSource": "template",
       "tier": "D",
       "construct": "ArrangementOfBinaryExpressions",
-      "summary": "Arrangement of binary expressions — Force chop compound condition in 'while' statement",
+      "summary": "Arrangement of binary expressions — Force chop compound condition in 'while' statement. Observed and not implemented: at `true` the oracle chops the condition onto one operand per line, the operator leading each continuation, and it does so whether the operators are all `&&`, all `||` or mixed. Left alone deliberately — the change belongs in the binary-expression group planning that the `wrap_*` keys own, and a second agent was editing that planning in parallel.",
       "since": "0.1",
       "oracle": null,
       "docs": "https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_LineBreaksPageSchema.html#resharper_csharp_force_chop_compound_while_expression",
@@ -4470,7 +4473,8 @@
       "oracle": null,
       "docs": null,
       "templateLine": 699,
-      "expands": []
+      "expands": [],
+      "inert": "The oracle returns `using Map = System.Collections.Generic.Dictionary<string, int>;` beside a trivial `using Simple = System.String;` unchanged at both values, under the format-only profile and under the cleanup profile. It reads as an inspection's preference — whether to keep an alias rather than expand it — and neither cleanup task in this repository's profile performs that rewrite."
     },
     {
       "key": "resharper_csharp_local_function_body",
@@ -8844,7 +8848,8 @@
       "oracle": null,
       "docs": null,
       "templateLine": 825,
-      "expands": []
+      "expands": [],
+      "inert": "The oracle returns a mixture of next-line and end-of-line declaration braces unchanged at both values, including with `declaration_body_on_the_same_line` pinned at `always` and at `never` so that key could not be deciding first. Nothing distinguishes the values on any input constructed."
     },
     {
       "key": "resharper_keep_user_linebreaks",
@@ -8968,7 +8973,8 @@
       "oracle": null,
       "docs": "https://www.jetbrains.com/help/resharper/EditorConfig_Index.html",
       "templateLine": 868,
-      "expands": []
+      "expands": [],
+      "inert": "The oracle returns `enum E { A, B, C }` unchanged at both values — including with `max_enum_members_on_line` raised to 10, `wrap_enum_declaration` moved off `chop_always` and `keep_existing_enum_arrangement = false`, which is every key that could have been deciding first. ⚠ docs/plan/05 § \"Required and forbidden breaks\" names this key for the behaviour; milestone 2 spelled the mechanism with `wrap_enum_declaration` and `max_enum_members_on_line` instead, and the measurement says milestone 2 was right."
     },
     {
       "key": "resharper_new_line_before_finally",
@@ -9090,7 +9096,8 @@
       "oracle": null,
       "docs": "https://www.jetbrains.com/help/resharper/EditorConfig_Index.html",
       "templateLine": 892,
-      "expands": []
+      "expands": [],
+      "inert": "Superseded by `place_accessorholder_attribute_on_same_line`, measured the same way as its property twin: `never` against `always` returns an event with an attribute above it unchanged, while `place_accessorholder_attribute_on_same_line = always` joins it. An event is an accessor holder and ReSharper 2025.2 answers it under that name."
     },
     {
       "key": "resharper_place_namespace_definitions_on_same_line",
@@ -9106,7 +9113,8 @@
       "oracle": null,
       "docs": "https://www.jetbrains.com/help/resharper/EditorConfig_Index.html",
       "templateLine": 897,
-      "expands": []
+      "expands": [],
+      "inert": "The oracle returns `namespace A { namespace B { … } }` unchanged at both values, in both brace styles and with `keep_existing_declaration_block_arrangement = false`. No input found under this export puts two namespace headers on one line either way."
     },
     {
       "key": "resharper_place_primary_constructor_initializer_on_same_line",
@@ -9138,7 +9146,8 @@
       "oracle": null,
       "docs": "https://www.jetbrains.com/help/resharper/EditorConfig_Index.html",
       "templateLine": 899,
-      "expands": []
+      "expands": [],
+      "inert": "Superseded by `place_accessorholder_attribute_on_same_line`, and measured rather than inferred. Asked at `never` and at `always` — with the generalized `place_attribute_on_same_line` pinned at `never` so it could not be masking the answer — the oracle returns a property with an attribute above it exactly as written. `place_accessorholder_attribute_on_same_line` asked on the same file moves both the property's attribute and the event's onto their declaration's line, which is the key ReSharper 2025.2 actually reads for an accessor holder."
     },
     {
       "key": "resharper_place_single_method_argument_lambda_on_same_line",
@@ -9316,7 +9325,8 @@
       "oracle": null,
       "docs": "https://www.jetbrains.com/help/resharper/EditorConfig_Index.html",
       "templateLine": 943,
-      "expands": []
+      "expands": [],
+      "inert": "The oracle returns a braced block, an embedded statement and a bare `{ … }` unchanged at all three values — `do_not_change`, `on_single_line` and `line_break` — with `keep_existing_embedded_arrangement`, `keep_existing_embedded_block_arrangement` and `keep_existing_declaration_block_arrangement` all turned off so none of them could be winning first. `place_simple_embedded_statement_on_same_line` asked on the same file does move it, which is the key that governs the behaviour under this export."
     },
     {
       "key": "resharper_simple_case_statement_style",
@@ -9332,7 +9342,8 @@
       "oracle": null,
       "docs": "https://www.jetbrains.com/help/resharper/EditorConfig_Index.html",
       "templateLine": 944,
-      "expands": []
+      "expands": [],
+      "inert": "The oracle returns a `case` whose body is one statement unchanged at all three values, including with `place_simple_case_statement_on_same_line` pinned at `never` so it could not be deciding first. That key is what governs the shape under this export."
     },
     {
       "key": "resharper_simple_embedded_statement_style",
@@ -9348,7 +9359,8 @@
       "oracle": null,
       "docs": "https://www.jetbrains.com/help/resharper/EditorConfig_Index.html",
       "templateLine": 945,
-      "expands": []
+      "expands": [],
+      "inert": "The oracle returns `if (a > 1) a--;` and `foreach (…) a += x;` unchanged at all three values, with `keep_existing_embedded_arrangement = false` and `place_simple_embedded_statement_on_same_line` pinned so neither could mask it. `place_simple_embedded_statement_on_same_line` is the key that moves those statements — at `always` against `never` it joins and splits them — so this spelling reaches nothing."
     },
     {
       "key": "resharper_sort_usings",
