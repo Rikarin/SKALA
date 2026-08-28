@@ -226,7 +226,7 @@ public static class XmlDocFormatter {
             return new Attempt(default, null, XmlDocRefusalReason.Malformed);
         }
 
-        if (XmlDocModel.Build(structure) is not { } nodes) {
+        if (XmlDocModel.Build(structure, options.SpaceAfterTripleSlash) is not { } nodes) {
             return new Attempt(default, null, XmlDocRefusalReason.Unmodelled);
         }
 
@@ -258,10 +258,17 @@ public static class XmlDocFormatter {
                 rendered.Append(newLine);
             }
 
+            // ⚠ The marker space is written on a verbatim line too, and that is SK-DIV-0023 closed
+            // rather than a widening. `space_after_triple_slash` is Tier A and governs the marker of
+            // every `///` line of a comment, including the ones holding a processing instruction or a
+            // `<code>` body; `XmlDocModel.SourceLines` takes that same space off on the way in, so the
+            // sample's own columns are what is left in `Text` and what comes back out here.
+            //
+            // ⚠ Skipping an empty line is not a special case for verbatim — it is the rule the prose
+            // branch has always had, and it is why a blank line inside a `<code>` block does not
+            // acquire the trailing space every other pass in Skala strips.
             rendered.Append(indent).Append("///");
-            if (lines[i].Verbatim) {
-                rendered.Append(lines[i].Text);
-            } else if (lines[i].Text.Length > 0) {
+            if (lines[i].Text.Length > 0) {
                 rendered.Append(marker).Append(lines[i].Text);
             }
         }
@@ -272,7 +279,7 @@ public static class XmlDocFormatter {
         // else in this file is allowed to be the last word: an oracle-less formatter that only
         // checks itself against its own reading of a settings page is a formatter that will one day
         // eat a sentence.
-        return XmlDocSignature.RoundTrips(structure, text)
+        return XmlDocSignature.RoundTrips(structure, text, options.SpaceAfterTripleSlash)
             ? new Attempt(span, text, null)
             : new Attempt(default, null, XmlDocRefusalReason.RoundTrip);
     }
@@ -313,15 +320,24 @@ public static class XmlDocFormatter {
 ///         <see cref="TokenEquivalence" /> allowance the sub-formatter needs cannot see inside a
 ///         <c>&lt;code&gt;</c> block; this can, and it runs first.
 ///     </para>
+///     <para>
+///         ⚠ "Byte-for-byte" is byte-for-byte <em>after the marker</em>, which is one column narrower
+///         than it sounds and is stated here because the difference is exactly one option.
+///         <c>space_after_triple_slash</c> owns the space between <c>///</c> and everything else on the
+///         line, a <c>&lt;code&gt;</c> body's lines included, so <c>XmlDocModel.SourceLines</c> takes it
+///         off both sides of this comparison and the writer puts it back. What is still compared to the
+///         byte is every column the sample has of its own, and the all-or-nothing rule there is what
+///         stops a marker-less block being read as one indented by a column it does not have.
+///     </para>
 /// </remarks>
 public static class XmlDocSignature {
     /// <summary>Whether the re-wrapped lines still say what the original said.</summary>
-    public static bool RoundTrips(DocumentationCommentTriviaSyntax original, string rewritten) {
+    public static bool RoundTrips(DocumentationCommentTriviaSyntax original, string rewritten, bool markerSpace) {
         if (Reparse(rewritten) is not { } produced) {
             return false;
         }
 
-        return string.Equals(Of(original), Of(produced), StringComparison.Ordinal);
+        return string.Equals(Of(original, markerSpace), Of(produced, markerSpace), StringComparison.Ordinal);
     }
 
     /// <summary>
@@ -347,7 +363,8 @@ public static class XmlDocSignature {
         return null;
     }
 
-    public static string Of(DocumentationCommentTriviaSyntax comment) => Content(comment.Content);
+    public static string Of(DocumentationCommentTriviaSyntax comment, bool markerSpace = true) =>
+        Content(comment.Content, markerSpace);
 
     /// <summary>
     ///     The signature of a content list.
@@ -362,7 +379,7 @@ public static class XmlDocSignature {
     ///     <c>spaces_inside_tags</c>, and the choice between a one-line and a three-line element, change
     ///     it and change nothing else.
     /// </remarks>
-    static string Content(SyntaxList<XmlNodeSyntax> content) {
+    static string Content(SyntaxList<XmlNodeSyntax> content, bool markerSpace) {
         var items = new List<(bool IsText, string Text, bool SpaceBefore)>();
         var pending = false;
 
@@ -379,7 +396,7 @@ public static class XmlDocSignature {
                 continue;
             }
 
-            items.Add((false, Markup(node), pending));
+            items.Add((false, Markup(node, markerSpace), pending));
             pending = false;
         }
 
@@ -395,7 +412,7 @@ public static class XmlDocSignature {
         return builder.ToString();
     }
 
-    static string Markup(XmlNodeSyntax node) {
+    static string Markup(XmlNodeSyntax node, bool markerSpace) {
         var builder = new StringBuilder();
         switch (node) {
             case XmlElementSyntax element:
@@ -406,10 +423,10 @@ public static class XmlDocSignature {
                     // ⚠ Byte-for-byte, minus only the lines the tags sat on. This is the check that
                     // catches a re-indented code sample, and it is the reason `<code>` is safe.
                     builder.Append("|v:")
-                        .Append(string.Join("\n", XmlDocModel.VerbatimBody(element.Content.ToString())))
+                        .Append(string.Join("\n", XmlDocModel.VerbatimBody(element.Content.ToString(), markerSpace)))
                         .Append('|');
                 } else {
-                    builder.Append(Content(element.Content));
+                    builder.Append(Content(element.Content, markerSpace));
                 }
 
                 builder.Append("</e>");
@@ -423,7 +440,7 @@ public static class XmlDocSignature {
 
             default:
                 builder.Append("|r:")
-                    .Append(string.Join("\n", XmlDocModel.VerbatimBody(node.ToString())))
+                    .Append(string.Join("\n", XmlDocModel.VerbatimBody(node.ToString(), markerSpace)))
                     .Append('|');
                 break;
         }

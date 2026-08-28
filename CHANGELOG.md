@@ -13,6 +13,44 @@ missed it says so and by how much; three of them were, and one of those is still
 
 ## Unreleased
 
+### Fixed — `space_after_triple_slash` was not applied to a verbatim line, and one of them came out `///Func<int>`
+
+⚠ **A doc-comment line with no space after the marker, in a comment whose every other line had one.**
+`skala format` over this repository's own sources produced `///Func&lt;int&gt;` on two files and was
+idempotent about it, which is a wrong-output defect rather than an instability. The cause is not
+indentation: `resharper_space_after_triple_slash` is **Tier A** and governs the marker of every `///`
+line, and the verbatim path — a `<code>` or `<c>` body, a processing instruction, a CDATA section —
+was exempt from it. That exemption existed to keep a code sample's columns, and it worked for every
+line of a block that had one; it broke on the one line of a region that never carried a marker,
+because the region's content began on its start tag's line.
+
+- **The marker space is removed on the way in rather than skipped on the way out.**
+  `XmlDocModel.SourceLines` takes it off a verbatim region's continuation lines and
+  `XmlDocFormatter` writes it back on every line, so a code sample keeps its own columns and the
+  marker is the writer's again. `space_after_triple_slash` is carried into the model and into
+  `XmlDocSignature`, because taking off a space the writer will not put back is how a sample loses a
+  column.
+
+- **All-or-nothing across the region, and that is the whole safety of it.** Removing a leading space
+  line by line would flatten `///if (x) {` / `/// y();` / `///}` — a block written under a marker-less
+  convention, whose one column of indentation is content — onto three lines at column zero, and the
+  round trip could not see it, because the signature calls the same function. A region that is not
+  uniformly marker-spaced is shifted whole instead, and if that shift does not survive the round trip
+  the comment is refused.
+
+- **Corpus effect.** `constructs/` every-line fidelity 96.81 % → **96.83 %**; `real/` and
+  `pathological/` unmoved; outside doc comments unmoved on all three, which is the number that says
+  nothing the sub-formatter may not touch has moved. Refusals unmoved (3 and 2, all `Malformed`; no
+  `RoundTrip` refusal anywhere). Against the `SkalaDocComments` oracle profile, **13 of 22** fixtures
+  agree before and after, and `resharper_xmldoc_blank_line_after_pi` now diverges on one line rather
+  than two — SK-DIV-0023's first half is closed and its second is a decision.
+
+- ⚠ **The old behaviour's output is committed, and it does not fully repair itself.** `1aad86f8`
+  wrote `///if (…)` above `/// throw new …` into seventeen files; the column that told those two lines
+  apart is gone, so re-formatting brings them back as `/// if (…)` above `///  throw new …` — faithful,
+  idempotent, one column wider than the author's. On the text an author wrote the fix gives the right
+  answer. See SK-DIV-0023.
+
 ### Fixed — the tier system rested on a measurement nothing could connect to the code
 
 ⚠ **Between the sweep at `2a14dee` and the one at `603fbd3` the tree moved 88 commits, and every tier

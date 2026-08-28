@@ -42,14 +42,21 @@ public static class TokenEquivalence {
     ///         than a word sequence where it counts: a <c>&lt;code&gt;</c> body is compared byte-for-byte.
     ///     </para>
     /// </remarks>
+    /// <param name="xmlDocMarkerSpace">
+    ///     ⚠ <c>space_after_triple_slash</c>, and it is passed rather than assumed. The signature reads a
+    ///     verbatim body from the column after the marker's space, so at <c>false</c> — where the
+    ///     sub-formatter neither adds that space nor takes one off — the net stays exactly as tight as it
+    ///     was, and a <c>&lt;code&gt;</c> block that moved by a column is still a failure.
+    /// </param>
     public static EquivalenceFailure? Compare(
         SourceText before,
         SourceText after,
         CSharpParseOptions parseOptions,
-        bool xmlDocReflow = false
+        bool xmlDocReflow = false,
+        bool xmlDocMarkerSpace = true
     ) {
-        var left = Significant(before, parseOptions, xmlDocReflow);
-        var right = Significant(after, parseOptions, xmlDocReflow);
+        var left = Significant(before, parseOptions, xmlDocReflow, xmlDocMarkerSpace);
+        var right = Significant(after, parseOptions, xmlDocReflow, xmlDocMarkerSpace);
 
         var count = Math.Min(left.Count, right.Count);
         for (var i = 0; i < count; i++) {
@@ -76,7 +83,8 @@ public static class TokenEquivalence {
     public static List<string> Significant(
         SourceText text,
         CSharpParseOptions parseOptions,
-        bool xmlDocReflow = false
+        bool xmlDocReflow = false,
+        bool xmlDocMarkerSpace = true
     ) {
         var tree = CSharpSyntaxTree.ParseText(text, parseOptions);
         var items = new List<string>(1024);
@@ -84,7 +92,7 @@ public static class TokenEquivalence {
 
         foreach (var token in tree.GetRoot().DescendantTokens(descendIntoTrivia: false)) {
             foreach (var trivia in token.LeadingTrivia) {
-                AddTrivia(items, builder, trivia, xmlDocReflow);
+                AddTrivia(items, builder, trivia, xmlDocReflow, xmlDocMarkerSpace);
             }
 
             if (!token.IsKind(SyntaxKind.EndOfFileToken)) {
@@ -94,14 +102,20 @@ public static class TokenEquivalence {
             }
 
             foreach (var trivia in token.TrailingTrivia) {
-                AddTrivia(items, builder, trivia, xmlDocReflow);
+                AddTrivia(items, builder, trivia, xmlDocReflow, xmlDocMarkerSpace);
             }
         }
 
         return items;
     }
 
-    static void AddTrivia(List<string> items, StringBuilder builder, SyntaxTrivia trivia, bool xmlDocReflow) {
+    static void AddTrivia(
+        List<string> items,
+        StringBuilder builder,
+        SyntaxTrivia trivia,
+        bool xmlDocReflow,
+        bool xmlDocMarkerSpace
+    ) {
         switch (trivia.Kind()) {
             case SyntaxKind.WhitespaceTrivia:
             case SyntaxKind.EndOfLineTrivia:
@@ -121,7 +135,7 @@ public static class TokenEquivalence {
                 // is a class of damage the net stops seeing. The signature is narrower in the place
                 // that matters most: a `<code>` body is compared byte-for-byte, which a
                 // word-sequence comparison could never do.
-                items.Add("C:" + XmlDocSignature.Of(structure));
+                items.Add("C:" + XmlDocSignature.Of(structure, xmlDocMarkerSpace));
                 return;
 
             case SyntaxKind.SingleLineCommentTrivia:

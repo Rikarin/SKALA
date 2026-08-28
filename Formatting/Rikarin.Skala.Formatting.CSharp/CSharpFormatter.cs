@@ -243,7 +243,8 @@ public static class CSharpFormatter {
             );
         }
 
-        if (TokenEquivalence.Compare(text, after, parseOptions, reflowed > 0) is { } failure) {
+        if (TokenEquivalence.Compare(text, after, parseOptions, reflowed > 0, options.XmlDoc.SpaceAfterTripleSlash)
+            is { } failure) {
             var artefact = CrashArtifacts.Write(crashRoot, path, text.ToString(), formatted, options);
             diagnostics.Add(
                 new SkalaDiagnostic(

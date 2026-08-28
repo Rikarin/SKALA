@@ -2035,8 +2035,9 @@ public static class Ids {
     // ⚠ SK-DIV-0022: `false` means "do not add a space inside the tags", not "remove the author's".
     public static readonly OptionId XmlDocSpacesInsideTags = OfUnoracled("resharper_xmldoc_spaces_inside_tags");
 
-    // ⚠ SK-DIV-0023: the marker space is not applied to a processing-instruction line, and the
-    // blank line the oracle writes after one carries a trailing space Skala deliberately omits.
+    // ⚠ SK-DIV-0023, now down to its second half: the blank line the oracle writes after a
+    // processing instruction carries a trailing space Skala deliberately omits. The first half — the
+    // marker space missing from the instruction's own line — is fixed.
     public static readonly OptionId XmlDocBlankLineAfterPi = OfUnoracled("resharper_xmldoc_blank_line_after_pi");
 
     // ── Generalized keys ─────────────────────────────────────────────────────────────────────
