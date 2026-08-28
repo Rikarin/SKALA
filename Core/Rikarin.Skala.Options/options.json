@@ -2018,11 +2018,11 @@
       "type": "bool",
       "default": "false",
       "defaultSource": "template",
-      "tier": "D",
+      "tier": "A",
       "construct": "AlignMultilineConstructs",
       "summary": "Align multiline constructs — List of base classes and interfaces",
       "since": "0.1",
-      "oracle": null,
+      "oracle": "constructs/wrapping/base-list-alignment.cs",
       "docs": "https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpIndentStylePageSchema.html#resharper_csharp_align_multiline_extends_list",
       "templateLine": 691,
       "expands": []

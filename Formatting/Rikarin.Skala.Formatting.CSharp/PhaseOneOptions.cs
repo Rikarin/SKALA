@@ -163,6 +163,8 @@ public readonly struct PhaseOneOptions {
         AlignMultilineBinaryExpressionsChain = options.GetBool(Ids.AlignMultilineBinaryExpressionsChain);
         AlignMultilineBinaryPatterns = options.GetBool(Ids.AlignMultilineBinaryPatterns);
         AlignLinqQuery = options.GetBool(Ids.AlignLinqQuery);
+        AlignMultilineExtendsList = options.GetBool(Ids.AlignMultilineExtendsList);
+        AlignTupleComponents = options.GetBool(Ids.AlignTupleComponents);
 
         IntAlignFields = options.GetBool(Ids.IntAlignFields);
         IntAlignVariables = options.GetBool(Ids.IntAlignVariables);
@@ -552,6 +554,8 @@ public readonly struct PhaseOneOptions {
     public bool AlignMultilineBinaryExpressionsChain { get; }
     public bool AlignMultilineBinaryPatterns { get; }
     public bool AlignLinqQuery { get; }
+    public bool AlignMultilineExtendsList { get; }
+    public bool AlignTupleComponents { get; }
 
     public bool IntAlignFields { get; }
     public bool IntAlignVariables { get; }
@@ -1132,6 +1136,39 @@ public static class Ids {
     // clauses, and not before.
     public static readonly OptionId AlignLinqQuery = OfInert("resharper_csharp_align_linq_query");
 
+    // ⚠ The column of the *first base type*, two past the base list's own node, which is where
+    // every other member of this family reads its column. That was recorded here as the reason the
+    // key could not be implemented, and it is a reason to move the anchor rather than to stop:
+    // AlignAnchor takes a position and not a node, so pointing it at `Types[0]` is enough. The `:`
+    // and the gap after it are written by EmitLeadingGapAt before the scope opens, so the column
+    // the scope reads is the one the first base type lands on. Measured:
+    //
+    //     public class Alpha : System.Collections.Generic.IReadOnlyCollection<int>,
+    //                          System.IDisposable,        ← the first base type's column
+    public static readonly OptionId AlignMultilineExtendsList =
+        Of("resharper_csharp_align_multiline_extends_list");
+
+    // ⚠ Implemented, measured, and Tier D — on Skala's own wrapping and not on the alignment. The
+    // oracle puts a wrapped tuple's components on the column *after* the `(`:
+    //
+    //     var tuple = (FirstComponentName: a, SecondComponentName: b,
+    //                  AThirdComponentName: c);
+    //
+    // which is a different anchor from every key AlignsFromOwnColumn answers, and VisitDelimited
+    // opens the scope for it after the `(` has been written. What is missing is the break. Skala
+    // has no break point *between* a tuple's components at all: asked with a tuple too wide for its
+    // line it breaks after the `=` instead and leaves the components flat, and asked with one too
+    // wide even for the continuation line it leaves the line over-long. The only break Skala
+    // produces inside a tuple is one inside a single component, which is not the line this key
+    // governs, so a fixture would pin a column the oracle never writes.
+    //
+    // ⚠ Recorded as *unmeasured* — "no probe found a shape where it changes the oracle's output" —
+    // until now. It does: the probes that missed it used tuples that fit. Tier A once a tuple wraps
+    // at its components, at which point this line becomes `Of` and the corpus file is a tuple long
+    // enough to chop.
+    public static readonly OptionId AlignTupleComponents =
+        OfInert("resharper_csharp_align_tuple_components");
+
     // ⚠ The rest of the `align_*` family, read so the crash snapshot records them, and Tier D each
     // for a reason the oracle gave rather than for a gap in the wiring. All measured one key at a
     // time at a 70-column margin against `jb cleanupcode`.
@@ -1161,15 +1198,16 @@ public static class Ids {
     //   align_multiline_calls_chain — the anchor is the chain's first `.`, and a chain's
     //     continuation level is spent lazily at the first break, by which time the writer has
     //     written past that dot.
-    //   align_multiline_extends_list — the anchor is the first base type, two columns past the base
-    //     list's own node, which is where every other member of this family reads its column.
     //   align_multiline_expression — the union of four specific keys, except for binary patterns:
     //     it aligns a pattern chain one level from the *enclosing* expression where
     //     align_multiline_binary_patterns aligns it on the pattern's own column, one further right.
     //     An Align scope reads the column where it opens and cannot see the enclosing expression.
-    //   align_multiple_declaration, align_tuple_components, align_multiline_comments — no probe
-    //     found a shape where they change the oracle's output, which is weaker evidence than the
-    //     rest of this list: they are unmeasured rather than measured inert.
+    //   align_multiple_declaration, align_multiline_comments — no probe found a shape where they
+    //     change the oracle's output, which is weaker evidence than the rest of this list: they are
+    //     unmeasured rather than measured inert. ⚠ `align_tuple_components` was in this group and
+    //     is not any more: the probes that missed it used tuples that fit, and a tuple long enough
+    //     to wrap moves the oracle's output at both values. Read the same warning into what is left
+    //     of the group — "no probe found" is a statement about the probes.
 
     // ── Column alignment of adjacent constructs (int_align_*) ────────────────────────────────
     // ⚠ Every one of these is `false` in the export and every one of them is read here, so the

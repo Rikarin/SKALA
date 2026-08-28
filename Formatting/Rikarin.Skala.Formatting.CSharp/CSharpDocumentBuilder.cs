@@ -135,9 +135,22 @@ public sealed partial class CSharpDocumentBuilder {
     ///     shows on this node.
     /// </remarks>
     static int AlignAnchor(SyntaxNode node) =>
-        node is AnonymousObjectCreationExpressionSyntax anonymous
-            ? anonymous.OpenBraceToken.SpanStart
-            : node.SpanStart;
+        node switch {
+            AnonymousObjectCreationExpressionSyntax anonymous => anonymous.OpenBraceToken.SpanStart,
+
+            // ⚠ The first base type, two columns past the base list's own node, and measured: with
+            // `align_multiline_extends_list = true` the oracle puts the second interface under the
+            // first one rather than under the `:`.
+            //
+            //     public class Alpha : System.Collections.Generic.IReadOnlyCollection<int>,
+            //                          System.IDisposable,        ← the first base type's column
+            //
+            // The anchor is a *position* rather than the node's start for exactly this reason;
+            // EmitLeadingGapAt writes the `:` and the gap after it before the scope opens, so the
+            // column the scope reads is the one the first base type lands on.
+            BaseListSyntax { Types: [{ } first, ..] } => first.SpanStart,
+            _ => node.SpanStart
+        };
 
     /// <summary>
     ///     Whether an <c>align_multiline_*</c> key anchors this construct to the column its own first
@@ -172,6 +185,7 @@ public sealed partial class CSharpDocumentBuilder {
             BinaryExpressionSyntax =>
                 _options.AlignMultilineBinaryExpressionsChain && BreakPlan.IsChainRootOperator(node),
             BinaryPatternSyntax => _options.AlignMultilineBinaryPatterns && BreakPlan.IsChainRootOperator(node),
+            BaseListSyntax { Types.Count: > 0 } => _options.AlignMultilineExtendsList,
             _ => false
         };
 
@@ -769,6 +783,20 @@ public sealed partial class CSharpDocumentBuilder {
         var opened = false;
         var suppress = layout == NodeLayout.Parens && !_options.UseContinuousIndentInsideParens;
 
+        // ⚠ `align_tuple_components = true`: the column *after* the tuple's `(`, which is a
+        // different anchor from every key AlignsFromOwnColumn answers and needs a different place
+        // to open the scope. Measured —
+        //
+        //     var tuple = (FirstComponentName: a, SecondComponentName: b,
+        //                  ThirdOne: c);          ← the `(`'s column plus one, not plus an indent
+        //
+        // The scope opens here, after the `(` has been written, so `CurrentColumn` is already the
+        // first component's. Opening it around the node — the way `Visit` does — would read the
+        // `(`'s own column and land one to the left.
+        var innerIndent = node is TupleExpressionSyntax && _options.AlignTupleComponents
+            ? IndentKind.Align
+            : IndentKind.Continuous;
+
         // ⚠ Which delimited scopes spend their level unconditionally — that is, even when another
         // scope opened on the same line — and which are collapsed with it. Both answers come from
         // the oracle and neither is guessable:
@@ -807,14 +835,14 @@ public sealed partial class CSharpDocumentBuilder {
                         _continuousDepth = savedDepth;
                     }
 
-                    CloseIndent(IndentKind.Continuous, alignsCloser: true);
+                    CloseIndent(innerIndent, alignsCloser: true);
                     opened = false;
                 }
 
                 EmitToken(token);
 
                 if (!opened && !suppress && token.SpanStart == open.SpanStart) {
-                    OpenIndent(IndentKind.Continuous, unconditional);
+                    OpenIndent(innerIndent, unconditional);
                     opened = true;
                     if (element) {
                         savedDepth = _continuousDepth;
@@ -838,7 +866,7 @@ public sealed partial class CSharpDocumentBuilder {
                 _continuousDepth = savedDepth;
             }
 
-            CloseIndent(IndentKind.Continuous);
+            CloseIndent(innerIndent);
         }
     }
 
