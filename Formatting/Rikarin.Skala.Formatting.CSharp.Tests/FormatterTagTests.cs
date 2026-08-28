@@ -137,6 +137,35 @@ public sealed class FormatterTagTests {
     }
 
     /// <summary>
+    ///     ⚠ SK-FUZZ-0011, and SK-FUZZ-0005's guard evaluated one call too early.
+    /// </summary>
+    /// <remarks>
+    ///     The check that fixed SK-FUZZ-0005 sits at the top of <c>EmitVerbatim</c>, but the tag comment
+    ///     here is in the node's own <em>leading trivia</em> — so the piece that opens the region is
+    ///     emitted by <c>EmitUpTo</c>, which runs after that check has already passed. Traced:
+    ///     <c>_verbatimUntil</c> is -1 on entry and the end of the file on return, and the node was
+    ///     written a second time over source the tag had covered.
+    ///     <para>
+    ///         ⚠ Both halves are needed and neither is exotic. The unbalanced <c>#if</c> is what makes
+    ///         <c>PreprocessorGuard</c> emit the member verbatim at all; without the tag
+    ///         <c>_verbatimUntil</c> never moves. Either one alone formats cleanly.
+    ///     </para>
+    /// </remarks>
+    [Fact]
+    public void AnOffTagInTheLeadingTriviaOfAnUnbalancedMember_DoesNotBreakTokenEquivalence() {
+        const string source = "class C {\n#if true\n// @formatter:off\nvoid M() {\n#endif\n}\n}\n";
+
+        var result = Format.Run(source);
+        Assert.DoesNotContain(
+            result.Diagnostics,
+            diagnostic => string.Equals(diagnostic.Id, "SK9099", StringComparison.Ordinal)
+        );
+
+        // Everything from the tag line on is the author's, byte for byte.
+        Assert.Equal(source, result.Formatted);
+    }
+
+    /// <summary>
     ///     ⚠ The tag comment's own line is inside the region, so its indentation is the author's.
     /// </summary>
     /// <remarks>

@@ -409,6 +409,100 @@ public sealed class ArrangementRuleTests {
         Assert.DoesNotContain("B,", arranged, StringComparison.Ordinal);
     }
 
+    /// <summary>
+    ///     ⚠ SK-FUZZ-0011: sorting a using block must not eat the trivia between its directives.
+    /// </summary>
+    /// <remarks>
+    ///     The fuzzer reported this as an arrangement-idempotency violation on a generated file, and the
+    ///     symptom hid how ordinary the input is. Two usings that both bind, a comment between them, no
+    ///     removal in play: <c>Renormalise</c> blanked the leading trivia of every directive except the
+    ///     first, so sorting deleted the comment. This is the plain statement of it, without a fuzzer in
+    ///     the way.
+    /// </remarks>
+    [Fact]
+    public void SortingUsings_KeepsTheCommentBetweenThem() {
+        var arranged = Arrange(
+            """
+            using System.Text;
+            // keep me
+            using System.Collections;
+
+            namespace P;
+            public class C {
+                public StringBuilder B() => new();
+                public Hashtable H() => new();
+            }
+            """,
+            only: ArrangeIds.Usings
+        );
+
+        Assert.Contains("// keep me", arranged, StringComparison.Ordinal);
+        Assert.Contains("using System.Collections;", arranged, StringComparison.Ordinal);
+        Assert.Contains("using System.Text;", arranged, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     ⚠ The same defect one step worse: what it deleted was a preprocessor directive.
+    /// </summary>
+    /// <remarks>
+    ///     A comment is prose and losing it makes the file worse; an <c>#if</c> is structure and losing it
+    ///     changes what compiles. Same line of code, and this is the half that says why it mattered.
+    /// </remarks>
+    [Fact]
+    public void SortingUsings_KeepsAPreprocessorDirectiveBetweenThem() {
+        var arranged = Arrange(
+            """
+            using System.Text;
+            #if NEVER_DEFINED
+            #endif
+            using System.Collections;
+
+            namespace P;
+            public class C {
+                public StringBuilder B() => new();
+                public Hashtable H() => new();
+            }
+            """,
+            only: ArrangeIds.Usings
+        );
+
+        Assert.Contains("#if NEVER_DEFINED", arranged, StringComparison.Ordinal);
+        Assert.Contains("#endif", arranged, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     ⚠ And the header still re-pins to the front, which is what <c>Renormalise</c> is for.
+    /// </summary>
+    /// <remarks>
+    ///     The fix must not be "keep every directive's trivia where it was" — that is the bug this method
+    ///     was written to prevent, with the licence header stranded in the middle of the block. The header
+    ///     rides to whatever sorts first and the directive it came from surrenders it, so it is emitted
+    ///     once.
+    /// </remarks>
+    [Fact]
+    public void SortingUsings_LeavesTheFileHeaderAtTheTop() {
+        var arranged = Arrange(
+            """
+            // Copyright the author.
+            using System.Text;
+            using System.Collections;
+
+            namespace P;
+            public class C {
+                public StringBuilder B() => new();
+                public Hashtable H() => new();
+            }
+            """,
+            only: ArrangeIds.Usings
+        );
+
+        Assert.StartsWith("// Copyright the author.", arranged, StringComparison.Ordinal);
+        Assert.Equal(
+            1,
+            arranged.Split("// Copyright the author.", StringSplitOptions.None).Length - 1
+        );
+    }
+
     static int CountBareBlocks(string text) {
         var count = 0;
         foreach (var line in text.Split('\n')) {
