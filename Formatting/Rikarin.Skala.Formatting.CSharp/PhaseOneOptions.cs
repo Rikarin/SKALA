@@ -1575,10 +1575,27 @@ public static class Ids {
     public static readonly OptionId BlankLinesAroundNamespace = Of("resharper_csharp_blank_lines_around_namespace");
     public static readonly OptionId BlankLinesAroundRegion = Of("resharper_csharp_blank_lines_around_region");
     public static readonly OptionId BlankLinesInsideRegion = Of("resharper_csharp_blank_lines_inside_region");
-    public static readonly OptionId BlankLinesInsideType = OfInert("resharper_csharp_blank_lines_inside_type");
+    // ⚠ No longer inert, and the reason they were is the reason to record. Both were `OfInert` on
+    // "the removal rules win over blank_lines_inside_type outright" — which was true of Skala and
+    // not of the oracle. Asked at `jb cleanupcode` 2025.2.6 under this repository's own
+    // .editorconfig, which sets `remove_blank_lines_near_braces_in_declarations = true`, the tool
+    // still pads the braces:
+    //
+    //     class C {                blank_lines_inside_type = 3      class C {
+    //         int a;                       ────────────►                (three blank lines)
+    //     }                                                                int a;
+    //                                                                  (three blank lines)
+    //                                                                 }
+    //
+    // and at `5` it pads five, so `keep_blank_lines_in_declarations = 2` does not bind either. The
+    // requirement outranks both, and `CSharpDocumentBuilder.InsideDeclarationBraces` is where that
+    // ordering lives. The export sets both keys to `0`, so honouring them costs nothing here — an
+    // unimplemented key whose configured value coincides with the behaviour is exactly the shape
+    // docs/plan/12 § "The key-flip sweep" exists to find.
+    public static readonly OptionId BlankLinesInsideType = Of("resharper_csharp_blank_lines_inside_type");
 
     public static readonly OptionId BlankLinesInsideNamespace =
-        OfInert("resharper_csharp_blank_lines_inside_namespace");
+        Of("resharper_csharp_blank_lines_inside_namespace");
 
     public static readonly OptionId BlankLinesAfterUsingList = Of("resharper_csharp_blank_lines_after_using_list");
 
@@ -2164,8 +2181,11 @@ public static class Ids {
     /// <summary>
     ///     ⚠ An option phase 1 reads but whose value it cannot yet make a difference to. No fitting
     ///     pass means <c>max_line_length</c> changes nothing; no tabs in the output means
-    ///     <c>tab_width</c> changes nothing; the removal rules win over <c>blank_lines_inside_type</c>
-    ///     outright; <c>end_of_line</c> is inert while <c>enforce_line_ending_style</c> is false;
+    ///     <c>tab_width</c> changes nothing — measured, and not merely because Skala emits spaces:
+    ///     asked of <c>jb cleanupcode</c> on a tab-indented fixture with <c>indent_style = tab</c>,
+    ///     <c>tab_width = 2</c> and <c>tab_width = 8</c> returned the same bytes, because a tab width is
+    ///     a display width and one indent level is one tab either way;
+    ///     <c>end_of_line</c> is inert while <c>enforce_line_ending_style</c> is false;
     ///     <c>remove_spaces_on_blank_lines</c> is inert because a blank line is a break followed by a
     ///     break and the writer never puts anything between them (the one place trailing whitespace
     ///     survives is inside a comment's own text, which is never a blank line); and

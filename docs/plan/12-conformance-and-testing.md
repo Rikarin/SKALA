@@ -674,6 +674,260 @@ The instrument that would settle it is the one that settled Tier A: give these e
 fixtures and sweep them. That is a **third named phase**, and until it runs, the split above is the
 most that can be claimed.
 
+#### ✅ The third phase, part one: 91 of the unexamined, measured
+
+**91 keys of that residue have now been measured** — the 83 Tier D entries with no `oracle` that
+belong to no family another agent owns, plus the eight formatter-side members of `BinaryExpression`
+and `MemberAccess`. What follows is their map. It is evidence, not inspection: **no key below is
+classified on the strength of its name.**
+
+##### The instrument, and why a flat result needed three more passes
+
+The measurement is `ScratchTree.Format`'s technique driven directly — a directory per probe, each
+with its own `.editorconfig` carrying the repository's export plus one overridden key, one
+`jb cleanupcode` 2025.2.6 invocation per value-index round. Every batch carries two controls: a key
+known to move the fixture and a probe with no override at all. **The negative control was flat and
+the positive control moved in all six batches**, and every batch was re-run from a harness that
+asserts the worktree it is pointed at before it starts; the two runs are byte-identical.
+
+⚠ **The first pass's answer was wrong for 9 of the 91, and the shape of the error is the point.**
+Asked once, at the export's own configuration, 76 of the 91 were flat — and "flat" conflates three
+different things:
+
+| what flat can mean | how it was separated |
+|---|---|
+| the C# formatter never reads the key | a **paired control**: a Tier A sibling spelling asked on the *same fixture* under the *same* configuration |
+| another key in the export dominates it | the **unmasking pass**: every `keep_existing_*` / `keep_user_*` switched permissive, and adversarial input already carrying the shape one value wants |
+| the fixture never reached the rule | **re-cutting** until a control moved; where no control moved, the row says *unresolved* rather than guessing |
+
+Nine keys that read as unreachable at the export's values proved otherwise once unmasked, and the
+paired control was decisive the other way for nineteen: a Tier A synonym moved the very fixture the
+key left alone. ⚠ **A key and a control that are both flat proves nothing**, and four rows below say
+so rather than claiming a verdict.
+
+##### ✅ Observable under the format-only profile — 19
+
+The oracle produces different output at different values, so these are behaviour Skala does not yet
+have. **Nine of them are gated on a break point in `BreakPlan.cs`** and are marked as such — that is
+a real gap, not a dismissal.
+
+| key | verdict |
+|---|---|
+| `resharper_csharp_blank_lines_inside_type` | ✅ **implemented** — see below |
+| `resharper_csharp_blank_lines_inside_namespace` | ✅ **implemented** — see below |
+| `resharper_csharp_extra_spaces` | implementable — **4 distinct outputs**, the widest in the set; needs a preservation pass that does not exist |
+| `csharp_space_around_binary_operators` | implementable, blocked — the polarity-aware `expands` the registry already records |
+| `csharp_space_between_parentheses` | implementable, blocked — same missing mechanism |
+| `csharp_new_line_before_members_in_object_initializers` | implementable, blocked — same; and only observable on an initializer the single-line joiner does not put back |
+| `resharper_int_align` | implementable — `IntAlign.cs`, another agent's file |
+| `resharper_csharp_int_align_binary_expressions` | implementable — `IntAlign.cs`, another agent's file |
+| `max_line_length` | implementable-with-a-gap — a fitting pass |
+| `csharp_preserve_single_line_blocks` | implementable-with-a-gap — forced expansion is a break point |
+| `resharper_csharp_force_chop_compound_if_expression` | implementable-with-a-gap — new break point |
+| `resharper_csharp_force_chop_compound_while_expression` | implementable-with-a-gap — new break point |
+| `resharper_csharp_force_chop_compound_do_expression` | implementable-with-a-gap — new break point |
+| `resharper_csharp_nested_ternary_style` | implementable-with-a-gap — **3 distinct outputs**, break point |
+| `resharper_csharp_wrap_verbatim_interpolated_strings` | implementable-with-a-gap — **3 distinct outputs**, break point |
+| `end_of_line` | masked — `resharper_enforce_line_ending_style = false` in the export; the mark on it was already right |
+| `resharper_csharp_max_attribute_length_for_same_line` | masked by `place_*_attribute_on_same_line = false`; moves at `1` once they are `always` |
+| `resharper_csharp_place_simple_list_pattern_on_single_line` | masked by `keep_existing_list_patterns_arrangement = true` |
+| `resharper_csharp_space_in_singleline_method` | ⚠ **masked, not inert** — see the correction below |
+
+⚠ **`space_in_singleline_method`'s recorded reason is wrong and this is the second time.** M9's
+`OptionObservabilityTests` already caught it once carrying "a true reason and wiring that contradicted
+it". The reason it carries now — "the shape it governs no longer exists" — is a statement about
+Skala at this export, and the oracle contradicts it: with
+`place_simple_method_on_single_line = true` and `keep_existing_declaration_block_arrangement = true`
+the key moves, and so does its Tier A sibling `space_in_singleline_anonymous_method` on the same
+fixture. The `OfInert` mark is left in place because `AnInertKey_StillCannotBeObserved` asks about
+*Skala*, and that half still holds; what is wrong is the sentence, and the sentence is what the next
+agent reads.
+
+##### The arranger's, not the formatter's — 5
+
+`CSReformatCode` alone cannot move a qualifier, a `var`, a modifier order or a redundant
+parenthesis, so a flat verdict under the format-only profile says nothing about these. Asked again
+under `OracleProfile.Cleanup`, **five moved**:
+
+| key | the cleanup task that moves it |
+|---|---|
+| `resharper_csharp_force_attribute_style` | `ArrangeAttributes` |
+| `csharp_preferred_modifier_order` | `SortModifiers` |
+| `resharper_csharp_builtin_type_apply_to_native_integer` | `CSFixBuiltinTypeReferences` |
+| `resharper_parentheses_non_obvious_operations` | `RemoveRedundantParentheses` |
+| `resharper_csharp_prefer_separate_deconstructed_variables_declaration` | `ArrangeVarStyle` |
+
+They belong to `Arrangement/` and to the cleanup-profile sweep phase, not to this one. ⚠ Note the
+split inside `BinaryExpression`: `parentheses_non_obvious_operations` is the arranger's and moves,
+while `parentheses_same_type_operations` and `prefer_roslyn_rules_for_parentheses_clarity` are flat
+on the *same* cleanup fixture that the first one moves — so the fixture reaches the task and those
+two are not read.
+
+##### Duplicate spellings — 19
+
+For each of these a **Tier A sibling moved the same fixture under the same configuration** and this
+spelling did not. The registry models them as separate entries with no `aliases` link, which is why
+they read as unexamined work; they are the same option under a name the C# formatter does not answer
+to.
+
+| key | the spelling that works |
+|---|---|
+| `resharper_wrap_after_binary_opsign` | `resharper_csharp_wrap_before_binary_opsign` |
+| `resharper_wrap_after_dot` | `resharper_csharp_wrap_after_dot_in_method_calls` |
+| `csharp_space_after_dot` | `resharper_csharp_space_around_dot` |
+| `csharp_space_before_dot` | `resharper_csharp_space_around_dot` |
+| `resharper_int_align_eq` | `resharper_csharp_int_align_variables` |
+| `resharper_int_align_declaration_names` | `resharper_csharp_int_align_fields` |
+| `resharper_int_align_enum_initializers` | `resharper_csharp_int_align_fields` |
+| `resharper_align_multiline_type_parameter` | `resharper_align_multiline_type_parameter_list` |
+| `resharper_align_multiline_implements_list` | `resharper_csharp_align_multiline_extends_list` |
+| `resharper_wrap_base_clause_style` | `resharper_csharp_wrap_extends_list_style` |
+| `resharper_wrap_ctor_initializer_style` | `resharper_csharp_wrap_arguments_style` |
+| `resharper_csharp_space_within_new_parentheses` | `resharper_csharp_space_within_parentheses` |
+| `resharper_space_within_spread_pattern` | `resharper_csharp_space_within_slice_pattern` |
+| `resharper_remove_blank_lines_near_braces` | `resharper_csharp_remove_blank_lines_near_braces_in_{code,declarations}` |
+| `resharper_simple_block_style` | `resharper_csharp_place_simple_method_on_single_line` |
+| `resharper_simple_embedded_statement_style` | `resharper_csharp_place_simple_embedded_statement_on_same_line` |
+| `resharper_simple_case_statement_style` | `resharper_csharp_place_simple_case_statement_on_same_line` |
+| `resharper_place_property_attribute_on_same_line` | `resharper_csharp_place_field_attribute_on_same_line` |
+| `resharper_place_event_attribute_on_same_line` | `resharper_csharp_place_accessorholder_attribute_on_same_line` |
+
+⚠ **The two attribute rows were checked one step further, because "there is no C# spelling" is a
+strong claim.** `resharper_csharp_place_event_attribute_on_same_line` — the spelling the registry
+does *not* contain — was probed as a control and is flat too, while
+`resharper_csharp_place_field_attribute_on_same_line` moved the same file. So it is not that the
+registry has the wrong prefix: the C# formatter has no per-property and no per-event attribute
+placement at all, and the export's `resharper_place_attribute_on_same_line` expands list, which omits
+both, is right.
+
+##### Unreachable — 34
+
+Flat at every value, on a fixture a control demonstrably moved, with no synonym that works. Each row
+names the control, because that is the whole of the evidence.
+
+| key | the control that moved the same fixture |
+|---|---|
+| `resharper_align_ternary` | `resharper_csharp_int_align_nested_ternary`, `max_line_length` |
+| `resharper_indent_aligned_ternary` | same |
+| `resharper_outdent_ternary_ops` | same |
+| `resharper_wrap_enumeration_style` | `resharper_csharp_keep_existing_enum_arrangement` |
+| `resharper_new_line_before_enumerators` | same |
+| `resharper_indent_comment` | `indent_size`, `resharper_csharp_allow_comment_after_lbrace` |
+| `resharper_wrap_comments` | same |
+| `resharper_place_namespace_definitions_on_same_line` | `indent_size` |
+| `resharper_labeled_statement_style` | `indent_size` |
+| `resharper_csharp_use_indent_from_previous_element` | `indent_size` |
+| `trim_trailing_whitespace` | `indent_size` |
+| `resharper_remove_spaces_on_blank_lines` | `indent_size` |
+| `resharper_expression_pars` | `resharper_csharp_wrap_before_binary_opsign` |
+| `resharper_continuous_line_indent` | `resharper_csharp_wrap_before_binary_opsign` |
+| `resharper_use_continuous_line_indent_in_method_pars` | `resharper_csharp_wrap_parameters_style`, `indent_method_decl_pars` |
+| `resharper_alignment_tab_fill_style` | `resharper_csharp_int_align_fields`, on a tab-indented fixture |
+| `resharper_csharp_int_align_fix_in_adjacent` | `resharper_csharp_int_align_fields` |
+| `resharper_blank_lines_around_global_attribute` | `resharper_csharp_blank_lines_after_using_list` |
+| `resharper_dont_remove_extra_blank_lines` | `resharper_csharp_keep_blank_lines_in_code` |
+| `resharper_align_multiline_type_parameter_constraints` | `resharper_align_multiline_type_parameter_list` |
+| `resharper_align_multiline_type_argument` | same |
+| `resharper_align_multiline_ctor_init` | `resharper_csharp_wrap_arguments_style` |
+| `resharper_declaration_body_on_the_same_line` | `resharper_csharp_place_simple_method_on_single_line` |
+| `resharper_keep_existing_line_break_before_declaration_body` | same |
+| `resharper_treat_case_statement_with_break_as_simple` | `resharper_csharp_place_simple_case_statement_on_same_line` |
+| `resharper_csharp_static_members_qualify_with` | `..._qualify_members`, under the **cleanup** profile |
+| `resharper_csharp_instance_members_qualify_declared_in` | same |
+| `resharper_csharp_use_roslyn_logic_for_evident_types` | `csharp_style_var_for_built_in_types`, under **cleanup** |
+| `resharper_parentheses_same_type_operations` | `resharper_parentheses_non_obvious_operations`, under **cleanup** |
+| `resharper_prefer_roslyn_rules_for_parentheses_clarity` | same |
+| `csharp_style_prefer_utf8_string_literals` | the cleanup batch's own `indent_size` control |
+| `dotnet_style_prefer_collection_expression` | same |
+| `tab_width` | `indent_style`, on a tab-indented fixture — see the note below |
+| `resharper_csharp_tab_width` | same |
+
+⚠ **`resharper_alignment_tab_fill_style` is worse than unreachable, and it is the one generalized
+key here.** It `expands` into `resharper_csharp_alignment_tab_fill_style`, which was probed as a
+control and is *also* flat. A generalized key whose only C# target is itself unobservable has nothing
+to inherit a claim from; `OfGeneralized` would throw on it today, and correctly.
+
+⚠ **`tab_width` and `resharper_csharp_tab_width` are inert by construction, and that was measured
+rather than argued.** On a tab-indented fixture with `indent_style = tab`, `tab_width = 2` and
+`tab_width = 8` returned the same bytes, while `indent_style` flipped to `space` moved it. A tab
+width is a *display* width: one indent level is one tab whatever the number says. The reason recorded
+in `PhaseOneOptions` — "no tabs in the output" — was true of Skala and would have stopped being true
+the day it emitted a tab; the reason above does not expire.
+
+##### Another subsystem's, or nobody's — 9
+
+| key | whose |
+|---|---|
+| `resharper_apply_on_completion` | the IDE's completion, not a file transformation at all |
+| `resharper_default_exception_variable_name` | code generation |
+| `resharper_event_handler_pattern_long` | code generation / naming |
+| `resharper_event_handler_pattern_short` | code generation / naming |
+| `resharper_support_vs_event_naming_pattern` | code generation / naming |
+| `resharper_configure_await_analysis_mode` | the analyser — it selects an inspection, not a layout |
+| `resharper_nullable_enable_for_new_files` | file templates |
+| `charset` | flat under both profiles: `cleanupcode` does not re-encode a file |
+| `file_header_template` | ⚠ flat **by construction** — both oracle profiles set `CSUpdateFileHeader` to `False`, so no fixture in this repository can ever exercise it |
+
+##### ⚠ Unresolved — 5, and they are reported rather than guessed
+
+| key | why no verdict |
+|---|---|
+| `resharper_csharp_indent_braces_inside_statement_conditions` | the paired control `align_multiline_statement_conditions` was flat too; the fixture never chopped the condition |
+| `resharper_use_indents_from_main_language_in_file` | no control moved on any fixture tried; the name suggests a mixed-language (Razor) key and **that is a guess, which is why it is here** |
+| `resharper_prefer_wrap_around_eq` | a `string` option with no documented domain — `default`, `true` and `false` were tried and nothing is known to be legal |
+| `csharp_prefer_braces` | flat under both profiles, and no control on its own cleanup fixture moved |
+| `resharper_csharp_space_between_keyword_and_type` | its Tier A sibling `space_between_keyword_and_expression` was flat on the same fixture; the oracle closed `typeof (int)` up at **both** values, so something else owns that gap. The `OfInert` reason on it — a type after a keyword is word-like, so the separation is mandatory — is consistent with everything seen and is not *established* by it |
+
+##### What this changes about the 120
+
+The 120-with-no-recorded-reason drops to **29**, and the honest headline is not the drop. Of the 91:
+
+- **19** are real, observable formatter behaviour — and **9 of those 19 need a break point in
+  `BreakPlan.cs`**, so the queue they represent is one file five agents are already in.
+- **19** are duplicate spellings of options that are already Tier A. They were never work.
+- **34 + 9** are unreachable or another subsystem's/nobody's.
+- **5** are the arranger's and belong to that phase's sweep.
+- **5** are unresolved and say so.
+
+⚠ So the "weeks or months" question this section opened with resolves, for this slice, in the
+direction the pessimists were wrong about and the optimists were also wrong about: **a quarter of it
+is real, and the real quarter is concentrated in one file.** Extrapolating the ratio to the rest of
+the residue is exactly the guess this measurement exists to stop, and it is not made here.
+
+##### The two that were implemented
+
+`blank_lines_inside_type` and `blank_lines_inside_namespace` were both `OfInert` on the reason
+"`remove_blank_lines_near_braces` wins over it by the documented ordering, so no input distinguishes
+its values". **That was true of Skala and false of the oracle.** Under this repository's own
+`.editorconfig` — which sets `remove_blank_lines_near_braces_in_declarations = true` and
+`keep_blank_lines_in_declarations = 2` — `jb cleanupcode` pads a type's braces with three blank lines
+at `3` and five at `5`. The requirement outranks both the removal and the cap, which is a fourth
+step in `ResolveBlankLines` and not a fourth requirement.
+
+Which bodies have an "inside" was probed body kind by body kind rather than read off the name: class,
+struct, interface, record **and enum** — `BaseTypeDeclarationSyntax` — and not a method body, an
+accessor list or an `if` block. A file-scoped `namespace N;` gets nothing; it has no braces.
+
+⚠ Both keys already had a `constructs/blank-lines/` file of exactly the right name, committed and
+named by no `oracle` glob — a fixture that demonstrated the *removal* and was the evidence for the
+inert claim. It was **extended rather than replaced**: the blank line after `{` that showed the
+removal is still the first thing in each input, and the bodies that answer "which bodies have an
+inside" are added below it.
+
+⚠ **The corpus fixture cannot pin any of that, and a sabotage test proved it.** Both keys are `0` in
+the export, so the committed `.expected.cs` is the oracle's answer at `0` — a file that is
+byte-identical whether the rule reaches an enum, a namespace, both or neither. Narrowing
+`BaseTypeDeclarationSyntax` to `TypeDeclarationSyntax`, which drops `enum`, left all 687 conformance
+tests green. `BlankLinesInsideDeclarationTests` is what actually holds the shape, and the same
+sabotage fails it. That is the general lesson for every option whose export value is the identity:
+**a fixture at a value where the option does nothing is not evidence that the option does the right
+thing**, and it is the same one-configuration fallacy § "The key-flip sweep" opens with.
+
+`verify` reports `Conformant` for both — 3 distinct outputs from each engine, agreeing at 3 of 3
+values — which is the sweep's own instrument rather than fixture agreement, and is what the Tier A
+on them rests on. The committed sweep has never reached either key; the next run on master is what
+confirms or reverses it.
+
 #### ⚠ Interactions are out of the single sweep's scope, and have their own pass
 
 One key at a time isolates cleanly, which is what makes a verdict a statement about *that option*. It
