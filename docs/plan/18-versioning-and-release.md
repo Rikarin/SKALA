@@ -105,8 +105,9 @@ The inputs and the configuration are held constant and both come from the candid
 repository's `.editorconfig` and `skala.jsonc` are staged at their **real relative paths**, so
 `.editorconfig` discovery walks the directories it walks in the repository rather than resolving
 against a flat scratch folder. The only variable in the experiment is which binary ran.
-`SKALA_NO_DAEMON=1` is set on every invocation — two tool versions racing for one per-repository
-daemon would measure the daemon.
+⚠ `SKALA_NO_DAEMON=1` used to be set on every invocation, because two tool versions racing for one
+per-repository daemon would have measured the daemon. The daemon is deleted; there is one path, and
+it is the one being measured.
 
 ### The exit-code detector reads the document *and* runs the binaries
 

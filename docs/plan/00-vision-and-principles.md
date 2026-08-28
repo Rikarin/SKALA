@@ -101,7 +101,7 @@ These are the things that, if traded away, mean the tool should not be built at 
 | Idempotency | 100 %, no exceptions | Second-pass diff over the corpus |
 | Semantic safety | 100 %, no exceptions | Token-stream equivalence on every write |
 | Cold format, whole corpus | < 20 s on 4 691 files / 1.35 M lines, 10 cores | `13` benchmark |
-| Warm format, one file | < 40 ms end to end from the daemon | `13` benchmark |
+| ~~Warm format, one file~~ | ~~< 40 ms end to end from the daemon~~ | ⚠ **withdrawn** — no format-on-save consumer, no daemon, nothing measuring it ([13](13-performance.md) § "Budgets") |
 | Cold analysis, whole corpus | < 4 min | `13` benchmark |
 | Warm analysis, changed files | < 5 s | `13` benchmark |
 | False-positive rate, default rule set | < 1 % of reported diagnostics on the corpus | Manual triage of a 200-diagnostic sample per release |

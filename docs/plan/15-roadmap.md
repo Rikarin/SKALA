@@ -120,7 +120,8 @@ it is for.**
 
 - The 47 `wrap_*` keys, the `max_*_on_line` counters, `Fill`, break-position keys.
 - The xmldoc sub-formatter.
-- Daemon, LSP, git hooks, the post-edit hook path and its 40 ms budget.
+- Daemon, LSP, git hooks, the post-edit hook path and its 40 ms budget. ⚠ The daemon and the budget
+  are since deleted — [11](11-cli-and-integrations.md) § "The daemon, and why it is gone".
 
 **Done when:** line fidelity ≥ 99.9 %, all divergences are documented `SK-DIV-*` entries, and
 Vixen's `.editorconfig` is replaced by the export with `skala format --check` clean in CI.
@@ -561,7 +562,11 @@ was removed and every subsequent run used `--no-cache --output ""`.
 ## M7 — Hardening · M — ✅
 
 - `SK4xxx` performance, `SK6xxx` design, `SK8xxx` tests.
-- NativeAOT client, ReadyToRun daemon, the startup budget met end to end.
+- NativeAOT client, ReadyToRun daemon, the startup budget met end to end. ⚠ **All of this is since
+  deleted.** The budget served a format-on-save consumer that does not exist; the client, the daemon,
+  the protocol and `PerformanceBudgetTests` went together. The M7 rows below are kept as a record of
+  what was built and measured, not as a description of the tool. See [13](13-performance.md)
+  § "Budgets".
 - Cross-platform CI matrix, the fuzzing job, the rule-count job.
 - Documentation site generation from `rules.json` + `options.json`.
 

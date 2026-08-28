@@ -1,7 +1,7 @@
 # 11 — CLI and Integrations
 
-The CLI is the contract (ADR-010). Everything else — daemon, LSP, MSBuild, MCP, hooks — is a
-different way to reach the same code, and none of them may have behaviour the CLI does not.
+The CLI is the contract (ADR-010). Everything else — LSP, MSBuild, MCP, hooks — is a different way
+to reach the same code, and none of them may have behaviour the CLI does not.
 
 ## Command surface
 
@@ -27,17 +27,22 @@ skala trend
 skala cache    stats|clear
 skala mcp
 skala lsp
-skala daemon   status|stop
+skala hooks    install
 ```
 
 Global: `--format`, `--output`, `--no-color`, `--verbose`, `--config <file>`, `--option k=v`,
-`--jobs n`, `--no-cache`, `--no-daemon`.
+`--jobs n`, `--no-cache`.
+
+⚠ **`skala daemon`, `--no-daemon` and `SKALA_NO_DAEMON` are removed, not deprecated.** The daemon is
+deleted (§ "The daemon, and why it is gone"), so the flag would have had nothing to turn off. A flag
+accepted and ignored is a flag that lies to the next person who reads a script containing it; there
+was no released version carrying it and nothing in this repository passed it, so it goes cleanly.
 
 ⚠ **What exists after M5 and M4**, because a command surface that lists intent as if it were
 behaviour is a surface nobody can trust: `format`, `arrange`, `check`, `verify`, `fix`, `explain`,
-`rules`, `config`, `cache`, `mcp`, `lsp`, `daemon` and `hooks`. Still intent: `baseline`, `report`,
-`trend` and every `--since`/`--baseline` flag (M6). `--jobs` and `--no-daemon` remain `format`-only;
-`--no-cache` is now on `check`, `verify` and `format`.
+`rules`, `config`, `cache`, `mcp`, `lsp` and `hooks`. Still intent: `baseline`, `report`, `trend`
+and every `--since`/`--baseline` flag (M6). `--jobs` remains `format`-only; `--no-cache` is now on
+`check`, `verify` and `format`.
 
 ⚠ **`arrange` is a separate verb from `format`, and is sequential where `format` is parallel.**
 `format` changes whitespace, needs no project, and is reversible by reformatting; `arrange` changes
@@ -65,9 +70,10 @@ between tags and still inserts the marker space, which is what Rider does with i
 JetBrains' `.editorconfig` index does not document it at all. Overloading a ReSharper key with a
 meaning ReSharper does not give it is the class of mistake this default is undoing.
 
-⚠ It disqualifies the daemon, in the other direction now: the daemon protocol carries no xmldoc
-switch and the daemon formats with the default, so `--no-xmldoc` falls through to the CLI. A daemon
-that quietly does *more* than it was asked makes one command mean two things.
+⚠ It used to disqualify the daemon, in the other direction: the daemon protocol carried no xmldoc
+switch and the daemon formatted with the default, so `--no-xmldoc` fell through to the CLI rather
+than being served by a process that would have quietly done *more* than it was asked. With the daemon
+gone there is one path and the asymmetry with it.
 
 ⚠ **`--verbose` is not implemented on `check`, and the way it fails is worse than not being there.**
 `check` takes `<paths>` as a variadic argument, so an unrecognised flag is bound as a *path*:
@@ -81,20 +87,15 @@ rejects a token beginning with `-` — and neither is in this milestone.
 
 ⚠ **What exists after M5**, because a command surface that lists intent as if it were behaviour is a
 surface nobody can trust: `format`, `check`, `verify`, `fix`, `explain`, `rules`, `config`, `cache`,
-`mcp`, `lsp`, `daemon` and `hooks`. Still intent: `arrange` (M4), `baseline`, `report`, `trend` and
-every `--since`/`--baseline` flag (M6). `--jobs` and `--no-daemon` remain `format`-only; `--no-cache`
+`mcp`, `lsp` and `hooks`. Still intent: `arrange` (M4), `baseline`, `report`, `trend` and
+every `--since`/`--baseline` flag (M6). `--jobs` remains `format`-only; `--no-cache`
 is now on `check`, `verify` and `format`.
 
 ⚠ **`--define` is on `format`, not only on `check`.** SK-DIV-0004 is a *formatting* limitation —
 without symbols Roslyn hands back every `#if DEBUG` body as disabled text and the formatter correctly
 refuses to touch it — so the symbols have to reach the formatter, and `--load` on `format` is the
-shorthand for "take them from what the build compiled". The daemon protocol carries them too, and
-they are part of its cache key: the same file formatted for Debug and for Release are two answers.
-
-⚠ `skala daemon` has no `start`. The daemon is started lazily by whatever needs it and exits after
-thirty minutes idle; a `start` verb invites a person to run one by hand and then wonder why their
-editor is using a different one. `skala daemon run` is the foreground form, for a supervisor and for
-the tests.
+shorthand for "take them from what the build compiled". They are part of the LSP server's cache key
+too: the same file formatted for Debug and for Release are two answers.
 
 ### Path resolution
 
@@ -109,62 +110,48 @@ the index — the correct behaviour for a pre-commit hook, and one that is easy 
 that loses uncommitted work. It refuses to run with unstaged changes to a staged file unless
 `--staged=worktree` is given.
 
-## The daemon
+## The daemon, and why it is gone
 
-Per-repository, started lazily on the first command, exits after 30 minutes idle. It holds parsed
-trees keyed by content hash, the option registry, resolved `.editorconfig` chains, and — for
-`check` — loaded compilations and metadata references.
+⚠ **Deleted.** There was a per-repository format daemon here — started lazily, holding parsed trees
+keyed by content hash, spoken to over a Unix domain socket by a NativeAOT thin client
+(`Tools/Rikarin.Skala.Client`) across a private length-prefixed JSON protocol
+(`Tools/Rikarin.Skala.Protocol`). It worked, and it was measured: a warm single-file
+`format --check` went from 66.9 ms to 8.65 ms.
 
-⚠ "Lazily" means the first single-file `skala format` in a repository finds no socket, **does the
-work itself**, and leaves a daemon behind for the next one. It does not wait for the daemon it
-starts: waiting would put the daemon's own start — process, JIT, first configuration resolution —
-inside the very budget the daemon exists to meet, and lazy starting would then feel slower than no
-daemon at all. Measured: the first `format --check` of a 615-line file is 310 ms and every one after
-it is 70 ms. The start is skipped entirely unless the running executable is `skala` itself, so a
-`dotnet run`, a test host, or anything using the formatter as a library never spawns one.
+It existed for one budget — [13](13-performance.md)'s 40 ms warm single-file row — and that budget
+existed for a post-edit agent hook that fired on every file write and had to be invisible. **There is
+no such consumer.** Skala runs ahead of test suites that take about twenty minutes. The budget is
+withdrawn (doc 13 § "Budgets"), and everything built to meet it went with it.
 
-- Socket: a unix domain socket (named pipe on Windows) under `.skala/daemon.sock`, permissions
-  0600.
-- Protocol: private, length-prefixed JSON, versioned by exact match. A client that meets a daemon of
-  a different version kills it and starts its own. No negotiation, no compatibility window.
-- ⚠ **The protocol version is a *wire* version, and for a long time it was the only check there
-  was.** The wire shape almost never moves; the formatter moves constantly. Rebuild Skala, leave the
-  daemon up, and every `skala format` kept answering with the old build's bytes — for ever, because
-  the 30-minute idle timer is refreshed by every request — with `--no-daemon` the only way to see
-  it. Measured cost of that: two agents, about forty minutes each, on one day. So the daemon also
-  checks **its own build**: `BuildIdentity` fingerprints the module MVIDs of the assemblies in its
-  install, gated by a length-and-mtime stamp so that the steady-state cost is 0.072 ms a request
-  (0.10 ms on a whole warm round trip, 0.25 % of the 40 ms budget) and the MVIDs are only read after
-  files have actually been rewritten. Mtimes alone would be cheaper and wrong — a copy of identical
-  bytes bumps them, and a daemon that exits on that throws its warm cache away after every no-op
-  build. The check is daemon-side only: the thin client is a different binary that does not load
-  Roslyn and cannot compute a formatter identity to put on the wire, so nothing about the request or
-  the response changed and the client pays nothing.
-- ⚠ On a changed build the daemon **refuses the format and stops** — it does not answer, and it does
-  not linger and refuse for the next thirty minutes. Refusing is already a fallback everywhere it
-  lands, so the caller does the work itself out of its own build and the *next* command lazily
-  starts a fresh daemon: no hard error in a pre-commit hook, and one cold format is the whole cost.
-  It unlinks its socket before answering, so the replacement is not blocked by the file it left.
-- ⚠ `daemon status` names the build it is serving and says `STALE` when the install has moved under
-  it, and it never stops the daemon it is reporting on — the one command a person runs to see the
-  problem must not be the one command that hides it.
-- Correctness rule: **every command must work identically with `SKALA_NO_DAEMON=1`.** The daemon is
-  only allowed to make things faster. It holds the results of the same `CSharpFormatter` the CLI
-  calls and never a second implementation of anything, and the suite compares the two answers byte
-  for byte.
-- The daemon never watches the filesystem. It is asked; it does not observe. ⚠ The way that is made
-  safe is the *cache key*: a file's content hash together with the identity of every
-  `.editorconfig` above it, so there is no invalidation to get wrong and no window in which a stale
-  answer is served. A config edited under a running daemon is picked up the same way — a reloaded
-  document carries a new version stamp and the stamp is in the key.
-- ⚠ Every failure on the client side is a fallback and never an error: absent, stale, or of another
-  protocol version, and the CLI does the work itself. An optimisation that can fail a pre-commit hook
-  is not one. A socket file left by a crashed daemon is probed before it is unlinked, so recovering
-  is not the same as stealing a live daemon's socket.
-- ⚠ The daemon serves exactly one shape — a single named file, no `--staged`, no `--range`, no
-  overrides — because that is the shape the budget is about. A whole-corpus run is already parallel
-  and is bounded by the formatter rather than by process start; serving more shapes would mean a
-  second implementation of the reporting, the writing and the exit codes.
+What it cost, stated once, because the trade is the useful part:
+
+- **A second implementation of one command shape.** `DaemonUse.TryFormat` re-implemented the
+  reporting, the file writing and the exit codes for a single named file with no `--staged`, no
+  `--range` and no overrides. Two implementations of "what does `format --check` print" is one more
+  than the number that can be right, and holding them in step needed a test that ran both binaries.
+- **An asymmetry that had to be found before it could be fixed.** The protocol carried no xmldoc
+  switch, so the daemon could not serve `--no-xmldoc` and had to refuse it. A correct refusal — but
+  it is a shape the CLI accepted and the daemon did not, which is the kind of divergence that is
+  invisible until somebody's comments get rewrapped.
+- **A stale-build hazard, and then a guard for it.** The protocol version was a *wire* version; the
+  wire shape almost never moved and the formatter moved constantly. Rebuild Skala, leave the daemon
+  up, and every `skala format` kept answering with the old build's bytes — for ever, because the
+  30-minute idle timer was refreshed by every request. Measured cost: two agents, about forty minutes
+  each, on one day. The fix (`BuildIdentity`, fingerprinting module MVIDs behind a length-and-mtime
+  stamp, refusing and stopping on a changed build) landed and is now deleted with what it guarded.
+- **A kernel path limit.** `struct sockaddr_un` caps a socket path at 104 bytes on macOS and 108 on
+  Linux; `<repo>/.skala/daemon.sock` exceeded that past about eighty-five characters and the daemon
+  died there with **exit code 0** while every later format silently took the cold path.
+- **Two binaries and a RID-specific package.** The client owned the name `skala`, so the tool became
+  `skala-tool`; they had to ship in one directory because adjacency was how the client found the
+  tool; and a native command cannot be `Runner="dotnet"`, so the `dotnet tool` package was
+  RID-specific with a wrapper package naming its per-RID siblings.
+
+Both of the correctness rules it was held to are now trivially true, which is the point: there is one
+path, so there is nothing for a second one to disagree with.
+
+`Tools/Rikarin.Skala.Server` survives, holding what never belonged to the daemon: the LSP server
+below, the `FormatService` cache behind it, and `skala hooks install`.
 
 ## LSP
 
@@ -279,12 +266,10 @@ skala format --staged --quiet || exit 1
 skala verify --format=plain  || exit 1
 ```
 
-Budget: under 500 ms for a typical commit (a handful of files, warm daemon). [13](13-performance.md)
-§ "Startup" is what makes that possible, and it is why NativeAOT for the CLI front end is on the
-table. ⚠ M3 measures a warm single-file format at 60–70 ms against a 40 ms budget, of which
-essentially all is the client's own process start — `skala daemon status`, which does no work at
-all, is the same 60 ms. The daemon itself answers in single-digit milliseconds; nothing in the
-budget is left for Skala to optimise, and the fix is NativeAOT for the client, which is not done.
+⚠ **The 500 ms budget for a typical commit is withdrawn** along with the rest of doc 13's table. A
+pre-commit hook formatting a handful of files pays one cold process start, 120–200 ms before `Main`,
+and then the formatting; that is a fraction of a second either way and nothing measures it. It is
+also not the tight case it was written as — the commit that follows is going to wait on a test suite.
 
 `skala hooks install` writes them, detecting an existing hook manager rather than clobbering it.
 ⚠ husky, lefthook, `pre-commit` and a `core.hooksPath` pointing elsewhere are all detected, and the
@@ -408,49 +393,36 @@ Verified by packing the real packages into a local feed and building a real cons
 `TreatWarningsAsErrors`: default → 3 `SK3002` **warnings**, exit 0; `SkalaRulesAsErrors=true` → the
 same 3 as **errors**, exit 1; `SkalaRulesEnabled=false` → no `SK` diagnostic at all, exit 0.
 
-### The tool package ships both binaries
+### The tool package is one portable binary
 
-⚠ **A `dotnet tool` package carries the NativeAOT client as its command and the full tool beside
-it**, and the adjacency is not a convenience — it is how `Fallback.Locate` finds the tool
-([13](13-performance.md) § "Startup"). A package with only the client is a package where every
-command that is not a warm single-file format exits 5, and a package with only the tool throws away
-M7's whole startup result for everyone who installs from NuGet, which is most people.
+⚠ **It used to be two, and RID-specific.** The command was the NativeAOT thin client, which .NET 10
+packs as `tools/any/<rid>/` with `Runner="executable"`; the full tool shipped beside it as
+`skala-tool` because adjacency was how `Fallback.Locate` found it, and packing more than one RID
+also emitted a RID-agnostic wrapper package listing the per-RID package ids — publishing that wrapper
+without every package it names is an install that fails on whichever platform is missing.
+
+With the client deleted, the command is an ordinary managed entry point again:
 
 ```
-tools/any/osx-arm64/
-├── DotnetToolSettings.xml     <Command Name="skala" EntryPoint="skala" Runner="executable" />
-├── skala                      2.9 MB, NativeAOT — the command
-├── skala-tool                 the apphost
-├── skala-tool.dll             …and the framework-dependent tool behind it
-└── (73 more files)            Roslyn, MSBuild, SARIF, the build hosts
+tools/net10.0/any/
+├── DotnetToolSettings.xml     <Command Name="skala" EntryPoint="skala.dll" Runner="dotnet" />
+├── skala.dll                  the tool
+└── (78 more files)            Roslyn, MSBuild, SARIF, the build hosts
 ```
 
-Three measurements this arrangement rests on, all on SDK 10.0.400, macOS, `osx-arm64`:
-
-1. ⚠ **`Runner="executable"` exists.** `dotnet pack` on a project with `PublishAot` and a
-   `RuntimeIdentifier` emits `tools/any/<rid>/` and a settings file naming the native binary
-   directly. Before .NET 10 a tool command could only be a managed assembly run through the muxer,
-   and the CLI's `.csproj` said so.
-2. ⚠ **`Environment.ProcessPath` resolves the install symlink.** `dotnet tool install` puts a symlink
-   in `~/.dotnet/tools/`; the process reports
-   `~/.dotnet/tools/.store/rikarin.skala.cli/1.0.0/…/tools/any/osx-arm64/skala`. Had it reported the
-   symlink, "beside my own executable" would have been `~/.dotnet/tools/`, where `skala-tool` is not,
-   and the fallback would have failed for every installed user while working perfectly in the
-   repository. Verified on a probe package before anything was built on it.
-3. ⚠ **The daemon it starts is the packaged one.** In a repository with no Skala checkout anywhere
-   near it, `ps` shows
-   `~/.dotnet/tools/.store/rikarin.skala.cli/1.0.0/…/tools/any/osx-arm64/skala-tool daemon run`.
-   That is the difference between a package that works and a package that works on the author's
-   machine because the repository is beside it.
-
-Consequences worth stating. The package is **RID-specific**, so `./build.sh Pack` defaults to the
-host's RID and takes `--rids` for a matrix; packing more than one also emits a RID-agnostic wrapper
-package listing per-RID package ids, and publishing that wrapper without every package it names is an
-install that fails on whichever platform is missing. And the package is **33 MB**, because Roslyn is
-22 MB of it. Two things that were in it and are not: the client's 13 MB `.dSYM` bundle, which
-`PackTool`'s publish glob collects and which nothing in a tool install can read, and 6.6 MB of
-localised Roslyn resources, which `InvariantGlobalization` does not suppress on its own —
+One .nupkg, every platform, and `./build.sh Pack` takes no `--rids`. The package is still ~33 MB,
+because Roslyn is 22 MB of it. Two things that were in it and are not: the client's 13 MB `.dSYM`
+bundle, which `PackTool`'s publish glob collected and which nothing in a tool install can read, and
+6.6 MB of localised Roslyn resources, which `InvariantGlobalization` does not suppress on its own —
 `SatelliteResourceLanguages` does.
+
+⚠ One measurement from the two-binary arrangement is worth keeping, because it is the kind of thing
+that is assumed and is load-bearing: **`Environment.ProcessPath` resolves the install symlink.**
+`dotnet tool install` puts a symlink in `~/.dotnet/tools/`, and the process reported
+`~/.dotnet/tools/.store/rikarin.skala.cli/1.0.0/…/tools/any/osx-arm64/skala`, not the symlink. Had it
+reported the symlink, "beside my own executable" would have been `~/.dotnet/tools/`, where
+`skala-tool` was not, and the fallback would have failed for every installed user while working
+perfectly in the repository.
 
 ### Verified by installing it
 
@@ -460,19 +432,16 @@ The measurements above come from a run that installed the packages from a local 
 `skala format`, `skala check --load loose`, `skala verify`, `skala explain SK1010`,
 `PackageReference Rikarin.Skala.Sdk` and `dotnet build`, and `dotnet tool uninstall`.
 
-Numbers from it, reference machine, 50 runs in a shell loop divided by N, spawn floor 4.9 ms
-measured the same way:
+⚠ **Historical**, from the run that installed the two-binary package, reference machine, 50 runs in
+a shell loop divided by N, spawn floor 4.9 ms measured the same way. The warm rows describe a daemon
+that no longer exists; the disk figures do not:
 
 | | measured |
 |---|---:|
-| warm single-file `format --check`, installed tool, shallow repository | **8.04 ms** |
-| the same, in a repository nested 127 characters deep | **13.05 ms** |
+| ~~warm single-file `format --check`, installed tool, shallow repository~~ | ~~**8.04 ms**~~ |
+| ~~the same, in a repository nested 127 characters deep~~ | ~~**13.05 ms**~~ |
 | the tool package, installed on disk | 153 MB |
 | left behind after `dotnet tool uninstall` | nothing |
 
-⚠ The deep-path row is the interesting one, and it is [13](13-performance.md) § "Startup"'s defect
-asserted through the shipped artefact rather than the build tree: a Unix socket path caps at 104
-bytes, `<repo>/.skala/daemon.sock` exceeds it past about eighty-five characters, and the daemon used
-to die of an unhandled exception *with exit code 0* while every later format silently took the cold
-path. In the packaged tool the socket moves to `$TMPDIR/skala-<hash>.sock`, `skala daemon run` in the
-127-character repository stays up, and its hit counter accounts for all 50 warm runs.
+The deep-path case is still exercised by the smoke test, without the socket assertion: a repository
+nested 127 characters deep has other ways to go wrong and the case costs one `mkdir -p`.

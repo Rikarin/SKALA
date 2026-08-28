@@ -291,7 +291,7 @@ suite asserts byte-identical SARIF across three runs with different thread count
 ## Cancellation and interactivity
 
 Every stage takes a `CancellationToken`. Ctrl-C cancels and prints what was found so far, marked
-partial. The daemon cancels an in-flight analysis when the file it was analyzing changes again —
+partial. The LSP server cancels an in-flight analysis when the file it was analyzing changes again —
 which, for an agent editing a file three times in ten seconds, is the difference between a responsive
 tool and a queue.
 
