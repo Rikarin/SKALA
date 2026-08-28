@@ -423,6 +423,53 @@
     ]
   },
   {
+    "Primary": "resharper_csharp_align_tuple_components",
+    "Secondary": "resharper_csharp_indent_size",
+    "Fixture": "constructs/wrapping/tuple-components.cs",
+    "Outcome": "InteractionOnly",
+    "OracleDistinct": 4,
+    "SkalaDistinct": 4,
+    "BaselineAgrees": true,
+    "Corners": [
+      {
+        "PrimaryValue": "true",
+        "SecondaryValue": "4",
+        "OracleHash": "00e63a7e",
+        "SkalaHash": "00e63a7e",
+        "Agree": true,
+        "ReachedBySingleSweep": true,
+        "AttributableToOneKey": false
+      },
+      {
+        "PrimaryValue": "true",
+        "SecondaryValue": "1",
+        "OracleHash": "a7d8b226",
+        "SkalaHash": "a7d8b226",
+        "Agree": true,
+        "ReachedBySingleSweep": false,
+        "AttributableToOneKey": false
+      },
+      {
+        "PrimaryValue": "false",
+        "SecondaryValue": "4",
+        "OracleHash": "969317c4",
+        "SkalaHash": "969317c4",
+        "Agree": true,
+        "ReachedBySingleSweep": true,
+        "AttributableToOneKey": false
+      },
+      {
+        "PrimaryValue": "false",
+        "SecondaryValue": "1",
+        "OracleHash": "2a5ee605",
+        "SkalaHash": "f2061e2e",
+        "Agree": false,
+        "ReachedBySingleSweep": false,
+        "AttributableToOneKey": false
+      }
+    ]
+  },
+  {
     "Primary": "resharper_csharp_keep_existing_attribute_arrangement",
     "Secondary": "resharper_keep_user_linebreaks",
     "Fixture": "constructs/preservation/attributes.cs",
@@ -2870,6 +2917,98 @@
         "SecondaryValue": "1",
         "OracleHash": "e5a955c0",
         "SkalaHash": "561185b7",
+        "Agree": false,
+        "ReachedBySingleSweep": false,
+        "AttributableToOneKey": true
+      }
+    ]
+  },
+  {
+    "Primary": "resharper_csharp_wrap_for_stmt_header_style",
+    "Secondary": "resharper_csharp_max_line_length",
+    "Fixture": "constructs/wrapping/for-header.cs",
+    "Outcome": "Inherited",
+    "OracleDistinct": 6,
+    "SkalaDistinct": 4,
+    "BaselineAgrees": true,
+    "Corners": [
+      {
+        "PrimaryValue": "wrap_if_long",
+        "SecondaryValue": "120",
+        "OracleHash": "9b0c583a",
+        "SkalaHash": "972fc9b2",
+        "Agree": false,
+        "ReachedBySingleSweep": true,
+        "AttributableToOneKey": true
+      },
+      {
+        "PrimaryValue": "wrap_if_long",
+        "SecondaryValue": "0",
+        "OracleHash": "9257af6e",
+        "SkalaHash": "972fc9b2",
+        "Agree": false,
+        "ReachedBySingleSweep": false,
+        "AttributableToOneKey": true
+      },
+      {
+        "PrimaryValue": "wrap_if_long",
+        "SecondaryValue": "1",
+        "OracleHash": "44ae8140",
+        "SkalaHash": "795f96db",
+        "Agree": false,
+        "ReachedBySingleSweep": false,
+        "AttributableToOneKey": true
+      },
+      {
+        "PrimaryValue": "chop_if_long",
+        "SecondaryValue": "120",
+        "OracleHash": "d9464a11",
+        "SkalaHash": "d9464a11",
+        "Agree": true,
+        "ReachedBySingleSweep": true,
+        "AttributableToOneKey": false
+      },
+      {
+        "PrimaryValue": "chop_if_long",
+        "SecondaryValue": "0",
+        "OracleHash": "a8056f3d",
+        "SkalaHash": "d9464a11",
+        "Agree": false,
+        "ReachedBySingleSweep": false,
+        "AttributableToOneKey": true
+      },
+      {
+        "PrimaryValue": "chop_if_long",
+        "SecondaryValue": "1",
+        "OracleHash": "44ae8140",
+        "SkalaHash": "795f96db",
+        "Agree": false,
+        "ReachedBySingleSweep": false,
+        "AttributableToOneKey": true
+      },
+      {
+        "PrimaryValue": "chop_always",
+        "SecondaryValue": "120",
+        "OracleHash": "be199de1",
+        "SkalaHash": "be199de1",
+        "Agree": true,
+        "ReachedBySingleSweep": true,
+        "AttributableToOneKey": false
+      },
+      {
+        "PrimaryValue": "chop_always",
+        "SecondaryValue": "0",
+        "OracleHash": "be199de1",
+        "SkalaHash": "be199de1",
+        "Agree": true,
+        "ReachedBySingleSweep": false,
+        "AttributableToOneKey": true
+      },
+      {
+        "PrimaryValue": "chop_always",
+        "SecondaryValue": "1",
+        "OracleHash": "44ae8140",
+        "SkalaHash": "795f96db",
         "Agree": false,
         "ReachedBySingleSweep": false,
         "AttributableToOneKey": true

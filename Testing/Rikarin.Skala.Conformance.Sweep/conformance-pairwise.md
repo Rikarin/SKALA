@@ -25,11 +25,11 @@ in `docs/divergences.md`, not here.
 | ReSharper | 2025.2.6 |
 | base configuration | the repository export, sha256 `bd9791d3a6e6a087` |
 | families | all |
-| pairs swept | 60 |
-| corners | 352 |
+| pairs swept | 62 |
+| corners | 365 |
 | rounds | 9 (batched by corner index) |
-| `cleanupcode` invocations | 10 |
-| oracle wall clock | 1.5 min |
+| `cleanupcode` invocations | 14 |
+| oracle wall clock | 2.2 min |
 | Skala wall clock | 0.7 s |
 
 ## Outcomes
@@ -37,17 +37,18 @@ in `docs/divergences.md`, not here.
 | outcome | pairs | meaning |
 |---|---:|---|
 | ✅ CONFORMANT | 16 | every corner of the grid agrees |
-| ⚠ INTERACTION | 0 | **every corner the single sweep reaches agrees, and an interior corner does not** |
+| ⚠ INTERACTION | 1 | **every corner the single sweep reaches agrees, and an interior corner does not** |
 | ❌ DIVERGENT | 0 | a corner disagrees, and the single sweep could have seen it too |
 | ⚠ UNEXERCISED | 0 | **neither engine distinguished the corners.** Not a pass |
 | ⚠ BASELINE | 12 | ⚠ the two engines already disagreed on this fixture before either key was set, so the grid cannot report on the pair |
-| ⚠ INHERITED | 32 | ⚠ every disagreement is one the single sweep already records for one of the two keys, measured alone — not a finding about the pair |
+| ⚠ INHERITED | 33 | ⚠ every disagreement is one the single sweep already records for one of the two keys, measured alone — not a finding about the pair |
 | ⚠ NO FIXTURE | 0 | the pair names no fixture the corpus has |
 
 ## Findings
 
 | pair | outcome | corners | agreeing | the corners that disagree |
 |---|---|---:|---:|---|
+| `resharper_csharp_align_tuple_components` × `resharper_csharp_indent_size` | ⚠ INTERACTION | 4 | 3 | `false` × `1` |
 | `resharper_csharp_align_multiline_list_pattern` × `resharper_csharp_indent_size` | ⚠ INHERITED | 4 | 2 | `true` × `4`, `true` × `1` |
 | `resharper_csharp_align_multiline_property_pattern` × `resharper_csharp_indent_size` | ⚠ INHERITED | 4 | 2 | `true` × `4`, `true` × `1` |
 | `resharper_csharp_align_multiline_statement_conditions` × `resharper_csharp_indent_size` | ⚠ INHERITED | 4 | 2 | `false` × `4`, `false` × `1` |
@@ -73,6 +74,7 @@ in `docs/divergences.md`, not here.
 | `resharper_csharp_wrap_chained_binary_patterns` × `resharper_csharp_max_line_length` | ⚠ INHERITED | 6 | 1 | `wrap_if_long` × `120`, `wrap_if_long` × `0`, `wrap_if_long` × `1`, `chop_if_long` × `0` |
 | `resharper_csharp_wrap_chained_method_calls` × `resharper_csharp_max_line_length` | ⚠ INHERITED | 9 | 4 | `wrap_if_long` × `120`, `wrap_if_long` × `1`, `chop_if_long` × `0`, `chop_if_long` × `1` |
 | `resharper_csharp_wrap_enum_declaration` × `resharper_csharp_max_line_length` | ⚠ INHERITED | 9 | 2 | `wrap_if_long` × `120`, `wrap_if_long` × `0`, `wrap_if_long` × `1`, `chop_if_long` × `120` |
+| `resharper_csharp_wrap_for_stmt_header_style` × `resharper_csharp_max_line_length` | ⚠ INHERITED | 9 | 3 | `wrap_if_long` × `120`, `wrap_if_long` × `0`, `wrap_if_long` × `1`, `chop_if_long` × `0` |
 | `resharper_csharp_wrap_multiple_declaration_style` × `resharper_csharp_max_line_length` | ⚠ INHERITED | 9 | 6 | `wrap_if_long` × `1`, `chop_if_long` × `1`, `chop_always` × `1` |
 | `resharper_csharp_wrap_parameters_style` × `resharper_csharp_max_line_length` | ⚠ INHERITED | 9 | 6 | `wrap_if_long` × `1`, `chop_if_long` × `1`, `chop_always` × `1` |
 | `resharper_csharp_wrap_primary_constructor_parameters_style` × `resharper_csharp_max_line_length` | ⚠ INHERITED | 9 | 6 | `wrap_if_long` × `1`, `chop_if_long` × `1`, `chop_always` × `1` |
@@ -110,6 +112,7 @@ that cross is an interaction and nothing else in the repository can see it.
 | `resharper_csharp_align_multiline_property_pattern` | `resharper_csharp_indent_size` | ⚠ INHERITED | 4 | 2 | 2 | 4 | 4 | = | `constructs/wrapping/alignment.cs` |
 | `resharper_csharp_align_multiline_statement_conditions` | `resharper_csharp_indent_size` | ⚠ INHERITED | 4 | 2 | 2 | 4 | 4 | = | `constructs/indentation/resharper_csharp_align_multiline_statement_conditions.cs` |
 | `resharper_csharp_align_multiline_switch_expression` | `resharper_csharp_indent_size` | ✅ CONFORMANT | 4 | 4 | 2 | 4 | 4 | = | `constructs/wrapping/alignment.cs` |
+| `resharper_csharp_align_tuple_components` | `resharper_csharp_indent_size` | ⚠ INTERACTION | 4 | 3 | 2 | 4 | 4 | = | `constructs/wrapping/tuple-components.cs` |
 | `resharper_csharp_keep_existing_attribute_arrangement` | `resharper_keep_user_linebreaks` | ✅ CONFORMANT | 4 | 4 | 2 | 2 | 2 | = | `constructs/preservation/attributes.cs` |
 | `resharper_csharp_keep_existing_declaration_block_arrangement` | `resharper_keep_user_linebreaks` | ✅ CONFORMANT | 4 | 4 | 2 | 2 | 2 | = | `constructs/preservation/declaration-blocks.cs` |
 | `resharper_csharp_keep_existing_declaration_parens_arrangement` | `resharper_keep_user_linebreaks` | ✅ CONFORMANT | 4 | 4 | 2 | 3 | 3 | = | `constructs/preservation/declaration-parens.cs` |
@@ -149,6 +152,7 @@ that cross is an interaction and nothing else in the repository can see it.
 | `resharper_csharp_wrap_chained_method_calls` | `resharper_csharp_max_line_length` | ⚠ INHERITED | 9 | 4 | 3 | 5 | 5 | = | `constructs/wrapping/chained-calls.cs` |
 | `resharper_csharp_wrap_enum_declaration` | `resharper_csharp_max_line_length` | ⚠ INHERITED | 9 | 2 | 3 | 2 | 4 | = | `constructs/breaks/enum-members.cs` |
 | `resharper_csharp_wrap_extends_list_style` | `resharper_csharp_max_line_length` | ⚠ BASELINE | 9 | 2 | 3 | 5 | 2 | ⚠ | `constructs/wrapping/base-list.cs` |
+| `resharper_csharp_wrap_for_stmt_header_style` | `resharper_csharp_max_line_length` | ⚠ INHERITED | 9 | 3 | 3 | 6 | 4 | = | `constructs/wrapping/for-header.cs` |
 | `resharper_csharp_wrap_lines` | `resharper_csharp_max_line_length` | ⚠ BASELINE | 6 | 1 | 2 | 3 | 2 | ⚠ | `constructs/wrapping/base-list.cs` |
 | `resharper_csharp_wrap_list_pattern` | `resharper_csharp_max_line_length` | ⚠ BASELINE | 9 | 0 | 3 | 2 | 3 | ⚠ | `constructs/wrapping/patterns.cs` |
 | `resharper_csharp_wrap_multiple_declaration_style` | `resharper_csharp_max_line_length` | ⚠ INHERITED | 9 | 6 | 3 | 3 | 4 | = | `constructs/wrapping/declarators.cs` |
@@ -166,6 +170,6 @@ that cross is an interaction and nothing else in the repository can see it.
 
 | pairs | reason |
 |---:|---|
-| 41 | no `oracle` fixture in the registry |
+| 39 | no `oracle` fixture in the registry |
 | 1 | excluded by name: keep |
 
