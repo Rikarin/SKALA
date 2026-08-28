@@ -363,10 +363,13 @@ public static class MemberMetrics {
             return null;
         }
 
+        // ⚠ The token goes in. `ControlFlowGraph.Create` takes one and defaults it, so all three of
+        // these silently built an uncancellable graph — over 1.35 M lines, on the one pass that is
+        // most worth interrupting. SK3004 is Skala's own rule and it was firing on Skala.
         return operation switch {
-            IMethodBodyOperation method => ControlFlowGraph.Create(method),
-            IConstructorBodyOperation constructor => ControlFlowGraph.Create(constructor),
-            IBlockOperation block => ControlFlowGraph.Create(block),
+            IMethodBodyOperation method => ControlFlowGraph.Create(method, cancellation),
+            IConstructorBodyOperation constructor => ControlFlowGraph.Create(constructor, cancellation),
+            IBlockOperation block => ControlFlowGraph.Create(block, cancellation),
             _ => null
         };
     }

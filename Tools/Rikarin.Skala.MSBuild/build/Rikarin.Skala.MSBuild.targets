@@ -75,9 +75,6 @@
 
       <_SkalaWorkingDirectory Condition="'$(SkalaToolPath)' == '' and '$(_SkalaManifestHasTool)' == 'true'">$(SkalaToolManifestDirectory)</_SkalaWorkingDirectory>
       <_SkalaWorkingDirectory Condition="'$(_SkalaWorkingDirectory)' == ''">$(MSBuildProjectDirectory)</_SkalaWorkingDirectory>
-
-      <_SkalaCommon>--no-color</_SkalaCommon>
-      <_SkalaCommon Condition="'$(SkalaArguments)' != ''">$(_SkalaCommon) $(SkalaArguments)</_SkalaCommon>
     </PropertyGroup>
 
     <!--
@@ -108,8 +105,57 @@
 
       <_SkalaVerb Condition="'$(SkalaMode)' == 'format'">format</_SkalaVerb>
       <_SkalaWhat Condition="'$(SkalaMode)' == 'format'">`skala format`</_SkalaWhat>
-      <!-- Writing, so 1 means "files were rewritten", which is the point and not a finding. -->
+      <!-- Writing, so the formatting code means "files were rewritten", which is the point and not a finding. -->
       <_SkalaFinding Condition="'$(SkalaMode)' == 'format'"></_SkalaFinding>
+
+      <!--
+        ⚠ **Which code means "a finding" depends on the verb, and getting that wrong is silent.**
+        ADR-010 gives 1 to "the gate failed" and 2 to "formatting changes are needed", and they are
+        two codes on purpose so that a hook can auto-format on one and stop on the other. `check`
+        therefore reports its finding as 1; the two format verbs report theirs as 2.
+
+        Every condition below used to key on 1 regardless of mode. In `check` mode that was right.
+        In `off` mode, which is the default, the tool returned 2 for "these files are not
+        formatted", the finding diagnostic never fired, and the ladder further down claimed the
+        check "could not complete" — so a consumer whose tree needed formatting was told the tool
+        had broken, and SkalaTreatFindingsAsErrors could not fail a build no matter what the tree
+        looked like.
+
+        ⚠ It is a stale copy of a contract that was already corrected once. Core's ExitCodes
+        remarks record that the checking form of `format` used to return 1 for "there are edits"
+        and 2 for "a file failed", the exact inverse of the documented table, and that the
+        inversion survived from M1 to M9 because nothing compared the two copies. This file was the
+        third copy, and it was still on the pre-correction numbering.
+      -->
+      <_SkalaFindingExit Condition="'$(SkalaMode)' == 'off' or '$(SkalaMode)' == ''">2</_SkalaFindingExit>
+      <_SkalaFindingExit Condition="'$(SkalaMode)' == 'check'">1</_SkalaFindingExit>
+      <!--
+        `format` writes, so it has no finding code and this stays empty on purpose: measured against
+        FormatCommand, the writing path returns 0 whether or not it rewrote anything, and the only
+        other code it can produce is the internal-error one. Every non-zero code there is therefore
+        something to report, which is what an empty value here gets. The comment this replaced said
+        the writing path returned 1 for "files were rewritten"; it does not, and has not.
+      -->
+
+      <!--
+        ⚠ The plain-output switch is set beside the verb that has it, and only that verb, because
+        it is not a global option. docs/overview.md's option table gives it to `check` and to
+        `report`; the two format verbs do not accept it, and overview wins over doc 11's looser
+        "Global:" listing (README § "Where a document under docs/plan/ and docs/overview.md
+        disagree"). It used to be appended to every mode from a block above this one, where nothing
+        knew which verb was about to run.
+
+        ⚠ That is not a tidiness point; it is why the default mode gated nothing for a whole
+        release. An option a command does not have is a parse error, which is exit 3, which the
+        ladder at the bottom of this file reads as "the check could not complete" and downgrades to
+        a warning. So `SkalaMode=off` — the default, and the mode every consumer gets without
+        asking — ran a command line the tool rejected before it opened a single file, warned about
+        its own arguments, and reported the tree as ungated. Two assertions in
+        .github/scripts/install-smoke-test.sh had been red on every platform ever since, which is
+        the only reason anybody found out.
+      -->
+      <_SkalaCommon Condition="'$(SkalaMode)' == 'check'">--no-color</_SkalaCommon>
+      <_SkalaCommon Condition="'$(SkalaArguments)' != ''">$(_SkalaCommon) $(SkalaArguments)</_SkalaCommon>
     </PropertyGroup>
 
     <Error Condition="'$(_SkalaVerb)' == ''"
@@ -167,19 +213,25 @@
     <Error Condition="'$(_SkalaMissing)' == 'true' and '$(SkalaRequireTool)' == 'true'"
            File="$(MSBuildProjectFullPath)" Text="$(_SkalaMissingText)" />
 
-    <Warning Condition="'$(_SkalaMissing)' != 'true' and '$(_SkalaExit)' == '1' and '$(_SkalaFinding)' != '' and '$(SkalaTreatFindingsAsErrors)' != 'true'"
+    <Warning Condition="'$(_SkalaMissing)' != 'true' and '$(_SkalaExit)' == '$(_SkalaFindingExit)' and '$(_SkalaFinding)' != '' and '$(SkalaTreatFindingsAsErrors)' != 'true'"
              File="$(MSBuildProjectFullPath)" Text="Skala: $(_SkalaFinding)." />
-    <Error Condition="'$(_SkalaMissing)' != 'true' and '$(_SkalaExit)' == '1' and '$(_SkalaFinding)' != '' and '$(SkalaTreatFindingsAsErrors)' == 'true'"
+    <Error Condition="'$(_SkalaMissing)' != 'true' and '$(_SkalaExit)' == '$(_SkalaFindingExit)' and '$(_SkalaFinding)' != '' and '$(SkalaTreatFindingsAsErrors)' == 'true'"
            File="$(MSBuildProjectFullPath)" Text="Skala: $(_SkalaFinding)." />
 
     <!--
-      2 is the command's own hard failure, 3 configuration, 4 load, 5 internal. None of them is a
-      finding and none of them gates the build: a tool that could not run is not evidence about the
-      code. Say so loudly enough to be fixed.
+      ⚠ Everything else non-zero, rather than a list of codes. None of it is a finding and none of
+      it gates the build: a tool that could not run is not evidence about the code. Say so loudly
+      enough to be fixed.
+
+      The condition is "not zero and not this mode's finding code" and not an enumeration, because
+      an enumeration is a fourth place the exit-code table is written down and the three that
+      already existed did not agree. A code this file has never heard of is exactly the case that
+      must not fall through in silence, and under the old enumeration 1 in `off` mode and the
+      cancellation code in every mode both did.
     -->
-    <Warning Condition="'$(_SkalaMissing)' != 'true' and ('$(_SkalaExit)' == '2' or '$(_SkalaExit)' == '3' or '$(_SkalaExit)' == '4' or '$(_SkalaExit)' == '5')"
+    <Warning Condition="'$(_SkalaMissing)' != 'true' and '$(_SkalaExit)' != '0' and '$(_SkalaExit)' != '$(_SkalaFindingExit)'"
              File="$(MSBuildProjectFullPath)"
-             Text="Skala: $(_SkalaWhat) could not complete (exit $(_SkalaExit) — 2 failed, 3 configuration, 4 load, 5 internal). The build is not gated on it." />
+             Text="Skala: $(_SkalaWhat) could not complete (exit $(_SkalaExit) — 1 gate, 2 formatting, 3 configuration, 4 load, 5 internal). The build is not gated on it." />
   </Target>
 
 </Project>

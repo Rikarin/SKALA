@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text.RegularExpressions;
 using Rikarin.Skala.Testing;
 
@@ -235,6 +236,80 @@ public sealed class ExitCodeContractTests : IDisposable {
 
             Assert.True(match.Success, $"docs/plan/09 § 'Exit codes' has no row for {code}.");
             Assert.Contains(meaning, match.Groups["meaning"].Value, StringComparison.OrdinalIgnoreCase);
+        }
+    }
+
+    /// <summary>
+    ///     ⚠ The third copy of the table: the MSBuild targets, which decide from an exit code whether
+    ///     a consumer's build has a finding.
+    /// </summary>
+    /// <remarks>
+    ///     <para>
+    ///         The class remarks say the table existed twice and the two disagreed. It existed three
+    ///         times. <c>Tools/Rikarin.Skala.MSBuild/build/Rikarin.Skala.MSBuild.targets</c> keyed its
+    ///         finding diagnostic on exit <b>1</b> for every mode — right for <c>SkalaMode=check</c>,
+    ///         wrong for the two format verbs, whose finding is <b>2</b>. So the default mode, which is
+    ///         the mode every consumer gets without asking, never once said "these files are not
+    ///         formatted": it fell through to the "could not complete" branch and reported the tool as
+    ///         broken instead, and <c>SkalaTreatFindingsAsErrors</c> could not fail a build whatever the
+    ///         tree looked like.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ This reads the shipped file rather than a copy of its numbers, for the same reason the
+    ///         test above reads the document: a constant compared against another constant cannot fail
+    ///         when both are wrong together. The only thing that catches this end to end is
+    ///         <c>.github/scripts/install-smoke-test.sh</c>, which needs a pack, a feed and a global
+    ///         install; it did catch it, and then it stayed red for a release because nothing cheaper
+    ///         ever asked the question.
+    ///     </para>
+    /// </remarks>
+    [Fact]
+    public void TheMsBuildTargetsAgreeAboutWhichCodeIsAFinding() {
+        var targets = Path.Combine(
+            CliRunner.RepositoryRoot,
+            "Tools",
+            "Rikarin.Skala.MSBuild",
+            "build",
+            "Rikarin.Skala.MSBuild.targets"
+        );
+
+        var text = File.ReadAllText(targets);
+
+        // Anti-vacuity: a renamed property must fail here rather than let every match below come
+        // back empty and pass.
+        Assert.Contains("_SkalaFindingExit", text, StringComparison.Ordinal);
+
+        var assignments = new Regex(
+            @"<_SkalaFindingExit Condition=""(?<condition>[^""]*)"">(?<code>\d+)</_SkalaFindingExit>",
+            RegexOptions.None
+        );
+
+        var byCode = assignments.Matches(text)
+            .ToDictionary(
+                static match => match.Groups["condition"].Value,
+                static match => int.Parse(match.Groups["code"].Value, CultureInfo.InvariantCulture),
+                StringComparer.Ordinal
+            );
+
+        // `off` is the default and its verb is the formatting check, so its finding is 2. It is
+        // also the mode with no `SkalaMode` set at all, which is why the condition carries both.
+        var format = Assert.Single(byCode, static entry => entry.Key.Contains("'off'", StringComparison.Ordinal));
+        Assert.Contains("'$(SkalaMode)' == ''", format.Key, StringComparison.Ordinal);
+        Assert.Equal(2, format.Value);
+
+        // `check` runs the gate, whose finding is 1.
+        var check = Assert.Single(byCode, static entry => entry.Key.Contains("'check'", StringComparison.Ordinal));
+        Assert.Equal(1, check.Value);
+
+        // ⚠ And the switch that started it: not global, so it may only be handed to the verb that
+        // has it. Anything else is a parse error, which the ladder reads as "the tool broke".
+        var common = new Regex(@"<_SkalaCommon Condition=""(?<condition>[^""]*)"">(?<value>[^<]*)</_SkalaCommon>");
+        foreach (Match match in common.Matches(text)) {
+            if (!match.Groups["value"].Value.Contains("no-color", StringComparison.Ordinal)) {
+                continue;
+            }
+
+            Assert.Contains("'check'", match.Groups["condition"].Value, StringComparison.Ordinal);
         }
     }
 }

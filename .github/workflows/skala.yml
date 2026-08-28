@@ -106,11 +106,45 @@ jobs:
           path: .skala/report.sarif
 
       # The PR comment, rendered from the stored SARIF. Runs no analysis — see fact 2 above.
+      #
+      # ⚠ **A replayed verdict is not a second failure, and this step used to make it one.** `report`
+      # exits with the gate verdict stored in the SARIF, which is right for a terminal and for a
+      # script — but here the check step has already evaluated that gate, already failed on it and
+      # already annotated every finding behind it. Letting it fail again is exactly the fault the
+      # `always()` note above describes: three red X's for one problem, and the extra ones naming the
+      # step that renders rather than the step that decided.
+      #
+      # ⚠ It is spelled out rather than reached for with `continue-on-error`, because the two are not
+      # the same thing. `continue-on-error` would also swallow exit 3 — the SARIF is missing or does
+      # not parse — which is a real fault in this step and the one case where it must go red. Only 1,
+      # the stored verdict, is forgiven, and the step says out loud that it is forgiving it.
       - name: Render the report
         if: always() && hashFiles('.skala/report.sarif') != ''
-        run: >
-          dotnet run --project Tools/Rikarin.Skala.Cli -c Release --no-build --
-          report .skala/report.sarif --format=markdown > skala-report.md
+        shell: bash
+        run: |
+          set -uo pipefail
+          status=0
+          dotnet run --project Tools/Rikarin.Skala.Cli -c Release --no-build -- \
+            report .skala/report.sarif --format=markdown > skala-report.md || status=$?
+
+          if [ "$status" != 0 ] && [ "$status" != 1 ]; then
+            echo "::error::skala report exited $status — the stored SARIF could not be rendered."
+            exit "$status"
+          fi
+
+          if [ "$status" = 1 ]; then
+            echo "::notice::The stored gate verdict is FAIL; the check step above is where that is reported. Rendering succeeded."
+          fi
+
+      # ⚠ The rendered markdown, kept. Without this the step above wrote a file, the job ended, and
+      # the file went with the runner — the render was performed and its result thrown away, so the
+      # only observable effect the step had ever had was its own exit code.
+      - name: Keep the rendered report
+        if: always() && hashFiles('skala-report.md') != ''
+        uses: actions/upload-artifact@v7
+        with:
+          name: skala-report-markdown
+          path: skala-report.md
 
       # ⚠ The step summary is written by `--format=github` itself, into $GITHUB_STEP_SUMMARY. It is
       # not a step here, because a renderer that needed its own step could be forgotten and the run

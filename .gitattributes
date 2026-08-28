@@ -1,3 +1,30 @@
+# ⚠ **LF in the working tree, on every platform, and it is this repository's own declaration.**
+# `.editorconfig` line 5 says `end_of_line = lf` for the whole tree. Git did not know that, so on
+# Windows — where `core.autocrlf=true` is Git for Windows' default and what the hosted runner image
+# ships — a checkout rewrote every file this line now covers into CRLF, and the tree the tests ran
+# against was not the tree that was committed.
+#
+# ⚠ The exemptions below were each added after a red Windows leg or by reasoning from one, and
+# every one of them is a *narrower* answer to this same question. They were never wrong; they were
+# just never generalised, so the next file to be compared byte for byte was unprotected again — and
+# three of them were, all at once:
+#
+#   1. **Thirteen formatter tests.** They express their input as a C# raw string literal, which
+#      takes its line endings from the .cs file on disk. Under a CRLF checkout the input carried
+#      `\r\n`, the formatter faithfully preserved it, and the expected value — written with
+#      explicit `\n` in a normal literal — did not match. `TriviaTests`, `IndentationTests`,
+#      `BraceTests`, `BreakPositionTests` and `FormatterTagTests`, red on Windows and nowhere else.
+#   2. **`RuleCatalogTests.TheCoverageBlock_MatchesTheRegistry`.** `skala rules docs` writes the
+#      generated block with `\n`; the block it was compared against had been CRLF'd on the way out.
+#   3. **`CanonicalCommandTests.Canonical_RegeneratesThePayloadIdentically`.** Exactly the defect
+#      the `editor_config_template` comment below describes, one file over: `canonical.editorconfig`
+#      was `-text` and `canonical.json`, which the same assertion compares, was not.
+#
+# `text=auto` leaves anything git detects as binary alone. Measured before it was set: the only
+# files in this repository stored with a CR are the fifteen under `Testing/corpus/`, and that
+# directory is exempted on the next line, so nothing here normalises a byte anybody wanted.
+* text=auto eol=lf
+
 # ⚠ The corpus is data, not source. Several files exist precisely to carry CRLF, mixed endings or
 # a BOM, and git's end-of-line normalisation would quietly delete the thing they test.
 Testing/corpus/** -text

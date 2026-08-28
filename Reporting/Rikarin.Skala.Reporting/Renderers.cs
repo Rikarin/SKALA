@@ -66,12 +66,12 @@ public static class Renderer {
 
     /// <summary>The totals, the metrics and the gate — the three lines doc 09's example ends with.</summary>
     static void Tail(StringBuilder builder, RunReport report) {
-        builder.Append("  ").AppendLine(ReportTotals.Render(report));
+        builder.Append("  ").Line(ReportTotals.Render(report));
 
         var thresholds = report.Gate is null ? null : GateThresholds(report);
         var metrics = report.Metrics.Render(thresholds);
         if (metrics.Length > 0) {
-            builder.Append("  ").AppendLine(metrics);
+            builder.Append("  ").Line(metrics);
         }
 
         if (report.Gate is { } gate) {
@@ -81,10 +81,10 @@ public static class Renderer {
                 .Append(gate.Passed ? "PASS" : "FAIL")
                 .Append(" in ")
                 .Append(FormatDuration(report.Duration))
-                .AppendLine(report.Partial ? "  ·  ⚠ partial run" : string.Empty);
+                .Line(report.Partial ? "  ·  ⚠ partial run" : string.Empty);
 
             foreach (var failure in gate.Failures) {
-                builder.Append("    ").AppendLine(failure);
+                builder.Append("    ").Line(failure);
             }
 
             return;
@@ -92,7 +92,7 @@ public static class Renderer {
 
         builder.Append("  ")
             .Append(FormatDuration(report.Duration))
-            .AppendLine(report.Partial ? "  ·  ⚠ partial run" : string.Empty);
+            .Line(report.Partial ? "  ·  ⚠ partial run" : string.Empty);
     }
 
     /// <summary>
@@ -130,7 +130,7 @@ public static class Renderer {
                 .Append(' ')
                 .Append(finding.RuleId)
                 .Append(": ")
-                .AppendLine(finding.Message);
+                .Line(finding.Message);
         }
 
         return builder.ToString();
@@ -144,15 +144,15 @@ public static class Renderer {
             .Append(" files  ·  ")
             .Append(report.LineCount.ToString("N0", CultureInfo.InvariantCulture))
             .Append(" lines  ·  ")
-            .AppendLine(report.LoadSummary);
-        builder.AppendLine();
+            .Line(report.LoadSummary);
+        builder.Line();
 
         var findings = Ordered(report, includeHints).ToList();
         foreach (var group in findings.GroupBy(
                      finding => SarifWriter.Relative(report.RepositoryRoot, finding.Path),
                      StringComparer.Ordinal
                  )) {
-            builder.Append("  ").AppendLine(group.Key);
+            builder.Append("  ").Line(group.Key);
             foreach (var finding in group) {
                 builder.Append("    ")
                     .Append(finding.HasFix ? "⟳ " : "  ")
@@ -164,40 +164,69 @@ public static class Renderer {
                     .Append(Word(finding.Severity).PadRight(11))
                     .Append(finding.RuleId)
                     .Append("  ")
-                    .AppendLine(finding.Message);
+                    .Line(finding.Message);
             }
 
-            builder.AppendLine();
+            builder.Line();
         }
 
         foreach (var diagnostic in report.Diagnostics.Where(static d => d.Severity >= SkalaSeverity.Info)) {
-            builder.Append("  ").AppendLine(diagnostic.ToString());
+            builder.Append("  ").Line(diagnostic.ToString());
         }
 
         if (!report.SkippedRules.IsEmpty) {
             builder.Append("  ")
                 .Append(report.SkippedRules.Length.ToString(CultureInfo.InvariantCulture))
                 .Append(" rule(s) did not run: ")
-                .AppendLine(string.Join(", ", report.SkippedRules.Select(static rule => rule.RuleId)));
+                .Line(string.Join(", ", report.SkippedRules.Select(static rule => rule.RuleId)));
 
             // ⚠ Without --verbose this prints the first rule's reason and lets it stand for all of
             // them, which is right when they share one — "no compilation" skips every semantic rule
             // for the same reason — and wrong the moment they do not.
             if (report.Verbose) {
                 foreach (var rule in report.SkippedRules) {
-                    builder.Append("    ").Append(rule.RuleId).Append("  ").AppendLine(rule.Reason);
+                    builder.Append("    ").Append(rule.RuleId).Append("  ").Line(rule.Reason);
                 }
             } else {
-                builder.Append("  ").AppendLine(report.SkippedRules[0].Reason);
+                builder.Append("  ").Line(report.SkippedRules[0].Reason);
             }
 
-            builder.AppendLine();
+            builder.Line();
         }
 
         Tail(builder, report);
         return builder.ToString();
     }
 
+    /// <summary>
+    ///     ⚠ The annotations, and then the verdict — because a log that ends at the annotations does not
+    ///     say what happened.
+    /// </summary>
+    /// <remarks>
+    ///     <para>
+    ///         This renderer used to emit findings and nothing else. The gate's verdict and its reasons go
+    ///         to <c>$GITHUB_STEP_SUMMARY</c>, which is a different page, so the *log* of a failing
+    ///         `Check` step was two hundred annotations followed by
+    ///         <c>
+    ///Process completed with exit code
+    ///         1
+    ///         </c> and no statement of why. Read from the log alone, this repository's own master gate
+    ///         looked like twenty-four errors in one rule family; it was in fact failing four conditions,
+    ///         of which those errors were one, and the largest was that the baseline the `ci` gate names
+    ///         did not exist.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ That last one is the reason the notifications are emitted too, and not only the gate
+    ///         failures. <c>SK9030</c> says in as many words: "the gate names a baseline at
+    ///         .skala/baseline.sarif and there is no such file, so every finding counts as new." The tool
+    ///         had diagnosed itself correctly and put the answer somewhere the log could not reach.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ It is not a second gate (doc 09 forbids that, and this file's own remarks repeat it). It
+    ///         reads <see cref="RunReport.Gate" /> — the verdict the gate already reached — and prints it.
+    ///         Nothing here decides anything.
+    ///     </para>
+    /// </remarks>
     static string Github(RunReport report, bool includeHints) {
         var builder = new StringBuilder();
         foreach (var finding in Ordered(report, includeHints)) {
@@ -218,7 +247,28 @@ public static class Renderer {
                 .Append(",title=")
                 .Append(finding.RuleId)
                 .Append("::")
-                .AppendLine(finding.Message.Replace("\n", "%0A", StringComparison.Ordinal));
+                .Line(finding.Message.Replace("\n", "%0A", StringComparison.Ordinal));
+        }
+
+        // The run's own diagnostics about the run: a missing baseline, a binlog that covers too
+        // little, a rule that could not be loaded. They are what explains the numbers above.
+        foreach (var diagnostic in report.Diagnostics) {
+            builder.Append(diagnostic.Severity >= SkalaSeverity.Error ? "::error::" : "::notice::")
+                .Append(diagnostic.Id)
+                .Append(": ")
+                .Line(diagnostic.Message.Replace("\n", "%0A", StringComparison.Ordinal));
+        }
+
+        if (report.Gate is { } gate) {
+            builder.Append(gate.Passed ? "::notice::" : "::error::")
+                .Append("gate `")
+                .Append(gate.Name)
+                .Append("`: ")
+                .Line(gate.Passed ? "PASS" : "FAIL");
+
+            foreach (var failure in gate.Failures) {
+                builder.Append("::error::  ").Line(failure.Replace("\n", "%0A", StringComparison.Ordinal));
+            }
         }
 
         return builder.ToString();
@@ -300,14 +350,14 @@ public static class AgentRenderer {
                 .Append(paths.Count.ToString(CultureInfo.InvariantCulture))
                 .Append(paths.Count == 1 ? " file needs" : " files need")
                 .Append(" formatting — run: skala format ")
-                .AppendLine(string.Join(" ", paths.Take(20)));
+                .Line(string.Join(" ", paths.Take(20)));
             if (paths.Count > 20) {
                 builder.Append("        … and ")
                     .Append((paths.Count - 20).ToString(CultureInfo.InvariantCulture))
-                    .AppendLine(" more; `skala format .` does all of them.");
+                    .Line(" more; `skala format .` does all of them.");
             }
 
-            builder.AppendLine();
+            builder.Line();
         }
 
         var budget = MaxFindings;
@@ -315,18 +365,18 @@ public static class AgentRenderer {
             builder.Append("FIXABLE ")
                 .Append(fixable.Count.ToString(CultureInfo.InvariantCulture))
                 .Append(fixable.Count == 1 ? " finding has" : " findings have")
-                .AppendLine(" safe automatic fixes — run: skala fix --safe");
+                .Line(" safe automatic fixes — run: skala fix --safe");
             budget -= Emit(builder, report, fixable, budget, indent: "  ");
-            builder.AppendLine();
+            builder.Line();
         }
 
         if (action.Count > 0) {
             builder.Append("ACTION  ")
                 .Append(action.Count.ToString(CultureInfo.InvariantCulture))
                 .Append(action.Count == 1 ? " finding needs" : " findings need")
-                .AppendLine(" a decision");
+                .Line(" a decision");
             Emit(builder, report, action, budget, indent: "  ");
-            builder.AppendLine();
+            builder.Line();
         }
 
         var suppressed = report.Findings.Count(static f => f.Suppression is SuppressionKind.Pragma
@@ -337,19 +387,17 @@ public static class AgentRenderer {
             // disable` is a valid move for a model optimising for the check passing. Surfacing
             // suppressions unprompted is what makes the dishonest path visible.
             builder.Append(suppressed.ToString(CultureInfo.InvariantCulture))
-                .AppendLine(
-                    " finding(s) suppressed by #pragma or [SuppressMessage] — see: skala check --show-suppressions"
-                );
-            builder.AppendLine();
+                .Line(" finding(s) suppressed by #pragma or [SuppressMessage] — see: skala check --show-suppressions");
+            builder.Line();
         }
 
         // ⚠ Said first and unconditionally when there is nothing to do. The SKIPPED block below is
         // context, not work, and an agent that reads a report starting with SKIPPED has to infer
         // that the answer was yes — inference the contract exists to remove.
         if (builder.Length == 0) {
-            builder.AppendLine("OK  nothing to do.");
+            builder.Line("OK  nothing to do.");
             if (!report.SkippedRules.IsEmpty) {
-                builder.AppendLine();
+                builder.Line();
             }
         }
 
@@ -358,8 +406,8 @@ public static class AgentRenderer {
                 .Append(report.SkippedRules.Length.ToString(CultureInfo.InvariantCulture))
                 .Append(" rule(s) did not run (")
                 .Append(report.Mode.ToString().ToLowerInvariant())
-                .AppendLine(" load): " + string.Join(", ", report.SkippedRules.Select(static r => r.RuleId)));
-            builder.AppendLine();
+                .Line(" load): " + string.Join(", ", report.SkippedRules.Select(static r => r.RuleId)));
+            builder.Line();
         }
 
         var text = builder.ToString();
@@ -380,7 +428,7 @@ public static class AgentRenderer {
                 builder.Append(indent)
                     .Append("… ")
                     .Append((findings.Count - shown).ToString(CultureInfo.InvariantCulture))
-                    .AppendLine(" more elided. Run `skala check --format=json` for all of them.");
+                    .Line(" more elided. Run `skala check --format=json` for all of them.");
                 break;
             }
 
@@ -391,12 +439,12 @@ public static class AgentRenderer {
                 .Append(':')
                 .Append(finding.Line.ToString(CultureInfo.InvariantCulture))
                 .Append("  ")
-                .AppendLine(finding.Message);
+                .Line(finding.Message);
 
             // ⚠ "Every finding either carries a fix or carries a one-sentence instruction. Never
             // both, never neither." A finding with no fix gets the rule's summary as an imperative.
             if (!finding.HasFix && RuleCatalog.Find(finding.RuleId) is { } rule) {
-                builder.Append(indent).Append("        → ").AppendLine(rule.Summary);
+                builder.Append(indent).Append("        → ").Line(rule.Summary);
             }
 
             shown++;
@@ -406,4 +454,30 @@ public static class AgentRenderer {
     }
 
     static string Quote(string path) => path.Contains(' ', StringComparison.Ordinal) ? "\"" + path + "\"" : path;
+}
+
+/// <summary>
+///     <c>StringBuilder.AppendLine</c>, with the line ending fixed at <c>\n</c>.
+/// </summary>
+/// <remarks>
+///     ⚠ <c>AppendLine</c> appends <see cref="Environment.NewLine" />, which is CRLF on Windows, so
+///     every renderer in this file emitted CRLF there and LF everywhere else. Only one assertion in
+///     the tree compared a whole rendered string against a literal —
+///     <c>ReportingTests.AgentRenderer_SaysNothingToDoWhenThereIsNothingToDo</c>, expecting
+///     <c>"OK  nothing to do.\n"</c> — so one test failed on Windows and the other seven surfaces
+///     changed shape unobserved.
+///     <para>
+///         ⚠ It is not a cosmetic difference, because these are not all human surfaces. <c>plain</c> is
+///         "greppable, and the format every editor's error parser already understands" (doc 09) and
+///         <c>agent</c> is doc 10's machine report. An output contract that varies by the platform the
+///         tool happens to run on is not a contract. <see cref="GithubRenderer" /> and
+///         <see cref="MarkdownRenderer" />, one file over, already append <c>'\n'</c> by hand for exactly
+///         this reason, and <c>DocsSite</c> makes the same argument at length; this file was the one that
+///         had not been told.
+///     </para>
+/// </remarks>
+static class Lines {
+    internal static StringBuilder Line(this StringBuilder builder) => builder.Append('\n');
+
+    internal static StringBuilder Line(this StringBuilder builder, string text) => builder.Append(text).Append('\n');
 }
