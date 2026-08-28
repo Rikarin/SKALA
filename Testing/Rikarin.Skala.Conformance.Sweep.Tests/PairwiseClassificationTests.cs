@@ -71,7 +71,10 @@ public sealed class PairwiseClassificationTests {
     public void EveryCornerAgreeing_IsConformant() =>
         Assert.Equal(
             PairOutcome.Conformant,
-            PairSweep.Classify(oracleDistinct: 2, skalaDistinct: 2, corners: [
+            PairSweep.Classify(
+                oracleDistinct: 2,
+                skalaDistinct: 2,
+                corners: [
                     Corner("true", "true", agree: true, reached: true),
                     Corner("false", "false", agree: true, reached: false)
                 ],
@@ -84,7 +87,10 @@ public sealed class PairwiseClassificationTests {
     public void OnlyTheInteriorDisagreeing_IsInteractionOnly() =>
         Assert.Equal(
             PairOutcome.InteractionOnly,
-            PairSweep.Classify(oracleDistinct: 2, skalaDistinct: 2, corners: [
+            PairSweep.Classify(
+                oracleDistinct: 2,
+                skalaDistinct: 2,
+                corners: [
                     Corner("true", "true", agree: true, reached: true),
                     Corner("false", "true", agree: true, reached: true),
                     Corner("true", "false", agree: false, reached: false),
@@ -107,7 +113,10 @@ public sealed class PairwiseClassificationTests {
     public void ADisagreementInsideTheCross_IsOrdinaryDivergence() =>
         Assert.Equal(
             PairOutcome.Divergent,
-            PairSweep.Classify(oracleDistinct: 2, skalaDistinct: 2, corners: [
+            PairSweep.Classify(
+                oracleDistinct: 2,
+                skalaDistinct: 2,
+                corners: [
                     Corner("true", "true", agree: false, reached: true),
                     Corner("false", "false", agree: false, reached: false)
                 ],
@@ -125,7 +134,10 @@ public sealed class PairwiseClassificationTests {
     /// </remarks>
     [Fact]
     public void NeitherEngineMoved_IsUnexercised_AndNeverConformant() {
-        var outcome = PairSweep.Classify(oracleDistinct: 1, skalaDistinct: 1, corners: [
+        var outcome = PairSweep.Classify(
+            oracleDistinct: 1,
+            skalaDistinct: 1,
+            corners: [
                 Corner("true", "true", agree: true, reached: true),
                 Corner("false", "true", agree: true, reached: true),
                 Corner("true", "false", agree: true, reached: false),

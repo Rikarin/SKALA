@@ -343,8 +343,8 @@ public sealed class RuleCatalogTests {
     /// <remarks>
     ///     The measurement behind docs/plan/16 § Q5:
     ///     <c>
-    ///resharper_use_throw_if_null_method_highlighting
-    /// = none
+    /// resharper_use_throw_if_null_method_highlighting
+    ///  = none
     ///     </c>. Any rule whose key is not simply its own default is a rule where reading the key
     ///     changes behaviour, and the note is what makes that a decision rather than a surprise.
     /// </remarks>

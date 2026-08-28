@@ -153,8 +153,8 @@ public sealed class WeakCipherAnalyzer : DiagnosticAnalyzer {
     ///     ⚠ Only where <c>ECB</c> is the value <em>being assigned to a cipher's</em> <c>Mode</c>. A
     ///     bare mention of the enum member is not a finding:
     ///     <c>
-    ///if (algorithm.Mode == CipherMode.ECB)
-    /// throw new …
+    /// if (algorithm.Mode == CipherMode.ECB)
+    ///  throw new …
     ///     </c> is a guard against exactly this, and reporting it would mean the rule fires
     ///     on the code written to satisfy it.
     /// </remarks>

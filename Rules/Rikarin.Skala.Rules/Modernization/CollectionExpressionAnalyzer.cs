@@ -25,8 +25,8 @@ namespace Rikarin.Skala.Rules.Modernization;
 ///         written into; <c>object[] a = [ … ]</c> is an array of <c>object</c>, and the two differ at run
 ///         time in a way nothing at the assignment can see. Same for
 ///         <c>
-///IList&lt;T&gt; x = new
-/// List&lt;T&gt;{…}
+/// IList&lt;T&gt; x = new
+///  List&lt;T&gt;{…}
 ///         </c>, where <c>[…]</c> is free to pick any implementation it likes.
 ///     </para>
 ///     <para>

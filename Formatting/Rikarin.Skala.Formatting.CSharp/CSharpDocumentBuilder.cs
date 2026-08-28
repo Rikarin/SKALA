@@ -917,7 +917,8 @@ public sealed partial class CSharpDocumentBuilder {
         // column and its contents start there, so the delimiter's level would put them one indent
         // past the column the oracle writes. The one delimited construct that aligns is a type
         // parameter list under `align_multiline_type_parameter_list`.
-        var suppress = layout == NodeLayout.Parens && !_options.UseContinuousIndentInsideParens
+        var suppress = layout == NodeLayout.Parens
+            && !_options.UseContinuousIndentInsideParens
             || AlignsFromOwnColumn(node);
 
         // ⚠ `align_tuple_components = true`: the column *after* the tuple's `(`, which is a
@@ -1535,29 +1536,32 @@ public sealed partial class CSharpDocumentBuilder {
     }
 
     /// <summary>
-    /// Whether a comment <em>is</em> the tag, rather than mentioning it.
+    ///     Whether a comment <em>is</em> the tag, rather than mentioning it.
     /// </summary>
     /// <remarks>
-    /// ⚠ SK-DIV-0017, and the one place Skala reads the escape hatch more narrowly than the oracle
-    /// does. `resharper_formatter_tags_accept_regexp = false` makes the match literal, and the
-    /// oracle takes "literal" to mean a plain substring test over the comment's whole text: measured,
-    /// `// we support @formatter:off here` turns formatting off to the end of the file in
-    /// <c>jb cleanupcode</c> 2025.2.6 exactly as a bare tag does, and so did Skala.
-    /// <para>
-    /// That is a footgun rather than a feature, and it fired inside this repository: four of Skala's
-    /// own source files have a comment discussing the directive, and the half of each file below that
-    /// comment was silently not being formatted. Nothing reported it. The fuzzer found it the same
-    /// way — <c>./build.sh Lint</c> refused to format its source — and a file that documents a
-    /// directive should not be governed by it.
-    /// </para>
-    /// <para>
-    /// So the rule is: <b>the tag must be the first thing in the comment</b>, after the marker and
-    /// any whitespace. <c>// @formatter:off</c> and <c>// @formatter:off — the table below is
-    /// hand-aligned</c> are the tag; <c>// we support @formatter:off here</c> and
-    /// <c>// ⚠ `@formatter:off`. The finding still stands</c> are prose. Deliberately not an
-    /// equality test: a reason written after the tag is the commonest way anyone writes one, and
-    /// refusing it would trade this footgun for a worse one.
-    /// </para>
+    ///     ⚠ SK-DIV-0017, and the one place Skala reads the escape hatch more narrowly than the oracle
+    ///     does. `resharper_formatter_tags_accept_regexp = false` makes the match literal, and the
+    ///     oracle takes "literal" to mean a plain substring test over the comment's whole text: measured,
+    ///     `// we support @formatter:off here` turns formatting off to the end of the file in
+    ///     <c>jb cleanupcode</c> 2025.2.6 exactly as a bare tag does, and so did Skala.
+    ///     <para>
+    ///         That is a footgun rather than a feature, and it fired inside this repository: four of Skala's
+    ///         own source files have a comment discussing the directive, and the half of each file below that
+    ///         comment was silently not being formatted. Nothing reported it. The fuzzer found it the same
+    ///         way — <c>./build.sh Lint</c> refused to format its source — and a file that documents a
+    ///         directive should not be governed by it.
+    ///     </para>
+    ///     <para>
+    ///         So the rule is: <b>the tag must be the first thing in the comment</b>, after the marker and
+    ///         any whitespace. <c>// @formatter:off</c> and
+    ///         <c>
+    /// // @formatter:off — the table below is
+    /// hand-aligned
+    ///         </c> are the tag; <c>// we support @formatter:off here</c> and
+    ///         <c>// ⚠ `@formatter:off`. The finding still stands</c> are prose. Deliberately not an
+    ///         equality test: a reason written after the tag is the commonest way anyone writes one, and
+    ///         refusing it would trade this footgun for a worse one.
+    ///     </para>
     /// </remarks>
     bool ContainsTag(string text, string tag) {
         if (_options.FormatterTagsAcceptRegexp) {

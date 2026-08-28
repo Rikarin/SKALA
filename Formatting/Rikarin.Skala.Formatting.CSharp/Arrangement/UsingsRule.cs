@@ -161,8 +161,8 @@ public sealed class UsingsRule : ArrangementRule {
     /// <summary>
     ///     ⚠ Ordinal, and <c>System</c> is not hoisted.
     ///     <c>
-    ///dotnet_sort_system_directives_first =
-    /// false
+    /// dotnet_sort_system_directives_first =
+    ///  false
     ///     </c> is an unusual choice and it is the author's; sorting <c>System</c> first "because
     ///     everyone does" would move every using block in the repository on the first run.
     /// </summary>

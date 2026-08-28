@@ -21,8 +21,11 @@ namespace Rikarin.Skala.Testing;
 ///         regenerated, and because the fourth row is the containment claim.
 ///     </para>
 ///     <para>
-///         ⚠ <b>This is no longer the only doc-comment measurement, and it is no longer the interesting
-///         one.</b> <c>harness xmldoc --oracle</c> (<see cref="XmlDocOracle" />) compares Skala against
+///         ⚠
+///         <b>
+///             This is no longer the only doc-comment measurement, and it is no longer the interesting
+///             one.
+///         </b> <c>harness xmldoc --oracle</c> (<see cref="XmlDocOracle" />) compares Skala against
 ///         <see cref="OracleProfile.DocComments" />, which does ask the question, over the
 ///         <c>constructs/xmldoc/</c> subtree. What is still only measurable <em>here</em> is
 ///         <c>corpus/real/</c>, because that set has no doc-comment fixture yet — so these four rows stay

@@ -180,7 +180,9 @@ public sealed class XmlDocModel {
                     break;
 
                 case XmlProcessingInstructionSyntax:
-                    builder.Add(new XmlDocVerbatim(SourceLines(node.ToString(), _markerSpace), ProcessingInstruction: true));
+                    builder.Add(
+                        new XmlDocVerbatim(SourceLines(node.ToString(), _markerSpace), ProcessingInstruction: true)
+                    );
                     _separated = true;
                     _afterWord = false;
                     break;

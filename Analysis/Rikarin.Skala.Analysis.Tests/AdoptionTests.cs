@@ -57,8 +57,8 @@ public sealed class AdoptionTests {
     ///         unsatisfiable.
     ///     </b> Measured on Vixen's <c>Core/Vixen.Water</c> after a full
     ///     <c>
-    ///skala
-    /// format
+    /// skala
+    ///  format
     ///     </c>: <c>format --check</c> reported "0 files would be reformatted" and the <c>ci</c>
     ///     gate still failed with "formatting is not clean; run `skala format`" on 23 <c>SK0002</c>.
     ///     Running the formatter changed nothing, and the bit was computed before scoping so a baseline

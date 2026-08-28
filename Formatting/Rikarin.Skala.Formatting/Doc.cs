@@ -359,8 +359,8 @@ public sealed class Document {
 ///         <item>
 ///             An expression-bodied member <em>removes</em> one:
 ///             <c>
-///keep_existing_expr_member_arrangement =
-/// false
+/// keep_existing_expr_member_arrangement =
+///  false
 ///             </c> re-joins <c>int P =&gt;\n 1;</c>, and leaves the break alone when joining would not
 ///             fit. <see cref="JoinsIfFits" />.
 ///         </item>

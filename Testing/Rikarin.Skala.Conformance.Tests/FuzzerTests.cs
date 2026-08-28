@@ -153,7 +153,8 @@ public sealed class FuzzerTests {
         Assert.True(
             lost.Count == 0,
             $"{lost.Count.ToString(CultureInfo.InvariantCulture)} of 300 cases stopped parsing, so they "
-            + "asserted nothing:\n" + string.Join("\n", lost.Take(5))
+            + "asserted nothing:\n"
+            + string.Join("\n", lost.Take(5))
         );
 
         Assert.True(

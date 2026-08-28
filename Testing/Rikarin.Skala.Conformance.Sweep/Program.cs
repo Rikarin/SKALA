@@ -182,7 +182,9 @@ int Pairwise() {
 
     Console.WriteLine();
     foreach (var outcome in Enum.GetValues<PairOutcome>()) {
-        Console.Write($"{outcome.ToString().ToUpperInvariant()}: {Count(run.Pairs.Count(pair => pair.Outcome == outcome))}   ");
+        Console.Write(
+            $"{outcome.ToString().ToUpperInvariant()}: {Count(run.Pairs.Count(pair => pair.Outcome == outcome))}   "
+        );
     }
 
     Console.WriteLine();

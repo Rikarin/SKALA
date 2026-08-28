@@ -188,8 +188,11 @@ public sealed class CanonicalSeverityTests {
     ///     The real payload against a repository that carries none of it: nothing build-breaking moves.
     /// </summary>
     /// <remarks>
-    ///     ⚠ <b>This assertion was inverted deliberately, and the inversion is the record of a product
-    ///     decision.</b> It read <c>csharp &gt; 200</c> — "the export carries 213" — and its summary called
+    ///     ⚠
+    ///     <b>
+    ///         This assertion was inverted deliberately, and the inversion is the record of a product
+    ///         decision.
+    ///     </b> It read <c>csharp &gt; 200</c> — "the export carries 213" — and its summary called
     ///     the shipped payload "the case that broke Vixen", because a repository taking the canonical
     ///     inherited 213 <c>cs*</c> compiler severities and its build changed underneath it.
     ///     <para>

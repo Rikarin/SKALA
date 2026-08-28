@@ -546,7 +546,7 @@ public sealed class ArrangementRuleTests {
         // is not in `Corpus.Arrangeable()`, so the corpus copy documents the case and this asserts
         // it.
         var source = directive
-                     + "\n   namespace  Fuzz . N1 {\n#if true\n   public sealed  readonly struct T10 {  \n   }\n   }\n#endif";
+            + "\n   namespace  Fuzz . N1 {\n#if true\n   public sealed  readonly struct T10 {  \n   }\n   }\n#endif";
 
         // ⚠ Through the *pipeline*, twice, and not through one `Arranger.Arrange`. A single arrange
         // computes the removable set and consumes it against the same tree, so the two spellings

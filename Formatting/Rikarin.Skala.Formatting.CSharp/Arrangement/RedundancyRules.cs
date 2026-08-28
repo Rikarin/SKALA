@@ -209,8 +209,8 @@ public static class ParenthesesRedundancy {
     ///     bitwise family are <c>resharper_parentheses_non_obvious_operations</c>; <c>&amp;&amp;</c>,
     ///     <c>||</c> and <c>??</c> are
     ///     <c>
-    ///dotnet_style_parentheses_in_other_binary_operators =
-    /// always_for_clarity
+    /// dotnet_style_parentheses_in_other_binary_operators =
+    ///  always_for_clarity
     ///     </c>. Assignment and the conditional operator are kept because
     ///     <c>x = (y = 2)</c> and <c>(a ? b : c)</c> read as deliberate in every corpus instance.
     /// </remarks>

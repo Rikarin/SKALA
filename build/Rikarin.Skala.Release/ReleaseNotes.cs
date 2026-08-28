@@ -16,8 +16,8 @@ namespace Rikarin.Skala.Release;
 ///     <para>
 ///         ⚠ The <c>CHANGELOG.md</c> block keeps the format that file already has —
 ///         <c>
-///## &lt;version&gt; —
-/// &lt;date&gt;
+/// ## &lt;version&gt; —
+///  &lt;date&gt;
 ///         </c> with <c>### Added/Changed/Fixed</c> beneath — because that file was written by
 ///         hand from the merge history and a generator that reformatted it would make the whole record
 ///         unreadable in one commit.

@@ -34,8 +34,11 @@ public sealed record SweepRow(
 ///         the fast path has is the last run's answer, and a regression is visible as a diff.
 ///     </para>
 ///     <para>
-///         ⚠ <b>And for a second job since <c>603fbd3</c>: it carries Skala's own answer at every
-///         configuration the run measured.</b> The oracle half cannot be re-asked without JetBrains and
+///         ⚠
+///         <b>
+///             And for a second job since <c>603fbd3</c>: it carries Skala's own answer at every
+///             configuration the run measured.
+///         </b> The oracle half cannot be re-asked without JetBrains and
 ///         minutes of wall clock, but Skala's half is 485 ms, so recording it turns "has the formatter
 ///         moved since this table was measured?" into a question the fast path can answer on every commit.
 ///         Without it the table's verdicts were checkable only against a formatter nobody had compared

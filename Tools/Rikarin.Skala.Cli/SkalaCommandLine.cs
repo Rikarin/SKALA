@@ -28,8 +28,8 @@ public static partial class SkalaCommandLine {
     ///     docs/plan/04 § "What it does not do" says generated files are "reported as skipped in
     ///     <c>--verbose</c>", and until M9 there was no such option:
     ///     <c>
-    ///skala check --load loose
-    /// --verbose
+    /// skala check --load loose
+    ///  --verbose
     ///     </c> bound <c>--verbose</c> to the variadic <c>&lt;paths&gt;</c> argument, looked
     ///     for C# files in a directory of that name, found none and exited 4. The flag being missing was
     ///     bad; the flag being silently eaten was the defect.

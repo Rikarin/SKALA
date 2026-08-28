@@ -723,8 +723,8 @@ public sealed partial class CSharpDocumentBuilder {
     ///     is the whole point: the caller is deciding a blank line, and a decision that reads whitespace
     ///     the formatter is about to rewrite is not absorbed by
     ///     <c>
-    ///format(mutate_whitespace(x)) ≡
-    /// format(x)
+    /// format(mutate_whitespace(x)) ≡
+    ///  format(x)
     ///     </c>.
     ///     <para>
     ///         The one place the source is still consulted is <see cref="SpaceKind.Preserve" />, and there it

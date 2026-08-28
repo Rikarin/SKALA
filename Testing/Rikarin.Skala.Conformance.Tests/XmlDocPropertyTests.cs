@@ -152,7 +152,8 @@ public sealed class XmlDocPropertyTests {
             .Where(static line =>
                 line.StartsWith("///", StringComparison.Ordinal)
                 && line.Length > 3
-                && line[3] is not (' ' or '/'))
+                && line[3] is not (' ' or '/')
+            )
     ];
 
     static string NonDocLines(string text) =>
