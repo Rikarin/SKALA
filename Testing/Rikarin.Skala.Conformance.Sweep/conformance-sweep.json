@@ -1555,6 +1555,76 @@
     ]
   },
   {
+    "Key": "resharper_csharp_indent_invocation_pars",
+    "Tier": "D",
+    "Outcome": "Conformant",
+    "OracleDistinct": 4,
+    "SkalaDistinct": 4,
+    "BaselineAgrees": true,
+    "Fixture": "constructs/indentation/delimiter-indent.cs",
+    "Values": [
+      {
+        "Value": "inside",
+        "OracleHash": "bf70d10d",
+        "SkalaHash": "bf70d10d",
+        "Agree": true
+      },
+      {
+        "Value": "outside",
+        "OracleHash": "2ba6cd1c",
+        "SkalaHash": "2ba6cd1c",
+        "Agree": true
+      },
+      {
+        "Value": "outside_and_inside",
+        "OracleHash": "030a18bb",
+        "SkalaHash": "030a18bb",
+        "Agree": true
+      },
+      {
+        "Value": "none",
+        "OracleHash": "69563124",
+        "SkalaHash": "69563124",
+        "Agree": true
+      }
+    ]
+  },
+  {
+    "Key": "resharper_csharp_indent_method_decl_pars",
+    "Tier": "D",
+    "Outcome": "Conformant",
+    "OracleDistinct": 4,
+    "SkalaDistinct": 4,
+    "BaselineAgrees": true,
+    "Fixture": "constructs/indentation/delimiter-indent.cs",
+    "Values": [
+      {
+        "Value": "inside",
+        "OracleHash": "bf70d10d",
+        "SkalaHash": "bf70d10d",
+        "Agree": true
+      },
+      {
+        "Value": "outside",
+        "OracleHash": "abd1d63d",
+        "SkalaHash": "abd1d63d",
+        "Agree": true
+      },
+      {
+        "Value": "outside_and_inside",
+        "OracleHash": "6f1aeb67",
+        "SkalaHash": "6f1aeb67",
+        "Agree": true
+      },
+      {
+        "Value": "none",
+        "OracleHash": "4d9d50ea",
+        "SkalaHash": "4d9d50ea",
+        "Agree": true
+      }
+    ]
+  },
+  {
     "Key": "resharper_csharp_indent_nested_fixed_stmt",
     "Tier": "A",
     "Outcome": "Conformant",
@@ -1693,6 +1763,41 @@
     ]
   },
   {
+    "Key": "resharper_csharp_indent_pars",
+    "Tier": "D",
+    "Outcome": "Divergent",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true,
+    "Fixture": "constructs/indentation/delimiter-indent.cs",
+    "Values": [
+      {
+        "Value": "inside",
+        "OracleHash": "bf70d10d",
+        "SkalaHash": "bf70d10d",
+        "Agree": true
+      },
+      {
+        "Value": "outside",
+        "OracleHash": "b5d5758d",
+        "SkalaHash": "b5d5758d",
+        "Agree": true
+      },
+      {
+        "Value": "outside_and_inside",
+        "OracleHash": "b5d5758d",
+        "SkalaHash": "b5d5758d",
+        "Agree": true
+      },
+      {
+        "Value": "none",
+        "OracleHash": "bf70d10d",
+        "SkalaHash": "b5d5758d",
+        "Agree": false
+      }
+    ]
+  },
+  {
     "Key": "resharper_csharp_indent_preprocessor_if",
     "Tier": "D",
     "Outcome": "Divergent",
@@ -1798,6 +1903,41 @@
     ]
   },
   {
+    "Key": "resharper_csharp_indent_primary_constructor_decl_pars",
+    "Tier": "D",
+    "Outcome": "Divergent",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 3,
+    "BaselineAgrees": true,
+    "Fixture": "constructs/indentation/delimiter-indent.cs",
+    "Values": [
+      {
+        "Value": "inside",
+        "OracleHash": "bf70d10d",
+        "SkalaHash": "bf70d10d",
+        "Agree": true
+      },
+      {
+        "Value": "outside",
+        "OracleHash": "bf70d10d",
+        "SkalaHash": "bf70d10d",
+        "Agree": true
+      },
+      {
+        "Value": "outside_and_inside",
+        "OracleHash": "bf70d10d",
+        "SkalaHash": "b288fe28",
+        "Agree": false
+      },
+      {
+        "Value": "none",
+        "OracleHash": "b536ca1b",
+        "SkalaHash": "b536ca1b",
+        "Agree": true
+      }
+    ]
+  },
+  {
     "Key": "resharper_csharp_indent_raw_literal_string",
     "Tier": "D",
     "Outcome": "Divergent",
@@ -1891,6 +2031,76 @@
         "Value": "false",
         "OracleHash": "5b4bd8ee",
         "SkalaHash": "5b4bd8ee",
+        "Agree": true
+      }
+    ]
+  },
+  {
+    "Key": "resharper_csharp_indent_typearg_angles",
+    "Tier": "D",
+    "Outcome": "Divergent",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true,
+    "Fixture": "constructs/indentation/delimiter-indent.cs",
+    "Values": [
+      {
+        "Value": "inside",
+        "OracleHash": "bf70d10d",
+        "SkalaHash": "bf70d10d",
+        "Agree": true
+      },
+      {
+        "Value": "outside",
+        "OracleHash": "c6678bb3",
+        "SkalaHash": "c6678bb3",
+        "Agree": true
+      },
+      {
+        "Value": "outside_and_inside",
+        "OracleHash": "c6678bb3",
+        "SkalaHash": "c6678bb3",
+        "Agree": true
+      },
+      {
+        "Value": "none",
+        "OracleHash": "bf70d10d",
+        "SkalaHash": "c6678bb3",
+        "Agree": false
+      }
+    ]
+  },
+  {
+    "Key": "resharper_csharp_indent_typeparam_angles",
+    "Tier": "D",
+    "Outcome": "Divergent",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 3,
+    "BaselineAgrees": true,
+    "Fixture": "constructs/breaks/type-parameter-list.cs",
+    "Values": [
+      {
+        "Value": "inside",
+        "OracleHash": "0a7c705f",
+        "SkalaHash": "0a7c705f",
+        "Agree": true
+      },
+      {
+        "Value": "outside",
+        "OracleHash": "0a7c705f",
+        "SkalaHash": "0a7c705f",
+        "Agree": true
+      },
+      {
+        "Value": "outside_and_inside",
+        "OracleHash": "0a7c705f",
+        "SkalaHash": "19ffdc66",
+        "Agree": false
+      },
+      {
+        "Value": "none",
+        "OracleHash": "0223374b",
+        "SkalaHash": "0223374b",
         "Agree": true
       }
     ]

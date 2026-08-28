@@ -15,7 +15,7 @@
 <p class="lede">6 keys.</p>
 <section class="option" id="resharper_align_multiline_expression_braces">
 <h2><code>resharper_align_multiline_expression_braces</code> <a class="self" href="#resharper_align_multiline_expression_braces">#</a></h2>
-<p>Align a wrapped braced expression with its opening brace.</p>
+<p>Align a wrapped braced expression with its opening brace. <strong>Not read by the C# formatter</strong> — one of the unprefixed spellings this export writes for the C++ and VB formatters. Measured at both values on a file with five wrapping initializers: the oracle returns it byte-identical. Negative control on the same file: <code>resharper_csharp_wrap_object_and_collection_initializer_style = chop_always</code> and <code>resharper_wrap_array_initializer_style = chop_always</code> both rewrite it, so the file can show an initializer moving.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>
@@ -30,7 +30,7 @@
 </section>
 <section class="option" id="resharper_expression_braces">
 <h2><code>resharper_expression_braces</code> <a class="self" href="#resharper_expression_braces">#</a></h2>
-<p>Where a break may land relative to an initializer's braces.</p>
+<p>Where a break may land relative to an initializer's braces. <strong>Not read by the C# formatter.</strong> Measured at all four values on a file whose initializers wrap and whose <code>}</code> therefore sits on a line of its own — the shape a <code>ParenthesesIndentStyle</code> key would move — and the oracle returns it byte-identical each time, while the C# initializer wrap keys rewrite the same file.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td>one of <code>inside</code>, <code>outside</code>, <code>outside_and_inside</code>, <code>none</code></td></tr>
@@ -45,7 +45,7 @@
 </section>
 <section class="option" id="resharper_use_continuous_line_indent_in_expression_braces">
 <h2><code>resharper_use_continuous_line_indent_in_expression_braces</code> <a class="self" href="#resharper_use_continuous_line_indent_in_expression_braces">#</a></h2>
-<p>Whether an initializer's contents take a continuation level. Inert: the oracle returns the file unchanged at both values.</p>
+<p>Whether an initializer's contents take a continuation level. <strong>Not read by the C# formatter</strong>: the C# spelling of this question is <code>resharper_csharp_use_continuous_indent_inside_initializer_braces</code>, which is implemented and observable. Measured at both values with the negative control described on <code>resharper_align_multiline_expression_braces</code>.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>
@@ -92,7 +92,7 @@
 </section>
 <section class="option" id="resharper_wrap_braced_init_list_style">
 <h2><code>resharper_wrap_braced_init_list_style</code> <a class="self" href="#resharper_wrap_braced_init_list_style">#</a></h2>
-<p>The braced initializer list's wrap style, in the language-generic spelling the export writes.</p>
+<p>The braced initializer list's wrap style, in the language-generic spelling the export writes. <strong>Not read by the C# formatter.</strong> Measured at all three values; <code>chop_always</code> leaves a five-initializer file byte-identical, while <code>resharper_wrap_array_initializer_style = chop_always</code> and <code>resharper_csharp_wrap_object_and_collection_initializer_style = chop_always</code> both chop it one element per line. The C# keys are the ones to implement.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td>one of <code>wrap_if_long</code>, <code>chop_if_long</code>, <code>chop_always</code></td></tr>
