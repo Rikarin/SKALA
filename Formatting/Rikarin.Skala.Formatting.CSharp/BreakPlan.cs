@@ -564,8 +564,20 @@ public sealed class BreakPlan {
 
                 return;
 
-            case TypeParameterConstraintClauseSyntax constraint when !_options.PlaceTypeConstraintsOnSameLine:
-                // place_type_constraints_on_same_line = false: every `where` starts its own line.
+            // ⚠ `place_type_constraints_on_same_line = false`: the constraints leave the
+            // DECLARATION's line, and that is one break before the first `where` — not one before
+            // every `where`, which is what this used to plan. Measured, one key flipped:
+            //     class SameLine<T, U>
+            //         where T : struct where U : class {     ← the clauses stay together
+            //     void M<V>(V v)
+            //         where V : notnull { }
+            // What separates the clauses from one another is
+            // `wrap_multiple_type_parameter_constraints_style` and the author's own breaks, which
+            // survive here because this arm plans no gap between them at all: the same file's
+            // `class OwnLines<T, U>` keeps the `where`s the author put on separate lines.
+            case TypeParameterConstraintClauseSyntax constraint
+                when !_options.PlaceTypeConstraintsOnSameLine
+                && ConstraintsOf(constraint.Parent).FirstOrDefault() == constraint:
                 Mandatory(constraint.WhereKeyword);
                 return;
 
@@ -573,8 +585,16 @@ public sealed class BreakPlan {
                 Mandatory(initializer.ColonToken);
                 return;
 
-            case PrimaryConstructorBaseTypeSyntax primary when !_options.PlacePrimaryConstructorInitializerOnSameLine:
-                Mandatory(FirstToken(primary));
+            // ⚠ The break goes before the `:`, not before the base type — the same side the ordinary
+            // constructor initializer's arm above takes, and it used to take the other one:
+            //     class Primary(int a)        class Primary(int a) :
+            //         : Base(a);                  Base(a);
+            //     ↑ the oracle                ↑ Skala, breaking after the colon
+            // `PrimaryConstructorBaseTypeSyntax` is `Base(a)` and the `:` is its base list's, so the
+            // node's own first token is one token too late.
+            case PrimaryConstructorBaseTypeSyntax { Parent: BaseListSyntax list }
+                when !_options.PlacePrimaryConstructorInitializerOnSameLine:
+                Mandatory(list.ColonToken);
                 return;
 
             default:

@@ -1793,17 +1793,10 @@ public sealed partial class CSharpDocumentBuilder {
 
         switch (piece.Kind) {
             case PieceKind.Token:
-                // ⚠ `indent_raw_literal_string = align`: a multi-line raw literal's interior and its
-                // closing delimiter move with the opening quotes. The shift is uniform, so the
-                // string's value is unchanged; see VerbatimFlags.Realign.
-                _doc.Text(
-                    piece.Text,
-                    span,
-                    _tokens[piece.TokenIndex].IsKind(SyntaxKind.MultiLineRawStringLiteralToken)
-                    && _options.IndentRawLiteralString == RawStringIndentStyle.Align
-                        ? VerbatimFlags.Realign
-                        : VerbatimFlags.None
-                );
+                // ⚠ `indent_raw_literal_string`, all three values. A multi-line raw literal's
+                // interior and its closing delimiter move together, and the shift is uniform, so
+                // the string's value is unchanged; see VerbatimFlags.Realign.
+                _doc.Text(piece.Text, span, RawLiteralFlags(piece));
                 break;
 
             case PieceKind.DisabledText:
@@ -1868,6 +1861,37 @@ public sealed partial class CSharpDocumentBuilder {
         }
 
         _lastPiece = index;
+    }
+
+    /// <summary>
+    ///     <c>indent_raw_literal_string</c>: where a multi-line raw literal's closing delimiter — and
+    ///     with it every interior line — is put.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Three values, and Skala used to write two: <c>indent</c> fell through to
+    ///     <see cref="VerbatimFlags.None" /> and was therefore an alias of <c>do_not_change</c>, which
+    ///     is what the sweep saw as the oracle producing three distinct outputs to Skala's two.
+    ///     Measured on four literals in one file — one already aligned, one flush left, one
+    ///     over-indented, one carrying a blank line — with the statement at eight columns:
+    ///     <code>
+    /// align          content at 16   the column of the opening quotes
+    /// indent         content at 12   the opening LINE's indent, plus one level
+    /// do_not_change  unmoved         every literal exactly as the author left it
+    ///     </code>
+    ///     ⚠ <c>indent</c> is a fact about the line and not about the quotes: all four literals land
+    ///     at twelve however far right their opening quotes sit and however they were indented in the
+    ///     source, which is what separates it from <c>align</c>.
+    /// </remarks>
+    VerbatimFlags RawLiteralFlags(Piece piece) {
+        if (!_tokens[piece.TokenIndex].IsKind(SyntaxKind.MultiLineRawStringLiteralToken)) {
+            return VerbatimFlags.None;
+        }
+
+        return _options.IndentRawLiteralString switch {
+            RawStringIndentStyle.Align => VerbatimFlags.Realign,
+            RawStringIndentStyle.Indent => VerbatimFlags.RealignToIndent,
+            _ => VerbatimFlags.None
+        };
     }
 
     /// <summary>
