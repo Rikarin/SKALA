@@ -1556,12 +1556,13 @@
       "defaultSource": "template",
       "tier": "D",
       "construct": "AlignMultilineConstructs",
-      "summary": "Align multiline constructs — Array and collection initializer, in the language-generic spelling the export writes.",
+      "summary": "Align multiline constructs — Array and collection initializer, in the language-generic spelling the export writes. Not read by the C# formatter: re-measured one key away from the export on constructs/wrapping/initializers.cs, where six initializers wrap, and `false` returns the file byte-identical. Negative control in the same run: `resharper_csharp_align_multiline_array_and_object_initializer = true` rewrites that file, so the probe can show an initializer's column moving.",
       "since": "0.4",
       "oracle": null,
       "docs": "https://www.jetbrains.com/help/resharper/EditorConfig_Index.html",
       "templateLine": 564,
-      "expands": []
+      "expands": [],
+      "inert": "Not read by the C# formatter. `false` returns a six-initializer file byte-identical while `align_multiline_array_and_object_initializer = true` rewrites the same file in the same probe run."
     },
     {
       "key": "resharper_align_multiline_ctor_init",
@@ -1572,12 +1573,13 @@
       "defaultSource": "template",
       "tier": "D",
       "construct": "ConstructorInitializer",
-      "summary": "Align a wrapped constructor initializer with the first argument.",
+      "summary": "Align a wrapped constructor initializer with the first argument. Not read by the C# formatter: measured one key away from the export on a probe carrying a `: base(…)` and a `: this(…)` whose argument lists both chop under the 120-column margin, and `false` returns it byte-identical — the arguments stay on the continuation indent rather than on the first argument's column, which is what the export's own `true` should have produced. Two negative controls on the same probe: `resharper_csharp_align_first_arg_by_paren = true` and `resharper_csharp_indent_invocation_pars = outside` both move that initializer's arguments.",
       "since": "0.4",
       "oracle": null,
       "docs": "https://www.jetbrains.com/help/resharper/EditorConfig_Index.html",
       "templateLine": 568,
-      "expands": []
+      "expands": [],
+      "inert": "Not read by the C# formatter. A wrapped `: base(…)` keeps the continuation indent at both values, where the export's `true` should have put the arguments on the first argument's column; two other keys move that same initializer in the same probe run."
     },
     {
       "key": "resharper_align_multiline_expression_braces",
@@ -1588,7 +1590,7 @@
       "defaultSource": "template",
       "tier": "D",
       "construct": "Initializer",
-      "summary": "Align a wrapped braced expression with its opening brace. **Not read by the C# formatter** — one of the unprefixed spellings this export writes for the C++ and VB formatters. Measured at both values on a file with five wrapping initializers: the oracle returns it byte-identical. Negative control on the same file: `resharper_csharp_wrap_object_and_collection_initializer_style = chop_always` and `resharper_wrap_array_initializer_style = chop_always` both rewrite it, so the file can show an initializer moving.",
+      "summary": "Align a wrapped braced expression with its opening brace. **Not read by the C# formatter** — one of the unprefixed spellings this export writes for the C++ and VB formatters. Measured at both values on a file with five wrapping initializers: the oracle returns it byte-identical. Negative control on the same file: `resharper_csharp_wrap_object_and_collection_initializer_style = chop_always` and `resharper_wrap_array_initializer_style = chop_always` both rewrite it, so the file can show an initializer moving. ⚠ Re-confirmed at the coverage pass on a second probe — an eighteen-file corpus including constructs/wrapping/initializers.cs — where `true` returns every file byte-identical while `resharper_csharp_align_multiline_array_and_object_initializer = true` rewrites the initializers in the same run.",
       "since": "0.4",
       "oracle": null,
       "docs": "https://www.jetbrains.com/help/resharper/EditorConfig_Index.html",
@@ -1605,12 +1607,13 @@
       "defaultSource": "template",
       "tier": "D",
       "construct": "BaseList",
-      "summary": "Align a wrapped base list with the first base type.",
+      "summary": "Align a wrapped base list with the first base type. Not read by the C# formatter: measured one key away from the export on constructs/wrapping/base-list-alignment.cs, whose base list wraps under the 120-column margin, and `false` returns it byte-identical. Negative control in the same run: `resharper_csharp_align_multiline_extends_list = true` — the C# key for the same construct — moves that base list onto the first base type's column.",
       "since": "0.4",
       "oracle": null,
       "docs": "https://www.jetbrains.com/help/resharper/EditorConfig_Index.html",
       "templateLine": 570,
-      "expands": []
+      "expands": [],
+      "inert": "Not read by the C# formatter. `false` returns a wrapping base list byte-identical while `align_multiline_extends_list = true` moves the same list onto the first base type's column."
     },
     {
       "key": "resharper_align_multiline_type_argument",
@@ -1621,12 +1624,13 @@
       "defaultSource": "template",
       "tier": "D",
       "construct": "TypeArgumentList",
-      "summary": "Align a wrapped type-argument list with the first argument.",
+      "summary": "Align a wrapped type-argument list with the first argument. Not read by the C# formatter: measured one key away from the export on a probe carrying a nested `Dictionary<…, Dictionary<…, …>>` property type and a generic invocation with explicit type arguments, both of which wrap at 120 columns, and `false` returns them byte-identical — the second line keeps the continuation indent rather than the first type argument's column, which the export's own `true` should have given it. Negative control on the same probe: `resharper_csharp_indent_typearg_angles = none` moves it.",
       "since": "0.4",
       "oracle": null,
       "docs": "https://www.jetbrains.com/help/resharper/EditorConfig_Index.html",
       "templateLine": 575,
-      "expands": []
+      "expands": [],
+      "inert": "Not read by the C# formatter. A wrapped type-argument list keeps the continuation indent at both values, where the export's `true` should have put it on the first type argument's column; `indent_typearg_angles = none` moves the same list in the same probe run."
     },
     {
       "key": "resharper_align_multiline_type_parameter",
@@ -1637,12 +1641,13 @@
       "defaultSource": "template",
       "tier": "D",
       "construct": "TypeParameterList",
-      "summary": "Align a wrapped type-parameter list with the first parameter.",
+      "summary": "Align a wrapped type-parameter list with the first parameter. Not read by the C# formatter, and re-measured rather than inherited from the nine-key claim its neighbour `resharper_align_multiline_type_parameter_list` escaped: asked on constructs/breaks/type-parameter-list.cs, which does wrap at 120 columns, `false` returns it byte-identical. Negative control in the same run: `resharper_align_multiline_type_parameter_list = true` — the unprefixed spelling the C# formatter *does* read — moves the wrapped line onto the first type parameter's column.",
       "since": "0.4",
       "oracle": null,
       "docs": "https://www.jetbrains.com/help/resharper/EditorConfig_Index.html",
       "templateLine": 576,
-      "expands": []
+      "expands": [],
+      "inert": "Not read by the C# formatter. `false` returns a wrapping type-parameter list byte-identical while `align_multiline_type_parameter_list = true` moves the same list onto the first parameter's column."
     },
     {
       "key": "resharper_align_multiline_type_parameter_constraints",
@@ -1653,12 +1658,13 @@
       "defaultSource": "unknown",
       "tier": "D",
       "construct": "TypeParameterConstraintClause",
-      "summary": "Undocumented ReSharper property; classified as C#-relevant by vocabulary.",
+      "summary": "Align a wrapped constraint list with the first `where`. Read by the C# formatter — this is one of the unprefixed spellings the nine-key \"C++ and VB only\" claim does *not* cover — and masked at the export's own values, so the per-option unit cannot reach it. `resharper_csharp_wrap_before_first_type_parameter_constraint = true` gives the first `where` a line of its own and leaves nothing on the declaration's line to align to. Measured on constructs/breaks/type-parameter-constraints.cs with that key set to `false` as well: a second `where` then lands on the first `where`'s column (46 on the local function, 53 on the type declaration) instead of one continuation indent in. Two flips, so it stays Tier D and unfixtured.",
       "since": "0.1",
       "oracle": null,
       "docs": null,
       "templateLine": 577,
-      "expands": []
+      "expands": [],
+      "inert": "Masked by `wrap_before_first_type_parameter_constraint = true`, which puts the first `where` on its own line so there is nothing left to align to. Decisive with that key at `false`: the second `where` moves onto the first one's column. Two flips, so the one-key sweep cannot reach it."
     },
     {
       "key": "resharper_align_multiline_type_parameter_list",
@@ -1685,12 +1691,13 @@
       "defaultSource": "template",
       "tier": "D",
       "construct": "ConditionalExpression",
-      "summary": "How the arms of a wrapped conditional expression are aligned.",
+      "summary": "How the arms of a wrapped conditional expression are aligned. Not read by the C# formatter: all three values return constructs/wrapping/ternary.cs and constructs/wrapping/ternary-chains.cs byte-identical — the single conditional and the nested chain alike, which is the shape `align_all` and `align_not_nested` can only differ on. Negative controls in the same run: `resharper_outdent_ternary_ops = true` and `resharper_csharp_align_multiline_expression = true` both move the chain's `?` and `:`, so the probe can show a conditional's arms changing column.",
       "since": "0.4",
       "oracle": null,
       "docs": "https://www.jetbrains.com/help/resharper/EditorConfig_Index.html",
       "templateLine": 579,
-      "expands": []
+      "expands": [],
+      "inert": "Not read by the C# formatter. All three values return a single conditional and a nested conditional chain byte-identical, while two other keys move the same chain's operators in the same probe run."
     },
     {
       "key": "resharper_alignment_tab_fill_style",
@@ -1701,7 +1708,7 @@
       "defaultSource": "template",
       "tier": "D",
       "construct": "Generalized",
-      "summary": "Generalized ReSharper property; sets every option it expands to at once.",
+      "summary": "Generalized ReSharper property; sets every option it expands to at once. Unreachable for two independent reasons, both measured. (1) Masked by `indent_style = space`: all three values return an 18-file probe byte-identical one key away from the export. Under `indent_style = tab` all three separate, and `use_tabs_only` and `optimal_fill` separate from each other as well — three distinct spellings of the same alignment column, which is SK-DIV-0032's table. (2) Even unmasked it could only be measured INERT: Skala writes one layout at every value, and the corpus has no per-directory `.editorconfig`, so no fixture under a tab configuration can exist to carry it. The divergence is recorded against `resharper_csharp_alignment_tab_fill_style` and is Skala's to fix rather than an option to implement.",
       "since": "0.1",
       "oracle": null,
       "docs": "https://www.jetbrains.com/help/resharper/EditorConfig_Generalized.html",
@@ -1709,7 +1716,8 @@
       "expands": [
         "resharper_csharp_alignment_tab_fill_style",
         "resharper_xmldoc_alignment_tab_fill_style"
-      ]
+      ],
+      "inert": "Masked by `indent_style = space`: all three values return an 18-file probe byte-identical, and all three separate under `indent_style = tab`. Not fixturable even then — the corpus has no per-directory `.editorconfig`, and Skala writes one layout at every value (SK-DIV-0032)."
     },
     {
       "key": "resharper_apply_auto_detected_rules",
@@ -1844,7 +1852,7 @@
       "defaultSource": "template",
       "tier": "D",
       "construct": "AlignMultilineConstructs",
-      "summary": "Align multiline constructs — Call arguments by '('",
+      "summary": "Align multiline constructs — Call arguments by '('. Observable one key away from the export and not implemented, so a fixture would score INERT rather than measure anything: asked at `true` on a probe of wrapping calls and a wrapping `: base(…)`, the oracle puts every argument on the `(`'s column plus one and the closing parenthesis on the `(`'s own column, one *left* of them (arguments at 53, closer at 52). Skala returns the same files byte-identical at both values. The implementation gap is a caller and not a model: LayoutWriter.Scope has carried CloserLevel separately from Level since milestone 3, and what is missing is VisitDelimited opening the Align scope with a CloserLevel of its own.",
       "since": "0.1",
       "oracle": null,
       "docs": "https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpIndentStylePageSchema.html#resharper_csharp_align_first_arg_by_paren",
@@ -1884,12 +1892,13 @@
       "defaultSource": "template",
       "tier": "D",
       "construct": "AlignMultilineConstructs",
-      "summary": "Align multiline constructs — Call arguments",
+      "summary": "Align multiline constructs — Call arguments. Masked at the export's own values, so the per-option unit cannot reach it: `resharper_csharp_wrap_after_invocation_lpar = true` gives the first argument a line of its own, and there is then no first argument on the `(`'s line for the rest to align to. Re-measured with that key at `false` as well, on a probe whose calls wrap at 120 columns: the second and later arguments then land on the first argument's column (53 and 57 on the two calls) rather than on the continuation indent. Two flips, so it stays Tier D and unfixtured.",
       "since": "0.1",
       "oracle": null,
       "docs": "https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpIndentStylePageSchema.html#resharper_csharp_align_multiline_argument",
       "templateLine": 688,
-      "expands": []
+      "expands": [],
+      "inert": "Masked by `wrap_after_invocation_lpar = true`, which puts the first argument on its own line so there is nothing on the `(`'s line to align to. Decisive with that key at `false`: the arguments move onto the first argument's column. Two flips, so the one-key sweep cannot reach it."
     },
     {
       "key": "resharper_csharp_align_multiline_array_and_object_initializer",
@@ -1964,7 +1973,7 @@
       "defaultSource": "template",
       "tier": "D",
       "construct": "AlignMultilineConstructs",
-      "summary": "Align multiline constructs — Chained method calls. Observed and not implementable as the alignment machinery stands: the anchor is the column the chain's first `.` lands on, and that is a function of the layout rather than a source position. At 120 columns `wrap_before_first_method_call = false` keeps the first call on the head line and the rest align under its dot; at 70 the layout breaks before that dot too and the anchor becomes the receiver's own column. At 50 the oracle abandons the alignment for a long receiver, which is the one shape on which `allow_far_alignment` has been seen to matter.",
+      "summary": "Align multiline constructs — Chained method calls. Observed and not implementable as the alignment machinery stands: the anchor is the column the chain's first `.` lands on, and that is a function of the layout rather than a source position. At 120 columns `wrap_before_first_method_call = false` keeps the first call on the head line and the rest align under its dot; at 70 the layout breaks before that dot too and the anchor becomes the receiver's own column. At 50 the oracle abandons the alignment for a long receiver, which is the one shape on which `allow_far_alignment` has been seen to matter. ⚠ Re-confirmed at the coverage pass: the oracle moves constructs/wrapping/chained-calls.cs and constructs/alignment/outdent.cs at `true`, and Skala returns both byte-identical at either value, so a glob on this key would score INERT and claim evidence that does not exist.",
       "since": "0.1",
       "oracle": null,
       "docs": "https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpIndentStylePageSchema.html#resharper_csharp_align_multiline_calls_chain",
@@ -1984,7 +1993,7 @@
       "defaultSource": "template",
       "tier": "D",
       "construct": "AlignMultilineConstructs",
-      "summary": "Align multiline constructs — Align multiline comments with asterisks",
+      "summary": "Align multiline constructs — Align multiline comments with asterisks. Observable one key away from the export and not implemented, so a fixture would score INERT rather than measure anything. `true` is the export's value, and at it the oracle pulls every ` * ` continuation line of a block comment onto the opening `/*`'s column plus one; at `false` it leaves the comment exactly as written, which is what Skala does at both values. A comment with no leading asterisks is untouched at either value by both engines. It rewrites the interior of a comment token, which no other key in this family does and which the formatter has no trivia rewriter for — and it is the only member of the family whose export value is the one Skala fails to honour, so it is a divergence at the export's own values (SK-DIV-0033) rather than merely an unimplemented option.",
       "since": "0.1",
       "oracle": null,
       "docs": "https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpIndentStylePageSchema.html#resharper_csharp_align_multiline_comments",
@@ -2004,7 +2013,7 @@
       "defaultSource": "template",
       "tier": "D",
       "construct": "AlignMultilineConstructs",
-      "summary": "Align multiline constructs — Other expressions",
+      "summary": "Align multiline constructs — Other expressions. Observable one key away from the export and not implemented, so a fixture would score INERT rather than measure anything: at `true` the oracle moves a binary chain, a pattern chain, a `for` header and a nested conditional chain, and Skala returns all four byte-identical at both values. The union is narrower than the name — measured, it is byte-identical to `align_multiline_binary_expressions_chain` on a binary chain, lands four columns left of `align_multiline_binary_patterns` on a pattern chain, and covers neither a chained call nor an argument list. An Align scope reads the column where it opens and cannot see the enclosing expression, which is what the pattern-chain case would need.",
       "since": "0.1",
       "oracle": null,
       "docs": "https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpIndentStylePageSchema.html#resharper_csharp_align_multiline_expression",
@@ -2044,12 +2053,13 @@
       "defaultSource": "template",
       "tier": "D",
       "construct": "AlignMultilineConstructs",
-      "summary": "Align multiline constructs — 'for' statement header",
+      "summary": "Align multiline constructs — 'for' statement header. Masked at the export's own values and confirmed a fourth time here: `resharper_align_multiline_statement_conditions = true` already aligns a `for` header by its `(`, either key alone is enough, and the export has the other one on. `true` alone returns constructs/wrapping/for-header.cs byte-identical; with `align_multiline_statement_conditions = false` supplied as well the two values separate. Two flips, so the per-option unit cannot reach it and it stays Tier D and unfixtured.",
       "since": "0.1",
       "oracle": null,
       "docs": "https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpIndentStylePageSchema.html#resharper_csharp_align_multiline_for_stmt",
       "templateLine": 692,
-      "expands": []
+      "expands": [],
+      "inert": "Masked by `align_multiline_statement_conditions = true`, which already aligns a `for` header by its `(`. Decisive with that key at `false`. Two flips, so the one-key sweep cannot reach it."
     },
     {
       "key": "resharper_csharp_align_multiline_list_pattern",
@@ -2084,12 +2094,13 @@
       "defaultSource": "template",
       "tier": "D",
       "construct": "AlignMultilineConstructs",
-      "summary": "Align multiline constructs — Method parameters",
+      "summary": "Align multiline constructs — Method parameters. Masked at the export's own values, so the per-option unit cannot reach it: `resharper_csharp_wrap_after_declaration_lpar = true` gives the first parameter a line of its own, and there is then no first parameter on the `(`'s line for the rest to align to. Re-measured with that key at `false` as well, on a declaration that wraps at 120 columns: the second and later parameters then land on the first parameter's column (61) rather than on the continuation indent. Two flips, so it stays Tier D and unfixtured.",
       "since": "0.1",
       "oracle": null,
       "docs": "https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpIndentStylePageSchema.html#resharper_csharp_align_multiline_parameter",
       "templateLine": 693,
-      "expands": []
+      "expands": [],
+      "inert": "Masked by `wrap_after_declaration_lpar = true`, which puts the first parameter on its own line so there is nothing on the `(`'s line to align to. Decisive with that key at `false`: the parameters move onto the first parameter's column. Two flips, so the one-key sweep cannot reach it."
     },
     {
       "key": "resharper_csharp_align_multiline_property_pattern",
@@ -3972,12 +3983,13 @@
       "defaultSource": "template",
       "tier": "D",
       "construct": "AlignSimilarCodeInColumns",
-      "summary": "Align similar code in columns — Fix column alignment in adjacent lines",
+      "summary": "Align similar code in columns — Fix column alignment in adjacent lines. Measured inert on a stronger probe than the recorded \"no answer while no run exists\". `false` one key away from the export returns an 18-file probe byte-identical, which is the weak reading. It is also byte-identical with `int_align_variables = true` and `int_align_fields = true` supplied — so adjacent declarations really are padded into a column and the neighbours it claims to govern exist — and byte-identical again with `allow_far_alignment = true` added on top of that. Two second keys tried, and the key moves nothing in either, so this is not merely masking.",
       "since": "0.1",
       "oracle": null,
       "docs": "https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpIndentStylePageSchema.html#resharper_csharp_int_align_fix_in_adjacent",
       "templateLine": 814,
-      "expands": []
+      "expands": [],
+      "inert": "Moves nothing at either value, and not for want of a run to refine: byte-identical alone, byte-identical with `int_align_variables` and `int_align_fields` on so that adjacent declarations really are in a column, and byte-identical again with `allow_far_alignment = true` added."
     },
     {
       "key": "resharper_csharp_int_align_invocations",
@@ -4873,7 +4885,8 @@
       "oracle": null,
       "docs": "https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpIndentStylePageSchema.html#resharper_csharp_outdent_commas",
       "templateLine": 880,
-      "expands": []
+      "expands": [],
+      "inert": "Masked by `wrap_before_comma = false`: the comma is trailing, and a trailing comma is not something the line after it can be outdented by. Re-confirmed one key away from the export — `true` alone returns an 18-file probe byte-identical — and decisive with `wrap_before_comma = true` supplied, where it moves the leading comma of eight of those files. Two flips, so the one-key sweep cannot reach it."
     },
     {
       "key": "resharper_csharp_outdent_dots",
@@ -8677,9 +8690,9 @@
       "defaultSource": "template",
       "tier": "D",
       "construct": "Generalized",
-      "summary": "Generalized ReSharper property; sets every option it expands to at once.",
+      "summary": "Generalized ReSharper property; sets every option it expands to at once. ⚠ Two recorded claims about this key are refuted, and it is measurable because of it. (1) \"`resharper_int_align = true` alone produces no alignment from the oracle\" is wrong: at `true` the oracle pads ten of an eighteen-file probe — fields, properties, methods, locals, assignments, trailing comments, switch sections, switch-expression arms, enum initializers, chopped parameter lists. (2) \"Nothing applies the expansion; OptionResolver resolves keys and aliases and leaves generalized properties alone\" is stale — OptionResolver.Expand has written each generalized key's value into the keys it names since the expansion work, so Skala moves too. Both engines therefore move on constructs/alignment/int-align.cs, and the sweep's verdict there is DIVERGENT with the baseline agreeing: they agree at `false` (the export's value) and disagree at `true`, on one line. The whole divergence is an interaction inside the family — with `int_align_methods` and `int_align_parameters` both on, the oracle pads *inside* the parameter list (`void Method(int                a) { }`) and Skala pads after the `)` (`void Method(int a)                { }`) — which neither key shows when flipped alone.",
       "since": "0.1",
-      "oracle": null,
+      "oracle": "constructs/alignment/int-align.cs",
       "docs": "https://www.jetbrains.com/help/resharper/EditorConfig_Generalized.html",
       "templateLine": 807,
       "expands": [
@@ -8707,12 +8720,13 @@
       "defaultSource": "template",
       "tier": "D",
       "construct": "IntAlign",
-      "summary": "Column-align declaration names.",
+      "summary": "Column-align declaration names. Not read by the C# formatter, on two measurements rather than one. (1) `true` one key away from the export returns a probe of adjacent fields, locals, assignments and enum members byte-identical. (2) The stronger question — \"is that a fact about the probe, or about the key?\" — asked with `resharper_int_align = true` supplied as well, so every `resharper_csharp_int_align_*` key is on and a run exists at every one of those shapes: turning this key *off* on top of that changes nothing. The column it claims to govern is produced by `resharper_csharp_int_align_fields` and `…_variables` and is indifferent to this spelling.",
       "since": "0.4",
       "oracle": null,
       "docs": "https://www.jetbrains.com/help/resharper/EditorConfig_Index.html",
       "templateLine": 810,
-      "expands": []
+      "expands": [],
+      "inert": "Not read by the C# formatter. Inert alone, and still inert with `resharper_int_align = true` supplied so that a declaration-name run exists at every shape in the probe — turning it off on top of that changes nothing."
     },
     {
       "key": "resharper_int_align_enum_initializers",
@@ -8723,12 +8737,13 @@
       "defaultSource": "template",
       "tier": "D",
       "construct": "IntAlign",
-      "summary": "Column-align enum member initializers.",
+      "summary": "Column-align enum member initializers. Not read by the C# formatter, on two measurements. (1) `true` one key away from the export returns two probe enums whose member names differ in width byte-identical. (2) With `resharper_int_align = true` supplied — which does pad both enums' `=` into a column — turning this key *off* on top of that changes nothing. `resharper_csharp_int_align_fields` is what aligns an enum's initializers; this spelling is the C++ and VB formatters'.",
       "since": "0.4",
       "oracle": null,
       "docs": "https://www.jetbrains.com/help/resharper/EditorConfig_Index.html",
       "templateLine": 812,
-      "expands": []
+      "expands": [],
+      "inert": "Not read by the C# formatter. Inert alone, and still inert with `resharper_int_align = true` supplied so that the enum initializers really are in a column — turning it off on top of that changes nothing. `int_align_fields` owns the construct."
     },
     {
       "key": "resharper_int_align_eq",
@@ -8739,12 +8754,13 @@
       "defaultSource": "template",
       "tier": "D",
       "construct": "IntAlign",
-      "summary": "Column-align `=` signs. Named by docs/plan/05 § \"Alignment\" and dropped by the M0 importer.",
+      "summary": "Column-align `=` signs. Named by docs/plan/05 § \"Alignment\" and dropped by the M0 importer. Not read by the C# formatter, on two measurements. (1) `true` one key away from the export returns a probe of adjacent fields, locals and assignments byte-identical. (2) With `resharper_int_align = true` supplied — which does pad every one of those `=` into a column — turning this key *off* on top of that changes nothing. The `=` column is `resharper_csharp_int_align_{fields,variables,assignments}`'; this spelling is the C++ and VB formatters'.",
       "since": "0.4",
       "oracle": null,
       "docs": "https://www.jetbrains.com/help/resharper/EditorConfig_Index.html",
       "templateLine": 813,
-      "expands": []
+      "expands": [],
+      "inert": "Not read by the C# formatter. Inert alone, and still inert with `resharper_int_align = true` supplied so that every `=` in the probe really is in a column — turning it off on top of that changes nothing."
     },
     {
       "key": "resharper_keep_existing_lambda_and_anonymous_function_parens_arrangement",
@@ -8932,7 +8948,7 @@
       "defaultSource": "unknown",
       "tier": "D",
       "construct": "ConditionalExpression",
-      "summary": "Outdent a wrapped `?` and `:`. Observed and not implemented: the oracle moves them left by two columns, which the level-based IR cannot express. ⚠ Re-measured at the ternary-chain work: it moves only the layout that wraps *at* the signs, and leaves a nested chain — which wraps after each `:` — exactly where it was. So it is the C# formatter that reads this unprefixed spelling, unlike `align_ternary` beside it.",
+      "summary": "Outdent a wrapped `?` and `:`. Observed and not implemented: the oracle moves them left by two columns, which the level-based IR cannot express. ⚠ Re-measured at the ternary-chain work: it moves only the layout that wraps *at* the signs, and leaves a nested chain — which wraps after each `:` — exactly where it was. So it is the C# formatter that reads this unprefixed spelling, unlike `align_ternary` beside it. ⚠ Re-measured at the coverage pass on constructs/wrapping/ternary-chains.cs: at `true` the oracle moves three of that file's layouts' `?` and `:` from column 12 to 10, and it is the only probe file of eighteen that moves — so the key really is the conditional's and not something broader. Skala returns the file byte-identical at both values, so a glob on this key would score INERT.",
       "since": "0.1",
       "oracle": null,
       "docs": null,
