@@ -2458,3 +2458,124 @@ reproduce. The construct is written down here instead, in the shape a future fix
 - options: `resharper_xmldoc_wrap_tags_and_pi`
 - ⚠ status: **open**, cause established and the prerequisite named. Not a wrapping bug — a missing
   half of the model.
+
+## SK-DIV-0080 — an aligned list pattern's continuation lines are not filled greedily, and no one rule fills both it and a collection expression
+
+⚠ **The columns were the visible half and they are fixed.** `align_multiline_list_pattern = true`
+anchors a list pattern and a collection expression on their own `[`, and the oracle puts the elements
+one level *past* that anchor while bringing the `]` back to it — the same relationship a braced
+initializer already had, and the reason `align_multiline_array_and_object_initializer` and
+`align_multiline_switch_expression` were conformant while this key was not. `PlanDelimited` read
+"aligned" as "no level at all" and put the elements on the bracket's own column. That is repaired.
+
+What is left is the *packing* of every continuation line after the first, and it is not reproducible
+by a width rule. Measured against `jb cleanupcode` 2025.2.6 at the export's 120-column margin, this
+key alone flipped, on `constructs/wrapping/alignment.cs` and on four purpose-built probes:
+
+```
+                                       firstElementPatternName, secondElementPatternName, thirdElementPatternName,   ← 114
+                                       fourthElementPatternName,                                                     ← 64
+                                       fifthElementPatternName                                                       ← 62
+                                   ];
+```
+
+Line 1 is greedy: adding the fourth element would reach 139. Line 2 is not — `fifthElementPatternName`
+would put it at 88, well inside the margin, and the oracle still moves it down. Skala fills greedily
+and writes the two together.
+
+⚠ **It is not "fill the first line, then chop", and it is not a narrower margin either.** Both
+readings are refuted by the same run:
+
+| probe (element widths held, anchor held) | the oracle's lines |
+|---|---|
+| six elements, last one two columns wide | 3 / 1 / **2** — so the tail is not chopped |
+| fifth element 10, 16 or 20 columns wide | 3 / 1 / 1 at every width — so it is not a threshold on the item |
+| collection expression, same elements, anchor 46 | 2 / **2** / 1 — a *different* packing on the same key |
+| either construct, `align_multiline_list_pattern = false` | 4 / 1 — greedy, and both engines agree |
+
+The last two rows are what closes the door. At the same margin, the same element widths and the same
+anchor column, the oracle packs a list pattern 3/1/1 and a collection expression 2/2/1 — and
+`resharper_wrap_list_pattern` is the one key that governs both. A continuation budget that explains
+the list pattern's line 2 (< 82 columns) contradicts the collection expression's (≥ 96). And the
+whole effect disappears when the construct is not aligned, where both engines are greedy and agree.
+
+⚠ Skala's behaviour is therefore deliberate: `wrap_if_long` is a greedy fill everywhere in this
+formatter — that is what the value means, what `LayoutWriter`'s fill point implements, and what the
+oracle itself does for the same key on the same construct when alignment is off. Reproducing the
+aligned answer would mean fitting a second, construct-specific packing rule to numbers that
+contradict each other across two constructs of one key. This is SK-DIV-0005's class: a ReSharper wrap
+threshold that no affine function of the numbers this fitter has will reproduce, recorded rather than
+fitted.
+
+- options: `resharper_csharp_align_multiline_list_pattern`
+- ⚠ status: **accepted**. The column relationship is fixed; the packing is measured, modelled twice,
+  refuted twice, and left greedy. `constructs/wrapping/alignment.cs` pins the columns at both values.
+
+## SK-DIV-0081 — an aligned property pattern's subpattern has no break point between its `:` and its value
+
+The other half of `constructs/wrapping/alignment.cs`'s pattern pair, and a different defect from
+SK-DIV-0080's. At `align_multiline_property_pattern = true` the clause is anchored on its `{`, its
+contents land four columns past that (39) and its `}` on it (35) — which Skala now writes. The
+divergence is one line inside:
+
+```
+        var matched = candidate is {
+                                       OnlySubpatternPropertyName:          ← the oracle breaks here
+                                       "a string long enough that the pattern cannot stay on its line"
+                                   };
+```
+
+At column 39 the subpattern is 130 columns wide, so it has to break, and the oracle breaks after the
+subpattern's colon and lands the value on the *same* column — no continuation level at all. Skala has
+no break point on a `SubpatternSyntax` at all: `BreakPlan` plans the property-pattern *clause* and its
+commas, and a subpattern's own colon is not a gap anybody planned. The line comes back at 130.
+
+⚠ **Reachable only under alignment**, which is why it has survived: at the export's
+`align_multiline_property_pattern = false` the same subpattern sits at column 12 and is 101 columns
+wide, so nothing has to break and both engines return it whole. No margin the fixture can choose
+exposes it while the key is off.
+
+⚠ The break itself is not the hard part — a point at `FirstToken(subpattern.Pattern)` is one line. What
+is not established is the level it lands on. Every other undelimited continuation in this formatter
+spends a level; this one spends none, and it is the only measurement available. A group whose
+`spendsIndent` is false everywhere would be a rule fitted to one line of one fixture at one value of
+one Tier D key, which is the kind of fact this register exists to refuse until a second measurement
+agrees with it.
+
+- options: `resharper_csharp_align_multiline_property_pattern`
+- ⚠ status: **open**, cause established and narrow: a missing break point on `SubpatternSyntax`, whose
+  indentation is measured once and nowhere else.
+
+## SK-DIV-0082 — `max_line_length = 1` explodes a file at break points Skala does not have, and cannot reasonably acquire
+
+⚠ **The other end of this key is a real defect and it is fixed.** `max_line_length = 0` means *no
+limit* — measured, the oracle returns `constructs/wrapping/initializers.cs` with a 141-column line
+untouched — and `PhaseOneOptions` read it as 120. The registry asserted the opposite in
+`boundsBecause` and is corrected. What follows is only about the degenerate value at the other end.
+
+At `max_line_length = 1` the oracle wraps at every gap it has, and its gaps are not this formatter's:
+
+```
+using                         var
+    System                        e =
+    .                                 new
+    Collections                           [] {
+    .                                         1,
+    Generic;                                  …
+```
+
+It breaks between `System` and the `.` of a namespace name, between `new` and the `[]` of an implicit
+array creation, and between `List` and its `<`. Skala has no break point in any of those places, and
+adding them would mean giving a qualified name, an array-creation keyword and a generic name break
+points that no margin above about 20 columns ever spends — points that every fitter measurement in
+this repository would then have to be re-established against.
+
+⚠ **This is a fact about the probe's domain and not about the key.** The int probe offers the
+declared minimum, and for a width that is 1. The key is measured Conformant at its export value and at
+`0` after the fix; the disagreement exists only at a margin narrower than the shortest C# statement,
+and the shape it exercises is "what does ReSharper do when nothing can fit", not "where does ReSharper
+wrap".
+
+- options: `resharper_csharp_max_line_length`
+- ⚠ status: **accepted**. Conformant at `120` and at `0`; the residue is the probe's floor, and closing
+  it would cost break points that no usable configuration reaches.
