@@ -10469,7 +10469,7 @@
       "construct": "AroundTags",
       "summary": "Around tags — Place single-line elements on a new line",
       "since": "0.1",
-      "oracle": "constructs/xmldoc/resharper_xmldoc_linebreak_before_singleline_elements.cs",
+      "oracle": null,
       "docs": "https://www.jetbrains.com/help/resharper/EditorConfig_XMLDOC_XmlDocCodeStylePageSchema.html#resharper_xmldoc_linebreak_before_singleline_elements",
       "templateLine": 840,
       "expands": []
@@ -10489,7 +10489,7 @@
       "construct": "TagContent",
       "summary": "Tag content — Line breaks after start-tag and before end-tag when element is longer than",
       "since": "0.1",
-      "oracle": "constructs/xmldoc/resharper_xmldoc_linebreaks_inside_tags_for_elements_longer_than.cs",
+      "oracle": null,
       "docs": "https://www.jetbrains.com/help/resharper/EditorConfig_XMLDOC_XmlDocCodeStylePageSchema.html#resharper_xmldoc_linebreaks_inside_tags_for_elements_longer_than",
       "templateLine": 835,
       "expands": [],
@@ -10733,7 +10733,7 @@
       "construct": "TagContent",
       "summary": "Tag content — Spaces after start-tag and before end-tag otherwise",
       "since": "0.1",
-      "oracle": "constructs/xmldoc/resharper_xmldoc_spaces_inside_tags.cs",
+      "oracle": null,
       "docs": "https://www.jetbrains.com/help/resharper/EditorConfig_XMLDOC_XmlDocCodeStylePageSchema.html#resharper_xmldoc_spaces_inside_tags",
       "templateLine": 956,
       "expands": []

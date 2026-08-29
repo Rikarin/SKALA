@@ -1106,16 +1106,24 @@ public sealed class XmlDocKeyCoverageTests {
             Assert.Contains(id, unoracled);
         }
 
-        // ⚠ The split the oracle measured: 13 of the 22 reproduce their doc-comment fixture and 9 do
-        // not. That is a statement about the fixtures and it has not changed. What the sweep changed is
-        // how many of the 13 may *claim Tier A* — six of them diverge at a value the fixture does not
-        // reach — so the tier count is asserted separately and against the sweep rather than baked in.
+        // ⚠ 16 and 6, and the reason the split moved is worth stating because the sentence here used to
+        // say it could not. It read "13 of the 22 reproduce their doc-comment fixture and 9 do not …
+        // a statement about the fixtures and it has not changed". Both halves are now false: the nine
+        // renderer keys were implemented on 2026-08-29 and **all 22 reproduce their fixture**, so
+        // reproducing one no longer separates anything.
+        //
+        // ⚠ What separates them now is the *sweep*, which is a stronger question. Three of the nine are
+        // Conformant at every value and moved to the oracled path; the other six agree at the export's
+        // own value and diverge away from it — Divergent (2), Spurious, Inert, Unexercised (2). That
+        // state is neither "pinned" nor "unimplemented", it is the one the tier vocabulary has no word
+        // for, and `OfUnoracled` is carrying it here on the narrow reading its own block records: not
+        // "the oracle cannot be asked" but "the oracle was asked and said something else".
         Assert.Equal(
-            13,
+            16,
             XmlDocIds.Honoured.Add(XmlDocIds.SpaceAfterTripleSlash).Count(implemented.Contains)
         );
 
-        Assert.Equal(9, XmlDocIds.Honoured.Count(unoracled.Contains));
+        Assert.Equal(6, XmlDocIds.Honoured.Count(unoracled.Contains));
 
         Assert.Equal(
             XmlDocIds.Honoured.Add(XmlDocIds.SpaceAfterTripleSlash)

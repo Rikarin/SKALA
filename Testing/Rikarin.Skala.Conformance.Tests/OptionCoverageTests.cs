@@ -45,8 +45,7 @@ public sealed class OptionCoverageTests {
     /// </remarks>
     static HashSet<OptionId> Implemented() => [
         .. PhaseOneOptions.Implemented,
-        .. Rikarin.Skala.Formatting.CSharp.Arrangement.ArrangementOptions.Implemented,
-        .. Rikarin.Skala.Formatting.CSharp.XmlDocIds.Implemented
+        .. Rikarin.Skala.Formatting.CSharp.Arrangement.ArrangementOptions.Implemented
     ];
 
     [Fact]

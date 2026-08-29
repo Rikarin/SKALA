@@ -15,48 +15,51 @@
 <p class="lede">7 keys.</p>
 <section class="option" id="resharper_csharp_force_chop_compound_do_expression">
 <h2><code>resharper_csharp_force_chop_compound_do_expression</code> <a class="self" href="#resharper_csharp_force_chop_compound_do_expression">#</a></h2>
-<p>Arrangement of binary expressions — Force chop compound condition in 'do' statement. Observed and not implemented: at <code>true</code> the oracle chops the condition onto one operand per line, the operator leading each continuation, and it does so whether the operators are all <code>&amp;&amp;</code>, all <code>||</code> or mixed. Left alone deliberately — the change belongs in the binary-expression group planning that the <code>wrap_*</code> keys own, and a second agent was editing that planning in parallel.</p>
+<p>Arrangement of binary expressions — Force chop compound condition in 'do' statement. Implemented in BreakPlan.PlanForcedChopCondition. ⚠ The earlier note here — that the oracle chops 'whether the operators are all <code>&amp;&amp;</code>, all <code>||</code> or mixed' — is refuted: re-measured one key at a time, a mixed condition is chopped at the root operator's own kind only, so <code>do { } while (a.P &amp;&amp; b.P || c.P)</code> breaks at the <code>||</code> and stays whole at the <code>&amp;&amp;</code>. A two-operand chain is chopped only when neither operand is a single token, which is why <code>while (a &amp;&amp; b)</code> never moves at either value. Governs the <code>do</code> statement alone.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>
 <tr><th>Default</th><td><code>false</code></td></tr>
 <tr><th>Default known from</th><td>the Rider export, which is Rider's default for most keys and the author's choice for the rest, with nothing distinguishing the two</td></tr>
-<tr><th>Tier</th><td>D — recorded so the key is not reported unknown; nothing reads it yet</td></tr>
+<tr><th>Tier</th><td>A — the formatter reads it and a committed oracle fixture pins it</td></tr>
 <tr><th>Language</th><td>csharp</td></tr>
 <tr><th>Since</th><td>0.1</td></tr>
 <tr><th>Also spelled</th><td><code>csharp_force_chop_compound_do_expression</code>, <code>force_chop_compound_do_expression</code>, <code>resharper_force_chop_compound_do_expression</code></td></tr>
+<tr><th>Oracle fixture</th><td><code>constructs/breaks/force-chop-compound.cs</code></td></tr>
 <tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_LineBreaksPageSchema.html#resharper_csharp_force_chop_compound_do_expression">https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_LineBreaksPageSchema.html#resharper_csharp_force_chop_compound_do_expression</a></td></tr>
 </tbody>
 </table>
 </section>
 <section class="option" id="resharper_csharp_force_chop_compound_if_expression">
 <h2><code>resharper_csharp_force_chop_compound_if_expression</code> <a class="self" href="#resharper_csharp_force_chop_compound_if_expression">#</a></h2>
-<p>Arrangement of binary expressions — Force chop compound condition in 'if' statement. Observed and not implemented: at <code>true</code> the oracle chops the condition onto one operand per line, the operator leading each continuation, and it does so whether the operators are all <code>&amp;&amp;</code>, all <code>||</code> or mixed. Left alone deliberately — the change belongs in the binary-expression group planning that the <code>wrap_*</code> keys own, and a second agent was editing that planning in parallel.</p>
+<p>Arrangement of binary expressions — Force chop compound condition in 'if' statement. Implemented in BreakPlan.PlanForcedChopCondition. ⚠ The earlier note here — that the oracle chops 'whether the operators are all <code>&amp;&amp;</code>, all <code>||</code> or mixed' — is refuted: re-measured one key at a time on conditions that all fit, the chop takes the root operator's own kind only, so <code>if (a.P &amp;&amp; b.P || c.P)</code> breaks at the <code>||</code> and stays whole at the <code>&amp;&amp;</code>. Three clauses, all measured: only <code>&amp;&amp;</code>/<code>||</code> roots (a relational, a single <code>&amp;</code>, and an <code>is</code> combinator do not move); three or more operands always chop; a two-operand chain chops only when neither operand is a single token, so <code>if (a &amp;&amp; b)</code>, <code>if (a &amp;&amp; b.P)</code> and <code>if (a &gt; 0 &amp;&amp; b)</code> stay on one line while <code>if (a.P &amp;&amp; b.P)</code> and <code>if (F() &amp;&amp; G())</code> chop. Not a width rule — <code>a &gt; 0 &amp;&amp; b</code> and <code>F() &amp;&amp; G()</code> are the same ten columns and go opposite ways. Governs the <code>if</code> statement alone, <code>else if</code> included.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>
 <tr><th>Default</th><td><code>false</code></td></tr>
 <tr><th>Default known from</th><td>the Rider export, which is Rider's default for most keys and the author's choice for the rest, with nothing distinguishing the two</td></tr>
-<tr><th>Tier</th><td>D — recorded so the key is not reported unknown; nothing reads it yet</td></tr>
+<tr><th>Tier</th><td>A — the formatter reads it and a committed oracle fixture pins it</td></tr>
 <tr><th>Language</th><td>csharp</td></tr>
 <tr><th>Since</th><td>0.1</td></tr>
 <tr><th>Also spelled</th><td><code>csharp_force_chop_compound_if_expression</code>, <code>force_chop_compound_if_expression</code>, <code>resharper_force_chop_compound_if_expression</code></td></tr>
+<tr><th>Oracle fixture</th><td><code>constructs/breaks/force-chop-compound.cs</code></td></tr>
 <tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_LineBreaksPageSchema.html#resharper_csharp_force_chop_compound_if_expression">https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_LineBreaksPageSchema.html#resharper_csharp_force_chop_compound_if_expression</a></td></tr>
 </tbody>
 </table>
 </section>
 <section class="option" id="resharper_csharp_force_chop_compound_while_expression">
 <h2><code>resharper_csharp_force_chop_compound_while_expression</code> <a class="self" href="#resharper_csharp_force_chop_compound_while_expression">#</a></h2>
-<p>Arrangement of binary expressions — Force chop compound condition in 'while' statement. Observed and not implemented: at <code>true</code> the oracle chops the condition onto one operand per line, the operator leading each continuation, and it does so whether the operators are all <code>&amp;&amp;</code>, all <code>||</code> or mixed. Left alone deliberately — the change belongs in the binary-expression group planning that the <code>wrap_*</code> keys own, and a second agent was editing that planning in parallel.</p>
+<p>Arrangement of binary expressions — Force chop compound condition in 'while' statement. Implemented in BreakPlan.PlanForcedChopCondition. ⚠ The earlier note here — that the oracle chops 'whether the operators are all <code>&amp;&amp;</code>, all <code>||</code> or mixed' — is refuted: re-measured one key at a time, a mixed condition is chopped at the root operator's own kind only, so <code>while (a.P &amp;&amp; b.P || c.P)</code> breaks at the <code>||</code> and stays whole at the <code>&amp;&amp;</code>. A two-operand chain is chopped only when neither operand is a single token, which is why <code>while (a &amp;&amp; b)</code> never moves at either value. Governs the <code>while</code> statement alone; the <code>do</code> statement's trailing condition has its own key.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>
 <tr><th>Default</th><td><code>false</code></td></tr>
 <tr><th>Default known from</th><td>the Rider export, which is Rider's default for most keys and the author's choice for the rest, with nothing distinguishing the two</td></tr>
-<tr><th>Tier</th><td>D — recorded so the key is not reported unknown; nothing reads it yet</td></tr>
+<tr><th>Tier</th><td>A — the formatter reads it and a committed oracle fixture pins it</td></tr>
 <tr><th>Language</th><td>csharp</td></tr>
 <tr><th>Since</th><td>0.1</td></tr>
 <tr><th>Also spelled</th><td><code>csharp_force_chop_compound_while_expression</code>, <code>force_chop_compound_while_expression</code>, <code>resharper_force_chop_compound_while_expression</code></td></tr>
+<tr><th>Oracle fixture</th><td><code>constructs/breaks/force-chop-compound.cs</code></td></tr>
 <tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_LineBreaksPageSchema.html#resharper_csharp_force_chop_compound_while_expression">https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_LineBreaksPageSchema.html#resharper_csharp_force_chop_compound_while_expression</a></td></tr>
 </tbody>
 </table>

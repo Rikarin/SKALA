@@ -2556,7 +2556,7 @@ public static class Ids {
     // ⚠ SK-DIV-0019: the wrap column. Five of the nine are one disagreement — the oracle keeps the
     // word that crosses `max_line_length` on the line and breaks after it, Skala breaks before it —
     // and they diverge together because every one of them is measured on a comment that wraps.
-    public static readonly OptionId XmlDocWrapLines = OfUnoracled("resharper_xmldoc_wrap_lines");
+    public static readonly OptionId XmlDocWrapLines = Of("resharper_xmldoc_wrap_lines");
     public static readonly OptionId XmlDocMaxLineLength = OfUnoracled("resharper_xmldoc_max_line_length");
     public static readonly OptionId XmlDocWrapText = OfUnoracled("resharper_xmldoc_wrap_text");
     public static readonly OptionId XmlDocWrapTagsAndPi = OfUnoracled("resharper_xmldoc_wrap_tags_and_pi");
@@ -2572,7 +2572,7 @@ public static class Ids {
     // ⚠ SK-DIV-0021: the oracle leaves the content of an element that `linebreak_before_elements`
     // does not name on one line however long it is; Skala wraps it.
     public static readonly OptionId XmlDocLinebreakBeforeMultilineElements =
-        OfUnoracled("resharper_xmldoc_linebreak_before_multiline_elements");
+        Of("resharper_xmldoc_linebreak_before_multiline_elements");
 
     // ⚠ SK-DIV-0022: `false` means "do not add a space inside the tags", not "remove the author's".
     public static readonly OptionId XmlDocSpacesInsideTags = OfUnoracled("resharper_xmldoc_spaces_inside_tags");
@@ -2580,7 +2580,7 @@ public static class Ids {
     // ⚠ SK-DIV-0023, now down to its second half: the blank line the oracle writes after a
     // processing instruction carries a trailing space Skala deliberately omits. The first half — the
     // marker space missing from the instruction's own line — is fixed.
-    public static readonly OptionId XmlDocBlankLineAfterPi = OfUnoracled("resharper_xmldoc_blank_line_after_pi");
+    public static readonly OptionId XmlDocBlankLineAfterPi = Of("resharper_xmldoc_blank_line_after_pi");
 
     // ── Generalized keys ─────────────────────────────────────────────────────────────────────
     // ⚠ These are not read by the formatter and never will be. A generalized key is a way of
