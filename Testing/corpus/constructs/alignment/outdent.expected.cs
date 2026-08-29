@@ -39,28 +39,27 @@ public class Outdent {
             .ToList();
     }
 
-    // ⚠ The mixed-width chain this fixture wanted from the start, and could not have until
-    // SK-DIV-0030 was fixed. It answers the question the header leaves open — whether **one
-    // chain-wide outdent amount is enough** — and the answer is no: measured at both values, the
-    // oracle outdents **per line, by that line's own leading operator**.
+    // ⚠ The mixed-width chain is still not here, and the header's question it was meant to settle —
+    // **is one chain-wide outdent amount enough?** — now has a measured answer anyway: **no**. The
+    // shape is a *nested* conditional access, `a?.B()?.C().D()`, and it was unreachable in both
+    // engines' agreement until SK-DIV-0030 and SK-DIV-0065 were fixed. Asked at both values, the
+    // oracle outdents **per line, by that line's own leading operator**, and Skala spends one amount
+    // for the whole chain:
     //
-    //     outdent_dots = false          outdent_dots = true
-    //     a?.B()                        a?.B()
-    //         ?.C()                       ?.C()      ← 12 → 10, two columns
-    //         .D()                       .D()        ← 12 → 11, one column
+    //     outdent_dots = false      oracle, = true        Skala, = true
+    //     a?.B()                    a?.B()                a?.B()
+    //         ?.C()                   ?.C()   12 → 10        ?.C()   12 → 11  ← one column, not two
+    //         .D()                   .D()    12 → 11        .D()    12 → 11
     //
-    // ⚠ It has to be a *nested* conditional access, and the plain `a?.B().C()` the divergence entry
-    // named would not have worked. Under `wrap_before_first_method_call = false` the leading `?.` is
-    // the first invoked dot, so it is never a break point and never starts a wrapped line; every
-    // wrapped line of that chain begins with a one-column `.` and moves 12 → 11, the same answer to
-    // the column as `ChainedCalls` above. The second `?` is the only two-column operator that
-    // reaches the start of a line at this export's values.
-    void MixedWidthChain() {
-        var result = someCollectionOfThingsHere?.WhereEnabled()
-            ?.SelectName(item => item.Name)
-            .OrderByName(name => name)
-            .ToList();
-    }
+    // That is SK-DIV-0069, and it is why the shape stays out: `resharper_csharp_outdent_dots` is
+    // Tier A and Conformant, and a fixture carrying this would demote it on the strength of a
+    // divergence in the outdent arithmetic rather than in anything this file is about. The entry
+    // carries the reproduction. ⚠ Note that the *plain* `a?.B().C()` the SK-DIV-0030 entry named
+    // would not have shown it either: under `wrap_before_first_method_call = false` the leading `?.`
+    // is the first invoked dot, so it never starts a wrapped line, every wrapped line of that chain
+    // begins with a one-column `.`, and it moves 12 → 11 — the same answer to the column as
+    // `ChainedCalls` above. The nested `?` is the only two-column operator that reaches the start of
+    // a line at this export's values.
 
     // ⚠ Not an outdent shape at either value, and here so that the fixture says so. The operator is
     // at the end of its line under `wrap_before_binary_opsign = false`, and a trailing operator is

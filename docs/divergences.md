@@ -1796,16 +1796,18 @@ fire. The measured pin is `constructs/wrapping/chained-calls.cs`, which is where
 their non-conditional control now live; with the fix reverted it takes `constructs` line fidelity
 from 98.34 % to 98.29 % and turns `Fidelity_DoesNotDecrease(set: "constructs")` red.
 
-⚠ **`outdent.cs` has the shape back, and the entry's description of it was wrong in a way that
-mattered.** The chain it named — `a?.B().C()` — outdents 12 → 11 on every wrapped line, measured at
-both values of `resharper_outdent_dots`, which is the same answer to the column as the plain chain
+⚠ **`outdent.cs` still does not get the shape, and the entry's description of it was wrong in a way
+that mattered.** The chain it named — `a?.B().C()` — outdents 12 → 11 on every wrapped line, measured
+at both values of `resharper_outdent_dots`, which is the same answer to the column as the plain chain
 that fixture already carried: under `wrap_before_first_method_call = false` the leading `?.` is the
 first invoked dot, so it is never a break point and never starts a wrapped line. There is no mixed
 width in it. The shape that carries one is a *nested* conditional access, `a?.B()?.C().D()`, whose
-second `?` is the only two-column operator that reaches the start of a line at this export's values —
-and it settles what `outdent.cs` was asking: the outdent is **per line, by that line's own leading
-operator**, `?.` 12 → 10 beside `.` 12 → 11, and not one chain-wide amount. That shape needed the
-second half of this fix (`ChainDot`) before Skala could carry it.
+second `?` is the only two-column operator that reaches the start of a line at this export's values,
+and fixing SK-DIV-0030 and SK-DIV-0065 is what made it reachable. It settles what `outdent.cs` was
+asking — the outdent is **per line, by that line's own leading operator** and not one chain-wide
+amount — and it settles it *against Skala*, which spends one amount for the whole chain. That is
+SK-DIV-0069, and it is the new reason the shape stays out: a fixture carrying it would demote a
+Tier A key on the strength of an unrelated defect. The fixture now records the measurement instead.
 
 ⚠ `align-declaration.cs` does **not** want the shape, and never depended on this defect for that:
 `align_multiline_calls_chain` anchors on a column that moves with the margin. Only the
@@ -1816,9 +1818,8 @@ cross-reference in its comment was stale.
 - ⚠ status: **resolved**, in two parts. `Collect` walks `WhenNotNull`, and `ChainDot` puts the break
   point on the `?` rather than on the binding's `.` (SK-DIV-0065 below, which the first part
   uncovered and which had to be fixed with it). Pinned by `constructs/wrapping/chained-calls.cs`
-  (`RootedAtAConditionalAccess` and four sibling contexts) and by
-  `constructs/alignment/outdent.cs`'s `MixedWidthChain`, each with the oracle's own answer
-  regenerated under `SkalaFormatOnly`, and sabotage-tested against the pre-change formatter.
+  (`RootedAtAConditionalAccess` and four sibling contexts, with the oracle's own answer regenerated
+  under `SkalaFormatOnly`), and sabotage-tested against the pre-change formatter.
   ⚠ Fixing the root arm exposed three *further* chain-planner divergences that it had been masking,
   none of which is this one: SK-DIV-0066 through SK-DIV-0068 below.
 
@@ -1850,9 +1851,10 @@ is unobservable until the chain's *receiver* contributes a dot of its own. With 
 receiver the binding's dot is the last entry in `dots`, `wrap_before_first_method_call = false` holds
 the last entry back, and the `?` therefore never begins a wrapped line.
 
-⚠ It is also what let `constructs/alignment/outdent.cs` finally carry the mixed-width chain, which is
-the only shape at this export's values where a two-column operator starts a wrapped line — and
-measuring it established that `outdent_dots` outdents per line rather than chain-wide.
+⚠ It is also what made the mixed-width chain *measurable* — the nested `?.` is the only shape at this
+export's values where a two-column operator starts a wrapped line — and measuring it is what turned
+up SK-DIV-0069. `constructs/alignment/outdent.cs` still does not carry the shape, because that
+divergence would demote a Tier A key from a file that is not about it; it records the measurement.
 
 - options: none — `resharper_outdent_dots` is read correctly and was conformant on the `.` lines of
   the same chain throughout
@@ -1963,6 +1965,55 @@ All three surfaced from the same eight-shape probe and none is large enough to c
 - options: none
 - ⚠ status: **open**, measured, unfixed. Recorded so that the next chain-planner pass has the shapes
   rather than having to rediscover them.
+
+## SK-DIV-0069 — `outdent_dots` spends one amount for the whole chain; the oracle spends one per line
+
+`constructs/alignment/outdent.cs`'s header asks whether one chain-wide outdent amount is enough, and
+until now nothing could answer it: every wrapped line of every chain in the corpus begins with a
+one-column `.`, so "the chain's amount" and "this line's amount" are the same number. The one shape
+where they differ is a *nested* conditional access, whose second `?` is the only two-column operator
+that reaches the start of a wrapped line at this export's values — and it was unreachable in both
+engines' agreement until SK-DIV-0030 and SK-DIV-0065 were fixed. Asked at both values:
+
+```csharp
+// outdent_dots = false, both engines
+var result = someCollectionOfThingsHere?.WhereEnabled()
+    ?.SelectName(item => item.Name)
+    .OrderByName(name => name);
+
+// outdent_dots = true, the oracle: per line, by that line's own leading operator
+var result = someCollectionOfThingsHere?.WhereEnabled()
+  ?.SelectName(item => item.Name)     // 12 → 10, two columns
+   .OrderByName(name => name);        // 12 → 11, one column
+
+// outdent_dots = true, Skala: one amount for the chain, and it is the `.`'s
+var result = someCollectionOfThingsHere?.WhereEnabled()
+   ?.SelectName(item => item.Name)    // 12 → 11
+   .OrderByName(name => name);        // 12 → 11
+```
+
+⚠ **Inert at the export**, which sets `resharper_outdent_dots = false`, and that is why this is a
+divergence rather than a fidelity defect: at `false` nothing outdents and the two engines agree to
+the column.
+
+⚠ **The shape is deliberately out of `outdent.cs`.** `resharper_csharp_outdent_dots` is Tier A and
+the committed sweep records it Conformant on that fixture; adding the shape takes it to Divergent 1
+of 2 — a demotion earned by the outdent arithmetic, not by anything the alignment fixture exists to
+pin. The same trap caught `resharper_csharp_wrap_before_first_method_call`, also Tier A, when the
+first draft of `constructs/wrapping/chained-calls.cs` used a property receiver and so carried
+SK-DIV-0067 shape C — and a third, `resharper_csharp_wrap_after_dot_in_method_calls`, was not a
+fixture problem at all but a real bug in SK-DIV-0065's fix: `ChainDot` registers the `?`, and the
+token after a `?` is the `.` rather than the name, so "break after the dot" broke after the `?` and
+wrote `…(more)?\n.Where(…)` where the oracle writes `…(more)?.\n Where(…)`. ⚠ **All three were found
+by running `verify` on every key pinned to a fixture this branch changed**, which neither the
+differential nor the ratchets can do: a fixture only ever measures the export's value, and all three
+faults are at the *other* one. Ten keys are pinned to the five fixtures touched here; nine had to come
+back unchanged and one had to improve.
+
+- options: `resharper_outdent_dots` — read correctly, and conformant on every chain whose wrapped
+  lines all begin with the same operator, which is every chain the corpus contains
+- ⚠ status: **open**, measured, unfixed. It is an arithmetic in the outdent scope rather than in the
+  chain planner: the amount is computed once for the group and has to be computed per break point.
 
 ## SK-DIV-0031 — a field with several declarators wraps after the type; Skala wraps at the commas
 

@@ -3,8 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 
 class ChainedCalls {
-    IEnumerable<string>? sourceOfStringsHere;
-
     void Fits(IEnumerable<string> source) {
         var a = source.Where(x => x.Length > 3).Select(x => x);
     }
@@ -73,12 +71,22 @@ class ChainedCalls {
             .Count()
         ?? 0;
 
-    // The `?.`'s own receiver is a member access rather than a bare identifier, so the receiver-side
-    // walk has something to do as well as the `WhenNotNull` side.
-    void TheReceiverIsAMemberAccess() {
-        var f = this.sourceOfStringsHere?.Where(x => x.Length > 3)
+    // The `?.`'s own receiver is a chain rather than a bare identifier, so the receiver-side walk has
+    // something to do as well as the `WhenNotNull` side — and it is the case where the `?` becomes a
+    // break point rather than being held back as the chain's first dot. This is the shape that says
+    // the point is the `?` and not the `.` beside it; with a bare identifier receiver the binding's
+    // dot is the last entry in the list and `wrap_before_first_method_call = false` never spends it.
+    //
+    // ⚠ The receiver is `.Concat(…)` and not `this.sourceOfStringsHere`, and the difference is not
+    // cosmetic. A *property* receiver puts a property run either side of the `?`, which the run loop
+    // still cuts at the `?` (SK-DIV-0067 shape C) — and the draft that used one took
+    // `resharper_csharp_wrap_before_first_method_call` from Conformant to Divergent at its other
+    // value, demoting a Tier A key on the strength of an open defect this file is not about.
+    void TheReceiverIsItselfAChain(IEnumerable<string> sourceOfStringsHere, IEnumerable<string> more) {
+        var f = sourceOfStringsHere.Concat(more)
+            ?.Where(x => x.Length > 3)
             .OrderBy(x => x)
-            .Select(x => x.ToUpperInvariant())
+            .Select(x => x.Trim())
             .ToList()
             .Count();
     }

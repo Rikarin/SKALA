@@ -1430,8 +1430,20 @@ public sealed class BreakPlan {
         var broken = false;
         for (var i = 0; i < first; i++) {
             if (_options.WrapAfterDotInMethodCalls) {
-                Flat(dots[i]);
-                var next = dots[i].GetNextToken();
+                // ⚠ "After the dot" has to mean after *both* tokens of a `?.`. `ChainDot` registers
+                // the `?`, because that is where a break before the link belongs, and the token
+                // after the `?` is the `.` rather than the name — so pointing at it blindly gives
+                // `…(more)?\n.Where(…)` where the oracle writes `…(more)?.\n Where(…)`. Measured:
+                // it took `resharper_csharp_wrap_after_dot_in_method_calls`, Tier A and Conformant,
+                // to Divergent at its non-export value.
+                var dot = dots[i];
+                Flat(dot);
+                if (dot.IsKind(SyntaxKind.QuestionToken)) {
+                    dot = dot.GetNextToken();
+                    Flat(dot);
+                }
+
+                var next = dot.GetNextToken();
                 Point(next, group);
                 broken |= BreaksBefore(next);
             } else {
