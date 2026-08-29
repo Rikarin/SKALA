@@ -142,6 +142,29 @@ public sealed class XmlDocOracleTests {
     ///         from it.
     ///     </para>
     ///     <para>
+    ///         ⚠ <b>What the sweep needs before it can reach them, and why it is not done here.</b> All nine
+    ///         carry <c>"oracle": null</c> in <c>options.json</c>, which is why <c>SweepPlan</c> excludes
+    ///         them — "no <c>oracle</c> fixture in the registry" — and it is a field left null when "no
+    ///         fixture can pin a documentation comment" was still believed. Setting each to
+    ///         <c>constructs/xmldoc/&lt;key&gt;.cs</c> is enough: <c>ScratchTree.ProfileFor</c> already
+    ///         switches that subtree to <see cref="OracleProfile.DocComments" />, and
+    ///         <c>Sweep -- verify &lt;key&gt;</c> then answers for every one. That edit was made, the nine
+    ///         verdicts were taken, and it was <em>reverted</em>: on its own it turns
+    ///         <c>OptionCoverageTests.TierD_CarriesAFixtureOnlyWhereTheSweepDemotedIt</c> red for exactly
+    ///         these nine, because a Tier D key with a fixture is required to have a sweep row saying why.
+    ///         The glob and the row belong in one commit, and the sweep runs on master.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ Measured with that glob in place, so the next person does not have to guess what the sweep
+    ///         will say: <c>wrap_lines</c>, <c>linebreak_before_multiline_elements</c> and
+    ///         <c>blank_line_after_pi</c> come back <b>Conformant</b> — those three are the promotions the
+    ///         sweep can earn. <c>max_line_length</c> and <c>wrap_text</c> are <b>Divergent</b>,
+    ///         <c>wrap_tags_and_pi</c> <b>Spurious</b>, <c>linebreaks_inside_tags_for_elements_longer_than</c>
+    ///         <b>Inert</b>, and <c>spaces_inside_tags</c> and
+    ///         <c>linebreak_before_singleline_elements</c> <b>Unexercised</b> — so six of the nine stay Tier D
+    ///         on the sweep's own evidence rather than on this list's.
+    ///     </para>
+    ///     <para>
     ///         ⚠ The assertion above runs in <em>both</em> directions over this list, so it cannot rot into
     ///         a place to park a regression: a key here that stops agreeing fails, and a key here that
     ///         earns Tier A leaves.

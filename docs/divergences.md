@@ -448,6 +448,19 @@ nine now reproduce their fixtures, and the split is 22 of 22.** Seven were one a
 wearing five names, SK-DIV-0021 turning out to be the same arithmetic, and SK-DIV-0020 needing one
 structural fix beside it; the other two were SK-DIV-0022 and SK-DIV-0023's surviving half.
 
+⚠ **Only four of the nine are keys the export sets**, and this has to be said before "enforced at the
+export's own value" is said of any of them. `.editorconfig` carries twelve `resharper_xmldoc_*` lines,
+and of the nine only `max_line_length = 120`, `wrap_lines = true`, `wrap_tags_and_pi = true` and
+`wrap_text = true` are among them. `spaces_inside_tags`, `blank_line_after_pi`,
+`linebreak_before_multiline_elements`, `linebreak_before_singleline_elements` and
+`linebreaks_inside_tags_for_elements_longer_than` are **not in the export at all**; the value in play
+is the registry `default`. So for those five the fixtures do not say "Skala enforces the standard" —
+they say **Skala's recorded default matches ReSharper's built-in default on this construct**, which is
+a different claim and, on these constructs, a stronger one. ⚠ Their `defaultSource` reads `template`
+and they are not in `editor_config_template` either, so that provenance does not hold up and is worth
+a pass of its own; nothing here rests on it, because every measurement in this family compares Skala
+and `jb cleanupcode` under the *same* `.editorconfig`, each falling back to its own defaults.
+
 ⚠ **The nine are still Tier D, and the distinction is the whole point of this section.** Agreement on
 a fixture is agreement at one value of one key on one construct under one configuration; Tier A is a
 claim about the option across its domain, and the instrument that makes it is the key-flip sweep,
