@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:381a31a28c5ea94d profile=SkalaFormatOnly generated=2026-08-28
+// skala-oracle: resharper=2025.2.6 config=sha256:1db666f69fec005d profile=SkalaFormatOnly generated=2026-08-29
 // ⚠ Wrong in spacing everywhere, and wrong in indentation and in wrapping as well.
 //
 // `disable_space_changes` preserves every inter-token run byte for byte — the two-space runs around

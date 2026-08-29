@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:381a31a28c5ea94d profile=SkalaFormatOnly generated=2026-08-28
+// skala-oracle: resharper=2025.2.6 config=sha256:1db666f69fec005d profile=SkalaFormatOnly generated=2026-08-29
 class C {
     int M(int a) => a > 0 ? a > 10 ? 2 : 1 : a < -10 ? -2 : -1;
 }

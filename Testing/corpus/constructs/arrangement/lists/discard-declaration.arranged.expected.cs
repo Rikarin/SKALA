@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:381a31a28c5ea94d profile=SkalaCleanup generated=2026-08-28
+// skala-oracle: resharper=2025.2.6 config=sha256:1db666f69fec005d profile=SkalaCleanup generated=2026-08-29
 namespace Skala.Corpus.Arrangement;
 
 // resharper_prefer_explicit_discard_declaration. ⚠ The export writes `false`, at which value this
