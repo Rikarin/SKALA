@@ -29,6 +29,12 @@ public class Heuristics {
     }
 
     // (d) async void is never converted.
+    // ⚠ `Task.Delay` unqualified, and the reason is SK-DIV-0073 rather than taste: the oracle
+    // shortens a qualified reference and Skala has no rule that does, so
+    // `System.Threading.Tasks.Task.Delay` would come back short from the oracle and long from Skala
+    // — a baseline disagreement on a construct this fixture is not about, which makes the three
+    // body-style rows on it attribute nothing. `constructs/arrangement/usings/placement.cs` lost an
+    // alias to the same divergence.
     public async void AsyncVoid() {
         await Task.Delay(1);
     }

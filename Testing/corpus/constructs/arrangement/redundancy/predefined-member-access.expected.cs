@@ -16,7 +16,12 @@ public class PredefinedMemberAccess {
 
     public long Min => Int64.MinValue;
 
-    public string Empty => String.Empty;
+    // ⚠ `String.IsNullOrEmpty` and not `String.Empty`, and the reason is SK-DIV-0013 rather than
+    // taste: `resharper_empty_string = empty_literal` is a rewrite the export configures, Skala
+    // performs and `jb cleanupcode` does not, so `String.Empty` would come back `string.Empty` from
+    // the oracle and `""` from Skala — a baseline disagreement on a construct this fixture is not
+    // about, which makes this key's sweep row attribute nothing.
+    public bool Blank => String.IsNullOrEmpty("x");
 
     public bool Parsed => Boolean.Parse("true");
 

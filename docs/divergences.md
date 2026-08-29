@@ -2237,3 +2237,140 @@ direction is pinned by `ArrangementOptionTests` instead.
 
 - options: `dotnet_separate_import_directive_groups`
 - ⚠ status: **open**, and narrow: it is only reachable on a source file that already has a blank line inside its using block, formatted without arranging.
+
+## SK-DIV-0075 — `T x = default(T)` for a reference `T` is a `var` candidate the oracle takes and Skala refuses
+
+Asked directly, unbatched, under the cleanup profile at the export's values, on a scratch project
+carrying this repository's `.editorconfig`:
+
+```csharp
+string a = default(string);        →  var a = default(string);
+List<int> b = default(List<int>);  →  var b = default(List<int>);
+int c = default(int);              →  var c = default(int);
+string d = "x";                    →  var d = "x";
+```
+
+Skala converts the third and the fourth and refuses the first two. The refusal is `VarRule`'s
+nullable-flow precondition and it is not an oversight: `default(string)` has type `string` and flow
+state maybe-null, so `var` retypes the local as nullable, and the next place it is passed to something
+expecting `string` is a new CS8600. That precondition's own remarks record what it is worth —
+**567 of Vixen's 618 re-bind reverts were this one**, the largest single cause and invisible to every
+check that compares types rather than states. `default(T)` for a reference `T` is the one shape where
+the declared type and the initializer's type are *identical* and the flow state still differs, so it is
+the one shape where the precondition and the oracle can disagree.
+
+⚠ Lifting the precondition to close this entry is refused for now: it would buy one line of one
+construct fixture and re-open a class the corpus has already paid for once.
+
+`constructs/arrangement/type-inference/var-and-maybe-null.cs` is the fixture, with the value-type row
+beside it as the control, and **no option is globbed to it**. The construct was moved there out of
+`default-literal.cs`, where it had been making both `resharper_csharp_default_value_when_type_evident`
+and `resharper_csharp_default_value_when_type_not_evident` unattributable in the key-flip sweep — two
+keys with nothing wrong with them, paying for a third rule's divergence.
+
+- options: `csharp_style_var_for_built_in_types`, `csharp_style_var_when_type_is_apparent`, `csharp_style_var_elsewhere`
+- ⚠ status: **open**, deliberate, and narrow.
+
+## SK-DIV-0076 — an argument is a target-typed position the oracle converts and Skala has no case for
+
+`Take(new object())` comes back from the oracle as `Take(new())`, and a *named* argument the same way:
+`Take(number: 1, other: new object())` → `other: new()`. `ObjectCreationRule.TargetTypeOf` enumerates
+the positions C# target-types — a declarator's initializer, a property initializer, a simple
+assignment, an arrow body, a `return`, an explicitly-typed collection or array initializer element —
+and an argument is not among them.
+
+The list is deliberately explicit rather than `GetTypeInfo(node).ConvertedType`, for the reason its
+remarks give: the converted type of `new Foo()` in a context with no target is `Foo` itself, so
+trusting it converts expressions that have no target at all. Adding the argument case means resolving
+the call, finding the parameter at the argument's index, and being right about `params`, `ref`/`out`
+and named arguments — and then about **overload resolution**, because `new()` in an argument can rebind
+the call the way `DefaultValueRule`'s remarks already record for `M(default)` versus `M(default(int))`.
+That is a capability with its own fixtures and its own safety argument, not a precondition to relax.
+
+`constructs/arrangement/type-inference/target-typed-new-argument.cs` is the fixture, with the
+declaration and assignment rows beside it as the control, and **no option is globbed to it**. The
+construct was moved there out of `lists/argument-style.cs`, where a single `new object()` argument was
+making all four `resharper_csharp_arguments_*` keys unattributable in the key-flip sweep.
+
+- options: `resharper_csharp_object_creation_when_type_evident`, `resharper_csharp_object_creation_when_type_not_evident`
+- ⚠ status: **open**; a missing capability rather than a decision, and it needs its own task.
+
+## SK-DIV-0077 — an anonymous method whose parentheses the author broke leaves the call's line, and its block body breaks with it
+
+Measured, unbatched, at the export's values, with the control beside each row:
+
+```csharp
+Use(delegate(int first) { return first; });     // kept whole — the key applies to anonymous methods
+Use(delegate(int first) {                       // body re-joined: → Use(delegate(int first) { return first; });
+    return first;
+});
+Use(delegate(                                   // →  Use(
+    int first) { return first; });              //        delegate(
+                                                //            int first
+                                                //        ) {
+                                                //            return first;
+                                                //        }
+                                                //    );
+Use((                                           // →  Use((
+    int first) => { return first; });           //        int first
+                                                //    ) => {
+                                                //        return first;
+                                                //    }
+                                                //    );
+```
+
+Two facts, and neither is the one the option names suggest. `place_single_method_argument_lambda_on_same_line`
+**does** apply to an anonymous method — row 1 keeps it whole — but row 3 moves it off the call's line
+anyway while row 4 keeps a *lambda*'s `(` joined to `Use(`. And a block body the author wrote on one
+line is re-joined when everything fits (row 2) and broken when the parameter list is broken (rows 3
+and 4).
+
+The second fact is the harder one, and it is the same shape as SK-DIV-0050 and SK-DIV-0024: an outer
+construct has to break because an inner one did. Skala's `Fitter` resolves the outer group first, so
+the argument list's group is decided before the anonymous function's parameter list is, and
+`GroupFacts.BreaksWithOwner` reads an owner that must already be resolved. SK-DIV-0050 records the one
+attempt at this family — a `Preserve` group with `PrefersOuterBreak` — as written, measured and
+withdrawn.
+
+`constructs/wrapping/anonymous-method-parens.cs` is the fixture, with the lambda beside it as the
+control, and **no option is globbed to it**. The construct was moved there out of
+`preservation/lambda-parens.cs`, where it was making
+`resharper_csharp_wrap_after_declaration_lpar`, `resharper_csharp_wrap_before_declaration_rpar` and
+`resharper_keep_existing_lambda_and_anonymous_function_parens_arrangement` unattributable in the
+key-flip sweep. All three keys were re-checked on the reduced fixture and the first two still move the
+oracle at both values; the third moved neither engine's oracle side before the change either.
+
+- options: `resharper_place_single_method_argument_lambda_on_same_line`, `resharper_keep_existing_lambda_and_anonymous_function_parens_arrangement`, `resharper_csharp_wrap_after_declaration_lpar`, `resharper_csharp_wrap_before_declaration_rpar`
+- ⚠ status: **open**; SK-DIV-0050's family, and it needs the same missing fact.
+
+## SK-DIV-0078 — an expression body's `=>` breaks when its body breaks, and Skala's fitter decides the arrow first
+
+```csharp
+bool M(object o) => o is int      →     bool M(object o) =>
+    or string                                 o is int
+    or bool;                                      or string
+                                                  or bool;
+```
+
+The first line is 33 columns wide, so no width test on the arrow can produce this break.
+`place_expr_method_on_single_line = if_owner_is_single_line` is what does: the *owner* is the
+declaration, and a declaration whose body spans lines is not on a single line — which is exactly the
+reading `PlanExpressionBody`'s remarks already record ("a body that spans lines makes it not
+single-line however short its first line is"). What Skala cannot do is *apply* it here. The body's
+breaks are the binary pattern chain's, that group is nested inside the arrow's, and `Fitter` resolves
+the outer group first: when the arrow's group is decided the chain has not yet said it will break.
+
+⚠ This is not the same as SK-DIV-0050. There the arrow has **no group at all**, because Roslyn spells a
+lambda's arrow differently from a member's; here the group exists and is resolved in the wrong order.
+It is SK-DIV-0024's and SK-DIV-0077's shape instead — two constructs, one break, and no fact in
+`GroupFacts` that lets the outer one read the inner.
+
+`constructs/wrapping/binary-pattern-arrow.cs` is the fixture, with a one-line member beside it as the
+control, and **no option is globbed to it**. The construct was moved there out of
+`breaks/binary-patterns.cs`, which was rewritten to put its chains in `return` statements — where
+there is no arrow to break — so that `resharper_csharp_wrap_before_binary_pattern_op` is measured on
+its own. Re-checked after the rewrite: the oracle keeps the before-the-operator breaks and re-joins
+the after-the-operator ones at `true`, and does the reverse at `false`, so both values still move it.
+
+- options: `resharper_csharp_wrap_before_binary_pattern_op`, `resharper_place_expr_method_on_single_line`, `resharper_csharp_wrap_chained_binary_patterns`
+- ⚠ status: **open**; the ordering fact is missing, and it is shared with SK-DIV-0077.

@@ -1,10 +1,18 @@
 // skala-oracle: resharper=2025.2.6 config=sha256:1db666f69fec005d profile=SkalaCleanup generated=2026-08-29
 namespace Skala.Corpus.Arrangement;
 
-// resharper_prefer_explicit_discard_declaration. ⚠ The export writes `false`, at which value this
-// file is arranged unchanged — the observable direction is the other one, and the option's coverage
-// test is what exercises it. Measured: at `true` the oracle turns `out _` into `out var _`, and at
-// `false` it does *not* do the reverse, because `false` means "do not add" rather than "remove".
+// resharper_prefer_explicit_discard_declaration, and both of its values move this file.
+//
+// ⚠ The comment here used to say that at the export's `false` the file is arranged unchanged, because
+// "`false` means do not add rather than remove". Re-measured unbatched under the cleanup profile, that
+// is wrong, and wrong in a way that cost this file its sweep baseline:
+//   written        false (the export)   true
+//   out _          out _                out var _
+//   out var _      out _                out var _
+//   out int _      out var _            out var _
+// The claim was read off the third row, where this key declines a *typed* declaration and the `var`
+// rule converts it afterwards — a fact about that shape and not about the key. The second row is the
+// key's own answer, and at `false` it removes.
 public class DiscardDeclaration {
     public void Deconstruct(out int first, out int second) {
         first = 1;

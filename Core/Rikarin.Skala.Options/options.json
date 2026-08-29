@@ -3140,7 +3140,7 @@
       "construct": "Braces",
       "summary": "Braces — Remove redundant braces",
       "since": "0.1",
-      "oracle": "constructs/arrangement/redundancy/qualifiers-and-parentheses.cs",
+      "oracle": "constructs/arrangement/redundancy/braces-redundant.cs",
       "docs": "https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpCodeStylePageImplSchema.html#resharper_csharp_braces_redundant",
       "templateLine": 648,
       "expands": []

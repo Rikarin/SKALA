@@ -81,11 +81,35 @@ public sealed class ArgumentStyleRule : ArrangementRule {
                 return visited;
             }
 
-            // ⚠ `params`, `__arglist` and an unresolved call all make the positional mapping a guess.
-            // The rule declines rather than guesses.
-            if (model.GetSymbolInfo(node.Parent!).Symbol is not IMethodSymbol method
-                || method.Parameters.Any(static p => p.IsParams)
-                || method.Parameters.Length < node.Arguments.Count) {
+            // ⚠ An unresolved call and `__arglist` make the positional mapping a guess, and the rule
+            // declines rather than guesses. A `params` call does not, and used to be lumped in with
+            // them — the second condition read `method.Parameters.Any(p => p.IsParams)`.
+            // ⚠ MEASURED, unbatched, under the cleanup profile, which is what says the blanket
+            // refusal was wrong in one direction and right in the other:
+            //   written                        positional (the export)   named
+            //   Many(first: 1, rest: [2, 3])   Many(1, [2, 3])           Many(first: 1, rest: [2, 3])
+            //   Single(first: 1, 2, 3)         Single(1, 2, 3)           Single(first: 1, 2, 3)
+            // The oracle strips a name off a `params` call like any other, and it adds one to the
+            // `params` parameter itself only where the call is in *normal* form — `Single`'s expanded
+            // arguments stay bare, because C# has no way to name them (CS1744). The refusal cost
+            // `constructs/arrangement/lists/argument-style.cs` its baseline, and with it all four
+            // `resharper_arguments_*` rows.
+            if (model.GetSymbolInfo(node.Parent!).Symbol is not IMethodSymbol method) {
+                return visited;
+            }
+
+            var parameters = method.Parameters;
+            var paramsIndex = parameters.Length;
+            for (var i = 0; i < parameters.Length; i++) {
+                if (parameters[i].IsParams) {
+                    paramsIndex = i;
+                    break;
+                }
+            }
+
+            // ⚠ More arguments than parameters is `__arglist` when there is no `params` parameter,
+            // and an expanded `params` call when there is. Only the first is unmappable.
+            if (paramsIndex == parameters.Length && parameters.Length < node.Arguments.Count) {
                 return visited;
             }
 
@@ -120,11 +144,22 @@ public sealed class ArgumentStyleRule : ArrangementRule {
 
                 var wanted = StyleFor(argument.Expression, options);
                 if (argument.NameColon is null && wanted == ArgumentStyle.Named) {
-                    if (i >= method.Parameters.Length) {
+                    if (i >= parameters.Length) {
                         continue;
                     }
 
-                    var name = method.Parameters[i].Name;
+                    // ⚠ The `params` parameter may be named only where the call passes the array
+                    // itself. In expanded form the arguments beyond `paramsIndex` have no parameter of
+                    // their own to be named after — CS1744 — and the one *at* it is an element rather
+                    // than the array, so naming it would not compile either. Recognised by the
+                    // argument's converted type: normal form converts to the parameter's array type,
+                    // expanded form to its element type. It is the direction this rule has been wrong
+                    // in before, and the check is a compile-legality check rather than a style one.
+                    if (i >= paramsIndex && !PassesTheParamsArray(node.Arguments, i, parameters[i])) {
+                        continue;
+                    }
+
+                    var name = parameters[i].Name;
                     if (name.Length == 0 || !SyntaxFacts.IsValidIdentifier(name)) {
                         continue;
                     }
@@ -165,21 +200,55 @@ public sealed class ArgumentStyleRule : ArrangementRule {
 
             return changed ? visited.WithArguments(arguments) : visited;
         }
+
+        /// <summary>
+        ///     Whether the argument at <paramref name="index" /> is the <c>params</c> array itself rather
+        ///     than one of its elements.
+        /// </summary>
+        /// <remarks>
+        ///     ⚠ Read off the *original* argument list, because the visited one has been rebuilt and is
+        ///     not in the tree the semantic model was created for — the same rule every semantic rewriter
+        ///     in this assembly obeys.
+        /// </remarks>
+        bool PassesTheParamsArray(SeparatedSyntaxList<ArgumentSyntax> original, int index, IParameterSymbol parameter) {
+            // ⚠ Only the last argument can be the array. Anything before it is an element by
+            // construction, whatever its type.
+            if (index != original.Count - 1) {
+                return false;
+            }
+
+            var converted = model.GetTypeInfo(original[index].Expression).ConvertedType;
+            return converted is not null
+                && SymbolEqualityComparer.Default.Equals(converted, parameter.Type);
+        }
     }
 }
 
 /// <summary>
-///     <c>out _</c> ⇒ <c>out var _</c>, under <c>resharper_prefer_explicit_discard_declaration</c>.
+///     <c>out _</c> ⇔ <c>out var _</c>, under <c>resharper_prefer_explicit_discard_declaration</c>.
 /// </summary>
 /// <remarks>
-///     ⚠ The export writes <c>false</c>, at which value this rule does nothing at all on this
-///     repository's configuration — the observable direction is the other one. It is implemented rather
-///     than recorded as inert because the key *is* observable when set: measured, at <c>true</c> the
-///     oracle turns <c>Deconstruct(out var p, out _)</c> into <c>… out var _)</c>.
+///     ⚠ <b>Both directions, and the export's <c>false</c> is not the inert one.</b> Asked directly,
+///     unbatched, under the cleanup profile at both values:
+///     <code>
+/// written        false (the export)   true
+/// out _          out _                out var _
+/// out var _      out _                out var _
+/// out int _      out var _            out var _
+///     </code>
+///     ⚠ The third row is where this entry was wrong until 06caa62f. It was read as "at <c>false</c>
+///     the oracle does not strip an existing <c>var</c>", and the rule was written to do nothing at
+///     <c>false</c> on the strength of it — but <c>out int _</c> is a *typed* declaration, so this key
+///     declines it and the <c>var</c> rule turns it into <c>out var _</c> afterwards. It is a fact
+///     about the shape that was probed and not about the key, and the row that answers the key is the
+///     second one: at <c>false</c> an existing <c>var _</c> **is** stripped. The cost of the mistake
+///     was `constructs/arrangement/lists/discard-declaration.cs` disagreeing with the oracle at the
+///     sweep's baseline, which made this key's row attribute nothing.
 ///     <para>
-///         ⚠ It deliberately does not do the reverse. At <c>false</c> the oracle does **not** strip an
-///         existing <c>var</c> from a discard: <c>out int _</c> becomes <c>out var _</c> under the <c>var</c>
-///         rule and stays there. `false` means "do not add", not "remove".
+///         ⚠ And the oracle is not at a fixed point on the third row: run over its own output it
+///         answers <c>out _</c>, because the <c>var</c> it wrote in pass one is what this key removes in
+///         pass two. Skala loops to a fixed point and therefore writes <c>out _</c> for all three, which
+///         is the known asymmetry `sweep fixed-point` exists to report rather than a fourth behaviour.
 ///     </para>
 /// </remarks>
 public sealed class DiscardDeclarationRule : ArrangementRule {
@@ -187,27 +256,44 @@ public sealed class DiscardDeclarationRule : ArrangementRule {
 
     public override bool NeedsSemantics => false;
 
-    public override bool IsEnabled(in ArrangementOptions options) => options.PreferExplicitDiscardDeclaration;
+    public override bool IsEnabled(in ArrangementOptions options) => true;
 
-    public override SyntaxNode Apply(ArrangementContext context) => new Rewriter(context.Guard).Visit(context.Root);
+    public override SyntaxNode Apply(ArrangementContext context) =>
+        new Rewriter(context.Guard, context.Options.PreferExplicitDiscardDeclaration).Visit(context.Root);
 
-    sealed class Rewriter(FormatterTagGuard guard) : GuardedRewriter(guard) {
+    sealed class Rewriter(FormatterTagGuard guard, bool explicitly) : GuardedRewriter(guard) {
         public override SyntaxNode? VisitArgument(ArgumentSyntax node) {
             var visited = (ArgumentSyntax)base.VisitArgument(node)!;
 
-            // Only an `out _`; a bare `_` in any other position may well be a real variable.
-            if (node.RefKindKeyword.IsKind(SyntaxKind.None)
-                || node.Expression is not IdentifierNameSyntax { Identifier.ValueText: "_" }) {
+            // Only an `out`/`ref`/`in` argument; a bare `_` in any other position may well be a real
+            // variable, and a declaration is only legal here.
+            if (node.RefKindKeyword.IsKind(SyntaxKind.None)) {
                 return visited;
             }
 
-            return visited.WithExpression(
-                SyntaxFactory.DeclarationExpression(
-                    SyntaxFactory.IdentifierName("var"),
-                    SyntaxFactory.DiscardDesignation()
+            if (explicitly) {
+                return node.Expression is IdentifierNameSyntax { Identifier.ValueText: "_" }
+                    ? visited.WithExpression(
+                        SyntaxFactory.DeclarationExpression(
+                            SyntaxFactory.IdentifierName("var"),
+                            SyntaxFactory.DiscardDesignation()
+                        )
+                            .WithTriviaFrom(visited.Expression)
+                    )
+                    : visited;
+            }
+
+            // ⚠ `var _` only. A discard declared with a written type — `out int _` — is left alone
+            // here; the `var` rule is what decides whether that type stays, and the table above is
+            // what says the two are separate decisions.
+            return node.Expression is DeclarationExpressionSyntax {
+                Type: IdentifierNameSyntax { Identifier.ValueText: "var" },
+                Designation: DiscardDesignationSyntax
+            }
+                ? visited.WithExpression(
+                    SyntaxFactory.IdentifierName("_").WithTriviaFrom(visited.Expression)
                 )
-                    .WithTriviaFrom(visited.Expression)
-            );
+                : visited;
         }
     }
 }
