@@ -15,7 +15,7 @@
 <p class="lede">7 keys.</p>
 <section class="option" id="resharper_csharp_space_before_singleline_accessorholder">
 <h2><code>resharper_csharp_space_before_singleline_accessorholder</code> <a class="self" href="#resharper_csharp_space_before_singleline_accessorholder">#</a></h2>
-<p>Around braces — Before single line accessors block</p>
+<p>Around braces — Before single line accessors block. Inert: the oracle spends one space in front of an accessor holder's brace at both values.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>
@@ -25,7 +25,6 @@
 <tr><th>Language</th><td>csharp</td></tr>
 <tr><th>Since</th><td>0.1</td></tr>
 <tr><th>Also spelled</th><td><code>csharp_space_before_singleline_accessorholder</code>, <code>resharper_space_before_singleline_accessorholder</code>, <code>space_before_singleline_accessorholder</code></td></tr>
-<tr><th>Oracle fixture</th><td><code>constructs/spaces/resharper_csharp_space_before_singleline_accessorholder.cs</code></td></tr>
 <tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_SpacesPageSchema.html#resharper_csharp_space_before_singleline_accessorholder">https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_SpacesPageSchema.html#resharper_csharp_space_before_singleline_accessorholder</a></td></tr>
 </tbody>
 </table>
@@ -38,7 +37,7 @@
 <tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>
 <tr><th>Default</th><td><code>true</code></td></tr>
 <tr><th>Default known from</th><td>an oracle probe — <code>jb cleanupcode</code> under a configuration carrying nothing but <code>root = true</code>, compared against the fixture that exercises the key</td></tr>
-<tr><th>Tier</th><td>D — recorded so the key is not reported unknown; nothing reads it yet</td></tr>
+<tr><th>Tier</th><td>A — the formatter reads it and a committed oracle fixture pins it</td></tr>
 <tr><th>Language</th><td>csharp</td></tr>
 <tr><th>Since</th><td>0.1</td></tr>
 <tr><th>Also spelled</th><td><code>csharp_space_between_accessors_in_singleline_property</code>, <code>resharper_space_between_accessors_in_singleline_property</code>, <code>space_between_accessors_in_singleline_property</code></td></tr>
@@ -55,7 +54,7 @@
 <tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>
 <tr><th>Default</th><td><code>true</code></td></tr>
 <tr><th>Default known from</th><td>an oracle probe — <code>jb cleanupcode</code> under a configuration carrying nothing but <code>root = true</code>, compared against the fixture that exercises the key</td></tr>
-<tr><th>Tier</th><td>D — recorded so the key is not reported unknown; nothing reads it yet</td></tr>
+<tr><th>Tier</th><td>A — the formatter reads it and a committed oracle fixture pins it</td></tr>
 <tr><th>Language</th><td>csharp</td></tr>
 <tr><th>Since</th><td>0.1</td></tr>
 <tr><th>Also spelled</th><td><code>csharp_space_in_singleline_accessorholder</code>, <code>resharper_space_in_singleline_accessorholder</code>, <code>space_in_singleline_accessorholder</code></td></tr>

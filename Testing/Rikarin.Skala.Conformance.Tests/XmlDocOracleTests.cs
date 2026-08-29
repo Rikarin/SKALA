@@ -115,6 +115,19 @@ public sealed class XmlDocOracleTests {
             return;
         }
 
+        // ⚠ The fourth cause, added 2026-08-29: the key is marked **inert** in the registry — Skala
+        // reads it and it changes nothing. Agreement is then trivial rather than evidence, because a
+        // key that moves no bytes cannot disagree with anything, so neither the fixture nor the sweep
+        // can speak for it and Tier D is the honest mark. `xmldoc_indent_size` and `indent_style` are
+        // the case: measured under `OracleProfile.DocComments`, the ReSharper key moves nothing while
+        // the C# indent governs the comment's inner indent. Promoting them on their agreement was
+        // tried and reverted — `OptionRegistryTests.Tiers_AreHonest` and
+        // `Inert_OptionsCarryAReasonAndAreNotClaimedAsImplemented` both refuse an inert Tier A, and
+        // they are right to.
+        if (OptionRegistry.Get(id).Inert is not null) {
+            return;
+        }
+
         Assert.True(
             row.Agrees == false || SweepVerdicts.Unsubstantiated().Contains(row.Key),
             $"{row.Key} is Tier {tier}, Skala reproduces its doc-comment fixture byte for byte, and the "

@@ -72,12 +72,21 @@ public sealed class McpServerTests {
     /// </remarks>
     [Fact]
     public void Format_FormatsDocumentationCommentsToo() {
+        // ⚠ The subject has to be a comment the sub-formatter *changes*. This test used to pass
+        // `///<summary>Docs.</summary>` and assert the marker gained its space — but the oracle was
+        // measured on 2026-08-29 leaving a comment that needs no other change byte-identical, marker
+        // included, and Skala now matches it. The old subject therefore asserted a behaviour neither
+        // engine has, and would have gone on passing only while Skala was wrong.
         var formatted = McpServerInspection.FormatContent(
             Directory.GetCurrentDirectory(),
-            "public sealed class Draft{///<summary>Docs.</summary>\npublic int Value;}"
+            "public sealed class Draft{///<summary>This is a fairly long documentation sentence that "
+            + "will certainly need to be wrapped by the sub formatter because it exceeds the margin."
+            + "</summary>\npublic int Value;}"
         );
 
-        Assert.Contains("/// <summary>Docs.</summary>", formatted, StringComparison.Ordinal);
+        Assert.Contains("/// <summary>", formatted, StringComparison.Ordinal);
+        Assert.Contains("///     This is a fairly long", formatted, StringComparison.Ordinal);
+        Assert.Contains("///     because it exceeds the margin.", formatted, StringComparison.Ordinal);
     }
 
     /// <summary>
