@@ -227,26 +227,11 @@ public sealed partial class CSharpDocumentBuilder {
         if (previous.Kind == PieceKind.Token) {
             var previousToken = _tokens[previous.TokenIndex];
 
-            // ⚠ blank_lines_after_block_statements: a statement that ended with a brace is
-            // separated from the next one — and "ended with a brace" is not "is a block". Measured:
-            // an `if … else { }`, a `switch { }` and a `try … catch { }` all get the blank line and
-            // none of their closing braces belongs to a `BlockSyntax` whose parent is a statement.
-            // The else's brace hangs from an `ElseClauseSyntax`, the switch's from the switch
-            // itself, the catch's from a `CatchClauseSyntax`.
-            // ⚠ And not before a `case`, which is a label rather than a statement: the gap between
-            // a switch section's last block and the next label belongs to `blank_lines_before_case`,
-            // which is 0 here, and the oracle leaves it empty.
-            if (previousToken.IsKind(SyntaxKind.CloseBraceToken)
-                && EndsAStatementInAList(previousToken)
-                && nextToken.Parent is not SwitchLabelSyntax) {
-                required = Math.Max(required, _options.BlankLinesAfterBlockStatements);
-            }
-
             if (previousToken.Parent is SwitchLabelSyntax) {
                 required = Math.Max(required, _options.BlankLinesAfterCase);
             }
 
-            // The two "after" statement requirements, attributed to the statement that ends here.
+            // The three "after" statement requirements, attributed to the statement that ends here.
             if (StatementEndingAt(previousToken) is { } statementAbove) {
                 if (IsControlTransfer(statementAbove)) {
                     required = Math.Max(required, _options.BlankLinesAfterControlTransferStatements);
@@ -254,6 +239,27 @@ public sealed partial class CSharpDocumentBuilder {
 
                 if (SpansLines(statementAbove)) {
                     required = Math.Max(required, _options.BlankLinesAfterMultilineStatements);
+                }
+
+                // ⚠ blank_lines_after_block_statements asks the same question of the statement above
+                // the gap that blank_lines_before_block_statements asks of the one below it, so it
+                // asks it with the same predicate. It used to be tested as "the previous token is a
+                // `}` and it ends a statement in a list", which is a different question and wrong in
+                // both directions. Measured over nineteen shapes at
+                // `blank_lines_after_block_statements = 1` with both local-method keys held at 0, so
+                // that only this key could be answering:
+                //
+                //   over-fired   a bare `{ … }` block, and a local function at either width — the
+                //                oracle writes no blank after any of the three, which is exactly
+                //                what HasChildBlock already records for the `before` direction
+                //   under-fired  `do { … } while (x);` and `if (x) { … } else Foo();` — both end in
+                //                a `;` and the oracle blanks after both
+                //
+                // ⚠ And not before a `case`, which is a label rather than a statement: the gap
+                // between a switch section's last block and the next label belongs to
+                // `blank_lines_before_case`, which is 0 here, and the oracle leaves it empty.
+                if (HasChildBlock(statementAbove) && nextToken.Parent is not SwitchLabelSyntax) {
+                    required = Math.Max(required, _options.BlankLinesAfterBlockStatements);
                 }
             }
         }
@@ -550,10 +556,18 @@ public sealed partial class CSharpDocumentBuilder {
     ///     The statement whose last token this is, when it is an element of a statement list.
     /// </summary>
     /// <remarks>
-    ///     ⚠ The list membership is the same guard <see cref="EndsAStatementInAList" /> carries and for
-    ///     the same reason: a method body is a <see cref="BlockSyntax" />, which is a
-    ///     <see cref="StatementSyntax" />, so without it every member's closing brace would answer
-    ///     <c>blank_lines_after_multiline_statements</c> and take the gap the member rules own.
+    ///     ⚠ The list membership is not decoration: a method body is a <see cref="BlockSyntax" />,
+    ///     which is a <see cref="StatementSyntax" />, so without it every member's closing brace would
+    ///     answer <c>blank_lines_after_multiline_statements</c> — and now
+    ///     <c>blank_lines_after_block_statements</c> with it — and take the gap the member rules own.
+    ///     <para>
+    ///         ⚠ And the walk does not stop at the first statement it meets. An <c>else</c>'s block is a
+    ///         statement whose parent is an <see cref="ElseClauseSyntax" />, and a <c>foreach</c>'s block
+    ///         is one whose parent is the loop — neither is in a list, and the statement that is lies
+    ///         one or two nodes further up. That outward walk is what lets
+    ///         <c>blank_lines_after_block_statements</c> see <c>do { … } while (x);</c> and
+    ///         <c>if (x) { … } else Foo();</c>, both of which end in a <c>;</c>.
+    ///     </para>
     ///     <para>
     ///         ⚠ Outward rather than innermost. An <c>else</c>'s last statement ends where the whole
     ///         <c>if</c> does, and the oracle spends the requirement on the <c>if</c>: at
@@ -1091,35 +1105,5 @@ public sealed partial class CSharpDocumentBuilder {
         }
 
         return true;
-    }
-
-    /// <summary>
-    ///     Whether this token is the last one of a statement that is itself an element of a statement
-    ///     list.
-    /// </summary>
-    /// <remarks>
-    ///     ⚠ The "in a list" half is not decoration. <see cref="BlockSyntax" /> <em>is</em> a
-    ///     <see cref="StatementSyntax" />, so a method body's own closing brace ends a statement by the
-    ///     first half of the test alone, and the rule would put a blank line between every method's
-    ///     last brace and whatever follows it.
-    ///     <para>
-    ///         ⚠ And the walk does not stop at the first statement it meets, which is the other half.
-    ///         An <c>else</c>'s block is a statement whose parent is an <see cref="ElseClauseSyntax" />, and
-    ///         a <c>foreach</c>'s block is one whose parent is the loop — neither is in a list, and the
-    ///         statement that is lies one or two nodes further up.
-    ///     </para>
-    /// </remarks>
-    static bool EndsAStatementInAList(SyntaxToken token) {
-        for (var node = token.Parent; node is not null; node = node.Parent) {
-            if (node.Span.End != token.Span.End) {
-                return false;
-            }
-
-            if (node is StatementSyntax && node.Parent is BlockSyntax or SwitchSectionSyntax or GlobalStatementSyntax) {
-                return true;
-            }
-        }
-
-        return false;
     }
 }
