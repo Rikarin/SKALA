@@ -2487,8 +2487,17 @@ public static class Ids {
     public static readonly OptionId PlaceExprAccessorOnSingleLine =
         Of("resharper_csharp_place_expr_accessor_on_single_line");
 
+    /// <summary>
+    ///     ⚠ Implemented in full and unreachable from this export, which is
+    ///     <c>align_multiline_argument</c>'s shape rather than a gap:
+    ///     <c>keep_existing_embedded_arrangement = true</c> outranks it in BOTH directions, so no
+    ///     one-key flip can move the oracle. <c>BreakPlan.PlanEmbeddedStatement</c> carries the
+    ///     measurement with the mask lifted; SK-DIV-0083 carries the pair. ⚠ Marked inert and its
+    ///     `oracle` glob KEPT: inert here means "no input distinguishes its values under this
+    ///     configuration", and the committed sweep still needs the fixture to re-measure it.
+    /// </summary>
     public static readonly OptionId PlaceSimpleEmbeddedStatementOnSameLine =
-        Of("resharper_csharp_place_simple_embedded_statement_on_same_line");
+        OfInert("resharper_csharp_place_simple_embedded_statement_on_same_line");
 
     /// <summary>
     ///     ⚠ Read and not applied. The oracle never rearranges a switch section's statements — asked in
@@ -2617,8 +2626,15 @@ public static class Ids {
     public static readonly OptionId PlaceSimplePropertyPatternOnSingleLine =
         Of("resharper_place_simple_property_pattern_on_single_line");
 
+    /// <summary>
+    ///     ⚠ Implemented and unreachable from this export, the same way
+    ///     <see cref="PlaceSimpleEmbeddedStatementOnSameLine" /> is:
+    ///     <c>wrap_switch_expression = chop_always</c> outranks it, which is the reverse of what
+    ///     <c>BreakPlan.PlanSwitchExpression</c> used to record. At `wrap_if_long` the key decides and
+    ///     both values move; at `chop_always` neither does. SK-DIV-0083.
+    /// </summary>
     public static readonly OptionId PlaceSimpleSwitchExpressionOnSingleLine =
-        Of("resharper_place_simple_switch_expression_on_single_line");
+        OfInert("resharper_place_simple_switch_expression_on_single_line");
 
     public static readonly OptionId MaxInvocationArgumentsOnLine = Of("resharper_max_invocation_arguments_on_line");
     public static readonly OptionId MaxFormalParametersOnLine = Of("resharper_max_formal_parameters_on_line");

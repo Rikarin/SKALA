@@ -5005,7 +5005,7 @@
       "summary": "Other indents — Place comments at first column when commenting out code. ⚠ The name is the whole of it: it governs the editor's comment-out action, and `cleanupcode` never comments anything out, so the reformat cannot reach it.",
       "since": "0.1",
       "inert": "Inert under `cleanupcode`, measured on three probes rather than reasoned from the name: the key's own fixture, a five-shape probe carrying a comment at column zero, one indented with its owner and one indented to neither, and a probe of commented-out code (`// M();`, `//int y = 2;`) which is what the option's name is about. At `true` and at `false` the oracle returns all three byte-identical. ⚠ Skala used to honour it, and what it honoured was invented: at `true` it pinned every line-starting comment to column 0. The key that really moves a comment's column is `resharper_csharp_stick_comment` — \"Don't indent comments started at first column\" — and the flag now hangs off that one.",
-      "oracle": null,
+      "oracle": "constructs/trivia/resharper_csharp_place_comments_at_first_column.cs",
       "docs": "https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpIndentStylePageSchema.html#resharper_csharp_place_comments_at_first_column",
       "templateLine": 890,
       "expands": []
@@ -5186,7 +5186,7 @@
       "summary": "Arrangement of embedded statements — Place simple 'case' statement on the same line",
       "since": "0.1",
       "inert": "Asked in both directions rather than one: a section written broken (one statement; two statements; a bare `break;`; a shared label; a braced section) at `always`, a section written joined at `never`, both again with `keep_user_linebreaks = false`, and ⚠ both again with `simple_case_statement_style` pushed the same way — `on_single_line` against the broken source and `line_break` against the joined one, because that key's own `inert` note names THIS key as what governs the shape. Every one byte-identical. Neither key governs a switch section's arrangement; `cleanupcode` preserves whatever the author wrote. ⚠ `simple_case_statement_style`'s note is wrong about which key wins, and for the usual reason — it was asked at `never` against a source that was already broken, where `never` has nothing to do.",
-      "oracle": null,
+      "oracle": "constructs/blank-lines/between-switch-sections.cs",
       "docs": "https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_LineBreaksPageSchema.html#resharper_csharp_place_simple_case_statement_on_same_line",
       "templateLine": 900,
       "expands": []
@@ -5209,7 +5209,8 @@
       "oracle": "constructs/indentation/resharper_csharp_indent_nested_for_stmt.cs",
       "docs": "https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_LineBreaksPageSchema.html#resharper_csharp_place_simple_embedded_statement_on_same_line",
       "templateLine": 901,
-      "expands": []
+      "expands": [],
+      "inert": "Masked at the export's own values, so the per-option unit cannot reach it: `resharper_keep_existing_embedded_arrangement = true` outranks this key in BOTH directions. Measured, one flip at a time, in both directions rather than one: at `never` with keep on, `if (c) M(c, d);` is left joined, and the long `if (depth < 0) throw new …(…);` in the same run is broken only because the `if` overflows the margin. Decisive with keep at `false`: `always` joins `if (c) M(c, d);` and `while (c) M(c, d);`, leaves `if (c) / if (d) / M()`, `if (c) / using (…) / M()` and a nested `for` alone, and joins that same nesting when it sits inside a block. Two flips, so the one-key sweep cannot reach it — SK-DIV-0083. ⚠ The `oracle` glob is deliberately KEPT: the key is implemented and observable, and the committed sweep needs the fixture to re-measure it."
     },
     {
       "key": "resharper_csharp_place_simple_initializer_on_single_line",
@@ -5290,7 +5291,8 @@
       "oracle": "constructs/wrapping/switch-expression.cs",
       "docs": "https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_LineBreaksPageSchema.html#resharper_csharp_place_simple_switch_expression_on_single_line",
       "templateLine": 905,
-      "expands": []
+      "expands": [],
+      "inert": "Masked at the export's own values, so the per-option unit cannot reach it: `resharper_wrap_switch_expression = chop_always` outranks this key, which is the reverse of what `BreakPlan` used to record. Measured, one flip at a time: at `chop_always` both values return every arm on its own line; at `wrap_if_long` the key decides — `true` returns `value switch { 1 => 1, _ => 0 }` on one line and `false` opens the braces and fills the arms. Two flips, so the one-key sweep cannot reach it — SK-DIV-0083. ⚠ The `oracle` glob is deliberately KEPT: the key is implemented and observable, and the committed sweep needs the fixture to re-measure it."
     },
     {
       "key": "resharper_csharp_place_type_attribute_on_same_line",
