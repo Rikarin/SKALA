@@ -101,7 +101,27 @@ public enum LineFlags {
     ///     A group-wide fill mode would either put the braces in the fill — producing
     ///     <c>new[] { "aaa",</c> — or take the elements out of it. Neither is what the oracle writes.
     /// </remarks>
-    FillPoint = 2
+    FillPoint = 2,
+
+    /// <summary>
+    ///     The last of its group's own break points, so what follows it on the line runs past the end
+    ///     of the group.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Set by <see cref="DocumentBuilder" /> when the group closes and its segments are measured,
+    ///     because only then is it known which point was last.
+    ///     <para>
+    ///         ⚠ It exists because <see cref="Document.SegmentOf" /> stops at the group's next point, and
+    ///         at the last point there is no next one — so the measure ends at the group's own end and
+    ///         the fill never sees the <c>) {</c> that follows it. That is not a rounding error: at the
+    ///         export's 120-column margin a <c>for</c> header of 121 columns has 118 before its <c>) {</c>
+    ///         and an <c>if</c> condition of 121 has 118 before its own, so <em>both</em> fills declined a
+    ///         break the oracle takes, and neither was reachable by any width the fixture could choose.
+    ///         <see cref="LayoutWriter" />'s TrailingWidth is the same measure a group already gets on
+    ///         entry; this is what lets the last point of a fill ask for it too.
+    ///     </para>
+    /// </remarks>
+    LastPoint = 4
 }
 
 /// <summary>

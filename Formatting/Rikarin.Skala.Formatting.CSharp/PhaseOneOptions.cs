@@ -29,12 +29,19 @@ public readonly struct PhaseOneOptions {
         // multiline stays chopped at both settings, a LINQ query keeps the author's breaks, and a
         // hard break is a hard break — all of which Fits already expresses, because a subtree
         // holding a break has an Unbounded flat width and never fits at any margin.
+        // ⚠ A width of 0 is "no limit" and not "120", and that is measured rather than read off the
+        // name. Asked with `resharper_csharp_max_line_length = 0` and nothing else changed, the
+        // oracle returns `constructs/wrapping/initializers.cs` with a 141-column line untouched —
+        // no finite margin produces that — while the element counter still chops the initializer it
+        // governs, which is the same "a construct that breaks for a reason other than width still
+        // breaks" the paragraph above records for `wrap_lines = false`. The registry's
+        // `boundsBecause` claimed the opposite and is corrected with this.
         WrapLines = options.GetBool(Ids.WrapLines);
         MaxLineLength = !WrapLines
             ? Document.Unbounded
             : options.GetInt(Ids.MaxLineLength) is var w and > 0
                 ? w
-                : 120;
+                : Document.Unbounded;
         InsertFinalNewline = options.GetBool(Ids.InsertFinalNewline);
         RemoveSpacesOnBlankLines = options.GetBool(Ids.RemoveSpacesOnBlankLines);
         EnforceLineEndingStyle = options.GetBool(Ids.EnforceLineEndingStyle);
@@ -2213,8 +2220,8 @@ public static class Ids {
     public static readonly OptionId KeepExistingEnumArrangement = Of("resharper_csharp_keep_existing_enum_arrangement");
     public static readonly OptionId KeepExistingLinebreaks = Of("resharper_csharp_keep_existing_linebreaks");
 
-    public static readonly OptionId WrapEnumDeclaration = Of("resharper_csharp_wrap_enum_declaration");
-    public static readonly OptionId MaxEnumMembersOnLine = Of("resharper_csharp_max_enum_members_on_line");
+    public static readonly OptionId WrapEnumDeclaration = OfInert("resharper_csharp_wrap_enum_declaration");
+    public static readonly OptionId MaxEnumMembersOnLine = OfInert("resharper_csharp_max_enum_members_on_line");
     public static readonly OptionId WrapSwitchExpression = Of("resharper_csharp_wrap_switch_expression");
     public static readonly OptionId WrapArgumentsStyle = Of("resharper_csharp_wrap_arguments_style");
     public static readonly OptionId WrapParametersStyle = Of("resharper_csharp_wrap_parameters_style");
@@ -2493,8 +2500,18 @@ public static class Ids {
     public static readonly OptionId PlaceSimpleInitializerOnSingleLine =
         Of("resharper_place_simple_initializer_on_single_line");
 
-    public static readonly OptionId WrapAfterExpressionLbrace = Of("resharper_wrap_after_expression_lbrace");
-    public static readonly OptionId WrapBeforeExpressionRbrace = Of("resharper_wrap_before_expression_rbrace");
+    // ⚠ Inert, and it is the tool that ignores them rather than a rule of Skala's masking them.
+    // Measured 2026-08-29 against `jb cleanupcode` 2025.2.6 on
+    // `constructs/wrapping/initializers.cs`, one key at a time appended to the export: at `false` —
+    // the only other value, both are `true` in the export — the oracle returns the file
+    // byte-identical, in the unprefixed spelling the export writes AND in a `csharp_`-prefixed one.
+    // The negative control on the same file and in the same shape,
+    // `resharper_csharp_wrap_array_initializer_style = chop_always`, rewrites it, so the file can
+    // move. BreakPlan now writes `true` for both, which is what the oracle does at either value: a
+    // braced construct that wraps at all puts its braces on their own lines. Skala honouring them
+    // is what made both rows SPURIOUS.
+    public static readonly OptionId WrapAfterExpressionLbrace = OfInert("resharper_wrap_after_expression_lbrace");
+    public static readonly OptionId WrapBeforeExpressionRbrace = OfInert("resharper_wrap_before_expression_rbrace");
 
     public static readonly OptionId WrapChainedMethodCalls = Of("resharper_csharp_wrap_chained_method_calls");
     public static readonly OptionId WrapAfterDotInMethodCalls = Of("resharper_wrap_after_dot_in_method_calls");
@@ -2531,9 +2548,16 @@ public static class Ids {
     // writes them on was already there, from align_multiline_statement_conditions.
     public static readonly OptionId WrapForStmtHeaderStyle = Of("resharper_csharp_wrap_for_stmt_header_style");
     public static readonly OptionId WrapBeforeExtendsColon = Of("resharper_wrap_before_extends_colon");
-    public static readonly OptionId WrapBeforeCommaInBaseClause = Of("resharper_wrap_before_comma_in_base_clause");
+    // ⚠ Inert, and the base clause's comma side is not: `resharper_csharp_wrap_before_comma` — the
+    // general key — moves it, and this one does not, in either spelling. Measured 2026-08-29 on
+    // `constructs/wrapping/base-list.cs`, one key at a time appended to the export: at `true` this
+    // key returns the file byte-identical while `wrap_before_comma = true` returns
+    // `class C : Base\n    , IFirst\n    , ISecond { }`. BreakPlan.PlanBaseList reads the general
+    // key now; reading this one is what made its row SPURIOUS.
+    public static readonly OptionId WrapBeforeCommaInBaseClause =
+        OfInert("resharper_wrap_before_comma_in_base_clause");
     public static readonly OptionId WrapPropertyPattern = Of("resharper_csharp_wrap_property_pattern");
-    public static readonly OptionId WrapListPattern = Of("resharper_csharp_wrap_list_pattern");
+    public static readonly OptionId WrapListPattern = OfInert("resharper_csharp_wrap_list_pattern");
 
     public static readonly OptionId KeepExistingListPatternsArrangement =
         Of("resharper_keep_existing_list_patterns_arrangement");

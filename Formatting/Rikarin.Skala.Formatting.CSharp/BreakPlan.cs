@@ -158,6 +158,19 @@ public sealed class BreakPlan {
     readonly Dictionary<long, int> _chainOwner = [];
 
     /// <summary>
+    ///     The chain roots whose <c>wrap_chained_binary_*</c> style is <c>wrap_if_long</c>, so that
+    ///     every operator of them plans a fill point rather than an ordinary one.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Beside <see cref="_chainOwner" /> rather than folded into it, because the two are read at
+    ///     different times: the owner is written by <see cref="PlanChainWide" /> from the chain root and
+    ///     read by <see cref="PlanOperator" /> from a link, and a link cannot see which of the two
+    ///     <c>wrap_chained_binary_*</c> keys governs its chain without repeating the precedence walk
+    ///     that found the root.
+    /// </remarks>
+    readonly HashSet<long> _chainFills = [];
+
+    /// <summary>
     ///     The operator tokens a <c>force_chop_compound_*</c> key requires a break at, by position.
     /// </summary>
     /// <remarks>
@@ -431,7 +444,8 @@ public sealed class BreakPlan {
                     _options.WrapListPattern,
                     wrapAfterOpen: true,
                     wrapBeforeClose: true,
-                    placeOnSingleLine: _options.PlaceSimpleListPatternOnSingleLine
+                    placeOnSingleLine: _options.PlaceSimpleListPatternOnSingleLine,
+                    keepOutranksChopAlways: true
                 );
                 return;
 
@@ -446,7 +460,8 @@ public sealed class BreakPlan {
                     _options.WrapListPattern,
                     wrapAfterOpen: true,
                     wrapBeforeClose: true,
-                    placeOnSingleLine: _options.PlaceSimpleListPatternOnSingleLine
+                    placeOnSingleLine: _options.PlaceSimpleListPatternOnSingleLine,
+                    keepOutranksChopAlways: true
                 );
                 return;
 
@@ -459,8 +474,16 @@ public sealed class BreakPlan {
                     propertyPattern.Subpatterns.GetSeparators(),
                     _options.KeepExistingPropertyPatternsArrangement,
                     _options.WrapPropertyPattern,
-                    _options.WrapAfterExpressionLbrace,
-                    _options.WrapBeforeExpressionRbrace,
+                    // ⚠ Not `wrap_after_expression_lbrace` / `wrap_before_expression_rbrace`.
+                    // Measured at both values of each, in both the unprefixed spelling the export
+                    // writes and a `csharp_`-prefixed one: the oracle returns
+                    // `constructs/wrapping/initializers.cs` byte-identical every time, while a
+                    // negative control on the same file — `csharp_wrap_array_initializer_style =
+                    // chop_always` — rewrites it. The C# formatter does not read them; a wrapped
+                    // braced construct always puts its braces on their own lines, which is what
+                    // these two constants say. See PhaseOneOptions.Ids.
+                    wrapAfterOpen: true,
+                    wrapBeforeClose: true,
                     placeOnSingleLine: _options.PlaceSimplePropertyPatternOnSingleLine
                 );
                 return;
@@ -576,11 +599,20 @@ public sealed class BreakPlan {
             return;
         }
 
-        // ⚠ keep_existing_enum_arrangement wins over chop_always: with it on, the oracle leaves
-        // `enum E { A, B, C }` on its line even though the wrap style says every member gets one.
-        var always = _options.WrapEnumDeclaration == WrapStyle.ChopAlways
-            && _options.MaxEnumMembersOnLine <= 1
-            && !_options.KeepExistingEnumArrangement;
+        // ⚠ `keep_existing_enum_arrangement` is the ONLY key of the three that governs this, and the
+        // other two are masked rather than partners. Measured, one key flipped at a time over the
+        // export: the oracle returns `constructs/breaks/enum-members.cs` with every member on its own
+        // line at `wrap_enum_declaration = wrap_if_long`, at `chop_if_long`, at `chop_always`, at
+        // `max_enum_members_on_line = 1` and at `= 2` — five configurations, one output — and puts
+        // `enum Compact { First, Second, Third, Fourth }` back on its line the moment
+        // `keep_existing_enum_arrangement` is true. Reading the wrap style and the counter as the
+        // forcing condition made Skala the only engine that varied, which is what SPURIOUS means, on
+        // both of their rows at once.
+        // ⚠ The rule the oracle is really applying is `resharper_new_line_before_enumerators`, which
+        // the remarks above already name: it is in the export template, it is not in options.json,
+        // and its value there is the one both engines now produce. Neither registered key stands in
+        // for it — an enum whose arrangement is not kept is chopped whatever they say.
+        var always = !_options.KeepExistingEnumArrangement;
         var group = NewGroup();
         Point(FirstToken(node.Members[0]), group);
         var broken = BreaksBefore(FirstToken(node.Members[0]));
@@ -616,18 +648,42 @@ public sealed class BreakPlan {
             return;
         }
 
+        var style = _options.WrapSwitchExpression;
+
+        // ⚠ `wrap_if_long` fills the arms; `chop_*` takes them together. Measured, one key flipped,
+        // on a switch whose arms cannot share a continuation line:
+        //     v switch {
+        //         1 => "aaaa…", 2 => "bbbb…", 3 => "cccc…",
+        //         4 => "dddd…", _ => "e"
+        //     };
+        var fill = style == WrapStyle.WrapIfLong;
+
         var group = NewGroup();
         Point(FirstToken(node.Arms[0]), group);
         var broken = BreaksBefore(FirstToken(node.Arms[0]));
 
+        // ⚠ The arms are the INNER group's and the braces the outer one's, which is the split a
+        // braced initializer already has and for the same measured reason. The export sets
+        // `place_simple_switch_expression_on_single_line = false`, and at that value the oracle puts
+        // the braces on their own lines WHATEVER `wrap_switch_expression` says:
+        //     int Compact(int v) =>
+        //         v switch {
+        //             1 => 10, 2 => 20, _ => 0     ← at wrap_if_long and at chop_if_long
+        //         };
+        // One group holding both meant the arms' style decided the braces too, so at either of those
+        // two values Skala returned the whole declaration flat — and the arrow break went with it,
+        // because "the owner is a single line" is answered by whether this construct broke.
+        var arms = NewGroup();
+        var armsBroken = false;
         foreach (var separator in node.Arms.GetSeparators()) {
             var next = separator.GetNextToken();
             if (!next.IsKind(SyntaxKind.None) && next.SpanStart < node.CloseBraceToken.SpanStart) {
-                Point(next, group);
-                broken |= BreaksBefore(next);
+                Point(next, arms, fill);
+                armsBroken |= BreaksBefore(next);
             }
         }
 
+        broken |= armsBroken;
         Point(node.CloseBraceToken, group);
         broken |= BreaksBefore(node.CloseBraceToken);
 
@@ -642,18 +698,43 @@ public sealed class BreakPlan {
         // off — the export's value — the same expression is chopped. That is what makes both keys
         // observable rather than only the wrap style.
         var keep = _options.KeepExistingSwitchExpressionArrangement;
-        var always = _options.WrapSwitchExpression == WrapStyle.ChopAlways
+        var always = style == WrapStyle.ChopAlways
             && !keep
             && !_options.PlaceSimpleSwitchExpressionOnSingleLine;
+
+        // ⚠ The braces break when the placement key says so, whatever the arms' style; the arms then
+        // decide for themselves. `always` is unchanged and still gates the ARMS, so that
+        // `place_simple_switch_expression_on_single_line = true` — where the outer group may join —
+        // is not defeated by an inner group certain to break inside it.
+        var forced = !keep && !_options.PlaceSimpleSwitchExpressionOnSingleLine;
 
         Describe(
             node,
             group,
-            always ? GroupMode.Break : GroupMode.Preserve,
+            forced ? GroupMode.Break : GroupMode.Preserve,
             new GroupFacts(
                 SourceBroken: broken,
                 JoinsIfFits: _options.PlaceSimpleSwitchExpressionOnSingleLine && !keep,
-                BreaksIfTooLong: _options.WrapSwitchExpression != WrapStyle.WrapIfLong
+                BreaksIfTooLong: true
+            )
+        );
+
+        DescribeInner(
+            node,
+            arms,
+
+            // ⚠ And the arms re-flow when `keep_existing_switch_expression_arrangement` is off, which
+            // is the export's value. Measured at `wrap_switch_expression = chop_if_long`: a switch
+            // the author wrote one arm per line comes back with the three arms on one continuation
+            // line, byte for byte what the same switch written flat gets at that value. The braces
+            // are still apart — that is the placement key's doing and not the author's — so the two
+            // halves of "what the source did" belong to the two groups separately, the same split
+            // `PlanBracedElements` makes.
+            always ? GroupMode.Break : GroupMode.Preserve,
+            new GroupFacts(
+                SourceBroken: keep && armsBroken,
+                JoinsIfFits: !keep,
+                BreaksIfTooLong: true
             )
         );
     }
@@ -702,18 +783,41 @@ public sealed class BreakPlan {
         bool wrapBeforeClose,
         int maxOnLine = int.MaxValue,
         bool? placeOnSingleLine = null,
-        bool wrapBeforeOpen = false
+        bool wrapBeforeOpen = false,
+        bool keepOutranksChopAlways = false
     )
         where T : SyntaxNode {
         if (open.IsKind(SyntaxKind.None) || close.IsKind(SyntaxKind.None) || items.Count == 0) {
             return;
         }
 
+        // ⚠ The counter wins over everything else, joining included: over the cap the construct is
+        // chopped whatever its width and whatever the author wrote.
+        var overCap = items.Count > maxOnLine;
+
+        // ⚠ And the per-construct `keep_existing_*` key outranks the placement key in both
+        // directions: with keep on, neither the join at `true` nor the forced break at `false`
+        // happens at all.
+        var joins = placeOnSingleLine == true && !keepExisting;
+        var forced = placeOnSingleLine == false && !keepExisting;
+
         // ⚠ `wrap_if_long` is a fill: the delimiters break together with the group and the gaps
         // between items break one at a time, as the line runs out. Milestone 2 declined to plan
         // these constructs at all rather than chop them, which is why an over-long initializer came
         // back untouched.
-        var fill = style == WrapStyle.WrapIfLong;
+        // ⚠ And so is a construct the placement key forced apart, at whatever style. Measured, one
+        // key flipped: `place_simple_property_pattern_on_single_line = false` with
+        // `wrap_property_pattern = chop_if_long` returns
+        //     o is Thing {
+        //         Alpha: 1, Beta: 2
+        //     };
+        // and keeps a three-subpattern clause of 98 columns together on its continuation line too.
+        // `false` puts the BRACES on their own lines; it does not chop what is between them, and
+        // reading it as a chop gave every subpattern a line of its own. It also overrides the
+        // author's own break at an item gap in the joining direction — a clause written one
+        // subpattern per line comes back re-flowed — which falls out of the fill: the group is
+        // broken either way, and each gap then answers for itself.
+        var fill = style == WrapStyle.WrapIfLong || forced;
 
         // ⚠ place_single_method_argument_lambda_on_same_line = true governs the OPENING parenthesis
         // only. `Assert.Throws(() => {` keeps the lambda on the call's line however long its body
@@ -729,11 +833,18 @@ public sealed class BreakPlan {
         var first = FirstToken(items[0]);
         var delimiterBroken = !soleLambda && BreaksBefore(first) || BreaksBefore(close);
 
-        // ⚠ `wrap_after_X_lpar = false` means "do not put the first item on a line of its own",
-        // not "join one the author put there". The two readings differ on
-        // `record R(\n a,\n b\n)`, where the oracle keeps the closing parenthesis where the author
-        // left it and Flat would pull it back up. The sole-lambda case below is the one place the
-        // oracle really does re-join, and it says so with its own key.
+        // ⚠ `wrap_after_X_lpar = false` DOES join a break the author put there — but only where the
+        // construct's own `keep_existing_*_arrangement` is not preserving it, and that correction is
+        // measured. The reading this replaces was "do not put the first item on a line of its own,
+        // and do not join one the author wrote", taken from `record R(\n a,\n b\n)`, which the
+        // oracle returns unmoved. It does — and the key holding it there is
+        // `keep_existing_declaration_parens_arrangement = true`, not this one. The export sets the
+        // invocation half of that pair to FALSE, and there the same flip joins:
+        //   wrap_after_invocation_lpar = false    Call(firstArgument,\n    secondArgument\n);
+        //   wrap_before_invocation_rpar = false   Call(\n    firstArgument,\n    secondArgument);
+        // one gap each, and neither touches the other's. Attributing the declaration's answer to
+        // this key made both invocation keys diverge at their non-export value.
+        // ⚠ The sole-lambda case below joins regardless, and it says so with its own key.
         // ⚠ `wrap_before_X_lpar = true` gives the opening parenthesis a line of its own, and it is a
         // point of the *list's* group rather than a break of its own: when the list chops, the
         // parenthesis goes with it. Asked directly at a 70-column margin, `void Decl(int a, …)`
@@ -761,7 +872,7 @@ public sealed class BreakPlan {
 
         if (wrapAfterOpen && !soleLambda) {
             Point(first, group);
-        } else if (soleLambda) {
+        } else if (soleLambda || !keepExisting) {
             Flat(first);
         }
 
@@ -805,6 +916,8 @@ public sealed class BreakPlan {
 
         if (wrapBeforeClose) {
             Point(close, group);
+        } else if (!keepExisting) {
+            Flat(close);
         }
 
         // ⚠ Two keys, two kinds of gap, and the second is gated by the first. Measured against the
@@ -816,17 +929,22 @@ public sealed class BreakPlan {
         //   false                | false           | re-joined  | re-joined
         // The global switch turns the per-construct one off; the per-construct one does not turn the
         // global one on.
-        // ⚠ The counter wins over everything else, joining included: over the cap the construct is
-        // chopped whatever its width and whatever the author wrote.
-        var overCap = items.Count > maxOnLine;
+        // ⚠ `chop_always` is gated on the construct's own `keep_existing_*_arrangement` — for the
+        // constructs where that was measured, and for those alone. `wrap_list_pattern = chop_always`
+        // leaves `xs is [1, 2, 3]` on its line, and a 113-column list pattern with it, because
+        // `keep_existing_list_patterns_arrangement = true` in this export; the same flip with that
+        // key turned OFF chops both. It is the keep key and not the placement key —
+        // `place_simple_list_pattern_on_single_line = false` beside `chop_always` still leaves the
+        // pattern whole.
+        // ⚠ And it is NOT general, which the committed sweep settles without another oracle run:
+        // `wrap_parameters_style`, `wrap_primary_constructor_parameters_style` and
+        // `wrap_arguments_style` are all conformant with THREE distinct oracle outputs on their
+        // fixtures, so those lists do chop at `chop_always` although
+        // `keep_existing_declaration_parens_arrangement` and its primary-constructor sibling are
+        // true. Applying the gate to every caller made all three of them stop varying.
+        var chopsAlways = style == WrapStyle.ChopAlways && !(keepOutranksChopAlways && keepExisting);
 
-        // ⚠ And the per-construct `keep_existing_*` key outranks the placement key in both
-        // directions: with keep on, neither the join at `true` nor the forced break at `false`
-        // happens at all.
-        var joins = placeOnSingleLine == true && !keepExisting;
-        var forced = placeOnSingleLine == false && !keepExisting;
-
-        var broken = style == WrapStyle.ChopAlways
+        var broken = chopsAlways
             || overCap
             || forced
             || _options.KeepsUserBreaksBetweenItems
@@ -844,7 +962,7 @@ public sealed class BreakPlan {
         Describe(
             node,
             group,
-            style == WrapStyle.ChopAlways || overCap || forced ? GroupMode.Break : GroupMode.Preserve,
+            chopsAlways || overCap || forced ? GroupMode.Break : GroupMode.Preserve,
             new GroupFacts(
                 SourceBroken: broken,
                 JoinsIfFits: joins && !overCap,
@@ -946,16 +1064,21 @@ public sealed class BreakPlan {
         var first = FirstToken(items[0]);
         var broken = BreaksBefore(first) || BreaksBefore(close);
 
-        if (_options.WrapAfterExpressionLbrace) {
-            Point(first, outer);
-        }
-
-        if (_options.WrapBeforeExpressionRbrace) {
-            Point(close, outer);
-        }
+        // ⚠ Unconditional, and `wrap_after_expression_lbrace` / `wrap_before_expression_rbrace` are
+        // not consulted: measured at both values of each and in both spellings, the oracle returns
+        // this file byte-identical, while the array initializer's own wrap key rewrites it. See the
+        // property-pattern call site and PhaseOneOptions.Ids.
+        Point(first, outer);
+        Point(close, outer);
 
         // ⚠ A fill only for an array initializer; an object or collection initializer chops.
-        var fill = array && style == WrapStyle.WrapIfLong;
+        // ⚠ …and never over the cap, which is what "a hard chop and not a fill" means on the
+        // `maxOnLine` parameter above. Measured, one key flipped: at
+        // `max_array_initializer_elements_on_line = 1` the oracle puts `new[] { 1, 2, 3, 4, 5 }` one
+        // element per line, and at `0` it does the same, so the counter is not a width and does not
+        // defer to one. The cap already forced the braces apart here; without this it left the five
+        // elements filled on the continuation line, so the key moved the output and moved it wrong.
+        var fill = array && style == WrapStyle.WrapIfLong && !overCap;
         var inner = NewGroup();
         var interBroken = false;
         foreach (var comma in separators) {
@@ -976,7 +1099,32 @@ public sealed class BreakPlan {
         }
 
         broken |= interBroken;
-        var mode = style == WrapStyle.ChopAlways || overCap || forced ? GroupMode.Break : GroupMode.Preserve;
+
+        // ⚠ `chop_always` is the ARRAY initializer's, and an object or collection one does not read
+        // it. Measured, one key flipped: at `wrap_array_initializer_style = chop_always` the oracle
+        // returns `new List<int> { 1, 2, 3 }`, `new Thing { Alpha = 1, Beta = 2 }` and a
+        // three-member `new { … }` exactly as written, and chops only `new[] { … }`. Skala read the
+        // one key for every braced initializer and gave all four a line per element.
+        // ⚠ The other two values need no such guard, because at neither of them does the style force
+        // anything: `wrap_if_long` and `chop_if_long` both leave the mode `Preserve` for a non-array
+        // initializer, and what separates them there is `fill`, which is already array-only. The key
+        // that governs an object or collection initializer is
+        // `csharp_wrap_object_and_collection_initializer_style`, which this registry does not carry;
+        // the export's answer is unchanged either way, so this narrows a wrong reading rather than
+        // standing in for the missing key.
+        // ⚠ `place_simple_initializer_on_single_line = false` forces the BRACES apart and not the
+        // elements, which is the outer group and not the inner one. Measured, one key flipped: the
+        // oracle returns
+        //     var a = new List<int> {
+        //         1, 2, 3
+        //     };
+        // and keeps a three-member `new Thing { … }` of 100 columns together on its continuation
+        // line too, chopping only the four-member one that does not fit there. Skala gave every
+        // element a line of its own, which reads the key as "and chop it" — the same conflation the
+        // outer/inner split exists to prevent. The inner group is left to decide on width, which is
+        // what `BreaksIfTooLong` already asks of it.
+        var chops = style == WrapStyle.ChopAlways && array || overCap;
+        var mode = chops || forced ? GroupMode.Break : GroupMode.Preserve;
         var facts = new GroupFacts(
             SourceBroken: _options.KeepUserLinebreaks && broken || forced,
             JoinsIfFits: joins,
@@ -987,8 +1135,24 @@ public sealed class BreakPlan {
         DescribeInner(
             node,
             inner,
-            mode,
-            facts with { SourceBroken = _options.KeepsUserBreaksBetweenItems && interBroken }
+            chops ? GroupMode.Break : GroupMode.Preserve,
+            facts with {
+                SourceBroken = _options.KeepsUserBreaksBetweenItems && interBroken,
+
+                // ⚠ And when the placement key forced the braces apart it re-flows the elements as
+                // well, overriding `keep_user_linebreaks` in the joining direction. Measured, one
+                // key flipped: at `place_simple_initializer_on_single_line = false` a `new Thing`
+                // the author wrote one member per line comes back as
+                //     var c = new Thing {
+                //         Alpha = 1, Beta = 2
+                //     };
+                // — byte for byte what the same initializer unbroken in the source gets at that
+                // value — while the four-member one that does not fit on its continuation line is
+                // still chopped. `false` has already decided this construct's shape, so the
+                // author's arrangement inside it no longer governs; that is the same direction the
+                // outer group's own `SourceBroken: … || forced` already reads the key in.
+                JoinsIfFits = joins || forced
+            }
         );
     }
 
@@ -1010,13 +1174,51 @@ public sealed class BreakPlan {
     ///         has to break somewhere: the gap after the colon is the point, and it is planned only in
     ///         that case. See the comment on the branch.
     ///     </para>
+    ///     <para>
+    ///         ⚠ <b>Two groups, and the split is the oracle's rather than a convenience</b> — the same
+    ///         shape <see cref="ConstraintRun" /> records for a run of <c>where</c> clauses, and reached
+    ///         here by the same measurement. At <c>wrap_before_extends_colon = true</c> the oracle breaks
+    ///         at the <c>:</c> and then <em>stops</em>, although <c>wrap_extends_list_style</c> is
+    ///         <c>chop_if_long</c> and the list is what did not fit:
+    ///         <code>
+    /// class LongBaseClassNameHereOkAndMore
+    ///     : SomeVeryLongBaseClassNameIndeed, IFirstInterfaceName, ISecondInterfaceName, IThirdName { }
+    ///         </code>
+    ///         One group holding both the colon and the commas cannot write that — a group resolved
+    ///         Broken breaks every point it owns, so Skala chopped all three commas of a list that fits
+    ///         on the line the colon break created. The outer group is entered before that gap and asks
+    ///         whether the whole list fits where the declaration reached; the inner one is entered after
+    ///         it, at the column the first base type actually lands on, and asks whether the types fit
+    ///         there. <see cref="GroupPlan.LeadingGapInside" /> is per plan for this.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ <c>wrap_if_long</c> is a <em>fill</em> and not "never wrap". Measured, one key flipped:
+    ///         the oracle returns
+    ///         <code>
+    /// class LongBaseClassNameHereOkAndMore : SomeVeryLongBaseClassNameIndeed, IFirstInterfaceName, ISecondInterfaceName,
+    ///     IThirdName { }
+    ///         </code>
+    ///         — the last comma that still fits, exactly as <see cref="PlanList" /> already fills a
+    ///         delimited list. Until this was measured the style reached the group as
+    ///         <c>BreaksIfTooLong: style != WrapIfLong</c>, which left the declaration flat past the
+    ///         margin. The same misreading was in the chain and the base list alike; see
+    ///         <see cref="PlanChainWide" />.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ <c>chop_always</c> is the <em>inner</em> group's mode and never the outer one's, which
+    ///         is also measured: <c>class ShortBase : IFirstInterfaceName { }</c> comes back untouched at
+    ///         <c>chop_always</c>. A single-base-type list has no comma to chop, and the point after the
+    ///         colon exists only so that a declaration too wide for the margin has somewhere to break —
+    ///         spending it on a style is how a 41-column declaration acquired a continuation line.
+    ///     </para>
     /// </remarks>
     void PlanBaseList(BaseListSyntax node) {
         if (node.Types.Count == 0) {
             return;
         }
 
-        var group = NewGroup();
+        var style = _options.WrapExtendsListStyle;
+        var outer = NewGroup();
         var broken = false;
 
         // ⚠ `wrap_before_extends_colon = true` makes the `:` itself a break point, which is the only
@@ -1025,7 +1227,7 @@ public sealed class BreakPlan {
         // and does not remove a break the author wrote, which is the correction docs/plan/05 records
         // for the whole `place_*_on_same_line` family.
         if (_options.WrapBeforeExtendsColon) {
-            Point(node.ColonToken, group);
+            Point(node.ColonToken, outer);
             broken |= BreaksBefore(node.ColonToken);
         } else if (node.Types.Count == 1) {
             // ⚠ The gap *after* the colon, and only when there is no comma to carry the break. A
@@ -1040,37 +1242,66 @@ public sealed class BreakPlan {
             //       IFirstInterfaceName,
             // so a point here in the multi-type case would chop with the commas and move a line the
             // oracle does not. The colon's own gap stays unplanned for the reason above.
-            Point(node.Types[0].GetFirstToken(), group);
+            Point(node.Types[0].GetFirstToken(), outer);
             broken |= BreaksBefore(node.Types[0].GetFirstToken());
         }
 
+        Describe(
+            node,
+            outer,
+            GroupMode.Preserve,
+            new GroupFacts(
+                SourceBroken: _options.KeepsUserBreaksBetweenItems && broken,
+                BreaksIfTooLong: true
+            ),
+            spendsIndent: true,
+            leadingGapInside: _options.WrapBeforeExtendsColon
+        );
+
+        if (node.Types.SeparatorCount == 0) {
+            return;
+        }
+
+        // ⚠ `wrap_if_long` fills the commas one at a time; `chop_*` takes them together.
+        var fill = style == WrapStyle.WrapIfLong;
+        var inner = NewGroup();
+        var innerBroken = false;
         foreach (var comma in node.Types.GetSeparators()) {
             var next = comma.GetNextToken();
             if (next.IsKind(SyntaxKind.None)) {
                 continue;
             }
 
-            if (_options.WrapBeforeCommaInBaseClause) {
-                Point(comma, group);
+            // ⚠ `wrap_before_comma`, the general key, and NOT
+            // `wrap_before_comma_in_base_clause`. Measured, one key at a time on this fixture: the
+            // base-clause-specific spelling moves nothing at either value — neither the unprefixed
+            // one the export writes nor a `csharp_`-prefixed one — while
+            // `resharper_csharp_wrap_before_comma = true` returns
+            //     class C : Base
+            //         , IFirst
+            //         , ISecond { }
+            // so the base clause's comma side IS governed, by the key that governs every other
+            // comma. Skala read the dead key and was the only engine that varied.
+            if (_options.WrapBeforeComma) {
+                Point(comma, inner, fill);
                 Flat(next);
-                broken |= BreaksBefore(comma);
+                innerBroken |= BreaksBefore(comma);
             } else {
                 Flat(comma);
-                Point(next, group);
-                broken |= BreaksBefore(next);
+                Point(next, inner, fill);
+                innerBroken |= BreaksBefore(next);
             }
         }
 
         Describe(
             node,
-            group,
-            _options.WrapExtendsListStyle == WrapStyle.ChopAlways ? GroupMode.Break : GroupMode.Preserve,
+            inner,
+            style == WrapStyle.ChopAlways ? GroupMode.Break : GroupMode.Preserve,
             new GroupFacts(
-                SourceBroken: _options.KeepsUserBreaksBetweenItems && broken,
-                BreaksIfTooLong: _options.WrapExtendsListStyle != WrapStyle.WrapIfLong
+                SourceBroken: _options.KeepsUserBreaksBetweenItems && innerBroken,
+                BreaksIfTooLong: true
             ),
-            spendsIndent: true,
-            leadingGapInside: _options.WrapBeforeExtendsColon
+            spendsIndent: true
         );
     }
 
@@ -1458,6 +1689,23 @@ public sealed class BreakPlan {
         var first = _options.WrapBeforeFirstMethodCall ? dots.Count : dots.Count - 1;
         var group = NewGroup();
         var broken = false;
+
+        // ⚠ `wrap_if_long` is a fill and not "leave the chain alone". Measured, one key flipped, at
+        // the export's 120-column margin:
+        //   var b = source.Where(…).OrderBy(…).Select(…).ToList().AsReadOnly()
+        //       .Count();
+        // — the last dot that still fits, and one break rather than one per link. The style used to
+        // reach the group as `BreaksIfTooLong: style != WrapIfLong`, which is "never break", and a
+        // 129-column chain came back whole. Same misreading as the base list's; see PlanBaseList.
+        var fill = _options.WrapChainedMethodCalls == WrapStyle.WrapIfLong;
+
+        // ⚠ And a fill keeps the author's own breaks gap by gap rather than re-flowing them, which
+        // is the same correction `PlanList`'s `pinsItemBreaks` and `PlanForHeader`'s
+        // `pinsClauseBreaks` make: a chain the author already broke at every dot comes back from
+        // `wrap_if_long` with every one of those breaks, although the fill would have re-joined all
+        // but the last. A per-group flag cannot say it — the preserved gaps and the filled ones are
+        // siblings — so a preserved gap becomes an ordinary required break and the rest stay points.
+        var pinsLinkBreaks = fill && _options.KeepsUserBreaksBetweenItems;
         for (var i = 0; i < first; i++) {
             if (_options.WrapAfterDotInMethodCalls) {
                 // ⚠ "After the dot" has to mean after *both* tokens of a `?.`. `ChainDot` registers
@@ -1474,11 +1722,9 @@ public sealed class BreakPlan {
                 }
 
                 var next = dot.GetNextToken();
-                Point(next, group);
-                broken |= BreaksBefore(next);
+                broken |= Link(next);
             } else {
-                Point(dots[i], group);
-                broken |= BreaksBefore(dots[i]);
+                broken |= Link(dots[i]);
             }
         }
 
@@ -1492,7 +1738,7 @@ public sealed class BreakPlan {
             _options.WrapChainedMethodCalls == WrapStyle.ChopAlways ? GroupMode.Break : GroupMode.Preserve,
             new GroupFacts(
                 SourceBroken: _options.KeepsUserBreaksBetweenItems && broken,
-                BreaksIfTooLong: _options.WrapChainedMethodCalls != WrapStyle.WrapIfLong,
+                BreaksIfTooLong: true,
                 HidesFlatWidthWhenBroken: true
             ),
             // ⚠ The chain opens its own continuation scope. Milestone 2 spent that level lazily, in
@@ -1516,6 +1762,17 @@ public sealed class BreakPlan {
             // same line.
             ownLevel: true
         );
+
+        bool Link(SyntaxToken gap) {
+            var broke = BreaksBefore(gap);
+            if (pinsLinkBreaks && broke) {
+                Mandatory(gap);
+            } else {
+                Point(gap, group, fill);
+            }
+
+            return broke;
+        }
 
         void Collect(SyntaxNode node) {
             switch (node) {
@@ -1649,12 +1906,23 @@ public sealed class BreakPlan {
     ///     line breaks at every operator at once, which no per-operator group can decide. This group
     ///     spans the whole chain, holds no break points of its own, and the operator groups read its
     ///     resolved mode through <see cref="GroupFacts.BreaksWithOwner" />.
+    ///     <para>
+    ///         ⚠ And it exists at <c>wrap_if_long</c> too, which is the correction. That value used to
+    ///         return here without planning anything, so no operator ever broke for width and a
+    ///         121-column condition came back whole. Measured, one key flipped, at the export's margin:
+    ///         <code>
+    /// if (a &gt; 0 &amp;&amp; b &gt; 0 &amp;&amp; c &gt; 0 &amp;&amp; d &gt; 0 &amp;&amp; a &lt; 100 &amp;&amp; b &lt; 100 &amp;&amp; c &lt; 100 &amp;&amp; d &lt; 100 &amp;&amp; a != b &amp;&amp; c != d
+    ///     &amp;&amp; a != d) {
+    ///         </code>
+    ///         — one break, at the last operator that fits, and the same answer for a pattern chain. So
+    ///         <c>wrap_if_long</c> is a <em>fill</em> here as it is everywhere else: the chain-wide group
+    ///         still answers "does the whole chain fit on one line", and when it says no every operator
+    ///         group breaks with it — but each operator's point is a fill point, so it puts its own link
+    ///         on the line when the link fits and moves it down when it does not. <c>chop_*</c> keeps
+    ///         ordinary points and every link moves together.
+    ///     </para>
     /// </remarks>
     void PlanChainWide(SyntaxNode root, WrapStyle style) {
-        if (style == WrapStyle.WrapIfLong) {
-            return;
-        }
-
         // ⚠ A force-chopped condition has no use for the chain-wide group, and leaving it in place
         // gets the answer wrong. The group asks "does the whole chain fit on one line"; a
         // GroupMode.Break point inside it hides the flat width (DocumentBuilder), so the answer is
@@ -1668,6 +1936,10 @@ public sealed class BreakPlan {
 
         var group = NewGroup();
         _chainOwner[Key(root)] = group;
+        if (style == WrapStyle.WrapIfLong) {
+            _chainFills.Add(Key(root));
+        }
+
         var pattern = root is BinaryPatternSyntax;
         Describe(
             root,
@@ -1800,15 +2072,33 @@ public sealed class BreakPlan {
         // what it lands on. Milestone 1 spent that level from inside its own Break path; a break
         // point has to ask for it explicitly or `return a\n + b;` comes out flush with the `return`.
         var group = NewGroup();
+
+        // ⚠ `wrap_chained_binary_* = wrap_if_long` makes this link's gap a fill point: the chain-wide
+        // group still decides whether the chain is being wrapped at all, and each link then decides
+        // for itself whether it still fits on the line. See PlanChainWide.
+        // ⚠ A break the author wrote is pinned rather than filled, the same correction
+        // `PlanList`'s `pinsItemBreaks` makes — `return a && b\n    || c;` comes back from the
+        // oracle unchanged at `wrap_if_long`, and a fill point would have re-joined it.
+        var fill = _chainFills.Contains(Key(ChainRootOf(node)));
+        var group0 = group;
         bool broken;
         if (wrapBefore) {
-            Point(operatorToken, group);
-            broken = BreaksBefore(operatorToken);
+            broken = Link(operatorToken);
             Flat(FirstToken(right));
         } else {
             Flat(operatorToken);
-            Point(FirstToken(right), group);
-            broken = BreaksBefore(FirstToken(right));
+            broken = Link(FirstToken(right));
+        }
+
+        bool Link(SyntaxToken gap) {
+            var broke = BreaksBefore(gap);
+            if (fill && broke && _options.KeepsUserBreaksBetweenItems) {
+                Mandatory(gap);
+            } else {
+                Point(gap, group0, fill);
+            }
+
+            return broke;
         }
 
         Describe(
@@ -1869,13 +2159,17 @@ public sealed class BreakPlan {
     }
 
     /// <summary>The chain-wide group of the chain this operator belongs to, or −1.</summary>
-    int ChainOwnerOf(SyntaxNode node) {
+    int ChainOwnerOf(SyntaxNode node) =>
+        _chainOwner.TryGetValue(Key(ChainRootOf(node)), out var group) ? group : -1;
+
+    /// <summary>The outermost link of the chain this operator belongs to.</summary>
+    static SyntaxNode ChainRootOf(SyntaxNode node) {
         var root = node;
         while (SameChain(root.Parent, root)) {
             root = root.Parent!;
         }
 
-        return _chainOwner.TryGetValue(Key(root), out var group) ? group : -1;
+        return root;
     }
 
     /// <summary>
@@ -2468,7 +2762,16 @@ public sealed class BreakPlan {
                 BreaksIfTooLong: placement == PlacementStyle.IfOwnerIsSingleLine
                 && !_options.KeepExistingExprMemberArrangement
             ),
-            spendsIndent: true
+            spendsIndent: true,
+
+            // ⚠ At `wrap_before_arrow_with_expressions = true` the break point IS the gap before the
+            // `=>`, and the `=>` is this node's own first token — so the point is written before the
+            // group opens, the writer finds the group unresolved, and renders it flat. The same
+            // correction a base list needs under `wrap_before_extends_colon` and a list under
+            // `wrap_before_*_lpar`; see GroupPlan.LeadingGapInside. Until it was made, `true` never
+            // moved the arrow at all and the key's own fixture came back with the declaration
+            // whole.
+            leadingGapInside: _options.WrapBeforeArrowWithExpressions
         );
     }
 

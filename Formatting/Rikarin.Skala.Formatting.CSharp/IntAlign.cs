@@ -94,9 +94,6 @@ public static class IntAlign {
             Collect(root, lines, runs, Kind.Properties);
         }
 
-        if (options.IntAlignMethods) {
-            Collect(root, lines, runs, Kind.Methods);
-        }
 
         if (options.IntAlignSwitchExpressions) {
             Collect(root, lines, runs, Kind.SwitchExpressions);
@@ -108,6 +105,18 @@ public static class IntAlign {
 
         if (options.IntAlignParameters) {
             Collect(root, lines, runs, Kind.Parameters);
+            Collect(root, lines, runs, Kind.MethodParameters);
+        }
+
+        // ⚠ After the parameters and not before them, because the column a method's `{` lands on is
+        // a function of its parameter list's width. With `int_align = true` turning both keys on,
+        // aligning the braces first padded `void Method(int a)` out to the longer declaration and
+        // then the parameter alignment widened it again — `void Method(int  a)      { }` where the
+        // oracle writes the brace where it already was, the two `)` having been made to line up.
+        // The runs are resolved in the order they are collected and each sees the ones before it;
+        // see Pad.
+        if (options.IntAlignMethods) {
+            Collect(root, lines, runs, Kind.Methods);
         }
 
         if (options.IntAlignInvocations) {
@@ -142,6 +151,7 @@ public static class IntAlign {
         SwitchExpressions,
         SwitchSections,
         Parameters,
+        MethodParameters,
         Invocations,
         PropertyPatterns
     }
@@ -222,6 +232,7 @@ public static class IntAlign {
             Kind.SwitchExpressions => node is SwitchExpressionSyntax arms ? arms.Arms : null,
             Kind.SwitchSections => node is SwitchStatementSyntax sections ? sections.Sections : null,
             Kind.Parameters => node is ParameterListSyntax parameters ? parameters.Parameters : null,
+            Kind.MethodParameters => node is TypeDeclarationSyntax declarations ? declarations.Members : null,
             Kind.Invocations => node switch {
                 BlockSyntax block => block.Statements,
                 SwitchSectionSyntax section => section.Statements,
@@ -237,6 +248,32 @@ public static class IntAlign {
     ///     on the line a token is on; a construct whose tokens are spread over three lines has no such
     ///     gap to widen, and the oracle leaves it alone.
     /// </remarks>
+    /// <summary>
+    ///     One method declaration's contribution to a <see cref="Kind.MethodParameters" /> run: the
+    ///     first parameter's name, then every later parameter's start and name.
+    /// </summary>
+    static ImmutableArray<int> ParameterSlots(ParameterListSyntax list) {
+        if (list.Parameters.Count == 0) {
+            return default;
+        }
+
+        var slots = ImmutableArray.CreateBuilder<int>(list.Parameters.Count * 2 - 1);
+        for (var i = 0; i < list.Parameters.Count; i++) {
+            var parameter = list.Parameters[i];
+            if (parameter.Identifier.IsKind(SyntaxKind.None)) {
+                return default;
+            }
+
+            if (i > 0) {
+                slots.Add(parameter.SpanStart);
+            }
+
+            slots.Add(parameter.Identifier.SpanStart);
+        }
+
+        return slots.ToImmutable();
+    }
+
     static Row? RowOf(SyntaxNode node, TextLineCollection lines, Kind kind) {
         var span = node.Span;
         var line = lines.GetLineFromPosition(span.Start);
@@ -281,6 +318,21 @@ public static class IntAlign {
                 node is ParameterSyntax parameter && !parameter.Identifier.IsKind(SyntaxKind.None)
                     ? One(parameter.Identifier.SpanStart)
                     : default,
+
+            // ⚠ `int_align_parameters` has a second target, and only a fixture with adjacent
+            // one-line method declarations can see it. Measured, that key alone:
+            //     void Two(int                 a,   string bb) { }
+            //     void TwoWithALongerName(long ccc, int    d) { }
+            // — the names of the first parameters line up, then the second parameters' types, then
+            // their names. A run of one-parameter methods aligns the one name; a method whose
+            // declaration spans lines is not in a run at all; a blank line starts a new one.
+            // ⚠ The first parameter contributes only its NAME. Its start is fixed by the `(` and the
+            // oracle does not move it — `int` stays at column 13 while `long` sits at 28 — so making
+            // it a slot would pad the shorter declaration's opening parenthesis out to the longer's.
+            // `constructs/alignment/int-align-lists.cs` pins the key's other target, a chopped list
+            // with one parameter per line, and has no adjacent one-line declarations to show this.
+            Kind.MethodParameters =>
+                node is MethodDeclarationSyntax method ? ParameterSlots(method.ParameterList) : default,
             Kind.Invocations =>
                 node is ExpressionStatementSyntax { Expression: InvocationExpressionSyntax invocation }
                     ? [.. invocation.ArgumentList.Arguments.Select(static argument => argument.SpanStart)]
@@ -447,16 +499,29 @@ public static class IntAlign {
         var insertions = new Dictionary<int, int>();
 
         foreach (var run in runs) {
+            // ⚠ Every earlier run's padding is part of this run's columns, and leaving it out is a
+            // defect with an output nobody would write. `int_align = true` turns the whole family on
+            // at once, so the variables run pads two of three `var`s out to the widest name — and
+            // the comments run then measured its target on the UNPADDED text, found the middle line
+            // widest, and padded the two the variables run had just made equally long:
+            //     var one            = 1;            // the first
+            //     var somewhatLonger = 2; // the second
+            //     var two            = 3;            // the third
+            // The oracle's answer is the three comments where they already were, because aligning
+            // the `=` had made the three prefixes the same width. Each run is still resolved on its
+            // own — the runs are collected in the order the keys are read, and comments are read
+            // last — but each one now sees what the runs before it decided.
+            var already = Prefix(insertions);
             var arity = run[0].Slots.Length;
             var shift = new int[run.Count];
             for (var slot = 0; slot < arity; slot++) {
                 var target = 0;
                 for (var i = 0; i < run.Count; i++) {
-                    target = Math.Max(target, ColumnOf(text, run[i], slot) + shift[i]);
+                    target = Math.Max(target, ColumnOf(text, run[i], slot, already) + shift[i]);
                 }
 
                 for (var i = 0; i < run.Count; i++) {
-                    var pad = target - (ColumnOf(text, run[i], slot) + shift[i]);
+                    var pad = target - (ColumnOf(text, run[i], slot, already) + shift[i]);
                     if (pad <= 0) {
                         continue;
                     }
@@ -484,5 +549,31 @@ public static class IntAlign {
         return builder.ToString();
     }
 
-    static int ColumnOf(string text, in Row row, int slot) => TextWidth.Measure(text[row.LineStart..row.Slots[slot]]);
+    /// <summary>
+    ///     The insertions decided so far, as sorted offsets and the running total of spaces before
+    ///     each, so that a column can be asked for in two binary searches.
+    /// </summary>
+    static (int[] Offsets, int[] Running) Prefix(Dictionary<int, int> insertions) {
+        var offsets = insertions.Keys.Order().ToArray();
+        var running = new int[offsets.Length + 1];
+        for (var i = 0; i < offsets.Length; i++) {
+            running[i + 1] = running[i] + insertions[offsets[i]];
+        }
+
+        return (offsets, running);
+    }
+
+    /// <summary>How many of those spaces fall inside a half-open range of the original text.</summary>
+    static int Inserted(in (int[] Offsets, int[] Running) prefix, int start, int end) =>
+        prefix.Running[Bound(prefix.Offsets, end)] - prefix.Running[Bound(prefix.Offsets, start)];
+
+    /// <summary>The number of offsets strictly below <paramref name="position" />.</summary>
+    static int Bound(int[] offsets, int position) {
+        var index = Array.BinarySearch(offsets, position);
+        return index >= 0 ? index : ~index;
+    }
+
+    static int ColumnOf(string text, in Row row, int slot, in (int[] Offsets, int[] Running) already) =>
+        TextWidth.Measure(text[row.LineStart..row.Slots[slot]])
+        + Inserted(already, row.LineStart, row.Slots[slot]);
 }
