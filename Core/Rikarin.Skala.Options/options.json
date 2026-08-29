@@ -5002,9 +5002,10 @@
       "defaultSource": "template",
       "tier": "D",
       "construct": "OtherIndents",
-      "summary": "Other indents — Place comments at first column when commenting out code",
+      "summary": "Other indents — Place comments at first column when commenting out code. ⚠ The name is the whole of it: it governs the editor's comment-out action, and `cleanupcode` never comments anything out, so the reformat cannot reach it.",
       "since": "0.1",
-      "oracle": "constructs/trivia/resharper_csharp_place_comments_at_first_column.cs",
+      "inert": "Inert under `cleanupcode`, measured on three probes rather than reasoned from the name: the key's own fixture, a five-shape probe carrying a comment at column zero, one indented with its owner and one indented to neither, and a probe of commented-out code (`// M();`, `//int y = 2;`) which is what the option's name is about. At `true` and at `false` the oracle returns all three byte-identical. ⚠ Skala used to honour it, and what it honoured was invented: at `true` it pinned every line-starting comment to column 0. The key that really moves a comment's column is `resharper_csharp_stick_comment` — \"Don't indent comments started at first column\" — and the flag now hangs off that one.",
+      "oracle": null,
       "docs": "https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpIndentStylePageSchema.html#resharper_csharp_place_comments_at_first_column",
       "templateLine": 890,
       "expands": []

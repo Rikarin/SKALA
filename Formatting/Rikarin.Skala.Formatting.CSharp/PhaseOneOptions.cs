@@ -1457,7 +1457,15 @@ public static class Ids {
     // `corpus/real/`'s fixtures are still generated under a profile that rebuilds nothing.
     public static readonly OptionId SpaceAfterTripleSlash = Of("resharper_space_after_triple_slash");
     public static readonly OptionId StickComment = Of("resharper_csharp_stick_comment");
-    public static readonly OptionId PlaceCommentsAtFirstColumn = Of("resharper_csharp_place_comments_at_first_column");
+
+    /// <summary>
+    ///     ⚠ Read and not honoured, and it is the one key in this file whose implementation was pure
+    ///     invention: at <c>true</c> Skala pinned every line-starting comment to column 0 and the oracle
+    ///     does no such thing at either value. See <c>CSharpDocumentBuilder.CommentFlags</c> for the
+    ///     three probes and for the key that does govern a comment's column.
+    /// </summary>
+    public static readonly OptionId PlaceCommentsAtFirstColumn =
+        OfInert("resharper_csharp_place_comments_at_first_column");
 
     public static readonly OptionId NewLineBeforeOpenBrace = Of("csharp_new_line_before_open_brace");
     public static readonly OptionId NewLineBeforeElse = Of("resharper_new_line_before_else");

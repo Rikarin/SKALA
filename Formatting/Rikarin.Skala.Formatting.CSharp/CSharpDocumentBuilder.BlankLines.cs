@@ -215,11 +215,18 @@ public sealed partial class CSharpDocumentBuilder {
             required = Math.Max(required, _options.BlankLinesAfterStartComment);
         }
 
-        // ⚠ stick_comment = true: a comment directly above a declaration is part of it, so the gap
-        // BELOW the comment is inside the member and takes none of the member's requirement. The
-        // requirement was already spent on the gap above the comment, which is the whole point of
-        // "attributed to the member below" (docs/plan/04 § "Blank lines").
-        if (_options.StickComment && previous.IsComment && previous.StartsLine) {
+        // ⚠ A comment directly above a declaration is part of it, so the gap BELOW the comment is
+        // inside the member and takes none of the member's requirement. The requirement was already
+        // spent on the gap above the comment, which is the whole point of "attributed to the member
+        // below" (docs/plan/04 § "Blank lines").
+        //
+        // ⚠ Unconditional, and it used to be gated on `stick_comment`. It is not that key's job:
+        // `stick_comment` is "Don't indent comments started at first column" and governs the
+        // comment's *column* (see CSharpDocumentBuilder.CommentFlags). Measured on the key's own
+        // fixture, one flip — at `stick_comment = false` the oracle still returns
+        // `// about M` hard against `void M() { }` with the blank line above the comment, and Skala
+        // put a blank line between them. That was the whole of the key's `SPURIOUS` row.
+        if (previous.IsComment && previous.StartsLine) {
             return required;
         }
 
@@ -757,9 +764,9 @@ public sealed partial class CSharpDocumentBuilder {
         && accessors.Accessors.All(static a => a.Body is null && a.ExpressionBody is null);
 
     /// <summary>
-    ///     One line including whatever <c>stick_comment</c> attached to it: a method with a doc comment
-    ///     is not single-line even when its body is, which is what docs/plan/05 § "Blank lines" means
-    ///     by "M() has a doc comment and is not single-line".
+    ///     One line including the comment stuck to it: a method with a doc comment is not single-line
+    ///     even when its body is, which is what docs/plan/05 § "Blank lines" means by "M() has a doc
+    ///     comment and is not single-line".
     /// </summary>
     /// <remarks>
     ///     ⚠ "One line" is a property of the <em>output</em>, and reading it off the input is a
@@ -771,7 +778,9 @@ public sealed partial class CSharpDocumentBuilder {
     ///     file has a member long enough.
     /// </remarks>
     bool IsSingleLine(SyntaxNode member) {
-        var start = _options.StickComment ? StickyStart(member) : member.Span.Start;
+        // ⚠ Always the sticky start, for the reason the gap rule above gives: the comment above a
+        // member is part of it whatever `stick_comment` is set to.
+        var start = StickyStart(member);
         var lines = _text.Lines;
         var first = lines.GetLineFromPosition(start);
         if (first.LineNumber != lines.GetLineFromPosition(member.Span.End).LineNumber) {

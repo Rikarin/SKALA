@@ -4,4 +4,16 @@ class C {
 
     // about M
     void M() { }
+
+// stuck to the left margin, and the key's real subject
+    void N() {
+// inside a body, at column zero
+        M();
+        // indented with its owner
+        M();
+        // indented to neither
+        M();
+/* a block comment at column zero */
+        M();
+    }
 }

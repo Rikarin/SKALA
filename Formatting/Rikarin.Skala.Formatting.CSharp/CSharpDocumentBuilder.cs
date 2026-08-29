@@ -1821,12 +1821,35 @@ public sealed partial class CSharpDocumentBuilder {
     }
 
     /// <summary>
-    ///     <c>place_comments_at_first_column = false</c> indents a comment with the code around it;
-    ///     true pins it to column 0, which is a habit some trees have and Skala honours rather than
-    ///     argues with.
+    ///     <c>stick_comment = true</c> — "Don't indent comments started at first column": a comment the
+    ///     author wrote hard against the left margin stays there; every other comment is indented with
+    ///     the code around it.
     /// </summary>
+    /// <remarks>
+    ///     ⚠ This flag used to hang off <c>place_comments_at_first_column</c>, and it was the wrong key
+    ///     in both directions. That key is <em>inert</em> under <c>cleanupcode</c> — it governs the
+    ///     editor's comment-out action, and the oracle returns the probe below byte-identical at
+    ///     <c>true</c> and at <c>false</c> — while Skala at <c>true</c> pinned <em>every</em>
+    ///     line-starting comment to column 0, which is a comment moved to the left margin in real code
+    ///     and no oracle behaviour behind it. The sweep called that row <c>SPURIOUS</c> and it was
+    ///     right.
+    ///     <para>
+    ///         ⚠ The key that does govern it is this one, measured on the same probe, one flip:
+    ///         <code>
+    /// void M() {
+    /// // already at column zero          → stays at column zero at `true`, indented to 8 at `false`
+    ///     // indented as its owner       → unmoved at both
+    ///   // badly indented                → indented to 8 at both
+    ///         </code>
+    ///         So "at the first column" is literal and is a fact about the <em>source</em>, not about
+    ///         `StartsLine`: a comment with any whitespace before it on its line is ordinary and gets
+    ///         the code's indent. The oracle applies it to block comments as well as line comments.
+    ///     </para>
+    /// </remarks>
     VerbatimFlags CommentFlags(Piece piece) =>
-        _options.PlaceCommentsAtFirstColumn && piece.StartsLine ? VerbatimFlags.AtColumnZero : VerbatimFlags.None;
+        _options.StickComment && piece.StartsLine && LineStart(piece.Span.Start) == piece.Span.Start
+            ? VerbatimFlags.AtColumnZero
+            : VerbatimFlags.None;
 
     /// <summary>
     ///     Whether either side of the gap is a directive Roslyn reports from inside an inactive
