@@ -15,7 +15,7 @@
 <p class="lede">2 keys.</p>
 <section class="option" id="resharper_align_multiline_type_parameter">
 <h2><code>resharper_align_multiline_type_parameter</code> <a class="self" href="#resharper_align_multiline_type_parameter">#</a></h2>
-<p>Align a wrapped type-parameter list with the first parameter.</p>
+<p>Align a wrapped type-parameter list with the first parameter. Not read by the C# formatter, and re-measured rather than inherited from the nine-key claim its neighbour <code>resharper_align_multiline_type_parameter_list</code> escaped: asked on constructs/breaks/type-parameter-list.cs, which does wrap at 120 columns, <code>false</code> returns it byte-identical. Negative control in the same run: <code>resharper_align_multiline_type_parameter_list = true</code> — the unprefixed spelling the C# formatter <em>does</em> read — moves the wrapped line onto the first type parameter's column.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>

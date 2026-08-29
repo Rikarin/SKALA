@@ -15,7 +15,7 @@
 <p class="lede">3 keys.</p>
 <section class="option" id="resharper_align_ternary">
 <h2><code>resharper_align_ternary</code> <a class="self" href="#resharper_align_ternary">#</a></h2>
-<p>How the arms of a wrapped conditional expression are aligned.</p>
+<p>How the arms of a wrapped conditional expression are aligned. Not read by the C# formatter: all three values return constructs/wrapping/ternary.cs and constructs/wrapping/ternary-chains.cs byte-identical — the single conditional and the nested chain alike, which is the shape <code>align_all</code> and <code>align_not_nested</code> can only differ on. Negative controls in the same run: <code>resharper_outdent_ternary_ops = true</code> and <code>resharper_csharp_align_multiline_expression = true</code> both move the chain's <code>?</code> and <code>:</code>, so the probe can show a conditional's arms changing column.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td>one of <code>align_all</code>, <code>align_not_nested</code>, <code>none</code></td></tr>
@@ -45,7 +45,7 @@
 </section>
 <section class="option" id="resharper_outdent_ternary_ops">
 <h2><code>resharper_outdent_ternary_ops</code> <a class="self" href="#resharper_outdent_ternary_ops">#</a></h2>
-<p>Outdent a wrapped <code>?</code> and <code>:</code>. Observed and not implemented: the oracle moves them left by two columns, which the level-based IR cannot express. ⚠ Re-measured at the ternary-chain work: it moves only the layout that wraps <em>at</em> the signs, and leaves a nested chain — which wraps after each <code>:</code> — exactly where it was. So it is the C# formatter that reads this unprefixed spelling, unlike <code>align_ternary</code> beside it.</p>
+<p>Outdent a wrapped <code>?</code> and <code>:</code>. Observed and not implemented: the oracle moves them left by two columns, which the level-based IR cannot express. ⚠ Re-measured at the ternary-chain work: it moves only the layout that wraps <em>at</em> the signs, and leaves a nested chain — which wraps after each <code>:</code> — exactly where it was. So it is the C# formatter that reads this unprefixed spelling, unlike <code>align_ternary</code> beside it. ⚠ Re-measured at the coverage pass on constructs/wrapping/ternary-chains.cs: at <code>true</code> the oracle moves three of that file's layouts' <code>?</code> and <code>:</code> from column 12 to 10, and it is the only probe file of eighteen that moves — so the key really is the conditional's and not something broader. Skala returns the file byte-identical at both values, so a glob on this key would score INERT.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>

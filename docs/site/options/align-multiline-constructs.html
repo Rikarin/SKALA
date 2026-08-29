@@ -15,7 +15,7 @@
 <p class="lede">27 keys.</p>
 <section class="option" id="resharper_align_multiline_array_initializer">
 <h2><code>resharper_align_multiline_array_initializer</code> <a class="self" href="#resharper_align_multiline_array_initializer">#</a></h2>
-<p>Align multiline constructs — Array and collection initializer, in the language-generic spelling the export writes.</p>
+<p>Align multiline constructs — Array and collection initializer, in the language-generic spelling the export writes. Not read by the C# formatter: re-measured one key away from the export on constructs/wrapping/initializers.cs, where six initializers wrap, and <code>false</code> returns the file byte-identical. Negative control in the same run: <code>resharper_csharp_align_multiline_array_and_object_initializer = true</code> rewrites that file, so the probe can show an initializer's column moving.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>
@@ -30,7 +30,7 @@
 </section>
 <section class="option" id="resharper_csharp_align_first_arg_by_paren">
 <h2><code>resharper_csharp_align_first_arg_by_paren</code> <a class="self" href="#resharper_csharp_align_first_arg_by_paren">#</a></h2>
-<p>Align multiline constructs — Call arguments by '('</p>
+<p>Align multiline constructs — Call arguments by '('. Observable one key away from the export and not implemented, so a fixture would score INERT rather than measure anything: asked at <code>true</code> on a probe of wrapping calls and a wrapping <code>: base(…)</code>, the oracle puts every argument on the <code>(</code>'s column plus one and the closing parenthesis on the <code>(</code>'s own column, one <em>left</em> of them (arguments at 53, closer at 52). Skala returns the same files byte-identical at both values. The implementation gap is a caller and not a model: LayoutWriter.Scope has carried CloserLevel separately from Level since milestone 3, and what is missing is VisitDelimited opening the Align scope with a CloserLevel of its own.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>
@@ -63,7 +63,7 @@
 </section>
 <section class="option" id="resharper_csharp_align_multiline_argument">
 <h2><code>resharper_csharp_align_multiline_argument</code> <a class="self" href="#resharper_csharp_align_multiline_argument">#</a></h2>
-<p>Align multiline constructs — Call arguments</p>
+<p>Align multiline constructs — Call arguments. Masked at the export's own values, so the per-option unit cannot reach it: <code>resharper_csharp_wrap_after_invocation_lpar = true</code> gives the first argument a line of its own, and there is then no first argument on the <code>(</code>'s line for the rest to align to. Re-measured with that key at <code>false</code> as well, on a probe whose calls wrap at 120 columns: the second and later arguments then land on the first argument's column (53 and 57 on the two calls) rather than on the continuation indent. Two flips, so it stays Tier D and unfixtured.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>
@@ -130,7 +130,7 @@
 </section>
 <section class="option" id="resharper_csharp_align_multiline_calls_chain">
 <h2><code>resharper_csharp_align_multiline_calls_chain</code> <a class="self" href="#resharper_csharp_align_multiline_calls_chain">#</a></h2>
-<p>Align multiline constructs — Chained method calls. Observed and not implementable as the alignment machinery stands: the anchor is the column the chain's first <code>.</code> lands on, and that is a function of the layout rather than a source position. At 120 columns <code>wrap_before_first_method_call = false</code> keeps the first call on the head line and the rest align under its dot; at 70 the layout breaks before that dot too and the anchor becomes the receiver's own column. At 50 the oracle abandons the alignment for a long receiver, which is the one shape on which <code>allow_far_alignment</code> has been seen to matter.</p>
+<p>Align multiline constructs — Chained method calls. Observed and not implementable as the alignment machinery stands: the anchor is the column the chain's first <code>.</code> lands on, and that is a function of the layout rather than a source position. At 120 columns <code>wrap_before_first_method_call = false</code> keeps the first call on the head line and the rest align under its dot; at 70 the layout breaks before that dot too and the anchor becomes the receiver's own column. At 50 the oracle abandons the alignment for a long receiver, which is the one shape on which <code>allow_far_alignment</code> has been seen to matter. ⚠ Re-confirmed at the coverage pass: the oracle moves constructs/wrapping/chained-calls.cs and constructs/alignment/outdent.cs at <code>true</code>, and Skala returns both byte-identical at either value, so a glob on this key would score INERT and claim evidence that does not exist.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>
@@ -146,7 +146,7 @@
 </section>
 <section class="option" id="resharper_csharp_align_multiline_comments">
 <h2><code>resharper_csharp_align_multiline_comments</code> <a class="self" href="#resharper_csharp_align_multiline_comments">#</a></h2>
-<p>Align multiline constructs — Align multiline comments with asterisks</p>
+<p>Align multiline constructs — Align multiline comments with asterisks. Observable one key away from the export and not implemented, so a fixture would score INERT rather than measure anything. <code>true</code> is the export's value, and at it the oracle pulls every <code> * </code> continuation line of a block comment onto the opening <code>/*</code>'s column plus one; at <code>false</code> it leaves the comment exactly as written, which is what Skala does at both values. A comment with no leading asterisks is untouched at either value by both engines. It rewrites the interior of a comment token, which no other key in this family does and which the formatter has no trivia rewriter for — and it is the only member of the family whose export value is the one Skala fails to honour, so it is a divergence at the export's own values (SK-DIV-0033) rather than merely an unimplemented option.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>
@@ -162,7 +162,7 @@
 </section>
 <section class="option" id="resharper_csharp_align_multiline_expression">
 <h2><code>resharper_csharp_align_multiline_expression</code> <a class="self" href="#resharper_csharp_align_multiline_expression">#</a></h2>
-<p>Align multiline constructs — Other expressions</p>
+<p>Align multiline constructs — Other expressions. Observable one key away from the export and not implemented, so a fixture would score INERT rather than measure anything: at <code>true</code> the oracle moves a binary chain, a pattern chain, a <code>for</code> header and a nested conditional chain, and Skala returns all four byte-identical at both values. The union is narrower than the name — measured, it is byte-identical to <code>align_multiline_binary_expressions_chain</code> on a binary chain, lands four columns left of <code>align_multiline_binary_patterns</code> on a pattern chain, and covers neither a chained call nor an argument list. An Align scope reads the column where it opens and cannot see the enclosing expression, which is what the pattern-chain case would need.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>
@@ -195,7 +195,7 @@
 </section>
 <section class="option" id="resharper_csharp_align_multiline_for_stmt">
 <h2><code>resharper_csharp_align_multiline_for_stmt</code> <a class="self" href="#resharper_csharp_align_multiline_for_stmt">#</a></h2>
-<p>Align multiline constructs — 'for' statement header</p>
+<p>Align multiline constructs — 'for' statement header. Masked at the export's own values and confirmed a fourth time here: <code>resharper_align_multiline_statement_conditions = true</code> already aligns a <code>for</code> header by its <code>(</code>, either key alone is enough, and the export has the other one on. <code>true</code> alone returns constructs/wrapping/for-header.cs byte-identical; with <code>align_multiline_statement_conditions = false</code> supplied as well the two values separate. Two flips, so the per-option unit cannot reach it and it stays Tier D and unfixtured.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>
@@ -228,7 +228,7 @@
 </section>
 <section class="option" id="resharper_csharp_align_multiline_parameter">
 <h2><code>resharper_csharp_align_multiline_parameter</code> <a class="self" href="#resharper_csharp_align_multiline_parameter">#</a></h2>
-<p>Align multiline constructs — Method parameters</p>
+<p>Align multiline constructs — Method parameters. Masked at the export's own values, so the per-option unit cannot reach it: <code>resharper_csharp_wrap_after_declaration_lpar = true</code> gives the first parameter a line of its own, and there is then no first parameter on the <code>(</code>'s line for the rest to align to. Re-measured with that key at <code>false</code> as well, on a declaration that wraps at 120 columns: the second and later parameters then land on the first parameter's column (61) rather than on the continuation indent. Two flips, so it stays Tier D and unfixtured.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>
@@ -345,7 +345,7 @@
 </section>
 <section class="option" id="resharper_csharp_allow_far_alignment">
 <h2><code>resharper_csharp_allow_far_alignment</code> <a class="self" href="#resharper_csharp_allow_far_alignment">#</a></h2>
-<p>Align multiline constructs — Align even if the resulting indentation is too large</p>
+<p>Align multiline constructs — Align even if the resulting indentation is too large ⚠ Measured 2026-08-29 against <code>jb cleanupcode</code> 2025.2.6, one key flipped at a time over the export in an appended <code>[*.cs]</code> section — the sweep's own method — and classified masked. ⚠ <strong>Not inert — the `OfInert` registration at PhaseOneOptions.cs ~1779 is overturned.</strong> On an invocation whose callee name pushes the argument column to about 98, with <code>resharper_csharp_align_multiline_argument = true</code>, <code>resharper_csharp_wrap_after_invocation_lpar = false</code> and <code>wrap_arguments_style = chop_always</code>, the oracle gives two distinct layouts: at <code>true</code> the arguments align to the far lpar column, at <code>false</code> they fall back to one continuation level. The export sets <code>align_multiline_argument = false</code> and <code>wrap_after_invocation_lpar = true</code>, so at the standard's own configuration there is no alignment column for this key to allow or refuse. Masked, not inert; Skala is flat at both values, so a glob would report INERT.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>

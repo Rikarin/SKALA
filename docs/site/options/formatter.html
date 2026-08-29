@@ -60,7 +60,7 @@
 </section>
 <section class="option" id="resharper_disable_int_align">
 <h2><code>resharper_disable_int_align</code> <a class="self" href="#resharper_disable_int_align">#</a></h2>
-<p>A master switch over a family the export has already switched off, so inert alone and decisive one key away: with int_align = true supplied alongside it turns the whole family off again. Re-measured; the recorded probe holds. SK-DIV-0060.</p>
+<p>A master switch over a family the export has already switched off, so inert alone and decisive one key away: with int_align = true supplied alongside it turns the whole family off again. Re-measured; the recorded probe holds. SK-DIV-0060. ⚠ Measured 2026-08-29 against <code>jb cleanupcode</code> 2025.2.6, one key flipped at a time over the export in an appended <code>[*.cs]</code> section — the sweep's own method — and classified unreachable by a one-key flip. The recorded probe holds and is now separated from the sweep's reach. Alone, at the export's <code>resharper_int_align = false</code>, both engines are flat — a one-key <code>oracle</code> glob would report UNEXERCISED. With <code>resharper_int_align = true</code> supplied alongside, both engines distinguish the values and disagree at <code>false</code>, on a fixture whose baseline already disagrees. It is the pairwise pass's key, not the key-flip sweep's. SK-DIV-0060.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>
@@ -119,7 +119,7 @@
 </section>
 <section class="option" id="resharper_disable_space_changes_before_trailing_comment">
 <h2><code>resharper_disable_space_changes_before_trailing_comment</code> <a class="self" href="#resharper_disable_space_changes_before_trailing_comment">#</a></h2>
-<p>Unreachable rather than unimplemented: the one rule it could gate is space_before_trailing_comment, and the oracle normalises the gap identically at both of that key's values with this one on. Its broad sibling disable_space_changes does preserve the same gap, so the narrow key is the one the C# formatter does not consult. SK-DIV-0060.</p>
+<p>Unreachable rather than unimplemented: the one rule it could gate is space_before_trailing_comment, and the oracle normalises the gap identically at both of that key's values with this one on. Its broad sibling disable_space_changes does preserve the same gap, so the narrow key is the one the C# formatter does not consult. SK-DIV-0060. ⚠ Measured 2026-08-29 against <code>jb cleanupcode</code> 2025.2.6, one key flipped at a time over the export in an appended <code>[*.cs]</code> section — the sweep's own method — and classified unreachable / inert. Confirmed at both values under three configurations: <code>resharper_csharp_space_before_trailing_comment</code> true, the same false, and the broad sibling <code>resharper_disable_space_changes = true</code>. Flat in both engines every time, on a fixture carrying a wide gap before a trailing comment.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>
@@ -193,7 +193,7 @@
 </section>
 <section class="option" id="resharper_ignore_space_preservation">
 <h2><code>resharper_ignore_space_preservation</code> <a class="self" href="#resharper_ignore_space_preservation">#</a></h2>
-<p>Inert on every shape and every pairing tried, including the three places the C# formatter demonstrably does preserve spaces — a disabled #if branch, an @formatter:off region and an int-aligned run. The confirmation the sweep could not give, because a one-key flip cannot rule out a mask. SK-DIV-0060.</p>
+<p>Inert on every shape and every pairing tried, including the three places the C# formatter demonstrably does preserve spaces — a disabled #if branch, an @formatter:off region and an int-aligned run. The confirmation the sweep could not give, because a one-key flip cannot rule out a mask. SK-DIV-0060. ⚠ Measured 2026-08-29 against <code>jb cleanupcode</code> 2025.2.6, one key flipped at a time over the export in an appended <code>[*.cs]</code> section — the sweep's own method — and classified unreachable / inert. Confirmed. Flat at both values on an <code>@formatter:off</code> region beside a disabled <code>#if</code> branch, and again on an extra-spaces fixture held at <code>resharper_csharp_extra_spaces = leave_all</code> — the configuration under which the oracle does preserve spaces, and therefore the one where a suppression switch would show. SK-DIV-0060.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>

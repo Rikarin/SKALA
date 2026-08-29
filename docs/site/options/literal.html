@@ -15,7 +15,7 @@
 <p class="lede">2 keys.</p>
 <section class="option" id="csharp_style_prefer_utf8_string_literals">
 <h2><code>csharp_style_prefer_utf8_string_literals</code> <a class="self" href="#csharp_style_prefer_utf8_string_literals">#</a></h2>
-<p>Prefer u8 string literals.</p>
+<p>Prefer u8 string literals. ⚠ Measured 2026-08-29 against <code>jb cleanupcode</code> 2025.2.6, one key flipped at a time over the export in an appended <code>[*.cs]</code> section — the sweep's own method — and classified wrong subsystem — a Roslyn analyser's. Flat at <code>true:suggestion</code>, <code>false:suggestion</code> and <code>true:warning</code> under the cleanup profile on a fixture where <code>ReadOnlySpan&lt;byte&gt; u8 = new byte[] { 104, 105 }</code> is left exactly as written — while the same profile on the same fixture rewrites <code>List&lt;int&gt; list = new List&lt;int&gt;()</code> to <code>var</code> and <code>String.Empty</code> to <code>string.Empty</code>. The oracle does not perform IDE0230, so no oracle fixture can pin it.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>

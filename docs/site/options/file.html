@@ -15,7 +15,7 @@
 <p class="lede">8 keys.</p>
 <section class="option" id="charset">
 <h2><code>charset</code> <a class="self" href="#charset">#</a></h2>
-<p>The file's character encoding. The EditorConfig specification enumerates the domain: “Set to latin1, utf-8, utf-8-bom, utf-16be or utf-16le to control the character set.”</p>
+<p>The file's character encoding. The EditorConfig specification enumerates the domain: “Set to latin1, utf-8, utf-8-bom, utf-16be or utf-16le to control the character set.” ⚠ Measured 2026-08-29 against <code>jb cleanupcode</code> 2025.2.6, one key flipped at a time over the export in an appended <code>[*.cs]</code> section — the sweep's own method — and classified not a formatter option. Probed at <code>utf-8</code>, <code>utf-8-bom</code>, <code>latin1</code> and <code>utf-16le</code> on a file carrying non-ASCII text, comparing raw bytes rather than normalised text: the oracle returned the same bytes at all four, adding no BOM and re-encoding nothing, and so did Skala. Neither engine re-encodes, so no oracle fixture can pin this key.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td>one of <code>latin1</code>, <code>utf-8</code>, <code>utf-8-bom</code>, <code>utf-16be</code>, <code>utf-16le</code></td></tr>
@@ -30,7 +30,7 @@
 </section>
 <section class="option" id="end_of_line">
 <h2><code>end_of_line</code> <a class="self" href="#end_of_line">#</a></h2>
-<p>The line ending written by the formatter.</p>
+<p>The line ending written by the formatter. ⚠ Measured 2026-08-29 against <code>jb cleanupcode</code> 2025.2.6, one key flipped at a time over the export in an appended <code>[*.cs]</code> section — the sweep's own method — and classified masked. ⚠ Masked by <code>resharper_enforce_line_ending_style = false</code>, and the mask is section-ordered in a way that defeats the sweep's own override mechanism. With the export as written, a CRLF fixture comes back CRLF from both engines. Appending <code>end_of_line = lf</code> in a later <code>[*.cs]</code> section — exactly what a key flip does — makes the oracle convert to LF, because the later section outranks the earlier <code>enforce_line_ending_style = false</code>; add <code>enforce_line_ending_style = false</code> to that same appended section and CRLF returns. So a one-key flip measures a configuration the standard never has: the oracle gives three distinct outputs at lf/crlf/cr, Skala one, and the glob would report INERT for a divergence that does not exist at the export's own value. Held at <code>enforce_line_ending_style = true</code>, both engines distinguish lf from crlf and agree — the key is read on both sides.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td>one of <code>lf</code>, <code>crlf</code>, <code>cr</code></td></tr>
@@ -90,7 +90,7 @@
 </section>
 <section class="option" id="resharper_nullable_enable_for_new_files">
 <h2><code>resharper_nullable_enable_for_new_files</code> <a class="self" href="#resharper_nullable_enable_for_new_files">#</a></h2>
-<p>Undocumented ReSharper property; classified as C#-relevant by vocabulary.</p>
+<p>Undocumented ReSharper property; classified as C#-relevant by vocabulary. ⚠ Measured 2026-08-29 against <code>jb cleanupcode</code> 2025.2.6, one key flipped at a time over the export in an appended <code>[*.cs]</code> section — the sweep's own method — and classified not a formatter option. Flat at both values under the cleanup profile with the same positive control. It governs the new-file template, not the layout of a file that already exists.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>
@@ -104,7 +104,7 @@
 </section>
 <section class="option" id="resharper_remove_spaces_on_blank_lines">
 <h2><code>resharper_remove_spaces_on_blank_lines</code> <a class="self" href="#resharper_remove_spaces_on_blank_lines">#</a></h2>
-<p>Undocumented ReSharper property; classified as C#-relevant by vocabulary.</p>
+<p>Undocumented ReSharper property; classified as C#-relevant by vocabulary. ⚠ Measured 2026-08-29 against <code>jb cleanupcode</code> 2025.2.6, one key flipped at a time over the export in an appended <code>[*.cs]</code> section — the sweep's own method — and classified implementable — the oracle honours it and Skala does not. ⚠ Refines the recorded <code>OfInert</code> reason. Compared raw, the oracle gives two distinct outputs: at the export's <code>true</code> it strips the spaces from a blank line, and at <code>false</code> it keeps them. Skala strips at both values, so it agrees at the standard and diverges away from it. The reason it cannot follow is structural — its writer emits a blank line as a break followed by a break with nothing between them — and an <code>oracle</code> glob would report INERT. The committed <code>constructs/file/resharper_remove_spaces_on_blank_lines.cs</code> cannot exercise the key either way: its blank line carries no spaces.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>
@@ -118,7 +118,7 @@
 </section>
 <section class="option" id="trim_trailing_whitespace">
 <h2><code>trim_trailing_whitespace</code> <a class="self" href="#trim_trailing_whitespace">#</a></h2>
-<p>Whether trailing whitespace is removed from every line. ⚠ <code>jb cleanupcode</code> ignores it: probed with <code>= true</code> on a doc comment carrying a trailing space, the oracle returns the space. Skala matches the oracle rather than the key, so it is inert in both directions.</p>
+<p>Whether trailing whitespace is removed from every line. ⚠ <code>jb cleanupcode</code> ignores it: probed with <code>= true</code> on a doc comment carrying a trailing space, the oracle returns the space. Skala matches the oracle rather than the key, so it is inert in both directions. ⚠ Measured 2026-08-29 against <code>jb cleanupcode</code> 2025.2.6, one key flipped at a time over the export in an appended <code>[*.cs]</code> section — the sweep's own method — and classified not a formatter option. Probed raw at both values on a fixture carrying trailing spaces after a statement, inside a <code>//</code> comment, and on two blank lines: identical bytes from both engines. The positive control is the same fixture — <code>resharper_remove_spaces_on_blank_lines</code> moves the oracle there — so the flatness is the key's and not the fixture's. <code>jb cleanupcode</code> ignores this key, and the recorded <code>oracle-probe</code> default is confirmed.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>

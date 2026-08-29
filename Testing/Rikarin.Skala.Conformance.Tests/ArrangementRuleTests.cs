@@ -642,7 +642,7 @@ public sealed class ArrangementRuleTests {
         var text = SourceText.From(source);
         var tree = CSharpSyntaxTree.ParseText(text, CSharpFormatter.ParseOptions, path);
         var trees = implicitUsings
-            ? (SyntaxTree[]) [
+            ? (SyntaxTree[])[
                 CSharpSyntaxTree.ParseText(
                     SourceText.From(Rikarin.Skala.Testing.ArrangementDifferential.ImplicitUsings),
                     CSharpFormatter.ParseOptions,

@@ -213,13 +213,17 @@ public sealed class OpenDefectTests {
             Assert.True(
                 explained?.Id == entry.Id,
                 $"{entry}: the register does not account for its own fixture (got "
-                + (explained?.Id ?? "nothing") + ")."
+                + (explained?.Id ?? "nothing")
+                + ")."
             );
 
             // ⚠ The other half: the same input with a second failure of the same property in it.
-            var other = OpenDefects.Register.FirstOrDefault(
-                candidate => !string.Equals(candidate.Id, entry.Id, StringComparison.Ordinal)
-                    && string.Equals(candidate.Property, entry.Property, StringComparison.Ordinal)
+            var other = OpenDefects.Register.FirstOrDefault(candidate => !string.Equals(
+                    candidate.Id,
+                    entry.Id,
+                    StringComparison.Ordinal
+                )
+                && string.Equals(candidate.Property, entry.Property, StringComparison.Ordinal)
             );
 
             if (other is null) {
@@ -285,8 +289,7 @@ public sealed class OpenDefectTests {
 
         var unaccounted = violations
             .Where(static violation => violation.Property != FuzzProperties.ParseLost)
-            .Where(
-                violation => OpenDefects.Explain(
+            .Where(violation => OpenDefects.Explain(
                     violation.Property,
                     subject.Path,
                     subject.Text,

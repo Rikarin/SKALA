@@ -15,7 +15,13 @@ namespace Rikarin.Skala.Testing;
 ///     entry whose own status line says "cause not established" has no claim to make. The way to stop
 ///     such an entry reding the nightly is to diagnose it — which is the pressure this field is for.
 /// </remarks>
-public sealed record OpenDefect(string Id, string Summary, string File, string Property, string Seed, string Probe = "") {
+public sealed record OpenDefect(
+    string Id,
+    string Summary,
+    string File,
+    string Property,
+    string Seed,
+    string Probe = "") {
     public string Path => System.IO.Path.Combine(OpenDefects.Root, File);
 
     /// <summary>
@@ -80,8 +86,11 @@ public static class OpenDefects {
     ///     The register entry that accounts for a violation, or <c>null</c> when it is a new defect.
     /// </summary>
     /// <remarks>
-    ///     ⚠ <b>This is the check the nightly's failure condition rests on, so here is exactly what it
-    ///     does and exactly what it guarantees.</b>
+    ///     ⚠
+    ///     <b>
+    ///         This is the check the nightly's failure condition rests on, so here is exactly what it
+    ///         does and exactly what it guarantees.
+    ///     </b>
     ///     <para>
     ///         For each entry that names the same property <i>and</i> names a probe, it takes the
     ///         probe's neutralisation of this input — the registered trigger removed and nothing else —

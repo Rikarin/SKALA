@@ -15,7 +15,7 @@
 <p class="lede">5 keys.</p>
 <section class="option" id="resharper_csharp_allow_alias">
 <h2><code>resharper_csharp_allow_alias</code> <a class="self" href="#resharper_csharp_allow_alias">#</a></h2>
-<p>Reference qualification and 'using' directives — Use using alias directive to resolve conflicts</p>
+<p>Reference qualification and 'using' directives — Use using alias directive to resolve conflicts ⚠ Measured 2026-08-29 against <code>jb cleanupcode</code> 2025.2.6, one key flipped at a time over the export in an appended <code>[*.cs]</code> section — the sweep's own method — and classified wrong subsystem — the arranger's. ⚠ Measured rather than filed by family resemblance, which is what the previous pass recorded it as. Flat at both values under the cleanup profile on a fixture where <code>CSOptimizeUsings</code> demonstrably removes three unused usings and shortens every reference to the <code>SB</code> alias. It governs whether a quick-fix may introduce an alias to resolve a conflict, which is an IDE action inside the arranger's half of the tool.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>
@@ -31,7 +31,7 @@
 </section>
 <section class="option" id="resharper_csharp_can_use_global_alias">
 <h2><code>resharper_csharp_can_use_global_alias</code> <a class="self" href="#resharper_csharp_can_use_global_alias">#</a></h2>
-<p>Reference qualification and 'using' directives — Allow 'global::' prefix use</p>
+<p>Reference qualification and 'using' directives — Allow 'global::' prefix use ⚠ Measured 2026-08-29 against <code>jb cleanupcode</code> 2025.2.6, one key flipped at a time over the export in an appended <code>[*.cs]</code> section — the sweep's own method — and classified wrong subsystem — the arranger's. ⚠ Measured rather than filed by family resemblance. Flat at both values under the cleanup profile on a fixture carrying <code>global::System.Text.StringBuilder</code>, which that profile demonstrably shortens. It permits a rewrite to introduce <code>global::</code>, and no cleanup task consults it.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>
@@ -47,7 +47,7 @@
 </section>
 <section class="option" id="resharper_csharp_prefer_qualified_reference">
 <h2><code>resharper_csharp_prefer_qualified_reference</code> <a class="self" href="#resharper_csharp_prefer_qualified_reference">#</a></h2>
-<p>Reference qualification and 'using' directives — Prefer fully qualified references. ⚠ Not inert and not implemented. At <code>true</code> the oracle rewrites every simple name to its fully qualified form and drops the usings that become redundant; at the export's <code>false</code> it <em>shortens</em> an already-qualified reference — <code>System.Text.StringBuilder</code> becomes <code>StringBuilder</code> — which Skala does not do either. Skala has no reference-shortening rule, so the key is unreachable rather than unread. See SK-DIV-0073.</p>
+<p>Reference qualification and 'using' directives — Prefer fully qualified references. ⚠ Not inert and not implemented. At <code>true</code> the oracle rewrites every simple name to its fully qualified form and drops the usings that become redundant; at the export's <code>false</code> it <em>shortens</em> an already-qualified reference — <code>System.Text.StringBuilder</code> becomes <code>StringBuilder</code> — which Skala does not do either. Skala has no reference-shortening rule, so the key is unreachable rather than unread. See SK-DIV-0073. ⚠ Measured 2026-08-29 against <code>jb cleanupcode</code> 2025.2.6, one key flipped at a time over the export in an appended <code>[*.cs]</code> section — the sweep's own method — and classified wrong subsystem — the arranger's. Confirmed: flat under <code>CSReformatCode</code>, two distinct outputs under the cleanup profile, where <code>CSArrangeQualifiers</code> performs it. SK-DIV-0073 stands.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>
@@ -63,7 +63,7 @@
 </section>
 <section class="option" id="resharper_csharp_qualified_using_at_nested_scope">
 <h2><code>resharper_csharp_qualified_using_at_nested_scope</code> <a class="self" href="#resharper_csharp_qualified_using_at_nested_scope">#</a></h2>
-<p>Reference qualification and 'using' directives — Prefer fully qualified using name at nested scope</p>
+<p>Reference qualification and 'using' directives — Prefer fully qualified using name at nested scope ⚠ Measured 2026-08-29 against <code>jb cleanupcode</code> 2025.2.6, one key flipped at a time over the export in an appended <code>[*.cs]</code> section — the sweep's own method — and classified wrong subsystem — the arranger's. ⚠ Measured rather than filed by family resemblance. Flat at both values under the cleanup profile on a fixture carrying <code>using</code> directives inside a namespace block, both alone and with <code>resharper_csharp_prefer_qualified_reference = true</code> alongside. The positive control is the same fixture: <code>resharper_static_members_qualify_members</code> moves the oracle on it.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>

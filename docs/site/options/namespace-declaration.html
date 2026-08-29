@@ -33,7 +33,7 @@
 </section>
 <section class="option" id="resharper_place_namespace_definitions_on_same_line">
 <h2><code>resharper_place_namespace_definitions_on_same_line</code> <a class="self" href="#resharper_place_namespace_definitions_on_same_line">#</a></h2>
-<p>Whether nested namespace definitions may share a line.</p>
+<p>Whether nested namespace definitions may share a line. ⚠ Probed rather than reasoned about: eleven fixtures under this repository's own .editorconfig, one <code>cleanupcode</code> invocation per configuration, each fixture first shown to move under the key that really governs its construct. Inert at both values on a <code>namespace A { namespace B { … } }</code> written in both brace styles; the same file moves under <code>indent_inside_namespace = false</code> and under <code>blank_lines_inside_namespace = 1</code>, so the probe was live.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>

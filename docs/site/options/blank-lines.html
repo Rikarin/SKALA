@@ -30,7 +30,7 @@
 </section>
 <section class="option" id="resharper_dont_remove_extra_blank_lines">
 <h2><code>resharper_dont_remove_extra_blank_lines</code> <a class="self" href="#resharper_dont_remove_extra_blank_lines">#</a></h2>
-<p>Undocumented ReSharper property; classified as C#-relevant by vocabulary.</p>
+<p>Undocumented ReSharper property; classified as C#-relevant by vocabulary. ⚠ Measured 2026-08-29 against <code>jb cleanupcode</code> 2025.2.6, one key flipped at a time over the export in an appended <code>[*.cs]</code> section — the sweep's own method — and classified unreachable / inert. Flat at both values under <code>resharper_keep_blank_lines_in_code</code> at 0, at 1 and at the export's 2. The positive control is the same fixture: <code>resharper_keep_blank_lines_in_code</code> at 2/0/1 is CONFORMANT with three distinct outputs, so the fixture's blank-line handling does move — this key does not move it.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>

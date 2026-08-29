@@ -45,7 +45,7 @@
 </section>
 <section class="option" id="resharper_wrap_comments">
 <h2><code>resharper_wrap_comments</code> <a class="self" href="#resharper_wrap_comments">#</a></h2>
-<p>Undocumented ReSharper property; classified as C#-relevant by vocabulary.</p>
+<p>Whether long comment text is rewrapped at the margin. ⚠ Probed rather than reasoned about: eleven fixtures under this repository's own .editorconfig, one <code>cleanupcode</code> invocation per configuration, each fixture first shown to move under the key that really governs its construct. Inert at both values over a long <code>//</code> comment, a long <code>/* … */</code> comment and a long trailing comment, at 120 and at 60 columns with <code>csharp_wrap_lines = true</code>; the same file moves under <code>space_before_trailing_comment = false</code>, so the probe was live. <code>CSReformatCode</code> does not rewrap comment text at all — the sub-formatter that does is the separate <code>CSharpFormatDocComments</code> cleanup task and <code>xmldoc_wrap_lines</code> is its key. Undocumented by JetBrains; classified as C#-relevant by vocabulary.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>

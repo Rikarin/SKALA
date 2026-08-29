@@ -32,7 +32,7 @@
 </section>
 <section class="option" id="resharper_csharp_place_simple_list_pattern_on_single_line">
 <h2><code>resharper_csharp_place_simple_list_pattern_on_single_line</code> <a class="self" href="#resharper_csharp_place_simple_list_pattern_on_single_line">#</a></h2>
-<p>Arrangement of list patterns — Place simple list pattern and collection expression on a single line</p>
+<p>Arrangement of list patterns — Place simple list pattern and collection expression on a single line. ⚠ Probed rather than reasoned about: eleven fixtures under this repository's own .editorconfig, one <code>cleanupcode</code> invocation per configuration, each fixture first shown to move under the key that really governs its construct. Masked rather than dead: <code>keep_existing_list_patterns_arrangement = true</code> is the export's own value, and while it stands <code>false</code> changes nothing — but with the mask off, <code>false</code> splits every list pattern and collection expression onto its own lines, including ones that already fit. The inert mark here is about the configuration, not about the option.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>

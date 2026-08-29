@@ -32,7 +32,7 @@
 </section>
 <section class="option" id="resharper_csharp_prefer_separate_deconstructed_variables_declaration">
 <h2><code>resharper_csharp_prefer_separate_deconstructed_variables_declaration</code> <a class="self" href="#resharper_csharp_prefer_separate_deconstructed_variables_declaration">#</a></h2>
-<p>'var' usage in declarations — Prefer separate declarations for deconstructed variables</p>
+<p>'var' usage in declarations — Prefer separate declarations for deconstructed variables ⚠ Measured 2026-08-29 against <code>jb cleanupcode</code> 2025.2.6, one key flipped at a time over the export in an appended <code>[*.cs]</code> section — the sweep's own method — and classified wrong subsystem — the arranger's. Flat under <code>CSReformatCode</code>; two distinct outputs under the cleanup profile, where <code>ArrangeVarStyle</code> joins <code>(var third, var fourth)</code> into <code>var (third, fourth)</code> or leaves it. An arrangement key.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>
@@ -48,7 +48,7 @@
 </section>
 <section class="option" id="resharper_csharp_use_roslyn_logic_for_evident_types">
 <h2><code>resharper_csharp_use_roslyn_logic_for_evident_types</code> <a class="self" href="#resharper_csharp_use_roslyn_logic_for_evident_types">#</a></h2>
-<p>'var' usage in declarations — Prefer Roslyn (Visual Studio) logic for type evidence</p>
+<p>'var' usage in declarations — Prefer Roslyn (Visual Studio) logic for type evidence ⚠ Measured 2026-08-29 against <code>jb cleanupcode</code> 2025.2.6, one key flipped at a time over the export in an appended <code>[*.cs]</code> section — the sweep's own method — and classified wrong subsystem — an inspection's. Flat at both values under the cleanup profile on a fixture where <code>ArrangeVarStyle</code> demonstrably rewrites four declarations. It selects which type-evidence rule the <code>var</code> <em>inspection</em> uses, and the cleanup task does not consult it.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>

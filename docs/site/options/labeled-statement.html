@@ -15,7 +15,7 @@
 <p class="lede">1 key.</p>
 <section class="option" id="resharper_labeled_statement_style">
 <h2><code>resharper_labeled_statement_style</code> <a class="self" href="#resharper_labeled_statement_style">#</a></h2>
-<p>Undocumented ReSharper property; classified as C#-relevant by vocabulary.</p>
+<p>Undocumented ReSharper property; classified as C#-relevant by vocabulary. ⚠ Measured 2026-08-29 against <code>jb cleanupcode</code> 2025.2.6, one key flipped at a time over the export in an appended <code>[*.cs]</code> section — the sweep's own method — and classified unreachable / inert. Flat at <code>line_break</code>, <code>same_line</code>, <code>no_indent</code> and <code>outdent</code> on two label fixtures — one with the label on its own line, one sharing a line with its statement — and at <code>max_line_length = 40</code>. The positive control is on the same fixture: <code>resharper_csharp_indent_size</code> at 4 against 8 gives two distinct oracle outputs, so the fixture's indentation does move. ⚠ Both engines disagree on label layout at baseline; that is a pre-existing divergence and not this key's.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td>string</td></tr>

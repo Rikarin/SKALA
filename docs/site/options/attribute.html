@@ -15,7 +15,7 @@
 <p class="lede">2 keys.</p>
 <section class="option" id="resharper_place_event_attribute_on_same_line">
 <h2><code>resharper_place_event_attribute_on_same_line</code> <a class="self" href="#resharper_place_event_attribute_on_same_line">#</a></h2>
-<p>Whether an event's attribute may share the event's line.</p>
+<p>Whether an event's attribute may share the event's line. ⚠ Probed rather than reasoned about: eleven fixtures under this repository's own .editorconfig, one <code>cleanupcode</code> invocation per configuration, each fixture first shown to move under the key that really governs its construct. Inert at <code>never</code> and at <code>always</code>, with <code>place_accessorholder_attribute_on_same_line</code> and <code>place_attribute_on_same_line</code> both pinned at <code>never</code> so neither could be answering first — while <code>place_accessorholder_attribute_on_same_line = always</code> joins the same event's attribute in the same batch. ReSharper 2025.2 reads an event under the accessor-holder name.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td>one of <code>never</code>, <code>if_owner_is_single_line</code>, <code>always</code></td></tr>
@@ -30,7 +30,7 @@
 </section>
 <section class="option" id="resharper_place_property_attribute_on_same_line">
 <h2><code>resharper_place_property_attribute_on_same_line</code> <a class="self" href="#resharper_place_property_attribute_on_same_line">#</a></h2>
-<p>Whether a property's attribute may share the property's line.</p>
+<p>Whether a property's attribute may share the property's line. ⚠ Probed rather than reasoned about: eleven fixtures under this repository's own .editorconfig, one <code>cleanupcode</code> invocation per configuration, each fixture first shown to move under the key that really governs its construct. Inert at <code>never</code> and at <code>always</code>, with <code>place_accessorholder_attribute_on_same_line</code> and <code>place_attribute_on_same_line</code> both pinned at <code>never</code> so neither could be answering first — while <code>place_accessorholder_attribute_on_same_line = always</code> joins the same property's attribute in the same batch. ReSharper 2025.2 reads a property under the accessor-holder name.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td>one of <code>never</code>, <code>if_owner_is_single_line</code>, <code>always</code></td></tr>

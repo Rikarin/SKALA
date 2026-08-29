@@ -15,7 +15,7 @@
 <p class="lede">1 key.</p>
 <section class="option" id="resharper_csharp_wrap_verbatim_interpolated_strings">
 <h2><code>resharper_csharp_wrap_verbatim_interpolated_strings</code> <a class="self" href="#resharper_csharp_wrap_verbatim_interpolated_strings">#</a></h2>
-<p>Arrangement of interpolated strings — Wrap interpolated strings</p>
+<p>Arrangement of interpolated strings — Wrap interpolated strings. ⚠ <strong>Honoured by the oracle at the export's own settings, and read by no spelling in Skala.</strong> Measured on <code>constructs/wrapping/interpolated-strings.cs</code>, whose strings overflow at 120 columns: the three values produce three distinct oracle outputs — <code>no_wrap</code> leaves the string whole, <code>wrap_if_long</code> breaks inside the first interpolation hole, <code>chop_if_long</code> puts every hole's expression on a line of its own. All three spellings the export may write (<code>resharper_</code>, <code>resharper_csharp_</code> and bare) reach the same behaviour, so this is one of the unprefixed forms the C# formatter does read. ⚠ The <code>oracle</code> glob is deliberately still null: Skala reads none of them, so the sweep can only report INERT — measured, with the glob set on this fixture for one run: oracle 3 distinct outputs, Skala 1, agreement at 1 of 3 values (the export's own, so the baseline agrees), verdict INERT — and <code>SkalaSideTests.EverySweptOption_MovesSkalasOutputOnItsOwnFixture</code> would go red. The fixture is committed and byte-exact at the export's value — point the glob at it when the key is implemented.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td>one of <code>wrap_if_long</code>, <code>chop_if_long</code>, <code>no_wrap</code></td></tr>

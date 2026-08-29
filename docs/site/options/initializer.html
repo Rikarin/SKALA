@@ -15,7 +15,7 @@
 <p class="lede">6 keys.</p>
 <section class="option" id="resharper_align_multiline_expression_braces">
 <h2><code>resharper_align_multiline_expression_braces</code> <a class="self" href="#resharper_align_multiline_expression_braces">#</a></h2>
-<p>Align a wrapped braced expression with its opening brace. <strong>Not read by the C# formatter</strong> — one of the unprefixed spellings this export writes for the C++ and VB formatters. Measured at both values on a file with five wrapping initializers: the oracle returns it byte-identical. Negative control on the same file: <code>resharper_csharp_wrap_object_and_collection_initializer_style = chop_always</code> and <code>resharper_wrap_array_initializer_style = chop_always</code> both rewrite it, so the file can show an initializer moving.</p>
+<p>Align a wrapped braced expression with its opening brace. <strong>Not read by the C# formatter</strong> — one of the unprefixed spellings this export writes for the C++ and VB formatters. Measured at both values on a file with five wrapping initializers: the oracle returns it byte-identical. Negative control on the same file: <code>resharper_csharp_wrap_object_and_collection_initializer_style = chop_always</code> and <code>resharper_wrap_array_initializer_style = chop_always</code> both rewrite it, so the file can show an initializer moving. ⚠ Re-confirmed at the coverage pass on a second probe — an eighteen-file corpus including constructs/wrapping/initializers.cs — where <code>true</code> returns every file byte-identical while <code>resharper_csharp_align_multiline_array_and_object_initializer = true</code> rewrites the initializers in the same run.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>
@@ -30,7 +30,7 @@
 </section>
 <section class="option" id="resharper_expression_braces">
 <h2><code>resharper_expression_braces</code> <a class="self" href="#resharper_expression_braces">#</a></h2>
-<p>Where a break may land relative to an initializer's braces. <strong>Not read by the C# formatter.</strong> Measured at all four values on a file whose initializers wrap and whose <code>}</code> therefore sits on a line of its own — the shape a <code>ParenthesesIndentStyle</code> key would move — and the oracle returns it byte-identical each time, while the C# initializer wrap keys rewrite the same file.</p>
+<p>Where a break may land relative to an initializer's braces. <strong>Not read by the C# formatter.</strong> Measured at all four values on a file whose initializers wrap and whose <code>}</code> therefore sits on a line of its own — the shape a <code>ParenthesesIndentStyle</code> key would move — and the oracle returns it byte-identical each time, while the C# initializer wrap keys rewrite the same file. ⚠ Measured 2026-08-29 against <code>jb cleanupcode</code> 2025.2.6, one key flipped at a time over the export in an appended <code>[*.cs]</code> section — the sweep's own method — and classified duplicate spelling. ⚠ Partially verified. Flat at all four values on a chopped object initializer, which agrees with the recorded reading — but the positive control did not reproduce here: the C# spelling <code>resharper_csharp_use_continuous_indent_inside_initializer_braces</code> came back SPURIOUS on the same fixture (Skala moved, the oracle did not), so this row still leans on the control recorded against <code>resharper_align_multiline_expression_braces</code> rather than on one established in this pass.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td>one of <code>inside</code>, <code>outside</code>, <code>outside_and_inside</code>, <code>none</code></td></tr>
@@ -45,7 +45,7 @@
 </section>
 <section class="option" id="resharper_use_continuous_line_indent_in_expression_braces">
 <h2><code>resharper_use_continuous_line_indent_in_expression_braces</code> <a class="self" href="#resharper_use_continuous_line_indent_in_expression_braces">#</a></h2>
-<p>Whether an initializer's contents take a continuation level. <strong>Not read by the C# formatter</strong>: the C# spelling of this question is <code>resharper_csharp_use_continuous_indent_inside_initializer_braces</code>, which is implemented and observable. Measured at both values with the negative control described on <code>resharper_align_multiline_expression_braces</code>.</p>
+<p>Whether an initializer's contents take a continuation level. <strong>Not read by the C# formatter</strong>: the C# spelling of this question is <code>resharper_csharp_use_continuous_indent_inside_initializer_braces</code>, which is implemented and observable. Measured at both values with the negative control described on <code>resharper_align_multiline_expression_braces</code>. ⚠ Measured 2026-08-29 against <code>jb cleanupcode</code> 2025.2.6, one key flipped at a time over the export in an appended <code>[*.cs]</code> section — the sweep's own method — and classified duplicate spelling. ⚠ Partially verified, with the same caveat as <code>resharper_expression_braces</code>: flat at both values on a chopped object initializer, but the C# spelling that should have served as the positive control was itself flat in the oracle on that fixture.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>
@@ -92,7 +92,7 @@
 </section>
 <section class="option" id="resharper_wrap_braced_init_list_style">
 <h2><code>resharper_wrap_braced_init_list_style</code> <a class="self" href="#resharper_wrap_braced_init_list_style">#</a></h2>
-<p>The braced initializer list's wrap style, in the language-generic spelling the export writes. <strong>Not read by the C# formatter.</strong> Measured at all three values; <code>chop_always</code> leaves a five-initializer file byte-identical, while <code>resharper_wrap_array_initializer_style = chop_always</code> and <code>resharper_csharp_wrap_object_and_collection_initializer_style = chop_always</code> both chop it one element per line. The C# keys are the ones to implement.</p>
+<p>The braced initializer list's wrap style, in the language-generic spelling the export writes. <strong>Not read by the C# formatter.</strong> ⚠ Probed rather than reasoned about: eleven fixtures under this repository's own .editorconfig, one <code>cleanupcode</code> invocation per configuration, each fixture first shown to move under the key that really governs its construct. Inert at all three values, at 120 and at 60 columns, and with <code>max_initializer_elements_on_line = 10000</code> and <code>csharp_wrap_array_initializer_style = wrap_if_long</code> in the same run — byte-identical to that run without this key, while <code>resharper_wrap_array_initializer_style = chop_always</code> and <code>resharper_csharp_wrap_object_and_collection_initializer_style = chop_always</code> both chop the same file one element per line. The C# keys are the ones to implement.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td>one of <code>wrap_if_long</code>, <code>chop_if_long</code>, <code>chop_always</code></td></tr>

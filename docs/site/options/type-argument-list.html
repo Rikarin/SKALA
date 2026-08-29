@@ -15,7 +15,7 @@
 <p class="lede">1 key.</p>
 <section class="option" id="resharper_align_multiline_type_argument">
 <h2><code>resharper_align_multiline_type_argument</code> <a class="self" href="#resharper_align_multiline_type_argument">#</a></h2>
-<p>Align a wrapped type-argument list with the first argument.</p>
+<p>Align a wrapped type-argument list with the first argument. Not read by the C# formatter: measured one key away from the export on a probe carrying a nested <code>Dictionary&lt;…, Dictionary&lt;…, …&gt;&gt;</code> property type and a generic invocation with explicit type arguments, both of which wrap at 120 columns, and <code>false</code> returns them byte-identical — the second line keeps the continuation indent rather than the first type argument's column, which the export's own <code>true</code> should have given it. Negative control on the same probe: <code>resharper_csharp_indent_typearg_angles = none</code> moves it.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>

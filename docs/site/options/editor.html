@@ -15,7 +15,7 @@
 <p class="lede">2 keys.</p>
 <section class="option" id="resharper_apply_on_completion">
 <h2><code>resharper_apply_on_completion</code> <a class="self" href="#resharper_apply_on_completion">#</a></h2>
-<p>Undocumented ReSharper property; classified as C#-relevant by vocabulary.</p>
+<p>Undocumented ReSharper property; classified as C#-relevant by vocabulary. ⚠ Measured 2026-08-29 against <code>jb cleanupcode</code> 2025.2.6, one key flipped at a time over the export in an appended <code>[*.cs]</code> section — the sweep's own method — and classified not a formatter option. Flat at both values under the cleanup profile on a fixture that same profile demonstrably rewrites (<code>RemoveRedundantParentheses</code> turns <code>a + (b * c)</code> into <code>a + b * c</code> on it). It governs when the IDE applies formatting during code completion, which no batch run can reach.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>
@@ -29,7 +29,7 @@
 </section>
 <section class="option" id="resharper_show_autodetect_configure_formatting_tip">
 <h2><code>resharper_show_autodetect_configure_formatting_tip</code> <a class="self" href="#resharper_show_autodetect_configure_formatting_tip">#</a></h2>
-<p>Undocumented ReSharper property; classified as C#-relevant by vocabulary.</p>
+<p>Undocumented ReSharper property; classified as C#-relevant by vocabulary. ⚠ Measured 2026-08-29 against <code>jb cleanupcode</code> 2025.2.6, one key flipped at a time over the export in an appended <code>[*.cs]</code> section — the sweep's own method — and classified Tier C — accepted and deliberately ignored. Flat at both values with the wrapping control above. It controls whether the IDE shows a tip; there is no output for it to change.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>

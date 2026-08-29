@@ -2615,7 +2615,7 @@ public static class Ids {
     public static readonly OptionId XmlDocWrapTagsAndPi = OfUnoracled("resharper_xmldoc_wrap_tags_and_pi");
 
     public static readonly OptionId XmlDocLinebreaksInsideTagsForElementsLongerThan =
-        OfUnoracled("resharper_xmldoc_linebreaks_inside_tags_for_elements_longer_than");
+        Of("resharper_xmldoc_linebreaks_inside_tags_for_elements_longer_than");
 
     // ⚠ SK-DIV-0020: mixed content. The oracle opens an element that holds text *and* children;
     // Skala opens one that holds only children.
@@ -2628,7 +2628,7 @@ public static class Ids {
         Of("resharper_xmldoc_linebreak_before_multiline_elements");
 
     // ⚠ SK-DIV-0022: `false` means "do not add a space inside the tags", not "remove the author's".
-    public static readonly OptionId XmlDocSpacesInsideTags = OfUnoracled("resharper_xmldoc_spaces_inside_tags");
+    public static readonly OptionId XmlDocSpacesInsideTags = Of("resharper_xmldoc_spaces_inside_tags");
 
     // ⚠ SK-DIV-0023, now down to its second half: the blank line the oracle writes after a
     // processing instruction carries a trailing space Skala deliberately omits. The first half — the

@@ -45,7 +45,7 @@
 </section>
 <section class="option" id="resharper_keep_user_wrapping">
 <h2><code>resharper_keep_user_wrapping</code> <a class="self" href="#resharper_keep_user_wrapping">#</a></h2>
-<p>Inert. Measured over all four corners of the <code>keep_user_linebreaks</code> table and at three margins: <code>keep_user_linebreaks</code> decides whether the author's breaks survive and this key never appears in the answer.</p>
+<p>Inert. Measured over all four corners of the <code>keep_user_linebreaks</code> table and at three margins: <code>keep_user_linebreaks</code> decides whether the author's breaks survive and this key never appears in the answer. ⚠ Measured 2026-08-29 against <code>jb cleanupcode</code> 2025.2.6, one key flipped at a time over the export in an appended <code>[*.cs]</code> section — the sweep's own method — and classified unreachable / inert. Confirmed. Flat at both values, and at both values of <code>resharper_keep_user_linebreaks</code>, on a fixture where <code>resharper_csharp_wrap_arguments_style</code> is CONFORMANT with three distinct outputs. The key never appears in the answer.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>
@@ -59,7 +59,7 @@
 </section>
 <section class="option" id="resharper_wrap_before_colon">
 <h2><code>resharper_wrap_before_colon</code> <a class="self" href="#resharper_wrap_before_colon">#</a></h2>
-<p>A break around a <code>:</code> lands before it. Inert in both spellings, while <code>wrap_before_extends_colon = true</code> in the same run moves a base list's <code>:</code> onto its own line.</p>
+<p>A break around a <code>:</code> lands before it. ⚠ Probed rather than reasoned about: eleven fixtures under this repository's own .editorconfig, one <code>cleanupcode</code> invocation per configuration, each fixture first shown to move under the key that really governs its construct. Inert at both values in every spelling, at 120 and at 60 columns, on an overflowing base list and an overflowing <code>: this(…)</code> constructor initializer, and with <code>csharp_wrap_extends_list_style = wrap_if_long</code> in the same run so the list's own wrap style could not be masking it — while <code>csharp_wrap_before_extends_colon = true</code> in the same run moves a base list's <code>:</code> onto its own line.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>

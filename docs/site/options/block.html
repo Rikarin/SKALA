@@ -31,7 +31,7 @@
 </section>
 <section class="option" id="csharp_preserve_single_line_blocks">
 <h2><code>csharp_preserve_single_line_blocks</code> <a class="self" href="#csharp_preserve_single_line_blocks">#</a></h2>
-<p>Keep a block that was written on one line on one line.</p>
+<p>Keep a block that was written on one line on one line. ⚠ Measured 2026-08-29 against <code>jb cleanupcode</code> 2025.2.6, one key flipped at a time over the export in an appended <code>[*.cs]</code> section — the sweep's own method — and classified implementable — the oracle honours it and Skala does not. ⚠ The unprefixed-spelling claim is refuted here too: the C# formatter reads this key. Two distinct oracle outputs under <code>CSReformatCode</code> at <code>true</code> against <code>false</code> on single-line method, <code>if</code>, <code>while</code> and accessor bodies; Skala is flat and already disagrees with the oracle on that fixture before the key is touched. An <code>oracle</code> glob would report INERT, so none is added until the baseline is closed.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>
@@ -46,7 +46,7 @@
 </section>
 <section class="option" id="resharper_simple_block_style">
 <h2><code>resharper_simple_block_style</code> <a class="self" href="#resharper_simple_block_style">#</a></h2>
-<p>Whether a simple block is put on one line.</p>
+<p>Whether a simple block is put on one line. ⚠ Probed rather than reasoned about: eleven fixtures under this repository's own .editorconfig, one <code>cleanupcode</code> invocation per configuration, each fixture first shown to move under the key that really governs its construct. Inert at all three values, at 120 and at 60 columns, and with <code>keep_existing_embedded_arrangement = false</code> in the same run — byte-identical to that run without this key, which moves the file on its own. <code>csharp_place_simple_embedded_statement_on_same_line</code> is what governs the shape under this export.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td>one of <code>do_not_change</code>, <code>on_single_line</code>, <code>line_break</code></td></tr>

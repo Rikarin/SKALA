@@ -15,7 +15,7 @@
 <p class="lede">3 keys.</p>
 <section class="option" id="resharper_int_align_declaration_names">
 <h2><code>resharper_int_align_declaration_names</code> <a class="self" href="#resharper_int_align_declaration_names">#</a></h2>
-<p>Column-align declaration names.</p>
+<p>Column-align declaration names. Not read by the C# formatter, on two measurements rather than one. (1) <code>true</code> one key away from the export returns a probe of adjacent fields, locals, assignments and enum members byte-identical. (2) The stronger question — &quot;is that a fact about the probe, or about the key?&quot; — asked with <code>resharper_int_align = true</code> supplied as well, so every <code>resharper_csharp_int_align_*</code> key is on and a run exists at every one of those shapes: turning this key <em>off</em> on top of that changes nothing. The column it claims to govern is produced by <code>resharper_csharp_int_align_fields</code> and <code>…_variables</code> and is indifferent to this spelling.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>
@@ -30,7 +30,7 @@
 </section>
 <section class="option" id="resharper_int_align_enum_initializers">
 <h2><code>resharper_int_align_enum_initializers</code> <a class="self" href="#resharper_int_align_enum_initializers">#</a></h2>
-<p>Column-align enum member initializers.</p>
+<p>Column-align enum member initializers. Not read by the C# formatter, on two measurements. (1) <code>true</code> one key away from the export returns two probe enums whose member names differ in width byte-identical. (2) With <code>resharper_int_align = true</code> supplied — which does pad both enums' <code>=</code> into a column — turning this key <em>off</em> on top of that changes nothing. <code>resharper_csharp_int_align_fields</code> is what aligns an enum's initializers; this spelling is the C++ and VB formatters'.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>
@@ -45,7 +45,7 @@
 </section>
 <section class="option" id="resharper_int_align_eq">
 <h2><code>resharper_int_align_eq</code> <a class="self" href="#resharper_int_align_eq">#</a></h2>
-<p>Column-align <code>=</code> signs. Named by docs/plan/05 § &quot;Alignment&quot; and dropped by the M0 importer.</p>
+<p>Column-align <code>=</code> signs. Named by docs/plan/05 § &quot;Alignment&quot; and dropped by the M0 importer. Not read by the C# formatter, on two measurements. (1) <code>true</code> one key away from the export returns a probe of adjacent fields, locals and assignments byte-identical. (2) With <code>resharper_int_align = true</code> supplied — which does pad every one of those <code>=</code> into a column — turning this key <em>off</em> on top of that changes nothing. The <code>=</code> column is <code>resharper_csharp_int_align_{fields,variables,assignments}</code>'; this spelling is the C++ and VB formatters'.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>

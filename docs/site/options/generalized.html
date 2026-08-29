@@ -134,7 +134,7 @@
 </section>
 <section class="option" id="resharper_alignment_tab_fill_style">
 <h2><code>resharper_alignment_tab_fill_style</code> <a class="self" href="#resharper_alignment_tab_fill_style">#</a></h2>
-<p>Generalized ReSharper property; sets every option it expands to at once.</p>
+<p>Generalized ReSharper property; sets every option it expands to at once. Unreachable for two independent reasons, both measured. (1) Masked by <code>indent_style = space</code>: all three values return an 18-file probe byte-identical one key away from the export. Under <code>indent_style = tab</code> all three separate, and <code>use_tabs_only</code> and <code>optimal_fill</code> separate from each other as well — three distinct spellings of the same alignment column, which is SK-DIV-0032's table. (2) Even unmasked it could only be measured INERT: Skala writes one layout at every value, and the corpus has no per-directory <code>.editorconfig</code>, so no fixture under a tab configuration can exist to carry it. The divergence is recorded against <code>resharper_csharp_alignment_tab_fill_style</code> and is Skala's to fix rather than an option to implement.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td>one of <code>use_spaces</code>, <code>use_tabs_only</code>, <code>optimal_fill</code></td></tr>
@@ -167,7 +167,7 @@
 </section>
 <section class="option" id="resharper_int_align">
 <h2><code>resharper_int_align</code> <a class="self" href="#resharper_int_align">#</a></h2>
-<p>Generalized ReSharper property; sets every option it expands to at once.</p>
+<p>Generalized ReSharper property; sets every option it expands to at once. ⚠ Two recorded claims about this key are refuted, and it is measurable because of it. (1) &quot;<code>resharper_int_align = true</code> alone produces no alignment from the oracle&quot; is wrong: at <code>true</code> the oracle pads ten of an eighteen-file probe — fields, properties, methods, locals, assignments, trailing comments, switch sections, switch-expression arms, enum initializers, chopped parameter lists. (2) &quot;Nothing applies the expansion; OptionResolver resolves keys and aliases and leaves generalized properties alone&quot; is stale — OptionResolver.Expand has written each generalized key's value into the keys it names since the expansion work, so Skala moves too. Both engines therefore move on constructs/alignment/int-align.cs, and the sweep's verdict there is DIVERGENT with the baseline agreeing: they agree at <code>false</code> (the export's value) and disagree at <code>true</code>, on one line. The whole divergence is an interaction inside the family — with <code>int_align_methods</code> and <code>int_align_parameters</code> both on, the oracle pads <em>inside</em> the parameter list (<code>void Method(int                a) { }</code>) and Skala pads after the <code>)</code> (<code>void Method(int a)                { }</code>) — which neither key shows when flipped alone.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>
@@ -177,6 +177,7 @@
 <tr><th>Language</th><td>any</td></tr>
 <tr><th>Since</th><td>0.1</td></tr>
 <tr><th>Expands to</th><td><a href="../options/align-similar-code-in-columns.html#resharper_csharp_int_align_assignments"><code>resharper_csharp_int_align_assignments</code></a>, <a href="../options/align-similar-code-in-columns.html#resharper_csharp_int_align_binary_expressions"><code>resharper_csharp_int_align_binary_expressions</code></a>, <a href="../options/align-similar-code-in-columns.html#resharper_csharp_int_align_comments"><code>resharper_csharp_int_align_comments</code></a>, <a href="../options/align-similar-code-in-columns.html#resharper_csharp_int_align_fields"><code>resharper_csharp_int_align_fields</code></a>, <a href="../options/align-similar-code-in-columns.html#resharper_csharp_int_align_invocations"><code>resharper_csharp_int_align_invocations</code></a>, <a href="../options/align-similar-code-in-columns.html#resharper_csharp_int_align_methods"><code>resharper_csharp_int_align_methods</code></a>, <a href="../options/align-similar-code-in-columns.html#resharper_csharp_int_align_nested_ternary"><code>resharper_csharp_int_align_nested_ternary</code></a>, <a href="../options/align-similar-code-in-columns.html#resharper_csharp_int_align_parameters"><code>resharper_csharp_int_align_parameters</code></a>, <a href="../options/align-similar-code-in-columns.html#resharper_csharp_int_align_properties"><code>resharper_csharp_int_align_properties</code></a>, <a href="../options/align-similar-code-in-columns.html#resharper_csharp_int_align_property_patterns"><code>resharper_csharp_int_align_property_patterns</code></a>, <a href="../options/align-similar-code-in-columns.html#resharper_csharp_int_align_switch_expressions"><code>resharper_csharp_int_align_switch_expressions</code></a>, <a href="../options/align-similar-code-in-columns.html#resharper_csharp_int_align_switch_sections"><code>resharper_csharp_int_align_switch_sections</code></a>, <a href="../options/align-similar-code-in-columns.html#resharper_csharp_int_align_variables"><code>resharper_csharp_int_align_variables</code></a></td></tr>
+<tr><th>Oracle fixture</th><td><code>constructs/alignment/int-align.cs</code></td></tr>
 <tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_Generalized.html">https://www.jetbrains.com/help/resharper/EditorConfig_Generalized.html</a></td></tr>
 </tbody>
 </table>
@@ -353,7 +354,7 @@
 </section>
 <section class="option" id="tab_width">
 <h2><code>tab_width</code> <a class="self" href="#tab_width">#</a></h2>
-<p>Generalized ReSharper property; sets every option it expands to at once.</p>
+<p>Generalized ReSharper property; sets every option it expands to at once. ⚠ Measured 2026-08-29 against <code>jb cleanupcode</code> 2025.2.6, one key flipped at a time over the export in an appended <code>[*.cs]</code> section — the sweep's own method — and classified not a formatter option. Probed at 1, 4 and 8 under <code>indent_style = tab</code> on a four-level tab-indented fixture, and again with <code>resharper_csharp_max_line_length = 60</code> so that column arithmetic decides a wrap. Flat in both engines at every value. The positive control is on the same fixture: <code>resharper_csharp_max_line_length</code> at 120 against 40 is CONFORMANT with two distinct outputs, so the fixture's layout does depend on columns — a tab width is a display width, and one indent level is one tab whatever it counts as. <code>resharper_csharp_indent_size</code> at 4 against 8 is likewise flat under <code>indent_style = tab</code>.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td>integer</td></tr>

@@ -15,7 +15,7 @@
 <p class="lede">8 keys.</p>
 <section class="option" id="csharp_space_around_binary_operators">
 <h2><code>csharp_space_around_binary_operators</code> <a class="self" href="#csharp_space_around_binary_operators">#</a></h2>
-<p>Spacing around binary operators. Observed and not implemented: at <code>none</code> the oracle closes up assignment, additive, multiplicative, relational, shift, bitwise and logical operators at once — <code>var t=q+r;</code>, <code>var v=q&lt;r ? 1 : 0;</code>, <code>var z=p&amp;&amp;q&gt;0;</code>. <code>ignore</code> is indistinguishable from <code>before_and_after</code> on every input tried, so only one of the three values is observable. ⚠ Blocked on the one mechanism the registry does not have: <code>expands</code> propagates a generalized key's value TEXT into the keys it names, so it can only reach targets whose domain — and whose polarity — is its own. Three keys need the same missing piece and none of them is a coverage gap: this one, <code>csharp_space_between_parentheses</code> and <code>csharp_new_line_before_members_in_object_initializers</code>.</p>
+<p>Spacing around binary operators. Observed and not implemented: at <code>none</code> the oracle closes up assignment, additive, multiplicative, relational, shift, bitwise and logical operators at once — <code>var t=q+r;</code>, <code>var v=q&lt;r ? 1 : 0;</code>, <code>var z=p&amp;&amp;q&gt;0;</code>. <code>ignore</code> is indistinguishable from <code>before_and_after</code> on every input tried, so only one of the three values is observable. ⚠ Blocked on the one mechanism the registry does not have: <code>expands</code> propagates a generalized key's value TEXT into the keys it names, so it can only reach targets whose domain — and whose polarity — is its own. Three keys need the same missing piece and none of them is a coverage gap: this one, <code>csharp_space_between_parentheses</code> and <code>csharp_new_line_before_members_in_object_initializers</code>. ⚠ Measured 2026-08-29 against <code>jb cleanupcode</code> 2025.2.6, one key flipped at a time over the export in an appended <code>[*.cs]</code> section — the sweep's own method — and classified implementable — blocked on a polarity-aware <code>expands</code>. The recorded reason is verified rather than inherited: at <code>none</code> the oracle closes up assignment, additive, relational, bitwise and logical operators at once (<code>var t=q+r;</code>, <code>var z=p&gt;0&amp;&amp;q&gt;0;</code>) while <code>ignore</code> is indistinguishable from <code>before_and_after</code>; Skala is flat at all three. Two distinct oracle outputs against one of Skala's, so an <code>oracle</code> glob would report INERT and none is added while the <code>expands</code> mechanism cannot carry a generalized key's value across a differing domain and polarity.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td>one of <code>before_and_after</code>, <code>none</code>, <code>ignore</code></td></tr>
@@ -109,7 +109,7 @@
 </section>
 <section class="option" id="resharper_prefer_roslyn_rules_for_parentheses_clarity">
 <h2><code>resharper_prefer_roslyn_rules_for_parentheses_clarity</code> <a class="self" href="#resharper_prefer_roslyn_rules_for_parentheses_clarity">#</a></h2>
-<p>Undocumented ReSharper property; classified as C#-relevant by vocabulary.</p>
+<p>Undocumented ReSharper property; classified as C#-relevant by vocabulary. ⚠ Measured 2026-08-29 against <code>jb cleanupcode</code> 2025.2.6, one key flipped at a time over the export in an appended <code>[*.cs]</code> section — the sweep's own method — and classified wrong subsystem — an inspection's. Flat at both values under the cleanup profile on a fixture where <code>RemoveRedundantParentheses</code> demonstrably fires, turning <code>a + (b * c)</code> into <code>a + b * c</code> while leaving <code>(a + b) * c</code> alone. It selects which rule set the redundant-parenthesis <em>inspection</em> uses.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>
@@ -123,7 +123,7 @@
 </section>
 <section class="option" id="resharper_wrap_after_binary_opsign">
 <h2><code>resharper_wrap_after_binary_opsign</code> <a class="self" href="#resharper_wrap_after_binary_opsign">#</a></h2>
-<p>Undocumented ReSharper property; classified as C#-relevant by vocabulary.</p>
+<p>Whether a break in a binary chain lands after the operator rather than before it. ⚠ Probed rather than reasoned about: eleven fixtures under this repository's own .editorconfig, one <code>cleanupcode</code> invocation per configuration, each fixture first shown to move under the key that really governs its construct. Inert at both values, at 120 and at 60 columns, and with <code>csharp_wrap_before_binary_opsign = false</code> in the same run so the operator's own side could not be deciding first — that key moves the operator across the break on its own and is Tier A. Undocumented by JetBrains; classified as C#-relevant by vocabulary.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>

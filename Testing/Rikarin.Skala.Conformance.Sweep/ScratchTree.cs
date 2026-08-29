@@ -71,14 +71,20 @@ public static class ScratchTree {
     ///     One profile's members, cut into batches an invocation can answer honestly.
     /// </summary>
     /// <remarks>
-    ///     ⚠ <b>A size limit is not the only constraint, and under the cleanup profile it is not the
-    ///     binding one.</b> Members are batched by count for a whitespace profile, because a
+    ///     ⚠
+    ///     <b>
+    ///         A size limit is not the only constraint, and under the cleanup profile it is not the
+    ///         binding one.
+    ///     </b> Members are batched by count for a whitespace profile, because a
     ///     <c>cleanupcode</c> run that only moves whitespace cannot be affected by what else is in the
     ///     project. A <em>semantic</em> profile resolves symbols, and the sweep's shape guarantees the
     ///     collision: 44 arrangement keys point at 22 fixtures, so four keys name
     ///     <c>redundancy/qualifiers-and-parentheses.cs</c> and a count-batched round would copy that one
-    ///     file into four directories of one project — four declarations of <c>class
-    ///     QualifiersAndParentheses</c> in one namespace. Every semantic rewrite in the profile
+    ///     file into four directories of one project — four declarations of
+    ///     <c>
+    /// class
+    ///     QualifiersAndParentheses
+    ///     </c> in one namespace. Every semantic rewrite in the profile
     ///     (<c>var</c>, qualifiers, predefined types) then reads a compilation full of CS0101, and the
     ///     verdicts would be a measurement of the scratch project.
     ///     <para>
@@ -260,7 +266,8 @@ public static class ScratchTree {
                 continue;
             }
 
-            result[path] = Settled(bodies, final) || !bodies.TryGetValue(path, out var previous)
+            result[path] = Settled(bodies, final)
+                || !bodies.TryGetValue(path, out var previous)
                 || string.Equals(previous, body, StringComparison.Ordinal)
                     ? body
                     : "did-not-converge: " + MaxOraclePasses.ToString(CultureInfo.InvariantCulture) + " oracle passes";

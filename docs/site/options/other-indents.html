@@ -99,7 +99,7 @@
 </section>
 <section class="option" id="resharper_csharp_use_indent_from_previous_element">
 <h2><code>resharper_csharp_use_indent_from_previous_element</code> <a class="self" href="#resharper_csharp_use_indent_from_previous_element">#</a></h2>
-<p>Other indents — Use previous element's indent on partial format. Inert for a whole-file format, which is the only thing the oracle profile does; it governs a partial reformat.</p>
+<p>Other indents — Use previous element's indent on partial format. Inert for a whole-file format, which is the only thing the oracle profile does; it governs a partial reformat. ⚠ Measured 2026-08-29 against <code>jb cleanupcode</code> 2025.2.6, one key flipped at a time over the export in an appended <code>[*.cs]</code> section — the sweep's own method — and classified unreachable. Flat at both values on three fixtures. It governs what a <em>partial</em> reformat takes its indent from, and the oracle profile only ever reformats whole files, so no oracle fixture can reach it.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>

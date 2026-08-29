@@ -234,8 +234,11 @@ public sealed record FuzzReport(
             report.AppendLine("|---|---|---:|");
             foreach (var entry in Accounted.OrderByDescending(static e => e.Value)
                          .ThenBy(static e => e.Key, StringComparer.Ordinal)) {
-                var registered = OpenDefects.Register.FirstOrDefault(
-                    candidate => string.Equals(candidate.Id, entry.Key, StringComparison.Ordinal)
+                var registered = OpenDefects.Register.FirstOrDefault(candidate => string.Equals(
+                        candidate.Id,
+                        entry.Key,
+                        StringComparison.Ordinal
+                    )
                 );
 
                 report.AppendLine(
@@ -776,9 +779,7 @@ public static class Fuzzer {
                             // One worked example per entry, minimised, so the report can show what
                             // the register absorbed rather than only asserting that it did.
                             if (accountedSeen.TryAdd(entry.Id, 0)) {
-                                findings.Add(
-                                    (index, Report(subject, violation, options, arrangement, entry.Id))
-                                );
+                                findings.Add((index, Report(subject, violation, options, arrangement, entry.Id)));
                             }
 
                             continue;

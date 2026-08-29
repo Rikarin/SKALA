@@ -15,7 +15,7 @@
 <p class="lede">2 keys.</p>
 <section class="option" id="csharp_prefer_braces">
 <h2><code>csharp_prefer_braces</code> <a class="self" href="#csharp_prefer_braces">#</a></h2>
-<p>Whether braces are required. IDE0011 documents <code>true</code>, <code>false</code> and <code>when_multiline</code>.</p>
+<p>Whether braces are required. IDE0011 documents <code>true</code>, <code>false</code> and <code>when_multiline</code>. ⚠ Measured 2026-08-29 against <code>jb cleanupcode</code> 2025.2.6, one key flipped at a time over the export in an appended <code>[*.cs]</code> section — the sweep's own method — and classified wrong subsystem — a Roslyn analyser's. Flat at <code>true:none</code>, <code>false:none</code>, <code>when_multiline:none</code>, <code>true:warning</code> and <code>false:warning</code>, under both <code>CSReformatCode</code> and the cleanup profile, on a fixture carrying braced and unbraced <code>if</code>, <code>while</code> and <code>foreach</code>. ⚠ The negative control is the point: ReSharper's own <code>resharper_braces_for_ifelse</code> is equally flat at <code>required</code>, <code>not_required</code> and <code>required_for_multiline</code> under both profiles, so neither oracle profile performs brace insertion at all and no oracle fixture can pin this key. It is IDE0011, a Roslyn analyser.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td>one of <code>true</code>, <code>false</code>, <code>when_multiline</code></td></tr>
@@ -31,7 +31,7 @@
 </section>
 <section class="option" id="resharper_simple_embedded_statement_style">
 <h2><code>resharper_simple_embedded_statement_style</code> <a class="self" href="#resharper_simple_embedded_statement_style">#</a></h2>
-<p>Whether a simple embedded statement is put on one line.</p>
+<p>Whether a simple embedded statement is put on one line. ⚠ Probed rather than reasoned about: eleven fixtures under this repository's own .editorconfig, one <code>cleanupcode</code> invocation per configuration, each fixture first shown to move under the key that really governs its construct. Inert at all three values, at 120 and at 60 columns, and with <code>keep_existing_embedded_arrangement = false</code> in the same run — byte-identical to that run without this key. <code>csharp_place_simple_embedded_statement_on_same_line</code> is what joins and splits those statements.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td>one of <code>do_not_change</code>, <code>on_single_line</code>, <code>line_break</code></td></tr>

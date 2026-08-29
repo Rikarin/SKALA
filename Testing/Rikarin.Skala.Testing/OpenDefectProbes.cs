@@ -91,8 +91,7 @@ public static class OpenDefectProbes {
     ///     parse byte-identical, so every property holds over it for free — which would make a broken
     ///     neutralisation look exactly like a successfully characterised defect.
     /// </remarks>
-    public static bool ParsesNoWorse(string before, string after) =>
-        Errors(after) <= Errors(before);
+    public static bool ParsesNoWorse(string before, string after) => Errors(after) <= Errors(before);
 
     static int Errors(string source) =>
         CSharpSyntaxTree.ParseText(source)

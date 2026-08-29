@@ -1119,11 +1119,11 @@ public sealed class XmlDocKeyCoverageTests {
         // for, and `OfUnoracled` is carrying it here on the narrow reading its own block records: not
         // "the oracle cannot be asked" but "the oracle was asked and said something else".
         Assert.Equal(
-            16,
+            18,
             XmlDocIds.Honoured.Add(XmlDocIds.SpaceAfterTripleSlash).Count(implemented.Contains)
         );
 
-        Assert.Equal(6, XmlDocIds.Honoured.Count(unoracled.Contains));
+        Assert.Equal(4, XmlDocIds.Honoured.Count(unoracled.Contains));
 
         Assert.Equal(
             XmlDocIds.Honoured.Add(XmlDocIds.SpaceAfterTripleSlash)

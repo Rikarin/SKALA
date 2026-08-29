@@ -167,11 +167,11 @@ public sealed class ArrangementRoutingTests {
                 .ToArray();
 
         var batches = ScratchTree.Batches(
-                candidates,
-                static candidate => candidate.Fixture,
-                OracleProfile.Cleanup,
-                KeyFlipSweep.BatchSize
-            )
+            candidates,
+            static candidate => candidate.Fixture,
+            OracleProfile.Cleanup,
+            KeyFlipSweep.BatchSize
+        )
             .ToArray();
 
         var shared = candidates.GroupBy(static candidate => candidate.Fixture.Path, StringComparer.Ordinal)
@@ -211,11 +211,11 @@ public sealed class ArrangementRoutingTests {
     public void AWhitespaceBatch_IsStillCutByCountAlone() {
         var candidates = SweepPlan.Build([]).Candidates.Take(KeyFlipSweep.BatchSize + 5).ToArray();
         var batches = ScratchTree.Batches(
-                candidates,
-                static candidate => candidate.Fixture,
-                OracleProfile.FormatOnly,
-                KeyFlipSweep.BatchSize
-            )
+            candidates,
+            static candidate => candidate.Fixture,
+            OracleProfile.FormatOnly,
+            KeyFlipSweep.BatchSize
+        )
             .ToArray();
 
         Assert.Equal(2, batches.Length);

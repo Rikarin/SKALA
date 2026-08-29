@@ -15,7 +15,7 @@
 <p class="lede">1 key.</p>
 <section class="option" id="resharper_align_multiline_type_parameter_constraints">
 <h2><code>resharper_align_multiline_type_parameter_constraints</code> <a class="self" href="#resharper_align_multiline_type_parameter_constraints">#</a></h2>
-<p>Undocumented ReSharper property; classified as C#-relevant by vocabulary.</p>
+<p>Align a wrapped constraint list with the first <code>where</code>. Read by the C# formatter — this is one of the unprefixed spellings the nine-key &quot;C++ and VB only&quot; claim does <em>not</em> cover — and masked at the export's own values, so the per-option unit cannot reach it. <code>resharper_csharp_wrap_before_first_type_parameter_constraint = true</code> gives the first <code>where</code> a line of its own and leaves nothing on the declaration's line to align to. Measured on constructs/breaks/type-parameter-constraints.cs with that key set to <code>false</code> as well: a second <code>where</code> then lands on the first <code>where</code>'s column (46 on the local function, 53 on the type declaration) instead of one continuation indent in. Two flips, so it stays Tier D and unfixtured.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>
