@@ -1798,6 +1798,17 @@ public static class Ids {
     // *abandons* the alignment under a long one, returning the plain continuation layout. That is
     // exactly "align even if the resulting indentation is too large" declining, and it is where a
     // future measurement of this key should start rather than on another int_align run.
+    //
+    // ⚠ That lead was followed, 2026-08-29, and it pays out: `allow_far_alignment` is **masked, not
+    // inert**. Not on a chain but on an invocation whose callee name is 84 characters, with
+    // `align_multiline_argument = true`, `wrap_after_invocation_lpar = false` and
+    // `wrap_arguments_style = chop_always`, the oracle gives two distinct layouts — at `true` the
+    // arguments align to the lpar column near 98, at `false` they fall back to one continuation
+    // level. The export sets `align_multiline_argument = false` and `wrap_after_invocation_lpar =
+    // true`, so at the standard's own configuration there is no column for this key to allow or
+    // refuse, which is why every earlier probe read flat. `OfInert` still states the truth about
+    // Skala — it is flat at both values — but the reason is now "masked at the export" and no longer
+    // "moves nothing on any shape tried". An `oracle` glob would report INERT, so none is added.
     public static readonly OptionId DisableIntAlign = OfInert("resharper_disable_int_align");
     public static readonly OptionId IntAlignFixInAdjacent = OfInert("resharper_csharp_int_align_fix_in_adjacent");
     public static readonly OptionId AllowFarAlignment = OfInert("resharper_csharp_allow_far_alignment");
