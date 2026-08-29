@@ -419,23 +419,76 @@ public sealed class FormatterOffSwitchTests {
     }
 
     /// <summary>
-    ///     ⚠ A suppression that leaks shows up as a second pass that moves, and this is the local copy.
+    ///     ⚠ The two properties a leaking suppression breaks, on every key × every subject.
     /// </summary>
     /// <remarks>
-    ///     The property suites fuzz idempotence over the whole corpus at the export's configuration,
-    ///     where every key here is <c>false</c> and none of them is exercised at all. A suppression is
-    ///     exactly the shape that breaks it — it makes the output depend on the input's own whitespace,
-    ///     so a rule that half-applies converges on nothing.
+    ///     ⚠
+    ///     <b>
+    ///         This is not a duplicate of the corpus-wide property suites; it is the only place these
+    ///         four keys are asked at all.
+    ///     </b> <c>PropertyTests</c> and <c>FuzzerTests</c> run at the
+    ///     export's configuration, where all four of these are <c>false</c> and every branch they
+    ///     control is dead — so a suppression could leak arbitrarily and 19 000 green property cases
+    ///     would say nothing about it. The keys have to be turned on by something, and this is it.
+    ///     <para>
+    ///         Both properties are the ones a half-applied suppression fails. <b>Idempotence</b>: a
+    ///         suppression makes the output depend on the input's own whitespace, so a rule that applies
+    ///         to some sites and not others converges on nothing — pass two sees the whitespace pass one
+    ///         wrote and moves again. <b>Token equivalence</b>: <c>VerificationFailed</c> is what the
+    ///         formatter reports when the output's token stream differs from the input's, and preserved
+    ///         whitespace is exactly the material that can fuse or split a trivium — a blank line inside a
+    ///         <c>///</c> run splits one trivia into two, which is the failure
+    ///         <see cref="DisableBlankLineChanges_DoesNotSplitADocumentationRun" /> already pins for the
+    ///         implemented sibling.
+    ///     </para>
     /// </remarks>
     [Theory]
     [InlineData("resharper_disable_indenter")]
     [InlineData("resharper_disable_space_changes")]
     [InlineData("resharper_disable_line_break_changes")]
     [InlineData("resharper_disable_line_break_removal")]
-    public void EverySuppression_IsIdempotent(string key) {
-        foreach (var subject in new[] { Crooked, Crooked5Indentation, Crooked5Spacing, Crooked5Breaks }) {
-            var once = Format(subject, (key, "true"));
-            Assert.Equal(once, Format(once, (key, "true")));
+    public void EverySuppression_IsIdempotent_AndKeepsTheTokenStream(string key) {
+        foreach (var subject in new[] { Crooked, Crooked5Indentation, Crooked5Spacing, Crooked5Breaks, Documented }) {
+            var first = Result(subject, key);
+            Assert.Equal(FormatOutcome.Formatted, first.Outcome);
+
+            var second = Result(first.Formatted, key);
+            Assert.Equal(FormatOutcome.Formatted, second.Outcome);
+            Assert.Equal(first.Formatted, second.Formatted);
         }
     }
+
+    /// <summary>
+    ///     A subject whose whitespace is load-bearing for the <em>token stream</em> and not only for
+    ///     the layout.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Roslyn ends a documentation comment at a blank line, so the gap between two <c>///</c>
+    ///     lines is the one piece of whitespace in the language where 0 → 1 splits one trivium into two
+    ///     and 1 → 0 fuses two into one. A suppression that preserves the author's whitespace at some
+    ///     sites and rewrites it at others is the shape most likely to land a blank there, and the
+    ///     answer is <c>VerificationFailed</c> rather than a misplaced blank line — the file is not
+    ///     formatted at all. The run starts on the brace line on purpose: that is the placement that
+    ///     defeated the guard in SK-FUZZ-0002.
+    /// </remarks>
+    const string Documented = """
+                              interface I { /// <summary>x</summary>
+                                /// <remarks>y</remarks>
+                                  int  M( ) ;
+                                /// <summary>z</summary>
+                                int N();
+                              }
+
+                              """;
+
+    static FormatResult Result(string source, string key) =>
+        CSharpFormatter.Format(
+            "Test.cs",
+            SourceText.From(source),
+            OptionResolver.Resolve(
+                Path.Combine(Rikarin.Skala.Testing.Corpus.RepositoryRoot, "Test.cs"),
+                [new KeyValuePair<string, string>(key, "true")]
+            )
+                .Options
+        );
 }
