@@ -2486,18 +2486,21 @@ and writes the two together.
 ⚠ **It is not "fill the first line, then chop", and it is not a narrower margin either.** Both
 readings are refuted by the same run:
 
-| probe (element widths held, anchor held) | the oracle's lines |
+| probe | the oracle's lines |
 |---|---|
-| six elements, last one two columns wide | 3 / 1 / **2** — so the tail is not chopped |
+| six elements, the last one two columns wide | 3 / 1 / **2** — so the tail is not chopped |
 | fifth element 10, 16 or 20 columns wide | 3 / 1 / 1 at every width — so it is not a threshold on the item |
-| collection expression, same elements, anchor 46 | 2 / **2** / 1 — a *different* packing on the same key |
+| collection expression, the same five elements, contents at 46 | 2 / **2** / 1 |
+| list pattern, the same five elements, contents at 45 | **3** / 1 / 1 |
 | either construct, `align_multiline_list_pattern = false` | 4 / 1 — greedy, and both engines agree |
 
-The last two rows are what closes the door. At the same margin, the same element widths and the same
-anchor column, the oracle packs a list pattern 3/1/1 and a collection expression 2/2/1 — and
-`resharper_wrap_list_pattern` is the one key that governs both. A continuation budget that explains
-the list pattern's line 2 (< 82 columns) contradicts the collection expression's (≥ 96). And the
-whole effect disappears when the construct is not aligned, where both engines are greedy and agree.
+The last three rows are what closes the door. Both constructs' FIRST lines are greedy and the one
+column between their anchors is exactly what explains 3 against 2: at 45 the third element ends at
+120 and at 46 it would end at 121. Neither construct's second line is greedy, and their budgets
+contradict each other — the list pattern moves a fifth element down that would have ended at 82,
+while the collection expression writes a second line of 96 and only then moves one down that would
+have ended at 108. One key, `resharper_wrap_list_pattern`, governs both. And the whole effect
+disappears when the construct is not aligned, where both engines are greedy and agree.
 
 ⚠ Skala's behaviour is therefore deliberate: `wrap_if_long` is a greedy fill everywhere in this
 formatter — that is what the value means, what `LayoutWriter`'s fill point implements, and what the
