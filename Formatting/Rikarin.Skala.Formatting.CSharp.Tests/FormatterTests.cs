@@ -505,6 +505,69 @@ public sealed class SafetyTests {
         Assert.Contains(lines, static line => line.TrimStart().StartsWith("#endif", StringComparison.Ordinal));
     }
 
+    /// <summary>
+    ///     ⚠ SK-FUZZ-0016. The inactive branch of a <c>#if</c> is opaque, and a directive Roslyn still
+    ///     reports inside it is part of that branch.
+    /// </summary>
+    /// <remarks>
+    ///     Roslyn does <em>not</em> fold directives into <c>DisabledTextTrivia</c>: a <c>#region</c>, a
+    ///     <c>#pragma</c>, a nested <c>#if</c> in a branch that is not compiled all arrive as ordinary
+    ///     directive trivia, so the piece stream could not tell them from directives that govern real
+    ///     code. <c>blank_lines_around_region</c> then wrote a blank line between <c>#if HAVE_ASYNC</c>
+    ///     and the <c>#region</c> below it — and re-parsed, that line is a <c>DisabledTextTrivia</c>
+    ///     that was not there before, so the safety net aborted the file with <c>SK9099</c> and it could
+    ///     not be formatted at all under the empty symbol set. <see cref="Piece.Inactive" /> is the flag
+    ///     that says otherwise, and <c>EmitGap</c> copies the gap byte-for-byte on either side of it.
+    ///     <para>
+    ///         ⚠ The assertion is <c>Formatted</c> and the output, not the absence of a diagnostic: a
+    ///         regression that produced a <em>different</em> wrong output would still trip <c>SK9099</c>
+    ///         and would still be wrong. What this pins is that nothing is written into the branch.
+    ///     </para>
+    /// </remarks>
+    [Fact]
+    public void ARegionInsideAnInactiveBranch_TakesNoBlankLines() {
+        const string source = "#if HAVE_ASYNC\n#region fuzz\n#endregion\n#endif\n";
+        var result = Format.Run(source);
+
+        Assert.DoesNotContain(result.Diagnostics, static d => d.Id == FormatDiagnosticIds.TokenStreamChanged);
+        Assert.Equal(FormatOutcome.Formatted, result.Outcome);
+        Assert.Equal(source, result.Formatted);
+    }
+
+    /// <summary>
+    ///     ⚠ SK-FUZZ-0016 again, in the shape a second seed found it: the inactive arm of an
+    ///     <c>#if</c> that has a live <c>#else</c>, so there is real code on both sides of the branch.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ And the control, in the same test: a <c>#region</c> that governs compiled code still gets
+    ///     <c>blank_lines_around_region</c>. The fix is "the inactive branch is opaque", not "regions
+    ///     stopped taking blank lines".
+    ///     <para>
+    ///         ⚠ The outcome is asserted before the text, and it has to be: a file the safety net refuses
+    ///         comes back as its own input, so every assertion about what is <em>not</em> in the output
+    ///         passes trivially on the broken formatter. Asserted the other way round this test was green
+    ///         against the defect it exists for.
+    ///     </para>
+    /// </remarks>
+    [Fact]
+    public void ARegionInTheInactiveArm_KeepsItsGapsWhileALiveRegionKeepsItsBlankLines() {
+        var inactive = Format.Run(
+            "class C {\n#if DEBUG\n#region fuzz\n#endregion\n  int _a;\n#else\n  int _b;\n#endif\n}\n"
+        );
+
+        Assert.Equal(FormatOutcome.Formatted, inactive.Outcome);
+        Assert.DoesNotContain("#if DEBUG\n\n", inactive.Formatted, StringComparison.Ordinal);
+        Assert.DoesNotContain("#endregion\n\n", inactive.Formatted, StringComparison.Ordinal);
+
+        var live = Format.Run(
+            "class C {\n    int _a;\n    #region fuzz\n    int _b;\n    #endregion\n    int _c;\n}\n"
+        );
+
+        Assert.Equal(FormatOutcome.Formatted, live.Outcome);
+        Assert.Contains("int _a;\n\n    #region fuzz\n", live.Formatted, StringComparison.Ordinal);
+        Assert.Contains("    #endregion\n\n    int _c;\n", live.Formatted, StringComparison.Ordinal);
+    }
+
     [Fact]
     public void GeneratedCode_IsSkipped() {
         var byName = Format.Run("class   C{}", "Thing.g.cs");
