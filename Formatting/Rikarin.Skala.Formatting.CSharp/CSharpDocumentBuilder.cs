@@ -1726,15 +1726,20 @@ public sealed partial class CSharpDocumentBuilder {
                 _doc.Text(piece.Text, span, CommentFlags(piece));
                 break;
 
-            // ⚠ Not trimmed. A comment's own text is the author's — `space_before_trailing_comment_text
-            // = false` — and the oracle leaves the trailing space on `// … during and ` exactly where
-            // it is. Only directives are trimmed; see the ConditionalDirective arm above.
+            // ⚠ Not trimmed, and not respaced either. A comment's own text is the author's, and the
+            // oracle leaves the trailing space on `// … during and ` exactly where it is. Only
+            // directives are trimmed; see the ConditionalDirective arm above.
+            //
+            // ⚠ `space_before_trailing_comment_text` used to be read here and is not, because the C#
+            // formatter does not answer to it. Measured on `M(); //x`, `M(); // y`, an own-line
+            // `//z`, an own-line `// w` and a trailing `/*t*/` in one file, one key flipped at a time
+            // over the export: at `true` and at `false` alike the oracle returns every one of them
+            // byte-identical — `//x` never grows its space. The key sits in the export's unprefixed
+            // block beside the C++ comment settings; the C# formatter has
+            // `space_before_trailing_comment`, which is the gap between the code and the `//` and is
+            // a different key with its own fixture.
             case PieceKind.LineComment:
-                _doc.Text(
-                    SpaceAfterMarker(piece.Text, "//", _options.SpaceBeforeTrailingCommentText),
-                    span,
-                    CommentFlags(piece)
-                );
+                _doc.Text(piece.Text, span, CommentFlags(piece));
                 break;
 
             default:
@@ -1752,23 +1757,6 @@ public sealed partial class CSharpDocumentBuilder {
     /// </summary>
     VerbatimFlags CommentFlags(Piece piece) =>
         _options.PlaceCommentsAtFirstColumn && piece.StartsLine ? VerbatimFlags.AtColumnZero : VerbatimFlags.None;
-
-    /// <summary>
-    ///     <c>space_after_triple_slash</c> and <c>space_before_trailing_comment_text</c>: exactly one
-    ///     space after the marker, or the author's text untouched.
-    /// </summary>
-    static string SpaceAfterMarker(string text, string marker, bool required) {
-        if (!text.StartsWith(marker, StringComparison.Ordinal)) {
-            return text;
-        }
-
-        var body = text[marker.Length..];
-        if (!required) {
-            return text;
-        }
-
-        return body.Length == 0 || body[0] is ' ' or '\t' ? text : marker + " " + body;
-    }
 
     /// <summary>
     ///     Whether either side of the gap is a directive Roslyn reports from inside an inactive

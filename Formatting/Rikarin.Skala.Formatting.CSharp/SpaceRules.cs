@@ -121,8 +121,17 @@ public static class SpaceRules {
                 return o.SpaceAfterSemicolonInFor;
             }
 
-            // `{ get; set; }` — the gap between two accessors written on one line.
-            if (prev.Parent is AccessorDeclarationSyntax { Parent: AccessorListSyntax }) {
+            // `{ get; set; }` — the gap *between* two accessors written on one line, and only that
+            // one. ⚠ The `right != CloseBraceToken` guard is the whole point: the gap in front of the
+            // holder's `}` used to be answered here too, and it belongs to
+            // `space_in_singleline_accessorholder`, which owns both of the holder's inner gaps.
+            // Measured on `public int X { get; set; }`, one key flipped at a time over the export:
+            // `space_between_accessors_in_singleline_property = false` gives `{ get;set; }` — the
+            // brace's own space survives — and `space_in_singleline_accessorholder = false` gives
+            // `{get; set;}`, closing both ends at once. Skala answered the first `{ get;set;}` and
+            // the second `{get; set; }`, so neither key could produce either of the oracle's shapes.
+            if (right != SyntaxKind.CloseBraceToken
+                && prev.Parent is AccessorDeclarationSyntax { Parent: AccessorListSyntax }) {
                 return o.SpaceBetweenAccessorsInSinglelineProperty;
             }
 
@@ -205,7 +214,14 @@ public static class SpaceRules {
             return next.Parent switch {
                 BaseListSyntax => o.SpaceBeforeColonInInheritance,
                 TypeParameterConstraintClauseSyntax => o.SpaceBeforeTypeParameterConstraintColon,
-                ConstructorInitializerSyntax or PrimaryConstructorBaseTypeSyntax => o.SpaceBeforeColonInCtorInitializer,
+                // ⚠ Not `space_before_colon_in_ctor_initializer`, which the C# formatter does not
+                // read. Measured on `public C() : base(1)` beside `public C(int a): this()` — one
+                // written with the space and one without, so the probe could see an insertion and a
+                // removal — one key flipped at a time over the export: at `true` and at `false`
+                // alike the oracle returns both as ` : `. The key is in ReSharper's export beside
+                // `space_before_colon_in_bitfield_declarator` and the rest of the C++ colon family;
+                // C# spends one space here whatever it says.
+                ConstructorInitializerSyntax or PrimaryConstructorBaseTypeSyntax => true,
                 SwitchLabelSyntax => o.SpaceBeforeColonInCase,
                 ConditionalExpressionSyntax => o.SpaceBeforeTernaryColon,
                 _ => false
@@ -273,6 +289,22 @@ public static class SpaceRules {
         }
 
         if (IsBinaryOperator(prev) || IsBinaryOperator(next)) {
+            // ⚠ The gap *behind* a right-shift is not the shift operator's, and this asymmetry is
+            // measured rather than inferred. `>>` and `>>>` are two and three `>` tokens to the
+            // parser that has to tell `List<List<int>>` from a shift, and ReSharper resolves the gap
+            // after the last of them as the gap after a closing angle bracket — whatever follows
+            // decides — instead of as the right-hand side of a shift. Measured at
+            // `space_around_shift_op = false` on `a << 2 >> 1`, `a >> b`, `a >>> 1`, `a >> (b + 1)`,
+            // `a >> -b` and `a >> 1L`: the oracle writes `a<<2>> 1`, `a>> b`, `a>>> 1`, `a>> (b + 1)`,
+            // `a>> -b` and `a>> 1L`. Every left-hand gap closes; every gap behind a `>>` survives,
+            // including the one in front of a `(`, which `space_around_shift_op = true` would have
+            // written identically. `<<` has no such split and closes on both sides.
+            if (IsBinaryOperator(prev)
+                && prev.Kind() is SyntaxKind.GreaterThanGreaterThanToken
+                    or SyntaxKind.GreaterThanGreaterThanGreaterThanToken) {
+                return !ClingsLeft(right);
+            }
+
             return BinarySpacing(IsBinaryOperator(prev) ? prev : next, o);
         }
 
@@ -446,9 +478,18 @@ public static class SpaceRules {
             case ParameterListSyntax or FunctionPointerParameterListSyntax:
                 return empty ? o.SpaceBeforeEmptyMethodParentheses : o.SpaceBeforeMethodParentheses;
 
-            case ArgumentListSyntax {
-                Parent: ObjectCreationExpressionSyntax or ImplicitObjectCreationExpressionSyntax
-            }:
+            // ⚠ An *implicit* object creation only. `new C()`'s parentheses are an ordinary call
+            // site's and fall through to the case below. Measured on `new C()`, `new C(1)`,
+            // `new()`, `new(1)`, `new List<int>()` and `new int[4]` in one file:
+            // `space_before_new_parentheses = true` gives `new ()` and `new (1)` and leaves
+            // `new C()` and `new List<int>()` shut, while
+            // `space_before_method_call_parentheses = true` with its empty twin opens exactly those
+            // two — `new C ()`, `new C (1)`, `new List<int> ()` — and leaves `new()` alone. Reading
+            // an explicit creation out of this key gave `new C ()` at every `true`, which no
+            // configuration of the oracle's produces. The `ImplicitObjectCreationExpressionSyntax`
+            // arm is kept because a tree can reach it, though `new`'s own keyword case above
+            // normally answers first.
+            case ArgumentListSyntax { Parent: ImplicitObjectCreationExpressionSyntax }:
                 return o.SpaceBeforeNewParentheses;
 
             case ArgumentListSyntax or AttributeArgumentListSyntax:
@@ -499,7 +540,14 @@ public static class SpaceRules {
             ? WithinBraces(prev.Parent, next, o)
             : next.Parent switch {
                 AttributeListSyntax => !ClingsRight(prev.Kind()),
-                ArrayRankSpecifierSyntax => o.SpaceBeforeArrayRankBrackets,
+                // ⚠ Only a rank specifier that carries no sizes. Measured on `int[] a`, `int[,] b`,
+                // `int[][] c`, `new int[] { 1 }`, `new int[4]` and `new int[2, 2]` in one file: at
+                // `space_before_array_rank_brackets = true` the oracle writes `int [] a`,
+                // `int [,] b`, `int [] [] c` and `new int [] { 1 }` — and leaves `new int[4]` and
+                // `new int[2, 2]` shut. The key is about the brackets that spell an array *type*;
+                // the ones that carry a creation's lengths are not rank brackets to ReSharper, and
+                // reading them out of this key cost `new int [4]` at every `true`.
+                ArrayRankSpecifierSyntax rank => IsOmittedRank(rank) && o.SpaceBeforeArrayRankBrackets,
                 // ⚠ `{ [key] = v, [key2] = v2 }` — an implicit element access has no operand in
                 // front of it, so `space_before_array_access_brackets` has no gap to govern and
                 // whatever precedes decides. Sharing the rule with a real `a[i]` deletes the space
@@ -586,12 +634,35 @@ public static class SpaceRules {
 
     static bool IsEmptyRank(ArrayRankSpecifierSyntax rank) => rank.Sizes is [OmittedArraySizeExpressionSyntax];
 
+    /// <summary>
+    ///     A rank specifier that spells a type rather than a length — <c>[]</c>, <c>[,]</c>, <c>[,,]</c>.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Not <see cref="IsEmptyRank" />, which is one omitted size and answers a different key.
+    ///     <c>int[,]</c> carries two omitted sizes and is still a type, so this is "every size
+    ///     omitted" where that one is "exactly one".
+    /// </remarks>
+    static bool IsOmittedRank(ArrayRankSpecifierSyntax rank) =>
+        rank.Sizes.All(static size => size is OmittedArraySizeExpressionSyntax);
+
     static bool WithinAngles(SyntaxNode? owner, in PhaseOneOptions o) =>
         owner is TypeParameterListSyntax ? o.SpaceWithinTypeParameterAngles : o.SpaceWithinTypeArgumentAngles;
 
+    /// <remarks>
+    ///     ⚠ <c>space_before_singleline_accessorholder</c> used to be read here and is not, because the
+    ///     C# formatter does not answer to it. Measured on <c>public int X { get; set; }</c>,
+    ///     <c>public int Y{ get; set; }</c>, a single-line indexer and a single-line event, one key
+    ///     flipped at a time over the export: at <c>true</c> and at <c>false</c> alike the oracle
+    ///     returns one space in front of every accessor holder's brace — it puts the space into
+    ///     <c>Y{</c> and it never takes the one in <c>X {</c> away. The gap in front of a brace that
+    ///     opens on its own line is brace placement's, and ReSharper spends exactly one space on it.
+    ///     ⚠ It is registered <c>OfInert</c> rather than deleted: the key is in ReSharper's own export
+    ///     and in JetBrains' C# spaces schema, so refusing to resolve it would reject a configuration
+    ///     the standard writes.
+    /// </remarks>
     static bool BeforeOpenBrace(SyntaxToken prev, SyntaxToken next, in PhaseOneOptions o) =>
         next.Parent switch {
-            AccessorListSyntax => o.SpaceBeforeSinglelineAccessorholder,
+            AccessorListSyntax => true,
             _ => !ClingsRight(prev.Kind())
         };
 
@@ -650,12 +721,18 @@ public static class SpaceRules {
     ///     <c>! b</c> and leaves <c>-a</c>, <c>+a</c>, <c>&amp;a</c> and <c>*p</c> untouched, and the
     ///     other four are the same story one operator over.
     ///     <para>
-    ///         ⚠ <c>~</c> and the prefix <c>++</c>/<c>--</c> keep reading the generalized key, because
-    ///         ReSharper has no per-operator key for them: asked at both values,
-    ///         <c>space_after_unary_operator</c> moves <c>!</c> and <c>-</c> and returns <c>~a</c>,
-    ///         <c>++a</c> and <c>--a</c> unchanged. That is a divergence Skala has always had and this
-    ///         change neither introduces nor repairs; it is recorded rather than smuggled into a
-    ///         spacing refactor.
+    ///         ⚠ <b><c>~</c> and the prefix <c>++</c>/<c>--</c> are not what this key governs, and the
+    ///         note that used to stand here said the opposite.</b> It read "they keep reading the
+    ///         generalized key … that is a divergence Skala has always had", and the generalized key
+    ///         is exactly what they must not read. Measured against `jb cleanupcode` 2025.2.6 under
+    ///         the doc-free format-only profile, one key flipped at a time over the export, on
+    ///         <c>!a</c>, <c>-b</c>, <c>+b</c>, <c>~b</c>, <c>++b</c>, <c>--b</c>, <c>*p</c> and
+    ///         <c>&amp;b</c> in one file: at <c>space_after_unary_operator = true</c> the oracle
+    ///         writes <c>! a</c>, <c>- b</c>, <c>+ b</c>, <c>* p</c> and <c>&amp; b</c> — and returns
+    ///         <c>~b</c>, <c>++b</c> and <c>--b</c> untouched. The prefix <c>++</c>/<c>--</c> have
+    ///         their own key and it moves them: <c>space_near_postfix_and_prefix_op = true</c> on the
+    ///         same file gives <c>++ b</c> and <c>-- b</c> while every other operator stays shut.
+    ///         <c>~</c> has no key at all; the oracle never spaces it.
     ///     </para>
     /// </remarks>
     static bool AfterPrefixOperator(SyntaxToken op, in PhaseOneOptions o) =>
@@ -665,6 +742,10 @@ public static class SpaceRules {
             SyntaxKind.PlusToken => o.SpaceAfterUnaryPlusOp,
             SyntaxKind.AmpersandToken => o.SpaceAfterAmpersandOp,
             SyntaxKind.AsteriskToken => o.SpaceAfterAsterikOp,
+            SyntaxKind.PlusPlusToken or SyntaxKind.MinusMinusToken => o.SpaceNearPostfixAndPrefixOp,
+            // ⚠ `~b`, and a destructor's `~C`. No key of ReSharper's reaches the gap behind a
+            // bitwise complement, so there is nothing for a configuration to say about it.
+            SyntaxKind.TildeToken => false,
             _ => o.SpaceAfterUnaryOperator
         };
 
@@ -703,9 +784,14 @@ public static class SpaceRules {
             SyntaxKind.LessThanToken
                 or SyntaxKind.GreaterThanToken
                 or SyntaxKind.LessThanEqualsToken
-                or SyntaxKind.GreaterThanEqualsToken
-                or SyntaxKind.EqualsEqualsToken
-                or SyntaxKind.ExclamationEqualsToken => o.SpaceAroundRelationalOp,
+                or SyntaxKind.GreaterThanEqualsToken => o.SpaceAroundRelationalOp,
+            // ⚠ `==` and `!=` are not relational operators as far as ReSharper is concerned, and
+            // reading them out of `space_around_relational_op` is a scope error rather than a
+            // near-enough. Measured on `a<b`, `a>b`, `a<=b`, `a>=b`, `a==b` and `a!=b` in one file:
+            // at `space_around_relational_op = false` the oracle closes the first four up and
+            // returns `a == b` and `a != b` spaced. There is no `space_around_equality_op` in the
+            // export, in JetBrains' C# spaces schema or anywhere else — the gap around an equality
+            // operator is not configurable, so it is written here rather than read from an option.
             _ => true
         };
 

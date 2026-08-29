@@ -246,6 +246,29 @@ public static class XmlDocFormatter {
             }
         }
 
+        // ⚠ SK-FUZZ-0015. The ending between this comment's own lines, not the first newline in the
+        // file — that is `CSharpFormatter.DefaultNewLine`'s answer, and the first pass can delete the
+        // text above the newline it read, so the second pass reads a different one and re-emits the
+        // same `///` run with the other ending. It is SK-FUZZ-0003's defect in the place that fix did
+        // not reach: `FinalNewLine` was moved off the input and the value handed to this pass was
+        // not.
+        //
+        // ⚠ A comment's own first gap is stable by construction. Whatever this pass writes between
+        // the run's lines is what the next pass reads back out of them, so the second pass agrees
+        // with the first whatever else moved in the file; and a run of one line has no gap to read,
+        // where the fallback is used once and then becomes the run's own ending.
+        //
+        // ⚠ **No test distinguishes this from the old value, and that is stated rather than hidden.**
+        // What actually retired SK-FUZZ-0015 is the marker rule below: a comment already in the shape
+        // the renderer would give it is not rewritten at all, so a second pass never reaches this
+        // value however unstable it is. That makes the property hold by *argument* — "one pass is a
+        // fixed point, so the ending is spent at most once" — and this line makes it hold by
+        // construction instead. The argument is the kind this project has been wrong with before, so
+        // both are kept; the belt is measured and the braces are not.
+        var runNewLine = first.LineNumber < last.LineNumber
+            ? source.ToString(TextSpan.FromBounds(first.End, first.EndIncludingLineBreak))
+            : newLine;
+
         var marker = options.SpaceAfterTripleSlash ? " " : string.Empty;
 
         // ⚠ Neither the code indentation nor the three slashes are subtracted, and both used to be
@@ -264,7 +287,7 @@ public static class XmlDocFormatter {
         var rendered = new StringBuilder();
         for (var i = 0; i < lines.Length; i++) {
             if (i > 0) {
-                rendered.Append(newLine);
+                rendered.Append(runNewLine);
             }
 
             // ⚠ The marker space is written on a verbatim line too, and that is SK-DIV-0023 closed
@@ -294,6 +317,23 @@ public static class XmlDocFormatter {
 
         var text = rendered.ToString();
 
+        // ⚠ A comment the run would otherwise leave alone keeps its own markers, and this is the
+        // oracle's rule rather than a concession. Measured on one file holding two comments with the
+        // same two blank `///` lines between the same two tags, both under
+        // `max_blank_lines_between_tags = 3` so neither line had to go: the comment whose summary was
+        // too long to fit came back rewrapped **and** with `/// ` on its blank lines, and the comment
+        // that needed no other change came back byte-identical, bare `///` and all. SK-DIV-0006
+        // records the same shape from the other end — the oracle does not put the marker space into
+        // `///<summary>Docs.</summary>` on a comment it is otherwise not touching.
+        //
+        // ⚠ The comparison is per line and modulo one space after the marker, because that space is
+        // the only thing the marker option can add. Anything else that differs — a re-flowed word, an
+        // element that moved, a blank line removed — is a real change and the rebuild is what the
+        // oracle does too.
+        if (DiffersOnlyInTheMarker(source, first.LineNumber, last.LineNumber, text, runNewLine)) {
+            text = source.ToString(span);
+        }
+
         // ⚠ The property, checked on every comment of every run rather than on a fixture. Nothing
         // else in this file is allowed to be the last word: an oracle-less formatter that only
         // checks itself against its own reading of a settings page is a formatter that will one day
@@ -305,6 +345,44 @@ public static class XmlDocFormatter {
 
     /// <summary>One comment's outcome: a replacement, or the reason there is not one.</summary>
     readonly record struct Attempt(TextSpan Span, string? Text, XmlDocRefusalReason? Reason);
+
+    /// <summary>
+    ///     Whether the re-wrap changed nothing but the space behind the <c>///</c>.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Line for line, and one space at most, because that is the only thing
+    ///     <c>space_after_triple_slash</c> can add or take away. A comment that is otherwise already in
+    ///     the shape the renderer would give it is one the oracle returns untouched, markers included.
+    /// </remarks>
+    static bool DiffersOnlyInTheMarker(SourceText source, int firstLine, int lastLine, string text, string newLine) {
+        var produced = text.Split(newLine);
+        if (produced.Length != lastLine - firstLine + 1) {
+            return false;
+        }
+
+        for (var i = 0; i < produced.Length; i++) {
+            if (!string.Equals(
+                    WithoutMarkerSpace(source.Lines[firstLine + i].ToString()),
+                    WithoutMarkerSpace(produced[i]),
+                    StringComparison.Ordinal
+                )) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /// <summary>The line with one space after its <c>///</c> removed, when there is one.</summary>
+    static string WithoutMarkerSpace(string line) {
+        var slashes = line.IndexOf("///", StringComparison.Ordinal);
+        if (slashes < 0) {
+            return line;
+        }
+
+        var after = slashes + 3;
+        return after < line.Length && line[after] == ' ' ? line[..after] + line[(after + 1)..] : line;
+    }
 
     /// <summary>
     ///     The line's indentation, when the line is a <c>///</c> line and nothing else.

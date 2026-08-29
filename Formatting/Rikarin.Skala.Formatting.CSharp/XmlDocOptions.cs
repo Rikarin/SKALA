@@ -44,9 +44,13 @@ namespace Rikarin.Skala.Formatting.CSharp;
 public readonly struct XmlDocOptions {
     public XmlDocOptions(in FormattingOptions options) {
         WrapLines = options.GetBool(XmlDocIds.WrapLines);
-        MaxLineLength = options.GetInt(XmlDocIds.MaxLineLength) is var width and > 0 ? width : 120;
+        // ⚠ `0` is a width of zero and not a stand-in for 120, and the line here used to say the
+        // opposite. Measured under `OracleProfile.DocComments` on a 170-column `<summary>`: at
+        // `resharper_xmldoc_max_line_length = 0` and again at `1` the oracle puts every single word
+        // of the prose on its own line, which is what a budget of zero means and is nothing like the
+        // two-line output it gives at 120. A negative width is not a width and still falls back.
+        MaxLineLength = options.GetInt(XmlDocIds.MaxLineLength) is var width and >= 0 ? width : 120;
         WrapText = options.GetBool(XmlDocIds.WrapText);
-        WrapTagsAndPi = options.GetBool(XmlDocIds.WrapTagsAndPi);
         KeepUserLinebreaks = options.GetBool(XmlDocIds.KeepUserLinebreaks);
         MaxBlankLinesBetweenTags = Math.Max(0, options.GetInt(XmlDocIds.MaxBlankLinesBetweenTags));
         IndentChildElements = (ChildIndentStyle)options.GetRaw(XmlDocIds.IndentChildElements);
@@ -68,8 +72,21 @@ public readonly struct XmlDocOptions {
                 ? threshold
                 : int.MaxValue;
 
-        IndentSize = Math.Max(1, options.GetInt(XmlDocIds.IndentSize));
-        UseTabs = options.GetRaw(XmlDocIds.IndentStyle) == (int)IndentStyle.Tab;
+        // ⚠ The *C#* indent, not `resharper_xmldoc_indent_size`, and this is measured. On
+        // `/// <remarks>` holding a `/// <para>`, under `OracleProfile.DocComments`:
+        // `resharper_xmldoc_indent_size = 1` leaves the child at four columns, while `indent_size = 1`
+        // moves it to one and `indent_size = 2` (with `tab_width = 8` in the same run, so the tab
+        // width could not be answering) moves it to two. `resharper_xmldoc_indent_style = tab` leaves
+        // the child indented with spaces; `indent_style = tab` puts tabs on the *code* lines and
+        // leaves the comment's inner indent four spaces. So a documentation comment inside a C# file
+        // takes its indent width from the file's own `indent_size` and always spends spaces on it.
+        // Both `xmldoc_` keys are registered inert on that measurement.
+        IndentSize = Math.Max(1, options.GetInt(Ids.IndentSize));
+
+        // ⚠ Read so the plumbing exists and the crash snapshot records them; the values above are
+        // what the layout uses. See `XmlDocIds.Inert`.
+        _ = options.GetInt(XmlDocIds.IndentSize);
+        _ = options.GetRaw(XmlDocIds.IndentStyle);
 
         LinebreakBeforeElements = Split(options.GetString(XmlDocIds.LinebreakBeforeElements));
     }
@@ -109,9 +126,6 @@ public readonly struct XmlDocOptions {
 
     /// <summary><c>resharper_xmldoc_wrap_text</c>: whether prose may be re-flowed.</summary>
     public bool WrapText { get; }
-
-    /// <summary><c>resharper_xmldoc_wrap_tags_and_pi</c>: whether a tag may be moved to a new line to fit.</summary>
-    public bool WrapTagsAndPi { get; }
 
     /// <summary>
     ///     <c>resharper_xmldoc_keep_user_linebreaks</c>: a line break the author wrote is a line break.
@@ -270,11 +284,20 @@ public readonly struct XmlDocOptions {
     /// </remarks>
     public int LinebreaksInsideTagsForElementsLongerThan { get; }
 
-    /// <summary><c>resharper_xmldoc_indent_size</c>: the indent unit inside the comment.</summary>
+    /// <summary>
+    ///     The indent unit inside the comment, in columns — the C# <c>indent_size</c>.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ <b>Not <c>resharper_xmldoc_indent_size</c>, which the oracle does not read.</b> On
+    ///     `/// &lt;remarks&gt;` holding a `/// &lt;para&gt;`, under <c>OracleProfile.DocComments</c>:
+    ///     <c>resharper_xmldoc_indent_size = 1</c> leaves the child at four columns, while
+    ///     <c>indent_size = 1</c> moves it to one and <c>indent_size = 2</c> — asked with
+    ///     <c>tab_width = 8</c> in the same run so a tab width could not be answering — moves it to two.
+    ///     A documentation comment inside a C# file takes its indent width from the file's own
+    ///     <c>indent_size</c>.
+    /// </remarks>
     public int IndentSize { get; }
 
-    /// <summary><c>resharper_xmldoc_indent_style</c>.</summary>
-    public bool UseTabs { get; }
 
     /// <summary>
     ///     <c>resharper_xmldoc_linebreak_before_elements</c>: the export lists
@@ -291,8 +314,18 @@ public readonly struct XmlDocOptions {
 
     public bool BreakBefore(string element) => LinebreakBeforeElements.Contains(element, StringComparer.Ordinal);
 
-    /// <summary>The indent unit, as text.</summary>
-    public string IndentUnit => UseTabs ? "\t" : new string(' ', IndentSize);
+    /// <summary>
+    ///     The indent unit, as text. ⚠ Always spaces, and <c>resharper_xmldoc_indent_style</c> does not
+    ///     change that.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured on the same fixture as <see cref="IndentSize" />:
+    ///     <c>resharper_xmldoc_indent_style = tab</c> leaves the child element indented with four
+    ///     spaces, and <c>indent_style = tab</c> puts tabs on the file's <em>code</em> lines while
+    ///     leaving the comment's inner indent four spaces. The character inside a documentation comment
+    ///     is not configurable in either direction.
+    /// </remarks>
+    public string IndentUnit => new(' ', IndentSize);
 
     /// <summary>How many indent units the content of an element is worth.</summary>
     public static int Delta(ChildIndentStyle style) => style == ChildIndentStyle.OneIndent ? 1 : 0;
@@ -343,7 +376,6 @@ public static class XmlDocIds {
     public static readonly OptionId WrapLines = Ids.XmlDocWrapLines;
     public static readonly OptionId MaxLineLength = Ids.XmlDocMaxLineLength;
     public static readonly OptionId WrapText = Ids.XmlDocWrapText;
-    public static readonly OptionId WrapTagsAndPi = Ids.XmlDocWrapTagsAndPi;
     public static readonly OptionId KeepUserLinebreaks = Ids.XmlDocKeepUserLinebreaks;
     public static readonly OptionId MaxBlankLinesBetweenTags = Ids.XmlDocMaxBlankLinesBetweenTags;
     public static readonly OptionId IndentChildElements = Ids.XmlDocIndentChildElements;
@@ -375,7 +407,6 @@ public static class XmlDocIds {
         WrapLines,
         MaxLineLength,
         WrapText,
-        WrapTagsAndPi,
         KeepUserLinebreaks,
         MaxBlankLinesBetweenTags,
         IndentChildElements,
@@ -390,8 +421,6 @@ public static class XmlDocIds {
         SpaceAfterLastAttribute,
         SpacesAroundEqInAttribute,
         BlankLineAfterPi,
-        IndentSize,
-        IndentStyle,
         LinebreakBeforeElements
     ];
 
@@ -435,6 +464,25 @@ public static class XmlDocIds {
         new(
             "resharper_xmldoc_allow_far_alignment",
             "Pending on the same prerequisite: no header is aligned yet, so 'too large' still has no subject."
+        ),
+        // ⚠ The fifth of that family, and it used to be in `Honoured` under a reading of its name.
+        new(
+            "resharper_xmldoc_wrap_tags_and_pi",
+            "Pending on the same prerequisite, and the reading it used to carry is measured false. It was read as 'whether a tag may be moved to a new line to fit', and at both values the oracle moves a <see/> off the end of a line of prose identically — the committed fixture is byte-identical at true and at false, which is the SPURIOUS row the sweep reported. What it really governs is a break INSIDE a tag header: a <see cref=... href=...> 170 columns wide comes back with its second attribute on a continuation line at true and whole at false, and the same probe leaves a <?pi ...?> alone. Skala cannot wrap a header, and it cannot re-read one either — XmlDocModel refuses a multi-line tag header as Unmodelled — so emitting one would cost idempotence. SK-DIV-0079."
+        ),
+
+        // ── Measured inert in the oracle: the indent is the C# file's ────────────────────────
+        // ⚠ These two used to be in `Honoured`, and were promoted on a fixture that could not tell
+        // them from the C# indent — it agrees at `4`/`space`, which is what `indent_size = 4` and
+        // ReSharper's always-spaces inner indent produce anyway. Probed under
+        // `OracleProfile.DocComments` on `/// <remarks>` holding a `/// <para>`.
+        new(
+            "resharper_xmldoc_indent_size",
+            "Inert in the oracle, and the C# `indent_size` is what really governs the gap. At `resharper_xmldoc_indent_size = 1` the child element stays at four columns; at `indent_size = 1` it moves to one, and at `indent_size = 2` — asked with `tab_width = 8` in the same run, so a tab width could not be answering — it moves to two. Skala takes the width from `indent_size` and reads this key only so the plumbing exists."
+        ),
+        new(
+            "resharper_xmldoc_indent_style",
+            "Inert in the oracle, and there is nothing to choose. At `resharper_xmldoc_indent_style = tab` the child element is still indented with spaces; at `indent_style = tab` the file's *code* lines take tabs and the comment's inner indent stays four spaces. A documentation comment's inner indent is always spaces, so Skala spends spaces and reads this key only so the plumbing exists."
         ),
 
         // ── Measured, and genuinely not distinguishable ──────────────────────────────────────

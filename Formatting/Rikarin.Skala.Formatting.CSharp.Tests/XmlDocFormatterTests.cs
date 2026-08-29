@@ -50,6 +50,51 @@ public static class XmlDoc {
 }
 
 public sealed class XmlDocSubFormatterTests {
+    /// <summary>
+    ///     SK-FUZZ-0015, retired: a <c>///</c> run in a mixed-ending file converges in one pass.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ The reproduction the register carried, minimised from 1 588 characters to 84 by the
+    ///     fuzzer and kept here rather than promoted into <c>pathological/</c>, because promoting it
+    ///     moves that set's ratchet. The leading <c>&lt;CR&gt;&lt;LF&gt;</c> is the whole trigger:
+    ///     <c>CSharpFormatter.DefaultNewLine</c> answered with the first newline in the *input*, the
+    ///     first pass deletes the blank line above it, and the second pass therefore re-emitted the
+    ///     same run with the other ending. The sub-formatter now takes the ending from the comment's
+    ///     own first gap, which the next pass reads back out of what this one wrote.
+    ///     <para>
+    ///         ⚠ Two passes, and the second is compared against the first rather than against the
+    ///         input. A one-pass assertion cannot see this defect at all — pass 1 was always
+    ///         self-consistent.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ <b>What retired the entry is the marker rule, not the newline change beside it</b>, and
+    ///         the difference was measured rather than assumed: with the newline read put back to the
+    ///         old unstable value both cases below still converge, because a comment already in the
+    ///         renderer's own shape is not rewritten and a comment that is rewritten reaches its fixed
+    ///         point on pass 1. Both bytes are asserted anyway — the run the fuzzer minimised, and one
+    ///         that has to be rebuilt — because "one pass is a fixed point" is an argument and this is
+    ///         the file where arguments have been wrong.
+    ///     </para>
+    /// </remarks>
+    [Fact]
+    public void ADocCommentRunUnderALeadingCrlf_KeepsItsOwnEnding() {
+        // ⚠ The register's own minimised bytes. The mixed endings are the whole case and must stay
+        // exactly as the fuzzer left them: a leading `<CR><LF>` whose blank line the first pass
+        // deletes — which is what moved "the first newline in the input" — a bare `<LF>` above the
+        // brace, and `<CR><LF>` inside the `///` run.
+        const string minimised = "\r\n// Copyright 2013-2015 Serilog Contributors\n{\r\n"
+            + "  /// <summary>\r\n  /// </summary>\n}\n";
+
+        Assert.Equal(XmlDoc.Text(minimised), XmlDoc.Text(XmlDoc.Text(minimised)));
+
+        // ⚠ The same endings around a run the sub-formatter has to rebuild, so the ending it writes
+        // is one it chose rather than one it copied.
+        const string rebuilt = "\r\n// Copyright 2013-2015 Serilog Contributors\n{\r\n"
+            + "  ///<summary>x</summary><remarks>y</remarks>\r\n  /// <example>z</example>\n}\n";
+
+        Assert.Equal(XmlDoc.Text(rebuilt), XmlDoc.Text(XmlDoc.Text(rebuilt)));
+    }
+
     [Fact]
     public void UnderNoXmlDoc_TheOracleAgreementIsUntouched() {
         // ⚠ The escape hatch, and it is now the only thing that reproduces what the pinned oracle
@@ -67,10 +112,27 @@ public sealed class XmlDocSubFormatterTests {
         Assert.Contains("///<summary>A summary line.</summary>", formatted, StringComparison.Ordinal);
     }
 
+    /// <summary>
+    ///     ⚠ The space appears with the rebuild, and only with it.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ This test used to be one line — <c>///&lt;summary&gt;Docs.&lt;/summary&gt;</c> in,
+    ///     <c>/// &lt;summary&gt;Docs.&lt;/summary&gt;</c> expected — and the oracle contradicts it.
+    ///     Asked under <c>OracleProfile.DocComments</c>, a short single element with no marker space
+    ///     comes back <b>byte-identical</b>, marker and all, because nothing else about the comment
+    ///     needed changing; SK-DIV-0006 records the same observation from the other end. Two crammed
+    ///     elements have to be rebuilt, and the marker's space arrives with the rebuild. So both halves
+    ///     are asserted here: the comment that changes gets the space, the comment that does not keeps
+    ///     the author's marker.
+    /// </remarks>
     [Fact]
-    public void SpaceAfterTripleSlash_IsInserted() {
-        var source = XmlDoc.InClass("///<summary>Docs.</summary>");
-        Assert.Contains("/// <summary>Docs.</summary>", XmlDoc.Text(source), StringComparison.Ordinal);
+    public void SpaceAfterTripleSlash_IsInsertedWhenTheCommentIsRebuiltAndNotOtherwise() {
+        var rebuilt = XmlDoc.InClass("///<summary>Docs.</summary><remarks>More.</remarks>");
+        Assert.Contains("/// <summary>Docs.</summary>", XmlDoc.Text(rebuilt), StringComparison.Ordinal);
+        Assert.Contains("/// <remarks>More.</remarks>", XmlDoc.Text(rebuilt), StringComparison.Ordinal);
+
+        var untouched = XmlDoc.InClass("///<summary>Docs.</summary>");
+        Assert.Contains("///<summary>Docs.</summary>", XmlDoc.Text(untouched), StringComparison.Ordinal);
     }
 
     [Fact]
@@ -192,12 +254,42 @@ public sealed class XmlDocSubFormatterTests {
         );
     }
 
+    /// <summary>
+    ///     ⚠ The indent inside a documentation comment is the <em>C#</em> indent's, not the xmldoc
+    ///     family's, and this test used to assert the opposite.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ It was <c>IndentSize_IsTheXmlDocsOwn</c>, asserting that
+    ///     <c>resharper_xmldoc_indent_size = 2</c> gives <c>///   &lt;para&gt;</c>. Measured under
+    ///     <c>OracleProfile.DocComments</c> on this very shape: at
+    ///     <c>resharper_xmldoc_indent_size = 1</c> the child stays at four columns, at
+    ///     <c>indent_size = 1</c> it moves to one, and at <c>indent_size = 2</c> — asked with
+    ///     <c>tab_width = 8</c> in the same run, so a tab width could not be answering — it moves to
+    ///     two. <c>resharper_xmldoc_indent_style = tab</c> leaves the child indented with spaces, and
+    ///     <c>indent_style = tab</c> tabs the file's code lines while leaving the comment's inner
+    ///     indent four spaces. Both <c>xmldoc_</c> keys are registered inert on that measurement; the
+    ///     old assertion passed only because the committed fixture agrees at <c>4</c>/<c>space</c>,
+    ///     which is what the C# indent produces anyway.
+    /// </remarks>
     [Fact]
-    public void IndentSize_IsTheXmlDocsOwn() {
+    public void IndentSize_IsTheCSharpIndents_AndTheXmlDocKeysAreInert() {
         var source = XmlDoc.InClass("/// <remarks><para>One.</para></remarks>");
+
         Assert.Contains(
             "///   <para>One.</para>",
+            XmlDoc.Text(source, ("indent_size", "2")),
+            StringComparison.Ordinal
+        );
+
+        Assert.Contains(
+            "///     <para>One.</para>",
             XmlDoc.Text(source, ("resharper_xmldoc_indent_size", "2")),
+            StringComparison.Ordinal
+        );
+
+        Assert.Contains(
+            "///     <para>One.</para>",
+            XmlDoc.Text(source, ("resharper_xmldoc_indent_style", "tab")),
             StringComparison.Ordinal
         );
     }
@@ -1037,9 +1129,15 @@ public sealed class XmlDocKeyCoverageTests {
         Assert.Empty(family.Except(covered, StringComparer.Ordinal));
         Assert.Empty(covered.Except(family, StringComparer.Ordinal));
 
+        // ⚠ 18 / 14, moved from 21 / 11 by three measurements rather than by three decisions.
+        // `indent_size` and `indent_style` are inert — a documentation comment's inner indent is the
+        // C# `indent_size`'s width, always spent in spaces, and neither `xmldoc_` key reaches it —
+        // and `wrap_tags_and_pi` joins the four tag-header keys it turned out to belong with. Each
+        // of the three had been read off a fixture that agrees at the export's own value and cannot
+        // separate the key from what else produces that value.
         Assert.Equal(32, family.Count);
-        Assert.Equal(21, honoured.Count);
-        Assert.Equal(11, refused.Count);
+        Assert.Equal(18, honoured.Count);
+        Assert.Equal(14, refused.Count);
     }
 
     [Fact]
@@ -1106,24 +1204,24 @@ public sealed class XmlDocKeyCoverageTests {
             Assert.Contains(id, unoracled);
         }
 
-        // ⚠ 16 and 6, and the reason the split moved is worth stating because the sentence here used to
-        // say it could not. It read "13 of the 22 reproduce their doc-comment fixture and 9 do not …
-        // a statement about the fixtures and it has not changed". Both halves are now false: the nine
-        // renderer keys were implemented on 2026-08-29 and **all 22 reproduce their fixture**, so
-        // reproducing one no longer separates anything.
+        // ⚠ 19 and 0, and the zero is the finding. The `OfUnoracled` mark was carrying four keys on
+        // the reading "the oracle was asked and said something else"; the oracle has now been asked
+        // again, with a probe rather than only with the committed fixture, and it said the same thing
+        // as Skala at every value of all four. `max_line_length`, `wrap_text` and
+        // `linebreak_before_singleline_elements` are `Of`, and `wrap_tags_and_pi` left the family for
+        // `XmlDocIds.Refused` because what it governs — a break inside a tag header — is a
+        // construct Skala can neither emit nor re-read (SK-DIV-0079).
         //
-        // ⚠ What separates them now is the *sweep*, which is a stronger question. Three of the nine are
-        // Conformant at every value and moved to the oracled path; the other six agree at the export's
-        // own value and diverge away from it — Divergent (2), Spurious, Inert, Unexercised (2). That
-        // state is neither "pinned" nor "unimplemented", it is the one the tier vocabulary has no word
-        // for, and `OfUnoracled` is carrying it here on the narrow reading its own block records: not
-        // "the oracle cannot be asked" but "the oracle was asked and said something else".
+        // ⚠ Nineteen `implemented`, not nineteen Tier A. Every one of these still reads Tier D until
+        // the committed sweep is re-run, and the loop above is what holds them there: it asserts the
+        // tier the *sweep* justifies, so a key that agrees everywhere is still D while the last
+        // committed table says otherwise. Promotion is a diff that carries a new measurement.
         Assert.Equal(
-            18,
+            19,
             XmlDocIds.Honoured.Add(XmlDocIds.SpaceAfterTripleSlash).Count(implemented.Contains)
         );
 
-        Assert.Equal(4, XmlDocIds.Honoured.Count(unoracled.Contains));
+        Assert.Equal(0, XmlDocIds.Honoured.Count(unoracled.Contains));
 
         Assert.Equal(
             XmlDocIds.Honoured.Add(XmlDocIds.SpaceAfterTripleSlash)

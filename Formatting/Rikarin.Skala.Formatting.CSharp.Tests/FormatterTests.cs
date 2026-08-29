@@ -926,14 +926,30 @@ public sealed class XmlDocTests {
         // pinned oracle profile does not run `CSharpFormatDocComments` and Rider's own Full Cleanup
         // does. Matching the profile here would mean diverging from the editor on every doc comment
         // in every repository, which is the larger of the two divergences.
+        //
+        // ⚠ The subject had to grow, and the growth is a measurement rather than a convenience. It
+        // used to be one 115-column line, and `jb cleanupcode` with `CSharpFormatDocComments`
+        // enabled returns that line **byte-identical** — no wrap, and no marker space either,
+        // because the marker's space arrives with a rebuild and there was nothing to rebuild. The
+        // budget is measured from after the `///` (SK-DIV-0019), so 115 file columns is well inside
+        // it. A summary that genuinely overflows is what this test is about, so it is one now.
         const string source =
-            "class C {\n    ///<summary>A summary line that runs a long way past one hundred and twenty columns in total, easily.</summary>\n    void M() { }\n}\n";
+            "class C {\n    ///<summary>A summary line that runs a long way past one hundred and twenty columns in total, easily, and then keeps going for another forty columns so that it certainly cannot fit.</summary>\n    void M() { }\n}\n";
         var formatted = Format.Text(source);
 
         Assert.DoesNotContain("///<summary>", formatted, StringComparison.Ordinal);
+
+        // ⚠ Measured from the character after the `///`, not from column 0, which is SK-DIV-0019
+        // and is what `XmlDocColumnTests` carries the probe for. The oracle's own answer to this
+        // very input is a 122-column file line, so a `<= 120` on the whole line asserts a shape
+        // `jb cleanupcode` does not produce. A code line is still measured whole.
         Assert.All(
             formatted.Split('\n'),
-            line => Assert.True(TextWidth.Measure(line) <= 120, $"'{line}' is {TextWidth.Measure(line)} columns.")
+            line => {
+                var slashes = line.IndexOf("///", StringComparison.Ordinal);
+                var measured = slashes < 0 ? TextWidth.Measure(line) : TextWidth.Measure(line[(slashes + 3)..]);
+                Assert.True(measured <= 120, $"'{line}' measures {measured} columns.");
+            }
         );
     }
 

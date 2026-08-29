@@ -398,9 +398,39 @@ The first cut of that fixture was a single short `///<summary>Docs.</summary>`, 
 wrapping, no element split and no blank-line removal — and it came back from
 `CSharpFormatDocComments` byte-identical, marker included. The fixture that measures the key is two
 crammed elements on one line, which the oracle has to rebuild, and the marker space appears with
-the rebuild. So the 79 lines M3 charged to Skala are *still* not fully re-explained: `corpus/real/`'s
-fixtures are generated under a profile that rebuilds nothing, and on a comment that needs no other
-change the oracle and Skala genuinely differ about the marker.
+the rebuild.
+
+⚠ **That last shape is now closed, and closing it was the second-largest finding of the sweep's
+doc-comment batch.** The paragraph used to end here with "So the 79 lines M3 charged to Skala are
+*still* not fully re-explained: `corpus/real/`'s fixtures are generated under a profile that rebuilds
+nothing, and on a comment that needs no other change the oracle and Skala genuinely differ about the
+marker." They no longer differ. `XmlDocFormatter.Replacement` compares its rendered lines to the
+source's line for line, modulo one space after the `///`, and puts the source back when that is the
+only difference — which is exactly what the oracle does, measured on one file holding two comments
+with the same two blank `///` lines between the same two tags, under
+`resharper_xmldoc_max_blank_lines_between_tags = 3` so neither line had to go:
+
+```csharp
+/// <summary>A summary written at enough length that it cannot possibly fit …</summary>   →  rebuilt, and its blank lines come back as `/// `
+///
+///
+/// <returns>A value.</returns>
+
+/// <summary>A summary.</summary>                                                          →  byte-identical, bare `///` and all
+///
+///
+/// <returns>A value.</returns>
+```
+
+⚠ **The row this was found from was `resharper_xmldoc_max_blank_lines_between_tags`, and the key had
+nothing to do with it.** The sweep reported it `Divergent` at `3`, where Skala wrote `/// ` and the
+oracle wrote `///`; the count was right on both sides and the *marker* was the disagreement, on a
+comment the oracle was not otherwise touching. A verdict on one key was a fact about a rule three
+keys away, which is the failure mode this file exists to catch.
+
+Worth +31 exact lines of `corpus/real/` on the every-line basis (74 436 → 74 467 of 77 312, 96.28 % →
+96.32 %), and nothing on the outside-doc-comments basis, which by construction cannot see it. It also
+retired SK-FUZZ-0015 — see `pathological/open/register.md`.
 
 What is implemented is the half [05](plan/05-csharp-formatting-rules.md) calls the hazard and that
 needs no oracle: a doc comment that is not well-formed XML is left exactly as it is and reported at
@@ -2374,3 +2404,57 @@ the after-the-operator ones at `true`, and does the reverse at `false`, so both 
 
 - options: `resharper_csharp_wrap_before_binary_pattern_op`, `resharper_place_expr_method_on_single_line`, `resharper_csharp_wrap_chained_binary_patterns`
 - ⚠ status: **open**; the ordering fact is missing, and it is shared with SK-DIV-0077.
+
+## SK-DIV-0079 — `xmldoc_wrap_tags_and_pi` wraps a tag's *attributes*, and Skala cannot re-read a header it broke
+
+⚠ **The sweep called this one `SPURIOUS` and the verdict was about the fixture, not the key.**
+`constructs/xmldoc/resharper_xmldoc_wrap_tags_and_pi.cs` is prose carrying a `<see cref="…" />` that
+cannot stay on its line, and the oracle returns **the same bytes at `true` and at `false`** — it moves
+the `<see/>` to the next line either way. Skala read the key as "whether a tag may be moved to a new
+line to fit", so only Skala's output varied, which is exactly what `SPURIOUS` means.
+
+### What it really governs, measured
+
+Under `OracleProfile.DocComments`, on a tag whose own header is 170 columns wide:
+
+```csharp
+/// <see cref="System.Collections.Generic.Dictionary{TKeyOfSomeVeryLongName,TValueOfSomeVeryLongName}" href="https://example.invalid/a/very/long/documentation/link/that/will/not/fit" />
+```
+
+| `resharper_xmldoc_wrap_tags_and_pi` | the oracle |
+|---|---|
+| `true` (the export's own value) | `href="…"` moves to a continuation line at one indent, inside the tag |
+| `false` | the header is returned whole, past the margin |
+
+A `<?pi-name a="1" … p="16" ?>` beside it is untouched at both values, so on this build the key is
+about element headers.
+
+⚠ **And the other half of the old reading is measured false in its own right.** Asked at
+`resharper_xmldoc_wrap_text = false` — with `wrap_tags_and_pi` left alone — the oracle *still* moves a
+`<see/>` off the end of a line of prose while leaving the words around it exactly where they were, and
+returns a `<summary>` of 170 columns of plain prose whole on one line. So permission for a tag to move
+is not this key's to give: `wrap_text` is permission for a **word** to move, and an element may always
+move. `XmlDocRenderer.Flush` now says that, and the change is what turns the committed fixture from
+"only Skala varies" into "neither varies".
+
+### Why Skala does not implement it
+
+`XmlDocModel` refuses a comment whose input carries a **multi-line tag header** — `Unmodelled`, one of
+the five recorded refusal reasons. So a Skala that wrapped a header would emit a comment it could not
+re-read on the next run, and `format(format(x))` would leave the header wrapped and every other rule
+unapplied. That is an idempotence violation traded for one non-export value of one key, and
+idempotence is the property this product exists to provide.
+
+It joins the four tag-header keys already in `XmlDocIds.Refused` — `xmldoc_attribute_indent`,
+`xmldoc_attribute_style`, `xmldoc_alignment_tab_fill_style`, `xmldoc_allow_far_alignment` — all
+pending on the same prerequisite, which is a model that can read a header back. Whoever lifts that
+lifts all five at once; four of them have nothing to say until this one works.
+
+⚠ The registry entry keeps `oracle: null`, on the `wrap_verbatim_interpolated_strings` precedent: a
+glob pointing at a fixture the oracle wraps and Skala does not would make the sweep report `INERT`
+with a baseline that disagrees, and would red `XmlDocOracleTests` on a committed fixture Skala cannot
+reproduce. The construct is written down here instead, in the shape a future fixture wants.
+
+- options: `resharper_xmldoc_wrap_tags_and_pi`
+- ⚠ status: **open**, cause established and the prerequisite named. Not a wrapping bug — a missing
+  half of the model.
