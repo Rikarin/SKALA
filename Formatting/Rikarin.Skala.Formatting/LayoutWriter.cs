@@ -181,7 +181,7 @@ public sealed class LayoutWriter {
                         continue;
 
                     case DocKind.Line:
-                        WriteLine(ref slot, node);
+                        WriteLine(ref slot, node, stack);
                         continue;
 
                     case DocKind.Indent:
@@ -588,6 +588,52 @@ public sealed class LayoutWriter {
     }
 
     /// <summary>
+    ///     What still has to be written on this line once <paramref name="group" /> has ended.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ <see cref="TrailingWidth" /> measured from outside the group rather than from here. The
+    ///     walk is inside the group when a fill point is written, so the frames up to and including the
+    ///     group's own are its interior — which the segment has already measured — and only the frames
+    ///     beyond it are the rest of the line. Frames are innermost-first, so the group's is the last
+    ///     one skipped.
+    ///     <para>
+    ///         ⚠ A group with no frame on the stack — which cannot happen for a point the walk is inside
+    ///         — measures nothing rather than the whole line, so a front end that lost the frame declines
+    ///         a break instead of taking a wrong one.
+    ///     </para>
+    /// </remarks>
+    int TrailingAfterGroup(Stack<(int Node, int Child)> stack, int group) {
+        var total = 0;
+        var outside = false;
+        foreach (var (node, child) in stack) {
+            if (!outside) {
+                ref var frame = ref _document.Nodes[node];
+                outside = frame.Kind == DocKind.Group && frame.Arg1 == group;
+                continue;
+            }
+
+            var children = _document.ChildrenOf(node);
+            for (var i = child; i < children.Length; i++) {
+                var sibling = children[i];
+                if (_document.Nodes[sibling].Kind == DocKind.Line) {
+                    return total;
+                }
+
+                var width = _document.PointWidthOf(sibling);
+                total = total >= Document.Unbounded || width >= Document.Unbounded
+                    ? Document.Unbounded
+                    : total + width;
+
+                if (_document.HasBreak(sibling)) {
+                    return total;
+                }
+            }
+        }
+
+        return outside ? total : 0;
+    }
+
+    /// <summary>
     ///     The column a line broken at one of this group's own points would start at.
     /// </summary>
     /// <remarks>
@@ -625,7 +671,7 @@ public sealed class LayoutWriter {
         return level;
     }
 
-    void WriteLine(ref DocNode slot, int node) {
+    void WriteLine(ref DocNode slot, int node, Stack<(int Node, int Child)> stack) {
         var kind = (LineKind)slot.Arg0;
         if (kind == LineKind.Soft) {
             var flags = (LineFlags)slot.Flags;
@@ -643,6 +689,19 @@ public sealed class LayoutWriter {
                     ? _pendingCloserLevel ?? Effective()
                     : _column + width;
                 var segment = _document.SegmentOf(node);
+
+                // ⚠ At the group's last point the segment ends where the group does, and the line
+                // does not — so what follows the group counts, exactly as it does when a group is
+                // resolved on entry. Without it a 121-column `for` header and a 121-column `if`
+                // condition both measure 118 and decline the break the oracle takes; the missing
+                // three columns are the `) {`. See LineFlags.LastPoint.
+                if ((flags & LineFlags.LastPoint) != 0) {
+                    var trailing = TrailingAfterGroup(stack, slot.Arg2);
+                    segment = segment >= Document.Unbounded || trailing >= Document.Unbounded
+                        ? Document.Unbounded
+                        : segment + trailing;
+                }
+
                 flat = segment < Document.Unbounded && column + segment <= _width;
             }
 

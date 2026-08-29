@@ -158,6 +158,19 @@ public sealed class BreakPlan {
     readonly Dictionary<long, int> _chainOwner = [];
 
     /// <summary>
+    ///     The chain roots whose <c>wrap_chained_binary_*</c> style is <c>wrap_if_long</c>, so that
+    ///     every operator of them plans a fill point rather than an ordinary one.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Beside <see cref="_chainOwner" /> rather than folded into it, because the two are read at
+    ///     different times: the owner is written by <see cref="PlanChainWide" /> from the chain root and
+    ///     read by <see cref="PlanOperator" /> from a link, and a link cannot see which of the two
+    ///     <c>wrap_chained_binary_*</c> keys governs its chain without repeating the precedence walk
+    ///     that found the root.
+    /// </remarks>
+    readonly HashSet<long> _chainFills = [];
+
+    /// <summary>
     ///     The operator tokens a <c>force_chop_compound_*</c> key requires a break at, by position.
     /// </summary>
     /// <remarks>
@@ -709,11 +722,33 @@ public sealed class BreakPlan {
             return;
         }
 
+        // ⚠ The counter wins over everything else, joining included: over the cap the construct is
+        // chopped whatever its width and whatever the author wrote.
+        var overCap = items.Count > maxOnLine;
+
+        // ⚠ And the per-construct `keep_existing_*` key outranks the placement key in both
+        // directions: with keep on, neither the join at `true` nor the forced break at `false`
+        // happens at all.
+        var joins = placeOnSingleLine == true && !keepExisting;
+        var forced = placeOnSingleLine == false && !keepExisting;
+
         // ⚠ `wrap_if_long` is a fill: the delimiters break together with the group and the gaps
         // between items break one at a time, as the line runs out. Milestone 2 declined to plan
         // these constructs at all rather than chop them, which is why an over-long initializer came
         // back untouched.
-        var fill = style == WrapStyle.WrapIfLong;
+        // ⚠ And so is a construct the placement key forced apart, at whatever style. Measured, one
+        // key flipped: `place_simple_property_pattern_on_single_line = false` with
+        // `wrap_property_pattern = chop_if_long` returns
+        //     o is Thing {
+        //         Alpha: 1, Beta: 2
+        //     };
+        // and keeps a three-subpattern clause of 98 columns together on its continuation line too.
+        // `false` puts the BRACES on their own lines; it does not chop what is between them, and
+        // reading it as a chop gave every subpattern a line of its own. It also overrides the
+        // author's own break at an item gap in the joining direction — a clause written one
+        // subpattern per line comes back re-flowed — which falls out of the fill: the group is
+        // broken either way, and each gap then answers for itself.
+        var fill = style == WrapStyle.WrapIfLong || forced;
 
         // ⚠ place_single_method_argument_lambda_on_same_line = true governs the OPENING parenthesis
         // only. `Assert.Throws(() => {` keeps the lambda on the call's line however long its body
@@ -816,16 +851,6 @@ public sealed class BreakPlan {
         //   false                | false           | re-joined  | re-joined
         // The global switch turns the per-construct one off; the per-construct one does not turn the
         // global one on.
-        // ⚠ The counter wins over everything else, joining included: over the cap the construct is
-        // chopped whatever its width and whatever the author wrote.
-        var overCap = items.Count > maxOnLine;
-
-        // ⚠ And the per-construct `keep_existing_*` key outranks the placement key in both
-        // directions: with keep on, neither the join at `true` nor the forced break at `false`
-        // happens at all.
-        var joins = placeOnSingleLine == true && !keepExisting;
-        var forced = placeOnSingleLine == false && !keepExisting;
-
         var broken = style == WrapStyle.ChopAlways
             || overCap
             || forced
@@ -955,7 +980,13 @@ public sealed class BreakPlan {
         }
 
         // ⚠ A fill only for an array initializer; an object or collection initializer chops.
-        var fill = array && style == WrapStyle.WrapIfLong;
+        // ⚠ …and never over the cap, which is what "a hard chop and not a fill" means on the
+        // `maxOnLine` parameter above. Measured, one key flipped: at
+        // `max_array_initializer_elements_on_line = 1` the oracle puts `new[] { 1, 2, 3, 4, 5 }` one
+        // element per line, and at `0` it does the same, so the counter is not a width and does not
+        // defer to one. The cap already forced the braces apart here; without this it left the five
+        // elements filled on the continuation line, so the key moved the output and moved it wrong.
+        var fill = array && style == WrapStyle.WrapIfLong && !overCap;
         var inner = NewGroup();
         var interBroken = false;
         foreach (var comma in separators) {
@@ -976,7 +1007,32 @@ public sealed class BreakPlan {
         }
 
         broken |= interBroken;
-        var mode = style == WrapStyle.ChopAlways || overCap || forced ? GroupMode.Break : GroupMode.Preserve;
+
+        // ⚠ `chop_always` is the ARRAY initializer's, and an object or collection one does not read
+        // it. Measured, one key flipped: at `wrap_array_initializer_style = chop_always` the oracle
+        // returns `new List<int> { 1, 2, 3 }`, `new Thing { Alpha = 1, Beta = 2 }` and a
+        // three-member `new { … }` exactly as written, and chops only `new[] { … }`. Skala read the
+        // one key for every braced initializer and gave all four a line per element.
+        // ⚠ The other two values need no such guard, because at neither of them does the style force
+        // anything: `wrap_if_long` and `chop_if_long` both leave the mode `Preserve` for a non-array
+        // initializer, and what separates them there is `fill`, which is already array-only. The key
+        // that governs an object or collection initializer is
+        // `csharp_wrap_object_and_collection_initializer_style`, which this registry does not carry;
+        // the export's answer is unchanged either way, so this narrows a wrong reading rather than
+        // standing in for the missing key.
+        // ⚠ `place_simple_initializer_on_single_line = false` forces the BRACES apart and not the
+        // elements, which is the outer group and not the inner one. Measured, one key flipped: the
+        // oracle returns
+        //     var a = new List<int> {
+        //         1, 2, 3
+        //     };
+        // and keeps a three-member `new Thing { … }` of 100 columns together on its continuation
+        // line too, chopping only the four-member one that does not fit there. Skala gave every
+        // element a line of its own, which reads the key as "and chop it" — the same conflation the
+        // outer/inner split exists to prevent. The inner group is left to decide on width, which is
+        // what `BreaksIfTooLong` already asks of it.
+        var chops = style == WrapStyle.ChopAlways && array || overCap;
+        var mode = chops || forced ? GroupMode.Break : GroupMode.Preserve;
         var facts = new GroupFacts(
             SourceBroken: _options.KeepUserLinebreaks && broken || forced,
             JoinsIfFits: joins,
@@ -987,8 +1043,24 @@ public sealed class BreakPlan {
         DescribeInner(
             node,
             inner,
-            mode,
-            facts with { SourceBroken = _options.KeepsUserBreaksBetweenItems && interBroken }
+            chops ? GroupMode.Break : GroupMode.Preserve,
+            facts with {
+                SourceBroken = _options.KeepsUserBreaksBetweenItems && interBroken,
+
+                // ⚠ And when the placement key forced the braces apart it re-flows the elements as
+                // well, overriding `keep_user_linebreaks` in the joining direction. Measured, one
+                // key flipped: at `place_simple_initializer_on_single_line = false` a `new Thing`
+                // the author wrote one member per line comes back as
+                //     var c = new Thing {
+                //         Alpha = 1, Beta = 2
+                //     };
+                // — byte for byte what the same initializer unbroken in the source gets at that
+                // value — while the four-member one that does not fit on its continuation line is
+                // still chopped. `false` has already decided this construct's shape, so the
+                // author's arrangement inside it no longer governs; that is the same direction the
+                // outer group's own `SourceBroken: … || forced` already reads the key in.
+                JoinsIfFits = joins || forced
+            }
         );
     }
 
@@ -1515,6 +1587,23 @@ public sealed class BreakPlan {
         var first = _options.WrapBeforeFirstMethodCall ? dots.Count : dots.Count - 1;
         var group = NewGroup();
         var broken = false;
+
+        // ⚠ `wrap_if_long` is a fill and not "leave the chain alone". Measured, one key flipped, at
+        // the export's 120-column margin:
+        //   var b = source.Where(…).OrderBy(…).Select(…).ToList().AsReadOnly()
+        //       .Count();
+        // — the last dot that still fits, and one break rather than one per link. The style used to
+        // reach the group as `BreaksIfTooLong: style != WrapIfLong`, which is "never break", and a
+        // 129-column chain came back whole. Same misreading as the base list's; see PlanBaseList.
+        var fill = _options.WrapChainedMethodCalls == WrapStyle.WrapIfLong;
+
+        // ⚠ And a fill keeps the author's own breaks gap by gap rather than re-flowing them, which
+        // is the same correction `PlanList`'s `pinsItemBreaks` and `PlanForHeader`'s
+        // `pinsClauseBreaks` make: a chain the author already broke at every dot comes back from
+        // `wrap_if_long` with every one of those breaks, although the fill would have re-joined all
+        // but the last. A per-group flag cannot say it — the preserved gaps and the filled ones are
+        // siblings — so a preserved gap becomes an ordinary required break and the rest stay points.
+        var pinsLinkBreaks = fill && _options.KeepsUserBreaksBetweenItems;
         for (var i = 0; i < first; i++) {
             if (_options.WrapAfterDotInMethodCalls) {
                 // ⚠ "After the dot" has to mean after *both* tokens of a `?.`. `ChainDot` registers
@@ -1531,11 +1620,9 @@ public sealed class BreakPlan {
                 }
 
                 var next = dot.GetNextToken();
-                Point(next, group);
-                broken |= BreaksBefore(next);
+                broken |= Link(next);
             } else {
-                Point(dots[i], group);
-                broken |= BreaksBefore(dots[i]);
+                broken |= Link(dots[i]);
             }
         }
 
@@ -1549,7 +1636,7 @@ public sealed class BreakPlan {
             _options.WrapChainedMethodCalls == WrapStyle.ChopAlways ? GroupMode.Break : GroupMode.Preserve,
             new GroupFacts(
                 SourceBroken: _options.KeepsUserBreaksBetweenItems && broken,
-                BreaksIfTooLong: _options.WrapChainedMethodCalls != WrapStyle.WrapIfLong,
+                BreaksIfTooLong: true,
                 HidesFlatWidthWhenBroken: true
             ),
             // ⚠ The chain opens its own continuation scope. Milestone 2 spent that level lazily, in
@@ -1573,6 +1660,17 @@ public sealed class BreakPlan {
             // same line.
             ownLevel: true
         );
+
+        bool Link(SyntaxToken gap) {
+            var broke = BreaksBefore(gap);
+            if (pinsLinkBreaks && broke) {
+                Mandatory(gap);
+            } else {
+                Point(gap, group, fill);
+            }
+
+            return broke;
+        }
 
         void Collect(SyntaxNode node) {
             switch (node) {
@@ -1706,12 +1804,23 @@ public sealed class BreakPlan {
     ///     line breaks at every operator at once, which no per-operator group can decide. This group
     ///     spans the whole chain, holds no break points of its own, and the operator groups read its
     ///     resolved mode through <see cref="GroupFacts.BreaksWithOwner" />.
+    ///     <para>
+    ///         ⚠ And it exists at <c>wrap_if_long</c> too, which is the correction. That value used to
+    ///         return here without planning anything, so no operator ever broke for width and a
+    ///         121-column condition came back whole. Measured, one key flipped, at the export's margin:
+    ///         <code>
+    /// if (a &gt; 0 &amp;&amp; b &gt; 0 &amp;&amp; c &gt; 0 &amp;&amp; d &gt; 0 &amp;&amp; a &lt; 100 &amp;&amp; b &lt; 100 &amp;&amp; c &lt; 100 &amp;&amp; d &lt; 100 &amp;&amp; a != b &amp;&amp; c != d
+    ///     &amp;&amp; a != d) {
+    ///         </code>
+    ///         — one break, at the last operator that fits, and the same answer for a pattern chain. So
+    ///         <c>wrap_if_long</c> is a <em>fill</em> here as it is everywhere else: the chain-wide group
+    ///         still answers "does the whole chain fit on one line", and when it says no every operator
+    ///         group breaks with it — but each operator's point is a fill point, so it puts its own link
+    ///         on the line when the link fits and moves it down when it does not. <c>chop_*</c> keeps
+    ///         ordinary points and every link moves together.
+    ///     </para>
     /// </remarks>
     void PlanChainWide(SyntaxNode root, WrapStyle style) {
-        if (style == WrapStyle.WrapIfLong) {
-            return;
-        }
-
         // ⚠ A force-chopped condition has no use for the chain-wide group, and leaving it in place
         // gets the answer wrong. The group asks "does the whole chain fit on one line"; a
         // GroupMode.Break point inside it hides the flat width (DocumentBuilder), so the answer is
@@ -1725,6 +1834,10 @@ public sealed class BreakPlan {
 
         var group = NewGroup();
         _chainOwner[Key(root)] = group;
+        if (style == WrapStyle.WrapIfLong) {
+            _chainFills.Add(Key(root));
+        }
+
         var pattern = root is BinaryPatternSyntax;
         Describe(
             root,
@@ -1857,15 +1970,33 @@ public sealed class BreakPlan {
         // what it lands on. Milestone 1 spent that level from inside its own Break path; a break
         // point has to ask for it explicitly or `return a\n + b;` comes out flush with the `return`.
         var group = NewGroup();
+
+        // ⚠ `wrap_chained_binary_* = wrap_if_long` makes this link's gap a fill point: the chain-wide
+        // group still decides whether the chain is being wrapped at all, and each link then decides
+        // for itself whether it still fits on the line. See PlanChainWide.
+        // ⚠ A break the author wrote is pinned rather than filled, the same correction
+        // `PlanList`'s `pinsItemBreaks` makes — `return a && b\n    || c;` comes back from the
+        // oracle unchanged at `wrap_if_long`, and a fill point would have re-joined it.
+        var fill = _chainFills.Contains(Key(ChainRootOf(node)));
+        var group0 = group;
         bool broken;
         if (wrapBefore) {
-            Point(operatorToken, group);
-            broken = BreaksBefore(operatorToken);
+            broken = Link(operatorToken);
             Flat(FirstToken(right));
         } else {
             Flat(operatorToken);
-            Point(FirstToken(right), group);
-            broken = BreaksBefore(FirstToken(right));
+            broken = Link(FirstToken(right));
+        }
+
+        bool Link(SyntaxToken gap) {
+            var broke = BreaksBefore(gap);
+            if (fill && broke && _options.KeepsUserBreaksBetweenItems) {
+                Mandatory(gap);
+            } else {
+                Point(gap, group0, fill);
+            }
+
+            return broke;
         }
 
         Describe(
@@ -1926,13 +2057,17 @@ public sealed class BreakPlan {
     }
 
     /// <summary>The chain-wide group of the chain this operator belongs to, or −1.</summary>
-    int ChainOwnerOf(SyntaxNode node) {
+    int ChainOwnerOf(SyntaxNode node) =>
+        _chainOwner.TryGetValue(Key(ChainRootOf(node)), out var group) ? group : -1;
+
+    /// <summary>The outermost link of the chain this operator belongs to.</summary>
+    static SyntaxNode ChainRootOf(SyntaxNode node) {
         var root = node;
         while (SameChain(root.Parent, root)) {
             root = root.Parent!;
         }
 
-        return _chainOwner.TryGetValue(Key(root), out var group) ? group : -1;
+        return root;
     }
 
     /// <summary>

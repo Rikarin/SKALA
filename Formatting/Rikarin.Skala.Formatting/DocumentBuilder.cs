@@ -385,7 +385,17 @@ public sealed class DocumentBuilder {
         var pointStopped = false;
 
         Walk(childStart, count);
+
+        // ⚠ The point still open when the walk ends is the group's last, and it is flagged here
+        // because this is the first moment anything knows which one that was. A fill's last point is
+        // the only one whose segment does not end at another point of the same group, so it is the
+        // only one that has to ask what follows the group — see LineFlags.LastPoint.
+        var last = current;
         Flush();
+        if (last >= 0) {
+            _nodes[last].Flags |= (int)LineFlags.LastPoint;
+        }
+
         return first < 0 ? 0 : _afterPoint[first];
 
         void Flush() {
