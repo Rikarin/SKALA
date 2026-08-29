@@ -29,12 +29,19 @@ public readonly struct PhaseOneOptions {
         // multiline stays chopped at both settings, a LINQ query keeps the author's breaks, and a
         // hard break is a hard break — all of which Fits already expresses, because a subtree
         // holding a break has an Unbounded flat width and never fits at any margin.
+        // ⚠ A width of 0 is "no limit" and not "120", and that is measured rather than read off the
+        // name. Asked with `resharper_csharp_max_line_length = 0` and nothing else changed, the
+        // oracle returns `constructs/wrapping/initializers.cs` with a 141-column line untouched —
+        // no finite margin produces that — while the element counter still chops the initializer it
+        // governs, which is the same "a construct that breaks for a reason other than width still
+        // breaks" the paragraph above records for `wrap_lines = false`. The registry's
+        // `boundsBecause` claimed the opposite and is corrected with this.
         WrapLines = options.GetBool(Ids.WrapLines);
         MaxLineLength = !WrapLines
             ? Document.Unbounded
             : options.GetInt(Ids.MaxLineLength) is var w and > 0
                 ? w
-                : 120;
+                : Document.Unbounded;
         InsertFinalNewline = options.GetBool(Ids.InsertFinalNewline);
         RemoveSpacesOnBlankLines = options.GetBool(Ids.RemoveSpacesOnBlankLines);
         EnforceLineEndingStyle = options.GetBool(Ids.EnforceLineEndingStyle);

@@ -1545,7 +1545,7 @@
       "templateLine": null,
       "expands": [],
       "min": 0,
-      "boundsBecause": "At least 0. ⚠ 0 is a supported value and is not 'no limit': PhaseOneOptions reads a width of 0 as 120, and OptionCoverageTests.LegalValues documents that. A negative width is not a width, and was clamped to 120 in silence."
+      "boundsBecause": "At least 0. ⚠ 0 is a supported value and it IS 'no limit' — the earlier reading here, 'PhaseOneOptions reads a width of 0 as 120', is REFUTED. Measured 2026-08-29 against `jb cleanupcode` 2025.2.6, this key alone appended to the export in an `[*.cs]` section: at `0` the oracle returns `constructs/wrapping/initializers.cs` with its 141-column line untouched, which no finite margin produces, while `max_initializer_elements_on_line` still chops the initializer it governs — the same shape `wrap_lines = false` gives, and the same 'a construct that breaks for a reason other than width still breaks' PhaseOneOptions already records there. PhaseOneOptions now reads 0 as Document.Unbounded. ⚠ The claim is about the C# margin only; `resharper_xmldoc_max_line_length` is read by XmlDocOptions, which takes 0 as 0, and has not been asked. A negative width is not a width and this bound refuses it rather than clamping it in silence."
     },
     {
       "key": "resharper_align_multiline_array_initializer",
@@ -4663,7 +4663,7 @@
       "templateLine": 701,
       "expands": [],
       "min": 0,
-      "boundsBecause": "At least 0. ⚠ 0 is a supported value and is not 'no limit': PhaseOneOptions reads a width of 0 as 120, and OptionCoverageTests.LegalValues documents that. A negative width is not a width, and was clamped to 120 in silence."
+      "boundsBecause": "At least 0. ⚠ 0 is a supported value and it IS 'no limit' — the earlier reading here, 'PhaseOneOptions reads a width of 0 as 120', is REFUTED. Measured 2026-08-29 against `jb cleanupcode` 2025.2.6, this key alone appended to the export in an `[*.cs]` section: at `0` the oracle returns `constructs/wrapping/initializers.cs` with its 141-column line untouched, which no finite margin produces, while `max_initializer_elements_on_line` still chops the initializer it governs — the same shape `wrap_lines = false` gives, and the same 'a construct that breaks for a reason other than width still breaks' PhaseOneOptions already records there. PhaseOneOptions now reads 0 as Document.Unbounded. ⚠ The claim is about the C# margin only; `resharper_xmldoc_max_line_length` is read by XmlDocOptions, which takes 0 as 0, and has not been asked. A negative width is not a width and this bound refuses it rather than clamping it in silence."
     },
     {
       "key": "resharper_csharp_max_primary_constructor_parameters_on_line",

@@ -589,11 +589,20 @@ public sealed class BreakPlan {
             return;
         }
 
-        // ⚠ keep_existing_enum_arrangement wins over chop_always: with it on, the oracle leaves
-        // `enum E { A, B, C }` on its line even though the wrap style says every member gets one.
-        var always = _options.WrapEnumDeclaration == WrapStyle.ChopAlways
-            && _options.MaxEnumMembersOnLine <= 1
-            && !_options.KeepExistingEnumArrangement;
+        // ⚠ `keep_existing_enum_arrangement` is the ONLY key of the three that governs this, and the
+        // other two are masked rather than partners. Measured, one key flipped at a time over the
+        // export: the oracle returns `constructs/breaks/enum-members.cs` with every member on its own
+        // line at `wrap_enum_declaration = wrap_if_long`, at `chop_if_long`, at `chop_always`, at
+        // `max_enum_members_on_line = 1` and at `= 2` — five configurations, one output — and puts
+        // `enum Compact { First, Second, Third, Fourth }` back on its line the moment
+        // `keep_existing_enum_arrangement` is true. Reading the wrap style and the counter as the
+        // forcing condition made Skala the only engine that varied, which is what SPURIOUS means, on
+        // both of their rows at once.
+        // ⚠ The rule the oracle is really applying is `resharper_new_line_before_enumerators`, which
+        // the remarks above already name: it is in the export template, it is not in options.json,
+        // and its value there is the one both engines now produce. Neither registered key stands in
+        // for it — an enum whose arrangement is not kept is chopped whatever they say.
+        var always = !_options.KeepExistingEnumArrangement;
         var group = NewGroup();
         Point(FirstToken(node.Members[0]), group);
         var broken = BreaksBefore(FirstToken(node.Members[0]));
@@ -703,8 +712,20 @@ public sealed class BreakPlan {
         DescribeInner(
             node,
             arms,
+
+            // ⚠ And the arms re-flow when `keep_existing_switch_expression_arrangement` is off, which
+            // is the export's value. Measured at `wrap_switch_expression = chop_if_long`: a switch
+            // the author wrote one arm per line comes back with the three arms on one continuation
+            // line, byte for byte what the same switch written flat gets at that value. The braces
+            // are still apart — that is the placement key's doing and not the author's — so the two
+            // halves of "what the source did" belong to the two groups separately, the same split
+            // `PlanBracedElements` makes.
             always ? GroupMode.Break : GroupMode.Preserve,
-            new GroupFacts(SourceBroken: armsBroken, BreaksIfTooLong: true)
+            new GroupFacts(
+                SourceBroken: keep && armsBroken,
+                JoinsIfFits: !keep,
+                BreaksIfTooLong: true
+            )
         );
     }
 
@@ -897,7 +918,17 @@ public sealed class BreakPlan {
         //   false                | false           | re-joined  | re-joined
         // The global switch turns the per-construct one off; the per-construct one does not turn the
         // global one on.
-        var broken = style == WrapStyle.ChopAlways
+        // ⚠ `chop_always` is gated on the construct's own `keep_existing_*_arrangement`, the same way
+        // the placement key already is and the same way a switch expression's is. Measured, one key
+        // flipped: `wrap_list_pattern = chop_always` leaves `xs is [1, 2, 3]` on its line, and a
+        // 113-column list pattern with it, because `keep_existing_list_patterns_arrangement = true`
+        // in this export — and the same flip with that key turned OFF chops both. It is the keep key
+        // and not the placement key: `place_simple_list_pattern_on_single_line = false` alongside
+        // `chop_always` still leaves the pattern whole. Skala chopped, and was the only engine that
+        // varied.
+        var chopsAlways = style == WrapStyle.ChopAlways && !keepExisting;
+
+        var broken = chopsAlways
             || overCap
             || forced
             || _options.KeepsUserBreaksBetweenItems
@@ -915,7 +946,7 @@ public sealed class BreakPlan {
         Describe(
             node,
             group,
-            style == WrapStyle.ChopAlways || overCap || forced ? GroupMode.Break : GroupMode.Preserve,
+            chopsAlways || overCap || forced ? GroupMode.Break : GroupMode.Preserve,
             new GroupFacts(
                 SourceBroken: broken,
                 JoinsIfFits: joins && !overCap,
