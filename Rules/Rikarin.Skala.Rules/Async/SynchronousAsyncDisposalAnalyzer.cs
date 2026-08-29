@@ -83,8 +83,8 @@ public sealed class SynchronousAsyncDisposalAnalyzer : DiagnosticAnalyzer {
         var type = statement.Declaration is { Variables.Count: > 0 } declaration
             ? TypeOfFirst(context, declaration)
             : statement.Expression is { } expression
-            ? context.SemanticModel.GetTypeInfo(expression, context.CancellationToken).Type
-            : null;
+                ? context.SemanticModel.GetTypeInfo(expression, context.CancellationToken).Type
+                : null;
 
         if (!Implements(type, asyncDisposable)) {
             return;

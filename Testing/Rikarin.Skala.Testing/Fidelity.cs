@@ -226,8 +226,8 @@ public static class Fidelity {
             return right.Length == 0
                 ? "blank line: Skala has one, the oracle does not"
                 : removedCount < addedCount && addedCount > 1
-                ? "line break presence: Skala left a line the oracle joined (phase 2)"
-                : "extra line";
+                    ? "line break presence: Skala left a line the oracle joined (phase 2)"
+                    : "extra line";
         }
 
         if (actual == "(no line)") {

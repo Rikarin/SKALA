@@ -149,8 +149,8 @@ public sealed partial record SemanticVersion(int Major, int Minor, int Patch, st
             var comparison = leftNumeric && rightNumeric
                 ? x.CompareTo(y)
                 : leftNumeric != rightNumeric
-                ? leftNumeric ? -1 : 1
-                : string.CompareOrdinal(a[i], b[i]);
+                    ? leftNumeric ? -1 : 1
+                    : string.CompareOrdinal(a[i], b[i]);
 
             if (comparison != 0) {
                 return comparison;

@@ -245,8 +245,8 @@ public static class FormatCommand {
         var exit = failures > 0
             ? ExitCodes.InternalError
             : (request.Check || request.Diff) && changed > 0
-            ? ExitCodes.FormattingNeeded
-            : ExitCodes.Ok;
+                ? ExitCodes.FormattingNeeded
+                : ExitCodes.Ok;
 
         return new CommandResult(exit, output.ToString());
     }

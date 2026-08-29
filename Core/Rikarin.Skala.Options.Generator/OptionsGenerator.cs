@@ -218,8 +218,8 @@ public sealed class OptionsGenerator : IIncrementalGenerator {
                 var bounds = option.Max is null
                     ? $"min {option.Min}"
                     : option.Min is null
-                    ? $"max {option.Max}"
-                    : $"min {option.Min} and max {option.Max}";
+                        ? $"max {option.Max}"
+                        : $"min {option.Min} and max {option.Max}";
                 context.ReportDiagnostic(
                     Diagnostic.Create(DefaultOutOfRange, Location.None, option.Key, bounds, option.Default)
                 );

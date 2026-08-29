@@ -299,8 +299,8 @@ public static class MarginSweep {
                     group.Count == 1
                     ? Layout.Flat
                     : group.Count == 2 && string.Equals(group[1], tail, StringComparison.Ordinal)
-                    ? Layout.OuterBreak
-                    : Layout.Inner)
+                        ? Layout.OuterBreak
+                        : Layout.Inner)
             );
         }
 

@@ -33,8 +33,8 @@ public readonly struct PhaseOneOptions {
         MaxLineLength = !WrapLines
             ? Document.Unbounded
             : options.GetInt(Ids.MaxLineLength) is var w and > 0
-            ? w
-            : 120;
+                ? w
+                : 120;
         InsertFinalNewline = options.GetBool(Ids.InsertFinalNewline);
         RemoveSpacesOnBlankLines = options.GetBool(Ids.RemoveSpacesOnBlankLines);
         EnforceLineEndingStyle = options.GetBool(Ids.EnforceLineEndingStyle);

@@ -88,8 +88,8 @@ public sealed class NullCheckingPatternRule : ArrangementRule {
             var (operand, visitedOperand) = IsNullLiteral(node.Right)
                 ? (node.Left, visited.Left)
                 : IsNullLiteral(node.Left)
-                ? (node.Right, visited.Right)
-                : (null, null);
+                    ? (node.Right, visited.Right)
+                    : (null, null);
 
             if (operand is null || visitedOperand is null || !IsSafe(operand)) {
                 return visited;

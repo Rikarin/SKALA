@@ -30,8 +30,8 @@ public sealed record SkalaDiagnostic(
         File is null
         ? string.Empty
         : Line > 0
-        ? $"{File}:{Line.ToString(System.Globalization.CultureInfo.InvariantCulture)}"
-        : File;
+            ? $"{File}:{Line.ToString(System.Globalization.CultureInfo.InvariantCulture)}"
+            : File;
 
     public override string ToString() {
         var location = Location;

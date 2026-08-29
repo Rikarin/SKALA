@@ -372,8 +372,8 @@ public static class IntAlign {
                 var slot = questions
                     ? member.QuestionToken.SpanStart
                     : member.Condition is BinaryExpressionSyntax binary
-                    ? binary.OperatorToken.SpanStart
-                    : -1;
+                        ? binary.OperatorToken.SpanStart
+                        : -1;
 
                 if (slot < 0 || slot > line.End || line.LineNumber != previousLine + 1 && run.Count > 0) {
                     Flush(runs, run);

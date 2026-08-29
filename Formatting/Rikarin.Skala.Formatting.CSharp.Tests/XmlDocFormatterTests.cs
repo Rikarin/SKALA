@@ -313,8 +313,11 @@ public sealed class XmlDocSubFormatterTests {
 ///     on a single arithmetic with no crossing word in it.
 ///     <list type="number">
 ///         <item>
-///             The measured width of a documentation line <b>excludes the code indentation and the
-///             three slashes</b> and includes the marker's space. A line is inside the margin when
+///             The measured width of a documentation line
+///             <b>
+///                 excludes the code indentation and the
+///                 three slashes
+///             </b> and includes the marker's space. A line is inside the margin when
 ///             <c>1 + indent + content &lt;= max_line_length</c> — so the same sentence wraps
 ///             identically at every nesting depth, and the file's own columns run
 ///             <c>codeIndent + 3</c> past the margin.
@@ -442,7 +445,9 @@ public sealed class XmlDocColumnTests {
                 "/// </remarks>"
             ],
             XmlDoc.DocLines(
-                XmlDoc.Text(XmlDoc.InClass("/// <remarks>Some leading prose. <list><item>Short.</item></list></remarks>"))
+                XmlDoc.Text(
+                    XmlDoc.InClass("/// <remarks>Some leading prose. <list><item>Short.</item></list></remarks>")
+                )
             )
         );
     }

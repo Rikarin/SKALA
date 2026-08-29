@@ -82,8 +82,11 @@ public readonly struct XmlDocOptions {
     ///     the character after the <c>///</c>.
     /// </summary>
     /// <remarks>
-    ///     ⚠ <b>This remark used to say the opposite and the opposite was an argument, not a
-    ///     measurement.</b> It read: "measured from column 0 of the file, including the code
+    ///     ⚠
+    ///     <b>
+    ///         This remark used to say the opposite and the opposite was an argument, not a
+    ///         measurement.
+    ///     </b> It read: "measured from column 0 of the file, including the code
     ///     indentation and the <c>///</c> marker. The alternative reading — a budget for the comment's
     ///     own text — would make the same sentence wrap differently at two nesting depths and produce
     ///     lines past the margin, which is the one thing a hard wrap exists to prevent." Probed at four
