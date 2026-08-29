@@ -629,18 +629,42 @@ public sealed class BreakPlan {
             return;
         }
 
+        var style = _options.WrapSwitchExpression;
+
+        // ⚠ `wrap_if_long` fills the arms; `chop_*` takes them together. Measured, one key flipped,
+        // on a switch whose arms cannot share a continuation line:
+        //     v switch {
+        //         1 => "aaaa…", 2 => "bbbb…", 3 => "cccc…",
+        //         4 => "dddd…", _ => "e"
+        //     };
+        var fill = style == WrapStyle.WrapIfLong;
+
         var group = NewGroup();
         Point(FirstToken(node.Arms[0]), group);
         var broken = BreaksBefore(FirstToken(node.Arms[0]));
 
+        // ⚠ The arms are the INNER group's and the braces the outer one's, which is the split a
+        // braced initializer already has and for the same measured reason. The export sets
+        // `place_simple_switch_expression_on_single_line = false`, and at that value the oracle puts
+        // the braces on their own lines WHATEVER `wrap_switch_expression` says:
+        //     int Compact(int v) =>
+        //         v switch {
+        //             1 => 10, 2 => 20, _ => 0     ← at wrap_if_long and at chop_if_long
+        //         };
+        // One group holding both meant the arms' style decided the braces too, so at either of those
+        // two values Skala returned the whole declaration flat — and the arrow break went with it,
+        // because "the owner is a single line" is answered by whether this construct broke.
+        var arms = NewGroup();
+        var armsBroken = false;
         foreach (var separator in node.Arms.GetSeparators()) {
             var next = separator.GetNextToken();
             if (!next.IsKind(SyntaxKind.None) && next.SpanStart < node.CloseBraceToken.SpanStart) {
-                Point(next, group);
-                broken |= BreaksBefore(next);
+                Point(next, arms, fill);
+                armsBroken |= BreaksBefore(next);
             }
         }
 
+        broken |= armsBroken;
         Point(node.CloseBraceToken, group);
         broken |= BreaksBefore(node.CloseBraceToken);
 
@@ -655,19 +679,32 @@ public sealed class BreakPlan {
         // off — the export's value — the same expression is chopped. That is what makes both keys
         // observable rather than only the wrap style.
         var keep = _options.KeepExistingSwitchExpressionArrangement;
-        var always = _options.WrapSwitchExpression == WrapStyle.ChopAlways
+        var always = style == WrapStyle.ChopAlways
             && !keep
             && !_options.PlaceSimpleSwitchExpressionOnSingleLine;
+
+        // ⚠ The braces break when the placement key says so, whatever the arms' style; the arms then
+        // decide for themselves. `always` is unchanged and still gates the ARMS, so that
+        // `place_simple_switch_expression_on_single_line = true` — where the outer group may join —
+        // is not defeated by an inner group certain to break inside it.
+        var forced = !keep && !_options.PlaceSimpleSwitchExpressionOnSingleLine;
 
         Describe(
             node,
             group,
-            always ? GroupMode.Break : GroupMode.Preserve,
+            forced ? GroupMode.Break : GroupMode.Preserve,
             new GroupFacts(
                 SourceBroken: broken,
                 JoinsIfFits: _options.PlaceSimpleSwitchExpressionOnSingleLine && !keep,
-                BreaksIfTooLong: _options.WrapSwitchExpression != WrapStyle.WrapIfLong
+                BreaksIfTooLong: true
             )
+        );
+
+        DescribeInner(
+            node,
+            arms,
+            always ? GroupMode.Break : GroupMode.Preserve,
+            new GroupFacts(SourceBroken: armsBroken, BreaksIfTooLong: true)
         );
     }
 
@@ -2669,7 +2706,16 @@ public sealed class BreakPlan {
                 BreaksIfTooLong: placement == PlacementStyle.IfOwnerIsSingleLine
                 && !_options.KeepExistingExprMemberArrangement
             ),
-            spendsIndent: true
+            spendsIndent: true,
+
+            // ⚠ At `wrap_before_arrow_with_expressions = true` the break point IS the gap before the
+            // `=>`, and the `=>` is this node's own first token — so the point is written before the
+            // group opens, the writer finds the group unresolved, and renders it flat. The same
+            // correction a base list needs under `wrap_before_extends_colon` and a list under
+            // `wrap_before_*_lpar`; see GroupPlan.LeadingGapInside. Until it was made, `true` never
+            // moved the arrow at all and the key's own fixture came back with the declaration
+            // whole.
+            leadingGapInside: _options.WrapBeforeArrowWithExpressions
         );
     }
 

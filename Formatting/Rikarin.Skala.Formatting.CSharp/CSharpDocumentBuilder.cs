@@ -282,7 +282,8 @@ public sealed partial class CSharpDocumentBuilder {
             // puts its operands on the pattern's own column and not one indent past it.
             indented[i] = aligned
                 ? 0
-                : (plan.SpendsIndent && CanSpendAContinuationLevel(node) ? 1 : 0) + (plan.OwnLevel ? 1 : 0);
+                : (plan.SpendsIndent && CanSpendAContinuationLevel(node) ? 1 : 0)
+                + (plan.OwnLevel && !HeaderPaysForTheOwnLevel() ? 1 : 0);
 
             // ⚠ Whether the level is actually spent is decided here and not in the plan, and the
             // fitter needs the answer: the ordering rule asks what column a break inside this group
@@ -1436,10 +1437,52 @@ public sealed partial class CSharpDocumentBuilder {
     (int Inside, int Closer) ConditionLevels =>
         ConditionIndent == IndentKind.Align ? (1, 0) : DelimiterLevels(_options.IndentStatementPars);
 
+    /// <summary>
+    ///     The <c>_continuousDepth</c> each open statement header sits at, while its parentheses are
+    ///     an <see cref="IndentKind.Continuous" /> scope rather than an aligned column.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ It exists so that a construct with a level of its OWN — a chained call, a binary pattern
+    ///     chain — does not add one on top of the header's when the header is paying a level rather
+    ///     than naming a column. Measured at `align_multiline_statement_conditions = false`, one key
+    ///     flipped:
+    ///     <code>
+    /// foreach (var item in registry.Where(…)
+    ///     .Select(Project)) {                       ← one level from the statement, not two
+    /// } catch (Exception e) when (e is BindingResolutionException
+    ///     or DocumentParseException) {
+    ///     </code>
+    ///     and Skala wrote both continuations at column 16. At <c>true</c> the header names an
+    ///     absolute column and the chain's own level lands on top of it — the oracle puts
+    ///     <c>.Select</c> four past the <c>(</c>'s column — so this applies to the
+    ///     <see cref="IndentKind.Continuous" /> case alone.
+    ///     <para>
+    ///         ⚠ The depth and not a flag, because a construct further in is a different question. A
+    ///         chain inside an argument list inside the header has a delimited scope between it and the
+    ///         header, which raises <c>_continuousDepth</c>, and the chain's own level is spent again —
+    ///         which is what the `if (Call(` case in the same fixture pins. <see cref="CanSpendAContinuationLevel" />
+    ///         cannot answer this: it is false inside a header at BOTH values of the key, because
+    ///         <see cref="OpenIndent" /> counts an aligned scope as a continuation too.
+    ///     </para>
+    /// </remarks>
+    readonly List<int> _continuousHeaders = [];
+
+    /// <summary>Whether a group's <see cref="GroupPlan.OwnLevel" /> is the header's to pay.</summary>
+    bool HeaderPaysForTheOwnLevel() =>
+        _continuousHeaders.Count > 0 && _continuousHeaders[^1] == _continuousDepth;
+
     int OpenConditionScopes() {
         var (inside, _) = ConditionLevels;
         for (var i = 0; i < inside; i++) {
             OpenIndent(ConditionIndent, unconditional: true);
+        }
+
+        // ⚠ Pushed only when a scope was actually opened, and popped by
+        // CloseConditionScopesBeforeRparen on the same condition, which is the one close call that
+        // runs exactly once per header. CloseConditionScopesAfterRparen runs on every token of the
+        // walk with nothing pending and cannot own the pop.
+        if (inside > 0) {
+            _continuousHeaders.Add(ConditionIndent == IndentKind.Continuous ? _continuousDepth : -1);
         }
 
         return inside;
@@ -1450,6 +1493,10 @@ public sealed partial class CSharpDocumentBuilder {
     ///     those close after the token.
     /// </summary>
     int CloseConditionScopesBeforeRparen(int opened) {
+        if (opened > 0 && _continuousHeaders.Count > 0) {
+            _continuousHeaders.RemoveAt(_continuousHeaders.Count - 1);
+        }
+
         var (_, closer) = ConditionLevels;
         for (var i = opened; i > closer; i--) {
             CloseIndent(ConditionIndent, alignsCloser: closer == 0 && i == closer + 1);
