@@ -1430,8 +1430,20 @@ public sealed class BreakPlan {
         var broken = false;
         for (var i = 0; i < first; i++) {
             if (_options.WrapAfterDotInMethodCalls) {
-                Flat(dots[i]);
-                var next = dots[i].GetNextToken();
+                // ⚠ "After the dot" has to mean after *both* tokens of a `?.`. `ChainDot` registers
+                // the `?`, because that is where a break before the link belongs, and the token
+                // after the `?` is the `.` rather than the name — so pointing at it blindly gives
+                // `…(more)?\n.Where(…)` where the oracle writes `…(more)?.\n Where(…)`. Measured:
+                // it took `resharper_csharp_wrap_after_dot_in_method_calls`, Tier A and Conformant,
+                // to Divergent at its non-export value.
+                var dot = dots[i];
+                Flat(dot);
+                if (dot.IsKind(SyntaxKind.QuestionToken)) {
+                    dot = dot.GetNextToken();
+                    Flat(dot);
+                }
+
+                var next = dot.GetNextToken();
                 Point(next, group);
                 broken |= BreaksBefore(next);
             } else {
@@ -1496,13 +1508,26 @@ public sealed class BreakPlan {
                             receiver = property.Expression;
                         }
 
+                        // ⚠ A property run that begins at the `?` ends on the `?`, not on the `.`
+                        // beside it. `X(…)?.Value.Trim()` is one run — `?.Value` feeding `.Trim()` —
+                        // and the oracle writes
+                        //     .FirstOrDefault(…)
+                        //     ?.Value.Trim();
+                        // Without this the run stopped at the binding, `.Trim` became the point, and
+                        // the two lines came out the other way round. Measured on Skala's own
+                        // `VersionSources.Value`.
+                        if (!_options.WrapAfterPropertyInChainedMethodCalls
+                            && receiver is MemberBindingExpressionSyntax bound) {
+                            dot = ChainDot(bound);
+                        }
+
                         dots.Add(dot);
                         Collect(receiver);
                         return;
                     }
 
                     if (invocation.Expression is MemberBindingExpressionSyntax binding) {
-                        dots.Add(binding.OperatorToken);
+                        dots.Add(ChainDot(binding));
                         return;
                     }
 
@@ -1510,8 +1535,23 @@ public sealed class BreakPlan {
                     return;
 
                 case ConditionalAccessExpressionSyntax conditional:
-                    // `a?.B().C()` — the `?.` is the binding's dot, already added by the invocation
-                    // above; what remains is the receiver.
+                    // ⚠ `a?.B().C()` splits into two tokens and two subtrees: the `?` is this node's
+                    // own operator and every dot of the chain — the `.` of `.B` included, as the
+                    // `MemberBindingExpression`'s operator — hangs off `WhenNotNull`. Walking only
+                    // `Expression` therefore collects the *receiver*'s dots and none of the chain's,
+                    // which for the common shape (`a?.Where(…).Select(…)`, where the receiver is a
+                    // bare identifier) left `dots` empty, planned no group, and gave the chain no
+                    // break points at all — SK-DIV-0030, whose recorded symptom was the last call's
+                    // argument list taking the break instead and leaving a dangling `)`.
+                    //
+                    // ⚠ `WhenNotNull` first and `Expression` second, because the list is
+                    // outermost-first and `WhenNotNull` holds the dots to the *right* of the `?`.
+                    // Reaching this arm twice is not double-counting: the invocation arm's
+                    // `MemberBindingExpressionSyntax` branch returns without recursing, so a
+                    // conditional access is only ever entered from the chain root, from a `!` on its
+                    // way out, or from an enclosing conditional's `WhenNotNull` — `a?.B()?.C().D()`,
+                    // which nests and whose inner node is reached exactly once.
+                    Collect(conditional.WhenNotNull);
                     Collect(conditional.Expression);
                     return;
 
@@ -1538,6 +1578,33 @@ public sealed class BreakPlan {
                     return;
             }
         }
+    }
+
+    /// <summary>
+    ///     The token a break before a conditional link lands on: the <c>?</c>, not the <c>.</c>.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ <c>a?.B</c> is three tokens — <c>a</c>, <c>?</c>, <c>.</c> — and only the <c>.</c> belongs to
+    ///     the <see cref="MemberBindingExpressionSyntax" />; the <c>?</c> is the enclosing
+    ///     <see cref="ConditionalAccessExpressionSyntax" />'s own operator. Breaking on the <c>.</c>
+    ///     strands the <c>?</c> at the end of the line above:
+    ///     <code>
+    /// return model.GetDeclaredSymbol(current, cancellation)?
+    ///     .ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)
+    ///     </code>
+    ///     where the oracle writes <c>?.ToDisplayString(…)</c> on the wrapped line. Measured on that
+    ///     exact expression, which is Skala's own <c>ArrangementSafety.ContainerOf</c>.
+    ///     <para>
+    ///         ⚠ Invisible until SK-DIV-0030 was fixed, and then only for a chain whose <em>receiver</em>
+    ///         contributes a dot of its own. With a bare identifier receiver the binding's dot is the last
+    ///         entry in the list, which <c>wrap_before_first_method_call = false</c> holds back, so it is
+    ///         never a break point and the token choice cannot be observed. It is observable the moment
+    ///         the receiver is itself a chain — the shape three of Skala's own files carry.
+    ///     </para>
+    /// </remarks>
+    static SyntaxToken ChainDot(MemberBindingExpressionSyntax binding) {
+        var previous = binding.OperatorToken.GetPreviousToken();
+        return previous.IsKind(SyntaxKind.QuestionToken) ? previous : binding.OperatorToken;
     }
 
     /// <summary>

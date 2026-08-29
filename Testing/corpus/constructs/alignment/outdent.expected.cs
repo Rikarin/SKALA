@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:381a31a28c5ea94d profile=SkalaFormatOnly generated=2026-08-28
+// skala-oracle: resharper=2025.2.6 config=sha256:381a31a28c5ea94d profile=SkalaFormatOnly generated=2026-08-29
 public class Outdent {
     // The `outdent_*` family: a wrapped line that begins with an operator moves *left* by that
     // operator's own width plus the space after it, so the operand behind it keeps the column it
@@ -39,11 +39,27 @@ public class Outdent {
             .ToList();
     }
 
-    // ⚠ A chain whose links are not all one column wide — `a?.B().C()`, where the first dot is two
-    // columns and the rest are one — is the shape the chain-wide amount approximates, and it is
-    // deliberately NOT in this fixture: Skala does not chop such a chain at all, at either value of
-    // any key here, so the file would pin SK-DIV-0030 rather than these three options. The
-    // divergence entry carries the reproduction.
+    // ⚠ The mixed-width chain is still not here, and the header's question it was meant to settle —
+    // **is one chain-wide outdent amount enough?** — now has a measured answer anyway: **no**. The
+    // shape is a *nested* conditional access, `a?.B()?.C().D()`, and it was unreachable in both
+    // engines' agreement until SK-DIV-0030 and SK-DIV-0065 were fixed. Asked at both values, the
+    // oracle outdents **per line, by that line's own leading operator**, and Skala spends one amount
+    // for the whole chain:
+    //
+    //     outdent_dots = false      oracle, = true        Skala, = true
+    //     a?.B()                    a?.B()                a?.B()
+    //         ?.C()                   ?.C()   12 → 10        ?.C()   12 → 11  ← one column, not two
+    //         .D()                   .D()    12 → 11        .D()    12 → 11
+    //
+    // That is SK-DIV-0069, and it is why the shape stays out: `resharper_csharp_outdent_dots` is
+    // Tier A and Conformant, and a fixture carrying this would demote it on the strength of a
+    // divergence in the outdent arithmetic rather than in anything this file is about. The entry
+    // carries the reproduction. ⚠ Note that the *plain* `a?.B().C()` the SK-DIV-0030 entry named
+    // would not have shown it either: under `wrap_before_first_method_call = false` the leading `?.`
+    // is the first invoked dot, so it never starts a wrapped line, every wrapped line of that chain
+    // begins with a one-column `.`, and it moves 12 → 11 — the same answer to the column as
+    // `ChainedCalls` above. The nested `?` is the only two-column operator that reaches the start of
+    // a line at this export's values.
 
     // ⚠ Not an outdent shape at either value, and here so that the fixture says so. The operator is
     // at the end of its line under `wrap_before_binary_opsign = false`, and a trailing operator is

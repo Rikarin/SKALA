@@ -1776,11 +1776,244 @@ It is a break-point defect and not an option's: no key in the `align_multiline_*
 family changes it at either value, and the outdent family's three implemented keys are conformant on
 every chain that *is* chopped.
 
+**The recorded model was confirmed, and the recorded *reason* was half wrong.** Dumping the tree
+settles it: `a?.B().C()` splits into a `?` — the `ConditionalAccessExpressionSyntax`'s own operator —
+and a `.` that belongs to the `MemberBindingExpression` under `WhenNotNull`, where *every* dot of the
+chain lives. So walking only `Expression` collected the receiver's dots and none of the chain's, and
+for the common shape (a bare identifier receiver) `dots` came back empty exactly as recorded. But the
+comment's justification — "already added by the invocation above" — describes a path that does not
+exist: the invocation arm's `MemberBindingExpressionSyntax` branch adds the dot and **returns without
+recursing**, so `Collect` never reaches a conditional access from an enclosing invocation at all. It
+is reached only from the chain root, from a `!` on the way out, or from an enclosing conditional's
+`WhenNotNull`. The fix is `Collect(conditional.WhenNotNull)` before `Collect(conditional.Expression)`
+— `WhenNotNull` first, because the list is outermost-first and it holds the dots right of the `?`.
+
+⚠ **Fidelity did not move by a single line** — `constructs`, `real` and `pathological` are
+byte-identical before and after — and that is a fact about the corpus, not about the fix.
+`corpus/real/` has 102 files containing `?.method(` and **zero** in which a `?.` call is followed by
+another `.` call, so `dots.Count < 2` returned early on every one of them and the defect could not
+fire. The measured pin is `constructs/wrapping/chained-calls.cs`, which is where the five shapes and
+their non-conditional control now live; with the fix reverted it takes `constructs` line fidelity
+from 98.34 % to 98.29 % and turns `Fidelity_DoesNotDecrease(set: "constructs")` red.
+
+⚠ **`outdent.cs` still does not get the shape, and the entry's description of it was wrong in a way
+that mattered.** The chain it named — `a?.B().C()` — outdents 12 → 11 on every wrapped line, measured
+at both values of `resharper_outdent_dots`, which is the same answer to the column as the plain chain
+that fixture already carried: under `wrap_before_first_method_call = false` the leading `?.` is the
+first invoked dot, so it is never a break point and never starts a wrapped line. There is no mixed
+width in it. The shape that carries one is a *nested* conditional access, `a?.B()?.C().D()`, whose
+second `?` is the only two-column operator that reaches the start of a line at this export's values,
+and fixing SK-DIV-0030 and SK-DIV-0065 is what made it reachable. It settles what `outdent.cs` was
+asking — the outdent is **per line, by that line's own leading operator** and not one chain-wide
+amount — and it settles it *against Skala*, which spends one amount for the whole chain. That is
+SK-DIV-0069, and it is the new reason the shape stays out: a fixture carrying it would demote a
+Tier A key on the strength of an unrelated defect. The fixture now records the measurement instead.
+
+⚠ `align-declaration.cs` does **not** want the shape, and never depended on this defect for that:
+`align_multiline_calls_chain` anchors on a column that moves with the margin. Only the
+cross-reference in its comment was stale.
+
 - options: none — `resharper_wrap_chained_method_calls` and `resharper_wrap_before_first_method_call`
   are read correctly and have no chain to apply to
-- ⚠ status: **open**, measured, unfixed. The fix is one arm of `PlanChainedCalls.Collect`; it was
-  left out of T5b because a chain-planner change is a wrapping change and this branch's subject is
-  the alignment options.
+- ⚠ status: **resolved**, in two parts. `Collect` walks `WhenNotNull`, and `ChainDot` puts the break
+  point on the `?` rather than on the binding's `.` (SK-DIV-0065 below, which the first part
+  uncovered and which had to be fixed with it). Pinned by `constructs/wrapping/chained-calls.cs`
+  (`RootedAtAConditionalAccess` and four sibling contexts, with the oracle's own answer regenerated
+  under `SkalaFormatOnly`), and sabotage-tested against the pre-change formatter.
+  ⚠ Fixing the root arm exposed three *further* chain-planner divergences that it had been masking,
+  none of which is this one: SK-DIV-0066 through SK-DIV-0068 below.
+
+## SK-DIV-0065 — the break before a conditional link lands on the `.`, not the `?`
+
+Uncovered by SK-DIV-0030's fix, which is what made the shape reachable at all, and fixed with it
+because leaving it would have made Skala's output on real code *worse* than the unchopped chain it
+replaced. `Collect` registered a `MemberBindingExpression`'s `.` as the chain's dot; the `?` is the
+enclosing `ConditionalAccessExpressionSyntax`'s own operator and a separate token, so a break on the
+`.` stranded the `?` at the end of the line above.
+
+```csharp
+// the oracle
+return model.GetDeclaredSymbol(current, cancellation)
+        ?.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)
+    ?? current.Kind().ToString();
+
+// Skala, with SK-DIV-0030 fixed and this one not
+return model.GetDeclaredSymbol(current, cancellation)?
+    .ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)
+    ?? current.Kind().ToString();
+```
+
+⚠ **That is Skala's own `ArrangementSafety.ContainerOf`**, and it is how the defect was found: the
+`?.` fix made `skala format --check .` want to move three of the repository's own files, and the
+change it wanted was wrong. The measured corpus could not have caught it — `corpus/real/` has no
+multi-link `?.` chain at all — and neither could the first round of probes, because the token choice
+is unobservable until the chain's *receiver* contributes a dot of its own. With a bare identifier
+receiver the binding's dot is the last entry in `dots`, `wrap_before_first_method_call = false` holds
+the last entry back, and the `?` therefore never begins a wrapped line.
+
+⚠ It is also what made the mixed-width chain *measurable* — the nested `?.` is the only shape at this
+export's values where a two-column operator starts a wrapped line — and measuring it is what turned
+up SK-DIV-0069. `constructs/alignment/outdent.cs` still does not carry the shape, because that
+divergence would demote a Tier A key from a file that is not about it; it records the measurement.
+
+- options: none — `resharper_outdent_dots` is read correctly and was conformant on the `.` lines of
+  the same chain throughout
+- ⚠ status: **resolved**. `BreakPlan.ChainDot`. ⚠ Measured at
+  `wrap_before_first_method_call = false`, the export's value. What the *other* value does with the
+  chain's leading `?.` is still unmeasured — at `true` the first dot becomes a point and this change
+  decides whether the break lands before `a?` or before `?.`.
+
+## SK-DIV-0066 — a chain whose last link is a property is not a chain root, so it is not chopped
+
+⚠ **This one has no `?.` in it**, and that is how it was found: it is what remained when the same
+eight shapes were re-measured with every `?.` replaced by `.`, as the control for SK-DIV-0030.
+
+`IsChainRoot` requires the outermost node to be an `InvocationExpressionSyntax` or a
+`ConditionalAccessExpressionSyntax`. A chain that ends in a property — `source.Where(…).ToList().Count`
+— is outermost a `MemberAccessExpressionSyntax`, matches neither, and gets no group at all, which
+reproduces SK-DIV-0030's exact symptom on a chain with no conditional access anywhere in it:
+
+```csharp
+// the oracle
+var result = someCollectionOfThingsHere.Where(c => c.IsEnabled)
+    .Select(c => c.Name)
+    .OrderBy(n => n)
+    .ToList()
+    .Count;
+
+// Skala: the argument list of the last call takes the break
+var result = someCollectionOfThingsHere.Where(c => c.IsEnabled).Select(c => c.Name).OrderBy(n => n
+).ToList().Count;
+```
+
+⚠ The oracle breaks *before* the trailing `.Count`, which is not what
+`wrap_after_property_in_chained_method_calls = false` predicts on the reading in `PlanChainedCalls`'s
+remarks ("the property travels with the call it feeds") — there is no call after it to travel with.
+Whatever rule the oracle is applying to a chain-final property has not been identified.
+
+- options: none identified — `resharper_wrap_after_property_in_chained_method_calls` is implicated
+  but the shape is broken at both of its values
+- ⚠ status: **open**, measured, unfixed. Deliberately not fixed alongside SK-DIV-0030: widening
+  `IsChainRoot` puts a group on every `a.B().C().Prop` in the tree, which is a far larger wrapping
+  change than the `?.` arm and wants its own measurement.
+
+## SK-DIV-0067 — a property run that *straddles* the `?` is still cut in half
+
+`wrap_after_property_in_chained_method_calls = false` is a loop in `Collect` that walks back over a
+run of `MemberAccessExpressionSyntax` receivers so the break lands before the run rather than after
+it. It used to stop at the `MemberBindingExpressionSyntax`, which was wrong for every run touching a
+`?`; it now ends on the `?` itself, which is right for a run that *begins* there and still one link
+short for a run that begins to its left. Measured, at the export's values:
+
+```csharp
+// A — the run begins at the `?`. Conformant.
+var a = someCollectionOfThingsHere.Where(c => c.IsEnabled).Select(c => c.Name).FirstOrDefault()
+    ?.Trim().ToUpperInvariant();
+
+// B — the run begins at the `?` and carries two properties. Conformant.
+var b = someParticularThingWithALongName.Self().Self().Self()
+    ?.Inner.Children.Where(c => c.IsEnabled).ToList();
+
+// C — the run straddles the `?`: `.Inner` is left of it, `.Children` right of it. Open.
+//   the oracle
+var c = someParticularThingWithALongName.Self()
+    .Inner?.Children.Where(item => item.IsEnabled)
+    .Select(item => item.Name)
+    .ToList();
+//   Skala: the run ends at the `?` and `.Inner` is left behind
+var c = someParticularThingWithALongName.Self().Inner
+    ?.Children.Where(item => item.IsEnabled)
+    .Select(item => item.Name)
+    .ToList();
+```
+
+⚠ The same chain with `.` for `?.` is conformant, measured, which is what makes the remainder a fact
+about the conditional access and not about the property rule.
+
+⚠ Half of this was fixed with SK-DIV-0030 rather than deferred, because `format --check` on Skala's
+own repository would not pass otherwise: `VersionSources.Value` and `VersionSourcesTests` both carry
+shape A, and until the run ended on the `?` the formatter wanted to write them the wrong way round.
+Both files moved *toward* the oracle in the same commit — the committed indent was four columns
+deeper than `jb cleanupcode` produces.
+
+- options: `resharper_wrap_after_property_in_chained_method_calls` — read correctly, and conformant on
+  every property run that does not straddle a `?`
+- ⚠ status: **open** for shape C only, measured. The remaining fix has to let the run continue past
+  the `?` into the receiver's own property chain, and the walk that would do it is the one the
+  conditional-access arm already performs on `Expression` — so it needs the two not to collect the
+  same dots twice, which is a restructure rather than another arm.
+
+## SK-DIV-0068 — three smaller chain-planner divergences, measured together
+
+All three surfaced from the same eight-shape probe and none is large enough to carry its own entry.
+⚠ The third was re-confirmed on Skala's own `VersionSources.Value`, so none of them is exotic.
+
+1. **A `!` between two links resets the oracle's "first method call" and does not reset Skala's.**
+   On `a?.Self()!.Self().Self()…` the oracle keeps `a?.Self()!.Self()` on the opening line and Skala
+   keeps only `a?.Self()!`, one link fewer. The reading that fits is that the oracle treats
+   `a?.Self()!` as the receiver and the call after the `!` as the chain's first, which
+   `wrap_before_first_method_call = false` then holds back — but that reading has not been tested at
+   the key's other value.
+2. **An element access in the chain is a break point for the oracle and not for Skala.** On
+   `source?[0].Children.Where(…)…` the oracle breaks after `[0]`; Skala keeps `.Children` attached.
+   ⚠ Also reproduces without the `?.`, so it belongs with SK-DIV-0066 rather than with SK-DIV-0030.
+3. **A chopped chain that is the left operand of `??` takes one continuation level from Skala and two
+   from the oracle.** ⚠ Only observable when the chain chops *and* the `??` breaks; the obvious
+   control — the same chain right of the `??`, and the same chain left of a `+` — is conformant, so
+   this is not simply "a chain inside a binary operand".
+
+- options: none
+- ⚠ status: **open**, measured, unfixed. Recorded so that the next chain-planner pass has the shapes
+  rather than having to rediscover them.
+
+## SK-DIV-0069 — `outdent_dots` spends one amount for the whole chain; the oracle spends one per line
+
+`constructs/alignment/outdent.cs`'s header asks whether one chain-wide outdent amount is enough, and
+until now nothing could answer it: every wrapped line of every chain in the corpus begins with a
+one-column `.`, so "the chain's amount" and "this line's amount" are the same number. The one shape
+where they differ is a *nested* conditional access, whose second `?` is the only two-column operator
+that reaches the start of a wrapped line at this export's values — and it was unreachable in both
+engines' agreement until SK-DIV-0030 and SK-DIV-0065 were fixed. Asked at both values:
+
+```csharp
+// outdent_dots = false, both engines
+var result = someCollectionOfThingsHere?.WhereEnabled()
+    ?.SelectName(item => item.Name)
+    .OrderByName(name => name);
+
+// outdent_dots = true, the oracle: per line, by that line's own leading operator
+var result = someCollectionOfThingsHere?.WhereEnabled()
+  ?.SelectName(item => item.Name)     // 12 → 10, two columns
+   .OrderByName(name => name);        // 12 → 11, one column
+
+// outdent_dots = true, Skala: one amount for the chain, and it is the `.`'s
+var result = someCollectionOfThingsHere?.WhereEnabled()
+   ?.SelectName(item => item.Name)    // 12 → 11
+   .OrderByName(name => name);        // 12 → 11
+```
+
+⚠ **Inert at the export**, which sets `resharper_outdent_dots = false`, and that is why this is a
+divergence rather than a fidelity defect: at `false` nothing outdents and the two engines agree to
+the column.
+
+⚠ **The shape is deliberately out of `outdent.cs`.** `resharper_csharp_outdent_dots` is Tier A and
+the committed sweep records it Conformant on that fixture; adding the shape takes it to Divergent 1
+of 2 — a demotion earned by the outdent arithmetic, not by anything the alignment fixture exists to
+pin. The same trap caught `resharper_csharp_wrap_before_first_method_call`, also Tier A, when the
+first draft of `constructs/wrapping/chained-calls.cs` used a property receiver and so carried
+SK-DIV-0067 shape C — and a third, `resharper_csharp_wrap_after_dot_in_method_calls`, was not a
+fixture problem at all but a real bug in SK-DIV-0065's fix: `ChainDot` registers the `?`, and the
+token after a `?` is the `.` rather than the name, so "break after the dot" broke after the `?` and
+wrote `…(more)?\n.Where(…)` where the oracle writes `…(more)?.\n Where(…)`. ⚠ **All three were found
+by running `verify` on every key pinned to a fixture this branch changed**, which neither the
+differential nor the ratchets can do: a fixture only ever measures the export's value, and all three
+faults are at the *other* one. Ten keys are pinned to the five fixtures touched here; nine had to come
+back unchanged and one had to improve.
+
+- options: `resharper_outdent_dots` — read correctly, and conformant on every chain whose wrapped
+  lines all begin with the same operator, which is every chain the corpus contains
+- ⚠ status: **open**, measured, unfixed. It is an arithmetic in the outdent scope rather than in the
+  chain planner: the amount is computed once for the group and has to be computed per break point.
 
 ## SK-DIV-0031 — a field with several declarators wraps after the type; Skala wraps at the commas
 
