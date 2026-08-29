@@ -1457,7 +1457,15 @@ public static class Ids {
     // `corpus/real/`'s fixtures are still generated under a profile that rebuilds nothing.
     public static readonly OptionId SpaceAfterTripleSlash = Of("resharper_space_after_triple_slash");
     public static readonly OptionId StickComment = Of("resharper_csharp_stick_comment");
-    public static readonly OptionId PlaceCommentsAtFirstColumn = Of("resharper_csharp_place_comments_at_first_column");
+
+    /// <summary>
+    ///     ⚠ Read and not honoured, and it is the one key in this file whose implementation was pure
+    ///     invention: at <c>true</c> Skala pinned every line-starting comment to column 0 and the oracle
+    ///     does no such thing at either value. See <c>CSharpDocumentBuilder.CommentFlags</c> for the
+    ///     three probes and for the key that does govern a comment's column.
+    /// </summary>
+    public static readonly OptionId PlaceCommentsAtFirstColumn =
+        OfInert("resharper_csharp_place_comments_at_first_column");
 
     public static readonly OptionId NewLineBeforeOpenBrace = Of("csharp_new_line_before_open_brace");
     public static readonly OptionId NewLineBeforeElse = Of("resharper_new_line_before_else");
@@ -1978,10 +1986,13 @@ public static class Ids {
     public static readonly OptionId IndentInvocationPars = Of("resharper_csharp_indent_invocation_pars");
     public static readonly OptionId IndentMethodDeclPars = Of("resharper_csharp_indent_method_decl_pars");
 
-    // ⚠ SK-DIV-0043 at one value: at `outside_and_inside` the oracle gives a primary constructor's
-    // parameters one level where the family's table says two. Its closing `)` never reaches a line
-    // of its own under this export, and a construct whose closer stays on the last parameter's line
-    // does not realise the outer level for its contents either. The other three values agree.
+    // ⚠ SK-DIV-0043 is RESOLVED, and the second half of its own note was the answer. At
+    // `outside_and_inside` the oracle gives a primary constructor's parameters one level where the
+    // family's table says two, because the outer of the two levels belongs to the *closing
+    // delimiter* and `wrap_before_primary_constructor_declaration_rpar = false` means that `)` is
+    // never a break point. `CSharpDocumentBuilder.ClosesAtABreakPoint` is the fact, and it is a
+    // configuration fact rather than "one the fitter knows and the builder does not". All four
+    // values agree.
     public static readonly OptionId IndentPrimaryConstructorDeclPars =
         Of("resharper_csharp_indent_primary_constructor_decl_pars");
 
@@ -1990,20 +2001,26 @@ public static class Ids {
     // absolute column, and a level count has nothing to say about a column. All four values return
     // the same file while that key is on; turn it off and the family's table applies here too.
     public static readonly OptionId IndentStatementPars = OfInert("resharper_csharp_indent_statement_pars");
-    // ⚠ SK-DIV-0041's shape at one value: at `none` the oracle gives a `>` the author left on its
-    // own line the level of its opener's line and Skala leaves it on the ambient continuation, which
-    // needs a zero-level scope kind the IR does not have. The other three values agree.
+    // ⚠ SK-DIV-0041's shape is RESOLVED, and the sentence that carried it was wrong on its own
+    // terms. It read: at `none` the oracle gives a `>` the author left on its own line the level of
+    // its opener's line, Skala leaves it on the ambient continuation, and that "needs a zero-level
+    // scope kind the IR does not have". `IndentKind.None` — "No change; a scope marker only" — has
+    // been in `Doc.cs` since the IR was written and had no call site anywhere in the formatter.
+    // `none` is the one value of the family that asks for zero levels inside, zero levels meant no
+    // scope at all, and with no scope there was nothing for the closing delimiter's `alignsCloser`
+    // to be measured against. All four values agree.
     public static readonly OptionId IndentTypeargAngles = Of("resharper_csharp_indent_typearg_angles");
 
     // ⚠ Its *closer* half is out of reach under this export: the shape is a `>` on a line of its
     // own, and SK-DIV-0042 is that Skala rejoins the author's break before one where the oracle
     // keeps it. Its *contents* half is not — a type parameter list wide enough to wrap puts its
-    // continuation at a level the four values move.
+    // continuation at a level the four values move, and all four now agree; the `outside_and_inside`
+    // one is SK-DIV-0043's, resolved with IndentPrimaryConstructorDeclPars above.
     public static readonly OptionId IndentTypeparamAngles = Of("resharper_csharp_indent_typeparam_angles");
 
-    // ⚠ SK-DIV-0041's shape at one value too, for the same reason as IndentTypeargAngles: `none`
-    // puts a stray `]` on the ambient continuation where the oracle puts it at its opener's line
-    // level. The other three values agree.
+    // ⚠ SK-DIV-0041's shape at one value too, and resolved with IndentTypeargAngles above: `none`
+    // put a stray `]` on the ambient continuation where the oracle puts it at its opener's line
+    // level. All four values agree.
     public static readonly OptionId IndentPars = Of("resharper_csharp_indent_pars");
 
     // ⚠ The outdent family, and the sentence that kept it at Tier D for six milestones is retired.
@@ -2434,13 +2451,27 @@ public static class Ids {
     public static readonly OptionId PlaceAttributeOnSameLine =
         OfGeneralized("resharper_place_attribute_on_same_line");
 
-    // ⚠ Three keys read but never observable, and Tier D with the reason rather than Tier A:
-    //   max_attribute_length_for_same_line — a length threshold for a placement that never happens.
+    // ⚠ Two keys read but never observable, and Tier D with the reason rather than Tier A:
     //   place_attribute_on_same_line — the six per-owner keys cover every C# attribute target, so
     //     the generalized key never gets to decide.
     //   wrap_before_eq — it moves the break point from one side of the `=` to the other, and
     //     milestone 2 never adds a break at either side (that ordering is prefer_wrap_around_eq's,
     //     which is M3), so no input distinguishes the values.
+
+    /// <summary>
+    ///     ⚠ STILL <see cref="OfInert" />, and the reason it carried is no longer the reason. It read
+    ///     "a length threshold for a placement that never happens"; the placement now happens —
+    ///     <see cref="BreakPlan" />'s <c>PlanAttributes</c> grew its <c>always</c> and
+    ///     <c>if_owner_is_single_line</c> halves — and the cap is honoured and observable. Measured at
+    ///     the cap and either side of it; the readings are recorded on <c>AttributeRunFitsTheCap</c>.
+    ///     <para>
+    ///         It stays inert only because the mark is the sweep's, not the formatter's: promoting a key
+    ///         means giving it an <c>oracle</c> glob and a tier, and this repository promotes on master
+    ///         after a sweep rather than from the branch that made the key reachable. ⚠ Under this
+    ///         export the cap is unreachable anyway — every <c>place_*_attribute_on_same_line</c> is
+    ///         <c>never</c>, so nothing is offered to the threshold to refuse.
+    ///     </para>
+    /// </summary>
     public static readonly OptionId MaxAttributeLengthForSameLine =
         OfInert("resharper_csharp_max_attribute_length_for_same_line");
 
@@ -2456,11 +2487,26 @@ public static class Ids {
     public static readonly OptionId PlaceExprAccessorOnSingleLine =
         Of("resharper_csharp_place_expr_accessor_on_single_line");
 
+    /// <summary>
+    ///     ⚠ Implemented in full and unreachable from this export, which is
+    ///     <c>align_multiline_argument</c>'s shape rather than a gap:
+    ///     <c>keep_existing_embedded_arrangement = true</c> outranks it in BOTH directions, so no
+    ///     one-key flip can move the oracle. <c>BreakPlan.PlanEmbeddedStatement</c> carries the
+    ///     measurement with the mask lifted; SK-DIV-0083 carries the pair. ⚠ Marked inert and its
+    ///     `oracle` glob KEPT: inert here means "no input distinguishes its values under this
+    ///     configuration", and the committed sweep still needs the fixture to re-measure it.
+    /// </summary>
     public static readonly OptionId PlaceSimpleEmbeddedStatementOnSameLine =
-        Of("resharper_csharp_place_simple_embedded_statement_on_same_line");
+        OfInert("resharper_csharp_place_simple_embedded_statement_on_same_line");
 
+    /// <summary>
+    ///     ⚠ Read and not applied. The oracle never rearranges a switch section's statements — asked in
+    ///     both directions, with <c>keep_user_linebreaks</c> off, and with
+    ///     <c>simple_case_statement_style</c> pushed the same way. See
+    ///     <c>BreakPlan.PlanCaseStatements</c> for the probes.
+    /// </summary>
     public static readonly OptionId PlaceSimpleCaseStatementOnSameLine =
-        Of("resharper_csharp_place_simple_case_statement_on_same_line");
+        OfInert("resharper_csharp_place_simple_case_statement_on_same_line");
 
     public static readonly OptionId PlaceTypeConstraintsOnSameLine =
         Of("resharper_csharp_place_type_constraints_on_same_line");
@@ -2580,8 +2626,15 @@ public static class Ids {
     public static readonly OptionId PlaceSimplePropertyPatternOnSingleLine =
         Of("resharper_place_simple_property_pattern_on_single_line");
 
+    /// <summary>
+    ///     ⚠ Implemented and unreachable from this export, the same way
+    ///     <see cref="PlaceSimpleEmbeddedStatementOnSameLine" /> is:
+    ///     <c>wrap_switch_expression = chop_always</c> outranks it, which is the reverse of what
+    ///     <c>BreakPlan.PlanSwitchExpression</c> used to record. At `wrap_if_long` the key decides and
+    ///     both values move; at `chop_always` neither does. SK-DIV-0083.
+    /// </summary>
     public static readonly OptionId PlaceSimpleSwitchExpressionOnSingleLine =
-        Of("resharper_place_simple_switch_expression_on_single_line");
+        OfInert("resharper_place_simple_switch_expression_on_single_line");
 
     public static readonly OptionId MaxInvocationArgumentsOnLine = Of("resharper_max_invocation_arguments_on_line");
     public static readonly OptionId MaxFormalParametersOnLine = Of("resharper_max_formal_parameters_on_line");

@@ -2582,3 +2582,77 @@ wrap".
 - options: `resharper_csharp_max_line_length`
 - ⚠ status: **accepted**. Conformant at `120` and at `0`; the residue is the probe's floor, and closing
   it would cost break points that no usable configuration reaches.
+
+## SK-DIV-0083 — two placement keys the export masks outright, and the semantics measured behind the mask
+
+Both were `SPURIOUS` in the key-flip sweep and both now read `UNEXERCISED`, which is the honest
+verdict and not a pass. Skala was moving where the oracle could not; Skala has stopped, and the reason
+the oracle cannot move is a *second* key in the export rather than a weak fixture. Neither is
+reachable by a one-key flip, so neither can be resolved to `Conformant` from this base — that is the
+pairwise phase's, and this entry exists so the model it should check against is written down rather
+than living only in a code comment.
+
+### `place_simple_embedded_statement_on_same_line`, masked by `keep_existing_embedded_arrangement = true`
+
+Asked in both directions, one key flipped from the export at a time, the oracle returns every probe
+byte-identical at all three values. What survives under the mask is the width rule alone:
+
+```
+// never, keep = true
+if (c) M(c, d);                    ← left joined; `never` does not get to break it
+if (depth < 0)                     ← broken, and only because the `if` overflows the margin
+    throw new ArgumentOutOfRangeException(…);
+```
+
+⚠ The previous note in `PlanEmbeddedStatement` read that second line as "`never` is not gated on the
+keep key" and it is not: the break is the margin's. Under keep, the placement key is inert in **both**
+directions.
+
+With the mask lifted (`keep_existing_embedded_arrangement = false`) the key is real, and "simple" has
+two halves, both measured:
+
+```
+// always, keep = false
+if (c) M(c, d);                    joined       — a plain statement
+while (c) M(c, d);                 joined
+if (c) / if (d) / M(c, d);         unmoved      — the embedded statement carries one of its own
+if (c) / using (…) / M(c, d);      unmoved
+if (c) { if (d) M(c, d); }         JOINED       — the same nesting, inside a block
+if (c) M(c, d); else M(d, c);      joined       — an `else` clause joins
+```
+
+So a statement carrying an embedded statement is not simple, **and** an owner that is itself somebody
+else's embedded statement does not get to join. Skala reproduces both probes byte for byte; the sweep
+simply cannot ask.
+
+### `place_simple_switch_expression_on_single_line`, masked by `wrap_switch_expression = chop_always`
+
+The precedence was recorded backwards — `PlanSwitchExpression` said this key outranks `chop_always`.
+Measured, one key flipped at a time:
+
+```
+chop_always  + place = true     every arm on its own line — the placement key does nothing
+wrap_if_long + place = true     `value switch { 1 => 1, _ => 0 }` on one line
+wrap_if_long + place = false    the braces open; the arms fill `1 => 1, _ => 0`
+```
+
+Under the export's own `chop_always` Skala flattened a chopped switch expression onto one line at
+`true` and the oracle left it chopped; that was the whole of the row. The wrap style outranks the
+placement key, and only with the mask lifted does the key decide anything.
+
+- options: `resharper_csharp_place_simple_embedded_statement_on_same_line`,
+  `resharper_csharp_place_simple_switch_expression_on_single_line`
+- ⚠ status: **accepted as unreachable from the one-at-a-time sweep**, not as a defect. Both keys agree
+  with the oracle at every value both under the mask and with it lifted. They are two of the pairs
+  `pairwise` exists for: `(place_simple_embedded_statement_on_same_line,
+  keep_existing_embedded_arrangement)` and `(place_simple_switch_expression_on_single_line,
+  wrap_switch_expression)`.
+- Both are registered the way `align_multiline_argument` already is for exactly this situation —
+  `OfInert` plus an `inert` note naming the masking key and the measurement behind it. Here "inert"
+  means "no input distinguishes its values *under this configuration*", which is the sense that entry
+  established; it does not mean the formatter ignores them.
+- ⚠ Their `oracle` globs are deliberately KEPT rather than nulled, which is where they differ from
+  `align_multiline_argument`. The committed sweep carries a demoted row for each, and
+  `OptionCoverageTests.TierD_CarriesAFixtureOnlyWhereTheSweepDemotedIt` is right to refuse a glob
+  stripped out from under it: the next sweep has to be able to re-measure the claim made here. The
+  rows will read `UNEXERCISED`, and this entry is what that verdict points at.

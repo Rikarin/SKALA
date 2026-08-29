@@ -1085,7 +1085,7 @@ public sealed partial class CSharpDocumentBuilder {
     ///     token loop below is where the state lives, and keeping the decisions out of it is what lets
     ///     each one be read against the measurement that produced it.
     /// </remarks>
-    (IndentKind Inner, bool Unconditional, bool Element, int Inside, int Closer) PlanDelimited(
+    (IndentKind Inner, bool Unconditional, bool Element, int Inside, int Closer, bool Marker) PlanDelimited(
         SyntaxNode node,
         NodeLayout layout
     ) {
@@ -1158,7 +1158,35 @@ public sealed partial class CSharpDocumentBuilder {
             ? (innerIndent == IndentKind.Align || anchorsOnTheDelimiter ? 1 : 0, 0)
             : DelimiterLevels(ParenthesesStyleFor(node));
 
-        return (innerIndent, unconditional, element, inside, closer);
+        // ⚠ `outside_and_inside`'s outer level belongs to the closing delimiter, and a construct
+        // whose closing delimiter is not a break point of its own never realises it. Measured, one
+        // key at a time, at that value:
+        //
+        //   Consume(                        ← wrap_before_invocation_rpar: the `)` is a point
+        //           argument                  contents 2 levels, `)` 1
+        //   );
+        //   class Primary(                  ← wrap_before_primary_constructor_declaration_rpar is
+        //       parameter) { }                false; the `)` is not a point — contents 1 level
+        //   class Wide<TFirst, TSecond,     ← a `>` is never a point — contents 1 level
+        //       TThird> { }
+        //
+        // ⚠ NOT "the closer takes a line": `arr[a + b\n]` has its `]` on a line of its own, because
+        // `keep_user_linebreaks = true` keeps the author's break there, and the oracle still gives
+        // that bracket's contents one level at `outside_and_inside`. Being *kept* on a line is not
+        // the same as being a break point of the construct, and only the second answers here.
+        if (inside > 1 && !ClosesAtABreakPoint(node, layout)) {
+            inside = 1;
+        }
+
+        // ⚠ `none` is the one value of the family that asks for *zero* levels inside, and zero levels
+        // used to mean no scope at all — which left the construct's closing delimiter wherever the
+        // ambient continuation had got to, instead of on its opener's line. A `None` scope is the
+        // marker that fixes it: no level, and something for `alignsCloser` to be measured against.
+        // The suppressed arms above also produce zero, and they must not get one — theirs is
+        // "this construct has no delimiter scope", not "its scope is worth nothing".
+        var marker = inside == 0 && closer == 0 && !suppress && innerIndent != IndentKind.Align;
+
+        return (innerIndent, unconditional, element, inside, closer, marker);
     }
 
     /// <summary>A <c>( )</c>, <c>[ ]</c> or <c>&lt; &gt;</c> group: one continuous indent inside.</summary>
@@ -1170,7 +1198,14 @@ public sealed partial class CSharpDocumentBuilder {
         }
 
         var opened = 0;
-        var (innerIndent, unconditional, element, inside, closer) = PlanDelimited(node, layout);
+        var (innerIndent, unconditional, element, inside, closer, marker) = PlanDelimited(node, layout);
+
+        // ⚠ At `none` the scope is a marker of no level, and the whole loop below is written in
+        // terms of one scope kind and a count. So the kind becomes a variable and the count becomes
+        // one: the marker opens and closes exactly where a real scope would, and the closing
+        // delimiter reaches `alignsCloser` instead of falling through to the ambient continuation.
+        var scopeKind = marker ? IndentKind.None : innerIndent;
+        var levels = marker ? 1 : inside;
 
         var savedDepth = _continuousDepth;
         var pending = 0;
@@ -1193,7 +1228,7 @@ public sealed partial class CSharpDocumentBuilder {
                     // `none` shape — the closer takes the level of the line its opener was on — and
                     // it is exactly wrong for the other two, where the closer takes one more.
                     for (var i = opened; i > closer; i--) {
-                        CloseIndent(innerIndent, alignsCloser: closer == 0 && i == closer + 1);
+                        CloseIndent(scopeKind, alignsCloser: closer == 0 && i == closer + 1);
                     }
 
                     pending = closer;
@@ -1203,13 +1238,13 @@ public sealed partial class CSharpDocumentBuilder {
                 EmitToken(token);
 
                 for (var i = 0; i < pending; i++) {
-                    CloseIndent(innerIndent);
+                    CloseIndent(scopeKind);
                 }
 
                 pending = 0;
 
-                if (opened == 0 && inside > 0 && token.SpanStart == open.SpanStart) {
-                    for (var i = 0; i < inside; i++) {
+                if (opened == 0 && levels > 0 && token.SpanStart == open.SpanStart) {
+                    for (var i = 0; i < levels; i++) {
                         // ⚠ Both scopes are unconditional when there are two, and it has to be both.
                         // `outside_and_inside` means "the contents take two levels" and both open on
                         // the opener's own line, where the writer's one-level-per-opening-line rule
@@ -1218,10 +1253,10 @@ public sealed partial class CSharpDocumentBuilder {
                         // Measured: the oracle's `outside_and_inside` puts a chopped call's
                         // arguments eight columns in and its `)` four, and Skala wrote four and four
                         // under both of the other spellings.
-                        OpenIndent(innerIndent, unconditional || inside > 1);
+                        OpenIndent(scopeKind, unconditional || inside > 1);
                     }
 
-                    opened = inside;
+                    opened = levels;
                     if (element) {
                         savedDepth = _continuousDepth;
                         _continuousDepth = 0;
@@ -1245,7 +1280,7 @@ public sealed partial class CSharpDocumentBuilder {
             }
 
             for (var i = 0; i < opened; i++) {
-                CloseIndent(innerIndent);
+                CloseIndent(scopeKind);
             }
         }
     }
@@ -1267,6 +1302,18 @@ public sealed partial class CSharpDocumentBuilder {
             ParenthesesIndentStyle.OutsideAndInside => (2, 1),
             _ => (1, 0)
         };
+
+    /// <summary>
+    ///     Whether this construct's closing delimiter is a break point of its own — a
+    ///     <c>wrap_before_*_rpar</c> the export switched on — rather than a token that merely happens
+    ///     to keep a line the author gave it.
+    /// </summary>
+    bool ClosesAtABreakPoint(SyntaxNode node, NodeLayout layout) {
+        var (_, close) = DelimiterTokens(node, layout);
+        return !close.IsKind(SyntaxKind.None)
+            && _plan.TryGap(close.SpanStart, out var spec)
+            && spec.Rule == GapRule.Point;
+    }
 
     /// <summary>Which of the family's keys governs this construct's delimiters.</summary>
     /// <remarks>
@@ -1595,7 +1642,10 @@ public sealed partial class CSharpDocumentBuilder {
         // ⚠ Neither an outdent kind is a continuation and neither is a block, so neither touches the
         // frame machinery. `OutdentColumns` shifts a column and spends no level at all, which is the
         // whole of what distinguishes it from the continuation scopes below.
-        if (kind is IndentKind.Outdent or IndentKind.OutdentColumns) {
+        // ⚠ `None` joins them: it is a scope marker that changes no level, so it must not touch the
+        // frame machinery either. It exists so that a construct whose contents take *zero* levels
+        // still has a scope for its closing delimiter to be aligned against.
+        if (kind is IndentKind.Outdent or IndentKind.OutdentColumns or IndentKind.None) {
             return;
         }
 
@@ -1617,7 +1667,7 @@ public sealed partial class CSharpDocumentBuilder {
     ///     The next piece is this scope's own closing delimiter and takes its opener's line level.
     /// </param>
     void CloseIndent(IndentKind kind, bool alignsCloser = false) {
-        if (kind is IndentKind.Outdent or IndentKind.OutdentColumns) {
+        if (kind is IndentKind.Outdent or IndentKind.OutdentColumns or IndentKind.None) {
             _doc.Close(alignsCloser);
             return;
         }
@@ -1743,17 +1793,10 @@ public sealed partial class CSharpDocumentBuilder {
 
         switch (piece.Kind) {
             case PieceKind.Token:
-                // ⚠ `indent_raw_literal_string = align`: a multi-line raw literal's interior and its
-                // closing delimiter move with the opening quotes. The shift is uniform, so the
-                // string's value is unchanged; see VerbatimFlags.Realign.
-                _doc.Text(
-                    piece.Text,
-                    span,
-                    _tokens[piece.TokenIndex].IsKind(SyntaxKind.MultiLineRawStringLiteralToken)
-                    && _options.IndentRawLiteralString == RawStringIndentStyle.Align
-                        ? VerbatimFlags.Realign
-                        : VerbatimFlags.None
-                );
+                // ⚠ `indent_raw_literal_string`, all three values. A multi-line raw literal's
+                // interior and its closing delimiter move together, and the shift is uniform, so
+                // the string's value is unchanged; see VerbatimFlags.Realign.
+                _doc.Text(piece.Text, span, RawLiteralFlags(piece));
                 break;
 
             case PieceKind.DisabledText:
@@ -1768,15 +1811,15 @@ public sealed partial class CSharpDocumentBuilder {
             // code in the corpus — 71 lines across 14 files of `corpus/real/` were nothing but this.
             // The rest of a verbatim piece is still byte-for-byte.
             case PieceKind.ConditionalDirective:
-                _doc.Verbatim(piece.Text.TrimEnd(), span, DirectiveFlags(_options.IndentPreprocessorIf));
+                EmitDirective(piece, span, _options.IndentPreprocessorIf);
                 break;
 
             case PieceKind.OtherDirective:
-                _doc.Verbatim(piece.Text.TrimEnd(), span, DirectiveFlags(_options.IndentPreprocessorOther));
+                EmitDirective(piece, span, _options.IndentPreprocessorOther);
                 break;
 
             case PieceKind.RegionDirective:
-                _doc.Verbatim(piece.Text.TrimEnd(), span, DirectiveFlags(_options.IndentPreprocessorRegion));
+                EmitDirective(piece, span, _options.IndentPreprocessorRegion);
                 break;
 
             case PieceKind.BlockComment:
@@ -1821,12 +1864,66 @@ public sealed partial class CSharpDocumentBuilder {
     }
 
     /// <summary>
-    ///     <c>place_comments_at_first_column = false</c> indents a comment with the code around it;
-    ///     true pins it to column 0, which is a habit some trees have and Skala honours rather than
-    ///     argues with.
+    ///     <c>indent_raw_literal_string</c>: where a multi-line raw literal's closing delimiter — and
+    ///     with it every interior line — is put.
     /// </summary>
+    /// <remarks>
+    ///     ⚠ Three values, and Skala used to write two: <c>indent</c> fell through to
+    ///     <see cref="VerbatimFlags.None" /> and was therefore an alias of <c>do_not_change</c>, which
+    ///     is what the sweep saw as the oracle producing three distinct outputs to Skala's two.
+    ///     Measured on four literals in one file — one already aligned, one flush left, one
+    ///     over-indented, one carrying a blank line — with the statement at eight columns:
+    ///     <code>
+    /// align          content at 16   the column of the opening quotes
+    /// indent         content at 12   the opening LINE's indent, plus one level
+    /// do_not_change  unmoved         every literal exactly as the author left it
+    ///     </code>
+    ///     ⚠ <c>indent</c> is a fact about the line and not about the quotes: all four literals land
+    ///     at twelve however far right their opening quotes sit and however they were indented in the
+    ///     source, which is what separates it from <c>align</c>.
+    /// </remarks>
+    VerbatimFlags RawLiteralFlags(Piece piece) {
+        if (!_tokens[piece.TokenIndex].IsKind(SyntaxKind.MultiLineRawStringLiteralToken)) {
+            return VerbatimFlags.None;
+        }
+
+        return _options.IndentRawLiteralString switch {
+            RawStringIndentStyle.Align => VerbatimFlags.Realign,
+            RawStringIndentStyle.Indent => VerbatimFlags.RealignToIndent,
+            _ => VerbatimFlags.None
+        };
+    }
+
+    /// <summary>
+    ///     <c>stick_comment = true</c> — "Don't indent comments started at first column": a comment the
+    ///     author wrote hard against the left margin stays there; every other comment is indented with
+    ///     the code around it.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ This flag used to hang off <c>place_comments_at_first_column</c>, and it was the wrong key
+    ///     in both directions. That key is <em>inert</em> under <c>cleanupcode</c> — it governs the
+    ///     editor's comment-out action, and the oracle returns the probe below byte-identical at
+    ///     <c>true</c> and at <c>false</c> — while Skala at <c>true</c> pinned <em>every</em>
+    ///     line-starting comment to column 0, which is a comment moved to the left margin in real code
+    ///     and no oracle behaviour behind it. The sweep called that row <c>SPURIOUS</c> and it was
+    ///     right.
+    ///     <para>
+    ///         ⚠ The key that does govern it is this one, measured on the same probe, one flip:
+    ///         <code>
+    /// void M() {
+    /// // already at column zero          → stays at column zero at `true`, indented to 8 at `false`
+    ///     // indented as its owner       → unmoved at both
+    ///   // badly indented                → indented to 8 at both
+    ///         </code>
+    ///         So "at the first column" is literal and is a fact about the <em>source</em>, not about
+    ///         `StartsLine`: a comment with any whitespace before it on its line is ordinary and gets
+    ///         the code's indent. The oracle applies it to block comments as well as line comments.
+    ///     </para>
+    /// </remarks>
     VerbatimFlags CommentFlags(Piece piece) =>
-        _options.PlaceCommentsAtFirstColumn && piece.StartsLine ? VerbatimFlags.AtColumnZero : VerbatimFlags.None;
+        _options.StickComment && piece.StartsLine && LineStart(piece.Span.Start) == piece.Span.Start
+            ? VerbatimFlags.AtColumnZero
+            : VerbatimFlags.None;
 
     /// <summary>
     ///     Whether either side of the gap is a directive Roslyn reports from inside an inactive
@@ -1836,8 +1933,57 @@ public sealed partial class CSharpDocumentBuilder {
         previous.Inactive
         || nextPieceIndex >= 0 && nextPieceIndex < _pieces.Length && _pieces[nextPieceIndex].Inactive;
 
-    static VerbatimFlags DirectiveFlags(PreprocessorIndentStyle style) =>
-        style == PreprocessorIndentStyle.UsualIndent ? VerbatimFlags.None : VerbatimFlags.AtColumnZero;
+    /// <summary>
+    ///     One preprocessor directive, at the column <c>indent_preprocessor_{if,other,region}</c> asks
+    ///     for.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Four values, and until the key-flip sweep Skala wrote only two of them: everything that
+    ///     was not <c>usual_indent</c> went to column 0. That made <c>outdent</c> and
+    ///     <c>do_not_change</c> both aliases of <c>no_indent</c>, and the sweep saw it as the oracle
+    ///     producing three distinct outputs to Skala's two.
+    ///     <list type="bullet">
+    ///         <item><c>no_indent</c> — column 0.</item>
+    ///         <item><c>usual_indent</c> — the code's own indent.</item>
+    ///         <item>
+    ///             ⚠ <c>outdent</c> — the code's indent less one level, and NOT column 0. Measured:
+    ///             with the guarded statement at eight columns the oracle returns <c>#if</c> and
+    ///             <c>#endif</c> at four. It is <see cref="IndentKind.Outdent" /> exactly, so it is
+    ///             spelled as that scope rather than as arithmetic here.
+    ///         </item>
+    ///         <item>
+    ///             ⚠ <c>do_not_change</c> — the column the author wrote, which is not the same claim as
+    ///             column 0 and was only passing because the fixture's directives were already there.
+    ///             Measured on one file carrying <c>#if</c> at eight columns and another at zero: the
+    ///             oracle returns each where it found it.
+    ///         </item>
+    ///     </list>
+    /// </remarks>
+    void EmitDirective(Piece piece, SourceSpan span, PreprocessorIndentStyle style) {
+        var text = piece.Text.TrimEnd();
+
+        switch (style) {
+            case PreprocessorIndentStyle.UsualIndent:
+                _doc.Verbatim(text, span, VerbatimFlags.None);
+                return;
+
+            case PreprocessorIndentStyle.Outdent:
+                OpenIndent(IndentKind.Outdent);
+                _doc.Verbatim(text, span, VerbatimFlags.None);
+                CloseIndent(IndentKind.Outdent);
+                return;
+
+            case PreprocessorIndentStyle.DoNotChange when piece.StartsLine:
+                // The author's own indentation, carried in the text so that the writer adds none.
+                var start = LineStart(piece.Span.Start);
+                _doc.Verbatim(_source[start..piece.Span.Start] + text, span, VerbatimFlags.SelfIndented);
+                return;
+
+            default:
+                _doc.Verbatim(text, span, VerbatimFlags.AtColumnZero);
+                return;
+        }
+    }
 
     /// <summary>Every open frame has now seen a piece of its own.</summary>
     void MarkFramesStarted() {

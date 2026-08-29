@@ -48,7 +48,22 @@ public enum VerbatimFlags {
     ///     Re-indenting the lines independently, or moving the content without the delimiter, changes
     ///     what the program prints.
     /// </remarks>
-    Realign = 4
+    Realign = 4,
+
+    /// <summary>
+    ///     The same uniform shift as <see cref="Realign" />, to a different target:
+    ///     <c>indent_raw_literal_string = indent</c> puts the literal's closing delimiter one indent
+    ///     level in from its opening line, wherever the opening quotes happen to sit on that line.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ The two are alternatives and never both. <c>align</c> targets the column of the opening
+    ///     quotes and <c>indent</c> targets the opening LINE's indentation plus one level, which is why
+    ///     `var a = """` at eight columns puts its content at sixteen under one and twelve under the
+    ///     other. The safety argument is <see cref="Realign" />'s entire — a uniform shift leaves the
+    ///     stripped value character for character identical — and nothing about it depends on which
+    ///     column is the target.
+    /// </remarks>
+    RealignToIndent = 8
 }
 
 /// <summary>
@@ -441,6 +456,21 @@ public sealed class LayoutWriter {
         bool Unconditional = false,
         int ColumnOutdent = 0);
 
+    /// <summary>The indentation already written at the start of the line being built.</summary>
+    int CurrentLineIndent() {
+        var start = _output.Length;
+        while (start > 0 && _output[start - 1] != '\n') {
+            start--;
+        }
+
+        var indent = 0;
+        for (var i = start; i < _output.Length && _output[i] is ' ' or '\t'; i++) {
+            indent = TextWidth.Advance(_output[i].ToString(), indent);
+        }
+
+        return indent;
+    }
+
     /// <summary>Writes the indentation that reaches <paramref name="column" />.</summary>
     /// <remarks>
     ///     ⚠ Whole indent units first and spaces for the remainder, which is what
@@ -829,6 +859,14 @@ public sealed class LayoutWriter {
             text = Realign(
                 text,
                 _atLineStart ? _pendingCloserLevel ?? Effective() : _column + PendingWidth
+            );
+        } else if ((flags & VerbatimFlags.RealignToIndent) != 0 && _source is null) {
+            // ⚠ The indentation of the line the opening quotes are on, plus one level — not the
+            // level the scope stack is at. A literal opened part-way along `var a = """` takes the
+            // line's own indent, and the two differ whenever a continuation scope is open.
+            text = Realign(
+                text,
+                (_atLineStart ? _pendingCloserLevel ?? Effective() : CurrentLineIndent()) + _indentWidth
             );
         }
 
