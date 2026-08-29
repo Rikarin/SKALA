@@ -309,7 +309,7 @@
   },
   {
     "Key": "csharp_style_var_for_built_in_types",
-    "Tier": "A",
+    "Tier": "D",
     "Outcome": "Divergent",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
@@ -332,7 +332,7 @@
   },
   {
     "Key": "csharp_style_var_when_type_is_apparent",
-    "Tier": "A",
+    "Tier": "D",
     "Outcome": "Divergent",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
@@ -401,7 +401,7 @@
   },
   {
     "Key": "dotnet_style_parentheses_in_arithmetic_binary_operators",
-    "Tier": "A",
+    "Tier": "D",
     "Outcome": "Divergent",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
@@ -424,7 +424,7 @@
   },
   {
     "Key": "dotnet_style_parentheses_in_other_binary_operators",
-    "Tier": "A",
+    "Tier": "D",
     "Outcome": "Divergent",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
@@ -447,7 +447,7 @@
   },
   {
     "Key": "dotnet_style_parentheses_in_relational_binary_operators",
-    "Tier": "A",
+    "Tier": "D",
     "Outcome": "Divergent",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
@@ -470,7 +470,7 @@
   },
   {
     "Key": "dotnet_style_predefined_type_for_locals_parameters_members",
-    "Tier": "A",
+    "Tier": "D",
     "Outcome": "Divergent",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
@@ -493,7 +493,7 @@
   },
   {
     "Key": "dotnet_style_predefined_type_for_member_access",
-    "Tier": "A",
+    "Tier": "D",
     "Outcome": "Divergent",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
@@ -608,7 +608,7 @@
   },
   {
     "Key": "dotnet_style_require_accessibility_modifiers",
-    "Tier": "A",
+    "Tier": "D",
     "Outcome": "Divergent",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
@@ -1017,7 +1017,7 @@
   },
   {
     "Key": "resharper_csharp_arguments_anonymous_function",
-    "Tier": "A",
+    "Tier": "D",
     "Outcome": "Divergent",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
@@ -1040,7 +1040,7 @@
   },
   {
     "Key": "resharper_csharp_arguments_literal",
-    "Tier": "A",
+    "Tier": "D",
     "Outcome": "Divergent",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
@@ -1086,7 +1086,7 @@
   },
   {
     "Key": "resharper_csharp_arguments_other",
-    "Tier": "A",
+    "Tier": "D",
     "Outcome": "Divergent",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
@@ -1132,7 +1132,7 @@
   },
   {
     "Key": "resharper_csharp_arguments_string_literal",
-    "Tier": "A",
+    "Tier": "D",
     "Outcome": "Divergent",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
@@ -1164,14 +1164,14 @@
     "Values": [
       {
         "Value": "1",
-        "OracleHash": "a05fccfd",
-        "SkalaHash": "a05fccfd",
+        "OracleHash": "d5538732",
+        "SkalaHash": "d5538732",
         "Agree": true
       },
       {
         "Value": "2",
-        "OracleHash": "3ad4c6e2",
-        "SkalaHash": "3ad4c6e2",
+        "OracleHash": "4023220e",
+        "SkalaHash": "4023220e",
         "Agree": true
       }
     ]
@@ -1699,17 +1699,17 @@
   {
     "Key": "resharper_csharp_blank_lines_around_single_line_local_method",
     "Tier": "D",
-    "Outcome": "Divergent",
+    "Outcome": "Conformant",
     "OracleDistinct": 3,
-    "SkalaDistinct": 2,
-    "BaselineAgrees": false,
+    "SkalaDistinct": 3,
+    "BaselineAgrees": true,
     "Fixture": "constructs/blank-lines/resharper_csharp_blank_lines_around_single_line_local_method.cs",
     "Values": [
       {
         "Value": "0",
         "OracleHash": "02d00230",
-        "SkalaHash": "7511aa2e",
-        "Agree": false
+        "SkalaHash": "02d00230",
+        "Agree": true
       },
       {
         "Value": "3",
@@ -2028,7 +2028,7 @@
   },
   {
     "Key": "resharper_csharp_braces_redundant",
-    "Tier": "A",
+    "Tier": "D",
     "Outcome": "Spurious",
     "OracleDistinct": 1,
     "SkalaDistinct": 2,
@@ -2051,7 +2051,7 @@
   },
   {
     "Key": "resharper_csharp_constructor_or_destructor_body",
-    "Tier": "A",
+    "Tier": "D",
     "Outcome": "Divergent",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
@@ -2097,7 +2097,7 @@
   },
   {
     "Key": "resharper_csharp_default_value_when_type_evident",
-    "Tier": "A",
+    "Tier": "D",
     "Outcome": "Divergent",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
@@ -2120,7 +2120,7 @@
   },
   {
     "Key": "resharper_csharp_default_value_when_type_not_evident",
-    "Tier": "A",
+    "Tier": "D",
     "Outcome": "Divergent",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
@@ -3471,7 +3471,7 @@
   },
   {
     "Key": "resharper_csharp_keep_nontrivial_alias",
-    "Tier": "A",
+    "Tier": "D",
     "Outcome": "Divergent",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
@@ -3714,7 +3714,7 @@
   },
   {
     "Key": "resharper_csharp_method_or_operator_body",
-    "Tier": "A",
+    "Tier": "D",
     "Outcome": "Divergent",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
@@ -3760,7 +3760,7 @@
   },
   {
     "Key": "resharper_csharp_null_checking_pattern_style",
-    "Tier": "A",
+    "Tier": "D",
     "Outcome": "Spurious",
     "OracleDistinct": 1,
     "SkalaDistinct": 2,
@@ -3783,7 +3783,7 @@
   },
   {
     "Key": "resharper_csharp_object_creation_when_type_evident",
-    "Tier": "A",
+    "Tier": "D",
     "Outcome": "Divergent",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
@@ -3806,7 +3806,7 @@
   },
   {
     "Key": "resharper_csharp_object_creation_when_type_not_evident",
-    "Tier": "A",
+    "Tier": "D",
     "Outcome": "Divergent",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
@@ -3838,14 +3838,14 @@
     "Values": [
       {
         "Value": "true",
-        "OracleHash": "37332357",
-        "SkalaHash": "37332357",
+        "OracleHash": "626508d4",
+        "SkalaHash": "626508d4",
         "Agree": true
       },
       {
         "Value": "false",
-        "OracleHash": "c5e43790",
-        "SkalaHash": "c5e43790",
+        "OracleHash": "676c2919",
+        "SkalaHash": "676c2919",
         "Agree": true
       }
     ]
@@ -3861,14 +3861,14 @@
     "Values": [
       {
         "Value": "true",
-        "OracleHash": "8ce24ba1",
-        "SkalaHash": "8ce24ba1",
+        "OracleHash": "cc9ab0bc",
+        "SkalaHash": "cc9ab0bc",
         "Agree": true
       },
       {
         "Value": "false",
-        "OracleHash": "c5e43790",
-        "SkalaHash": "c5e43790",
+        "OracleHash": "676c2919",
+        "SkalaHash": "676c2919",
         "Agree": true
       }
     ]
@@ -3884,14 +3884,14 @@
     "Values": [
       {
         "Value": "true",
-        "OracleHash": "35f78f07",
-        "SkalaHash": "35f78f07",
+        "OracleHash": "67086c80",
+        "SkalaHash": "67086c80",
         "Agree": true
       },
       {
         "Value": "false",
-        "OracleHash": "c5e43790",
-        "SkalaHash": "c5e43790",
+        "OracleHash": "676c2919",
+        "SkalaHash": "676c2919",
         "Agree": true
       }
     ]
@@ -3921,7 +3921,7 @@
   },
   {
     "Key": "resharper_csharp_parentheses_redundancy_style",
-    "Tier": "A",
+    "Tier": "D",
     "Outcome": "Divergent",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
@@ -4424,7 +4424,7 @@
   },
   {
     "Key": "resharper_csharp_prefer_explicit_discard_declaration",
-    "Tier": "A",
+    "Tier": "D",
     "Outcome": "Divergent",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
@@ -6679,7 +6679,7 @@
   },
   {
     "Key": "resharper_csharp_use_heuristics_for_body_style",
-    "Tier": "A",
+    "Tier": "D",
     "Outcome": "Divergent",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
@@ -6734,14 +6734,14 @@
     "Values": [
       {
         "Value": "true",
-        "OracleHash": "512c32f9",
-        "SkalaHash": "512c32f9",
+        "OracleHash": "7c87c4b9",
+        "SkalaHash": "7c87c4b9",
         "Agree": true
       },
       {
         "Value": "false",
-        "OracleHash": "b7cea1da",
-        "SkalaHash": "b7cea1da",
+        "OracleHash": "7cbbe9ec",
+        "SkalaHash": "7cbbe9ec",
         "Agree": true
       }
     ]
@@ -6803,14 +6803,14 @@
     "Values": [
       {
         "Value": "true",
-        "OracleHash": "1903d7aa",
-        "SkalaHash": "1903d7aa",
+        "OracleHash": "115f9f58",
+        "SkalaHash": "115f9f58",
         "Agree": true
       },
       {
         "Value": "false",
-        "OracleHash": "b7cea1da",
-        "SkalaHash": "b7cea1da",
+        "OracleHash": "7cbbe9ec",
+        "SkalaHash": "7cbbe9ec",
         "Agree": true
       }
     ]
@@ -7068,14 +7068,14 @@
     "Values": [
       {
         "Value": "true",
-        "OracleHash": "096b50d5",
-        "SkalaHash": "096b50d5",
+        "OracleHash": "78e731f2",
+        "SkalaHash": "78e731f2",
         "Agree": true
       },
       {
         "Value": "false",
-        "OracleHash": "b7cea1da",
-        "SkalaHash": "b7cea1da",
+        "OracleHash": "7cbbe9ec",
+        "SkalaHash": "7cbbe9ec",
         "Agree": true
       }
     ]
@@ -7321,20 +7321,20 @@
     "Values": [
       {
         "Value": "wrap_if_long",
-        "OracleHash": "fff94226",
-        "SkalaHash": "715a89f2",
+        "OracleHash": "7ad96279",
+        "SkalaHash": "c643ee76",
         "Agree": false
       },
       {
         "Value": "chop_if_long",
-        "OracleHash": "b7cea1da",
-        "SkalaHash": "b7cea1da",
+        "OracleHash": "7cbbe9ec",
+        "SkalaHash": "7cbbe9ec",
         "Agree": true
       },
       {
         "Value": "chop_always",
-        "OracleHash": "731ba3a0",
-        "SkalaHash": "731ba3a0",
+        "OracleHash": "8d4218b2",
+        "SkalaHash": "8d4218b2",
         "Agree": true
       }
     ]
@@ -7547,20 +7547,20 @@
     "Values": [
       {
         "Value": "wrap_if_long",
-        "OracleHash": "a05fccfd",
-        "SkalaHash": "a05fccfd",
+        "OracleHash": "37f80250",
+        "SkalaHash": "37f80250",
         "Agree": true
       },
       {
         "Value": "chop_if_long",
-        "OracleHash": "a05fccfd",
-        "SkalaHash": "a05fccfd",
+        "OracleHash": "37f80250",
+        "SkalaHash": "37f80250",
         "Agree": true
       },
       {
         "Value": "chop_always",
-        "OracleHash": "064d7134",
-        "SkalaHash": "064d7134",
+        "OracleHash": "84811e58",
+        "SkalaHash": "84811e58",
         "Agree": true
       }
     ]
@@ -7821,7 +7821,7 @@
   },
   {
     "Key": "resharper_empty_string",
-    "Tier": "A",
+    "Tier": "D",
     "Outcome": "Spurious",
     "OracleDistinct": 1,
     "SkalaDistinct": 2,
@@ -8195,7 +8195,7 @@
   },
   {
     "Key": "resharper_remove_only_unused_aliases",
-    "Tier": "A",
+    "Tier": "D",
     "Outcome": "Divergent",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,
@@ -8218,7 +8218,7 @@
   },
   {
     "Key": "resharper_remove_this_qualifier",
-    "Tier": "A",
+    "Tier": "D",
     "Outcome": "Spurious",
     "OracleDistinct": 1,
     "SkalaDistinct": 2,
@@ -8241,7 +8241,7 @@
   },
   {
     "Key": "resharper_sort_usings",
-    "Tier": "A",
+    "Tier": "D",
     "Outcome": "Divergent",
     "OracleDistinct": 2,
     "SkalaDistinct": 2,

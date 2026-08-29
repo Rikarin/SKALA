@@ -2861,7 +2861,7 @@
       "type": "int",
       "default": "0",
       "defaultSource": "template",
-      "tier": "D",
+      "tier": "A",
       "construct": "BlankLinesInCode",
       "summary": "Blank lines in code — Around single line local function",
       "since": "0.1",
