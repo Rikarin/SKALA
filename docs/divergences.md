@@ -1796,55 +1796,70 @@ fire. The measured pin is `constructs/wrapping/chained-calls.cs`, which is where
 their non-conditional control now live; with the fix reverted it takes `constructs` line fidelity
 from 98.34 % to 98.29 % and turns `Fidelity_DoesNotDecrease(set: "constructs")` red.
 
-⚠ **`outdent.cs` does not want the shape back, and the entry's premise for it is refuted.** Measured
-at both values of `resharper_outdent_dots`, `a?.B().C()` outdents 12 → 11 on every wrapped line — the
-same answer, to the column, as the plain chain the fixture already carries. Under
-`wrap_before_first_method_call = false` the `?.` is the first invoked dot, so it is never a break
-point and never starts a wrapped line; there is no mixed width to see. The shape that does carry it
-is a *nested* conditional access (SK-DIV-0065), and it answers the question `outdent.cs` was actually
-asking: the outdent is **per line, by that line's own leading operator**, `?.` 12 → 10 beside `.`
-12 → 11, and not one chain-wide amount. `align-declaration.cs` does not want it either, for its own
-reason, which never depended on this defect: `align_multiline_calls_chain` anchors on a column that
-moves with the margin.
+⚠ **`outdent.cs` has the shape back, and the entry's description of it was wrong in a way that
+mattered.** The chain it named — `a?.B().C()` — outdents 12 → 11 on every wrapped line, measured at
+both values of `resharper_outdent_dots`, which is the same answer to the column as the plain chain
+that fixture already carried: under `wrap_before_first_method_call = false` the leading `?.` is the
+first invoked dot, so it is never a break point and never starts a wrapped line. There is no mixed
+width in it. The shape that carries one is a *nested* conditional access, `a?.B()?.C().D()`, whose
+second `?` is the only two-column operator that reaches the start of a line at this export's values —
+and it settles what `outdent.cs` was asking: the outdent is **per line, by that line's own leading
+operator**, `?.` 12 → 10 beside `.` 12 → 11, and not one chain-wide amount. That shape needed the
+second half of this fix (`ChainDot`) before Skala could carry it.
+
+⚠ `align-declaration.cs` does **not** want the shape, and never depended on this defect for that:
+`align_multiline_calls_chain` anchors on a column that moves with the margin. Only the
+cross-reference in its comment was stale.
 
 - options: none — `resharper_wrap_chained_method_calls` and `resharper_wrap_before_first_method_call`
   are read correctly and have no chain to apply to
-- ⚠ status: **resolved**. `Collect` walks `WhenNotNull`. Pinned by
-  `constructs/wrapping/chained-calls.cs` (`RootedAtAConditionalAccess` and four sibling contexts,
-  each with the oracle's own answer regenerated under `SkalaFormatOnly`), and sabotage-tested against
-  the pre-change formatter. ⚠ Fixing the root arm exposed four *further* chain-planner divergences
-  that it had been masking, none of which is this one: SK-DIV-0065 through SK-DIV-0068 below.
+- ⚠ status: **resolved**, in two parts. `Collect` walks `WhenNotNull`, and `ChainDot` puts the break
+  point on the `?` rather than on the binding's `.` (SK-DIV-0065 below, which the first part
+  uncovered and which had to be fixed with it). Pinned by `constructs/wrapping/chained-calls.cs`
+  (`RootedAtAConditionalAccess` and four sibling contexts) and by
+  `constructs/alignment/outdent.cs`'s `MixedWidthChain`, each with the oracle's own answer
+  regenerated under `SkalaFormatOnly`, and sabotage-tested against the pre-change formatter.
+  ⚠ Fixing the root arm exposed three *further* chain-planner divergences that it had been masking,
+  none of which is this one: SK-DIV-0066 through SK-DIV-0068 below.
 
-## SK-DIV-0065 — a nested `?.` breaks before the `.` and the oracle breaks before the `?`
+## SK-DIV-0065 — the break before a conditional link lands on the `.`, not the `?`
 
-Uncovered by SK-DIV-0030's fix, which is what made the shape reachable at all. `Collect` registers a
-`MemberBindingExpression`'s `.` as the chain's dot. For the *first* call that is invisible —
-`wrap_before_first_method_call = false` drops it — but a nested conditional access has a second one
-in the middle of the chain, and there the token choice shows:
+Uncovered by SK-DIV-0030's fix, which is what made the shape reachable at all, and fixed with it
+because leaving it would have made Skala's output on real code *worse* than the unchopped chain it
+replaced. `Collect` registered a `MemberBindingExpression`'s `.` as the chain's dot; the `?` is the
+enclosing `ConditionalAccessExpressionSyntax`'s own operator and a separate token, so a break on the
+`.` stranded the `?` at the end of the line above.
 
 ```csharp
 // the oracle
-var result = someCollectionOfThingsHere?.WhereEnabled()
-    ?.SelectName(item => item.Name)
-    .OrderByName(name => name);
+return model.GetDeclaredSymbol(current, cancellation)
+        ?.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)
+    ?? current.Kind().ToString();
 
-// Skala: the `?` is left behind on the previous line
-var result = someCollectionOfThingsHere?.WhereEnabled()?
-    .SelectName(item => item.Name)
-    .OrderByName(name => name);
+// Skala, with SK-DIV-0030 fixed and this one not
+return model.GetDeclaredSymbol(current, cancellation)?
+    .ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)
+    ?? current.Kind().ToString();
 ```
 
-⚠ This is the entry that blocks `constructs/alignment/outdent.cs` from carrying the mixed-width
-chain, and it is worth more than its size suggests for that reason: it is the only shape at this
-export's values in which a two-column operator starts a wrapped line, and measuring it is what
-established that `outdent_dots` outdents per line rather than chain-wide.
+⚠ **That is Skala's own `ArrangementSafety.ContainerOf`**, and it is how the defect was found: the
+`?.` fix made `skala format --check .` want to move three of the repository's own files, and the
+change it wanted was wrong. The measured corpus could not have caught it — `corpus/real/` has no
+multi-link `?.` chain at all — and neither could the first round of probes, because the token choice
+is unobservable until the chain's *receiver* contributes a dot of its own. With a bare identifier
+receiver the binding's dot is the last entry in `dots`, `wrap_before_first_method_call = false` holds
+the last entry back, and the `?` therefore never begins a wrapped line.
 
-- options: none — `resharper_outdent_dots` is read correctly and is conformant on the `.` lines of
-  the same chain
-- ⚠ status: **open**, measured, unfixed. The fix is a token choice in the same arm — the point is the
-  enclosing `ConditionalAccessExpressionSyntax`'s `OperatorToken` and not the binding's `.` — but it
-  also changes what `wrap_before_first_method_call = true` would produce for the *first* dot, and
-  that value has not been measured.
+⚠ It is also what let `constructs/alignment/outdent.cs` finally carry the mixed-width chain, which is
+the only shape at this export's values where a two-column operator starts a wrapped line — and
+measuring it established that `outdent_dots` outdents per line rather than chain-wide.
+
+- options: none — `resharper_outdent_dots` is read correctly and was conformant on the `.` lines of
+  the same chain throughout
+- ⚠ status: **resolved**. `BreakPlan.ChainDot`. ⚠ Measured at
+  `wrap_before_first_method_call = false`, the export's value. What the *other* value does with the
+  chain's leading `?.` is still unmeasured — at `true` the first dot becomes a point and this change
+  decides whether the break lands before `a?` or before `?.`.
 
 ## SK-DIV-0066 — a chain whose last link is a property is not a chain root, so it is not chopped
 
@@ -1880,37 +1895,56 @@ Whatever rule the oracle is applying to a chain-final property has not been iden
   `IsChainRoot` puts a group on every `a.B().C().Prop` in the tree, which is a far larger wrapping
   change than the `?.` arm and wants its own measurement.
 
-## SK-DIV-0067 — a property run does not cross the `?`, so the break lands one link too late
+## SK-DIV-0067 — a property run that *straddles* the `?` is still cut in half
 
-`wrap_after_property_in_chained_method_calls = false` is implemented as a loop in `Collect` that walks
-back over a run of `MemberAccessExpressionSyntax` receivers so the break lands before the run rather
-than after it. The loop stops at a `MemberBindingExpressionSyntax`, so a run that begins on the
-receiver side of a `?` is cut in half:
+`wrap_after_property_in_chained_method_calls = false` is a loop in `Collect` that walks back over a
+run of `MemberAccessExpressionSyntax` receivers so the break lands before the run rather than after
+it. It used to stop at the `MemberBindingExpressionSyntax`, which was wrong for every run touching a
+`?`; it now ends on the `?` itself, which is right for a run that *begins* there and still one link
+short for a run that begins to its left. Measured, at the export's values:
 
 ```csharp
-// the oracle: the run feeding `.Where` is `.Inner` (left of the `?`) and `.Children` (right of it)
-var result = someParticularThingWithALongName.Self()
-    .Inner?.Children.Where(c => c.IsEnabled)
-    .Select(c => c.Name)
-    .ToList();
+// A — the run begins at the `?`. Conformant.
+var a = someCollectionOfThingsHere.Where(c => c.IsEnabled).Select(c => c.Name).FirstOrDefault()
+    ?.Trim().ToUpperInvariant();
 
-// Skala: only `.Children` is in the run, so `.Where` becomes the point
-var result = someParticularThingWithALongName.Self().Inner?.Children
-    .Where(c => c.IsEnabled)
-    .Select(c => c.Name)
+// B — the run begins at the `?` and carries two properties. Conformant.
+var b = someParticularThingWithALongName.Self().Self().Self()
+    ?.Inner.Children.Where(c => c.IsEnabled).ToList();
+
+// C — the run straddles the `?`: `.Inner` is left of it, `.Children` right of it. Open.
+//   the oracle
+var c = someParticularThingWithALongName.Self()
+    .Inner?.Children.Where(item => item.IsEnabled)
+    .Select(item => item.Name)
+    .ToList();
+//   Skala: the run ends at the `?` and `.Inner` is left behind
+var c = someParticularThingWithALongName.Self().Inner
+    ?.Children.Where(item => item.IsEnabled)
+    .Select(item => item.Name)
     .ToList();
 ```
 
-⚠ The same chain with `.` for `?.` is conformant, measured, which is what makes this a fact about the
-conditional access and not about the property rule.
+⚠ The same chain with `.` for `?.` is conformant, measured, which is what makes the remainder a fact
+about the conditional access and not about the property rule.
+
+⚠ Half of this was fixed with SK-DIV-0030 rather than deferred, because `format --check` on Skala's
+own repository would not pass otherwise: `VersionSources.Value` and `VersionSourcesTests` both carry
+shape A, and until the run ended on the `?` the formatter wanted to write them the wrong way round.
+Both files moved *toward* the oracle in the same commit — the committed indent was four columns
+deeper than `jb cleanupcode` produces.
 
 - options: `resharper_wrap_after_property_in_chained_method_calls` — read correctly, and conformant on
   every property run that does not straddle a `?`
-- ⚠ status: **open**, measured, unfixed.
+- ⚠ status: **open** for shape C only, measured. The remaining fix has to let the run continue past
+  the `?` into the receiver's own property chain, and the walk that would do it is the one the
+  conditional-access arm already performs on `Expression` — so it needs the two not to collect the
+  same dots twice, which is a restructure rather than another arm.
 
-## SK-DIV-0068 — two smaller chain-planner divergences, measured together
+## SK-DIV-0068 — three smaller chain-planner divergences, measured together
 
-Both surfaced from the same eight-shape probe and neither is large enough to carry its own entry.
+All three surfaced from the same eight-shape probe and none is large enough to carry its own entry.
+⚠ The third was re-confirmed on Skala's own `VersionSources.Value`, so none of them is exotic.
 
 1. **A `!` between two links resets the oracle's "first method call" and does not reset Skala's.**
    On `a?.Self()!.Self().Self()…` the oracle keeps `a?.Self()!.Self()` on the opening line and Skala

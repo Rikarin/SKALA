@@ -1496,13 +1496,26 @@ public sealed class BreakPlan {
                             receiver = property.Expression;
                         }
 
+                        // ⚠ A property run that begins at the `?` ends on the `?`, not on the `.`
+                        // beside it. `X(…)?.Value.Trim()` is one run — `?.Value` feeding `.Trim()` —
+                        // and the oracle writes
+                        //     .FirstOrDefault(…)
+                        //     ?.Value.Trim();
+                        // Without this the run stopped at the binding, `.Trim` became the point, and
+                        // the two lines came out the other way round. Measured on Skala's own
+                        // `VersionSources.Value`.
+                        if (!_options.WrapAfterPropertyInChainedMethodCalls
+                            && receiver is MemberBindingExpressionSyntax bound) {
+                            dot = ChainDot(bound);
+                        }
+
                         dots.Add(dot);
                         Collect(receiver);
                         return;
                     }
 
                     if (invocation.Expression is MemberBindingExpressionSyntax binding) {
-                        dots.Add(binding.OperatorToken);
+                        dots.Add(ChainDot(binding));
                         return;
                     }
 
@@ -1553,6 +1566,33 @@ public sealed class BreakPlan {
                     return;
             }
         }
+    }
+
+    /// <summary>
+    ///     The token a break before a conditional link lands on: the <c>?</c>, not the <c>.</c>.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ <c>a?.B</c> is three tokens — <c>a</c>, <c>?</c>, <c>.</c> — and only the <c>.</c> belongs to
+    ///     the <see cref="MemberBindingExpressionSyntax" />; the <c>?</c> is the enclosing
+    ///     <see cref="ConditionalAccessExpressionSyntax" />'s own operator. Breaking on the <c>.</c>
+    ///     strands the <c>?</c> at the end of the line above:
+    ///     <code>
+    /// return model.GetDeclaredSymbol(current, cancellation)?
+    ///     .ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)
+    ///     </code>
+    ///     where the oracle writes <c>?.ToDisplayString(…)</c> on the wrapped line. Measured on that
+    ///     exact expression, which is Skala's own <c>ArrangementSafety.ContainerOf</c>.
+    ///     <para>
+    ///         ⚠ Invisible until SK-DIV-0030 was fixed, and then only for a chain whose <em>receiver</em>
+    ///         contributes a dot of its own. With a bare identifier receiver the binding's dot is the last
+    ///         entry in the list, which <c>wrap_before_first_method_call = false</c> holds back, so it is
+    ///         never a break point and the token choice cannot be observed. It is observable the moment
+    ///         the receiver is itself a chain — the shape three of Skala's own files carry.
+    ///     </para>
+    /// </remarks>
+    static SyntaxToken ChainDot(MemberBindingExpressionSyntax binding) {
+        var previous = binding.OperatorToken.GetPreviousToken();
+        return previous.IsKind(SyntaxKind.QuestionToken) ? previous : binding.OperatorToken;
     }
 
     /// <summary>

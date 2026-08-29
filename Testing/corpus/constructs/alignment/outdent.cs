@@ -23,27 +23,25 @@ public class Outdent {
         var result = someCollectionOfThingsHere.Where(item => item.IsEnabled).Select(item => item.Name).OrderBy(name => name).ToList();
     }
 
-    // ⚠ `a?.B().C()` is still not here, and SK-DIV-0030 is no longer the reason — that is fixed, and
-    // `constructs/wrapping/chained-calls.cs` pins it. The reason now is that the shape was measured
-    // and **does not distinguish the key's two values**: under `wrap_before_first_method_call =
-    // false` the `?.` is the first invoked dot, so it never becomes a break point and never starts a
-    // wrapped line. Every wrapped line of such a chain begins with a one-column `.`, and the oracle
-    // moves it 12 → 11 — the same answer, to the column, as `ChainedCalls` above. Adding it would
-    // have added a method and no evidence.
-    //
-    // ⚠ The shape that *does* carry the mixed width is a **nested** conditional access,
-    // `a?.B()?.C().D()`, where the oracle breaks before the second `?` rather than before its `.`.
-    // Measured at both values, it settles the question this fixture's header leaves open — the
-    // outdent is **per line, by that line's own leading-operator width**, not one chain-wide amount:
+    // ⚠ The mixed-width chain this fixture wanted from the start, and could not have until
+    // SK-DIV-0030 was fixed. It answers the question the header leaves open — whether **one
+    // chain-wide outdent amount is enough** — and the answer is no: measured at both values, the
+    // oracle outdents **per line, by that line's own leading operator**.
     //
     //     outdent_dots = false          outdent_dots = true
     //     a?.B()                        a?.B()
     //         ?.C()                       ?.C()      ← 12 → 10, two columns
     //         .D()                       .D()        ← 12 → 11, one column
     //
-    // It is out of this fixture because Skala breaks before that `.` and not before the `?`, which
-    // is a second and separate chain-planner divergence (SK-DIV-0065). A fixture carrying the shape
-    // would pin that instead of these three options.
+    // ⚠ It has to be a *nested* conditional access, and the plain `a?.B().C()` the divergence entry
+    // named would not have worked. Under `wrap_before_first_method_call = false` the leading `?.` is
+    // the first invoked dot, so it is never a break point and never starts a wrapped line; every
+    // wrapped line of that chain begins with a one-column `.` and moves 12 → 11, the same answer to
+    // the column as `ChainedCalls` above. The second `?` is the only two-column operator that
+    // reaches the start of a line at this export's values.
+    void MixedWidthChain() {
+        var result = someCollectionOfThingsHere?.WhereEnabled()?.SelectName(item => item.Name).OrderByName(name => name).ToList();
+    }
 
     // ⚠ Not an outdent shape at either value, and here so that the fixture says so. The operator is
     // at the end of its line under `wrap_before_binary_opsign = false`, and a trailing operator is

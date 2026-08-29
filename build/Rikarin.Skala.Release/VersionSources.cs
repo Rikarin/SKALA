@@ -42,5 +42,5 @@ public static class VersionSources {
     static string? Value(XDocument document, string name) =>
         document.Descendants()
             .FirstOrDefault(element => string.Equals(element.Name.LocalName, name, StringComparison.Ordinal))
-                ?.Value.Trim();
+            ?.Value.Trim();
 }

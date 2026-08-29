@@ -28,7 +28,7 @@ public sealed partial class VersionSourcesTests {
         string? Value(string name) =>
             document.Descendants()
                 .FirstOrDefault(element => string.Equals(element.Name.LocalName, name, StringComparison.Ordinal))
-                    ?.Value.Trim();
+                ?.Value.Trim();
 
         var prefix = Value("VersionPrefix")
             ?? throw new InvalidOperationException("Directory.Build.props has no <VersionPrefix>.");
