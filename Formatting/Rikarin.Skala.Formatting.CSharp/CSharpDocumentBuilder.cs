@@ -1905,6 +1905,39 @@ public sealed partial class CSharpDocumentBuilder {
             return;
         }
 
+        // ── The two line-break suppressions ──────────────────────────────────────────────────
+        //
+        // ⚠ Both are resolved here, above the break plan, because this method is the one funnel: a
+        // line break is added or removed at a gap and nowhere else, so answering here is the whole
+        // implementation rather than the first of several sites. It is the same argument
+        // `ResolveBlankLines` makes for the blank-line half, and the reason the family shares one
+        // mechanism instead of acquiring a suppression mode in the writer.
+        //
+        // ⚠ The two are a superset and a subset, and conflating them would leave one of them green
+        // and unimplemented. `disable_line_break_changes` decides the gap in *both* directions from
+        // the source — the author wrote a break, so there is one; the author wrote none, so there is
+        // none — which is what "no line break is added and none removed" means (SK-DIV-0063).
+        // `disable_line_break_removal` decides only the first: a gap the author broke is broken, and
+        // a gap the author did not break falls through to every rule below, so the wrapping still
+        // adds breaks the author never wrote (SK-DIV-0064).
+        // ⚠ Both arms are unreachable for disabled text, which the two returns above have already
+        // taken: an inactive `#if` branch is copied byte for byte and no key here reaches inside it.
+        if (_options.DisableLineBreakChanges && newLines == 0) {
+            EmitFlatGap(previous, nextKind, nextToken, gap);
+            return;
+        }
+
+        if ((_options.DisableLineBreakChanges || _options.DisableLineBreakRemoval) && newLines > 0) {
+            Break(
+                nextPieceIndex,
+                nextToken,
+                ResolveBlankLines(previous, nextPieceIndex, nextToken, newLines - 1),
+                _options.EnforceLineEndingStyle ? DefaultNewLine() : FirstNewLine(gap) ?? DefaultNewLine()
+            );
+
+            return;
+        }
+
         // ⚠ The break plan only ever governs a gap between two tokens. A comment or a directive in
         // the gap makes it untouchable: joining `a + // note` with `b` puts `b` inside the comment,
         // and breaking before a directive moves code across it.
@@ -1914,12 +1947,23 @@ public sealed partial class CSharpDocumentBuilder {
             && _plan.TryGap(nextStart, out spec);
 
         if (planned) {
+            // ⚠ A preserved run goes *before* the point rather than into its flat rendering, because
+            // a point's flat form is one space or nothing and the run may be wider. The writer
+            // discards a pending gap at a break it takes, so the run appears when the point stays
+            // flat and vanishes when it breaks — the same answer `flatSpace` would have given, at
+            // the width the author wrote.
+            var preserved = PreservedRun(gap);
+
             switch (spec.Rule) {
                 case GapRule.Point:
                 case GapRule.FillPoint:
+                    if (preserved is not null) {
+                        _doc.Space(preserved);
+                    }
+
                     _doc.BreakPoint(
                         spec.Group,
-                        GapSpace(previous, nextKind, nextToken) != SpaceKind.Forbidden,
+                        preserved is null && FlatGapSpace(previous, nextKind, nextToken, gap) != SpaceKind.Forbidden,
                         spec.Rule == GapRule.FillPoint,
                         ResolveBlankLines(previous, nextPieceIndex, nextToken, Math.Max(0, newLines - 1)),
                         newLines == 0
@@ -1929,7 +1973,7 @@ public sealed partial class CSharpDocumentBuilder {
                     return;
 
                 case GapRule.Flat:
-                    _doc.Space(GapSpace(previous, nextKind, nextToken));
+                    EmitFlatGap(previous, nextKind, nextToken, gap);
                     return;
 
                 default:
@@ -1957,12 +2001,12 @@ public sealed partial class CSharpDocumentBuilder {
                 return;
             }
 
-            _doc.Space(GapSpace(previous, nextKind, nextToken));
+            EmitFlatGap(previous, nextKind, nextToken, gap);
             return;
         }
 
         if (ShouldJoin(previous, nextKind, nextToken)) {
-            _doc.Space(GapSpace(previous, nextKind, nextToken));
+            EmitFlatGap(previous, nextKind, nextToken, gap);
             return;
         }
 
@@ -2210,6 +2254,61 @@ public sealed partial class CSharpDocumentBuilder {
             CollectionElementSyntax => true,
             _ => false
         };
+
+    /// <summary>
+    ///     A gap that stays on one line, with <c>disable_space_changes</c> resolved.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Byte for byte, which is one step past what <see cref="SpaceKind" /> can say. The oracle
+    ///     preserves the whole run — <c>a  +  b</c> keeps both double spaces — and a
+    ///     <see cref="SpaceKind.Required" /> renders exactly one space, so a run wider than that is
+    ///     emitted as text. Its width is measured like any other text, so the wrapping the key does
+    ///     <em>not</em> suppress still sees the columns the run occupies.
+    ///     <para>
+    ///         ⚠ Only where the source gap held no newline. The other call sites reach here having
+    ///         decided to <em>join</em> a break the author wrote, and there is no run to preserve: what
+    ///         the author wrote at that gap was a line ending. One space or none, from
+    ///         <see cref="FlatGapSpace" />, is the whole of the answer there.
+    ///     </para>
+    /// </remarks>
+    void EmitFlatGap(Piece previous, PieceKind nextKind, SyntaxToken nextToken, string gap) {
+        if (PreservedRun(gap) is { } preserved) {
+            _doc.Space(preserved);
+            return;
+        }
+
+        _doc.Space(FlatGapSpace(previous, nextKind, nextToken, gap));
+    }
+
+    /// <summary>
+    ///     The author's own inter-token run, when <c>disable_space_changes</c> asks for it verbatim.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Null in three cases, and each is a case <see cref="FlatGapSpace" /> already answers. The
+    ///     key is off. The run is one character or none, which one <see cref="SpaceKind" /> bit says
+    ///     exactly. Or the run holds a newline, which means the caller is *joining* a break the author
+    ///     wrote and there is no horizontal run to preserve — what the author wrote there was a line
+    ///     ending, and this key has no opinion about line endings.
+    /// </remarks>
+    string? PreservedRun(string gap) =>
+        _options.DisableSpaceChanges && gap.Length > 1 && CountNewLines(gap) == 0 ? gap : null;
+
+    /// <summary>
+    ///     <c>disable_space_changes</c>: the one-bit half of the run, which every caller needs.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ It sits above <see cref="GapSpace" />'s trailing-comment branch rather than inside it, so
+    ///     the gap before a trailing comment is preserved too. That is measured: the narrow sibling
+    ///     <c>disable_space_changes_before_trailing_comment</c> cannot move that gap at either of
+    ///     <c>space_before_trailing_comment</c>'s values, and this key can (SK-DIV-0060, SK-DIV-0062).
+    /// </remarks>
+    SpaceKind FlatGapSpace(Piece previous, PieceKind nextKind, SyntaxToken nextToken, string gap) {
+        if (!_options.DisableSpaceChanges) {
+            return GapSpace(previous, nextKind, nextToken);
+        }
+
+        return gap.AsSpan().IndexOfAny(' ', '\t') >= 0 ? SpaceKind.Required : SpaceKind.Forbidden;
+    }
 
     SpaceKind GapSpace(Piece previous, PieceKind nextKind, SyntaxToken nextToken) {
         // A trailing comment gets exactly one space before it (space_before_trailing_comment), and

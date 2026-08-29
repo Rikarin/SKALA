@@ -18,7 +18,24 @@ namespace Rikarin.Skala.Formatting.CSharp;
 ///     </para>
 /// </remarks>
 public sealed partial class CSharpDocumentBuilder {
+    /// <summary>
+    ///     The removal-suppressing half of the family, wrapped around the resolution itself.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ <c>disable_line_break_removal</c> is one-directional, and a blank run is where the two
+    ///     directions are easiest to conflate. Two of the three systems below only ever
+    ///     <em>reduce</em> a run — the cap and the near-brace removal — and one only ever raises it.
+    ///     Clamping the resolved count up to the author's own is exactly "the reductions are off and
+    ///     the requirement is not": measured, the oracle kept a three-blank run the cap would have cut
+    ///     to two and still inserted the blank <c>blank_lines_around_invocable</c> asks for, on the
+    ///     same file where <c>disable_blank_line_changes</c> suppressed both. SK-DIV-0064.
+    /// </remarks>
     int ResolveBlankLines(Piece previous, int nextPieceIndex, SyntaxToken nextToken, int sourceBlanks) {
+        var blanks = ResolveBlankLinesCore(previous, nextPieceIndex, nextToken, sourceBlanks);
+        return _options.DisableLineBreakRemoval ? Math.Max(blanks, sourceBlanks) : blanks;
+    }
+
+    int ResolveBlankLinesCore(Piece previous, int nextPieceIndex, SyntaxToken nextToken, int sourceBlanks) {
         // ⚠ `disable_blank_line_changes = true` short-circuits all three systems at once, which is
         // the whole reason this method is the one funnel: caps, requirements and removals are the
         // only three things in the formatter that can change a blank-line count, so returning the
@@ -29,7 +46,11 @@ public sealed partial class CSharpDocumentBuilder {
         // ⚠ It also subsumes the documentation-comment guard below rather than skipping it: a `///`
         // run's own count is what comes back, so the 0 → 1 split that guard exists to prevent cannot
         // happen on this path either.
-        if (_options.DisableBlankLineChanges) {
+        //
+        // ⚠ `disable_line_break_changes` arrives at the same return, and that is the measurement
+        // rather than an economy: the oracle's answer to it includes "blank runs included", so it is
+        // the union of this key and `disable_line_break_removal` and not a third rule (SK-DIV-0063).
+        if (_options.DisableBlankLineChanges || _options.DisableLineBreakChanges) {
             return sourceBlanks;
         }
 

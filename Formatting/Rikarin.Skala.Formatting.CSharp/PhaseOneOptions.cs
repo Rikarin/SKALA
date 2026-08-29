@@ -240,6 +240,10 @@ public readonly struct PhaseOneOptions {
         // ── The formatter's own off switches ─────────────────────────────────────────────────
         DisableFormatter = options.GetBool(Ids.DisableFormatter);
         DisableBlankLineChanges = options.GetBool(Ids.DisableBlankLineChanges);
+        DisableIndenter = options.GetBool(Ids.DisableIndenter);
+        DisableSpaceChanges = options.GetBool(Ids.DisableSpaceChanges);
+        DisableLineBreakChanges = options.GetBool(Ids.DisableLineBreakChanges);
+        DisableLineBreakRemoval = options.GetBool(Ids.DisableLineBreakRemoval);
 
         // ── Blank lines ──────────────────────────────────────────────────────────────────────
         KeepBlankLinesInCode = options.GetInt(Ids.KeepBlankLinesInCode);
@@ -807,6 +811,56 @@ public readonly struct PhaseOneOptions {
     ///     SK-DIV-0060.
     /// </remarks>
     public bool DisableBlankLineChanges { get; }
+
+    /// <summary>
+    ///     <c>disable_indenter</c>: no line's leading whitespace is rewritten.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Two halves, and the second is what makes it a suppression rather than "indent to zero".
+    ///     A line that existed in the input keeps the leading whitespace the author wrote; a line the
+    ///     <em>wrap</em> created did not exist in the input, has no leading whitespace to keep, and
+    ///     starts at column zero. Spacing, blank lines and wrapping all still apply. SK-DIV-0061.
+    ///     <para>
+    ///         ⚠ The margin is still measured against the indentation the rules <em>would</em> have
+    ///         written, not against the author's. Which of the two <c>jb cleanupcode</c> wraps against is
+    ///         unmeasured, and guessing it would be inventing a second rule out of the same probe.
+    ///     </para>
+    /// </remarks>
+    public bool DisableIndenter { get; }
+
+    /// <summary>
+    ///     <c>disable_space_changes</c>: every inter-token run comes back exactly as written.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ The recorded "inert at both values" was a fact about the fixture, not about the key:
+    ///     asked on a file whose spacing is actually wrong, the oracle preserves the runs byte for byte
+    ///     and still reindents and rewraps. Byte for byte rather than one-bit — a two-space run stays
+    ///     two — which is why a preserved run wider than a space is emitted as text rather than as a
+    ///     <see cref="SpaceKind" />. It also covers the gap before a trailing comment, which its narrow
+    ///     sibling <c>disable_space_changes_before_trailing_comment</c> cannot reach. SK-DIV-0062.
+    /// </remarks>
+    public bool DisableSpaceChanges { get; }
+
+    /// <summary>
+    ///     <c>disable_line_break_changes</c>: no line break is added and none removed.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Both directions and blank runs included — the union of
+    ///     <see cref="DisableBlankLineChanges" /> and <see cref="DisableLineBreakRemoval" />, plus the
+    ///     additions neither of those blocks. Spaces and indentation still move. SK-DIV-0063.
+    /// </remarks>
+    public bool DisableLineBreakChanges { get; }
+
+    /// <summary>
+    ///     <c>disable_line_break_removal</c>: a break the author wrote is never removed.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ One direction only, and that is the whole of what separates it from
+    ///     <see cref="DisableLineBreakChanges" />: a break the wrapping rules want is still added, and a
+    ///     blank line a requirement asks for is still inserted. What it blocks is the other side of each
+    ///     — the join, the cap, the near-brace removal. SK-DIV-0064.
+    /// </remarks>
+    public bool DisableLineBreakRemoval { get; }
 
     /// <summary>
     ///     The three members of the outdent family that move a wrapped <em>operator</em> left by its own
@@ -1742,25 +1796,39 @@ public static class Ids {
     //   disable_formatter          the file comes back byte for byte. Implemented.
     //   disable_blank_line_changes every blank run survives. Implemented.
     //   disable_int_align          masked by the export; decisive one key away.
-    //   disable_indenter           SK-DIV-0061, read by the oracle, not read here.
-    //   disable_space_changes      SK-DIV-0062,   "        "        "        "
-    //   disable_line_break_changes SK-DIV-0063,   "        "        "        "
-    //   disable_line_break_removal SK-DIV-0064,   "        "        "        "
+    //   disable_indenter           SK-DIV-0061, implemented; the sweep has not reached it.
+    //   disable_space_changes      SK-DIV-0062,      "                "               "
+    //   disable_line_break_changes SK-DIV-0063,      "                "               "
+    //   disable_line_break_removal SK-DIV-0064,      "                "               "
     //
     // The three that are not divergences at all — the two implemented and `disable_int_align` — plus
     // the two unreachable ones are recorded together in SK-DIV-0060, which carries the method.
     //
-    // ⚠ Four of them are deliberately *not* registered below. `Of` and `OfInert` both assert
-    // something about this formatter — "honoured" and "read, and unable to move anything" — and
-    // neither is true of a key nothing consults. Registering them to hold the measurement would put
-    // four unimplemented keys inside a claim, which is the failure OfInert's own remark warns about.
-    // The measurement lives in the divergence register, where an unimplemented behaviour belongs.
+    // ⚠ Four of them were deliberately *not* registered below while nothing consulted them, on the
+    // grounds that `Of` and `OfInert` each assert something about this formatter — "honoured" and
+    // "read, and unable to move anything" — and neither is true of a key nothing reads. They are
+    // read now, so they are registered; what has not changed is the tier, because the sweep is the
+    // evidence for that and it has not run on them.
     //
     // ⚠ Two of the nine are not reachable at all and are recorded as such rather than as "not done
     // yet": `disable_space_changes_before_trailing_comment` and `ignore_space_preservation`, both
     // under SK-DIV-0060.
     public static readonly OptionId DisableFormatter = Of("resharper_disable_formatter");
     public static readonly OptionId DisableBlankLineChanges = Of("resharper_disable_blank_line_changes");
+
+    // ⚠ The four the comment above records as "read by the oracle, not read here" are read here now.
+    // The mechanism is the one the two above already use — a suppression resolved at the single site
+    // that can change the class of edit, not a mode threaded through the writer — and it is split
+    // across two of them because the classes are: gaps and blank lines are decided in
+    // CSharpDocumentBuilder.EmitGap, and leading whitespace is written by LayoutWriter.
+    //
+    // ⚠ They stay Tier D and the registry keeps saying so. Tier A is "Skala reproduces Rider's
+    // behaviour, and the committed sweep substantiates it"; the sweep has never reached these four,
+    // so promoting them here would be a claim made by the same change that wrote the code.
+    public static readonly OptionId DisableIndenter = Of("resharper_disable_indenter");
+    public static readonly OptionId DisableSpaceChanges = Of("resharper_disable_space_changes");
+    public static readonly OptionId DisableLineBreakChanges = Of("resharper_disable_line_break_changes");
+    public static readonly OptionId DisableLineBreakRemoval = Of("resharper_disable_line_break_removal");
 
     // ⚠ Read and Tier D on the measurement: the C# formatter does not consult the unprefixed
     // spellings at all. Asked directly with each set to true on a file that exercises it, the oracle

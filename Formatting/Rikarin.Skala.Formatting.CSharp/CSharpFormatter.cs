@@ -215,7 +215,11 @@ public static class CSharpFormatter {
             options.MaxLineLength,
             indentUnit,
             newLine,
-            options.ContinuousIndentMultiplier
+            options.ContinuousIndentMultiplier,
+            // ⚠ `disable_indenter = true` and the writer needs the input, because "keep the leading
+            // whitespace the author wrote" cannot be answered from the document alone. Materialised
+            // only when the key is on, so the ordinary path does not pay for a whole-file string.
+            options.DisableIndenter ? text.ToString() : null
         );
         // ⚠ Two post-passes over the laid-out text, and the order between them is a decision.
         // The xmldoc sub-formatter goes first because it re-wraps comments against the *final* code
