@@ -54,8 +54,7 @@ public static class CorpusVariants {
         "resharper_csharp_keep_existing_primary_constructor_declaration_parens_arrangement",
         "resharper_csharp_keep_existing_property_patterns_arrangement",
         "resharper_csharp_keep_existing_switch_expression_arrangement",
-        "resharper_keep_existing_lambda_and_anonymous_function_parens_arrangement",
-        "resharper_keep_existing_line_break_before_declaration_body"
+        "resharper_keep_existing_lambda_and_anonymous_function_parens_arrangement"
     ];
 
     /// <summary>The set whose files are run under <see cref="Preservation" />.</summary>

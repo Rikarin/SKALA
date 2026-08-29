@@ -38,12 +38,16 @@ public sealed class ThisQualifierRule : ArrangementRule {
     /// </summary>
     public override bool NeedsSemantics => true;
 
-    public override bool IsEnabled(in ArrangementOptions options) =>
-        options.RemoveThisQualifier
-        || options.QualifyField
-        || options.QualifyProperty
-        || options.QualifyMethod
-        || options.QualifyEvent;
+    // ⚠ Unconditional since `resharper_remove_this_qualifier` was removed from the registry: the
+    // rule has to run whether the per-kind keys ask for a qualifier or its removal, and the old
+    // first disjunct was a key ReSharper does not read (SK-DIV-0070, and the sweep's SPURIOUS
+    // verdict on it — Skala's output varied across its values while the oracle's did not).
+    // ⚠ `true`, not a disjunction of the four qualification keys. The export sets all four to
+    // `false`, so a disjunction would switch the rule off entirely and `this.` would stop being
+    // removed — the exact behaviour this rule exists for. The old first disjunct
+    // (`resharper_remove_this_qualifier`, always `true` in the export) was carrying the rule, and
+    // removing a key must not change output.
+    public override bool IsEnabled(in ArrangementOptions options) => true;
 
     public override SyntaxNode Apply(ArrangementContext context) =>
         new Rewriter(context.Guard, context.Semantics, context.Options).Visit(context.Root);
@@ -87,7 +91,7 @@ public sealed class ThisQualifierRule : ArrangementRule {
             // ⚠ The key for *this member's kind* decides, not one switch for the whole file. A file
             // with `qualification_for_field = true` and `_for_property = false` keeps `this._field`
             // and loses `this.Property`, which is the oracle's own per-kind behaviour.
-            if (!options.RemoveThisQualifier || WantsQualifier(options, qualified)) {
+            if (WantsQualifier(options, qualified)) {
                 return visited;
             }
 

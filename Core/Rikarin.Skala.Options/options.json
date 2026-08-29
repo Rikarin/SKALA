@@ -8292,39 +8292,6 @@
       "expands": []
     },
     {
-      "key": "resharper_declaration_body_on_the_same_line",
-      "aliases": [],
-      "language": "csharp",
-      "type": "enum:PlacementStyle",
-      "default": "if_owner_is_single_line",
-      "defaultSource": "unknown",
-      "tier": "D",
-      "construct": "DeclarationBody",
-      "summary": "Undocumented ReSharper property; classified as C#-relevant by vocabulary.",
-      "since": "0.1",
-      "oracle": null,
-      "docs": null,
-      "templateLine": 716,
-      "expands": []
-    },
-    {
-      "key": "resharper_default_exception_variable_name",
-      "aliases": [],
-      "language": "csharp",
-      "type": "string",
-      "default": "e",
-      "defaultSource": "unknown",
-      "tier": "D",
-      "construct": "CatchClause",
-      "summary": "Undocumented ReSharper property; classified as C#-relevant by vocabulary.",
-      "since": "0.1",
-      "oracle": null,
-      "docs": null,
-      "templateLine": 717,
-      "expands": [],
-      "freeFormBecause": "The value is a C# identifier chosen by the user. JetBrains publishes no property page for this key at all."
-    },
-    {
       "key": "resharper_disable_blank_line_changes",
       "aliases": [],
       "language": "csharp",
@@ -8485,22 +8452,6 @@
       "expands": []
     },
     {
-      "key": "resharper_enable_wrapping",
-      "aliases": [],
-      "language": "csharp",
-      "type": "bool",
-      "default": "false",
-      "defaultSource": "template",
-      "tier": "D",
-      "construct": "Wrapping",
-      "summary": "Named as though it were the master switch for wrapping, and measured not to be one. The export sets it `false` and wrapping happens; both values are byte-identical on a file that wraps four ways, at 120 columns, at 60, and with `wrap_lines = false`.",
-      "since": "0.4",
-      "oracle": null,
-      "docs": "https://www.jetbrains.com/help/resharper/EditorConfig_Index.html",
-      "templateLine": 732,
-      "expands": []
-    },
-    {
       "key": "resharper_enforce_line_ending_style",
       "aliases": [],
       "language": "csharp",
@@ -8515,40 +8466,6 @@
       "docs": null,
       "templateLine": 733,
       "expands": []
-    },
-    {
-      "key": "resharper_event_handler_pattern_long",
-      "aliases": [],
-      "language": "csharp",
-      "type": "string",
-      "default": "$object$On$event$",
-      "defaultSource": "unknown",
-      "tier": "D",
-      "construct": "EventHandler",
-      "summary": "Undocumented ReSharper property; classified as C#-relevant by vocabulary.",
-      "since": "0.1",
-      "oracle": null,
-      "docs": null,
-      "templateLine": 734,
-      "expands": [],
-      "freeFormBecause": "A naming template built from the $object$ and $event$ macros, so the value space is every string containing them. JetBrains publishes no property page for this key."
-    },
-    {
-      "key": "resharper_event_handler_pattern_short",
-      "aliases": [],
-      "language": "csharp",
-      "type": "string",
-      "default": "On$event$",
-      "defaultSource": "unknown",
-      "tier": "D",
-      "construct": "EventHandler",
-      "summary": "Undocumented ReSharper property; classified as C#-relevant by vocabulary.",
-      "since": "0.1",
-      "oracle": null,
-      "docs": null,
-      "templateLine": 735,
-      "expands": [],
-      "freeFormBecause": "A naming template built from the $event$ macro. JetBrains publishes no property page for this key."
     },
     {
       "key": "resharper_expression_braces",
@@ -8844,23 +8761,6 @@
       "docs": null,
       "templateLine": 824,
       "expands": []
-    },
-    {
-      "key": "resharper_keep_existing_line_break_before_declaration_body",
-      "aliases": [],
-      "language": "csharp",
-      "type": "bool",
-      "default": "true",
-      "defaultSource": "unknown",
-      "tier": "D",
-      "construct": "DeclarationBody",
-      "summary": "Undocumented ReSharper property; classified as C#-relevant by vocabulary.",
-      "since": "0.1",
-      "oracle": null,
-      "docs": null,
-      "templateLine": 825,
-      "expands": [],
-      "inert": "The oracle returns a mixture of next-line and end-of-line declaration braces unchanged at both values, including with `declaration_body_on_the_same_line` pinned at `always` and at `never` so that key could not be deciding first. Nothing distinguishes the values on any input constructed."
     },
     {
       "key": "resharper_keep_user_linebreaks",
@@ -9178,22 +9078,6 @@
       "expands": []
     },
     {
-      "key": "resharper_prefer_line_break_after_multiline_lparen",
-      "aliases": [],
-      "language": "csharp",
-      "type": "bool",
-      "default": "true",
-      "defaultSource": "unknown",
-      "tier": "D",
-      "construct": "Wrapping",
-      "summary": "Whether a break follows a `(` whose contents span lines. Inert at both values and in both spellings, on a multi-statement lambda argument, a wide initializer argument and a nested call, at 120 and at 80 columns.",
-      "since": "0.1",
-      "oracle": null,
-      "docs": null,
-      "templateLine": 909,
-      "expands": []
-    },
-    {
       "key": "resharper_prefer_roslyn_rules_for_parentheses_clarity",
       "aliases": [],
       "language": "csharp",
@@ -9227,22 +9111,6 @@
       "freeFormBecause": "⚠ A gap, recorded rather than guessed. The key is on no JetBrains EditorConfig page and in no property index; its exported value `default` is attested nowhere in JetBrains' documentation, so not even one member of a candidate domain is confirmed. The neighbouring documented key is `wrap_before_eq`, which is a bool and a different option."
     },
     {
-      "key": "resharper_remove_blank_lines_near_braces",
-      "aliases": [],
-      "language": "csharp",
-      "type": "bool",
-      "default": "false",
-      "defaultSource": "template",
-      "tier": "D",
-      "construct": "BlankLines",
-      "summary": "The language-generic form of the two `remove_blank_lines_near_braces_in_*` keys.",
-      "since": "0.4",
-      "oracle": null,
-      "docs": "https://www.jetbrains.com/help/resharper/EditorConfig_Index.html",
-      "templateLine": 917,
-      "expands": []
-    },
-    {
       "key": "resharper_remove_only_unused_aliases",
       "aliases": [],
       "language": "csharp",
@@ -9273,22 +9141,6 @@
       "oracle": null,
       "docs": null,
       "templateLine": 921,
-      "expands": []
-    },
-    {
-      "key": "resharper_remove_this_qualifier",
-      "aliases": [],
-      "language": "csharp",
-      "type": "bool",
-      "default": "true",
-      "defaultSource": "unknown",
-      "tier": "D",
-      "construct": "MemberAccess",
-      "summary": "Undocumented ReSharper property; classified as C#-relevant by vocabulary.",
-      "since": "0.1",
-      "oracle": "constructs/arrangement/redundancy/qualifiers-and-parentheses.cs",
-      "docs": null,
-      "templateLine": 922,
       "expands": []
     },
     {
@@ -10010,22 +9862,6 @@
       "oracle": null,
       "docs": null,
       "templateLine": 1140,
-      "expands": []
-    },
-    {
-      "key": "resharper_wrap_arguments",
-      "aliases": [],
-      "language": "csharp",
-      "type": "enum:WrapStyle",
-      "default": "wrap_if_long",
-      "defaultSource": "template",
-      "tier": "D",
-      "construct": "Wrapping",
-      "summary": "The language-generic argument wrap style the export writes alongside the C# one. Inert: `chop_always` changes nothing, while `csharp_wrap_arguments_style = chop_always` in the same run chops every argument list in the file.",
-      "since": "0.4",
-      "oracle": null,
-      "docs": "https://www.jetbrains.com/help/resharper/EditorConfig_Index.html",
-      "templateLine": 1143,
       "expands": []
     },
     {

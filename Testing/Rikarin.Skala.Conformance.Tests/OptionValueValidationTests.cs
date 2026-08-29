@@ -35,12 +35,6 @@ public sealed class OptionValueValidationTests {
         // The header text itself.
         "file_header_template",
 
-        // A user-chosen identifier; JetBrains publishes no property page for the key.
-        "resharper_default_exception_variable_name",
-
-        // Naming templates built from $object$/$event$ macros.
-        "resharper_event_handler_pattern_long", "resharper_event_handler_pattern_short",
-
         // The literal text of the formatter's off/on marker comments.
         "resharper_formatter_off_tag", "resharper_formatter_on_tag",
 

@@ -66,7 +66,6 @@ public readonly struct ArrangementOptions {
             (AccessibilityModifierStyle)options.GetRaw(Ids.RequireAccessibilityModifiers)
             == AccessibilityModifierStyle.OmitIfDefault;
 
-        RemoveThisQualifier = options.GetBool(Ids.RemoveThisQualifier);
         QualifyField = options.GetBool(Ids.QualificationForField);
         QualifyProperty = options.GetBool(Ids.QualificationForProperty);
         QualifyMethod = options.GetBool(Ids.QualificationForMethod);
@@ -137,7 +136,6 @@ public readonly struct ArrangementOptions {
     public bool EmptyStringIsLiteral { get; }
 
     public bool OmitDefaultAccessibility { get; }
-    public bool RemoveThisQualifier { get; }
 
     /// <summary>
     ///     <c>dotnet_style_qualification_for_field</c>: whether an instance field is written
@@ -385,8 +383,6 @@ public readonly struct ArrangementOptions {
 
         public static readonly OptionId RequireAccessibilityModifiers =
             Of("dotnet_style_require_accessibility_modifiers");
-
-        public static readonly OptionId RemoveThisQualifier = Of("resharper_remove_this_qualifier");
 
         public static readonly OptionId QualificationForField = Of("dotnet_style_qualification_for_field");
 
