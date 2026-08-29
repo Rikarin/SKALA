@@ -1532,6 +1532,75 @@
     ]
   },
   {
+    "Key": "resharper_csharp_force_chop_compound_do_expression",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true,
+    "Fixture": "constructs/breaks/force-chop-compound.cs",
+    "Values": [
+      {
+        "Value": "true",
+        "OracleHash": "d9bf0638",
+        "SkalaHash": "d9bf0638",
+        "Agree": true
+      },
+      {
+        "Value": "false",
+        "OracleHash": "13b70b7e",
+        "SkalaHash": "13b70b7e",
+        "Agree": true
+      }
+    ]
+  },
+  {
+    "Key": "resharper_csharp_force_chop_compound_if_expression",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true,
+    "Fixture": "constructs/breaks/force-chop-compound.cs",
+    "Values": [
+      {
+        "Value": "true",
+        "OracleHash": "8c10ce56",
+        "SkalaHash": "8c10ce56",
+        "Agree": true
+      },
+      {
+        "Value": "false",
+        "OracleHash": "13b70b7e",
+        "SkalaHash": "13b70b7e",
+        "Agree": true
+      }
+    ]
+  },
+  {
+    "Key": "resharper_csharp_force_chop_compound_while_expression",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true,
+    "Fixture": "constructs/breaks/force-chop-compound.cs",
+    "Values": [
+      {
+        "Value": "true",
+        "OracleHash": "56bce4e8",
+        "SkalaHash": "56bce4e8",
+        "Agree": true
+      },
+      {
+        "Value": "false",
+        "OracleHash": "13b70b7e",
+        "SkalaHash": "13b70b7e",
+        "Agree": true
+      }
+    ]
+  },
+  {
     "Key": "resharper_csharp_indent_inside_namespace",
     "Tier": "A",
     "Outcome": "Conformant",
@@ -1556,7 +1625,7 @@
   },
   {
     "Key": "resharper_csharp_indent_invocation_pars",
-    "Tier": "D",
+    "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 4,
     "SkalaDistinct": 4,
@@ -1591,7 +1660,7 @@
   },
   {
     "Key": "resharper_csharp_indent_method_decl_pars",
-    "Tier": "D",
+    "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 4,
     "SkalaDistinct": 4,
@@ -6697,6 +6766,98 @@
     ]
   },
   {
+    "Key": "resharper_disable_indenter",
+    "Tier": "D",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true,
+    "Fixture": "constructs/suppression/resharper_disable_indenter.cs",
+    "Values": [
+      {
+        "Value": "true",
+        "OracleHash": "4019f4e9",
+        "SkalaHash": "4019f4e9",
+        "Agree": true
+      },
+      {
+        "Value": "false",
+        "OracleHash": "be645f28",
+        "SkalaHash": "be645f28",
+        "Agree": true
+      }
+    ]
+  },
+  {
+    "Key": "resharper_disable_line_break_changes",
+    "Tier": "D",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true,
+    "Fixture": "constructs/suppression/resharper_disable_line_break_changes.cs",
+    "Values": [
+      {
+        "Value": "true",
+        "OracleHash": "9b0dc3d6",
+        "SkalaHash": "9b0dc3d6",
+        "Agree": true
+      },
+      {
+        "Value": "false",
+        "OracleHash": "b9da239a",
+        "SkalaHash": "b9da239a",
+        "Agree": true
+      }
+    ]
+  },
+  {
+    "Key": "resharper_disable_line_break_removal",
+    "Tier": "D",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true,
+    "Fixture": "constructs/suppression/resharper_disable_line_break_removal.cs",
+    "Values": [
+      {
+        "Value": "true",
+        "OracleHash": "3a1bcd1c",
+        "SkalaHash": "3a1bcd1c",
+        "Agree": true
+      },
+      {
+        "Value": "false",
+        "OracleHash": "9336f81f",
+        "SkalaHash": "9336f81f",
+        "Agree": true
+      }
+    ]
+  },
+  {
+    "Key": "resharper_disable_space_changes",
+    "Tier": "D",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true,
+    "Fixture": "constructs/suppression/resharper_disable_space_changes.cs",
+    "Values": [
+      {
+        "Value": "true",
+        "OracleHash": "32955e2c",
+        "SkalaHash": "32955e2c",
+        "Agree": true
+      },
+      {
+        "Value": "false",
+        "OracleHash": "6021893e",
+        "SkalaHash": "6021893e",
+        "Agree": true
+      }
+    ]
+  },
+  {
     "Key": "resharper_enforce_line_ending_style",
     "Tier": "A",
     "Outcome": "Conformant",
@@ -7623,6 +7784,29 @@
     ]
   },
   {
+    "Key": "resharper_xmldoc_blank_line_after_pi",
+    "Tier": "D",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true,
+    "Fixture": "constructs/xmldoc/resharper_xmldoc_blank_line_after_pi.cs",
+    "Values": [
+      {
+        "Value": "true",
+        "OracleHash": "2966dcb5",
+        "SkalaHash": "2966dcb5",
+        "Agree": true
+      },
+      {
+        "Value": "false",
+        "OracleHash": "79469712",
+        "SkalaHash": "79469712",
+        "Agree": true
+      }
+    ]
+  },
+  {
     "Key": "resharper_xmldoc_indent_child_elements",
     "Tier": "A",
     "Outcome": "Conformant",
@@ -7785,6 +7969,81 @@
     ]
   },
   {
+    "Key": "resharper_xmldoc_linebreak_before_multiline_elements",
+    "Tier": "D",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true,
+    "Fixture": "constructs/xmldoc/resharper_xmldoc_linebreak_before_multiline_elements.cs",
+    "Values": [
+      {
+        "Value": "true",
+        "OracleHash": "92b066b0",
+        "SkalaHash": "92b066b0",
+        "Agree": true
+      },
+      {
+        "Value": "false",
+        "OracleHash": "236143ca",
+        "SkalaHash": "236143ca",
+        "Agree": true
+      }
+    ]
+  },
+  {
+    "Key": "resharper_xmldoc_linebreak_before_singleline_elements",
+    "Tier": "D",
+    "Outcome": "Unexercised",
+    "OracleDistinct": 1,
+    "SkalaDistinct": 1,
+    "BaselineAgrees": true,
+    "Fixture": "constructs/xmldoc/resharper_xmldoc_linebreak_before_singleline_elements.cs",
+    "Values": [
+      {
+        "Value": "true",
+        "OracleHash": "545faf7c",
+        "SkalaHash": "545faf7c",
+        "Agree": true
+      },
+      {
+        "Value": "false",
+        "OracleHash": "545faf7c",
+        "SkalaHash": "545faf7c",
+        "Agree": true
+      }
+    ]
+  },
+  {
+    "Key": "resharper_xmldoc_linebreaks_inside_tags_for_elements_longer_than",
+    "Tier": "D",
+    "Outcome": "Inert",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 1,
+    "BaselineAgrees": true,
+    "Fixture": "constructs/xmldoc/resharper_xmldoc_linebreaks_inside_tags_for_elements_longer_than.cs",
+    "Values": [
+      {
+        "Value": "2147483647",
+        "OracleHash": "01d9eef8",
+        "SkalaHash": "01d9eef8",
+        "Agree": true
+      },
+      {
+        "Value": "0",
+        "OracleHash": "ee466874",
+        "SkalaHash": "01d9eef8",
+        "Agree": false
+      },
+      {
+        "Value": "1",
+        "OracleHash": "ee466874",
+        "SkalaHash": "01d9eef8",
+        "Agree": false
+      }
+    ]
+  },
+  {
     "Key": "resharper_xmldoc_linebreaks_inside_tags_for_elements_with_child_elements",
     "Tier": "D",
     "Outcome": "Divergent",
@@ -7848,13 +8107,42 @@
       {
         "Value": "3",
         "OracleHash": "4cec01f4",
-        "SkalaHash": "4cec01f4",
-        "Agree": true
+        "SkalaHash": "1e72a350",
+        "Agree": false
       },
       {
         "Value": "1",
         "OracleHash": "a886eadb",
-        "SkalaHash": "f1501068",
+        "SkalaHash": "a886eadb",
+        "Agree": true
+      }
+    ]
+  },
+  {
+    "Key": "resharper_xmldoc_max_line_length",
+    "Tier": "D",
+    "Outcome": "Divergent",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true,
+    "Fixture": "constructs/xmldoc/resharper_xmldoc_max_line_length.cs",
+    "Values": [
+      {
+        "Value": "120",
+        "OracleHash": "f4ae84f1",
+        "SkalaHash": "f4ae84f1",
+        "Agree": true
+      },
+      {
+        "Value": "0",
+        "OracleHash": "23f870b0",
+        "SkalaHash": "f4ae84f1",
+        "Agree": false
+      },
+      {
+        "Value": "1",
+        "OracleHash": "23f870b0",
+        "SkalaHash": "c69fadf1",
         "Agree": false
       }
     ]
@@ -7925,6 +8213,98 @@
         "OracleHash": "1d821f0a",
         "SkalaHash": "1d821f0a",
         "Agree": true
+      }
+    ]
+  },
+  {
+    "Key": "resharper_xmldoc_spaces_inside_tags",
+    "Tier": "D",
+    "Outcome": "Unexercised",
+    "OracleDistinct": 1,
+    "SkalaDistinct": 1,
+    "BaselineAgrees": true,
+    "Fixture": "constructs/xmldoc/resharper_xmldoc_spaces_inside_tags.cs",
+    "Values": [
+      {
+        "Value": "true",
+        "OracleHash": "2628d5c0",
+        "SkalaHash": "2628d5c0",
+        "Agree": true
+      },
+      {
+        "Value": "false",
+        "OracleHash": "2628d5c0",
+        "SkalaHash": "2628d5c0",
+        "Agree": true
+      }
+    ]
+  },
+  {
+    "Key": "resharper_xmldoc_wrap_lines",
+    "Tier": "D",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true,
+    "Fixture": "constructs/xmldoc/resharper_xmldoc_wrap_lines.cs",
+    "Values": [
+      {
+        "Value": "true",
+        "OracleHash": "32409187",
+        "SkalaHash": "32409187",
+        "Agree": true
+      },
+      {
+        "Value": "false",
+        "OracleHash": "34884a91",
+        "SkalaHash": "34884a91",
+        "Agree": true
+      }
+    ]
+  },
+  {
+    "Key": "resharper_xmldoc_wrap_tags_and_pi",
+    "Tier": "D",
+    "Outcome": "Spurious",
+    "OracleDistinct": 1,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true,
+    "Fixture": "constructs/xmldoc/resharper_xmldoc_wrap_tags_and_pi.cs",
+    "Values": [
+      {
+        "Value": "true",
+        "OracleHash": "0b9566f7",
+        "SkalaHash": "0b9566f7",
+        "Agree": true
+      },
+      {
+        "Value": "false",
+        "OracleHash": "0b9566f7",
+        "SkalaHash": "ddacfa5f",
+        "Agree": false
+      }
+    ]
+  },
+  {
+    "Key": "resharper_xmldoc_wrap_text",
+    "Tier": "D",
+    "Outcome": "Divergent",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true,
+    "Fixture": "constructs/xmldoc/resharper_xmldoc_wrap_text.cs",
+    "Values": [
+      {
+        "Value": "true",
+        "OracleHash": "1b9d320b",
+        "SkalaHash": "1b9d320b",
+        "Agree": true
+      },
+      {
+        "Value": "false",
+        "OracleHash": "3e276786",
+        "SkalaHash": "861cf95d",
+        "Agree": false
       }
     ]
   }

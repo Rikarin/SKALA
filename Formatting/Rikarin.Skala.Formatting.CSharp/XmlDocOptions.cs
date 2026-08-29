@@ -316,10 +316,20 @@ public readonly struct XmlDocOptions {
 /// </summary>
 /// <remarks>
 ///     ⚠ Every id here is registered through <see cref="Ids" />'s unoracled path, so none of them enters
-///     <see cref="PhaseOneOptions.Implemented" /> and none of them claims Tier A. That is the honest
-///     state: Tier A means "pinned by an oracle fixture" and the oracle has nothing to say here. It is
-///     <em>not</em> the inert path, which would say these keys change nothing, and they change output on
-///     every file with a documentation comment in it.
+///     <see cref="PhaseOneOptions.Implemented" />. It is <em>not</em> the inert path, which would say
+///     these keys change nothing, and they change output on every file with a documentation comment in
+///     it.
+///     <para>
+///         ⚠
+///         <b>
+///             This remark used to end "and none of them claims Tier A … the oracle has nothing to say
+///             here". That stopped being true on 2026-08-29 and the sentence outlived the fact.
+///         </b> The
+///         <c>DocComments</c> oracle profile enables <c>CSharpFormatDocComments</c>, the fixtures under
+///         <c>constructs/xmldoc/</c> carry <c>oracle</c> globs, and the committed key-flip sweep holds a
+///         row for each — three of them Conformant at every value, and now Tier A. The unoracled
+///         registration path is about how the id is declared, not about whether evidence can exist.
+///     </para>
 /// </remarks>
 public static class XmlDocIds {
     public static readonly OptionId WrapLines = Ids.XmlDocWrapLines;
@@ -456,5 +466,53 @@ public static class XmlDocIds {
             "resharper_xmldoc_spaces_around_eq_in_pi_attribute",
             "Pending on the same prerequisite: the instruction's bytes are copied, '=' included."
         )
+    ];
+
+    /// <summary>
+    ///     The ids the sub-formatter reads, as a set, for the tier invariant.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠
+    ///     <b>
+    ///         A third component that reads options, and until 2026-08-29 the tier invariant could not
+    ///         see it.
+    ///     </b> <c>OptionCoverageTests.Implemented()</c> was
+    ///     <c>
+    /// PhaseOneOptions ∪
+    ///     ArrangementOptions
+    ///     </c>, so a key this sub-formatter implements could never satisfy "Tier A
+    ///     implies implemented" — it read as an over-claim however well it was measured. Three keys
+    ///     Conformant against the oracle at every value were blocked on that alone.
+    ///     <para>
+    ///         ⚠ The remark above this class said the oracle "has nothing to say here", and that was true
+    ///         when it was written and is not any more: the <c>DocComments</c> oracle profile enables
+    ///         <c>CSharpFormatDocComments</c>, the fixtures under <c>constructs/xmldoc/</c> carry
+    ///         <c>oracle</c> globs, and the committed sweep now holds a row for each of them. The claim
+    ///         "no oracle evidence exists for doc comments" outlived the fact by one milestone.
+    ///     </para>
+    /// </remarks>
+    public static ImmutableArray<OptionId> Implemented => [
+        WrapLines,
+        MaxLineLength,
+        WrapText,
+        WrapTagsAndPi,
+        KeepUserLinebreaks,
+        MaxBlankLinesBetweenTags,
+        IndentChildElements,
+        IndentText,
+        LinebreaksInsideTagsForElementsWithChildElements,
+        LinebreaksInsideTagsForMultilineElements,
+        LinebreakBeforeMultilineElements,
+        LinebreakBeforeSinglelineElements,
+        SpacesInsideTags,
+        SpaceBeforeSelfClosing,
+        SpaceAfterTripleSlash,
+        IndentSize,
+        IndentStyle,
+        LinebreakBeforeElements,
+        SpaceAfterLastAttribute,
+        SpacesAroundEqInAttribute,
+        BlankLineAfterPi,
+        LinebreaksInsideTagsForElementsLongerThan
     ];
 }

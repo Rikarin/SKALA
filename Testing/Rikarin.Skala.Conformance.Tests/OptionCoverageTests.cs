@@ -34,7 +34,9 @@ public sealed class OptionCoverageTests {
     ///     Every option Skala implements: the formatter's and the arranger's.
     /// </summary>
     /// <remarks>
-    ///     ⚠ Two sets, one claim. Milestone 4 added a second component that reads options, and folding
+    ///     ⚠ Three sets, one claim. Milestone 4 added a second component that reads options, and the
+    ///     doc-comment sub-formatter is a third — it was missing here until 2026-08-29, which made Tier A
+    ///     unreachable for every key it implements however well measured. Folding them together
     ///     its keys into <see cref="PhaseOneOptions.Implemented" /> would have made
     ///     <see cref="EveryImplementedOption_ChangesTheOutputOfItsCorpusFile" /> unprovable for a dozen
     ///     of them — that test formats a file, and an arrangement key changes nothing about formatting.
@@ -43,7 +45,8 @@ public sealed class OptionCoverageTests {
     /// </remarks>
     static HashSet<OptionId> Implemented() => [
         .. PhaseOneOptions.Implemented,
-        .. Rikarin.Skala.Formatting.CSharp.Arrangement.ArrangementOptions.Implemented
+        .. Rikarin.Skala.Formatting.CSharp.Arrangement.ArrangementOptions.Implemented,
+        .. Rikarin.Skala.Formatting.CSharp.XmlDocIds.Implemented
     ];
 
     [Fact]
