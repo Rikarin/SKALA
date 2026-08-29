@@ -51,7 +51,6 @@ public readonly struct XmlDocOptions {
         // two-line output it gives at 120. A negative width is not a width and still falls back.
         MaxLineLength = options.GetInt(XmlDocIds.MaxLineLength) is var width and >= 0 ? width : 120;
         WrapText = options.GetBool(XmlDocIds.WrapText);
-        WrapTagsAndPi = options.GetBool(XmlDocIds.WrapTagsAndPi);
         KeepUserLinebreaks = options.GetBool(XmlDocIds.KeepUserLinebreaks);
         MaxBlankLinesBetweenTags = Math.Max(0, options.GetInt(XmlDocIds.MaxBlankLinesBetweenTags));
         IndentChildElements = (ChildIndentStyle)options.GetRaw(XmlDocIds.IndentChildElements);
@@ -127,9 +126,6 @@ public readonly struct XmlDocOptions {
 
     /// <summary><c>resharper_xmldoc_wrap_text</c>: whether prose may be re-flowed.</summary>
     public bool WrapText { get; }
-
-    /// <summary><c>resharper_xmldoc_wrap_tags_and_pi</c>: whether a tag may be moved to a new line to fit.</summary>
-    public bool WrapTagsAndPi { get; }
 
     /// <summary>
     ///     <c>resharper_xmldoc_keep_user_linebreaks</c>: a line break the author wrote is a line break.
@@ -380,7 +376,6 @@ public static class XmlDocIds {
     public static readonly OptionId WrapLines = Ids.XmlDocWrapLines;
     public static readonly OptionId MaxLineLength = Ids.XmlDocMaxLineLength;
     public static readonly OptionId WrapText = Ids.XmlDocWrapText;
-    public static readonly OptionId WrapTagsAndPi = Ids.XmlDocWrapTagsAndPi;
     public static readonly OptionId KeepUserLinebreaks = Ids.XmlDocKeepUserLinebreaks;
     public static readonly OptionId MaxBlankLinesBetweenTags = Ids.XmlDocMaxBlankLinesBetweenTags;
     public static readonly OptionId IndentChildElements = Ids.XmlDocIndentChildElements;
@@ -412,7 +407,6 @@ public static class XmlDocIds {
         WrapLines,
         MaxLineLength,
         WrapText,
-        WrapTagsAndPi,
         KeepUserLinebreaks,
         MaxBlankLinesBetweenTags,
         IndentChildElements,
@@ -470,6 +464,11 @@ public static class XmlDocIds {
         new(
             "resharper_xmldoc_allow_far_alignment",
             "Pending on the same prerequisite: no header is aligned yet, so 'too large' still has no subject."
+        ),
+        // ⚠ The fifth of that family, and it used to be in `Honoured` under a reading of its name.
+        new(
+            "resharper_xmldoc_wrap_tags_and_pi",
+            "Pending on the same prerequisite, and the reading it used to carry is measured false. It was read as 'whether a tag may be moved to a new line to fit', and at both values the oracle moves a <see/> off the end of a line of prose identically — the committed fixture is byte-identical at true and at false, which is the SPURIOUS row the sweep reported. What it really governs is a break INSIDE a tag header: a <see cref=... href=...> 170 columns wide comes back with its second attribute on a continuation line at true and whole at false, and the same probe leaves a <?pi ...?> alone. Skala cannot wrap a header, and it cannot re-read one either — XmlDocModel refuses a multi-line tag header as Unmodelled — so emitting one would cost idempotence. SK-DIV-0079."
         ),
 
         // ── Measured inert in the oracle: the indent is the C# file's ────────────────────────

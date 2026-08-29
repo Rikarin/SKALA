@@ -10676,9 +10676,9 @@
       "defaultSource": "template",
       "tier": "D",
       "construct": "LineWrapping",
-      "summary": "Line wrapping — Wrap tags and processing instructions",
+      "summary": "Line wrapping — Wrap tags and processing instructions. It wraps a tag's attributes across lines; it is not what lets a tag move to a line of its own. Not implemented — SK-DIV-0079.",
       "since": "0.1",
-      "oracle": "constructs/xmldoc/resharper_xmldoc_wrap_tags_and_pi.cs",
+      "oracle": null,
       "docs": "https://www.jetbrains.com/help/resharper/EditorConfig_XMLDOC_XmlDocCodeStylePageSchema.html#resharper_xmldoc_wrap_tags_and_pi",
       "templateLine": 1193,
       "expands": []

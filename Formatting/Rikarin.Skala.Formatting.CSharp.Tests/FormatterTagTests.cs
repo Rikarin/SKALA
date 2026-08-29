@@ -56,14 +56,20 @@ public sealed class FormatterTagTests {
     /// </summary>
     [Fact]
     public void TheXmlDocSubFormatter_LeavesADocCommentInsideTheRegionAlone() {
+        // ⚠ The comment is two crammed elements rather than one long line, and that is a measurement
+        // rather than a tidy-up. `jb cleanupcode` with `CSharpFormatDocComments` enabled returns a
+        // lone `///<summary>…</summary>` **byte-identical** whenever nothing about it has to change —
+        // the marker's space arrives with a rebuild — so the old subject stopped separating "the tag
+        // suppressed the sub-formatter" from "the sub-formatter had nothing to do". Two elements on
+        // one line have to be split, so the control below is live again.
         const string source = """
                               class D {
                                   // @formatter:off
-                                  ///<summary>A hand-laid line long enough that the sub-formatter would want to wrap it over two.</summary>
+                                  ///<summary>A hand-laid line.</summary><remarks>Beside it.</remarks>
                                   public void M() { }
                                   // @formatter:on
 
-                                  ///<summary>A hand-laid line long enough that the sub-formatter would want to wrap it over two.</summary>
+                                  ///<summary>A hand-laid line.</summary><remarks>Beside it.</remarks>
                                   public void N() { }
                               }
                               """;
@@ -77,7 +83,7 @@ public sealed class FormatterTagTests {
             .Formatted;
 
         Assert.Contains(
-            "    ///<summary>A hand-laid line long enough that the sub-formatter would want to wrap it over two.</summary>\n    public void M() { }",
+            "    ///<summary>A hand-laid line.</summary><remarks>Beside it.</remarks>\n    public void M() { }",
             formatted,
             StringComparison.Ordinal
         );

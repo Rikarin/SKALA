@@ -2633,21 +2633,30 @@ public static class Ids {
     // keeps `oracle: null` in the registry — a Tier D entry with a fixture glob would have to be a
     // key the *sweep* demoted, and the sweep has never swept these.
     //
-    // ⚠ SK-DIV-0019: the wrap column. Five of the nine are one disagreement — the oracle keeps the
-    // word that crosses `max_line_length` on the line and breaks after it, Skala breaks before it —
-    // and they diverge together because every one of them is measured on a comment that wraps.
+    // ⚠ SK-DIV-0019 closed the wrap column, and the sweep then reached these two and found the rest
+    // of the arithmetic. `max_line_length = 0` is a width of zero and not a stand-in for 120 — at
+    // `0` and at `1` the oracle puts every word of a 170-column summary on its own line — and
+    // `wrap_text` is permission for a *word* to move rather than for the element to be opened: at
+    // `false` a `<summary>` of plain prose comes back whole on one line, while the same key over
+    // prose carrying a `<see/>` opens the element and moves the `<see/>` alone. Both are Conformant
+    // at every value now, so they are `Of`; the tier is the sweep's to set on its next run.
     public static readonly OptionId XmlDocWrapLines = Of("resharper_xmldoc_wrap_lines");
-    public static readonly OptionId XmlDocMaxLineLength = OfUnoracled("resharper_xmldoc_max_line_length");
-    public static readonly OptionId XmlDocWrapText = OfUnoracled("resharper_xmldoc_wrap_text");
-    public static readonly OptionId XmlDocWrapTagsAndPi = OfUnoracled("resharper_xmldoc_wrap_tags_and_pi");
+    public static readonly OptionId XmlDocMaxLineLength = Of("resharper_xmldoc_max_line_length");
+    public static readonly OptionId XmlDocWrapText = Of("resharper_xmldoc_wrap_text");
+
+    // ⚠ `resharper_xmldoc_wrap_tags_and_pi` is not registered here at all any more. It is in
+    // `XmlDocIds.Refused` with the four tag-header keys it belongs with: measured, it governs a
+    // break *inside* a tag header, which Skala can neither emit nor re-read. SK-DIV-0079.
 
     public static readonly OptionId XmlDocLinebreaksInsideTagsForElementsLongerThan =
         Of("resharper_xmldoc_linebreaks_inside_tags_for_elements_longer_than");
 
-    // ⚠ SK-DIV-0020: mixed content. The oracle opens an element that holds text *and* children;
-    // Skala opens one that holds only children.
+    // ⚠ Conformant at both values since the sweep reached it. "Place single-line elements on a new
+    // line" puts what *follows* the element on a new line too: measured on a `<remarks>` holding
+    // `Leading prose. <c>Code.</c> Trailing prose.`, at `true` the oracle writes those on three
+    // lines, and Skala used to break only in front of the `<c>`.
     public static readonly OptionId XmlDocLinebreakBeforeSinglelineElements =
-        OfUnoracled("resharper_xmldoc_linebreak_before_singleline_elements");
+        Of("resharper_xmldoc_linebreak_before_singleline_elements");
 
     // ⚠ SK-DIV-0021: the oracle leaves the content of an element that `linebreak_before_elements`
     // does not name on one line however long it is; Skala wraps it.

@@ -113,23 +113,40 @@ public sealed class OptionObservabilityTests {
     ///         semantics with, and is where these keys' evidence lives anyway.
     ///     </para>
     /// </remarks>
-    [Theory]
-    [MemberData(nameof(Unoracled))]
-    public void AnUnoracledKey_IsObservable(string key) {
-        var outputs = FormatProbeAtEveryValue(key, out var values);
-        Assert.True(
-            outputs.Count > 1,
-            $"{key} is registered OfUnoracled — honoured, and not provable against the oracle — and every value "
-            + $"in [{string.Join(", ", values)}] formats the doc-comment probe to the same bytes. "
-            + "Unoracled is a statement about the evidence, never about the wiring: a key nothing can observe is "
-            + "unimplemented, and calling it unoracled hides that behind a reason that sounds like one. Either wire "
-            + "it up, move it to XmlDocIds.Refused with a reason, or widen the probe if the shape it governs is "
-            + "genuinely missing from it."
-        );
+    /// <remarks>
+    ///     ⚠ A <c>[Fact]</c> over the list rather than a <c>[Theory]</c> per key, because the list is
+    ///     empty and an empty <c>MemberData</c> is a red build rather than a green one. The emptiness is
+    ///     the finding and is asserted below: nothing in the <c>resharper_xmldoc_*</c> family is
+    ///     "asked, and answered differently" any more. Three of the four that were —
+    ///     <c>max_line_length</c>, <c>wrap_text</c>, <c>linebreak_before_singleline_elements</c> —
+    ///     agree at every value once the model behind them was re-probed rather than read off a
+    ///     fixture, and the fourth, <c>wrap_tags_and_pi</c>, turned out to govern a construct Skala
+    ///     does not produce and moved to <c>XmlDocIds.Refused</c> (SK-DIV-0079). The loop still runs,
+    ///     so the moment a key is registered <c>OfUnoracled</c> again it has to be observable.
+    /// </remarks>
+    [Fact]
+    public void AnUnoracledKey_IsObservable() {
+        foreach (var key in Ids.ReadButUnoracled.Select(static id => OptionRegistry.Get(id).Key)) {
+            var outputs = FormatProbeAtEveryValue(key, out var values);
+            Assert.True(
+                outputs.Count > 1,
+                $"{key} is registered OfUnoracled — honoured, and not provable against the oracle — and every value "
+                + $"in [{string.Join(", ", values)}] formats the doc-comment probe to the same bytes. "
+                + "Unoracled is a statement about the evidence, never about the wiring: a key nothing can observe is "
+                + "unimplemented, and calling it unoracled hides that behind a reason that sounds like one. Either wire "
+                + "it up, move it to XmlDocIds.Refused with a reason, or widen the probe if the shape it governs is "
+                + "genuinely missing from it."
+            );
 
-        Assert.True(OptionRegistry.TryResolve(key, out var id));
-        Assert.NotEqual(OptionTier.A, OptionRegistry.Get(id).Tier);
-        Assert.NotEqual(OptionTier.B, OptionRegistry.Get(id).Tier);
+            Assert.True(OptionRegistry.TryResolve(key, out var id));
+            Assert.NotEqual(OptionTier.A, OptionRegistry.Get(id).Tier);
+            Assert.NotEqual(OptionTier.B, OptionRegistry.Get(id).Tier);
+        }
+
+        // ⚠ Not anti-vacuity theatre. `OfUnoracled` is a real state and it is currently unoccupied;
+        // this line says so out loud, so that a key acquiring the mark has to change a number here
+        // and cannot slip in under an assertion that was passing on an empty list.
+        Assert.Empty(Ids.ReadButUnoracled);
     }
 
     /// <summary>

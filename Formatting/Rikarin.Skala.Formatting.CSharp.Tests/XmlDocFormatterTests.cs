@@ -209,12 +209,42 @@ public sealed class XmlDocSubFormatterTests {
         );
     }
 
+    /// <summary>
+    ///     ⚠ The indent inside a documentation comment is the <em>C#</em> indent's, not the xmldoc
+    ///     family's, and this test used to assert the opposite.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ It was <c>IndentSize_IsTheXmlDocsOwn</c>, asserting that
+    ///     <c>resharper_xmldoc_indent_size = 2</c> gives <c>///   &lt;para&gt;</c>. Measured under
+    ///     <c>OracleProfile.DocComments</c> on this very shape: at
+    ///     <c>resharper_xmldoc_indent_size = 1</c> the child stays at four columns, at
+    ///     <c>indent_size = 1</c> it moves to one, and at <c>indent_size = 2</c> — asked with
+    ///     <c>tab_width = 8</c> in the same run, so a tab width could not be answering — it moves to
+    ///     two. <c>resharper_xmldoc_indent_style = tab</c> leaves the child indented with spaces, and
+    ///     <c>indent_style = tab</c> tabs the file's code lines while leaving the comment's inner
+    ///     indent four spaces. Both <c>xmldoc_</c> keys are registered inert on that measurement; the
+    ///     old assertion passed only because the committed fixture agrees at <c>4</c>/<c>space</c>,
+    ///     which is what the C# indent produces anyway.
+    /// </remarks>
     [Fact]
-    public void IndentSize_IsTheXmlDocsOwn() {
+    public void IndentSize_IsTheCSharpIndents_AndTheXmlDocKeysAreInert() {
         var source = XmlDoc.InClass("/// <remarks><para>One.</para></remarks>");
+
         Assert.Contains(
             "///   <para>One.</para>",
+            XmlDoc.Text(source, ("indent_size", "2")),
+            StringComparison.Ordinal
+        );
+
+        Assert.Contains(
+            "///     <para>One.</para>",
             XmlDoc.Text(source, ("resharper_xmldoc_indent_size", "2")),
+            StringComparison.Ordinal
+        );
+
+        Assert.Contains(
+            "///     <para>One.</para>",
+            XmlDoc.Text(source, ("resharper_xmldoc_indent_style", "tab")),
             StringComparison.Ordinal
         );
     }
@@ -1054,9 +1084,15 @@ public sealed class XmlDocKeyCoverageTests {
         Assert.Empty(family.Except(covered, StringComparer.Ordinal));
         Assert.Empty(covered.Except(family, StringComparer.Ordinal));
 
+        // ⚠ 18 / 14, moved from 21 / 11 by three measurements rather than by three decisions.
+        // `indent_size` and `indent_style` are inert — a documentation comment's inner indent is the
+        // C# `indent_size`'s width, always spent in spaces, and neither `xmldoc_` key reaches it —
+        // and `wrap_tags_and_pi` joins the four tag-header keys it turned out to belong with. Each
+        // of the three had been read off a fixture that agrees at the export's own value and cannot
+        // separate the key from what else produces that value.
         Assert.Equal(32, family.Count);
-        Assert.Equal(21, honoured.Count);
-        Assert.Equal(11, refused.Count);
+        Assert.Equal(18, honoured.Count);
+        Assert.Equal(14, refused.Count);
     }
 
     [Fact]
@@ -1123,24 +1159,24 @@ public sealed class XmlDocKeyCoverageTests {
             Assert.Contains(id, unoracled);
         }
 
-        // ⚠ 16 and 6, and the reason the split moved is worth stating because the sentence here used to
-        // say it could not. It read "13 of the 22 reproduce their doc-comment fixture and 9 do not …
-        // a statement about the fixtures and it has not changed". Both halves are now false: the nine
-        // renderer keys were implemented on 2026-08-29 and **all 22 reproduce their fixture**, so
-        // reproducing one no longer separates anything.
+        // ⚠ 19 and 0, and the zero is the finding. The `OfUnoracled` mark was carrying four keys on
+        // the reading "the oracle was asked and said something else"; the oracle has now been asked
+        // again, with a probe rather than only with the committed fixture, and it said the same thing
+        // as Skala at every value of all four. `max_line_length`, `wrap_text` and
+        // `linebreak_before_singleline_elements` are `Of`, and `wrap_tags_and_pi` left the family for
+        // `XmlDocIds.Refused` because what it governs — a break inside a tag header — is a
+        // construct Skala can neither emit nor re-read (SK-DIV-0079).
         //
-        // ⚠ What separates them now is the *sweep*, which is a stronger question. Three of the nine are
-        // Conformant at every value and moved to the oracled path; the other six agree at the export's
-        // own value and diverge away from it — Divergent (2), Spurious, Inert, Unexercised (2). That
-        // state is neither "pinned" nor "unimplemented", it is the one the tier vocabulary has no word
-        // for, and `OfUnoracled` is carrying it here on the narrow reading its own block records: not
-        // "the oracle cannot be asked" but "the oracle was asked and said something else".
+        // ⚠ Nineteen `implemented`, not nineteen Tier A. Every one of these still reads Tier D until
+        // the committed sweep is re-run, and the loop above is what holds them there: it asserts the
+        // tier the *sweep* justifies, so a key that agrees everywhere is still D while the last
+        // committed table says otherwise. Promotion is a diff that carries a new measurement.
         Assert.Equal(
-            18,
+            19,
             XmlDocIds.Honoured.Add(XmlDocIds.SpaceAfterTripleSlash).Count(implemented.Contains)
         );
 
-        Assert.Equal(4, XmlDocIds.Honoured.Count(unoracled.Contains));
+        Assert.Equal(0, XmlDocIds.Honoured.Count(unoracled.Contains));
 
         Assert.Equal(
             XmlDocIds.Honoured.Add(XmlDocIds.SpaceAfterTripleSlash)
