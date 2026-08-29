@@ -200,6 +200,7 @@ public static class ArrangeTree {
                 new ArrangementOptions(options, ArrangementScope.Full, aggressive),
                 units[0].Compilation,
                 Removable(units, file),
+                (rewritten, _) => Removable(units, file, rewritten),
                 null,
                 symbols
             );
@@ -282,7 +283,16 @@ public static class ArrangeTree {
         }
     }
 
-    static ImmutableHashSet<string> Removable(List<CompilationUnit> units, string file) {
+    /// <summary>
+    ///     ⚠ <paramref name="rewritten" /> is the pipeline re-asking about text it has since produced
+    ///     (SK-FUZZ-0018). This harness owns several compilations per file, so it has to answer, and the
+    ///     answer has to stay the intersection — the pipeline's own fallback holds one compilation.
+    /// </summary>
+    static ImmutableHashSet<string> Removable(
+        List<CompilationUnit> units,
+        string file,
+        SourceText? rewritten = null
+    ) {
         ImmutableHashSet<string>? intersection = null;
         foreach (var unit in units) {
             foreach (var tree in unit.Compilation.SyntaxTrees) {
@@ -290,7 +300,15 @@ public static class ArrangeTree {
                     continue;
                 }
 
-                var unused = UsingsRule.Unused(unit.Compilation.GetSemanticModel(tree), tree);
+                var current = rewritten is null
+                    ? tree
+                    : CSharpSyntaxTree.ParseText(rewritten, (CSharpParseOptions)tree.Options, file);
+
+                var bound = rewritten is null
+                    ? unit.Compilation
+                    : unit.Compilation.ReplaceSyntaxTree(tree, current);
+
+                var unused = UsingsRule.Unused(bound.GetSemanticModel(current), current);
                 intersection = intersection is null ? unused : intersection.Intersect(unused);
                 break;
             }

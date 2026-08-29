@@ -60,6 +60,8 @@ public static class CorpusArranger {
             new ArrangementOptions(resolved),
             compilation,
             ArrangementDifferential.Removable(compilation, file.Path),
+            // ⚠ One compilation here, so the pipeline's own recomputation is this call site's answer.
+            null,
             null,
             symbols,
             ArrangementFilter.All

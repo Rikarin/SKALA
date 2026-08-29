@@ -492,6 +492,7 @@ public static class FuzzProperties {
             compilation,
             ArrangementDifferential.Removable(compilation, path),
             null,
+            null,
             symbols,
             ArrangementFilter.All
         );
