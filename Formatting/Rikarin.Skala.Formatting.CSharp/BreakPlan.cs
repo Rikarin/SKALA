@@ -444,7 +444,8 @@ public sealed class BreakPlan {
                     _options.WrapListPattern,
                     wrapAfterOpen: true,
                     wrapBeforeClose: true,
-                    placeOnSingleLine: _options.PlaceSimpleListPatternOnSingleLine
+                    placeOnSingleLine: _options.PlaceSimpleListPatternOnSingleLine,
+                    keepOutranksChopAlways: true
                 );
                 return;
 
@@ -459,7 +460,8 @@ public sealed class BreakPlan {
                     _options.WrapListPattern,
                     wrapAfterOpen: true,
                     wrapBeforeClose: true,
-                    placeOnSingleLine: _options.PlaceSimpleListPatternOnSingleLine
+                    placeOnSingleLine: _options.PlaceSimpleListPatternOnSingleLine,
+                    keepOutranksChopAlways: true
                 );
                 return;
 
@@ -472,8 +474,16 @@ public sealed class BreakPlan {
                     propertyPattern.Subpatterns.GetSeparators(),
                     _options.KeepExistingPropertyPatternsArrangement,
                     _options.WrapPropertyPattern,
-                    _options.WrapAfterExpressionLbrace,
-                    _options.WrapBeforeExpressionRbrace,
+                    // ⚠ Not `wrap_after_expression_lbrace` / `wrap_before_expression_rbrace`.
+                    // Measured at both values of each, in both the unprefixed spelling the export
+                    // writes and a `csharp_`-prefixed one: the oracle returns
+                    // `constructs/wrapping/initializers.cs` byte-identical every time, while a
+                    // negative control on the same file — `csharp_wrap_array_initializer_style =
+                    // chop_always` — rewrites it. The C# formatter does not read them; a wrapped
+                    // braced construct always puts its braces on their own lines, which is what
+                    // these two constants say. See PhaseOneOptions.Ids.
+                    wrapAfterOpen: true,
+                    wrapBeforeClose: true,
                     placeOnSingleLine: _options.PlaceSimplePropertyPatternOnSingleLine
                 );
                 return;
@@ -773,7 +783,8 @@ public sealed class BreakPlan {
         bool wrapBeforeClose,
         int maxOnLine = int.MaxValue,
         bool? placeOnSingleLine = null,
-        bool wrapBeforeOpen = false
+        bool wrapBeforeOpen = false,
+        bool keepOutranksChopAlways = false
     )
         where T : SyntaxNode {
         if (open.IsKind(SyntaxKind.None) || close.IsKind(SyntaxKind.None) || items.Count == 0) {
@@ -918,15 +929,20 @@ public sealed class BreakPlan {
         //   false                | false           | re-joined  | re-joined
         // The global switch turns the per-construct one off; the per-construct one does not turn the
         // global one on.
-        // ⚠ `chop_always` is gated on the construct's own `keep_existing_*_arrangement`, the same way
-        // the placement key already is and the same way a switch expression's is. Measured, one key
-        // flipped: `wrap_list_pattern = chop_always` leaves `xs is [1, 2, 3]` on its line, and a
-        // 113-column list pattern with it, because `keep_existing_list_patterns_arrangement = true`
-        // in this export — and the same flip with that key turned OFF chops both. It is the keep key
-        // and not the placement key: `place_simple_list_pattern_on_single_line = false` alongside
-        // `chop_always` still leaves the pattern whole. Skala chopped, and was the only engine that
-        // varied.
-        var chopsAlways = style == WrapStyle.ChopAlways && !keepExisting;
+        // ⚠ `chop_always` is gated on the construct's own `keep_existing_*_arrangement` — for the
+        // constructs where that was measured, and for those alone. `wrap_list_pattern = chop_always`
+        // leaves `xs is [1, 2, 3]` on its line, and a 113-column list pattern with it, because
+        // `keep_existing_list_patterns_arrangement = true` in this export; the same flip with that
+        // key turned OFF chops both. It is the keep key and not the placement key —
+        // `place_simple_list_pattern_on_single_line = false` beside `chop_always` still leaves the
+        // pattern whole.
+        // ⚠ And it is NOT general, which the committed sweep settles without another oracle run:
+        // `wrap_parameters_style`, `wrap_primary_constructor_parameters_style` and
+        // `wrap_arguments_style` are all conformant with THREE distinct oracle outputs on their
+        // fixtures, so those lists do chop at `chop_always` although
+        // `keep_existing_declaration_parens_arrangement` and its primary-constructor sibling are
+        // true. Applying the gate to every caller made all three of them stop varying.
+        var chopsAlways = style == WrapStyle.ChopAlways && !(keepOutranksChopAlways && keepExisting);
 
         var broken = chopsAlways
             || overCap
@@ -1048,13 +1064,12 @@ public sealed class BreakPlan {
         var first = FirstToken(items[0]);
         var broken = BreaksBefore(first) || BreaksBefore(close);
 
-        if (_options.WrapAfterExpressionLbrace) {
-            Point(first, outer);
-        }
-
-        if (_options.WrapBeforeExpressionRbrace) {
-            Point(close, outer);
-        }
+        // ⚠ Unconditional, and `wrap_after_expression_lbrace` / `wrap_before_expression_rbrace` are
+        // not consulted: measured at both values of each and in both spellings, the oracle returns
+        // this file byte-identical, while the array initializer's own wrap key rewrites it. See the
+        // property-pattern call site and PhaseOneOptions.Ids.
+        Point(first, outer);
+        Point(close, outer);
 
         // ⚠ A fill only for an array initializer; an object or collection initializer chops.
         // ⚠ …and never over the cap, which is what "a hard chop and not a fill" means on the
@@ -1257,7 +1272,17 @@ public sealed class BreakPlan {
                 continue;
             }
 
-            if (_options.WrapBeforeCommaInBaseClause) {
+            // ⚠ `wrap_before_comma`, the general key, and NOT
+            // `wrap_before_comma_in_base_clause`. Measured, one key at a time on this fixture: the
+            // base-clause-specific spelling moves nothing at either value — neither the unprefixed
+            // one the export writes nor a `csharp_`-prefixed one — while
+            // `resharper_csharp_wrap_before_comma = true` returns
+            //     class C : Base
+            //         , IFirst
+            //         , ISecond { }
+            // so the base clause's comma side IS governed, by the key that governs every other
+            // comma. Skala read the dead key and was the only engine that varied.
+            if (_options.WrapBeforeComma) {
                 Point(comma, inner, fill);
                 Flat(next);
                 innerBroken |= BreaksBefore(comma);

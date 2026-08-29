@@ -4577,7 +4577,8 @@
       "templateLine": 700,
       "expands": [],
       "min": 0,
-      "boundsBecause": "At least 0. ⚠ 0 is a supported value and means 'chop always' — the formatter clamps the count to 1 — so the floor is 0 rather than 1. A negative count is not a count."
+      "boundsBecause": "At least 0. ⚠ 0 is a supported value and means 'chop always' — the formatter clamps the count to 1 — so the floor is 0 rather than 1. A negative count is not a count.",
+      "inert": "Masked by `resharper_new_line_before_enumerators`, exactly as `resharper_csharp_wrap_enum_declaration` is and in the same measurement: at `1` and at `2` the oracle returns `constructs/breaks/enum-members.cs` byte-identical, with every member on its own line, while `keep_existing_enum_arrangement = true` puts a four-member enum back on one line. The counter is not what chops an enum in this export."
     },
     {
       "key": "resharper_csharp_max_formal_parameters_on_line",
@@ -8067,7 +8068,8 @@
       "oracle": "constructs/breaks/enum-members.cs",
       "docs": "https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_LineBreaksPageSchema.html#resharper_csharp_wrap_enum_declaration",
       "templateLine": 1172,
-      "expands": []
+      "expands": [],
+      "inert": "Masked by `resharper_new_line_before_enumerators`, which the export template writes and this registry does not carry. ⚠ Measured 2026-08-29 against `jb cleanupcode` 2025.2.6 on `constructs/breaks/enum-members.cs`, one key at a time appended to the export: the oracle puts every member on its own line at `wrap_if_long`, at `chop_if_long` and at `chop_always` alike, and at `max_enum_members_on_line = 1` and `= 2` alike — five configurations, one output — and returns `enum Compact { First, Second, Third, Fourth }` unmoved the moment `keep_existing_enum_arrangement` is true. That key alone governs the layout, and it is Conformant. BreakPlan.PlanEnum reads it alone now; reading this one made Skala the only engine that varied."
     },
     {
       "key": "resharper_csharp_wrap_extends_list_style",
@@ -8143,7 +8145,8 @@
       "oracle": "constructs/wrapping/patterns.cs",
       "docs": "https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_LineBreaksPageSchema.html#resharper_csharp_wrap_list_pattern",
       "templateLine": 1175,
-      "expands": []
+      "expands": [],
+      "inert": "Masked by `resharper_keep_existing_list_patterns_arrangement = true`, which outranks it — the documented ordering, measured. ⚠ 2026-08-29 against `jb cleanupcode` 2025.2.6 on `constructs/wrapping/patterns.cs`: at `chop_always` the oracle leaves `xs is [1, 2, 3]` and a 113-column list pattern exactly as written, and the same flip with `keep_existing_list_patterns_arrangement = false` chops both — so the key IS read, and nothing this export can express distinguishes its three values. It is the keep key and not the placement key: `place_simple_list_pattern_on_single_line = false` beside `chop_always` still leaves the pattern whole. Skala honouring `chop_always` through the mask is what made this row SPURIOUS."
     },
     {
       "key": "resharper_csharp_wrap_multiple_declaration_style",
@@ -9862,12 +9865,13 @@
       "defaultSource": "template",
       "tier": "D",
       "construct": "Initializer",
-      "summary": "A break in a wrapped initializer lands after the `{` rather than before it.",
+      "summary": "A break in a wrapped initializer lands after the `{` rather than before it. **Not read by the C# formatter.** ⚠ Measured 2026-08-29 against `jb cleanupcode` 2025.2.6 on `constructs/wrapping/initializers.cs`, one key at a time appended to the repository export in an `[*.cs]` section: at `false` — the only other value — the oracle returns the file byte-identical, and so does the `resharper_csharp_`-prefixed spelling. Negative control in the same shape and on the same file: `resharper_csharp_wrap_array_initializer_style = chop_always` rewrites it, so the file can move. A braced construct that wraps at all puts its braces on their own lines at either value; BreakPlan writes that unconditionally now. Skala honouring the key is what made this row SPURIOUS.",
       "since": "0.4",
       "oracle": "constructs/wrapping/initializers.cs",
       "docs": "https://www.jetbrains.com/help/resharper/EditorConfig_Index.html",
       "templateLine": 1139,
-      "expands": []
+      "expands": [],
+      "inert": "Not read by the C# formatter. Byte-identical at both values and in both spellings, on a file the array initializer’s own wrap key rewrites."
     },
     {
       "key": "resharper_wrap_after_lambda_and_anonymous_function_declaration_lpar",
@@ -9929,12 +9933,13 @@
       "defaultSource": "template",
       "tier": "D",
       "construct": "BaseList",
-      "summary": "A break in a base list lands before the comma.",
+      "summary": "A break in a base list lands before the comma. **Not read by the C# formatter — but the behaviour is configurable, by `resharper_csharp_wrap_before_comma`.** ⚠ Measured 2026-08-29 against `jb cleanupcode` 2025.2.6 on `constructs/wrapping/base-list.cs`, one key at a time appended to the export: at `true` this key returns the file byte-identical, and so does the `resharper_csharp_`-prefixed spelling, while `resharper_csharp_wrap_before_comma = true` returns `class C : Base` / `    , IFirst` / `    , ISecond { }`. The base clause’s comma side is governed by the general comma key like every other comma, and this spelling is the C++ and VB formatters’. BreakPlan.PlanBaseList reads the general key now; reading this one is what made this row SPURIOUS.",
       "since": "0.4",
       "oracle": "constructs/wrapping/base-list.cs",
       "docs": "https://www.jetbrains.com/help/resharper/EditorConfig_Index.html",
       "templateLine": 1151,
-      "expands": []
+      "expands": [],
+      "inert": "Not read by the C# formatter. Byte-identical at both values and in both spellings, on a file where `resharper_csharp_wrap_before_comma = true` moves every comma of the same base list."
     },
     {
       "key": "resharper_wrap_before_expression_rbrace",
@@ -9945,12 +9950,13 @@
       "defaultSource": "template",
       "tier": "D",
       "construct": "Initializer",
-      "summary": "A wrapped initializer's `}` goes on a line of its own.",
+      "summary": "A wrapped initializer’s `}` goes on a line of its own. **Not read by the C# formatter.** ⚠ The same measurement as `resharper_wrap_after_expression_lbrace`, on the same file and in the same run: at `false` the oracle returns `constructs/wrapping/initializers.cs` byte-identical in both spellings, while `resharper_csharp_wrap_array_initializer_style = chop_always` rewrites it. The `}` takes a line of its own at either value, which BreakPlan now writes unconditionally.",
       "since": "0.4",
       "oracle": "constructs/wrapping/initializers.cs",
       "docs": "https://www.jetbrains.com/help/resharper/EditorConfig_Index.html",
       "templateLine": 1154,
-      "expands": []
+      "expands": [],
+      "inert": "Not read by the C# formatter. Byte-identical at both values and in both spellings, on a file the array initializer’s own wrap key rewrites."
     },
     {
       "key": "resharper_wrap_before_lambda_and_anonymous_function_declaration_lpar",
