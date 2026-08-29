@@ -999,17 +999,50 @@ that it "reads like one of the family and is not" — it is the per-language for
 `keep_user_linebreaks`, so pairing them would measure a key against itself and report a guaranteed
 interaction meaning nothing.
 
-#### ⚠ Arrangement options are excluded, and are the other named second phase
+#### Arrangement options: the second phase, now built
 
-The sweep runs the **format-only** profile, which is `CSReformatCode` and nothing else — so its
-output is byte-identical whatever an `arrange_*` or `csharp_style_*` key says, and on Skala's side it
-runs the formatter rather than the arranger. Sweeping those keys here would report every one of them
-as `SPURIOUS`: the harness inventing divergences rather than finding any. They are excluded by name,
-with the reason recorded in the report's "Not swept" table.
+Until this section was rewritten the sweep ran the **format-only** profile and nothing else, so its
+output was byte-identical whatever an `arrange_*` or `csharp_style_*` key said and on Skala's side it
+ran the formatter rather than the arranger. Sweeping those keys under that profile would have
+reported every one of them `SPURIOUS`: the harness inventing divergences rather than finding any. So
+all 44 were excluded by name — and the consequence, which the exclusion did not say, is that **15 %
+of the Tier A claim rested on the hand-transcribed flipped-value readings in
+`ArrangementOptionTests`**, which is the standard of evidence this sweep exists to replace.
 
-Doing them properly needs the cleanup profile on the oracle's side and `CorpusArranger` on Skala's,
-which is the same substitution `OptionCoverageTests` already makes for its arrangement theories. Same
-machinery, different subject.
+That was a fact about the profile, and the profile is a parameter. The fixture now chooses it —
+`OracleProfile.For`, read by *both* halves, so the oracle picks a `cleanupcode` profile and
+`SkalaSide` picks between `CSharpFormatter` and `ArrangementPipeline` from the same answer. Two
+spellings would compare an arranged output against a formatted one and blame the flipped key.
+
+Three things the semantic profile needs that the whitespace profiles did not:
+
+- **A batch holds each fixture at most once.** 44 keys point at 22 fixtures, so four of them name
+  `redundancy/qualifiers-and-parentheses.cs`; a count-batched round would put four copies of one file
+  in one scratch project and read `var`, qualifier and predefined-type rewrites off a compilation
+  full of CS0101.
+- **The whole subtree travels with the batch.** `usings/sort-and-remove.cs` imports `Alpha.Things`,
+  which exists only because `usings/namespaces.cs` declares it. Without the context file the oracle
+  deletes the import as unresolvable at *every* value and `resharper_sort_usings` reads `DIVERGENT`
+  at 0 of 2 — a verdict about the scratch directory.
+- **The oracle runs to a fixed point, because Skala's half does.** Measured, not assumed:
+  `sweep fixed-point` runs `cleanupcode` over the subtree and again over its own output. 27 of 27
+  files move on pass 1; **one** moves again on pass 2 — `namespaces/file-scoped.cs`, where converting
+  a block-scoped namespace leaves a blank first line that only a further invocation removes. That is
+  the fixture `csharp_style_namespace_declarations` is pinned by, so a single-invocation oracle
+  manufactures a divergence for exactly the key whose fixture exposes the defect: `DIVERGENT` at 0 of
+  2 without the loop, `CONFORMANT` at 2 of 2 with it. Skala reaches its own fixed point in two passes
+  on all 27.
+
+⚠ **The canaries are counted per profile, not per round.** A round now holds three populations
+answered by three profiles. Pooled, 44 arrangement options that answered nothing sit inside a round
+of 378 whose whitespace half moved normally — `moved > 0`, both canaries silent, and 44 rows of
+universal agreement about a profile that never ran. That is the shape `ScratchTree.ProfileFor`'s
+remarks record for the doc-comment family, and a pooled count cannot see it.
+
+⚠ **The pairwise pass is still excluded**, and now on its own reason rather than the single sweep's:
+`PairwiseSweep.Run` batches by count without partitioning by profile, so an arrangement pair would
+either trip the mixed-profile guard or land in a project holding two copies of one fixture. That is a
+gap in the pairwise table, not a claim about the keys.
 
 ### 3. Properties — where the real bugs are
 

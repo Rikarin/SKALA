@@ -18,14 +18,22 @@ namespace Rikarin.Skala.Conformance.Tests;
 ///     to agree there, which is how six documentation-comment keys were promoted one morning and
 ///     demoted the same afternoon.
 ///     <para>
-///         ⚠ The key-flip sweep is what closes that gap for the formatter's options and it cannot close it
-///         here: <c>SweepPlan</c> drops every arrangement option by name, because the format-only profile it
-///         flips against is byte-identical whatever an arrangement key says. So the flipped half is written
-///         down by hand, from the oracle, the way SK-DIV-0013's three rewrites are — each assertion below
-///         records an observed <c>jb cleanupcode</c> 2025.2.6 output under
+///         ⚠ The key-flip sweep is what closes that gap, and for a long time it could not reach here:
+///         <c>SweepPlan</c> dropped every arrangement option by name, because the format-only profile it
+///         flipped against is byte-identical whatever an arrangement key says. So the flipped half was
+///         written down by hand, from the oracle, the way SK-DIV-0013's three rewrites are — each
+///         assertion below records an observed <c>jb cleanupcode</c> 2025.2.6 output under
 ///         <see cref="Rikarin.Skala.Testing.OracleProfile.Cleanup" />, probed one key at a time with every
 ///         key of its family restated so that a later <c>.editorconfig</c> section cannot reset its
 ///         siblings to Roslyn's defaults.
+///     </para>
+///     <para>
+///         ⚠ <b>The sweep does reach here now</b>, under that same profile — see
+///         <c>ArrangementRoutingTests</c>. These assertions are deliberately kept rather than deleted,
+///         and they are not the weaker instrument's leftovers: they are transcriptions a human checked,
+///         and a run of the automated one that contradicts them is a disagreement worth reading before
+///         either is believed. What has changed is that they are no longer the <em>only</em> evidence
+///         for 15 % of the Tier A claim.
 ///     </para>
 /// </remarks>
 public sealed class ArrangementOptionTests {
