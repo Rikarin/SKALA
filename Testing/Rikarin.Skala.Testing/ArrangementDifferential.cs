@@ -203,6 +203,9 @@ public static class ArrangementDifferential {
             arrangement,
             compilation,
             removable,
+            // ⚠ One compilation, so the pipeline's own single-compilation recomputation is the same
+            // answer this call site would give — see ArrangementPipeline.Recompute.
+            null,
             null,
             symbols,
             filter

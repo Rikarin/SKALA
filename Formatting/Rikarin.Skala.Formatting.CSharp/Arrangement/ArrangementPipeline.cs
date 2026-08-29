@@ -39,6 +39,17 @@ public sealed record PipelineResult(
 ///         Measured over <c>corpus/real/</c>, the observed maximum is 2 — one pass to arrange and format,
 ///         one to prove nothing more wants to change.
 ///     </para>
+///     <para>
+///         ⚠ The removable-usings set follows the text, and that is SK-FUZZ-0018. "Which usings may this
+///         file lose" is a question about a <em>text</em>, and every pass rewrites the text it was
+///         answered for: hoisting <c>using System;</c> out of a file-scoped namespace makes it duplicate a
+///         <c>global using</c> and therefore <c>CS8019</c>-redundant, and rewriting
+///         <c>String.Empty</c> to <c>""</c> makes it unused outright — neither has a namespace boundary in
+///         common with the other, so this is a property of the set's <em>timing</em> and not of any one
+///         rule. Held once, the set is an answer about the input, and the caller who feeds this method its
+///         own output gets a removal the first run did not make. So it is recomputed on every pass whose
+///         arrangement actually rewrote the tree; see <see cref="Recompute" />.
+///     </para>
 /// </remarks>
 public static class ArrangementPipeline {
     /// <summary>
@@ -51,6 +62,22 @@ public static class ArrangementPipeline {
     /// <summary>⚠ The document arranged and re-formatted until neither half wants to move.</summary>
     public const string DidNotConverge = "SK9097";
 
+    /// <param name="removableUsings">
+    ///     The usings the file may lose, answered for <paramref name="text" /> as it arrives.
+    /// </param>
+    /// <param name="removableFor">
+    ///     The same question, re-asked for text this method has rewritten.
+    /// </param>
+    /// <remarks>
+    ///     ⚠ <paramref name="removableFor" /> is how a caller with <b>more than one</b> owning compilation
+    ///     keeps the intersection doc 06 § "Usings" requires — "unused in <em>every</em> compilation this
+    ///     file participates in". This method holds one compilation, so recomputing from it alone would
+    ///     answer for one target framework and could delete a using that another one needs, which is the
+    ///     failure the intersection exists to prevent. A caller that owns several compilations
+    ///     <b>must</b> supply this; the fallback below is the single-compilation answer, which is exactly
+    ///     right for a caller that had one compilation to begin with and is what
+    ///     <paramref name="removableUsings" /> already was for such a caller.
+    /// </remarks>
     public static PipelineResult Run(
         string path,
         SourceText text,
@@ -58,6 +85,7 @@ public static class ArrangementPipeline {
         in ArrangementOptions arrangement,
         CSharpCompilation? compilation = null,
         ImmutableHashSet<string>? removableUsings = null,
+        Func<SourceText, CancellationToken, ImmutableHashSet<string>>? removableFor = null,
         string? crashRoot = null,
         IReadOnlyList<string>? preprocessorSymbols = null,
         ArrangementFilter? filter = null,
@@ -67,6 +95,7 @@ public static class ArrangementPipeline {
         var applied = ImmutableArray.CreateBuilder<string>();
         var current = text;
         var currentCompilation = compilation;
+        var currentRemovable = removableUsings;
         var converged = false;
         var passes = 0;
 
@@ -78,7 +107,7 @@ public static class ArrangementPipeline {
                 current,
                 arrangement,
                 currentCompilation,
-                removableUsings,
+                currentRemovable,
                 crashRoot,
                 filter,
                 cancellation
@@ -135,6 +164,22 @@ public static class ArrangementPipeline {
             // most of what the second pass costs, and skipping it is a correctness bug rather than a
             // slow path.
             currentCompilation = Rebind(currentCompilation, path, current, cancellation);
+
+            // ⚠ And so does the removable set, for the same reason and one pass later — SK-FUZZ-0018.
+            // Gated on the *arrangement* having fired: a pass in which only the formatter moved
+            // something has changed whitespace, and whether a using is unused is a question about
+            // binding, which whitespace does not enter. The key stopped carrying the author's spacing
+            // in SK-FUZZ-0013's fix, so that is now true of the key as well as of the diagnostic.
+            if (arranged.Outcome == ArrangementOutcome.Arranged) {
+                currentRemovable = Recompute(
+                    removableFor,
+                    currentCompilation,
+                    path,
+                    current,
+                    currentRemovable,
+                    cancellation
+                );
+            }
         }
 
         if (!converged) {
@@ -164,6 +209,47 @@ public static class ArrangementPipeline {
             passes,
             true
         );
+    }
+
+    /// <summary>
+    ///     The usings the file may lose, asked again about the text this pass produced.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ <paramref name="compilation" /> is the <em>rebound</em> one, so its tree for
+    ///     <paramref name="path" /> already carries <paramref name="text" /> — the model below is asked
+    ///     about the file that exists now rather than the one that arrived. Getting that order wrong
+    ///     would replace one stale answer with another.
+    ///     <para>
+    ///         ⚠ Falling back to <paramref name="previous" /> rather than to the empty set when there is no
+    ///         compilation. Empty means "remove nothing" and would be safe, but it would also silently
+    ///         un-authorise a removal the caller had already authorised for the file's own text; the
+    ///         syntactic scope arrives here with an empty set anyway, so the two agree where it matters and
+    ///         this one does not lose the semantic caller's answer if a rebind ever hands back null.
+    ///     </para>
+    /// </remarks>
+    static ImmutableHashSet<string>? Recompute(
+        Func<SourceText, CancellationToken, ImmutableHashSet<string>>? removableFor,
+        CSharpCompilation? compilation,
+        string path,
+        SourceText text,
+        ImmutableHashSet<string>? previous,
+        CancellationToken cancellation
+    ) {
+        if (removableFor is not null) {
+            return removableFor(text, cancellation);
+        }
+
+        if (compilation is null) {
+            return previous;
+        }
+
+        foreach (var tree in compilation.SyntaxTrees) {
+            if (string.Equals(tree.FilePath, path, StringComparison.Ordinal)) {
+                return UsingsRule.Unused(compilation.GetSemanticModel(tree), tree, cancellation);
+            }
+        }
+
+        return previous;
     }
 
     static CSharpCompilation? Rebind(

@@ -1770,6 +1770,14 @@ public sealed partial class CSharpDocumentBuilder {
         return body.Length == 0 || body[0] is ' ' or '\t' ? text : marker + " " + body;
     }
 
+    /// <summary>
+    ///     Whether either side of the gap is a directive Roslyn reports from inside an inactive
+    ///     <c>#if</c> branch — see <see cref="Piece.Inactive" />.
+    /// </summary>
+    bool TouchesInactiveBranch(Piece previous, int nextPieceIndex) =>
+        previous.Inactive
+        || nextPieceIndex >= 0 && nextPieceIndex < _pieces.Length && _pieces[nextPieceIndex].Inactive;
+
     static VerbatimFlags DirectiveFlags(PreprocessorIndentStyle style) =>
         style == PreprocessorIndentStyle.UsualIndent ? VerbatimFlags.None : VerbatimFlags.AtColumnZero;
 
@@ -1891,7 +1899,16 @@ public sealed partial class CSharpDocumentBuilder {
         // begins immediately after the opening directive's newline and swallows every blank line
         // next to it, so adding or removing one here does not move whitespace — it rewrites the
         // inactive branch, which Skala never does (docs/plan/04 § "Trivia").
-        if (nextKind == PieceKind.DisabledText || previous.Kind == PieceKind.DisabledText && newLines > 0) {
+        // ⚠ …and so is a gap that touches a directive *inside* the inactive branch (SK-FUZZ-0016).
+        // Roslyn does not fold those into DisabledTextTrivia — `#region`, `#pragma`, a nested `#if`
+        // in a branch that is not compiled all stay structured — so without Piece.Inactive the gap
+        // rules see two ordinary directives and `blank_lines_around_region` writes a blank line
+        // between them. That line is not spacing: re-parsed, it is a DisabledTextTrivia that was not
+        // there before, and the safety net aborts the file with SK9099. The branch is opaque whether
+        // or not Roslyn kept its contents structured.
+        if (nextKind == PieceKind.DisabledText
+            || previous.Kind == PieceKind.DisabledText && newLines > 0
+            || TouchesInactiveBranch(previous, nextPieceIndex)) {
             if (gap.Length > 0) {
                 _doc.Verbatim(gap, new SourceSpan(previous.Span.End, gap.Length), VerbatimFlags.AtColumnZero);
             }

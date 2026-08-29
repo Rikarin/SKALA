@@ -3,6 +3,7 @@ using System.Globalization;
 using System.Text;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.Text;
 using Rikarin.Skala.Core.Configuration;
 using Rikarin.Skala.Core.Diagnostics;
 
@@ -104,7 +105,13 @@ public static class ArrangeCommand {
                     new PhaseOneOptions(options),
                     arrangement,
                     owning.FirstOrDefault(),
-                    Removable(owning, file, cancellation),
+                    Removable(owning, file, null, cancellation),
+                    // ⚠ The pipeline rewrites the text its removable set was computed for, and this
+                    // is the only caller that owns more than one compilation — so it is the only one
+                    // that can re-ask the question the way doc 06 requires it to be asked. Left to
+                    // recompute from the single compilation it holds, the pipeline would answer for
+                    // one target framework. See SK-FUZZ-0018.
+                    (rewritten, token) => Removable(owning, file, rewritten, token),
                     crashRoot,
                     request.Define,
                     filter,
@@ -213,10 +220,18 @@ public static class ArrangeCommand {
     ///     may be needed by a <c>#if</c> branch that only one target compiles. The intersection is the
     ///     whole point: with one compilation it is that compilation's answer, and with three it is the
     ///     only answer that is safe under all three.
+    ///     <para>
+    ///         ⚠ <paramref name="rewritten" /> is the pipeline asking the same question about text it has
+    ///         since produced — SK-FUZZ-0018, where the set was computed once against the input and a rule
+    ///         then made a directive removable that had not been. Every owning compilation gets the new
+    ///         text substituted for its own tree, so the intersection is still an intersection over the
+    ///         same file; asking only the first would give a wider answer than any of them agreed to.
+    ///     </para>
     /// </remarks>
     static ImmutableHashSet<string> Removable(
         List<CSharpCompilation> owning,
         string file,
+        SourceText? rewritten,
         CancellationToken cancellation
     ) {
         ImmutableHashSet<string>? intersection = null;
@@ -226,7 +241,12 @@ public static class ArrangeCommand {
                     continue;
                 }
 
-                var unused = UsingsRule.Unused(compilation.GetSemanticModel(tree), tree, cancellation);
+                var current = rewritten is null
+                    ? tree
+                    : CSharpSyntaxTree.ParseText(rewritten, (CSharpParseOptions)tree.Options, file, cancellation);
+
+                var bound = rewritten is null ? compilation : compilation.ReplaceSyntaxTree(tree, current);
+                var unused = UsingsRule.Unused(bound.GetSemanticModel(current), current, cancellation);
                 intersection = intersection is null ? unused : intersection.Intersect(unused);
                 break;
             }

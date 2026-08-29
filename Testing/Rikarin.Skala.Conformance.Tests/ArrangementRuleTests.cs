@@ -560,14 +560,101 @@ public sealed class ArrangementRuleTests {
         );
     }
 
+    /// <summary>
+    ///     ⚠ SK-FUZZ-0018. The removable-usings set is an answer about a text, and the pipeline rewrites
+    ///     that text.
+    /// </summary>
+    /// <remarks>
+    ///     SK-FUZZ-0013 was this defect's <em>key</em> half — the set keyed on a spelling the formatter
+    ///     was about to change. This is its <em>timing</em> half, and the key being stable does not
+    ///     touch it: the set is computed once, before pass 1, and a rule then makes a directive
+    ///     removable that was not removable when the question was asked. Pass 2 of the same run reuses
+    ///     the stale answer and converges; the caller who feeds that output back in recomputes, and
+    ///     removes what the first run had only moved. <c>pipeline(pipeline(x)) ≠ pipeline(x)</c>.
+    ///     <para>
+    ///         ⚠ Two shapes, and the second is why the fix is not "refuse the move". The first is the
+    ///         minimised finding, committed as
+    ///         <c>pathological/open/using-inside-a-wrapped-file-scoped-namespace.cs</c>: a
+    ///         <c>using System;</c> written after a file-scoped namespace declaration is *inside* it,
+    ///         where it is the thing that binds <c>Console</c>; hoisted out by
+    ///         <c>csharp_using_directive_placement = outside_namespace</c> it duplicates the implicit
+    ///         <c>global using System;</c> and Roslyn answers <c>CS8933</c> and then <c>CS8019</c>. The
+    ///         second has no namespace boundary anywhere in it — <see cref="EmptyStringRule" /> rewrites
+    ///         <c>String.Empty</c> to <c>""</c> and *that* is what leaves the using unused. A fix that
+    ///         taught <see cref="UsingsRule" /> not to move a directive across the namespace boundary
+    ///         would pass the first of these and fail the second.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ The last assertion is the one that keeps the fix honest. Refusing to arrange makes the
+    ///         pipeline a fixed point too — of a file it declined to touch — so the property alone would
+    ///         be satisfied by a regression. The directive has to be *gone*.
+    ///     </para>
+    /// </remarks>
+    [Theory]
+    [InlineData(
+        true,
+        """
+        namespace Serilog
+          .Configuration;
+        using System;
+        public class Foo {
+          void M() {
+          Console.WriteLine(1);
+          }
+        }
+        """
+    )]
+    [InlineData(
+        false,
+        """
+        using System;
+
+        public class Foo {
+            public string M() => String.Empty;
+        }
+        """
+    )]
+    public void AUsingAnEarlierPassMadeRedundant_GoesInThatSameRun(bool implicitUsings, string source) {
+        var first = Pipeline(source, implicitUsings);
+        Assert.True(first.Converged, "the first run did not reach a fixed point.");
+
+        var second = Pipeline(first.Text, implicitUsings);
+        Assert.True(
+            second.Edits.IsEmpty,
+            "arrange-and-format is not a fixed point of itself; the second pass still wants "
+            + $"{second.Edits.Length} edit(s): {string.Join(", ", second.Edits.Take(3))}\n"
+            + $"first  ⇒\n{first.Text}\nsecond ⇒\n{second.Text}"
+        );
+
+        Assert.DoesNotContain("using System;", first.Text, StringComparison.Ordinal);
+    }
+
     /// <summary>One arrange-and-format pipeline run over a loose source string.</summary>
-    static PipelineResult Pipeline(string source) {
+    /// <param name="implicitUsings">
+    ///     ⚠ Whether the compilation carries the SDK's <c>global using</c>s, as
+    ///     <see cref="Rikarin.Skala.Testing.ArrangementDifferential.ImplicitUsings" /> spells them. Off because a
+    ///     probe wants the narrowest compilation that answers the question; on, an explicit
+    ///     <c>using System;</c> at compilation-unit level is redundant, which is the whole subject of
+    ///     SK-FUZZ-0018 and invisible without it.
+    /// </param>
+    static PipelineResult Pipeline(string source, bool implicitUsings = false) {
         const string path = "/arrangement/Probe.cs";
         var text = SourceText.From(source);
         var tree = CSharpSyntaxTree.ParseText(text, CSharpFormatter.ParseOptions, path);
+        var trees = implicitUsings
+            ? (SyntaxTree[]) [
+                CSharpSyntaxTree.ParseText(
+                    SourceText.From(Rikarin.Skala.Testing.ArrangementDifferential.ImplicitUsings),
+                    CSharpFormatter.ParseOptions,
+                    "GlobalUsings.g.cs"
+                ),
+                tree
+            ]
+            : [tree];
+
         var compilation = CSharpCompilation.Create(
             "probe",
-            [tree],
+            trees,
             SharedFrameworkReferences.Value,
             new CSharpCompilationOptions(
                 OutputKind.DynamicallyLinkedLibrary,

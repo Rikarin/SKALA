@@ -1,5 +1,6 @@
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
 
 namespace Rikarin.Skala.Formatting.CSharp;
@@ -49,12 +50,21 @@ public enum PieceKind {
 }
 
 /// <summary>One indivisible thing in the source: a token, a comment, a directive, a disabled block.</summary>
+/// <param name="Inactive">
+///     ⚠ A directive that stands <em>inside</em> the inactive branch of a <c>#if</c> (SK-FUZZ-0016).
+///     Roslyn does not fold directives into <see cref="PieceKind.DisabledText" />: a <c>#region</c>, a
+///     <c>#pragma</c>, a nested <c>#if</c> in a branch that is not compiled all arrive as ordinary
+///     directive trivia, so the piece stream cannot tell them from directives that govern real code and
+///     the spacing rules would rewrite the inactive branch around them. Every piece of that branch is
+///     opaque, whether or not Roslyn kept it structured.
+/// </param>
 public readonly record struct Piece(
     PieceKind Kind,
     TextSpan Span,
     string Text,
     int TokenIndex,
-    bool StartsLine) {
+    bool StartsLine,
+    bool Inactive = false) {
     public bool IsComment =>
         Kind is PieceKind.LineComment
             or PieceKind.BlockComment
@@ -211,7 +221,17 @@ public static class SourcePieces {
     }
 
     static Piece Make(PieceKind kind, SyntaxTrivia trivia, SourceText text) =>
-        new(kind, trivia.Span, text.ToString(trivia.Span), -1, StartsLine(text, trivia.SpanStart));
+        new(
+            kind,
+            trivia.Span,
+            text.ToString(trivia.Span),
+            -1,
+            StartsLine(text, trivia.SpanStart),
+            // ⚠ `DirectiveTriviaSyntax.IsActive` is the only thing that distinguishes a directive
+            // inside a branch the preprocessor skipped from one that governs compiled code. The
+            // structure is materialised for directives only, which is where the flag exists.
+            trivia.IsDirective && trivia.GetStructure() is DirectiveTriviaSyntax { IsActive: false }
+        );
 
     /// <summary>True when only whitespace separates <paramref name="position" /> from the line start.</summary>
     static bool StartsLine(SourceText text, int position) {

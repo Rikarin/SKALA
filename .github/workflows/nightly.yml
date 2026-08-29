@@ -133,11 +133,35 @@ jobs:
 
       # ⚠ Now the job goes red, after the artefacts are safe and the report is in the summary.
       # `continue-on-error` above deferred the failure; it did not forgive it.
-      - name: Fail if the expedition found something
+      #
+      # ⚠ **The expedition fails on a finding the open register does not account for, and not on any
+      # finding.** Those were the same thing until `Testing/corpus/pathological/open/register.md` had
+      # entries in it, and then they stopped being. A registered open defect is rediscovered from a
+      # fresh seed on most nights — SK-FUZZ-0016's own entry records the same defect arriving twice
+      # from two seeds on two origins — so the old condition made this job permanently red, and a
+      # signal that is always red is not a signal. Run 33207471534's three findings were all
+      # rediscoveries of entries registered the day before.
+      #
+      # ⚠ **The accounting is a measurement, not a suppression list**, which matters because a
+      # suppression list keyed on the defect the fuzzer is *for* would hide the next variant too.
+      # `OpenDefects.Explain` deletes the trigger the register entry names — each entry's `probe:`,
+      # from a closed vocabulary in `OpenDefectProbes` — and asks the property oracle again; the entry
+      # accounts for the violation only if the property then **holds**. An input carrying a second,
+      # unregistered defect still fails after the deletion and is reported as new. Every violation is
+      # screened individually *before* the per-property deduplication, so a registered defect cannot
+      # take a property's one reporting slot and swallow the new defects behind it.
+      #
+      # ⚠ An entry with no `probe:` accounts for nothing and still reds this job. That is the
+      # mechanism refusing to guess: an entry whose own status line says "cause not established" has
+      # no trigger to name. `OpenDefectTests.EntriesWithoutAProbe_AreTheOnesThatStillRedTheNightly`
+      # bounds how many of those there may be.
+      - name: Fail if the expedition found something new
         if: steps.fuzz.outcome == 'failure'
         run: |
-          echo "::error::the fuzzer found a property violation — see the run summary and the"
-          echo "::error::fuzz-findings artefact. Each finding replays from its own seed with"
+          echo "::error::the fuzzer found a property violation the open register does not account"
+          echo "::error::for — see the run summary and the fuzz-findings artefact. The summary's"
+          echo "::error::'already registered' table lists what was screened out and why; anything"
+          echo "::error::not in it is new. Each finding replays from its own seed with"
           echo "::error::  dotnet run --project Testing/Rikarin.Skala.Testing -- fuzz --replay=<seed>"
           echo "::error::and is committed to Testing/corpus/pathological/open/ with a register entry."
           exit 1

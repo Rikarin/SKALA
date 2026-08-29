@@ -35,6 +35,21 @@ else
   SKALA="$HOME/.dotnet/tools/skala"
 fi
 
+# ⚠ **Two spellings of the feed path, and the difference is what made this test red on Windows and
+# only on Windows.** Under Git Bash `pwd` returns an MSYS path — `/d/a/SKALA/SKALA/artifacts/…`.
+# MSYS rewrites an argument that looks like one into a Windows path on its way to a native process,
+# so `dotnet tool install --add-source /d/a/…` worked and every command below it worked. A path
+# *written into a file* gets no such rewriting: NuGet read `/d/a/…` out of the generated
+# nuget.config, resolved it as a drive-relative path to `C:\d\a\…`, and failed every restore with
+# NU1301. The four MSBuild assertions then failed on a project that had never restored.
+#
+# So: `$FEED` is for bash, `$FEED_NATIVE` is for anything that lands in a file or is read by a
+# native process. On Unix they are the same string and the distinction costs nothing.
+FEED_NATIVE="$FEED"
+if [ "$WINDOWS" = "1" ] && command -v cygpath >/dev/null 2>&1; then
+  FEED_NATIVE="$(cygpath -w "$FEED")"
+fi
+
 # ⚠ Refuse to run if a `skala` is already installed. Uninstalling somebody else's copy at the end
 # would be worse than not running, and testing against it would not be testing this feed.
 if [ -e "$SKALA" ]; then
@@ -46,6 +61,7 @@ fi
 VERSION="$(basename "$(ls "$FEED"/Rikarin.Skala.Cli.*.nupkg | head -1)" .nupkg)"
 VERSION="${VERSION#Rikarin.Skala.Cli.}"
 echo "Feed:    $FEED"
+echo "Feed (native): $FEED_NATIVE"
 echo "Version: $VERSION"
 
 WORK="$(mktemp -d)"
@@ -57,7 +73,22 @@ cleanup() {
 }
 trap cleanup EXIT
 
-step() { echo; echo "── $* ─────────────────────────────────────────────"; }
+STEP_FAILURES=0
+step() {
+  echo
+  echo "── $* ─────────────────────────────────────────────"
+  STEP_FAILURES="$FAILURES"
+}
+
+# ⚠ Print the build log, but only when something in this step failed. The four Windows failures
+# below were one NU1301 in a log the script had already thrown away, and reading it took a trip to
+# the Actions UI. Every build here is under a second and its log is under fifty lines.
+dump() {
+  if [ "$FAILURES" != "$STEP_FAILURES" ]; then
+    echo "  ── the build log ──────────────────────────────"
+    sed 's/^/  | /' "$1"
+  fi
+}
 
 # `run <expected-exit> <description> -- command…`
 run() {
@@ -142,7 +173,7 @@ XML
 <configuration>
   <packageSources>
     <clear />
-    <add key="local-skala" value="$FEED" />
+    <add key="local-skala" value="$FEED_NATIVE" />
     <add key="nuget.org" value="https://api.nuget.org/v3/index.json" />
   </packageSources>
 </configuration>
@@ -154,7 +185,7 @@ echo "  deep repository:    ${#DEEP} characters"
 
 # ── install ────────────────────────────────────────────────────────────────────
 step "dotnet tool install"
-dotnet tool install --global --add-source "$FEED" Rikarin.Skala.Cli --version "$VERSION"
+dotnet tool install --global --add-source "$FEED_NATIVE" Rikarin.Skala.Cli --version "$VERSION"
 assert "$([ -e "$SKALA" ] && echo true || echo false)" "the shim exists at $SKALA"
 "$SKALA" --version
 
@@ -186,6 +217,15 @@ step "dotnet build with a PackageReference on Rikarin.Skala.Sdk"
 cd "$SHALLOW/src"
 printf '\n[*.cs]\ndotnet_diagnostic.SK1010.severity = warning\n' >> "$SHALLOW/.editorconfig"
 BUILD="$WORK/build.log"
+
+# ⚠ **Restore on its own line, before anything reads a build log.** Every assertion from here down
+# looks for a string in a log, and a project that never restored produces a log with no SK1010, no
+# Skala diagnostic and no warning — which is indistinguishable from a tool that ran and found
+# nothing to say. This is the assertion that tells the two apart, and it is the one that was
+# missing: the Windows leg spent a release reporting a single NU1301 as four unrelated failures,
+# while `SkalaTreatFindingsAsErrors fails the build` passed on the *restore's* exit 1.
+run 0 "dotnet restore resolves both packages from the feed" -- dotnet restore --nologo
+
 dotnet build --nologo > "$BUILD" 2>&1 || true
 cat "$BUILD"
 assert "$(grep -q 'warning SK1010' "$BUILD" && echo true || echo false)" \
@@ -199,18 +239,43 @@ namespace Smoke;
 public class Rough{public int X{get;set;}}
 CSHARP
 dotnet build --nologo -t:Rebuild > "$BUILD" 2>&1 || true
+# ⚠ `off` is not silent, and the assertion is not a typo. Per the .props, SkalaMode's `off` means
+# "formatting verification only" — the cheap half, which is the default every consumer gets. The
+# silent setting is SkalaEnabled=false, which is asserted separately below.
 assert "$(grep -q 'are not formatted' "$BUILD" && echo true || echo false)" \
   "SkalaMode=off warns about formatting"
-run 1 "SkalaTreatFindingsAsErrors fails the build" -- dotnet build --nologo -t:Rebuild -p:SkalaTreatFindingsAsErrors=true
+dump "$BUILD"
+
+# ⚠ Exit 1 is *also* what a build that failed to restore returns, and what a compile error returns.
+# Checking only the code is how this assertion stayed green on the Windows leg while the four
+# around it went red on one NU1301. The code and the reason are two assertions.
+ERRORS="$WORK/errors.log"
+STATUS=0
+dotnet build --nologo -t:Rebuild -p:SkalaTreatFindingsAsErrors=true > "$ERRORS" 2>&1 || STATUS=$?
+assert "$([ "$STATUS" = "1" ] && echo true || echo false)" \
+  "SkalaTreatFindingsAsErrors fails the build (exit $STATUS)"
+assert "$(grep -q 'error .*Skala:.*are not formatted' "$ERRORS" && echo true || echo false)" \
+  "and it fails on the Skala formatting diagnostic rather than on something else"
+dump "$ERRORS"
 rm -f Rough.cs
 
 step "SkalaMode=check runs the analysis half"
 dotnet build --nologo -t:Rebuild -p:SkalaMode=check > "$BUILD" 2>&1 || true
 assert "$(grep -q 'error' "$BUILD" && echo false || echo true)" "the build has no errors"
+# ⚠ **A green build is not evidence that `check` ran.** The targets downgrade every exit code that
+# is not this mode's finding code to a warning ending "The build is not gated on it" — so a check
+# that could not find the tool, could not load the workspace, or was handed an option the CLI does
+# not have leaves a passing build over an ungated tree. `no errors` cannot tell that apart from a
+# clean run. This can, and it is the only thing standing between a fail-open and a green board.
+assert "$(grep -q 'could not complete' "$BUILD" && echo false || echo true)" \
+  "and the check completed rather than warning that the build is not gated on it"
+dump "$BUILD"
 
 step "SkalaEnabled=false is silent"
 dotnet build --nologo -t:Rebuild -p:SkalaEnabled=false > "$BUILD" 2>&1 || true
 assert "$(grep -q 'Skala: ' "$BUILD" && echo false || echo true)" "no Skala diagnostics"
+assert "$(grep -q 'error' "$BUILD" && echo false || echo true)" "and the build still succeeds"
+dump "$BUILD"
 
 # ── uninstall ──────────────────────────────────────────────────────────────────
 step "dotnet tool uninstall"
