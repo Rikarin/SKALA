@@ -55,6 +55,87 @@ re-checked key by key.
 **So the finish line is ~55, not 63.** The headline table below is left as first written, so the
 correction is visible as a correction.
 
+## ⚠ Measured, 2026-08-29 — 26 keys that had never been measured at any value
+
+Every row below carried `"oracle": null`, so `SweepPlan` excluded it with *“no `oracle` fixture in the
+registry”* and **no committed sweep has ever asked it anything**. Their placement in the tables below
+was an assertion. This section is the measurement, and it is the only evidence any of them has: 12
+`resharper_xmldoc_*` keys and 14 indentation / spacing / blank-line keys.
+
+⚠ **Two instruments, and they answer different halves.** Skala’s half is free — `SkalaSide.Format` over
+**all 408 `constructs/` fixtures** at every probe value — and it decides whether a glob may be set at
+all: a key Skala cannot move can only come back `INERT` or `UNEXERCISED`, and a glob whose fixture
+cannot separate the values is worse than no glob, because it files a verdict about the corpus under the
+option’s name. The oracle’s half is `jb cleanupcode` 2025.2.6 under the profile the fixture routes to,
+and it separates *“Skala lags a capability the oracle has”* (`INERT` — a real gap) from *“neither engine
+has a subject”* (`UNEXERCISED` — no gap at all).
+
+### The three that are now swept — 3
+
+⚠ **All three had a glob added and withdrawn within a day**, because their fixtures produced one output
+at every value. **The fixtures were the reason, not the keys.** Each corpus file was rebuilt to a shape
+that separates the values, its `.xmldoc.expected.cs` regenerated from the oracle, and the glob set. All
+three still reproduce their doc-comment fixture byte for byte, so `XmlDocOracleTests` is unaffected.
+
+| key | export value | what the fixture could not do, and what it does now | `verify` verdict |
+|---|---|---|---|
+| `resharper_xmldoc_spaces_inside_tags` | `false` | the file was written *with* a space inside each tag, and `false` means “do not add” rather than “remove” (SK-DIV-0022) — so both values kept the author’s spaces. Written tight, both engines move | **Conformant**, 2/2, baseline agrees |
+| `resharper_xmldoc_linebreaks_inside_tags_for_elements_longer_than` | `2147483647` | the summary was long enough that **width** opened it at all three probe values, the degenerate `0` and `1` an int probe offers included. Shortened below the margin, the export’s value keeps it closed and `0`/`1` open it | **Conformant**, 3/3, baseline agrees |
+| `resharper_xmldoc_linebreak_before_singleline_elements` | `false` | the element sat inside a container that stayed flat, so the renderer rendered the subtree as text and never reached the break rule. Mid-line inside an *opened* container, both engines move | **Divergent**, 1/2, **baseline agrees** — at `true` the oracle breaks both *before* and *after* the single-line element and Skala breaks only before it |
+
+⚠ **Setting those three globs turns `OptionCoverageTests.TierD_CarriesAFixtureOnlyWhereTheSweepDemotedIt`
+red until the next sweep**, because a Tier D key with a glob is required to have a non-`Conformant` row
+in the committed sidecar and these have no row at all. That is the chicken-and-egg the first attempt hit
+and resolved by reverting — which also removed the only thing that lets a sweep reach them, so the gap
+survived the fix. The glob is kept this time: two of the three earn Tier A on the next sweep and the
+third gets a `Divergent` row, and either way the red goes away in the run that writes them.
+
+### The nine `resharper_xmldoc_*` keys the sub-formatter does not honour — 9
+
+Flat on Skala’s side over all 408 `constructs/` fixtures at every probe value, so **no glob may be set
+for any of them**. Measured against `OracleProfile.DocComments` on a purpose-built subject —
+a `<list>` header of four attributes past the margin, and `/// <?pi first = "1" second="2" third   =   "3" ?>`.
+
+| key | export value | measured | would-be verdict |
+|---|---|---|---|
+| `resharper_xmldoc_attribute_indent` | `single_indent` | ⚠ **confirmed, and it is a real gap.** The oracle produces **three distinct** continuation indents for a wrapped tag header — `single_indent`, `double_indent`, `align_by_first_attribute` — and Skala never breaks inside a header at all | `INERT` |
+| `resharper_xmldoc_attribute_style` | `do_not_touch` | ⚠ **confirmed, same gap**: three distinct headers from the oracle, one from Skala | `INERT` |
+| `resharper_xmldoc_allow_far_alignment` | `false` | ⚠ **“same group, same prerequisite” is refuted.** Asked on the same wrapped header the two rows above move, the oracle returns **one** output at both values — and again with `attribute_indent = align_by_first_attribute` held, which is the only value that produces an alignment column to be “too far”. Two flips, still no subject | `UNEXERCISED` |
+| `resharper_xmldoc_pi_attribute_style` | `do_not_touch` | ⚠ **“pending on a PI renderer” is refuted as a Skala gap.** One oracle output across all four values, and **Skala agrees at every one** — the oracle does not parse a processing instruction’s header either | `UNEXERCISED` |
+| `resharper_xmldoc_pi_attributes_indent` | `align_by_first_attribute` | same, 3 values, oracle flat, agrees 3/3 | `UNEXERCISED` |
+| `resharper_xmldoc_space_after_last_pi_attribute` | `true` | same, oracle flat, agrees 2/2 | `UNEXERCISED` |
+| `resharper_xmldoc_spaces_around_eq_in_pi_attribute` | `false` | same, oracle flat, agrees 2/2 — asked on a `=` written with spaces on both sides, which is the shape the key would have to normalise | `UNEXERCISED` |
+| `resharper_xmldoc_wrap_around_elements` | `true` | confirmed, now under the doc-comment profile: prose carrying `<see/>`, `<c>` and `<b>`, long enough to wrap and short enough not to, gives one oracle output at both values | `UNEXERCISED` |
+| `resharper_xmldoc_insert_final_newline` | `false` | confirmed by measurement rather than by the key index alone: one oracle output at both values on a doc-commented file | `UNEXERCISED` |
+
+### The 14 indentation, spacing and blank-line keys — 14
+
+⚠ **Every one is flat on Skala’s side across all 408 `constructs/` fixtures at every probe value**, so
+none of them can carry a glob. Six are `OfInert` in `PhaseOneOptions.cs` and are already held there by
+`OptionObservabilityTests.AnInertKey_StillCannotBeObserved`; the other eight are in `options.json` and
+in no `OptionId` at all, so nothing had ever checked them. They are checked now.
+
+| key | Skala | oracle, where asked | would-be verdict |
+|---|---|---|---|
+| `resharper_csharp_indent_anonymous_method_block` | flat | ⚠ **the fixture named after it cannot exercise it.** `constructs/indentation/resharper_csharp_indent_anonymous_method_block.cs` is a `delegate { … }`, and the recorded measurement says `delegate(int v) { … }` does not move — the subject is a *lambda’s* braced body. Asked on one, the oracle collapses `value => { … }` onto a single line at both values, so the subject is masked as well | `UNEXERCISED` on either fixture |
+| `resharper_csharp_space_between_keyword_and_type` | flat | oracle flat, agrees 2/2, on its own fixture | `UNEXERCISED` |
+| `resharper_csharp_space_within_new_parentheses` | flat | oracle flat, agrees 2/2, on its own fixture | `UNEXERCISED` |
+| `resharper_space_within_spread_pattern` | flat | oracle flat, agrees 2/2, on its own fixture | `UNEXERCISED` |
+| `resharper_blank_lines_around_global_attribute` | flat | ⚠ asked on `constructs/blank-lines/an-assembly-attribute-and-a-type.cs`, so the construct is present and the flat result is not about a missing fixture: oracle flat across `0`, `3`, `1`, agrees 3/3 | `UNEXERCISED` |
+| `resharper_new_line_before_enumerators` | flat | ⚠ same — asked on `constructs/breaks/enum-members.cs`, oracle flat, agrees 2/2 | `UNEXERCISED` |
+| `resharper_csharp_indent_statement_pars` | flat | not re-asked; masked by `align_multiline_statement_conditions = true`, which the export sets | `UNEXERCISED` |
+| `resharper_csharp_space_in_singleline_method` | flat | not re-asked; masked, and needs two flips (`place_simple_method_on_single_line` + `keep_existing_declaration_block_arrangement`) | `UNEXERCISED` |
+| `resharper_csharp_indent_braces_inside_statement_conditions` | flat | not re-asked | `INERT` or `UNEXERCISED` |
+| `resharper_indent_aligned_ternary` | flat | not re-asked | `INERT` or `UNEXERCISED` |
+| `resharper_indent_comment` | flat | not re-asked | `INERT` or `UNEXERCISED` |
+| `resharper_indent_wrapped_function_names` | flat | not re-asked | `INERT` or `UNEXERCISED` |
+| `resharper_parentheses_non_obvious_operations` | flat | not re-asked; the arranger’s, under `OracleProfile.Cleanup` | `INERT` or `UNEXERCISED` |
+| `resharper_parentheses_same_type_operations` | flat | not re-asked | `INERT` or `UNEXERCISED` |
+
+⚠ **The last six rows are recorded honestly as un-re-asked.** Skala’s half already settles the
+deliverable — no glob may be set — and which of the two forbidden verdicts they would produce changes
+nothing about that. Naming the verdict would need an oracle run this pass did not make.
+
 ## Headline
 
 | | keys | share of the 230 |
