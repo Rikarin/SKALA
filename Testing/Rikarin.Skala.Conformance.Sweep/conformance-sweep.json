@@ -262,6 +262,386 @@
     ]
   },
   {
+    "Key": "csharp_style_namespace_declarations",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true,
+    "Fixture": "constructs/arrangement/namespaces/file-scoped.cs",
+    "Values": [
+      {
+        "Value": "file_scoped",
+        "OracleHash": "bb587a5b",
+        "SkalaHash": "bb587a5b",
+        "Agree": true
+      },
+      {
+        "Value": "block_scoped",
+        "OracleHash": "3fe18151",
+        "SkalaHash": "3fe18151",
+        "Agree": true
+      }
+    ]
+  },
+  {
+    "Key": "csharp_style_var_elsewhere",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true,
+    "Fixture": "constructs/arrangement/type-inference/var-wins-when-rhs-names-the-type.cs",
+    "Values": [
+      {
+        "Value": "true",
+        "OracleHash": "9843c72a",
+        "SkalaHash": "9843c72a",
+        "Agree": true
+      },
+      {
+        "Value": "false",
+        "OracleHash": "9a1ae84f",
+        "SkalaHash": "9a1ae84f",
+        "Agree": true
+      }
+    ]
+  },
+  {
+    "Key": "csharp_style_var_for_built_in_types",
+    "Tier": "A",
+    "Outcome": "Divergent",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true,
+    "Fixture": "constructs/arrangement/type-inference/var-wins-when-rhs-names-the-type.cs",
+    "Values": [
+      {
+        "Value": "true",
+        "OracleHash": "9843c72a",
+        "SkalaHash": "9843c72a",
+        "Agree": true
+      },
+      {
+        "Value": "false",
+        "OracleHash": "1808dc8d",
+        "SkalaHash": "ce10ecfa",
+        "Agree": false
+      }
+    ]
+  },
+  {
+    "Key": "csharp_style_var_when_type_is_apparent",
+    "Tier": "A",
+    "Outcome": "Divergent",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true,
+    "Fixture": "constructs/arrangement/type-inference/var-wins-when-rhs-names-the-type.cs",
+    "Values": [
+      {
+        "Value": "true",
+        "OracleHash": "9843c72a",
+        "SkalaHash": "9843c72a",
+        "Agree": true
+      },
+      {
+        "Value": "false",
+        "OracleHash": "37f34578",
+        "SkalaHash": "c96e43b9",
+        "Agree": false
+      }
+    ]
+  },
+  {
+    "Key": "csharp_using_directive_placement",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true,
+    "Fixture": "constructs/arrangement/usings/placement.cs",
+    "Values": [
+      {
+        "Value": "outside_namespace",
+        "OracleHash": "ce4eba1c",
+        "SkalaHash": "ce4eba1c",
+        "Agree": true
+      },
+      {
+        "Value": "inside_namespace",
+        "OracleHash": "1e816394",
+        "SkalaHash": "1e816394",
+        "Agree": true
+      }
+    ]
+  },
+  {
+    "Key": "dotnet_separate_import_directive_groups",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true,
+    "Fixture": "constructs/arrangement/usings/import-groups.cs",
+    "Values": [
+      {
+        "Value": "true",
+        "OracleHash": "ad05037a",
+        "SkalaHash": "ad05037a",
+        "Agree": true
+      },
+      {
+        "Value": "false",
+        "OracleHash": "b48de85d",
+        "SkalaHash": "b48de85d",
+        "Agree": true
+      }
+    ]
+  },
+  {
+    "Key": "dotnet_style_parentheses_in_arithmetic_binary_operators",
+    "Tier": "A",
+    "Outcome": "Divergent",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true,
+    "Fixture": "constructs/arrangement/redundancy/parentheses-categories.cs",
+    "Values": [
+      {
+        "Value": "always_for_clarity",
+        "OracleHash": "5eb01a26",
+        "SkalaHash": "91dcba5b",
+        "Agree": false
+      },
+      {
+        "Value": "never_if_unnecessary",
+        "OracleHash": "4c9dd659",
+        "SkalaHash": "8adc83fb",
+        "Agree": false
+      }
+    ]
+  },
+  {
+    "Key": "dotnet_style_parentheses_in_other_binary_operators",
+    "Tier": "A",
+    "Outcome": "Divergent",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true,
+    "Fixture": "constructs/arrangement/redundancy/parentheses-categories.cs",
+    "Values": [
+      {
+        "Value": "always_for_clarity",
+        "OracleHash": "5eb01a26",
+        "SkalaHash": "8adc83fb",
+        "Agree": false
+      },
+      {
+        "Value": "never_if_unnecessary",
+        "OracleHash": "1151d304",
+        "SkalaHash": "2f6d7296",
+        "Agree": false
+      }
+    ]
+  },
+  {
+    "Key": "dotnet_style_parentheses_in_relational_binary_operators",
+    "Tier": "A",
+    "Outcome": "Divergent",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true,
+    "Fixture": "constructs/arrangement/redundancy/parentheses-categories.cs",
+    "Values": [
+      {
+        "Value": "always_for_clarity",
+        "OracleHash": "5eb01a26",
+        "SkalaHash": "4c9dd659",
+        "Agree": false
+      },
+      {
+        "Value": "never_if_unnecessary",
+        "OracleHash": "91dcba5b",
+        "SkalaHash": "8adc83fb",
+        "Agree": false
+      }
+    ]
+  },
+  {
+    "Key": "dotnet_style_predefined_type_for_locals_parameters_members",
+    "Tier": "A",
+    "Outcome": "Divergent",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": false,
+    "Fixture": "constructs/arrangement/redundancy/qualifiers-and-parentheses.cs",
+    "Values": [
+      {
+        "Value": "true",
+        "OracleHash": "1157cb75",
+        "SkalaHash": "24f764b3",
+        "Agree": false
+      },
+      {
+        "Value": "false",
+        "OracleHash": "06833cad",
+        "SkalaHash": "f3cde7a0",
+        "Agree": false
+      }
+    ]
+  },
+  {
+    "Key": "dotnet_style_predefined_type_for_member_access",
+    "Tier": "A",
+    "Outcome": "Divergent",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": false,
+    "Fixture": "constructs/arrangement/redundancy/predefined-member-access.cs",
+    "Values": [
+      {
+        "Value": "true",
+        "OracleHash": "5c2230a7",
+        "SkalaHash": "e2b4cbcb",
+        "Agree": false
+      },
+      {
+        "Value": "false",
+        "OracleHash": "599c9292",
+        "SkalaHash": "5f1b8bdd",
+        "Agree": false
+      }
+    ]
+  },
+  {
+    "Key": "dotnet_style_qualification_for_event",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true,
+    "Fixture": "constructs/arrangement/redundancy/instance-qualifier.cs",
+    "Values": [
+      {
+        "Value": "true",
+        "OracleHash": "5b4a6569",
+        "SkalaHash": "5b4a6569",
+        "Agree": true
+      },
+      {
+        "Value": "false",
+        "OracleHash": "2ccd2a23",
+        "SkalaHash": "2ccd2a23",
+        "Agree": true
+      }
+    ]
+  },
+  {
+    "Key": "dotnet_style_qualification_for_field",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true,
+    "Fixture": "constructs/arrangement/redundancy/instance-qualifier.cs",
+    "Values": [
+      {
+        "Value": "true",
+        "OracleHash": "a3fa9202",
+        "SkalaHash": "a3fa9202",
+        "Agree": true
+      },
+      {
+        "Value": "false",
+        "OracleHash": "2ccd2a23",
+        "SkalaHash": "2ccd2a23",
+        "Agree": true
+      }
+    ]
+  },
+  {
+    "Key": "dotnet_style_qualification_for_method",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true,
+    "Fixture": "constructs/arrangement/redundancy/instance-qualifier.cs",
+    "Values": [
+      {
+        "Value": "true",
+        "OracleHash": "d3536acd",
+        "SkalaHash": "d3536acd",
+        "Agree": true
+      },
+      {
+        "Value": "false",
+        "OracleHash": "2ccd2a23",
+        "SkalaHash": "2ccd2a23",
+        "Agree": true
+      }
+    ]
+  },
+  {
+    "Key": "dotnet_style_qualification_for_property",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true,
+    "Fixture": "constructs/arrangement/redundancy/instance-qualifier.cs",
+    "Values": [
+      {
+        "Value": "true",
+        "OracleHash": "3e866019",
+        "SkalaHash": "3e866019",
+        "Agree": true
+      },
+      {
+        "Value": "false",
+        "OracleHash": "2ccd2a23",
+        "SkalaHash": "2ccd2a23",
+        "Agree": true
+      }
+    ]
+  },
+  {
+    "Key": "dotnet_style_require_accessibility_modifiers",
+    "Tier": "A",
+    "Outcome": "Divergent",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": false,
+    "Fixture": "constructs/arrangement/redundancy/qualifiers-and-parentheses.cs",
+    "Values": [
+      {
+        "Value": "always",
+        "OracleHash": "08846f13",
+        "SkalaHash": "37a66c28",
+        "Agree": false
+      },
+      {
+        "Value": "for_non_interface_members",
+        "OracleHash": "08846f13",
+        "SkalaHash": "37a66c28",
+        "Agree": false
+      },
+      {
+        "Value": "never",
+        "OracleHash": "08846f13",
+        "SkalaHash": "37a66c28",
+        "Agree": false
+      },
+      {
+        "Value": "omit_if_default",
+        "OracleHash": "1157cb75",
+        "SkalaHash": "24f764b3",
+        "Agree": false
+      }
+    ]
+  },
+  {
     "Key": "indent_size",
     "Tier": "A",
     "Outcome": "Conformant",
@@ -326,6 +706,35 @@
         "Value": "false",
         "OracleHash": "0a7c705f",
         "SkalaHash": "0a7c705f",
+        "Agree": true
+      }
+    ]
+  },
+  {
+    "Key": "resharper_csharp_accessor_owner_body",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 3,
+    "SkalaDistinct": 3,
+    "BaselineAgrees": true,
+    "Fixture": "constructs/arrangement/body-style/accessor-owner.cs",
+    "Values": [
+      {
+        "Value": "expression_body",
+        "OracleHash": "c1398bb4",
+        "SkalaHash": "c1398bb4",
+        "Agree": true
+      },
+      {
+        "Value": "accessors_with_expression_body",
+        "OracleHash": "260faf3e",
+        "SkalaHash": "260faf3e",
+        "Agree": true
+      },
+      {
+        "Value": "accessors_with_block_body",
+        "OracleHash": "9e53083f",
+        "SkalaHash": "9e53083f",
         "Agree": true
       }
     ]
@@ -603,6 +1012,144 @@
         "OracleHash": "f38644f9",
         "SkalaHash": "f38644f9",
         "Agree": true
+      }
+    ]
+  },
+  {
+    "Key": "resharper_csharp_arguments_anonymous_function",
+    "Tier": "A",
+    "Outcome": "Divergent",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": false,
+    "Fixture": "constructs/arrangement/lists/argument-style.cs",
+    "Values": [
+      {
+        "Value": "positional",
+        "OracleHash": "efe67ce4",
+        "SkalaHash": "6a33e342",
+        "Agree": false
+      },
+      {
+        "Value": "named",
+        "OracleHash": "3374ff3c",
+        "SkalaHash": "75d3f1e2",
+        "Agree": false
+      }
+    ]
+  },
+  {
+    "Key": "resharper_csharp_arguments_literal",
+    "Tier": "A",
+    "Outcome": "Divergent",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": false,
+    "Fixture": "constructs/arrangement/lists/argument-style.cs",
+    "Values": [
+      {
+        "Value": "positional",
+        "OracleHash": "efe67ce4",
+        "SkalaHash": "6a33e342",
+        "Agree": false
+      },
+      {
+        "Value": "named",
+        "OracleHash": "2aec2db2",
+        "SkalaHash": "aeca29bd",
+        "Agree": false
+      }
+    ]
+  },
+  {
+    "Key": "resharper_csharp_arguments_named",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true,
+    "Fixture": "constructs/arrangement/lists/argument-style-named.cs",
+    "Values": [
+      {
+        "Value": "positional",
+        "OracleHash": "176c9ab0",
+        "SkalaHash": "176c9ab0",
+        "Agree": true
+      },
+      {
+        "Value": "named",
+        "OracleHash": "bfc3cbef",
+        "SkalaHash": "bfc3cbef",
+        "Agree": true
+      }
+    ]
+  },
+  {
+    "Key": "resharper_csharp_arguments_other",
+    "Tier": "A",
+    "Outcome": "Divergent",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": false,
+    "Fixture": "constructs/arrangement/lists/argument-style.cs",
+    "Values": [
+      {
+        "Value": "positional",
+        "OracleHash": "efe67ce4",
+        "SkalaHash": "6a33e342",
+        "Agree": false
+      },
+      {
+        "Value": "named",
+        "OracleHash": "96149f86",
+        "SkalaHash": "dc7bf0c4",
+        "Agree": false
+      }
+    ]
+  },
+  {
+    "Key": "resharper_csharp_arguments_skip_single",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true,
+    "Fixture": "constructs/arrangement/lists/argument-style-named.cs",
+    "Values": [
+      {
+        "Value": "true",
+        "OracleHash": "8197d8e0",
+        "SkalaHash": "8197d8e0",
+        "Agree": true
+      },
+      {
+        "Value": "false",
+        "OracleHash": "176c9ab0",
+        "SkalaHash": "176c9ab0",
+        "Agree": true
+      }
+    ]
+  },
+  {
+    "Key": "resharper_csharp_arguments_string_literal",
+    "Tier": "A",
+    "Outcome": "Divergent",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": false,
+    "Fixture": "constructs/arrangement/lists/argument-style.cs",
+    "Values": [
+      {
+        "Value": "positional",
+        "OracleHash": "efe67ce4",
+        "SkalaHash": "6a33e342",
+        "Agree": false
+      },
+      {
+        "Value": "named",
+        "OracleHash": "aea0bced",
+        "SkalaHash": "18857dee",
+        "Agree": false
       }
     ]
   },
@@ -1480,6 +2027,52 @@
     ]
   },
   {
+    "Key": "resharper_csharp_braces_redundant",
+    "Tier": "A",
+    "Outcome": "Spurious",
+    "OracleDistinct": 1,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": false,
+    "Fixture": "constructs/arrangement/redundancy/qualifiers-and-parentheses.cs",
+    "Values": [
+      {
+        "Value": "true",
+        "OracleHash": "1157cb75",
+        "SkalaHash": "24f764b3",
+        "Agree": false
+      },
+      {
+        "Value": "false",
+        "OracleHash": "1157cb75",
+        "SkalaHash": "1157cb75",
+        "Agree": true
+      }
+    ]
+  },
+  {
+    "Key": "resharper_csharp_constructor_or_destructor_body",
+    "Tier": "A",
+    "Outcome": "Divergent",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": false,
+    "Fixture": "constructs/arrangement/body-style/heuristics.cs",
+    "Values": [
+      {
+        "Value": "expression_body",
+        "OracleHash": "e36781b1",
+        "SkalaHash": "c3b355d4",
+        "Agree": false
+      },
+      {
+        "Value": "block_body",
+        "OracleHash": "4b182e75",
+        "SkalaHash": "71816bc6",
+        "Agree": false
+      }
+    ]
+  },
+  {
     "Key": "resharper_csharp_continuous_indent_multiplier",
     "Tier": "A",
     "Outcome": "Conformant",
@@ -1499,6 +2092,52 @@
         "OracleHash": "2891ed29",
         "SkalaHash": "2891ed29",
         "Agree": true
+      }
+    ]
+  },
+  {
+    "Key": "resharper_csharp_default_value_when_type_evident",
+    "Tier": "A",
+    "Outcome": "Divergent",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": false,
+    "Fixture": "constructs/arrangement/type-inference/default-literal.cs",
+    "Values": [
+      {
+        "Value": "default_literal",
+        "OracleHash": "a46ae960",
+        "SkalaHash": "86777ec2",
+        "Agree": false
+      },
+      {
+        "Value": "default_expression",
+        "OracleHash": "c68e7887",
+        "SkalaHash": "d0755831",
+        "Agree": false
+      }
+    ]
+  },
+  {
+    "Key": "resharper_csharp_default_value_when_type_not_evident",
+    "Tier": "A",
+    "Outcome": "Divergent",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": false,
+    "Fixture": "constructs/arrangement/type-inference/default-literal.cs",
+    "Values": [
+      {
+        "Value": "default_literal",
+        "OracleHash": "a46ae960",
+        "SkalaHash": "86777ec2",
+        "Agree": false
+      },
+      {
+        "Value": "default_expression",
+        "OracleHash": "ea83ab13",
+        "SkalaHash": "bf7ef025",
+        "Agree": false
       }
     ]
   },
@@ -2831,6 +3470,52 @@
     ]
   },
   {
+    "Key": "resharper_csharp_keep_nontrivial_alias",
+    "Tier": "A",
+    "Outcome": "Divergent",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true,
+    "Fixture": "constructs/arrangement/usings/aliases.cs",
+    "Values": [
+      {
+        "Value": "true",
+        "OracleHash": "5e3c2dc7",
+        "SkalaHash": "c78b2d25",
+        "Agree": false
+      },
+      {
+        "Value": "false",
+        "OracleHash": "5d909e01",
+        "SkalaHash": "5d909e01",
+        "Agree": true
+      }
+    ]
+  },
+  {
+    "Key": "resharper_csharp_local_function_body",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true,
+    "Fixture": "constructs/arrangement/body-style/accessor-owner.cs",
+    "Values": [
+      {
+        "Value": "expression_body",
+        "OracleHash": "c1398bb4",
+        "SkalaHash": "c1398bb4",
+        "Agree": true
+      },
+      {
+        "Value": "block_body",
+        "OracleHash": "9119a940",
+        "SkalaHash": "9119a940",
+        "Agree": true
+      }
+    ]
+  },
+  {
     "Key": "resharper_csharp_max_array_initializer_elements_on_line",
     "Tier": "D",
     "Outcome": "Divergent",
@@ -3028,6 +3713,29 @@
     ]
   },
   {
+    "Key": "resharper_csharp_method_or_operator_body",
+    "Tier": "A",
+    "Outcome": "Divergent",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": false,
+    "Fixture": "constructs/arrangement/body-style/heuristics.cs",
+    "Values": [
+      {
+        "Value": "expression_body",
+        "OracleHash": "4b182e75",
+        "SkalaHash": "71816bc6",
+        "Agree": false
+      },
+      {
+        "Value": "block_body",
+        "OracleHash": "756071b7",
+        "SkalaHash": "5f2678a8",
+        "Agree": false
+      }
+    ]
+  },
+  {
     "Key": "resharper_csharp_new_line_before_while",
     "Tier": "D",
     "Outcome": "Divergent",
@@ -3047,6 +3755,75 @@
         "OracleHash": "3683cd84",
         "SkalaHash": "3683cd84",
         "Agree": true
+      }
+    ]
+  },
+  {
+    "Key": "resharper_csharp_null_checking_pattern_style",
+    "Tier": "A",
+    "Outcome": "Spurious",
+    "OracleDistinct": 1,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": false,
+    "Fixture": "constructs/arrangement/redundancy/null-checking-pattern.cs",
+    "Values": [
+      {
+        "Value": "empty_recursive_pattern",
+        "OracleHash": "9fcb74a5",
+        "SkalaHash": "9fcb74a5",
+        "Agree": true
+      },
+      {
+        "Value": "not_null_pattern",
+        "OracleHash": "9fcb74a5",
+        "SkalaHash": "e664604d",
+        "Agree": false
+      }
+    ]
+  },
+  {
+    "Key": "resharper_csharp_object_creation_when_type_evident",
+    "Tier": "A",
+    "Outcome": "Divergent",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true,
+    "Fixture": "constructs/arrangement/type-inference/new-wins-when-lhs-names-the-type.cs",
+    "Values": [
+      {
+        "Value": "target_typed",
+        "OracleHash": "6b67af28",
+        "SkalaHash": "6b67af28",
+        "Agree": true
+      },
+      {
+        "Value": "explicitly_typed",
+        "OracleHash": "bd72e70e",
+        "SkalaHash": "95ba293a",
+        "Agree": false
+      }
+    ]
+  },
+  {
+    "Key": "resharper_csharp_object_creation_when_type_not_evident",
+    "Tier": "A",
+    "Outcome": "Divergent",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true,
+    "Fixture": "constructs/arrangement/type-inference/new-wins-when-lhs-names-the-type.cs",
+    "Values": [
+      {
+        "Value": "target_typed",
+        "OracleHash": "6b67af28",
+        "SkalaHash": "6b67af28",
+        "Agree": true
+      },
+      {
+        "Value": "explicitly_typed",
+        "OracleHash": "d95d72b4",
+        "SkalaHash": "726c814f",
+        "Agree": false
       }
     ]
   },
@@ -3138,6 +3915,29 @@
         "Value": "false",
         "OracleHash": "ba107678",
         "SkalaHash": "ba107678",
+        "Agree": true
+      }
+    ]
+  },
+  {
+    "Key": "resharper_csharp_parentheses_redundancy_style",
+    "Tier": "A",
+    "Outcome": "Divergent",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true,
+    "Fixture": "constructs/arrangement/redundancy/parentheses.cs",
+    "Values": [
+      {
+        "Value": "remove",
+        "OracleHash": "761b438e",
+        "SkalaHash": "e699bf6f",
+        "Agree": false
+      },
+      {
+        "Value": "remove_if_not_clarifies_precedence",
+        "OracleHash": "a152b30a",
+        "SkalaHash": "a152b30a",
         "Agree": true
       }
     ]
@@ -3623,6 +4423,29 @@
     ]
   },
   {
+    "Key": "resharper_csharp_prefer_explicit_discard_declaration",
+    "Tier": "A",
+    "Outcome": "Divergent",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": false,
+    "Fixture": "constructs/arrangement/lists/discard-declaration.cs",
+    "Values": [
+      {
+        "Value": "true",
+        "OracleHash": "952f88e0",
+        "SkalaHash": "11862e1b",
+        "Agree": false
+      },
+      {
+        "Value": "false",
+        "OracleHash": "54dfc55a",
+        "SkalaHash": "f6bc161d",
+        "Agree": false
+      }
+    ]
+  },
+  {
     "Key": "resharper_csharp_remove_blank_lines_near_braces_in_code",
     "Tier": "A",
     "Outcome": "Conformant",
@@ -3664,6 +4487,29 @@
         "Value": "false",
         "OracleHash": "110b58e5",
         "SkalaHash": "110b58e5",
+        "Agree": true
+      }
+    ]
+  },
+  {
+    "Key": "resharper_csharp_sort_usings_with_system_first",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true,
+    "Fixture": "constructs/arrangement/usings/sort-and-remove.cs",
+    "Values": [
+      {
+        "Value": "true",
+        "OracleHash": "331ab422",
+        "SkalaHash": "331ab422",
+        "Agree": true
+      },
+      {
+        "Value": "false",
+        "OracleHash": "0deb5d42",
+        "SkalaHash": "0deb5d42",
         "Agree": true
       }
     ]
@@ -5670,6 +6516,53 @@
     ]
   },
   {
+    "Key": "resharper_csharp_static_members_qualify_members",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 5,
+    "SkalaDistinct": 5,
+    "BaselineAgrees": true,
+    "Fixture": "constructs/arrangement/redundancy/static-qualifier.cs",
+    "Values": [
+      {
+        "Value": "none",
+        "OracleHash": "0154cb59",
+        "SkalaHash": "0154cb59",
+        "Agree": true
+      },
+      {
+        "Value": "field",
+        "OracleHash": "dbe502d4",
+        "SkalaHash": "dbe502d4",
+        "Agree": true
+      },
+      {
+        "Value": "property",
+        "OracleHash": "200db93b",
+        "SkalaHash": "200db93b",
+        "Agree": true
+      },
+      {
+        "Value": "event",
+        "OracleHash": "0154cb59",
+        "SkalaHash": "0154cb59",
+        "Agree": true
+      },
+      {
+        "Value": "method",
+        "OracleHash": "3cda4c85",
+        "SkalaHash": "3cda4c85",
+        "Agree": true
+      },
+      {
+        "Value": "all",
+        "OracleHash": "90f11b37",
+        "SkalaHash": "90f11b37",
+        "Agree": true
+      }
+    ]
+  },
+  {
     "Key": "resharper_csharp_stick_comment",
     "Tier": "D",
     "Outcome": "Spurious",
@@ -5689,6 +6582,52 @@
         "OracleHash": "5df3f72c",
         "SkalaHash": "048f9127",
         "Agree": false
+      }
+    ]
+  },
+  {
+    "Key": "resharper_csharp_trailing_comma_in_multiline_lists",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true,
+    "Fixture": "constructs/arrangement/lists/trailing-commas.cs",
+    "Values": [
+      {
+        "Value": "true",
+        "OracleHash": "7dba76b8",
+        "SkalaHash": "7dba76b8",
+        "Agree": true
+      },
+      {
+        "Value": "false",
+        "OracleHash": "a50d6ae1",
+        "SkalaHash": "a50d6ae1",
+        "Agree": true
+      }
+    ]
+  },
+  {
+    "Key": "resharper_csharp_trailing_comma_in_singleline_lists",
+    "Tier": "A",
+    "Outcome": "Conformant",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true,
+    "Fixture": "constructs/arrangement/lists/trailing-commas.cs",
+    "Values": [
+      {
+        "Value": "true",
+        "OracleHash": "eff60c81",
+        "SkalaHash": "eff60c81",
+        "Agree": true
+      },
+      {
+        "Value": "false",
+        "OracleHash": "a50d6ae1",
+        "SkalaHash": "a50d6ae1",
+        "Agree": true
       }
     ]
   },
@@ -5734,6 +6673,29 @@
         "Value": "false",
         "OracleHash": "314c045e",
         "SkalaHash": "32481378",
+        "Agree": false
+      }
+    ]
+  },
+  {
+    "Key": "resharper_csharp_use_heuristics_for_body_style",
+    "Tier": "A",
+    "Outcome": "Divergent",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": false,
+    "Fixture": "constructs/arrangement/body-style/heuristics.cs",
+    "Values": [
+      {
+        "Value": "true",
+        "OracleHash": "4b182e75",
+        "SkalaHash": "71816bc6",
+        "Agree": false
+      },
+      {
+        "Value": "false",
+        "OracleHash": "4e5090fb",
+        "SkalaHash": "30003d57",
         "Agree": false
       }
     ]
@@ -6858,6 +7820,29 @@
     ]
   },
   {
+    "Key": "resharper_empty_string",
+    "Tier": "A",
+    "Outcome": "Spurious",
+    "OracleDistinct": 1,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": false,
+    "Fixture": "constructs/arrangement/redundancy/empty-string.cs",
+    "Values": [
+      {
+        "Value": "empty_literal",
+        "OracleHash": "0bcdfae3",
+        "SkalaHash": "c1854e7a",
+        "Agree": false
+      },
+      {
+        "Value": "string_empty",
+        "OracleHash": "0bcdfae3",
+        "SkalaHash": "0bcdfae3",
+        "Agree": true
+      }
+    ]
+  },
+  {
     "Key": "resharper_enforce_line_ending_style",
     "Tier": "A",
     "Outcome": "Conformant",
@@ -7205,6 +8190,75 @@
         "OracleHash": "3d99ec4d",
         "SkalaHash": "3d99ec4d",
         "Agree": true
+      }
+    ]
+  },
+  {
+    "Key": "resharper_remove_only_unused_aliases",
+    "Tier": "A",
+    "Outcome": "Divergent",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true,
+    "Fixture": "constructs/arrangement/usings/aliases.cs",
+    "Values": [
+      {
+        "Value": "true",
+        "OracleHash": "5d909e01",
+        "SkalaHash": "5d909e01",
+        "Agree": true
+      },
+      {
+        "Value": "false",
+        "OracleHash": "5e3c2dc7",
+        "SkalaHash": "c78b2d25",
+        "Agree": false
+      }
+    ]
+  },
+  {
+    "Key": "resharper_remove_this_qualifier",
+    "Tier": "A",
+    "Outcome": "Spurious",
+    "OracleDistinct": 1,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": false,
+    "Fixture": "constructs/arrangement/redundancy/qualifiers-and-parentheses.cs",
+    "Values": [
+      {
+        "Value": "true",
+        "OracleHash": "1157cb75",
+        "SkalaHash": "24f764b3",
+        "Agree": false
+      },
+      {
+        "Value": "false",
+        "OracleHash": "1157cb75",
+        "SkalaHash": "fa37604d",
+        "Agree": false
+      }
+    ]
+  },
+  {
+    "Key": "resharper_sort_usings",
+    "Tier": "A",
+    "Outcome": "Divergent",
+    "OracleDistinct": 2,
+    "SkalaDistinct": 2,
+    "BaselineAgrees": true,
+    "Fixture": "constructs/arrangement/usings/sort-and-remove.cs",
+    "Values": [
+      {
+        "Value": "true",
+        "OracleHash": "0deb5d42",
+        "SkalaHash": "0deb5d42",
+        "Agree": true
+      },
+      {
+        "Value": "false",
+        "OracleHash": "25f59917",
+        "SkalaHash": "10534a96",
+        "Agree": false
       }
     ]
   },
