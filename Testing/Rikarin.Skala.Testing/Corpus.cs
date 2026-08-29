@@ -180,10 +180,29 @@ public static class Corpus {
     ///     constructs. This is the set <c>./build.sh Oracle</c> regenerates under the second profile and
     ///     the set the M4 differential is measured over.
     /// </summary>
-    public static IReadOnlyList<CorpusFile> Arrangeable() => [
+    public static IReadOnlyList<CorpusFile> Arrangeable() => [.. ArrangementConstructs(), .. Files(Real)];
+
+    /// <summary>
+    ///     The arrangement half of <see cref="Arrangeable" />: <c>constructs/arrangement/</c> alone.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ A set rather than an inline <c>Where</c>, because it is a <em>compilation</em> and not just
+    ///     a list of files. <c>usings/sort-and-remove.cs</c> imports <c>Alpha.Things</c>, which exists
+    ///     only because <c>usings/namespaces.cs</c> declares it; drop either file and the import stops
+    ///     resolving, whereupon both engines answer a different question about
+    ///     <c>resharper_sort_usings</c> than the one that was asked. The key-flip sweep gives its oracle
+    ///     this whole subtree and compiles Skala's side over the same one, so that the two are asked the
+    ///     same question — the argument <c>ArrangementDifferential.ImplicitUsings</c> makes about the
+    ///     SDK's global usings, applied to the corpus's own cross-references.
+    ///     <para>
+    ///         ⚠ <see cref="Real" /> is deliberately not in here. The differential measures both; the
+    ///         sweep runs ~270 oracle configurations and cannot carry 380 vendored files into every one.
+    ///         Nothing under <c>constructs/arrangement/</c> references anything under <see cref="Real" />.
+    ///     </para>
+    /// </remarks>
+    public static IReadOnlyList<CorpusFile> ArrangementConstructs() => [
         .. Files(Constructs)
-            .Where(static file => file.RelativePath.StartsWith(ArrangementPrefix, StringComparison.Ordinal)),
-        .. Files(Real)
+            .Where(static file => file.RelativePath.StartsWith(ArrangementPrefix, StringComparison.Ordinal))
     ];
 
     /// <summary>

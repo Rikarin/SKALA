@@ -25,6 +25,11 @@ using Rikarin.Skala.Testing;
 //   verify <key>      one option, unbatched, with both engines' output at every value printed in
 //                     full. ⚠ How a row in the table is checked before anything is demoted on the
 //                     strength of it.
+//   fixed-point       ⚠ whether the two sides of an arrangement verdict are stopped at the same
+//                     place. Skala's half loops to a fixed point and the oracle's half is one
+//                     `cleanupcode` invocation; this runs the oracle twice over its own output and
+//                     reports what moved the second time. A comparison between a converged output
+//                     and an unconverged one is a measurement bug that reads as a divergence.
 //   nightly [--family=…] [--apply]
 //                     both passes in one process: the export-base sweep, then the bare-base defaults
 //                     pass cross-checked against it. ⚠ The shape the nightly job wants — the
@@ -35,7 +40,7 @@ using Rikarin.Skala.Testing;
 if (args.Length == 0) {
     Console.Error.WriteLine(
         "usage: sweep | defaults | nightly [--family=…] [--out=…] [--apply] | plan [--family=…] | "
-        + "pairwise [--family=…] [--out=…] | pairwise-plan [--family=…] | verify <key>"
+        + "pairwise [--family=…] [--out=…] | pairwise-plan [--family=…] | verify <key> | fixed-point"
     );
     return 2;
 }
@@ -59,6 +64,8 @@ switch (args[0]) {
         return Defaults(null);
     case "nightly":
         return Nightly();
+    case "fixed-point":
+        return ArrangementFixedPoint.Run(Corpus.BaseEditorConfigPath, Console.Out);
     case "verify":
         if (args.Length < 2) {
             Console.Error.WriteLine("usage: verify <key>");

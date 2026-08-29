@@ -83,7 +83,7 @@ public sealed class DefaultsPass {
         var bare = new Dictionary<string, string>(StringComparer.Ordinal);
         foreach (var batch in Batches(fixtures)) {
             var produced = Format(batch, static _ => BareConfig);
-            for (var i = 0; i < batch.Length; i++) {
+            for (var i = 0; i < batch.Count; i++) {
                 // Keyed by fixture path, because the bare run is per fixture and several options
                 // may share one.
                 if (produced[i] is { } body) {
@@ -111,7 +111,7 @@ public sealed class DefaultsPass {
                         + candidate.Values[round] + "\n"
                 );
 
-                for (var i = 0; i < batch.Length; i++) {
+                for (var i = 0; i < batch.Count; i++) {
                     if (produced[i] is not { } body || !bare.TryGetValue(batch[i].Fixture.Path, out var expected)) {
                         continue;
                     }
@@ -203,9 +203,27 @@ public sealed class DefaultsPass {
         ];
     }
 
-    static IEnumerable<SweepCandidate[]> Batches(SweepCandidate[] candidates) {
-        for (var start = 0; start < candidates.Length; start += KeyFlipSweep.BatchSize) {
-            yield return [.. candidates.Skip(start).Take(KeyFlipSweep.BatchSize)];
+    /// <summary>
+    ///     ⚠ Partitioned by oracle profile before batching, exactly as the conformance sweep is.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ This used to cut the list by count alone, which was correct for as long as every candidate
+    ///     wanted <c>CSReformatCode</c>. It stopped being correct the moment the plan started offering
+    ///     arrangement and doc-comment fixtures: a batch that mixes profiles trips
+    ///     <c>ScratchTree.Format</c>'s own guard, and a semantic batch holding one fixture twice
+    ///     measures the scratch project. Both rules live in <see cref="ScratchTree.Batches" /> so that
+    ///     this pass and the sweep cannot come to differ about them.
+    /// </remarks>
+    static IEnumerable<IReadOnlyList<SweepCandidate>> Batches(SweepCandidate[] candidates) {
+        foreach (var partition in ScratchTree.ByProfile(candidates, static candidate => candidate.Fixture)) {
+            foreach (var batch in ScratchTree.Batches(
+                         partition.ToArray(),
+                         static candidate => candidate.Fixture,
+                         partition.Key,
+                         KeyFlipSweep.BatchSize
+                     )) {
+                yield return batch;
+            }
         }
     }
 

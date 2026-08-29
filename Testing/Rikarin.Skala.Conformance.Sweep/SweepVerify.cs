@@ -48,18 +48,15 @@ public static class SweepVerify {
             var body = ScratchTree.Format(runner, [candidate], c => sweep.ConfigFor(c.Key, c.Values[round]))[0];
             oracle.Add(body is null ? null : TextNormalisation.Normalise(body));
 
-            var resolved = OptionResolver.Resolve(
-                candidate.Fixture.Path,
-                [new KeyValuePair<string, string>(candidate.Key, candidate.Values[round])]
-            );
+            // ⚠ Through `SkalaSide`, which is the sweep's own Skala half. This used to call
+            // `CSharpFormatter.Format` directly, and a second spelling of "what Skala produces" is
+            // exactly the drift `SkalaSide`'s remarks were written about: on a cleanup-profile
+            // fixture the sweep runs the arrange-and-format pipeline and this would have printed a
+            // merely-formatted file, so the confirmation view would contradict the table it exists
+            // to confirm — and the contradiction would look like a finding.
             skala.Add(
                 TextNormalisation.Normalise(
-                    CSharpFormatter.Format(
-                        candidate.Fixture.Path,
-                        CSharpFormatter.Read(candidate.Fixture.Path),
-                        resolved.Options
-                    )
-                        .Formatted
+                    SkalaSide.Format(candidate.Fixture.Path, candidate.Key, candidate.Values[round])
                 )
             );
 

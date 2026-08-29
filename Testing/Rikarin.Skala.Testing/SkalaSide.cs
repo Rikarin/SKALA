@@ -1,7 +1,9 @@
 using System.Security.Cryptography;
 using System.Text;
+using Microsoft.CodeAnalysis.CSharp;
 using Rikarin.Skala.Core.Configuration;
 using Rikarin.Skala.Formatting.CSharp;
+using Rikarin.Skala.Formatting.CSharp.Arrangement;
 
 namespace Rikarin.Skala.Testing;
 
@@ -21,6 +23,9 @@ namespace Rikarin.Skala.Testing;
 ///     </para>
 /// </remarks>
 public static class SkalaSide {
+    static readonly Lock Gate = new();
+    static CSharpCompilation? _arrangement;
+
     /// <summary>
     ///     Skala's answer for one option at one value, resolved from the repository's own chain.
     /// </summary>
@@ -63,7 +68,48 @@ public static class SkalaSide {
         }
 
         var text = CSharpFormatter.Read(fixturePath);
-        return CSharpFormatter.Format(fixturePath, text, resolved.Options).Formatted;
+        if (!OracleProfile.For(fixturePath).IsSemantic) {
+            return CSharpFormatter.Format(fixturePath, text, resolved.Options).Formatted;
+        }
+
+        // ⚠ The arrangement subtree is measured against the *cleanup* profile, so Skala's half of that
+        // comparison is the arrange-and-format pipeline and not the formatter. Routed on the fixture's
+        // path through the one authority both halves read, because the failure mode of two answers is
+        // silent: `CSharpFormatter.Format` alone would return a merely-formatted file, the oracle would
+        // return an arranged one, and every arrangement key would be reported DIVERGENT on a difference
+        // no key caused.
+        var result = ArrangementPipeline.Run(
+            fixturePath,
+            text,
+            new PhaseOneOptions(resolved.Options),
+            new ArrangementOptions(resolved.Options),
+            ArrangementCompilation(),
+            ArrangementDifferential.Removable(ArrangementCompilation(), fixturePath)
+        );
+
+        // ⚠ A file that did not reach a fixed point is not an answer, and scoring it as one is the
+        // failure this whole comparison is exposed to: the oracle's side is a single `cleanupcode`
+        // invocation, so comparing an unconverged Skala output against it would report the pipeline's
+        // own incompleteness as a divergence of the key that was flipped. It is spelled into the
+        // output rather than thrown, for the reason the value-error above is: a refusal that is
+        // recorded stays comparable across runs.
+        return result.Converged ? result.Text : "did-not-converge: " + result.Passes + " passes";
+    }
+
+    /// <summary>
+    ///     The compilation the arrangement half is resolved against, built once.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ <c>constructs/arrangement/</c> entire, and the same set the sweep hands its oracle — see
+    ///     <see cref="Corpus.ArrangementConstructs" /> for why a subset answers differently. Built once
+    ///     and shared: the input text of a fixture does not change across an option's values, only the
+    ///     options do, so one compilation serves every configuration and re-parsing 27 files per
+    ///     (option, value) would be the sweep's dominant Skala cost for no change in the answer.
+    /// </remarks>
+    static CSharpCompilation ArrangementCompilation() {
+        lock (Gate) {
+            return _arrangement ??= ArrangementDifferential.Compile(Corpus.ArrangementConstructs());
+        }
     }
 
     /// <summary>A short digest of one engine's output, so a table can be read as a diff.</summary>

@@ -231,9 +231,12 @@ public sealed class KeyFlipSweep {
             // ScratchTree.ProfileFor for what mixing them cost.
             foreach (var partition in ScratchTree.ByProfile(work, static candidate => candidate.Fixture)) {
                 var members = partition.ToArray();
-                for (var start = 0; start < members.Length; start += BatchSize) {
-                    var batch = members.Skip(start).Take(BatchSize).ToArray();
-
+                foreach (var batch in ScratchTree.Batches(
+                             members,
+                             static candidate => candidate.Fixture,
+                             partition.Key,
+                             BatchSize
+                         )) {
                     var skalaStart = Stopwatch.GetTimestamp();
                     foreach (var candidate in batch) {
                         skala[(candidate.Key, round)] = FormatWithSkala(candidate, candidate.Values[round]);
@@ -250,8 +253,8 @@ public sealed class KeyFlipSweep {
                     // The batch's wall clock is one `cleanupcode` startup shared between its members,
                     // so the honest per-option figure is the share and not a stopwatch around a call
                     // that was never made on its own.
-                    var share = elapsed / batch.Length;
-                    for (var i = 0; i < batch.Length; i++) {
+                    var share = elapsed / batch.Count;
+                    for (var i = 0; i < batch.Count; i++) {
                         cost[batch[i].Key] += share;
                         if (produced[i] is { } body) {
                             oracle[(batch[i].Key, round)] = body;
@@ -267,56 +270,76 @@ public sealed class KeyFlipSweep {
             // property of the finding. A round in which the tool errored and a round in which one
             // option's value legitimately reproduces its fixture both have `moved == 0`, and only
             // `answered` tells them apart.
-            var answered = 0;
-            foreach (var candidate in work) {
-                if (!oracle.TryGetValue((candidate.Key, round), out var body)) {
-                    continue;
+            //
+            // ⚠ Counted per *profile* and not per round, which is a correction the second and third
+            // profiles forced. A round now holds three populations answered by three different
+            // `cleanupcode` profiles, and a pooled count cannot see one of them fail: 44 arrangement
+            // options that answered nothing sit inside a round of 378 whose whitespace half moved
+            // normally, so `moved > 0` and the canary stays silent. That is precisely the "run where
+            // the oracle never varied, read as universal agreement" both of these exist to refuse —
+            // the failure would present as 44 SPURIOUS rows, which is what the doc-comment family
+            // produced when its profile was wrong. A population is a profile's share of a round.
+            foreach (var partition in ScratchTree.ByProfile(work, static candidate => candidate.Fixture)) {
+                var members = partition.ToArray();
+                var answered = 0;
+                var movedHere = 0;
+
+                foreach (var candidate in members) {
+                    if (!oracle.TryGetValue((candidate.Key, round), out var body)) {
+                        continue;
+                    }
+
+                    answered++;
+                    if (!string.Equals(
+                            TextNormalisation.Normalise(body),
+                            Baseline(candidate),
+                            StringComparison.Ordinal
+                        )) {
+                        movedHere++;
+                    }
                 }
 
-                answered++;
-                if (!string.Equals(
-                        TextNormalisation.Normalise(body),
-                        Baseline(candidate),
-                        StringComparison.Ordinal
-                    )) {
-                    moved++;
+                moved += movedHere;
+                _log.WriteLine(
+                    $"  round {Count(round + 1)}/{Count(rounds)} {partition.Key.Name}: {Count(members.Length)} options, {Count(answered)} answered, {Count(movedHere)} oracle outputs differ from the input"
+                );
+
+                if (IsBrokenMeasurement(members.Length, answered)) {
+                    broken.Add(
+                        new BrokenRound(
+                            round,
+                            members.Length,
+                            answered,
+                            movedHere,
+                            "`cleanupcode` returned nothing for any "
+                            + partition.Key.Name
+                            + " option in this round. It errored, or the configuration never reached it."
+                        )
+                    );
+                    _log.WriteLine(
+                        "  ⚠ NOT A FINDING, A BROKEN MEASUREMENT: `cleanupcode` returned nothing for the "
+                        + partition.Key.Name
+                        + " half of this round. It errored, or the configuration never reached it."
+                    );
+                } else if (IsUnvaryingRound(members.Length, movedHere)) {
+                    broken.Add(
+                        new BrokenRound(
+                            round,
+                            members.Length,
+                            answered,
+                            movedHere,
+                            "`cleanupcode` answered every "
+                            + partition.Key.Name
+                            + " option in this round with the fixture it was given. The configurations are "
+                            + "reaching it but they are not varying."
+                        )
+                    );
+                    _log.WriteLine(
+                        "  ⚠ NOT A FINDING, A BROKEN MEASUREMENT: `cleanupcode` answered every "
+                        + partition.Key.Name
+                        + " option in this round with the input it was given. The configurations are not varying."
+                    );
                 }
-            }
-
-            _log.WriteLine(
-                $"  round {Count(round + 1)}/{Count(rounds)}: {Count(work.Length)} options, {Count(answered)} answered, {Count(moved)} oracle outputs differ from the input"
-            );
-
-            if (IsBrokenMeasurement(work.Length, answered)) {
-                broken.Add(
-                    new BrokenRound(
-                        round,
-                        work.Length,
-                        answered,
-                        moved,
-                        "`cleanupcode` returned nothing for any option in this round. It errored, or the "
-                        + "configuration never reached it."
-                    )
-                );
-                _log.WriteLine(
-                    "  ⚠ NOT A FINDING, A BROKEN MEASUREMENT: `cleanupcode` returned nothing for this "
-                    + "whole round. It errored, or the configuration never reached it."
-                );
-            } else if (IsUnvaryingRound(work.Length, moved)) {
-                broken.Add(
-                    new BrokenRound(
-                        round,
-                        work.Length,
-                        answered,
-                        moved,
-                        "`cleanupcode` answered every option in this round with the fixture it was given. "
-                        + "The configurations are reaching it but they are not varying."
-                    )
-                );
-                _log.WriteLine(
-                    "  ⚠ NOT A FINDING, A BROKEN MEASUREMENT: `cleanupcode` answered every option in this "
-                    + "round with the input it was given. The configurations are not varying."
-                );
             }
         }
 
@@ -359,20 +382,27 @@ public sealed class KeyFlipSweep {
             .ToArray();
         var agreement = new Dictionary<string, bool>(StringComparer.Ordinal);
 
-        // ⚠ Partitioned by profile, exactly as the rounds are.
+        // ⚠ Partitioned by profile and batched by it, exactly as the rounds are.
         foreach (var partition in ScratchTree.ByProfile(fixtures, static candidate => candidate.Fixture)) {
             var members = partition.ToArray();
-            for (var start = 0; start < members.Length; start += BatchSize) {
-                var batch = members.Skip(start).Take(BatchSize).ToArray();
+            foreach (var batch in ScratchTree.Batches(
+                         members,
+                         static candidate => candidate.Fixture,
+                         partition.Key,
+                         BatchSize
+                     )) {
                 var produced = FormatWithOracle(batch, round: null);
                 invocations++;
 
-                for (var i = 0; i < batch.Length; i++) {
+                for (var i = 0; i < batch.Count; i++) {
                     var path = batch[i].Fixture.Path;
-                    var skala = TextNormalisation.Normalise(
-                        CSharpFormatter.Format(path, CSharpFormatter.Read(path), OptionResolver.Resolve(path).Options)
-                            .Formatted
-                    );
+
+                    // ⚠ Through `SkalaSide` and not `CSharpFormatter` directly, because Skala's half
+                    // of a cleanup-profile comparison is the arrange-and-format pipeline. Formatting
+                    // an arrangement fixture here and arranging it in the rounds would make every
+                    // arrangement fixture disagree at the baseline, and then every arrangement key's
+                    // DIVERGENT row would carry `BaselineAgrees = false` and attribute nothing.
+                    var skala = TextNormalisation.Normalise(SkalaSide.Format(path, []));
 
                     // ⚠ Both sides normalised. `FormatWithOracle` hands back exactly what the tool
                     // wrote, because the line-ending and final-newline options need it to; normalising

@@ -33,28 +33,13 @@ public sealed class SweepPlanTests {
         }
     }
 
-    /// <summary>
-    ///     ⚠ An arrangement option is excluded rather than swept under the wrong profile.
-    /// </summary>
-    /// <remarks>
-    ///     The format-only profile is <c>CSReformatCode</c> and nothing else, so its output is
-    ///     byte-identical whatever an <c>arrange_*</c> key says. Sweeping them here would report every
-    ///     one as <c>SPURIOUS</c> — the harness inventing divergences rather than finding any.
-    /// </remarks>
-    [Fact]
-    public void ArrangementOptions_AreExcludedWithTheirReasonRecorded() {
-        var plan = SweepPlan.Build([]);
-        var swept = plan.Candidates.Select(static candidate => candidate.Info.Id).ToHashSet();
-
-        foreach (var id in Rikarin.Skala.Formatting.CSharp.Arrangement.ArrangementOptions.Implemented) {
-            Assert.DoesNotContain(id, swept);
-            Assert.Contains(
-                plan.Excluded,
-                exclusion => exclusion.Info.Id == id
-                    && exclusion.Reason.Contains("arrangement", StringComparison.Ordinal)
-            );
-        }
-    }
+    // ⚠ `ArrangementOptions_AreExcludedWithTheirReasonRecorded` stood here and asserted the opposite
+    // of what `ArrangementRoutingTests.EveryArrangementOption_IsNowSwept` asserts. It was right about
+    // the profile and wrong about the option: `CSReformatCode` is byte-identical whatever an
+    // arrangement key says, so sweeping all 44 under it would have reported 44 SPURIOUS rows — but
+    // the profile is a parameter, and the fixture now chooses it. The narrow half of its reasoning
+    // that survives is pinned by
+    // `ArrangementRoutingTests.EverySweptArrangementOption_HasAFixtureTheCleanupProfileOwns`.
 
     /// <summary>A family is matched after the vendor prefix, because the export spells keys three ways.</summary>
     [Theory]

@@ -143,6 +143,59 @@ public sealed record OracleProfile(string Name, string Suffix, string Tasks) {
     public static OracleProfile? ByName(string name) =>
         All.FirstOrDefault(profile => string.Equals(profile.Name, name, StringComparison.OrdinalIgnoreCase));
 
+    /// <summary>
+    ///     Whether this profile rewrites the tree, or only the whitespace between its tokens.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Only <see cref="Cleanup" /> is semantic, and the distinction is not cosmetic: a semantic
+    ///     profile resolves symbols, so what else is in the scratch project changes its answer. Two
+    ///     copies of one fixture in one project are two declarations of one type; the arrangement
+    ///     subtree's <c>usings/sort-and-remove.cs</c> imports <c>Alpha.Things</c>, which only exists
+    ///     because <c>usings/namespaces.cs</c> declares it. Under <see cref="FormatOnly" /> neither fact
+    ///     can move a byte, which is why the key-flip sweep could batch by count alone for three
+    ///     milestones. See <c>ScratchTree.Format</c> for what this flag buys.
+    /// </remarks>
+    public bool IsSemantic => ReferenceEquals(this, Cleanup);
+
+    /// <summary>
+    ///     Which profile can move this corpus file at all, decided by where it sits in the corpus.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ <b>One authority, because two halves of one measurement read it.</b> The oracle side asks
+    ///     it to choose a <c>cleanupcode</c> profile and Skala's side asks it to choose between the
+    ///     formatter and the arrange-and-format pipeline. If those two ever disagreed about one file,
+    ///     the sweep would compare an arranged output against a merely formatted one and report the
+    ///     difference as a divergence of whatever key happened to be flipped. <c>SkalaSide</c>'s own
+    ///     remarks record the same hazard for the same reason.
+    ///     <para>
+    ///         ⚠ Measured, on master, the day the doc-comment profile landed: the sweep ran
+    ///         <see cref="FormatOnly" /> alone, that profile switches <c>CSharpFormatDocComments</c> off,
+    ///         and so every one of the 13 doc-comment keys came back <c>SPURIOUS</c> — "Skala reacts where
+    ///         ReSharper does not" — when what had actually happened was that the oracle was asked a
+    ///         question its profile forbade it to answer. A verdict is only about an option when the
+    ///         oracle was given a profile that lets it answer.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ A path outside <c>Testing/corpus/</c> falls through to <see cref="FormatOnly" />. That is
+    ///         the safe direction: the two subtrees that need another profile are named constants, and a
+    ///         tree the corpus does not own is measured the way every milestone before 4 measured it.
+    ///     </para>
+    /// </remarks>
+    public static OracleProfile For(string path) {
+        var relative = Path.GetRelativePath(Corpus.Root, path).Replace('\\', '/');
+        var slash = relative.IndexOf('/', StringComparison.Ordinal);
+        var withinSet = slash < 0 ? relative : relative[(slash + 1)..];
+
+        if (withinSet.StartsWith(Corpus.ArrangementPrefix, StringComparison.Ordinal)) {
+            return Cleanup;
+        }
+
+        return withinSet.StartsWith(Corpus.XmlDocPrefix, StringComparison.Ordinal) ? DocComments : FormatOnly;
+    }
+
+    /// <summary>The same, for a file the corpus has already enumerated.</summary>
+    public static OracleProfile For(CorpusFile file) => For(file.Path);
+
     /// <summary>The <c>.DotSettings</c> document that defines this profile, and nothing else.</summary>
     public string SettingsFile =>
         """
