@@ -247,7 +247,16 @@ public static class XmlDocFormatter {
         }
 
         var marker = options.SpaceAfterTripleSlash ? " " : string.Empty;
-        var budget = options.MaxLineLength - TextWidth.Measure(indent) - 3 - marker.Length;
+
+        // ⚠ Neither the code indentation nor the three slashes are subtracted, and both used to be
+        // — SK-DIV-0019 entire. Probed at four content indents, three code indents, four start-tag
+        // widths and two margins, the oracle wraps a documentation line when
+        // `marker + indent + content` passes `max_line_length`, measuring from the character after
+        // the `///`. The consequences are the divergence's two visible halves: the same sentence
+        // wraps identically however deeply its declaration is nested, and the file's own columns run
+        // `codeIndent + 3` past the margin. `XmlDocOptions.MaxLineLength` carries the argument this
+        // replaces, and why the argument lost.
+        var budget = options.MaxLineLength - marker.Length;
         if (XmlDocRenderer.Render(nodes, options, budget) is not { } lines || lines.Length == 0) {
             return new Attempt(default, null, XmlDocRefusalReason.Glue);
         }
@@ -264,11 +273,21 @@ public static class XmlDocFormatter {
             // `<code>` body; `XmlDocModel.SourceLines` takes that same space off on the way in, so the
             // sample's own columns are what is left in `Text` and what comes back out here.
             //
-            // ⚠ Skipping an empty line is not a special case for verbatim — it is the rule the prose
-            // branch has always had, and it is why a blank line inside a `<code>` block does not
-            // acquire the trailing space every other pass in Skala strips.
+            // ⚠ A blank line the *renderer* wrote gets the marker space too, and that is SK-DIV-0023's
+            // second half closed. It used to be skipped on the argument that "an empty line's trailing
+            // whitespace is the one thing every other pass in Skala strips" — an argument about Skala
+            // rather than a measurement of the oracle. Probed: every blank `///` line the oracle
+            // writes carries the space, the one after a processing instruction and the ones
+            // `max_blank_lines_between_tags` keeps alike, whether or not the author's did. So the
+            // marker's space belongs to the marker, exactly as the first half of that entry concluded
+            // for verbatim lines.
+            //
+            // ⚠ A blank line inside a `<code>` block still does not, and that is why the test is on
+            // `Verbatim` rather than on emptiness. Those columns are the sample's, this space is the
+            // option's, and `ABlankLineInsideAVerbatimBlock_IsNeitherACrashNorATrailingSpace` pins the
+            // difference.
             rendered.Append(indent).Append("///");
-            if (lines[i].Text.Length > 0) {
+            if (lines[i].Text.Length > 0 || !lines[i].Verbatim) {
                 rendered.Append(marker).Append(lines[i].Text);
             }
         }

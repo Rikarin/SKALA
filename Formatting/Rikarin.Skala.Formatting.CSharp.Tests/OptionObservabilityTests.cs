@@ -153,6 +153,18 @@ public sealed class OptionObservabilityTests {
     ///         <c>linebreaks_inside_tags_for_elements_longer_than</c> had only single-attribute headers
     ///         and short contents to work on.
     ///     </para>
+    ///     <para>
+    ///         ⚠ Widened again, and this time by a probe defect the wrap-column fix exposed rather than by
+    ///         a missing construct. Every "long enough that it will not fit" phrase here was written
+    ///         against a budget seven columns narrower than the one SK-DIV-0019 measured, so
+    ///         <c>linebreak_before_multiline_elements</c> lost its only shape: the <c>&lt;exception&gt;</c>
+    ///         it governed is now moved by the width wrap at both values, and a key that is masked reads
+    ///         exactly like a key that is unwired. The shape it actually governs is a <em>short</em>
+    ///         element that is multi-line for a structural reason, beside prose — the line added below —
+    ///         and the key moves it: at <c>false</c> the <c>&lt;list&gt;</c>'s start tag stays on the prose's
+    ///         line. Asserting the answer without asking whether the probe could still see it is the
+    ///         mistake this repository has made in four separate areas.
+    ///     </para>
     /// </remarks>
     const string Probe = """
                          class Probe {
@@ -164,6 +176,7 @@ public sealed class OptionObservabilityTests {
                              /// <list><item>One item.</item><item>Another item, written at enough length that the list cannot fit on any single line of its own.</item></list>
                              /// <para>A paragraph.</para><para>A second paragraph, itself long enough that it will not sit on one line beside the first.</para>
                              /// <list><item>A.</item></list>
+                             /// Prose beside a short list. <list><item>B.</item></list> and prose after it.
                              /// <value>Some ordinary prose that runs on for a while before it finally reaches an inline element <see cref="System.String"/> right here.</value>
                              /// </remarks>
                              /// <param name="first">The first parameter, described at some length so that it too runs past the margin.</param><param name="second">The second.</param>

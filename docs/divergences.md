@@ -422,8 +422,10 @@ directions and stays Tier D — implementing it would create a divergence in exc
 anyone asked for.
 
 ⚠ **Registry state.** `resharper_space_after_triple_slash` is **Tier A** (see above),
-`resharper_xmldoc_wrap_lines` is **Tier D** for the measured reason in SK-DIV-0019 rather than for
-want of a fixture, `trim_trailing_whitespace` is **Tier D** with
+`resharper_xmldoc_wrap_lines` is **Tier D** — SK-DIV-0019 is closed and its fixture agrees, but the
+key has never been swept, so nothing has yet made a claim about it away from the export's value;
+`XmlDocOracleTests.Unswept` holds it and its six siblings there until the sweep does.
+`trim_trailing_whitespace` is **Tier D** with
 `defaultSource: oracle-probe` — the probe that established it is recorded in the registry entry
 itself — and `resharper_remove_spaces_on_blank_lines` is **Tier D**, inert as this entry says.
 
@@ -441,7 +443,31 @@ one level down: a limitation of the *profile*, read as a limitation of the corpu
 `<CSharpFormatDocComments>True</CSharpFormatDocComments>` and nothing else, `./build.sh Oracle`
 regenerates `constructs/xmldoc/*.xmldoc.expected.cs` under it, and the family is measured. **13 of
 the 22 keys are Tier A**, pinned exactly the way every other option in the registry is. The nine
-that are not have measured shapes and entries of their own: SK-DIV-0019 through SK-DIV-0023.
+that are not had measured shapes and entries of their own: SK-DIV-0019 through SK-DIV-0023. ⚠ **All
+nine now reproduce their fixtures, and the split is 22 of 22.** Seven were one arithmetic — SK-DIV-0019
+wearing five names, SK-DIV-0021 turning out to be the same arithmetic, and SK-DIV-0020 needing one
+structural fix beside it; the other two were SK-DIV-0022 and SK-DIV-0023's surviving half.
+
+⚠ **Only four of the nine are keys the export sets**, and this has to be said before "enforced at the
+export's own value" is said of any of them. `.editorconfig` carries twelve `resharper_xmldoc_*` lines,
+and of the nine only `max_line_length = 120`, `wrap_lines = true`, `wrap_tags_and_pi = true` and
+`wrap_text = true` are among them. `spaces_inside_tags`, `blank_line_after_pi`,
+`linebreak_before_multiline_elements`, `linebreak_before_singleline_elements` and
+`linebreaks_inside_tags_for_elements_longer_than` are **not in the export at all**; the value in play
+is the registry `default`. So for those five the fixtures do not say "Skala enforces the standard" —
+they say **Skala's recorded default matches ReSharper's built-in default on this construct**, which is
+a different claim and, on these constructs, a stronger one. ⚠ Their `defaultSource` reads `template`
+and they are not in `editor_config_template` either, so that provenance does not hold up and is worth
+a pass of its own; nothing here rests on it, because every measurement in this family compares Skala
+and `jb cleanupcode` under the *same* `.editorconfig`, each falling back to its own defaults.
+
+⚠ **The nine are still Tier D, and the distinction is the whole point of this section.** Agreement on
+a fixture is agreement at one value of one key on one construct under one configuration; Tier A is a
+claim about the option across its domain, and the instrument that makes it is the key-flip sweep,
+which has no row for any of the nine. Six `resharper_xmldoc_*` keys were promoted on exactly this
+evidence and demoted the same afternoon — every one agreeing at the export's value and diverging away
+from it. `XmlDocOracleTests.Unswept` holds the nine, asserts in both directions that they still agree,
+and shrinks to nothing as the sweep reaches them.
 
 The three things below still pin the sub-formatter and are still worth having — the round trip in
 particular is checked on every comment of every run, which no fixture can be — but they are no
@@ -1127,45 +1153,82 @@ therefore never held. The three lines it loses are this divergence and nothing e
 - options: `resharper_enforce_line_ending_style`, `end_of_line`, `insert_final_newline`
 - ⚠ status: **permanent**, pinned by the fixture above.
 
-## SK-DIV-0019 — the oracle keeps the word that crosses `max_line_length`; Skala breaks before it
+## SK-DIV-0019 — the wrap column is measured from after the `///`, not from column 0 — **CLOSED**
 
-The first divergence the doc-comment oracle profile made visible, and the largest: **five** of the
-nine keys that stayed Tier D are this one disagreement wearing five names, because every one of
-them is measured on a comment that has to wrap.
+⚠ **This entry's title used to be "the oracle keeps the word that crosses `max_line_length`; Skala
+breaks before it", and that model was wrong.** It was consistent with all five committed fixtures
+and with nothing else. What follows is the record of a reading that fitted the evidence it was built
+from, because the way it was wrong is the useful part.
 
-Skala fills a documentation line while the *whole line* — code indent, `///`, marker space, content
-indent and text — stays within `resharper_xmldoc_max_line_length`. The oracle fills while the line
-is **strictly under** the limit and then keeps the word that crosses it, breaking after it. So the
-oracle's lines routinely run one word past the margin and Skala's never do:
+### What it said
 
-```
-                                                                                          120 ↓
-oracle   ///     A summary written … inside the configured column limit, so that the       (122)
-skala    ///     A summary written … inside the configured column limit, so that           (118)
-```
+> Skala fills a documentation line while the *whole line* — code indent, `///`, marker space, content
+> indent and text — stays within `resharper_xmldoc_max_line_length`. The oracle fills while the line
+> is **strictly under** the limit and then keeps the word that crosses it, breaking after it.
 
-`constructs/xmldoc/resharper_xmldoc_max_line_length.xmldoc.expected.cs` carries 122 columns,
-`…_wrap_lines` 122, `…_wrap_text` 122, `…_wrap_tags_and_pi` 121 and
-`…_linebreaks_inside_tags_for_elements_longer_than` 122, all under `max_line_length = 120`. The
-model was checked against every wrapping fixture in the subtree: greedy fill, break *after* the
-crossing word, and the crossing word admitted only while the line before it was under 120.
+and, immediately after it, the part that should have been read as a refutation rather than a caveat:
 
-⚠ **One part of the shape is measured and not explained.** Probed at three nesting depths with a
-`<summary>` of sixty identical five-letter words, the oracle produced content lines of 125, 129 and
-133 columns — a constant 113 columns of *content*, which is `120 − 3 − 4` — but the **first**
-content line of each was one word shorter than the rest, at every depth. The greedy model fits every
-later line and misses that one. The first-line reservation is unexplained; it is recorded here
-rather than guessed at.
+> ⚠ **One part of the shape is measured and not explained.** Probed at three nesting depths with a
+> `<summary>` of sixty identical five-letter words, the oracle produced content lines of 125, 129 and
+> 133 columns — a constant 113 columns of *content* — but the **first** content line of each was one
+> word shorter than the rest, at every depth. The first-line reservation is unexplained.
 
-Skala's reading is not obviously the wrong one — a hard wrap exists to keep lines inside a margin,
-and a wrap that overshoots by a word is a wrap that did not do its job — but it is a disagreement
-either way, and until it is settled these five keys cannot claim to reproduce Rider.
+### What it is
+
+Three rules, each probed against `OracleProfile.DocComments` at more than one value rather than read
+off the fixtures. ⚠ The probe uses **single-character words**, and that is the whole methodological
+point: with five-letter words the fill can only land every six columns, so a budget of 113 and a
+budget of 118 produce identical output and the old model could not be told from this one.
+
+1. **The measured width excludes the code indentation and the three slashes, and includes the
+   marker's space.** A line is inside the margin when `1 + indent + content ≤ max_line_length`.
+   Probed at code indents 4, 8 and 12 the content widths are *identical*, which is exactly what the
+   old note recorded as a constant 113 and read as a coincidence; probed at `max_line_length = 100`
+   they move to `1 + indent + content ≤ 100`. So the same sentence wraps identically however deeply
+   its declaration is nested, and the file's own columns run `codeIndent + 3` past the margin.
+2. **An element's content is laid out starting at the column its start tag closes at**, and moving
+   the start tag onto a line of its own does not reset that. Probed at start-tag widths 6, 7, 9 and
+   45 at four content indents, the first content line's fill begins at `tagIndent + tagWidth` every
+   time — `<param name="averyveryverylongparametername">` gives away 36 columns more than `<value>`.
+   That is the "first content line is one word shorter" shape, and it is not a reservation: the
+   content never left the tag's line as far as the fill is concerned. A break the *author* wrote
+   between the tag and its content removes it, which is the control that makes it a rule.
+3. **An element is opened up when its content overflows from that column, and the end tag is not in
+   the comparison.** `<summary>` closes at column 9, so 110 columns of content stay flat at 136 file
+   columns and 111 are opened. The `</summary>` rides past the margin on the last line.
+
+### What it cost, and what it closed
+
+One arithmetic in `XmlDocFormatter` (`budget = max_line_length − marker`, dropping `− indent − 3`)
+and a carried column in `XmlDocRenderer`. Seven of the family's nine failing fixtures agree byte for
+byte afterwards: the five here, plus SK-DIV-0021's, which was rule 3 all along, plus SK-DIV-0020's,
+which needed one further structural fix. `harness xmldoc --oracle` goes 13/22 → 20/22.
+
+⚠ **It moved no line outside a doc comment**, which the containment property asserts and
+`./build.sh Fidelity` confirms: `constructs` 98.53 %, `real` 99.64 %, `pathological` 95.45 %,
+unchanged to the line. `harness xmldoc real` rises 96.05 % → 96.28 % of lines and 47.89 % → 48.95 %
+of files against the format-only oracle, which measures how much the sub-formatter rewrites rather
+than whether it is right.
+
+⚠ **The fix is not a Tier A claim and none of the seven was promoted.** None has ever appeared in
+the key-flip sweep, so no instrument that can make a claim about the option across its domain has
+spoken; six `resharper_xmldoc_*` keys were promoted on exactly this kind of evidence and demoted the
+same afternoon. `XmlDocOracleTests.Unswept` names the seven, asserts in both directions that they
+still agree, and shrinks to nothing when the sweep reaches them.
+
+⚠ **One consequence to know before the next `skala format` of this tree.** Doc comments re-wrap
+seven columns wider at a code indent of four, so the 17 files SK-DIV-0023 lists as carrying damage
+from `1aad86f8` re-wrap again. The damage is unchanged in kind — it is a lost column inside a
+verbatim region, which no wrap column touches — but the surrounding prose moves, so a repair commit
+should revert those comments to their pre-`1aad86f8` form and re-format rather than diffing against
+what is there now.
 
 - options: `resharper_xmldoc_max_line_length`, `resharper_xmldoc_wrap_lines`,
   `resharper_xmldoc_wrap_text`, `resharper_xmldoc_wrap_tags_and_pi`,
   `resharper_xmldoc_linebreaks_inside_tags_for_elements_longer_than`
-- ⚠ status: **open**, pinned by the five fixtures above and by
-  `Conformance.Tests/XmlDocOracleTests`, which asserts that each of them still fails.
+- ⚠ status: **closed**, pinned by the five fixtures above, by
+  `Conformance.Tests/XmlDocOracleTests` and by `XmlDocColumnTests`, which carries the probe
+  arithmetic so the model cannot drift back without a diff.
 
 ## SK-DIV-0020 — the oracle opens an element that holds text *and* children; Skala opens one that holds only children
 
@@ -1189,37 +1252,66 @@ skala    /// <remarks>Some leading prose. <list><item>Short.</item></list></rema
 
 The pure-children case agrees exactly — `constructs/xmldoc/…_with_child_elements` is Tier A — so the
 key itself is honoured and the disagreement is about what counts as "an element with child
-elements". Fixing it is a change to `XmlDocRenderer`'s notion of mixed content and is not attempted
-here.
+elements".
+
+⚠ **Fixed, and the rule is narrower than "mixed content".** Probed against
+`OracleProfile.DocComments`, what opens the parent is not prose beside *an* element but prose beside
+a **multi-line** one. The control is one element substituted for another:
+
+```
+input    /// <remarks>Some leading prose. <para>Short.</para></remarks>
+oracle   /// <remarks>Some leading prose.
+         ///     <para>Short.</para>
+         /// </remarks>                          ← the prose stays on the start tag's line
+```
+
+`<list>` holds only `<item>`s, so `with_child_elements` opens it, and an element holding one that is
+open cannot itself be flat; `<para>` holds only text and fits, so nothing about `<remarks>` has to
+open and its prose stays put. The fix is `Structural` — the structure half of `IsMultiline`, split
+out so `FlatNodes` can ask it of a child without asking the width question, which is the parent's
+own.
+
+⚠ **The `<para>` line above is a shape Skala still gets wrong**, and it is recorded rather than
+fixed: Skala breaks after `<remarks>` and the oracle does not. It has no key of its own and no
+fixture reaches it — it is the same "content never left the start tag's line" mechanism as
+SK-DIV-0019's rule 2, applied to a break the width did not force.
 
 - options: `resharper_xmldoc_linebreak_before_singleline_elements`
-- ⚠ status: **open**, pinned by
-  `constructs/xmldoc/resharper_xmldoc_linebreak_before_singleline_elements.xmldoc.expected.cs`.
+- ⚠ status: **closed on the fixture**, pinned by
+  `constructs/xmldoc/resharper_xmldoc_linebreak_before_singleline_elements.xmldoc.expected.cs` and by
+  `XmlDocColumnTests.AnElementHoldingAMultilineChild_HoistsItsProseToo`; the `<para>` shape above is
+  open and unpinned.
 
-## SK-DIV-0021 — the oracle leaves an unlisted element's content on one line however long; Skala wraps it
+## SK-DIV-0021 — ~~the oracle leaves an unlisted element's content on one line however long~~ — **REFUTED, and it was SK-DIV-0019**
 
-The mirror of SK-DIV-0020, on the same construct with a longer item, and it goes the other way.
-`resharper_xmldoc_linebreak_before_elements` names eight elements — `summary`, `remarks`, `example`,
-`returns`, `param`, `typeparam`, `value`, `para` — and `item` is not one of them. Asked to format a
-`<list>` whose single `<item>` runs to 131 columns, the oracle **leaves it at 131 columns**:
+⚠ **The reading this entry recorded is measured false, and the entry itself said which measurement
+would settle it.** It ran:
 
-```
-oracle   ///         <item>An item written at enough length that … cannot fit on any single line of its own.</item>
-skala    ///         <item>
-         ///             An item written at enough length that … cannot fit on any single line of
-         ///             its own.
-         ///         </item>
-```
+> `resharper_xmldoc_linebreak_before_elements` names eight elements … and `item` is not one of them.
+> Asked to format a `<list>` whose single `<item>` runs to 131 columns, the oracle **leaves it at 131
+> columns**. ⚠ The reading this suggests — that the oracle wraps *inside* an element only when
+> `linebreak_before_elements` names it — is consistent with every fixture in the subtree, `<summary>`
+> included, but it is a reading of five files rather than a probe of the rule, and it is written down
+> as such.
 
-⚠ The reading this suggests — that the oracle wraps *inside* an element only when
-`linebreak_before_elements` names it — is consistent with every fixture in the subtree, `<summary>`
-included, but it is a reading of five files rather than a probe of the rule, and it is written down
-as such. Note that it also overshoots the margin, which is SK-DIV-0019 again; the two are separable
-because this line is 11 columns over and no single word explains that.
+Probed: the **same `<item>`** with longer content is opened up and wrapped, and so are `<exception>`
+and `<description>`, none of which the key names. Adding `item` to `linebreak_before_elements` is not
+what decides it. What decides it is SK-DIV-0019's third rule — an element is opened when its
+*content* overflows from the start tag's closing column, end tag excluded. The fixture's `<item>`
+closes at column 14 and carries 102 columns of content, which is 116 against a budget of 119, so it
+stays flat and the `</item>` rides past the margin. At 107 columns of content it opens. Nothing about
+`linebreak_before_elements` is involved.
+
+⚠ The entry's own last sentence — "note that it also overshoots the margin, which is SK-DIV-0019
+again; the two are separable because this line is 11 columns over and no single word explains that" —
+is where the join was available and was declined. No single word explained it because the "crossing
+word" model was wrong; the overshoot is the end tag, exactly as SK-DIV-0019 now says.
 
 - options: `resharper_xmldoc_linebreak_before_multiline_elements`
-- ⚠ status: **open**, pinned by
-  `constructs/xmldoc/resharper_xmldoc_linebreak_before_multiline_elements.xmldoc.expected.cs`.
+- ⚠ status: **retired into SK-DIV-0019**, pinned by
+  `constructs/xmldoc/resharper_xmldoc_linebreak_before_multiline_elements.xmldoc.expected.cs`, which
+  now agrees, and by `XmlDocColumnTests.AnElementIsOpened_WhenItsContentOverflows_NotItsEndTag`,
+  which carries both sides of the threshold.
 
 ## SK-DIV-0022 — `spaces_inside_tags = false` means "do not add one", not "remove the author's"
 
@@ -1243,9 +1335,33 @@ SK-DIV-0006 now records under `space_after_triple_slash`: on a comment the oracl
 leaving alone it changes nothing at all, and a "no change" that means "not asked" is exactly the
 reading this project has been burned by twice.
 
+⚠ **Fixed, and both values were probed rather than one inferred from the other.** "Do not add one"
+and "add exactly one" are not symmetric readings, and taking the second from the first is how a key
+gets demoted:
+
+| author wrote | at `false` | at `true` |
+|---|---|---|
+| `<summary> Text. </summary>` | `<summary> Text. </summary>` | `<summary> Text. </summary>` |
+| `<summary> Text.</summary>` | `<summary> Text.</summary>` | `<summary> Text. </summary>` |
+| `<summary>Text.</summary>` | `<summary>Text.</summary>` | `<summary> Text. </summary>` |
+| `<summary>  Text.  </summary>` | `<summary>  Text.  </summary>` | `<summary> Text. </summary>` |
+
+So `true` *is* a statement about the output — exactly one space each side, and the author's two
+collapse to one, which is what Skala already did. `false` is a statement about what the run may
+insert: nothing is added and the author's own run survives, **per side and verbatim**. The gap is
+recorded on the element (`XmlDocElement.InnerLead` / `InnerTrail`) and read only by `Flat`, because
+an element the run *opens up* has its content re-flowed and loses the spaces — measured, the oracle
+drops them there too.
+
+⚠ Single-line content only, and the reason is a defect this found: Roslyn's `XmlElementSyntax.Content`
+carries each continuation line's `///` with it, so the whitespace run at the end of a multi-line
+content is the **marker's** space and not a gap anybody wrote inside a tag. Taking it as one reflowed
+`<summary>One. Two.</summary>` with a space before its end tag.
+
 - options: `resharper_xmldoc_spaces_inside_tags`
-- ⚠ status: **open**, pinned by
-  `constructs/xmldoc/resharper_xmldoc_spaces_inside_tags.xmldoc.expected.cs`.
+- ⚠ status: **closed**, pinned by
+  `constructs/xmldoc/resharper_xmldoc_spaces_inside_tags.xmldoc.expected.cs` and by
+  `SpacesInsideTagsFalse_DoesNotAddOne_AndDoesNotRemoveTheAuthors`, which carries the table above.
 
 ## SK-DIV-0023 — the blank line after a processing instruction carries no trailing space
 
@@ -1286,17 +1402,27 @@ skala    /// <?skala-probe mode="short"?>         ← (1) fixed: the marker spac
    the author's. Repairing those properly means reverting those comments to their pre-`1aad86f8` form
    and re-formatting; guessing at it in the formatter would mean flattening a code block written under
    a marker-less convention, which is the one thing the verbatim rule exists to prevent.
-2. **The blank line the oracle writes after a processing instruction carries a trailing space.**
-   Skala's carries none, deliberately and for a reason that is stated at `XmlDocOptions.BlankLineAfterPi`
-   and holds elsewhere: an empty line's trailing whitespace is the one thing every other pass in
-   Skala strips. Unlike (1) this half is a decision, and it survived (1) being fixed.
+2. ~~**The blank line the oracle writes after a processing instruction carries a trailing space.**~~
+   **Fixed, and it was never about the processing instruction.** It was refused on this argument:
+   "Skala's carries none, deliberately and for a reason that is stated at
+   `XmlDocOptions.BlankLineAfterPi` and holds elsewhere: an empty line's trailing whitespace is the
+   one thing every other pass in Skala strips. Unlike (1) this half is a decision."
+
+   ⚠ That is a fact about Skala offered where a measurement was needed, and the measurement was one
+   probe away. Asked at `max_blank_lines_between_tags = 1`, the oracle writes `/// ` for **every**
+   blank line it keeps — the ones between two tags as well as the one after a `<?…?>`, and whether or
+   not the author's blank line had the space. So the space belongs to the marker, which is exactly
+   what half (1) concluded and then was not carried across the empty case. The condition is now
+   `Verbatim` rather than emptiness, so a blank line inside a `<code>` block still has none: those
+   columns are the sample's and this space is the option's.
 
 - options: `resharper_xmldoc_blank_line_after_pi`, `resharper_space_after_triple_slash`
-- ⚠ status: **open on (2), fixed on (1)**, pinned by
-  `constructs/xmldoc/resharper_xmldoc_blank_line_after_pi.xmldoc.expected.cs`, which still diverges —
-  on one line rather than two. ⚠ The entry names `resharper_space_after_triple_slash`, which is
-  **Tier A**: the key is reproduced everywhere its fixture exercises it, and this is a construct that
-  fixture does not reach.
+- ⚠ status: **closed on both halves**, pinned by
+  `constructs/xmldoc/resharper_xmldoc_blank_line_after_pi.xmldoc.expected.cs`, which now agrees, by
+  `MaxBlankLinesBetweenTags_IsHonoured`, which carries the generalisation, and by
+  `ABlankLineInsideAVerbatimBlock_IsNeitherACrashNorATrailingSpace`, which carries the exception.
+  ⚠ The entry names `resharper_space_after_triple_slash`, which is **Tier A**: the key is reproduced
+  everywhere its fixture exercises it, and this is a construct that fixture does not reach.
 - ⚠ **What was missing was an assertion, not a fixture.** The fix for (1) was reported as still
   failing on a multi-line verbatim body, on the grounds that no `constructs/xmldoc/` fixture reaches
   one — and that is true of the construct corpus. It was never true of `real/`: five files under

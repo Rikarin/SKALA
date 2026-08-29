@@ -77,21 +77,29 @@ public readonly struct XmlDocOptions {
     /// <summary><c>resharper_xmldoc_wrap_lines</c>: the master switch for width-driven wrapping.</summary>
     public bool WrapLines { get; }
 
-    /// <summary><c>resharper_xmldoc_max_line_length</c>: the column the whole line must fit in.</summary>
+    /// <summary>
+    ///     <c>resharper_xmldoc_max_line_length</c>: the column the line must fit in, measured from
+    ///     the character after the <c>///</c>.
+    /// </summary>
     /// <remarks>
-    ///     ⚠ Measured from column 0 of the file, including the code indentation and the <c>///</c>
-    ///     marker. The alternative reading — a budget for the comment's own text — would make the same
-    ///     sentence wrap differently at two nesting depths and produce lines past the margin, which is
-    ///     the one thing a hard wrap exists to prevent.
+    ///     ⚠ <b>This remark used to say the opposite and the opposite was an argument, not a
+    ///     measurement.</b> It read: "measured from column 0 of the file, including the code
+    ///     indentation and the <c>///</c> marker. The alternative reading — a budget for the comment's
+    ///     own text — would make the same sentence wrap differently at two nesting depths and produce
+    ///     lines past the margin, which is the one thing a hard wrap exists to prevent." Probed at four
+    ///     content indents, three code indents, four start-tag widths and two margins, the oracle wraps
+    ///     a documentation line when <c>marker + indent + content</c> passes this value: the same
+    ///     sentence wraps <em>identically</em> at every nesting depth, and the file's own columns run
+    ///     <c>codeIndent + 3</c> past the margin. The rejected reading is the one the tool has.
     ///     <para>
-    ///         ⚠ <b>The oracle does not agree, and this is SK-DIV-0019.</b> It fills while the line is
-    ///         strictly <em>under</em> the limit and then keeps the word that crosses it, so its output
-    ///         runs one word past the margin —
-    ///         <c>constructs/xmldoc/resharper_xmldoc_max_line_length.xmldoc.expected.cs</c> is 122
-    ///         columns under a limit of 120. Skala breaks before that word. Five keys diverge on this one
-    ///         rule because five fixtures have to wrap; the argument above is why Skala's reading is
-    ///         kept, and it is an argument rather than a measurement, which is what makes it a
-    ///         divergence rather than a defect.
+    ///         ⚠ That was SK-DIV-0019, and with it five keys — every fixture in the family that has to
+    ///         wrap measured this one arithmetic. Two more came with it once the same probe reached
+    ///         them: an element's content is laid out from the column its start tag closes at
+    ///         (<c>XmlDocRenderer</c>'s carry), and an element is opened when that content overflows,
+    ///         with the end tag outside the comparison. The entry's own summary — "the oracle keeps the
+    ///         word that crosses the margin" — fits the five committed fixtures and nothing else; with
+    ///         five-letter words a probe cannot tell a budget of 113 from one of 118, which is how it
+    ///         survived.
     ///     </para>
     /// </remarks>
     public int MaxLineLength { get; }
@@ -156,10 +164,17 @@ public readonly struct XmlDocOptions {
     ///     <c>resharper_xmldoc_spaces_inside_tags</c>: <c>&lt;summary&gt; Text &lt;/summary&gt;</c>.
     /// </summary>
     /// <remarks>
-    ///     ⚠ SK-DIV-0022. Skala reads this as a statement about the output — false means no gap,
-    ///     whatever the author wrote. The oracle reads it as a statement about what it may
-    ///     <em>insert</em>: false means it will not add one, and a space already there survives even
-    ///     while the same run splits the elements around it. Measured, not inferred.
+    ///     ⚠ SK-DIV-0022, and the two values are not symmetric readings. <b>True</b> is a statement
+    ///     about the output: exactly one space each side, and the author's two collapse to one.
+    ///     <b>False</b> is a statement about what the run may <em>insert</em>: it adds nothing and the
+    ///     author's own gap survives, per side and verbatim, even while the same run splits the
+    ///     elements around it. Skala used to read false as "no gap, whatever the author wrote". Both
+    ///     values probed, because taking the second from the first is how a key gets demoted.
+    ///     <para>
+    ///         ⚠ Only a <em>flat</em> element has an author's gap left to keep — see
+    ///         <see cref="XmlDocElement.InnerLead" />. One the run opens up has its content re-flowed,
+    ///         and the oracle drops the spaces there too.
+    ///     </para>
     /// </remarks>
     public bool SpacesInsideTags { get; }
 
@@ -216,10 +231,15 @@ public readonly struct XmlDocOptions {
     ///     ⚠ The export leaves this at its default <c>true</c>, so a processing instruction in a doc
     ///     comment has been getting a blank line after it from Rider all along and not from Skala.
     ///     <para>
-    ///         ⚠ Skala's blank line is <c>///</c> and the oracle's is <c>///</c> plus the marker space. The
-    ///         trailing space is not reproduced, for the same reason
-    ///         <c>max_blank_lines_between_tags</c>'s blank lines do not carry one: an empty line's trailing
-    ///         whitespace is the one thing every other pass in Skala strips.
+    ///         ⚠ The blank line is <c>///</c> plus the marker space, and this remark used to say it was
+    ///         not: "the trailing space is not reproduced, for the same reason
+    ///         <c>max_blank_lines_between_tags</c>'s blank lines do not carry one: an empty line's
+    ///         trailing whitespace is the one thing every other pass in Skala strips." That is a fact
+    ///         about Skala standing where a measurement belonged, and it named its own refutation —
+    ///         probed at <c>max_blank_lines_between_tags = 1</c>, <em>those</em> blank lines carry the
+    ///         space too. The space belongs to the marker, which is what SK-DIV-0023's first half had
+    ///         already concluded for verbatim lines. A blank line inside a <c>&lt;code&gt;</c> block
+    ///         still has none: those columns are the sample's.
     ///     </para>
     /// </remarks>
     public bool BlankLineAfterPi { get; }

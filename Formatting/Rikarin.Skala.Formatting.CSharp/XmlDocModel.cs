@@ -81,6 +81,15 @@ public readonly record struct XmlDocNameValue(string Name, string Value);
 ///     <c>&lt;/summary&gt;&lt;param&gt;</c> is two tags that <c>linebreak_before_elements</c> exists to
 ///     put on separate lines.
 /// </param>
+/// <param name="InnerLead">
+///     ⚠ The run of spaces or tabs the author wrote between the start tag and the content, and
+///     <c>InnerTrail</c> the one before the end tag. Recorded because
+///     <c>spaces_inside_tags = false</c> means "do not add one", not "remove the author's" —
+///     SK-DIV-0022 — so at the export's value the gap is the source's bytes rather than a decision,
+///     a double space included. Empty when the gap holds a line break, which the renderer owns
+///     instead, and irrelevant the moment the element is opened up: the oracle drops the author's
+///     spaces when it re-flows the content, and so does this, because <c>Flat</c> is the only reader.
+/// </param>
 public sealed record XmlDocElement(
     string Name,
     string Header,
@@ -89,7 +98,9 @@ public sealed record XmlDocElement(
     ImmutableArray<XmlDocNode> Children,
     ImmutableArray<string>? Verbatim,
     bool Glued,
-    bool GluedToWord
+    bool GluedToWord,
+    string InnerLead = "",
+    string InnerTrail = ""
 ) : XmlDocNode(Glued) {
     public bool HasChildElements => Children.Any(static child => child is XmlDocElement);
 
@@ -233,10 +244,54 @@ public sealed class XmlDocModel {
         // last child rather than the text before its start tag.
         _separated = true;
         _afterWord = false;
+        var content = element.Content.ToString();
         var children = ImmutableArray.CreateBuilder<XmlDocNode>();
         return Add(children, element.Content)
-            ? new XmlDocElement(name, header, attributes, false, children.ToImmutable(), null, glued, gluedToWord)
+            ? new XmlDocElement(
+                name,
+                header,
+                attributes,
+                false,
+                children.ToImmutable(),
+                null,
+                glued,
+                gluedToWord,
+                InnerGap(content, fromStart: true),
+                InnerGap(content, fromStart: false)
+            )
             : null;
+    }
+
+    /// <summary>
+    ///     The spaces or tabs the author left just inside one of the element's tags.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Spaces and tabs only, and empty for an all-whitespace content, which has one gap rather
+    ///     than two. See <see cref="XmlDocElement.InnerLead" />.
+    ///     <para>
+    ///         ⚠ <b>Single-line content only, and the reason is that this string is not what it looks
+    ///         like.</b> Roslyn's XML content carries each continuation line's <c>///</c> with it, so the
+    ///         run at the end of a multi-line content is the <em>marker's</em> space and not a gap
+    ///         anybody wrote inside a tag — which is how <c>&lt;summary&gt;One. Two.&lt;/summary&gt;</c>
+    ///         reflowed with a space before its end tag. A gap that spans lines is the renderer's to
+    ///         choose anyway.
+    ///     </para>
+    /// </remarks>
+    static string InnerGap(string content, bool fromStart) {
+        if (content.Contains('\n', StringComparison.Ordinal)) {
+            return string.Empty;
+        }
+
+        var length = 0;
+        while (length < content.Length && content[fromStart ? length : content.Length - 1 - length] is ' ' or '\t') {
+            length++;
+        }
+
+        return length == content.Length
+            ? string.Empty
+            : fromStart
+                ? content[..length]
+                : content[^length..];
     }
 
     /// <summary>
