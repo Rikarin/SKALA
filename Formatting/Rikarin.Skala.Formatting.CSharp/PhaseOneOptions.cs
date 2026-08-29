@@ -1986,10 +1986,13 @@ public static class Ids {
     public static readonly OptionId IndentInvocationPars = Of("resharper_csharp_indent_invocation_pars");
     public static readonly OptionId IndentMethodDeclPars = Of("resharper_csharp_indent_method_decl_pars");
 
-    // ⚠ SK-DIV-0043 at one value: at `outside_and_inside` the oracle gives a primary constructor's
-    // parameters one level where the family's table says two. Its closing `)` never reaches a line
-    // of its own under this export, and a construct whose closer stays on the last parameter's line
-    // does not realise the outer level for its contents either. The other three values agree.
+    // ⚠ SK-DIV-0043 is RESOLVED, and the second half of its own note was the answer. At
+    // `outside_and_inside` the oracle gives a primary constructor's parameters one level where the
+    // family's table says two, because the outer of the two levels belongs to the *closing
+    // delimiter* and `wrap_before_primary_constructor_declaration_rpar = false` means that `)` is
+    // never a break point. `CSharpDocumentBuilder.ClosesAtABreakPoint` is the fact, and it is a
+    // configuration fact rather than "one the fitter knows and the builder does not". All four
+    // values agree.
     public static readonly OptionId IndentPrimaryConstructorDeclPars =
         Of("resharper_csharp_indent_primary_constructor_decl_pars");
 
@@ -1998,20 +2001,26 @@ public static class Ids {
     // absolute column, and a level count has nothing to say about a column. All four values return
     // the same file while that key is on; turn it off and the family's table applies here too.
     public static readonly OptionId IndentStatementPars = OfInert("resharper_csharp_indent_statement_pars");
-    // ⚠ SK-DIV-0041's shape at one value: at `none` the oracle gives a `>` the author left on its
-    // own line the level of its opener's line and Skala leaves it on the ambient continuation, which
-    // needs a zero-level scope kind the IR does not have. The other three values agree.
+    // ⚠ SK-DIV-0041's shape is RESOLVED, and the sentence that carried it was wrong on its own
+    // terms. It read: at `none` the oracle gives a `>` the author left on its own line the level of
+    // its opener's line, Skala leaves it on the ambient continuation, and that "needs a zero-level
+    // scope kind the IR does not have". `IndentKind.None` — "No change; a scope marker only" — has
+    // been in `Doc.cs` since the IR was written and had no call site anywhere in the formatter.
+    // `none` is the one value of the family that asks for zero levels inside, zero levels meant no
+    // scope at all, and with no scope there was nothing for the closing delimiter's `alignsCloser`
+    // to be measured against. All four values agree.
     public static readonly OptionId IndentTypeargAngles = Of("resharper_csharp_indent_typearg_angles");
 
     // ⚠ Its *closer* half is out of reach under this export: the shape is a `>` on a line of its
     // own, and SK-DIV-0042 is that Skala rejoins the author's break before one where the oracle
     // keeps it. Its *contents* half is not — a type parameter list wide enough to wrap puts its
-    // continuation at a level the four values move.
+    // continuation at a level the four values move, and all four now agree; the `outside_and_inside`
+    // one is SK-DIV-0043's, resolved with IndentPrimaryConstructorDeclPars above.
     public static readonly OptionId IndentTypeparamAngles = Of("resharper_csharp_indent_typeparam_angles");
 
-    // ⚠ SK-DIV-0041's shape at one value too, for the same reason as IndentTypeargAngles: `none`
-    // puts a stray `]` on the ambient continuation where the oracle puts it at its opener's line
-    // level. The other three values agree.
+    // ⚠ SK-DIV-0041's shape at one value too, and resolved with IndentTypeargAngles above: `none`
+    // put a stray `]` on the ambient continuation where the oracle puts it at its opener's line
+    // level. All four values agree.
     public static readonly OptionId IndentPars = Of("resharper_csharp_indent_pars");
 
     // ⚠ The outdent family, and the sentence that kept it at Tier D for six milestones is retired.
