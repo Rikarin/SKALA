@@ -178,8 +178,8 @@ public sealed class XmlDocRenderer {
         var breaksBefore = !element.GluedToWord
             && (owns
                 || (multiline
-                    ? _options.LinebreakBeforeMultilineElements
-                    : _options.LinebreakBeforeSinglelineElements));
+                        ? _options.LinebreakBeforeMultilineElements
+                        : _options.LinebreakBeforeSinglelineElements));
 
         if (breaksBefore) {
             Break();
@@ -319,7 +319,8 @@ public sealed class XmlDocRenderer {
     /// </remarks>
     static bool HasGrandchildElement(XmlDocElement element) =>
         element.Children.Any(static child => child is XmlDocElement { SelfClosing: false } child_
-            && child_.HasChildElements);
+            && child_.HasChildElements
+        );
 
     /// <summary>
     ///     The element's start tag, from its name and its attributes.
@@ -540,8 +541,11 @@ public sealed class XmlDocRenderer {
 
     /// <summary>Ends the unbreakable unit and places it, wrapping the line first if it must.</summary>
     /// <remarks>
-    ///     ⚠ <b>A unit carrying a tag may always move, and <c>wrap_tags_and_pi</c> is not what says
-    ///     so.</b> This used to read <c>_tokenIsTag ? WrapTagsAndPi : WrapText</c>, and both halves of
+    ///     ⚠
+    ///     <b>
+    ///         A unit carrying a tag may always move, and <c>wrap_tags_and_pi</c> is not what says
+    ///         so.
+    ///     </b> This used to read <c>_tokenIsTag ? WrapTagsAndPi : WrapText</c>, and both halves of
     ///     that were measured wrong on the same pair of probes. At
     ///     <c>wrap_tags_and_pi = false</c> the oracle still moves a <c>&lt;see/&gt;</c> off the end of a
     ///     line of prose — byte-identical to <c>true</c> on that fixture — and what the key really

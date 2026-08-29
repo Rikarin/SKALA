@@ -301,7 +301,7 @@ public static class SpaceRules {
             // written identically. `<<` has no such split and closes on both sides.
             if (IsBinaryOperator(prev)
                 && prev.Kind() is SyntaxKind.GreaterThanGreaterThanToken
-                    or SyntaxKind.GreaterThanGreaterThanGreaterThanToken) {
+                or SyntaxKind.GreaterThanGreaterThanGreaterThanToken) {
                 return !ClingsLeft(right);
             }
 
@@ -721,8 +721,11 @@ public static class SpaceRules {
     ///     <c>! b</c> and leaves <c>-a</c>, <c>+a</c>, <c>&amp;a</c> and <c>*p</c> untouched, and the
     ///     other four are the same story one operator over.
     ///     <para>
-    ///         ⚠ <b><c>~</c> and the prefix <c>++</c>/<c>--</c> are not what this key governs, and the
-    ///         note that used to stand here said the opposite.</b> It read "they keep reading the
+    ///         ⚠
+    ///         <b>
+    ///             <c>~</c> and the prefix <c>++</c>/<c>--</c> are not what this key governs, and the
+    ///             note that used to stand here said the opposite.
+    ///         </b> It read "they keep reading the
     ///         generalized key … that is a divergence Skala has always had", and the generalized key
     ///         is exactly what they must not read. Measured against `jb cleanupcode` 2025.2.6 under
     ///         the doc-free format-only profile, one key flipped at a time over the export, on

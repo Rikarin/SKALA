@@ -23,6 +23,22 @@ public sealed class SkalaSideTests {
         var stale = new List<string>();
 
         foreach (var candidate in SweepPlan.Build([]).Candidates) {
+            // ⚠ The third cause, added 2026-08-30, and it is the opposite of the two below. A key the
+            // registry marks `inert` has been *measured* to move nothing — the claim is recorded with
+            // the probe that established it — so a flat Skala side is the expected result rather than
+            // a broken measurement. Its glob is kept on purpose: the row it produces is UNEXERCISED,
+            // and that row is the standing measurement that would *falsify* the inertness claim if the
+            // key ever started moving output. Withdrawing the glob instead would delete the only thing
+            // able to contradict the claim, which is the failure mode this file exists to prevent.
+            //
+            // ⚠ So UNEXERCISED now carries two opposite meanings and only one of them is a defect:
+            // "nobody could tell whether this key works" is a gap, and "this key provably does nothing,
+            // here is the check that would notice if that changed" is evidence. They must not be
+            // collapsed — that conflation has already cost this project three separate mistakes.
+            if (candidate.Info.Inert is not null) {
+                continue;
+            }
+
             var outputs = candidate.Values
                 .Select(value => KeyFlipSweep.FormatWithSkala(candidate, value))
                 .Distinct(StringComparer.Ordinal)

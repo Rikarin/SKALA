@@ -45,7 +45,7 @@
 </section>
 <section class="option" id="resharper_wrap_before_comma_in_base_clause">
 <h2><code>resharper_wrap_before_comma_in_base_clause</code> <a class="self" href="#resharper_wrap_before_comma_in_base_clause">#</a></h2>
-<p>A break in a base list lands before the comma.</p>
+<p>A break in a base list lands before the comma. <strong>Not read by the C# formatter — but the behaviour is configurable, by `resharper_csharp_wrap_before_comma`.</strong> ⚠ Measured 2026-08-29 against <code>jb cleanupcode</code> 2025.2.6 on <code>constructs/wrapping/base-list.cs</code>, one key at a time appended to the export: at <code>true</code> this key returns the file byte-identical, and so does the <code>resharper_csharp_</code>-prefixed spelling, while <code>resharper_csharp_wrap_before_comma = true</code> returns <code>class C : Base</code> / <code>    , IFirst</code> / <code>    , ISecond { }</code>. The base clause’s comma side is governed by the general comma key like every other comma, and this spelling is the C++ and VB formatters’. BreakPlan.PlanBaseList reads the general key now; reading this one is what made this row SPURIOUS.</p>
 <table class="facts">
 <tbody>
 <tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>

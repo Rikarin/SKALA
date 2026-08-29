@@ -2186,8 +2186,7 @@ public sealed class BreakPlan {
     }
 
     /// <summary>The chain-wide group of the chain this operator belongs to, or −1.</summary>
-    int ChainOwnerOf(SyntaxNode node) =>
-        _chainOwner.TryGetValue(Key(ChainRootOf(node)), out var group) ? group : -1;
+    int ChainOwnerOf(SyntaxNode node) => _chainOwner.TryGetValue(Key(ChainRootOf(node)), out var group) ? group : -1;
 
     /// <summary>The outermost link of the chain this operator belongs to.</summary>
     static SyntaxNode ChainRootOf(SyntaxNode node) {

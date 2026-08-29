@@ -1515,8 +1515,7 @@ public sealed partial class CSharpDocumentBuilder {
     readonly List<int> _continuousHeaders = [];
 
     /// <summary>Whether a group's <see cref="GroupPlan.OwnLevel" /> is the header's to pay.</summary>
-    bool HeaderPaysForTheOwnLevel() =>
-        _continuousHeaders.Count > 0 && _continuousHeaders[^1] == _continuousDepth;
+    bool HeaderPaysForTheOwnLevel() => _continuousHeaders.Count > 0 && _continuousHeaders[^1] == _continuousDepth;
 
     int OpenConditionScopes() {
         var (inside, _) = ConditionLevels;

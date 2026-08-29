@@ -1436,6 +1436,7 @@ public static class Ids {
     public static readonly OptionId SpaceWithinSpreadPattern = OfInert("resharper_space_within_spread_pattern");
 
     public static readonly OptionId SpaceBeforeTrailingComment = Of("resharper_csharp_space_before_trailing_comment");
+
     // ⚠ Inert. Asked at both values on `M(); //x`, `M(); // y`, an own-line `//z`, an own-line
     // `// w` and a trailing `/*t*/` in one file, the oracle returns every one of them
     // byte-identical: `//x` never grows its space and `// y` never loses it. A comment's text is the
@@ -1443,6 +1444,7 @@ public static class Ids {
     // the C# key that really exists, with its own fixture and its own Tier.
     public static readonly OptionId SpaceBeforeTrailingCommentText =
         OfInert("resharper_space_before_trailing_comment_text");
+
     // ⚠ Tier A again, and it has now been all three. Milestone 1 had it Tier A; milestone 3 demoted
     // it to inert because the oracle did not insert the space and doing it anyway cost 79 lines
     // across 15 files of `corpus/real/`; the sub-formatter's default flip made it unoracled, on the
@@ -1922,12 +1924,13 @@ public static class Ids {
     //     oracle   void Method(int                a) { }
     //     Skala    void Method(int a)                { }
     //
-    // ⚠ It stays `OfInert` and Tier D deliberately. `OfInert` is now the wrong mark — the honest one
-    // is `OfGeneralized`, which is what this key is — but moving it puts the key into `Implemented`,
-    // and `TierA_IsWhatSkalaReads_AndTheSweepSubstantiates` then demands either Tier A or a committed
-    // sweep row, and there is no committed sweep row until the next full run reaches the glob. The
-    // wiring change and the promotion are one commit and belong to that run, not to this one.
-    public static readonly OptionId IntAlign = OfInert("resharper_int_align");
+    // ⚠ `OfGeneralized` since 2026-08-30, and this is the commit the note above was waiting for. It
+    // read: "`OfInert` is now the wrong mark — the honest one is `OfGeneralized` … but moving it puts
+    // the key into `Implemented`, and `TierA_IsWhatSkalaReads_AndTheSweepSubstantiates` then demands
+    // either Tier A or a committed sweep row, and there is no committed sweep row until the next full
+    // run reaches the glob. The wiring change and the promotion are one commit." The run has happened,
+    // the row is `Conformant`, so the wiring and the promotion land together as it asked.
+    public static readonly OptionId IntAlign = OfGeneralized("resharper_int_align");
 
     public static readonly OptionId IntAlignEq = OfInert("resharper_int_align_eq");
     public static readonly OptionId IntAlignDeclarationNames = OfInert("resharper_int_align_declaration_names");
@@ -2594,6 +2597,7 @@ public static class Ids {
     // writes them on was already there, from align_multiline_statement_conditions.
     public static readonly OptionId WrapForStmtHeaderStyle = Of("resharper_csharp_wrap_for_stmt_header_style");
     public static readonly OptionId WrapBeforeExtendsColon = Of("resharper_wrap_before_extends_colon");
+
     // ⚠ Inert, and the base clause's comma side is not: `resharper_csharp_wrap_before_comma` — the
     // general key — moves it, and this one does not, in either spelling. Measured 2026-08-29 on
     // `constructs/wrapping/base-list.cs`, one key at a time appended to the export: at `true` this
@@ -2602,6 +2606,7 @@ public static class Ids {
     // key now; reading this one is what made its row SPURIOUS.
     public static readonly OptionId WrapBeforeCommaInBaseClause =
         OfInert("resharper_wrap_before_comma_in_base_clause");
+
     public static readonly OptionId WrapPropertyPattern = Of("resharper_csharp_wrap_property_pattern");
     public static readonly OptionId WrapListPattern = OfInert("resharper_csharp_wrap_list_pattern");
 
