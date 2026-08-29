@@ -1088,14 +1088,29 @@ public sealed partial class CSharpDocumentBuilder {
         SyntaxNode node,
         NodeLayout layout
     ) {
-        // ⚠ And an aligned construct spends no level of its own either — the same rule VisitPlanned
-        // applies to a group's own indent, for the same reason: the Align scope is an absolute
-        // column and its contents start there, so the delimiter's level would put them one indent
-        // past the column the oracle writes. The one delimited construct that aligns is a type
-        // parameter list under `align_multiline_type_parameter_list`.
+        // ⚠ And an aligned construct spends no GROUP level of its own — the same rule VisitPlanned
+        // applies, for the same reason: the Align scope is an absolute column and its contents start
+        // there.
+        // ⚠ But whether it spends a DELIMITER level depends on where its anchor is, and that is
+        // measured rather than uniform. A type parameter list anchors on its first parameter, which
+        // is already past the `<`, so its continuation lines land on the anchor exactly:
+        //     public void ManyParams<TFirstParameterName, TSecondParameterName,
+        //                            TThirdParameterName>(int a) { }
+        // A list pattern and a collection expression anchor on their own `[`, and there the oracle
+        // puts the elements one level PAST the anchor and brings the `]` back to it:
+        //     var matched = candidate is [
+        //                                    firstElementPatternName, secondElementPatternName,
+        //                                    fourthElementPatternName
+        //                                ];
+        // — which is the same relationship a braced initializer already gets from its own path, and
+        // is why `align_multiline_array_and_object_initializer` and
+        // `align_multiline_switch_expression` were conformant while `align_multiline_list_pattern`
+        // was not. Reading "aligned" as "no level at all" put the elements on the bracket's column.
+        var aligned = AlignsFromOwnColumn(node);
+        var anchorsOnTheDelimiter = aligned && AlignAnchor(node) <= node.SpanStart;
         var suppress = layout == NodeLayout.Parens
             && !_options.UseContinuousIndentInsideParens
-            || AlignsFromOwnColumn(node);
+            || aligned;
 
         // ⚠ `align_tuple_components = true`: the column *after* the tuple's `(`, which is a
         // different anchor from every key AlignsFromOwnColumn answers and needs a different place
@@ -1139,7 +1154,7 @@ public sealed partial class CSharpDocumentBuilder {
         // keeps the single scope it always had — the Align scope is an absolute column, and a second
         // one of those is not a deeper indent but the same column twice.
         var (inside, closer) = innerIndent == IndentKind.Align || suppress
-            ? (suppress ? 0 : 1, 0)
+            ? (innerIndent == IndentKind.Align || anchorsOnTheDelimiter ? 1 : 0, 0)
             : DelimiterLevels(ParenthesesStyleFor(node));
 
         return (innerIndent, unconditional, element, inside, closer);

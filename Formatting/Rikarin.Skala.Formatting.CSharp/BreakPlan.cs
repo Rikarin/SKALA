@@ -764,11 +764,18 @@ public sealed class BreakPlan {
         var first = FirstToken(items[0]);
         var delimiterBroken = !soleLambda && BreaksBefore(first) || BreaksBefore(close);
 
-        // ⚠ `wrap_after_X_lpar = false` means "do not put the first item on a line of its own",
-        // not "join one the author put there". The two readings differ on
-        // `record R(\n a,\n b\n)`, where the oracle keeps the closing parenthesis where the author
-        // left it and Flat would pull it back up. The sole-lambda case below is the one place the
-        // oracle really does re-join, and it says so with its own key.
+        // ⚠ `wrap_after_X_lpar = false` DOES join a break the author put there — but only where the
+        // construct's own `keep_existing_*_arrangement` is not preserving it, and that correction is
+        // measured. The reading this replaces was "do not put the first item on a line of its own,
+        // and do not join one the author wrote", taken from `record R(\n a,\n b\n)`, which the
+        // oracle returns unmoved. It does — and the key holding it there is
+        // `keep_existing_declaration_parens_arrangement = true`, not this one. The export sets the
+        // invocation half of that pair to FALSE, and there the same flip joins:
+        //   wrap_after_invocation_lpar = false    Call(firstArgument,\n    secondArgument\n);
+        //   wrap_before_invocation_rpar = false   Call(\n    firstArgument,\n    secondArgument);
+        // one gap each, and neither touches the other's. Attributing the declaration's answer to
+        // this key made both invocation keys diverge at their non-export value.
+        // ⚠ The sole-lambda case below joins regardless, and it says so with its own key.
         // ⚠ `wrap_before_X_lpar = true` gives the opening parenthesis a line of its own, and it is a
         // point of the *list's* group rather than a break of its own: when the list chops, the
         // parenthesis goes with it. Asked directly at a 70-column margin, `void Decl(int a, …)`
@@ -796,7 +803,7 @@ public sealed class BreakPlan {
 
         if (wrapAfterOpen && !soleLambda) {
             Point(first, group);
-        } else if (soleLambda) {
+        } else if (soleLambda || !keepExisting) {
             Flat(first);
         }
 
@@ -840,6 +847,8 @@ public sealed class BreakPlan {
 
         if (wrapBeforeClose) {
             Point(close, group);
+        } else if (!keepExisting) {
+            Flat(close);
         }
 
         // ⚠ Two keys, two kinds of gap, and the second is gated by the first. Measured against the
