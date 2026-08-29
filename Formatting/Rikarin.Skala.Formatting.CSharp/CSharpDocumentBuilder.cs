@@ -1818,15 +1818,15 @@ public sealed partial class CSharpDocumentBuilder {
             // code in the corpus — 71 lines across 14 files of `corpus/real/` were nothing but this.
             // The rest of a verbatim piece is still byte-for-byte.
             case PieceKind.ConditionalDirective:
-                _doc.Verbatim(piece.Text.TrimEnd(), span, DirectiveFlags(_options.IndentPreprocessorIf));
+                EmitDirective(piece, span, _options.IndentPreprocessorIf);
                 break;
 
             case PieceKind.OtherDirective:
-                _doc.Verbatim(piece.Text.TrimEnd(), span, DirectiveFlags(_options.IndentPreprocessorOther));
+                EmitDirective(piece, span, _options.IndentPreprocessorOther);
                 break;
 
             case PieceKind.RegionDirective:
-                _doc.Verbatim(piece.Text.TrimEnd(), span, DirectiveFlags(_options.IndentPreprocessorRegion));
+                EmitDirective(piece, span, _options.IndentPreprocessorRegion);
                 break;
 
             case PieceKind.BlockComment:
@@ -1909,8 +1909,57 @@ public sealed partial class CSharpDocumentBuilder {
         previous.Inactive
         || nextPieceIndex >= 0 && nextPieceIndex < _pieces.Length && _pieces[nextPieceIndex].Inactive;
 
-    static VerbatimFlags DirectiveFlags(PreprocessorIndentStyle style) =>
-        style == PreprocessorIndentStyle.UsualIndent ? VerbatimFlags.None : VerbatimFlags.AtColumnZero;
+    /// <summary>
+    ///     One preprocessor directive, at the column <c>indent_preprocessor_{if,other,region}</c> asks
+    ///     for.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Four values, and until the key-flip sweep Skala wrote only two of them: everything that
+    ///     was not <c>usual_indent</c> went to column 0. That made <c>outdent</c> and
+    ///     <c>do_not_change</c> both aliases of <c>no_indent</c>, and the sweep saw it as the oracle
+    ///     producing three distinct outputs to Skala's two.
+    ///     <list type="bullet">
+    ///         <item><c>no_indent</c> — column 0.</item>
+    ///         <item><c>usual_indent</c> — the code's own indent.</item>
+    ///         <item>
+    ///             ⚠ <c>outdent</c> — the code's indent less one level, and NOT column 0. Measured:
+    ///             with the guarded statement at eight columns the oracle returns <c>#if</c> and
+    ///             <c>#endif</c> at four. It is <see cref="IndentKind.Outdent" /> exactly, so it is
+    ///             spelled as that scope rather than as arithmetic here.
+    ///         </item>
+    ///         <item>
+    ///             ⚠ <c>do_not_change</c> — the column the author wrote, which is not the same claim as
+    ///             column 0 and was only passing because the fixture's directives were already there.
+    ///             Measured on one file carrying <c>#if</c> at eight columns and another at zero: the
+    ///             oracle returns each where it found it.
+    ///         </item>
+    ///     </list>
+    /// </remarks>
+    void EmitDirective(Piece piece, SourceSpan span, PreprocessorIndentStyle style) {
+        var text = piece.Text.TrimEnd();
+
+        switch (style) {
+            case PreprocessorIndentStyle.UsualIndent:
+                _doc.Verbatim(text, span, VerbatimFlags.None);
+                return;
+
+            case PreprocessorIndentStyle.Outdent:
+                OpenIndent(IndentKind.Outdent);
+                _doc.Verbatim(text, span, VerbatimFlags.None);
+                CloseIndent(IndentKind.Outdent);
+                return;
+
+            case PreprocessorIndentStyle.DoNotChange when piece.StartsLine:
+                // The author's own indentation, carried in the text so that the writer adds none.
+                var start = LineStart(piece.Span.Start);
+                _doc.Verbatim(_source[start..piece.Span.Start] + text, span, VerbatimFlags.SelfIndented);
+                return;
+
+            default:
+                _doc.Verbatim(text, span, VerbatimFlags.AtColumnZero);
+                return;
+        }
+    }
 
     /// <summary>Every open frame has now seen a piece of its own.</summary>
     void MarkFramesStarted() {
