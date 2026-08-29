@@ -142,27 +142,64 @@ public sealed class XmlDocOracleTests {
     ///         from it.
     ///     </para>
     ///     <para>
-    ///         ⚠ <b>What the sweep needs before it can reach them, and why it is not done here.</b> All nine
-    ///         carry <c>"oracle": null</c> in <c>options.json</c>, which is why <c>SweepPlan</c> excludes
-    ///         them — "no <c>oracle</c> fixture in the registry" — and it is a field left null when "no
-    ///         fixture can pin a documentation comment" was still believed. Setting each to
-    ///         <c>constructs/xmldoc/&lt;key&gt;.cs</c> is enough: <c>ScratchTree.ProfileFor</c> already
-    ///         switches that subtree to <see cref="OracleProfile.DocComments" />, and
-    ///         <c>Sweep -- verify &lt;key&gt;</c> then answers for every one. That edit was made, the nine
-    ///         verdicts were taken, and it was <em>reverted</em>: on its own it turns
-    ///         <c>OptionCoverageTests.TierD_CarriesAFixtureOnlyWhereTheSweepDemotedIt</c> red for exactly
-    ///         these nine, because a Tier D key with a fixture is required to have a sweep row saying why.
-    ///         The glob and the row belong in one commit, and the sweep runs on master.
+    ///         ⚠ <b>What the sweep needs before it can reach them.</b> The field <c>SweepPlan</c> reads is
+    ///         <c>oracle</c> in <c>options.json</c>, and it was left null across this family when "no
+    ///         fixture can pin a documentation comment" was still believed; a null glob is excluded with
+    ///         "no <c>oracle</c> fixture in the registry" and the key is never swept at any value. Setting
+    ///         it to <c>constructs/xmldoc/&lt;key&gt;.cs</c> is enough — <c>ScratchTree.ProfileFor</c>
+    ///         already switches that subtree to <see cref="OracleProfile.DocComments" /> — and
+    ///         <c>Sweep -- verify &lt;key&gt;</c> then answers.
+    ///         <para>
+    ///             ⚠ <b>It costs one red test until the sweep runs, and that is not a reason to leave the
+    ///             glob off.</b> A Tier D key carrying a glob must have a non-Conformant row in the
+    ///             committed sidecar, so
+    ///             <c>OptionCoverageTests.TierD_CarriesAFixtureOnlyWhereTheSweepDemotedIt</c> is red for
+    ///             each glob added before the sweep that would write that row. The first attempt at this
+    ///             set all nine and reverted the lot for that reason; reverting also removed the only
+    ///             thing that lets the next sweep reach them, so the gap survived the fix. Three are set
+    ///             now — see below — and the red goes away in the same run that writes their rows.
+    ///         </para>
     ///     </para>
     ///     <para>
-    ///         ⚠ Measured with that glob in place, so the next person does not have to guess what the sweep
+    ///         ⚠ Measured with the glob in place, so the next person does not have to guess what the sweep
     ///         will say: <c>wrap_lines</c>, <c>linebreak_before_multiline_elements</c> and
     ///         <c>blank_line_after_pi</c> come back <b>Conformant</b> — those three are the promotions the
-    ///         sweep can earn. <c>max_line_length</c> and <c>wrap_text</c> are <b>Divergent</b>,
-    ///         <c>wrap_tags_and_pi</c> <b>Spurious</b>, <c>linebreaks_inside_tags_for_elements_longer_than</c>
-    ///         <b>Inert</b>, and <c>spaces_inside_tags</c> and
-    ///         <c>linebreak_before_singleline_elements</c> <b>Unexercised</b> — so six of the nine stay Tier D
-    ///         on the sweep's own evidence rather than on this list's.
+    ///         sweep can earn. <c>max_line_length</c> and <c>wrap_text</c> are <b>Divergent</b> and
+    ///         <c>wrap_tags_and_pi</c> <b>Spurious</b>.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ <b>The last three of those verdicts were about the fixtures and have been withdrawn.</b>
+    ///         <c>linebreaks_inside_tags_for_elements_longer_than</c> read <b>Inert</b>, and
+    ///         <c>spaces_inside_tags</c> and <c>linebreak_before_singleline_elements</c>
+    ///         <b>Unexercised</b> — every one of them because its corpus file could not tell the key's
+    ///         values apart, not because the key could not be observed:
+    ///         <list type="bullet">
+    ///             <item>
+    ///                 <c>spaces_inside_tags</c>'s file was written with a space inside each tag, and
+    ///                 <c>false</c> means "do not add" rather than "remove" (SK-DIV-0022), so both values
+    ///                 kept the author's spaces. Written tight, the key moves both engines and the sweep
+    ///                 says <b>Conformant</b>.
+    ///             </item>
+    ///             <item>
+    ///                 <c>linebreaks_inside_tags_for_elements_longer_than</c>'s summary was long enough
+    ///                 that width opened it at all three probe values — including the degenerate
+    ///                 <c>0</c> and <c>1</c> an int probe offers. Shortened below the margin, the export's
+    ///                 <c>2147483647</c> keeps it closed and <c>0</c>/<c>1</c> open it: <b>Conformant</b>.
+    ///             </item>
+    ///             <item>
+    ///                 <c>linebreak_before_singleline_elements</c>'s element sat inside a container that
+    ///                 stayed flat, so the renderer never reached the break rule. With the element
+    ///                 mid-line inside an opened container the sweep says <b>Divergent</b>, and the
+    ///                 disagreement is one-sided and worth having: at <c>true</c> the oracle breaks both
+    ///                 <em>before</em> and <em>after</em> the single-line element and Skala breaks only
+    ///                 before it. Baseline agrees — at the export's <c>false</c> the two are identical —
+    ///                 so the divergence is the key's and not inherited.
+    ///             </item>
+    ///         </list>
+    ///         ⚠ The general lesson is the one <c>SweepOutcome</c>'s own remarks state and this family
+    ///         proved twice: <c>INERT</c> and <c>UNEXERCISED</c> are claims about a fixture until the
+    ///         fixture has been shown able to separate the values. A glob whose fixture cannot is worse
+    ///         than no glob, because it reports a verdict about the corpus in the option's name.
     ///     </para>
     ///     <para>
     ///         ⚠ The assertion above runs in <em>both</em> directions over this list, so it cannot rot into
