@@ -26,6 +26,29 @@ case. `.gitattributes` marks the corpus `-text` for the same reason. There are n
 fixtures here: an oracle fixture is a measurement, and a file the tool cannot process has nothing to
 measure.
 
+⚠ **`probe:` is the field that decides whether the nightly goes red when this defect is
+rediscovered**, and it is a claim about the *cause*, not a label. It names one entry of the closed
+vocabulary in `Testing/Rikarin.Skala.Testing/OpenDefectProbes.cs`, each of which is an edit that
+removes that trigger from an arbitrary input and nothing else. When the expedition hits a violation
+it applies the probe of every entry sharing the property, re-runs the property oracle on the result,
+and accepts the entry **only if the property then holds** — so a rediscovery is reported and does not
+fail the job, while an input that carries a *second*, unregistered defect still fails the re-run and
+is reported as new. `OpenDefectTests` requires each probe to fire on its own entry's fixture and to
+be the reason that fixture fails.
+
+⚠ The objection this has to answer was written down here before the mechanism existed, by the entry
+that prompted it: *"a suppression list keyed on the defect the fuzzer is for would hide the next
+variant too."* It would, and that is why a `probe:` is not a suppression key. The check is a
+measurement — the oracle is re-run on the neutralised input — so the next variant, being a different
+defect, still fails it.
+
+⚠ **An entry with no `probe:` still reds the nightly, and that is deliberate.** An entry whose status
+line says "cause not established" has no trigger to name, and the expedition genuinely cannot tell
+its rediscovery from a new defect — guessing there would be exactly the suppression list SK-FUZZ-0016
+argues against below. The cost is therefore visible and attributable to a named entry rather than
+showing up as "the nightly is flaky", and
+`OpenDefectTests.EntriesWithoutAProbe_AreTheOnesThatStillRedTheNightly` bounds how many there may be.
+
 ⚠ A `whitespace-absorption` entry carries **two** files, because the property is a statement about a
 pair: `<name>.cs` is the mutated input and `<name>.baseline.cs` is what it was mutated from, and the
 two must differ only in whitespace. The test formats both and asserts the outputs still differ.
@@ -51,62 +74,6 @@ asserts over: its defect is in the fuzzer's own mutation catalogue rather than i
 its fixture lives in the measured corpus. That is a gap in this register's own accounting and is
 written down rather than tidied away — an entry nothing tests is a note, and this directory exists
 because a note is not enough.
-
-## SK-FUZZ-0018 — a `using` inside a wrapped file-scoped namespace is hoisted, then removed
-
-- file: `using-inside-a-wrapped-file-scoped-namespace.cs`
-- property: `arrangement-idempotency`
-- seed: `10305983846149543162`
-- found: mutating `pathological/wrapped-file-scoped-namespace-name.cs` with `join-line`; minimised
-  from 158 characters to 114.
-
-```csharp
-namespace Serilog
-  .Configuration;
-using System;
-public class Foo {
-  void M() {
-  Console.WriteLine(Bar);
-  }
-}
-```
-
-The pipeline converges, and then a second pipeline pass over its own output still wants one edit:
-
-```
-arrangement-idempotency [no symbols]: the second pipeline pass still wants 1 edit(s);
-rules applied on the first: SK2010
-```
-
-⚠ **The first pass moves the directive; the second pass deletes it.** `using System;` is written
-*after* a file-scoped namespace declaration, which puts it inside the namespace.
-`csharp_using_directive_placement = outside_namespace` hoists it above `namespace Serilog
-.Configuration;`, and that is the SK2010 the message names. On the *hoisted* text the compiler
-answers `CS8019` — the fuzzer's compilation carries the implicit `global using System;` from
-`ArrangementDifferential.ImplicitUsings`, so an explicit `using System;` at compilation-unit level is
-redundant — and the second pass removes what the first had only relocated. Two passes, two different
-answers about the same directive, from two different questions asked of two different texts.
-
-⚠ **This is SK-FUZZ-0013's shape in a place its fix did not reach.** That entry records the
-removable-usings set being computed once, before the pipeline, against a text the pipeline is about
-to rewrite; its fix made both sides key on the name with whitespace dropped, which is the *key* half
-of the problem. This is the *timing* half: the key is now stable and the set is still an answer about
-the input rather than about the output, so a rule that moves a directive across the boundary that
-decides its own removability makes the set stale in one pass.
-
-⚠ **Not reproducible through the CLI on a loose file**, and that is diagnostic rather than an
-inconvenience: `skala arrange` on this file with no compilation runs the syntactic subset, where
-`_removable` is empty by construction and the hoist is all that happens — `arrange` then reports a
-fixed point on its own output. The defect needs the semantic half, which is why it took a fuzz run
-with `--arrange-every` to find it. Reproduce it with `FuzzProperties.Check(…, arrangement: true)`, as
-`OpenDefectTests` does.
-
-- ⚠ status: **open**, reproduced and minimised, cause established, **not fixed**. The fix is not the
-  one-line kind: either the removable set is recomputed per pass — which costs a compilation per
-  pass and changes what `ArrangementPipeline` is allowed to cache — or `UsingsRule` refuses to move a
-  directive across the namespace boundary in the same pass that could remove it. Both are decisions
-  about the pipeline's contract rather than repairs, and the loader that feeds it is being worked on
-  in parallel. It wants its own commit.
 
 ## SK-FUZZ-0017 — a generated nested switch loses 51 characters on the second pass
 
@@ -140,68 +107,12 @@ collection expression, a `switch` expression and a raw string, and any of those 
   long: an idempotence violation means the same file formats two ways depending on how many times the
   tool has already run.
 
-## SK-FUZZ-0016 — a `#region` inside disabled text stops being a directive
-
-- file: `region-directive-inside-disabled-text.cs`
-- property: `token-equivalence`
-- seed: `13502335049781382213`
-- found: mutating `real/newtonsoft/Newtonsoft.Json/Utilities/Base64Encoder.cs` with `join-line`,
-  `region`, `tabs`, `tabs`; minimised from 1 149 characters to 45.
-
-```
-#if HAVE_ASYNC
-#region fuzz
-#endregion
-#endif
-```
-
-`skala format` reports **SK9099** and refuses to write:
-
-```
-error SK9099: not written, the formatted output has a different token stream
-(at token 1: 'P:#region fuzz' became 'D:\n')
-```
-
-⚠ A **P**reprocessor directive became **D**isabled text — the mirror image of SK-FUZZ-0009, where a
-directive became a *skipped token*. Under no symbols `HAVE_ASYNC` is undefined, so the branch is
-inactive; Skala's piece splitter treats everything inside it as one run of `DisabledTextTrivia` and
-re-emits it as text, while Roslyn keeps `#region` and `#endregion` as **directive** trivia even
-there. The file therefore cannot be formatted at all under the empty symbol set, and formats
-correctly under one that defines `HAVE_ASYNC`.
-
-⚠ **Three probes say it is `#region` specifically and not "a directive inside disabled text".**
-Replace the `#region`/`#endregion` pair with `#pragma warning disable 1` in the same inactive branch
-and every property holds — because Roslyn does *not* keep a `#pragma` as a directive inside disabled
-text, and it does keep a region. Put the same region in an **enabled** branch, or in no branch at
-all, and both hold. So the rule the splitter needs is not "disabled text is opaque" but "disabled
-text is opaque except for the directives Roslyn still reports inside it".
-
-⚠ **Found again, by a different seed on a different origin, and this is what an open entry costs.**
-Nightly 33195187043 reported `token-equivalence` on seed `13694834950078302995`, mutating
-`constructs/blank-lines/a-preprocessor-else-between-members.cs` with `comment-line`, `region`,
-`widen-gap`, `trailing-comment` — a `#region` the `region` mutation dropped into the inactive arm of
-an `#if DEBUG`. Reduced to `class C { #if DEBUG / #region fuzz / #endregion / int _a; #else … }` it
-gives the same message this entry already records, at token 4 instead of token 1, and the `#pragma`
-control above still formats cleanly. Same defect, not a second one.
-
-⚠ **The expedition has no notion of a known open defect, so this reds the nightly on its own.**
-`OpenDefectTests` pins the *fixture*; it does not stop the fuzzer rediscovering the defect from a new
-seed, and `nightly.yml` fails the job on any finding. So while this entry stands, a nightly can go
-red for a defect that is already registered, and the only way to tell that from a genuine regression
-is to replay the seed and compare it with this section. That is an argument for fixing it rather than
-for teaching the fuzzer to skip it: a suppression list keyed on the defect the fuzzer is *for* would
-hide the next variant too.
-
-- ⚠ status: **open**, reproduced through the CLI, minimised, and the shape established. Not
-  diagnosed to the line, and not fixed: `#region` inside `#if` is ordinary in real code —
-  Newtonsoft.Json is where the fuzzer found it — so the fix is worth its own commit with the
-  differential run to price it.
-
 ## SK-FUZZ-0015 — a `///` run takes its line ending from the first newline in the *input*
 
 - file: `doc-comment-run-under-a-leading-crlf.cs`
 - property: `idempotency`
 - seed: `7489454592082333649`
+- probe: `doc-comment-run`
 - found: mutating `real/serilog/Serilog/Events/LogEventLevel.cs` with `blank-lines`, `blank-lines`,
   `comment-inline`, `line-endings`; minimised from 1 588 characters to 84.
 
@@ -339,8 +250,23 @@ what the original entry describes, and it is the rarer of the two.
 Kept as a list rather than deleted, because "what the fuzzer has already caught" is the evidence
 that it is worth running — and an empty register would read as a fuzzer that finds nothing.
 
+⚠ **SK-FUZZ-0016 and SK-FUZZ-0018 were retired without their reproductions being promoted into
+`Testing/corpus/pathological/`, and that is a deliberate omission rather than the usual retirement.**
+The prescribed move regenerates a fixture with `./build.sh Oracle --only <name>` and adding a file to
+a measured set moves that set's fidelity number — SK-FUZZ-0003's retirement is recorded above as
+having lowered `pathological`'s ratchet to 0.9589 — and the ratchets were out of scope for the commit
+that fixed these two. Neither case is lost: both are pinned by named regression tests (in the "fixed
+by" rows below), and SK-FUZZ-0018's reproduction could not have become a corpus fixture in any case,
+because its own entry recorded that it does not reproduce on a loose file at all — it needs the
+semantic half, so a fixture in a set analysed with no compilation would pin nothing. Promoting
+SK-FUZZ-0016's four-line file is a real, small piece of remaining work; it is worth one commit that
+also moves the ratchet.
+
+
 | | property | fixed by |
 |---|---|---|
+| `SK-FUZZ-0016` | token equivalence — a `#region` inside disabled text stopped being a directive (SK9099, the file unformattable) | ⚠ **the entry's recorded diagnosis was wrong on both halves, and re-measurement is what found the fix.** It said the piece splitter folded the inactive branch into one `DisabledTextTrivia` run and re-emitted it as text, and that the defect was `#region` specifically because Roslyn does not keep a `#pragma` structured inside disabled text. Measured on Roslyn 5.9.0, Roslyn keeps **every** directive structured inside a skipped branch — `#pragma`, `#nullable`, `#line`, `#define`, a nested `#if` — and `SourcePieces.Split` was already producing four directive pieces for the fixture. Nothing was ever folded. The real cause was the converse: `blank_lines_around_region` fires on the gaps around the pair (`RequiredBlankLines` exempts regions from the `TouchesDirective` early return on purpose), and inside an inactive branch a blank line is not spacing — re-parsed it is a `DisabledTextTrivia` of `\n` that was not in the input, which is the `'P:#region fuzz' became 'D:\n'` the entry recorded. `#pragma` was fine only because no rule adds blank lines around one. So the rule needed was not "disabled text is opaque except for the directives Roslyn reports inside it" but **"the inactive branch is opaque even where Roslyn kept it structured"**. `Piece.Inactive`, set from `DirectiveTriviaSyntax.IsActive`, and `EmitGap` copies the gap byte for byte on either side of it. Pinned by `SafetyTests.ARegionInsideAnInactiveBranch_TakesNoBlankLines` and `ARegionInTheInactiveArm_KeepsItsGapsWhileALiveRegionKeepsItsBlankLines`, the second carrying the control that a **live** `#region` still gets its blank lines |
+| `SK-FUZZ-0018` | arrangement idempotency — a `using` inside a wrapped file-scoped namespace was hoisted by one pass and deleted by the next | the entry was right, including that this is SK-FUZZ-0013's *timing* half — but its two candidate fixes were not equal and the second is refuted. "`UsingsRule` refuses to move a directive across the namespace boundary" cannot reach `using System;` / `public class Foo { public string M() => String.Empty; }`, which has no namespace anywhere in it: `EmptyStringRule` rewrites the body, `System` becomes unused, and pipeline #2 deletes a using pipeline #1 kept. Same defect, different rule, no boundary involved — so the stale set is the defect and the boundary was a coincidence of the first reproduction. The removable set is therefore **recomputed on every pass whose arrangement rewrote the tree**, after the rebind so the model answers about the text that now exists. ⚠ The obstacle was never cost (11.49 ms against a 107.53 ms pipeline pass) but the **contract**: `ArrangeCommand` hands the pipeline one compilation and a removable set that is the *intersection* over every owning compilation, so recomputing inside the pipeline would answer for one target framework and could delete a using another needs. The pipeline takes a recomputation delegate and ownership of the intersection stays with the caller. Measured A/B over 200 files: identical output, identical pass counts, identical safety reverts, **+17.9 % cost**. Pinned by `ArrangementRuleTests.AUsingAnEarlierPassMadeRedundant_GoesInThatSameRun`, which asserts the arrangement actually happened as well as that it converged — declining to arrange is also a fixed point |
 | `SK-FUZZ-0009` | token equivalence — a `#endif` after a lone `\r` stopped being a directive (SK9099, the file unformattable) | ⚠ **the entry's own guess, and it was right for once.** `CSharpDocumentBuilder.CountNewLines` counted `'\n'` and nothing else, so the gap `}   <CR>#endif` reported zero newlines and `EmitGap` reasoned about the brace and the directive as though they shared a line — it joined them, a `#` that is not first on its line is not a directive to Roslyn, and the `#endif` became a skipped token. `FirstNewLine` beside it had always read a lone `\r` correctly, which is what made the disagreement invisible: the *style* of the break was right, there just was not one. It now counts the terminators C# recognises, `\r\n` as one |
 | `SK-FUZZ-0010` | idempotency — a wrapped signature and a trailing comment needed two passes for one blank line | SK-FUZZ-0007's mistake one step further out, exactly where the entry pointed. `OutputWidth` measures the gaps *between* a member's tokens and there is no gap after the last one, so the trailing comment that will share the member's line was not in the width `IsSingleLine` compares to the margin: 116 columns without `// fuzz`, 124 with it. The member was called single-line, `blank_lines_around_single_line_invocable = 0` declined the blank line — and then the fitter, which does count the comment, chopped the member onto three lines, so pass 2 read a multi-line member, asked `blank_lines_around_invocable = 1` instead, and inserted the blank line pass 1 had refused. ⚠ The register said the trigger "needs the *wide* method signature that the fitter chops"; the width it was missing was the comment's |
 | `SK-FUZZ-0012` | crash — a target-typed `new` whose target is a **delegate** type, carrying a LINQ query in its object initializer, threw `IndexOutOfRangeException` out of the *arrangement pipeline* and took the process with it | ⚠ **the throw is Roslyn's and the defect is ours.** `Func<int> v = new () { P = (from item in items select null) };` makes `MemberSemanticModel.GetLowerBoundNode` index an empty bound-node list, out of a plain `SemanticModel.GetSymbolInfo` on a node of the model's own tree — `PredefinedTypeRule` calls it, and there is no version of that call that can know in advance which node will do it. Two guards, because the first was not enough: a rule that throws is now skipped and reported as `SK9095` (the sibling of `SK9030` "analyzer threw"), and `ArrangementSafety.Check` — the layer whose whole job is to stop a bad rewrite reaching disk, and which was itself the thing taking the process down — now answers **revert** when its re-bind throws, because an unanswered safety question is not a safe one |
