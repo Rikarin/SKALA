@@ -246,6 +246,29 @@ public static class XmlDocFormatter {
             }
         }
 
+        // ⚠ SK-FUZZ-0015. The ending between this comment's own lines, not the first newline in the
+        // file — that is `CSharpFormatter.DefaultNewLine`'s answer, and the first pass can delete the
+        // text above the newline it read, so the second pass reads a different one and re-emits the
+        // same `///` run with the other ending. It is SK-FUZZ-0003's defect in the place that fix did
+        // not reach: `FinalNewLine` was moved off the input and the value handed to this pass was
+        // not.
+        //
+        // ⚠ A comment's own first gap is stable by construction. Whatever this pass writes between
+        // the run's lines is what the next pass reads back out of them, so the second pass agrees
+        // with the first whatever else moved in the file; and a run of one line has no gap to read,
+        // where the fallback is used once and then becomes the run's own ending.
+        //
+        // ⚠ **No test distinguishes this from the old value, and that is stated rather than hidden.**
+        // What actually retired SK-FUZZ-0015 is the marker rule below: a comment already in the shape
+        // the renderer would give it is not rewritten at all, so a second pass never reaches this
+        // value however unstable it is. That makes the property hold by *argument* — "one pass is a
+        // fixed point, so the ending is spent at most once" — and this line makes it hold by
+        // construction instead. The argument is the kind this project has been wrong with before, so
+        // both are kept; the belt is measured and the braces are not.
+        var runNewLine = first.LineNumber < last.LineNumber
+            ? source.ToString(TextSpan.FromBounds(first.End, first.EndIncludingLineBreak))
+            : newLine;
+
         var marker = options.SpaceAfterTripleSlash ? " " : string.Empty;
 
         // ⚠ Neither the code indentation nor the three slashes are subtracted, and both used to be
@@ -264,7 +287,7 @@ public static class XmlDocFormatter {
         var rendered = new StringBuilder();
         for (var i = 0; i < lines.Length; i++) {
             if (i > 0) {
-                rendered.Append(newLine);
+                rendered.Append(runNewLine);
             }
 
             // ⚠ The marker space is written on a verbatim line too, and that is SK-DIV-0023 closed
@@ -307,7 +330,7 @@ public static class XmlDocFormatter {
         // the only thing the marker option can add. Anything else that differs — a re-flowed word, an
         // element that moved, a blank line removed — is a real change and the rebuild is what the
         // oracle does too.
-        if (DiffersOnlyInTheMarker(source, first.LineNumber, last.LineNumber, text, newLine)) {
+        if (DiffersOnlyInTheMarker(source, first.LineNumber, last.LineNumber, text, runNewLine)) {
             text = source.ToString(span);
         }
 

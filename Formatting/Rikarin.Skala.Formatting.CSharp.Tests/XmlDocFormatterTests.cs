@@ -50,6 +50,51 @@ public static class XmlDoc {
 }
 
 public sealed class XmlDocSubFormatterTests {
+    /// <summary>
+    ///     SK-FUZZ-0015, retired: a <c>///</c> run in a mixed-ending file converges in one pass.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ The reproduction the register carried, minimised from 1 588 characters to 84 by the
+    ///     fuzzer and kept here rather than promoted into <c>pathological/</c>, because promoting it
+    ///     moves that set's ratchet. The leading <c>&lt;CR&gt;&lt;LF&gt;</c> is the whole trigger:
+    ///     <c>CSharpFormatter.DefaultNewLine</c> answered with the first newline in the *input*, the
+    ///     first pass deletes the blank line above it, and the second pass therefore re-emitted the
+    ///     same run with the other ending. The sub-formatter now takes the ending from the comment's
+    ///     own first gap, which the next pass reads back out of what this one wrote.
+    ///     <para>
+    ///         ⚠ Two passes, and the second is compared against the first rather than against the
+    ///         input. A one-pass assertion cannot see this defect at all — pass 1 was always
+    ///         self-consistent.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ <b>What retired the entry is the marker rule, not the newline change beside it</b>, and
+    ///         the difference was measured rather than assumed: with the newline read put back to the
+    ///         old unstable value both cases below still converge, because a comment already in the
+    ///         renderer's own shape is not rewritten and a comment that is rewritten reaches its fixed
+    ///         point on pass 1. Both bytes are asserted anyway — the run the fuzzer minimised, and one
+    ///         that has to be rebuilt — because "one pass is a fixed point" is an argument and this is
+    ///         the file where arguments have been wrong.
+    ///     </para>
+    /// </remarks>
+    [Fact]
+    public void ADocCommentRunUnderALeadingCrlf_KeepsItsOwnEnding() {
+        // ⚠ The register's own minimised bytes. The mixed endings are the whole case and must stay
+        // exactly as the fuzzer left them: a leading `<CR><LF>` whose blank line the first pass
+        // deletes — which is what moved "the first newline in the input" — a bare `<LF>` above the
+        // brace, and `<CR><LF>` inside the `///` run.
+        const string minimised = "\r\n// Copyright 2013-2015 Serilog Contributors\n{\r\n"
+            + "  /// <summary>\r\n  /// </summary>\n}\n";
+
+        Assert.Equal(XmlDoc.Text(minimised), XmlDoc.Text(XmlDoc.Text(minimised)));
+
+        // ⚠ The same endings around a run the sub-formatter has to rebuild, so the ending it writes
+        // is one it chose rather than one it copied.
+        const string rebuilt = "\r\n// Copyright 2013-2015 Serilog Contributors\n{\r\n"
+            + "  ///<summary>x</summary><remarks>y</remarks>\r\n  /// <example>z</example>\n}\n";
+
+        Assert.Equal(XmlDoc.Text(rebuilt), XmlDoc.Text(XmlDoc.Text(rebuilt)));
+    }
+
     [Fact]
     public void UnderNoXmlDoc_TheOracleAgreementIsUntouched() {
         // ⚠ The escape hatch, and it is now the only thing that reproduces what the pinned oracle

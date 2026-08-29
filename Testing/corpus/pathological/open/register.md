@@ -107,67 +107,6 @@ collection expression, a `switch` expression and a raw string, and any of those 
   long: an idempotence violation means the same file formats two ways depending on how many times the
   tool has already run.
 
-## SK-FUZZ-0015 — a `///` run takes its line ending from the first newline in the *input*
-
-- file: `doc-comment-run-under-a-leading-crlf.cs`
-- property: `idempotency`
-- seed: `7489454592082333649`
-- probe: `doc-comment-run`
-- found: mutating `real/serilog/Serilog/Events/LogEventLevel.cs` with `blank-lines`, `blank-lines`,
-  `comment-inline`, `line-endings`; minimised from 1 588 characters to 84.
-
-```
-<CR>
-// Copyright 2013-2015 Serilog Contributors
-{<CR>
-  /// <summary><CR>
-  /// </summary>
-}
-```
-
-`format(format(x)) ≠ format(x)` by one line ending, inside the `///` run:
-
-```
-pass 1:   /// <summary><CR><LF>       /// </summary><LF>
-pass 2:   /// <summary><LF>           /// </summary><LF>
-```
-
-⚠ **The cause is established rather than guessed, by three probes.** Delete the file's leading
-`<CR><LF>` and it converges; make the gap between the two `///` lines an `<LF>` and it still fails,
-so the gap's own ending is not what is read; replace `///` with `//` and it converges.
-
-`CSharpFormatter.DefaultNewLine` answers with **the first newline in the input**, and that value is
-handed to `XmlDocFormatter.Rewrite`, which uses it between the lines of a run it reflows. The first
-pass deletes the leading blank line — so the first newline of pass 2's input is a different newline,
-in a file whose endings are mixed, and the same run is re-emitted with the other one.
-
-⚠ **This is SK-FUZZ-0003's defect in a place its fix did not reach.** That entry records exactly
-this sentence about `insert_final_newline` — "`DefaultNewLine` […] answers with the first newline in
-the *input*, and the first pass can move, rewrite or delete the text above that newline, so the
-second pass asks a different question" — and fixed `FinalNewLine` to read the ending of the last
-break in the **output**. The same unstable value is still passed to the doc-comment sub-formatter
-one line below the call that was fixed.
-
-⚠ **A second reproduction, on a different file, from the next run.** Seed `12780975215320227180`
-mutates `pathological/doc-comment-starting-on-the-brace-line.cs` — SK-FUZZ-0002's own retired
-fixture — with `line-endings`, `tabs`, `join-line`, and lands on the same instability:
-
-```
-pass 1:   /// <summary>x</summary><CR><LF>   /// <remarks>y</remarks><CR><LF>
-pass 2:   /// <summary>x</summary><LF>       /// <remarks>y</remarks><CR><LF>
-```
-
-⚠ Note what pass 2 did *not* do: it rewrote the first gap of the run and left the second. Two passes
-are the bound the property checks, so a case that needs three is a case this property reports as
-"still wants one edit" without saying it would want another. Not investigated further.
-
-- ⚠ status: **open**, reproduced through the CLI byte for byte, minimised, and **cause established**.
-- ⚠ Not fixed here deliberately. The fix is small — derive the sub-formatter's newline from the
-  output the way `FinalNewLine` already does — and its blast radius is not: it moves a line ending
-  inside every reflowed doc comment in every CRLF file, and docs/plan/04's own note says the
-  doc-comment area is "the one area of the formatter with no differential safety net at all". It
-  wants its own measured commit rather than a rider on a fuzz-triage branch.
-
 ## SK-FUZZ-0008 — the `indent` mutation is misclassified as absorbed on a raw interpolated string
 
 ⚠ **A defect in the fuzzer's own catalogue, not in the formatter.** `pathological/interpolated-raw-string-with-nested-braces.cs`:
@@ -263,8 +202,19 @@ SK-FUZZ-0016's four-line file is a real, small piece of remaining work; it is wo
 also moves the ratchet.
 
 
+⚠ **SK-FUZZ-0015 was retired the same way and for the same reason**, and its entry had itself asked
+for this: "the fix is small — derive the sub-formatter's newline from the output the way
+`FinalNewLine` already does — and its blast radius is not […] it wants its own measured commit."
+That commit is the doc-comment sweep batch, which re-measured the sub-formatter against
+`OracleProfile.DocComments` end to end, so the blast radius is now covered by the thing the entry
+said was missing. Its reproduction is pinned by
+`XmlDocSubFormatterTests.ADocCommentRunUnderALeadingCrlf_KeepsItsOwnEnding` rather than promoted into
+the measured set, because promoting it moves `pathological`'s ratchet and the ratchets are out of
+scope for that commit.
+
 | | property | fixed by |
 |---|---|---|
+| `SK-FUZZ-0015` | idempotency — a `///` run took its line ending from the first newline in the *input* | ⚠ **the entry's diagnosis was right and its prescription is not what closed it.** The diagnosis stands: `CSharpFormatter.DefaultNewLine` answers with the first newline in the input, hands that to `XmlDocFormatter.Rewrite`, and the first pass deletes the text above that newline — SK-FUZZ-0003's defect in the place its fix did not reach. What removed the violation is a different change in the same commit, and it is the *oracle's* rule rather than a repair: a comment the run would otherwise leave alone now keeps its own `///` markers, because `jb cleanupcode` does the same — measured on one file holding two comments with identical blank `///` lines, where the one whose summary had to be rewrapped came back with `/// ` and the one that needed nothing came back bare. A comment already in the renderer's own shape is therefore not rewritten at all, and one that is rewritten reaches its fixed point on pass 1, so the unstable value is spent at most once and no second pass can disagree with a first. ⚠ **That is an argument, so the value was made stable as well**: the sub-formatter now reads the ending from the comment's own first gap, which the next pass reads back out of what this one wrote. ⚠ **No test distinguishes that second change** — with the old read put back, both the minimised bytes and a run that must be rebuilt still converge — and it is recorded here rather than presented as the fix. Pinned by `XmlDocSubFormatterTests.ADocCommentRunUnderALeadingCrlf_KeepsItsOwnEnding`, which carries both shapes |
 | `SK-FUZZ-0016` | token equivalence — a `#region` inside disabled text stopped being a directive (SK9099, the file unformattable) | ⚠ **the entry's recorded diagnosis was wrong on both halves, and re-measurement is what found the fix.** It said the piece splitter folded the inactive branch into one `DisabledTextTrivia` run and re-emitted it as text, and that the defect was `#region` specifically because Roslyn does not keep a `#pragma` structured inside disabled text. Measured on Roslyn 5.9.0, Roslyn keeps **every** directive structured inside a skipped branch — `#pragma`, `#nullable`, `#line`, `#define`, a nested `#if` — and `SourcePieces.Split` was already producing four directive pieces for the fixture. Nothing was ever folded. The real cause was the converse: `blank_lines_around_region` fires on the gaps around the pair (`RequiredBlankLines` exempts regions from the `TouchesDirective` early return on purpose), and inside an inactive branch a blank line is not spacing — re-parsed it is a `DisabledTextTrivia` of `\n` that was not in the input, which is the `'P:#region fuzz' became 'D:\n'` the entry recorded. `#pragma` was fine only because no rule adds blank lines around one. So the rule needed was not "disabled text is opaque except for the directives Roslyn reports inside it" but **"the inactive branch is opaque even where Roslyn kept it structured"**. `Piece.Inactive`, set from `DirectiveTriviaSyntax.IsActive`, and `EmitGap` copies the gap byte for byte on either side of it. Pinned by `SafetyTests.ARegionInsideAnInactiveBranch_TakesNoBlankLines` and `ARegionInTheInactiveArm_KeepsItsGapsWhileALiveRegionKeepsItsBlankLines`, the second carrying the control that a **live** `#region` still gets its blank lines |
 | `SK-FUZZ-0018` | arrangement idempotency — a `using` inside a wrapped file-scoped namespace was hoisted by one pass and deleted by the next | the entry was right, including that this is SK-FUZZ-0013's *timing* half — but its two candidate fixes were not equal and the second is refuted. "`UsingsRule` refuses to move a directive across the namespace boundary" cannot reach `using System;` / `public class Foo { public string M() => String.Empty; }`, which has no namespace anywhere in it: `EmptyStringRule` rewrites the body, `System` becomes unused, and pipeline #2 deletes a using pipeline #1 kept. Same defect, different rule, no boundary involved — so the stale set is the defect and the boundary was a coincidence of the first reproduction. The removable set is therefore **recomputed on every pass whose arrangement rewrote the tree**, after the rebind so the model answers about the text that now exists. ⚠ The obstacle was never cost (11.49 ms against a 107.53 ms pipeline pass) but the **contract**: `ArrangeCommand` hands the pipeline one compilation and a removable set that is the *intersection* over every owning compilation, so recomputing inside the pipeline would answer for one target framework and could delete a using another needs. The pipeline takes a recomputation delegate and ownership of the intersection stays with the caller. Measured A/B over 200 files: identical output, identical pass counts, identical safety reverts, **+17.9 % cost**. Pinned by `ArrangementRuleTests.AUsingAnEarlierPassMadeRedundant_GoesInThatSameRun`, which asserts the arrangement actually happened as well as that it converged — declining to arrange is also a fixed point |
 | `SK-FUZZ-0009` | token equivalence — a `#endif` after a lone `\r` stopped being a directive (SK9099, the file unformattable) | ⚠ **the entry's own guess, and it was right for once.** `CSharpDocumentBuilder.CountNewLines` counted `'\n'` and nothing else, so the gap `}   <CR>#endif` reported zero newlines and `EmitGap` reasoned about the brace and the directive as though they shared a line — it joined them, a `#` that is not first on its line is not a directive to Roslyn, and the `#endif` became a skipped token. `FirstNewLine` beside it had always read a lone `\r` correctly, which is what made the disagreement invisible: the *style* of the break was right, there just was not one. It now counts the terminators C# recognises, `\r\n` as one |
