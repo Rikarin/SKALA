@@ -299,6 +299,37 @@ overturned verdicts, the export-value column, and the count.
 Skala and the oracle produce the same bytes at the value the export sets. Tier D because a value the
 export never uses diverges. **Not a Tier A claim** — see the caveat above.
 
+⚠ **Twenty of these rows are stale, and deliberately not edited here.** Every row's `evidence` cell
+quotes the *committed* `conformance-sweep.json`, so rewriting a cell before the sweep is re-run would
+make this document disagree with the artefact it cites — which is the one failure a derived table must
+not have. The twenty are the batch measured on 2026-08-29; what happened to each is recorded at its
+own declaration and, where it is a divergence, in `docs/divergences.md`. In summary:
+
+- **Eleven are fixed and read `Conformant` on `verify`**: `space_after_unary_operator`,
+  `space_around_relational_op`, `space_around_shift_op`, `space_before_array_rank_brackets`,
+  `space_between_accessors_in_singleline_property`, `space_in_singleline_accessorholder`,
+  `space_before_new_parentheses`, `xmldoc_linebreak_before_elements`,
+  `xmldoc_linebreak_before_singleline_elements`,
+  `xmldoc_linebreaks_inside_tags_for_elements_with_child_elements`,
+  `xmldoc_linebreaks_inside_tags_for_multiline_elements`, `xmldoc_max_blank_lines_between_tags`,
+  `xmldoc_max_line_length` and `xmldoc_wrap_text` — fourteen, counting the three whose fix was one
+  arithmetic each.
+- **Five are inert and leave the sweep**: `space_before_singleline_accessorholder`,
+  `space_before_colon_in_ctor_initializer`, `space_before_trailing_comment_text`,
+  `xmldoc_indent_size`, `xmldoc_indent_style`. Each was asked in both directions and the oracle is
+  flat at both values; their `oracle` globs are now `null`, so the next sweep will not carry a row
+  for them at all.
+- **One is open**: `xmldoc_wrap_tags_and_pi` — SK-DIV-0079. It governs a break inside a tag header,
+  which Skala can neither emit nor re-read; the fixture it is globed to measures something else, and
+  the row will read `Unexercised` until the model can round-trip a wrapped header.
+
+⚠ Two rows in the *other* direction are worth naming, because they are the shape this document warns
+about: `xmldoc_indent_size` and `xmldoc_indent_style` were `SPURIOUS` for a reason that is a fact
+about the fixture. Both agree at `4`/`space` — which is exactly what the C# `indent_size` and
+ReSharper's always-spaces inner indent produce anyway — so the fixture could not tell the key from
+what else was answering. The probe that could is one line of `.editorconfig`: set `indent_size` and the
+comment's inner indent moves; set `resharper_xmldoc_indent_size` and it does not.
+
 | key | export value | evidence | size |
 |---|---|---|---|
 | `csharp_new_line_before_open_brace` | `none` | sweep `Divergent` on `constructs/braces/csharp_new_line_before_open_brace.cs`; agrees at the export's `none`, 2/15 values agree; diverges at `accessors`, `anonymous_methods`, `anonymous_types`, `control_blocks`, `events`, `indexers`, `lambdas`, `local_functions`, `methods`, `object_collection_array_initializers`, `properties`, `types`, `properties, types` | n/a — enforced at the standard; only off-standard values differ |
@@ -435,7 +466,7 @@ or neither.
 | `resharper_xmldoc_spaces_around_eq_in_pi_attribute` | `false` | same group, same prerequisite | S once the PI renderer exists |
 | `resharper_xmldoc_spaces_inside_tags` | `false` | read and honoured (`OfUnoracled`, `PhaseOneOptions.cs`); asked of `OracleProfile.DocComments` and answered differently — SK-DIV-0022 (`false` means "do not add", not "remove") | S — a renderer rule; four of the five SK-DIV-0019 keys are one fix |
 | `resharper_xmldoc_wrap_lines` | `true` | read and honoured (`OfUnoracled`, `PhaseOneOptions.cs`); asked of `OracleProfile.DocComments` and answered differently — SK-DIV-0019 (the wrap column) | S — a renderer rule; four of the five SK-DIV-0019 keys are one fix |
-| `resharper_xmldoc_wrap_tags_and_pi` | `true` | read and honoured (`OfUnoracled`, `PhaseOneOptions.cs`); asked of `OracleProfile.DocComments` and answered differently — SK-DIV-0019 (the wrap column) | S — a renderer rule; four of the five SK-DIV-0019 keys are one fix |
+| `resharper_xmldoc_wrap_tags_and_pi` | `true` | ⚠ **re-measured 2026-08-29 and this row's diagnosis is withdrawn.** Not SK-DIV-0019 and not a wrap-column key: it governs a break *inside* a tag header — a 170-column `<see cref=… href=…>` comes back with `href` on a continuation line at `true` and whole at `false` — while a `<see/>` moving off the end of a line of prose is byte-identical at both values. Not read by Skala at all now; `XmlDocIds.Refused`, SK-DIV-0079 | L — needs the model to *read* a multi-line tag header back, or the next pass sees a comment it must refuse; four other header keys are pending on the same prerequisite |
 | `resharper_xmldoc_wrap_text` | `true` | read and honoured (`OfUnoracled`, `PhaseOneOptions.cs`); asked of `OracleProfile.DocComments` and answered differently — SK-DIV-0019 (the wrap column) | S — a renderer rule; four of the five SK-DIV-0019 keys are one fix |
 
 ### Masked — 12
