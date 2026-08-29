@@ -12,7 +12,7 @@
 <main>
 <p class="crumb"><a href="index.html">Options</a></p>
 <h1>Wrapping</h1>
-<p class="lede">7 keys.</p>
+<p class="lede">4 keys.</p>
 <section class="option" id="resharper_csharp_wrap_lines">
 <h2><code>resharper_csharp_wrap_lines</code> <a class="self" href="#resharper_csharp_wrap_lines">#</a></h2>
 <p>Undocumented ReSharper property; classified as C#-relevant by vocabulary.</p>
@@ -25,21 +25,6 @@
 <tr><th>Language</th><td>csharp</td></tr>
 <tr><th>Since</th><td>0.1</td></tr>
 <tr><th>Oracle fixture</th><td><code>constructs/wrapping/base-list.cs</code></td></tr>
-</tbody>
-</table>
-</section>
-<section class="option" id="resharper_enable_wrapping">
-<h2><code>resharper_enable_wrapping</code> <a class="self" href="#resharper_enable_wrapping">#</a></h2>
-<p>Named as though it were the master switch for wrapping, and measured not to be one. The export sets it <code>false</code> and wrapping happens; both values are byte-identical on a file that wraps four ways, at 120 columns, at 60, and with <code>wrap_lines = false</code>.</p>
-<table class="facts">
-<tbody>
-<tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>
-<tr><th>Default</th><td><code>false</code></td></tr>
-<tr><th>Default known from</th><td>the Rider export, which is Rider's default for most keys and the author's choice for the rest, with nothing distinguishing the two</td></tr>
-<tr><th>Tier</th><td>D — recorded so the key is not reported unknown; nothing reads it yet</td></tr>
-<tr><th>Language</th><td>csharp</td></tr>
-<tr><th>Since</th><td>0.4</td></tr>
-<tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_Index.html">https://www.jetbrains.com/help/resharper/EditorConfig_Index.html</a></td></tr>
 </tbody>
 </table>
 </section>
@@ -69,35 +54,6 @@
 <tr><th>Tier</th><td>D — recorded so the key is not reported unknown; nothing reads it yet</td></tr>
 <tr><th>Language</th><td>csharp</td></tr>
 <tr><th>Since</th><td>0.1</td></tr>
-</tbody>
-</table>
-</section>
-<section class="option" id="resharper_prefer_line_break_after_multiline_lparen">
-<h2><code>resharper_prefer_line_break_after_multiline_lparen</code> <a class="self" href="#resharper_prefer_line_break_after_multiline_lparen">#</a></h2>
-<p>Whether a break follows a <code>(</code> whose contents span lines. Inert at both values and in both spellings, on a multi-statement lambda argument, a wide initializer argument and a nested call, at 120 and at 80 columns.</p>
-<table class="facts">
-<tbody>
-<tr><th>Type</th><td><code>true</code> / <code>false</code></td></tr>
-<tr><th>Default</th><td><code>true</code></td></tr>
-<tr><th>Default known from</th><td>nothing beyond the export</td></tr>
-<tr><th>Tier</th><td>D — recorded so the key is not reported unknown; nothing reads it yet</td></tr>
-<tr><th>Language</th><td>csharp</td></tr>
-<tr><th>Since</th><td>0.1</td></tr>
-</tbody>
-</table>
-</section>
-<section class="option" id="resharper_wrap_arguments">
-<h2><code>resharper_wrap_arguments</code> <a class="self" href="#resharper_wrap_arguments">#</a></h2>
-<p>The language-generic argument wrap style the export writes alongside the C# one. Inert: <code>chop_always</code> changes nothing, while <code>csharp_wrap_arguments_style = chop_always</code> in the same run chops every argument list in the file.</p>
-<table class="facts">
-<tbody>
-<tr><th>Type</th><td>one of <code>wrap_if_long</code>, <code>chop_if_long</code>, <code>chop_always</code></td></tr>
-<tr><th>Default</th><td><code>wrap_if_long</code></td></tr>
-<tr><th>Default known from</th><td>the Rider export, which is Rider's default for most keys and the author's choice for the rest, with nothing distinguishing the two</td></tr>
-<tr><th>Tier</th><td>D — recorded so the key is not reported unknown; nothing reads it yet</td></tr>
-<tr><th>Language</th><td>csharp</td></tr>
-<tr><th>Since</th><td>0.4</td></tr>
-<tr><th>Documented at</th><td><a href="https://www.jetbrains.com/help/resharper/EditorConfig_Index.html">https://www.jetbrains.com/help/resharper/EditorConfig_Index.html</a></td></tr>
 </tbody>
 </table>
 </section>

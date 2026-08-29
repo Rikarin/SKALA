@@ -1907,7 +1907,8 @@ public sealed partial class CSharpDocumentBuilder {
         // there before, and the safety net aborts the file with SK9099. The branch is opaque whether
         // or not Roslyn kept its contents structured.
         if (nextKind == PieceKind.DisabledText
-            || previous.Kind == PieceKind.DisabledText && newLines > 0
+            || previous.Kind == PieceKind.DisabledText
+            && newLines > 0
             || TouchesInactiveBranch(previous, nextPieceIndex)) {
             if (gap.Length > 0) {
                 _doc.Verbatim(gap, new SourceSpan(previous.Span.End, gap.Length), VerbatimFlags.AtColumnZero);

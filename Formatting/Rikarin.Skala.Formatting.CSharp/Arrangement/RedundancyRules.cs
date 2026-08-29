@@ -6,8 +6,7 @@ using Rikarin.Skala.Options;
 namespace Rikarin.Skala.Formatting.CSharp.Arrangement;
 
 /// <summary>
-///     <c>this.field</c> ⇔ <c>field</c>, under the four <c>dotnet_style_qualification_for_*</c> keys and
-///     <c>resharper_remove_this_qualifier</c>.
+///     <c>this.field</c> ⇔ <c>field</c>, under the four <c>dotnet_style_qualification_for_*</c> keys.
 /// </summary>
 /// <remarks>
 ///     ⚠ The rule runs in both directions and the direction is chosen per member kind, because that is
@@ -18,12 +17,19 @@ namespace Rikarin.Skala.Formatting.CSharp.Arrangement;
 ///     kind. The export writes <c>false</c> for all four, which is why only the removing direction is
 ///     visible in the committed fixtures.
 ///     <para>
-///         ⚠ <c>resharper_remove_this_qualifier</c> is not the key the oracle reads. The same probe with it
-///         at <c>false</c> comes back byte-identical — the qualifier is still removed — so on this
-///         repository's configuration it is dominated by the four Roslyn keys. It is kept here as a gate on
-///         the removing direction, because it is a Tier A option whose own committed fixture has to keep
-///         distinguishing it; the disagreement is recorded as SK-DIV-0070 rather than resolved by
-///         quietly dropping a key another fixture claims.
+///         ⚠
+///         <b>
+///             There used to be a fifth key here, and it was measured wrong for a long time before it
+///             was measured right.
+///         </b> <c>resharper_remove_this_qualifier</c> gated the removing direction.
+///         The same probe with it at <c>false</c> came back byte-identical — the qualifier still
+///         removed — which said it was dominated by the four Roslyn keys; that was recorded as
+///         SK-DIV-0070 and the key was kept anyway, because it was Tier A and a fixture claimed it.
+///         The first cleanup-profile sweep then returned <c>SPURIOUS</c> for it: Skala's output varied
+///         across its values while the oracle's did not. It was removed from the export and the
+///         registry on 2026-08-29 as a key ReSharper does not support, and regenerating all 1336
+///         fixtures against the oracle changed <b>not one non-header line</b> — which is what a key
+///         nothing reads looks like when you finally take it out.
 ///     </para>
 /// </remarks>
 public sealed class ThisQualifierRule : ArrangementRule {

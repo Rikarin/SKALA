@@ -1698,7 +1698,7 @@
   },
   {
     "Key": "resharper_csharp_blank_lines_around_single_line_local_method",
-    "Tier": "D",
+    "Tier": "A",
     "Outcome": "Conformant",
     "OracleDistinct": 3,
     "SkalaDistinct": 3,
@@ -8212,29 +8212,6 @@
         "Value": "false",
         "OracleHash": "5e3c2dc7",
         "SkalaHash": "c78b2d25",
-        "Agree": false
-      }
-    ]
-  },
-  {
-    "Key": "resharper_remove_this_qualifier",
-    "Tier": "D",
-    "Outcome": "Spurious",
-    "OracleDistinct": 1,
-    "SkalaDistinct": 2,
-    "BaselineAgrees": false,
-    "Fixture": "constructs/arrangement/redundancy/qualifiers-and-parentheses.cs",
-    "Values": [
-      {
-        "Value": "true",
-        "OracleHash": "1157cb75",
-        "SkalaHash": "24f764b3",
-        "Agree": false
-      },
-      {
-        "Value": "false",
-        "OracleHash": "1157cb75",
-        "SkalaHash": "fa37604d",
         "Agree": false
       }
     ]

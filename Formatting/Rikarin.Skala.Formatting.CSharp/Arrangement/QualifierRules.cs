@@ -27,8 +27,8 @@ namespace Rikarin.Skala.Formatting.CSharp.Arrangement;
 ///         ⚠ There is no instance-member counterpart here and the asymmetry is the configuration's, not an
 ///         omission. <c>resharper_instance_members_qualify_members</c> — the key that would say which
 ///         instance members take a <c>this.</c> — is not in the author's export and so is not in the option
-///         registry at all. Removing <c>this.</c> is <see cref="ThisQualifierRule" /> under
-///         <c>resharper_remove_this_qualifier</c>; adding it has no key to read.
+///         registry at all. Removing <c>this.</c> is <see cref="ThisQualifierRule" /> under the four
+///         <c>dotnet_style_qualification_for_*</c> keys; adding it has no key to read.
 ///     </para>
 /// </remarks>
 public sealed class StaticQualifierRule : ArrangementRule {

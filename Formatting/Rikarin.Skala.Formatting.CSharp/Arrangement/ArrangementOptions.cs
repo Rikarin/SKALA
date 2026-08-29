@@ -150,12 +150,10 @@ public readonly struct ArrangementOptions {
     ///     other three alone; at <c>false</c> it strips an existing one. Four separate probes, four
     ///     disjoint one-line diffs.
     ///     <para>
-    ///         ⚠ <see cref="RemoveThisQualifier" /> is <b>not</b> what the oracle reads. The same probe with
-    ///         <c>resharper_remove_this_qualifier = false</c> and the four Roslyn keys left at the export's
-    ///         <c>false</c> comes back byte-identical — the qualifier is still removed. The ReSharper key is
-    ///         dominated by these four on this repository's configuration; Skala keeps reading it as a gate
-    ///         on removal so that its own committed fixture still distinguishes it, and the divergence is
-    ///         recorded as SK-DIV-0070.
+    ///         ⚠ These four are the whole story now. <c>resharper_remove_this_qualifier</c> also gated the
+    ///         removing direction until 2026-08-29, when it was removed as a key ReSharper does not
+    ///         support — measured first as dominated (SK-DIV-0070), then as <c>SPURIOUS</c> by the first
+    ///         cleanup-profile sweep, and finally proved inert by regenerating the corpus without it.
     ///     </para>
     /// </remarks>
     public bool QualifyField { get; }
