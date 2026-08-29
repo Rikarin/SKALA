@@ -5185,7 +5185,8 @@
       "construct": "ArrangementOfEmbeddedStatements",
       "summary": "Arrangement of embedded statements — Place simple 'case' statement on the same line",
       "since": "0.1",
-      "oracle": "constructs/blank-lines/between-switch-sections.cs",
+      "inert": "Asked in both directions rather than one: a section written broken (one statement; two statements; a bare `break;`; a shared label; a braced section) at `always`, a section written joined at `never`, both again with `keep_user_linebreaks = false`, and ⚠ both again with `simple_case_statement_style` pushed the same way — `on_single_line` against the broken source and `line_break` against the joined one, because that key's own `inert` note names THIS key as what governs the shape. Every one byte-identical. Neither key governs a switch section's arrangement; `cleanupcode` preserves whatever the author wrote. ⚠ `simple_case_statement_style`'s note is wrong about which key wins, and for the usual reason — it was asked at `never` against a source that was already broken, where `never` has nothing to do.",
+      "oracle": null,
       "docs": "https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_LineBreaksPageSchema.html#resharper_csharp_place_simple_case_statement_on_same_line",
       "templateLine": 900,
       "expands": []

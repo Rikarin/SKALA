@@ -687,26 +687,33 @@ public sealed class BreakPlan {
         Point(node.CloseBraceToken, group);
         broken |= BreaksBefore(node.CloseBraceToken);
 
-        // ⚠ `place_simple_switch_expression_on_single_line` outranks `chop_always`, and that is why
-        // both keys are observable rather than only the wrap style. With it on, `x switch { 1 => 1,
-        // _ => 0 }` stays on its line although the wrap style says every arm gets one;
-        // `keep_existing_switch_expression_arrangement` is the other direction, keeping the author's
-        // breaks when the placement rule would otherwise join them.
         // ⚠ `keep_existing_switch_expression_arrangement` outranks `chop_always`, which the option
         // names do not suggest and the oracle settles: with it on, `value switch { 1 => 1, _ => 0 }`
         // comes back on one line although the wrap style says every arm gets one of its own. With it
-        // off — the export's value — the same expression is chopped. That is what makes both keys
-        // observable rather than only the wrap style.
+        // off — the export's value — the same expression is chopped.
+        //
+        // ⚠ `chop_always` outranks `place_simple_switch_expression_on_single_line`, and this used to
+        // say the reverse. Measured, one key flipped from the export at a time:
+        //
+        //   chop_always + place = true    every arm on its own line — the placement key does nothing
+        //   wrap_if_long + place = true   `value switch { 1 => 1, _ => 0 }` on one line
+        //   wrap_if_long + place = false  the braces open; the arms fill `1 => 1, _ => 0`
+        //
+        // The old ordering was the whole of the key's `SPURIOUS` row: under the export's own
+        // `chop_always` Skala flattened a chopped switch expression onto one line at `true` and the
+        // oracle left it chopped.
+        //
+        // The third line is the braces/arms split above: `forced` opens the braces and `fill` lets
+        // the arms flow, so all three rows come out of the same two groups.
         var keep = _options.KeepExistingSwitchExpressionArrangement;
-        var always = style == WrapStyle.ChopAlways
-            && !keep
-            && !_options.PlaceSimpleSwitchExpressionOnSingleLine;
+        var always = style == WrapStyle.ChopAlways && !keep;
 
-        // ⚠ The braces break when the placement key says so, whatever the arms' style; the arms then
-        // decide for themselves. `always` is unchanged and still gates the ARMS, so that
-        // `place_simple_switch_expression_on_single_line = true` — where the outer group may join —
-        // is not defeated by an inner group certain to break inside it.
-        var forced = !keep && !_options.PlaceSimpleSwitchExpressionOnSingleLine;
+        // ⚠ The braces break when the placement key says so, whatever the arms' style, AND whenever
+        // the arms are certain to chop — a switch whose arms each take a line cannot have its braces
+        // joined around them. `always` gates the arms; `|| always` here is what stops
+        // `place_simple_switch_expression_on_single_line = true` from joining the braces back
+        // together under `chop_always`, which is the precedence the row turned on.
+        var forced = !keep && (always || !_options.PlaceSimpleSwitchExpressionOnSingleLine);
 
         Describe(
             node,
@@ -714,7 +721,7 @@ public sealed class BreakPlan {
             forced ? GroupMode.Break : GroupMode.Preserve,
             new GroupFacts(
                 SourceBroken: broken,
-                JoinsIfFits: _options.PlaceSimpleSwitchExpressionOnSingleLine && !keep,
+                JoinsIfFits: _options.PlaceSimpleSwitchExpressionOnSingleLine && !keep && !always,
                 BreaksIfTooLong: true
             )
         );
@@ -2780,10 +2787,38 @@ public sealed class BreakPlan {
     ///     shares its owner's line exactly when the owner fits on one.
     /// </summary>
     /// <remarks>
-    ///     ⚠ <c>keep_existing_embedded_arrangement = true</c> in this export, which means the author's
-    ///     choice wins over the placement rule in both directions and this plan is a no-op for the
-    ///     repository's own configuration. It is still the mechanism, and flipping either key moves the
-    ///     output — which is what makes both of them Tier A rather than wiring.
+    ///     ⚠ <c>keep_existing_embedded_arrangement = true</c> in this export, and it outranks the
+    ///     placement key in <em>both</em> directions — which is not what this plan used to say. Asked
+    ///     one value at a time over the export, with keep at its own value:
+    ///     <code>
+    /// // place_simple_embedded_statement_on_same_line = never, keep = true
+    /// if (c) M(c, d);                     ← left joined. `never` does not get to break it.
+    /// if (depth &lt; 0) throw new …(…);      ← broken, because the `if` overflows the margin
+    ///     </code>
+    ///     So the break the previous note attributed to "`never` is not gated on keep" is the width
+    ///     rule and nothing else: under keep the placement key is inert in both directions, and what
+    ///     survives is "an owner that does not fit on one line pushes its statement off that line".
+    ///     That is why <c>BreaksIfTooLong</c> below is true whenever keep is.
+    ///     <para>
+    ///         ⚠ And "simple" is load-bearing, in two halves. With keep off and the key at
+    ///         <c>always</c> the oracle joins <c>if (c) M(c, d);</c> and <c>while (c) M(c, d);</c> and
+    ///         leaves every one of <c>if (c) / if (d) / M()</c>, <c>if (c) / using (…) / M()</c> and the
+    ///         nested <c>for</c> exactly where the author put them — so a statement that carries an
+    ///         embedded statement of its own is not simple.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ That alone is not enough, and the probe that says so is the one that separates "nested"
+    ///         from "embedded". Put the same nesting inside a block and the oracle joins it:
+    ///         <code>
+    /// if (c) {                       if (c) {                    if (c)
+    ///     if (d)            →            if (d) M(c, d);             if (d)
+    ///         M(c, d);                }                                   M(c, d);
+    /// }                                                          ← unmoved
+    ///         </code>
+    ///         An <c>else</c> clause joins too. So the second half is a fact about the <em>owner</em>:
+    ///         an owner that is itself somebody's embedded statement does not get to join, and one
+    ///         whose statement merely sits inside a block does.
+    ///     </para>
     /// </remarks>
     void PlanEmbeddedStatement(SyntaxNode owner, StatementSyntax? embedded) {
         if (embedded is null or BlockSyntax) {
@@ -2795,12 +2830,16 @@ public sealed class BreakPlan {
             return;
         }
 
-        if (_options.PlaceSimpleEmbeddedStatementOnSameLine == PlacementStyle.Never) {
+        var keeps = _options.KeepExistingEmbeddedArrangement;
+        var placement = _options.PlaceSimpleEmbeddedStatementOnSameLine;
+        var simple = EmbeddedStatementOf(embedded) is null && !IsEmbeddedStatement(owner);
+
+        if (!keeps && placement == PlacementStyle.Never) {
             Mandatory(first);
             return;
         }
 
-        if (_options.PlaceSimpleEmbeddedStatementOnSameLine == PlacementStyle.Always) {
+        if (!keeps && placement == PlacementStyle.Always && simple) {
             Flat(first);
             return;
         }
@@ -2813,35 +2852,53 @@ public sealed class BreakPlan {
             GroupMode.Preserve,
             new GroupFacts(
                 SourceBroken: BreaksBefore(first),
-                JoinsIfFits: !_options.KeepExistingEmbeddedArrangement,
-
-                // ⚠ Not gated on the keep key, and that is the difference between this and a
-                // delimited list. `keep_existing_embedded_arrangement = true` says the author's
-                // break is not *removed*; it does not say a break may not be added. Measured on
-                // the export's own values: `if (depth < 0) throw new ArgumentOutOfRangeException(…);`
-                // written on one 168-column line comes back from the oracle with the `throw` on a
-                // line of its own, which is `if_owner_is_single_line` — the `if` does not occupy one
-                // line, so the statement leaves it.
-                BreaksIfTooLong: _options.PlaceSimpleEmbeddedStatementOnSameLine
-                == PlacementStyle.IfOwnerIsSingleLine
+                // Only `always` and `if_owner_is_single_line` join, only a simple statement joins,
+                // and keep outranks all of it.
+                JoinsIfFits: !keeps && placement != PlacementStyle.Never && simple,
+                BreaksIfTooLong: keeps || placement == PlacementStyle.IfOwnerIsSingleLine
             )
         );
     }
 
+    /// <summary>Whether this node is itself somebody else's embedded statement.</summary>
+    static bool IsEmbeddedStatement(SyntaxNode node) =>
+        node.Parent is { } parent && EmbeddedStatementOf(parent) == node;
+
     /// <summary>
-    ///     <c>place_simple_case_statement_on_same_line = if_owner_is_single_line</c>:
-    ///     <c>
-    /// case 1: F();
-    ///  break;
-    ///     </c> stays on the label's line exactly when the whole section fits on one.
+    ///     A switch section's statements keep the arrangement the author gave them, and break when the
+    ///     section does not fit.
     /// </summary>
+    /// <remarks>
+    ///     ⚠ <c>place_simple_case_statement_on_same_line</c> is read and deliberately not applied, which
+    ///     is a reversal: this plan used to force the break at <c>never</c> and remove it at
+    ///     <c>always</c>, and the sweep called the row <c>SPURIOUS</c> because only Skala moved. The key
+    ///     is inert under <c>cleanupcode</c>, and it was asked in both directions rather than one:
+    ///     <list type="bullet">
+    ///         <item>
+    ///             a section written broken — one statement, two statements, an empty <c>break;</c>, a
+    ///             shared label, a braced section — at <c>always</c>: unchanged.
+    ///         </item>
+    ///         <item>a section written joined at <c>never</c>: unchanged.</item>
+    ///         <item>both of those again with <c>keep_user_linebreaks = false</c>: unchanged.</item>
+    ///         <item>
+    ///             ⚠ and both again with <c>simple_case_statement_style</c> pushed the same way —
+    ///             <c>on_single_line</c> against the broken source, <c>line_break</c> against the joined
+    ///             one — because that key is the one this repository's registry claims is masked by this
+    ///             one. Unchanged. Neither key governs the shape; the oracle simply preserves the
+    ///             section, and the registry's note on <c>simple_case_statement_style</c> ("that key is
+    ///             what governs the shape under this export") is wrong about which key wins for the
+    ///             usual reason — it was asked at <c>never</c> against a source that was already broken.
+    ///         </item>
+    ///     </list>
+    ///     The preserve group stays, because it is not the key's: it is what makes a section that
+    ///     overflows the margin break, and it is what the export already produced.
+    /// </remarks>
     void PlanCaseStatements(SwitchSectionSyntax node) {
         if (node.Statements.Count == 0 || node.Statements is [BlockSyntax]) {
             return;
         }
 
-        var placement = _options.PlaceSimpleCaseStatementOnSameLine;
-        var group = placement == PlacementStyle.IfOwnerIsSingleLine ? NewGroup() : -1;
+        var group = NewGroup();
         var broken = false;
 
         foreach (var statement in node.Statements) {
@@ -2850,25 +2907,11 @@ public sealed class BreakPlan {
                 continue;
             }
 
-            switch (placement) {
-                case PlacementStyle.Never:
-                    Mandatory(first);
-                    break;
-
-                case PlacementStyle.Always:
-                    Flat(first);
-                    break;
-
-                default:
-                    Point(first, group);
-                    broken |= BreaksBefore(first);
-                    break;
-            }
+            Point(first, group);
+            broken |= BreaksBefore(first);
         }
 
-        if (group >= 0) {
-            Describe(node, group, GroupMode.Preserve, new GroupFacts(SourceBroken: broken, BreaksIfTooLong: true));
-        }
+        Describe(node, group, GroupMode.Preserve, new GroupFacts(SourceBroken: broken, BreaksIfTooLong: true));
     }
 
     /// <summary>

@@ -2481,8 +2481,14 @@ public static class Ids {
     public static readonly OptionId PlaceSimpleEmbeddedStatementOnSameLine =
         Of("resharper_csharp_place_simple_embedded_statement_on_same_line");
 
+    /// <summary>
+    ///     ⚠ Read and not applied. The oracle never rearranges a switch section's statements — asked in
+    ///     both directions, with <c>keep_user_linebreaks</c> off, and with
+    ///     <c>simple_case_statement_style</c> pushed the same way. See
+    ///     <c>BreakPlan.PlanCaseStatements</c> for the probes.
+    /// </summary>
     public static readonly OptionId PlaceSimpleCaseStatementOnSameLine =
-        Of("resharper_csharp_place_simple_case_statement_on_same_line");
+        OfInert("resharper_csharp_place_simple_case_statement_on_same_line");
 
     public static readonly OptionId PlaceTypeConstraintsOnSameLine =
         Of("resharper_csharp_place_type_constraints_on_same_line");
