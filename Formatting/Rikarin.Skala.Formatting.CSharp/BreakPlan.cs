@@ -1010,13 +1010,51 @@ public sealed class BreakPlan {
     ///         has to break somewhere: the gap after the colon is the point, and it is planned only in
     ///         that case. See the comment on the branch.
     ///     </para>
+    ///     <para>
+    ///         ⚠ <b>Two groups, and the split is the oracle's rather than a convenience</b> — the same
+    ///         shape <see cref="ConstraintRun" /> records for a run of <c>where</c> clauses, and reached
+    ///         here by the same measurement. At <c>wrap_before_extends_colon = true</c> the oracle breaks
+    ///         at the <c>:</c> and then <em>stops</em>, although <c>wrap_extends_list_style</c> is
+    ///         <c>chop_if_long</c> and the list is what did not fit:
+    ///         <code>
+    /// class LongBaseClassNameHereOkAndMore
+    ///     : SomeVeryLongBaseClassNameIndeed, IFirstInterfaceName, ISecondInterfaceName, IThirdName { }
+    ///         </code>
+    ///         One group holding both the colon and the commas cannot write that — a group resolved
+    ///         Broken breaks every point it owns, so Skala chopped all three commas of a list that fits
+    ///         on the line the colon break created. The outer group is entered before that gap and asks
+    ///         whether the whole list fits where the declaration reached; the inner one is entered after
+    ///         it, at the column the first base type actually lands on, and asks whether the types fit
+    ///         there. <see cref="GroupPlan.LeadingGapInside" /> is per plan for this.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ <c>wrap_if_long</c> is a <em>fill</em> and not "never wrap". Measured, one key flipped:
+    ///         the oracle returns
+    ///         <code>
+    /// class LongBaseClassNameHereOkAndMore : SomeVeryLongBaseClassNameIndeed, IFirstInterfaceName, ISecondInterfaceName,
+    ///     IThirdName { }
+    ///         </code>
+    ///         — the last comma that still fits, exactly as <see cref="PlanList" /> already fills a
+    ///         delimited list. Until this was measured the style reached the group as
+    ///         <c>BreaksIfTooLong: style != WrapIfLong</c>, which left the declaration flat past the
+    ///         margin. The same misreading was in the chain and the base list alike; see
+    ///         <see cref="PlanChainWide" />.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ <c>chop_always</c> is the <em>inner</em> group's mode and never the outer one's, which
+    ///         is also measured: <c>class ShortBase : IFirstInterfaceName { }</c> comes back untouched at
+    ///         <c>chop_always</c>. A single-base-type list has no comma to chop, and the point after the
+    ///         colon exists only so that a declaration too wide for the margin has somewhere to break —
+    ///         spending it on a style is how a 41-column declaration acquired a continuation line.
+    ///     </para>
     /// </remarks>
     void PlanBaseList(BaseListSyntax node) {
         if (node.Types.Count == 0) {
             return;
         }
 
-        var group = NewGroup();
+        var style = _options.WrapExtendsListStyle;
+        var outer = NewGroup();
         var broken = false;
 
         // ⚠ `wrap_before_extends_colon = true` makes the `:` itself a break point, which is the only
@@ -1025,7 +1063,7 @@ public sealed class BreakPlan {
         // and does not remove a break the author wrote, which is the correction docs/plan/05 records
         // for the whole `place_*_on_same_line` family.
         if (_options.WrapBeforeExtendsColon) {
-            Point(node.ColonToken, group);
+            Point(node.ColonToken, outer);
             broken |= BreaksBefore(node.ColonToken);
         } else if (node.Types.Count == 1) {
             // ⚠ The gap *after* the colon, and only when there is no comma to carry the break. A
@@ -1040,10 +1078,30 @@ public sealed class BreakPlan {
             //       IFirstInterfaceName,
             // so a point here in the multi-type case would chop with the commas and move a line the
             // oracle does not. The colon's own gap stays unplanned for the reason above.
-            Point(node.Types[0].GetFirstToken(), group);
+            Point(node.Types[0].GetFirstToken(), outer);
             broken |= BreaksBefore(node.Types[0].GetFirstToken());
         }
 
+        Describe(
+            node,
+            outer,
+            GroupMode.Preserve,
+            new GroupFacts(
+                SourceBroken: _options.KeepsUserBreaksBetweenItems && broken,
+                BreaksIfTooLong: true
+            ),
+            spendsIndent: true,
+            leadingGapInside: _options.WrapBeforeExtendsColon
+        );
+
+        if (node.Types.SeparatorCount == 0) {
+            return;
+        }
+
+        // ⚠ `wrap_if_long` fills the commas one at a time; `chop_*` takes them together.
+        var fill = style == WrapStyle.WrapIfLong;
+        var inner = NewGroup();
+        var innerBroken = false;
         foreach (var comma in node.Types.GetSeparators()) {
             var next = comma.GetNextToken();
             if (next.IsKind(SyntaxKind.None)) {
@@ -1051,26 +1109,25 @@ public sealed class BreakPlan {
             }
 
             if (_options.WrapBeforeCommaInBaseClause) {
-                Point(comma, group);
+                Point(comma, inner, fill);
                 Flat(next);
-                broken |= BreaksBefore(comma);
+                innerBroken |= BreaksBefore(comma);
             } else {
                 Flat(comma);
-                Point(next, group);
-                broken |= BreaksBefore(next);
+                Point(next, inner, fill);
+                innerBroken |= BreaksBefore(next);
             }
         }
 
         Describe(
             node,
-            group,
-            _options.WrapExtendsListStyle == WrapStyle.ChopAlways ? GroupMode.Break : GroupMode.Preserve,
+            inner,
+            style == WrapStyle.ChopAlways ? GroupMode.Break : GroupMode.Preserve,
             new GroupFacts(
-                SourceBroken: _options.KeepsUserBreaksBetweenItems && broken,
-                BreaksIfTooLong: _options.WrapExtendsListStyle != WrapStyle.WrapIfLong
+                SourceBroken: _options.KeepsUserBreaksBetweenItems && innerBroken,
+                BreaksIfTooLong: true
             ),
-            spendsIndent: true,
-            leadingGapInside: _options.WrapBeforeExtendsColon
+            spendsIndent: true
         );
     }
 

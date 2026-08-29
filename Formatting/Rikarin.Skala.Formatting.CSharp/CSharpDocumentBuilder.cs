@@ -245,12 +245,20 @@ public sealed partial class CSharpDocumentBuilder {
         //
         // ⚠ Unless the group says otherwise: a construct whose own first break point *is* that gap
         // has to own it. See GroupPlan.LeadingGapInside.
-        var gapInside = false;
-        for (var i = 0; i < planned.Count; i++) {
-            gapInside |= planned[i].LeadingGapInside;
+        //
+        // ⚠ And the claim is per plan rather than per node, which is what lets two groups over one
+        // construct ask their question at two different columns. A base list's outer group owns the
+        // gap before the `:` and asks "does the whole list fit where the declaration reached"; its
+        // inner group opens *after* that gap and asks "do the types fit on the line the first one
+        // lands on". Emitting the gap before both would enter the inner one at the column before the
+        // break, and `wrap_before_extends_colon = true` would chop every comma of a list the oracle
+        // leaves whole. Plans are outermost-first, so the claimants are a prefix of them.
+        var gapAfter = 0;
+        while (gapAfter < planned.Count && planned[gapAfter].LeadingGapInside) {
+            gapAfter++;
         }
 
-        if (!gapInside) {
+        if (gapAfter == 0) {
             EmitLeadingGap(node);
         }
 
@@ -284,10 +292,10 @@ public sealed partial class CSharpDocumentBuilder {
             for (var level = 0; level < indented[i]; level++) {
                 OpenIndent(IndentKind.Continuous);
             }
-        }
 
-        if (gapInside) {
-            EmitLeadingGap(node);
+            if (i + 1 == gapAfter) {
+                EmitLeadingGap(node);
+            }
         }
 
         // ⚠ Innermost of everything this node opens, and that is load-bearing rather than tidy.
