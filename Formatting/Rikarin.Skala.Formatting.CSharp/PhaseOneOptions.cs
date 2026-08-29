@@ -1563,6 +1563,19 @@ public static class Ids {
     //     per line. `align_all` and `none` both return constructs/wrapping/ternary-chains.cs
     //     byte-identical, single conditional and chain alike. The claim holds on the shape that was
     //     most likely to break it.
+    //   ⚠ All seven re-measured together at the coverage pass, each against a probe that demonstrably
+    //     wraps the construct it names and each with a *negative control on the same probe file* — a
+    //     different key that does move that construct in the same run. The controls are what turn
+    //     "the oracle returned it byte-identical" from a fact about the probe into a fact about the
+    //     key, and they are recorded per key in options.json rather than here. Two of the seven had
+    //     no probe at all before: `align_multiline_ctor_init` now has a `: base(…)` whose argument
+    //     list chops (control: `align_first_arg_by_paren`, `indent_invocation_pars = outside`), and
+    //     `align_multiline_type_argument` a nested `Dictionary<…>` type that wraps (control:
+    //     `indent_typearg_angles = none`). Both hold. ⚠ Note what the export's own values make these
+    //     two: `align_multiline_array_initializer`, `_ctor_init`, `_implements_list`,
+    //     `_type_argument` and `_type_parameter` are all `true` in the export, so the layout they
+    //     ask for is one the oracle does not produce either — the keys are dead on both sides, not
+    //     honoured by ReSharper and ignored by Skala.
     //
     // ⚠ Two names left that list in T5a, and the reason they were on it was a *missing wrap*, not a
     // missing key. The claim above was established on files that "wrap the construct it names" — and
@@ -1762,10 +1775,21 @@ public static class Ids {
     // whose name is 68 columns wide drag both runs' `=` out to column 74; flipping
     // `allow_far_alignment` on top of that returns the file byte-identical, on locals and on fields
     // alike. It stays Tier D on a stronger measurement than the one it had: the run is there, it is
-    // as far as anything in a 120-column file can be, and the key still moves nothing. ⚠ Note also
-    // that `resharper_int_align = true` alone produces *no* alignment from the oracle — the run above
+    // as far as anything in a 120-column file can be, and the key still moves nothing.
+    //
+    // ⚠ WITHDRAWN, and only this sentence of the paragraph. It read: "Note also that
+    // `resharper_int_align = true` alone produces *no* alignment from the oracle — the run above
     // needed the two specific keys — which is a fact about the generalized spelling and not about
-    // this one.
+    // this one." It does produce alignment: at `true` the oracle pads fields, properties, methods,
+    // locals, assignments, trailing comments, switch sections, switch-expression arms, enum
+    // initializers and chopped parameter lists, over ten files of an eighteen-file probe. See
+    // IntAlign below, which is fixtured on the strength of it. The `allow_far_alignment` measurement
+    // above used the two specific keys and is unaffected.
+    //
+    // ⚠ `int_align_fix_in_adjacent` also got the stronger probe the reason above was asking for, and
+    // it survived: byte-identical alone, byte-identical with the two specific keys on so that a run
+    // exists, and byte-identical again with `allow_far_alignment = true` added. It is not masked, it
+    // moves nothing.
     //
     // ⚠ And a lead the int_align family does not supply. `allow_far_alignment` is filed with
     // int_align because of where it sits in the settings page, and the one shape on which anything
@@ -1836,12 +1860,30 @@ public static class Ids {
     // construct changes it — `int_align_fields` is what aligns an enum's initializers, not
     // `int_align_enum_initializers`. They are the C++ and VB formatters' keys, which this export
     // writes without a language prefix.
-    // ⚠ Read and Tier D on the configuration model rather than on the formatter. The registry
-    // records that `resharper_int_align` expands into the thirteen `resharper_csharp_int_align_*`
-    // keys — that is what `expands` in options.json is for — and nothing applies the expansion:
-    // OptionResolver resolves keys and aliases and leaves generalized properties alone. Setting it
-    // therefore changes no value the formatter reads, whatever the formatter implements. Tier A when
-    // the resolver expands it, and the fix belongs to docs/plan/03's configuration model.
+    // ⚠ WITHDRAWN, both halves, and the key is now fixtured and measured. It read: "Read and Tier D
+    // on the configuration model rather than on the formatter. The registry records that
+    // `resharper_int_align` expands into the thirteen `resharper_csharp_int_align_*` keys … and
+    // nothing applies the expansion: OptionResolver resolves keys and aliases and leaves generalized
+    // properties alone." That is stale — OptionResolver.Expand writes each generalized key's value
+    // into the keys it names, and `skala format --option resharper_int_align=true` on
+    // constructs/alignment/int-align.cs pads the file. The companion claim recorded beside
+    // AllowFarAlignment — "`resharper_int_align = true` alone produces *no* alignment from the
+    // oracle" — is refuted too: at `true` the oracle pads ten files of an eighteen-file probe.
+    //
+    // Both engines therefore move, the key carries an `oracle` glob, and the sweep's verdict on it is
+    // DIVERGENT with the baseline agreeing. The whole divergence is one line, and it is an
+    // interaction *inside* the family that no member shows when flipped alone: with
+    // `int_align_methods` and `int_align_parameters` both on, the oracle pads inside the parameter
+    // list and Skala pads after the `)`.
+    //
+    //     oracle   void Method(int                a) { }
+    //     Skala    void Method(int a)                { }
+    //
+    // ⚠ It stays `OfInert` and Tier D deliberately. `OfInert` is now the wrong mark — the honest one
+    // is `OfGeneralized`, which is what this key is — but moving it puts the key into `Implemented`,
+    // and `TierA_IsWhatSkalaReads_AndTheSweepSubstantiates` then demands either Tier A or a committed
+    // sweep row, and there is no committed sweep row until the next full run reaches the glob. The
+    // wiring change and the promotion are one commit and belong to that run, not to this one.
     public static readonly OptionId IntAlign = OfInert("resharper_int_align");
 
     public static readonly OptionId IntAlignEq = OfInert("resharper_int_align_eq");
