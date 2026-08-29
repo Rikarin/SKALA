@@ -107,15 +107,20 @@ public static class PairwisePlan {
                     continue;
                 }
 
-                // ⚠ Same exclusion as the single sweep and for the same reason: an arrangement key is
-                // read by the arranger and pinned by the cleanup profile, and this pass runs
-                // format-only. Sweeping one here would invent a divergence rather than find one.
+                // ⚠ The single sweep no longer carries this exclusion — `ScratchTree` picks the oracle
+                // profile per fixture and `SkalaSide` picks the pipeline from the same authority, so
+                // the 44 arrangement keys are measured under `OracleProfile.Cleanup`. This pass has
+                // *not* been taught either: `PairwiseSweep.Run` batches by count without partitioning
+                // by profile, so an arrangement pair would either trip `ScratchTree.Format`'s
+                // mixed-profile guard or land in a project holding two copies of one fixture. The
+                // exclusion therefore stands here on its own reason and not on the single sweep's,
+                // and it is a gap in the pairwise table rather than a claim about the keys.
                 if (arrangement.Contains(primary.Id)) {
                     excluded.Add(
                         new PairExclusion(
                             primary.Key,
                             secondary.Key,
-                            "arrangement option: needs the cleanup profile, not CSReformatCode"
+                            "arrangement option: the pairwise pass has not been taught the cleanup profile"
                         )
                     );
                     continue;

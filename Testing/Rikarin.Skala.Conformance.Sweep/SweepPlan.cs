@@ -55,20 +55,6 @@ public static class SweepPlan {
                 continue;
             }
 
-            // ⚠ An arrangement option is pinned by a *cleanup* fixture and read by the *arranger*,
-            // and sweeping it here would ask neither question. The format-only profile is
-            // `CSReformatCode` and nothing else, so it is byte-identical whatever an `arrange_*` key
-            // says — every one of them would come back SPURIOUS, which would be the harness inventing
-            // 20 divergences rather than finding any. They need the cleanup profile on the oracle's
-            // side and `CorpusArranger` on Skala's; that is a second pass, named in docs/plan/12, not
-            // something to approximate with the wrong profile.
-            if (arrangement.Contains(info.Id)) {
-                excluded.Add(
-                    new SweepExclusion(info, "arrangement option: needs the cleanup profile, not CSReformatCode")
-                );
-                continue;
-            }
-
             if (families.Count > 0 && !InFamily(info.Key, families)) {
                 continue;
             }
@@ -82,6 +68,26 @@ public static class SweepPlan {
             var fixture = matches.Count == 0 ? null : matches[0];
             if (fixture is null) {
                 excluded.Add(new SweepExclusion(info, "`oracle` is '" + glob + "' and no corpus file matches it"));
+                continue;
+            }
+
+            // ⚠ What is left of the blanket arrangement exclusion, and all that survives measurement.
+            // The old rule refused all 44 arrangement keys because the sweep ran one profile —
+            // `CSReformatCode` — under which no `arrange_*` key can move a byte, so every one of them
+            // would have come back SPURIOUS: the harness inventing divergences rather than finding
+            // any. That is now a statement about the *fixture* and not about the option, because
+            // `ScratchTree` picks the profile per fixture and `SkalaSide` picks the pipeline from the
+            // same authority. What remains true is the narrow case: an arrangement key whose `oracle`
+            // glob names a fixture outside `constructs/arrangement/` would still be measured
+            // format-only on both sides, and the old reasoning would apply to it exactly.
+            if (arrangement.Contains(info.Id) && !OracleProfile.For(fixture).IsSemantic) {
+                excluded.Add(
+                    new SweepExclusion(
+                        info,
+                        "arrangement option whose `oracle` fixture is outside constructs/arrangement/, "
+                        + "so the oracle would run CSReformatCode and could not answer"
+                    )
+                );
                 continue;
             }
 

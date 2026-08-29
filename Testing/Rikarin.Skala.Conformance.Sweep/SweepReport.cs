@@ -85,9 +85,10 @@ public static class SweepReport {
         builder.AppendLine(
             "| rounds | "
             + Count(run.Rounds)
-            + " (batched by value index, "
+            + " (batched by value index, at most "
             + Count(KeyFlipSweep.BatchSize)
-            + " fixtures per invocation) |"
+            + " fixtures per invocation — and each fixture at most once under the cleanup profile, "
+            + "which resolves symbols) |"
         );
         builder.AppendLine("| `cleanupcode` invocations | " + Count(run.OracleInvocations) + " |");
         builder.AppendLine("| oracle wall clock | " + Duration(run.OracleWallClock) + " |");
@@ -256,9 +257,16 @@ public static class SweepReport {
             }
 
             // ⚠ The arrangement rows are deliberately not counted here. They claim Tier A and they
-            // are entitled to: a cleanup fixture pins them and `OptionCoverageTests` measures them
-            // against the arranger. What this call-out is for is a Tier A claim with *no* evidence
-            // behind it, which is a different and worse thing than one this profile cannot see.
+            // are entitled to: `OptionCoverageTests` measures them against the arranger, and
+            // `ArrangementOptionTests` records a hand-checked flipped-value reading for each.
+            // What this call-out is for is a Tier A claim with *no* evidence behind it, which is a
+            // different and worse thing than one this profile cannot see.
+            //
+            // ⚠ The set this excuses is now nearly empty, and that is the point: the 44 arrangement
+            // keys are swept under `OracleProfile.Cleanup` and appear in the table above with real
+            // verdicts. Only a key whose `oracle` glob names a fixture outside
+            // `constructs/arrangement/` still lands here — for that key the format-only reasoning
+            // still holds exactly.
             var unevidenced = run.Excluded
                 .Where(static exclusion => exclusion.Info.Tier == OptionTier.A
                     && !exclusion.Reason.StartsWith("arrangement option", StringComparison.Ordinal)
