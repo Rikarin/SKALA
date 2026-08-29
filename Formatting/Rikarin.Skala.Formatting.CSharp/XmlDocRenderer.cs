@@ -48,6 +48,22 @@ public sealed class XmlDocRenderer {
     int _width;
     bool _empty = true;
 
+    /// <summary>How many elements enclose what is being written. Zero is the comment itself.</summary>
+    /// <remarks>
+    ///     ⚠ Not <see cref="_level" />, which is an indent level and can stay at zero through a whole
+    ///     nest when <c>indent_child_elements</c> says so. This counts enclosing elements, because the
+    ///     rule it serves is about structure: an element written directly under the <c>///</c> marker
+    ///     always gets a line of its own, and <c>linebreak_before_elements</c> has nothing to say about
+    ///     it. Measured, with the whole comment written on one line and the key set to the export's
+    ///     list, to <c>b</c> alone, and to an empty list: the oracle splits
+    ///     <c>&lt;summary&gt;…&lt;para&gt;…&lt;para&gt;…&lt;b&gt;…&lt;c&gt;…</c> onto five lines at every
+    ///     one of the three. Set the same key to <c>b,c</c> and the *nested* elements answer it exactly
+    ///     — <c>&lt;b&gt;</c> and <c>&lt;c&gt;</c> inside a <c>&lt;summary&gt;</c> take their own lines
+    ///     while <c>&lt;para&gt;</c> inside a <c>&lt;remarks&gt;</c> does not — so the key is real, and
+    ///     it is a rule about nesting rather than about the element's name.
+    /// </remarks>
+    int _depth;
+
     /// <summary>⚠ Something has been placed on the current line, so the next unit needs a space.</summary>
     /// <remarks>
     ///     ⚠ This used to be <c>_width &gt; IndentWidth()</c>, which is the same question only while a
@@ -80,7 +96,14 @@ public sealed class XmlDocRenderer {
 
     XmlDocRenderer(in XmlDocOptions options, int budget) {
         _options = options;
-        _budget = Math.Max(20, budget);
+
+        // ⚠ No floor, and the `Math.Max(20, …)` that used to be here was a guess that hid a
+        // measurement. At `xmldoc_max_line_length = 0` and at `1` the oracle puts one word on each
+        // line; the floor gave Skala a 20-column fill at both, which is neither value's answer and
+        // is not the 120-column answer either. Nothing needs protecting: `Flush` only wraps when the
+        // line already holds something, so a budget of zero still emits one unit per line rather
+        // than looping.
+        _budget = Math.Max(0, budget);
         _indentUnit = options.IndentUnit;
     }
 
@@ -141,24 +164,38 @@ public sealed class XmlDocRenderer {
     void Element(XmlDocElement element) {
         var flat = Flat(element);
         var multiline = IsMultiline(element, flat);
-        var owns = _options.BreakBefore(element.Name);
+
+        // ⚠ An element written directly under the marker owns its line whatever the list says. See
+        // `_depth`: the oracle splits five top-level elements off one another at the export's list,
+        // at `b` alone and at an empty list alike, and answers the list only for nested ones.
+        var owns = _depth == 0 || _options.BreakBefore(element.Name);
 
         // ⚠ Glue to a *word* wins over every break rule. A line break between `<c>x</c>` and the
         // `s` after it would insert whitespace the author did not write, which is the one thing a
         // formatter that touches prose must never do. Two adjacent tags are a different case: a
         // break between them changes no sentence, and `linebreak_before_elements` exists to ask for
         // exactly that.
-        if (!element.GluedToWord
+        var breaksBefore = !element.GluedToWord
             && (owns
                 || (multiline
-                        ? _options.LinebreakBeforeMultilineElements
-                        : _options.LinebreakBeforeSinglelineElements))) {
+                    ? _options.LinebreakBeforeMultilineElements
+                    : _options.LinebreakBeforeSinglelineElements));
+
+        if (breaksBefore) {
             Break();
         }
 
         if (!multiline) {
             Push(flat!, element.Glued, tag: true);
-            if (owns) {
+
+            // ⚠ A break *after* as well, and it is the same rule read once rather than twice.
+            // Measured on `<remarks>` holding `Leading prose. <c>Code.</c> Trailing prose.` and a
+            // second line: at `linebreak_before_singleline_elements = true` the oracle writes the
+            // prose, the `<c>` and the trailing prose on three lines — so "place single-line elements
+            // on a new line" puts what follows on a new line too, exactly as
+            // `linebreak_before_elements` does. Skala broke only in front of the element and left
+            // `<c>Code.</c> Trailing prose.` sharing a line.
+            if (owns || breaksBefore) {
                 Break();
             }
 
@@ -211,10 +248,11 @@ public sealed class XmlDocRenderer {
             return true;
         }
 
-        // ⚠ `linebreaks_inside_tags_for_multiline_elements = false` means an element that does not
-        // fit is left long rather than opened up, which is the same answer docs/plan/04 gives for a
-        // line of code nothing can break.
-        return !FitsOpen(element, flat) && _options.LinebreaksInsideTagsForMultilineElements;
+        // ⚠ `linebreaks_inside_tags_for_multiline_elements` is not asked here, and it used to be.
+        // It chooses where the *tags* sit once the element spans lines — see `Open`'s hug mode — not
+        // whether it spans them. Reading it here made `false` mean "leave the element on one line
+        // however long", which the oracle does not do.
+        return !FitsOpen(element, flat);
     }
 
     /// <summary>
@@ -238,10 +276,28 @@ public sealed class XmlDocRenderer {
             return false;
         }
 
-        if (_options.LinebreaksInsideTagsForElementsWithChildElements
-            && element.HasChildElements
-            && !element.HasText) {
-            return true;
+        if (element.HasChildElements) {
+            if (_options.LinebreaksInsideTagsForElementsWithChildElements) {
+                if (!element.HasText) {
+                    return true;
+                }
+            }
+
+            // ⚠ `false` does not close every element up, and this is measured rather than reasoned
+            // about. At `linebreaks_inside_tags_for_elements_with_child_elements = false` the oracle
+            // still opens an element that holds a *grandchild* element and closes up only the
+            // innermost one. On one comment, all at `false`: `<remarks><b>One.</b></remarks>`,
+            // `<summary><b>One.</b></summary>`, `<list><b>One.</b></list>` and `<foo><b>One.</b></foo>`
+            // all come back flat, while `<remarks><b><i>One.</i></b></remarks>`,
+            // `<foo><bar><baz>One.</baz></bar></foo>` and `<remarks><list><item>One.</item></list></remarks>`
+            // are opened — and inside them the innermost element-with-children stays flat.
+            // `<aa><bb><cc><dd>One.</dd></cc></bb></aa>` opens `<aa>` and `<bb>` and leaves
+            // `<cc><dd>One.</dd></cc>` on one line, which is the same rule three deep. Mixed content
+            // does not exempt it either: `<remarks>Text <b><i>One.</i></b></remarks>` opens, where the
+            // `true` branch above would have left it flat for holding text.
+            else if (HasGrandchildElement(element)) {
+                return true;
+            }
         }
 
         // ⚠ `linebreaks_inside_tags_for_elements_longer_than`, measured: the length compared is the
@@ -252,6 +308,18 @@ public sealed class XmlDocRenderer {
             && FlatNodes(element.Children) is { } inner
             && TextWidth.Measure(inner) > _options.LinebreaksInsideTagsForElementsLongerThan;
     }
+
+    /// <summary>
+    ///     Whether any child of this element is itself an element with element children.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ The shape <c>linebreaks_inside_tags_for_elements_with_child_elements = false</c> still
+    ///     opens. It is asked of the children rather than of the element, which is why the innermost
+    ///     element-with-children is the one that stays flat.
+    /// </remarks>
+    static bool HasGrandchildElement(XmlDocElement element) =>
+        element.Children.Any(static child => child is XmlDocElement { SelfClosing: false } child_
+            && child_.HasChildElements);
 
     /// <summary>
     ///     The element's start tag, from its name and its attributes.
@@ -286,13 +354,30 @@ public sealed class XmlDocRenderer {
     string SelfClosingTag(XmlDocElement element) => Tag(element, _options.SpaceBeforeSelfClosing ? " />" : "/>");
 
     /// <summary>Writes an element across several lines: start tag, indented content, end tag.</summary>
+    /// <remarks>
+    ///     ⚠ <c>linebreaks_inside_tags_for_multiline_elements = false</c> does not stop the element
+    ///     spanning lines; it stops the *tags* taking lines of their own. Measured on a
+    ///     <c>&lt;summary&gt;</c> whose prose cannot fit: at <c>false</c> the oracle keeps the start tag
+    ///     on the first content line and welds <c>&lt;/summary&gt;</c> to the last word, and wraps the
+    ///     prose in between exactly as it does at <c>true</c>. Skala used to read the key as "do not
+    ///     wrap", and returned the whole element on one 170-column line — which is neither value's
+    ///     answer.
+    /// </remarks>
     void Open(XmlDocElement element) {
+        var hug = !_options.LinebreaksInsideTagsForMultilineElements && element.Verbatim is null;
         Push(Tag(element, ">"), glued: false, tag: true);
 
         // ⚠ The start tag's closing column, kept across the break it is about to take. See `_carry`.
         Flush();
         var carry = _width;
-        EndLine();
+        if (hug) {
+            // ⚠ Welded, not merely kept on the line. The oracle writes `<summary>A summary …` with no
+            // gap behind the tag at `linebreaks_inside_tags_for_multiline_elements = false`, and a
+            // start tag that is only "on the same line" picks up the ordinary word separator.
+            _weld = true;
+        } else {
+            EndLine();
+        }
 
         var outer = _level;
         _level = outer
@@ -300,17 +385,26 @@ public sealed class XmlDocRenderer {
                 element.Verbatim is not null || element.HasText ? _options.IndentText : _options.IndentChildElements
             );
 
+        var depth = _depth;
+        _depth = depth + 1;
         if (element.Verbatim is { } verbatim) {
             Lines(verbatim);
         } else {
-            _carry = carry;
+            // ⚠ No carry in hug mode: the content really is on the start tag's line, so the width is
+            // already counted and handing it to `Start` a second time would reserve it twice.
+            _carry = hug ? 0 : carry;
             Nodes(element.Children);
             _carry = 0;
         }
 
-        Break();
+        _depth = depth;
+
+        if (!hug) {
+            Break();
+        }
+
         _level = outer;
-        Push("</" + element.Name + ">", glued: false, tag: true);
+        Push("</" + element.Name + ">", glued: hug, tag: true);
     }
 
     /// <summary>
@@ -415,9 +509,20 @@ public sealed class XmlDocRenderer {
     ///         ⚠ Everything fits when <c>wrap_lines</c> is false: with no hard wrap there is no width to
     ///         fail, so a long element is left long rather than opened up.
     ///     </para>
+    ///     <para>
+    ///         ⚠ And everything fits when there is nowhere in the content a break could go, which is
+    ///         what <c>wrap_text = false</c> does to an element holding nothing but prose. Measured on
+    ///         two fixtures at that value: a <c>&lt;summary&gt;</c> of 170 columns of plain prose comes
+    ///         back whole, on one line, tags and all — but the same key over prose carrying a
+    ///         <c>&lt;see/&gt;</c> opens the element and moves the <c>&lt;see/&gt;</c> to the next line,
+    ///         leaving the words around it exactly where they were. So <c>wrap_text</c> is permission
+    ///         for a <em>word</em> to move, an element may always move, and an element with no movable
+    ///         content has no reason to be opened.
+    ///     </para>
     /// </remarks>
     bool FitsOpen(XmlDocElement element, string flat) =>
         !_options.WrapLines
+        || !(_options.WrapText || element.HasChildElements)
         || IndentWidth() + TextWidth.Measure(flat) - element.Name.Length - "</>".Length <= _budget;
 
     void Push(string text, bool glued, bool tag) {
@@ -435,10 +540,19 @@ public sealed class XmlDocRenderer {
 
     /// <summary>Ends the unbreakable unit and places it, wrapping the line first if it must.</summary>
     /// <remarks>
-    ///     ⚠ <c>wrap_text</c> and <c>wrap_tags_and_pi</c> are asked separately, and which one applies is
-    ///     decided by what the unit contains rather than by what started it: a word with a
-    ///     <c>&lt;see/&gt;</c> glued to it is a tag as far as the permission to move it goes, because
-    ///     moving it moves the tag.
+    ///     ⚠ <b>A unit carrying a tag may always move, and <c>wrap_tags_and_pi</c> is not what says
+    ///     so.</b> This used to read <c>_tokenIsTag ? WrapTagsAndPi : WrapText</c>, and both halves of
+    ///     that were measured wrong on the same pair of probes. At
+    ///     <c>wrap_tags_and_pi = false</c> the oracle still moves a <c>&lt;see/&gt;</c> off the end of a
+    ///     line of prose — byte-identical to <c>true</c> on that fixture — and what the key really
+    ///     governs is a break *inside* a tag header: a two-attribute <c>&lt;see&gt;</c> 170 columns wide
+    ///     comes back with its second attribute on a continuation line at <c>true</c> and whole at
+    ///     <c>false</c>. And at <c>wrap_text = false</c> the same <c>&lt;see/&gt;</c> still moves while
+    ///     the words around it stay put, so <c>wrap_text</c> is permission for a *word*.
+    ///     <para>
+    ///         ⚠ A word with a <c>&lt;see/&gt;</c> glued to it counts as a tag, because moving it moves
+    ///         the tag.
+    ///     </para>
     /// </remarks>
     void Flush() {
         if (_token.Length == 0) {
@@ -447,7 +561,7 @@ public sealed class XmlDocRenderer {
 
         var text = _token.ToString();
         var weld = _weld;
-        var mayWrap = !weld && _options.WrapLines && (_tokenIsTag ? _options.WrapTagsAndPi : _options.WrapText);
+        var mayWrap = !weld && _options.WrapLines && (_tokenIsTag || _options.WrapText);
         _token.Clear();
         _tokenIsTag = false;
         _weld = false;
@@ -484,7 +598,7 @@ public sealed class XmlDocRenderer {
         _placed = false;
     }
 
-    int IndentWidth() => _level * (_options.UseTabs ? TextWidth.TabStop : _options.IndentSize);
+    int IndentWidth() => _level * _options.IndentSize;
 
     void Break() {
         Flush();

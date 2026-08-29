@@ -67,10 +67,27 @@ public sealed class XmlDocSubFormatterTests {
         Assert.Contains("///<summary>A summary line.</summary>", formatted, StringComparison.Ordinal);
     }
 
+    /// <summary>
+    ///     ⚠ The space appears with the rebuild, and only with it.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ This test used to be one line — <c>///&lt;summary&gt;Docs.&lt;/summary&gt;</c> in,
+    ///     <c>/// &lt;summary&gt;Docs.&lt;/summary&gt;</c> expected — and the oracle contradicts it.
+    ///     Asked under <c>OracleProfile.DocComments</c>, a short single element with no marker space
+    ///     comes back <b>byte-identical</b>, marker and all, because nothing else about the comment
+    ///     needed changing; SK-DIV-0006 records the same observation from the other end. Two crammed
+    ///     elements have to be rebuilt, and the marker's space arrives with the rebuild. So both halves
+    ///     are asserted here: the comment that changes gets the space, the comment that does not keeps
+    ///     the author's marker.
+    /// </remarks>
     [Fact]
-    public void SpaceAfterTripleSlash_IsInserted() {
-        var source = XmlDoc.InClass("///<summary>Docs.</summary>");
-        Assert.Contains("/// <summary>Docs.</summary>", XmlDoc.Text(source), StringComparison.Ordinal);
+    public void SpaceAfterTripleSlash_IsInsertedWhenTheCommentIsRebuiltAndNotOtherwise() {
+        var rebuilt = XmlDoc.InClass("///<summary>Docs.</summary><remarks>More.</remarks>");
+        Assert.Contains("/// <summary>Docs.</summary>", XmlDoc.Text(rebuilt), StringComparison.Ordinal);
+        Assert.Contains("/// <remarks>More.</remarks>", XmlDoc.Text(rebuilt), StringComparison.Ordinal);
+
+        var untouched = XmlDoc.InClass("///<summary>Docs.</summary>");
+        Assert.Contains("///<summary>Docs.</summary>", XmlDoc.Text(untouched), StringComparison.Ordinal);
     }
 
     [Fact]

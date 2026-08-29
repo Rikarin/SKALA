@@ -1361,8 +1361,13 @@ public static class Ids {
     public static readonly OptionId SpaceBeforeColonInCase = Of("resharper_csharp_space_before_colon_in_case");
     public static readonly OptionId SpaceAfterColonInCase = Of("resharper_csharp_space_after_colon_in_case");
 
+    // ⚠ Inert, and measured in both directions. Asked at both values on `public C() : base(1)`
+    // beside `public C(int a): this()` — one written with the space, one without — the oracle
+    // returns both as ` : `. It is an unprefixed export key sitting among the C++ colon family
+    // (`space_before_colon_in_bitfield_declarator` and the rest); the C# formatter spends one space
+    // in front of a constructor initializer's colon and offers no way to ask for none.
     public static readonly OptionId SpaceBeforeColonInCtorInitializer =
-        Of("resharper_space_before_colon_in_ctor_initializer");
+        OfInert("resharper_space_before_colon_in_ctor_initializer");
 
     public static readonly OptionId SpaceBeforeTypeParameterConstraintColon =
         Of("resharper_csharp_space_before_type_parameter_constraint_colon");
@@ -1379,8 +1384,14 @@ public static class Ids {
     public static readonly OptionId SpaceBeforePointerAsterikDeclaration =
         Of("resharper_csharp_space_before_pointer_asterik_declaration");
 
+    // ⚠ Inert, and measured rather than argued. The gap in front of an accessor holder's `{` is
+    // brace placement's and ReSharper spends exactly one space on it whatever this key says: asked
+    // at both values on `public int X { get; set; }`, `public int Y{ get; set; }`, a single-line
+    // indexer and a single-line event — so the probe could see both an insertion and a removal —
+    // the oracle returns `X {` and `Y {` at `true` and at `false` alike. Read and resolved, because
+    // the key is in ReSharper's own export and in JetBrains' C# spaces schema.
     public static readonly OptionId SpaceBeforeSinglelineAccessorholder =
-        Of("resharper_csharp_space_before_singleline_accessorholder");
+        OfInert("resharper_csharp_space_before_singleline_accessorholder");
 
     public static readonly OptionId SpaceInSinglelineAccessorholder =
         Of("resharper_csharp_space_in_singleline_accessorholder");
@@ -1418,7 +1429,13 @@ public static class Ids {
     public static readonly OptionId SpaceWithinSpreadPattern = OfInert("resharper_space_within_spread_pattern");
 
     public static readonly OptionId SpaceBeforeTrailingComment = Of("resharper_csharp_space_before_trailing_comment");
-    public static readonly OptionId SpaceBeforeTrailingCommentText = Of("resharper_space_before_trailing_comment_text");
+    // ⚠ Inert. Asked at both values on `M(); //x`, `M(); // y`, an own-line `//z`, an own-line
+    // `// w` and a trailing `/*t*/` in one file, the oracle returns every one of them
+    // byte-identical: `//x` never grows its space and `// y` never loses it. A comment's text is the
+    // author's, and `space_before_trailing_comment` — the gap between the code and the marker — is
+    // the C# key that really exists, with its own fixture and its own Tier.
+    public static readonly OptionId SpaceBeforeTrailingCommentText =
+        OfInert("resharper_space_before_trailing_comment_text");
     // ⚠ Tier A again, and it has now been all three. Milestone 1 had it Tier A; milestone 3 demoted
     // it to inert because the oracle did not insert the space and doing it anyway cost 79 lines
     // across 15 files of `corpus/real/`; the sub-formatter's default flip made it unoracled, on the
@@ -2591,8 +2608,18 @@ public static class Ids {
         Of("resharper_xmldoc_linebreaks_inside_tags_for_multiline_elements");
 
     public static readonly OptionId XmlDocSpaceBeforeSelfClosing = Of("resharper_xmldoc_space_before_self_closing");
-    public static readonly OptionId XmlDocIndentSize = Of("resharper_xmldoc_indent_size");
-    public static readonly OptionId XmlDocIndentStyle = Of("resharper_xmldoc_indent_style");
+    // ⚠ Inert, and the sweep's `SPURIOUS` on both of them was right about the direction and wrong
+    // about the cause. They were promoted on a fixture that agrees at `4`/`space` — which is what
+    // the *C#* `indent_size` also produces — and the fixture could not tell the two keys apart.
+    // Probed under `OracleProfile.DocComments` on `/// <remarks>` holding a `/// <para>`:
+    // `resharper_xmldoc_indent_size = 1` leaves the child at four columns, `indent_size = 1` moves it
+    // to one, and `indent_size = 2` with `tab_width = 8` in the same run moves it to two — so it is
+    // the file's own indent width and not the tab width. `resharper_xmldoc_indent_style = tab`
+    // leaves the child indented with spaces, and `indent_style = tab` tabs the *code* lines while
+    // leaving the comment's inner indent four spaces. A documentation comment's indent is the C#
+    // indent's width, always spent in spaces, and neither `xmldoc_` key reaches it.
+    public static readonly OptionId XmlDocIndentSize = OfInert("resharper_xmldoc_indent_size");
+    public static readonly OptionId XmlDocIndentStyle = OfInert("resharper_xmldoc_indent_style");
     public static readonly OptionId XmlDocLinebreakBeforeElements = Of("resharper_xmldoc_linebreak_before_elements");
     public static readonly OptionId XmlDocSpaceAfterLastAttribute = Of("resharper_xmldoc_space_after_last_attribute");
 
