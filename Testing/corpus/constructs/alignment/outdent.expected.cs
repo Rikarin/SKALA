@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:381a31a28c5ea94d profile=SkalaFormatOnly generated=2026-08-28
+// skala-oracle: resharper=2025.2.6 config=sha256:381a31a28c5ea94d profile=SkalaFormatOnly generated=2026-08-29
 public class Outdent {
     // The `outdent_*` family: a wrapped line that begins with an operator moves *left* by that
     // operator's own width plus the space after it, so the operand behind it keeps the column it
@@ -39,11 +39,27 @@ public class Outdent {
             .ToList();
     }
 
-    // ⚠ A chain whose links are not all one column wide — `a?.B().C()`, where the first dot is two
-    // columns and the rest are one — is the shape the chain-wide amount approximates, and it is
-    // deliberately NOT in this fixture: Skala does not chop such a chain at all, at either value of
-    // any key here, so the file would pin SK-DIV-0030 rather than these three options. The
-    // divergence entry carries the reproduction.
+    // ⚠ `a?.B().C()` is still not here, and SK-DIV-0030 is no longer the reason — that is fixed, and
+    // `constructs/wrapping/chained-calls.cs` pins it. The reason now is that the shape was measured
+    // and **does not distinguish the key's two values**: under `wrap_before_first_method_call =
+    // false` the `?.` is the first invoked dot, so it never becomes a break point and never starts a
+    // wrapped line. Every wrapped line of such a chain begins with a one-column `.`, and the oracle
+    // moves it 12 → 11 — the same answer, to the column, as `ChainedCalls` above. Adding it would
+    // have added a method and no evidence.
+    //
+    // ⚠ The shape that *does* carry the mixed width is a **nested** conditional access,
+    // `a?.B()?.C().D()`, where the oracle breaks before the second `?` rather than before its `.`.
+    // Measured at both values, it settles the question this fixture's header leaves open — the
+    // outdent is **per line, by that line's own leading-operator width**, not one chain-wide amount:
+    //
+    //     outdent_dots = false          outdent_dots = true
+    //     a?.B()                        a?.B()
+    //         ?.C()                       ?.C()      ← 12 → 10, two columns
+    //         .D()                       .D()        ← 12 → 11, one column
+    //
+    // It is out of this fixture because Skala breaks before that `.` and not before the `?`, which
+    // is a second and separate chain-planner divergence (SK-DIV-0065). A fixture carrying the shape
+    // would pin that instead of these three options.
 
     // ⚠ Not an outdent shape at either value, and here so that the fixture says so. The operator is
     // at the end of its line under `wrap_before_binary_opsign = false`, and a trailing operator is

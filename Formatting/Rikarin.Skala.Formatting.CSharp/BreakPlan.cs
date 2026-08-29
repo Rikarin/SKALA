@@ -1510,8 +1510,23 @@ public sealed class BreakPlan {
                     return;
 
                 case ConditionalAccessExpressionSyntax conditional:
-                    // `a?.B().C()` — the `?.` is the binding's dot, already added by the invocation
-                    // above; what remains is the receiver.
+                    // ⚠ `a?.B().C()` splits into two tokens and two subtrees: the `?` is this node's
+                    // own operator and every dot of the chain — the `.` of `.B` included, as the
+                    // `MemberBindingExpression`'s operator — hangs off `WhenNotNull`. Walking only
+                    // `Expression` therefore collects the *receiver*'s dots and none of the chain's,
+                    // which for the common shape (`a?.Where(…).Select(…)`, where the receiver is a
+                    // bare identifier) left `dots` empty, planned no group, and gave the chain no
+                    // break points at all — SK-DIV-0030, whose recorded symptom was the last call's
+                    // argument list taking the break instead and leaving a dangling `)`.
+                    //
+                    // ⚠ `WhenNotNull` first and `Expression` second, because the list is
+                    // outermost-first and `WhenNotNull` holds the dots to the *right* of the `?`.
+                    // Reaching this arm twice is not double-counting: the invocation arm's
+                    // `MemberBindingExpressionSyntax` branch returns without recursing, so a
+                    // conditional access is only ever entered from the chain root, from a `!` on its
+                    // way out, or from an enclosing conditional's `WhenNotNull` — `a?.B()?.C().D()`,
+                    // which nests and whose inner node is reached exactly once.
+                    Collect(conditional.WhenNotNull);
                     Collect(conditional.Expression);
                     return;
 
