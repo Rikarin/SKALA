@@ -743,6 +743,20 @@ public sealed class BreakPlan {
         // and the two are different positions — the opening token's own start, and the first item's.
         if (wrapBeforeOpen && !soleLambda) {
             Point(open, group);
+        } else if (open.IsKind(SyntaxKind.OpenBracketToken)) {
+            // ⚠ An opening *bracket* is not a break point of anybody's, and a break the author wrote
+            // in front of one is joined rather than kept. MEASURED on
+            // constructs/wrapping/patterns.cs, whose `return xs is\n[\n 1,\n 2\n];` comes back from
+            // the oracle as `return xs is [\n 1,\n 2\n];` — the items keep their breaks, which is
+            // `keep_existing_list_patterns_arrangement = true`, and the gap before the `[` does not,
+            // because that key governs the arrangement *inside* the brackets. Without this the gap
+            // falls through to `keep_user_linebreaks = true` and stays broken, and the items then
+            // sit a continuation level deeper than the oracle puts them.
+            // ⚠ Brackets only. `CSharpDocumentBuilder.ShouldJoin` already does the same for the `{`
+            // of a joinable body — a property pattern's among them — and a parenthesis is left
+            // alone because `wrap_before_declaration_lpar` and its siblings are real keys that put
+            // one on a line of its own.
+            Flat(open);
         }
 
         if (wrapAfterOpen && !soleLambda) {
@@ -991,13 +1005,14 @@ public sealed class BreakPlan {
     ///     ISecond {
     ///     </code>
     ///     The list therefore opens its own continuation scope rather than living inside a delimiter's.
+    ///     <para>
+    ///         ⚠ With <em>one</em> base type there is no comma either, and a declaration that overflows
+    ///         has to break somewhere: the gap after the colon is the point, and it is planned only in
+    ///         that case. See the comment on the branch.
+    ///     </para>
     /// </remarks>
     void PlanBaseList(BaseListSyntax node) {
         if (node.Types.Count == 0) {
-            return;
-        }
-
-        if (node.Types.Count < 2 && !_options.WrapBeforeExtendsColon) {
             return;
         }
 
@@ -1012,6 +1027,21 @@ public sealed class BreakPlan {
         if (_options.WrapBeforeExtendsColon) {
             Point(node.ColonToken, group);
             broken |= BreaksBefore(node.ColonToken);
+        } else if (node.Types.Count == 1) {
+            // ⚠ The gap *after* the colon, and only when there is no comma to carry the break. A
+            // single-base-type declaration that overflows is wrapped by the oracle —
+            //   class ASingleBaseTypeButAVeryLongDeclarationIndeed :
+            //       SomeVeryLongBaseClassNameIndeed { }
+            // — and until 06caa62f Skala planned nothing here and let the line run past the margin.
+            // ⚠ Deliberately restricted to a one-type list rather than made a general point before
+            // the first base type: MEASURED, on the same fixture, the oracle leaves the first base
+            // type on the declaration's line when the list has commas and breaks at those instead,
+            //   class LongBaseClassNameHereOkAndMore : SomeVeryLongBaseClassNameIndeed,
+            //       IFirstInterfaceName,
+            // so a point here in the multi-type case would chop with the commas and move a line the
+            // oracle does not. The colon's own gap stays unplanned for the reason above.
+            Point(node.Types[0].GetFirstToken(), group);
+            broken |= BreaksBefore(node.Types[0].GetFirstToken());
         }
 
         foreach (var comma in node.Types.GetSeparators()) {

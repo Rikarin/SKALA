@@ -2,8 +2,16 @@ using System;
 
 namespace Skala.Corpus.Arrangement;
 
-// this-qualifier removal, predefined type names, redundant nested braces, and the parenthesis
-// removal that is gated behind --aggressive.
+// this-qualifier removal, predefined type names, and the parenthesis removal that was gated behind
+// --aggressive.
+//
+// ⚠ The redundant-brace case moved to braces-redundant.cs, and it is not a tidy-up. Removing a
+// redundant brace pair is SK-DIV-0013: the export configures it, Skala performs it and
+// `jb cleanupcode` does not, so a file holding one can never agree with the oracle at the sweep's
+// baseline — and while it sat here it took `dotnet_style_predefined_type_for_locals_parameters_members`
+// and `dotnet_style_require_accessibility_modifiers` down with it, two keys with nothing wrong with
+// them whose rows attributed nothing as a result. The divergence is pinned on its own file now, so
+// only the key that owns it pays for it.
 public class QualifiersAndParentheses {
     private int _count;
     private static int _shared;
@@ -28,20 +36,6 @@ public class QualifiersAndParentheses {
         // ⚠ builtin_type_apply_to_native_integer = false, so these stay as written.
         IntPtr handle = IntPtr.Zero;
         Console.WriteLine(nameof(Int32));
-    }
-
-    public void RedundantBraces(int a) {
-        {
-            {
-                Console.WriteLine(a);
-            }
-        }
-
-        // ⚠ Refused: the inner block declares, and lifting it widens the declaration's scope.
-        {
-            int scoped = a;
-            Console.WriteLine(scoped);
-        }
     }
 
     public void Parentheses(int a, int b, int c) {

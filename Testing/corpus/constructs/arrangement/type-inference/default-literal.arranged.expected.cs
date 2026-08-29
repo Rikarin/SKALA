@@ -7,9 +7,13 @@ public class DefaultLiteral {
 
     public List<int> Property { get; set; } = default;
 
+    // ⚠ No `string text = default(string);` here, and the reason is SK-DIV-0075 rather than taste: a
+    // local whose initializer is `default(T)` for a *reference* T is a `var` candidate the oracle takes
+    // and Skala's nullable-flow precondition refuses, so the two disagree on that line before any key
+    // is touched — and both of this file's keys then attribute nothing. The construct is pinned on
+    // var-and-maybe-null.cs, which nothing is globbed to.
     public void Converted() {
         var number = default(int);
-        var text = default(string);
         Held = default;
     }
 
