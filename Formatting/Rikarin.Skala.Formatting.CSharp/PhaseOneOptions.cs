@@ -2434,13 +2434,27 @@ public static class Ids {
     public static readonly OptionId PlaceAttributeOnSameLine =
         OfGeneralized("resharper_place_attribute_on_same_line");
 
-    // ⚠ Three keys read but never observable, and Tier D with the reason rather than Tier A:
-    //   max_attribute_length_for_same_line — a length threshold for a placement that never happens.
+    // ⚠ Two keys read but never observable, and Tier D with the reason rather than Tier A:
     //   place_attribute_on_same_line — the six per-owner keys cover every C# attribute target, so
     //     the generalized key never gets to decide.
     //   wrap_before_eq — it moves the break point from one side of the `=` to the other, and
     //     milestone 2 never adds a break at either side (that ordering is prefer_wrap_around_eq's,
     //     which is M3), so no input distinguishes the values.
+
+    /// <summary>
+    ///     ⚠ STILL <see cref="OfInert" />, and the reason it carried is no longer the reason. It read
+    ///     "a length threshold for a placement that never happens"; the placement now happens —
+    ///     <see cref="BreakPlan" />'s <c>PlanAttributes</c> grew its <c>always</c> and
+    ///     <c>if_owner_is_single_line</c> halves — and the cap is honoured and observable. Measured at
+    ///     the cap and either side of it; the readings are recorded on <c>AttributeRunFitsTheCap</c>.
+    ///     <para>
+    ///         It stays inert only because the mark is the sweep's, not the formatter's: promoting a key
+    ///         means giving it an <c>oracle</c> glob and a tier, and this repository promotes on master
+    ///         after a sweep rather than from the branch that made the key reachable. ⚠ Under this
+    ///         export the cap is unreachable anyway — every <c>place_*_attribute_on_same_line</c> is
+    ///         <c>never</c>, so nothing is offered to the threshold to refuse.
+    ///     </para>
+    /// </summary>
     public static readonly OptionId MaxAttributeLengthForSameLine =
         OfInert("resharper_csharp_max_attribute_length_for_same_line");
 

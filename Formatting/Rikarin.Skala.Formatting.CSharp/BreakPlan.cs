@@ -2947,9 +2947,33 @@ public sealed class BreakPlan {
     }
 
     /// <summary>
-    ///     <c>place_*_attribute_on_same_line = never</c>: an attribute section never shares a line with
-    ///     what follows it.
+    ///     <c>place_*_attribute_on_same_line</c>: whether an attribute section shares a line with what
+    ///     follows it — <c>never</c> forces the break, <c>always</c> removes it, and
+    ///     <c>if_owner_is_single_line</c> removes it exactly when the declaration occupies one line.
     /// </summary>
+    /// <remarks>
+    ///     ⚠ All three values, and until the key-flip sweep only <c>never</c> was planned: the other two
+    ///     left the author's break alone, so the oracle joined an attribute onto its owner and Skala did
+    ///     not. That is what made four rows — <c>place_attribute_on_same_line</c> and the
+    ///     <c>method</c>, <c>accessor</c> and <c>accessorholder</c> keys — one divergence rather than
+    ///     four, and the joining half is measured rather than reasoned about:
+    ///     <code>
+    /// [First]
+    /// void SingleLine() { }
+    /// [First]
+    /// void MultiLine() { int x = 1; Use(x); }
+    ///     </code>
+    ///     comes back from the oracle with <em>both</em> attributes joined at <c>always</c> and only
+    ///     <c>SingleLine</c>'s joined at <c>if_owner_is_single_line</c>. "Owner is single line" is
+    ///     therefore a property of the declaration's whole formatted width, exactly as it is for
+    ///     <see cref="PlanExpressionBody" />, and not of the attribute's.
+    ///     <para>
+    ///         ⚠ <c>keep_existing_attribute_arrangement = true</c> outranks the key in the joining
+    ///         direction only. It says a break the author wrote is not removed; it does not say a break
+    ///         may not be added, which is the same reading <see cref="PlanEmbeddedStatement" /> records
+    ///         for the embedded-statement pair.
+    ///     </para>
+    /// </remarks>
     void PlanAttributes(SyntaxNode node) {
         var lists = node switch {
             MemberDeclarationSyntax member => member.AttributeLists,
@@ -2960,19 +2984,102 @@ public sealed class BreakPlan {
             _ => default
         };
 
-        if (lists.Count == 0 || AttributePlacement(node) != PlacementStyle.Never) {
+        if (lists.Count == 0) {
             return;
         }
 
-        // keep_existing_attribute_arrangement = true leaves whatever the author wrote.
-        if (_options.KeepExistingAttributeArrangement) {
+        var placement = AttributePlacement(node);
+        if (placement == PlacementStyle.Never) {
+            // keep_existing_attribute_arrangement = true leaves whatever the author wrote.
+            if (_options.KeepExistingAttributeArrangement) {
+                return;
+            }
+
+            foreach (var token in AttributeGaps(node, lists)) {
+                Mandatory(token);
+            }
+
             return;
         }
 
+        // The joining half. `keep_existing_attribute_arrangement = true` is the author's break
+        // surviving, so there is nothing to plan.
+        if (_options.KeepExistingAttributeArrangement || !AttributeRunFitsTheCap(lists)) {
+            return;
+        }
+
+        if (placement == PlacementStyle.Always) {
+            foreach (var token in AttributeGaps(node, lists)) {
+                Flat(token);
+            }
+
+            return;
+        }
+
+        var group = NewGroup();
+        var broken = false;
+        foreach (var token in AttributeGaps(node, lists)) {
+            Point(token, group);
+            broken |= BreaksBefore(token);
+        }
+
+        Describe(
+            node,
+            group,
+            GroupMode.Preserve,
+            // ⚠ `JoinsIfFits` and `BreaksIfTooLong` both, which is what makes this
+            // `if_owner_is_single_line` rather than `keep`: the author's break goes when the owner
+            // fits on one line and comes back when it does not.
+            new GroupFacts(SourceBroken: broken, JoinsIfFits: true, BreaksIfTooLong: true)
+        );
+    }
+
+    /// <summary>
+    ///     <c>max_attribute_length_for_same_line</c>: an attribute run wider than the cap does not join
+    ///     its owner's line however the placement key is set.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ The key was registered <see cref="PhaseOneOptions.Ids.MaxAttributeLengthForSameLine" />
+    ///     inert on the grounds that it is "a length threshold for a placement that never happens", and
+    ///     that reason expired the moment <see cref="PlanAttributes" /> grew its joining half. The
+    ///     reading below is measured, at the cap and either side of it:
+    ///     <code>
+    /// // max_attribute_length_for_same_line = 6, place_method_attribute_on_same_line = always
+    /// [Aaa] void Four() { }        // 5 — joined
+    /// [Aaaa] void Five() { }       // 6 — joined, so the comparison is inclusive
+    /// [Aaaaa]                      // 7 — not joined
+    /// void Six() { }
+    /// [Aa] [Bb]                    // 9 across both sections — not joined at 6, joined at 9,
+    /// void TwoSections() { }       //     so the measure is the whole run and not one section
+    ///     </code>
+    ///     ⚠ Measured off the source spans plus one separator each, which is the run's width in every
+    ///     input this repository holds and is *not* the same claim as the formatted width: an author who
+    ///     writes <c>[ First ]</c> is measured two columns wider than the oracle would measure the
+    ///     section it is about to emit. The exact-width answer needs the formatted attribute text, which
+    ///     does not exist when the break plan is built.
+    /// </remarks>
+    bool AttributeRunFitsTheCap(SyntaxList<AttributeListSyntax> lists) {
+        var width = 0;
+        foreach (var list in lists) {
+            width += list.Span.Length;
+        }
+
+        if (_options.SpaceBetweenAttributeSections) {
+            width += lists.Count - 1;
+        }
+
+        return width <= _options.MaxAttributeLengthForSameLine;
+    }
+
+    /// <summary>
+    ///     The gap after each of a declaration's attribute sections — the one place the placement key
+    ///     decides.
+    /// </summary>
+    static IEnumerable<SyntaxToken> AttributeGaps(SyntaxNode node, SyntaxList<AttributeListSyntax> lists) {
         foreach (var list in lists) {
             var next = list.CloseBracketToken.GetNextToken();
             if (!next.IsKind(SyntaxKind.None) && next.SpanStart <= node.Span.End) {
-                Mandatory(next);
+                yield return next;
             }
         }
     }
@@ -2987,13 +3094,21 @@ public sealed class BreakPlan {
                 or ConversionOperatorDeclarationSyntax
                 or LocalFunctionStatementSyntax =>
                 _options.PlaceMethodAttributeOnSameLine,
-            PropertyDeclarationSyntax or IndexerDeclarationSyntax or EventDeclarationSyntax =>
+            // ⚠ `event Action E;` is an accessor holder too, and it used to be read as a field here.
+            // Measured, and it is the same finding `resharper_place_event_attribute_on_same_line`'s
+            // `inert` note records from the other side: with the field key at `always` the event's
+            // attribute stays on its own line, and with the accessor-holder key at `always` it joins.
+            // The two keys are `never` together in the export, which is what hid it.
+            PropertyDeclarationSyntax
+                or IndexerDeclarationSyntax
+                or EventDeclarationSyntax
+                or EventFieldDeclarationSyntax =>
                 _options.PlaceAccessorHolderAttributeOnSameLine,
             AccessorDeclarationSyntax => _options.PlaceAccessorAttributeOnSameLine,
             // A record's positional parameter is a field, not a parameter, and has its own key. An
             // ordinary parameter's attribute always stays on the parameter's line.
             ParameterSyntax => _options.PlaceRecordFieldAttributeOnSameLine,
-            FieldDeclarationSyntax or EventFieldDeclarationSyntax => _options.PlaceFieldAttributeOnSameLine,
+            FieldDeclarationSyntax => _options.PlaceFieldAttributeOnSameLine,
             _ => _options.PlaceAttributeOnSameLine
         };
 
