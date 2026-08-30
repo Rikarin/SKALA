@@ -1691,14 +1691,11 @@ public static class PreferenceSweep {
         builder.AppendLine(
             "**The margin law with a floor** — the same, and additionally the inner construct must be at"
         );
-        builder.AppendLine("least `F` columns wide on its own — is fitted below. ⚠ `F` is one constant per *content*,");
         builder.AppendLine(
-            "not per shape: the same construct takes 0 with several arguments, 17 with one, and 29 with a"
+            "least `F` columns wide on its own — is fitted below, per content profile and then over all"
         );
-        builder.AppendLine(
-            "lone string literal. The per-filler rows below are the finding, not a breakdown of one number."
-        );
-        builder.AppendLine("It is the only thing here a later reader cannot derive without measuring:");
+        builder.AppendLine("of them at once. It is the only thing here a later reader cannot derive without");
+        builder.AppendLine("measuring, and where the profiles disagree the pooled row is the honest one:");
         builder.AppendLine();
         builder.AppendLine("| filler | cells | `F` | law alone | law with floor |");
         builder.AppendLine("|---|---:|---:|---:|---:|");
@@ -1900,9 +1897,17 @@ public static class PreferenceSweep {
         builder.AppendLine("Each construct below is scored against a two-term model: *break the inner construct when");
         builder.AppendLine("breaking it brings the head line within the margin, and when the inner construct is at");
         builder.AppendLine("least `F` columns wide on its own; otherwise take the outer break.* The first term is a");
-        builder.AppendLine("sentence anyone can state without ReSharper installed. The second is one constant per");
-        builder.AppendLine("shape, and it is the entire irreducible content of the \"preference fact\" — read the");
-        builder.AppendLine("fitted `F` and the accuracy beside it in each construct's section.");
+        builder.AppendLine("sentence anyone can state without ReSharper installed. The second is the entire");
+        builder.AppendLine("irreducible content of the \"preference fact\" — read the fitted `F` and the accuracy");
+        builder.AppendLine("beside it in the table below, and in each construct's own section.");
+        builder.AppendLine();
+        builder.AppendLine("⚠ **`F` is not one constant per shape, which is what version 1 of this file called it.**");
+        builder.AppendLine("Fourteen shapes later it is one constant per *content*: a parenthesised argument list");
+        builder.AppendLine("floors at the same width behind a bare callee, a qualifier, a cast and a type argument");
+        builder.AppendLine("list, and what moves it is whether the list holds several arguments, one, or a lone");
+        builder.AppendLine("string literal. Nothing to the left of the inner construct moves it at all. Two shapes");
+        builder.AppendLine("need no floor whatever, and one — the lambda arrow — has a floor that moves with both");
+        builder.AppendLine("its shape and its contents, which is why it is the shape still needing its grid.");
         builder.AppendLine();
         builder.Append("Oracle: `")
             .Append(artefact.Oracle)
