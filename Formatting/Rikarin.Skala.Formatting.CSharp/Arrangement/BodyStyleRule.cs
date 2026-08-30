@@ -323,7 +323,7 @@ public sealed class BodyStyleRule : ArrangementRule {
         /// <remarks>
         ///     ⚠ A comment blocks the conversion at <em>both</em> values of
         ///     <c>use_heuristics_for_body_style</c>, and at <c>false</c> that is a divergence rather than
-        ///     the rule — SK-DIV-0084. The oracle converts there and writes the comment on its own line
+        ///     the rule — SK-DIV-0086. The oracle converts there and writes the comment on its own line
         ///     between the <c>=&gt;</c> and the expression; carrying it through arrangement is easy and
         ///     the *formatter* then leaves it at column 0, which is worse than not converting. It is the
         ///     formatter's comment placement that has to move first.
