@@ -263,10 +263,48 @@ public static class PreferenceSweep {
 
     /// <summary>Keywords a generated identifier must never collide with, or the probe stops parsing.</summary>
     static readonly HashSet<string> Keywords = new(StringComparer.Ordinal) {
-        "as", "base", "bool", "byte", "case", "char", "checked", "class", "const", "do", "else", "enum",
-        "event", "false", "fixed", "for", "goto", "if", "in", "int", "is", "lock", "long", "new", "null",
-        "out", "ref", "sbyte", "short", "sizeof", "stackalloc", "static", "this", "true", "try", "typeof",
-        "uint", "ulong", "ushort", "using", "void", "while"
+        "as",
+        "base",
+        "bool",
+        "byte",
+        "case",
+        "char",
+        "checked",
+        "class",
+        "const",
+        "do",
+        "else",
+        "enum",
+        "event",
+        "false",
+        "fixed",
+        "for",
+        "goto",
+        "if",
+        "in",
+        "int",
+        "is",
+        "lock",
+        "long",
+        "new",
+        "null",
+        "out",
+        "ref",
+        "sbyte",
+        "short",
+        "sizeof",
+        "stackalloc",
+        "static",
+        "this",
+        "true",
+        "try",
+        "typeof",
+        "uint",
+        "ulong",
+        "ushort",
+        "using",
+        "void",
+        "while"
     };
 
     static List<Filler> Fillers() => [
@@ -419,45 +457,11 @@ public static class PreferenceSweep {
         var fillers = Fillers();
         var scratch = Directory.CreateTempSubdirectory("skala-preference-");
         try {
-            var files = new List<CorpusFile>();
-            var plans = new Dictionary<string, (Construct Construct, List<Probe> Probes)>(StringComparer.Ordinal);
-
-            foreach (var construct in constructs) {
-                foreach (var filler in fillers) {
-                    if (filler.TokenLengths.Length == 0 && construct.Id == "type-parameters") {
-                        // ⚠ A type parameter list has no literals to hold. Skipped rather than faked.
-                        continue;
-                    }
-
-                    foreach (var total in totals) {
-                        var probes = new List<Probe>();
-                        for (var inner = innerFrom; inner <= innerTo; inner++) {
-                            var probe = Build(construct, filler, total, inner);
-                            if (probe is not null) {
-                                probes.Add(probe);
-                            }
-                        }
-
-                        if (probes.Count == 0) {
-                            continue;
-                        }
-
-                        var path = Path.Combine(
-                            scratch.FullName,
-                            construct.Id.Replace('-', '_')
-                            + "__"
-                            + filler.Id.Replace('-', '_')
-                            + "__"
-                            + total.ToString(CultureInfo.InvariantCulture)
-                            + ".cs"
-                        );
-
-                        File.WriteAllText(path, construct.File([.. probes.Select(static probe => probe.Flat)]));
-                        files.Add(new CorpusFile("preference", Path.GetFileName(path), path));
-                        plans[path] = (construct, probes);
-                    }
-                }
-            }
+            var plans = Generate(constructs, fillers, totals, innerFrom, innerTo, scratch.FullName);
+            var files = plans.Keys
+                .Order(StringComparer.Ordinal)
+                .Select(static path => new CorpusFile("preference", Path.GetFileName(path), path))
+                .ToList();
 
             log.WriteLine(
                 "  "
@@ -585,6 +589,60 @@ public static class PreferenceSweep {
         }
     }
 
+    /// <summary>
+    ///     Writes one file per (construct, filler, total) into the scratch directory and returns what
+    ///     each of them holds.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ One file per row rather than one per cell. <c>cleanupcode</c> costs seconds of startup and
+    ///     pennies of analysis, so fifty thousand single-statement files would be a day's run and fifty
+    ///     thousand statements in one file is a solution the tool declines to open.
+    /// </remarks>
+    static Dictionary<string, (Construct Construct, List<Probe> Probes)> Generate(
+        List<Construct> constructs,
+        List<Filler> fillers,
+        IReadOnlyList<int> totals,
+        int innerFrom,
+        int innerTo,
+        string scratch
+    ) {
+        var plans = new Dictionary<string, (Construct Construct, List<Probe> Probes)>(StringComparer.Ordinal);
+        foreach (var construct in constructs) {
+            foreach (var filler in fillers) {
+                // ⚠ A type parameter list has no literals to hold. Skipped rather than faked.
+                if (filler.TokenLengths.Length == 0 && construct.Id == "type-parameters") {
+                    continue;
+                }
+
+                foreach (var total in totals) {
+                    var probes = Enumerable.Range(innerFrom, innerTo - innerFrom + 1)
+                        .Select(inner => Build(construct, filler, total, inner))
+                        .OfType<Probe>()
+                        .ToList();
+
+                    if (probes.Count == 0) {
+                        continue;
+                    }
+
+                    var path = Path.Combine(
+                        scratch,
+                        construct.Id.Replace('-', '_')
+                        + "__"
+                        + filler.Id.Replace('-', '_')
+                        + "__"
+                        + total.ToString(CultureInfo.InvariantCulture)
+                        + ".cs"
+                    );
+
+                    File.WriteAllText(path, construct.File([.. probes.Select(static probe => probe.Flat)]));
+                    plans[path] = (construct, probes);
+                }
+            }
+        }
+
+        return plans;
+    }
+
     public static void Write(Artefact artefact, string jsonPath, string markdownPath) {
         File.WriteAllText(jsonPath, JsonSerializer.Serialize(artefact, JsonOptions) + "\n");
         File.WriteAllText(markdownPath, Markdown(artefact, Path.GetFileName(jsonPath)));
@@ -694,8 +752,7 @@ public static class PreferenceSweep {
     }
 
     /// <summary>A braced initialiser holding one string literal.</summary>
-    static string? BracedLiteral(int width) =>
-        width < 10 ? null : "{ \"" + new string('Z', width - 8) + "\" }";
+    static string? BracedLiteral(int width) => width < 10 ? null : "{ \"" + new string('Z', width - 8) + "\" }";
 
     /// <summary>A single string-literal argument filling the list on its own.</summary>
     static string? Literal(int width) =>
@@ -1016,7 +1073,12 @@ public static class PreferenceSweep {
     ///     stale the first time the table is regenerated and nobody notices; prose computed from it
     ///     cannot.
     /// </remarks>
-    static string Findings(ConstructNote construct, List<Reading> readings, List<Row> rows) {
+    static string Findings(
+        ConstructNote construct,
+        List<Reading> readings,
+        List<Row> rows,
+        HashSet<string> sampled
+    ) {
         var builder = new StringBuilder();
         var crossing = readings.Where(static reading => reading.Threshold is not null).ToList();
         var jagged = readings.Where(static reading => reading.Crossings > 1).ToList();
@@ -1047,26 +1109,28 @@ public static class PreferenceSweep {
                 builder.AppendLine(
                     "⚠ In those rows \"which of the two constructs gives\" has no answer, because neither"
                 );
-                builder.AppendLine(
-                    "does. Any model fitted only to the rows where one of them wins is fitted to a"
-                );
+                builder.AppendLine("does. Any model fitted only to the rows where one of them wins is fitted to a");
                 builder.AppendLine("selected slice of the oracle's behaviour.");
             }
         }
 
+        // ⚠ No early return when nothing crosses. A construct whose answer turns with the *total*
+        // rather than within a row has no threshold anywhere in its grid and is still perfectly
+        // decided — and it is the construct the model below fits best, so bailing out here would have
+        // hidden the one exact result in the artefact behind "no boundary to reconstruct".
         if (crossing.Count == 0) {
             builder.AppendLine();
             builder.AppendLine(
-                "The oracle never changes its mind about this construct anywhere in the grid, so there is"
+                "The oracle never changes its mind *within* a row: whichever construct gives is settled"
             );
-            builder.AppendLine("no boundary here to reconstruct.");
-            return builder.ToString();
+            builder.AppendLine("before the inner width is consulted at all, and what moves the answer is the total.");
         }
 
-        foreach (var group in crossing.GroupBy(static reading => reading.Filler).OrderBy(
-                     static group => group.Key,
-                     StringComparer.Ordinal
-                 )) {
+        foreach (var group in crossing.GroupBy(static reading => reading.Filler)
+                     .OrderBy(
+                         static group => group.Key,
+                         StringComparer.Ordinal
+                     )) {
             var ordered = group.OrderBy(static reading => reading.Total).ToList();
 
             // ⚠ Against the *last non-zero* direction, not against the previous step. The recorded
@@ -1113,7 +1177,8 @@ public static class PreferenceSweep {
         }
 
         builder.AppendLine();
-        var agreements = crossing.GroupBy(static reading => reading.Total)
+        var agreements = crossing.Where(reading => sampled.Contains(reading.Filler))
+            .GroupBy(static reading => reading.Total)
             .Where(static group => group.Count() > 1)
             .ToList();
 
@@ -1121,7 +1186,7 @@ public static class PreferenceSweep {
             group.Select(static reading => reading.Threshold).Distinct().Count() == 1
         );
 
-        builder.Append("The filler profiles agree on the threshold at ")
+        builder.Append("The word-length profiles agree on the threshold at ")
             .Append(unanimous.ToString(CultureInfo.InvariantCulture))
             .Append(" of the ")
             .Append(agreements.Count.ToString(CultureInfo.InvariantCulture))
@@ -1145,14 +1210,26 @@ public static class PreferenceSweep {
                 .AppendLine(" rows cross more than once and are marked in the table above.");
         }
 
-        // ⚠ The one closed form worth testing, tested rather than argued: "break the inner construct
-        // exactly when breaking it is enough on its own, and reach further out when it is not." It is
-        // a sentence a person can hold, so where it holds the divergence needs no oracle at all.
-        //
-        // ⚠ Scored per *cell*, not per threshold. A construct can obey the rule perfectly and have no
-        // threshold anywhere in its grid — that is what happens when the rule's answer changes with
-        // the total rather than within a row — and a score that only counts crossings reports 0 of 0
-        // for the one construct the rule fits exactly.
+        builder.Append(Model(rows));
+        return builder.ToString();
+    }
+
+    /// <summary>
+    ///     Scores the two-term model against one construct's rows, and grades what is left.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ The one closed form worth testing, tested rather than argued: "break the inner construct
+    ///     exactly when breaking it is enough on its own, and reach further out when it is not." It is
+    ///     a sentence a person can hold, so where it holds the divergence needs no oracle at all.
+    ///     <para>
+    ///         ⚠ Scored per <em>cell</em>, not per threshold. A construct can obey the rule perfectly and
+    ///         have no threshold anywhere in its grid — that is what happens when the rule's answer
+    ///         changes with the total rather than within a row — and a score that only counts crossings
+    ///         reports 0 of 0 for the one construct the rule fits exactly.
+    ///     </para>
+    /// </remarks>
+    static string Model(List<Row> rows) {
+        var builder = new StringBuilder();
         var decided = 0;
         var agreed = 0;
         foreach (var row in rows) {
@@ -1170,48 +1247,123 @@ public static class PreferenceSweep {
         }
 
         builder.AppendLine();
-        builder.AppendLine(
-            "Against the closed form *\"break the inner construct exactly when breaking it brings the"
-        );
-        builder.AppendLine("head line within the margin, and reach further out when it does not\"*:");
+        builder.AppendLine("### What decides it, tested");
         builder.AppendLine();
-        builder.Append("- it predicts **")
-            .Append(agreed.ToString(CultureInfo.InvariantCulture))
-            .Append(" of ")
-            .Append(decided.ToString(CultureInfo.InvariantCulture))
-            .Append("** decided cells — ")
+        builder.AppendLine("**The margin law** — *break the inner construct exactly when breaking it brings the head");
+        builder.AppendLine(
+            "line within the margin, and reach further out when it does not* — predicts **"
+            + agreed.ToString(CultureInfo.InvariantCulture)
+            + " of "
+            + decided.ToString(CultureInfo.InvariantCulture)
+            + "** decided"
+        );
+        builder.Append("cells, ")
             .Append((100.0 * agreed / Math.Max(1, decided)).ToString("0.00", CultureInfo.InvariantCulture))
-            .AppendLine(" %.");
-        if (decided > 0 && agreed == decided) {
-            builder.AppendLine(
-                "- **This construct has a rule.** It is statable in one sentence, predictable without"
-            );
-            builder.AppendLine(
-                "  running anything, and needs no ReSharper to defend — the oracle's answer here can be"
-            );
-            builder.AppendLine("  reconstructed from the sentence rather than from the grid.");
-        } else if (agreed >= decided * 9 / 10) {
-            builder.AppendLine(
-                "- It holds over most of the grid but not all of it, so the construct is a rule plus a"
-            );
-            builder.AppendLine(
-                "  residue. The residue is what the grid is for, and the rows where the two disagree are"
-            );
-            builder.AppendLine("  the ones to read.");
-        } else {
-            builder.AppendLine(
-                "- ⚠ **It does not describe this construct.** The oracle declines the inner break far"
-            );
-            builder.AppendLine(
-                "  past the width at which taking it would have been enough, so what decides the answer"
-            );
-            builder.AppendLine(
-                "  is not sufficiency. This is preference in the strict sense, and it is the half that"
-            );
-            builder.AppendLine("  cannot be re-derived once the instrument is gone.");
+            .AppendLine(" %. It carries no fitted number and needs no oracle to state.");
+        builder.AppendLine();
+        builder.AppendLine(
+            "**The margin law with a floor** — the same, and additionally the inner construct must be at"
+        );
+        builder.AppendLine(
+            "least `F` columns wide on its own — is fitted below. `F` is one constant per shape, and it"
+        );
+        builder.AppendLine("is the only thing here a later reader cannot derive without measuring:");
+        builder.AppendLine();
+        builder.AppendLine("| filler | `F` | law alone | law with floor |");
+        builder.AppendLine("|---|---:|---:|---:|");
+
+        var scores = new List<double>();
+        foreach (var filler in rows.Select(static row => row.Filler)
+                     .Distinct(StringComparer.Ordinal)
+                     .OrderBy(static filler => filler, StringComparer.Ordinal)) {
+            var mine = rows.Where(row => row.Filler == filler).ToList();
+            var (floor, withFloor, plain, total) = Floor(mine);
+            if (total == 0) {
+                continue;
+            }
+
+            scores.Add(100.0 * withFloor / total);
+            builder.Append("| `")
+                .Append(filler)
+                .Append("` | ")
+                .Append(floor.ToString(CultureInfo.InvariantCulture))
+                .Append(" | ")
+                .Append((100.0 * plain / total).ToString("0.00", CultureInfo.InvariantCulture))
+                .Append(" % | ")
+                .Append((100.0 * withFloor / total).ToString("0.00", CultureInfo.InvariantCulture))
+                .AppendLine(" % |");
         }
 
+        if (scores.Count == 0) {
+            return builder.ToString();
+        }
+
+        // ⚠ Graded on the *worst* filler profile, and the range is printed beside the grade. A model
+        // scored on its best content shape is a model scored on the content shape that suits it, and
+        // this artefact exists because a previous finding here was exactly that.
+        var worst = scores.Min();
+        builder.AppendLine();
+        builder.Append("Across the filler profiles the two-term model scores ")
+            .Append(worst.ToString("0.00", CultureInfo.InvariantCulture))
+            .Append(" % to ")
+            .Append(scores.Max().ToString("0.00", CultureInfo.InvariantCulture))
+            .AppendLine(" %, graded here on the worst.");
+        builder.AppendLine();
+        builder.AppendLine(
+            worst >= 99.9
+            ? "⚠ **This construct is a rule, not a preference.** Two terms, one of them a single"
+            + " constant,\nreproduce the oracle across the whole grid at every content shape"
+            + " swept. Nothing here has\nto survive in a table — it survives in a sentence."
+            : worst >= 97.0
+                ? "⚠ **A rule plus a wander.** Two terms reproduce nearly every cell; what is left"
+                + " is the\nboundary moving a few columns either side of `F` as the total changes."
+                + " That wander is\nthe genuinely preferential part, and it is in the grid below"
+                + " and nowhere else."
+                : "⚠ **A rule for some content shapes and not others.** The floor is not one"
+                + " constant here —\nit moves with what the inner construct is made of, so the"
+                + " model closes some rows and\nleaves others open. The grid is the only record of"
+                + " the ones it leaves open."
+        );
+
         return builder.ToString();
+    }
+
+    /// <summary>
+    ///     Fits the one free constant in the two-term model: how wide the inner construct must be on its
+    ///     own before the oracle will break it at all.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Fitted by sweeping every candidate rather than solved, because the residual is not convex —
+    ///     the boundary wanders either side of the best constant instead of sitting on one side of it,
+    ///     and a solver that assumed otherwise would return an endpoint.
+    /// </remarks>
+    static (int Floor, int WithFloor, int Plain, int Total) Floor(List<Row> rows) {
+        var cells = new List<(int Inner, bool Enough, bool Measured)>();
+        foreach (var row in rows) {
+            for (var i = 0; i < row.Codes.Length; i++) {
+                if (row.Codes[i] == '.') {
+                    continue;
+                }
+
+                var inner = row.InnerFrom + i;
+                cells.Add((inner, row.Sufficient is { } enough && inner >= enough, row.Codes[i] == 'I'));
+            }
+        }
+
+        if (cells.Count == 0) {
+            return (0, 0, 0, 0);
+        }
+
+        var plain = cells.Count(static cell => cell.Enough == cell.Measured);
+        var best = (Floor: 0, Score: -1);
+        for (var floor = 0; floor <= 120; floor++) {
+            var score = cells.Count(cell => (cell.Enough && cell.Inner >= floor) == cell.Measured);
+            if (score > best.Score) {
+                best = (floor, score);
+            }
+        }
+
+        return (best.Floor, best.Score, plain, cells.Count);
     }
 
     /// <summary>
@@ -1256,13 +1408,21 @@ public static class PreferenceSweep {
         builder.AppendLine(
             "facts this family is made of\" names this the *preference fact* and says the thing that makes"
         );
-        builder.AppendLine(
-            "it different from every other open divergence: it cannot be settled after the oracle is"
-        );
+        builder.AppendLine("it different from every other open divergence: it cannot be settled after the oracle is");
         builder.AppendLine(
             "uninstalled. There is no principle to appeal to, only measurement, and the instrument goes"
         );
         builder.AppendLine("away. This file is the measurement, taken while it was still there.");
+        builder.AppendLine();
+        builder.AppendLine(
+            "⚠ **And the measurement mostly refutes the premise, which is the best outcome available.**"
+        );
+        builder.AppendLine("Each construct below is scored against a two-term model: *break the inner construct when");
+        builder.AppendLine("breaking it brings the head line within the margin, and when the inner construct is at");
+        builder.AppendLine("least `F` columns wide on its own; otherwise take the outer break.* The first term is a");
+        builder.AppendLine("sentence anyone can state without ReSharper installed. The second is one constant per");
+        builder.AppendLine("shape, and it is the entire irreducible content of the \"preference fact\" — read the");
+        builder.AppendLine("fitted `F` and the accuracy beside it in each construct's section.");
         builder.AppendLine();
         builder.Append("Oracle: `")
             .Append(artefact.Oracle)
@@ -1284,7 +1444,9 @@ public static class PreferenceSweep {
         builder.AppendLine(artefact.Resolution);
         builder.AppendLine();
 
-        builder.AppendLine("## The three constructs");
+        builder.Append("## The ")
+            .Append(artefact.Constructs.Count.ToString(CultureInfo.InvariantCulture))
+            .AppendLine(" constructs");
         builder.AppendLine();
         builder.AppendLine("| id | divergence | template | outer break | inner construct | third break |");
         builder.AppendLine("|---|---|---|---|---|---|");
@@ -1305,9 +1467,7 @@ public static class PreferenceSweep {
         }
 
         builder.AppendLine();
-        builder.AppendLine(
-            "In every construct the total width is held fixed and moved one column at a time out of an"
-        );
+        builder.AppendLine("In every construct the total width is held fixed and moved one column at a time out of an");
         builder.AppendLine(
             "inert filler — the callee's or the method's own name, which holds no break point — and into"
         );
@@ -1341,33 +1501,68 @@ public static class PreferenceSweep {
         builder.AppendLine();
         builder.AppendLine("## Where the answer flips, to the column");
         builder.AppendLine();
-        builder.AppendLine(
-            "⚠ **The threshold is the finding.** A table of outputs without the boundary marked leaves"
-        );
+        builder.AppendLine("⚠ **The threshold is the finding.** A table of outputs without the boundary marked leaves");
         builder.AppendLine("the next reader to re-derive it.");
         builder.AppendLine();
-        builder.AppendLine(
-            "**threshold** is the narrowest inner construct at which the oracle stops taking the outer"
-        );
+        builder.AppendLine("**threshold** is the narrowest inner construct at which the oracle stops taking the outer");
         builder.AppendLine(
             "break, having taken it one column narrower. `—` means it took the outer break at every width"
         );
+        builder.AppendLine("swept; `all` means it broke the inner construct at every width. A `⚠` marks a row that");
         builder.AppendLine(
-            "swept; `all` means it took it at none. A `⚠` marks a row that crosses back — the answer is"
+            "crosses back — the answer is not monotone in the inner width, so no bisection over that row"
+        );
+        builder.AppendLine("would have found the boundary.");
+        builder.AppendLine();
+        builder.AppendLine(
+            "⚠ **agree?** compares only the profiles that differ in *word lengths* and nothing else, which"
         );
         builder.AppendLine(
-            "not monotone in the inner width, so no bisection over that row would have found the boundary."
+            "is the question that has refuted findings here before: a threshold that moves when the filler's"
         );
+        builder.AppendLine("identifiers change length is a fact about the probe. `single-literal` is excluded from it");
+        builder.AppendLine("because it changes the construct's *contents* — one element instead of several — and is a");
+        builder.AppendLine("different measurement rather than a different sample of the same one.");
         builder.AppendLine();
 
+        // The profiles that vary only the filler's word lengths — the ones whose disagreement would
+        // mean the boundary is the probe's rather than the oracle's.
+        var sampled = artefact.Fillers
+            .Where(static filler => filler.TokenLengths.Count > 0)
+            .Select(static filler => filler.Id)
+            .ToHashSet(StringComparer.Ordinal);
+
         foreach (var construct in artefact.Constructs) {
-            var mine = readings.Where(reading => reading.Construct == construct.Id).ToList();
+            Section(
+                builder,
+                artefact,
+                construct,
+                [.. readings.Where(r => r.Construct == construct.Id)],
+                sampled
+            );
+        }
+
+        Reversals(builder, artefact);
+        UnnamedCells(builder, artefact);
+        Grid(builder, artefact);
+        return builder.ToString();
+    }
+
+    /// <summary>One construct's threshold table, its fitted model, and the two lines at its boundary.</summary>
+    static void Section(
+        StringBuilder builder,
+        Artefact artefact,
+        ConstructNote construct,
+        List<Reading> mine,
+        HashSet<string> sampled
+    ) {
+        {
             builder.Append("### `").Append(construct.Id).Append("` — ").AppendLine(construct.Divergence);
             builder.AppendLine();
             if (mine.Count == 0) {
                 builder.AppendLine("Nothing was generated for this construct.");
                 builder.AppendLine();
-                continue;
+                return;
             }
 
             var columns = mine.Select(static reading => reading.Filler)
@@ -1393,7 +1588,7 @@ public static class PreferenceSweep {
                 var seen = new List<int>();
                 foreach (var column in columns) {
                     var reading = mine.FirstOrDefault(entry => entry.Total == total && entry.Filler == column);
-                    if (reading?.Threshold is { } threshold) {
+                    if (reading?.Threshold is { } threshold && sampled.Contains(column)) {
                         seen.Add(threshold);
                     }
 
@@ -1405,7 +1600,12 @@ public static class PreferenceSweep {
 
             builder.AppendLine();
             builder.AppendLine(
-                Findings(construct, mine, [.. artefact.Grid.Where(row => row.Construct == construct.Id)])
+                Findings(
+                    construct,
+                    mine,
+                    [.. artefact.Grid.Where(row => row.Construct == construct.Id)],
+                    sampled
+                )
             );
             builder.AppendLine();
 
@@ -1434,7 +1634,10 @@ public static class PreferenceSweep {
                 builder.AppendLine();
             }
         }
+    }
 
+    /// <summary>Every place a *wider* inner construct brings the outer break back.</summary>
+    static void Reversals(StringBuilder builder, Artefact artefact) {
         var reversals = artefact.Flips
             .Where(static flip => flip.From == "Inner" && flip.To == "Outer")
             .ToList();
@@ -1445,22 +1648,14 @@ public static class PreferenceSweep {
             builder.AppendLine(
                 "None. Within a row the oracle's answer changes at most once, from taking the outer break"
             );
-            builder.AppendLine(
-                "to declining it, so each row *is* locally monotone in the inner width — the"
-            );
-            builder.AppendLine(
-                "non-monotonicity this artefact records lives entirely in the other axis, in how the"
-            );
+            builder.AppendLine("to declining it, so each row *is* locally monotone in the inner width — the");
+            builder.AppendLine("non-monotonicity this artefact records lives entirely in the other axis, in how the");
             builder.AppendLine("threshold moves with the total.");
         } else {
             builder.Append("⚠ ")
                 .Append(reversals.Count.ToString(CultureInfo.InvariantCulture))
-                .AppendLine(
-                    " places where a **wider** inner construct brings the outer break back. Each one is a"
-                );
-            builder.AppendLine(
-                "row a bisection over the inner width would have reported the wrong boundary for."
-            );
+                .AppendLine(" places where a **wider** inner construct brings the outer break back. Each one is a");
+            builder.AppendLine("row a bisection over the inner width would have reported the wrong boundary for.");
             builder.AppendLine();
             builder.AppendLine("| construct | filler | total | last inner | first outer |");
             builder.AppendLine("|---|---|---:|---:|---:|");
@@ -1480,6 +1675,10 @@ public static class PreferenceSweep {
         }
 
         builder.AppendLine();
+    }
+
+    /// <summary>The cells the probe could not name, kept verbatim rather than counted.</summary>
+    static void UnnamedCells(StringBuilder builder, Artefact artefact) {
         builder.AppendLine("## Cells the probe could not name");
         builder.AppendLine();
         if (artefact.Unnamed.Count == 0) {
@@ -1488,9 +1687,7 @@ public static class PreferenceSweep {
             );
             builder.AppendLine("here is being averaged away.");
         } else {
-            builder.AppendLine(
-                "⚠ An outcome a probe cannot name looks like noise and is usually a break point the"
-            );
+            builder.AppendLine("⚠ An outcome a probe cannot name looks like noise and is usually a break point the");
             builder.AppendLine(
                 "experiment did not know about. One exemplar per distinct rendering, with how many cells"
             );
@@ -1517,11 +1714,13 @@ public static class PreferenceSweep {
         }
 
         builder.AppendLine();
+    }
+
+    /// <summary>The measurement itself, one character per cell.</summary>
+    static void Grid(StringBuilder builder, Artefact artefact) {
         builder.AppendLine("## The grid");
         builder.AppendLine();
-        builder.AppendLine(
-            "One character per inner width, left to right, starting at the row's `inner from`. The raw"
-        );
+        builder.AppendLine("One character per inner width, left to right, starting at the row's `inner from`. The raw");
         builder.AppendLine("form of the same thing is in the JSON.");
         builder.AppendLine();
 
@@ -1548,7 +1747,5 @@ public static class PreferenceSweep {
 
             builder.AppendLine();
         }
-
-        return builder.ToString();
     }
 }

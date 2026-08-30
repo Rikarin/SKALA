@@ -413,9 +413,31 @@ it. It is the preference fact: `Fitter` resolves the outer group before the inne
 one flat width per node, so "which of these two constructs gives" cannot be asked at all. The margin
 is the stand-in for that missing question, which is why it wanders.
 
+⚠ **Swept as a surface, and the surface has a rule in it.**
+[sk-div-preference-sweep.md](sk-div-preference-sweep.md) probes total width against the right-hand
+side's own width one column at a time, at four constructs, under four filler profiles. For this
+entry's shape — `var value = <name>(<args>);` — the oracle's answer is reproduced by a sentence:
+**break the argument list exactly when breaking it brings the head line within the margin, and take
+the `=` when it does not.** 5 184 of 5 186 cells under `uniform-5` and `varied-short`, the two
+misses at totals 129 and 130 and one column each. Under `varied-long` the law alone is 98.65 % and
+becomes **100.00 %** once a floor of 17 columns is added — and 17 is exactly the width at which that
+profile's list stops being a single argument, so the residue is "a list of one has nothing to chop"
+and not a second rule. The same law is exact at SK-DIV-0024 and holds at
+`var value = new <name>[] { … }` above a floor of 29.
+
+⚠ **So the margin is not modelling an unknowable preference; it is standing in for a question
+`Fitter` cannot ask.** `11 + column/indent` is a fitted constant because the ordering rule is asked
+"is the outer break worth it" and answers from the node's own width. The law above is asked "would
+the inner break be *enough*", which is a question about the head line the inner break would leave —
+and that is a fact the fitter has, not one it has to guess. This does not close the entry, and the
+work is still the preference fact's size L; what it changes is that the target is now statable
+without ReSharper installed, which is what the entry said was missing.
+
 - options: `resharper_prefer_wrap_around_eq` (Tier D), `resharper_csharp_wrap_before_eq` (Tier D)
-- ⚠ status: **open**, measured. The sweep is [sk-div-0005-margin-sweep.md](sk-div-0005-margin-sweep.md)
-  and it says no value of the constant closes this; it is not tail work
+- ⚠ status: **open**, measured. The margin's own sweep is
+  [sk-div-0005-margin-sweep.md](sk-div-0005-margin-sweep.md) and it says no value of the constant
+  closes this; the width surface is [sk-div-preference-sweep.md](sk-div-preference-sweep.md) and it
+  says what to replace the constant with. Not tail work
 
 ## SK-DIV-0006 — the pinned oracle profile does not format documentation comments; Rider does, and so does Skala
 
@@ -1723,8 +1745,31 @@ configured maximum when it has a break point for it is wrong under any house sty
 ordering inside `CSharpDocumentBuilder`'s alignment scope, not a new break point or a new scope kind
 — and it is confined to one value of one Tier key, which is why it has stayed cheap and invisible.
 
+⚠ **Re-swept at one-column resolution, and the first half's premise does not survive.**
+[sk-div-preference-sweep.md](sk-div-preference-sweep.md) sweeps
+`public abstract void <name><T…>(int a, int b);` over totals 124–180 against the type parameter
+list's width 10–100. There is **no threshold in the list's own width anywhere in the grid**: the
+answer turns with the *total* and not within a row, and it is reproduced exactly — 4 977 of 4 977
+cells, all three filler profiles — by *break the parameter list exactly when breaking it brings the
+head line within the margin, and reach further out when it does not*. The declaration chops its
+parameter list up to the total at which that stops being enough, and never after.
+
+⚠ Two things the earlier reading got wrong, and both were the probe's. The recorded flip "at a total
+of 124, list widths 20 through 27 chop the parameter list, 28 through 40 wrap the type parameter
+list" does not reproduce; and the oracle's third answer — **breaking between the return type and
+the method name, declining both lists** — was not in the earlier model at all, though it takes 2 522
+cells of this grid. It is what "none in 20…40" was.
+
+⚠ This does not overturn the `deliberate` verdict, and it improves the argument for it. "The thing
+that overflowed is the thing that got wrapped" is close to the oracle's own rule rather than
+unrelated to it; where Skala and the oracle part is that the oracle asks whether the break would be
+*enough* and Skala asks whether the construct is *over*. That is a difference two sentences can
+hold, which is what a `deliberate` verdict needs.
+
 - options: `resharper_csharp_wrap_before_type_parameter_langle`, `resharper_align_multiline_type_parameter_list`, `resharper_csharp_wrap_parameters_style`
-- ⚠ status: first half **deliberate**, argued above; second half **open**, measured, `debt` size S.
+- ⚠ status: first half **deliberate**, argued above and re-measured in
+  [sk-div-preference-sweep.md](sk-div-preference-sweep.md); second half **open**, measured, `debt`
+  size S.
 
 ## SK-DIV-0050 — a lambda's `=>` is a break point of the oracle's and not of Skala's
 
@@ -1862,6 +1907,24 @@ recorded here once so the other members can point at them instead of restating t
    unlike the containment fact **it cannot be settled after the oracle is uninstalled** — there is no
    principle to appeal to, only measurement, and the instrument goes away.
 
+   ⚠ **That last sentence was the reason to sweep it, and the sweep has largely refuted it.**
+   [sk-div-preference-sweep.md](sk-div-preference-sweep.md) measured all three members over a
+   total-width × inner-width grid at one-column resolution, and two of the three turn out to have a
+   principle after all: *break the inner construct exactly when breaking it brings the head line
+   within the margin, and reach further out when it does not.* It is 100.00 % of SK-DIV-0024's grid
+   and 99.96 % of SK-DIV-0005's, it carries no fitted number, and anyone can state it with nothing
+   installed. **The three constructs are not one curve** — the "same curve at three constructs"
+   reading came from three probes that each measured one construct at coarse resolution and read
+   the shared shape of a *floor* as a shared law.
+
+   What survives is narrower and much cheaper to keep: each construct has a minimum width `F` below
+   which the oracle will not break the inner construct at all, and `F` is genuinely per shape and
+   genuinely unmeasurable later — 0 for a type parameter list, 0 for a multi-argument call after
+   `=`, 17 for a single-argument one, 29 for an array initialiser, 58 for a call under a lambda
+   arrow. **This entry's own member is the one the principle does not carry**, at 70.69 % without
+   `F` against 97.82 % with it, so `=>` is where the remaining irreducible measurement lives. Five
+   numbers and a grid, rather than a subsystem's worth of unknowable surface.
+
 ⚠ **SK-DIV-0011 has been folded into this entry as `moot`** — it is the same fact measured on a
 sole-argument lambda instead of an assigned one, and its corpus count is carried below.
 
@@ -1872,8 +1935,31 @@ that way deliberately — the signature it counts (a hunk in which a line the or
 next reader should re-derive it rather than quote it. On the `8cbd66d` basis it is the second
 largest single class after SK-DIV-0005.
 
+⚠ **The preference half is now captured as data, and it is one number wide.**
+[sk-div-preference-sweep.md](sk-div-preference-sweep.md) sweeps this entry's shape over totals
+124–180 against the body's argument-list width 10–100, one column at a time, under three filler
+profiles that differ only in how long the arguments' identifiers are. **All three agree on the flip
+column at 57 of 57 totals**, so the boundary is a fact about the oracle and the width and not about
+the probe — the question that refuted two models here this week is answered for this one.
+
+The curve is the recorded one, at full resolution: the flip falls 65 → 55 over totals 124–142 and
+rises 55 → 61 over 142–180, with the minimum sitting immediately past total 137, which is where
+taking the arrow stops fitting on its own. Non-monotone, as recorded, and now to the column.
+
+⚠ **What it reduces to.** Against the two-term model the sweep fits at every construct — *break the
+inner construct when breaking it brings the head within the margin **and** the inner construct is at
+least `F` columns wide* — this entry scores 97.82 % at `F = 58` for a multi-argument body, against
+70.69 % for the margin term alone. Unlike SK-DIV-0005 and SK-DIV-0024, the margin term does not
+carry it: at a total of 124 chopping the body would have been enough from width 10 and the oracle
+keeps the arrow to 64, fifty-five columns past sufficiency, and the gap closes only as the total
+approaches 180. **So `F = 58` is this family's irreducible measurement — one constant, not a
+surface** — and the 55…65 band the flip actually wanders through as the total moves is in the
+committed grid and nowhere else.
+
 - options: `resharper_csharp_wrap_before_arrow_with_expressions`, `resharper_keep_user_linebreaks`, `resharper_csharp_keep_existing_linebreaks`, `resharper_place_single_method_argument_lambda_on_same_line`, `resharper_csharp_wrap_parameters_style`
-- ⚠ status: **open**, measured; the break point is missing and the rule that would arm it is not known.
+- ⚠ status: **open**, measured; the break point is missing. The rule that would arm it is now known
+  to one constant and a three-column wander, both in
+  [sk-div-preference-sweep.md](sk-div-preference-sweep.md).
 ## SK-DIV-0060 — the nine `disable_*` switches, measured; five of them are not divergences at all
 
 ReSharper ships nine keys that **suppress a class of edit** rather than choosing between two

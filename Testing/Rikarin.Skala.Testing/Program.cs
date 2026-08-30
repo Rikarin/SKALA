@@ -55,6 +55,19 @@ using Rikarin.Skala.Testing;
 //                     it.
 //   margin [out]      SK-DIV-0005's constant, swept: eleven right-hand-side shapes at five block
 //                     depths under both values of `wrap_before_eq`, one character at a time.
+//   preference [flags]
+//                     the preference fact, captured as data while the oracle can still be asked:
+//                     total width against the inner construct's own width, one column at a time, at
+//                     the four constructs SK-DIV-0005, SK-DIV-0024 and SK-DIV-0050 are about. It is
+//                     the one open divergence whose target cannot be restated from first principles
+//                     after ReSharper is uninstalled, so the grid is committed beside the prose.
+//                     ⚠ Varies *width*, never option values — the export's configuration throughout.
+//                       --totals=A..B     flat line widths to sweep, inclusive. Default 124..180.
+//                       --inner=A..B      inner construct widths, delimiters included. Default 10..100.
+//                       --out=PATH        path without extension. Default docs/sk-div-preference-sweep.
+//                       --render=JSON     ⚠ rewrite the prose from a committed grid, without the
+//                                         oracle. Every sentence in the markdown is computed from the
+//                                         JSON, so this is the mode that still works afterwards.
 //   fuzz [flags]      docs/plan/12 § "4. Fuzzing", as a program. Seeded mutation of the corpus and
 //                     a weighted generative grammar, both asserted against the seven properties
 //                     under both symbol sets, with a delta-debugging minimiser behind any failure.
@@ -246,7 +259,7 @@ switch (args[0]) {
         var totalRange = Range(args, "--totals=", 122, 176);
         var innerRange = Range(args, "--inner=", 10, 100);
         var output = args.FirstOrDefault(static argument => argument.StartsWith("--out=", StringComparison.Ordinal))
-                ?["--out=".Length..]
+            ?["--out=".Length..]
             ?? Path.Combine(Corpus.RepositoryRoot, "docs", "sk-div-preference-sweep");
 
         var artefact = PreferenceSweep.Run(
