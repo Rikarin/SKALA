@@ -2814,3 +2814,110 @@ not ask about it.
   continuous_indent_multiplier)`.
 - ⚠ Both `oracle` globs are kept, the way SK-DIV-0083's are, so the next sweep re-measures the claim
   and `UNEXERCISED` points here.
+
+## SK-DIV-0086 — `csharp_indent_braces`, and the brace-split direction the placement family does not have
+
+Four brace rows were resolved together and three of them are **fixed**; this entry is the residue, and
+it is two separate things that share a mechanism.
+
+### What was fixed, because it is the larger half
+
+`csharp_new_line_before_open_brace` is a **flags** option with twelve members and Skala read it as a
+two-valued switch — `NewLineBeforeOpenBrace is "none"`, so every other value behaved as `all`. **2 of
+its 15 values agreed with the oracle; 15 of 15 do now.** The seven groups the C# formatter actually
+has were measured one value per run, on a probe whose every body holds two statements and every
+initializer six elements — the first attempt had one-statement bodies and read `accessors`,
+`lambdas` and `object_collection_array_initializers` as inert when all three are live, because the
+export had already joined the constructs they govern:
+
+| value | what moves |
+|---|---|
+| `types` | class, struct, interface, enum, record — **and a block namespace** |
+| `methods` | method, constructor and operator bodies — **and local functions** |
+| `properties` | the accessor **list** of a property, an indexer or an event alike |
+| `accessors` | the accessor **body**: `get`, `set`, `add`, `remove` |
+| `control_blocks` | `if`, `while`, `for`, `foreach`, `do`, `lock`, `using`, `try`/`catch`/`finally`, `switch` |
+| `lambdas` | a lambda body — **and an anonymous method's `delegate(…) { }`** |
+| `object_collection_array_initializers` | initializer and anonymous-type braces — **and a switch *expression*'s and a property pattern's** |
+| `anonymous_methods`, `anonymous_types`, `events`, `indexers`, `local_functions` | **nothing** — each is covered by a neighbour |
+
+Three of those groupings are the ones reading the names would get wrong, and each was checked against
+the neighbour that would have explained it away: `local_functions` moves nothing while `methods` moves
+the local function; `events` and `indexers` move nothing while `properties` moves all three accessor
+lists; `anonymous_methods` moves nothing while `lambdas` moves the `delegate`.
+
+`empty_block_style`'s `together_same_line` (read as `multiline`, so the pair was split),
+`new_line_before_while`'s indentation and `special_else_if_treatment`'s split direction were fixed in
+the same pass and all three now read `Conformant`.
+
+### The first thing that is not fixed: the split direction
+
+Brace placement in this formatter is a **join** decision. `ShouldJoin` is "the one place phase 1
+removes a line break the author wrote", and nothing inserts one before a brace. So a K&R input under
+`csharp_new_line_before_open_brace = all` comes back K&R, where the oracle splits every brace onto its
+own line; and `empty_block_style = together_same_line`'s second half — pulling `{ }` back onto the
+declaration's line *against* the placement key — cannot be honoured either.
+
+⚠ **This is invisible to all four rows, and not by luck.** Every one of their fixtures is written with
+the break already there, so all fifteen values of the placement key only ever ask the join question.
+`FormatterTests.BraceSplitIsNotImplemented` asserts the gap so that it is a recorded absence rather
+than a discovery. Closing it means a break point before a brace in every construct in the language,
+which is not a change to make from a row that is already `Conformant`.
+
+`special_else_if_treatment` is the one member of the family that *did* get its split direction, in
+`MustBreak`, because its row needed it and its shape is a keyword rather than a brace.
+
+### The second: `csharp_indent_braces`, and the probe that moved the question
+
+The key governs a brace **on a line of its own**. Measured with both Roslyn brace keys supplied
+together, the oracle is flat at both values under the export's `csharp_new_line_before_open_brace =
+none`, and decisive with the braces split — where the answer is Whitesmiths, the brace taking one
+level and the body taking the *same* level:
+
+```
+class C                     class C
+    {                       {
+    void M()                    void M()
+        {                       {
+        if (true)                   if (true)
+            {                       {
+            M();                        M();
+            }                       }
+        }                       }
+    }                       }
+indent_braces = true        indent_braces = false
+```
+
+Skala applied the key whatever the brace placement, so under `none` the joined opening brace could not
+move and the closing one did — a shape no configuration of either key writes. That is fixed; the key
+is now inert under the export, exactly as the oracle is.
+
+⚠ **And that is why its sweep row reads `INERT` — the first in the table — rather than `UNEXERCISED`.
+The verdict is about the probe.** The sweep appends the key in an `[*.cs]` section of its own, and
+ReSharper re-derives the Roslyn brace pair from *that section*, defaulting the absent
+`csharp_new_line_before_open_brace` to Roslyn's `all`. So the oracle switches to Allman at **both**
+values and answers a question about brace *placement* that was never asked:
+
+```
+base only                          → K&R          (both engines; BaselineAgrees)
++ [*.cs] csharp_indent_braces=false → ALLMAN      ← the coupling
++ [*.cs] with both keys, either order → K&R       ← ask properly and it is flat
+```
+
+The export itself sets both keys, `csharp_indent_braces` first, and is unaffected; it is only the
+appended single-key section that trips it.
+
+Skala cannot follow, and deliberately does not try. Reproducing it means teaching the option resolver
+that assigning one key in a section silently re-derives another from that section's *absent* members —
+a rule whose only justification is that ReSharper does it, on a configuration nobody writes. Doc 00's
+non-negotiable 9 is exactly this case: the reference tool is a test subject, not a specification.
+
+- options: `csharp_indent_braces`, and the split-direction gap in `csharp_new_line_before_open_brace`
+  and `resharper_csharp_empty_block_style`
+- ⚠ status: **accepted**. `csharp_indent_braces` agrees with the oracle at both values whenever the
+  question is put to both engines the same way; the row's disagreement exists only under a
+  single-key section that changes what the oracle was asked. Registered `OfInert` with the mask named,
+  and its `oracle` glob is kept so the next sweep re-measures it.
+- ⚠ `INERT` in the sweep's own table means "the oracle moved and Skala did not — the key is ignored",
+  and for this row that reading is wrong in both halves. Whoever runs the next sweep should read this
+  entry before acting on the count.

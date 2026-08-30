@@ -171,6 +171,7 @@ public readonly struct PhaseOneOptions {
 
         // ── Braces ───────────────────────────────────────────────────────────────────────────
         NewLineBeforeOpenBrace = options.GetString(Ids.NewLineBeforeOpenBrace) ?? "none";
+        NewLineBeforeOpenBraceOwners = BraceOwnerSet.Parse(NewLineBeforeOpenBrace);
         NewLineBeforeElse = options.GetBool(Ids.NewLineBeforeElse);
         NewLineBeforeCatch = options.GetBool(Ids.NewLineBeforeCatch);
         NewLineBeforeFinally = options.GetBool(Ids.NewLineBeforeFinally);
@@ -628,6 +629,17 @@ public readonly struct PhaseOneOptions {
     public bool PlaceCommentsAtFirstColumn { get; }
 
     public string NewLineBeforeOpenBrace { get; }
+
+    /// <summary>
+    ///     <c>csharp_new_line_before_open_brace</c>, resolved into the constructs it actually names.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ It is a *flags* option with twelve members plus <c>all</c> and <c>none</c>, and it used to be
+    ///     read as a two-valued switch — <c>NewLineBeforeOpenBrace is "none"</c>, so every other value
+    ///     behaved as <c>all</c>. Two of fifteen values agreed with the oracle.
+    /// </remarks>
+    public BraceOwners NewLineBeforeOpenBraceOwners { get; }
+
     public bool NewLineBeforeElse { get; }
     public bool NewLineBeforeCatch { get; }
     public bool NewLineBeforeFinally { get; }
@@ -1478,7 +1490,12 @@ public static class Ids {
     public static readonly OptionId EmptyBlockStyle = Of("resharper_csharp_empty_block_style");
     public static readonly OptionId AllowCommentAfterLbrace = Of("resharper_csharp_allow_comment_after_lbrace");
 
-    public static readonly OptionId IndentBraces = Of("csharp_indent_braces");
+    // ⚠ SK-DIV-0086, and `OfInert` in the established sense: masked at the export's own values, not
+    // ignored. It indents a brace that is on a line of its own, and the export's
+    // `csharp_new_line_before_open_brace = none` never puts one there — the oracle is flat at both
+    // values under that configuration too. `BracePlacementTests` pins the unmasked answer, which is
+    // Whitesmiths: the brace takes one level and the body takes the same one.
+    public static readonly OptionId IndentBraces = OfInert("csharp_indent_braces");
 
     public static readonly OptionId AlignMultilineStatementConditions =
         Of("resharper_csharp_align_multiline_statement_conditions");

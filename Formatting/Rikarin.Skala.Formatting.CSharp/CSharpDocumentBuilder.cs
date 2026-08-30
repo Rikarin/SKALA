@@ -984,7 +984,25 @@ public sealed partial class CSharpDocumentBuilder {
         var hasInner = _plan.TryInnerGroup(node, out var elements);
 
         // csharp_indent_braces: the braces themselves take the inner level rather than the outer.
-        var indentBraces = _options.IndentBraces;
+        //
+        // ⚠ Only where the brace goes on a line of its own, which is measured and was missing. Under
+        // the export's `csharp_new_line_before_open_brace = none` the oracle is flat at both values —
+        // indenting a brace that is welded to the end of the previous line is not a thing it can do —
+        // and Skala applied it anyway. The opening brace was joined and so could not move, the closing
+        // one moved, and the result was a shape neither value of either key produces:
+        //
+        //   class C {              class C            ← indent_braces = true, and the oracle's answer
+        //       void M() {             {                 only at `new_line_before_open_brace = all`
+        //           if (true) {        void M()
+        //               M();               {
+        //               }                  if (true)
+        //           }                          {
+        //       }                              M();
+        //                                      }
+        //                                  }
+        //                              }
+        var indentBraces = _options.IndentBraces
+            && (_options.NewLineBeforeOpenBraceOwners & BraceOwnerSet.Of(open)) != 0;
 
         // resharper_indent_inside_namespace = false flattens a block namespace's members.
         var suppress = node is NamespaceDeclarationSyntax && !_options.IndentInsideNamespace;
@@ -2376,6 +2394,16 @@ public sealed partial class CSharpDocumentBuilder {
             return true;
         }
 
+        // ⚠ A `do` statement's trailing `while` starts its own line at the `do`'s level, exactly as
+        // `else`, `catch` and `finally` do below — but those three have a clause node whose first
+        // token they are, and this one is a keyword sitting directly in `DoStatementSyntax`. So the
+        // walk read it as a continuation of the `do` and spent a level on it. Measured: at
+        // `new_line_before_while = true` the oracle puts `while (b);` flush with its `do` and Skala
+        // had it four columns in — the whole of that key's sweep row.
+        if (token.IsKind(SyntaxKind.WhileKeyword) && token.Parent is DoStatementSyntax) {
+            return true;
+        }
+
         SyntaxNode? child = null;
         for (var node = token.Parent; node is not null; node = node.Parent) {
             if (node.GetFirstToken() != token) {
@@ -2577,11 +2605,31 @@ public sealed partial class CSharpDocumentBuilder {
         var previousToken = _tokens[previous.TokenIndex];
 
         if (previousToken.IsKind(SyntaxKind.OpenBraceToken) && nextToken.IsKind(SyntaxKind.CloseBraceToken)) {
-            return _options.EmptyBlockStyle == EmptyBlockStyle.Together && OpensAJoinableBody(previousToken);
+            // ⚠ `together_same_line` joins the pair too, and this read `== Together` — so Skala gave
+            // it `multiline`'s answer and disagreed with the oracle at one of the key's three values.
+            // Measured, the three are genuinely distinct and the difference between the two
+            // `together`s only shows once the brace would be on its own line:
+            //
+            //   multiline           together                together_same_line
+            //   void M()            void M()                void M() { }
+            //   {                   { }
+            //   }
+            //
+            // (under `csharp_new_line_before_open_brace = all`; under the export's `none` the second
+            // and third are the same bytes.) ⚠ `together_same_line`'s second half — pulling the pair
+            // back onto the declaration's line against `new_line_before_open_brace` — is NOT
+            // implemented: it needs the brace-split direction Skala does not have. SK-DIV-0086.
+            return _options.EmptyBlockStyle is EmptyBlockStyle.Together or EmptyBlockStyle.TogetherSameLine
+                && OpensAJoinableBody(previousToken);
         }
 
         if (nextToken.IsKind(SyntaxKind.OpenBraceToken)) {
-            return _options.NewLineBeforeOpenBrace is "none" && OpensAJoinableBody(nextToken);
+            // ⚠ Per construct, not per file. This read `NewLineBeforeOpenBrace is "none"` — so every
+            // one of the key's twelve members behaved as `all`, and two of its fifteen values agreed
+            // with the oracle. See BraceOwners for the seven groups the C# formatter actually has and
+            // the probe that established them.
+            return OpensAJoinableBody(nextToken)
+                && (_options.NewLineBeforeOpenBraceOwners & BraceOwnerSet.Of(nextToken)) == 0;
         }
 
         if (previousToken.IsKind(SyntaxKind.ElseKeyword)) {
@@ -2602,16 +2650,52 @@ public sealed partial class CSharpDocumentBuilder {
     }
 
     /// <summary>
-    ///     <c>allow_comment_after_lbrace = false</c>: a comment may not sit on the brace's line.
+    ///     A break the rules require at a gap the author left flat: the other direction of
+    ///     <see cref="ShouldJoin" />.
     /// </summary>
+    /// <remarks>
+    ///     ⚠ Two arms, and the second is deliberately narrower than <see cref="ShouldJoin" />'s
+    ///     mirror image would be. <c>ShouldJoin</c> returning <c>false</c> does not mean "break": it
+    ///     means "this rule has no opinion", and every gap in the file passes through it. A break may
+    ///     only be *added* where a rule positively asks for one, so the arms here are written out
+    ///     rather than derived by negation.
+    ///     <para>
+    ///         ⚠ The placement family's split direction is otherwise not implemented — a brace is never
+    ///         moved onto a line of its own, so <c>new_line_before_open_brace</c>,
+    ///         <c>new_line_before_else</c> and their siblings only ever decide whether to *keep* the
+    ///         break the author wrote. That gap is recorded in SK-DIV-0086 and is invisible to their
+    ///         sweep rows, whose fixtures are all written with the break already there. The one arm
+    ///         added here is the one whose row needs it and whose shape is a keyword rather than a
+    ///         brace.
+    ///     </para>
+    /// </remarks>
     bool MustBreak(Piece previous, PieceKind nextKind, SyntaxToken nextToken) {
-        _ = nextToken;
-        if (_options.AllowCommentAfterLbrace || previous.Kind != PieceKind.Token) {
+        if (previous.Kind != PieceKind.Token) {
             return false;
         }
 
-        return nextKind is PieceKind.LineComment or PieceKind.DocCommentLine
-            && _tokens[previous.TokenIndex].IsKind(SyntaxKind.OpenBraceToken);
+        var previousToken = _tokens[previous.TokenIndex];
+
+        // `allow_comment_after_lbrace = false`: a comment may not sit on the brace's line.
+        if (!_options.AllowCommentAfterLbrace
+            && nextKind is PieceKind.LineComment or PieceKind.DocCommentLine
+            && previousToken.IsKind(SyntaxKind.OpenBraceToken)) {
+            return true;
+        }
+
+        // ⚠ `special_else_if_treatment = false` splits `else if` and lets the `if` become what it
+        // structurally is — the `else`'s embedded statement, one level in. Measured, and symmetric:
+        // the oracle splits a joined `else if` at `false` and joins a split one at `true`, so
+        // `ShouldJoin`'s arm alone covered one direction of a two-directional key.
+        //
+        //   } else                     ← false
+        //       if (a == 2) {
+        //           M(a);
+        //       }
+        return nextKind == PieceKind.Token
+            && previousToken.IsKind(SyntaxKind.ElseKeyword)
+            && nextToken.IsKind(SyntaxKind.IfKeyword)
+            && !_options.SpecialElseIfTreatment;
     }
 
     static bool OpensAJoinableBody(SyntaxToken brace) =>
