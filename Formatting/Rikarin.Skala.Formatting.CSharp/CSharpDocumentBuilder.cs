@@ -1866,9 +1866,16 @@ public sealed partial class CSharpDocumentBuilder {
                 break;
 
             case PieceKind.BlockComment:
-            case PieceKind.BlockDocComment:
                 // A multi-line comment's continuation lines carry their own indentation; the first
-                // line takes the code's.
+                // line takes the code's — unless `align_multiline_comments` claims them, below.
+                _doc.Verbatim(piece.Text, span, CommentFlags(piece) | StarredFlag(piece));
+                break;
+
+            // ⚠ `/** … */` is deliberately not offered to `align_multiline_comments`. It is a
+            // *documentation* comment, the key names ordinary multiline comments, and the oracle was
+            // never asked about the combination — so it keeps the behaviour it had rather than
+            // inheriting a rule measured on a different token kind.
+            case PieceKind.BlockDocComment:
                 _doc.Verbatim(piece.Text, span, CommentFlags(piece));
                 break;
 
@@ -1963,6 +1970,62 @@ public sealed partial class CSharpDocumentBuilder {
     ///         the code's indent. The oracle applies it to block comments as well as line comments.
     ///     </para>
     /// </remarks>
+    /// <summary>
+    ///     <c>align_multiline_comments</c>: whether this block comment's asterisks are the formatter's to
+    ///     move. SK-DIV-0033.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ <b>The qualifying shape is narrow and it was measured rather than guessed, twice.</b> The
+    ///     first reading — "a comment whose lines begin with <c>*</c>" — is right only if "whose lines"
+    ///     means <em>every</em> continuation line. Asked of <c>jb cleanupcode</c> 2025.2.6 under
+    ///     <c>OracleProfile.FormatOnly</c> at <c>true</c>:
+    ///     <list type="bullet">
+    ///         <item>every continuation line starred, however ragged — realigned to the opener's column + 1;</item>
+    ///         <item>first line starred, second not — <b>returned exactly as written</b>;</item>
+    ///         <item>first line unstarred, second starred — returned exactly as written;</item>
+    ///         <item>
+    ///             ⚠ every line starred but with an <em>empty</em> line among them — returned exactly as
+    ///             written. An empty line is a line that does not begin with <c>*</c>, and it disqualifies the
+    ///             comment like any other. This is the case a "does it look like a javadoc block" heuristic
+    ///             would get wrong, and it is why the loop below has no exemption for blank lines.
+    ///         </item>
+    ///     </list>
+    ///     The closing <c>*/</c>'s line counts as a starred line and is realigned with the rest, which is
+    ///     what makes a comment with an unstarred body — whose last line is still <c>*/</c> — come out
+    ///     unqualified rather than half-moved.
+    /// </remarks>
+    VerbatimFlags StarredFlag(Piece piece) =>
+        _options.AlignMultilineComments && IsStarredBlockComment(piece.Text)
+            ? VerbatimFlags.AlignStarred
+            : VerbatimFlags.None;
+
+    /// <summary>Whether every continuation line of a block comment begins with <c>*</c>.</summary>
+    static bool IsStarredBlockComment(string text) {
+        var newLine = text.IndexOf('\n', StringComparison.Ordinal);
+        if (newLine < 0) {
+            return false;
+        }
+
+        for (var i = newLine; i < text.Length; i = text.IndexOf('\n', i + 1)) {
+            if (i < 0) {
+                break;
+            }
+
+            var start = i + 1;
+            while (start < text.Length && text[start] is ' ' or '\t') {
+                start++;
+            }
+
+            // ⚠ End of text, an empty line and a whitespace-only line all fail here, and all three are
+            // meant to: none of them begins with `*`.
+            if (start >= text.Length || text[start] != '*') {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     VerbatimFlags CommentFlags(Piece piece) =>
         _options.StickComment && piece.StartsLine && LineStart(piece.Span.Start) == piece.Span.Start
             ? VerbatimFlags.AtColumnZero

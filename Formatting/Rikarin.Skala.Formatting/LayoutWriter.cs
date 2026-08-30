@@ -64,7 +64,21 @@ public enum VerbatimFlags {
     ///     stripped value character for character identical — and nothing about it depends on which
     ///     column is the target.
     /// </remarks>
-    RealignToIndent = 8
+    RealignToIndent = 8,
+
+    /// <summary>
+    ///     A starred block comment: every continuation line is re-indented to the opening
+    ///     <c>/*</c>'s column plus one. <c>align_multiline_comments = true</c>.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ The one flag here that is <em>not</em> a uniform shift, and so the one whose safety argument
+    ///     is different. <see cref="Realign" /> may move a string literal because moving every line by the
+    ///     same amount leaves the value identical; this moves lines by different amounts, and it is safe
+    ///     for the unrelated reason that a comment has no value. What it must not do is change the token
+    ///     stream, which is why the caller only sets it on a comment whose every continuation line already
+    ///     begins with <c>*</c> — see <c>CSharpDocumentBuilder.IsStarredBlockComment</c>.
+    /// </remarks>
+    AlignStarred = 16
 }
 
 /// <summary>
@@ -635,6 +649,59 @@ public sealed class LayoutWriter {
     ///         both unnecessary and, when the shift is negative, impossible.
     ///     </para>
     /// </remarks>
+    /// <summary>
+    ///     Puts every continuation line of a starred block comment on <paramref name="column" />.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ <c>align_multiline_comments = true</c>, which is the export's own value, and SK-DIV-0033's
+    ///     whole subject. Measured against <c>jb cleanupcode</c> 2025.2.6 under
+    ///     <c>OracleProfile.FormatOnly</c>: every line after the first — the closing <c>*/</c>'s line
+    ///     included — lands on the opening <c>/*</c>'s column plus one, whatever column it was written at.
+    ///     <para>
+    ///         ⚠ Whether a comment qualifies is <em>not</em> decided here. The caller only sets the flag on
+    ///         a comment whose every continuation line already begins with <c>*</c>, so this method may
+    ///         replace each line's leading whitespace unconditionally; the disqualifying shapes are the
+    ///         caller's to recognise, because that is where the comment's text is available before layout.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ Spaces, not indent units. The target is a column one past a delimiter, which is not a
+    ///         multiple of anything; <c>WriteIndentTo</c>'s three fill styles are about a line's
+    ///         *indentation* and this is the interior of a token.
+    ///     </para>
+    /// </remarks>
+    static string AlignStarred(string text, int column) {
+        var lines = text.Split('\n');
+        if (lines.Length < 2) {
+            return text;
+        }
+
+        var indent = new string(' ', Math.Max(0, column));
+        var builder = new StringBuilder(text.Length + lines.Length * 2);
+        builder.Append(lines[0]);
+
+        for (var i = 1; i < lines.Length; i++) {
+            builder.Append('\n');
+
+            // ⚠ A `\r` belongs to the line it ends, so it is carried across rather than trimmed. The
+            // input is the token's own bytes and the file's line ending is not this method's to change.
+            var line = lines[i];
+            var carriage = line.EndsWith('\r');
+            var body = carriage ? line[..^1] : line;
+
+            var start = 0;
+            while (start < body.Length && body[start] is ' ' or '\t') {
+                start++;
+            }
+
+            builder.Append(indent).Append(body, start, body.Length - start);
+            if (carriage) {
+                builder.Append('\r');
+            }
+        }
+
+        return builder.ToString();
+    }
+
     static string Realign(string text, int column) {
         var lines = text.Split('\n');
         if (lines.Length < 2) {
@@ -981,6 +1048,13 @@ public sealed class LayoutWriter {
                 text,
                 (_atLineStart ? _pendingCloserLevel ?? Effective() : CurrentLineIndent()) + _indentWidth
             );
+        } else if ((flags & VerbatimFlags.AlignStarred) != 0 && _source is null) {
+            // ⚠ The opening delimiter's own column plus one — measured, and it is the *opener's*
+            // column rather than the code's indent, which is why a block comment that begins on a
+            // code line puts its asterisks 26 columns in rather than 5. Same expression as
+            // `Realign` above and for the same reason: at a line start the indentation has not been
+            // written yet, so the column has to come from the scope stack.
+            text = AlignStarred(text, (_atLineStart ? _pendingCloserLevel ?? Effective() : _column + PendingWidth) + 1);
         }
 
         if (_atLineStart) {

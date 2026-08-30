@@ -21,6 +21,7 @@ public readonly struct PhaseOneOptions {
         TabWidth = Math.Max(1, options.GetInt(Ids.TabWidth));
         UseTabs = options.GetRaw(Ids.IndentStyle) == (int)IndentStyle.Tab;
         TabFill = (TabFillStyle)options.GetRaw(Ids.AlignmentTabFillStyle);
+        AlignMultilineComments = options.GetBool(Ids.AlignMultilineComments);
         // ⚠ `wrap_lines = false` is exactly an unbounded margin, and that is measured rather than
         // reasoned. Asked with `wrap_lines = false` and asked with
         // `max_line_length = 2147483647`, `jb cleanupcode` returns byte-identical output — on source
@@ -432,6 +433,28 @@ public readonly struct PhaseOneOptions {
     ///     list until a probe was finally run under <c>indent_style = tab</c> (SK-DIV-0032).
     /// </remarks>
     public TabFillStyle TabFill { get; }
+
+    /// <summary>
+    ///     <c>align_multiline_comments</c>: a starred block comment's continuation lines go to the
+    ///     opening <c>/*</c>'s column plus one.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ <b><c>true</c> is the export's own value</b> — one of very few in the
+    ///     <c>AlignMultilineConstructs</c> family that is — so this is a divergence at the configuration
+    ///     the repository ships rather than an unimplemented option (SK-DIV-0033). Which comments qualify
+    ///     is <c>CSharpDocumentBuilder.StarredFlag</c>'s and the realignment is
+    ///     <c>LayoutWriter.AlignStarred</c>'s; both carry the measurement.
+    ///     <para>
+    ///         ⚠ <b>The <c>false</c> direction is measured and deliberately not implemented.</b> At
+    ///         <c>false</c> the oracle freezes a starred comment <em>entire</em> — it does not even
+    ///         re-indent the opening <c>/*</c> to the code's own column, which Skala does at both values
+    ///         and did before this key was read at all. That is a second, separable behaviour: it is about
+    ///         where the comment token starts rather than about its asterisks, and honouring it means
+    ///         emitting the comment self-indented from its written column. Recorded in SK-DIV-0033 with
+    ///         the probe that shows it, and left there rather than folded in on the strength of one run.
+    ///     </para>
+    /// </remarks>
+    public bool AlignMultilineComments { get; }
 
     /// <summary>
     ///     The column limit, or <see cref="Document.Unbounded" /> when <see cref="WrapLines" /> is off.
@@ -1202,6 +1225,15 @@ public static class Ids {
     // only point at a committed fixture, and no committed fixture can be tab-indented. That is the
     // whole of what is left of SK-DIV-0032 — the layouts themselves are fixed.
     public static readonly OptionId AlignmentTabFillStyle = OfInert("resharper_csharp_alignment_tab_fill_style");
+
+    // ⚠ `OfUnoracled` in its documented sense — "asked, and answered differently" — and the mark is
+    // load-bearing rather than a place to park the key. Skala reproduces the oracle at the export's
+    // `true`; at `false` the oracle freezes a starred comment entire, including its opening `/*`'s own
+    // column, and Skala re-indents that. So the key is honoured, observable, and not conformant at one
+    // of its two values, which is exactly what bars it from Tier A. SK-DIV-0033 carries the probe.
+    public static readonly OptionId AlignMultilineComments =
+        OfUnoracled("resharper_csharp_align_multiline_comments");
+
     // ⚠ No longer inert. Milestone 1 read it and could not act on it — nothing wrapped — and it was
     // Tier D for that reason (docs/plan/05 § "Phase 1"). Milestone 3 is the phase where the column
     // limit is the whole point, and constructs/wrapping/initializers.cs pins it.

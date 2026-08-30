@@ -2640,7 +2640,11 @@ before it. Two clauses of the model this entry carried are **refuted by that run
   it was three cases in one method plus the value on `LayoutWriter`; the *fixture* was and remains the
   larger half.
 
-## SK-DIV-0033 — the oracle realigns a block comment's asterisks; Skala leaves the comment as written
+## SK-DIV-0033 — the oracle realigns a block comment's asterisks; Skala left the comment as written
+
+⚠ **Fixed at the export's value 2026-08-30, and narrowed. See the two sections at the end of this
+entry** — one corrects the shape of comment the key governs, the other records what is left. The text
+down to them is kept as written, because the corrections are only legible beside the claims.
 
 `align_multiline_comments` is **`true`** in the export — one of very few keys in the
 `AlignMultilineConstructs` family that is — and it moves each continuation line of a `/* … */`
@@ -2672,8 +2676,61 @@ delimiter's column plus one — including the member-level comment, whose lines 
 and 2 to column 5 — and leaves the unstarred comment exactly as written. Skala returns all three
 byte for byte as written.
 
+### ⚠ Fixed at the export's value 2026-08-30, and the shape is narrower than this entry said
+
+`LayoutWriter.AlignStarred` puts every continuation line on the opener's column plus one;
+`CSharpDocumentBuilder.StarredFlag` decides which comments qualify; `PhaseOneOptions.AlignMultilineComments`
+reads the key. On the probe below Skala's output is byte-identical to `jb cleanupcode` 2025.2.6's at
+`true` — the export's own value — where before the change it matched at neither value.
+
+⚠ **"A block comment whose lines begin with `*`" is too loose, and three shapes refute it.** Asked at
+`true`, the oracle returns each of these **exactly as written**:
+
+| probe | why it does not qualify |
+|---|---|
+| first continuation starred, second not | not *every* continuation line begins with `*` |
+| first continuation unstarred, second starred | the same, from the other side |
+| ⚠ every line starred, with one **empty** line among them | an empty line does not begin with `*` either |
+
+The last is the one a "does it look like a javadoc block" heuristic gets wrong, and it is why the
+implementation has no exemption for blank lines. The closing `*/`'s line counts as a starred line and
+moves with the rest — which is what makes a comment with an unstarred *body* come out unqualified
+rather than half-moved.
+
+⚠ **The anchor is the opening `/*`'s own column and not the code's indent.** A block comment that
+begins on a code line — `public int Trailing; /*` with the `/*` at column 25 — has its asterisks put
+at 26, not at the member's 5. Measured.
+
+### ⚠ Two adjacent facts this entry did not have, both measured on the same run
+
+1. **At `false` the oracle freezes a starred comment *entire*, its opening `/*` included.** On a
+   comment whose opener is written at column 8 where the code indent is 4, `false` returns the opener
+   at 8. Skala re-indents it to 4 — at both values, and it did so before this key was read at all. So
+   this entry's "at `false` the oracle returns the comment exactly as written, which is what Skala
+   does at every value" is wrong in its second half: Skala was never doing that, because it moves the
+   opener. **Not implemented**, because it is a separable behaviour — about where the comment token
+   starts rather than about its asterisks — and honouring it means emitting the comment self-indented
+   from its written column, which touches anchoring and `stick_comment`. It is why the key is
+   registered `OfUnoracled` rather than promoted, and `AlignMultilineCommentTests` asserts the gap
+   explicitly so that closing it has to come back and delete that test.
+2. ⚠ **An *unstarred* multi-line comment's body is uniformly shifted with its opener, at both values,
+   and that is not this key.** Written at opener 8 / body 6 / `*/` 5 where the code indent is 4, the
+   oracle returns 4 / 2 / 1 — every line moved by −4. Skala returns 4 / 6 / 5: it moves the opener and
+   leaves the body at its written columns. Recorded as **SK-DIV-0094**, because it is reachable at the
+   export's values on a comment this key declines to touch.
+
 - options: `resharper_csharp_align_multiline_comments`
-- ⚠ status: **open**, measured, unfixed
+- ⚠ status: **narrowed**. Conformant at the export's `true`, pinned by
+  `Formatting/Rikarin.Skala.Formatting.CSharp.Tests/AlignMultilineCommentTests.cs` against the
+  oracle's own bytes plus a fixed-point round trip and four disqualified shapes. Open at `false`, for
+  fact 1 above. ⚠ `verify resharper_csharp_align_multiline_comments` still answers "not swept" — the
+  key has no `oracle` glob, and it may not have one while it is non-conformant at a value, because a
+  glob on a Tier D entry the sweep has not demoted is a promotion nobody made
+  (`OptionCoverageTests.TierD_CarriesAFixtureOnlyWhereTheSweepDemotedIt`). The glob and the fixture
+  are the natural next step once fact 1 is paid.
+- ⚠ **`corpus/real` fidelity is unmoved (99.55 line / 86.05 file), and the reason is measured**: a
+  scan of all 380 files finds **zero** multi-line block comments whose every continuation line begins
+  with `*`. The construct does not occur there, so no fix to it could move the number.
 - ⚠ **triage 2026-08-30: `debt`, size M.** It looks like SK-DIV-0001's principle — do not rewrite
   the inside of something you did not parse — and it is not, because Skala already rewrites the
   inside of a `///` comment by default (SK-DIV-0006). Once the interior of one comment kind is the
@@ -4014,3 +4071,46 @@ wrong conclusion to draw from the table.
   same way and mean different things. Still resolved and reported by `skala config explain` — a key
   the registry knows and the tool silently drops is worse than one it reports as having no effect.
 - ⚠ Its `oracle` glob is kept. If a future ReSharper wires the key up, this is the row that notices.
+
+## SK-DIV-0094 — an unstarred block comment's body moves with its opener, and Skala moves only the opener
+
+⚠ **Found while measuring SK-DIV-0033 and separated from it deliberately**, because it is reachable at
+the export's values on exactly the comments that entry's key declines to touch.
+
+A multi-line `/* … */` comment whose continuation lines do **not** all begin with `*` is re-indented by
+the oracle as a **unit**: the opening `/*` goes to the code's own column and every other line moves by
+the same delta. Measured against `jb cleanupcode` 2025.2.6 under `OracleProfile.FormatOnly`, on a
+comment written at opener 8 / body 6 / `*/` 5 inside a type whose member indent is 4:
+
+| | opener | body | `*/` |
+|---|---|---|---|
+| written | 8 | 6 | 5 |
+| oracle — at **both** values of `align_multiline_comments` | 4 | 2 | 1 |
+| Skala | 4 | 6 | 5 |
+
+Skala moves the opener and leaves the interior at its written columns, so the comment's shape is
+destroyed rather than preserved: the body ends up further right than its own delimiter by a margin that
+depends on how far the opener moved.
+
+⚠ **Not `align_multiline_comments`.** The uniform shift happens identically at `true` and at `false`,
+and it applies precisely to the comments that key does not govern — a comment whose every continuation
+line begins with `*` is realigned instead (SK-DIV-0033), and one that qualifies for neither, because it
+is a single line, has no interior to move.
+
+⚠ **The mechanism is already in the formatter and pointed at something else.**
+`VerbatimFlags.Realign` is exactly a uniform shift of a multi-line token's interior, written for
+`indent_raw_literal_string` and carrying the safety argument that a uniform shift leaves a raw string's
+stripped value character for character identical. A comment has no value to preserve, so the argument
+is only easier here. What is missing is the caller: `CSharpDocumentBuilder` emits a `BlockComment`
+piece with `CommentFlags(piece)` and never with `Realign`.
+
+- options: none. It is reachable at every configuration, and no key turns it off — `align_multiline_comments`
+  governs the starred case only.
+- ⚠ status: **open**, measured, unfixed. Nothing in `corpus/real` reaches it — a scan of all 380 files
+  finds no multi-line block comment at all whose opener the formatter moves — which is why nine
+  milestones of fidelity measurement never saw it.
+- ⚠ **Untriaged.** Recorded at the size the measurement supports and no further: the probe above is one
+  comment at one depth, and what has *not* been asked is what happens when the opener moves right
+  rather than left, when the body's own lines are ragged in the other direction, or when a line of the
+  body would be pushed to a negative column. A uniform shift that clamps at zero is not the same rule
+  as one that does not, and this probe cannot tell them apart.
