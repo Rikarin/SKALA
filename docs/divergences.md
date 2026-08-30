@@ -3276,9 +3276,87 @@ formatter returns it unchanged and applies **no** doc-comment rule to that comme
 `Unmodelled`. So a Skala that emitted a wrapped header would emit a comment it could not read back,
 and `format(format(x))` would leave every other doc rule unapplied to it.
 
+### ⚠ 2026-08-30 — still open, and the prerequisite this entry names is necessary but **not sufficient**
+
+The wrap reproduces exactly as recorded above. What is new is the shape of the fix, and it is larger
+than "teach `XmlDocModel` to read a wrapped header".
+
+⚠ **The oracle does not unwrap. An author's break inside a header is preserved at BOTH values.**
+Handed a header that is already wrapped, `jb cleanupcode` 2025.2.6 under `OracleProfile.DocComments`
+returns it wrapped at `true` **and at `false`** — and it does so even for a *short* header that would
+fit comfortably on one line:
+
+```csharp
+/// <see cref="System.String"
+///     href="https://short.invalid/" />        ← kept wrapped at both values
+/// <see
+///     cref="System.String" />                 ← kept wrapped; only the continuation's indent is normalised
+```
+
+So `false` means "do not *introduce* a break", not "join what is broken", and `true` adds only the
+introduction. The wrapping of a header is otherwise **preserved**, with continuation lines re-indented
+to the tag's column plus one level.
+
+⚠ **That refutes the reader-only fix, which is the obvious first move and would make things worse.**
+`XmlDocModel.Attributes` refuses on `attribute.ToFullString().Contains('\n')`, and the one-line change
+— test the attribute's own span text instead, so a newline lying in the *separator* between two
+attributes is tolerated — does lift the `Unmodelled` refusal. But `XmlDocRenderer.Tag` rebuilds the
+header from the name and the attributes with single spaces between them, so the comment would come
+back with the header **joined**. Against an oracle that preserves the break at both values, that is a
+new divergence at both values in place of the old one at one. The model must record *where* the
+author's breaks fall inside a header, not merely tolerate them — and `XmlDocRenderer` must be able to
+emit a tag across several lines, which its line model has no notion of today.
+
+⚠ **The converse test reproduces, with a control this entry did not have.** A `<remarks>` whose header
+is wrapped comes back byte-for-byte, prose lines and all; the *same* `<remarks>` with a single-line
+header has its prose re-indented under the element. So the refusal is the header's and not the
+comment's, and the five inert keys are inert for that reason exactly.
+
+### ⚠ Three of the four dependent keys are measured, for the first time
+
+The entry says they "have nothing to say until this one works" and that their behaviour "has never
+been measured because nothing could ask". Nothing could ask *Skala*; the oracle can be asked directly,
+on a header it wraps of its own accord. Measured under `OracleProfile.DocComments` on a three-attribute
+`<see …/>` past the margin, and a second one that fits, one key at a time over the export:
+
+**`resharper_xmldoc_attribute_indent` — all three values separate.** The tag opens at column 12:
+
+| value | the continuation lines |
+|---|---|
+| `single_indent` (the export) | column 16 — one indent past the tag |
+| `double_indent` | column 20 |
+| `align_by_first_attribute` | column 17 — under the first attribute, which starts after `<see ` |
+
+**`resharper_xmldoc_attribute_style` — and its recorded reason is refuted.** The reason on file is "it
+arranges the attributes of a header Skala does not yet wrap". It does not wait for a wrap: two of its
+four values restructure a header that fits perfectly well.
+
+| value | header past the margin | header that fits |
+|---|---|---|
+| `do_not_touch` (the export) | broken at the margin | left on one line |
+| `on_single_line` | broken at the margin — indistinguishable from `do_not_touch` on this probe | left on one line |
+| `on_different_lines` | tag name alone, then every attribute on its own line | ⚠ **the same** — restructured though it fits |
+| `first_attribute_on_single_line` | first attribute on the tag's line, the rest one per line | ⚠ **the same** — restructured though it fits |
+
+⚠ `on_single_line` and `do_not_touch` are **not** distinguished by this probe, and the shape that would
+distinguish them is the already-wrapped short header above: `do_not_touch` demonstrably keeps it
+wrapped, so `on_single_line` joining it is the obvious hypothesis and is **not measured**. Recorded as
+an open question rather than an answer.
+
+**`resharper_xmldoc_allow_far_alignment = true` returns the probe byte-identical**, and that is not a
+finding about the key: it governs when an `align_by_first_attribute` alignment is "too far", so it
+needs that key flipped with it and a tag name long enough to push the alignment out. A one-key probe
+cannot reach it, exactly as `resharper_csharp_alignment_tab_fill_style` cannot be reached without
+`indent_style = tab` (SK-DIV-0032). **Still unmeasured**, and now for a precise reason.
+
+**`resharper_xmldoc_alignment_tab_fill_style` is untouched here**, for the same pairwise reason: it
+fills a continuation line's alignment and needs `indent_style = tab` beside it.
+
 - options: `resharper_xmldoc_wrap_tags_and_pi`
-- ⚠ status: **open**, cause established and the prerequisite named. Not a wrapping bug — a missing
-  half of the model.
+- ⚠ status: **open, and better specified**. Not a wrapping bug and not merely a missing half of the
+  model: the model must learn to *record* a header's own line breaks, and the renderer must learn to
+  emit a tag across lines. The reader-only change is a one-liner and is refuted above — it would trade
+  one divergence for two.
 - ⚠ **triage 2026-08-30: `debt`, size M.** ⚠ The idempotence argument is a reason not to ship the
   wrap *yet*; it is not a reason the current behaviour is right, and the two are easy to confuse.
   What Skala does is not a choice anyone made — it is what falls out of a model that cannot

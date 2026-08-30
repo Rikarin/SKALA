@@ -451,24 +451,24 @@ public static class XmlDocIds {
         // about the key.
         new(
             "resharper_xmldoc_attribute_indent",
-            "Pending, not refused. It chooses how a wrapped tag header's continuation line is indented, and Skala does not yet wrap a tag header. The oracle does: a five-attribute header past the margin comes back with its last attribute on a continuation line at one indent."
+            "Pending, not refused, and now MEASURED rather than assumed. It chooses how a wrapped tag header's continuation lines are indented and all three of its values separate: with the tag opening at column 12, `single_indent` (the export) puts them at 16, `double_indent` at 20, and `align_by_first_attribute` at 17 — under the first attribute. Skala does not yet wrap or re-read a header, so it has no subject here. SK-DIV-0079."
         ),
         new(
             "resharper_xmldoc_attribute_style",
-            "Pending, not refused. It arranges the attributes of a header Skala does not yet wrap. The export leaves it at do_not_touch, so the default costs nothing today."
+            "Pending, not refused. ⚠ The reason recorded here — 'it arranges the attributes of a header Skala does not yet wrap' — is MEASURED FALSE: it does not wait for a wrap. `on_different_lines` puts the tag name alone and every attribute on its own line, and `first_attribute_on_single_line` keeps the first on the tag's line and breaks the rest, and BOTH do so to a header that fits on one line comfortably. What survives is the second half: the export leaves it at `do_not_touch`, so the default costs nothing today. ⚠ `on_single_line` and `do_not_touch` are not distinguished by that probe — the shape that would is an already-wrapped short header, which `do_not_touch` demonstrably keeps wrapped — and that is unmeasured. SK-DIV-0079."
         ),
         new(
             "resharper_xmldoc_alignment_tab_fill_style",
-            "Pending on the same prerequisite: it fills the alignment of a wrapped header's continuation line, and nothing is wrapped yet."
+            "Pending on the same prerequisite: it fills the alignment of a wrapped header's continuation line, and nothing is wrapped yet. ⚠ It is also a *pairwise* question and no one-key probe can reach it — like `resharper_csharp_alignment_tab_fill_style` it needs `indent_style = tab` flipped beside it (SK-DIV-0032)."
         ),
         new(
             "resharper_xmldoc_allow_far_alignment",
-            "Pending on the same prerequisite: no header is aligned yet, so 'too large' still has no subject."
+            "Pending on the same prerequisite: no header is aligned yet, so 'too large' still has no subject. ⚠ Asked anyway, on a header the oracle wraps of its own accord, it returns the probe byte-identical — which says nothing about the key: it governs when an `align_by_first_attribute` alignment is too far, so it needs THAT key flipped beside it and a tag name long enough to push the alignment out. Pairwise, and still unmeasured. SK-DIV-0079."
         ),
         // ⚠ The fifth of that family, and it used to be in `Honoured` under a reading of its name.
         new(
             "resharper_xmldoc_wrap_tags_and_pi",
-            "Pending on the same prerequisite, and the reading it used to carry is measured false. It was read as 'whether a tag may be moved to a new line to fit', and at both values the oracle moves a <see/> off the end of a line of prose identically — the committed fixture is byte-identical at true and at false, which is the SPURIOUS row the sweep reported. What it really governs is a break INSIDE a tag header: a <see cref=... href=...> 170 columns wide comes back with its second attribute on a continuation line at true and whole at false, and the same probe leaves a <?pi ...?> alone. Skala cannot wrap a header, and it cannot re-read one either — XmlDocModel refuses a multi-line tag header as Unmodelled — so emitting one would cost idempotence. SK-DIV-0079."
+            "Pending on the same prerequisite, and the reading it used to carry is measured false. It was read as 'whether a tag may be moved to a new line to fit', and at both values the oracle moves a <see/> off the end of a line of prose identically — the committed fixture is byte-identical at true and at false, which is the SPURIOUS row the sweep reported. What it really governs is a break INSIDE a tag header: a <see cref=... href=...> 170 columns wide comes back with its second attribute on a continuation line at true and whole at false, and the same probe leaves a <?pi ...?> alone. ⚠ And it governs only whether a break is INTRODUCED: handed a header that is already wrapped the oracle preserves the wrap at BOTH values, even when the header is short enough to fit — so `false` is 'do not break', never 'join'. That is why the reader-only fix is refused: lifting XmlDocModel's Unmodelled refusal without recording where the author's breaks fall would make XmlDocRenderer.Tag rebuild the header joined, which diverges at both values in place of one. SK-DIV-0079."
         ),
 
         // ── Measured inert in the oracle: the indent is the C# file's ────────────────────────
