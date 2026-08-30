@@ -321,4 +321,60 @@ public sealed class ArrangementOptionTests {
         Assert.DoesNotContain("using StringBuilder =", output, StringComparison.Ordinal);
         Assert.Equal(survives, output.Contains("using Numbers =", StringComparison.Ordinal));
     }
+
+    const string Discards = """
+                            namespace P;
+
+                            public class C {
+                                public void Deconstruct(out int first, out int second) {
+                                    first = 1;
+                                    second = 2;
+                                }
+
+                                public void Bare() {
+                                    Deconstruct(out var kept, out _);
+                                    System.Console.WriteLine(kept);
+                                }
+
+                                public void Explicit() {
+                                    Deconstruct(out var kept, out var _);
+                                    System.Console.WriteLine(kept);
+                                }
+                            }
+                            """;
+
+    /// <summary>
+    ///     ⚠ The space between <c>var</c> and <c>_</c> is the whole of this test.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ A <c>DeclarationExpression</c> built from two nodes that carry no trivia prints
+    ///     <c>var_</c>, which is one identifier and not a declaration. The re-bind reported
+    ///     <c>CS0103: The name 'var_' does not exist in the current context</c>, safety layer 3 reverted
+    ///     the document whole, and the arranger's answer at this key's <c>true</c> was therefore the
+    ///     input byte for byte — every other rule's work on the file lost with it. The key-flip sweep
+    ///     read that as <c>DIVERGENT</c> and could not say why, because a reverted file looks exactly
+    ///     like a rule that declined. The <c>Arrange</c> helper above already asserts
+    ///     <c>NotEqual(Reverted)</c>; nothing asked it at this value until now, which is the gap rather
+    ///     than the assertion.
+    /// </remarks>
+    [Fact]
+    public void Discard_ExplicitDeclaration_WritesTheSpaceAfterVar() {
+        var output = Arrange(Discards, ("resharper_csharp_prefer_explicit_discard_declaration", "true"));
+
+        Assert.Contains("out var _", output, StringComparison.Ordinal);
+        Assert.DoesNotContain("var_", output, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     ⚠ The export's <c>false</c>, which *removes* an existing <c>var _</c> rather than merely
+    ///     declining to write one — the second row of the table in <c>DiscardDeclarationRule</c>'s own
+    ///     remarks, and the row that answers the key.
+    /// </summary>
+    [Fact]
+    public void Discard_AtTheExportsValue_StripsAnExistingVar() {
+        var output = Arrange(Discards);
+
+        Assert.Contains("out _", output, StringComparison.Ordinal);
+        Assert.DoesNotContain("out var _", output, StringComparison.Ordinal);
+    }
 }
