@@ -260,32 +260,37 @@ public sealed class ArrangementOptionTests {
                           """;
 
     /// <summary>
-    ///     ⚠ Grouped by first namespace segment, one blank line, and only between groups.
+    ///     ⚠ <c>dotnet_separate_import_directive_groups</c> is not the arranger's, and this asserts that
+    ///     it no longer acts on it. SK-DIV-0074.
     /// </summary>
+    /// <remarks>
+    ///     Two tests stood here — one per direction — and both measured
+    ///     <c>UsingsRule.Separate</c>, which is gone. The key is a <em>formatting</em> key: the oracle
+    ///     performs both of its directions under <c>CSReformatCode</c> alone, so while the arranger was
+    ///     the only component reading it, <c>skala format</c> and <c>skala arrange</c> gave different
+    ///     blank lines for the same file and the same key. The behaviour is pinned by
+    ///     <c>ImportDirectiveGroupTests</c> in the formatter's own project, against the oracle's bytes.
+    ///     <para>
+    ///         ⚠ What is asserted here instead is the *absence*, and it is worth a test rather than a
+    ///         deletion: the arranger must leave the block's blank lines exactly as written at either value,
+    ///         because the separation is settled after it runs. A rule that quietly kept a copy would put
+    ///         the seam back and the formatter's tests could not see it.
+    ///     </para>
+    /// </remarks>
     [Fact]
-    public void SeparateImportGroups_WritesOneBlankLineBetweenFirstSegments() {
-        var output = Arrange(Groups, ("dotnet_separate_import_directive_groups", "true"));
-        Assert.Contains(
-            "using System.Text;\n\nusing Zeta.Support;",
-            output.Replace("\r\n", "\n", StringComparison.Ordinal),
-            StringComparison.Ordinal
-        );
-    }
+    public void SeparateImportGroups_IsNotTheArrangersAndTheArrangerDoesNotActOnIt() {
+        var spaced = Groups.Replace("using Zeta.Support;\n", "using Zeta.Support;\n\n", StringComparison.Ordinal);
+        var atFalse = Arrange(spaced, ("dotnet_separate_import_directive_groups", "false"))
+            .Replace("\r\n", "\n", StringComparison.Ordinal);
+        var atTrue = Arrange(spaced, ("dotnet_separate_import_directive_groups", "true"))
+            .Replace("\r\n", "\n", StringComparison.Ordinal);
 
-    /// <summary>
-    ///     ⚠ And takes one back out at the export's <c>false</c>. SK-DIV-0074: the oracle does this under
-    ///     <c>CSReformatCode</c> alone and Skala's formatter does not read the key at all, so the
-    ///     arranger is the only place it happens — which is why the corpus fixture cannot carry the
-    ///     removal direction and this test does.
-    /// </summary>
-    [Fact]
-    public void SeparateImportGroups_RemovesABlankLineAtTheExportsValue() {
-        var output = Arrange(
-            Groups.Replace("using Zeta.Support;\n", "using Zeta.Support;\n\n", StringComparison.Ordinal)
-        )
-                .Replace("\r\n", "\n", StringComparison.Ordinal);
+        Assert.Equal(atFalse, atTrue);
 
-        Assert.Contains("using System.Text;\nusing Zeta.Support;", output, StringComparison.Ordinal);
+        // ⚠ And the equality is not vacuous: the arranger did run and did its own job on this file.
+        // The sort is still its own — `Zeta.Support` was written first and comes back second — which is
+        // what distinguishes "this key does nothing here" from "nothing happened here".
+        Assert.Contains("using System.Text;\nusing Zeta.Support;", atFalse, StringComparison.Ordinal);
     }
 
     const string Aliases = """

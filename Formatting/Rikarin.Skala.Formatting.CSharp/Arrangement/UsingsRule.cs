@@ -46,10 +46,17 @@ public sealed class UsingsRule : ArrangementRule {
     /// </summary>
     public override bool NeedsSemantics => false;
 
+    /// <remarks>
+    ///     ⚠ <c>dotnet_separate_import_directive_groups</c> left this list at SK-DIV-0074. The oracle
+    ///     performs both of its directions under <c>CSReformatCode</c> alone, so it is a formatting key
+    ///     and it is now read in one place — <c>PhaseOneOptions.SeparateImportDirectiveGroups</c>, resolved
+    ///     in <c>CSharpDocumentBuilder.ImportGroupSeparation</c>. This rule still decides the *order*, and
+    ///     the formatter separates whatever order it is handed, which is why the two profiles' answers
+    ///     now fall out rather than being arranged for.
+    /// </remarks>
     public override bool IsEnabled(in ArrangementOptions options) =>
         options.SortUsings
         || !_removable.IsEmpty
-        || options.SeparateImportDirectiveGroups
         || options.UsingDirectivePlacement == UsingDirectivePlacement.InsideNamespace;
 
     public override SyntaxNode Apply(ArrangementContext context) {
@@ -81,10 +88,7 @@ public sealed class UsingsRule : ArrangementRule {
         }
 
         var ordered = context.Options.SortUsings ? Sort(kept, context.Options) : kept;
-        var renormalised = Separate(
-            Renormalise(ordered, source.Count > 0 ? source : SyntaxFactory.List(moved)),
-            context.Options.SeparateImportDirectiveGroups
-        );
+        var renormalised = Renormalise(ordered, source.Count > 0 ? source : SyntaxFactory.List(moved));
 
         if (moved.Count == 0 && renormalised.Count == source.Count && Same(renormalised, source)) {
             return context.Root;
@@ -519,59 +523,19 @@ public sealed class UsingsRule : ArrangementRule {
             ? directive
             : directive.WithLeadingTrivia(trivia);
 
-    /// <summary>
-    ///     The blank lines <c>dotnet_separate_import_directive_groups</c> asks for, and only those.
-    /// </summary>
-    /// <remarks>
-    ///     ⚠ Both directions are the oracle's, measured on a block written with blank lines in the wrong
-    ///     places: at <c>true</c> it puts exactly one blank line between directives whose first namespace
-    ///     segment differs, and at the export's <c>false</c> it takes every blank line inside the block
-    ///     back out. So the rule owns the blank lines *within* the block — the one after it is
-    ///     <c>resharper_blank_lines_after_using_list</c> and the formatter's.
-    ///     <para>
-    ///         ⚠ The grouping is by first segment and nothing finer: <c>System</c> and <c>System.Text</c> are
-    ///         one group, <c>Alpha.Wide</c> and <c>Beta.Wide</c> are two.
-    ///     </para>
-    ///     <para>
-    ///         ⚠ The first directive is never touched, because its leading trivia is the block's — a file
-    ///         header, a <c>#region</c>, the blank line under a licence comment. Only the separations
-    ///         *between* directives are this rule's to write.
-    ///     </para>
-    /// </remarks>
-    static List<UsingDirectiveSyntax> Separate(List<UsingDirectiveSyntax> ordered, bool separate) {
-        for (var i = 1; i < ordered.Count; i++) {
-            var leading = ordered[i].GetLeadingTrivia();
-
-            // A blank line shows up as an end-of-line trivia at the *front* of the next directive's
-            // leading trivia — the newline that ends the previous line is that line's trailing
-            // trivia. Anything else in there is a comment or a directive and stays.
-            var start = 0;
-            while (start < leading.Count && leading[start].IsKind(SyntaxKind.EndOfLineTrivia)) {
-                start++;
-            }
-
-            var rest = start == 0 ? leading : SyntaxFactory.TriviaList(leading.Skip(start));
-            var wanted = separate && !SameGroup(ordered[i - 1], ordered[i])
-                ? SyntaxFactory.TriviaList(SyntaxFactory.ElasticCarriageReturnLineFeed).AddRange(rest)
-                : rest;
-
-            ordered[i] = Retrivia(ordered[i], wanted);
-        }
-
-        return ordered;
-    }
-
-    static bool SameGroup(UsingDirectiveSyntax left, UsingDirectiveSyntax right) =>
-        string.Equals(FirstSegment(left), FirstSegment(right), StringComparison.Ordinal);
-
-    static string FirstSegment(UsingDirectiveSyntax directive) {
-        var name = directive.Name;
-        while (name is QualifiedNameSyntax qualified) {
-            name = qualified.Left;
-        }
-
-        return name is SimpleNameSyntax simple ? simple.Identifier.ValueText : string.Empty;
-    }
+    // ⚠ `Separate` stood here, and it was this rule's copy of
+    // `dotnet_separate_import_directive_groups`. It is gone rather than moved: the oracle performs
+    // *both* of that key's directions under `CSReformatCode` alone, so it is a formatting key, and a
+    // key two components both act on is the seam SK-DIV-0074 named — `skala format` and `skala arrange`
+    // gave different blank lines for the same file and the same key. The formatter reads it now, in
+    // `CSharpDocumentBuilder.ImportGroupSeparation`, which also carries the corrected grouping model:
+    // the group is (kind, first segment), not first segment alone, and two aliases are one group
+    // however far apart their targets are.
+    //
+    // ⚠ Nothing replaces it here, and that is deliberate. This rule decides the *order*; the formatter
+    // separates whatever order it is handed. The cleanup profile's answer (sort, then separate the
+    // sorted order) and the format-only profile's (separate the written order) then fall out of the
+    // pipeline instead of each being arranged for.
 }
 
 /// <summary>

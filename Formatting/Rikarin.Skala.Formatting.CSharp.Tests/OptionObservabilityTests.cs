@@ -143,10 +143,20 @@ public sealed class OptionObservabilityTests {
             Assert.NotEqual(OptionTier.B, OptionRegistry.Get(id).Tier);
         }
 
-        // ⚠ Not anti-vacuity theatre. `OfUnoracled` is a real state and it is currently unoccupied;
-        // this line says so out loud, so that a key acquiring the mark has to change a number here
-        // and cannot slip in under an assertion that was passing on an empty list.
-        Assert.Empty(Ids.ReadButUnoracled);
+        // ⚠ Not anti-vacuity theatre. `OfUnoracled` is a real state and this line pins how many keys
+        // are in it, so that a key acquiring the mark has to change a number here and cannot slip in
+        // under an assertion that was passing on an empty list.
+        //
+        // ⚠ It went from empty to one at SK-DIV-0033. `resharper_csharp_align_multiline_comments` is
+        // the mark in its documented sense — asked, and answered differently: Skala reproduces the
+        // oracle byte for byte at the export's `true`, and at `false` the oracle freezes a starred
+        // comment entire, including the column its opening `/*` is written at, which Skala re-indents
+        // at both values. Honoured, observable, and not conformant at one of two values, which is
+        // exactly what bars Tier A. The probe above carries the block comment it is observed on.
+        Assert.Equal(
+            ["resharper_csharp_align_multiline_comments"],
+            Ids.ReadButUnoracled.Select(static id => OptionRegistry.Get(id).Key)
+        );
     }
 
     /// <summary>
@@ -201,6 +211,14 @@ public sealed class OptionObservabilityTests {
                              ///
                              /// <returns>A value.<br/> Then <exception cref="System.OverflowException">Short.</exception> and then <exception cref="System.ArgumentException">a much longer description that will certainly not fit on the line it starts on.</exception></returns>
                              int Method(int first, int second) => first + second;
+
+                             /*
+                          * A starred block comment whose asterisks are out of place, written at an opener
+                            * column the code does not put it at, so that `align_multiline_comments` has
+                          * something to move. ⚠ Every continuation line begins with `*`, which is what
+                          * makes the comment qualify — see CSharpDocumentBuilder.StarredFlag.
+                              */
+                             int Second() => 2;
                          }
                          """;
 

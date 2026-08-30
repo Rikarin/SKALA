@@ -2546,10 +2546,14 @@ waiting on it.
 - ⚠ status: **deliberate** — argued above; the difference is kept and the fixture keeps pinning the
   half where the two engines agree
 
-## SK-DIV-0032 — `alignment_tab_fill_style` has three layouts and Skala writes one of them, under the wrong name
+## SK-DIV-0032 — `alignment_tab_fill_style` has three layouts and Skala wrote one of them, under the wrong name
 
-`LayoutWriter.WriteIndentTo` writes whole indent units and then spaces for the remainder, and its
-remarks say that is "what `alignment_tab_fill_style = use_spaces` asks for". It is not. Asked under
+⚠ **Fixed 2026-08-30; what is left is the fixture. See the section at the end of this entry**, which
+also refutes two clauses of the model recorded below. The text down to it is kept as written, because
+the refutation is only legible beside the claim it corrects.
+
+`LayoutWriter.WriteIndentTo` wrote whole indent units and then spaces for the remainder, and its
+remarks said that is "what `alignment_tab_fill_style = use_spaces` asks for". It is not. Asked under
 `indent_style = tab`, the oracle gives three distinct layouts of the same alignment column, and the
 one Skala writes is `optimal_fill`:
 
@@ -2587,20 +2591,60 @@ remainder, with no reference to the key anywhere in the formatter. So Skala writ
 under every configuration, and under the export's `use_spaces` it is wrong on every aligned
 continuation line of every tab-indented file.
 
-- options: `resharper_csharp_alignment_tab_fill_style`, `indent_style`
-- ⚠ status: **open**, measured, unfixed. The fix is a value on `LayoutWriter` and three cases in
-  `WriteIndentTo`; it needs a fixture under a tab configuration, and the corpus has no mechanism for
-  a per-directory `.editorconfig`, so it wants that first.
-- ⚠ **triage 2026-08-30: `debt`, size S.** Nothing was decided here — Skala writes one of three
-  layouts because `WriteIndentTo` was written before the question was asked, and the layout it
-  writes is not the one the export requests. There is no version of this to defend to a user: "you
-  asked for tabs to the block level and spaces for the remainder, and you got neither" is a defect.
-  Paying it is three cases in one method plus the value on `LayoutWriter`; the *fixture* is the
-  larger half, because the corpus cannot yet carry a per-directory `.editorconfig` and every probe
-  that asked this key was indented with spaces, which is why it sat on the "never read" list for so
-  long. ⚠ Needs the oracle only for the fixture — the three layouts are specified in the table above.
+### ⚠ Fixed 2026-08-30 — and the model above was wrong in two places
 
-## SK-DIV-0033 — the oracle realigns a block comment's asterisks; Skala leaves the comment as written
+`LayoutWriter.WriteIndentTo` now takes the line's **level column** beside its target column and writes
+all three layouts; `PhaseOneOptions.TabFill` reads the key and `CSharpFormatter` passes it. Measured
+against `jb cleanupcode` 2025.2.6 under `OracleProfile.FormatOnly` with this repository's
+`.editorconfig` plus `indent_style = tab`, `tab_width = 4`, one value per invocation, on a probe
+carrying a plain continuation and three statement conditions aligned at columns 12, 14 and 19. Tab
+portion `»`, space portion `·`:
+
+| column | block | `use_spaces` (the export) | `use_tabs_only` | `optimal_fill` |
+|---|---|---|---|---|
+| 12 (a *continuation*, not an alignment) | 8 | `»»»` | `»»»` | `»»»` |
+| 12 (an alignment) | 8 | `»»····` | `»»»` | `»»»` |
+| 14 | 8 | `»»······` | `»»»` | `»»»··` |
+| 19 | 12 | `»»»·······` | `»»»»»` | `»»»»···` |
+
+Skala reproduced the oracle byte for byte at all three values after the change, and at none of them
+before it. Two clauses of the model this entry carried are **refuted by that run**:
+
+- **`use_spaces` tabs to the line's own *level* column, not to the enclosing block's.** Rows 1 and 2
+  are the refutation and they were never separated before: both land on column 12 inside a block at 8,
+  and the oracle writes the plain continuation as three whole tabs while writing the aligned line as
+  two tabs and four spaces. A continuation level is a level and stays tabs; only what *alignment* adds
+  becomes spaces. Every probe in this entry's history used alignment alone, where the two readings
+  coincide, so the "enclosing block" phrasing survived unchallenged — and it is wrong on every
+  continuation line of every tab-indented file, which is far more lines than the aligned ones.
+- **`use_tabs_only` rounds to the *nearest* tab stop, ties downwards — not down.** Column 14 goes down
+  to 12 and column 19 goes *up* to 20. The "rounded down" claim rested on the single column-21 datum in
+  the first table above, which rounds to 20 under either rule and so could not tell them apart.
+
+- options: `resharper_csharp_alignment_tab_fill_style`, `indent_style`
+- ⚠ status: **narrowed**. The three layouts are implemented and pinned by
+  `Formatting/Rikarin.Skala.Formatting.CSharp.Tests/TabFillStyleTests.cs`, which carries the oracle's
+  own bytes at each value plus an idempotence round-trip and a space-indented control. What remains is
+  **the fixture, and only the fixture**: the corpus has no per-directory `.editorconfig`, so no
+  committed fixture can be tab-indented, so the key can carry no `oracle` glob, so the key-flip sweep
+  cannot reach it — `verify resharper_csharp_alignment_tab_fill_style` answers "not swept: no `oracle`
+  fixture in the registry" after this change exactly as it did before. The key is therefore registered
+  `OfInert` in `PhaseOneOptions`, beside `tab_width`, which is inert for the identical reason: read,
+  honoured, and unobservable because every fixture there is is indented with spaces. It becomes `Of`
+  and Tier A when that mechanism lands, and the promotion needs no further measurement — the table
+  above is the specification.
+- ⚠ **triage 2026-08-30: `debt`, size S.** Nothing was decided here — Skala wrote one of three
+  layouts because `WriteIndentTo` was written before the question was asked, and the layout it
+  wrote was not the one the export requests. There is no version of that to defend to a user: "you
+  asked for tabs to the level and spaces for the remainder, and you got neither" is a defect. Paying
+  it was three cases in one method plus the value on `LayoutWriter`; the *fixture* was and remains the
+  larger half.
+
+## SK-DIV-0033 — the oracle realigns a block comment's asterisks; Skala left the comment as written
+
+⚠ **Fixed at the export's value 2026-08-30, and narrowed. See the two sections at the end of this
+entry** — one corrects the shape of comment the key governs, the other records what is left. The text
+down to them is kept as written, because the corrections are only legible beside the claims.
 
 `align_multiline_comments` is **`true`** in the export — one of very few keys in the
 `AlignMultilineConstructs` family that is — and it moves each continuation line of a `/* … */`
@@ -2632,8 +2676,61 @@ delimiter's column plus one — including the member-level comment, whose lines 
 and 2 to column 5 — and leaves the unstarred comment exactly as written. Skala returns all three
 byte for byte as written.
 
+### ⚠ Fixed at the export's value 2026-08-30, and the shape is narrower than this entry said
+
+`LayoutWriter.AlignStarred` puts every continuation line on the opener's column plus one;
+`CSharpDocumentBuilder.StarredFlag` decides which comments qualify; `PhaseOneOptions.AlignMultilineComments`
+reads the key. On the probe below Skala's output is byte-identical to `jb cleanupcode` 2025.2.6's at
+`true` — the export's own value — where before the change it matched at neither value.
+
+⚠ **"A block comment whose lines begin with `*`" is too loose, and three shapes refute it.** Asked at
+`true`, the oracle returns each of these **exactly as written**:
+
+| probe | why it does not qualify |
+|---|---|
+| first continuation starred, second not | not *every* continuation line begins with `*` |
+| first continuation unstarred, second starred | the same, from the other side |
+| ⚠ every line starred, with one **empty** line among them | an empty line does not begin with `*` either |
+
+The last is the one a "does it look like a javadoc block" heuristic gets wrong, and it is why the
+implementation has no exemption for blank lines. The closing `*/`'s line counts as a starred line and
+moves with the rest — which is what makes a comment with an unstarred *body* come out unqualified
+rather than half-moved.
+
+⚠ **The anchor is the opening `/*`'s own column and not the code's indent.** A block comment that
+begins on a code line — `public int Trailing; /*` with the `/*` at column 25 — has its asterisks put
+at 26, not at the member's 5. Measured.
+
+### ⚠ Two adjacent facts this entry did not have, both measured on the same run
+
+1. **At `false` the oracle freezes a starred comment *entire*, its opening `/*` included.** On a
+   comment whose opener is written at column 8 where the code indent is 4, `false` returns the opener
+   at 8. Skala re-indents it to 4 — at both values, and it did so before this key was read at all. So
+   this entry's "at `false` the oracle returns the comment exactly as written, which is what Skala
+   does at every value" is wrong in its second half: Skala was never doing that, because it moves the
+   opener. **Not implemented**, because it is a separable behaviour — about where the comment token
+   starts rather than about its asterisks — and honouring it means emitting the comment self-indented
+   from its written column, which touches anchoring and `stick_comment`. It is why the key is
+   registered `OfUnoracled` rather than promoted, and `AlignMultilineCommentTests` asserts the gap
+   explicitly so that closing it has to come back and delete that test.
+2. ⚠ **An *unstarred* multi-line comment's body is uniformly shifted with its opener, at both values,
+   and that is not this key.** Written at opener 8 / body 6 / `*/` 5 where the code indent is 4, the
+   oracle returns 4 / 2 / 1 — every line moved by −4. Skala returns 4 / 6 / 5: it moves the opener and
+   leaves the body at its written columns. Recorded as **SK-DIV-0094**, because it is reachable at the
+   export's values on a comment this key declines to touch.
+
 - options: `resharper_csharp_align_multiline_comments`
-- ⚠ status: **open**, measured, unfixed
+- ⚠ status: **narrowed**. Conformant at the export's `true`, pinned by
+  `Formatting/Rikarin.Skala.Formatting.CSharp.Tests/AlignMultilineCommentTests.cs` against the
+  oracle's own bytes plus a fixed-point round trip and four disqualified shapes. Open at `false`, for
+  fact 1 above. ⚠ `verify resharper_csharp_align_multiline_comments` still answers "not swept" — the
+  key has no `oracle` glob, and it may not have one while it is non-conformant at a value, because a
+  glob on a Tier D entry the sweep has not demoted is a promotion nobody made
+  (`OptionCoverageTests.TierD_CarriesAFixtureOnlyWhereTheSweepDemotedIt`). The glob and the fixture
+  are the natural next step once fact 1 is paid.
+- ⚠ **`corpus/real` fidelity is unmoved (99.55 line / 86.05 file), and the reason is measured**: a
+  scan of all 380 files finds **zero** multi-line block comments whose every continuation line begins
+  with `*`. The construct does not occur there, so no fix to it could move the number.
 - ⚠ **triage 2026-08-30: `debt`, size M.** It looks like SK-DIV-0001's principle — do not rewrite
   the inside of something you did not parse — and it is not, because Skala already rewrites the
   inside of a `///` comment by default (SK-DIV-0006). Once the interior of one comment kind is the
@@ -2801,7 +2898,11 @@ design question of its own and not a detail of the implementation.
   that binds to a *different* symbol of the same name, so that check has to be explicit. ⚠ Needs the
   oracle — the alias preference is exactly the kind of behaviour no specification states.
 
-## SK-DIV-0074 — `dotnet_separate_import_directive_groups` is a formatting key in the oracle and an arrangement key in Skala
+## SK-DIV-0074 — `dotnet_separate_import_directive_groups` was a formatting key in the oracle and an arrangement key in Skala
+
+⚠ **Fixed 2026-08-30. See the section at the end**, which also corrects this entry's grouping model
+and its claim that only one of the key's two directions belongs to the format-only profile. The text
+down to it is kept as written, because the correction is only legible beside the claim.
 
 At `true` the oracle writes one blank line between using directives whose first namespace segment
 differs, and at the export's `false` it takes every blank line inside the using block back out. Both
@@ -2825,20 +2926,63 @@ task in it at all — the oracle removes both; `skala format` returns the file u
 arrange` removes them. So the divergence is precisely the seam this entry names, and it is visible
 on the profile milestones 1–3.1 used as their whole oracle.
 
+### ⚠ Fixed 2026-08-30 — and *both* directions turn out to be the format-only profile's
+
+The key is `PhaseOneOptions.SeparateImportDirectiveGroups` now, resolved in
+`CSharpDocumentBuilder.ImportGroupSeparation`; `UsingsRule.Separate` and the arranger's copy of the
+option are deleted rather than moved, so exactly one component reads it. The arranger still decides
+the *order* and the formatter separates whatever order it is handed, which is why the cleanup
+profile's answer (sort, then separate the sorted order) and the format-only profile's (separate the
+written order) now fall out of the pipeline instead of each being arranged for.
+
+⚠ **This entry understated the seam.** It says the *removal* direction "also happens under
+`CSReformatCode` alone". Measured on a probe carrying every kind of directive and blank runs of 0, 1
+and 2, under `SkalaFormatOnly` — no arrangement task in the profile at all — **both** directions do:
+at `true` the oracle *inserts* the separating blank lines and removes the ones inside a group. So it
+is not "a formatting key in one direction and an arrangement key in the other"; it is a formatting
+key, entire.
+
+⚠ **And the grouping model was wrong, in two ways.** Both `UsingsRule.Separate` and this entry said
+"by first segment and nothing finer". Measured on the same probe:
+
+| gap | oracle at `true` | why |
+|---|---|---|
+| `System.Text` ▸ `System.Globalization` | 0 | same kind, same segment |
+| `System.Globalization` ▸ `Zeta.Support` | 1 | same kind, segment differs |
+| `Zeta.Support` ▸ `Zeta.Support.Deep` | 0 | the segment and nothing finer — this half held |
+| ⚠ `Zeta.Support.Deep` ▸ `using static System.Math` | **1** | a change of **kind** separates on its own |
+| `static System.Math` ▸ `static Zeta.Support.Helper` | 1 | segment differs within the static kind |
+| ⚠ `AliasOne = System…` ▸ `AliasTwo = Zeta…` | **0** | aliases are one group **whatever they alias** |
+| ⚠ `AliasTwo = Zeta…` ▸ `using System.Threading` | **1** | kind again, alias back to plain |
+
+So the group is **(kind, first segment)**, where kind is plain / `using static` / alias, and the
+segment is not consulted for an alias at all. `using System.Text;` and `using static System.Math;`
+share a first segment and are separated — which the old model could not produce.
+
+⚠ **And "it takes every blank line inside the using block back out" is too strong.** A gap holding a
+comment is not this key's gap at either value: at `true` the oracle inserts nothing across a comment
+even between two different groups, and at `false` it *keeps* a blank line the author wrote above one.
+That needs no special case in the implementation — the formatter attributes a gap to the piece below
+it, and a comment piece is not a using directive.
+
+⚠ An `extern alias` is left alone at both values, and that is recorded as **unmeasured** rather than
+inert: the directive needs an aliased assembly reference the probe project has no way to carry.
+
 - options: `dotnet_separate_import_directive_groups`
-- ⚠ status: **open**, and narrow: it is only reachable on a source file that already has a blank line inside its using block, formatted without arranging.
-- ⚠ **triage 2026-08-30: `debt`, size S.** Narrow is not the same as decided, and nothing here is
-  defensible on its own terms: a user who runs `skala format` and a user who runs `skala arrange`
-  get different blank lines from the same file and the same key, which is a seam rather than a
-  choice. The entry already names the end state — the key belongs in the formatter — and the reason
-  given for not moving it ("a key two components both act on is worse than a key one of them acts on
-  late") is an argument about sequencing, not about the behaviour. Paying it: read
-  `dotnet_separate_import_directive_groups` in `PhaseOneOptions`, resolve it in `ResolveBlankLines`
-  for a gap between two `UsingDirectiveSyntax` nodes, and drop the arranger's copy so one component
-  owns it. The fixture already exists in the shape it wants —
-  `constructs/arrangement/usings/import-groups.cs` was deliberately written *without* a blank line so
-  that its format-only half would not measure this gap, and that is the line to remove. ⚠ Needs the
-  oracle for the regenerated format-only fixture only.
+- ⚠ status: **fixed**, `verify dotnet_separate_import_directive_groups` reports **Conformant** — and
+  now on a fixture that actually asks the question. `constructs/arrangement/usings/import-groups.cs`
+  carries a blank line inside its using block for the first time, both its `.expected.cs` and its
+  `.arranged.expected.cs` are regenerated at 2025.2.6, and the removal direction is pinned by the
+  corpus rather than by a unit test standing in for it. `ImportDirectiveGroupTests` carries the
+  oracle's own bytes at both values, and the two `ArrangementOptionTests` that pinned the arranger's
+  copy are replaced by one that asserts the arranger no longer acts on the key at all.
+- ⚠ **`corpus/real` fidelity is unmoved, and the reason is measured rather than assumed.** Not one of
+  the 380 files has a blank line between two using directives — the two candidates a scan turns up
+  are `using var` statements inside method bodies. The construct does not occur in that corpus, so no
+  fix to it could move the number.
+- ⚠ **triage 2026-08-30: `debt`, size S.** Narrow is not the same as decided, and nothing here was
+  defensible on its own terms: a user who ran `skala format` and a user who ran `skala arrange` got
+  different blank lines from the same file and the same key, which is a seam rather than a choice.
 
 ## SK-DIV-0075 — `T x = default(T)` for a reference `T` is a `var` candidate the oracle takes and Skala refuses
 
@@ -3132,9 +3276,87 @@ formatter returns it unchanged and applies **no** doc-comment rule to that comme
 `Unmodelled`. So a Skala that emitted a wrapped header would emit a comment it could not read back,
 and `format(format(x))` would leave every other doc rule unapplied to it.
 
+### ⚠ 2026-08-30 — still open, and the prerequisite this entry names is necessary but **not sufficient**
+
+The wrap reproduces exactly as recorded above. What is new is the shape of the fix, and it is larger
+than "teach `XmlDocModel` to read a wrapped header".
+
+⚠ **The oracle does not unwrap. An author's break inside a header is preserved at BOTH values.**
+Handed a header that is already wrapped, `jb cleanupcode` 2025.2.6 under `OracleProfile.DocComments`
+returns it wrapped at `true` **and at `false`** — and it does so even for a *short* header that would
+fit comfortably on one line:
+
+```csharp
+/// <see cref="System.String"
+///     href="https://short.invalid/" />        ← kept wrapped at both values
+/// <see
+///     cref="System.String" />                 ← kept wrapped; only the continuation's indent is normalised
+```
+
+So `false` means "do not *introduce* a break", not "join what is broken", and `true` adds only the
+introduction. The wrapping of a header is otherwise **preserved**, with continuation lines re-indented
+to the tag's column plus one level.
+
+⚠ **That refutes the reader-only fix, which is the obvious first move and would make things worse.**
+`XmlDocModel.Attributes` refuses on `attribute.ToFullString().Contains('\n')`, and the one-line change
+— test the attribute's own span text instead, so a newline lying in the *separator* between two
+attributes is tolerated — does lift the `Unmodelled` refusal. But `XmlDocRenderer.Tag` rebuilds the
+header from the name and the attributes with single spaces between them, so the comment would come
+back with the header **joined**. Against an oracle that preserves the break at both values, that is a
+new divergence at both values in place of the old one at one. The model must record *where* the
+author's breaks fall inside a header, not merely tolerate them — and `XmlDocRenderer` must be able to
+emit a tag across several lines, which its line model has no notion of today.
+
+⚠ **The converse test reproduces, with a control this entry did not have.** A `<remarks>` whose header
+is wrapped comes back byte-for-byte, prose lines and all; the *same* `<remarks>` with a single-line
+header has its prose re-indented under the element. So the refusal is the header's and not the
+comment's, and the five inert keys are inert for that reason exactly.
+
+### ⚠ Three of the four dependent keys are measured, for the first time
+
+The entry says they "have nothing to say until this one works" and that their behaviour "has never
+been measured because nothing could ask". Nothing could ask *Skala*; the oracle can be asked directly,
+on a header it wraps of its own accord. Measured under `OracleProfile.DocComments` on a three-attribute
+`<see …/>` past the margin, and a second one that fits, one key at a time over the export:
+
+**`resharper_xmldoc_attribute_indent` — all three values separate.** The tag opens at column 12:
+
+| value | the continuation lines |
+|---|---|
+| `single_indent` (the export) | column 16 — one indent past the tag |
+| `double_indent` | column 20 |
+| `align_by_first_attribute` | column 17 — under the first attribute, which starts after `<see ` |
+
+**`resharper_xmldoc_attribute_style` — and its recorded reason is refuted.** The reason on file is "it
+arranges the attributes of a header Skala does not yet wrap". It does not wait for a wrap: two of its
+four values restructure a header that fits perfectly well.
+
+| value | header past the margin | header that fits |
+|---|---|---|
+| `do_not_touch` (the export) | broken at the margin | left on one line |
+| `on_single_line` | broken at the margin — indistinguishable from `do_not_touch` on this probe | left on one line |
+| `on_different_lines` | tag name alone, then every attribute on its own line | ⚠ **the same** — restructured though it fits |
+| `first_attribute_on_single_line` | first attribute on the tag's line, the rest one per line | ⚠ **the same** — restructured though it fits |
+
+⚠ `on_single_line` and `do_not_touch` are **not** distinguished by this probe, and the shape that would
+distinguish them is the already-wrapped short header above: `do_not_touch` demonstrably keeps it
+wrapped, so `on_single_line` joining it is the obvious hypothesis and is **not measured**. Recorded as
+an open question rather than an answer.
+
+**`resharper_xmldoc_allow_far_alignment = true` returns the probe byte-identical**, and that is not a
+finding about the key: it governs when an `align_by_first_attribute` alignment is "too far", so it
+needs that key flipped with it and a tag name long enough to push the alignment out. A one-key probe
+cannot reach it, exactly as `resharper_csharp_alignment_tab_fill_style` cannot be reached without
+`indent_style = tab` (SK-DIV-0032). **Still unmeasured**, and now for a precise reason.
+
+**`resharper_xmldoc_alignment_tab_fill_style` is untouched here**, for the same pairwise reason: it
+fills a continuation line's alignment and needs `indent_style = tab` beside it.
+
 - options: `resharper_xmldoc_wrap_tags_and_pi`
-- ⚠ status: **open**, cause established and the prerequisite named. Not a wrapping bug — a missing
-  half of the model.
+- ⚠ status: **open, and better specified**. Not a wrapping bug and not merely a missing half of the
+  model: the model must learn to *record* a header's own line breaks, and the renderer must learn to
+  emit a tag across lines. The reader-only change is a one-liner and is refuted above — it would trade
+  one divergence for two.
 - ⚠ **triage 2026-08-30: `debt`, size M.** ⚠ The idempotence argument is a reason not to ship the
   wrap *yet*; it is not a reason the current behaviour is right, and the two are easy to confuse.
   What Skala does is not a choice anyone made — it is what falls out of a model that cannot
@@ -3367,6 +3589,10 @@ placement key, and only with the mask lifted does the key decide anything.
 
 ## SK-DIV-0084 — `predefined_type_for_locals_parameters_members = false` asks for the framework name, and Skala's rule only contracts
 
+⚠ **Still open, and NOT a defect at the export's value — see the section at the end**, which refutes a
+framing this entry has now been handed twice and widens the specification from five positions to
+roughly fifteen.
+
 `PredefinedTypeRule` rewrites `Int32` ⇒ `int` and reads
 `dotnet_style_predefined_type_for_locals_parameters_members` to decide whether to. It has no rewrite
 in the other direction, and that key's `false` is a request for one. Asked one key at a time under
@@ -3414,8 +3640,59 @@ byte for byte on the same file. The fifth row is new — the expansion reaches a
 well as a field, a parameter and a local, so "locals, parameters, members" is to be read at its
 widest.
 
+### ⚠ 2026-08-30 — still open, and the "five rows" are nearer fifteen
+
+⚠ **First, the framing this entry has to keep refusing.** A triage brief put this batch's five entries
+under the heading "wrong at the configuration the repository actually ships — the export's own value".
+That is true of the other four and **false of this one**, and the measurement says so plainly:
+`.editorconfig` line 169 is `dotnet_style_predefined_type_for_locals_parameters_members = true`, at
+`true` the two engines agree byte for byte on this key's own fixture, and
+`verify dotnet_style_predefined_type_for_locals_parameters_members` reports **Conformant** both before
+and after this batch's work. The divergence lives only at `false`, which this repository does not set.
+Nothing here is wrong for a user running the shipped configuration. That is what the triage already
+concluded — "the lowest-priority of this batch's debts because the export's own value agrees" — and
+the brief inverted it.
+
+⚠ **Second, the specification was too narrow.** Re-measured under `OracleProfile.Cleanup` at `false`
+on a purpose-built probe, the expansion reaches far more positions than the five rows above, and it is
+the whole predefined set rather than `int` and `string`:
+
+| position | at `false` |
+|---|---|
+| field, static field | `int _count` ⇒ `Int32 _count` |
+| ⚠ **property type** | `public bool Enabled` ⇒ `Boolean`, `public long Total` ⇒ `Int64` |
+| return type | `string Name()` ⇒ `String`, `double Ratio(…)` ⇒ `Double` |
+| parameter | `Double numerator, Double denominator`, `Int32 a, Int32 b, Int32 c` |
+| ⚠ **type argument** | `List<int>` ⇒ `List<Int32>`, `Dictionary<string, int>` ⇒ `Dictionary<String, Int32>` |
+| ⚠ **in an object creation** | `new List<int>()` ⇒ `new List<Int32>()` |
+| ⚠ **cast expression** | `(int)value` ⇒ `(Int32)value` |
+| ⚠ **`object`** | `Object value` — so it is every predefined keyword, not the numeric ones |
+
+And what it leaves alone, each for its own reason:
+
+- `int.MaxValue` — a **member access receiver**, which is the sibling key
+  `dotnet_style_predefined_type_for_member_access`'s and stays `int` while that key is `true`. The two
+  keys partition the positions and this probe shows the seam.
+- `nameof(Int32)` — the spelling is the value.
+- `IntPtr Native` — `builtin_type_apply_to_native_integer = false`, as recorded.
+- ⚠ **a local variable, and it is masked rather than exempt.** `int local = count;` comes back
+  `var local = count;` at *both* values, because the cleanup profile's `ArrangeVarStyle` claims it
+  first. So the "locals" in the key's own name cannot be observed on any probe that lets `var` run, and
+  whether the expansion reaches a local whose type `var` declines is **not measured**.
+
 - options: `dotnet_style_predefined_type_for_locals_parameters_members`, `dotnet_style_predefined_type_for_member_access`
 - ⚠ status: **open**; a missing capability rather than a decision, and it needs its own task.
+  `PredefinedTypeRule.Rewriter` visits `IdentifierNameSyntax` and `QualifiedNameSyntax` only — the
+  framework-named spellings — so there is no visitor for `PredefinedTypeSyntax` and the reverse
+  direction does not exist even in outline. ⚠ **And the fixture is reachable after all**, which this
+  entry had wrong: `constructs/arrangement/redundancy/predefined-type-declarations.cs` is written
+  framework-named *so that* it measures only the contraction, which is the same deliberate dodge
+  `usings/import-groups.cs` used for SK-DIV-0074 and which was removed there. Written the other way
+  round — every governed position in its predefined spelling — the file measures the **expansion** on
+  the existing corpus with no per-directory `.editorconfig` at all: at `true` both engines leave a
+  file that is already contracted alone, and at `false` both should expand it. Rewriting it is what
+  makes the fix provable; it must not be rewritten before the fix, or the key goes DIVERGENT on a
+  capability nobody has built yet.
 - ⚠ **triage 2026-08-30: `debt`, size M.** A user who writes
   `dotnet_style_predefined_type_for_locals_parameters_members = false` and gets no framework names is
   not looking at a considered refusal, and this repository never made one — `PredefinedTypeRule` was
@@ -3428,6 +3705,11 @@ widest.
   cannot be pinned without the per-directory `.editorconfig` mechanism SK-DIV-0032 also wants. ⚠ The
   five rows above are the specification; recording them is what lets this be paid after the oracle
   is gone, and it is the lowest-priority of this batch's debts because the export's own value agrees.
+  ⚠ **The "five rows" are superseded by the table in the section above** — the expansion reaches
+  property types, type arguments, object creations and cast expressions as well, and covers every
+  predefined keyword rather than `int` and `string`. The triage's *ordering* stands and was re-confirmed
+  by the same run: the export sets `true`, the two engines agree at `true`, and `verify` reports
+  Conformant.
 
 ## SK-DIV-0085 — `sort_usings = false` still reorders, and the oracle's unsorted order is not the written one
 
@@ -3927,3 +4209,46 @@ wrong conclusion to draw from the table.
   same way and mean different things. Still resolved and reported by `skala config explain` — a key
   the registry knows and the tool silently drops is worse than one it reports as having no effect.
 - ⚠ Its `oracle` glob is kept. If a future ReSharper wires the key up, this is the row that notices.
+
+## SK-DIV-0094 — an unstarred block comment's body moves with its opener, and Skala moves only the opener
+
+⚠ **Found while measuring SK-DIV-0033 and separated from it deliberately**, because it is reachable at
+the export's values on exactly the comments that entry's key declines to touch.
+
+A multi-line `/* … */` comment whose continuation lines do **not** all begin with `*` is re-indented by
+the oracle as a **unit**: the opening `/*` goes to the code's own column and every other line moves by
+the same delta. Measured against `jb cleanupcode` 2025.2.6 under `OracleProfile.FormatOnly`, on a
+comment written at opener 8 / body 6 / `*/` 5 inside a type whose member indent is 4:
+
+| | opener | body | `*/` |
+|---|---|---|---|
+| written | 8 | 6 | 5 |
+| oracle — at **both** values of `align_multiline_comments` | 4 | 2 | 1 |
+| Skala | 4 | 6 | 5 |
+
+Skala moves the opener and leaves the interior at its written columns, so the comment's shape is
+destroyed rather than preserved: the body ends up further right than its own delimiter by a margin that
+depends on how far the opener moved.
+
+⚠ **Not `align_multiline_comments`.** The uniform shift happens identically at `true` and at `false`,
+and it applies precisely to the comments that key does not govern — a comment whose every continuation
+line begins with `*` is realigned instead (SK-DIV-0033), and one that qualifies for neither, because it
+is a single line, has no interior to move.
+
+⚠ **The mechanism is already in the formatter and pointed at something else.**
+`VerbatimFlags.Realign` is exactly a uniform shift of a multi-line token's interior, written for
+`indent_raw_literal_string` and carrying the safety argument that a uniform shift leaves a raw string's
+stripped value character for character identical. A comment has no value to preserve, so the argument
+is only easier here. What is missing is the caller: `CSharpDocumentBuilder` emits a `BlockComment`
+piece with `CommentFlags(piece)` and never with `Realign`.
+
+- options: none. It is reachable at every configuration, and no key turns it off — `align_multiline_comments`
+  governs the starred case only.
+- ⚠ status: **open**, measured, unfixed. Nothing in `corpus/real` reaches it — a scan of all 380 files
+  finds no multi-line block comment at all whose opener the formatter moves — which is why nine
+  milestones of fidelity measurement never saw it.
+- ⚠ **Untriaged.** Recorded at the size the measurement supports and no further: the probe above is one
+  comment at one depth, and what has *not* been asked is what happens when the opener moves right
+  rather than left, when the body's own lines are ragged in the other direction, or when a line of the
+  body would be pushed to a negative column. A uniform shift that clamps at zero is not the same rule
+  as one that does not, and this probe cannot tell them apart.

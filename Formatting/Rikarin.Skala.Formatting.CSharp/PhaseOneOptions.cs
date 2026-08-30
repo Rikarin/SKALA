@@ -20,6 +20,8 @@ public readonly struct PhaseOneOptions {
         IndentSize = Math.Max(1, options.GetInt(Ids.IndentSize));
         TabWidth = Math.Max(1, options.GetInt(Ids.TabWidth));
         UseTabs = options.GetRaw(Ids.IndentStyle) == (int)IndentStyle.Tab;
+        TabFill = (TabFillStyle)options.GetRaw(Ids.AlignmentTabFillStyle);
+        AlignMultilineComments = options.GetBool(Ids.AlignMultilineComments);
         // ⚠ `wrap_lines = false` is exactly an unbounded margin, and that is measured rather than
         // reasoned. Asked with `wrap_lines = false` and asked with
         // `max_line_length = 2147483647`, `jb cleanupcode` returns byte-identical output — on source
@@ -278,6 +280,7 @@ public readonly struct PhaseOneOptions {
         BlankLinesInsideType = options.GetInt(Ids.BlankLinesInsideType);
         BlankLinesInsideNamespace = options.GetInt(Ids.BlankLinesInsideNamespace);
         BlankLinesAfterUsingList = options.GetInt(Ids.BlankLinesAfterUsingList);
+        SeparateImportDirectiveGroups = options.GetBool(Ids.SeparateImportDirectiveGroups);
         BlankLinesAfterFileScopedNamespaceDirective = options.GetInt(Ids.BlankLinesAfterFileScopedNamespaceDirective);
         BlankLinesAfterBlockStatements = options.GetInt(Ids.BlankLinesAfterBlockStatements);
         BlankLinesBeforeSingleLineComment = options.GetInt(Ids.BlankLinesBeforeSingleLineComment);
@@ -419,6 +422,39 @@ public readonly struct PhaseOneOptions {
     public int IndentSize { get; }
     public int TabWidth { get; }
     public bool UseTabs { get; }
+
+    /// <summary>
+    ///     <c>alignment_tab_fill_style</c>: how the whitespace reaching an aligned column is spelled.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Three distinct layouts of the same column, and <see cref="LayoutWriter.WriteIndentTo" />
+    ///     carries the measured table. Reachable only under <see cref="UseTabs" />; with spaces all three
+    ///     spell the identical column, which is why this key sat on the "never read by the C# formatter"
+    ///     list until a probe was finally run under <c>indent_style = tab</c> (SK-DIV-0032).
+    /// </remarks>
+    public TabFillStyle TabFill { get; }
+
+    /// <summary>
+    ///     <c>align_multiline_comments</c>: a starred block comment's continuation lines go to the
+    ///     opening <c>/*</c>'s column plus one.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ <b><c>true</c> is the export's own value</b> — one of very few in the
+    ///     <c>AlignMultilineConstructs</c> family that is — so this is a divergence at the configuration
+    ///     the repository ships rather than an unimplemented option (SK-DIV-0033). Which comments qualify
+    ///     is <c>CSharpDocumentBuilder.StarredFlag</c>'s and the realignment is
+    ///     <c>LayoutWriter.AlignStarred</c>'s; both carry the measurement.
+    ///     <para>
+    ///         ⚠ <b>The <c>false</c> direction is measured and deliberately not implemented.</b> At
+    ///         <c>false</c> the oracle freezes a starred comment <em>entire</em> — it does not even
+    ///         re-indent the opening <c>/*</c> to the code's own column, which Skala does at both values
+    ///         and did before this key was read at all. That is a second, separable behaviour: it is about
+    ///         where the comment token starts rather than about its asterisks, and honouring it means
+    ///         emitting the comment self-indented from its written column. Recorded in SK-DIV-0033 with
+    ///         the probe that shows it, and left there rather than folded in on the strength of one run.
+    ///     </para>
+    /// </remarks>
+    public bool AlignMultilineComments { get; }
 
     /// <summary>
     ///     The column limit, or <see cref="Document.Unbounded" /> when <see cref="WrapLines" /> is off.
@@ -929,6 +965,32 @@ public readonly struct PhaseOneOptions {
     public int BlankLinesInsideType { get; }
     public int BlankLinesInsideNamespace { get; }
     public int BlankLinesAfterUsingList { get; }
+
+    /// <summary>
+    ///     <c>dotnet_separate_import_directive_groups</c>: exactly one blank line between two adjacent
+    ///     using directives in different groups, and exactly none between two in the same group.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ <b>The formatter's, not the arranger's, and that is the whole of SK-DIV-0074.</b> Measured
+    ///     against <c>jb cleanupcode</c> 2025.2.6, the oracle performs <em>both</em> directions under
+    ///     <c>CSReformatCode</c> alone — the format-only profile, with no arrangement task in it — so a
+    ///     user who ran <c>skala format</c> and a user who ran <c>skala arrange</c> used to get different
+    ///     blank lines out of the same file and the same key.
+    ///     <para>
+    ///         ⚠ It is an <em>exact</em> count and not a requirement, which is why
+    ///         <c>ResolveBlankLinesCore</c> returns on it rather than folding it into
+    ///         <c>RequiredBlankLines</c>: at <c>true</c> a two-blank gap between groups comes back as one,
+    ///         which a <c>Math.Max</c> could never produce.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ Ordering is not this key's business. Under the cleanup profile the oracle sorts first and
+    ///         separates the sorted order; under format-only it separates the written order untouched.
+    ///         Both fall out of the arranger sorting and the formatter separating afterwards, which is what
+    ///         moving the key here buys beyond closing the seam.
+    ///     </para>
+    /// </remarks>
+    public bool SeparateImportDirectiveGroups { get; }
+
     public int BlankLinesAfterFileScopedNamespaceDirective { get; }
     public int BlankLinesAfterBlockStatements { get; }
     public int BlankLinesBeforeSingleLineComment { get; }
@@ -1152,6 +1214,26 @@ public static class Ids {
     public static readonly OptionId IndentSize = Of("resharper_csharp_indent_size");
     public static readonly OptionId TabWidth = OfInert("resharper_csharp_tab_width");
     public static readonly OptionId IndentStyle = Of("resharper_csharp_indent_style");
+    // ⚠ Inert for the same reason `TabWidth` above is, and the reason is the *corpus* rather than the
+    // key: every committed fixture is indented with spaces, and with spaces all three values spell the
+    // identical column. `LayoutWriter.WriteIndentTo` now writes three distinct layouts under tabs, each
+    // one measured against the oracle and pinned by `TabFillStyleTests` — so this is "read, honoured,
+    // and unobservable on the only corpus there is", not "read and unwired".
+    //
+    // ⚠ It becomes `Of` and Tier A the moment the corpus can carry a per-directory `.editorconfig`,
+    // and not before: the key-flip sweep only reaches an option that has an `oracle` glob, a glob may
+    // only point at a committed fixture, and no committed fixture can be tab-indented. That is the
+    // whole of what is left of SK-DIV-0032 — the layouts themselves are fixed.
+    public static readonly OptionId AlignmentTabFillStyle = OfInert("resharper_csharp_alignment_tab_fill_style");
+
+    // ⚠ `OfUnoracled` in its documented sense — "asked, and answered differently" — and the mark is
+    // load-bearing rather than a place to park the key. Skala reproduces the oracle at the export's
+    // `true`; at `false` the oracle freezes a starred comment entire, including its opening `/*`'s own
+    // column, and Skala re-indents that. So the key is honoured, observable, and not conformant at one
+    // of its two values, which is exactly what bars it from Tier A. SK-DIV-0033 carries the probe.
+    public static readonly OptionId AlignMultilineComments =
+        OfUnoracled("resharper_csharp_align_multiline_comments");
+
     // ⚠ No longer inert. Milestone 1 read it and could not act on it — nothing wrapped — and it was
     // Tier D for that reason (docs/plan/05 § "Phase 1"). Milestone 3 is the phase where the column
     // limit is the whole point, and constructs/wrapping/initializers.cs pins it.
@@ -1665,17 +1747,23 @@ public static class Ids {
     //     SK-DIV-0008 and SK-DIV-0012 had blamed this key for a residue that was the missing `for`-
     //     header `;` break point. The blame was wrong and the masking verdict was right: with only
     //     this key flipped the oracle returns constructs/wrapping/for-header.cs byte-identical.
-    //   alignment_tab_fill_style — masked by `indent_style = space`, and it took a probe under tabs
-    //     to see it. All three values are distinct layouts of the *same* alignment column, and they
-    //     differ only in how the whitespace reaching it is spelled. On `if (a\n && b` at column 12
-    //     inside a block at 8, with a 4-column tab:
-    //         use_spaces     `\t\t` + 4 spaces   — tabs to the enclosing block, spaces for the rest
-    //         use_tabs_only  `\t\t\t`           — the column rounded *down* to a tab stop
-    //         optimal_fill   `\t\t\t`           — floor(column / tab) tabs, then the remainder
-    //     `optimal_fill` and `use_tabs_only` separate where the column is not a multiple of the tab
-    //     width: a chain aligned at column 21 is 5 tabs under `use_tabs_only` (column 20, short of
-    //     the anchor) and 5 tabs and a space under `optimal_fill`. ⚠ LayoutWriter.WriteIndentTo
-    //     implements `optimal_fill` and its remarks name it `use_spaces`; SK-DIV-0032.
+    //   alignment_tab_fill_style — ⚠ **implemented; this entry is kept for the masking, which is
+    //     still true.** Masked by `indent_style = space`, and it took a probe under tabs to see it.
+    //     All three values are distinct layouts of the *same* alignment column, differing only in how
+    //     the whitespace reaching it is spelled. `LayoutWriter.WriteIndentTo` carries the measured
+    //     table and writes all three; `TabFillStyleTests` pins them against the oracle's own bytes.
+    //     ⚠ Two clauses of the model recorded here were **wrong**, and both were corrected by a probe
+    //     run under `indent_style = tab` on 2026-08-30:
+    //       — `use_spaces` tabs to the line's *level* column, not to the enclosing block's. A plain
+    //         continuation at column 12 inside a block at 8 is three whole tabs; an *aligned* line at
+    //         that same column 12 is two tabs and four spaces. A level stays tabs and only what
+    //         alignment adds becomes spaces, which the "enclosing block" reading gets wrong on every
+    //         continuation line in the file.
+    //       — `use_tabs_only` rounds to the *nearest* tab stop and not down. Column 14 goes down to
+    //         12 and column 19 goes up to 20; ties break downwards. The "rounded down" claim was read
+    //         off a single column-21 datum that happens to round down either way.
+    //     SK-DIV-0032, whose remaining half is the fixture: the corpus has no per-directory
+    //     `.editorconfig`, so the key stays `OfInert` and out of the key-flip sweep's reach.
     //
     // Observable and not implemented, with the shape recorded so the next attempt starts from it:
     //   align_first_arg_by_paren — puts the arguments on the `(`'s column plus one and the closing
@@ -2176,6 +2264,12 @@ public static class Ids {
         Of("resharper_csharp_blank_lines_inside_namespace");
 
     public static readonly OptionId BlankLinesAfterUsingList = Of("resharper_csharp_blank_lines_after_using_list");
+
+    // ⚠ Beside `BlankLinesAfterUsingList` because it is the same family: that key owns the gap *after*
+    // the using block and this one owns the gaps *inside* it. It was the arranger's until SK-DIV-0074
+    // established that the oracle performs both of its directions under `CSReformatCode` alone, which
+    // made `skala format` and `skala arrange` disagree about one key. One component owns it now.
+    public static readonly OptionId SeparateImportDirectiveGroups = Of("dotnet_separate_import_directive_groups");
 
     public static readonly OptionId BlankLinesAfterFileScopedNamespaceDirective =
         Of("resharper_csharp_blank_lines_after_file_scoped_namespace_directive");
