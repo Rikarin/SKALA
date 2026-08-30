@@ -529,6 +529,34 @@ public static class FuzzMutations {
 
         readonly List<TextSpan> otherDataRegions = [];
 
+        /// <summary>
+        ///     Lines that <b>begin</b> with a comment, hard against the left margin.
+        /// </summary>
+        /// <remarks>
+        ///     ⚠ A correction to the property rather than to the formatter, and the same correction
+        ///     <see cref="AbsorbableGaps" /> carries for the gap beside a <c>..</c>:
+        ///     <c>resharper_csharp_stick_comment</c> — "Don't indent comments started at first column" —
+        ///     makes the comment's <em>source column</em> an input the oracle reads, and "at the first
+        ///     column" is literal. Measured on
+        ///     <c>constructs/trivia/resharper_csharp_stick_comment.expected.cs</c>: a comment at column 0
+        ///     is returned at column 0, and the same comment at column 2 is returned at the code's
+        ///     indent. So the one space an <see cref="Indent" /> mutation inserts in front of a column-0
+        ///     comment is <b>not</b> whitespace in the sense absorption means — it is the key's entire
+        ///     input, and a formatter that absorbed it would be diverging from the oracle on purpose.
+        ///     <para>
+        ///         ⚠ Head protection only, and only for the absorbed five. Appending to such a line, or
+        ///         inserting a whole line above it, leaves the comment where the author put it; it is
+        ///         shifting the line's own start that destroys the measurement. A structural mutation may
+        ///         still shift it and should — it is allowed to move the output.
+        ///     </para>
+        ///     <para>
+        ///         ⚠ Block comments are in scope too — the oracle applies the key to them — but they arrive
+        ///         here already <c>headProtected</c>, because a <see cref="SyntaxKind.MultiLineCommentTrivia" />
+        ///         is protected <c>whole</c>. This set is what the <em>single-line</em> kinds were missing.
+        ///     </para>
+        /// </remarks>
+        readonly HashSet<int> commentStartedLines = [];
+
         readonly HashSet<int> commentEndedLines = [];
         readonly List<TextSpan> verbatimRegions = [];
         readonly Dictionary<string, List<TextSpan>> identifiers = new(StringComparer.Ordinal);
@@ -624,6 +652,13 @@ public static class FuzzMutations {
                     continue;
                 }
 
+                // ⚠ The comment's own column is data under `resharper_csharp_stick_comment`; see
+                // `commentStartedLines`. Shifting the start of a line a comment opens at column 0
+                // is the one absorbed edit that changes what the oracle is being asked.
+                if (absorbing && atStart && commentStartedLines.Contains(i)) {
+                    continue;
+                }
+
                 if (excludeCommentEnds && commentEndedLines.Contains(i)) {
                     continue;
                 }
@@ -694,6 +729,15 @@ public static class FuzzMutations {
 
                     for (var line = first; line <= last; line++) {
                         commentEndedLines.Add(line);
+
+                        // ⚠ A line of this comment that opens hard against the left margin. Inside a
+                        // comment run every such line begins with the comment's own `/`, so "no
+                        // leading whitespace" is the whole test — and a *trailing* comment
+                        // (`M(); // x`) fails it, which is right: it is not at the first column and
+                        // the key does not protect it. See `commentStartedLines`.
+                        if (Text.Lines[line].ToString().StartsWith('/')) {
+                            commentStartedLines.Add(line);
+                        }
                     }
                 }
             }
