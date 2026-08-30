@@ -1,4 +1,4 @@
-// skala-oracle: resharper=2025.2.6 config=sha256:1db666f69fec005d profile=SkalaFormatOnly generated=2026-08-29
+// skala-oracle: resharper=2025.2.6 config=sha256:1db666f69fec005d profile=SkalaFormatOnly generated=2026-08-30
 namespace Skala.Corpus.Wrapping;
 
 // A *nested* conditional chain, which the oracle wraps by a rule of its own and not by the two keys
@@ -52,6 +52,30 @@ public class TernaryChains {
         return flag > 10 ? "the first branch here"
             : flag > 5 ? "the second branch here"
             : flag > 1 ? "third" : "d";
+    }
+
+    public string KeptAtOneSignOnly(int flag) {
+        // ⚠ The author broke exactly one sign of the chain and it was a `:`. The chain is planned
+        // member by member, as above — but the members the author left flat still have to break,
+        // and the measured answer is that they break at their `:` and never at their own `?`. The
+        // line is over the margin, so the break is paid for by width.
+        return flag > 10 ? "the first branch here"
+            : flag > 5 ? "the second branch here"
+            : flag > 1 ? "third"
+            : "d";
+    }
+
+    public string KeptAtOneSignOnlyInsideTheMargin(int flag) {
+        // ⚠ The same shape inside the margin, and it is the half that says the break is not about
+        // width: the flat members break only because the member the author broke did. Both halves
+        // are here because this is where idempotence lives — a break before a `?` is what turns the
+        // staircase on (see BreakPlan.PlanTernary), and it is read off the source, so a pass that
+        // broke these members at both signs would hand the next pass a chain it steps. It did, at
+        // 4, 8 and 12, and pass 3 agreed with pass 2.
+        return flag > 10 ? "a"
+            : flag > 5 ? "b"
+            : flag > 1 ? "c"
+            : "d";
     }
 
     public void Argument(int flag) {
