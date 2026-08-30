@@ -272,6 +272,7 @@ public sealed class LayoutWriter {
                 IndentKind.Block => new Scope(true, outer + _indentWidth, _line, outer, unconditional),
                 IndentKind.Continuous =>
                     new Scope(false, _continuousMultiplier * _indentWidth, _line, outer, unconditional),
+                IndentKind.OneLevel => new Scope(false, _indentWidth, _line, outer, unconditional),
                 IndentKind.Outdent =>
                     new Scope(true, Math.Max(0, outer - _indentWidth), _line, outer, unconditional),
 

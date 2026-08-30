@@ -989,12 +989,27 @@ public sealed partial class CSharpDocumentBuilder {
         // resharper_indent_inside_namespace = false flattens a block namespace's members.
         var suppress = node is NamespaceDeclarationSyntax && !_options.IndentInsideNamespace;
 
-        // use_continuous_indent_inside_initializer_braces = false leaves an initializer's contents
-        // at the level of the construct that owns them.
-        if (node is InitializerExpressionSyntax or AnonymousObjectCreationExpressionSyntax
-            && !_options.UseContinuousIndentInsideInitializerBraces) {
-            suppress = true;
-        }
+        // ⚠ `use_continuous_indent_inside_initializer_braces = false` used to suppress the scope
+        // outright — the initializer's contents landed on the level of the construct that owns them —
+        // and that is measured wrong in the same way its `_parens` sibling was: the oracle gives them
+        // ONE INDENT WIDTH. With `continuous_indent_multiplier = 2`:
+        //
+        //   new List<int> {          new List<int> {
+        //           1,                   1,          ← 12 + 1×4 at false, 12 + 2×4 at true
+        //   };                       };
+        //
+        // Under the export's own multiplier of 1 the two are the same number, which is why the sweep
+        // called this key `SPURIOUS`: the oracle could not move and Skala did.
+        //
+        // ⚠ The `true` arm is `IndentKind.Block` and stays that way in this pass. Block is one indent
+        // width, so it is *also* the `false` answer at multiplier 1, and at any other multiplier the
+        // `true` arm is a level short. That is a `continuous_indent_multiplier` defect on braced
+        // initializers rather than this key's, it is recorded at the key in options.json, and moving
+        // it here would mean turning an absolute scope into a relative one under every initializer in
+        // `corpus/real` on the strength of a row that does not ask about it.
+        var singleInsideInitializer = node is InitializerExpressionSyntax
+                or AnonymousObjectCreationExpressionSyntax
+            && !_options.UseContinuousIndentInsideInitializerBraces;
 
         // ⚠ A generic type's `where` clauses come before its `{`, so the run belongs to this walk as
         // much as to VisitChildren's. Without it a constrained class declaration has the plan and no
@@ -1010,13 +1025,14 @@ public sealed partial class CSharpDocumentBuilder {
                         _doc.Close();
                     }
 
+                    var closeIndent = singleInsideInitializer ? IndentKind.OneLevel : IndentKind.Block;
                     if (!indentBraces) {
-                        CloseIndent(IndentKind.Block, alignsCloser: true);
+                        CloseIndent(closeIndent, alignsCloser: true);
                     }
 
                     EmitToken(token);
                     if (indentBraces) {
-                        CloseIndent(IndentKind.Block);
+                        CloseIndent(closeIndent);
                     }
 
                     opened = false;
@@ -1032,12 +1048,13 @@ public sealed partial class CSharpDocumentBuilder {
                         _frames[^1] = _frames[^1] with { Activated = false };
                     }
 
+                    var braceIndent = singleInsideInitializer ? IndentKind.OneLevel : IndentKind.Block;
                     if (indentBraces) {
-                        OpenIndent(IndentKind.Block);
+                        OpenIndent(braceIndent);
                         EmitToken(token);
                     } else {
                         EmitToken(token);
-                        OpenIndent(IndentKind.Block);
+                        OpenIndent(braceIndent);
                     }
 
                     if (hasInner) {
@@ -1070,7 +1087,7 @@ public sealed partial class CSharpDocumentBuilder {
                 _doc.Close();
             }
 
-            CloseIndent(IndentKind.Block);
+            CloseIndent(singleInsideInitializer ? IndentKind.OneLevel : IndentKind.Block);
         }
     }
 
@@ -1109,9 +1126,14 @@ public sealed partial class CSharpDocumentBuilder {
         // was not. Reading "aligned" as "no level at all" put the elements on the bracket's column.
         var aligned = AlignsFromOwnColumn(node);
         var anchorsOnTheDelimiter = aligned && AlignAnchor(node) <= node.SpanStart;
-        var suppress = layout == NodeLayout.Parens
-            && !_options.UseContinuousIndentInsideParens
-            || aligned;
+
+        // ⚠ `use_continuous_indent_inside_parens = false` used to suppress the scope outright, and
+        // that was measured wrong: the oracle gives the contents ONE INDENT WIDTH, not none. The two
+        // readings are indistinguishable under the export's `continuous_indent_multiplier = 1` — which
+        // is exactly why the sweep called this key `SPURIOUS`, with Skala moving where the oracle
+        // could not — and separate at any other multiplier. See IndentKind.OneLevel.
+        var singleInsideParens = layout == NodeLayout.Parens && !_options.UseContinuousIndentInsideParens;
+        var suppress = aligned;
 
         // ⚠ `align_tuple_components = true`: the column *after* the tuple's `(`, which is a
         // different anchor from every key AlignsFromOwnColumn answers and needs a different place
@@ -1125,7 +1147,9 @@ public sealed partial class CSharpDocumentBuilder {
         // column and land one to the left.
         var innerIndent = node is TupleExpressionSyntax && _options.AlignTupleComponents
             ? IndentKind.Align
-            : IndentKind.Continuous;
+            : singleInsideParens
+                ? IndentKind.OneLevel
+                : IndentKind.Continuous;
 
         // ⚠ Which delimited scopes spend their level unconditionally — that is, even when another
         // scope opened on the same line — and which are collapsed with it. Both answers come from
@@ -1648,7 +1672,9 @@ public sealed partial class CSharpDocumentBuilder {
             return;
         }
 
-        if (kind is IndentKind.Continuous or IndentKind.Align) {
+        // ⚠ `Single` belongs here and not below: it is a continuation scope whose width happens not
+        // to be multiplied, so it composes and does not reset the continuation context.
+        if (kind is IndentKind.Continuous or IndentKind.Align or IndentKind.OneLevel) {
             _continuousDepth++;
             return;
         }
@@ -1671,7 +1697,7 @@ public sealed partial class CSharpDocumentBuilder {
             return;
         }
 
-        if (kind is IndentKind.Continuous or IndentKind.Align) {
+        if (kind is IndentKind.Continuous or IndentKind.Align or IndentKind.OneLevel) {
             _continuousDepth--;
         } else {
             if (_frames[^1].Activated) {

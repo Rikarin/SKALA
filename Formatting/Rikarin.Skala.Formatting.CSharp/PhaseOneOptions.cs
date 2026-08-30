@@ -1947,11 +1947,17 @@ public static class Ids {
     public static readonly OptionId IndentNestedLockStmt = Of("resharper_csharp_indent_nested_lock_stmt");
     public static readonly OptionId IndentNestedFixedStmt = Of("resharper_csharp_indent_nested_fixed_stmt");
 
+    // ⚠ SK-DIV-0085, and `OfInert` here means what it means for `align_multiline_argument`: no input
+    // distinguishes the values *under this configuration*, not that the formatter ignores them. The
+    // mask is `resharper_continuous_indent_multiplier = 1` in the export, which makes a continuation
+    // level and an indent width the same number — and `false` is one indent width, measured, not the
+    // absence of an indent. At multiplier 2 both keys are decisive in both engines, which is what
+    // `ContinuousIndentInsideTests` pins and what the sweep's one-key flip cannot reach.
     public static readonly OptionId UseContinuousIndentInsideParens =
-        Of("resharper_csharp_use_continuous_indent_inside_parens");
+        OfInert("resharper_csharp_use_continuous_indent_inside_parens");
 
     public static readonly OptionId UseContinuousIndentInsideInitializerBraces =
-        Of("resharper_csharp_use_continuous_indent_inside_initializer_braces");
+        OfInert("resharper_csharp_use_continuous_indent_inside_initializer_braces");
 
     public static readonly OptionId ContinuousIndentMultiplier = Of("resharper_csharp_continuous_indent_multiplier");
     public static readonly OptionId IndentPreprocessorIf = Of("resharper_csharp_indent_preprocessor_if");
@@ -2654,10 +2660,19 @@ public static class Ids {
     public static readonly OptionId PreferWrapAroundEq = OfInert("resharper_prefer_wrap_around_eq");
 
     public static readonly OptionId IndentRawLiteralString = Of("resharper_csharp_indent_raw_literal_string");
-    public static readonly OptionId FormatterTagsEnabled = Of("resharper_formatter_tags_enabled");
-    public static readonly OptionId FormatterOffTag = Of("resharper_formatter_off_tag");
-    public static readonly OptionId FormatterOnTag = Of("resharper_formatter_on_tag");
-    public static readonly OptionId FormatterTagsAcceptRegexp = Of("resharper_formatter_tags_accept_regexp");
+
+    // ⚠ SK-DIV-0084, and `OfInert` here is the same sense `align_multiline_argument` established: no
+    // input distinguishes their values *under this configuration*, not that the formatter ignores
+    // them. All four are read and honoured, and `FormatterTagTests` pins six measured behaviours
+    // between them. What masks them is that `@formatter:off` / `@formatter:on` are recognised whatever
+    // the four keys say — measured against the oracle, which does the same — so with the export's
+    // configured pair sitting on the built-in values there is nothing for `tags_enabled` or
+    // `accept_regexp` to change; and `off_tag`'s probe values are the default and the default with an
+    // `x` appended, of which the second is matched by the first's own prefix on every possible input.
+    public static readonly OptionId FormatterTagsEnabled = OfInert("resharper_formatter_tags_enabled");
+    public static readonly OptionId FormatterOffTag = OfInert("resharper_formatter_off_tag");
+    public static readonly OptionId FormatterOnTag = OfInert("resharper_formatter_on_tag");
+    public static readonly OptionId FormatterTagsAcceptRegexp = OfInert("resharper_formatter_tags_accept_regexp");
 
     // ── The xmldoc sub-formatter's subset ────────────────────────────────────────────────────
     // ⚠ This block used to be 22 keys registered `OfUnoracled` under one shared reason: "no

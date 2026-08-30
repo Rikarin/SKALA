@@ -7425,12 +7425,13 @@
       "defaultSource": "template",
       "tier": "D",
       "construct": "BracesLayout",
-      "summary": "Braces layout — Use continuous line indent inside expression braces",
+      "summary": "Whether an initializer's contents take a continuation level. ⚠ Measured 2026-08-30 at `resharper_continuous_indent_multiplier = 2`: a `new List<int> {` at column 12 puts its elements on 20 at `true` and on 16 at `false`, so `false` is one indent width rather than none. Under the export's multiplier of 1 the two coincide. ⚠ SEPARATE AND NOT FIXED: Skala's `true` arm is an `IndentKind.Block` scope, which is one indent width whatever the multiplier says, so at any multiplier above 1 it is a level short of the oracle. That is a `continuous_indent_multiplier` defect on braced initializers rather than this key's, and repairing it means turning an absolute scope into a relative one under every initializer in `corpus/real`. SK-DIV-0085.",
       "since": "0.1",
       "oracle": "constructs/indentation/resharper_csharp_use_continuous_indent_inside_initializer_braces.cs",
       "docs": "https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_BracesPageSchema.html#resharper_csharp_use_continuous_indent_inside_initializer_braces",
       "templateLine": 1107,
-      "expands": []
+      "expands": [],
+      "inert": "Masked by `resharper_continuous_indent_multiplier = 1`, which the export sets: at that multiplier one continuation level and one indent width are the same number, so no input distinguishes the values. Decisive at multiplier 2, in both spellings and in both engines — `true` gives the contents `2×4` and `false` gives them `1×4`. ⚠ `false` is ONE INDENT WIDTH, not the absence of an indent; Skala suppressed the scope outright, which is a level short at every multiplier and invisible at 1, and is why the sweep read SPURIOUS. Two flips, so the one-key sweep cannot reach it. SK-DIV-0085; pinned by `ContinuousIndentInsideTests`."
     },
     {
       "key": "resharper_csharp_use_continuous_indent_inside_parens",
@@ -7445,12 +7446,13 @@
       "defaultSource": "template",
       "tier": "D",
       "construct": "Parenthesis",
-      "summary": "Parenthesis — Use continuous line indent inside parenthesis",
+      "summary": "Whether the contents of a parenthesis take a continuation level. ⚠ Measured 2026-08-30 against `jb cleanupcode` 2025.2.6 with `resharper_continuous_indent_multiplier = 2`, which is the only configuration that can ask: `M(` at column 8 puts its arguments on 16 at `true` and on 12 at `false`. So `false` is one indent width rather than none. Under the export's own multiplier of 1 the two answers coincide and the key is unobservable. SK-DIV-0085.",
       "since": "0.1",
       "oracle": "constructs/indentation/resharper_csharp_use_continuous_indent_inside_parens.cs",
       "docs": "https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_CSharpIndentStylePageSchema.html#resharper_csharp_use_continuous_indent_inside_parens",
       "templateLine": 1108,
-      "expands": []
+      "expands": [],
+      "inert": "Masked by `resharper_continuous_indent_multiplier = 1`, which the export sets: at that multiplier one continuation level and one indent width are the same number, so no input distinguishes the values. Decisive at multiplier 2, in both spellings and in both engines — `true` gives the contents `2×4` and `false` gives them `1×4`. ⚠ `false` is ONE INDENT WIDTH, not the absence of an indent; Skala suppressed the scope outright, which is a level short at every multiplier and invisible at 1, and is why the sweep read SPURIOUS. Two flips, so the one-key sweep cannot reach it. SK-DIV-0085; pinned by `ContinuousIndentInsideTests`."
     },
     {
       "key": "resharper_csharp_use_heuristics_for_body_style",
@@ -8534,7 +8536,8 @@
       "docs": null,
       "templateLine": 744,
       "expands": [],
-      "freeFormBecause": "The literal text of the marker comment that switches the formatter off; the user chooses it. JetBrains documents the default marker and no domain, because there is none."
+      "freeFormBecause": "The literal text of the marker comment that switches the formatter off; the user chooses it. JetBrains documents the default marker and no domain, because there is none.",
+      "inert": "Masked at the export's own values, and by the built-in tags rather than by a second key: `@formatter:off` / `@formatter:on` are honoured whatever the four keys say — measured against `jb cleanupcode` 2025.2.6, which does the same — so with the export's configured pair sitting on the built-in values nothing distinguishes any of their values. ⚠ Not unimplemented: all four are read and honoured, and `FormatterTagTests` pins six measured behaviours between them, including the custom tag, the regexp mode and the negative control. SK-DIV-0084. ⚠ And no fixture could unmask `off_tag` / `on_tag`: the free-form-string probe offers the default and the default with `x` appended, and any comment matching `@formatter:offx` also matches the built-in `@formatter:off`, so the two values agree on every possible input."
     },
     {
       "key": "resharper_formatter_on_tag",
@@ -8551,7 +8554,8 @@
       "docs": null,
       "templateLine": 745,
       "expands": [],
-      "freeFormBecause": "The literal text of the marker comment that switches the formatter back on; the user chooses it."
+      "freeFormBecause": "The literal text of the marker comment that switches the formatter back on; the user chooses it.",
+      "inert": "Masked at the export's own values, and by the built-in tags rather than by a second key: `@formatter:off` / `@formatter:on` are honoured whatever the four keys say — measured against `jb cleanupcode` 2025.2.6, which does the same — so with the export's configured pair sitting on the built-in values nothing distinguishes any of their values. ⚠ Not unimplemented: all four are read and honoured, and `FormatterTagTests` pins six measured behaviours between them, including the custom tag, the regexp mode and the negative control. SK-DIV-0084. ⚠ And no fixture could unmask `off_tag` / `on_tag`: the free-form-string probe offers the default and the default with `x` appended, and any comment matching `@formatter:offx` also matches the built-in `@formatter:off`, so the two values agree on every possible input."
     },
     {
       "key": "resharper_formatter_tags_accept_regexp",
@@ -8567,7 +8571,8 @@
       "oracle": "constructs/trivia/resharper_formatter_tags_accept_regexp.cs",
       "docs": null,
       "templateLine": 746,
-      "expands": []
+      "expands": [],
+      "inert": "Masked at the export's own values, and by the built-in tags rather than by a second key: `@formatter:off` / `@formatter:on` are honoured whatever the four keys say — measured against `jb cleanupcode` 2025.2.6, which does the same — so with the export's configured pair sitting on the built-in values nothing distinguishes any of their values. ⚠ Not unimplemented: all four are read and honoured, and `FormatterTagTests` pins six measured behaviours between them, including the custom tag, the regexp mode and the negative control. SK-DIV-0084. Reachable only as the pair (`accept_regexp`, `off_tag`)."
     },
     {
       "key": "resharper_formatter_tags_enabled",
@@ -8583,7 +8588,8 @@
       "oracle": "constructs/trivia/resharper_formatter_tags_enabled.cs",
       "docs": null,
       "templateLine": 747,
-      "expands": []
+      "expands": [],
+      "inert": "Masked at the export's own values, and by the built-in tags rather than by a second key: `@formatter:off` / `@formatter:on` are honoured whatever the four keys say — measured against `jb cleanupcode` 2025.2.6, which does the same — so with the export's configured pair sitting on the built-in values nothing distinguishes any of their values. ⚠ Not unimplemented: all four are read and honoured, and `FormatterTagTests` pins six measured behaviours between them, including the custom tag, the regexp mode and the negative control. SK-DIV-0084. Reachable only as the pair (`tags_enabled`, `off_tag`)."
     },
     {
       "key": "resharper_ignore_space_preservation",

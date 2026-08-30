@@ -2747,11 +2747,70 @@ built-in values, where neither key can change anything. They are reachable, but 
 - ⚠ status: **accepted as unreachable from the one-at-a-time sweep**, not as a defect. Skala agrees
   with the oracle at every value the sweep can offer *and* at every configuration measured by hand
   above.
-- ⚠ Deliberately **not** registered `OfInert`. SK-DIV-0083 established "inert" to mean "no input
-  distinguishes its values under this configuration", and that is true here — but these four are read,
-  honoured and now correct on every path, and the mark that keeps a key out of the Tier A claim is the
-  wrong mark for a key whose behaviour is pinned by six tests. Their `oracle` globs are kept, so the
-  next sweep re-measures the claim and `UNEXERCISED` points here.
+- All four are registered `OfInert`, in the sense `align_multiline_argument` established and
+  SK-DIV-0083 restated: "no input distinguishes its values *under this configuration*", not "the
+  formatter ignores them". ⚠ **This entry first said the opposite** — that the mark was wrong for keys
+  whose behaviour is pinned by six tests — and the harness refuted it in the same run:
+  `OptionCoverageTests.EveryImplementedOption_ChangesTheOutputOfItsCorpusFile` and
+  `OptionObservabilityTests.EveryValue_IsDistinguishableOnTheKeysOwnFixture` both failed on all four,
+  and both were right to. An implemented key that no input can distinguish is exactly what the mark is
+  for; the tests were the argument and the prose was the opinion.
+- ⚠ Their `oracle` globs are kept, the way SK-DIV-0083's are, so the next sweep re-measures the claim
+  and `UNEXERCISED` points here.
 - ⚠ The model above is pinned by `FormatterTagTests` — one test per row of the table, each with the
   unrecognised-tag negative control beside it — because the sweep cannot pin it and a measurement that
   only lives in a document is one nobody will notice going stale.
+
+## SK-DIV-0085 — `use_continuous_indent_inside_parens` / `_initializer_braces`, masked by `continuous_indent_multiplier = 1`
+
+Both were `SPURIOUS` in the key-flip sweep and both now read `UNEXERCISED`. **A real defect was found
+and is fixed**: `false` does not mean "no indent", it means "one indent width", and the two readings
+are the same number under the export's own multiplier — which is why the oracle could not move and
+Skala could.
+
+⚠ **This settles the note the registry and `docs/tier-d-split.md` disagreed about.** The registry said
+these keys are "implemented and observable"; a pass measured `SPURIOUS` and could not reconcile the
+two. Both were right. The key *is* implemented and observable in `jb cleanupcode` — the mask is
+`resharper_continuous_indent_multiplier`, which the export sets to `1`.
+
+### The measurement
+
+`resharper_continuous_indent_multiplier = 2` is the only configuration that can ask, and at it the
+oracle is decisive at both values and in both spellings, prefixed and unprefixed:
+
+```
+// use_continuous_indent_inside_parens            // …_inside_initializer_braces
+M(                    M(                          new List<int> {      new List<int> {
+        a,                a,                              1,               1,
+        b                 b                               2                2
+);                    );                          };                   };
+true                  false                       true                 false
+8 + 2×4               8 + 1×4                     12 + 2×4             12 + 1×4
+```
+
+So `false` is **one indent width of continuation**, not the absence of one. Skala suppressed the
+scope outright, putting the contents on the owning construct's own column — a level short of the
+oracle at every multiplier, and visible in the sweep only because at multiplier 1 the oracle's two
+answers coincide and Skala's do not.
+
+`IndentKind.OneLevel` is what the IR was missing: `Continuous` with the multiplier forced to 1. It is
+deliberately not `Block` — a block is absolute and replaces whatever continuation is open, and the
+contents of a parenthesis do not reset the continuation context.
+
+⚠ **One half of the `true` arm is still short, and it is a different key's row.** A braced
+initializer's contents come from an `IndentKind.Block` scope, which is one indent width whatever the
+multiplier says, so at any multiplier above 1 Skala's `true` is a level short of the oracle. That is
+`continuous_indent_multiplier`'s defect on braced initializers, not this key's; it is recorded at the
+key in `options.json` and is not fixed here, because turning an absolute scope into a relative one
+under every initializer in `corpus/real` is not a change to make on the strength of a row that does
+not ask about it.
+
+- options: `resharper_csharp_use_continuous_indent_inside_parens`,
+  `resharper_csharp_use_continuous_indent_inside_initializer_braces`
+- ⚠ status: **accepted as unreachable from the one-at-a-time sweep**, not as a defect. Skala now
+  agrees with the oracle at both values under the export's multiplier *and* at the multiplier that
+  unmasks them. Two more pairs for `pairwise`: `(use_continuous_indent_inside_parens,
+  continuous_indent_multiplier)` and `(use_continuous_indent_inside_initializer_braces,
+  continuous_indent_multiplier)`.
+- ⚠ Both `oracle` globs are kept, the way SK-DIV-0083's are, so the next sweep re-measures the claim
+  and `UNEXERCISED` points here.

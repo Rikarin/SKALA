@@ -968,3 +968,100 @@ public sealed class XmlDocTests {
         Assert.Contains(new string('x', 200), result.Formatted, StringComparison.Ordinal);
     }
 }
+
+/// <summary>
+///     The two <c>use_continuous_indent_inside_*</c> keys, at the multiplier that unmasks them.
+/// </summary>
+/// <remarks>
+///     ⚠ SK-DIV-0085. The key-flip sweep cannot ask about either key, because the export sets
+///     <c>resharper_continuous_indent_multiplier = 1</c> and at that multiplier a continuation level and
+///     an indent width are the same number — so the oracle is flat at both values and any Skala answer
+///     that is not also flat reads <c>SPURIOUS</c>. The oracle's real answer, measured at multiplier 2,
+///     is pinned here instead, one assertion per column the oracle produced.
+///     <para>
+///         ⚠ <c>false</c> means <em>one indent width</em>, not the absence of an indent. Skala suppressed
+///         the scope outright, which is a level short at every multiplier and invisible at 1.
+///     </para>
+/// </remarks>
+public sealed class ContinuousIndentInsideTests {
+    static string FormatWith(string source, params (string Key, string Value)[] overrides) {
+        var options = new PhaseOneOptions(
+            Rikarin.Skala.Core.Configuration.OptionResolver.Resolve(
+                    Path.Combine(Rikarin.Skala.Testing.Corpus.RepositoryRoot, "Test.cs"),
+                    [.. overrides.Select(static o => new KeyValuePair<string, string>(o.Key, o.Value))]
+                )
+                .Options
+        );
+
+        return CSharpFormatter.Format("Test.cs", SourceText.From(source), options).Formatted;
+    }
+
+    const string Call = """
+                        class C {
+                            void M(int a, int b) {
+                                M(
+                                    a,
+                                    b);
+                            }
+                        }
+                        """;
+
+    /// <summary>
+    ///     ⚠ The negative control the rest of this class rests on: at the export's own multiplier the
+    ///     key decides nothing, in Skala exactly as in the oracle.
+    /// </summary>
+    [Theory]
+    [InlineData("true")]
+    [InlineData("false")]
+    public void AtTheExportsMultiplierOfOne_TheParenKeyDecidesNothing(string value) {
+        var formatted = FormatWith(Call, ("resharper_csharp_use_continuous_indent_inside_parens", value));
+        Assert.Contains("\n            a,\n", formatted, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     ⚠ Measured: at multiplier 2 the arguments land on <c>8 + 2×4</c> at <c>true</c> and
+    ///     <c>8 + 1×4</c> at <c>false</c>. The <c>false</c> column is the finding — it is an indent,
+    ///     not the lack of one.
+    /// </summary>
+    [Theory]
+    [InlineData("true", "\n                a,\n")]
+    [InlineData("false", "\n            a,\n")]
+    public void AtMultiplierTwo_InsideParens_IsOneLevelOrOneWidth(string value, string expected) {
+        var formatted = FormatWith(
+            Call,
+            ("resharper_continuous_indent_multiplier", "2"),
+            ("resharper_csharp_use_continuous_indent_inside_parens", value)
+        );
+        Assert.Contains(expected, formatted, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     ⚠ The initializer half, and only its <c>false</c> arm is asserted. The <c>true</c> arm comes
+    ///     from an <c>IndentKind.Block</c> scope, which is one indent width whatever the multiplier says
+    ///     — a <c>continuous_indent_multiplier</c> defect on braced initializers that SK-DIV-0085 records
+    ///     and deliberately does not fix. Asserting it here would pin the defect.
+    /// </summary>
+    [Fact]
+    public void AtMultiplierTwo_InsideInitializerBraces_False_IsOneWidthRatherThanNone() {
+        // ⚠ Five elements is over `max_initializer_elements_on_line = 4`, so this one is chopped
+        // whatever its width — which is what makes the indent inside the braces observable at all.
+        // The same construct `constructs/indentation/…_initializer_braces.cs` uses, for the same reason.
+        const string source = """
+                              class C {
+                                  System.Collections.Generic.List<int> N() =>
+                                      new System.Collections.Generic.List<int> { 1, 2, 3, 4, 5 };
+                              }
+                              """;
+
+        var formatted = FormatWith(
+            source,
+            ("resharper_continuous_indent_multiplier", "2"),
+            ("resharper_csharp_use_continuous_indent_inside_initializer_braces", "false")
+        );
+
+        // The `new` lands on one continuation level of 2×4 from the member at 4; the elements take one
+        // indent width from it rather than landing on it, which is the whole of the finding.
+        Assert.Contains("\n            new System.Collections.Generic.List<int> {\n", formatted, StringComparison.Ordinal);
+        Assert.Contains("\n                1,\n", formatted, StringComparison.Ordinal);
+    }
+}
