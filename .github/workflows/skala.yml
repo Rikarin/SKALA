@@ -91,6 +91,16 @@ jobs:
       # every alert the last good run raised**. A crash would then silently clear the security
       # surface it crashed before measuring, which is strictly worse than a skipped step. A report
       # that does not exist is reported by the step that failed to produce it.
+      # ⚠ **The file is uploaded whole, and it must stay that way.** It carries every finding the run
+      # produced, and the ones the baseline accepts carry a SARIF `suppressions` entry saying so —
+      # code scanning shows those dismissed rather than open, so the alert list is what the gate above
+      # called new and nothing here has to filter anything to make that true (doc 09 § "The verdict
+      # and the page cannot disagree").
+      #
+      # ⚠ Do not insert a `jq` step to drop the accepted results. It was the shape of the defect this
+      # replaced, in reverse: a dropped result claims "this run did not find it", which is a different
+      # and false statement from "this repository accepts it" — and the two steps below render the
+      # same file into the PR comment and the kept artefact, so every number on both would move.
       - name: Upload SARIF to code scanning
         if: always() && hashFiles('.skala/report.sarif') != ''
         uses: github/codeql-action/upload-sarif@v4

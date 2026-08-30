@@ -43,6 +43,84 @@ Everything a human or a machine sees is rendered from this object, in `Rikarin.S
 ⚠ No renderer contains analysis logic. A renderer that decides what counts as a failure is a second
 implementation of the gate. Renderers read; the gate decides.
 
+### Severities, and what they are in SARIF
+
+Skala has four severities and SARIF has three failure levels, so the mapping is lossy in one
+direction and is written down rather than inferred at each call site. It *was* inferred at three of
+them and they disagreed. `Rikarin.Skala.Reporting.SarifSeverity` is the one place it lives.
+
+| `.editorconfig` / `rules.json` | `SkalaSeverity` | SARIF `level` | SARIF `kind` | `properties.skalaSeverity` |
+|---|---|---|---|---|
+| `error` | `Error` | `error` | `fail` | `error` |
+| `warning` | `Warning` | `warning` | `fail` | `warning` |
+| `suggestion` | `Info` | `note` | `fail` | `suggestion` |
+| `hint` | `Hidden` | `note` | `fail` | `hint` |
+| `none` | — never reported — | `enabled: false` on the rule descriptor | — | — |
+
+⚠ **`hint` is `note`, not `none`.** SARIF § 3.27.10 permits `level: none` only on a result whose
+`kind` is something other than `fail`; a rule violation's kind is `fail`, so `none` is not available
+to it. Skala emitted it on **249 of the 446 results** in its own report — SARIF the spec does not
+allow, and a value GitHub's documented vocabulary (`error`, `warning`, `note`) has no rendering for,
+so how the code-scanning page displayed a third of the report was undefined rather than merely wrong.
+
+⚠ **`note` is the floor**, so `hint` and `suggestion` share it. `properties.skalaSeverity` carries
+the exact word, and `SarifReader` reads it back — without which `skala report` over a stored SARIF
+folds the recorded hint count into the suggestion count with nothing saying so.
+
+⚠ **Every result states its level, including the warnings.** The SARIF SDK declares `Result.Level`
+with `[DefaultValue(FailureLevel.Warning)]`, so **52 of the 446** results serialised with no `level`
+at all. Nothing downstream was wrong about them — SARIF and GitHub both default an absent level to
+`warning` — but a file that states the severity for three of four values and omits the fourth cannot
+be diffed or grepped, and the absence is indistinguishable from a writer that forgot.
+
+### The baseline is in the uploaded report
+
+A finding the baseline accepts carries a SARIF `suppressions` entry:
+
+```json
+"suppressions": [{
+  "kind": "external",
+  "status": "accepted",
+  "justification": "Accepted in .skala/baseline.sarif, …",
+  "properties": { "skalaSuppressionSource": "baseline" }
+}]
+```
+
+⚠ **This is what makes the uploaded report say what the gate decided.** Before it, the baseline
+governed the verdict and was invisible in the file: all 446 results went to code scanning with no
+suppression on them, so a page that answers "what is wrong with master" listed **428 long-accepted
+findings as open alerts** while the gate reading the same run counted 0 new. Code scanning shows a
+suppressed result as dismissed rather than open, so the alert list and `newIssues` are now the same
+set — see the invariant below.
+
+⚠ **Suppressed, never dropped.** Filtering the accepted findings out is a different and false claim
+— "this run did not find them" rather than "this repository has accepted them" — and `skala report`,
+the PR comment and the stored-verdict path all render from this same file.
+
+⚠ **Two suppressions on one result is a real state.** A finding can be `#pragma`-suppressed *and*
+accepted by the baseline; each entry names its own mechanism in `properties.skalaSuppressionSource`
+so `SarifReader` can tell them apart. That property is not decoration: the reader used to answer
+"there is at least one suppression" with `Pragma`, and `RunReport.Reportable` drops suppressed
+findings, so a baseline suppression read as a pragma would have taken 428 findings out of the gate's
+own input on the way back.
+
+⚠ **`result.baselineState` is deliberately not used.** SARIF § 3.27.24 makes it conditional on the
+run carrying a `baselineGuid`, and inventing a stable GUID for the baseline file is a separate
+decision. The bucket travels in `properties.baseline`, as it always has.
+
+### The verdict and the page cannot disagree
+
+An alert is open on the code-scanning page exactly when its result carries no `suppressions`. With a
+baseline in play and no `--since`, that set is `RunReport.New` — the set `newIssues` counts. It holds
+by construction, not by agreement: `CheckCommand` evaluates the gate against one `RunReport`, stores
+the verdict on that object, and writes the SARIF from the same object, so both sides are functions of
+the same `Finding.Bucket`. `SarifSuppressionTests.TheOpenResults_AreExactlyWhatTheGateCountsAsNew`
+is what fails if a later change gives either side its own opinion.
+
+⚠ `--since` is **not** expressed as a suppression, and must not be. A finding outside the lines a
+branch touched is still genuinely open on the branch; dismissing it because this PR did not touch it
+would be a false claim about the tree. Only the baseline means "accepted".
+
 ## Fingerprints and baselines
 
 ### The fingerprint

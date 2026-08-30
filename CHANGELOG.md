@@ -13,6 +13,41 @@ missed it says so and by how much; three of them were, and one of those is still
 
 ## Unreleased
 
+### Fixed — the code-scanning page listed 428 accepted findings as open alerts
+
+⚠ **The SARIF shape changed, which is a major bump under ADR-012.** `SarifSurface` will report the
+added paths on the next release measurement; that is the detector doing its job, not a regression.
+
+**The baseline governed the gate verdict and was invisible in the uploaded file.** All 446 results in
+Skala's own report went to code scanning with no `suppressions` entry, while `.skala/baseline.sarif`
+accepted 428 of them — so the page that answers "what is wrong with `master`" listed hundreds of
+long-accepted findings as open alerts, and the gate reading the very same run counted 0 new. A
+finding the baseline accepts now carries `suppressions: [{ kind: "external", status: "accepted", … }]`
+with a justification naming the committed file. Code scanning shows a suppressed result as dismissed.
+
+⚠ **Suppressed, not filtered out.** Dropping the accepted results would be a different and false
+claim — "this run did not find them" — and `skala report`, the PR comment and the stored-verdict path
+all render from this same file. Measured on this tree, same command before and after: 402 results
+both times, 402 open before and **1** after, against a gate that said "1 new" both times.
+
+`SarifReader` learned the difference in the same change. It answered "there is at least one
+suppression" with `Pragma`, and `RunReport.Reportable` drops suppressed findings — so without that,
+reading the report back would have taken 428 findings out of the gate's own input.
+
+**The severity mapping is written down**, in `SarifSeverity` and doc 09 § "Severities, and what they
+are in SARIF". It had been inferred at three call sites that disagreed:
+
+- `hint` was `level: none` on **249 of 446** results. SARIF § 3.27.10 permits `none` only where
+  `kind` is not `fail`; a rule violation's kind is `fail`. GitHub's documented vocabulary is
+  `error`/`warning`/`note`, so the rendering of a third of the report was undefined. `hint` and
+  `suggestion` are both `note` now, with the exact word in `properties.skalaSeverity` — which is
+  what keeps the round trip, and the recorded hint count, lossless.
+- **52 of 446** results carried no `level` at all: the SDK declares `Result.Level` with
+  `[DefaultValue(FailureLevel.Warning)]`, so the value Skala chose most deliberately serialised as
+  nothing. A contract resolver states it. Rule descriptors state theirs the same way.
+- `RuleSeverity.None` — "never runs, never reported" — is `defaultConfiguration.enabled: false`,
+  which is SARIF's own way of saying it, rather than a level that means it.
+
 ### Removed — the daemon, the thin client, and the performance budget
 
 ⚠ **Breaking, for anyone who typed `skala daemon`, `--no-daemon` or `SKALA_NO_DAEMON=1`.** All three

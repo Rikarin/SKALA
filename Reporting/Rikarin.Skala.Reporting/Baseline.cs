@@ -157,9 +157,18 @@ public sealed class Baseline {
     ///     ⚠ Suppressed findings are written too. A baseline exists to record what the repository
     ///     accepted, and a <c>#pragma</c> is a second, less visible way of accepting something; leaving
     ///     them out means removing the pragma turns an accepted finding new.
+    ///     <para>
+    ///         ⚠ The bucket is cleared, for the same reason the invocation is. A baseline is a list of
+    ///         what the repository accepts, not the record of a comparison — and since M9 an
+    ///         <see cref="BaselineBucket.Existing" /> finding carries a <c>suppressions</c> entry saying
+    ///         "the baseline accepted this", which inside the baseline file itself would be the file
+    ///         citing itself.
+    ///     </para>
     /// </remarks>
     public static void Write(string path, RunReport report, IEnumerable<Finding> findings) {
-        var accepted = findings.ToArray();
+        var accepted = findings.Select(static finding => finding with { Bucket = BaselineBucket.Unknown })
+            .ToArray();
+
         var log = SarifWriter.Build(report with { Findings = [.. accepted], Gate = null });
         log.Runs[0].Invocations = null;
 
