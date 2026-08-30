@@ -418,6 +418,19 @@ public static class PreferenceSweep {
         File.WriteAllText(markdownPath, Markdown(artefact, Path.GetFileName(jsonPath)));
     }
 
+    /// <summary>
+    ///     Reads a committed grid back and rewrites the prose beside it.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ The measurement costs minutes of an installed ReSharper and the reading of it costs nothing,
+    ///     so they are separable on purpose: every sentence in the markdown is computed from the JSON, and
+    ///     a reader who wants to ask the grid a question the prose does not answer can change the question
+    ///     without re-running the oracle — which, after the oracle is uninstalled, is the only way left.
+    /// </remarks>
+    public static Artefact Read(string jsonPath) =>
+        JsonSerializer.Deserialize<Artefact>(File.ReadAllText(jsonPath), JsonOptions)
+        ?? throw new InvalidOperationException(jsonPath + " did not deserialise.");
+
     static string Resolution(IReadOnlyList<int> totals, int innerFrom, int innerTo) =>
         "total "
         + totals[0].ToString(CultureInfo.InvariantCulture)
@@ -712,6 +725,167 @@ public static class PreferenceSweep {
         }
     }
 
+    /// <summary>One row of the grid, read as a boundary rather than as a string of codes.</summary>
+    /// <param name="Threshold">
+    ///     The narrowest inner construct at which the oracle declines the outer break having taken it one
+    ///     column narrower, or nothing when the row never crosses that way.
+    /// </param>
+    /// <param name="Crossings">How many times the answer changes across the row. More than one is not monotone.</param>
+    sealed record Reading(
+        string Construct,
+        string Filler,
+        int Total,
+        int? Threshold,
+        int Crossings,
+        bool AnyOuter,
+        bool AnyInner) {
+        public static Reading Of(Row row) {
+            int? threshold = null;
+            var crossings = 0;
+            var anyOuter = false;
+            var anyInner = false;
+            char? previous = null;
+            for (var i = 0; i < row.Codes.Length; i++) {
+                var code = row.Codes[i];
+                if (code is not ('O' or 'I')) {
+                    continue;
+                }
+
+                anyOuter |= code == 'O';
+                anyInner |= code == 'I';
+                if (previous is not null && previous != code) {
+                    crossings++;
+                    if (code == 'I' && threshold is null) {
+                        threshold = row.InnerFrom + i;
+                    }
+                }
+
+                previous = code;
+            }
+
+            return new Reading(row.Construct, row.Filler, row.Total, threshold, crossings, anyOuter, anyInner);
+        }
+
+        /// <summary>The threshold as it appears in the table, carrying its own caveat.</summary>
+        public string Cell =>
+            (Threshold is { } value
+                ? value.ToString(CultureInfo.InvariantCulture)
+                : AnyInner
+                    ? "all"
+                    : "—")
+            + (Crossings > 1 ? " ⚠" : string.Empty);
+    }
+
+    /// <summary>What the rows of one construct say, computed rather than asserted.</summary>
+    /// <remarks>
+    ///     ⚠ Every sentence here is derived from the grid at render time. Prose typed beside a table goes
+    ///     stale the first time the table is regenerated and nobody notices; prose computed from it
+    ///     cannot.
+    /// </remarks>
+    static string Findings(ConstructNote construct, List<Reading> readings) {
+        var builder = new StringBuilder();
+        var crossing = readings.Where(static reading => reading.Threshold is not null).ToList();
+        var jagged = readings.Where(static reading => reading.Crossings > 1).ToList();
+
+        builder.Append("Rows: ")
+            .Append(readings.Count.ToString(CultureInfo.InvariantCulture))
+            .Append(". Rows with a threshold in range: ")
+            .Append(crossing.Count.ToString(CultureInfo.InvariantCulture))
+            .Append(". Rows that cross more than once: ")
+            .Append(jagged.Count.ToString(CultureInfo.InvariantCulture))
+            .AppendLine(".");
+
+        if (crossing.Count == 0) {
+            builder.AppendLine();
+            builder.AppendLine(
+                "The oracle never changes its mind about this construct anywhere in the grid, so there is"
+            );
+            builder.AppendLine("no boundary here to reconstruct.");
+            return builder.ToString();
+        }
+
+        foreach (var group in crossing.GroupBy(static reading => reading.Filler).OrderBy(
+                     static group => group.Key,
+                     StringComparer.Ordinal
+                 )) {
+            var ordered = group.OrderBy(static reading => reading.Total).ToList();
+            var turns = 0;
+            for (var i = 2; i < ordered.Count; i++) {
+                var first = Math.Sign(ordered[i - 1].Threshold!.Value - ordered[i - 2].Threshold!.Value);
+                var second = Math.Sign(ordered[i].Threshold!.Value - ordered[i - 1].Threshold!.Value);
+                if (first != 0 && second != 0 && first != second) {
+                    turns++;
+                }
+            }
+
+            var thresholds = ordered.Select(static reading => reading.Threshold!.Value).ToList();
+            var heads = ordered.Select(static reading => reading.Total - reading.Threshold!.Value).ToList();
+            builder.AppendLine();
+            builder.Append("- `")
+                .Append(group.Key)
+                .Append("`: threshold ")
+                .Append(thresholds.Min().ToString(CultureInfo.InvariantCulture))
+                .Append('…')
+                .Append(thresholds.Max().ToString(CultureInfo.InvariantCulture))
+                .Append(" over totals ")
+                .Append(ordered[0].Total.ToString(CultureInfo.InvariantCulture))
+                .Append('…')
+                .Append(ordered[^1].Total.ToString(CultureInfo.InvariantCulture))
+                .Append(", turning direction ")
+                .Append(turns.ToString(CultureInfo.InvariantCulture))
+                .Append(turns == 1 ? " time" : " times")
+                .Append(". `total − threshold` spans ")
+                .Append(heads.Min().ToString(CultureInfo.InvariantCulture))
+                .Append('…')
+                .Append(heads.Max().ToString(CultureInfo.InvariantCulture))
+                .Append(heads.Distinct().Count() == 1 ? " — **constant**" : string.Empty)
+                .AppendLine(".");
+        }
+
+        builder.AppendLine();
+        var agreements = crossing.GroupBy(static reading => reading.Total)
+            .Where(static group => group.Count() > 1)
+            .ToList();
+
+        var unanimous = agreements.Count(static group =>
+            group.Select(static reading => reading.Threshold).Distinct().Count() == 1
+        );
+
+        builder.Append("The filler profiles agree on the threshold at ")
+            .Append(unanimous.ToString(CultureInfo.InvariantCulture))
+            .Append(" of the ")
+            .Append(agreements.Count.ToString(CultureInfo.InvariantCulture))
+            .AppendLine(" totals where more than one of them has a threshold to compare —");
+        builder.AppendLine(
+            agreements.Count > 0 && unanimous == agreements.Count
+                ? "unanimously. The boundary is a fact about the oracle and the width, not about how many"
+                : "which is not unanimous. Where they disagree the boundary is partly a fact about how many"
+        );
+        builder.AppendLine(
+            agreements.Count > 0 && unanimous == agreements.Count
+                ? "identifiers the probe happened to fit inside the construct."
+                : "identifiers the probe fitted inside the construct, and those rows are the probe's, not"
+                + " the oracle's."
+        );
+
+        if (jagged.Count > 0) {
+            builder.AppendLine();
+            builder.Append("⚠ ")
+                .Append(jagged.Count.ToString(CultureInfo.InvariantCulture))
+                .AppendLine(" rows cross more than once and are marked in the table above.");
+        }
+
+        _ = construct;
+        return builder.ToString();
+    }
+
+    /// <summary>Turns a joined group of lines back into a code block's worth of text.</summary>
+    static string Unfold(string text) =>
+        string.Join(
+            '\n',
+            text.Split(" ⏎ ", StringSplitOptions.None).Select(static line => line.TrimEnd())
+        );
+
     static string Markdown(Artefact artefact, string jsonName) {
         var builder = new StringBuilder();
         builder.AppendLine("# The preference surface, measured");
@@ -800,6 +974,8 @@ public static class PreferenceSweep {
             builder.Append("- `").Append(line[0]).Append("` — ").AppendLine(line[3..]);
         }
 
+        var readings = artefact.Grid.Select(Reading.Of).ToList();
+
         builder.AppendLine();
         builder.AppendLine("## Where the answer flips, to the column");
         builder.AppendLine();
@@ -808,22 +984,126 @@ public static class PreferenceSweep {
         );
         builder.AppendLine("the next reader to re-derive it.");
         builder.AppendLine();
+        builder.AppendLine(
+            "**threshold** is the narrowest inner construct at which the oracle stops taking the outer"
+        );
+        builder.AppendLine(
+            "break, having taken it one column narrower. `—` means it took the outer break at every width"
+        );
+        builder.AppendLine(
+            "swept; `all` means it took it at none. A `⚠` marks a row that crosses back — the answer is"
+        );
+        builder.AppendLine(
+            "not monotone in the inner width, so no bisection over that row would have found the boundary."
+        );
+        builder.AppendLine();
 
         foreach (var construct in artefact.Constructs) {
-            var flips = artefact.Flips.Where(flip => flip.Construct == construct.Id).ToList();
+            var mine = readings.Where(reading => reading.Construct == construct.Id).ToList();
             builder.Append("### `").Append(construct.Id).Append("` — ").AppendLine(construct.Divergence);
             builder.AppendLine();
-            if (flips.Count == 0) {
-                builder.AppendLine("No flip anywhere in the grid: the oracle's answer never changes with the");
-                builder.AppendLine("inner construct's width at any total swept.");
+            if (mine.Count == 0) {
+                builder.AppendLine("Nothing was generated for this construct.");
                 builder.AppendLine();
                 continue;
             }
 
-            builder.AppendLine("| filler | total | last | first | from | to |");
-            builder.AppendLine("|---|---:|---:|---:|---|---|");
-            foreach (var flip in flips) {
+            var columns = mine.Select(static reading => reading.Filler)
+                .Distinct(StringComparer.Ordinal)
+                .OrderBy(static filler => filler, StringComparer.Ordinal)
+                .ToList();
+
+            builder.Append("| total |");
+            foreach (var column in columns) {
+                builder.Append(" `").Append(column).Append("` |");
+            }
+
+            builder.AppendLine(" agree? |");
+            builder.Append("|---:|");
+            foreach (var unused in columns) {
+                builder.Append("---:|");
+            }
+
+            builder.AppendLine("---|");
+
+            foreach (var total in mine.Select(static reading => reading.Total).Distinct().Order()) {
+                builder.Append("| ").Append(total.ToString(CultureInfo.InvariantCulture)).Append(" |");
+                var seen = new List<int>();
+                foreach (var column in columns) {
+                    var reading = mine.FirstOrDefault(entry => entry.Total == total && entry.Filler == column);
+                    if (reading?.Threshold is { } threshold) {
+                        seen.Add(threshold);
+                    }
+
+                    builder.Append(' ').Append(reading is null ? "·" : reading.Cell).Append(" |");
+                }
+
+                builder.AppendLine(seen.Distinct().Count() <= 1 ? " yes |" : " **no** |");
+            }
+
+            builder.AppendLine();
+            builder.AppendLine(Findings(construct, mine));
+            builder.AppendLine();
+
+            var exemplar = artefact.Flips.FirstOrDefault(flip =>
+                flip.Construct == construct.Id && flip.From == "Outer" && flip.To == "Inner"
+            );
+
+            if (exemplar is not null) {
+                builder.Append("The boundary itself, at total ")
+                    .Append(exemplar.Total.ToString(CultureInfo.InvariantCulture))
+                    .Append(" under `")
+                    .Append(exemplar.Filler)
+                    .AppendLine("`. One column of the inner construct separates these two:");
+                builder.AppendLine();
+                builder.Append("```csharp\n// inner ")
+                    .Append(exemplar.Before.ToString(CultureInfo.InvariantCulture))
+                    .Append(" — the oracle takes the `")
+                    .Append(construct.OuterBreak)
+                    .AppendLine("`");
+                builder.AppendLine(Unfold(exemplar.BeforeText));
+                builder.Append("\n// inner ")
+                    .Append(exemplar.After.ToString(CultureInfo.InvariantCulture))
+                    .AppendLine(" — one column wider, and it breaks the inner construct instead");
+                builder.AppendLine(Unfold(exemplar.AfterText));
+                builder.AppendLine("```");
+                builder.AppendLine();
+            }
+        }
+
+        var reversals = artefact.Flips
+            .Where(static flip => flip.From == "Inner" && flip.To == "Outer")
+            .ToList();
+
+        builder.AppendLine("## Every crossing back");
+        builder.AppendLine();
+        if (reversals.Count == 0) {
+            builder.AppendLine(
+                "None. Within a row the oracle's answer changes at most once, from taking the outer break"
+            );
+            builder.AppendLine(
+                "to declining it, so each row *is* locally monotone in the inner width — the"
+            );
+            builder.AppendLine(
+                "non-monotonicity this artefact records lives entirely in the other axis, in how the"
+            );
+            builder.AppendLine("threshold moves with the total.");
+        } else {
+            builder.Append("⚠ ")
+                .Append(reversals.Count.ToString(CultureInfo.InvariantCulture))
+                .AppendLine(
+                    " places where a **wider** inner construct brings the outer break back. Each one is a"
+                );
+            builder.AppendLine(
+                "row a bisection over the inner width would have reported the wrong boundary for."
+            );
+            builder.AppendLine();
+            builder.AppendLine("| construct | filler | total | last inner | first outer |");
+            builder.AppendLine("|---|---|---:|---:|---:|");
+            foreach (var flip in reversals) {
                 builder.Append("| `")
+                    .Append(flip.Construct)
+                    .Append("` | `")
                     .Append(flip.Filler)
                     .Append("` | ")
                     .Append(flip.Total.ToString(CultureInfo.InvariantCulture))
@@ -831,16 +1111,11 @@ public static class PreferenceSweep {
                     .Append(flip.Before.ToString(CultureInfo.InvariantCulture))
                     .Append(" | ")
                     .Append(flip.After.ToString(CultureInfo.InvariantCulture))
-                    .Append(" | ")
-                    .Append(flip.From)
-                    .Append(" | ")
-                    .Append(flip.To)
                     .AppendLine(" |");
             }
-
-            builder.AppendLine();
         }
 
+        builder.AppendLine();
         builder.AppendLine("## The grid");
         builder.AppendLine();
         builder.AppendLine(

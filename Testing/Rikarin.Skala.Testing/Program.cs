@@ -225,6 +225,19 @@ switch (args[0]) {
         // target cannot be restated from first principles after the oracle is uninstalled, so the
         // grid is committed. Minutes, not seconds; never a test.
         //   preference [--totals=A..B] [--inner=A..B] [--out=<path-without-extension>]
+        //   preference --render=<json>
+
+        // ⚠ `--render` rewrites the prose from a grid already committed, and is checked *before* the
+        // oracle is looked for: it is the mode that still works after ReSharper is uninstalled, and
+        // it is why the markdown states nothing the JSON does not carry.
+        if (args.FirstOrDefault(static argument => argument.StartsWith("--render=", StringComparison.Ordinal))
+                ?["--render=".Length..] is { } render) {
+            var existing = PreferenceSweep.Read(render);
+            PreferenceSweep.Write(existing, render, Path.ChangeExtension(render, ".md"));
+            Console.WriteLine($"re-rendered {existing.Grid.Count} rows from {render}");
+            return 0;
+        }
+
         if (OracleRunner.FindExecutableOrNull() is null) {
             Console.Error.WriteLine("jb is not installed.");
             return 2;
