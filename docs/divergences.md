@@ -151,8 +151,40 @@ within two lines of it. The whole blank-line residue is 18 lines across 17 files
 differences in three files are not next to a directive and belong elsewhere.** The class shrank
 because the rest of the tail shrank around it, not because it changed.
 
+⚠ **Re-measured 2026-08-30, and the oracle's edit is worse than this entry recorded.** On a probe
+carrying an inactive `#if HAVE_BENCHMARKS` branch, `jb cleanupcode` under `SkalaFormatOnly` deletes
+the blank line after the opening directive *and* rewrites the spacing of the code inside:
+
+```
+   int    y   =   2 ;      →      int    y = 2 ;
+```
+
+That is the whole of the argument in one line. It normalised the runs around `=` and left the run
+after `int` and the three-space indent exactly where they were, because there is no tree to walk —
+it is a spacing rule fired at text nobody parsed. A formatter that edits code it cannot see will
+eventually edit it wrongly, and the evidence that it already does is in the output.
+
+⚠ **And Skala is now consistent about it, which it was not.** The one hole was
+`blank_lines_around_region` firing on the gaps around a `#region` that stands *inside* the inactive
+branch: Roslyn keeps such a directive structured, so the piece stream could not tell it from one
+governing real code, and the blank line Skala wrote there re-parsed as a `DisabledTextTrivia` that
+had not been in the input — SK-FUZZ-0016, and the file aborted with SK9099. `Piece.Inactive`
+(`DirectiveTriviaSyntax.IsActive`) and `EmitGap`'s `TouchesInactiveBranch` close it: every piece of
+the branch is opaque whether or not Roslyn kept it structured. Re-measured on a probe with two
+`#region` pairs and a nested `#if` inside an inactive branch, live members either side and an
+`#else` arm that *is* active: Skala reformats every active line, including the `#else` arm, and
+returns the inactive branch byte for byte. The only remaining difference from the oracle is the
+oracle's own edit inside the disabled text.
+
 - options: `resharper_csharp_keep_blank_lines_in_code`, `resharper_csharp_keep_blank_lines_in_declarations`
 - ⚠ status: **open**, measured
+- ⚠ **triage 2026-08-30: `deliberate`.** The argument does not need the oracle to state it: *the
+  inactive branch of a `#if` is text the compiler never sees, so an edit to it can only be checked
+  by a human reading it, and the whole point of a formatter is that nobody reads its output.* It is
+  the same instinct as ADR-003's byte-identical unparseable file, and this repository has already
+  paid once for the converse — SK-FUZZ-0016 is what happens when one rule reaches inside. Skala
+  keeps the branch, and the entry survives the oracle's retirement as a stated property rather than
+  as a difference from a tool.
 
 ## SK-DIV-0002 — resolved at milestone 3; kept for the number it recorded
 
@@ -211,8 +243,42 @@ tokens rather than one token, so the per-token guard missed it — and added whi
 Skala nor the oracle absorbs. The mutation now leaves the whole expression alone, the same way it
 already left raw strings and disabled text alone.
 
+⚠ **Re-measured 2026-08-30, and the recorded argument does not survive it.** The entry's reason for
+the interpolated case is "where a moved space changes the value". It does not. Asked directly:
+
+| shape | oracle | Skala |
+|---|---|---|
+| `"""…"""` at column 24, opener moved to 20 | content and delimiter shifted −4 | the same, byte for byte |
+| `$"""…"""` at column 24, opener moved to 28 | content and delimiter shifted +4 | **unchanged** |
+| `$"""` with a multi-line interpolation hole | the literal's own lines shift; the **hole's** lines do not | unchanged |
+| `$"""` with a nested `$"""` inside a hole | outer shifts +1, inner shifts +7 to its own anchor | unchanged |
+| `@"…"` and `$@"…"` | untouched | untouched |
+
+The stripping rule C# applies to a raw literal — the closing delimiter's whitespace prefix is
+removed from every content line — holds for an interpolated literal exactly as it holds for a plain
+one, so a shift that is uniform *within one literal* is value-neutral in both. The oracle performs
+it, on a nested literal too, and the result compiles to the same strings. **What is missing is
+machinery, not a proof.** An interpolated raw literal is not one token but a run of them:
+`LayoutWriter.ShiftRawLiteral` rewrites one token's text, and reaching this case means shifting only
+the literal's own text tokens, leaving the lines that belong to an interpolation hole alone,
+recursing into a nested literal in a hole against *its* anchor, and teaching the per-token
+equivalence guard about all three.
+
+⚠ The `@"…"` half of this entry is **not a divergence at all** and should stop being carried as one.
+A verbatim string has no stripping rule, so its content is literal and neither engine can move it;
+both return it untouched. Only the raw-literal half is open.
+
 - options: `resharper_csharp_indent_raw_literal_string` (Tier A, `default = align`, from the template)
 - ⚠ status: **open**, measured
+- ⚠ **triage 2026-08-30: `debt`, size M.** Not defensible to a user: "Skala aligns your raw string
+  literals, except the interpolated ones" is a bug report, not a policy, and the entry's own
+  justification is refuted above. It costs 12 lines over 11 files of `corpus/real/` and owns the
+  single worst file in any corpus (`pathological/interpolated-raw-string-with-nested-braces.cs`, at
+  14.29 % of lines and 0 % of files). Paying it: extend the shift from a token to an
+  `InterpolatedStringExpressionSyntax`'s text-token run, anchor each nested literal separately,
+  exclude hole lines, and widen the equivalence guard's raw-literal exemption to the run. ⚠ Needs
+  the oracle, for the fixtures — the four rows above are the specification and are recorded here so
+  that at least the *shape* survives its retirement.
 
 ## SK-DIV-0004 — ✅ closed at milestone 5, and the residue is not preprocessor-shaped
 
@@ -784,8 +850,40 @@ alignment off, laying out line *n* never requires knowing the contents of line *
 the change**, and that is worth stating: an alignment scope's column is the column the writer is
 already at when the scope opens, which is on the current line. The fitting pass is still linear.
 
+⚠ **Re-measured 2026-08-30 and the other half is closed too.** Four probes, each carrying the shape
+the four remaining keys name — an overflowing array initializer, a `: base(…)` initializer, a broken
+type argument list, a five-parameter type parameter list — formatted by Skala and by
+`jb cleanupcode` under `SkalaFormatOnly`, first at the export's values and then with all four keys
+flipped to `false`:
+
+| | result |
+|---|---|
+| Skala vs oracle, export values | **byte-identical on every shape**, the `for` header included |
+| oracle at `true` vs `false`, all four keys | **byte-identical** — the keys move nothing |
+| same, with `align_multiline_array_and_object_initializer = true` unmasking the family | still byte-identical |
+
+The last row is the one that matters, because it is the mask the `for` row was caught by. Turning
+the family's general key on *does* move the oracle — an overflowing `{ … }` goes from block indent to
+the initializer's own column — and with the family unmasked the specialised key still makes no
+difference at either value. So `align_multiline_array_initializer`, `…_ctor_init`,
+`…_type_argument` and `…_type_parameter` are the same shape `align_multiline_for_stmt` turned out to
+be: keys the C# formatter does not answer to on this configuration, recorded as divergences because
+nothing had asked them directly.
+
+⚠ What is *left* is not a divergence but a registry fact: Skala declares four keys it never reads,
+and flipping one silently does nothing. That is the shape `resharper_remove_this_qualifier` had
+before it was deleted, and it is a question for the registry rather than for this file.
+
 - options: `resharper_csharp_align_multiline_statement_conditions` (now Tier A), `resharper_csharp_align_multiline_for_stmt`, `resharper_align_multiline_array_initializer`, `resharper_align_multiline_type_argument`, `resharper_align_multiline_ctor_init`
 - ⚠ status: **half closed** (statement conditions, at M3.1), four keys still **open**, measured
+- ⚠ **triage 2026-08-30: `moot`.** Every half of this entry is now accounted for: the statement
+  conditions were built and are Tier A; the `for` residue was reattributed to
+  `wrap_for_stmt_header_style`, which is implemented and Tier A, and the header reproduces byte for
+  byte; the other four keys are worth 0 lines over 380 real and 324 construct files *and* move the
+  oracle at neither value on any shape probed, masked or unmasked. ⚠ Stated as a limit rather than a
+  proof: four probes are not the shape space. What is claimed is that nothing this repository can
+  measure separates the two engines on these keys, which is the same standard the `INERT` verdicts
+  elsewhere in this file are held to.
 
 ## SK-DIV-0009 — `space_within_spread_pattern` is inert, and the gap it names is not governed at all
 
@@ -1043,9 +1141,22 @@ of its own before anything is implemented.
 
 Measured: 1 line, 1 file of `constructs/` (324 files). Not observed in `corpus/real/`.
 
+⚠ **Re-measured 2026-08-30: it does not reproduce.** Skala formats
+`constructs/trivia/a-malformed-doc-comment-is-left-alone.cs` into the committed
+`.expected.cs` **byte for byte** — the blank line the oracle inserts is now Skala's too. Confirmed a
+second time on a fresh two-line probe (`// comment` / `// comment` / `class C {`), where Skala and
+the oracle both insert the blank line and the two outputs are identical. `RequirementFor` states
+`BlankLinesAroundType` at the compilation unit's first member, and the leading comment block no
+longer suppresses it.
+
 - options: `resharper_blank_lines_around_type`, `resharper_stick_comment`,
   `resharper_blank_lines_before_single_line_comment`
 - ⚠ status: **open**, pre-existing, exposed at the M9 merge
+- ⚠ **triage 2026-08-30: `moot`.** It no longer reproduces, on the fixture that recorded it or on a
+  minimal probe. ⚠ The entry's open question — whether the oracle special-cases a file-scope comment
+  block or treats the compilation unit's start as a member boundary — was never answered and is now
+  academic: the two engines agree, and the entry is kept for the record that a fixture written for
+  something else is what found it.
 
 ## SK-DIV-0016 — the oracle's cleanup profile ignores `@formatter:off`; Skala honours it everywhere
 
@@ -2099,10 +2210,34 @@ three values then produce identical output and the key reads as inert. That is w
 real divergence on a tab-indented configuration and it is Skala's to fix, not an option to implement:
 the export's own value is the one Skala gets wrong.
 
+⚠ **Re-measured 2026-08-30 under `indent_style = tab`, and the table above reproduces to the
+character.** One probe — a statement condition aligned at column 15 inside a block at column 8 —
+formatted by `jb cleanupcode` at each of the three values and by Skala:
+
+| value | the continuation's indent |
+|---|---|
+| `use_spaces` — **the export's own value** | 2 tabs + 7 spaces |
+| `use_tabs_only` | 4 tabs |
+| `optimal_fill` | 3 tabs + 3 spaces |
+| Skala, at all three | 3 tabs + 3 spaces |
+
+`LayoutWriter.WriteIndentTo` is unconditional: `column / _indentWidth` whole units and spaces for the
+remainder, with no reference to the key anywhere in the formatter. So Skala writes `optimal_fill`
+under every configuration, and under the export's `use_spaces` it is wrong on every aligned
+continuation line of every tab-indented file.
+
 - options: `resharper_csharp_alignment_tab_fill_style`, `indent_style`
 - ⚠ status: **open**, measured, unfixed. The fix is a value on `LayoutWriter` and three cases in
   `WriteIndentTo`; it needs a fixture under a tab configuration, and the corpus has no mechanism for
   a per-directory `.editorconfig`, so it wants that first.
+- ⚠ **triage 2026-08-30: `debt`, size S.** Nothing was decided here — Skala writes one of three
+  layouts because `WriteIndentTo` was written before the question was asked, and the layout it
+  writes is not the one the export requests. There is no version of this to defend to a user: "you
+  asked for tabs to the block level and spaces for the remainder, and you got neither" is a defect.
+  Paying it is three cases in one method plus the value on `LayoutWriter`; the *fixture* is the
+  larger half, because the corpus cannot yet carry a per-directory `.editorconfig` and every probe
+  that asked this key was indented with spaces, which is why it sat on the "never read" list for so
+  long. ⚠ Needs the oracle only for the fixture — the three layouts are specified in the table above.
 
 ## SK-DIV-0033 — the oracle realigns a block comment's asterisks; Skala leaves the comment as written
 
@@ -2129,8 +2264,26 @@ other key in this family does and which the formatter has no trivia rewriter for
 member of the family whose export value is the one Skala fails to honour, so it is a divergence at
 the export's own values and not merely an unimplemented option.
 
+⚠ **Re-measured 2026-08-30 and it reproduces at the export's value.** On a probe carrying a starred
+block comment at file scope, a second one indented inside a type, and a third with no asterisks at
+all, `jb cleanupcode` under `SkalaFormatOnly` pulls every starred continuation line to the opening
+delimiter's column plus one — including the member-level comment, whose lines move from columns 8
+and 2 to column 5 — and leaves the unstarred comment exactly as written. Skala returns all three
+byte for byte as written.
+
 - options: `resharper_csharp_align_multiline_comments`
 - ⚠ status: **open**, measured, unfixed
+- ⚠ **triage 2026-08-30: `debt`, size M.** It looks like SK-DIV-0001's principle — do not rewrite
+  the inside of something you did not parse — and it is not, because Skala already rewrites the
+  inside of a `///` comment by default (SK-DIV-0006). Once the interior of one comment kind is the
+  formatter's, "we do not touch the interior of a block comment" is not a position, it is an
+  omission, and the export asks for the realignment at the value it actually sets. Paying it:
+  `SourcePieces.AddTrivia` keeps a `MultiLineCommentTrivia` as one piece emitted verbatim; the work
+  is to split it per line the way `AddDocumentationLines` already splits a `///` run, indent each
+  continuation whose first non-space character is `*` to the opener's column plus one, and leave a
+  comment with no leading asterisks alone. The size is M rather than S because a new per-line piece
+  kind has to answer to `@formatter:off`, to the inactive-branch opacity above, and to idempotence,
+  and it wants a fixture at both values. ⚠ Needs the oracle, for the fixture.
 ## SK-DIV-0070 — the oracle reads the four Roslyn qualification keys for `this.`, and not `resharper_remove_this_qualifier`
 
 `resharper_remove_this_qualifier = true` is in the export and the key is **Tier A**, pinned by
@@ -2159,8 +2312,28 @@ it — that is the divergence, and it is deliberate. Dropping the key instead wo
 option unobservable and leave its committed fixture proving nothing, which is a bigger claim to make
 than this one. The tier is the maintainer's call; the measurement is here so it can be made.
 
+⚠ **Superseded on 2026-08-29 and re-checked 2026-08-30.** `resharper_remove_this_qualifier` was
+deleted from the template, the generated `.editorconfig`, the registry (520 → 510), the free-form
+exemption list and the arranger, as one of ten keys ReSharper does not support — and the removal was
+proved inert by regenerating 1 336 fixtures and re-stamping 760 with **not one non-header line
+changed** (`302338e6`). This entry was the first of three readings of that key, and the last one is
+the one that stuck: dominated (here), then `SPURIOUS` in the first cleanup-profile sweep, then gone.
+
+`ThisQualifierRule.IsEnabled` is now `true` unconditionally — deliberately not the disjunction of the
+four Roslyn keys, which the export sets all `false` and which would therefore have switched the rule
+off entirely. The four `dotnet_style_qualification_for_*` keys are the whole story, they drive the
+*adding* direction as well as the removing one, per member kind, and all four read `Conformant`
+Tier A in the committed sweep against
+`constructs/arrangement/redundancy/instance-qualifier.cs`.
+
 - options: `resharper_remove_this_qualifier`, `dotnet_style_qualification_for_field`, `dotnet_style_qualification_for_property`, `dotnet_style_qualification_for_method`, `dotnet_style_qualification_for_event`
 - ⚠ status: **open**, measured; the divergence is only reachable by flipping `resharper_remove_this_qualifier` away from the export's value.
+- ⚠ **triage 2026-08-30: `moot`.** The divergence this entry records — Skala gating the removing
+  direction on a fifth key and so keeping a `this.` the oracle removes — is unreachable, because the
+  key no longer exists to flip. Kept for the lesson rather than the measurement: it was recorded
+  from a probe that could only see that the key was *dominated*, and "dominated on this
+  configuration" was read as "read, but never decisive" when the truth was "not read at all". The
+  probe that settled it was deleting the key and regenerating the corpus.
 
 ## SK-DIV-0071 — `resharper_remove_unused_only_aliases` is a Visual Basic option, not a second spelling of the C# one
 
@@ -2244,8 +2417,28 @@ file built to need it (a `global::` prefix disambiguating a locally-shadowed `Co
 nested scope), and each came back byte-identical. Same shape as SK-DIV-0013's three code-generation
 settings.
 
+⚠ **Re-measured 2026-08-30 under `OracleProfile.Cleanup`, and it reproduces in full — with one shape
+this entry did not record.** On a probe carrying `new System.Text.StringBuilder()`,
+`global::System.Console.WriteLine(…)` and `System.Collections.Generic.List<int>` beside their short
+forms, the oracle shortens all three and removes the `using` that becomes redundant; Skala changes
+none of them. The new shape: on a second probe carrying `using Abe = System.Text.StringBuilder;`,
+the oracle rewrote `new StringBuilder()` to **`new Abe()`** — it prefers a user-declared alias to the
+imported name, and then removed `using System.Text;` as unused. So the rule is not "shorten to the
+simple name"; it is "shorten to the shortest name that binds here, alias included", which is a
+design question of its own and not a detail of the implementation.
+
 - options: `resharper_csharp_prefer_qualified_reference`, `resharper_csharp_allow_alias`, `resharper_csharp_can_use_global_alias`, `resharper_csharp_qualified_using_at_nested_scope`
 - ⚠ status: **open** on the first, **closed** (inert, recorded) on the other three.
+- ⚠ **triage 2026-08-30: `debt`, size L.** The export sets `prefer_qualified_reference = false`,
+  which is a request Skala does not answer — not a considered refusal, an absent rule. It already
+  costs the corpus a construct: `constructs/arrangement/usings/placement.cs` had to lose its
+  nested-scope alias because the oracle shortened through it. Paying it is a new semantic rule with
+  the full weight of one: resolve the qualified name, re-look-up the candidate short form at exactly
+  that position, require the same symbol (`LookupSymbols`, the way `ThisQualifierRule` already
+  does), decide the alias-versus-import preference above, and then feed the using removal that
+  follows. Layer 3's re-bind catches a wrong shortening that fails to compile; it does not catch one
+  that binds to a *different* symbol of the same name, so that check has to be explicit. ⚠ Needs the
+  oracle — the alias preference is exactly the kind of behaviour no specification states.
 
 ## SK-DIV-0074 — `dotnet_separate_import_directive_groups` is a formatting key in the oracle and an arrangement key in Skala
 
@@ -2265,8 +2458,26 @@ The consequence for the corpus is recorded in the fixture itself:
 because one would make its format-only fixture measure this gap rather than the option. The removal
 direction is pinned by `ArrangementOptionTests` instead.
 
+⚠ **Re-measured 2026-08-30 and it reproduces, in both directions.** On a probe whose using block
+carries two blank lines, under `SkalaFormatOnly` — the *format-only* profile, with no arrangement
+task in it at all — the oracle removes both; `skala format` returns the file unchanged; `skala
+arrange` removes them. So the divergence is precisely the seam this entry names, and it is visible
+on the profile milestones 1–3.1 used as their whole oracle.
+
 - options: `dotnet_separate_import_directive_groups`
 - ⚠ status: **open**, and narrow: it is only reachable on a source file that already has a blank line inside its using block, formatted without arranging.
+- ⚠ **triage 2026-08-30: `debt`, size S.** Narrow is not the same as decided, and nothing here is
+  defensible on its own terms: a user who runs `skala format` and a user who runs `skala arrange`
+  get different blank lines from the same file and the same key, which is a seam rather than a
+  choice. The entry already names the end state — the key belongs in the formatter — and the reason
+  given for not moving it ("a key two components both act on is worse than a key one of them acts on
+  late") is an argument about sequencing, not about the behaviour. Paying it: read
+  `dotnet_separate_import_directive_groups` in `PhaseOneOptions`, resolve it in `ResolveBlankLines`
+  for a gap between two `UsingDirectiveSyntax` nodes, and drop the arranger's copy so one component
+  owns it. The fixture already exists in the shape it wants —
+  `constructs/arrangement/usings/import-groups.cs` was deliberately written *without* a blank line so
+  that its format-only half would not measure this gap, and that is the line to remove. ⚠ Needs the
+  oracle for the regenerated format-only fixture only.
 
 ## SK-DIV-0075 — `T x = default(T)` for a reference `T` is a `var` candidate the oracle takes and Skala refuses
 
@@ -2298,8 +2509,35 @@ beside it as the control, and **no option is globbed to it**. The construct was 
 and `resharper_csharp_default_value_when_type_not_evident` unattributable in the key-flip sweep — two
 keys with nothing wrong with them, paying for a third rule's divergence.
 
+⚠ **Re-measured 2026-08-30 under `OracleProfile.Cleanup`, and the shape is wider than the title
+says.** Six rows, arranged and formatted by Skala and by `jb cleanupcode` at the export's values:
+
+| written | oracle | Skala |
+|---|---|---|
+| `string a = default(string);` | `var a = default(string);` | `string a = default;` |
+| `List<int> b = default(List<int>);` | `var b = default(List<int>);` | `List<int> b = default;` |
+| `object e = default(object);` | `var e = default(object);` | `object e = default;` |
+| `int? f = default(int?);` | `var f = default(int?);` | `int? f = default;` |
+| `int c = default(int);` | `var c = default(int);` | the same |
+| `string d = "x";` | `var d = "x";` | the same |
+
+Two corrections. **The shape is not "a reference `T`"** — `int?` is a value type and is refused for
+the same reason, so it is *any `T` whose flow state after `default(T)` is maybe-null.* And **the
+refusal is not the end of it**: `VarRule` declining leaves the declaration standing, `DefaultValueRule`
+then fires on it, and Skala emits a third form — `string a = default;` — that neither engine's
+`var` rule produces. That is a better outcome than the one this entry implies, because it keeps the
+declared non-nullable type where the oracle's `var` discards it.
+
 - options: `csharp_style_var_for_built_in_types`, `csharp_style_var_when_type_is_apparent`, `csharp_style_var_elsewhere`
 - ⚠ status: **open**, deliberate, and narrow.
+- ⚠ **triage 2026-08-30: `deliberate`.** The argument stands without the oracle in it: *`var` is
+  only a shorthand when it retypes nothing, and `var x = default(string)` retypes `x` from `string`
+  to `string?`.* The next thing that passes `x` to a parameter expecting `string` is a new CS8600
+  the author did not write, and the precondition that prevents it is the largest single cause of
+  re-bind reverts this repository has measured — 567 of Vixen's 618, invisible to every check that
+  compares types instead of flow states. Skala's answer, `string a = default;`, is the shortening
+  that costs the user nothing. Lifting the precondition to match the oracle would buy one line of
+  one construct fixture and re-open a class the corpus has already paid for once.
 
 ## SK-DIV-0076 — an argument is a target-typed position the oracle converts and Skala has no case for
 
@@ -2322,8 +2560,27 @@ declaration and assignment rows beside it as the control, and **no option is glo
 construct was moved there out of `lists/argument-style.cs`, where a single `new object()` argument was
 making all four `resharper_csharp_arguments_*` keys unattributable in the key-flip sweep.
 
+⚠ **Re-measured 2026-08-30 under `OracleProfile.Cleanup`, and it reproduces at the export's values.**
+`Take(new object())` comes back from the oracle as `Take(new())`; Skala leaves it. The controls in
+the same file — a declarator's initializer, a property initializer, a simple assignment, a `return`
+— are converted by both engines identically, so the divergence is the argument position and nothing
+else. `TypeInferenceRules`'s `TargetTypeOf` still falls through `default: return null` for an
+`ArgumentSyntax` parent, which is the whole of it.
+
 - options: `resharper_csharp_object_creation_when_type_evident`, `resharper_csharp_object_creation_when_type_not_evident`
 - ⚠ status: **open**; a missing capability rather than a decision, and it needs its own task.
+- ⚠ **triage 2026-08-30: `debt`, size M.** ⚠ **The difficulty is not the argument.** Nobody would
+  defend "Skala target-types every position C# does, except an argument" to a user; it is a hole in
+  a rule, and the entry's own words — "a missing capability rather than a decision" — say so. The
+  size is real and it is where the care goes: mapping an argument to its parameter needs `params`,
+  `ref`/`out` and named arguments handled, and then the hazard `DefaultValueRule` records for
+  `M(default)` versus `M(default(int))` applies here in its sharpest form — **`M(new())` can bind a
+  different overload than `M(new Foo())`, and the result compiles.** Safety layer 3 re-binds and
+  reverts on a compile error; it cannot see a silently different overload, so the precondition has
+  to be explicit: resolve the call before and after, and require the same method symbol. With that,
+  the rest is one case in `TargetTypeOf` and a fixture beside
+  `constructs/arrangement/type-inference/target-typed-new-argument.cs`. ⚠ Needs the oracle for the
+  fixture; the overload-stability check is Skala's own and does not.
 
 ## SK-DIV-0077 — an anonymous method whose parentheses the author broke leaves the call's line, and its block body breaks with it
 
@@ -2455,9 +2712,38 @@ glob pointing at a fixture the oracle wraps and Skala does not would make the sw
 with a baseline that disagrees, and would red `XmlDocOracleTests` on a committed fixture Skala cannot
 reproduce. The construct is written down here instead, in the shape a future fixture wants.
 
+⚠ **Re-measured 2026-08-30 under `OracleProfile.DocComments`, and it reproduces — at the export's
+own value.** The probe: a `<see cref="…" href="…" />` header 170 columns wide inside a `<remarks>`.
+
+| | oracle | Skala |
+|---|---|---|
+| `wrap_tags_and_pi = true` — **the export's value** | `href="…"` moves to a continuation line at one indent, inside the tag | header returned whole, past the margin |
+| `wrap_tags_and_pi = false` | header returned whole | the same |
+
+⚠ **This corrects the entry's own last sentence.** It says the idempotence violation would be
+"traded for one non-export value of one key"; it is the reverse — Skala matches the oracle only at
+the value the export does *not* set, and diverges at the value it does.
+
+The prerequisite is confirmed by the converse test: handed the oracle's wrapped output, Skala's
+formatter returns it unchanged and applies **no** doc-comment rule to that comment, because
+`XmlDocModel.Build` returns null and `XmlDocFormatter.Replacement` refuses the whole comment as
+`Unmodelled`. So a Skala that emitted a wrapped header would emit a comment it could not read back,
+and `format(format(x))` would leave every other doc rule unapplied to it.
+
 - options: `resharper_xmldoc_wrap_tags_and_pi`
 - ⚠ status: **open**, cause established and the prerequisite named. Not a wrapping bug — a missing
   half of the model.
+- ⚠ **triage 2026-08-30: `debt`, size M.** ⚠ The idempotence argument is a reason not to ship the
+  wrap *yet*; it is not a reason the current behaviour is right, and the two are easy to confuse.
+  What Skala does is not a choice anyone made — it is what falls out of a model that cannot
+  represent a multi-line tag header, and the cost is five declared keys that do nothing:
+  `xmldoc_wrap_tags_and_pi` at the export's own value, plus `xmldoc_attribute_indent`,
+  `xmldoc_attribute_style`, `xmldoc_alignment_tab_fill_style` and `xmldoc_allow_far_alignment` in
+  `XmlDocIds.Refused`, four of which have nothing to say until this one works. Paying it: teach
+  `XmlDocModel` to *parse* a header spread over several `///` lines back into one element node —
+  after which the emitter side is the easy half and all five keys become answerable at once. ⚠ Needs
+  the oracle for the four dependent keys' behaviour, which has never been measured because nothing
+  could ask.
 
 ## SK-DIV-0080 — an aligned list pattern's continuation lines are not filled greedily, and no one rule fills both it and a collection expression
 
@@ -2710,8 +2996,36 @@ written the same way, which is what lets the row attribute. The expansion itself
 and cannot have one: at the export's `true` there is nothing to expand and the two engines agree, so
 the divergence exists only at the value the export does not use.
 
+⚠ **Re-measured 2026-08-30 under `OracleProfile.Cleanup` on a fixture written for this key**, with
+`dotnet_style_predefined_type_for_locals_parameters_members = false` and nothing else flipped:
+
+```csharp
+int _count;                            →  Int32 _count;
+static int _shared;                    →  static Int32 _shared;
+void Shadowed(int _count)              →  void Shadowed(Int32 _count)
+void Parentheses(int a, int b, int c)  →  void Parentheses(Int32 a, Int32 b, Int32 c)
+string Name()                          →  String Name()          ← and the return type, which this entry had not recorded
+```
+
+Skala leaves all five as written. The control holds: at the export's `true` the two engines agree
+byte for byte on the same file. The fifth row is new — the expansion reaches a **return type** as
+well as a field, a parameter and a local, so "locals, parameters, members" is to be read at its
+widest.
+
 - options: `dotnet_style_predefined_type_for_locals_parameters_members`, `dotnet_style_predefined_type_for_member_access`
 - ⚠ status: **open**; a missing capability rather than a decision, and it needs its own task.
+- ⚠ **triage 2026-08-30: `debt`, size M.** A user who writes
+  `dotnet_style_predefined_type_for_locals_parameters_members = false` and gets no framework names is
+  not looking at a considered refusal, and this repository never made one — `PredefinedTypeRule` was
+  written in the contracting direction because that is the direction the export asks for. Paying it:
+  the expansion is only legal where `Int32` binds to `System.Int32` at the position, so the rule
+  needs a `LookupSymbols` check per site and a decision about what to do when it does not bind
+  (write `System.Int32`, or decline) — being wrong costs the whole document, because layer 3
+  re-binds, sees CS0246 and reverts the file. The other half is the fixture: at the export's `true`
+  there is nothing to expand, so the divergence exists only at the value the export does not use and
+  cannot be pinned without the per-directory `.editorconfig` mechanism SK-DIV-0032 also wants. ⚠ The
+  five rows above are the specification; recording them is what lets this be paid after the oracle
+  is gone, and it is the lowest-priority of this batch's debts because the export's own value agrees.
 
 ## SK-DIV-0085 — `sort_usings = false` still reorders, and the oracle's unsorted order is not the written one
 
@@ -2745,10 +3059,51 @@ the rest, written order within each" and "descending ordinal" — so what the or
 and agrees with the oracle byte for byte, and at `false` it emits a different order from the oracle's
 rather than the same one. The disagreement is confined to the value the export does not use.
 
+### ⚠ The probe this entry asked for was run on 2026-08-30, and it refutes both hypotheses
+
+Nine directives, all resolvable and all used, interleaving alias, `static` and plain, and with three
+non-`System` plain namespaces (`Zulu.Alpha`, `Alpha.Zulu`, `Mango.Beta`) placed among three `System`
+ones so that `System`-ness and ordinal order disagree in both directions. Under the cleanup profile
+at `resharper_sort_usings = false`:
+
+```
+written                              oracle
+1  Zulu.Alpha            (plain)     Zed = …CultureInfo        (3)
+2  System.Text           (plain)     static Zulu.Alpha.ZHelp   (5)
+3  Zed = …CultureInfo    (alias)     Abe = …StringBuilder      (7)
+4  Alpha.Zulu            (plain)     static System.Math        (9)
+5  static …ZHelp         (static)    Zulu.Alpha                (1)
+6  System.Collections.Concurrent     Alpha.Zulu                (4)
+7  Abe = …StringBuilder  (alias)     System.Collections.Conc.  (6)
+8  Mango.Beta            (plain)     Mango.Beta                (8)
+9  static System.Math    (static)
+```
+
+**The rule is: a directive that binds a name — an alias or a `static` — is hoisted above the plain
+ones, and both partitions keep their written order.** Not two groups but one: aliases and `static`s
+interleave with each other exactly as written (3, 5, 7, 9), which the "plain → alias → `static`"
+reading above gets wrong. Within the plain partition the written order is preserved with a
+non-`System` namespace *first* (1 before 6), which refutes "`System` first"; and `Zulu.Alpha` staying
+ahead of `Alpha.Zulu` refutes "descending ordinal". A control run with no aliases and no `static`s at
+all came back in written order, unchanged, both with and without an unused directive to remove — so
+the hoist is the whole effect and a removal does not trigger a re-sort.
+
+⚠ That leaves one row of this entry's first probe unexplained: `Alpha.Things` moving to the end of
+the plain group. It could not be reproduced — the re-run's `Alpha.Things` was unresolvable and got
+removed instead — and the nine-directive probe above contradicts the only rule that would explain
+it. Treat the first table's fifth row as unreliable, not the model.
+
 - options: `resharper_sort_usings`
-- ⚠ status: **open**, and deliberately not guessed at. Closing it needs a probe that separates the two
-  hypotheses above — half a dozen plain directives whose `System`-ness and ordinal order disagree —
-  and that probe is a nightly-cost measurement rather than a reading of this table.
+- ⚠ status: **open**, and no longer a guess: the oracle's rule at `false` is stated above.
+- ⚠ **triage 2026-08-30: `deliberate`**, and now for a reason rather than for want of a measurement.
+  The argument does not mention ReSharper: **`sort_usings = false` says do not sort, and Skala does
+  not sort.** A user who switches sorting off and finds their using block reordered anyway has been
+  told one thing and given another; that the reordering is small and consistent does not make it
+  asked for. Reproducing it would mean implementing a hoist nobody requested in order to agree with
+  a tool that will not be installed. `UsingsRule` keeps the written order at `false` and sorts at
+  `true`, where it agrees with the oracle byte for byte, and the sweep's `Divergent` row for this key
+  is the price of the position rather than evidence against it. The oracle's rule is written down
+  above so that the choice stays re-examinable once the oracle is gone.
 
 ## SK-DIV-0086 — with the body-style heuristic off, a body carrying a comment still stays a block
 
@@ -2783,8 +3138,42 @@ an arrow and its expression, and acquiring one is a formatter change with its ow
 something to bolt onto an arrangement rule. At the export's `true` the heuristic holds and
 `constructs/arrangement/body-style/heuristics.cs` agrees with the oracle byte for byte.
 
+### ⚠ Re-measured 2026-08-30, and the entry names one shape where there are two
+
+At `use_heuristics_for_body_style = false`, under the cleanup profile, with the export's values
+otherwise:
+
+| body | oracle | Skala |
+|---|---|---|
+| a comment **above** the only statement | `=>` with the comment on its own line between arrow and expression | stays a block |
+| `return 1; // trailing` | **`=> 1; // trailing`** | stays a block |
+| `throw new …;` | stays a block | the same |
+| `async void` + `await` | `=>` | the same |
+| `#if DEBUG` around the only statement | stays a block | the same |
+
+The second row is new and it is not covered by the entry's argument. `HasTriviaThatBlocksConversion`
+walks `DescendantTrivia` and refuses on **any** comment anywhere in the body, so a comment that
+merely trails the statement blocks the conversion too — and there is nothing to place: the comment
+stays on the same line as the expression, where the formatter already handles it.
+`BodyStyleRule.Semicolon` even carries a closing brace's trailing trivia through for exactly this
+reason; it is the statement's own trailing trivia that is being dropped on the floor.
+
 - options: `resharper_csharp_use_heuristics_for_body_style`
 - ⚠ status: **open**; the blocker is the formatter's comment placement and not the body-style rule.
+- ⚠ **triage 2026-08-30: `debt`, size S** — for the second row. The two halves are different things
+  and only one of them was decided:
+  - **the leading-comment half is `deliberate`.** "A body with a comment inside it stays a block" is
+    defensible on its own terms, and the alternative was measured and thrown away: carrying the
+    comment through arrangement is three lines, and the formatter then leaves it at column 0, which
+    is worse than not converting. Acquiring an indentation rule for a comment between an arrow and
+    its expression is a formatter change with its own fixtures, and it is a fair thing to decline.
+  - **the trailing-comment half is `debt`.** No blocker applies to it — the output is one line with
+    the comment where the author left it — so the refusal is the precondition being wider than its
+    reason. Paying it: narrow `HasTriviaThatBlocksConversion` to comments and directives that are
+    *not* trailing trivia on the body's last statement, and carry that trivia onto the new
+    semicolon the way `Semicolon(closeBrace)` already does. A fixture row beside
+    `constructs/arrangement/body-style/heuristics.cs`. ⚠ Needs the oracle for the fixture only;
+    reachable only at `use_heuristics_for_body_style = false`, which the export does not set.
 
 ## SK-DIV-0089 — the four formatter-tag keys, and why no one-key flip can ask about any of them
 
