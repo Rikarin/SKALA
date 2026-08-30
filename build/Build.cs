@@ -240,6 +240,43 @@ class Build : NukeBuild {
                 )
             );
 
+    /// <summary>
+    ///     ⚠ Commits the key-flip sweep's per-configuration outputs, so that the guarantee they carry
+    ///     survives ReSharper's uninstallation.
+    /// </summary>
+    /// <remarks>
+    ///     A deliberate, reviewed action whose diff is the review, exactly like <see cref="Oracle" />
+    ///     and for a sharper version of the same reason: this corpus is what the repository will have
+    ///     <em>after</em> there is no second opinion to appeal to, so a replay that re-froze itself on
+    ///     disagreement would be the tautology docs/plan/12 § "The oracle" forbids, made permanent.
+    ///     <c>FrozenSweepTests</c> reads it and never writes it.
+    ///     <para>
+    ///         ⚠ Unlike <see cref="Sweep" /> this measures nothing and decides nothing. Every byte it
+    ///         writes must hash to an <c>OracleHash</c> that the committed <c>conformance-sweep.json</c>
+    ///         already records; an output that does not is refused rather than written. Run
+    ///         <see cref="Sweep" /> first when the table is stale — this target cannot substitute for it
+    ///         and will say so.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ It needs JetBrains for the handful of outputs on rows where Skala is known to disagree:
+    ///         no digest of Skala's can match the oracle's there, and freezing Skala's answer instead is
+    ///         the one substitution this corpus must never make. A developer-machine and nightly
+    ///         dependency (ADR-011), like <see cref="Oracle" /> and <see cref="Sweep" />; what the fast
+    ///         path reads is the committed result.
+    ///     </para>
+    /// </remarks>
+    Target Freeze =>
+        definition => definition
+            .DependsOn(Compile)
+            .Executes(() => DotNetRun(settings => settings
+                        .SetProjectFile(RootDirectory / "Testing" / "Rikarin.Skala.Conformance.Sweep")
+                        .SetConfiguration(Configuration)
+                        .EnableNoBuild()
+                        .EnableNoRestore()
+                        .SetApplicationArguments("freeze")
+                )
+            );
+
     /// <summary>Two keys at once, over the grid: the interaction pass docs/plan/12 names.</summary>
     /// <remarks>
     ///     ⚠ A nightly job like <see cref="Sweep" /> and never a commit gate (ADR-011). It answers the

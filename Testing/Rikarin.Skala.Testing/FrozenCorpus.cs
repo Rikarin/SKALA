@@ -1,13 +1,12 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using Rikarin.Skala.Testing;
 
-namespace Rikarin.Skala.Conformance.Sweep;
+namespace Rikarin.Skala.Testing;
 
 /// <summary>One key forced to one value, in the shape an override list can hold more than one of.</summary>
 /// <remarks>
 ///     ⚠ A list rather than a <c>Key</c>/<c>Value</c> pair on the row, and that is the extension point
-///     rather than ceremony. <see cref="PairwiseSweep" /> already forces two keys at once, and the width
+///     rather than ceremony. <c>PairwiseSweep</c> already forces two keys at once, and the width
 ///     capture being built alongside this one forces a wrap key together with
 ///     <c>max_line_length</c>. A row shaped as one key cannot hold either without a schema change that
 ///     would invalidate every committed row; a row shaped as a list holds both today.
@@ -27,7 +26,7 @@ public sealed record FrozenOverride(string Key, string Value);
 ///     oracle's recorded digest and the bytes were taken from Skala, or
 ///     <see cref="FrozenCorpus.Measured" /> when only <c>jb cleanupcode</c> could produce them. It is
 ///     recorded because the two are not equally strong evidence and a reader must be able to tell them
-///     apart — see <see cref="FrozenFreeze" />.
+///     apart — see <c>FrozenFreeze</c>.
 /// </param>
 public sealed record FrozenOutput(
     string Path,
