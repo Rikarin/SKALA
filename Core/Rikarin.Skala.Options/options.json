@@ -1735,7 +1735,8 @@
       "oracle": null,
       "docs": null,
       "templateLine": 585,
-      "expands": []
+      "expands": [],
+      "unsweptBecause": "⚠ Tier C is a deliberate refusal and stays one — docs/plan/16 § Q1 records the decision, and `skala config check` reports SK9006 if this is ever set back to `true`. Measured in the same run as `resharper_autodetect_indent_settings`, under `OracleProfile.FormatOnly`: `true` and `false` give one output on a tab-indented file and on a two-space one, and so does the triple with `resharper_autodetect_indent_settings = true` and `resharper_use_indent_from_vs = true` held beside it. `indent_style = tab` and `indent_size = 2` each rewrite the same file in the same runs, so `jb cleanupcode` does not apply autodetected rules either — there is nothing on the command line for the refusal to cost."
     },
     {
       "key": "resharper_apply_on_completion",
@@ -4828,7 +4829,8 @@
       "oracle": null,
       "docs": "https://www.jetbrains.com/help/resharper/EditorConfig_CSHARP_OthersPageSchema.html#resharper_csharp_old_engine",
       "templateLine": 876,
-      "expands": []
+      "expands": [],
+      "unsweptBecause": "⚠ Tier C, and the one entry that proves Tier C is not an inertness claim: the oracle demonstrably honours it. Measured under `OracleProfile.FormatOnly` — at `true` the whole probe is rewritten, a file-scoped namespace's members are outdented, `namespace Probe ; ` is spaced, and the wrap points move; at `false` it is byte-identical to the export. So C means Skala declines to implement ReSharper's legacy engine, not that nothing would happen if it did. ⚠ Its unprefixed sibling `resharper_use_old_engine` is inert in the same run, which is a fact about that spelling and not about this one. No glob: Skala has one engine, so it is flat at both values and a glob could only file an `INERT` row the registry does not declare."
     },
     {
       "key": "resharper_csharp_outdent_binary_ops",
@@ -9209,7 +9211,8 @@
       "oracle": null,
       "docs": null,
       "templateLine": 942,
-      "expands": []
+      "expands": [],
+      "unsweptBecause": "⚠ Tier C, and the plainest of the six: it governs whether an IDE shows a notification. Not a formatter option at all. Measured anyway rather than assumed from the name — one output at both values under `OracleProfile.FormatOnly`, in the same run where `indent_style = tab` rewrites the same file."
     },
     {
       "key": "resharper_simple_block_style",
@@ -9803,7 +9806,8 @@
       "oracle": null,
       "docs": null,
       "templateLine": 1114,
-      "expands": []
+      "expands": [],
+      "unsweptBecause": "⚠ Tier C, a deliberate refusal, and measured beside it: one output at both values in the same `OracleProfile.FormatOnly` run as the two autodetect keys, singly and with both of them held at `true`, against an `indent_style = tab` control that rewrites the file. It names Visual Studio's editor setting as the source of an indent, which is not a thing a command-line formatter has — and `jb cleanupcode` agrees, since it ignores the key too."
     },
     {
       "key": "resharper_use_indents_from_main_language_in_file",

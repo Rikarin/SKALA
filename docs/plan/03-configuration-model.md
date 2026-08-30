@@ -198,6 +198,18 @@ in the registry, so those are not "parsed, validated and deliberately not implem
 `resharper_show_autodetect_configure_formatting_tip` — the last two never named here, and a third of
 the tier.
 
+⚠ **All six now carry a measurement, and it is recorded in `unsweptBecause` rather than in `inert`.**
+The distinction is the point and the registry enforces it: `inert` is Tier D by construction —
+`OptionRegistryTests.Inert_OptionsCarryAReasonAndAreNotClaimedAsImplemented` asserts the tier — so a
+Tier C key that was *also* measured unobservable had nowhere to put that fact and sat with an empty
+entry instead. Recording it in a second field keeps the refusal and the measurement apart, which
+matters because they disagree about one of the six: five of them are flat in `jb cleanupcode` 2025.2.6
+at every value, and **`resharper_csharp_old_engine` is not** — at `true` the oracle rewrites the whole
+probe, outdenting a file-scoped namespace's members and moving the wrap points. Tier C was still the
+right answer for it. **C means Skala declines; it has never meant nothing would happen.** Collapsing
+the two would have turned a deliberate refusal into a claim that the option does not exist, which is
+the one reading Tier C exists to rule out. See `docs/tier-d-split.md` § "Measured, 2026-08-31".
+
 **The tier matrix is published** — into `docs/site/options/` by `skala docs site`, not into
 `docs/options/` by the generator. The headline number is **Tier A: 259 of 520**.
 
