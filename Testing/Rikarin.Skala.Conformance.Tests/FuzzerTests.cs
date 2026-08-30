@@ -388,6 +388,75 @@ public sealed class FuzzerTests {
     }
 
     /// <summary>
+    ///     ⚠ An absorbed mutation may not move a comment off the first column.
+    /// </summary>
+    /// <remarks>
+    ///     <c>resharper_csharp_stick_comment</c> — "Don't indent comments started at first column" — makes
+    ///     a comment's <em>source column</em> an input the oracle reads, and "at the first column" is
+    ///     literal. The fixture's own oracle output is the measurement: the comment written at column 0
+    ///     comes back at column 0, and the one written at column 2 comes back at the code's indent. So the
+    ///     single space the <c>indent</c> mutation used to insert in front of a column-0 comment was not
+    ///     whitespace in the sense absorption means — it was the key's entire input, and the violation it
+    ///     produced was a fact about the <b>probe</b>, not about the formatter. Absorbing it would be
+    ///     asserting that Skala should diverge from the oracle on purpose.
+    ///     <para>
+    ///         ⚠ This is the same correction <see cref="FuzzMutations.SourceMap.AbsorbableGaps" /> already
+    ///         carried for the gap beside a <c>..</c>, arrived at from the other end: there a key
+    ///         <em>preserves</em> the author's spacing, here a key <em>reads</em> it. Both make
+    ///         <c>format(mutate_whitespace(x)) ≡ format(x)</c> false as stated over one span class.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ Asserted as the property itself rather than as the shape of the mutation, because the
+    ///         mutation is the thing under suspicion. Seeded rather than replayed from
+    ///         <c>17198075540958731069</c>: excluding a line changes how much randomness the draw
+    ///         consumes, so that seed no longer builds that case, and a regression test keyed to a seed
+    ///         would be pinning the fuzzer's arithmetic instead of the defect.
+    ///     </para>
+    /// </remarks>
+    [Fact]
+    public void AnAbsorbedMutation_NeverMovesACommentOffTheFirstColumn() {
+        var path = Path.Combine(
+            Corpus.SetRoot(Corpus.Constructs),
+            "trivia",
+            "resharper_csharp_stick_comment.cs"
+        );
+
+        var source = File.ReadAllText(path);
+
+        // The fixture is the origin the nightly's finding was minimised from, and it has to keep
+        // carrying the shape: a comment hard against the left margin, inside a body and outside one.
+        Assert.Contains("\n// stuck to the left margin", source, StringComparison.Ordinal);
+        Assert.Contains("\n// inside a body, at column zero", source, StringComparison.Ordinal);
+
+        var options = Fuzzer.OptionsFor(path);
+        var applied = 0;
+        for (var index = 0; index < 400; index++) {
+            var random = new FuzzRandom(FuzzRandom.Derive(17198075540958731069, index));
+            var mutation = FuzzMutations.Apply(source, random, Corpus.PropertySymbols, FuzzMutations.AbsorbedNames);
+            if (mutation is null) {
+                continue;
+            }
+
+            applied++;
+            foreach (var symbols in (IReadOnlyList<string>[])[[], Corpus.PropertySymbols]) {
+                Assert.Equal(
+                    FuzzProperties.Format(path, source, options, symbols),
+                    FuzzProperties.Format(path, mutation.Text, options, symbols)
+                );
+            }
+        }
+
+        // ⚠ A guard on the assertion above, not decoration. If the protection were widened until
+        // nothing on this fixture were mutable at all, every `Assert.Equal` would pass vacuously and
+        // the suite would go green on a fuzzer that had stopped fuzzing the file the defect lives in.
+        Assert.True(
+            applied > 200,
+            $"only {applied.ToString(CultureInfo.InvariantCulture)} of 400 draws mutated the fixture; "
+            + "the column-zero protection has been widened until the file is no longer fuzzed."
+        );
+    }
+
+    /// <summary>
     ///     A short, fixed-seed run, so the driver itself is exercised on every commit.
     /// </summary>
     /// <remarks>
